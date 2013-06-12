@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Cocotb : Coroutine Co-simulation Test Bench " />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Cocotb</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/potentialventures/cocotb">View on GitHub</a>
+
+          <h1 id="project_title">Cocotb</h1>
+          <h2 id="project_tagline">Coroutine Co-simulation Test Bench </h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/potentialventures/cocotb/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/potentialventures/cocotb/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p><strong>cocotb</strong> is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.</p>
+
+<h1>
+<a name="rationale" class="anchor" href="#rationale"><span class="octicon octicon-link"></span></a>Rationale</h1>
+
+<p>VHDL and Verilog are both unsuitable for writing complex testbenches. eRM, SystemVerilog and the various SV based methodologies have emerged to address this deficiency. These verification methodologies are large and cumbersome, requiring specialist knowledge, significant time investment and expensive toolchains to achieve satisfactory verification. The overhead of setting up testbenches is onerous so often designers write small throwaway testbenches at a block level and defer the majority of verification to a large system level testbench. Cocotb intends to bridge this gap in order to make block-level testing useful, reusable, fast, accessible to a much wider skill-set. The net effect is that bugs will be discovered earlier in the design cycle which equates to significant time and cost saving.</p>
+
+<h1>
+<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h1>
+
+<p>A typical cocotb testbench requires no additional RTL code. The Design Under Test (DUT) is instantiated as the toplevel in the simulator without any wrapper code. Cocotb drives stimulus onto the inputs to the DUT (or further down the hierarchy) and monitors the outputs directly from Python.</p>
+
+<p>Cocotb comprises 3 layers:</p>
+
+<h3>
+<a name="gpi-generic-procedural-interface" class="anchor" href="#gpi-generic-procedural-interface"><span class="octicon octicon-link"></span></a>GPI (Generic Procedural Interface)</h3>
+
+<p>This layer abstracts the simulator language interface to provide a common set of functionality. Supports VHDL via VHPI and Verilog/SystemVerilog via VPI. Modelsim FLI may be supported in the future.</p>
+
+<h3>
+<a name="simulatormodule" class="anchor" href="#simulatormodule"><span class="octicon octicon-link"></span></a>simulatormodule</h3>
+
+<p>A CPython extension which utilises GPI to expose the simulator to Python.</p>
+
+<h3>
+<a name="cocotb-python-package" class="anchor" href="#cocotb-python-package"><span class="octicon octicon-link"></span></a>cocotb Python package</h3>
+
+<p>Python infrastructure including coroutine scheduler, base classes etc. The cocotb package provides a mechanism to traverse the hierarchy, query signal values, force signals to particular values and control simulator execution.</p>
+
+<h1>
+<a name="example" class="anchor" href="#example"><span class="octicon octicon-link"></span></a>Example</h1>
+
+<p>A simplistic example of generating a clock with 10ns period:</p>
+
+<div class="highlight"><pre><span class="nd">@cocotb.coroutine</span>
+<span class="k">def</span> <span class="nf">clock</span><span class="p">(</span><span class="n">signal</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">signal</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+        <span class="k">yield</span> <span class="n">Timer</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">signal</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+        <span class="k">yield</span> <span class="n">Timer</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+
+<p>The python "yield" keyword is used to suspend the coroutine and return control back to the simulator until a condition is met. In this case, the condition is a simple timer that fires after 5ns of simulation time.</p>
+
+<p>This may seem pretty pointless, in fact a Verilog process to perform the same operation requires fewer lines of code. Let's examine a more useful example:</p>
+
+<div class="highlight"><pre><span class="nd">@cocotb.coroutine</span>
+<span class="k">def</span> <span class="nf">pcap_replay</span><span class="p">(</span><span class="n">bus</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="n">prevtime</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">packet</span> <span class="ow">in</span> <span class="n">dpkt</span><span class="o">.</span><span class="n">pcap</span><span class="o">.</span><span class="n">Reader</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'r'</span><span class="p">)):</span>
+        <span class="k">yield</span> <span class="n">Timer</span><span class="p">((</span><span class="n">timestamp</span> <span class="o">-</span> <span class="n">prevtime</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">bus</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
+</pre></div>
+
+<p>Here we utilise a thirdparty python library called dpkt to iterate over packets in a PCAP packet capture. This becomes trivially easy in Python when compared to a VHDL/Verilog/SystemVerilog implementation. The argument "bus" is an instance of a Driver class which provides a send method to serialise the packet transaction over multiple cycles on the bus. Although the majority of the complexity is hidden in this (reusable) Driver class the actual implementation is once again straightforward:</p>
+
+<div class="highlight"><pre><span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packet</span><span class="p">):</span>
+
+    <span class="n">words</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span>
+
+    <span class="k">yield</span> <span class="n">RisingEdge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clk</span><span class="p">)</span>            <span class="c"># Synchronise to bus clock</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">sop</span> <span class="o">&lt;=</span> <span class="mi">1</span>                         <span class="c"># First word is start-of-packet</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">packet</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">&lt;=</span> <span class="n">word</span>
+        <span class="k">yield</span> <span class="n">rising_edge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clk</span><span class="p">)</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">sop</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="n">words</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eop</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">len</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+
+    <span class="k">yield</span> <span class="n">rising_edge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clk</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">eop</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+</pre></div>
+
+<h1>
+<a name="advantages" class="anchor" href="#advantages"><span class="octicon octicon-link"></span></a>Advantages</h1>
+
+<ul>
+<li>Low overhead to creating testbenches to facilitate block-level verification</li>
+<li>Favourable learning curve compared to eRM/OVM/UVM</li>
+<li>Leverage existing Python and C libraries easily</li>
+<li>Multi-language (Verilog/VHDL) and cross multi-simulator compatible</li>
+<li>Supports directed and randomised testing</li>
+</ul><h1>
+<a name="disadvantages" class="anchor" href="#disadvantages"><span class="octicon octicon-link"></span></a>Disadvantages</h1>
+
+<ul>
+<li>Simulation is slower than native language testbench</li>
+<li>Non-standard</li>
+</ul><h1>
+<a name="similar-projects" class="anchor" href="#similar-projects"><span class="octicon octicon-link"></span></a>Similar projects</h1>
+
+<p>Several examples exist of projects providing a VPI interface into a language other than C and (most notably <a href="http://pyhvl.sourceforge.net/">http://pyhvl.sourceforge.net/</a> and <a href="http://snk.tuxfamily.org/lib/ruby-vpi/">http://snk.tuxfamily.org/lib/ruby-vpi/</a>). MyHDL (<a href="http://www.myhdl.org/">http://www.myhdl.org/</a>) seeks to displace VHDL and Verilog with a Python framework that can generate synthesiable RTL.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Cocotb maintained by <a href="https://github.com/potentialventures">potentialventures</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-41678571-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
