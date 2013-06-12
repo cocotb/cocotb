@@ -1,0 +1,97 @@
+###############################################################################
+# Copyright (c) 2013 Potential Ventures Ltd
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
+
+include $(SIM_ROOT)/scripts/Makefile.inc
+
+COCOTB =  $(SIM_ROOT)/sim_core/cocotb
+VPI_FILE = $(SIM_ROOT)/build/cocotb.vpi
+OBJ_DIR := obj
+VPI_LIB := aldecpli
+VPI_LD_PATH := $(RIVERA_BASE)/lib
+
+all : sim
+
+$(OBJ_DIR) :
+	mkdir -p $(OBJ_DIR)
+
+core:
+	make -C $(SIM_ROOT)/sim_core
+
+# By default create output goes in a build directory
+SIM_DIR ?= sim_output
+
+# Common Makefile for Aldec Riviera-PRO simulator
+
+ifeq ($(GUI),1)
+    CMD := riviera -nosplash
+else
+    CMD := vsimsa
+endif
+
+$(SIM_DIR):
+	mkdir -p $(SIM_DIR)
+
+
+
+# Aldec requires a process in the verilog - if the only
+# timesteps are PLI initiated then the sim finishes immediately
+#
+# FIXME this doesn't work, still need this code in the toplevel GRRRR
+ $(SIM_DIR)/initial.v : $(SIM_DIR)
+	echo -e "module fake_initial;\n\
+initial begin\n\
+    $display (\"Initial statement began\");\n\
+    #99999999999 $finish;\n\
+end\n\
+endmodule\n" > $@
+
+# Create a TCL script based on the list of $(VERILOG_SOURCES)
+$(SIM_DIR)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_DIR)
+	echo "alib work" > $@
+	echo "set worklib work" >> $@
+	cd $(SIM_DIR) && create_project.py $(VERILOG_SOURCES) >> runsim.tcl
+	echo "asim +access +w -O2 -dbg -pli libcocotb $(TOPLEVEL)" >> $@
+ifeq ($(GUI),1)
+	echo "wave -rec *" >> $@
+else
+	echo "run -all" >> $@
+	echo "endsim" >> $@
+endif
+
+# Note it's the redirection of the output rather than the 'do' command
+# that turns on batch mode (i.e. exit on completion/error)
+.PHONY: sim
+
+sim: $(SIM_DIR)/runsim.tcl core
+	-cd $(SIM_DIR) && ln -sf $(VPI_FILE) libcocotb.so
+	cd $(SIM_DIR) && PYTHONPATH=$(LIB_DIR):$(PWD)/testbench:$(SIM_ROOT)/sim_core:$(PWD):$(PYTHONPATH) \
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(VSIMSABIN)/Linux64 MODULE=$(MODULE) FUNCTION=$(FUNCTION) $(CMD) -do runsim.tcl | tee sim.log
+
+clean::
+	rm -rf $(SIM_DIR)
+

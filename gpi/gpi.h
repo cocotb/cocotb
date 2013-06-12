@@ -1,0 +1,148 @@
+/******************************************************************************
+* Copyright (c) 2013 Potential Ventures Ltd
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*    * Redistributions of source code must retain the above copyright
+*      notice, this list of conditions and the following disclaimer.
+*    * Redistributions in binary form must reproduce the above copyright
+*      notice, this list of conditions and the following disclaimer in the
+*      documentation and/or other materials provided with the distribution.
+*    * Neither the name of Potential Ventures Ltd nor the
+*      names of its contributors may be used to endorse or promote products
+*      derived from this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+******************************************************************************/
+
+/*
+gpi.h
+
+Generic Language Interface
+
+This header file defines a Generic Language Interface into any simulator.
+Implementations should include this header file and MUST
+
+The functions are essentially a limited subset of VPI/VHPI/FLI.
+
+Implementation specific notes
+=============================
+
+By amazing coincidence, VPI and VHPI are strikingly similar which is obviously
+reflected by this header file. Unfortunately, this means that proprietry,
+non-standard, less featured language interfaces (for example Mentor FLI) may have
+to resort to some hackery, or may not even be capable of implementing a GPI layer.
+
+Because of the lack of ability to register a callback on event change using the FLI,
+we have to create a process with the signal on the sensitivity list to imitate a callback.
+
+*/
+
+#ifndef __GPI_H
+#define __GPI_H
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+#if defined(__MINGW32__) || defined (__CYGWIN32__)
+#  define DLLEXPORT __declspec(dllexport)
+#else
+#  define DLLEXPORT
+#endif
+
+#ifdef __cplusplus
+# define EXTERN_C_START extern "C" {
+# define EXTERN_C_END }
+#else
+# define EXTERN_C_START
+# define EXTERN_C_END
+#endif
+
+#ifndef __GNUC__
+# undef  __attribute__
+# define __attribute__(x)
+#endif
+
+
+EXTERN_C_START
+
+// Define a type for our simulation handle.
+typedef struct __gpi_sim_hdl *gpi_sim_hdl;
+// Define a callback handle type for registered callbacks.
+typedef struct __gpi_cb_hdl *gpi_cb_hdl;
+// Define a handle type for iterators
+typedef struct __gpi_iterator_hdl *gpi_iterator_hdl;
+// Define a type of a clock object
+typedef struct gpi_clock_s {
+    int period;
+    int value;
+    unsigned int max_cycles;
+    unsigned int curr_cycle;
+    bool exit;
+    gpi_sim_hdl sim_hdl;
+    gpi_cb_hdl cb_hdl;
+} gpi_clock_t;
+
+typedef gpi_clock_t *gpi_clock_hdl;
+
+
+// Functions for controlling/querying the simulation state
+
+// Stop the simulator
+void gpi_sim_end();
+
+
+// Returns simulation time as a float. Units are default sim units
+void gpi_get_sim_time(uint32_t *high, uint32_t *low);
+
+
+// Functions for extracting a gpi_sim_hdl to an object
+// Returns a handle to the root simulation object
+gpi_sim_hdl gpi_get_root_handle();
+gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent);
+
+
+
+// Functions for querying the properties of a handle
+
+// Caller responsible for freeing the returned string.
+// This is all slightly verbose but it saves having to enumerate various value types
+// We only care about a limited subset of values.
+char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
+char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
+char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
+
+
+
+// Functions for setting the properties of a handle
+void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
+void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
+
+// The callback registering functions all return a gpi_cb_hdl;
+gpi_cb_hdl gpi_register_sim_start_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_sim_end_callback                (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_timed_callback                  (int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
+gpi_cb_hdl gpi_register_value_change_callback           (int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
+gpi_cb_hdl gpi_register_readonly_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_nexttime_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_readwrite_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
+
+int gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
+gpi_clock_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int cycles);
+void gpi_clock_unregister(gpi_clock_hdl clock);
+
+EXTERN_C_END
+
+#endif // __GPI_H
