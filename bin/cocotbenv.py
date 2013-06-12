@@ -56,6 +56,21 @@ class SimIcarus(SimType):
         print(cmd)
         call(cmd, shell=True)
 
+class SimSfsim(SimType):
+    def __init__(self, name=None):
+    SimType.__init__(self, "SolarFlare Model")
+
+    def execute(self, py_path, lib_path, module, function, finput):
+        SimType.execute(self)
+        cmd = 'PYTHONPATH=' + py_path
+        cmd = cmd + ' LD_LIBRARY_PATH=' + lib_path
+        cmd = cmd + ' MODULE=' + module
+        cmd = cmd + ' FUNCTION=' + function
+        cmd = cmd + ' ' + finput
+        cmd = cmd + ' -l ' + lib_path + '/libcocotb.so'
+        print(cmd)
+        call(cmd, shell=True)
+
 def main():
 
     """ Start the desired simulator with cocotb embedded within.
