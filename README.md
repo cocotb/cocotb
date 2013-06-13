@@ -1,13 +1,6 @@
 
 **cocotb** is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 
-TODO
-====
-
- - [ ] Block align log messages that span multiple lines
- - [ ] Common functions for dumping a diff, nicely coloured (see scapy.utils.hexdiff)
-
-
 Rationale
 =========
 VHDL and Verilog are both unsuitable for writing complex testbenches. eRM, SystemVerilog and the various SV based methodologies have emerged to address this deficiency. These verification methodologies are large and cumbersome, requiring specialist knowledge, significant time investment and expensive toolchains to achieve satisfactory verification. The overhead of setting up testbenches is onerous so often designers write small throwaway testbenches at a block level and defer the majority of verification to a large system level testbench. Cocotb intends to bridge this gap in order to make block-level testing useful, reusable, fast, accessible to a much wider skill-set. The net effect is that bugs will be discovered earlier in the design cycle which equates to significant time and cost saving.
