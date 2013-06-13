@@ -58,7 +58,7 @@ class SimIcarus(SimType):
 
 class SimSfsim(SimType):
     def __init__(self, name=None):
-    SimType.__init__(self, "SolarFlare Model")
+        SimType.__init__(self, "SolarFlare Model")
 
     def execute(self, py_path, lib_path, module, function, finput):
         SimType.execute(self)
