@@ -26,8 +26,6 @@
 ###############################################################################
 
 
-include $(SIM_ROOT)/scripts/Makefile.inc
-
 COCOTB =  $(SIM_ROOT)/sim_core/cocotb
 VPI_FILE = $(SIM_ROOT)/build/cocotb.vpi
 OBJ_DIR := obj

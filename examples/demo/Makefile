@@ -33,4 +33,6 @@ VERILOG_SOURCES = counter.v
 MODULE=demo
 FUNCTION=example_test
 
-include $(SIM_ROOT)/makefiles/Makefile.sim
+include ../../makefiles/Makefile.inc
+include ../../makefiles/Makefile.sim
+

@@ -25,14 +25,14 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##############################################################################
 
+# Common makefile included by everything
+
 ifeq ($(SIM_ROOT),)
-export SIM_ROOT:=$(pwd)
+export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 endif
 
 BUILD_DIR=$(SIM_ROOT)/build
 ARCH=$(shell uname -m)
-
-VPI_INCLUDE_PATH := -I/home/smh/Downloads/
 
 include $(SIM_ROOT)/makefiles/Makefile.paths
 
@@ -41,3 +41,4 @@ export BUILD_DIR
 export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 
 include $(SIM_ROOT)/makefiles/Makefile.pylib
+
