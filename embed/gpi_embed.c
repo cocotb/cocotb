@@ -199,9 +199,21 @@ void register_final_callback()
 }
 
 
+// FIXME this is VPI specific, should be in gpi_vpi.c
 void (*vlog_startup_routines[])() = {
    init_python,
    register_initial_callback,
    register_final_callback,
    0
 };
+
+
+// For non-VPI compliant applications that cannot find vlog_startup_routines symbol
+void vlog_startup_routines_bootstrap() {
+   unsigned int i;
+   for (i = 0; vlog_startup_routines[i]; i++) {
+      vlog_startup_routines[i]();
+      }
+}
+
+

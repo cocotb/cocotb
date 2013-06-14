@@ -214,6 +214,7 @@ typedef struct t_vpi_cb_user_data {
     int (*gpi_function)(void *);
     int (*gpi_cleanup)(struct t_vpi_cb_user_data *);
     vpiHandle cb_hdl;
+    s_vpi_value  cb_value;
 } s_vpi_cb_user_data, *p_vpi_cb_user_data;
 
 
@@ -311,7 +312,7 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *), void 
     cb_data_s.cb_rtn    = handle_vpi_callback;
     cb_data_s.obj       = (vpiHandle)gpi_hdl;
     cb_data_s.time      = &vpi_time_s;
-    cb_data_s.value     = NULL;
+    cb_data_s.value     = &user_data->cb_value;
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
