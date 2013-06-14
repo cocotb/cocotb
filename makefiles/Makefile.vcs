@@ -25,20 +25,25 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# This is a simple wrapper Makefile to pull in the appropriate Makefile for
-# the desired simulator
+OBJ_DIR := obj
+VPI_LIB := vpi
 
-SIM?=ICARUS
+all: $(OBJ_DIR) sim
 
-ifeq ($(SIM),ICARUS)
-include $(SIM_ROOT)/makefiles/Makefile.icarus
-else
-ifeq ($(SIM),ALDEC)
-include $(SIM_ROOT)/makefiles/Makefile.aldec
-else
-ifeq ($(SIM),VCS)
-include $(SIM_ROOT)/makefiles/Makefile.vcs
-endif
-endif
-endif
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+
+# TODO:
+# investigate +vpi+1 option which reduces memory requirements
+
+pli.tab :
+	echo "acc+=read_write,callback,force:*" > $@
+
+.PHONY: sim
+sim: $(OBJ_DIR) $(VERILOG_SOURCES) pli.tab
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) FUNCTION=$(FUNCTION) \
+		vcs -R -debug_all +acc+1 -diag vpi +vpi -P pli.tab -load cocotb.vpi $(VERILOG_SOURCES)
+clean:
+	rm -rf $(OBJ_DIR)
 
