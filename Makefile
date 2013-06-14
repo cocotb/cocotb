@@ -31,7 +31,7 @@ export BUILD_DIR=$(shell pwd)/build
 
 INSTALL_DIR:=/tmp/test-install
 
-LIBS:= simulator embed vpi_shim gpi
+LIBS:= lib/simulator lib/embed lib/vpi_shim lib/gpi
 
 .PHONY: $(LIBS)
 
@@ -40,8 +40,8 @@ all: $(LIBS)
 $(LIBS): dirs
 	$(MAKE) -C $@
 
-vpi_shim: gpi
-simulator: vpi_shim
+lib/vpi_shim: lib/gpi
+lib/simulator: lib/vpi_shim
 
 dirs:
 	@mkdir -p $(LIB_DIR)
@@ -61,3 +61,4 @@ lib_install: libs
 	cp -R $(LIB_DIR)/* $(INSTALL_DIR)/lib
 
 install: all lib_install pycode
+
