@@ -101,7 +101,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
             PyObject *pShouldFilter = PyObject_CallObject(pLogFilter, pLogArgs);
             if (pShouldFilter == Py_True) {
                 PyObject *pLogResult = PyObject_CallObject(pLogHandler, pLogArgs);
-                Py_DECRE(pLogResult);
+                Py_DECREF(pLogResult);
             }
 
             Py_DECREF(pShouldFilter);

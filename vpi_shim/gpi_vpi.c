@@ -258,7 +258,7 @@ static int gpi_free_one_time(p_vpi_cb_user_data user_data)
     PLI_INT32 rc;
     vpiHandle cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
-        LOG_ERR("VPI: %s passed a NULL pointer\n", __func__);
+        LOG_ERROR("VPI: %s passed a NULL pointer\n", __func__);
         exit(1);
     }
 
@@ -277,7 +277,7 @@ static int gpi_free_recurring(p_vpi_cb_user_data user_data)
     PLI_INT32 rc;
     vpiHandle cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
-        LOG_ERR("VPI: %s passed a NULL pointer\n", __func__);
+        LOG_ERROR("VPI: %s passed a NULL pointer\n", __func__);
         exit(1);
     }
 
