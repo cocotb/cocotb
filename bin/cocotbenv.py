@@ -33,15 +33,16 @@ import os, sys, inspect
 from subprocess import call
 
 class SimType():
-    def __init__(self, name=None):
+    def __init__(self, name=None, sdebug=False):
         self._name = name;
+        self._sdebug = sdebug
 
     def execute(self):
         print("Running cocotb against %s simulator" % self._name)
 
 class SimIcarus(SimType):
-    def __init__(self, name=None):
-        SimType.__init__(self, "Icarus")
+    def __init__(self, name=None, sdebug=False):
+        SimType.__init__(self, "Icarus", sdebug)
         self._base_cmd = ' vvp -m cocotb'
 
     def execute(self, py_path, lib_path, module, function, finput):
@@ -50,6 +51,8 @@ class SimIcarus(SimType):
         cmd = cmd + ' LD_LIBRARY_PATH=' + lib_path
         cmd = cmd + ' MODULE=' + module
         cmd = cmd + ' FUNCTION=' + function
+        if self._sdebug is True:
+            cmd = cmd + ' gdb --args'
         cmd = cmd + self._base_cmd
         cmd = cmd + ' -M ' + lib_path
         cmd = cmd + ' ' + finput
@@ -57,8 +60,8 @@ class SimIcarus(SimType):
         call(cmd, shell=True)
 
 class SimSfsim(SimType):
-    def __init__(self, name=None):
-        SimType.__init__(self, "SolarFlare Model")
+    def __init__(self, name=None, sdebug=False):
+        SimType.__init__(self, "SolarFlare Model", sdebug)
 
     def execute(self, py_path, lib_path, module, function, finput):
         SimType.execute(self)
@@ -66,6 +69,8 @@ class SimSfsim(SimType):
         cmd = cmd + ' LD_LIBRARY_PATH=' + lib_path
         cmd = cmd + ' MODULE=' + module
         cmd = cmd + ' FUNCTION=' + function
+        if self._sdebug is True:
+            cmd = cmd + ' gdb --args'
         cmd = cmd + ' ' + finput
         cmd = cmd + ' -l ' + lib_path + '/libcocotb.so'
         print(cmd)
@@ -81,6 +86,7 @@ Options:
   -m, --module		Module to load with test case
   -s, --simtype		The Simulator to use for execution
   -i, --input		Input file, type depends on simtype
+  -d, --debug           Start the environment in gdb
 """
 
     from optparse import OptionParser
@@ -93,6 +99,8 @@ Options:
                       help="The Simulator to use for execution")
     parser.add_option("-i", "--input", dest="input_str",
                       help="Input file, type depends on simtype")
+    parser.add_option("-d", action="store_true", dest="debug",
+                      help="Debug option")
 
     (options, args) = parser.parse_args()
 
@@ -133,7 +141,7 @@ Options:
     # Add the module and function as command line options that are passed
     # as env vars to the underlying code
 
-    sim_world = ctype()
+    sim_world = ctype(sdebug=options.debug)
     sim_world.execute(py_path,
                       lib_path,
                       options.module_str,
