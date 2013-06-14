@@ -32,12 +32,12 @@ GCC_ARGS	:= -Werror -g
 LIBS		:= -lgpilog
 LD_PATH		:= -L$(LIB_DIR)
 
-all: $(LIB_DIR)/gpi_lib
+all: $(LIB_DIR)/gpi_lib.so
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-$(LIB_DIR)/gpi_lib: $(OBJ_DIR)
+$(LIB_DIR)/gpi_lib.so: $(OBJ_DIR)
 	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $(OBJ_DIR)/gpi_vpi.o gpi_vpi.c
 	gcc $(GCC_ARGS) -shared -export-dynamic -o $(LIB_DIR)/gpi_lib.so $(OBJ_DIR)/gpi_vpi.o $(LIBS) $(LD_PATH)
 	ln -sf gpi_lib.so $(LIB_DIR)/libgpi.so
