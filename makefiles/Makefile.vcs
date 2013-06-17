@@ -47,10 +47,10 @@ sim: $(OBJ_DIR) $(VERILOG_SOURCES) pli.tab
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) FUNCTION=$(FUNCTION) \
 		vcs -R -debug_all +acc+1 -diag vpi +vpi -P pli.tab -load cocotb.vpi $(VERILOG_SOURCES)
 clean:
-	-rm -rf $(OBJ_DIR)
-	-rm wn.tab
-	-rm -rf csrc
-	-rm -rf simv.daidir
-	-rm simv
-	-rm ucli.key
+	-@rm -rf $(OBJ_DIR)
+	-@rm -f pli.tab
+	-@rm -rf csrc
+	-@rm -rf simv.daidir
+	-@rm -f simv
+	-@rm -f ucli.key
 
