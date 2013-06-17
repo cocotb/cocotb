@@ -57,7 +57,7 @@ def reset_dut(clock, reset, enable):
     while True:
         yield Edge(clock)
         clock_ticks += 1
-        if clock_ticks >= 2:
+        if clock_ticks >= 4:
             reset <= 0
             enable <= 1
             break

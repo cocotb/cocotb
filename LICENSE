@@ -1,4 +1,4 @@
-#!/bin/sh
+Cocotb is licensed under the Revised BSD License.  Full license text below.
 
 ###############################################################################
 # Copyright (c) 2013 Potential Ventures Ltd
@@ -26,15 +26,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
-
-
-# Source this to set up the sauce
-
-export SIM_ROOT="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
-export BUILD_DIR=$SIM_ROOT/build
-
-
-export PATH=$SIM_ROOT/bin:$PATH
-export PYTHONPATH=$BUILD_DIR:$SIM_ROOT/sim_core:$SIM_ROOT:$PYTHONPATH
-export LD_LIBRARY_PATH=$BUILD_DIR:$LD_LIBRARY_PATH
 
