@@ -296,7 +296,7 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *), void 
     p_vpi_cb_user_data user_data;
 
     // Freed when callback fires or the callback is deregistered
-    user_data = (p_vpi_cb_user_data)malloc(sizeof(s_vpi_cb_user_data));
+    user_data = (p_vpi_cb_user_data)calloc(sizeof(s_vpi_cb_user_data), 1);
     if (user_data == NULL) {
         LOG_WARN("VPI: Attempting allocate user_data for %s failed!", __func__);
     }
@@ -304,6 +304,7 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *), void 
     user_data->gpi_cb_data = gpi_cb_data;
     user_data->gpi_function = gpi_function;
     user_data->gpi_cleanup = gpi_free_recurring;
+    user_data->cb_value.format = vpiIntVal;
 
     vpi_time_s.type = vpiSuppressTime;
     vpi_value_s.format = vpiIntVal;
