@@ -26,24 +26,25 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
+    Set of common driver base classes
+"""
+
+
+import logging
+
+import cocotb
+from cocotb.decorators import coroutine
+from cocotb.triggers import Event
+from cocotb.bus import Bus
+
+class Driver(object):
+    """
 
     Class defining the standard interface for a driver within a testbench
 
     The driver is responsible for serialising transactions onto the physical pins
     of the interface.  This may consume simulation time.
-
-"""
-
-import logging
-import math
-
-import cocotb
-from cocotb.decorators import coroutine
-from cocotb.triggers import Edge, Event, RisingEdge
-from cocotb.bus import Bus
-
-class Driver(object):
-
+    """
     def __init__(self):
         """
         Constructor for a driver instance
@@ -127,3 +128,25 @@ class Driver(object):
             self.log.info("Sending packet...")
             yield self._send(transaction, callback, event)
             self.log.info("Done, shouldn't be waiting on _send.join() anymore..")
+
+
+
+class BusDriver(Driver):
+    """Tickets please!
+
+    Wrapper around common functionality for busses which have:
+        a list of _signals (class attribute)
+        a clock
+        a name
+        an entity
+    """
+
+    def __init__(self, entity, name, clock):
+        self.log = logging.getLogger("cocotb.%s.%s" % (entity.name, name))
+        Driver.__init__(self)
+        self.entity = entity
+        self.name = name
+        self.clock = clock
+        self.bus = Bus(self.entity, self.name, self._signals)
+
+
