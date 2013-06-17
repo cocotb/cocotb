@@ -32,15 +32,20 @@ OBJ_DIR		:= obj
 INCLUDES	:= -I. -I/usr/include/python$(PYTHON_VERSION)/
 GCC_ARGS	:= -Werror -g
 
-all : $(LIB_DIR)/gpi_logging.so
+SRCS		:= gpi_logging.c
+OBJS            := $(SRCS:%.c=$(OBJ_DIR)/%.o)
+
+all: $(LIB_DIR)/gpi_logging.so
+
+$(OBJ_DIR)/%.o: %.c
+	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-$(LIB_DIR)/gpi_logging.so: $(OBJ_DIR)
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $(OBJ_DIR)/gpi_logging.o gpi_logging.c
-	gcc $(GCC_ARGS) -shared -export-dynamic -o $(LIB_DIR)/gpi_logging.so $(OBJ_DIR)/gpi_logging.o -lpython2.7
+$(LIB_DIR)/gpi_logging.so: $(OBJ_DIR) $(OBJS)
+	gcc $(GCC_ARGS) -shared -export-dynamic -o $(LIB_DIR)/gpi_logging.so $(OBJS) -lpython2.7
 	ln -sf gpi_logging.so $(LIB_DIR)/libgpilog.so
 
-clean :
+clean:
 	rm -rf $(OBJ_DIR)

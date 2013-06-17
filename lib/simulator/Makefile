@@ -32,15 +32,19 @@ GCC_ARGS	:= -Werror -g
 LIBS		:= -lgpi -lpython2.7 $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
 
+SRCS		:= simulatormodule.c
+OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
 all : $(LIB_DIR)/simulator.so
+
+$(OBJ_DIR)/%.o: %.c
+	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
 
 $(OBJ_DIR) :
 	mkdir -p $(OBJ_DIR)
  
-$(LIB_DIR)/simulator.so : $(OBJ_DIR)
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $(OBJ_DIR)/simulatormodule.o simulatormodule.c
-	gcc $(GCC_ARGS) -shared -Xlinker -export-dynamic -o $(LIB_DIR)/simulator.so $(OBJ_DIR)/simulatormodule.o $(LIBS) $(LD_PATH)
+$(LIB_DIR)/simulator.so : $(OBJ_DIR) $(OBJS)
+	gcc $(GCC_ARGS) -shared -Xlinker -export-dynamic -o $(LIB_DIR)/simulator.so $(OBJS) $(LIBS) $(LD_PATH)
 	ln -sf simulator.so $(LIB_DIR)/libsim.so
 
 clean :

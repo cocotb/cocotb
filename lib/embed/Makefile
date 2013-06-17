@@ -28,20 +28,25 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 OBJ_DIR    	:= obj
-INCLUDES	:= -I. -I/usr/include/python$(PYTHON_VERSION)/ -I/mnt/sources/tools/icarus/include/iverilog -I../gpi
+INCLUDES	:= -I. -I/usr/include/python$(PYTHON_VERSION)/ \
+		   -I/mnt/sources/tools/icarus/include/iverilog -I../gpi
 GCC_ARGS	:= -Werror -g
 LIBS		:= -lgpi -lpython2.7 $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
 
+SRCS		:= gpi_embed.c
+OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
 all: $(LIB_DIR)/cocotb.vpi
+
+$(OBJ_DIR)/%.o: %.c
+	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-$(LIB_DIR)/libcocotb.so: $(OBJ_DIR)
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $(OBJ_DIR)/cocotb.o gpi_embed.c
-	gcc $(GCC_ARGS) -shared -Xlinker -export-dynamic -o $@ $(OBJ_DIR)/cocotb.o $(LIBS) $(LD_PATH)
+$(LIB_DIR)/libcocotb.so: $(OBJ_DIR) $(OBJS)
+	gcc $(GCC_ARGS) -shared -Xlinker -export-dynamic -o $@ $(OBJS) $(LIBS) $(LD_PATH)
 
 # More rules such that this may be needed depending on the requirements of
 # different simulators, icarus for instance loads a <name>.vpi libraray to use the vpi

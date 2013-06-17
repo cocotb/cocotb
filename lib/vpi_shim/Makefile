@@ -32,15 +32,20 @@ GCC_ARGS	:= -Werror -g
 LIBS		:= -lgpilog
 LD_PATH		:= -L$(LIB_DIR)
 
+SRCS		:= gpi_vpi.c
+OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
+
 all: $(LIB_DIR)/gpi_lib.so
+
+$(OBJ_DIR)/%.o: %.c
+	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-$(LIB_DIR)/gpi_lib.so: $(OBJ_DIR)
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $(OBJ_DIR)/gpi_vpi.o gpi_vpi.c
-	gcc $(GCC_ARGS) -shared -export-dynamic -o $(LIB_DIR)/gpi_lib.so $(OBJ_DIR)/gpi_vpi.o $(LIBS) $(LD_PATH)
+$(LIB_DIR)/gpi_lib.so: $(OBJ_DIR) $(OBJS)
+	gcc $(GCC_ARGS) -shared -export-dynamic -o $(LIB_DIR)/gpi_lib.so $(OBJS) $(LIBS) $(LD_PATH)
 	ln -sf gpi_lib.so $(LIB_DIR)/libgpi.so
 
-clean :
+clean:
 	rm -rf $(OBJ_DIR)

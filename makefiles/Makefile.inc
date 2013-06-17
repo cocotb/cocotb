@@ -42,3 +42,10 @@ export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 
 include $(SIM_ROOT)/makefiles/Makefile.pylib
 
+# Disable some inbuild rules
+%: %.c
+%: %.o
+
+# Define some of our own
+$(OBJ_DIR)/%.o: %.c
+	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
