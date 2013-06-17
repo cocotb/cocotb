@@ -44,7 +44,6 @@ from cocotb.bus import Bus
 
 class Driver(object):
 
-
     def __init__(self):
         """
         Constructor for a driver instance
@@ -128,99 +127,3 @@ class Driver(object):
             self.log.info("Sending packet...")
             yield self._send(transaction, callback, event)
             self.log.info("Done, shouldn't be waiting on _send.join() anymore..")
-
-
-class BusDriver(Driver):
-    """Tickets please!
-
-    Wrapper around common functionality for busses which have:
-        a list of _signals (class attribute)
-        a clock
-        a name
-        an entity
-    """
-
-    def __init__(self, entity, name, clock):
-        self.log = logging.getLogger("cocotb.%s.%s" % (entity.name, name))
-        Driver.__init__(self)
-        self.entity = entity
-        self.name = name
-        self.clock = clock
-        self.bus = Bus(self.entity, self.name, self._signals)
-
-
-class AvalonMM(BusDriver):
-    """Avalon-MM Driver
-
-    Currently we only support the mode required to communicate with SF avalon_mapper which
-    is a limited subset of all the signals
-
-
-    This needs some thought... do we do a transaction based mechanism or 'blocking' read/write calls?
-    """
-    _signals = ["readdata", "read", "write", "waitrequest", "writedata", "address"]
-
-    def __init__(self, entity, name, clock):
-        BusDriver.__init__(self, entity, name, clock)
-
-        # Drive some sensible defaults
-        self.bus.read           <= 0
-        self.bus.write          <= 0
-
-
-    def read(self, address):
-        """
-        """
-        pass
-
-    def write(self, address):
-        """
-        """
-        pass
-
-
-
-
-class AvalonST(Driver):
-    _signals = ["valid", "data"]
-
-class SFStreaming(BusDriver):
-    """This is the Solarflare Streaming bus as defined by the FDK.
-
-    Expect to see a 72-bit bus (bottom 64 bits data, top 8 bits are ECC)
-    """
-    _signals = AvalonST._signals + ["startofpacket", "endofpacket", "ready", "empty", "channel", "error"]
-
-    def __init__(self, entity, name, clock):
-        BusDriver.__init__(self, entity, name, clock)
-
-        # Drive some sensible defaults onto the bus
-        self.bus.startofpacket <= 0
-        self.bus.endofpacket   <= 0
-        self.bus.valid         <= 0
-        self.bus.empty         <= 0
-        self.bus.channel       <= 0
-        self.bus.error         <= 0
-
-    @coroutine
-    def _driver_send(self, sfpkt):
-        """Send a packet over the bus
-
-            sfpkt should be an instance of SFStreamingPacket
-        """
-        # Avoid spurious object creation by recycling
-        clkedge = RisingEdge(self.clock)
-
-        self.log.info("Sending packet of length %d bytes" % len(sfpkt))
-
-        for word in sfpkt:
-            yield clkedge
-            while self.bus.ready != 1:
-                yield clkedge
-            self.bus.drive(word)
-
-        yield clkedge
-        self.bus.endofpacket <= 0
-        self.bus.valid <= 0
-
-        self.log.info("Packet sent successfully")
