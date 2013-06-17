@@ -32,4 +32,5 @@ VERILOG_SOURCES = issue12.v
 MODULE=issue12
 FUNCTION=issue12
 
-include $(SIM_ROOT)/makefiles/Makefile.sim
+include ../../makefiles/Makefile.inc
+include ../../makefiles/Makefile.sim

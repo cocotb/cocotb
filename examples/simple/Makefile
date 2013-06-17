@@ -33,4 +33,5 @@ VERILOG_SOURCES = packet_tap.v
 MODULE=smoketest
 FUNCTION=smoketest
 
-include $(SIM_ROOT)/makefiles/Makefile.sim
+include ../../makefiles/Makefile.inc
+include ../../makefiles/Makefile.sim
