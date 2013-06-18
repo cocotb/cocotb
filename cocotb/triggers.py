@@ -38,6 +38,14 @@ class Trigger(object):
     def __init__(self):
         self.log = logging.getLogger("cocotb.%s.0x%x" % (self.__class__.__name__, id(self)))
 
+    def unprime(self):
+        """Remove any pending callbacks if necessary"""
+        pass
+
+    def __del__(self):
+        """Ensure if a trigger drops out of scope we remove any pending callbacks"""
+        self.unprime()
+
 class Timer(Trigger):
     """
     Execution will resume when the specified time period expires
