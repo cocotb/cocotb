@@ -25,6 +25,56 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """Collection of handy functions"""
 
+import ctypes
+
+# Ctypes helper functions
+
+def pack(ctypes_obj):
+    """Convert a ctypes structure into a python string
+
+
+    Args:
+        ctypes_obj (ctypes.Structure): ctypes structure to convert to a string
+
+
+    Returns:
+        New python string containing the bytes from memory holding ctypes_obj
+    """
+    return ctypes.string_at(ctypes.addressof(ctypes_obj), ctypes.sizeof(ctypes_obj))
+
+
+def unpack(ctypes_obj, string, bytes=None):
+    """Unpack a python string into a ctypes structure
+
+    Args:
+        ctypes_obj (ctypes.Structure):  ctypes structure to pack into
+
+        string (str):  String to copy over the ctypes_obj memory space
+
+    Kwargs:
+        bytes: Number of bytes to copy
+
+    Raises:
+        ValueError, MemoryError
+
+    If the length of the string is not the correct size for the memory footprint of the
+    ctypes structure then the bytes keyword argument must be used
+    """
+    if bytes is None:
+        if len(string) != ctypes.sizeof(ctypes_obj):
+            raise ValueError("Attempt to unpack a string of size %d into a \
+                struct of size %d" % (len(string), ctypes.sizeof(ctypes_obj)))
+        bytes = len(string)
+
+    if bytes > ctypes.sizeof(ctypes_obj):
+        raise MemoryError("Attempt to unpack %d bytes over an object \
+                        of size %d" % (bytes, ctypes.sizeof(ctypes_obj)))
+
+    ctypes.memmove(ctypes.addressof(ctypes.ctypes_obj), string, bytes)
+
+
+
+
 import ANSI
 
 
