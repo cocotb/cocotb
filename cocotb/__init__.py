@@ -41,6 +41,9 @@ import simulator
 log = logging.getLogger('cocotb')
 log.setLevel(logging.INFO)
 
+class TestFailed(Exception):
+    pass
+
 
 class SimLogFormatter(logging.Formatter):
 
@@ -121,3 +124,6 @@ def _initialise_testbench(root_handle):
     scheduler.add(coroutine)
     _rlock.release()
     return True
+
+from cocotb.decorators import test
+
