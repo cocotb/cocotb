@@ -27,8 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
     Common bus related functionality
-
-    A bus is simply defined as a collection of signals
 """
 
 class Bus(object):
@@ -41,23 +39,36 @@ class Bus(object):
         name:           name of the bus
         signals:        array of signal names
         """
+        self._entity = entity
+        self._name = name
+        self._signals = {}
+
         for signal in signals:
             signame = name + "_" + signal
             setattr(self, signal, getattr(entity, signame))
+            self._signals[signal] = getattr(self, signal)
 
-        self._signals = {}
-        self._signals[signal] = getattr(self, signal)
-        self._entity = entity
-        self._name = name
 
-    def drive(self, obj):
+    def drive(self, obj, strict=False):
         """
         Drives values onto the bus.
 
-        obj is an object with attribute names that match the bus signals
+        Args:
+            obj (any type) : object with attribute names that match the bus signals
+
+        Kwargs:
+            strict (bool)  : Check that all signals are being assigned
+
+        Raises:
+            AttributeError
         """
+
+        print self._signals
         for name, hdl in self._signals.items():
             if not hasattr(obj, name):
-                raise AttributeError("Unable to drive onto %s.%s because %s is missing attribute %s" %
+                if strict:
+                    raise AttributeError("Unable to drive onto %s.%s because %s is missing attribute %s" %
                         (self._entity.name, self._name, obj.__class__.__name__, name))
-            hdl <= getattr(obj, name)
+                else: continue
+            val = getattr(obj, name)
+            hdl <= val
