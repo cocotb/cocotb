@@ -28,6 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 # -*- coding: utf-8 -*-
 
 import logging
+import ctypes
+
 import simulator as simulator
 import cocotb
 from cocotb.binary import BinaryValue
@@ -41,6 +43,7 @@ class SimHandle(object):
         """
         self._handle = handle           # handle used for future simulator transactions
         self._sub_handles = {}          # Dictionary of SimHandle objects created by getattr
+        self._len = None
 
         self.name = simulator.get_name_string(self._handle)
         self.fullname = self.name + '(%s)' % simulator.get_type_string(self._handle)
@@ -65,11 +68,25 @@ class SimHandle(object):
         return result
 
     def setimeadiatevalue(self, value):
-        """Set the value of the underlying simulation object to value.
+        """
+        Set the value of the underlying simulation object to value.
 
-        This operation will fail unless the handle refers to a modifiable object eg signal or variable.
-        We determine the library call to make based on the type of the value"""
-        if isinstance(value, BinaryValue):
+        Args:
+            value (ctypes.Structure, cocotb.binary.BinaryValue, int)
+                The value to drive onto the simulator object
+
+        Raises:
+            TypeError
+
+        This operation will fail unless the handle refers to a modifiable
+        object eg net, signal or variable.
+
+        We determine the library call to make based on the type of the value
+        """
+        if isinstance(value, ctypes.Structure):
+            simulator.set_signal_val_str(self._handle, \
+                BinaryValue(value=cocotb.utils.pack(value), bits=len(self)).binstr)
+        elif isinstance(value, BinaryValue):
             simulator.set_signal_val_str(self._handle, value.binstr)
         elif isinstance(value, int):
             simulator.set_signal_val(self._handle, value)
@@ -106,7 +123,9 @@ class SimHandle(object):
 
         TODO: Handle other types (loops, generate etc)
         """
-        return len(self._get_value_str())
+        if self._len is None:
+            self._len = len(self._get_value_str())
+        return self._len
 
 
     def __cmp__(self, other):
