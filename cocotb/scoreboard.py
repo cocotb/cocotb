@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
 from cocotb.utils import hexdiffs
 
-from cocotb.monitor import Monitor
+from cocotb.monitors import Monitor
 
 class Scoreboard(object):
     """Generic scorboarding class
