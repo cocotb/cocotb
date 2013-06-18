@@ -62,8 +62,6 @@ class Bus(object):
         Raises:
             AttributeError
         """
-
-        print self._signals
         for name, hdl in self._signals.items():
             if not hasattr(obj, name):
                 if strict:
