@@ -1,5 +1,3 @@
-#!/bin/env python
-
 ''' Copyright (c) 2013 Potential Ventures Ltd
 All rights reserved.
 
@@ -25,42 +23,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
-"""
 
-    Class defining the standard interface for a driver within a testbench
-
-    The driver is responsible for serialising transactions onto the physical pins
-    of the interface.  This may consume simulation time.
-
-"""
-
-import logging
-import math
-
-import cocotb
-from cocotb.decorators import coroutine
-from cocotb.triggers import Edge, Event, RisingEdge
-from cocotb.bus import Bus
-from cocotb.drivers import Driver
-
-class BusDriver(Driver):
-    """Tickets please!
-
-    Wrapper around common functionality for busses which have:
-        a list of _signals (class attribute)
-        a clock
-        a name
-        an entity
-    """
-
-    def __init__(self, entity, name, clock):
-        self.log = logging.getLogger("cocotb.%s.%s" % (entity.name, name))
-        Driver.__init__(self)
-        self.entity = entity
-        self.name = name
-        self.clock = clock
-        self.bus = Bus(self.entity, self.name, self._signals)
-
+from cocotb.drivers import BusDriver
 
 class AvalonMM(BusDriver):
     """Avalon-MM Driver
@@ -90,3 +54,7 @@ class AvalonMM(BusDriver):
         """
         """
         pass
+
+
+class AvalonST(BusDriver):
+    _signals = ["valid", "data"]

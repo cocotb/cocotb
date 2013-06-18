@@ -34,15 +34,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
 
-import logging
-import math
-
-import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Edge, Event, RisingEdge
-from cocotb.bus import Bus
+from cocotb.triggers import RisingEdge
+
 from cocotb.drivers import BusDriver
-from cocotb.drivers import AvalonST
+from cocotb.drivers.avalon import AvalonST
 
 class SFStreaming(BusDriver):
     """This is the Solarflare Streaming bus as defined by the FDK.
