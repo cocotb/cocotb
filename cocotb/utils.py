@@ -70,7 +70,7 @@ def unpack(ctypes_obj, string, bytes=None):
         raise MemoryError("Attempt to unpack %d bytes over an object \
                         of size %d" % (bytes, ctypes.sizeof(ctypes_obj)))
 
-    ctypes.memmove(ctypes.addressof(ctypes.ctypes_obj), string, bytes)
+    ctypes.memmove(ctypes.addressof(ctypes_obj), string, bytes)
 
 
 
