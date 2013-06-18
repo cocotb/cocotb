@@ -48,6 +48,7 @@ class Scoreboard(object):
     def __init__(self, dut, reorder_depth=0):
         self.dut = dut
         self.log = logging.getLogger("cocotb.scoreboard.%s" % self.dut.name)
+        self.errors = 0
 
     def add_interface(self, monitor, expected_output):
         """Add an interface to be scoreboarded.
@@ -73,6 +74,7 @@ class Scoreboard(object):
             else: exp = expected_output.pop(0)
 
             if transaction != exp:
+                self.errors += 1
                 self.log.error("Received transaction differed from expected output")
                 self.log.warning(hexdiffs(exp, transaction))
             else:
