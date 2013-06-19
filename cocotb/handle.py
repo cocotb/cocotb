@@ -84,9 +84,8 @@ class SimHandle(object):
         We determine the library call to make based on the type of the value
         """
         if isinstance(value, ctypes.Structure):
-            simulator.set_signal_val_str(self._handle, \
-                BinaryValue(value=cocotb.utils.pack(value), bits=len(self)).binstr)
-        elif isinstance(value, BinaryValue):
+            value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
+        if isinstance(value, BinaryValue):
             simulator.set_signal_val_str(self._handle, value.binstr)
         elif isinstance(value, int):
             simulator.set_signal_val(self._handle, value)
