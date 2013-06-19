@@ -1,0 +1,23 @@
+*.py[cod]
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+sdist
+obj
+develop-eggs
+.installed.cfg
+__pycache__
+
+# Vim tmp files
+*.swp
+
+# Waveforms
+*.vcd
