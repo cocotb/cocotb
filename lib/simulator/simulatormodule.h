@@ -65,7 +65,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args);
 static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args);
 static PyObject *create_clock(PyObject *self, PyObject *args);
 static PyObject *stop_clock(PyObject *self, PyObject *args);
-static Pyobject *stop_simulator(PyObject *self, PyObject *args);
+static PyObject *stop_simulator(PyObject *self, PyObject *args);
 
 
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
