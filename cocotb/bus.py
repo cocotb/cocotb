@@ -27,6 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
     Common bus related functionality
+
+    A bus is simply defined as a collection of signals
 """
 
 class Bus(object):
