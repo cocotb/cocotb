@@ -48,8 +48,9 @@ def clock_generator(signal, period_ps):
         signal <= 1
         yield t
 
-@coroutine
+@cocotb.test()
 def smoketest(dut):
+    """Smoke test to help get cocotb up and running"""
     dut.log.info("Test started, got DUT:" + str(dut))
 
     clock_gen = cocotb.scheduler.add(clock_generator(dut.clk, 3200))

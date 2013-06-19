@@ -70,8 +70,9 @@ def waiting_coroutine(some_event):
     yield some_event.wait()
     some_event.log.info("Coroutine woke up again!  Awesome")
 
-@coroutine
+@cocotb.test()
 def example_test(dut):
+    """This is an example test"""
     dut.log.info("Example test got DUT:" + str(dut))
 
     yield Timer(10000)
