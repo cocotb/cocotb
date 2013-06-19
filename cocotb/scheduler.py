@@ -123,6 +123,21 @@ class Scheduler(object):
             # Call any pending callbacks that were waiting for this coroutine to exit
             exc()
             return
+
+        except cocotb.decorators.TestComplete as test:
+            self.log.info("Test completed")
+            # Unprime all pending triggers:
+            for trigger, waiting in self.waiting.items():
+                trigger.unprime()
+                for coro in waiting:
+                    try: coro.kill()
+                    except StopIteration: pass
+            self.waiting = []
+            self.log.info("Test result: %s" % str(test.result))
+
+            # FIXME: proper teardown
+            stop
+
         if isinstance(result, triggers.Trigger):
             self._add_trigger(result, coroutine)
         elif isinstance(result, cocotb.decorators.coroutine):
