@@ -33,7 +33,7 @@ import cocotb
 from cocotb.generators import feeds
 from cocotb.decorators import coroutine
 from cocotb.triggers import Timer, Edge, Event
-from cocotb.drivers import SFStreaming
+from cocotb.drivers.SFStreaming import SFStreaming
 from cocotb.monitors import SFStreaming as SFMon
 from cocotb.generators.feeds.itch_feed import *
 
