@@ -546,6 +546,12 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
     return pTuple;
 }
 
+static PyObject *stop_simulator(PyObject *self, PyObject *args)
+{
+    gpi_sim_end();
+    return Py_BuildValue("s", "OK!");    
+}
+
 static PyObject *create_clock(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;

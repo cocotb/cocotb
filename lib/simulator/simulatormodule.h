@@ -65,6 +65,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args);
 static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args);
 static PyObject *create_clock(PyObject *self, PyObject *args);
 static PyObject *stop_clock(PyObject *self, PyObject *args);
+static Pyobject *stop_simulator(PyObject *self, PyObject *args);
 
 
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
@@ -86,6 +87,7 @@ static PyMethodDef SimulatorMethods[] = {
     {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS, "Register a callback for the readwrite section"},
     {"create_clock", create_clock, METH_VARARGS, "Register a clock object"},
     {"stop_clock", stop_clock, METH_VARARGS, "Terminate a clock"},
+    {"stop_simulator", stop_simulator, METH_VARARGS, "Instruct the attached simulator to stop"},
 
     // FIXME METH_NOARGS => initialization from incompatible pointer type
     {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as a float"},
