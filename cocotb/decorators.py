@@ -95,6 +95,10 @@ class coroutine(object):
         return self._coro.throw(exc)
 
     def kill(self):
+        """Kill a coroutine
+
+        FIXME: Do we want to call all the pending callbacks?
+        """
         self.log.warning("kill() called on coroutine")
         self.throw(StopIteration)
 
