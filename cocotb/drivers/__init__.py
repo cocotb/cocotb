@@ -117,18 +117,20 @@ class Driver(object):
 
     @coroutine
     def _send_thread(self):
-        while True:
+        try:
+            while True:
 
-            # Sleep until we have something to send
-            while not self._sendQ:
-                yield self._pending.wait()
+                # Sleep until we have something to send
+                while not self._sendQ:
+                    yield self._pending.wait()
 
-            transaction, callback, event = self._sendQ.pop(0)
-            # Send the pending transaction
-            self.log.info("Sending packet...")
-            yield self._send(transaction, callback, event)
-            self.log.info("Done, shouldn't be waiting on _send.join() anymore..")
-
+                transaction, callback, event = self._sendQ.pop(0)
+                # Send the pending transaction
+                self.log.info("Sending packet...")
+                yield self._send(transaction, callback, event)
+                self.log.info("Done, shouldn't be waiting on _send.join() anymore..")
+        except StopIteration:
+            self.log.info("Stopping send thread on driver")
 
 
 class BusDriver(Driver):

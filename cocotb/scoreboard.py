@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     Common scoreboarding capability.
 """
 import logging
-from cocotb.utils import hexdiffs
+from cocotb.utils import hexdump, hexdiffs
 
 from cocotb.monitors import Monitor
 
@@ -71,11 +71,13 @@ class Scoreboard(object):
                 raise TestFailure("Recieved a transaction but wasn't expecting anything")
 
             if callable(expected_output): exp = expected_output()
-            else: exp = expected_output.pop(0)
+            else: exp = str(expected_output.pop(0))
 
             if transaction != exp:
                 self.errors += 1
                 self.log.error("Received transaction differed from expected output")
+                self.log.info(hexdump(exp))
+                self.log.info(hexdump(transaction))
                 self.log.warning(hexdiffs(exp, transaction))
             else:
                 self.log.debug("Received expected transaction %d bytes" % (len(transaction)))
