@@ -1,5 +1,3 @@
-#!/bin/env python
-
 ''' Copyright (c) 2013 Potential Ventures Ltd
 All rights reserved.
 
@@ -24,59 +22,61 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-
 """
+Monitors for Altera Avalon interfaces.
 
-    Class defining the standard interface for a driver within a testbench
+See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 
-    The driver is responsible for serialising transactions onto the physical pins
-    of the interface.  This may consume simulation time.
-
+NB Currently we only support a very small subset of functionality
 """
 
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge
+from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.monitors import BusMonitor
+from cocotb.utils import hexdump
 
-from cocotb.drivers import BusDriver
-from cocotb.drivers.avalon import AvalonST
+# Solarflare specific
+from modules.sf_streaming.model.sf_streaming import SFStreamingData
 
-class SFStreaming(BusDriver):
+class SFStreaming(BusMonitor):
     """This is the Solarflare Streaming bus as defined by the FDK.
 
     Expect to see a 72-bit bus (bottom 64 bits data, top 8 bits are ECC)
+
+    TODO:
+        Metaword / channel bits
+        ECC checking
     """
-    _signals = AvalonST._signals + ["startofpacket", "endofpacket", "ready", "empty", "channel", "error"]
+    _signals = ["startofpacket", "endofpacket", "ready", "empty", "channel", "error", "valid", "data"]
 
-    def __init__(self, entity, name, clock):
-        BusDriver.__init__(self, entity, name, clock)
-
-        # Drive some sensible defaults onto the bus
-        self.bus.startofpacket <= 0
-        self.bus.endofpacket   <= 0
-        self.bus.valid         <= 0
-        self.bus.empty         <= 0
-        self.bus.channel       <= 0
-        self.bus.error         <= 0
 
     @coroutine
-    def _driver_send(self, sfpkt):
-        """Send a packet over the bus
+    def _monitor_recv(self):
+        """Watch the pins and reconstruct transactions"""
 
-            sfpkt should be an instance of SFStreamingPacket
-        """
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
+        rdonly  = ReadOnly()
+        word = SFStreamingData()
 
-        self.log.info("Sending packet of length %d bytes" % len(sfpkt))
+        pkt = ""
 
-        for word in sfpkt:
+        while True:
             yield clkedge
-            while self.bus.ready != 1:
-                yield clkedge
-            self.bus.drive(word)
+            yield rdonly
 
-        yield clkedge
-        self.bus.endofpacket <= 0
-        self.bus.valid <= 0
-
-        self.log.info("Packet sent successfully")
+            if self.bus.valid.value and self.bus.startofpacket.value:
+                vec = self.bus.data.value
+                pkt += vec.buff[1:][::-1]
+                while True:
+                    yield clkedge
+                    yield rdonly
+                    if self.bus.valid.value:
+                        vec = self.bus.data.value
+                        pkt += vec.buff[1:][::-1]
+                        if self.bus.endofpacket.value:
+                            self.log.info("Recieved a packet of %d bytes", len(pkt))
+                            self.log.debug(hexdump(pkt))
+                            self._recv(pkt)
+                            pkt = ""
+                            break

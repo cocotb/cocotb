@@ -134,8 +134,7 @@ class Driver(object):
 
 
 class BusDriver(Driver):
-    """Tickets please!
-
+    """
     Wrapper around common functionality for busses which have:
         a list of _signals (class attribute)
         a clock
@@ -151,4 +150,11 @@ class BusDriver(Driver):
         self.clock = clock
         self.bus = Bus(self.entity, self.name, self._signals)
 
+class ValidatedBusDriver(BusDriver):
+    """
 
+
+    """
+
+
+    

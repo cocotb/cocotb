@@ -33,8 +33,8 @@ import cocotb
 from cocotb.generators import feeds
 from cocotb.decorators import coroutine
 from cocotb.triggers import Timer, Edge, Event
-from cocotb.drivers.SFStreaming import SFStreaming
-from cocotb.monitors import SFStreaming as SFMon
+from cocotb.drivers.solarflare import SFStreaming as SFDrv
+from cocotb.monitors.solarflare import SFStreaming as SFMon
 from cocotb.generators.feeds.itch_feed import *
 
 from modules.sf_streaming.model.sf_streaming import SFStreamingPacket
@@ -60,7 +60,7 @@ def smoketest(dut):
 
     yield Timer(32000)
 
-    stream_in = SFStreaming(dut, "stream_in", dut.clk)
+    stream_in = SFDrv(dut, "stream_in", dut.clk)
     stream_out = SFMon(dut, "stream_out", dut.clk)
 
     yield Timer(32000)

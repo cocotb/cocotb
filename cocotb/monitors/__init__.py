@@ -38,10 +38,9 @@ import math
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Edge, Event, RisingEdge
+from cocotb.triggers import Edge, Event, RisingEdge, ReadOnly
 from cocotb.binary import BinaryValue
 from cocotb.bus import Bus
-from cocotb.utils import hexdump
 
 class Monitor(object):
 
@@ -106,100 +105,15 @@ class Monitor(object):
             self._event.set()
 
 
-class AvalonST(Monitor):
-    _signals = ["valid", "data"]
-
-
-
-class AvalonSTPkts(Monitor):
+class BusMonitor(Monitor):
     """
-    Packetised AvalonST bus
+    Wrapper providing common functionality for monitoring busses
     """
-    _signals = AvalonST._signals + ["startofpacket", "endofpacket", "ready", "empty", "error"]
-
     def __init__(self, entity, name, clock, callback=None, event=None):
+        self.log = logging.getLogger("cocotb.%s.%s" % (entity.name, name))
         self.entity = entity
         self.name = name
         self.clock = clock
         self.bus = Bus(self.entity, self.name, self._signals)
-        self.log = logging.getLogger("cocotb.%s.%s" % (self.entity.name, self.name))
-
         Monitor.__init__(self, callback=callback, event=event)
 
-    @coroutine
-    def _monitor_recv(self):
-        """Watch the pins and reconstruct transactions"""
-
-        # Avoid spurious object creation by recycling
-        clkedge = RisingEdge(self.clock)
-        pkt = ""
-
-        while True:
-            yield clkedge
-
-            if self.bus.valid.value and self.bus.startofpacket.value:
-                vec = self.bus.data.value
-                self.bus.data.log.info("%s %s" % (vec.binstr, repr(vec.buff)))
-                pkt += vec.buff
-                while True:
-                    yield clkedge
-                    if self.bus.valid.value:
-                        vec = self.bus.data.value
-                        self.bus.data.log.debug("%s %s" % (vec.binstr, repr(vec.buff)))
-                        pkt += vec.buff
-                        if self.bus.endofpacket.value:
-                            self.log.info("Recieved a packet of %d bytes" % len(pkt))
-                            self.log.debug(hexdump(str((pkt))))
-                            self._recv(pkt)
-                            pkt = ""
-                            break
-
-
-
-class SFStreaming(Monitor):
-    """This is the Solarflare Streaming bus as defined by the FDK.
-
-    Expect to see a 72-bit bus (bottom 64 bits data, top 8 bits are ECC)
-
-    TODO:
-        Metaword / channel bits
-        ECC checking
-    """
-    _signals = AvalonST._signals + ["startofpacket", "endofpacket", "ready", "empty", "channel", "error"]
-
-    def __init__(self, entity, name, clock, callback=None, event=None):
-        self.entity = entity
-        self.name = name
-        self.clock = clock
-        self.bus = Bus(self.entity, self.name, self._signals)
-        self.log = logging.getLogger("cocotb.%s.%s" % (self.entity.name, self.name))
-
-        Monitor.__init__(self, callback=callback, event=event)
-
-    @coroutine
-    def _monitor_recv(self):
-        """Watch the pins and reconstruct transactions"""
-
-        # Avoid spurious object creation by recycling
-        clkedge = RisingEdge(self.clock)
-        pkt = ""
-
-        while True:
-            yield clkedge
-
-            if self.bus.valid.value and self.bus.startofpacket.value:
-                vec = self.bus.data.value
-                self.bus.data.log.info("%s %s" % (vec.binstr, repr(vec.buff)))
-                pkt += vec.buff
-                while True:
-                    yield clkedge
-                    if self.bus.valid.value:
-                        vec = self.bus.data.value
-                        self.bus.data.log.info("%s %s" % (vec.binstr, repr(vec.buff)))
-                        pkt += vec.buff
-                        if self.bus.endofpacket.value:
-                            self.log.warning("Recieved a packet!!")
-                            self.log.info(repr(pkt))
-                            self._recv(pkt)
-                            pkt = ""
-                            break

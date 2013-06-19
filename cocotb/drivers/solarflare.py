@@ -23,44 +23,56 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
-Drivers for Altera Avalon interfaces.
+Drivers for Solarflare bus format.
 
-See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
-
-NB Currently we only support a very small subset of functionality
+A specialisation of the AvalonST bus
 """
+from cocotb.decorators import coroutine
+from cocotb.triggers import RisingEdge
 
 from cocotb.drivers import BusDriver
-
-class AvalonMM(BusDriver):
-    """Avalon-MM Driver
-
-    Currently we only support the mode required to communicate with SF avalon_mapper which
-    is a limited subset of all the signals
+from cocotb.drivers.avalon import AvalonST
 
 
-    This needs some thought... do we do a transaction based mechanism or 'blocking' read/write calls?
+class SFStreaming(BusDriver):
+    """This is the Solarflare Streaming bus as defined by the Solarflare FDK.
+
+    Expect to see a 72-bit bus (bottom 64 bits data, top 8 bits are ECC)
     """
-    _signals = ["readdata", "read", "write", "waitrequest", "writedata", "address"]
+    _signals = AvalonST._signals + ["startofpacket", "endofpacket", "ready", "empty", "channel", "error"]
 
     def __init__(self, entity, name, clock):
         BusDriver.__init__(self, entity, name, clock)
 
-        # Drive some sensible defaults
-        self.bus.read           <= 0
-        self.bus.write          <= 0
+        # Drive some sensible defaults onto the bus
+        self.bus.startofpacket <= 0
+        self.bus.endofpacket   <= 0
+        self.bus.valid         <= 0
+        self.bus.empty         <= 0
+        self.bus.channel       <= 0
+        self.bus.error         <= 0
 
+    @coroutine
+    def _driver_send(self, sfpkt):
+        """Send a packet over the bus
 
-    def read(self, address):
+            sfpkt should be an instance of SFStreamingPacket
         """
-        """
-        pass
+        # Avoid spurious object creation by recycling
+        clkedge = RisingEdge(self.clock)
 
-    def write(self, address):
-        """
-        """
-        pass
+        self.log.info("Sending packet of length %d bytes" % len(sfpkt))
 
+        for word in sfpkt:
+            word.valid = 1
+            yield clkedge
+            while self.bus.ready != 1:
+                yield clkedge
+            self.log.debug("Writing word onto bus: %s" % str(word))
+            self.bus.drive(word)
 
-class AvalonST(BusDriver):
-    _signals = ["valid", "data"]
+        yield clkedge
+        self.bus.endofpacket <= 0
+        self.bus.valid <= 0
+
+        self.log.info("Packet sent successfully")
