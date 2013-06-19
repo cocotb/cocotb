@@ -36,6 +36,7 @@ import logging
 
 import cocotb
 import cocotb.decorators
+import simulator as simulator
 from cocotb import triggers
 from cocotb.handle import SimHandle
 from cocotb.decorators import coroutine
@@ -132,11 +133,12 @@ class Scheduler(object):
                 for coro in waiting:
                     try: coro.kill()
                     except StopIteration: pass
-            self.waiting = []
+            self.waiting = {}
             self.log.info("Test result: %s" % str(test.result))
 
             # FIXME: proper teardown
-            stop
+            simulator.stop_simulator(self)
+            return
 
         if isinstance(result, triggers.Trigger):
             self._add_trigger(result, coroutine)
