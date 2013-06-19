@@ -72,8 +72,9 @@ def driver(clock, ready, data):
         yield RisingEdge(ready)
         data <= data.value.value + 1
 
-@coroutine
+@cocotb.test()
 def issue12(dut):
+    """Test highlighting the ReadWriteSync issue (issue12 in testsauce repo)"""
     dut.log.info("Test got DUT:" + str(dut))
     
     # convenience
