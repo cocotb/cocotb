@@ -28,27 +28,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
 
 from ctypes import *
-from scapy.all import *
+
+from scapy.all import Ether, IP, UDP
+
+from cocotb.utils import pack, unpack
 
 # The only thing we export is the SFStreamingPacket
 __all__ = ["SFStreamingPacket", "SFStreamingBusWord"]
-
-# Helper functions FIXME move somewhere common
-def pack(ctypes_obj):
-    """Convert a ctypes structure into a python string"""
-    return string_at(addressof(ctypes_obj), sizeof(ctypes_obj))
-
-
-def unpack(ctypes_obj, string, bytes=None):
-    """Unpack a python string into a ctypes structure
-
-    If the length of the string is not the correct size for the memory footprint of the
-    ctypes structure then the bytes keyword argument must be used
-    """
-    if bytes is None and len(string) != sizeof(ctypes_obj):
-        raise ValueError("Attempt to unpack a string of size %d into a struct of size %d" % (len(string), sizeof(ctypes_obj)))
-    if bytes is None: bytes = len(string)
-    memmove(addressof(ctypes_obj), string, bytes)
 
 
 # Enumerations for the detected protocol
@@ -106,12 +92,22 @@ class SFStreamingPacket(object):
         We could then alias self.pkt to pull out the packet contents from the array.
     """
 
-    def __init__(self, pkt):
+    def __init__(self, pkt=None):
         """pkt is a string"""
         self.metaword = SFMetaWord()
         self.pkt = pkt
-        self.parse()
         self._ptr = 0
+        if pkt is not None:
+            self.wrap(pkt)
+
+
+    def wrap(self, pkt):
+        """
+        Wrap a packet, parsing the packet and setting up the descriptor field
+        accordingly
+        """
+        self.pkt = pkt
+        self.parse()
 
     def parse(self):
         """Parse the packet and populate the metaword descriptor field
@@ -143,7 +139,7 @@ class SFStreamingPacket(object):
         return
 
     def __len__(self):
-        return len(self.pkt) + 8
+        return len(self.pkt) + 8        # FIXME: + len(self.metaword)
 
     def __iter__(self):
         self._ptr = None

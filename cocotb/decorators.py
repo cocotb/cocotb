@@ -25,6 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import logging
 
+import cocotb
 from cocotb.triggers import Join
 
 
@@ -41,6 +42,13 @@ class CoroutineComplete(StopIteration):
     def __call__(self):
         if self.callback is not None: self.callback()
 
+
+class TestComplete(StopIteration):
+    """
+        Indicate that a test has finished
+    """
+    def __init__(self, result):
+        self.result = result
 
 
 class coroutine(object):
@@ -70,6 +78,7 @@ class coroutine(object):
     def __iter__(self): return self
 
     def next(self):
+        """FIXME: deprecated by send method?"""
         try:
             return self._coro.next()
         except StopIteration:
@@ -107,3 +116,41 @@ class coroutine(object):
             if the coroutine has finished return false
             otherwise return true"""
         return not self._finished
+
+
+class test(coroutine):
+    """Decorator to mark a fucntion as a test
+
+    All tests are coroutines.  The test decorator provides
+    some common reporting etc, a test timeout and allows
+    us to mark tests as expected failures.
+    """
+    def __init__(self, timeout=None, expect_fail=False):
+        self.timeout = timeout
+        self.expect_fail = expect_fail
+        self.started = False
+
+    def __call__(self, f):
+        """
+        ping
+
+        """
+        super(test, self).__init__(f)
+        def _wrapped_test(*args, **kwargs):
+            super(test, self).__call__(*args, **kwargs)
+            return self
+        return _wrapped_test
+
+
+    def send(self, value):
+        """FIXME: problem here is that we don't let the call stack unwind..."""
+        if not self.started:
+            self.log.info("Starting test: \"%s\"\nDescription: %s" % (self.__name__, self._func.__doc__))
+            self.started = True
+        try:
+            self.log.info("sending %s" % (str(value)))
+            return self._coro.send(value)
+        except StopIteration:
+            raise TestComplete(result="Passed")
+        except cocotb.TestFailed:
+            raise TestComplete(result="Failed")
