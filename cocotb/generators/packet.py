@@ -35,16 +35,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import random
 
 from scapy.all import Ether, IP, UDP
-from byte_generators import *
+from cocotb.generators.byte import *
 
 __all__  = ["udp_all_sizes", "udp_random_sizes"]
 
 _default_payload = random_data
 
-def _get_payload(gen, bytes):
+def _get_payload(gen, nbytes):
     """Helper function to pull a chunk of bytes from a generator"""
     payload = ""
-    while len(payload) < bytes:
+    while len(payload) < nbytes:
         payload += gen.next()
     return payload
 
