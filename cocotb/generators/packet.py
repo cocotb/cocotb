@@ -35,9 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import random
 
 from scapy.all import Ether, IP, UDP
-from cocotb.generators.byte import *
 
-__all__  = ["udp_all_sizes", "udp_random_sizes"]
+from cocotb.decorators import public
+from cocotb.generators.byte import *
 
 _default_payload = random_data
 
@@ -50,7 +50,7 @@ def _get_payload(gen, nbytes):
 
 
 # UDP packet generators
-
+@public
 def udp_all_sizes(max_size=1500, payload=_default_payload()):
     """UDP packets of every supported size"""
     header = Ether() / IP() / UDP ()
@@ -58,6 +58,7 @@ def udp_all_sizes(max_size=1500, payload=_default_payload()):
     for size in range(0, max_size-len(header)):
         yield header / _get_payload(payload, size)
 
+@public
 def udp_random_sizes(npackets=100, payload=_default_payload()):
     """UDP packets with random sizes"""
     header = Ether() / IP() / UDP ()
@@ -66,10 +67,3 @@ def udp_random_sizes(npackets=100, payload=_default_payload()):
     for pkt in range(npackets):
         yield header / _get_payload(payload, random.randint(0,max_size))
 
-
-
-if __name__ == "__main__":
-    for pkt in udp_all_sizes(max_size=64):
-        print repr(pkt)
-    for pkt in udp_random_sizes(npackets=2):
-        print repr(pkt)

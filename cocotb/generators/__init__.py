@@ -26,7 +26,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
     Set of general generic generators
 """
+from cocotb.decorators import public
 
+@public
 def repeat(obj, nrepeat=None):
     """Generator to repeatedly yield the same object
 
@@ -42,3 +44,12 @@ def repeat(obj, nrepeat=None):
     else:
         for i in range(nrepeat):
             yield obj
+
+
+def get_generators(module):
+    """Return an iterator which yields  all the generators in a module
+
+    Args:
+        module (python module): The module to get the generators from
+    """
+    return (getattr(module, gen) for gen in module.__all__)

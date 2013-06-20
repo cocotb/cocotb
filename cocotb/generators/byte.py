@@ -30,13 +30,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     Collection of generators for creating byte streams
 """
 import random
+from cocotb.decorators import public
 
-
+@public
 def random_data():
     """Random bytes"""
     while True:
         yield chr(random.randint(0,255))
 
+@public
 def incrementing_data(increment=1):
     """Incrementing bytes"""
     val = 0
@@ -45,6 +47,7 @@ def incrementing_data(increment=1):
         val += increment
         val = val & 0xFF
 
+@public
 def repeating_bytes(pattern="\x00"):
     """Repeat a pattern of bytes"""
     while True:

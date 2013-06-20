@@ -34,8 +34,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
 import random
 
+from cocotb.decorators import public
 
-def intermittent_single_cycles(mean=100, sigma=None):
+@public
+def intermittent_single_cycles(mean=10, sigma=None):
     """Generator to intermittently insert a single cycle pulse
 
     Kwargs:
