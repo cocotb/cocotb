@@ -23,12 +23,30 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
+import sys
 import logging
 
 import cocotb
 from cocotb.triggers import Join
 
 
+def public(f):
+  """Use a decorator to avoid retyping function/class names.
+
+  * Based on an idea by Duncan Booth:
+  http://groups.google.com/group/comp.lang.python/msg/11cbb03e09611b8a
+  * Improved via a suggestion by Dave Angel:
+  http://groups.google.com/group/comp.lang.python/msg/3d400fb22d8a42e1
+  """
+  all = sys.modules[f.__module__].__dict__.setdefault('__all__', [])
+  if f.__name__ not in all:  # Prevent duplicates if run from an IDE.
+      all.append(f.__name__)
+  return f
+
+public(public)  # Emulate decorating ourself
+
+
+@public
 class CoroutineComplete(StopIteration):
     """
         To ensure that a coroutine has completed before we fire any triggers that
@@ -122,6 +140,7 @@ class coroutine(object):
         return not self._finished
 
 
+@public
 class test(coroutine):
     """Decorator to mark a fucntion as a test
 
