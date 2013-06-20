@@ -75,6 +75,9 @@ class SFStreaming(BusMonitor):
                         vec = self.bus.data.value
                         pkt += vec.buff[1:][::-1]
                         if self.bus.endofpacket.value:
+                            # Truncate the empty bits
+                            if self.bus.empty.value.value:
+                                pkt = pkt[:-self.bus.empty.value.value]
                             self.log.info("Recieved a packet of %d bytes", len(pkt))
                             self.log.debug(hexdump(pkt))
                             self._recv(pkt)
