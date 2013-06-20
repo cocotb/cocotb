@@ -29,8 +29,10 @@ See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 
 NB Currently we only support a very small subset of functionality
 """
-
-from cocotb.drivers import BusDriver
+from cocotb.decorators import coroutine
+from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.drivers import BusDriver, ValidatedBusDriver
+from cocotb.utils import hexdump
 
 class AvalonMM(BusDriver):
     """Avalon-MM Driver
@@ -62,5 +64,135 @@ class AvalonMM(BusDriver):
         pass
 
 
-class AvalonST(BusDriver):
+class AvalonST(ValidatedBusDriver):
     _signals = ["valid", "data"]
+
+
+class AvalonSTPkts(ValidatedBusDriver):
+    _signals = ["valid", "data", "startofpacket", "endofpacket", "empty"]
+    _optional_signals = ["error", "channel", "ready"]
+
+    @coroutine
+    def _wait_ready(self):
+        """Wait for a ready cycle on the bus before continuing
+
+            Can no longer drive values this cycle...
+
+            FIXME assumes readyLatency of 0
+        """
+        yield ReadOnly()
+        while not self.bus.ready.value:
+            yield RisingEdge(self.clock)
+            yield ReadOnly()
+
+    @coroutine
+    def _send_string(self, string):
+        """
+        Args:
+            string (str): A string of bytes to send over the bus
+        """
+        # Avoid spurious object creation by recycling
+        clkedge = RisingEdge(self.clock)
+        firstword = True
+
+        # FIXME busses that aren't integer numbers of bytes
+        bus_width = len(self.bus.data) / 8
+        word = BinaryValue(nbits=len(self.bus.data))
+
+        while string:
+            yield clkedge
+
+            # Insert a gap where valid is low
+            if not self.on:
+                self.bus.valid <= 0
+                for i in range(self.off):
+                    yield clkedge
+                self.on, self.off = self.valid_generator.next()
+
+            # Consume a valid cycle
+            if self.on is not True:
+                self.on -= 1
+
+            self.bus.valid <= 1
+
+            if firstword:
+                self.bus.startofpacket <= 1
+                firstword = False
+
+            if len(string) <= bus_width:
+                self.bus.endofpacket <= 1
+                self.bus.empty <= bus_width - len(string)
+                string = ""
+            else:
+                word.buff = string[:bus_width]
+                string = string[bus_width:]
+
+            # If this is a bus with a ready signal, wait for this word to
+            # be acknowledged
+            if hasattr(self.bus, "ready"):
+                yield self._wait_ready()
+
+        yield clkedge
+        self.bus.valid <= 0
+
+
+
+    @coroutine
+    def _send_iterable(self, pkt):
+        """
+        Args:
+            pkt (iterable): Will yield objects with attributes matching the
+                            signal names for each individual bus cycle
+        """
+        clkedge = RisingEdge(self.clock)
+
+        for word in pkt:
+            yield clkedge
+
+            # Insert a gap where valid is low
+            if not self.on:
+                self.log.debug("Inserting %d non-valid cycles" % (self.off))
+                self.bus.valid <= 0
+                for i in range(self.off):
+                    yield clkedge
+                self.on, self.off = self.valid_generator.next()
+
+            # Consume a valid cycle
+            if self.on is not True:
+                self.on -= 1
+
+            self.bus <= word
+            self.bus.valid <= 1
+
+            # If this is a bus with a ready signal, wait for this word to
+            # be acknowledged
+            if hasattr(self.bus, "ready"):
+                yield self._wait_ready()
+
+        yield clkedge
+        self.bus.valid <= 0
+
+    @coroutine
+    def _driver_send(self, pkt):
+        """Send a packet over the bus
+
+        Args:
+            pkt (str or iterable): packet to drive onto the bus
+
+        If pkt is a string, we simply send it word by word
+
+        If pkt is an iterable, it's assumed to yield objects with attributes
+        matching the signal names
+        """
+
+        # Avoid spurious object creation by recycling
+
+        self.log.info("Sending packet of length %d bytes" % len(pkt))
+        self.log.debug(hexdump(pkt))
+
+        if isinstance(pkt, str):
+            yield self._send_string(pkt)
+        else:
+            yield self._send_iterable(pkt)
+
+        self.log.info("Packet sent successfully")

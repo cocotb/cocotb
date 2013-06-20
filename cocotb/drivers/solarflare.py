@@ -30,19 +30,18 @@ A specialisation of the AvalonST bus
 from cocotb.decorators import coroutine
 from cocotb.triggers import RisingEdge
 
-from cocotb.drivers import BusDriver
-from cocotb.drivers.avalon import AvalonST
+from cocotb.drivers.avalon import AvalonSTPkts
 
 
-class SFStreaming(BusDriver):
+class SFStreaming(AvalonSTPkts):
     """This is the Solarflare Streaming bus as defined by the Solarflare FDK.
 
     Expect to see a 72-bit bus (bottom 64 bits data, top 8 bits are ECC)
     """
-    _signals = AvalonST._signals + ["startofpacket", "endofpacket", "ready", "empty", "channel", "error"]
+    _signals = ["valid", "data", "startofpacket", "endofpacket", "ready", "empty", "channel", "error"]
 
-    def __init__(self, entity, name, clock):
-        BusDriver.__init__(self, entity, name, clock)
+    def __init__(self, *args, **kwargs):
+        AvalonSTPkts.__init__(self, *args, **kwargs)
 
         # Drive some sensible defaults onto the bus
         self.bus.startofpacket <= 0
@@ -52,27 +51,3 @@ class SFStreaming(BusDriver):
         self.bus.channel       <= 0
         self.bus.error         <= 0
 
-    @coroutine
-    def _driver_send(self, sfpkt):
-        """Send a packet over the bus
-
-            sfpkt should be an instance of SFStreamingPacket
-        """
-        # Avoid spurious object creation by recycling
-        clkedge = RisingEdge(self.clock)
-
-        self.log.info("Sending packet of length %d bytes" % len(sfpkt))
-
-        for word in sfpkt:
-            word.valid = 1
-            yield clkedge
-            while self.bus.ready != 1:
-                yield clkedge
-            self.log.debug("Writing word onto bus: %s" % str(word))
-            self.bus.drive(word)
-
-        yield clkedge
-        self.bus.endofpacket <= 0
-        self.bus.valid <= 0
-
-        self.log.info("Packet sent successfully")
