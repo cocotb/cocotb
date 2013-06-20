@@ -99,7 +99,7 @@ class coroutine(object):
 
         FIXME: Do we want to call all the pending callbacks?
         """
-        self.log.warning("kill() called on coroutine")
+        self.log.debug("kill() called on coroutine")
         self.throw(StopIteration)
 
     def _finished_cb(self):
@@ -152,7 +152,7 @@ class test(coroutine):
             self.log.info("Starting test: \"%s\"\nDescription: %s" % (self.__name__, self._func.__doc__))
             self.started = True
         try:
-            self.log.info("sending %s" % (str(value)))
+            self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
         except StopIteration:
             raise TestComplete(result="Passed")
