@@ -24,21 +24,27 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
-    Set of general generic generators
+    Collection of generators for creating bit signals.
+
+    Typically we use a single bit to control backpressure or insert IDLE
+    cycles onto a bus.
+
+    These yield a tuple which is intended to be interpreted as a number of
+    cycles (ON,OFF)
 """
+import random
 
-def repeat(obj, nrepeat=None):
-    """Generator to repeatedly yield the same object
 
-    Args:
-        obj (any): The object to yield
+def intermittent_single_cycles(mean=100, sigma=None):
+    """Generator to intermittently insert a single cycle pulse
 
     Kwargs:
-        nrepeat (int): The number of times to repeatedly yield obj
+        mean (int):     Average number of cycles in between single cycle gaps
+
+        sigma (int):    Standard deviation of gaps.  mean/4 if sigma is None
     """
-    if nrepeat is None:
-        while True:
-            yield obj
-    else:
-        for i in range(nrepeat):
-            yield obj
+    if sigma is None:
+        sigma = mean/4.0
+    while True:
+        yield (abs(int(random.gauss(mean, sigma))), 1)
+
