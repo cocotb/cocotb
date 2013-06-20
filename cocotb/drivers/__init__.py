@@ -34,7 +34,7 @@ import logging
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Event
+from cocotb.triggers import Event, RisingEdge
 from cocotb.bus import Bus
 
 class Driver(object):
@@ -130,31 +130,77 @@ class Driver(object):
                 yield self._send(transaction, callback, event)
                 self.log.info("Done, shouldn't be waiting on _send.join() anymore..")
         except StopIteration:
-            self.log.info("Stopping send thread on driver")
+            self.log.debug("Stopping send thread on driver")
 
 
 class BusDriver(Driver):
     """
     Wrapper around common functionality for busses which have:
         a list of _signals (class attribute)
+        a list of _optional_signals (class attribute)
         a clock
         a name
         an entity
     """
+    _optional_signals = []
 
     def __init__(self, entity, name, clock):
+        """
+        Args:
+            entity (SimHandle) : a handle to the simulator entity
+
+            name (str) : name of this bus
+
+            clock (SimHandle) : A handle to the clock associated with this bus
+        """
         self.log = logging.getLogger("cocotb.%s.%s" % (entity.name, name))
         Driver.__init__(self)
         self.entity = entity
         self.name = name
         self.clock = clock
-        self.bus = Bus(self.entity, self.name, self._signals)
+        self.bus = Bus(self.entity, self.name, self._signals, self._optional_signals)
+
+
+    @coroutine
+    def _driver_send(self, transaction):
+        yield RisingEdge(self.clock)
+        self.bus <= transaction
+
 
 class ValidatedBusDriver(BusDriver):
     """
-
-
+    Same as a BusDriver except we support an optional generator to control
+    which cycles are valid
     """
 
+    def __init__(self, entity, name, clock, valid_generator=None):
+        """
+        Args:
+            entity (SimHandle) : a handle to the simulator entity
 
-    
+            name (str) : name of this bus
+
+            clock (SimHandle) : A handle to the clock associated with this bus
+        Kwargs:
+            valid_generator (generator): a generator that yields tuples  of
+                                        (valid, invalid) cycles to insert
+        """
+        BusDriver.__init__(self, entity, name, clock)
+        self.set_valid_generator(valid_generator=valid_generator)
+
+
+    def set_valid_generator(self, valid_generator=None):
+        """
+        Set a new valid generator for this bus
+        """
+
+        self.valid_generator = valid_generator
+
+        # Optionally insert invalid cycles every N
+        if self.valid_generator is not None:
+            self.on, self.off = valid_generator.next()
+            self.log.debug("Will be on for %d cycles, off for %s" % (self.on, self.off))
+        else:
+            # Valid every clock cycle
+            self.on, self.off = True, False
+            self.log.debug("Not using valid generator")
