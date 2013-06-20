@@ -76,14 +76,12 @@ class AvalonSTPkts(BusMonitor):
             yield rdonly
             if self.bus.valid.value and self.bus.startofpacket.value:
                 vec = self.bus.data.value
-                self.bus.data.log.info("%s %s" % (vec.binstr, repr(vec.buff)))
                 pkt += vec.buff
                 while True:
                     yield clkedge
                     yield rdonly
                     if self.bus.valid.value:
                         vec = self.bus.data.value
-                        self.bus.data.log.debug("%s %s" % (vec.binstr, repr(vec.buff)))
                         pkt += vec.buff
                         if self.bus.endofpacket.value:
                             self.log.info("Recieved a packet of %d bytes" % len(pkt))
