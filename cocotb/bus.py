@@ -34,12 +34,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 class Bus(object):
     """
         Wraps up a collection of signals
+
+        Assumes we have a set of signals/nets named:
+
+            entity.bus_name_signal
+
+        for example a bus named "stream_in" with signals ["valid", "data"]
+            dut.stream_in_valid
+            dut.stream_in_data            
+
+        TODO:
+            Support for struct/record ports where signals are member names
     """
-    def __init__(self, entity, name, signals):
+    def __init__(self, entity, name, signals, optional_signals=[]):
         """
-        entity:         SimHandle instance to the entity containing the bus
-        name:           name of the bus
-        signals:        array of signal names
+        Args:
+            entity (SimHandle):   SimHandle instance to the entity containing the bus
+            name (str):           name of the bus
+            signals (list):       array of signal names
+
+        Kwargs:
+            optiona_signals (list): array of optional signal names
         """
         self._entity = entity
         self._name = name
@@ -50,6 +65,17 @@ class Bus(object):
             setattr(self, signal, getattr(entity, signame))
             self._signals[signal] = getattr(self, signal)
 
+        # Also support a set of optional signals that don't have to be present
+        for signal in optional_signals:
+            signame = name + "_" + signal
+            try:
+                hdl = getattr(entity, signame)
+            except AttributeError:
+                self._entity.log.debug("Ignoring optional missing signal %s \
+                    on bus %s" % signal, name)
+                continue
+            setattr(self, signal, hdl)
+            self._signals[signal] = getattr(self, signal)
 
     def drive(self, obj, strict=False):
         """
@@ -72,3 +98,7 @@ class Bus(object):
                 else: continue
             val = getattr(obj, name)
             hdl <= val
+
+    def __le__(self, value):
+        """Overload the less than or equal to operator for value assignment"""
+        self.drive(value)
