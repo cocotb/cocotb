@@ -10,7 +10,7 @@ Typically coroutines :keyword:`yield` a :py:class:`Trigger` object which
 indicates to the simulator some which will cause the coroutine to be woken
 when it occurs.  For example:
 
-.. codeblock:: python
+.. code-block:: python
     
     @cocotb.coroutine
     def wait_10ns():
@@ -20,7 +20,7 @@ when it occurs.  For example:
 
 Coroutines may also yield other coroutines:
 
-.. codeblock:: python
+.. code-block:: python
     
     @cocotb.coroutine
     def wait_100ns():
@@ -31,7 +31,7 @@ Coroutines may also yield other coroutines:
 Coroutines may also yield a list of triggers to indicate that execution should 
 resume if *any* of them fires:
 
-.. codeblock:: python
+.. code-block:: python
     
     @cocotb.coroutine
     def packet_with_timeout(monitor, timeout):
