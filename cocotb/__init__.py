@@ -24,8 +24,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
-    TODO:
-        Seed random from environment variable if provided
+Cocotb is a coroutine, cosimulation framework for writing testbenches in Python.
+
+See http://cocotb.readthedocs.org for full documentation
 """
 import os
 import sys
@@ -33,13 +34,29 @@ import logging
 import threading
 from functools import wraps
 
-import ANSI
-import cocotb.handle
-from cocotb.scheduler import Scheduler
 import simulator
 
+import cocotb.ANSI
+import cocotb.handle
+from cocotb.scheduler import Scheduler
+
+
+# Things we want in the cocotb namespace
+from cocotb.decorators import test
+
+# Singleton scheduler instance
+# NB this cheekily ensures a singleton since we're replacing the reference
+# so that cocotb.scheduler gives you the singleton instance and not the
+# scheduler package
+scheduler = Scheduler()
+
+# To save typing provide an alias to scheduler.add
+join = scheduler.add
+
+# Top level logger object
 log = logging.getLogger('cocotb')
 log.setLevel(logging.INFO)
+
 
 class TestFailed(Exception):
     pass
@@ -84,9 +101,6 @@ log.addHandler(hdlr)
 # FIXME is this really required?
 _rlock = threading.RLock()
 
-# Singleton scheduler instance
-# TODO: Ensure we only ever have a single scheduler
-scheduler = Scheduler()
 
 def _initialise_testbench(root_handle):
     """
@@ -124,6 +138,4 @@ def _initialise_testbench(root_handle):
     scheduler.add(coroutine)
     _rlock.release()
     return True
-
-from cocotb.decorators import test
 
