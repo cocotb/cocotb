@@ -22,7 +22,7 @@ What is cocotb?
 Why create cocotb?
 ==================
 
-Verification is the hardest part of realising a working design. Throughout the industry quite a broad spectrum of verification techniques exist, of increasing degrees of complexity:
+Throughout the industry quite a broad spectrum of verification techniques exist, of increasing degrees of complexity:
 
 1. Waveform inspection (non self-checking testbenches)
 2. VHDL/Verilog testbenches (self-checking testbenches)
@@ -31,11 +31,62 @@ Verification is the hardest part of realising a working design. Throughout the i
 5. "e" or UVM based testbench
 6. Custom PLI/DPI framework
 
-The EDA tool industry has recognised the limitations of 
+Verification is the hardest part of realising a working design. 
+The EDA industry has invested heavily in helping us verify designs, 
+adding software contructs to verilog when creating SystemVerilog, 
+mandating that simulators need to implement constrain solvers, 
+converging on UVM as a standard methodology. Why is this inadequate?
+
+Fundamentally the process of verification is writing software, specifically software to test a design, 
+where the design happens to be synthesisable into real hardware. If VHDL, Verilog or 
+SystemVerilog excelled as software languages would there not be examples of their use outside of EDA?
 
 
+UVM
+---
+
+UVM is a prime example of how the EDA industry solves a problem and the solution isn't pretty. While the ideas driving
+UVM are valid (defining a common testbench structure, promoting code re-use, using constrained-random testing) and good, 
+the outcome is a step backwards for the following reasons:
+
+UVM is ugly
+^^^^^^^^^^^
+
+Given the rapid progress being made in software development and evolution of new languages, creating a framework that requires
+so much boilerplate and relies so heavily on macros is actually impressive! This highlights why bashing SystemVerilog
+to behave like a software language is midguided.
 
 
+UVM is nich
+^^^^^^^^^^^
+
+We now have another niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
+in the time it takes you to find 1 UVM developer I can hire 5 Python developers (and probabaly for the same total cost).
+
+
+UVM is expensive
+^^^^^^^^^^^^^^^^
+
+I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
+
+
+So EDA development is a bit backward and the tools suck, why is cocotb any better?
+----------------------------------------------------------------------------------
+
+Ranting aside, what is the idea behind cocotb any why is it different?
+
+Use the right tool for the job
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In cocotb VHDL/Verilog/SystemVerilog are only used for the synthesisable design. All verification is done using Python.
+
+Python is ideal for rapid development of complex systems, integrating multiple languages, 
+utilising the capabilites of the standard libraries and extensions like 
+`constraint solvers <https://code.google.com/p/or-tools/>`_ and `packet parsing/generation <http://www.secdev.org/projects/scapy/>`_ libraries.
+
+
+Lower the overhead of creating a test
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 How should I use cocotb?
