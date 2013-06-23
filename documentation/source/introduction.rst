@@ -40,8 +40,7 @@ UVM is a prime example of how the EDA industry solves a problem and the solution
 UVM are valid and good (defining a common testbench structure, promoting code re-use, using constrained-random testing), 
 the outcome is a not the much needed giant leap forward for the following reasons:
 
-* **UVM is ugly** Given the rapid progress being made in software development and evolution of new languages, creating a framework that requires
-so much boilerplate and relies so heavily on macros is actually impressive!
+* **UVM is ugly** Given the rapid progress being made in software development and evolution of new languages, creating a framework that requires so much boilerplate and relies so heavily on macros is actually impressive!
 * **UVM is niche** UVM is a niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
 * **UVM is expensive** I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
 
@@ -58,8 +57,8 @@ The right tool for the job
 
 In cocotb VHDL/Verilog/SystemVerilog are only used for the synthesisable design. All verification is done using Python which is isideal for rapid development of complex systems and integrating multiple languages.
 
-* It's easy to interface to other languages from Python
-* Python has a huge **library** of existing code like `constraint solvers <https://code.google.com/p/or-tools/>`_ and `packet parsing/generation <http://www.secdev.org/projects/scapy/>`_ libraries.
+* It's **easy** to interface to other languages from Python
+* Python has a huge library of existing code to **re-use** like `constraint solvers <https://code.google.com/p/or-tools/>`_ and `packet parsing/generation <http://www.secdev.org/projects/scapy/>`_ libraries.
 * Python is **interpreted**. Tests can be edited and re-run them without having to recompile the design or even exit the simulator GUI.
 * Writing Python is **fast**, it's *easy to understand* and *everybody* knows it.
 
