@@ -22,15 +22,6 @@ What is cocotb?
 Why create cocotb?
 ==================
 
-Throughout the industry quite a broad spectrum of verification techniques exist, of increasing degrees of complexity:
-
-1. Waveform inspection (non self-checking testbenches)
-2. VHDL/Verilog testbenches (self-checking testbenches)
-3. File-based testbenches using another language to generate the test-vectors and check the output
-4. SystemVerilog or SystemC testbench
-5. "e" or UVM based testbench
-6. Custom PLI/DPI framework
-
 Verification is the hardest part of realising a working design. 
 The EDA industry has invested heavily in helping us verify designs, 
 adding software contructs to verilog when creating SystemVerilog, 
@@ -58,7 +49,7 @@ so much boilerplate and relies so heavily on macros is actually impressive!
 
 UVM is a niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
 
-* UVM is expensive*
+**UVM is expensive**
 
 I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
 
