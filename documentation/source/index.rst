@@ -12,12 +12,12 @@ Contents:
    :maxdepth: 2
 
    introduction
+   quickstart
    coroutines
    triggers
-   tests
-   drivers
-   monitors
-   scoreboards
+   structure
+   roadmap
+
 
 
 Indices and tables
