@@ -38,32 +38,34 @@ Case study: UVM
 
 UVM is a prime example of how the EDA industry solves a problem and the solution isn't pretty. While the ideas driving
 UVM are valid and good (defining a common testbench structure, promoting code re-use, using constrained-random testing), 
-the outcome is a step backwards for the following reasons:
+the outcome is a not the much needed giant leap forward for the following reasons:
 
-**UVM is ugly:** Given the rapid progress being made in software development and evolution of new languages, creating a framework that requires
+* **UVM is ugly** Given the rapid progress being made in software development and evolution of new languages, creating a framework that requires
 so much boilerplate and relies so heavily on macros is actually impressive!
-
-**UVM is niche:** UVM is a niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
-
-**UVM is expensive:** I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
+* **UVM is niche** UVM is a niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
+* **UVM is expensive** I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
 
 
 How is cocotb different?
 ------------------------
 
-Cocotb encourages the same philosophy of design re-use and randomised testing as UVM, however is implemented in Python rather than SystemVerilog.
+Cocotb encourages the same philosophy of design re-use and randomised testing as UVM, however is implemented in 
+Python rather than SystemVerilog.
 
 
 The right tool for the job
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In cocotb VHDL/Verilog/SystemVerilog are only used for the synthesisable design. All verification is done using Python.
+In cocotb VHDL/Verilog/SystemVerilog are only used for the synthesisable design. All verification is done using Python which is isideal for rapid development of complex systems and integrating multiple languages.
 
-Python is ideal for rapid development of complex systems, integrating multiple languages, 
-utilising the capabilites of the standard libraries and extensions like 
-`constraint solvers <https://code.google.com/p/or-tools/>`_ and `packet parsing/generation <http://www.secdev.org/projects/scapy/>`_ libraries.
+* It's easy to interface to other languages from Python
+* Python has a huge **library** of existing code like `constraint solvers <https://code.google.com/p/or-tools/>`_ and `packet parsing/generation <http://www.secdev.org/projects/scapy/>`_ libraries.
+* Python is **interpreted**. Tests can be edited and re-run them without having to recompile the design or even exit the simulator GUI.
+* Writing Python is **fast**, it's *easy to understand* and *everybody* knows it.
 
-Because Python is an interpreted language, I can actually edit my tests and re-run them without having to recompile the design or even exit the simulator GUI.
+.. note::
+
+    That last statement me be a slight exaggeration, however a brief peruse of `Google Trends <http://www.google.co.uk/trends/explore>`_ suggests that compared to UVM, everybody knows Python.
 
 
 Lower the overhead of creating a test
@@ -81,7 +83,6 @@ ASIC/FPGA designs always involve some software development.
 Often the hardware team is responsible for creating and verifying the RTL with little interaction 
 with the software team although as the boundaries blur the software teams are tending to get more involved (often with exclamations of `WTF?! <http://www.osnews.com/story/19266/WTFs_m>`_).
 Cocotb encourages more people to get more involved in RTL design by lowering the barrier to entry. Python is a common language accessible to a larger audience.
-
 
 
 
