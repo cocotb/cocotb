@@ -40,6 +40,19 @@ Values can be assigned to signals using either the .value property of a handle o
 Reading values from signals
 ---------------------------
 
+Accessing the .value property of a handle object will return a :class:`BinaryValue` object.  Any unresolved bits are preserved and can be accessed using the binstr attribute, or a resolved integer value can be accessed using the value attribute.
+
+.. code-block:: python
+    
+    >>> # Read a value back from the dut
+    >>> count = dut.counter.value
+    >>> 
+    >>> print count.binstr
+    1X1010
+    >>> # Resolve the value (X or Z treated as 0)
+    >>> print count.value
+    42
+
 
 
 Parallel and sequential execution of coroutines
