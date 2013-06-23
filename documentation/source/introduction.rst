@@ -57,11 +57,11 @@ so much boilerplate and relies so heavily on macros is actually impressive! This
 to behave like a software language is midguided.
 
 
-UVM is nich
-^^^^^^^^^^^
+UVM is niche
+^^^^^^^^^^^^
 
-We now have another niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
-in the time it takes you to find 1 UVM developer I can hire 5 Python developers (and probabaly for the same total cost).
+UVM is a niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
+In the time it takes you to find 1 UVM developer I can hire 3 Python developers (and probabaly for the same total cost).
 
 
 UVM is expensive
@@ -70,8 +70,8 @@ UVM is expensive
 I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
 
 
-So EDA development is a bit backward and the tools suck, why is cocotb any better?
-----------------------------------------------------------------------------------
+What makes cocotb any better?
+-----------------------------
 
 Ranting aside, what is the idea behind cocotb any why is it different?
 
@@ -85,8 +85,26 @@ utilising the capabilites of the standard libraries and extensions like
 `constraint solvers <https://code.google.com/p/or-tools/>`_ and `packet parsing/generation <http://www.secdev.org/projects/scapy/>`_ libraries.
 
 
+Because Python is an interpreted language, I can actually edit my tests and re-run them without having to recompile the design or even exit the simulator GUI.
+
+
 Lower the overhead of creating a test
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Using cocotb the DUT hangs in "free space" in the simulator, you don't even have to create an instance and wire it up. 
+Tests themselves are very terse and easy to create. This lower overhead encourages creation of regression tests even for
+sub-blocks where usually the overhead of writing a testbench is too onerous.
+
+
+Open verification to a wider audience
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ASIC/FPGA designs always involve some software development. 
+Often the hardware team is responsible for creating and verifying the RTL with little interaction 
+with the software team although as the boundaries blur the software teams are tending to get more involved (often with exclamations of `WTF?! <http://www.osnews.com/story/19266/WTFs_m>`_).
+Cocotb encourages more people to get more involved in RTL design by lowering the barrier to entry. Python is a common language accessible to a larger audience.
+
+
 
 
 How should I use cocotb?
