@@ -1,5 +1,0 @@
-Scoreboards
-===========
-
-Placeholder
-
