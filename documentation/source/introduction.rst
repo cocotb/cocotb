@@ -42,48 +42,41 @@ where the design happens to be synthesisable into real hardware. If VHDL, Verilo
 SystemVerilog excelled as software languages would there not be examples of their use outside of EDA?
 
 
-UVM
----
+Case study: UVM
+---------------
 
 UVM is a prime example of how the EDA industry solves a problem and the solution isn't pretty. While the ideas driving
-UVM are valid (defining a common testbench structure, promoting code re-use, using constrained-random testing) and good, 
+UVM are valid and good (defining a common testbench structure, promoting code re-use, using constrained-random testing), 
 the outcome is a step backwards for the following reasons:
 
-UVM is ugly
-^^^^^^^^^^^
+**UVM is ugly**
 
 Given the rapid progress being made in software development and evolution of new languages, creating a framework that requires
-so much boilerplate and relies so heavily on macros is actually impressive! This highlights why bashing SystemVerilog
-to behave like a software language is midguided.
+so much boilerplate and relies so heavily on macros is actually impressive!
 
-
-UVM is niche
-^^^^^^^^^^^^
+**UVM is niche**
 
 UVM is a niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
-In the time it takes you to find 1 UVM developer I can hire 3 Python developers (and probabaly for the same total cost).
 
-
-UVM is expensive
-^^^^^^^^^^^^^^^^
+* UVM is expensive*
 
 I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
 
 
-What makes cocotb any better?
------------------------------
+How is cocotb different?
+------------------------
 
-Ranting aside, what is the idea behind cocotb any why is it different?
+Cocotb encourages the same philosophy of design re-use and randomised testing as UVM, however is implemented in Python rather than SystemVerilog.
 
-Use the right tool for the job
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The right tool for the job
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In cocotb VHDL/Verilog/SystemVerilog are only used for the synthesisable design. All verification is done using Python.
 
 Python is ideal for rapid development of complex systems, integrating multiple languages, 
 utilising the capabilites of the standard libraries and extensions like 
 `constraint solvers <https://code.google.com/p/or-tools/>`_ and `packet parsing/generation <http://www.secdev.org/projects/scapy/>`_ libraries.
-
 
 Because Python is an interpreted language, I can actually edit my tests and re-run them without having to recompile the design or even exit the simulator GUI.
 
