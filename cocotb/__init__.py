@@ -51,7 +51,7 @@ from cocotb.decorators import test
 scheduler = Scheduler()
 
 # To save typing provide an alias to scheduler.add
-join = scheduler.add
+fork = scheduler.add
 
 # Top level logger object
 log = logging.getLogger('cocotb')
