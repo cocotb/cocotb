@@ -40,18 +40,12 @@ UVM is a prime example of how the EDA industry solves a problem and the solution
 UVM are valid and good (defining a common testbench structure, promoting code re-use, using constrained-random testing), 
 the outcome is a step backwards for the following reasons:
 
-**UVM is ugly**
-
-Given the rapid progress being made in software development and evolution of new languages, creating a framework that requires
+**UVM is ugly:** Given the rapid progress being made in software development and evolution of new languages, creating a framework that requires
 so much boilerplate and relies so heavily on macros is actually impressive!
 
-**UVM is niche**
+**UVM is niche:** UVM is a niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
 
-UVM is a niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
-
-**UVM is expensive**
-
-I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
+**UVM is expensive:** I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
 
 
 How is cocotb different?
