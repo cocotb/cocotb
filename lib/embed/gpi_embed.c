@@ -210,10 +210,13 @@ void (*vlog_startup_routines[])() = {
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines symbol
 void vlog_startup_routines_bootstrap() {
-   unsigned int i;
-   for (i = 0; vlog_startup_routines[i]; i++) {
-      vlog_startup_routines[i]();
-      }
+   void (*routine)(void);
+   int i;
+   routine = vlog_startup_routines[0];
+   for (i = 0, routine = vlog_startup_routines[i];
+        routine;
+        routine = vlog_startup_routines[++i]) {
+       printf("routine is %p\n", routine);
+       routine();
+   }
 }
-
-
