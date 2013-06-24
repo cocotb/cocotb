@@ -40,8 +40,6 @@ gpi_logging.h
 # define EXTERN_C_END
 #endif
 
-#define DEBUG
-
 EXTERN_C_START
 
 enum gpi_log_levels {

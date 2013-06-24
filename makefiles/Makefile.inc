@@ -42,6 +42,9 @@ export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 
 include $(SIM_ROOT)/makefiles/Makefile.pylib
 
+# Base GCC flags
+GCC_ARGS	:=	-Werror -g -DDEBUG
+
 # Disable some inbuild rules
 %: %.c
 %: %.o

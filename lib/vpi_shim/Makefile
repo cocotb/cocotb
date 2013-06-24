@@ -28,7 +28,7 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 OBJ_DIR		:= obj
 INCLUDES	:= -I. -I/usr/include/python$(PYTHON_VERSION)/ -I../gpi/ $(VPI_INCLUDE_PATH)
-GCC_ARGS	:= -Werror -g
+GCC_ARGS	+=
 LIBS		:= -lgpilog
 LD_PATH		:= -L$(LIB_DIR)
 

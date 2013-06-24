@@ -30,7 +30,7 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 OBJ_DIR    	:= obj
 INCLUDES	:= -I. -I/usr/include/python$(PYTHON_VERSION)/ \
 		   -I/mnt/sources/tools/icarus/include/iverilog -I../gpi
-GCC_ARGS	:= -Werror -g
+GCC_ARGS	+=
 LIBS		:= -lgpi -lpython2.7 $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
 
