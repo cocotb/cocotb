@@ -37,8 +37,13 @@ class SimType():
         self._name = name;
         self._sdebug = sdebug
 
-    def execute(self):
+    def execute(self, cmd):
         print("Running cocotb against %s simulator" % self._name)
+        print(cmd)
+        try: 
+            call(cmd, shell=True)
+        except KeyboardInterrupt:
+            print("Closing Test Bench")
 
 class SimIcarus(SimType):
     def __init__(self, name=None, sdebug=False):
@@ -46,7 +51,6 @@ class SimIcarus(SimType):
         self._base_cmd = ' vvp -m cocotb'
 
     def execute(self, py_path, lib_path, module, function, finput):
-        SimType.execute(self)
         cmd = 'PYTHONPATH=' + py_path
         cmd = cmd + ' LD_LIBRARY_PATH=' + lib_path
         cmd = cmd + ' MODULE=' + module
@@ -56,15 +60,14 @@ class SimIcarus(SimType):
         cmd = cmd + self._base_cmd
         cmd = cmd + ' -M ' + lib_path
         cmd = cmd + ' ' + finput
-        print(cmd)
-        call(cmd, shell=True)
+
+        SimType.execute(self, cmd)
 
 class SimSfsim(SimType):
     def __init__(self, name=None, sdebug=False):
         SimType.__init__(self, "SolarFlare Model", sdebug)
 
     def execute(self, py_path, lib_path, module, function, finput):
-        SimType.execute(self)
         cmd = 'PYTHONPATH=' + py_path
         cmd = cmd + ' LD_LIBRARY_PATH=' + lib_path
         cmd = cmd + ' MODULE=' + module
@@ -73,8 +76,8 @@ class SimSfsim(SimType):
             cmd = cmd + ' gdb --args'
         cmd = cmd + ' ' + finput
         cmd = cmd + ' -l ' + lib_path + '/libcocotb.so'
-        print(cmd)
-        call(cmd, shell=True)
+
+        SimType.execute(self, cmd)
 
 def main():
 
