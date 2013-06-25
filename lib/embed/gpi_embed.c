@@ -28,14 +28,9 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
-#include "gpi.h"
-#include "gpi_logging.h"
+#include "embed.h"
 
 static PyThreadState *gtstate;
-static gpi_cb_hdl sim_init_cb;
-static gpi_cb_hdl sim_finish_cb;
-
-
 
 static char *progname = "cocotb";
 static PyObject *thread_dict;
@@ -54,7 +49,7 @@ static PyObject *lock;
  *
  * Stores the thread state for cocotb in static variable gtstate
  */
-void init_python(void)
+void embed_init_python(void)
 {
     FENTER;
 
@@ -86,7 +81,7 @@ void init_python(void)
  *
  * Loads the Python module called cocotb and calls the _initialise_testbench function
  */
-int handle_sim_init(void *gpi_cb_data)
+void embed_sim_init(void)
 {
     FENTER
 
@@ -108,7 +103,7 @@ int handle_sim_init(void *gpi_cb_data)
         PyErr_Print();
         fprintf(stderr, "Failed to load \"%s\"\n", "cocotb");
         PyGILState_Release(gstate);
-        return 1;
+        return;
     }
 
 
@@ -123,7 +118,7 @@ int handle_sim_init(void *gpi_cb_data)
         PyErr_Print();
         fprintf(stderr, "Failed to find handle to logging object \"log\" from module cocotb\n");
         PyGILState_Release(gstate);
-        return 1;
+        return;
     }
 
     set_log_handler(pHandler);
@@ -151,7 +146,7 @@ int handle_sim_init(void *gpi_cb_data)
         Py_DECREF(pFunc);
         Py_DECREF(pModule);
         PyGILState_Release(gstate);
-        return 1;
+        return;
     }
 
     pArgs = PyTuple_New(1);
@@ -174,51 +169,11 @@ int handle_sim_init(void *gpi_cb_data)
     PyGILState_Release(gstate);
 
     FEXIT
-    return(0);
 }
 
-void register_initial_callback()
+void embed_sim_end(void)
 {
     FENTER
-    sim_init_cb = gpi_register_sim_start_callback(handle_sim_init, (void *)NULL);
-    FEXIT
-}
-
-
-int handle_sim_end(void *gpi_cb_data)
-{
-    FENTER
-    sim_finish_cb = NULL;
     LOG_WARN("Closing down cocotb at simulator request!");
     FEXIT
-    return(0);
-}
-
-void register_final_callback()
-{
-    FENTER
-    sim_finish_cb = gpi_register_sim_end_callback(handle_sim_end, (void *)NULL);
-    FEXIT
-}
-
-
-// FIXME this is VPI specific, should be in gpi_vpi.c
-void (*vlog_startup_routines[])() = {
-    init_python,
-    register_initial_callback,
-    register_final_callback,
-    0
-};
-
-
-// For non-VPI compliant applications that cannot find vlog_startup_routines symbol
-void vlog_startup_routines_bootstrap() {
-    void (*routine)(void);
-    int i;
-    routine = vlog_startup_routines[0];
-    for (i = 0, routine = vlog_startup_routines[i];
-         routine;
-         routine = vlog_startup_routines[++i]) {
-        routine();
-    }
 }
