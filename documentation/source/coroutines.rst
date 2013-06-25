@@ -7,7 +7,7 @@ pass control of execution back to the simulator and simulation time can advance
 again.
 
 Typically coroutines :keyword:`yield` a :py:class:`Trigger` object which
-indicates to the simulator some which will cause the coroutine to be woken
+indicates to the simulator some event which will cause the coroutine to be woken
 when it occurs.  For example:
 
 .. code-block:: python
