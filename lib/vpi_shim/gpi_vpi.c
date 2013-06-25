@@ -85,12 +85,9 @@ void gpi_sim_end()
 // double gpi_get_sim_time()
 void gpi_get_sim_time(uint32_t *high, uint32_t *low)
 {
-//     FENTERD
     s_vpi_time vpi_time_s;
     vpi_time_s.type = vpiSimTime;//vpiScaledRealTime;        //vpiSimTime;
     vpi_get_time(NULL, &vpi_time_s);
-//     FEXIT
-//     return vpi_time_s.real;
     *high = vpi_time_s.high;
     *low = vpi_time_s.low;
 }
@@ -105,9 +102,10 @@ void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
     value_p->value.integer = value;
     value_p->format = vpiIntVal;
 
-//  *  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
-//  *      may be NULL, in this case. This is like a blocking assignment
-//  *      in behavioral code.
+    /*  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
+     *      may be NULL, in this case. This is like a blocking assignment
+     *      in behavioral code.
+     */
     vpi_put_value((vpiHandle)gpi_hdl, value_p, NULL, vpiNoDelay);
 
     FEXIT
@@ -135,9 +133,10 @@ void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
     value_p->value.str = buff;
     value_p->format = vpiBinStrVal;
 
-//  *  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
-//  *      may be NULL, in this case. This is like a blocking assignment
-//  *      in behavioral code.
+    /*  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
+     *      may be NULL, in this case. This is like a blocking assignment
+     *      in behavioral code.
+     */
     vpi_put_value((vpiHandle)gpi_hdl, value_p, NULL, vpiNoDelay);
 
     free(buff);

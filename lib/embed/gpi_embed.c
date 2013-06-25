@@ -185,9 +185,12 @@ void register_initial_callback()
 }
 
 
-// NB We don't attempt to log here since the world has fallen apart
 int handle_sim_end(void *gpi_cb_data)
 {
+    FENTER
+    sim_finish_cb = NULL;
+    LOG_WARN("Closing down cocotb at simulator request!");
+    FEXIT
     return(0);
 }
 
@@ -201,21 +204,21 @@ void register_final_callback()
 
 // FIXME this is VPI specific, should be in gpi_vpi.c
 void (*vlog_startup_routines[])() = {
-   init_python,
-   register_initial_callback,
-   register_final_callback,
-   0
+    init_python,
+    register_initial_callback,
+    register_final_callback,
+    0
 };
 
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines symbol
 void vlog_startup_routines_bootstrap() {
-   void (*routine)(void);
-   int i;
-   routine = vlog_startup_routines[0];
-   for (i = 0, routine = vlog_startup_routines[i];
-        routine;
-        routine = vlog_startup_routines[++i]) {
-       routine();
-   }
+    void (*routine)(void);
+    int i;
+    routine = vlog_startup_routines[0];
+    for (i = 0, routine = vlog_startup_routines[i];
+         routine;
+         routine = vlog_startup_routines[++i]) {
+        routine();
+    }
 }
