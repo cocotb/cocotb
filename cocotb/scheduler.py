@@ -34,13 +34,10 @@ import collections
 import os
 import logging
 
+import simulator
 import cocotb
 import cocotb.decorators
-import simulator as simulator
-from cocotb import triggers
-from cocotb.handle import SimHandle
-from cocotb.decorators import coroutine
-from cocotb.triggers import Timer, ReadOnly, NextTimeStep, ReadWrite
+from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite
 
 
 class Scheduler(object):
@@ -115,6 +112,15 @@ class Scheduler(object):
 
 
     def schedule(self, coroutine, trigger=None):
+        """
+        Schedule a coroutine by calling the send method
+
+        Args:
+            coroutine (cocotb.decorators.coroutine): The coroutine to schedule
+
+            trigger (cocotb.triggers.Trigger): The trigger that caused this
+                                                coroutine to be scheduled
+        """
         coroutine.log.debug("Scheduling (%s)" % str(trigger))
         try:
             result = coroutine.send(trigger)
@@ -140,7 +146,7 @@ class Scheduler(object):
             simulator.stop_simulator(self)
             return
 
-        if isinstance(result, triggers.Trigger):
+        if isinstance(result, Trigger):
             self._add_trigger(result, coroutine)
         elif isinstance(result, cocotb.decorators.coroutine):
             self.log.debug("Scheduling nested co-routine: %s" % result.__name__)
@@ -154,7 +160,7 @@ class Scheduler(object):
             self.log.warning("Unable to schedule coroutine since it's returning stuff %s" % repr(result))
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))
 
-    @coroutine
+    @cocotb.decorators.coroutine
     def move_to_rw(self):
         yield ReadWrite()
         self._readwrite = None
