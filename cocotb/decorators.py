@@ -102,8 +102,20 @@ class coroutine(object):
         except StopIteration:
             raise CoroutineComplete(callback=self._finished_cb)
 
+    def _pre_send(self):
+        """Provide some useful debug if our coroutine isn't a real coroutine
+
+        NB better than catching AttributeError on _coro.send since then we
+        can't distinguish between an AttributeError in the coroutine itself
+        """
+        if not hasattr(self._coro, "send"):
+            self.log.error("%s isn't a value coroutine! Did you use the yield keyword?"
+                % self.__name__)
+            raise CoroutineComplete(callback=self._finished_cb)
+
     def send(self, value):
         """FIXME: problem here is that we don't let the call stack unwind..."""
+        self._pre_send()
         try:
             return self._coro.send(value)
         except StopIteration:
@@ -167,6 +179,7 @@ class test(coroutine):
 
     def send(self, value):
         """FIXME: problem here is that we don't let the call stack unwind..."""
+        self._pre_send()
         if not self.started:
             self.log.info("Starting test: \"%s\"\nDescription: %s" % (self.__name__, self._func.__doc__))
             self.started = True
