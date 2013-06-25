@@ -216,7 +216,6 @@ void vlog_startup_routines_bootstrap() {
    for (i = 0, routine = vlog_startup_routines[i];
         routine;
         routine = vlog_startup_routines[++i]) {
-       printf("routine is %p\n", routine);
        routine();
    }
 }
