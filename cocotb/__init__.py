@@ -42,7 +42,7 @@ from cocotb.scheduler import Scheduler
 
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test
+from cocotb.decorators import test, coroutine
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference
