@@ -26,6 +26,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
     Set of general generic generators
 """
+import math
+import random
 from cocotb.decorators import public
 
 @public
@@ -45,6 +47,50 @@ def repeat(obj, nrepeat=None):
         for i in range(nrepeat):
             yield obj
 
+@public
+def combine(generators):
+    """
+    Generator for serially combining multiple generators together
+
+    Args:
+        generators (iterable): Generators to combine together
+    """
+    for gen in generators:
+        for item in gen:
+            yield item
+
+
+@public
+def gaussian(mean, sigma):
+    """
+    Generate a guasian distribution indefinitely
+
+    Args:
+        mean (int/float): mean value
+
+        signma (int/float): Standard deviation
+    """
+    while True:
+        yield random.gauss(mean, sigma)
+
+
+@public
+def sine_wave(amplitude, w, offset=0):
+    """
+    Generates a sine wave that repeats forever
+
+    Args:
+        amplitude (int/float):  peak deviation of the function from zero
+
+        w (int/float): is the rate of change of the function argument
+
+    Yields:
+        floats that form a sine wave
+    """
+    twoPiF_DIV_sampleRate = math.pi * 2
+    while True:
+        for idx in ( i / float(w) for i in range(int(w)) ):
+            yield amplitude*math.sin(twoPiF_DIV_sampleRate * idx) + offset
 
 def get_generators(module):
     """Return an iterator which yields  all the generators in a module
