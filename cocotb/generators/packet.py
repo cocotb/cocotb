@@ -36,6 +36,10 @@ import random
 
 from scapy.all import Ether, IP, UDP
 
+# Supress SCAPY warning messages
+import logging
+logging.getLogger("scapy").setLevel(logging.ERROR)
+
 from cocotb.decorators import public
 from cocotb.generators.byte import *
 
@@ -67,3 +71,8 @@ def udp_random_sizes(npackets=100, payload=_default_payload()):
     for pkt in range(npackets):
         yield header / _get_payload(payload, random.randint(0,max_size))
 
+@public
+def ipv4_small_packets(npackets=100, payload=_default_payload()):
+    """Small (<100bytes payload) IPV4 packets"""
+    for pkt in range(npackets):
+        yield Ether() / IP() / _get_payload(payload, random.randint(0, 100))
