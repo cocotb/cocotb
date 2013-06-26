@@ -440,6 +440,42 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 
 
 
+static PyObject *iterate_signals(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    gpi_iterator_hdl result;
+
+    if (!PyArg_ParseTuple(args, "l", &hdl))
+        return NULL;
+
+    result = gpi_iterate(hdl);
+
+    return Py_BuildValue("l", result);
+}
+
+
+
+static PyObject *next(PyObject *self, PyObject *args)
+{
+    gpi_iterator_hdl hdl;
+    gpi_sim_hdl result;
+
+    if (!PyArg_ParseTuple(args, "l", &hdl))
+        return NULL;
+
+    result = gpi_next(hdl);
+
+    // Raise stopiteration when we're done
+    if (!result) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+
+    return Py_BuildValue("l", result);
+}
+
+
+
 
 static PyObject *get_signal_val(PyObject *self, PyObject *args)
 {
