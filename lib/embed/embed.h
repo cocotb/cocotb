@@ -28,6 +28,6 @@
 #include <gpi.h>
 #include <gpi_logging.h>
 
-void embed_init_python(void);
-void embed_sim_init(void);
-void embed_sim_end(void);
+extern void embed_init_python(void);
+extern void embed_sim_init(void);
+extern void embed_sim_end(void);

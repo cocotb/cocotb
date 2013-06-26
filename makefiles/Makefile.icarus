@@ -38,14 +38,14 @@ $(OBJ_DIR):
 sim: $(OBJ_DIR) $(VERILOG_SOURCES)
 	iverilog -o $(OBJ_DIR)/sim.vvp $(VERILOG_SOURCES)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) FUNCTION=$(FUNCTION) \
-		vvp -M $(LIB_DIR) -m cocotb $(OBJ_DIR)/sim.vvp
+		vvp -M $(LIB_DIR) -m gpivpi $(OBJ_DIR)/sim.vvp
 .PHONY: gdb
 gdb: $(OBJ_DIR) $(VERILOG_SOURCES)
 	iverilog -o $(OBJ_DIR)/sim.vvp $(VERILOG_SOURCES)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) FUNCTION=$(FUNCTION) \
-		gdb --args vvp -M $(LIB_DIR) -m cocotb $(OBJ_DIR)/sim.vvp
+		gdb --args vvp -M $(LIB_DIR) -m gpivpi $(OBJ_DIR)/sim.vvp
 
 
 clean:
 	rm -rf $(OBJ_DIR)
-
+	rm -rf simv

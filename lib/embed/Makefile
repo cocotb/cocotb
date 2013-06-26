@@ -31,13 +31,15 @@ OBJ_DIR    	:= obj
 INCLUDES	:= -I. -I/usr/include/python$(PYTHON_VERSION)/ \
 		   -I/mnt/sources/tools/icarus/include/iverilog -I../gpi
 GCC_ARGS	+=
-LIBS		:= -lgpi -lpython2.7 $(PYLIBS)
+LIBS		:= -lpython2.7 $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
 
 SRCS		:= gpi_embed.c
 OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
-all: $(LIB_DIR)/cocotb.vpi
+LIB_NAME	:= libcocotb.so
+
+all: $(LIB_DIR)/$(LIB_NAME)
 
 $(OBJ_DIR)/%.o: %.c
 	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
@@ -45,14 +47,8 @@ $(OBJ_DIR)/%.o: %.c
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-$(LIB_DIR)/libcocotb.so: $(OBJ_DIR) $(OBJS)
+$(LIB_DIR)/$(LIB_NAME): $(OBJ_DIR) $(OBJS)
 	gcc $(GCC_ARGS) -shared -Xlinker -export-dynamic -o $@ $(OBJS) $(LIBS) $(LD_PATH)
-
-# More rules such that this may be needed depending on the requirements of
-# different simulators, icarus for instance loads a <name>.vpi libraray to use the vpi
-# inerface at the start of the simulation
-$(LIB_DIR)/cocotb.vpi: $(LIB_DIR)/libcocotb.so
-	ln -sf libcocotb.so $@
 
 clean:
 	rm -rf $(OBJ_DIR)

@@ -40,7 +40,7 @@ all: $(LIBS)
 $(LIBS): dirs
 	$(MAKE) -C $@
 
-lib/vpi_shim: lib/gpi
+lib/vpi_shim: lib/gpi lib/embed
 lib/simulator: lib/vpi_shim
 
 dirs:

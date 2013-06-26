@@ -48,7 +48,7 @@ class SimType():
 class SimIcarus(SimType):
     def __init__(self, name=None, sdebug=False):
         SimType.__init__(self, "Icarus", sdebug)
-        self._base_cmd = ' vvp -m cocotb'
+        self._base_cmd = ' vvp -m gpivpi'
 
     def execute(self, py_path, lib_path, module, function, finput):
         cmd = 'PYTHONPATH=' + py_path
@@ -75,7 +75,7 @@ class SimSfsim(SimType):
         if self._sdebug is True:
             cmd = cmd + ' gdb --args'
         cmd = cmd + ' ' + finput
-        cmd = cmd + ' -l ' + lib_path + '/libcocotb.so'
+        cmd = cmd + ' -l ' + lib_path + '/libgpi.so'
 
         SimType.execute(self, cmd)
 

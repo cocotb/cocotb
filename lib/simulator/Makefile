@@ -35,6 +35,8 @@ LD_PATH		:= -L$(LIB_DIR)
 SRCS		:= simulatormodule.c
 OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
+LIB_NAME	:= libsim.so
+
 all : $(LIB_DIR)/simulator.so
 
 $(OBJ_DIR)/%.o: %.c
@@ -43,9 +45,11 @@ $(OBJ_DIR)/%.o: %.c
 $(OBJ_DIR) :
 	mkdir -p $(OBJ_DIR)
  
-$(LIB_DIR)/simulator.so : $(OBJ_DIR) $(OBJS)
-	gcc $(GCC_ARGS) -shared -Xlinker -export-dynamic -o $(LIB_DIR)/simulator.so $(OBJS) $(LIBS) $(LD_PATH)
-	ln -sf simulator.so $(LIB_DIR)/libsim.so
+$(LIB_DIR)/$(LIB_NAME) : $(OBJ_DIR) $(OBJS)
+	gcc $(GCC_ARGS) -shared -Xlinker -export-dynamic -o $@ $(OBJS) $(LIBS) $(LD_PATH)
+
+$(LIB_DIR)/simulator.so: $(LIB_DIR)/$(LIB_NAME)
+	ln -sf $(LIB_NAME) $@
 
 clean :
 	@rm -rf $(OBJ_DIR)
