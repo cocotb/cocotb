@@ -12,10 +12,10 @@ Contents:
    :maxdepth: 2
 
    introduction
+   overview
    quickstart
    coroutines
    triggers
-   structure
    roadmap
 
 
