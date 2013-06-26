@@ -73,7 +73,37 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     free(buff);
     FEXIT
     return rv;
+}
 
+
+// Functions for iterating over entries of a handle
+// Returns an iterator handle which can then be used in gpi_next calls
+gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base) {
+    FENTER
+
+    vpiHandle iterator;
+
+    iterator = vpi_iterate(vpiNet, (vpiHandle)base);
+
+    FEXIT
+    return (gpi_iterator_hdl)iterator;
+}
+
+// Returns NULL when there are no more objects
+gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator) {
+    FENTER
+    vpiHandle result;
+
+    result = vpi_scan((vpiHandle) iterator);
+
+//      FIXME do we need to free the iterator handle?
+//      Icarus complains about this
+//     if (result == NULL) && !vpi_free_object((vpiHandle)iterator)) {
+//         LOG_WARN("VPI: Attempting to free iterator failed!");
+//     }
+    
+    FEXIT
+    return (gpi_sim_hdl)result;
 }
 
 

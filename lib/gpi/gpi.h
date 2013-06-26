@@ -114,6 +114,14 @@ gpi_sim_hdl gpi_get_root_handle();
 gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent);
 
 
+// Functions for iterating over entries of a handle
+// Returns an iterator handle which can then be used in gpi_next calls
+gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base);
+
+// Returns NULL when there are no more objects
+gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
+
+
 
 // Functions for querying the properties of a handle
 
