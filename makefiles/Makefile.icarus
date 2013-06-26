@@ -48,4 +48,3 @@ gdb: $(OBJ_DIR) $(VERILOG_SOURCES)
 
 clean:
 	rm -rf $(OBJ_DIR)
-	rm -rf simv
