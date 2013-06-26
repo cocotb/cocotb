@@ -30,9 +30,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "gpi.h"
-#include "gpi_logging.h"
+#include <gpi.h>
+#include <gpi_logging.h>
+#include <embed.h>
 #include <vpi_user.h>
+
+static gpi_cb_hdl sim_init_cb;
+static gpi_cb_hdl sim_finish_cb;
 
 // Handle related functions
 gpi_sim_hdl gpi_get_root_handle()
@@ -106,21 +110,12 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator) {
     return (gpi_sim_hdl)result;
 }
 
-
-void gpi_sim_end()
-{
-    vpi_control(vpiFinish);
-}
-
 // double gpi_get_sim_time()
 void gpi_get_sim_time(uint32_t *high, uint32_t *low)
 {
-//     FENTERD
     s_vpi_time vpi_time_s;
     vpi_time_s.type = vpiSimTime;//vpiScaledRealTime;        //vpiSimTime;
     vpi_get_time(NULL, &vpi_time_s);
-//     FEXIT
-//     return vpi_time_s.real;
     *high = vpi_time_s.high;
     *low = vpi_time_s.low;
 }
@@ -135,9 +130,10 @@ void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
     value_p->value.integer = value;
     value_p->format = vpiIntVal;
 
-//  *  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
-//  *      may be NULL, in this case. This is like a blocking assignment
-//  *      in behavioral code.
+    /*  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
+     *      may be NULL, in this case. This is like a blocking assignment
+     *      in behavioral code.
+     */
     vpi_put_value((vpiHandle)gpi_hdl, value_p, NULL, vpiNoDelay);
 
     FEXIT
@@ -165,18 +161,15 @@ void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
     value_p->value.str = buff;
     value_p->format = vpiBinStrVal;
 
-//  *  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
-//  *      may be NULL, in this case. This is like a blocking assignment
-//  *      in behavioral code.
+    /*  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
+     *      may be NULL, in this case. This is like a blocking assignment
+     *      in behavioral code.
+     */
     vpi_put_value((vpiHandle)gpi_hdl, value_p, NULL, vpiNoDelay);
 
     free(buff);
     FEXIT
 }
-
-
-
-
 
 
 static char *gpi_copy_name(const char *name)
@@ -589,4 +582,74 @@ gpi_clock_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int c
 void gpi_clock_unregister(gpi_clock_hdl clock)
 {
     clock->exit = true;
+}
+
+void register_embed(void)
+{
+    FENTER
+    embed_init_python();
+    FEXIT
+}
+
+
+int handle_sim_init(void *gpi_cb_data)
+{
+    FENTER
+    sim_init_cb = NULL;
+    embed_sim_init();
+    FEXIT
+}
+
+void register_initial_callback(void)
+{
+    FENTER
+    sim_init_cb = gpi_register_sim_start_callback(handle_sim_init, (void *)NULL);
+    FEXIT
+}
+
+int handle_sim_end(void *gpi_cb_data)
+{
+    FENTER
+    if (sim_finish_cb)
+        embed_sim_end();
+    FEXIT
+}
+
+void register_final_callback(void)
+{
+    FENTER
+    sim_finish_cb = gpi_register_sim_end_callback(handle_sim_end, (void *)NULL);
+    FEXIT
+}
+
+// If the Pything world wants things to shut down then unregister
+// the callback for end of sim
+void gpi_sim_end()
+{
+    FENTER
+
+    sim_finish_cb = NULL;
+    vpi_control(vpiFinish);
+
+    FEXIT
+}
+
+void (*vlog_startup_routines[])() = {
+    register_embed,
+    register_initial_callback,
+    register_final_callback,
+    0
+};
+
+
+// For non-VPI compliant applications that cannot find vlog_startup_routines symbol
+void vlog_startup_routines_bootstrap() {
+    void (*routine)(void);
+    int i;
+    routine = vlog_startup_routines[0];
+    for (i = 0, routine = vlog_startup_routines[i];
+         routine;
+         routine = vlog_startup_routines[++i]) {
+        routine();
+    }
 }
