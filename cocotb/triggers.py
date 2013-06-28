@@ -59,20 +59,15 @@ class Trigger(object):
         """Ensure if a trigger drops out of scope we remove any pending callbacks"""
         self.unprime()
 
-class Timer(Trigger):
+class GPITrigger(Trigger):
     """
     Execution will resume when the specified time period expires
 
     Consumes simulation time
     """
-    def __init__(self, time_ps):
+    def __init__(self):
         Trigger.__init__(self)
-        self.time_ps = time_ps
         self.cbhdl = None
-
-    def prime(self, callback):
-        """Register for a timed callback"""
-        self.cbhdl = simulator.register_timed_callback(self.time_ps, callback, self)
 
     def unprime(self):
         """Unregister a prior registered timed callback"""
@@ -81,40 +76,46 @@ class Timer(Trigger):
             simulator.deregister_callback(self.cbhdl)
             self.cbhdl = None
 
+
+class Timer(GPITrigger):
+    """
+    Execution will resume when the specified time period expires
+
+    Consumes simulation time
+    """
+    def __init__(self, time_ps):
+        GPITrigger.__init__(self)
+        self.time_ps = time_ps
+
+    def prime(self, callback):
+        """Register for a timed callback"""
+        self.cbhdl = simulator.register_timed_callback(self.time_ps, callback, self)
+
     def __str__(self):
         return self.__class__.__name__ + "(%dps)" % self.time_ps
 
-class Edge(Trigger):
+class Edge(GPITrigger):
     """
     Execution will resume when an edge occurs on the provided signal
     """
     def __init__(self, signal):
-        Trigger.__init__(self)
-        self.cbhdl = None
+        GPITrigger.__init__(self)
         self.signal = signal
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
         self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, self)
 
-    def unprime(self):
-        """Unregister a prior registered value change callback"""
-        Trigger.unprime(self)
-        if self.cbhdl is not None:
-            simulator.deregister_callback(self.cbhdl)
-            self.cbhdl = None
-
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
 
-class ReadOnly(Trigger):
+class ReadOnly(GPITrigger):
     """
     Execution will resume when the readonly portion of the sim cycles is
     readched
     """
     def __init__(self):
-        Trigger.__init__(self)
-        self.cbhdl = None
+        GPITrigger.__init__(self)
 
     def prime(self, callback):
         self.cbhdl = simulator.register_readonly_callback(callback, self)
@@ -122,35 +123,26 @@ class ReadOnly(Trigger):
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
 
-class ReadWrite(Trigger):
+class ReadWrite(GPITrigger):
     """
     Execution will resume when the readwrite porttion of the sim cycles is
     reached
     """
     def __init__(self):
-        Trigger.__init__(self)
-        self.cbhdl = None
+        GPITrigger.__init__(self)
 
     def prime(self, callback):
         self.cbhdl = simulator.register_rwsynch_callback(callback, self)
 
-    def unprime(self):
-        """Unregister a prior registered timed callback"""
-        if self.cbhdl is not None:
-            simulator.deregister_callback(self.cbhdl)
-            self.cbhdl = None
-        Trigger.unprime(self)
-
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
 
-class NextTimeStep(Trigger):
+class NextTimeStep(GPITrigger):
     """
     Execution will resume when the next time step is started
     """
     def __init__(self):
-        Trigger.__init__(self)
-        self.cbhdl = None
+        GPITrigger.__init__(self)
 
     def prime(self, callback):
         self.cbhdl = simulator.register_nextstep_callback(callback, self)
@@ -163,9 +155,7 @@ class RisingEdge(Edge):
     Execution will resume when a rising edge occurs on the provided signal
     """
     def __init__(self, signal):
-        Trigger.__init__(self)
-        self.cbhdl = None
-        self.signal = signal
+        Edge.__init__(self, signal)
 
     def prime(self, callback):
         self._callback = callback
@@ -186,9 +176,7 @@ class ClockCycles(Edge):
     Execution will resume after N rising edges
     """
     def __init__(self, signal, num_cycles):
-        Trigger.__init__(self)
-        self.cbhdl = None
-        self.signal = signal
+        Edge.__init__(self, signal)
         self.num_cycles = num_cycles
 
     def prime(self, callback):
@@ -285,4 +273,5 @@ class Join(Trigger):
         self.log.debug("Primed on %s" % self._coroutine.__name__)
 
     def __str__(self):
+        self.signal = signal
         return self.__class__.__name__ + "(%s)" % self._coroutine.__name__
