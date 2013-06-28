@@ -94,7 +94,13 @@ class Edge(Trigger):
         self.signal = signal
 
     def prime(self, callback):
+        """Register notification of a value change via a callback"""
         self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, self)
+
+    def unprime(self):
+        """Unregister a prior registered value change callback"""
+        simulator.deregister_callback(self.cbhdl)
+        Trigger.unprime(self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -143,7 +149,7 @@ class NextTimeStep(Trigger):
     def __str__(self):
         return self.__class__.__name__ + "(nexttimestep)"
 
-class RisingEdge(Trigger):
+class RisingEdge(Edge):
     """
     Execution will resume when a rising edge occurs on the provided signal
     """
@@ -166,7 +172,7 @@ class RisingEdge(Trigger):
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
 
-class ClockCycles(Trigger):
+class ClockCycles(Edge):
     """
     Execution will resume after N rising edges
     """
