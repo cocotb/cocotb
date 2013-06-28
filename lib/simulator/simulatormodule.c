@@ -125,6 +125,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
     return Py_BuildValue("s", "OK!");
 }
 
+
 // Register a callback for read only state of sim
 // First argument is the function to call
 // Remaining arguments are keyword arguments to be passed to the callback
@@ -186,6 +187,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     return rv;
 }
 
+
 static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 {
     FENTER
@@ -243,6 +245,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 
     return rv;
 }
+
 
 static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 {
@@ -368,6 +371,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     return rv;
 }
 
+
 // Register signal change callback
 // First argument should be the signal handle
 // Second argument is the function to call
@@ -439,7 +443,6 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 }
 
 
-
 static PyObject *iterate_signals(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
@@ -452,7 +455,6 @@ static PyObject *iterate_signals(PyObject *self, PyObject *args)
 
     return Py_BuildValue("l", result);
 }
-
 
 
 static PyObject *next(PyObject *self, PyObject *args)
@@ -475,8 +477,6 @@ static PyObject *next(PyObject *self, PyObject *args)
 }
 
 
-
-
 static PyObject *get_signal_val(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
@@ -492,6 +492,7 @@ static PyObject *get_signal_val(PyObject *self, PyObject *args)
 
     return retstr;
 }
+
 
 static PyObject *set_signal_val(PyObject *self, PyObject *args)
 {
@@ -533,6 +534,7 @@ static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
     return Py_BuildValue("l", result);
 }
 
+
 static PyObject *get_name_string(PyObject *self, PyObject *args)
 {
     char *result;
@@ -549,6 +551,7 @@ static PyObject *get_name_string(PyObject *self, PyObject *args)
     return retstr;
 }
 
+
 static PyObject *get_type_string(PyObject *self, PyObject *args)
 {
     char *result;
@@ -564,6 +567,7 @@ static PyObject *get_type_string(PyObject *self, PyObject *args)
 
     return retstr;
 }
+
 
 // Returns a high, low tuple of simulator time
 // Note we can never log from this function since the logging mechanism calls this to annotate
@@ -582,11 +586,21 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
     return pTuple;
 }
 
+
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
     gpi_sim_end();
     return Py_BuildValue("s", "OK!");    
 }
+
+
+static PyObject *deregister_callback(PyObject *self, PyObject *args)
+{
+    FENTER
+    FEXIT
+    return Py_BuildValue("s", "OK!");
+}
+
 
 static PyObject *create_clock(PyObject *self, PyObject *args)
 {
@@ -619,6 +633,7 @@ static PyObject *create_clock(PyObject *self, PyObject *args)
     PyGILState_Release(gstate);
     return rv;
 }
+
 
 static PyObject *stop_clock(PyObject *self, PyObject *args)
 {

@@ -73,7 +73,13 @@ class Timer(Trigger):
         self.cbhdl = None
 
     def prime(self, callback):
+        """Register for a timed callback"""
         self.cbhdl = simulator.register_timed_callback(self.time_ps, callback, self)
+
+    def unprime(self):
+        """Unregister a prior registered timed callback"""
+        simulator.deregister_callback(self.cbhdl)
+        Trigger.unprime(self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%dps)" % self.time_ps
