@@ -35,8 +35,28 @@
 #include <embed.h>
 #include <vpi_user.h>
 
-static gpi_cb_hdl sim_init_cb;
-static gpi_cb_hdl sim_finish_cb;
+#define gpi_container_of(_address, _type, _member)  \
+        ((_type *)((uintptr_t)(_address) -      \
+         (uintptr_t)(&((_type *)0)->_member)))
+
+static gpi_sim_hdl sim_init_cb;
+static gpi_sim_hdl sim_finish_cb;
+
+void gpi_free_handle(gpi_sim_hdl gpi_hdl)
+{
+    free(gpi_hdl);
+}
+
+static gpi_sim_hdl gpi_alloc_handle()
+{
+    gpi_sim_hdl new_hdl = malloc(sizeof(*new_hdl));
+    if (!new_hdl) {
+        LOG_CRITICAL("VPI: Could not allocate handle\n");
+        exit(1);
+    }
+
+    return new_hdl;
+}
 
 // Handle related functions
 gpi_sim_hdl gpi_get_root_handle()
@@ -44,6 +64,7 @@ gpi_sim_hdl gpi_get_root_handle()
     FENTER
     vpiHandle root;
     vpiHandle iterator;
+    gpi_sim_hdl rv;
 
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
@@ -53,14 +74,19 @@ gpi_sim_hdl gpi_get_root_handle()
     if (root != NULL && !vpi_free_object(iterator)) {
         LOG_WARN("VPI: Attempting to free root iterator failed!");
     }
+
+    rv = gpi_alloc_handle();
+    rv->sim_hdl = root;
+
     FEXIT
-    return (gpi_sim_hdl)root;
+    return rv;
 }
 
 gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
 {
     FENTER
     gpi_sim_hdl rv;
+    vpiHandle obj;
     int len;
     char *buff;
     if (name)
@@ -73,8 +99,12 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     }
 
     strncpy(buff, name, len);
-    rv = (gpi_sim_hdl)vpi_handle_by_name(buff, (vpiHandle)parent);
+    obj = vpi_handle_by_name(buff, (vpiHandle)(parent->sim_hdl));
     free(buff);
+
+    rv = gpi_alloc_handle();
+    rv->sim_hdl = obj;
+
     FEXIT
     return rv;
 }
@@ -87,18 +117,24 @@ gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base) {
 
     vpiHandle iterator;
 
-    iterator = vpi_iterate(vpiNet, (vpiHandle)base);
+    iterator = vpi_iterate(vpiNet, (vpiHandle)(base->sim_hdl));
 
     FEXIT
     return (gpi_iterator_hdl)iterator;
 }
 
 // Returns NULL when there are no more objects
-gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator) {
+gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
+{
     FENTER
     vpiHandle result;
+    gpi_sim_hdl rv = gpi_alloc_handle();
 
-    result = vpi_scan((vpiHandle) iterator);
+    rv->sim_hdl = vpi_scan((vpiHandle) iterator);
+    if (!rv->sim_hdl) {
+        gpi_free_handle(rv);
+        rv = NULL;
+    }
 
 //      FIXME do we need to free the iterator handle?
 //      Icarus complains about this
@@ -107,7 +143,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator) {
 //     }
     
     FEXIT
-    return (gpi_sim_hdl)result;
+    return rv;
 }
 
 // double gpi_get_sim_time()
@@ -134,7 +170,7 @@ void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
      *      may be NULL, in this case. This is like a blocking assignment
      *      in behavioral code.
      */
-    vpi_put_value((vpiHandle)gpi_hdl, value_p, NULL, vpiNoDelay);
+    vpi_put_value((vpiHandle)(gpi_hdl->sim_hdl), value_p, NULL, vpiNoDelay);
 
     FEXIT
 }
@@ -165,7 +201,7 @@ void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
      *      may be NULL, in this case. This is like a blocking assignment
      *      in behavioral code.
      */
-    vpi_put_value((vpiHandle)gpi_hdl, value_p, NULL, vpiNoDelay);
+    vpi_put_value((vpiHandle)(gpi_hdl->sim_hdl), value_p, NULL, vpiNoDelay);
 
     free(buff);
     FEXIT
@@ -202,7 +238,7 @@ char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
     s_vpi_value value_s = {vpiBinStrVal};
     p_vpi_value value_p = &value_s;
 
-    vpi_get_value((vpiHandle)gpi_hdl, value_p);
+    vpi_get_value((vpiHandle)(gpi_hdl->sim_hdl), value_p);
 
     char *result = gpi_copy_name(value_p->value.str);
     FEXIT
@@ -212,7 +248,7 @@ char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
 char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl)
 {
     FENTER
-    const char *name = vpi_get_str(vpiFullName, (vpiHandle)gpi_hdl);
+    const char *name = vpi_get_str(vpiFullName, (vpiHandle)(gpi_hdl->sim_hdl));
     char *result = gpi_copy_name(name);
     FEXIT
     return result;
@@ -221,7 +257,7 @@ char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl)
 char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl)
 {
     FENTER
-    const char *name = vpi_get_str(vpiType, (vpiHandle)gpi_hdl);
+    const char *name = vpi_get_str(vpiType, (vpiHandle)(gpi_hdl->sim_hdl));
     char *result = gpi_copy_name(name);
     FEXIT
     return result;
@@ -238,7 +274,26 @@ typedef struct t_vpi_cb_user_data {
     int (*gpi_cleanup)(struct t_vpi_cb_user_data *);
     vpiHandle cb_hdl;
     s_vpi_value  cb_value;
+    gpi_sim_hdl_t gpi_hdl;
 } s_vpi_cb_user_data, *p_vpi_cb_user_data;
+
+// Ask the attached simulator to return the user pointer
+// that was given when the callback was registered
+// Useful for operating on the data before the callback
+// has fired since we only have the handle in hand
+static p_vpi_cb_user_data gpi_get_user_data(gpi_sim_hdl hdl)
+{
+     p_vpi_cb_user_data user_data;
+     s_cb_data cbdata;
+     FENTER
+
+     vpi_get_cb_info((vpiHandle)hdl, &cbdata);
+
+     user_data = (p_vpi_cb_user_data)cbdata.user_data;
+
+     FEXIT
+     return user_data;
+}
 
 
 PLI_INT32 handle_vpi_callback(p_cb_data cb_data)
@@ -259,15 +314,26 @@ PLI_INT32 handle_vpi_callback(p_cb_data cb_data)
     return rv;
 };
 
-// remove a callback without freeing the user data
-// (called by callback to clean up)
-// vpi_get_cb_info could be used to free user data if
-// the callback hasn't fired...
-int gpi_deregister_callback(gpi_cb_hdl gpi_hdl)
+// Deregisters a callback and removes the user
+// data, if we do not remove the user data
+// then all references to this are lost
+// Only needs to be called before a callback
+// fires, see gpr_free_on_time and gpi_free_recurring
+// for way to handle this during callback execution
+int gpi_deregister_callback(gpi_sim_hdl gpi_hdl)
 {
+    p_vpi_cb_user_data user_data;
     FENTER
-    // This destroys them memory allocated for the handle
-    PLI_INT32 rc = vpi_remove_cb((vpiHandle)gpi_hdl);
+    // We should be able to user gpi_get_user_data
+    // but this is not implemented in ICARUS
+    // and gets upset on VCS. So instead we
+    // do some pointer magic.
+
+    user_data = gpi_container_of(gpi_hdl, s_vpi_cb_user_data, gpi_hdl);
+    PLI_INT32 rc = vpi_remove_cb(user_data->cb_hdl);
+
+    free(user_data);
+
     FEXIT
     return rc;
 }
@@ -310,7 +376,7 @@ static int gpi_free_recurring(p_vpi_cb_user_data user_data)
     return rc;
 }
 
-gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl)
+gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl)
 {
     FENTER
     s_cb_data cb_data_s;
@@ -334,7 +400,7 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *), void 
 
     cb_data_s.reason    = cbValueChange;
     cb_data_s.cb_rtn    = handle_vpi_callback;
-    cb_data_s.obj       = (vpiHandle)gpi_hdl;
+    cb_data_s.obj       = (vpiHandle)(gpi_hdl->sim_hdl);
     cb_data_s.time      = &vpi_time_s;
     cb_data_s.value     = &user_data->cb_value;
     cb_data_s.user_data = (char *)user_data;
@@ -342,11 +408,11 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(void *), void 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
     FEXIT
 
-    return (gpi_cb_hdl)user_data->cb_hdl;
+    return &user_data->gpi_hdl;
 }
 
 
-gpi_cb_hdl gpi_register_readonly_callback(int (*gpi_function)(void *), void *gpi_cb_data)
+gpi_sim_hdl gpi_register_readonly_callback(int (*gpi_function)(void *), void *gpi_cb_data)
 {
     FENTER
     s_cb_data cb_data_s;
@@ -377,10 +443,10 @@ gpi_cb_hdl gpi_register_readonly_callback(int (*gpi_function)(void *), void *gpi
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
 
     FEXIT
-    return (gpi_cb_hdl)user_data->cb_hdl;
+    return &user_data->gpi_hdl;
 }
 
-gpi_cb_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gpi_cb_data)
+gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gpi_cb_data)
 {
     FENTER
     s_cb_data cb_data_s;
@@ -409,12 +475,11 @@ gpi_cb_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *), void *gp
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
-
     FEXIT
-    return (gpi_cb_hdl)user_data->cb_hdl;
+    return &user_data->gpi_hdl;
 }
 
-gpi_cb_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gpi_cb_data)
+gpi_sim_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gpi_cb_data)
 {
     FENTER
     s_cb_data cb_data_s;
@@ -445,10 +510,10 @@ gpi_cb_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gpi
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
 
     FEXIT
-    return (gpi_cb_hdl)user_data->cb_hdl;
+    return &user_data->gpi_hdl;
 }
 
-gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps)
+gpi_sim_hdl gpi_register_timed_callback(int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps)
 {
     FENTER
     s_cb_data cb_data_s;
@@ -479,10 +544,10 @@ gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(void *), void *gpi_cb
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
     FEXIT
 
-    return (gpi_cb_hdl)user_data->cb_hdl;
+    return &user_data->gpi_hdl;
 }
 
-gpi_cb_hdl gpi_register_sim_start_callback(int (*gpi_function)(void *), void *gpi_cb_data)
+gpi_sim_hdl gpi_register_sim_start_callback(int (*gpi_function)(void *), void *gpi_cb_data)
 {
     FENTER
 
@@ -508,11 +573,11 @@ gpi_cb_hdl gpi_register_sim_start_callback(int (*gpi_function)(void *), void *gp
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
     FEXIT
-    return (gpi_cb_hdl)user_data->cb_hdl;
+    return &user_data->gpi_hdl;
 
 }
 
-gpi_cb_hdl gpi_register_sim_end_callback(int (*gpi_function)(void *), void *gpi_cb_data)
+gpi_sim_hdl gpi_register_sim_end_callback(int (*gpi_function)(void *), void *gpi_cb_data)
 {
     FENTER
 
@@ -538,7 +603,7 @@ gpi_cb_hdl gpi_register_sim_end_callback(int (*gpi_function)(void *), void *gpi_
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
     FEXIT
-    return (gpi_cb_hdl)user_data->cb_hdl;
+    return &user_data->gpi_hdl;
 
 }
 
@@ -551,8 +616,8 @@ int gpi_clock_handler(void *clock)
 
     hdl->value = !hdl->value;
     gpi_set_signal_value_int(hdl->sim_hdl, hdl->value);
-    gpi_cb_hdl edge = gpi_register_timed_callback(gpi_clock_handler, hdl, hdl->period);
-    hdl->cb_hdl = edge;
+    gpi_sim_hdl edge = gpi_register_timed_callback(gpi_clock_handler, hdl, hdl->period);
+    hdl->sim_hdl = edge;
     hdl->curr_cycle++;
 }
 
@@ -572,8 +637,8 @@ gpi_clock_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int c
     hdl->curr_cycle = 0;
 
     gpi_set_signal_value_int(hdl->sim_hdl, hdl->value);
-    gpi_cb_hdl edge = gpi_register_timed_callback(gpi_clock_handler, hdl, hdl->period);
-    hdl->cb_hdl = edge;
+    gpi_sim_hdl edge = gpi_register_timed_callback(gpi_clock_handler, hdl, hdl->period);
+    hdl->sim_hdl = edge;
 
     FEXIT
     return hdl;

@@ -136,7 +136,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     PyObject *fArgs;
     PyObject *function;
     uint64_t time_ps;
-    gpi_cb_hdl cb_hdl;
+    gpi_sim_hdl cb_hdl;
     gpi_sim_hdl sig_hdl;
     char *result;
     PyObject *retstr;
@@ -195,7 +195,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     PyObject *fArgs;
     PyObject *function;
     uint64_t time_ps;
-    gpi_cb_hdl cb_hdl;
+    gpi_sim_hdl cb_hdl;
     gpi_sim_hdl sig_hdl;
     char *result;
     PyObject *retstr;
@@ -254,7 +254,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     PyObject *fArgs;
     PyObject *function;
     uint64_t time_ps;
-    gpi_cb_hdl cb_hdl;
+    gpi_sim_hdl cb_hdl;
     gpi_sim_hdl sig_hdl;
     char *result;
     PyObject *retstr;
@@ -317,7 +317,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     PyObject *fArgs;
     PyObject *function;
     uint64_t time_ps;
-    gpi_cb_hdl cb_hdl;
+    gpi_sim_hdl cb_hdl;
 
     p_callback_data callback_data_p;
 
@@ -383,7 +383,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     PyObject *fArgs;
     PyObject *function;
     uint64_t time_ps;
-    gpi_cb_hdl cb_hdl;
+    gpi_sim_hdl cb_hdl;
     gpi_sim_hdl sig_hdl;
     char *result;
     PyObject *retstr;
@@ -596,7 +596,18 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
 
 static PyObject *deregister_callback(PyObject *self, PyObject *args)
 {
+    gpi_sim_hdl hdl;
+    PyObject *pSihHdl;
+    int ret;
+
     FENTER
+
+    pSihHdl = PyTuple_GetItem(args, 0);
+    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
+
+    if (!gpi_deregister_callback(hdl))
+        return NULL;
+
     FEXIT
     return Py_BuildValue("s", "OK!");
 }

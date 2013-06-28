@@ -79,9 +79,12 @@ we have to create a process with the signal on the sensitivity list to imitate a
 EXTERN_C_START
 
 // Define a type for our simulation handle.
-typedef struct __gpi_sim_hdl *gpi_sim_hdl;
+typedef struct gpi_sim_hdl_s {
+    void *sim_hdl;
+} gpi_sim_hdl_t, *gpi_sim_hdl;
+
 // Define a callback handle type for registered callbacks.
-typedef struct __gpi_cb_hdl *gpi_cb_hdl;
+//typedef struct __gpi_sim_hdl *gpi_sim_hdl;
 // Define a handle type for iterators
 typedef struct __gpi_iterator_hdl *gpi_iterator_hdl;
 // Define a type of a clock object
@@ -92,7 +95,6 @@ typedef struct gpi_clock_s {
     unsigned int curr_cycle;
     bool exit;
     gpi_sim_hdl sim_hdl;
-    gpi_cb_hdl cb_hdl;
 } gpi_clock_t;
 
 typedef gpi_clock_t *gpi_clock_hdl;
@@ -138,16 +140,16 @@ char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
 void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
 
-// The callback registering functions all return a gpi_cb_hdl;
-gpi_cb_hdl gpi_register_sim_start_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_cb_hdl gpi_register_sim_end_callback                (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_cb_hdl gpi_register_timed_callback                  (int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
-gpi_cb_hdl gpi_register_value_change_callback           (int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
-gpi_cb_hdl gpi_register_readonly_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_cb_hdl gpi_register_nexttime_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_cb_hdl gpi_register_readwrite_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
+// The callback registering functions all return a gpi_sim_hdl;
+gpi_sim_hdl gpi_register_sim_start_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_sim_end_callback                (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_timed_callback                  (int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
+gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
+gpi_sim_hdl gpi_register_readonly_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_nexttime_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_readwrite_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
 
-int gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
+int gpi_deregister_callback(gpi_sim_hdl gpi_hdl);
 gpi_clock_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int cycles);
 void gpi_clock_unregister(gpi_clock_hdl clock);
 

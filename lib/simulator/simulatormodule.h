@@ -45,7 +45,7 @@ typedef struct t_callback_data {
     PyObject *function;                 // Fuction to call when the callback fires
     PyObject *args;                     // The arguments to call the function with
     PyObject *kwargs;                   // Keyword arguments to call the function with
-    gpi_cb_hdl cb_hdl;
+    gpi_sim_hdl cb_hdl;
 } s_callback_data, *p_callback_data;
 
 static PyObject *log_msg(PyObject *self, PyObject *args);
