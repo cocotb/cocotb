@@ -30,6 +30,7 @@ import logging
 import simulator
 
 
+
 class TriggerException(Exception):
     pass
 
@@ -44,18 +45,15 @@ class Trigger(object):
 	if self.peers:
            self.peers = None
             
-
     def addpeers(self, peers):
         """Store any relate triggers"""
-        self.peers = peers
+        for elem in peers:
+           if elem is not self:
+               self.peers.append(elem)
 
     def clearpeers(self):
         """Call _clearpeers on each trigger that is not me"""
-        if self.peers:
-      	    while self.peers:
-                trigger = self.peers.pop(0)
-	        if trigger is not self:
-                    trigger.unprime()
+        return self.peers
 
     def __del__(self):
         """Ensure if a trigger drops out of scope we remove any pending callbacks"""
@@ -78,8 +76,10 @@ class Timer(Trigger):
 
     def unprime(self):
         """Unregister a prior registered timed callback"""
-        simulator.deregister_callback(self.cbhdl)
         Trigger.unprime(self)
+        if self.cbhdl is not None:
+            simulator.deregister_callback(self.cbhdl)
+            self.cbhdl = None
 
     def __str__(self):
         return self.__class__.__name__ + "(%dps)" % self.time_ps
@@ -99,8 +99,10 @@ class Edge(Trigger):
 
     def unprime(self):
         """Unregister a prior registered value change callback"""
-        simulator.deregister_callback(self.cbhdl)
         Trigger.unprime(self)
+        if self.cbhdl is not None:
+            simulator.deregister_callback(self.cbhdl)
+            self.cbhdl = None
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -131,6 +133,13 @@ class ReadWrite(Trigger):
 
     def prime(self, callback):
         self.cbhdl = simulator.register_rwsynch_callback(callback, self)
+
+    def unprime(self):
+        """Unregister a prior registered timed callback"""
+        if self.cbhdl is not None:
+            simulator.deregister_callback(self.cbhdl)
+            self.cbhdl = None
+        Trigger.unprime(self)
 
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"

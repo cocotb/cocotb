@@ -73,11 +73,14 @@ class Scheduler(object):
 
         while self._scheduling:
             coroutine = self._scheduling.pop(0)
-            trigger.clearpeers()
+            del_list = trigger.clearpeers()
+            while del_list:
+                self.remove(del_list.pop(0))
             self.schedule(coroutine, trigger=trigger)
             self.log.debug("Scheduled coroutine %s" % (coroutine.__name__))
 
-        self.log.debug("Completed scheduling loop, still waiting on:")
+        if self.waiting:
+            self.log.debug("Completed scheduling loop, still waiting on:")
         for trig, routines in self.waiting.items():
             self.log.debug("\t%s: [%s]" % (str(trig).ljust(30), " ".join([routine.__name__ for routine in routines])))
 
@@ -110,6 +113,11 @@ class Scheduler(object):
         self.log.debug("Queuing new coroutine %s" % coroutine.__name__)
         self.schedule(coroutine)
         return coroutine
+
+    def remove(self, trigger):
+        """Remove a trigger from the list of pending coroutines"""
+        self.waiting.pop(trigger)
+        trigger.unprime()
 
 
     def schedule(self, coroutine, trigger=None):
