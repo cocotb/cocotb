@@ -62,3 +62,12 @@ def test_function_not_a_coroutine_fork(dut):
     yield Timer(500)
     cocotb.fork(function_not_a_coroutine())
     yield Timer(500)
+
+@cocotb.test(expect_fail=False)
+def test_yield_list(dut):
+    """Example of yeilding on a list of triggers"""
+    yield [Timer(500), Timer(1000)]
+
+@cocotb.test(expect_fail=True)
+def test_duplicate_yield(dut):
+    """A trigger can not be yielded on twice"""

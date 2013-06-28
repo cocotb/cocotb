@@ -37,10 +37,25 @@ class Trigger(object):
     """Base class to derive from"""
     def __init__(self):
         self.log = logging.getLogger("cocotb.%s.0x%x" % (self.__class__.__name__, id(self)))
+        self.peers = []
 
     def unprime(self):
         """Remove any pending callbacks if necessary"""
-        pass
+	if self.peers:
+           self.peers = None
+            
+
+    def addpeers(self, peers):
+        """Store any relate triggers"""
+        self.peers = peers
+
+    def clearpeers(self):
+        """Call _clearpeers on each trigger that is not me"""
+        if self.peers:
+      	    while self.peers:
+                trigger = self.peers.pop(0)
+	        if trigger is not self:
+                    trigger.unprime()
 
     def __del__(self):
         """Ensure if a trigger drops out of scope we remove any pending callbacks"""

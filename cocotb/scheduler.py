@@ -73,6 +73,7 @@ class Scheduler(object):
 
         while self._scheduling:
             coroutine = self._scheduling.pop(0)
+            trigger.clearpeers()
             self.schedule(coroutine, trigger=trigger)
             self.log.debug("Scheduled coroutine %s" % (coroutine.__name__))
 
@@ -155,6 +156,7 @@ class Scheduler(object):
             self.schedule(result)
         elif isinstance(result, list):
             for trigger in result:
+                trigger.addpeers(result)
                 self._add_trigger(trigger, coroutine)
         else:
             self.log.warning("Unable to schedule coroutine since it's returning stuff %s" % repr(result))
