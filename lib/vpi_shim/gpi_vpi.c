@@ -42,6 +42,32 @@
 static gpi_sim_hdl sim_init_cb;
 static gpi_sim_hdl sim_finish_cb;
 
+// callback user data used for VPI callbacks
+// (mostly just a thin wrapper around the gpi_callback)
+typedef struct t_vpi_cb_user_data {
+    void *gpi_cb_data;
+    int (*gpi_function)(void *);
+    int (*gpi_cleanup)(struct t_vpi_cb_user_data *);
+    vpiHandle cb_hdl;
+    s_vpi_value  cb_value;
+    gpi_sim_hdl_t gpi_hdl;
+    bool called;
+} s_vpi_cb_user_data, *p_vpi_cb_user_data;
+
+// Define a type of a clock object
+typedef struct gpi_clock_s {
+    int period;
+    int value;
+    unsigned int max_cycles;
+    unsigned int curr_cycle;
+    bool exit;
+    gpi_sim_hdl_t gpi_hdl;  /* Handle to pass back to called */
+    gpi_sim_hdl clk_hdl;    /* Handle for signal to operate on */
+    gpi_sim_hdl cb_hdl;     /* Handle for the current pending callback */
+} gpi_clock_t;
+
+typedef gpi_clock_t *gpi_clock_hdl;
+
 void gpi_free_handle(gpi_sim_hdl gpi_hdl)
 {
     free(gpi_hdl);
@@ -265,18 +291,6 @@ char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl)
 
 
 // Callback related functions
-
-// callback user data used for VPI callbacks
-// (mostly just a thin wrapper around the gpi_callback)
-typedef struct t_vpi_cb_user_data {
-    void *gpi_cb_data;
-    int (*gpi_function)(void *);
-    int (*gpi_cleanup)(struct t_vpi_cb_user_data *);
-    vpiHandle cb_hdl;
-    s_vpi_value  cb_value;
-    gpi_sim_hdl_t gpi_hdl;
-    bool called;
-} s_vpi_cb_user_data, *p_vpi_cb_user_data;
 
 // Ask the attached simulator to return the user pointer
 // that was given when the callback was registered
@@ -626,18 +640,25 @@ gpi_sim_hdl gpi_register_sim_end_callback(int (*gpi_function)(void *), void *gpi
 int gpi_clock_handler(void *clock)
 {
     gpi_clock_hdl hdl = (gpi_clock_hdl)clock;
+    gpi_sim_hdl old_hdl;
 
     if (hdl->exit || (hdl->max_cycles == hdl->curr_cycle))
         return;
 
+    /* Unregister/free the last callback that just fired */
+    old_hdl = hdl->cb_hdl;
+
+    printf("Clock triggered %d->%d\n", hdl->value, !hdl->value);
+
     hdl->value = !hdl->value;
-    gpi_set_signal_value_int(hdl->sim_hdl, hdl->value);
-    gpi_sim_hdl edge = gpi_register_timed_callback(gpi_clock_handler, hdl, hdl->period);
-    hdl->sim_hdl = edge;
+    gpi_set_signal_value_int(hdl->clk_hdl, hdl->value);
+    hdl->cb_hdl = gpi_register_timed_callback(gpi_clock_handler, hdl, hdl->period);
     hdl->curr_cycle++;
+
+    gpi_deregister_callback(old_hdl);
 }
 
-gpi_clock_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int cycles)
+gpi_sim_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int cycles)
 {
     FENTER
 
@@ -647,22 +668,22 @@ gpi_clock_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int c
 
     hdl->period = period;
     hdl->value = 0;
-    hdl->sim_hdl = sim_hdl;
+    hdl->clk_hdl = sim_hdl;
     hdl->exit = false;
     hdl->max_cycles = cycles;
     hdl->curr_cycle = 0;
 
-    gpi_set_signal_value_int(hdl->sim_hdl, hdl->value);
-    gpi_sim_hdl edge = gpi_register_timed_callback(gpi_clock_handler, hdl, hdl->period);
-    hdl->sim_hdl = edge;
+    gpi_set_signal_value_int(hdl->clk_hdl, hdl->value);
+    hdl->cb_hdl = gpi_register_timed_callback(gpi_clock_handler, hdl, hdl->period);
 
     FEXIT
-    return hdl;
+    return &hdl->gpi_hdl;
 }
 
-void gpi_clock_unregister(gpi_clock_hdl clock)
+void gpi_clock_unregister(gpi_sim_hdl clock)
 {
-    clock->exit = true;
+    gpi_clock_hdl hdl = gpi_container_of(clock, gpi_clock_t, gpi_hdl);
+    hdl->exit = true;
 }
 
 void register_embed(void)

@@ -135,11 +135,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    uint64_t time_ps;
-    gpi_sim_hdl cb_hdl;
-    gpi_sim_hdl sig_hdl;
     char *result;
-    PyObject *retstr;
 
     PyGILState_STATE gstate;
     gstate = PyGILState_Ensure();
@@ -194,11 +190,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    uint64_t time_ps;
-    gpi_sim_hdl cb_hdl;
-    gpi_sim_hdl sig_hdl;
     char *result;
-    PyObject *retstr;
 
     PyGILState_STATE gstate;
     gstate = PyGILState_Ensure();
@@ -254,8 +246,6 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     PyObject *fArgs;
     PyObject *function;
     uint64_t time_ps;
-    gpi_sim_hdl cb_hdl;
-    gpi_sim_hdl sig_hdl;
     char *result;
     PyObject *retstr;
 
@@ -317,7 +307,6 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     PyObject *fArgs;
     PyObject *function;
     uint64_t time_ps;
-    gpi_sim_hdl cb_hdl;
 
     p_callback_data callback_data_p;
 
@@ -383,7 +372,6 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     PyObject *fArgs;
     PyObject *function;
     uint64_t time_ps;
-    gpi_sim_hdl cb_hdl;
     gpi_sim_hdl sig_hdl;
     char *result;
     PyObject *retstr;
@@ -638,7 +626,7 @@ static PyObject *create_clock(PyObject *self, PyObject *args)
     PyObject *pCycles = PyTuple_GetItem(args, 2);
     mcycles = (unsigned int)PyLong_AsUnsignedLong(pCycles);
 
-    gpi_clock_hdl clk_hdl = gpi_clock_register(hdl, period, mcycles);
+    gpi_sim_hdl clk_hdl = gpi_clock_register(hdl, period, mcycles);
     PyObject *rv = Py_BuildValue("l", clk_hdl);
 
     PyGILState_Release(gstate);
@@ -648,7 +636,7 @@ static PyObject *create_clock(PyObject *self, PyObject *args)
 
 static PyObject *stop_clock(PyObject *self, PyObject *args)
 {
-    gpi_clock_hdl clk_hdl;
+    gpi_sim_hdl clk_hdl;
 
     if (!PyArg_ParseTuple(args, "l", &clk_hdl))
        return NULL;

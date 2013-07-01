@@ -83,22 +83,8 @@ typedef struct gpi_sim_hdl_s {
     void *sim_hdl;
 } gpi_sim_hdl_t, *gpi_sim_hdl;
 
-// Define a callback handle type for registered callbacks.
-//typedef struct __gpi_sim_hdl *gpi_sim_hdl;
 // Define a handle type for iterators
 typedef struct __gpi_iterator_hdl *gpi_iterator_hdl;
-// Define a type of a clock object
-typedef struct gpi_clock_s {
-    int period;
-    int value;
-    unsigned int max_cycles;
-    unsigned int curr_cycle;
-    bool exit;
-    gpi_sim_hdl sim_hdl;
-} gpi_clock_t;
-
-typedef gpi_clock_t *gpi_clock_hdl;
-
 
 // Functions for controlling/querying the simulation state
 
@@ -150,8 +136,8 @@ gpi_sim_hdl gpi_register_nexttime_callback               (int (*gpi_function)(vo
 gpi_sim_hdl gpi_register_readwrite_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
 
 int gpi_deregister_callback(gpi_sim_hdl gpi_hdl);
-gpi_clock_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int cycles);
-void gpi_clock_unregister(gpi_clock_hdl clock);
+gpi_sim_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int cycles);
+void gpi_clock_unregister(gpi_sim_hdl clock);
 
 EXTERN_C_END
 
