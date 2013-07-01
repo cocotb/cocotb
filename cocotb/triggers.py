@@ -39,6 +39,7 @@ class Trigger(object):
     def __init__(self):
         self.log = logging.getLogger("cocotb.%s.0x%x" % (self.__class__.__name__, id(self)))
         self.peers = []
+        self.signal = None
 
     def unprime(self):
         """Remove any pending callbacks if necessary"""
@@ -273,5 +274,4 @@ class Join(Trigger):
         self.log.debug("Primed on %s" % self._coroutine.__name__)
 
     def __str__(self):
-        self.signal = signal
         return self.__class__.__name__ + "(%s)" % self._coroutine.__name__

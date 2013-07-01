@@ -346,7 +346,6 @@ int gpi_deregister_callback(gpi_sim_hdl gpi_hdl)
 static int gpi_free_one_time(p_vpi_cb_user_data user_data)
 {
     FENTER
-    PLI_INT32 rc;
     vpiHandle cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
         LOG_ERROR("VPI: %s passed a NULL pointer\n", __func__);
@@ -355,13 +354,16 @@ static int gpi_free_one_time(p_vpi_cb_user_data user_data)
 
     // If the callback has not been called we also need to call
     // remove as well
-    if (!user_data->called)
+    
+    if (!user_data->called) {
         vpi_remove_cb(cb_hdl);
+    } else {
+        vpi_free_object(cb_hdl);
+    }
 
-    rc = vpi_free_object(cb_hdl);
     free(user_data);
     FEXIT
-    return rc;
+    return 1;
 }
 
 // Call when the handle relates to recurring callback

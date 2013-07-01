@@ -78,7 +78,7 @@ def test_yield_list(dut):
     """Example of yeilding on a list of triggers"""
     clock = dut.clk;
     cocotb.scheduler.add(clock_gen(clock))
-    yield [Timer(5000), Timer(6000)]
+    yield [Timer(1000), Timer(2000)]
 
     yield Timer(10000)
 
