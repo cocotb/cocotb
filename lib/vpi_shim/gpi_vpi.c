@@ -52,6 +52,7 @@ typedef struct t_vpi_cb_user_data {
     s_vpi_value  cb_value;
     gpi_sim_hdl_t gpi_hdl;
     bool called;
+    bool cleared;
 } s_vpi_cb_user_data, *p_vpi_cb_user_data;
 
 // Define a type of a clock object
@@ -319,23 +320,30 @@ PLI_INT32 handle_vpi_callback(p_cb_data cb_data)
     p_vpi_cb_user_data user_data;
     user_data = (p_vpi_cb_user_data)cb_data->user_data;
 
+
     user_data->called = true;
     rv = user_data->gpi_function(user_data->gpi_cb_data);
 
-    // We delay freeing until the top level owner
-    // calls gpi_deregister_callback
-    // this gives an implicit serialisation
+    // We call into deregister to remove from the connected
+    // simulator, the freeing on data will not be done
+    // until there is not reference left though
+
+    gpi_deregister_callback(&user_data->gpi_hdl);
 
     FEXIT
     return rv;
 };
 
-// Deregisters a callback and removes the user
-// data, if we do not remove the user data
-// then all references to this are lost
-// Only needs to be called before a callback
-// fires, see gpr_free_on_time and gpi_free_recurring
-// for way to handle this during callback execution
+// Cleaing up is a bit complex
+// 1. We need to remove the callback and
+// it's associated handle internally so that
+// there is a not a duplicate trigger event
+// 2. The user data needs to stay around until
+// thre are no more handles to it.
+// Thus this function calls into the sim
+// to close down if able to. Or if there
+// is no internal state it closes down
+// the user data.
 int gpi_deregister_callback(gpi_sim_hdl gpi_hdl)
 {
     p_vpi_cb_user_data user_data;
@@ -347,8 +355,13 @@ int gpi_deregister_callback(gpi_sim_hdl gpi_hdl)
 
     user_data = gpi_container_of(gpi_hdl, s_vpi_cb_user_data, gpi_hdl);
 
-    if (user_data->gpi_cleanup)
+    if (user_data->cleared) {
+        memset(user_data, 0x0, sizeof(*user_data));
+        free(user_data);
+    } else if (user_data->gpi_cleanup) {
         user_data->gpi_cleanup(user_data);
+        user_data->cleared = true;
+    }
 
     FEXIT
     return 1;
@@ -360,6 +373,7 @@ int gpi_deregister_callback(gpi_sim_hdl gpi_hdl)
 static int gpi_free_one_time(p_vpi_cb_user_data user_data)
 {
     FENTER
+    int32_t rc;
     vpiHandle cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
         LOG_ERROR("VPI: %s passed a NULL pointer\n", __func__);
@@ -368,14 +382,11 @@ static int gpi_free_one_time(p_vpi_cb_user_data user_data)
 
     // If the callback has not been called we also need to call
     // remove as well
-    
-    if (!user_data->called) {
-        vpi_remove_cb(cb_hdl);
-    } else {
-        vpi_free_object(cb_hdl);
-    }
+    if (!user_data->called)
+        rc = vpi_remove_cb(cb_hdl);
+    else 
+        rc = vpi_free_object(cb_hdl);
 
-    free(user_data);
     FEXIT
     return 1;
 }
@@ -394,7 +405,6 @@ static int gpi_free_recurring(p_vpi_cb_user_data user_data)
     }
 
     rc = vpi_remove_cb(cb_hdl);
-    free(user_data);
     FEXIT
     return rc;
 }
@@ -418,6 +428,7 @@ gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(void *), void
     user_data->gpi_cleanup = gpi_free_recurring;
     user_data->cb_value.format = vpiIntVal;
     user_data->called = false;
+    user_data->cleared = false;
 
     vpi_time_s.type = vpiSuppressTime;
     vpi_value_s.format = vpiIntVal;
@@ -453,6 +464,7 @@ gpi_sim_hdl gpi_register_readonly_callback(int (*gpi_function)(void *), void *gp
     user_data->gpi_function = gpi_function;
     user_data->gpi_cleanup = gpi_free_one_time;
     user_data->called = false;
+    user_data->cleared = false;
 
     vpi_time_s.type = vpiSimTime;
     vpi_time_s.high = 0;
@@ -488,6 +500,7 @@ gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *), void *g
     user_data->gpi_function = gpi_function;
     user_data->gpi_cleanup = gpi_free_one_time;
     user_data->called = false;
+    user_data->cleared = false;
 
     vpi_time_s.type = vpiSimTime;
     vpi_time_s.high = 0;
@@ -522,6 +535,7 @@ gpi_sim_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gp
     user_data->gpi_function = gpi_function;
     user_data->gpi_cleanup = gpi_free_one_time;
     user_data->called = false;
+    user_data->cleared = false;
 
     vpi_time_s.type = vpiSimTime;
     vpi_time_s.high = 0;
@@ -535,7 +549,7 @@ gpi_sim_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gp
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
-
+  
     FEXIT
     return &user_data->gpi_hdl;
 }
@@ -557,6 +571,7 @@ gpi_sim_hdl gpi_register_timed_callback(int (*gpi_function)(void *), void *gpi_c
     user_data->gpi_function = gpi_function;
     user_data->gpi_cleanup = gpi_free_one_time;
     user_data->called = false;
+    user_data->cleared = false;
 
     vpi_time_s.type = vpiSimTime;
     vpi_time_s.high = (PLI_UINT32)(time_ps>>32);
@@ -592,6 +607,7 @@ gpi_sim_hdl gpi_register_sim_start_callback(int (*gpi_function)(void *), void *g
     user_data->gpi_function = gpi_function;
     user_data->gpi_cleanup = gpi_free_one_time;
     user_data->called = false;
+    user_data->cleared = false;
 
     cb_data_s.reason    = cbStartOfSimulation;
     cb_data_s.cb_rtn    = handle_vpi_callback;
@@ -623,6 +639,7 @@ gpi_sim_hdl gpi_register_sim_end_callback(int (*gpi_function)(void *), void *gpi
     user_data->gpi_function = gpi_function;
     user_data->gpi_cleanup = gpi_free_one_time;
     user_data->called = false;
+    user_data->cleared = false;
 
     cb_data_s.reason    = cbEndOfSimulation;
     cb_data_s.cb_rtn    = handle_vpi_callback;
@@ -647,8 +664,6 @@ int gpi_clock_handler(void *clock)
 
     /* Unregister/free the last callback that just fired */
     old_hdl = hdl->cb_hdl;
-
-    printf("Clock triggered %d->%d\n", hdl->value, !hdl->value);
 
     hdl->value = !hdl->value;
     gpi_set_signal_value_int(hdl->clk_hdl, hdl->value);
