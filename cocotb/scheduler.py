@@ -155,6 +155,7 @@ class Scheduler(object):
                 self.log.error("Test failed!")
 
             # FIXME: proper teardown
+            coroutine.write_test_output("results.xml")
             simulator.stop_simulator(self)
             return
 

@@ -38,7 +38,7 @@ from functools import wraps
 import cocotb.handle
 from cocotb.scheduler import Scheduler
 from cocotb.log import SimLogFormatter
-
+from cocotb.regression import xunit_header
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine
@@ -97,6 +97,9 @@ def _initialise_testbench(root_handle):
 
     if not module_str or not function_str:
         raise ImportError("Environment variables with test information not provided.  MODULE=\"%s\" and FUNCTION=\"%s\"" % (module_str, function_str))
+
+    with open("results.xml", 'w') as f:
+        f.write(xunit_header())
 
     testmod = my_import(module_str)
     log.info("Starting testcase %s.%s" % (testmod.__name__, function_str))
