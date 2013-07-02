@@ -27,9 +27,8 @@
 
 
 
-SMOKE_TESTS := simple \
- 	 demo \
-	 comb_seq
+SMOKE_TESTS :=  demo \
+		comb_seq
 
 .PHONY: $(SMOKE_TESTS)
 
