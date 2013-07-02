@@ -43,9 +43,9 @@ class Trigger(object):
 
     def unprime(self):
         """Remove any pending callbacks if necessary"""
-	if self.peers:
+    if self.peers:
            self.peers = None
-            
+
     def addpeers(self, peers):
         """Store any relate triggers"""
         for elem in peers:
