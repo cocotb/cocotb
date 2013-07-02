@@ -25,12 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-/*
-gpi_logging.h
-
-*/
-#ifndef __GPI_LOGGING_H
-#define __GPI_LOGGING_H
+#ifndef COCOTB_GPI_LOGGING_H_
+#define COCOTB_GPI_LOGGING_H_
 
 #ifdef __cplusplus
 # define EXTERN_C_START extern "C" {
@@ -73,4 +69,4 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
 
 EXTERN_C_END
 
-#endif // __GPI_H
+#endif /* COCOTB_GPI_LOGGING_H_ */

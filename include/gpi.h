@@ -25,9 +25,10 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-/*
-gpi.h
+#ifndef COCOTB_GPI_H_
+#define COCOTB_GPI_H_
 
+/*
 Generic Language Interface
 
 This header file defines a Generic Language Interface into any simulator.
@@ -47,9 +48,6 @@ Because of the lack of ability to register a callback on event change using the 
 we have to create a process with the signal on the sensitivity list to imitate a callback.
 
 */
-
-#ifndef __GPI_H
-#define __GPI_H
 
 #include <string.h>
 #include <stdlib.h>
@@ -141,4 +139,4 @@ void gpi_clock_unregister(gpi_sim_hdl clock);
 
 EXTERN_C_END
 
-#endif // __GPI_H
+#endif /* COCOTB_GPI_H_ */

@@ -25,9 +25,14 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#ifndef COCOTB_EMBED_H_
+#define COCOTB_EMBED_H_
+
 #include <gpi.h>
 #include <gpi_logging.h>
 
 extern void embed_init_python(void);
 extern void embed_sim_init(void);
 extern void embed_sim_end(void);
+
+#endif /* COCOTB_EMBED_H_ */
