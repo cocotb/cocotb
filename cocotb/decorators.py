@@ -171,6 +171,7 @@ class test(coroutine):
 
         """
         super(test, self).__init__(f)
+        self.log =  logging.getLogger("cocotb.test.%s" % self._func.__name__)
         def _wrapped_test(*args, **kwargs):
             super(test, self).__call__(*args, **kwargs)
             return self
@@ -188,5 +189,6 @@ class test(coroutine):
             return self._coro.send(value)
         except StopIteration:
             raise TestComplete(result="Passed")
-        except cocotb.TestFailed:
+        except cocotb.TestFailed as e:
+            self.log.error(str(e))
             raise TestComplete(result="Failed")
