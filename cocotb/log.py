@@ -39,7 +39,7 @@ _LEVEL_CHARS    = len("CRITICAL")
 _RECORD_CHARS   = 35
 _FILENAME_CHARS = 20
 _LINENO_CHARS   = 4
-_FUNCNAME_CHARS = 32
+_FUNCNAME_CHARS = 31
 
 
 class SimLogFormatter(logging.Formatter):

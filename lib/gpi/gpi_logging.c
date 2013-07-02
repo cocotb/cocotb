@@ -161,7 +161,7 @@ clog:
         fprintf(stdout, "%-8s", log_level(level));
         fprintf(stdout, "%-35s", name);
         fprintf(stdout, "%20s:", pathname);
-        fprintf(stdout, "%4ld", lineno);
+        fprintf(stdout, "%-4ld", lineno);
         fprintf(stdout, " in %-31s ", funcname);
         fprintf(stdout, "%s", msg);
         fprintf(stdout, "\n");
