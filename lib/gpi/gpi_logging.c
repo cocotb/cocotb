@@ -50,6 +50,36 @@ void set_log_filter(void *filter)
     Py_INCREF(pLogFilter);
 }
 
+// Decode the level into a string matching the Python interpretation
+struct _log_level_table {
+    long level;
+    const char *levelname;
+};
+
+static struct _log_level_table log_level_table [] = {
+    { 10,       "DEBUG"         },
+    { 20,       "INFO"          },
+    { 30,       "WARNING"       },
+    { 40,       "ERROR"         },
+    { 50,       "CRITICAL"      },
+    { 0,        NULL}
+};
+
+const char *log_level(long level)
+{
+  struct _log_level_table *p;
+  const char *str = "------";
+
+  for (p=log_level_table; p->levelname; p++) {
+    if (level == p->level) {
+      str = p->levelname;
+      break;
+    }
+  }
+  return str;
+}
+
+
 
 /**
  * @name    GPI logging
@@ -127,13 +157,13 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     // Python logging not available, just dump to stdout (No filtering)
     } else {
 clog:
-        fprintf(stdout, "     -.--ns");
-        fprintf(stdout, " %2ld", level);                // FIXME: Print msglevel DEBUG INFO etc.
-        fprintf(stdout, "%16s", name);
-        fprintf(stdout, "%45s:", pathname);
+        fprintf(stdout, "     -.--ns ");
+        fprintf(stdout, "%-8s", log_level(level));
+        fprintf(stdout, "%-35s", name);
+        fprintf(stdout, "%20s:", pathname);
         fprintf(stdout, "%4ld", lineno);
-        fprintf(stdout, " in %s\t", funcname);
-        fprintf(stdout, "%25s", msg);
+        fprintf(stdout, " in %-31s ", funcname);
+        fprintf(stdout, "%s", msg);
         fprintf(stdout, "\n");
     }
 
