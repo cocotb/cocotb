@@ -37,6 +37,43 @@ from cocotb.decorators import coroutine
 from cocotb.triggers import Event, RisingEdge
 from cocotb.bus import Bus
 
+
+class BitDriver(object):
+    """
+    Drives a signal onto a single bit
+
+    Useful for exercising ready / valid
+    """
+    def __init__(self, signal, clk, generator=None):
+        self._signal = signal
+        self._clk = clk
+        self._generator = generator
+
+    def start(self, generator=None):
+        self._cr = cocotb.fork(self._cr_twiddler(generator=generator))
+
+    def stop(self):
+        self._cr.kill()
+
+    @cocotb.coroutine
+    def _cr_twiddler(self, generator=None):
+        if generator is None and self._generator is None:
+            raise Exception("No generator provided!")
+        if generator is not None:
+            self._generator = generator
+
+        edge = RisingEdge(self._clk)
+
+        # Actual thread 
+        while True:
+            on,off = self._generator.next()
+            self._signal <= 1
+            for i in range(on):
+                yield edge
+            self._signal <= 0
+            for i in range(off):
+                yield edge
+
 class Driver(object):
     """
 
