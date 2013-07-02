@@ -42,6 +42,15 @@ from cocotb.triggers import Edge, Event, RisingEdge, ReadOnly
 from cocotb.binary import BinaryValue
 from cocotb.bus import Bus
 
+
+
+
+class MonitorStatistics(object):
+    """Wrapper class for storing Monitor statistics"""
+    def __init__(self):
+        self.received_transactions = 0
+
+
 class Monitor(object):
 
 
@@ -57,6 +66,7 @@ class Monitor(object):
         self._event = event
         self._recvQ = []
         self._callbacks = []
+        self.stats = MonitorStatistics()
 
         # Subclasses may already set up logging
         if not hasattr(self, "log"):
@@ -76,6 +86,9 @@ class Monitor(object):
     def __len__(self):
         return len(self._recvQ)
 
+    def __getitem__(self, idx):
+        return self._recvQ[idx]
+
     def add_callback(self, callback):
         self.log.debug("Adding callback of function %s to monitor" % (callback.__name__))
         self._callbacks.append(callback)
@@ -93,6 +106,9 @@ class Monitor(object):
 
     def _recv(self, transaction):
         """Common handling of a received transaction."""
+
+        self.stats.received_transactions += 1
+
         # either callback based consumer
         for callback in self._callbacks:
             callback(transaction)
