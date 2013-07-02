@@ -44,11 +44,7 @@ _FUNCNAME_CHARS = 31
 
 class SimLogFormatter(logging.Formatter):
 
-    """Log formatter to provide consistent log message handling.
-
-        TODO:
-            - Move somewhere sensible
-    """
+    """Log formatter to provide consistent log message handling."""
     loglevel2colour = {
         logging.DEBUG   :       "%s",
         logging.INFO    :       ANSI.BLUE_FG + "%s" + ANSI.DEFAULT_FG,
