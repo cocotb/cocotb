@@ -312,7 +312,7 @@ static p_vpi_cb_user_data gpi_get_user_data(gpi_sim_hdl hdl)
 }
 
 
-PLI_INT32 handle_vpi_callback(p_cb_data cb_data)
+int32_t handle_vpi_callback(p_cb_data cb_data)
 {
     FENTER
     int rv = 0;
@@ -397,7 +397,7 @@ static int gpi_free_one_time(p_vpi_cb_user_data user_data)
 static int gpi_free_recurring(p_vpi_cb_user_data user_data)
 {
     FENTER
-    PLI_INT32 rc;
+    int32_t rc;
     vpiHandle cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
         LOG_ERROR("VPI: %s passed a NULL pointer\n", __func__);
@@ -574,8 +574,8 @@ gpi_sim_hdl gpi_register_timed_callback(int (*gpi_function)(void *), void *gpi_c
     user_data->cleared = false;
 
     vpi_time_s.type = vpiSimTime;
-    vpi_time_s.high = (PLI_UINT32)(time_ps>>32);
-    vpi_time_s.low  = (PLI_UINT32)(time_ps);
+    vpi_time_s.high = (uint32_t)(time_ps>>32);
+    vpi_time_s.low  = (uint32_t)(time_ps);
 
     cb_data_s.reason    = cbAfterDelay;
     cb_data_s.cb_rtn    = handle_vpi_callback;
