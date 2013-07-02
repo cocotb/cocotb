@@ -32,6 +32,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import random
 from cocotb.decorators import public
 
+
+@public
+def get_bytes(nbytes, generator):
+    """Get nbytes from generator"""
+    result = ""
+    for i in range(nbytes):
+        result += generator.next()
+    return result
+
 @public
 def random_data():
     """Random bytes"""
