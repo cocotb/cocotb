@@ -47,6 +47,7 @@ class Scheduler(object):
         self.log = logging.getLogger("cocotb.scheduler")
         self.writes = {}
         self.writes_lock = threading.RLock()
+        self._remove = []
         self._readwrite = self.add(self.move_to_rw())
 
     def react(self, trigger):
@@ -119,6 +120,12 @@ class Scheduler(object):
         self.waiting.pop(trigger)
         trigger.unprime()
 
+    def schedule_remove(self, coroutine, callback):
+        """Adds the specified coroutine to the list of routines
+           That will be removed at the end of the current loop
+        """
+        self._remove.append((coroutine, callback))
+
 
     def schedule(self, coroutine, trigger=None):
         """
@@ -155,6 +162,23 @@ class Scheduler(object):
             simulator.stop_simulator(self)
             return
 
+        # Entries may have been added to the remove list while the
+        # coroutine was running, clear these down and deschedule
+        # before resuming
+        while self._remove:
+            delroutine, cb = self._remove.pop(0)
+            for trigger, waiting in self.waiting.items():
+                for coro in waiting:
+                    if coro is delroutine:
+                        cb()
+                        self.waiting[trigger].remove(coro)
+            # Clean up any triggers that no longer have pending coroutines
+            for trigger, waiting in self.waiting.items():
+                if not waiting:
+                    trigger.unprime()
+                    del self.waiting[trigger]
+         
+
         if isinstance(result, Trigger):
             self._add_trigger(result, coroutine)
         elif isinstance(result, cocotb.decorators.coroutine):
@@ -169,6 +193,8 @@ class Scheduler(object):
         else:
             self.log.warning("Unable to schedule coroutine since it's returning stuff %s" % repr(result))
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))
+
+        self._remove = []
 
     @cocotb.decorators.coroutine
     def move_to_rw(self):

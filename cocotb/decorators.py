@@ -95,6 +95,9 @@ class coroutine(object):
 
     def __iter__(self): return self
 
+    def __str__(self):
+        return str(self.__name__)
+
     def next(self):
         """FIXME: deprecated by send method?"""
         try:
@@ -125,12 +128,9 @@ class coroutine(object):
         return self._coro.throw(exc)
 
     def kill(self):
-        """Kill a coroutine
-
-        FIXME: Do we want to call all the pending callbacks?
-        """
+        """Kill a coroutine"""
         self.log.debug("kill() called on coroutine")
-        self.throw(StopIteration)
+        cocotb.scheduler.schedule_remove(self, self._finished_cb)
 
     def _finished_cb(self):
         """Called when the coroutine completes.
