@@ -75,7 +75,7 @@ def unpack(ctypes_obj, string, bytes=None):
 
 
 
-import ANSI
+import cocotb.ANSI as ANSI
 
 
 def _sane_color(x):
