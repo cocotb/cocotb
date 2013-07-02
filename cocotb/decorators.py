@@ -229,7 +229,8 @@ class test(coroutine):
         
         with open(fname, 'a') as f:
             if self.error_messages:
-                f.write(xunit_output(self._func.__name__, "bing", duration,
-                    failure="\n".join(self.error_messages)))
+                f.write(xunit_output(self._func.__name__, self._func.__module__,
+                    duration, failure="\n".join(self.error_messages)))
             else:
-                f.write(xunit_output(self._func.__name__, "bing", duration))
+                f.write(xunit_output(self._func.__name__, self._func.__module__,
+                    duration))

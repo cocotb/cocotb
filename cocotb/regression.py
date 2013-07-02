@@ -51,7 +51,7 @@ def xunit_output(name, classname, time, skipped=False, failure="", error=""):
     Returns an XML string
 
     """
-    xml = """<testsuite name="%s" tests="1" time="%f">""" % \
+    xml = """<testsuite name="%s" tests="1" time="%f">\n""" % \
             (name, time)
     xml += """<testcase classname="%s" name="%s" time="%f" """ % \
             (classname, name, time)
