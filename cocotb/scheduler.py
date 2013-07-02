@@ -48,6 +48,7 @@ class Scheduler(object):
         self.writes = {}
         self.writes_lock = threading.RLock()
         self._remove = []
+        self._pending_adds = []
         self._readwrite = self.add(self.move_to_rw())
 
     def react(self, trigger):
@@ -89,12 +90,18 @@ class Scheduler(object):
         # another callback for the read-only part of the sim cycle
         if len(self.writes) and self._readwrite is None:
             self._readwrite = self.add(self.move_to_rw())
+
+        # If the python has caused any subsequent events to fire we might
+        # need to schedule more coroutines before we drop back into the
+        # simulator
+        while self._pending_adds:
+            coroutine = self._pending_adds.pop(0)
+            self.add(coroutine)
+
         return
 
     def playout_writes(self):
         if self.writes:
-            if self._readwrite is None:
-                self._readwrite = self.add(self.move_to_rw())
             while self.writes:
                 handle, args = self.writes.popitem()
                 handle.setimeadiatevalue(args)
@@ -108,6 +115,9 @@ class Scheduler(object):
         self.waiting[trigger].append(coroutine)
         trigger.prime(self.react)
 
+    def queue(self, coroutine):
+        """Queue a coroutine for execution"""
+        self._pending_adds.append(coroutine)
 
     def add(self, coroutine):
         """Add a new coroutine. Required because we cant send to a just started generator (FIXME)"""
@@ -126,6 +136,8 @@ class Scheduler(object):
         """
         self._remove.append((coroutine, callback))
 
+    def schedule_react(self, trigger):
+        self._
 
     def schedule(self, coroutine, trigger=None):
         """
@@ -147,27 +159,15 @@ class Scheduler(object):
             exc()
             return
 
+        # TestComplete indication is game over, tidy up
         except cocotb.decorators.TestComplete as test_result:
-            test = coroutine
 
-            # Unprime all pending triggers:
-            for trigger, waiting in self.waiting.items():
-                trigger.unprime()
-                for coro in waiting:
-                    # Singleton test instance
-                    if isinstance(coro, cocotb.decorators.test):
-                        test = coro
-                    try: coro.kill()
-                    except StopIteration: pass
-            self.waiting = {}
-            if isinstance(test_result, cocotb.decorators.TestCompleteOK):
-                self.log.info("Test passed!")
-            else:
-                self.log.error("Test failed!")
+            self.cleanup()
 
-            test.write_test_output("results.xml")
-            simulator.stop_simulator(self)
+            # Indicate to the test manager that we're done for this test
+            cocotb.regression.handle_result(test_result)
             return
+        #except:
 
         # Entries may have been added to the remove list while the
         # coroutine was running, clear these down and deschedule
@@ -199,9 +199,25 @@ class Scheduler(object):
                 self._add_trigger(trigger, coroutine)
         else:
             self.log.warning("Unable to schedule coroutine since it's returning stuff %s" % repr(result))
+            self.cleanup()
+            cocotb.regression.handle_result(cocotb.decorators.TestCompleteFail())
+            
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))
 
         self._remove = []
+
+    def cleanup(self):
+        """Clear up all our state
+
+            Unprime all pending triggers and kill off any coroutines"""
+        for trigger, waiting in self.waiting.items():
+            trigger.unprime()
+            for coro in waiting:
+                try: coro.kill()
+                except StopIteration: pass
+        self.waiting = collections.defaultdict(list)
+        self.writes = {}
+        self._readwrite = self.add(self.move_to_rw())
 
     @cocotb.decorators.coroutine
     def move_to_rw(self):

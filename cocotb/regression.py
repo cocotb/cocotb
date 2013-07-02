@@ -27,8 +27,99 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 All things relating to regression capabilities
 """
 
-def xunit_header():
-    return """<?xml version="1.0" encoding="UTF-8"?>\n"""
+import time
+import logging
+
+import simulator
+
+import cocotb.decorators
+
+
+def _my_import(name):
+    mod = __import__(name)
+    components = name.split('.')
+    for comp in components[1:]:
+        mod = getattr(mod, comp)
+    return mod
+
+
+class RegressionManager(object):
+    """Encapsulates all regression capability into a single place"""
+
+    def __init__(self, dut, modules, function=None):
+        """
+        Args:
+            modules (list): A list of python module names to run
+
+        Kwargs
+        """
+        self._queue = []
+        self._dut = dut
+        self._modules = modules
+        self._function = function
+        self._running_test = None
+        self.log = logging.getLogger("cocotb.regression")
+
+    def initialise(self):
+
+        ntests = 0
+
+        for module_name in self._modules:
+            module = _my_import(module_name)
+
+            for thing in vars(module).values():
+                if hasattr(thing, "im_test"):
+                    self._queue.append(thing(self._dut))
+                    ntests += 1
+                    self.log.info("Found test %s.%s" %
+                        (self._queue[-1]._func.__module__,
+                        self._queue[-1]._func.__name__))
+
+        # XML output format
+        self._fout = open("results.xml", 'w')
+        self._fout.write("""<?xml version="1.0" encoding="UTF-8"?>\n""")
+        self._fout.write("""<testsuite name="all" tests="%d">\n""" % ntests)        
+
+    def tear_down(self):
+        """It's the end of the world as we know it"""
+        self._fout.write("</testsuite>")
+        self._fout.close()
+        self.log.info("Shutting down...")
+        simulator.stop_simulator()
+
+    def next_test(self):
+        """Get the next test to run"""
+        if not self._queue: return None
+        return self._queue.pop(0)
+
+
+    def handle_result(self, result):
+        """Handle a test result
+
+        Dumps result to XML and schedules the next test (if any)
+
+        Args: result (TestComplete exception)
+        """
+
+        if isinstance(result, cocotb.decorators.TestCompleteFail):
+            self._fout.write(xunit_output(self._running_test._func.__name__,
+                            self._running_test._func.__module__,
+                            time.time() - self._running_test.start_time,
+                            failure="\n".join(self._running_test.error_messages)))
+        else:
+            self._fout.write(xunit_output(self._running_test._func.__name__,
+                            self._running_test._func.__module__,
+                            time.time() - self._running_test.start_time))
+
+        self.execute()
+
+    def execute(self):
+        self._running_test = self.next_test()
+        if not self._running_test:
+            self.tear_down()
+            return
+        cocotb.scheduler.queue(self._running_test)
+
 
 def xunit_output(name, classname, time, skipped=False, failure="", error=""):
     """
@@ -51,13 +142,11 @@ def xunit_output(name, classname, time, skipped=False, failure="", error=""):
     Returns an XML string
 
     """
-    xml = """<testsuite name="%s" tests="1" time="%f">\n""" % \
-            (name, time)
-    xml += """<testcase classname="%s" name="%s" time="%f" """ % \
+    xml = """  <testcase classname="%s" name="%s" time="%f" """ % \
             (classname, name, time)
 
     if not skipped and not failure and not error:
-        return xml + " />\n</testsuite>"
+        return xml + " />\n"
     else:
         xml += ">\n"
 
@@ -72,4 +161,4 @@ def xunit_output(name, classname, time, skipped=False, failure="", error=""):
         xml += "    <error message=\"test failure\">%s\n    </error>\n" % \
             error
 
-    return xml + "</testcase>\n</testsuite>"
+    return xml + "  </testcase>\n"
