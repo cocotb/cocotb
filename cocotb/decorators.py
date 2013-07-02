@@ -205,7 +205,21 @@ class test(coroutine):
         def _wrapped_test(*args, **kwargs):
             super(test, self).__call__(*args, **kwargs)
             return self
+
+        _wrapped_test.im_test = True    # For auto-regressions
         return _wrapped_test
+
+
+    def _pre_send(self):
+        """Provide some useful debug if our coroutine isn't a real coroutine
+
+        NB better than catching AttributeError on _coro.send since then we
+        can't distinguish between an AttributeError in the coroutine itself
+        """
+        if not hasattr(self._coro, "send"):
+            self.log.error("%s isn't a value coroutine! Did you use the yield keyword?"
+                % self.__name__)
+            raise TestCompleteFail()
 
 
     def send(self, value):
@@ -222,15 +236,3 @@ class test(coroutine):
         except cocotb.TestFailed as e:
             self.log.error(str(e))
             raise TestCompleteFail()
-
-    def write_test_output(self, fname):
-
-        duration = time.time() - self.start_time
-        
-        with open(fname, 'a') as f:
-            if self.error_messages:
-                f.write(xunit_output(self._func.__name__, self._func.__module__,
-                    duration, failure="\n".join(self.error_messages)))
-            else:
-                f.write(xunit_output(self._func.__name__, self._func.__module__,
-                    duration))

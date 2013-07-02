@@ -38,7 +38,7 @@ from functools import wraps
 import cocotb.handle
 from cocotb.scheduler import Scheduler
 from cocotb.log import SimLogFormatter
-from cocotb.regression import xunit_header
+from cocotb.regression import RegressionManager
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine
@@ -48,6 +48,7 @@ from cocotb.decorators import test, coroutine
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
 scheduler = Scheduler()
+regression = None
 
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
@@ -83,31 +84,23 @@ def _initialise_testbench(root_handle):
     """
     _rlock.acquire()
 
-    def my_import(name):
-        mod = __import__(name)
-        components = name.split('.')
-        for comp in components[1:]:
-            mod = getattr(mod, comp)
-        return mod
-
     # Create the base handle type
     dut = cocotb.handle.SimHandle(root_handle)
     module_str = os.getenv('MODULE')
     function_str = os.getenv('FUNCTION')
 
-    if not module_str or not function_str:
-        raise ImportError("Environment variables with test information not provided.  MODULE=\"%s\" and FUNCTION=\"%s\"" % (module_str, function_str))
+    if not module_str:
+        raise ImportError("Environment variables defining the module(s) to \
+                        execute not defined.  MODULE=\"%s\"\"" % (module_str))
 
-    with open("results.xml", 'w') as f:
-        f.write(xunit_header())
+    modules = module_str.split()
 
-    testmod = my_import(module_str)
-    log.info("Starting testcase %s.%s" % (testmod.__name__, function_str))
+    global regression
 
-    coroutine = getattr(testmod, function_str)(dut)
-    log.debug("Got %s %s" % (coroutine.__name__, str(coroutine)))
+    regression = RegressionManager(dut, modules, function=function_str)
+    regression.initialise()
+    regression.execute()
 
-    scheduler.add(coroutine)
     _rlock.release()
     return True
 
