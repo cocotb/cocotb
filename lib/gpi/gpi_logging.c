@@ -157,6 +157,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     // Python logging not available, just dump to stdout (No filtering)
     } else {
 clog:
+        if (level < 20) return;
         fprintf(stdout, "     -.--ns ");
         fprintf(stdout, "%-8s", log_level(level));
         fprintf(stdout, "%-35s", name);
