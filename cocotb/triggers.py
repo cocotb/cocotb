@@ -60,6 +60,16 @@ class Trigger(object):
         """Ensure if a trigger drops out of scope we remove any pending callbacks"""
         self.unprime()
 
+    def __str__(self):
+        return self.__class__.__name__
+
+class PythonTrigger(Trigger):
+    """Python triggers don't use GPI at all
+
+        For example notification of coroutine completion etc"""
+    pass
+
+
 class GPITrigger(Trigger):
     """
     Execution will resume when the specified time period expires
@@ -135,6 +145,9 @@ class ReadWrite(GPITrigger):
     def prime(self, callback):
         self.cbhdl = simulator.register_rwsynch_callback(callback, self)
 
+    def unprime(self):
+        return
+
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
 
@@ -199,7 +212,7 @@ class ClockCycles(Edge):
         return self.__class__.__name__ + "(%s)" % self.signal.name
 
 
-class Combine(Trigger):
+class Combine(PythonTrigger):
     """
     Combines multiple triggers together.  Coroutine will continue when all
     triggers have fired
@@ -232,7 +245,7 @@ class Combine(Trigger):
             trigger.unprime()
 
 
-class Event(Trigger):
+class Event(PythonTrigger):
     """
     Event to permit synchronisation between two coroutines
     """
@@ -257,7 +270,7 @@ class Event(Trigger):
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.name
 
-class Join(Trigger):
+class Join(PythonTrigger):
     """
     Join a coroutine, firing when it exits
     """
