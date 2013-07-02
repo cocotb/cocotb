@@ -57,7 +57,7 @@ def xunit_output(name, classname, time, skipped=False, failure="", error=""):
             (classname, name, time)
 
     if not skipped and not failure and not error:
-        return xml + " />"
+        return xml + " />\n</testsuite>"
     else:
         xml += ">\n"
 
