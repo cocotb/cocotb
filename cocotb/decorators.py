@@ -65,9 +65,14 @@ class TestComplete(StopIteration):
     """
         Indicate that a test has finished
     """
-    def __init__(self, result):
-        self.result = result
+    pass
 
+
+class TestCompleteFail(TestComplete):
+    pass
+
+class TestCompleteOK(TestComplete):
+    pass
 
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
@@ -120,6 +125,9 @@ class coroutine(object):
             return self._coro.send(value)
         except StopIteration:
             raise CoroutineComplete(callback=self._finished_cb)
+        except cocotb.TestFailed as e:
+            self.log.error(str(e))
+            raise TestCompleteFail()
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -188,7 +196,7 @@ class test(coroutine):
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
         except StopIteration:
-            raise TestComplete(result="Passed")
+            raise TestCompleteOK()
         except cocotb.TestFailed as e:
             self.log.error(str(e))
-            raise TestComplete(result="Failed")
+            raise TestCompleteFail()

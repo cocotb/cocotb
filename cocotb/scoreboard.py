@@ -29,9 +29,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     Common scoreboarding capability.
 """
 import logging
+import cocotb
+
 from cocotb.utils import hexdump, hexdiffs
 
 from cocotb.monitors import Monitor
+
 
 class Scoreboard(object):
     """Generic scorboarding class
@@ -67,18 +70,26 @@ class Scoreboard(object):
             """Called back by the monitor when a new transaction has been received"""
 
             if not expected_output:
+                self.errors += 1
                 self.log.error("%s" % (transaction))    # TODO hexdump
-                raise TestFailure("Recieved a transaction but wasn't expecting anything")
+                raise cocotb.TestFailed("Recieved a transaction but wasn't expecting anything")
 
             if callable(expected_output): exp = expected_output()
-            else: exp = str(expected_output.pop(0))
+            else: exp = expected_output.pop(0)
+
+            if type(transaction) != type(exp):
+                self.errors += 1
+                self.log.error("Received transaction is a different type to expected transaction")
+                self.log.info("Got: %s but expected %s" % (str(type(transaction)), str(type(exp))))
+                raise cocotb.TestFailed("Received transaction of wrong type")
 
             if transaction != exp:
                 self.errors += 1
                 self.log.error("Received transaction differed from expected output")
-                self.log.info(hexdump(exp))
-                self.log.info(hexdump(transaction))
+                self.log.info("Expected:\n" + hexdump(exp))
+                self.log.info("Received:\n" + hexdump(transaction))
                 self.log.warning(hexdiffs(exp, transaction))
+                raise cocotb.TestFailed("Received transaction differed from expected transaction")
             else:
                 self.log.debug("Received expected transaction %d bytes" % (len(transaction)))
                 self.log.debug(repr(transaction))
