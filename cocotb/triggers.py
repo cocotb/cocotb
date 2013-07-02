@@ -62,7 +62,7 @@ class Trigger(object):
 
 class GPITrigger(Trigger):
     """
-    Execution will resume when the specified time period expires
+    Base Trigger class for GPI triggers
 
     Consumes simulation time
     """
