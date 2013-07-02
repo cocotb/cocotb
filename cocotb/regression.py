@@ -51,7 +51,9 @@ def xunit_output(name, classname, time, skipped=False, failure="", error=""):
     Returns an XML string
 
     """
-    xml = """<testcase classname="%s" name="%s" time="%f" """ % \
+    xml = """<testsuite name="%s" tests="1" time="%f">""" % \
+            (name, time)
+    xml += """<testcase classname="%s" name="%s" time="%f" """ % \
             (classname, name, time)
 
     if not skipped and not failure and not error:
@@ -70,4 +72,4 @@ def xunit_output(name, classname, time, skipped=False, failure="", error=""):
         xml += "    <error message=\"test failure\">%s\n    </error>\n" % \
             error
 
-    return xml + "</testcase>"
+    return xml + "</testcase>\n</testsuite>"
