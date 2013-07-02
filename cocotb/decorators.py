@@ -24,11 +24,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import sys
+import time
 import logging
 
 import cocotb
 from cocotb.triggers import Join
-
+from cocotb.regression import xunit_output
 
 def public(f):
   """Use a decorator to avoid retyping function/class names.
@@ -65,9 +66,14 @@ class TestComplete(StopIteration):
     """
         Indicate that a test has finished
     """
-    def __init__(self, result):
-        self.result = result
+    pass
 
+
+class TestCompleteFail(TestComplete):
+    pass
+
+class TestCompleteOK(TestComplete):
+    pass
 
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
@@ -123,6 +129,9 @@ class coroutine(object):
             return self._coro.send(value)
         except StopIteration:
             raise CoroutineComplete(callback=self._finished_cb)
+        except cocotb.TestFailed as e:
+            self.log.error(str(e))
+            raise TestCompleteFail()
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -160,10 +169,29 @@ class test(coroutine):
     some common reporting etc, a test timeout and allows
     us to mark tests as expected failures.
     """
+
+
+    class ErrorLogHandler(logging.Handler):
+        def __init__(self, fn):
+            self.fn = fn
+            logging.Handler.__init__(self, level=logging.ERROR)
+
+        def handle(self, record):
+            self.fn(self.format(record))
+
     def __init__(self, timeout=None, expect_fail=False):
         self.timeout = timeout
         self.expect_fail = expect_fail
         self.started = False
+        self.error_messages = []
+
+        # Capture all log messages with ERROR or higher
+        def handle_error_msg(msg):
+            self.error_messages.append(msg)
+
+        self.handler = test.ErrorLogHandler(handle_error_msg)
+        cocotb.log.addHandler(self.handler)
+
 
     def __call__(self, f):
         """
@@ -171,6 +199,9 @@ class test(coroutine):
 
         """
         super(test, self).__init__(f)
+        self.log =  logging.getLogger("cocotb.test.%s" % self._func.__name__)
+        self.start_time = time.time()
+
         def _wrapped_test(*args, **kwargs):
             super(test, self).__call__(*args, **kwargs)
             return self
@@ -187,6 +218,19 @@ class test(coroutine):
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
         except StopIteration:
-            raise TestComplete(result="Passed")
-        except cocotb.TestFailed:
-            raise TestComplete(result="Failed")
+            raise TestCompleteOK()
+        except cocotb.TestFailed as e:
+            self.log.error(str(e))
+            raise TestCompleteFail()
+
+    def write_test_output(self, fname):
+
+        duration = time.time() - self.start_time
+        
+        with open(fname, 'a') as f:
+            if self.error_messages:
+                f.write(xunit_output(self._func.__name__, self._func.__module__,
+                    duration, failure="\n".join(self.error_messages)))
+            else:
+                f.write(xunit_output(self._func.__name__, self._func.__module__,
+                    duration))

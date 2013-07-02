@@ -147,18 +147,25 @@ class Scheduler(object):
             exc()
             return
 
-        except cocotb.decorators.TestComplete as test:
-            self.log.info("Test completed")
+        except cocotb.decorators.TestComplete as test_result:
+            test = coroutine
+
             # Unprime all pending triggers:
             for trigger, waiting in self.waiting.items():
                 trigger.unprime()
                 for coro in waiting:
+                    # Singleton test instance
+                    if isinstance(coro, cocotb.decorators.test):
+                        test = coro
                     try: coro.kill()
                     except StopIteration: pass
             self.waiting = {}
-            self.log.info("Test result: %s" % str(test.result))
+            if isinstance(test_result, cocotb.decorators.TestCompleteOK):
+                self.log.info("Test passed!")
+            else:
+                self.log.error("Test failed!")
 
-            # FIXME: proper teardown
+            test.write_test_output("results.xml")
             simulator.stop_simulator(self)
             return
 

@@ -30,7 +30,7 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 OBJ_DIR		:= obj
 INCLUDES	:= -I. -I/usr/include/python$(PYTHON_VERSION)/
-GCC_ARGS	+=
+GCC_ARGS	+= -DFILTER
 
 SRCS		:= gpi_logging.c
 OBJS            := $(SRCS:%.c=$(OBJ_DIR)/%.o)

@@ -154,7 +154,7 @@ class BinaryValue(object):
 
         """
         for char in self._str:
-            if char != "0": return True
+            if char == "1": return True
         return False
 
     def __cmp__(self, other):

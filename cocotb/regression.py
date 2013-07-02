@@ -22,32 +22,54 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+
 """
-Drivers for Solarflare bus format.
-
-A specialisation of the AvalonST bus
+All things relating to regression capabilities
 """
-from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge
 
-from cocotb.drivers.avalon import AvalonSTPkts
+def xunit_header():
+    return """<?xml version="1.0" encoding="UTF-8"?>\n"""
 
-
-class SFStreaming(AvalonSTPkts):
-    """This is the Solarflare Streaming bus as defined by the Solarflare FDK.
-
-    Expect to see a 72-bit bus (bottom 64 bits data, top 8 bits are ECC)
+def xunit_output(name, classname, time, skipped=False, failure="", error=""):
     """
-    _signals = ["valid", "data", "startofpacket", "endofpacket", "ready", "empty", "channel", "error"]
+    Format at xunit test output in XML
 
-    def __init__(self, *args, **kwargs):
-        AvalonSTPkts.__init__(self, *args, **kwargs)
+    Args:
+        name (str):     the name of the test
 
-        # Drive some sensible defaults onto the bus
-        self.bus.startofpacket <= 0
-        self.bus.endofpacket   <= 0
-        self.bus.valid         <= 0
-        self.bus.empty         <= 0
-        self.bus.channel       <= 0
-        self.bus.error         <= 0
+        classname (str): the name of the class
 
+        time (float): duration of the test in seconds
+
+    Kwargs:
+        skipped (bool): this test was skipped
+
+        failure (str): failure message to report
+
+        error (str): error message to report
+
+    Returns an XML string
+
+    """
+    xml = """<testsuite name="%s" tests="1" time="%f">\n""" % \
+            (name, time)
+    xml += """<testcase classname="%s" name="%s" time="%f" """ % \
+            (classname, name, time)
+
+    if not skipped and not failure and not error:
+        return xml + " />\n</testsuite>"
+    else:
+        xml += ">\n"
+
+    if skipped:
+        xml += "    <skipped />\n"
+
+    if failure:
+        xml += "    <failure message=\"test failure\">%s\n    </failure>\n" % \
+            failure
+
+    if error:
+        xml += "    <error message=\"test failure\">%s\n    </error>\n" % \
+            error
+
+    return xml + "</testcase>\n</testsuite>"

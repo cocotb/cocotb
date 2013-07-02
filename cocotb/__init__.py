@@ -34,12 +34,11 @@ import logging
 import threading
 from functools import wraps
 
-import simulator
 
-import cocotb.ANSI
 import cocotb.handle
 from cocotb.scheduler import Scheduler
-
+from cocotb.log import SimLogFormatter
+from cocotb.regression import xunit_header
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine
@@ -57,46 +56,16 @@ fork = scheduler.add
 log = logging.getLogger('cocotb')
 log.setLevel(logging.INFO)
 
+# Add our default log handler
+hdlr = logging.StreamHandler(sys.stdout)
+hdlr.setFormatter(SimLogFormatter())
+log.addHandler(hdlr)
+
 
 class TestFailed(Exception):
     pass
 
 
-class SimLogFormatter(logging.Formatter):
-
-    """Log formatter to provide consistent log message handling.
-
-        TODO:
-            - Move somewhere sensible
-    """
-    loglevel2colour = {
-        logging.DEBUG   :       "%s",
-        logging.INFO    :       ANSI.BLUE_FG + "%s" + ANSI.DEFAULT_FG,
-        logging.WARNING :       ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT_FG,
-        logging.ERROR   :       ANSI.RED_FG + "%s" + ANSI.DEFAULT_FG,
-        logging.CRITICAL:       ANSI.RED_BG + ANSI.BLACK_FG + "%s" + ANSI.DEFAULT_FG + ANSI.DEFAULT_BG}
-
-
-    def format(self, record):
-        """pretify the log output, annotate with simulation time"""
-        if record.args:  msg = record.msg % record.args
-        else:            msg = record.msg
-
-        level = record.levelname.ljust(8)
-
-        msg = SimLogFormatter.loglevel2colour[record.levelno] % msg
-        level = SimLogFormatter.loglevel2colour[record.levelno] % record.levelname.ljust(8)
-
-        timeh, timel = simulator.get_sim_time()
-        simtime = "% 6d.%02dns" % ((timel/1000), (timel%1000)/10)
-
-        prefix = simtime + ' ' + level + record.name.ljust(35) + os.path.split(record.filename)[1].rjust(20) + ':' + str(record.lineno).ljust(4) + ' in ' + str(record.funcName).ljust(25) + ' '
-        pad = "\n" + " " * (len(prefix) - 10)
-        return prefix + pad.join(msg.split('\n'))
-
-hdlr = logging.StreamHandler(sys.stdout)
-hdlr.setFormatter(SimLogFormatter())
-log.addHandler(hdlr)
 
 # FIXME is this really required?
 _rlock = threading.RLock()
@@ -128,6 +97,9 @@ def _initialise_testbench(root_handle):
 
     if not module_str or not function_str:
         raise ImportError("Environment variables with test information not provided.  MODULE=\"%s\" and FUNCTION=\"%s\"" % (module_str, function_str))
+
+    with open("results.xml", 'w') as f:
+        f.write(xunit_header())
 
     testmod = my_import(module_str)
     log.info("Starting testcase %s.%s" % (testmod.__name__, function_str))

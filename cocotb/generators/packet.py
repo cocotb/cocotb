@@ -45,14 +45,6 @@ from cocotb.generators.byte import *
 
 _default_payload = random_data
 
-def _get_payload(gen, nbytes):
-    """Helper function to pull a chunk of bytes from a generator"""
-    payload = ""
-    while len(payload) < nbytes:
-        payload += gen.next()
-    return payload
-
-
 # UDP packet generators
 @public
 def udp_all_sizes(max_size=1500, payload=_default_payload()):
@@ -60,7 +52,7 @@ def udp_all_sizes(max_size=1500, payload=_default_payload()):
     header = Ether() / IP() / UDP ()
 
     for size in range(0, max_size-len(header)):
-        yield header / _get_payload(payload, size)
+        yield header / _get_payload(size, payload)
 
 @public
 def udp_random_sizes(npackets=100, payload=_default_payload()):
@@ -69,10 +61,11 @@ def udp_random_sizes(npackets=100, payload=_default_payload()):
     max_size = 1500 - len(header)
 
     for pkt in range(npackets):
-        yield header / _get_payload(payload, random.randint(0,max_size))
+        yield header / get_bytes(random.randint(0,max_size), payload)
 
+# IPV4 generator
 @public
 def ipv4_small_packets(npackets=100, payload=_default_payload()):
     """Small (<100bytes payload) IPV4 packets"""
     for pkt in range(npackets):
-        yield Ether() / IP() / _get_payload(payload, random.randint(0, 100))
+        yield Ether() / IP() / get_bytes(random.randint(0, 100), payload)
