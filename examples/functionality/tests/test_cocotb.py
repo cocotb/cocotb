@@ -32,7 +32,7 @@ Also used a regression test of cocotb capabilities
 """
 
 import cocotb
-from cocotb.triggers import Timer
+from cocotb.triggers import Timer, Join
 
 
 
@@ -82,6 +82,29 @@ def test_yield_list(dut):
 
     yield Timer(10000)
 
+test_flag = False
+
+@cocotb.coroutine
+def clock_yield(clock_gen):
+    global test_flag
+    yield Join(clock_gen)
+    test_flag = True 
+
 @cocotb.test(expect_fail=True)
 def test_duplicate_yield(dut):
     """A trigger can not be yielded on twice"""
+
+@cocotb.test(expect_fail=False)
+def test_coroutine_kill(dut):
+    """Test that killing a coroutine causes pending routine continue"""
+    global test_flag
+    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
+    yield Timer(100)
+    clk_gen_two = cocotb.fork(clock_yield(clock_gen))
+    yield Timer(100)
+    clk_gen.kill()
+    if test_flag is not False:
+        raise cocotb.TestFailed
+    yield Timer(1000)
+    if test_flag is not True:
+        raise cocotb.TestFailed
