@@ -51,6 +51,8 @@
 
 <p>Cocotb is ideally suited to FPGA development but also scales to ASIC environments.  A testbench can be as simple as basic directed tests through to a complex constrained random verification environment similar to UVM but with the productivity benefit of a higher-level language.</p>
 
+<p>Cocotb is complete <em>open-source</em>, licensed under BSD license and compatible with the <a href="http://iverilog.icarus.com/">Icarus Verilog</a> simulator.</p>
+
 <h2>
 <a name="why-verify-in-python" class="anchor" href="#why-verify-in-python"><span class="octicon octicon-link"></span></a>Why verify in Python?</h2>
 
@@ -73,7 +75,7 @@
         <span class="k">yield</span> <span class="n">Timer</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 
-<p>The python "yield" keyword is used to suspend the coroutine and return control back to the simulator until a condition is met. In this case, the condition is a simple timer that fires after 5ns of simulation time.</p>
+<p>The python <strong>yield</strong> keyword is used to suspend the coroutine and return control back to the simulator until a condition is met. In this case, the condition is a simple timer that fires after 5ns of simulation time.</p>
 
 <p>This may seem pretty pointless, in fact a Verilog process to perform the same operation requires fewer lines of code. Let's examine a more useful example:</p>
 
@@ -107,6 +109,8 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">eop</span> <span class="o">&lt;=</span> <span class="mi">0</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">&lt;=</span> <span class="mi">0</span>
 </pre></div>
+
+<p>For further details refer to the <a href="http://cocotb.readthedocs.org">documentation</a>.</p>
 
 <h2>
 <a name="similar-projects" class="anchor" href="#similar-projects"><span class="octicon octicon-link"></span></a>Similar projects</h2>
