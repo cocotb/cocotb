@@ -87,7 +87,15 @@ class Scoreboard(object):
                 self.errors += 1
                 self.log.error("Received transaction differed from expected output")
                 self.log.info("Expected:\n" + hexdump(exp))
+                if not isinstance(exp, str):
+                    try:
+                        for word in exp: self.log.info(str(word))
+                    except: pass
                 self.log.info("Received:\n" + hexdump(transaction))
+                if not isinstance(transaction, str):
+                    try:
+                        for word in transaction: self.log.info(str(word))
+                    except: pass
                 self.log.warning(hexdiffs(exp, transaction))
                 raise cocotb.TestFailed("Received transaction differed from expected transaction")
             else:
