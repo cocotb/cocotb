@@ -88,7 +88,7 @@ endif
 sim: $(SIM_DIR)/runsim.tcl core
 	-cd $(SIM_DIR) && ln -sf $(VPI_FILE) libcocotb.so
 	cd $(SIM_DIR) && PYTHONPATH=$(LIB_DIR):$(PWD)/testbench:$(SIM_ROOT)/sim_core:$(PWD):$(PYTHONPATH) \
-	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(VSIMSABIN)/Linux64 MODULE=$(MODULE) FUNCTION=$(FUNCTION) $(CMD) -do runsim.tcl | tee sim.log
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(VSIMSABIN)/Linux64 MODULE=$(MODULE) TESTCASE=$(TESTCASE) $(CMD) -do runsim.tcl | tee sim.log
 
 clean::
 	rm -rf $(SIM_DIR)

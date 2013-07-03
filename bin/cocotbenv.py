@@ -54,7 +54,7 @@ class SimIcarus(SimType):
         cmd = 'PYTHONPATH=' + py_path
         cmd = cmd + ' LD_LIBRARY_PATH=' + lib_path
         cmd = cmd + ' MODULE=' + module
-        cmd = cmd + ' FUNCTION=' + function
+        cmd = cmd + ' TESTCASE=' + function
         if self._sdebug is True:
             cmd = cmd + ' gdb --args'
         cmd = cmd + self._base_cmd
@@ -71,7 +71,7 @@ class SimSfsim(SimType):
         cmd = 'PYTHONPATH=' + py_path
         cmd = cmd + ' LD_LIBRARY_PATH=' + lib_path
         cmd = cmd + ' MODULE=' + module
-        cmd = cmd + ' FUNCTION=' + function
+        cmd = cmd + ' TESTCASE=' + function
         if self._sdebug is True:
             cmd = cmd + ' gdb --args'
         cmd = cmd + ' ' + finput

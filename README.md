@@ -1,33 +1,29 @@
 
 **cocotb** is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 
-Rationale
-=========
-VHDL and Verilog are both unsuitable for writing complex testbenches. eRM, SystemVerilog and the various SV based methodologies have emerged to address this deficiency. These verification methodologies are large and cumbersome, requiring specialist knowledge, significant time investment and expensive toolchains to achieve satisfactory verification. The overhead of setting up testbenches is onerous so often designers write small throwaway testbenches at a block level and defer the majority of verification to a large system level testbench. Cocotb intends to bridge this gap in order to make block-level testing useful, reusable, fast, accessible to a much wider skill-set. The net effect is that bugs will be discovered earlier in the design cycle which equates to significant time and cost saving.
+* Read the [documentation](http://cocotb.readthedocs.org)
+* Get involved: [Raise a bug / request an enhancement](https://github.com/potentialventures/cocotb/issues/new) (Requires a GitHub account)
+* Get in contact: [E-mail us](mailto:cocotb@potentialventures.com)
 
 
 Overview
 ========
 
+VHDL and Verilog are both unsuitable for writing complex testbenches. eRM, SystemVerilog and the various SV based methodologies have emerged to address this deficiency. These verification methodologies are large and cumbersome, requiring specialist knowledge, significant time investment and expensive toolchains to achieve satisfactory verification. The overhead of setting up testbenches is onerous so often designers write small throwaway testbenches at a block level and defer the majority of verification to a large system level testbench.
 
-A typical cocotb testbench requires no additional RTL code. The Design Under Test (DUT) is instantiated as the toplevel in the simulator without any wrapper code. Cocotb drives stimulus onto the inputs to the DUT (or further down the hierarchy) and monitors the outputs directly from Python.
+Cocotb intends to bridge this gap in order to make block-level testing useful, reusable, fast, accessible to a much wider skill-set. The net effect is that bugs will be discovered earlier in the design cycle which equates to significant time and cost saving.
 
-Cocotb comprises 3 layers:
+Why verify in Python?
+---------------------
 
-### GPI (Generic Procedural Interface)
+* It's **easy** to interface to other languages from Python
+* Python has a huge library of existing code to **re-use** like [constraint solvers](https://code.google.com/p/or-tools/) [packet parsing/generation](http://www.secdev.org/projects/scapy/) libraries.
+* Python is **interpreted**. Tests can be edited and re-run them without having to recompile the design or even exit the simulator GUI.
+* Writing Python is **fast**, it's *easy to understand* and *everybody* knows it.
 
-This layer abstracts the simulator language interface to provide a common set of functionality. Supports VHDL via VHPI and Verilog/SystemVerilog via VPI. Modelsim FLI may be supported in the future.
-
-### simulatormodule
-
-A CPython extension which utilises GPI to expose the simulator to Python.
-
-### cocotb Python package
-
-Python infrastructure including coroutine scheduler, base classes etc. The cocotb package provides a mechanism to traverse the hierarchy, query signal values, force signals to particular values and control simulator execution.
 
 Example
-=======
+-------
 
 A simplistic example of generating a clock with 10ns period:
 ```python
@@ -77,22 +73,15 @@ def send(self, packet):
     self.valid <= 0
 ```
 
-Advantages
-==========
-* Low overhead to creating testbenches to facilitate block-level verification
-* Favourable learning curve compared to eRM/OVM/UVM
-* Leverage existing Python and C libraries easily
-* Multi-language (Verilog/VHDL) and cross multi-simulator compatible
-* Supports directed and randomised testing
-
-
-Disadvantages
-=============
-* Simulation is slower than native language testbench
-* Non-standard
-
-
 Similar projects
-================
+----------------
 
-Several examples exist of projects providing a VPI interface into a language other than C and (most notably http://pyhvl.sourceforge.net/ and http://snk.tuxfamily.org/lib/ruby-vpi/). MyHDL (http://www.myhdl.org/) seeks to displace VHDL and Verilog with a Python framework that can generate synthesiable RTL.
+[MyHDL](http://www.myhdl.org/) seeks to displace VHDL and Verilog with a Python framework that can generate synthesiable RTL.
+
+Several examples exist of projects providing a VPI interface into a language other than C:
+
+* [PyHVL](http://pyhvl.sourceforge.net/)
+* [Ruby-vpi](http://snk.tuxfamily.org/lib/ruby-vpi/)
+
+Cocotb tries to build on the advances made by these projects while learning from the direction of UVM and other verification standards.
+

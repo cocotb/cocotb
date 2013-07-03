@@ -30,7 +30,6 @@ TOPLEVEL = sample_module
 
 VERILOG_SOURCES = ../hdl/sample_module.v
 MODULE=test_cocotb
-FUNCTION=test_not_a_coroutine
 
 include ../../../makefiles/Makefile.inc
 include ../../../makefiles/Makefile.sim

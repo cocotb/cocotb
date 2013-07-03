@@ -102,3 +102,10 @@ def example_test(dut):
 
     result = yield Timer(1000000)
     dut.log.warning("test complete!")
+
+
+@cocotb.test()
+def example_test2(dut):
+    """This is another example test"""
+    result = yield Timer(1000000)
+    dut.log.warning("test complete!")
