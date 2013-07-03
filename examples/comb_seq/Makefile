@@ -30,7 +30,6 @@ TOPLEVEL = issue12
 
 VERILOG_SOURCES = issue12.v
 MODULE=issue12
-FUNCTION=issue12
 
 include ../../makefiles/Makefile.inc
 include ../../makefiles/Makefile.sim
