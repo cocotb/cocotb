@@ -46,7 +46,7 @@ def _my_import(name):
 class RegressionManager(object):
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, dut, modules, function=None):
+    def __init__(self, dut, modules, test=None):
         """
         Args:
             modules (list): A list of python module names to run
@@ -56,7 +56,7 @@ class RegressionManager(object):
         self._queue = []
         self._dut = dut
         self._modules = modules
-        self._function = function
+        self._function = test
         self._running_test = None
         self.log = logging.getLogger("cocotb.regression")
 
@@ -64,8 +64,20 @@ class RegressionManager(object):
 
         ntests = 0
 
+        # Auto discovery
         for module_name in self._modules:
             module = _my_import(module_name)
+
+            if self._function:
+
+                # Single function specified, don't auto discover
+                if not hasattr(module, self._function):
+                    raise AttributeError("Test %s doesn't exist in %s" %
+                        (self._function, module_name))
+
+                self._queue.append(getattr(module, self._function)(self._dut))
+                ntests = 1
+                break
 
             for thing in vars(module).values():
                 if hasattr(thing, "im_test"):
@@ -75,7 +87,10 @@ class RegressionManager(object):
                         (self._queue[-1]._func.__module__,
                         self._queue[-1]._func.__name__))
 
-        # XML output format
+        self.start_xml(ntests)
+
+    def start_xml(self, ntests):
+        """Write the XML header into results.txt"""
         self._fout = open("results.xml", 'w')
         self._fout.write("""<?xml version="1.0" encoding="UTF-8"?>\n""")
         self._fout.write("""<testsuite name="all" tests="%d">\n""" % ntests)        

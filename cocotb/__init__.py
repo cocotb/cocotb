@@ -79,15 +79,14 @@ def _initialise_testbench(root_handle):
 
     The test must be defined by the environment variables
         MODULE
-        FUNCTION
-
+        TESTCASE
     """
     _rlock.acquire()
 
     # Create the base handle type
     dut = cocotb.handle.SimHandle(root_handle)
     module_str = os.getenv('MODULE')
-    function_str = os.getenv('FUNCTION')
+    test_str = os.getenv('TESTCASE')
 
     if not module_str:
         raise ImportError("Environment variables defining the module(s) to \
@@ -97,7 +96,7 @@ def _initialise_testbench(root_handle):
 
     global regression
 
-    regression = RegressionManager(dut, modules, function=function_str)
+    regression = RegressionManager(dut, modules, test=test_str)
     regression.initialise()
     regression.execute()
 
