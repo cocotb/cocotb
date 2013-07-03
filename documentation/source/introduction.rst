@@ -55,7 +55,7 @@ Python rather than SystemVerilog.
 The right tool for the job
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In cocotb VHDL/Verilog/SystemVerilog are only used for the synthesisable design. All verification is done using Python which is isideal for rapid development of complex systems and integrating multiple languages.
+In cocotb VHDL/Verilog/SystemVerilog are only used for the synthesisable design. All verification is done using Python which is ideal for rapid development of complex systems and integrating multiple languages.
 
 * It's **easy** to interface to other languages from Python
 * Python has a huge library of existing code to **re-use** like `constraint solvers <https://code.google.com/p/or-tools/>`_ and `packet parsing/generation <http://www.secdev.org/projects/scapy/>`_ libraries.
