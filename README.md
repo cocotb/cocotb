@@ -1,6 +1,11 @@
 
 **cocotb** is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 
+* Read the [documentation](http://cocotb.readthedocs.org)
+* Get involved: [Raise a bug / request an enhancement](https://github.com/potentialventures/cocotb/issues/new) (Requires a GitHub account)
+* Get in contact: [E-mail us](mailto:cocotb@potentialventures.com)
+
+
 Overview
 ========
 
@@ -9,7 +14,7 @@ VHDL and Verilog are both unsuitable for writing complex testbenches. eRM, Syste
 Cocotb intends to bridge this gap in order to make block-level testing useful, reusable, fast, accessible to a much wider skill-set. The net effect is that bugs will be discovered earlier in the design cycle which equates to significant time and cost saving.
 
 Why verify in Python?
-=====================
+---------------------
 
 * It's **easy** to interface to other languages from Python
 * Python has a huge library of existing code to **re-use** like [constraint solvers](https://code.google.com/p/or-tools/) [packet parsing/generation](http://www.secdev.org/projects/scapy/) libraries.
@@ -17,17 +22,8 @@ Why verify in Python?
 * Writing Python is **fast**, it's *easy to understand* and *everybody* knows it.
 
 
-
-Useful links
-============
-
-* Read the [documentation](http://cocotb.readthedocs.org)
-* Get involved: [Raise a bug / request an enhancement](https://github.com/potentialventures/cocotb/issues/new) (Requires a GitHub account)
-* Get in contact: [E-mail us](mailto:cocotb@potentialventures.com)
-
-
 Example
-=======
+-------
 
 A simplistic example of generating a clock with 10ns period:
 ```python
@@ -78,7 +74,7 @@ def send(self, packet):
 ```
 
 Similar projects
-================
+----------------
 
 [MyHDL](http://www.myhdl.org/) seeks to displace VHDL and Verilog with a Python framework that can generate synthesiable RTL.
 
