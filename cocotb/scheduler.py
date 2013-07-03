@@ -49,6 +49,10 @@ class Scheduler(object):
         self.writes_lock = threading.RLock()
         self._remove = []
         self._pending_adds = []
+        self._terminate = False
+        self._test_result = None
+        self._readonly = None
+        # Keep this last
         self._readwrite = self.add(self.move_to_rw())
 
     def react(self, trigger):
@@ -81,22 +85,38 @@ class Scheduler(object):
             self.schedule(coroutine, trigger=trigger)
             self.log.debug("Scheduled coroutine %s" % (coroutine.__name__))
 
-        if self.waiting:
-            self.log.debug("Completed scheduling loop, still waiting on:")
+        self.log.debug("Completed scheduling loop, still waiting on:")
+
         for trig, routines in self.waiting.items():
             self.log.debug("\t%s: [%s]" % (str(trig).ljust(30), " ".join([routine.__name__ for routine in routines])))
 
         # If we've performed any writes that are cached then schedule
-        # another callback for the read-only part of the sim cycle
-        if len(self.writes) and self._readwrite is None:
+        # another callback for the read-write part of the sim cycle, but
+        # if we are terminating then do not allow another callback to be
+        # scheduled
+        if len(self.writes) and self._readwrite is None and self._terminate is False:
             self._readwrite = self.add(self.move_to_rw())
+
+        # A request for termination may have happened,
+        # This is where we really handle to informing of the
+        # regression handler that everything from the current
+        # test is done and that it can go on with more
+        if self._terminate is True:
+            if self._readonly is None and not self.waiting:
+                if self._test_result:
+                    cocotb.regression.handle_result(self._test_result)
+                    self._terminate = False
+                else:
+                    self.log.error("Seemed to have scorchedd the earth")
+                    die
 
         # If the python has caused any subsequent events to fire we might
         # need to schedule more coroutines before we drop back into the
         # simulator
-        while self._pending_adds:
-            coroutine = self._pending_adds.pop(0)
-            self.add(coroutine)
+        if self._terminate is False:
+            while self._pending_adds:
+                coroutine = self._pending_adds.pop(0)
+                self.add(coroutine)
 
         return
 
@@ -136,42 +156,11 @@ class Scheduler(object):
         """
         self._remove.append((coroutine, callback))
 
-    def schedule_react(self, trigger):
-        self._
-
-    def schedule(self, coroutine, trigger=None):
+    def prune_routines(self):
         """
-        Schedule a coroutine by calling the send method
-
-        Args:
-            coroutine (cocotb.decorators.coroutine): The coroutine to schedule
-
-            trigger (cocotb.triggers.Trigger): The trigger that caused this
-                                                coroutine to be scheduled
+        Process the remove list that can have accumulatad during the
+        execution of a parent routine
         """
-        coroutine.log.debug("Scheduling (%s)" % str(trigger))
-        try:
-            result = coroutine.send(trigger)
-        except cocotb.decorators.CoroutineComplete as exc:
-            self.log.debug("Coroutine completed execution with CoroutineComplete: %s" % coroutine.__name__)
-
-            # Call any pending callbacks that were waiting for this coroutine to exit
-            exc()
-            return
-
-        # TestComplete indication is game over, tidy up
-        except cocotb.decorators.TestComplete as test_result:
-
-            self.cleanup()
-
-            # Indicate to the test manager that we're done for this test
-            cocotb.regression.handle_result(test_result)
-            return
-        #except:
-
-        # Entries may have been added to the remove list while the
-        # coroutine was running, clear these down and deschedule
-        # before resuming
         while self._remove:
             delroutine, cb = self._remove.pop(0)
             for trigger, waiting in self.waiting.items():
@@ -184,6 +173,48 @@ class Scheduler(object):
                 if not waiting:
                     trigger.unprime()
                     del self.waiting[trigger]
+
+    def schedule(self, coroutine, trigger=None):
+        """
+        Schedule a coroutine by calling the send method
+
+        Args:
+            coroutine (cocotb.decorators.coroutine): The coroutine to schedule
+
+            trigger (cocotb.triggers.Trigger): The trigger that caused this
+                                                coroutine to be scheduled
+        """
+
+        if self._terminate is True and self._readonly is None:
+            self._readonly = True
+            readonly = self.add(self.move_to_ro())
+            self._readonly = readonly
+
+        coroutine.log.debug("Scheduling (%s)" % str(trigger))
+        try:
+            result = coroutine.send(trigger)
+        except cocotb.decorators.CoroutineComplete as exc:
+            self.log.debug("Coroutine completed execution with CoroutineComplete: %s" % coroutine.__name__)
+
+            # Call any pending callbacks that were waiting for this coroutine to exit
+            exc()
+            self.prune_routines()
+            return
+
+        # TestComplete indication is game over, tidy up
+        except cocotb.decorators.TestComplete as test_result:
+
+            # Tag that close down is needed, save the test_result
+            # for later use in cleanup handler
+            self._terminate = True
+            self._test_result = test_result
+
+            return
+
+        # Entries may have been added to the remove list while the
+        # coroutine was running, clear these down and deschedule
+        # before resuming
+        self.prune_routines()
          
 
         if isinstance(result, Trigger):
@@ -215,9 +246,12 @@ class Scheduler(object):
             for coro in waiting:
                 try: coro.kill()
                 except StopIteration: pass
-        self.waiting = collections.defaultdict(list)
-        self.writes = {}
-        self._readwrite = self.add(self.move_to_rw())
+
+    @cocotb.decorators.coroutine
+    def move_to_ro(self):
+        yield ReadOnly()
+        self.cleanup()
+        self._readonly = None
 
     @cocotb.decorators.coroutine
     def move_to_rw(self):

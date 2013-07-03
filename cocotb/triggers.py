@@ -72,7 +72,7 @@ class PythonTrigger(Trigger):
 
 class GPITrigger(Trigger):
     """
-    Execution will resume when the specified time period expires
+    Base Trigger class for GPI triggers
 
     Consumes simulation time
     """
@@ -144,9 +144,6 @@ class ReadWrite(GPITrigger):
 
     def prime(self, callback):
         self.cbhdl = simulator.register_rwsynch_callback(callback, self)
-
-    def unprime(self):
-        return
 
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
