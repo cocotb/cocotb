@@ -104,6 +104,7 @@ class Scheduler(object):
         if self._terminate is True:
             if self._readonly is None and not self.waiting:
                 if self._test_result:
+                    self.log.warn("Issue test result to regresssion object")
                     cocotb.regression.handle_result(self._test_result)
                     self._terminate = False
                 else:
@@ -161,18 +162,23 @@ class Scheduler(object):
         Process the remove list that can have accumulatad during the
         execution of a parent routine
         """
+        self.log.warn("In prune_routines")
         while self._remove:
             delroutine, cb = self._remove.pop(0)
             for trigger, waiting in self.waiting.items():
                 for coro in waiting:
                     if coro is delroutine:
+                        self.log.warn("Trowing into %s" % str(coro))
                         cb()
+                        try:coro.throw(StopIteration)
+                        except StopIteration: pass
                         self.waiting[trigger].remove(coro)
             # Clean up any triggers that no longer have pending coroutines
             for trigger, waiting in self.waiting.items():
                 if not waiting:
                     trigger.unprime()
                     del self.waiting[trigger]
+        self.log.warn("Exit prune_routines")
 
     def schedule(self, coroutine, trigger=None):
         """
@@ -185,20 +191,20 @@ class Scheduler(object):
                                                 coroutine to be scheduled
         """
 
-        if self._terminate is True and self._readonly is None:
-            self._readonly = True
-            readonly = self.add(self.move_to_ro())
-            self._readonly = readonly
+#        if self._terminate is True and self._readonly is None:
+#            self._readonly = True
+#            readonly = self.add(self.move_to_ro())
+#            self._readonly = readonly
 
         coroutine.log.debug("Scheduling (%s)" % str(trigger))
         try:
             result = coroutine.send(trigger)
         except cocotb.decorators.CoroutineComplete as exc:
-            self.log.debug("Coroutine completed execution with CoroutineComplete: %s" % coroutine.__name__)
+            self.log.debug("Coroutine completed execution with CoroutineComplete: %s" % str(coroutine))
 
             # Call any pending callbacks that were waiting for this coroutine to exit
             exc()
-            self.prune_routines()
+#            self.prune_routines()
             return
 
         # TestComplete indication is game over, tidy up
@@ -208,15 +214,19 @@ class Scheduler(object):
             # for later use in cleanup handler
             self._terminate = True
             self._test_result = test_result
-
+            self.log.debug("Coroutine completed execution with TestComplete: %s" % str(coroutine))
+#            self.prune_routines()
+            self.cleanup()
+#            self.prune_routines()
+            self._readonly = self.add(self.move_to_ro())
             return
 
         # Entries may have been added to the remove list while the
         # coroutine was running, clear these down and deschedule
         # before resuming
-        self.prune_routines()
-         
-
+        if self._terminate is False:
+            self.prune_routines()
+        
         if isinstance(result, Trigger):
             self._add_trigger(result, coroutine)
         elif isinstance(result, cocotb.decorators.coroutine):
@@ -235,26 +245,34 @@ class Scheduler(object):
             
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))
 
-        self._remove = []
+#        self._remove = []
 
     def cleanup(self):
-        """Clear up all our state
+        """ Clear up all our state
 
             Unprime all pending triggers and kill off any coroutines"""
         for trigger, waiting in self.waiting.items():
-            trigger.unprime()
+#            trigger.unprime()
             for coro in waiting:
-                try: coro.kill()
-                except StopIteration: pass
+                 self.log.warn("Killing %s" % str(coro))
+                 coro.kill()
+#                self.log.warn("Trowing on %s" % str(coro))
+#                try: coro.throw(StopIteration)
+#                except StopIteration: pass
 
     @cocotb.decorators.coroutine
     def move_to_ro(self):
-        yield ReadOnly()
-        self.cleanup()
+        yield Timer(1)
+	self.log.warn("out of next time step")
+#        self.cleanup()
+        self.prune_routines()
         self._readonly = None
 
     @cocotb.decorators.coroutine
     def move_to_rw(self):
-        yield ReadWrite()
-        self._readwrite = None
-        self.playout_writes()
+        try:
+            yield ReadWrite()
+            self._readwrite = None
+            self.playout_writes()
+        except StopIteration:
+            self.log.warn("Exception caught in read_rw_handler")

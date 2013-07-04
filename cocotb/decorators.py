@@ -236,3 +236,5 @@ class test(coroutine):
         except cocotb.TestFailed as e:
             self.log.error(str(e))
             raise TestCompleteFail()
+
+        raise StopIteration()

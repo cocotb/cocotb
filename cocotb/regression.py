@@ -135,6 +135,19 @@ class RegressionManager(object):
             return
         cocotb.scheduler.queue(self._running_test)
 
+#@cocotb.decorators.test
+#def test_runner(self):
+#        self._running_test = cocotb.regression.next_test()
+#        while self._running_test:
+#            try:
+#                test = cocotb.scheduler.add(self._running_test)
+#                yield Join(test)
+##            except StopIteration:
+#                self.log.warn("Caught the bugger")
+
+ #       cocotb.regression.tear_down()       
+#        return 
+
 
 def xunit_output(name, classname, time, skipped=False, failure="", error=""):
     """
