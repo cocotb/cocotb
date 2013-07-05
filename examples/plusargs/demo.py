@@ -86,9 +86,9 @@ def example_test(dut):
 
     dut.log.info(str(clk))
 
-    print cocotb.argv
-    print cocotb.argc
-    
+    for name in cocotb.plusargs:
+        print name, cocotb.plusargs[name]
+
     cgen = cocotb.scheduler.add(clock_generator(clk))
     yield reset_dut(clk, reset, enable)
     dut.log.info("Reset DUT complete, continuing test...")

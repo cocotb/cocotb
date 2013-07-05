@@ -32,6 +32,8 @@ TOPLEVEL = first_counter
 VERILOG_SOURCES = counter.v
 MODULE=demo
 
+PLUSARGS=+foo=bar +test1 +test2 +options=fubar
+
 include ../../makefiles/Makefile.inc
 include ../../makefiles/Makefile.sim
 
