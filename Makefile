@@ -51,7 +51,7 @@ clean:
 	-@find . -name "obj" | xargs rm -rf
 	-@find . -name "*.pyc" | xargs rm -rf
 
-test:
+test: $(LIBS)
 	$(MAKE) -C examples
 
 pycode:
