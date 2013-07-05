@@ -116,7 +116,7 @@ class RegressionManager(object):
 
         self.xunit.add_testcase(name = self._running_test._func.__name__, 
                                 classname=self._running_test._func.__module__,
-                                time=time.time() - self._running_test.start_time)
+                                time=repr(time.time() - self._running_test.start_time))
         if isinstance(result, cocotb.decorators.TestCompleteFail):
             self.xunit.add_failure("\n".join(self._running_test.error_messages))
 
