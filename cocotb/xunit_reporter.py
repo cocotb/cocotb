@@ -35,6 +35,7 @@ class File(file):
 class XUnitReporter:
 
     def __init__(self, filename="results.xml"):
+        self.filename = filename
         self.results = Element("testsuites", name="results")
 
     def add_testsuite(self, **kwargs):
