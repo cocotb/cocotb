@@ -53,9 +53,18 @@ class SimLogFormatter(logging.Formatter):
         logging.CRITICAL:       ANSI.RED_BG + ANSI.BLACK_FG + "%s" +
                                 ANSI.DEFAULT_FG + ANSI.DEFAULT_BG}
 
-
     def format(self, record):
         """pretify the log output, annotate with simulation time"""
+
+        # Justify and truncate
+        def ljust(string, chars):
+            if len(string) > chars: return string[:chars-2] + ".."
+            return string.ljust(chars)
+
+        def rjust(string, chars):
+            if len(string) > chars: return string[:chars-2] + ".."
+            return string.rjust(chars)
+
         if record.args:  msg = record.msg % record.args
         else:            msg = record.msg
 
@@ -66,10 +75,10 @@ class SimLogFormatter(logging.Formatter):
         timeh, timel = simulator.get_sim_time()
         simtime = "% 6d.%02dns" % ((timel/1000), (timel%1000)/10)
 
-        prefix = simtime + ' ' + level + record.name.ljust(_RECORD_CHARS) + \
-                 os.path.split(record.filename)[1].rjust(_FILENAME_CHARS) + \
-                 ':' + str(record.lineno).ljust(_LINENO_CHARS) + \
-                 ' in ' + str(record.funcName).ljust(_FUNCNAME_CHARS) + ' '
+        prefix = simtime + ' ' + level + ljust(record.name, _RECORD_CHARS) + \
+                 rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
+                 ':' + ljust(str(record.lineno), _LINENO_CHARS) + \
+                 ' in ' + ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
 
         pad = "\n" + " " * (len(prefix) - 10)
         return prefix + pad.join(msg.split('\n'))
