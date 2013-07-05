@@ -67,6 +67,15 @@ typedef struct t_vpi_time
 #define vpiSimTime        2
 #define vpiSuppressTime   3
 
+typedef struct t_vpi_vlog_info
+{
+      int32_t   argc;
+      char      **argv;
+      char      *product;
+      char      *version;
+} s_vpi_vlog_info, *p_vpi_vlog_info;
+
+
 
 /* generic value */
 typedef struct t_vpi_value
