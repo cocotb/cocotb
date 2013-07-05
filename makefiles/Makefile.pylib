@@ -45,7 +45,7 @@ PYTHON_LIBDIR:=$(PYTHON_PREFIX)/$(LIBDIR)/
 ifeq ($(OS),Linux)
 PYLIBS = $(wildcard $(PYTHON_LIBDIR)/python$(PYTHON_VERSION)/lib-dynload/*.so) $(shell python-config --libs)
 else
-PYLIBS = 
+PYLIBS = $(shell python-config --libs)
 endif
 
 PYTHON_INCLUDEDIR := -I$(PYTHON_PREFIX)/include/python$(PYTHON_VERSION)/
