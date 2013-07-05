@@ -34,12 +34,6 @@ import cocotb
 from cocotb.triggers import NullTrigger
 import simulator
 
-<<<<<<< HEAD
-import cocotb.decorators
-from xunit_reporter import XUnitReporter
-
-=======
->>>>>>> 07da45d1fcaaea391ad21307afa4f4f15a41cd64
 def _my_import(name):
     mod = __import__(name)
     components = name.split('.')
@@ -66,7 +60,6 @@ class RegressionManager(object):
         self.log = logging.getLogger("cocotb.regression")
 
     def initialise(self):
-        print 'initialise called'
 
         self.ntests = 0
 
@@ -93,10 +86,6 @@ class RegressionManager(object):
                         (self._queue[-1]._func.__module__,
                         self._queue[-1]._func.__name__))
 
-<<<<<<< HEAD
-        self.xunit = XUnitReporter()
-        self.xunit.add_testsuite(name="all", tests=repr(ntests))       
-=======
         self.start_xml(self.ntests)
 
     def start_xml(self, ntests):
@@ -104,45 +93,29 @@ class RegressionManager(object):
         self._fout = open("results.xml", 'w')
         self._fout.write("""<?xml version="1.0" encoding="UTF-8"?>\n""")
         self._fout.write("""<testsuite name="all" tests="%d">\n""" % ntests)        
->>>>>>> 07da45d1fcaaea391ad21307afa4f4f15a41cd64
 
     def tear_down(self):
         """It's the end of the world as we know it"""
+        self._fout.write("</testsuite>")
+        self._fout.close()
         self.log.info("Shutting down...")
-        self.xunit.write()
         simulator.stop_simulator()
 
     def next_test(self):
         """Get the next test to run"""
-        print 'next_test ', len(self._queue)
+        if not self._queue: return None
         return self._queue.pop(0)
 
 
     def handle_result(self, result):
         """Handle a test result
+
         Dumps result to XML and schedules the next test (if any)
+
         Args: result (TestComplete exception)
         """
-        
-        print 'handle_result called'
-        self.xunit.add_testcase(name = self._running_test._func.__name__, 
-                                classname=self._running_test._func.__module__,
-                                time=time.time() - self._running_test.start_time)
-        if isinstance(result, cocotb.decorators.TestCompleteFail):
-<<<<<<< HEAD
-            self.xunit.add_failure("\n".join(self._running_test.error_messages))
-        self.execute()
 
-    def execute(self):
-        print 'execute called'
-        try:
-            self._running_test = self.next_test()
-        except:
-            print 'tear down'
-            self.tear_down()
-            return
-        cocotb.scheduler.queue(self._running_test)
-=======
+        if isinstance(result, cocotb.decorators.TestCompleteFail):
             self._fout.write(xunit_output(self._running_test._func.__name__,
                             self._running_test._func.__module__,
                             time.time() - self._running_test.start_time,
@@ -173,5 +146,46 @@ class RegressionManager(object):
 
         self.tear_down()       
         return 
->>>>>>> 07da45d1fcaaea391ad21307afa4f4f15a41cd64
 
+
+def xunit_output(name, classname, time, skipped=False, failure="", error=""):
+    """
+    Format at xunit test output in XML
+
+    Args:
+        name (str):     the name of the test
+
+        classname (str): the name of the class
+
+        time (float): duration of the test in seconds
+
+    Kwargs:
+        skipped (bool): this test was skipped
+
+        failure (str): failure message to report
+
+        error (str): error message to report
+
+    Returns an XML string
+
+    """
+    xml = """  <testcase classname="%s" name="%s" time="%f" """ % \
+            (classname, name, time)
+
+    if not skipped and not failure and not error:
+        return xml + " />\n"
+    else:
+        xml += ">\n"
+
+    if skipped:
+        xml += "    <skipped />\n"
+
+    if failure:
+        xml += "    <failure message=\"test failure\">%s\n    </failure>\n" % \
+            failure
+
+    if error:
+        xml += "    <error message=\"test failure\">%s\n    </error>\n" % \
+            error
+
+    return xml + "  </testcase>\n"
