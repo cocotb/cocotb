@@ -44,7 +44,7 @@ $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
 $(LIB_DIR)/libgpilog.so: $(OBJ_DIR) $(OBJS)
-	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) -lpython2.7
+	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) 
 
 clean:
 	rm -rf $(OBJ_DIR)

@@ -57,7 +57,7 @@ endif
 
 
 ifeq ($(OS),Darwin)
-LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
+LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR) 
 
 #/Users/gmcgregor/src/IMP/python_install/lib/
 else
