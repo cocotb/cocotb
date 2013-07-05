@@ -30,7 +30,7 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 OBJ_DIR    	:= obj
 INCLUDES	+= $(PYINCLUDES) 
 GCC_ARGS	+=
-LIBS		:= -lpython2.7 $(PYLIBS)
+LIBS		:= $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
 
 SRCS		:= gpi_embed.c

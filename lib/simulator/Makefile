@@ -29,7 +29,7 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 OBJ_DIR		:= obj
 INCLUDES	+= $(PYINCLUDES) 
 GCC_ARGS	+=
-LIBS		:= -lgpi -lpython2.7 $(PYLIBS)
+LIBS		:= -lgpi $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
 
 SRCS		:= simulatormodule.c
