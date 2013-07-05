@@ -29,7 +29,6 @@ import logging
 
 import cocotb
 from cocotb.triggers import Join
-from cocotb.regression import xunit_output
 
 def public(f):
   """Use a decorator to avoid retyping function/class names.
