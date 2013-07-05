@@ -4,8 +4,7 @@ Roadmap
 
 Cocotb is in active development.
 
+We use GitHub issues to track our pending tasks. Take a look at the `open Enchancements <https://github.com/potentialventures/cocotb/issues?labels=enhancement&state=open>`_ to see the work that's lined up.
 
-* `Jenkins <http://jenkins-ci.org/>`_ itegration 
+If you have a GitHub account you can also `raise an enhancement request <https://github.com/potentialventures/cocotb/issues/new>`_ to suggest new features.
 
-  * Test auto-discovery
-  * XML output format

@@ -33,45 +33,12 @@ else
 LIBDIR:=lib
 endif
 
-PYTHON_VERSION:=2.7
+# We might work with other Python versions
+PYTHON_VERSION?=2.7
 PYTHON_DIR:=/usr/$(LIBDIR)/python$(PYTHON_VERSION)
 
-# Stupid Python doesn't seem to have a consistent naming convention
+# Since we don't know which modules we might need or whether the simulator
+# we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
+# is we simply link against all dynamic libraries in the Python installation
+PYLIBS = $(wildcard $(PYTHON_DIR)/lib-dynload/*.so)
 
-PYMODULE_CASE:=$(shell if [ -f $(PYTHON_DIR)/lib-dynload/_functoolsmodule.so ]; then echo 1; else echo 0; fi)
-
-ifeq ($(PYMODULE_CASE),1)
-PYLIBS = $(PYTHON_DIR)/lib-dynload/_functoolsmodule.so \
-	$(PYTHON_DIR)/lib-dynload/_socketmodule.so \
-	$(PYTHON_DIR)/lib-dynload/_collectionsmodule.so \
-	$(PYTHON_DIR)/lib-dynload/operator.so \
-	$(PYTHON_DIR)/lib-dynload/itertoolsmodule.so \
-	$(PYTHON_DIR)/lib-dynload/timemodule.so \
-	$(PYTHON_DIR)/lib-dynload/cStringIO.so \
-	$(PYTHON_DIR)/lib-dynload/selectmodule.so \
-	$(PYTHON_DIR)/lib-dynload/fcntlmodule.so \
-	$(PYTHON_DIR)/lib-dynload/_struct.so \
-	$(PYTHON_DIR)/lib-dynload/binascii.so \
-	$(PYTHON_DIR)/lib-dynload/math.so \
-	$(PYTHON_DIR)/lib-dynload/_randommodule.so \
-	$(PYTHON_DIR)/lib-dynload/zlibmodule.so \
-	$(PYTHON_DIR)/lib-dynload/cPickle.so \
-	$(PYTHON_DIR)/lib-dynload/arraymodule.so
-else
-PYLIBS = $(PYTHON_DIR)/lib-dynload/_functools.so \
-	 $(PYTHON_DIR)/lib-dynload/_socket.so \
-	 $(PYTHON_DIR)/lib-dynload/_collections.so \
-	 $(PYTHON_DIR)/lib-dynload/operator.so \
-	 $(PYTHON_DIR)/lib-dynload/itertools.so \
-	 $(PYTHON_DIR)/lib-dynload/time.so \
-	 $(PYTHON_DIR)/lib-dynload/cStringIO.so \
-	 $(PYTHON_DIR)/lib-dynload/select.so \
-	 $(PYTHON_DIR)/lib-dynload/fcntl.so \
-	 $(PYTHON_DIR)/lib-dynload/_struct.so \
-	 $(PYTHON_DIR)/lib-dynload/binascii.so \
-	 $(PYTHON_DIR)/lib-dynload/math.so \
-	 $(PYTHON_DIR)/lib-dynload/_random.so \
-	 $(PYTHON_DIR)/lib-dynload/zlib.so \
-	 $(PYTHON_DIR)/lib-dynload/cPickle.so \
-	 $(PYTHON_DIR)/lib-dynload/array.so
-endif
