@@ -89,7 +89,7 @@ class RegressionManager(object):
                         self._queue[-1]._func.__name__))
 
         self.xunit = XUnitReporter()
-        self.xunit.add_testsuite(name="all", tests=repr(self.ntests))    
+        self.xunit.add_testsuite(name="all", tests=repr(self.ntests), package="all")    
 
     def tear_down(self):
         """It's the end of the world as we know it"""
