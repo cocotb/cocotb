@@ -29,7 +29,6 @@ import logging
 
 import cocotb
 from cocotb.triggers import Join
-from cocotb.regression import xunit_output
 
 def public(f):
   """Use a decorator to avoid retyping function/class names.
@@ -185,14 +184,6 @@ class test(coroutine):
         self.started = False
         self.error_messages = []
 
-        # Capture all log messages with ERROR or higher
-        def handle_error_msg(msg):
-            self.error_messages.append(msg)
-
-        self.handler = test.ErrorLogHandler(handle_error_msg)
-        cocotb.log.addHandler(self.handler)
-
-
     def __call__(self, f):
         """
         ping
@@ -201,6 +192,13 @@ class test(coroutine):
         super(test, self).__init__(f)
         self.log =  logging.getLogger("cocotb.test.%s" % self._func.__name__)
         self.start_time = time.time()
+
+        # Capture all log messages with ERROR or higher
+        def handle_error_msg(msg):
+            self.error_messages.append(msg)
+
+        self.handler = test.ErrorLogHandler(handle_error_msg)
+        cocotb.log.addHandler(self.handler)
 
         def _wrapped_test(*args, **kwargs):
             super(test, self).__call__(*args, **kwargs)
@@ -223,6 +221,7 @@ class test(coroutine):
 
 
     def send(self, value):
+        self.error_messages = []
         """FIXME: problem here is that we don't let the call stack unwind..."""
         self._pre_send()
         if not self.started:

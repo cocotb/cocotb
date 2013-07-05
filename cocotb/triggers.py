@@ -285,3 +285,26 @@ class Join(PythonTrigger):
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self._coroutine.__name__
+
+
+class NullTrigger(PythonTrigger):
+    """
+    Don't do anything
+    """
+    def __init__(self):
+        Trigger.__init__(self)
+
+
+    def prime(self, callback):
+        pass
+
+
+#class WaitException(PythonTriggers):
+#    """"
+#    Wait for an exception to be thrown into this coroutine
+#    """
+#    def __init__(self, exception):
+#        super(self).__init__(self)
+
+    
+
