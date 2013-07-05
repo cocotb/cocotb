@@ -36,14 +36,14 @@ LIBDIR:=lib
 endif
 
 # We might work with other Python versions
-PYTHON_VERSION?=2.6
+PYTHON_VERSION?=$(shell python -c 'import platform; print ".".join(platform.python_version_tuple()[0:2])')
 PYTHON_LIBDIR:=$(PYTHON_PREFIX)/$(LIBDIR)/
 
 # Since we don't know which modules we might need or whether the simulator
 # we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
 # is we simply link against all dynamic libraries in the Python installation
 ifeq ($(OS),Linux)
-PYLIBS = $(wildcard $(PYTHON_LIBDIR)/python$(PYTHON_VERSION)/lib-dynload/*.so) -lpython$(PYTHON_VERSION)
+PYLIBS = $(wildcard $(PYTHON_LIBDIR)/python$(PYTHON_VERSION)/lib-dynload/*.so) $(shell python-config --libs)
 else
 PYLIBS = 
 endif
