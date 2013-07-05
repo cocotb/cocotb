@@ -29,12 +29,17 @@ All things relating to regression capabilities
 
 import time
 import logging
+import cocotb
 
+from cocotb.triggers import NullTrigger
 import simulator
 
+<<<<<<< HEAD
 import cocotb.decorators
 from xunit_reporter import XUnitReporter
 
+=======
+>>>>>>> 07da45d1fcaaea391ad21307afa4f4f15a41cd64
 def _my_import(name):
     mod = __import__(name)
     components = name.split('.')
@@ -63,7 +68,7 @@ class RegressionManager(object):
     def initialise(self):
         print 'initialise called'
 
-        ntests = 0
+        self.ntests = 0
 
         # Auto discovery
         for module_name in self._modules:
@@ -77,19 +82,29 @@ class RegressionManager(object):
                         (self._function, module_name))
 
                 self._queue.append(getattr(module, self._function)(self._dut))
-                ntests = 1
+                self.ntests = 1
                 break
 
             for thing in vars(module).values():
                 if hasattr(thing, "im_test"):
                     self._queue.append(thing(self._dut))
-                    ntests += 1
+                    self.ntests += 1
                     self.log.info("Found test %s.%s" %
                         (self._queue[-1]._func.__module__,
                         self._queue[-1]._func.__name__))
 
+<<<<<<< HEAD
         self.xunit = XUnitReporter()
         self.xunit.add_testsuite(name="all", tests=repr(ntests))       
+=======
+        self.start_xml(self.ntests)
+
+    def start_xml(self, ntests):
+        """Write the XML header into results.txt"""
+        self._fout = open("results.xml", 'w')
+        self._fout.write("""<?xml version="1.0" encoding="UTF-8"?>\n""")
+        self._fout.write("""<testsuite name="all" tests="%d">\n""" % ntests)        
+>>>>>>> 07da45d1fcaaea391ad21307afa4f4f15a41cd64
 
     def tear_down(self):
         """It's the end of the world as we know it"""
@@ -114,6 +129,7 @@ class RegressionManager(object):
                                 classname=self._running_test._func.__module__,
                                 time=time.time() - self._running_test.start_time)
         if isinstance(result, cocotb.decorators.TestCompleteFail):
+<<<<<<< HEAD
             self.xunit.add_failure("\n".join(self._running_test.error_messages))
         self.execute()
 
@@ -126,4 +142,36 @@ class RegressionManager(object):
             self.tear_down()
             return
         cocotb.scheduler.queue(self._running_test)
+=======
+            self._fout.write(xunit_output(self._running_test._func.__name__,
+                            self._running_test._func.__module__,
+                            time.time() - self._running_test.start_time,
+                            failure="\n".join(self._running_test.error_messages)))
+        else:
+            self._fout.write(xunit_output(self._running_test._func.__name__,
+                            self._running_test._func.__module__,
+                            time.time() - self._running_test.start_time))
+
+    def execute(self):
+        cocotb.scheduler.add(self.test_runner())
+
+    @cocotb.decorators.coroutine
+    def test_runner(self):
+        self._running_test = cocotb.regression.next_test()
+        count = 1
+        while self._running_test:
+            try:
+                self.log.warn("Running test %s of %d/%d" % (self._running_test, count, self.ntests))
+                if count is 1:
+                    test = cocotb.scheduler.add(self._running_test)
+                else:
+                    test = cocotb.scheduler.new_test(self._running_test)
+                yield NullTrigger()
+            except StopIteration:
+               count+=1
+               self._running_test = cocotb.regression.next_test()
+
+        self.tear_down()       
+        return 
+>>>>>>> 07da45d1fcaaea391ad21307afa4f4f15a41cd64
 
