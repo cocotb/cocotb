@@ -49,6 +49,7 @@ class Scheduler(object):
         self.writes_lock = threading.RLock()
         self._remove = []
         self._pending_adds = []
+        self._startpoint = None
         self._terminate = False
         self._test_result = None
         self._readonly = None
@@ -106,7 +107,7 @@ class Scheduler(object):
         if self._terminate is True:
             if self._readonly is None:
                 self._terminate = False
-                if hasattr(self, "_startpoint") and self._startpoint is not None:
+                if self._startpoint is not None:
                     self.add(self._startpoint)
                     self._startpoint = None
                 self._test_result = None
