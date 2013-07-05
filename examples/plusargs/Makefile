@@ -26,11 +26,10 @@
 ###############################################################################
 
 
-# FIXME these should come from some cunning script, possibly from the FDK :)
-TOPLEVEL = first_counter
+TOPLEVEL = tb_top
 
-VERILOG_SOURCES = counter.v
-MODULE=demo
+VERILOG_SOURCES = tb_top.v
+MODULE=plusargs
 
 PLUSARGS=+foo=bar +test1 +test2 +options=fubar
 
