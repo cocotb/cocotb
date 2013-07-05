@@ -106,7 +106,7 @@ class Scheduler(object):
         if self._terminate is True:
             if self._readonly is None:
                 self._terminate = False
-                if self._startpoint is not None:
+                if hasattr(self, "_startpoint") and self._startpoint is not None:
                     self.add(self._startpoint)
                     self._startpoint = None
                 self._test_result = None
