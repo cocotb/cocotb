@@ -29,7 +29,7 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 OBJ_DIR		:= obj
-INCLUDES	+= -I/usr/include/python$(PYTHON_VERSION)/
+INCLUDES	+= 
 GCC_ARGS	+= -DFILTER
 
 SRCS		:= gpi_logging.c
@@ -38,13 +38,13 @@ OBJS            := $(SRCS:%.c=$(OBJ_DIR)/%.o)
 all: $(LIB_DIR)/libgpilog.so
 
 $(OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
+	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
 $(LIB_DIR)/libgpilog.so: $(OBJ_DIR) $(OBJS)
-	gcc $(GCC_ARGS) -shared -export-dynamic -o $@ $(OBJS) -lpython2.7
+	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) -lpython2.7
 
 clean:
 	rm -rf $(OBJ_DIR)

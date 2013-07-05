@@ -27,7 +27,7 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc 
 OBJ_DIR		:= obj
-INCLUDES	+= -I/usr/include/python$(PYTHON_VERSION)/
+INCLUDES	+= $(PYINCLUDES) 
 GCC_ARGS	+=
 LIBS		:= -lgpi -lpython2.7 $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
@@ -40,13 +40,13 @@ LIB_NAME	:= libsim.so
 all : $(LIB_DIR)/simulator.so
 
 $(OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
+	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
 
 $(OBJ_DIR) :
 	mkdir -p $(OBJ_DIR)
  
 $(LIB_DIR)/$(LIB_NAME) : $(OBJ_DIR) $(OBJS)
-	gcc $(GCC_ARGS) -shared -Xlinker -export-dynamic -o $@ $(OBJS) $(LIBS) $(LD_PATH)
+	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) $(LIBS) $(LD_PATH)
 
 $(LIB_DIR)/simulator.so: $(LIB_DIR)/$(LIB_NAME)
 	ln -sf $(LIB_NAME) $@

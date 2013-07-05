@@ -27,18 +27,25 @@
 
 # All common pyhon related rules
 
+PYTHON_PREFIX = $(shell python-config --prefix)
+
 ifeq ($(ARCH),x86_64)
-LIBDIR:=lib64
+LIBDIR:=lib
 else
 LIBDIR:=lib
 endif
 
 # We might work with other Python versions
 PYTHON_VERSION?=2.7
-PYTHON_DIR:=/usr/$(LIBDIR)/python$(PYTHON_VERSION)
+PYTHON_LIBDIR:=$(PYTHON_PREFIX)/$(LIBDIR)/
 
 # Since we don't know which modules we might need or whether the simulator
 # we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
 # is we simply link against all dynamic libraries in the Python installation
-PYLIBS = $(wildcard $(PYTHON_DIR)/lib-dynload/*.so)
+ifeq ($(OS),Linux)
+PYLIBS = $(wildcard $(PYTHON_LIBDIR)/python$(PYTHON_VERSION)/lib-dynload/*.so)  
+else
+PYLIBS = 
+endif
 
+PYTHON_INCLUDEDIR := -I$(PYTHON_PREFIX)/include/python$(PYTHON_VERSION)/
