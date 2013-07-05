@@ -32,7 +32,7 @@ class File(file):
         return line_list[-lines_2find:]
 
 
-class XUnitReporter:
+class XUnitReporter(object):
 
     def __init__(self, filename="results.xml"):
         self.results = Element("testsuites", name="results")
