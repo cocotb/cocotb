@@ -37,6 +37,8 @@ import cocotb
 from cocotb.triggers import NullTrigger
 
 import cocotb.ANSI as ANSI
+import cocotb.decorators
+from xunit_reporter import XUnitReporter
 
 def _my_import(name):
     mod = __import__(name)
@@ -90,45 +92,33 @@ class RegressionManager(object):
                         (self._queue[-1]._func.__module__,
                         self._queue[-1]._func.__name__))
 
-        self.start_xml(self.ntests)
 
-    def start_xml(self, ntests):
-        """Write the XML header into results.txt"""
-        self._fout = open("results.xml", 'w')
-        self._fout.write("""<?xml version="1.0" encoding="UTF-8"?>\n""")
-        self._fout.write("""<testsuite name="all" tests="%d" package="all">\n""" % ntests)
+        self.xunit = XUnitReporter()
+        self.xunit.add_testsuite(name="all", tests=repr(self.ntests), package="all")       
 
     def tear_down(self):
         """It's the end of the world as we know it"""
-        self._fout.write("</testsuite>")
-        self._fout.close()
         self.log.info("Shutting down...")
+        self.xunit.write()
         simulator.stop_simulator()
 
     def next_test(self):
         """Get the next test to run"""
-        if not self._queue: return None
+        print 'next_test ', len(self._queue)
         return self._queue.pop(0)
 
 
     def handle_result(self, result):
         """Handle a test result
-
         Dumps result to XML and schedules the next test (if any)
-
         Args: result (TestComplete exception)
         """
 
-        if isinstance(result, cocotb.decorators.TestCompleteFail) and not \
-            self._running_test.expect_fail:
-            self._fout.write(xunit_output(self._running_test._func.__name__,
-                            self._running_test._func.__module__,
-                            time.time() - self._running_test.start_time,
-                            failure="\n".join(self._running_test.error_messages)))
-        else:
-            self._fout.write(xunit_output(self._running_test._func.__name__,
-                            self._running_test._func.__module__,
-                            time.time() - self._running_test.start_time))
+        self.xunit.add_testcase(name = self._running_test._func.__name__, 
+                                classname=self._running_test._func.__module__,
+                                time=time.time() - self._running_test.start_time)
+        if isinstance(result, cocotb.decorators.TestCompleteFail):
+            self.xunit.add_failure("\n".join(self._running_test.error_messages))
 
     def execute(self):
         cocotb.scheduler.add(self.test_runner())
@@ -156,46 +146,3 @@ class RegressionManager(object):
 
         self.tear_down()       
         return 
-
-
-def xunit_output(name, classname, time, skipped=False, failure="", error=""):
-    """
-    Format at xunit test output in XML
-
-    Args:
-        name (str):     the name of the test
-
-        classname (str): the name of the class
-
-        time (float): duration of the test in seconds
-
-    Kwargs:
-        skipped (bool): this test was skipped
-
-        failure (str): failure message to report
-
-        error (str): error message to report
-
-    Returns an XML string
-
-    """
-    xml = """  <testcase classname="%s" name="%s" time="%f" """ % \
-            (classname, name, time)
-
-    if not skipped and not failure and not error:
-        return xml + " />\n"
-    else:
-        xml += ">\n"
-
-    if skipped:
-        xml += "    <skipped />\n"
-
-    if failure:
-        xml += "    <failure message=\"test failure\">%s\n    </failure>\n" % \
-            failure
-
-    if error:
-        xml += "    <error message=\"test failure\">%s\n    </error>\n" % \
-            error
-
-    return xml + "  </testcase>\n"
