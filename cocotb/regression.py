@@ -96,7 +96,7 @@ class RegressionManager(object):
         """Write the XML header into results.txt"""
         self._fout = open("results.xml", 'w')
         self._fout.write("""<?xml version="1.0" encoding="UTF-8"?>\n""")
-        self._fout.write("""<testsuite name="all" tests="%d">\n""" % ntests)        
+        self._fout.write("""<testsuite name="all" tests="%d" package="all">\n""" % ntests)
 
     def tear_down(self):
         """It's the end of the world as we know it"""
