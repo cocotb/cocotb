@@ -29,10 +29,14 @@ All things relating to regression capabilities
 
 import time
 import logging
-import cocotb
 
-from cocotb.triggers import NullTrigger
+
 import simulator
+
+import cocotb
+from cocotb.triggers import NullTrigger
+
+import cocotb.ANSI as ANSI
 
 def _my_import(name):
     mod = __import__(name)
@@ -92,7 +96,7 @@ class RegressionManager(object):
         """Write the XML header into results.txt"""
         self._fout = open("results.xml", 'w')
         self._fout.write("""<?xml version="1.0" encoding="UTF-8"?>\n""")
-        self._fout.write("""<testsuite name="all" tests="%d">\n""" % ntests)        
+        self._fout.write("""<testsuite name="all" tests="%d" package="all">\n""" % ntests)
 
     def tear_down(self):
         """It's the end of the world as we know it"""
@@ -115,7 +119,8 @@ class RegressionManager(object):
         Args: result (TestComplete exception)
         """
 
-        if isinstance(result, cocotb.decorators.TestCompleteFail):
+        if isinstance(result, cocotb.decorators.TestCompleteFail) and not \
+            self._running_test.expect_fail:
             self._fout.write(xunit_output(self._running_test._func.__name__,
                             self._running_test._func.__module__,
                             time.time() - self._running_test.start_time,
@@ -134,7 +139,12 @@ class RegressionManager(object):
         count = 1
         while self._running_test:
             try:
-                self.log.warn("Running test %s of %d/%d" % (self._running_test, count, self.ntests))
+                # Want this to stand out a little bit
+                self.log.info("%sRunning test %d/%d:%s %s" % (
+                    ANSI.BLUE_BG +ANSI.BLACK_FG,
+                        count, self.ntests,
+                    ANSI.DEFAULT_FG + ANSI.DEFAULT_BG,
+                        self._running_test))
                 if count is 1:
                     test = cocotb.scheduler.add(self._running_test)
                 else:
