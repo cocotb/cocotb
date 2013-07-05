@@ -27,7 +27,7 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc 
 OBJ_DIR		:= obj
-INCLUDES	+= $(PYINCLUDES) 
+INCLUDES	+=  
 GCC_ARGS	+=
 LIBS		:= -lgpi $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
