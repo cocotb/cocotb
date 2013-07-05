@@ -92,7 +92,7 @@ def _initialise_testbench(root_handle):
         raise ImportError("Environment variables defining the module(s) to \
                         execute not defined.  MODULE=\"%s\"\"" % (module_str))
 
-    modules = module_str.split()
+    modules = module_str.split(',')
 
     global regression
 
