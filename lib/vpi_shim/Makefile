@@ -27,7 +27,7 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 OBJ_DIR		:= obj
-INCLUDES	+= -I/usr/include/python$(PYTHON_VERSION)/
+INCLUDES	+= 
 GCC_ARGS	+=
 LIBS		:= -lgpilog -lcocotb
 LD_PATH		:= -L$(LIB_DIR)
@@ -37,21 +37,21 @@ OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
 LIB_NAME	:= libgpi.so
 
-all: $(LIB_DIR)/gpivpi.vpi
+all: $(LIB_DIR)/gpivpi.vpl
 
 $(OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
+	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
 $(LIB_DIR)/$(LIB_NAME): $(OBJ_DIR) $(OBJS)
-	gcc $(GCC_ARGS) -shared -export-dynamic -o $@ $(OBJS) $(LIBS) $(LD_PATH)
+	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) $(LIBS) $(LD_PATH)
 
 # More rules such that this may be needed depending on the requirements of
 # different simulators, icarus for instance loads a <name>.vpi libraray to use the vpi
 # inerface at the start of the simulation
-$(LIB_DIR)/gpivpi.vpi: $(LIB_DIR)/$(LIB_NAME)
+$(LIB_DIR)/gpivpi.vpl: $(LIB_DIR)/$(LIB_NAME)
 	ln -sf $(LIB_NAME) $@
 
 clean:

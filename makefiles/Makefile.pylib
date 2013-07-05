@@ -27,18 +27,26 @@
 
 # All common pyhon related rules
 
-ifeq ($(ARCH),x86_64)
-LIBDIR:=lib64
-else
-LIBDIR:=lib
-endif
+PYTHON_PREFIX = $(shell python-config --prefix)
 
 # We might work with other Python versions
-PYTHON_VERSION?=2.7
-PYTHON_DIR:=/usr/$(LIBDIR)/python$(PYTHON_VERSION)
+PYTHON_VERSION?=$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version()')
+PYTHON_LIBDIR:=$(shell python -c 'import os.path,distutils.sysconfig;print os.path.sep+os.path.join(*list(distutils.sysconfig.get_python_lib(standard_lib=True).split(os.path.sep)[:-1]))')
 
 # Since we don't know which modules we might need or whether the simulator
 # we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
 # is we simply link against all dynamic libraries in the Python installation
-PYLIBS = $(wildcard $(PYTHON_DIR)/lib-dynload/*.so)
+ifeq ($(OS),Linux)
+PYLIBS = $(wildcard $(PYTHON_LIBDIR)/python$(PYTHON_VERSION)lib-dynload/*.so) $(shell python-config --libs)
+else
+PYLIBS = $(shell python-config --libs)
+endif
+
+PYTHON_INCLUDEDIR := -I$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
+
+
+
+
+
+
 
