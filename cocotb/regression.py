@@ -104,7 +104,7 @@ class RegressionManager(object):
 
     def next_test(self):
         """Get the next test to run"""
-        print 'next_test ', len(self._queue)
+        if not self._queue: return None
         return self._queue.pop(0)
 
 
