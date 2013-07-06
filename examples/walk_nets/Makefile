@@ -25,8 +25,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# Please set the paths to the various simulators here
 
-ICARUS_BASE:=/usr/local/icarus
+# FIXME these should come from some cunning script, possibly from the FDK :)
+TOPLEVEL = top
 
-VPI_USER:=/usr/local/include/iverilog/vpi_user.h
+VERILOG_SOURCES = counter.v
+MODULE=walk_nets
+
+include ../../makefiles/Makefile.inc
+include ../../makefiles/Makefile.sim
+

@@ -33,6 +33,7 @@
 */
 
 #include "simulatormodule.h"
+#include <vpi_user.h>
 
 /**
  * @name    Callback Handling
@@ -59,6 +60,18 @@
  *  - Ensure cleanup correctly in exception cases
  *
  */
+
+typedef struct {
+  char  *name;
+  long  value;
+} vpi_name_value;
+
+
+static vpi_name_value vpi_constants[] =  {
+#include "generated_vpidefs.h"
+};
+
+
 int handle_gpi_callback(void *user_data)
 {
     p_callback_data callback_data_p = (p_callback_data)user_data;
@@ -650,5 +663,14 @@ static PyObject *stop_clock(PyObject *self, PyObject *args)
 PyMODINIT_FUNC
 initsimulator(void)
 {
-    (void) Py_InitModule("simulator", SimulatorMethods);
+    vpi_name_value * vnv_p;
+    PyObject *pModule, *pDict;
+    pModule = Py_InitModule("simulator", SimulatorMethods);
+    pDict = PyModule_GetDict(pModule);
+    vnv_p = vpi_constants;
+    while(vnv_p->name != NULL) {
+        PyDict_SetItemString(pDict, vnv_p->name, PyInt_FromLong((long)vnv_p->value));
+        vnv_p++;
+    }
+
 }

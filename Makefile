@@ -40,14 +40,18 @@ all: $(LIBS)
 $(LIBS): dirs
 	$(MAKE) -C $@
 
+include/generated_vpidefs.h:
+	./makefiles/parse_vpi.py $(VPI_USER) > include/generated_vpidefs.h
+
 lib/vpi_shim: lib/gpi lib/embed
-lib/simulator: lib/vpi_shim
+lib/simulator: lib/vpi_shim include/generated_vpidefs.h
 
 dirs:
 	@mkdir -p $(LIB_DIR)
 
 clean:
-	-@rm -rf $(BUILD_DIR)
+	-rm -rf $(BUILD_DIR)
+	-@rm -f include/generated_vpidefs.h
 	-@find . -name "obj" | xargs rm -rf
 	-@find . -name "*.pyc" | xargs rm -rf
 	-@find . -name "results.xml" | xargs rm -rf
