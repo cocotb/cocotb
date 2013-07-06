@@ -39,7 +39,11 @@ else
 ifeq ($(SIM),VCS)
 include $(SIM_ROOT)/makefiles/Makefile.vcs
 else
-$(error "Unknown simulator selected. Set SIM to either ICARUS, ALDEC or VCS")
+ifeq ($(SIM),QUESTA)
+include $(SIM_ROOT)/makefiles/Makefile.questa
+else
+$(error "Unknown simulator selected. Set SIM to either ICARUS, ALDEC, QUESTA or VCS")
+endif
 endif
 endif
 endif
