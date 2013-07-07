@@ -13,14 +13,15 @@ $(OBJ_DIR):
 .PHONY: sim
 sim: $(OBJ_DIR) $(VERILOG_SOURCES) 
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(PYTHON_LIBDIR):$(PYTHON_DYNLIBDIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) \
-		qverilog +nc64bit +loadvpi=$(VPI_FILE):vlog_startup_routines_bootstrap +access+rw $(EXTRA_ARGS) $(VERILOG_SOURCES)
+	qverilog -64 -R -pli $(VPI_FILE) - +acc $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 dve: $(OBJ_DIR) $(VERILOG_SOURCES) 
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) \
-		qverilog +loadvpi=$(VPI_FILE):vlog_startup_routines_bootstrap +access+rw $(EXTRA_ARGS) $(VERILOG_SOURCES)
+    qverilog -64 -R -pli $(VPI_FILE) - +acc $(EXTRA_ARGS) $(VERILOG_SOURCES)
+
 clean:
 	-@rm -rf $(OBJ_DIR)
 	-@rm -rf INCA_libs
-	-@rm -rf ncverilog.log
+	-@rm -rf qverilog.log
 
 
