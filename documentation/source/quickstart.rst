@@ -19,7 +19,7 @@ The same mechanism can be used to access signals inside the design.
     # Get a reference to the "clk" signal on the top-level
     clk = dut.clk
     
-    # Get a regerence to a register "count" in a sub-block "inst_sub_block"
+    # Get a reference to a register "count" in a sub-block "inst_sub_block"
     count = dut.inst_sub_block.count
 
 
