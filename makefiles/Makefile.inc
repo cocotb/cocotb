@@ -52,16 +52,16 @@ export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
 ifeq ($(OS),Darwin)
 GCC_ARGS    :=  -g -DDEBUG -fpic
 else
-GCC_ARGS	:=	-Werror -g -DDEBUG -fpic
+GCC_ARGS	:=	-Werror -g -DDEBUG -fpic 
 endif
 
 
 ifeq ($(OS),Darwin)
-LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR) 
+LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR) $(PYLIBS)
 
 #/Users/gmcgregor/src/IMP/python_install/lib/
 else
-LINKER_ARGS := -shared -Xlinker -export-dynamic
+LINKER_ARGS := -shared -Xlinker -export-dynamic $(PYLIBS)
 endif
 
 # Disable some inbuild rules

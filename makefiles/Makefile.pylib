@@ -33,11 +33,13 @@ PYTHON_PREFIX = $(shell python-config --prefix)
 PYTHON_VERSION?=$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version()')
 PYTHON_LIBDIR:=$(shell python -c 'import os.path,distutils.sysconfig;print os.path.sep+os.path.join(*list(distutils.sysconfig.get_python_lib(standard_lib=True).split(os.path.sep)[:-1]))')
 
+PYTHON_DYNLIBDIR:=$(PYTHON_LIBDIR)/python$(PYTHON_VERSION)/lib-dynload/
+
 # Since we don't know which modules we might need or whether the simulator
 # we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
 # is we simply link against all dynamic libraries in the Python installation
 ifeq ($(OS),Linux)
-PYLIBS = $(wildcard $(PYTHON_LIBDIR)/python$(PYTHON_VERSION)lib-dynload/*.so) $(shell python-config --libs)
+PYLIBS = $(wildcard $(PYTHON_DYNLIBDIR)/*.so) $(shell python-config --libs)
 else
 PYLIBS = $(shell python-config --libs)
 endif
