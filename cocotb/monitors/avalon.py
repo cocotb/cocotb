@@ -31,6 +31,7 @@ NB Currently we only support a very small subset of functionality
 """
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
+from cocotb.triggers import RisingEdge, ReadOnly
 
 class AvalonST(BusMonitor):
     """
@@ -52,7 +53,7 @@ class AvalonST(BusMonitor):
         while True:
             yield clkedge
             yield rdonly
-            if self.bus.valid.value
+            if self.bus.valid.value:
                 vec = self.bus.data.value
                 self._recv(vec.buff)
 
