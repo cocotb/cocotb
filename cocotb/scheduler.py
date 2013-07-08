@@ -54,8 +54,6 @@ class Scheduler(object):
         self._terminate = False
         self._test_result = None
         self._readonly = None
-        self._restart = None
-        self._restart_coro = None
         # Keep this last
         self._readwrite = self.add(self.move_to_rw())
 
@@ -101,25 +99,13 @@ class Scheduler(object):
         if len(self.writes) and self._readwrite is None and self._terminate is False:
             self._readwrite = self.add(self.move_to_rw())
 
-        # A request for termination may have happened,
-        # This is where we really handle to informing of the
-        # regression handler that everything from the current
-        # test is done and that it can go on with more
-        if self._terminate is True:
-            if self._readonly is None:
-                self._terminate = False
-                if self._startpoint is not None:
-                    self.add(self._startpoint)
-                    self._startpoint = None
-                self._test_result = None
 
         # If the python has caused any subsequent events to fire we might
         # need to schedule more coroutines before we drop back into the
         # simulator
-        if self._terminate is False:
-            while self._pending_adds:
-                coroutine = self._pending_adds.pop(0)
-                self.add(coroutine)
+        while self._pending_adds:
+            coroutine = self._pending_adds.pop(0)
+            self.add(coroutine)
 
         return
 
@@ -152,7 +138,7 @@ class Scheduler(object):
             self.log.critical("Attempt to schedule a coroutine that hasn't started")
             coroutine.log.error("This is the failing coroutine")
             self.log.warning("Did you forget to add paranthesis to the @test decorator?")
-            cocotb.regression.handle_result(TestError("Attempt to schedule a coroutine that hasn't started"))
+            self._result = TestError("Attempt to schedule a coroutine that hasn't started")
             self.cleanup()
             return
 
@@ -160,7 +146,7 @@ class Scheduler(object):
             self.log.critical("Attempt to add something to the scheduler which isn't a coroutine")
             self.log.warning("Got: %s (%s)" % (str(type(coroutine)), repr(coroutine)))
             self.log.warning("Did you use the @coroutine decorator?")
-            cocotb.regression.handle_result(TestError("Attempt to schedule a coroutine that hasn't started"))
+            self._resulti = TestError("Attempt to schedule a coroutine that hasn't started")
             self.cleanup()
             return
 
@@ -188,18 +174,16 @@ class Scheduler(object):
         Process the remove list that can have accumulatad during the
         execution of a parent routine
         """
-        restart = None
-        restart_coro = None
         while self._remove:
             delroutine, cb = self._remove.pop(0)
             for trigger, waiting in self.waiting.items():
                 if isinstance(trigger, NullTrigger): continue
                 for coro in waiting:
                     if coro is delroutine:
-                        self.log.debug("Trowing into %s" % str(coro))
+                        self.log.debug("Closing %s" % str(coro))
                         cb()
-                        coro.close()
                         self.waiting[trigger].remove(coro)
+                        coro.close()
             # Clean up any triggers that no longer have pending coroutines
             for trigger, waiting in self.waiting.items():
                 if not waiting:
@@ -240,35 +224,31 @@ class Scheduler(object):
             if isinstance(result, Trigger):
                 self._add_trigger(result, coroutine)
             elif isinstance(result, cocotb.decorators.RunningCoroutine):
-                self.log.debug("Scheduling nested co-routine: %s" % result.__name__)
-
-                # Queue current routine to schedule when the nested routine exits
-                self._add_trigger(result.join(), coroutine)
                 if self._terminate is False:
-                    self.add(result)
+                    self.log.debug("Scheduling nested co-routine: %s" % result.__name__)
+
+                    # Queue current routine to schedule when the nested routine exits
+                    self.queue(result)
+                    self._add_trigger(result.join(), coroutine)
 
             elif isinstance(result, list):
-                if self._terminate is False:
-                    for trigger in result:
-                        trigger.addpeers(result)
-                        self._add_trigger(trigger, coroutine)
+                for trigger in result:
+                    trigger.addpeers(result)
+                    self._add_trigger(trigger, coroutine)
             else:
                 raise TestError(("Unable to schedule coroutine since it's returning stuff %s" % repr(result)))
 
         # TestComplete indication is game over, tidy up
         except TestComplete as test_result:
 
-            self.log.error(str(test_result))
+    #        self.log.error(str(test_result))
 
             # Tag that close down is needed, save the test_result
             # for later use in cleanup handler
-            if self._terminate is False:
-                self._terminate = True
-                self._test_result = test_result
-                self.log.debug("Issue test result to regresssion object")
-                cocotb.regression.handle_result(test_result)
-                self._readonly = self.add(self.move_to_cleanup())
-                self.cleanup()
+            self._terminate = True
+            self._test_result = test_result
+            self.cleanup()
+            self._readonly = self.add(self.move_to_cleanup())
 
             self.log.debug("Coroutine completed execution with TestComplete: %s" % str(coroutine))
             return                
@@ -289,20 +269,24 @@ class Scheduler(object):
         yield Timer(1)
         self.prune_routines()
         self._readonly = None
-        if self._restart is not None:
-            self._add_trigger(self._restart, self._restart_coro)
-            self._restart = None
-        self.log.debug("Out of delay cleanup")
 
-        # Carry on running the test
-        self.react(self.waiting.keys()[0])
+        # Tell the handler what the result was
+        self.log.debug("Issue test result to regresssion object")
+        cocotb.regression.handle_result(self._test_result)
+        self._test_result = None
+
+        # If another test was added to queue kick it off
+        self.log.debug("Cleanup done")
+        if self._startpoint is not None:
+            newstart = self._startpoint
+            self._startpoint = None
+            self.queue(newstart)
+
+        self._terminate = False
 
 
     @cocotb.decorators.coroutine
     def move_to_rw(self):
-        try:
-            yield ReadWrite()
-            self._readwrite = None
-            self.playout_writes()
-        except StopIteration:
-            self.log.warn("Exception caught in read_rw_handler")
+        yield ReadWrite()
+        self._readwrite = None
+        self.playout_writes()

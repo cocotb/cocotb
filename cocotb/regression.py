@@ -68,6 +68,7 @@ class RegressionManager(object):
     def initialise(self):
 
         self.ntests = 0
+        self.count = 1
 
         xml = ""
 
@@ -140,31 +141,24 @@ class RegressionManager(object):
                             self._running_test.module,
                             time.time() - self._running_test.start_time))
 
-    def execute(self):
-        cocotb.scheduler.add(self.test_runner())
+	self.execute()
 
-    @cocotb.decorators.coroutine
-    def test_runner(self):
+    def execute(self):
         self._running_test = cocotb.regression.next_test()
-        count = 1
-        try:        
-            while self._running_test:
-                # Want this to stand out a little bit
-                self.log.info("%sRunning test %d/%d:%s %s" % (
-                    ANSI.BLUE_BG +ANSI.BLACK_FG,
-                        count, self.ntests,
-                    ANSI.DEFAULT_FG + ANSI.DEFAULT_BG,
-                        self._running_test))
-                if count is 1:
-                    test = cocotb.scheduler.add(self._running_test)
-                else:
-                    test = cocotb.scheduler.new_test(self._running_test)
-                yield NullTrigger()
-                count+=1
-                self._running_test = cocotb.regression.next_test()
-        finally:
-            self.tear_down()
-        return 
+        if self._running_test:
+            # Want this to stand out a little bit
+            self.log.info("%sRunning test %d/%d:%s %s" % (
+               ANSI.BLUE_BG +ANSI.BLACK_FG,
+                    self.count, self.ntests,
+               ANSI.DEFAULT_FG + ANSI.DEFAULT_BG,
+                    self._running_test))
+            if self.count is 1:
+                test = cocotb.scheduler.add(self._running_test)
+            else:
+                test = cocotb.scheduler.new_test(self._running_test)
+            self.count+=1
+        else:
+            self.tear_down()   
 
 
 def xunit_output(name, classname, time, skipped=False, failure="", error=""):

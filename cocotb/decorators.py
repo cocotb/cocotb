@@ -151,8 +151,8 @@ class RunningTest(RunningCoroutine):
 
 
     def __init__(self, inst, parent):
-        RunningCoroutine.__init__(self, inst, parent)
         self.error_messages = []
+        RunningCoroutine.__init__(self, inst, parent)
         self.started = False
         self.start_time = 0
         self.expect_fail = parent.expect_fail
@@ -162,6 +162,7 @@ class RunningTest(RunningCoroutine):
 
     def send(self, value):
         if not self.started:
+            self.error_messages = []
             self.log.info("Starting test: \"%s\"\nDescription: %s" % (self.funcname, self.__doc__))
             self.start_time = time.time()            
             self.started = True
