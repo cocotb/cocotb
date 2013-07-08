@@ -37,16 +37,11 @@ PYTHON_LIBDIR:=$(shell python -c 'import os.path,distutils.sysconfig;print os.pa
 # we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
 # is we simply link against all dynamic libraries in the Python installation
 ifeq ($(OS),Linux)
-PYLIBS = $(wildcard $(PYTHON_LIBDIR)/python$(PYTHON_VERSION)lib-dynload/*.so) $(shell python-config --libs)
+PYLIBS = $(wildcard $(PYTHON_LIBDIR)/python$(PYTHON_VERSION)/lib-dynload/*.so) $(shell python-config --libs)
 else
 PYLIBS = $(shell python-config --libs)
 endif
 
 PYTHON_INCLUDEDIR := -I$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
-
-
-
-
-
 
 
