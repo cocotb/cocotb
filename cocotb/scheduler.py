@@ -146,7 +146,7 @@ class Scheduler(object):
             self.log.critical("Attempt to add something to the scheduler which isn't a coroutine")
             self.log.warning("Got: %s (%s)" % (str(type(coroutine)), repr(coroutine)))
             self.log.warning("Did you use the @coroutine decorator?")
-            self._resulti = TestError("Attempt to schedule a coroutine that hasn't started")
+            self._result = TestError("Attempt to schedule a coroutine that hasn't started")
             self.cleanup()
             return
 
@@ -276,13 +276,13 @@ class Scheduler(object):
         self._test_result = None
 
         # If another test was added to queue kick it off
-        self.log.debug("Cleanup done")
+        self._terminate = False
         if self._startpoint is not None:
             newstart = self._startpoint
             self._startpoint = None
-            self.queue(newstart)
+            self.add(newstart)
 
-        self._terminate = False
+        self.log.debug("Cleanup done")
 
 
     @cocotb.decorators.coroutine
