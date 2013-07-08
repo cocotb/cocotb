@@ -37,8 +37,9 @@ import logging
 import simulator
 import cocotb
 import cocotb.decorators
-from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite
+from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite, NullTrigger
 
+from cocotb.result import TestComplete, TestError
 
 class Scheduler(object):
 
@@ -134,8 +135,11 @@ class Scheduler(object):
 
     def _add_trigger(self, trigger, coroutine):
         """Adds a new trigger which will cause the coroutine to continue when fired"""
-        self.waiting[trigger].append(coroutine)
-        trigger.prime(self.react)
+        try:
+            trigger.prime(self.react)
+            self.waiting[trigger].append(coroutine)
+        except Exception as e:
+            raise TestError("Unable to prime a trigger: %s" % str(e))
 
     def queue(self, coroutine):
         """Queue a coroutine for execution"""
@@ -143,6 +147,24 @@ class Scheduler(object):
 
     def add(self, coroutine):
         """Add a new coroutine. Required because we cant send to a just started generator (FIXME)"""
+
+        if isinstance(coroutine, cocotb.decorators.coroutine):
+            self.log.critical("Attempt to schedule a coroutine that hasn't started")
+            coroutine.log.error("This is the failing coroutine")
+            self.log.warning("Did you forget to add paranthesis to the @test decorator?")
+            cocotb.regression.handle_result(TestError("Attempt to schedule a coroutine that hasn't started"))
+            self.cleanup()
+            return
+
+        elif not isinstance(coroutine, cocotb.decorators.RunningCoroutine):
+            self.log.critical("Attempt to add something to the scheduler which isn't a coroutine")
+            self.log.warning("Got: %s (%s)" % (str(type(coroutine)), repr(coroutine)))
+            self.log.warning("Did you use the @coroutine decorator?")
+            cocotb.regression.handle_result(TestError("Attempt to schedule a coroutine that hasn't started"))
+            self.cleanup()
+            return
+
+
         self.log.debug("Queuing new coroutine %s" % coroutine.__name__)
         self.schedule(coroutine)
         return coroutine
@@ -171,16 +193,12 @@ class Scheduler(object):
         while self._remove:
             delroutine, cb = self._remove.pop(0)
             for trigger, waiting in self.waiting.items():
+                if isinstance(trigger, NullTrigger): continue
                 for coro in waiting:
                     if coro is delroutine:
                         self.log.debug("Trowing into %s" % str(coro))
                         cb()
-                        try:
-                            result = coro.throw(StopIteration)
-                            if result:
-                                self._restart = result
-                                self._restart_coro = coro
-                        except StopIteration: pass
+                        coro.close()
                         self.waiting[trigger].remove(coro)
             # Clean up any triggers that no longer have pending coroutines
             for trigger, waiting in self.waiting.items():
@@ -201,16 +219,46 @@ class Scheduler(object):
 
         coroutine.log.debug("Scheduling (%s)" % str(trigger))
         try:
-            result = coroutine.send(trigger)
-        except cocotb.decorators.CoroutineComplete as exc:
-            self.log.debug("Coroutine completed execution with CoroutineComplete: %s" % str(coroutine))
 
-            # Call any pending callbacks that were waiting for this coroutine to exit
-            exc()
-            return
+            try:
+                result = coroutine.send(trigger)
+
+            # Normal co-routine completion
+            except cocotb.decorators.CoroutineComplete as exc:
+                self.log.debug("Coroutine completed execution with CoroutineComplete: %s" % str(coroutine))
+    
+                # Call any pending callbacks that were waiting for this coroutine to exit
+                exc()
+                return
+
+            # Entries may have been added to the remove list while the
+            # coroutine was running, clear these down and deschedule
+            # before resuming
+            if self._terminate is False:
+                self.prune_routines()
+
+            if isinstance(result, Trigger):
+                self._add_trigger(result, coroutine)
+            elif isinstance(result, cocotb.decorators.RunningCoroutine):
+                self.log.debug("Scheduling nested co-routine: %s" % result.__name__)
+
+                # Queue current routine to schedule when the nested routine exits
+                self._add_trigger(result.join(), coroutine)
+                if self._terminate is False:
+                    self.add(result)
+
+            elif isinstance(result, list):
+                if self._terminate is False:
+                    for trigger in result:
+                        trigger.addpeers(result)
+                        self._add_trigger(trigger, coroutine)
+            else:
+                raise TestError(("Unable to schedule coroutine since it's returning stuff %s" % repr(result)))
 
         # TestComplete indication is game over, tidy up
-        except cocotb.decorators.TestComplete as test_result:
+        except TestComplete as test_result:
+
+            self.log.error(str(test_result))
 
             # Tag that close down is needed, save the test_result
             # for later use in cleanup handler
@@ -223,32 +271,8 @@ class Scheduler(object):
                 self.cleanup()
 
             self.log.debug("Coroutine completed execution with TestComplete: %s" % str(coroutine))
-            return
+            return                
 
-        # Entries may have been added to the remove list while the
-        # coroutine was running, clear these down and deschedule
-        # before resuming
-        if self._terminate is False:
-            self.prune_routines()
-        
-        if isinstance(result, Trigger):
-            self._add_trigger(result, coroutine)
-        elif isinstance(result, cocotb.decorators.coroutine):
-            self.log.debug("Scheduling nested co-routine: %s" % result.__name__)
-            # Queue this routine to schedule when the nested routine exits
-            self._add_trigger(result.join(), coroutine)
-            if self._terminate is False:
-                self.schedule(result)
-        elif isinstance(result, list):
-            if self._terminate is False:
-                for trigger in result:
-                    trigger.addpeers(result)
-                    self._add_trigger(trigger, coroutine)
-        else:
-            self.log.warning("Unable to schedule coroutine since it's returning stuff %s" % repr(result))
-            self.cleanup()
-            cocotb.regression.handle_result(cocotb.decorators.TestCompleteFail())
-            
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))
 
     def cleanup(self):
@@ -269,6 +293,10 @@ class Scheduler(object):
             self._add_trigger(self._restart, self._restart_coro)
             self._restart = None
         self.log.debug("Out of delay cleanup")
+
+        # Carry on running the test
+        self.react(self.waiting.keys()[0])
+
 
     @cocotb.decorators.coroutine
     def move_to_rw(self):

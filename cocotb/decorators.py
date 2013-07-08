@@ -27,8 +27,13 @@ import sys
 import time
 import logging
 
+import traceback
+
 import cocotb
 from cocotb.triggers import Join
+
+from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess
+
 
 def public(f):
   """Use a decorator to avoid retyping function/class names.
@@ -61,79 +66,52 @@ class CoroutineComplete(StopIteration):
         if self.callback is not None: self.callback()
 
 
-class TestComplete(StopIteration):
+class RunningCoroutine(object):
+    """Per instance wrapper around an function to turn it into a coroutine
+
+
+        Provides the following:
+
+            coro.join() creates a Trigger that will fire when this coroutine completes
+
+            coro.kill() will destroy a coroutine instance (and cause any Join triggers to fire
     """
-        Indicate that a test has finished
-    """
-    pass
-
-
-class TestCompleteFail(TestComplete):
-    pass
-
-class TestCompleteOK(TestComplete):
-    pass
-
-class coroutine(object):
-    """Decorator class that allows us to provide common coroutine mechanisms:
-
-        log methods will will log to cocotb.coroutines.name
-
-        join() method returns an event which will fire when the coroutine exits
-    """
-
-    def __init__(self, func):
-        self._func = func
-        self.__name__ = func.__name__   # FIXME should use functools.wraps?
-        self._callbacks = []
-        self.log =  logging.getLogger("cocotb.coroutine.%s" % func.__name__)
+    def __init__(self, inst, parent):
+        self.__name__ = "%s.0x%x" % (inst.__name__, id(self))
+        self.log =  logging.getLogger("cocotb.coroutine.%s" % self.__name__)
+        self._coro = inst
         self._finished = False
+        self._callbacks = []
+        self._parent = parent
+        self.__doc__ = parent._func.__doc__
+        self.module = parent._func.__module__
+        self.funcname = parent._func.__name__
 
-    def __call__(self, *args, **kwargs):
-        self._coro = self._func(*args, **kwargs)
-        return self
-
-    def __get__(self, obj, type=None):
-        """Permit the decorator to be used on class methods
-            and standalone functions"""
-        return self.__class__(self._func.__get__(obj, type))
-
-    def __iter__(self): return self
-
-    def __str__(self):
-        return str(self.__name__)
-
-    def next(self):
-        """FIXME: deprecated by send method?"""
-        try:
-            return self._coro.next()
-        except StopIteration:
-            raise CoroutineComplete(callback=self._finished_cb)
-
-    def _pre_send(self):
-        """Provide some useful debug if our coroutine isn't a real coroutine
-
-        NB better than catching AttributeError on _coro.send since then we
-        can't distinguish between an AttributeError in the coroutine itself
-        """
         if not hasattr(self._coro, "send"):
             self.log.error("%s isn't a value coroutine! Did you use the yield keyword?"
                 % self.__name__)
             raise CoroutineComplete(callback=self._finished_cb)
 
+    def __iter__(self):
+        return self
+
+    def __str__(self):
+        return str(self.__name__)
+
     def send(self, value):
-        """FIXME: problem here is that we don't let the call stack unwind..."""
-        self._pre_send()
         try:
             return self._coro.send(value)
+        except TestComplete as e:
+            self.log.info(str(e))
+            raise
         except StopIteration:
             raise CoroutineComplete(callback=self._finished_cb)
-        except cocotb.TestFailed as e:
-            self.log.error(str(e))
-            raise TestCompleteFail()
 
     def throw(self, exc):
         return self._coro.throw(exc)
+
+    def close(self):
+        return self._coro.close()
 
     def kill(self):
         """Kill a coroutine"""
@@ -160,15 +138,8 @@ class coroutine(object):
         return not self._finished
 
 
-@public
-class test(coroutine):
-    """Decorator to mark a fucntion as a test
-
-    All tests are coroutines.  The test decorator provides
-    some common reporting etc, a test timeout and allows
-    us to mark tests as expected failures.
-    """
-
+class RunningTest(RunningCoroutine):
+    """Add some useful Test functionality to a RunningCoroutine"""
 
     class ErrorLogHandler(logging.Handler):
         def __init__(self, fn):
@@ -178,62 +149,87 @@ class test(coroutine):
         def handle(self, record):
             self.fn(self.format(record))
 
-    def __init__(self, timeout=None, expect_fail=False):
-        self.timeout = timeout
-        self.expect_fail = expect_fail
-        self.started = False
+
+    def __init__(self, inst, parent):
+        RunningCoroutine.__init__(self, inst, parent)
         self.error_messages = []
+        self.started = False
+        self.start_time = 0
+        self.expect_fail = parent.expect_fail
 
-    def __call__(self, f):
-        """
-        ping
-
-        """
-        super(test, self).__init__(f)
-        self.log =  logging.getLogger("cocotb.test.%s" % self._func.__name__)
-        self.start_time = time.time()
-
-        # Capture all log messages with ERROR or higher
-        def handle_error_msg(msg):
-            self.error_messages.append(msg)
-
-        self.handler = test.ErrorLogHandler(handle_error_msg)
+        self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
         cocotb.log.addHandler(self.handler)
 
-        def _wrapped_test(*args, **kwargs):
-            super(test, self).__call__(*args, **kwargs)
-            return self
-
-        _wrapped_test.im_test = True    # For auto-regressions
-        return _wrapped_test
-
-
-    def _pre_send(self):
-        """Provide some useful debug if our coroutine isn't a real coroutine
-
-        NB better than catching AttributeError on _coro.send since then we
-        can't distinguish between an AttributeError in the coroutine itself
-        """
-        if not hasattr(self._coro, "send"):
-            self.log.error("%s isn't a value coroutine! Did you use the yield keyword?"
-                % self.__name__)
-            raise TestCompleteFail()
-
-
     def send(self, value):
-        self.error_messages = []
-        """FIXME: problem here is that we don't let the call stack unwind..."""
-        self._pre_send()
         if not self.started:
-            self.log.info("Starting test: \"%s\"\nDescription: %s" % (self.__name__, self._func.__doc__))
+            self.log.info("Starting test: \"%s\"\nDescription: %s" % (self.funcname, self.__doc__))
+            self.start_time = time.time()            
             self.started = True
+
         try:
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
+        except TestFailure as e:
+            self.log.info(str(e))
+            raise
         except StopIteration:
-            raise TestCompleteOK()
-        except cocotb.TestFailed as e:
-            self.log.error(str(e))
-            raise TestCompleteFail()
+            raise TestSuccess()
 
-        raise StopIteration()
+    def _handle_error_message(self, msg):
+        self.error_messages.append(msg)
+
+
+class coroutine(object):
+    """Decorator class that allows us to provide common coroutine mechanisms:
+
+        log methods will will log to cocotb.coroutines.name
+
+        join() method returns an event which will fire when the coroutine exits
+    """
+
+    def __init__(self, func):
+        self._func = func
+        self.log =  logging.getLogger("cocotb.function.%s" % self._func.__name__)
+
+    def __call__(self, *args, **kwargs):
+        try:
+            return RunningCoroutine(self._func(*args, **kwargs), self)
+        except Exception as e:
+            traceback.print_exc()
+            raise TestError(str(e))
+
+    def __get__(self, obj, type=None):
+        """Permit the decorator to be used on class methods
+            and standalone functions"""
+        return self.__class__(self._func.__get__(obj, type))
+
+    def __iter__(self): return self
+
+    def __str__(self):
+        return str(self._func.__name__)
+
+@public
+class test(coroutine):
+    """Decorator to mark a fucntion as a test
+
+    All tests are coroutines.  The test decorator provides
+    some common reporting etc, a test timeout and allows
+    us to mark tests as expected failures.
+    """
+    def __init__(self, timeout=None, expect_fail=False):
+        self.timeout = timeout
+        self.expect_fail = expect_fail
+
+    def __call__(self, f):
+        super(test, self).__init__(f)
+
+        def _wrapped_test(*args, **kwargs):
+            try:
+                return RunningTest(self._func(*args, **kwargs), self)
+            except Exception as e:
+                traceback.print_exc()
+                raise TestError(str(e))
+
+        _wrapped_test.im_test = True    # For auto-regressions
+        _wrapped_test.name = self._func.__name__
+        return _wrapped_test

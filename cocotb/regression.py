@@ -38,6 +38,8 @@ from cocotb.triggers import NullTrigger
 
 import cocotb.ANSI as ANSI
 
+from cocotb.result import TestError, TestFailure, TestSuccess
+
 def _my_import(name):
     mod = __import__(name)
     components = name.split('.')
@@ -67,6 +69,8 @@ class RegressionManager(object):
 
         self.ntests = 0
 
+        xml = ""
+
         # Auto discovery
         for module_name in self._modules:
             module = _my_import(module_name)
@@ -84,13 +88,19 @@ class RegressionManager(object):
 
             for thing in vars(module).values():
                 if hasattr(thing, "im_test"):
-                    self._queue.append(thing(self._dut))
+                    try:
+                        self._queue.append(thing(self._dut))
+                    except TestError:
+                        self.log.warning("Skipping test %s" % thing.name)
+                        xml += xunit_output(thing.name, module_name, 0.0, skipped=True)
+                        continue
                     self.ntests += 1
                     self.log.info("Found test %s.%s" %
-                        (self._queue[-1]._func.__module__,
-                        self._queue[-1]._func.__name__))
+                        (self._queue[-1].module,
+                        self._queue[-1].funcname))
 
         self.start_xml(self.ntests)
+        self._fout.write(xml + '\n')
 
     def start_xml(self, ntests):
         """Write the XML header into results.txt"""
@@ -119,15 +129,15 @@ class RegressionManager(object):
         Args: result (TestComplete exception)
         """
 
-        if isinstance(result, cocotb.decorators.TestCompleteFail) and not \
+        if isinstance(result, TestFailure) and not \
             self._running_test.expect_fail:
-            self._fout.write(xunit_output(self._running_test._func.__name__,
-                            self._running_test._func.__module__,
+            self._fout.write(xunit_output(self._running_test.funcname,
+                            self._running_test.module,
                             time.time() - self._running_test.start_time,
                             failure="\n".join(self._running_test.error_messages)))
         else:
-            self._fout.write(xunit_output(self._running_test._func.__name__,
-                            self._running_test._func.__module__,
+            self._fout.write(xunit_output(self._running_test.funcname,
+                            self._running_test.module,
                             time.time() - self._running_test.start_time))
 
     def execute(self):
@@ -137,8 +147,8 @@ class RegressionManager(object):
     def test_runner(self):
         self._running_test = cocotb.regression.next_test()
         count = 1
-        while self._running_test:
-            try:
+        try:        
+            while self._running_test:
                 # Want this to stand out a little bit
                 self.log.info("%sRunning test %d/%d:%s %s" % (
                     ANSI.BLUE_BG +ANSI.BLACK_FG,
@@ -150,11 +160,10 @@ class RegressionManager(object):
                 else:
                     test = cocotb.scheduler.new_test(self._running_test)
                 yield NullTrigger()
-            except StopIteration:
-               count+=1
-               self._running_test = cocotb.regression.next_test()
-
-        self.tear_down()       
+                count+=1
+                self._running_test = cocotb.regression.next_test()
+        finally:
+            self.tear_down()
         return 
 
 

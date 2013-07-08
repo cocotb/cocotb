@@ -34,6 +34,7 @@ import cocotb
 from cocotb.utils import hexdump, hexdiffs
 
 from cocotb.monitors import Monitor
+from cocotb.result import TestFailure
 
 
 class Scoreboard(object):
@@ -72,7 +73,7 @@ class Scoreboard(object):
             if not expected_output:
                 self.errors += 1
                 self.log.error("%s" % (transaction))    # TODO hexdump
-                raise cocotb.TestFailed("Recieved a transaction but wasn't expecting anything")
+                raise TestFailure("Recieved a transaction but wasn't expecting anything")
 
             if callable(expected_output): exp = expected_output()
             else: exp = expected_output.pop(0)
@@ -81,7 +82,7 @@ class Scoreboard(object):
                 self.errors += 1
                 self.log.error("Received transaction is a different type to expected transaction")
                 self.log.info("Got: %s but expected %s" % (str(type(transaction)), str(type(exp))))
-                raise cocotb.TestFailed("Received transaction of wrong type")
+                raise TestFailure("Received transaction of wrong type")
 
             if transaction != exp:
                 self.errors += 1
@@ -97,7 +98,7 @@ class Scoreboard(object):
                         for word in transaction: self.log.info(str(word))
                     except: pass
                 self.log.warning(hexdiffs(exp, transaction))
-                raise cocotb.TestFailed("Received transaction differed from expected transaction")
+                raise TestFailure("Received transaction differed from expected transaction")
             else:
                 self.log.debug("Received expected transaction %d bytes" % (len(transaction)))
                 self.log.debug(repr(transaction))

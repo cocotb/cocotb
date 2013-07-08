@@ -85,9 +85,9 @@ def test_yield_list(dut):
 test_flag = False
 
 @cocotb.coroutine
-def clock_yield(clock_gen):
+def clock_yield(generator):
     global test_flag
-    yield Join(clock_gen)
+    yield Join(generator)
     test_flag = True 
 
 @cocotb.test(expect_fail=True)
@@ -100,7 +100,7 @@ def test_coroutine_kill(dut):
     global test_flag
     clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
     yield Timer(100)
-    clk_gen_two = cocotb.fork(clock_yield(clock_gen))
+    clk_gen_two = cocotb.fork(clock_yield(clk_gen))
     yield Timer(100)
     clk_gen.kill()
     if test_flag is not False:
