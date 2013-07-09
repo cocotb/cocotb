@@ -33,6 +33,7 @@ from cocotb.decorators import coroutine
 from cocotb.triggers import RisingEdge, ReadOnly
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
+from cocotb.binary import BinaryValue
 
 class AvalonMM(BusDriver):
     """Avalon-MM Driver
@@ -97,7 +98,16 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         # FIXME busses that aren't integer numbers of bytes
         bus_width = len(self.bus.data) / 8
-        word = BinaryValue(nbits=len(self.bus.data))
+        word = BinaryValue(bits=len(self.bus.data))
+
+
+        # Drive some defaults since we don't know what state we're in
+        self.bus.empty <= 0
+        self.bus.startofpacket <= 0
+        self.bus.endofpacket <= 0
+        self.bus.error <= 0
+        self.bus.valid <= 0
+
 
         while string:
             yield clkedge
@@ -116,16 +126,25 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.bus.valid <= 1
 
             if firstword:
+                self.bus.empty <= 0
                 self.bus.startofpacket <= 1
                 firstword = False
+            else:
+                self.bus.startofpacket <= 0
+
+            nbytes = min(len(string), bus_width)
+            data = string[:nbytes]
+            word.buff = data[::-1]      # Big Endian FIXME
+                
 
             if len(string) <= bus_width:
                 self.bus.endofpacket <= 1
                 self.bus.empty <= bus_width - len(string)
                 string = ""
             else:
-                word.buff = string[:bus_width]
                 string = string[bus_width:]
+
+            self.bus.data <= word
 
             # If this is a bus with a ready signal, wait for this word to
             # be acknowledged
@@ -134,7 +153,7 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         yield clkedge
         self.bus.valid <= 0
-
+        self.bus.endofpacket <= 0
 
 
     @coroutine
