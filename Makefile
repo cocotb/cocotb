@@ -26,10 +26,12 @@
 ###############################################################################
 
 include makefiles/Makefile.inc
+include version
 
 export BUILD_DIR=$(shell pwd)/build
 
-INSTALL_DIR:=/tmp/test-install
+INSTALL_DIR?=/usr/local
+FULL_INSTALL_DIR=$(INSTALL_DIR)/cocotb-$(VERSION)
 
 LIBS:= lib/simulator lib/embed lib/vpi_shim lib/gpi
 
@@ -56,11 +58,33 @@ test: $(LIBS)
 	$(MAKE) -C examples
 
 pycode:
-	easy_install --install-dir=$(INSTALL_DIR) $(SIM_ROOT)
+	cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
 
-lib_install: libs
-	-mkdir -p $(INSTALL_DIR)/lib
-	cp -R $(LIB_DIR)/* $(INSTALL_DIR)/lib
+lib_install: $(LIBS)
+	@mkdir -p $(FULL_INSTALL_DIR)/lib
+	@mkdir -p $(FULL_INSTALL_DIR)/bin
+	@cp -R $(LIB_DIR)/* $(FULL_INSTALL_DIR)/lib
+	@cp -R bin/cocotbenv.py $(FULL_INSTALL_DIR)/bin/
+	@cp -R makefiles $(FULL_INSTALL_DIR)/
+	@rm -rf $(FULL_INSTALL_DIR)/makefiles/Makefile.inc
 
-install: all lib_install pycode
+$(FULL_INSTALL_DIR)/makefiles/Makefile.inc:
+	@echo "export SIM_ROOT:=$(FULL_INSTALL_DIR)" > $@
+	@echo "export LIB_DIR=$(FULL_INSTALL_DIR)/lib" >> $@
 
+$(FULL_INSTALL_DIR)/bin/cocotb_uninstall:
+	@echo "#!/bin/bash" > bin/cocotb_uninstall
+	@echo "rm -rf $(FULL_INSTALL_DIR)" >> bin/cocotb_uninstall
+	install -m 544 bin/cocotb_uninstall $@
+	rm -rf bin/cocotb_uninstall
+
+scripts: $(FULL_INSTALL_DIR)/bin/cocotb_uninstall $(FULL_INSTALL_DIR)/makefiles/Makefile.inc
+
+install: all lib_install pycode scripts
+	@echo -e "\nInstalled to $(FULL_INSTALL_DIR)"
+	@echo -e "To uninstall run $(FULL_INSTALL_DIR)/bin/cocotb_uninstall\n"
+
+help:
+	@echo -e "\nCoCoTB make help\n\nall\t- Build libaries"
+	@echo -e "install\t- Build and install libaries to FULL_INSTALL_DIR (default=$(FULL_INSTALL_DIR))"
+	@echo -e "clean\t- Clean the build dir\n\n"

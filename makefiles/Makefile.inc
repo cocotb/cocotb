@@ -32,7 +32,7 @@ export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 endif
 
 BUILD_DIR=$(SIM_ROOT)/build
-ARCH=$(shell uname -m)
+ARCH?=$(shell uname -m)
 
 OS=$(shell uname)
 export OS
@@ -58,8 +58,6 @@ endif
 
 ifeq ($(OS),Darwin)
 LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR) 
-
-#/Users/gmcgregor/src/IMP/python_install/lib/
 else
 LINKER_ARGS := -shared -Xlinker -export-dynamic
 endif
