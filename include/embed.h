@@ -30,9 +30,10 @@
 
 #include <gpi.h>
 #include <gpi_logging.h>
+#include <vpi_user.h>
 
 extern void embed_init_python(void);
-extern void embed_sim_init(void);
+extern void embed_sim_init(p_vpi_vlog_info info_p);
 extern void embed_sim_end(void);
 
 #endif /* COCOTB_EMBED_H_ */

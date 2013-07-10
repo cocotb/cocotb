@@ -712,8 +712,10 @@ void register_embed(void)
 int handle_sim_init(void *gpi_cb_data)
 {
     FENTER
+    s_vpi_vlog_info info_s;
     sim_init_cb = NULL;
-    embed_sim_init();
+    vpi_get_vlog_info(&info_s);
+    embed_sim_init(&info_s);
     FEXIT
 }
 

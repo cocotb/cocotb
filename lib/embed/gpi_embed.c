@@ -81,10 +81,15 @@ void embed_init_python(void)
  *
  * Loads the Python module called cocotb and calls the _initialise_testbench function
  */
-void embed_sim_init(void)
+void embed_sim_init(p_vpi_vlog_info info_p)
 {
     FENTER
 
+    int i;
+    PyObject *argv_list; 
+    PyObject *argc;
+
+ 
     // Find the simulation root
     gpi_sim_hdl dut = gpi_get_root_handle();
 
@@ -106,6 +111,17 @@ void embed_sim_init(void)
         return;
     }
 
+    argv_list = PyList_New(0);
+    for (i = 0; i < info_p->argc; i++) {
+        pValue = PyString_FromString(info_p->argv[i]);
+        PyList_Append(argv_list, pValue);
+    }
+
+    pDict = PyModule_GetDict(pModule);
+    PyDict_SetItemString(pDict, "argv", argv_list);
+
+    argc = PyInt_FromLong(info_p->argc);
+    PyDict_SetItemString(pDict, "argc", argc);
 
     // Extact a reference to the logger object to unitfy logging mechanism
     pLogger = PyObject_GetAttrString(pModule, "log");
@@ -130,7 +146,8 @@ void embed_sim_init(void)
     Py_DECREF(pHandler);
     Py_DECREF(pRecordFn);
     Py_DECREF(pFilterFn);
-
+    Py_DECREF(pDict);
+    
     // Save a handle to the lock object
     lock = PyObject_GetAttrString(pModule, "_rlock");
 
