@@ -23,49 +23,25 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##############################################################################
+###############################################################################
 
-# Common makefile included by everything
+OBJ_DIR := obj
+VPI_LIB := vpi
 
-ifeq ($(SIM_ROOT),)
-export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
-endif
+all: $(OBJ_DIR) sim
 
-BUILD_DIR=$(SIM_ROOT)/build
-ARCH?=$(shell uname -m)
-
-OS=$(shell uname)
-export OS
-
-include $(SIM_ROOT)/makefiles/Makefile.paths
-
-export ARCH
-
-include $(SIM_ROOT)/makefiles/Makefile.pylib
-
-export BUILD_DIR
-export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
 
 
-# Base GCC flags
-ifeq ($(OS),Darwin)
-GCC_ARGS    :=  -g -DDEBUG -fpic
-else
-GCC_ARGS	:=	-Werror -g -DDEBUG -fpic 
-endif
+.PHONY: sim
+sim: $(OBJ_DIR) $(VERILOG_SOURCES) 
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) \
+		irun -sv $(EXTRA_ARGS) -64bit -loadvpi $(BUILD_DIR)/libgpi:vlog_startup_routines_bootstrap +access+rwc $(VERILOG_SOURCES)
 
+dve: $(OBJ_DIR) $(VERILOG_SOURCES) 
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) \
+        irun -sv $(EXTRA_ARGS) -64bit -loadvpi $(BUILD_DIR)/libgpi:vlog_startup_routines_bootstrap +access+rwc $(VER
+clean:
+	-@rm -rf $(OBJ_DIR)
 
-ifeq ($(OS),Darwin)
-LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR) $(PYLIBS)
-else
-LINKER_ARGS := -shared -Xlinker -export-dynamic $(PYLIBS)
-endif
-
-# Disable some inbuild rules
-%: %.c
-%: %.o
-
-# Define some of our own
-$(OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
