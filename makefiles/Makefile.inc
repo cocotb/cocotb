@@ -34,17 +34,35 @@ endif
 BUILD_DIR=$(SIM_ROOT)/build
 ARCH=$(shell uname -m)
 
+OS=$(shell uname)
+export OS
+
 include $(SIM_ROOT)/makefiles/Makefile.paths
 
 export ARCH
-export BUILD_DIR
-export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include
 
 include $(SIM_ROOT)/makefiles/Makefile.pylib
 
+export BUILD_DIR
+export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
+export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
+
+
 # Base GCC flags
-GCC_ARGS	:=	-Werror -g -DDEBUG
+ifeq ($(OS),Darwin)
+GCC_ARGS    :=  -g -DDEBUG -fpic
+else
+GCC_ARGS	:=	-Werror -g -DDEBUG -fpic
+endif
+
+
+ifeq ($(OS),Darwin)
+LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR) 
+
+#/Users/gmcgregor/src/IMP/python_install/lib/
+else
+LINKER_ARGS := -shared -Xlinker -export-dynamic
+endif
 
 # Disable some inbuild rules
 %: %.c

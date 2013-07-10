@@ -49,6 +49,7 @@ class Scheduler(object):
         self.writes_lock = threading.RLock()
         self._remove = []
         self._pending_adds = []
+        self._startpoint = None
         self._terminate = False
         self._test_result = None
         self._readonly = None

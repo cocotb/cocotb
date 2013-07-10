@@ -108,3 +108,15 @@ def test_coroutine_kill(dut):
     yield Timer(1000)
     if test_flag is not True:
         raise cocotb.TestFailed
+
+@cocotb.test()
+def test_adding_a_coroutine_without_starting(dut):
+    """Catch (and provide useful error) for attempts to fork coroutines incorrectly"""
+    yield Timer(100)
+    forked = cocotb.fork(clock_gen)
+    yield Timer(100)
+    yield Join(forked)
+    yield Timer(100)
+
+
+
