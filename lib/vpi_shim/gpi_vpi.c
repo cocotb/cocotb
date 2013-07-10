@@ -39,6 +39,8 @@
         ((_type *)((uintptr_t)(_address) -      \
          (uintptr_t)(&((_type *)0)->_member)))
 
+#define VPI_CHECKING 1
+
 static gpi_sim_hdl sim_init_cb;
 static gpi_sim_hdl sim_finish_cb;
 
@@ -69,6 +71,52 @@ typedef struct gpi_clock_s {
 
 typedef gpi_clock_t *gpi_clock_hdl;
 
+
+// Should be run after every VPI call to check error status
+static int check_vpi_error(void)
+{
+  int level=0;
+#if VPI_CHECKING
+  s_vpi_error_info info;
+  int loglevel;
+  char msg_buf [100];
+  level = vpi_chk_error(&info);
+
+  if (level == 0) {
+    return;
+  }
+  
+  switch (level) {
+    case vpiNotice:   loglevel = GPIInfo;
+		      break;
+    case vpiWarning:  loglevel = GPIWarning;
+		      break;
+    case vpiError:    loglevel = GPIError;
+		      break;
+    case vpiSystem:  
+    case vpiInternal: loglevel = GPICritical;
+		      break;
+  }
+
+  snprintf(msg_buf, 100, "VPI Error level %d\n", level  );
+  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+
+  snprintf(msg_buf, 100, "MESG %s\n", info.message  );
+  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+
+  snprintf(msg_buf, 100, "PROD %s\n", info.product  );
+  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+
+  snprintf(msg_buf, 100, "CODE %s\n", info.code );
+  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+
+  snprintf(msg_buf, 100, "FILE %s\n", info.file  );
+  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+
+#endif
+  return level;
+}
+
 void gpi_free_handle(gpi_sim_hdl gpi_hdl)
 {
     free(gpi_hdl);
@@ -95,12 +143,16 @@ gpi_sim_hdl gpi_get_root_handle()
 
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
+    check_vpi_error();
+
     root = vpi_scan(iterator);
+    check_vpi_error();
 
     // Need to free the iterator if it didn't return NULL
     if (root != NULL && !vpi_free_object(iterator)) {
         LOG_WARN("VPI: Attempting to free root iterator failed!");
     }
+    check_vpi_error();
 
     rv = gpi_alloc_handle();
     rv->sim_hdl = root;
@@ -127,6 +179,7 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
 
     strncpy(buff, name, len);
     obj = vpi_handle_by_name(buff, (vpiHandle)(parent->sim_hdl));
+    check_vpi_error();
     free(buff);
 
     rv = gpi_alloc_handle();
@@ -145,7 +198,7 @@ gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base) {
     vpiHandle iterator;
 
     iterator = vpi_iterate(vpiNet, (vpiHandle)(base->sim_hdl));
-
+    check_vpi_error();
     FEXIT
     return (gpi_iterator_hdl)iterator;
 }
@@ -158,6 +211,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
     gpi_sim_hdl rv = gpi_alloc_handle();
 
     rv->sim_hdl = vpi_scan((vpiHandle) iterator);
+    check_vpi_error();
     if (!rv->sim_hdl) {
         gpi_free_handle(rv);
         rv = NULL;
@@ -179,6 +233,7 @@ void gpi_get_sim_time(uint32_t *high, uint32_t *low)
     s_vpi_time vpi_time_s;
     vpi_time_s.type = vpiSimTime;//vpiScaledRealTime;        //vpiSimTime;
     vpi_get_time(NULL, &vpi_time_s);
+    check_vpi_error();
     *high = vpi_time_s.high;
     *low = vpi_time_s.low;
 }
@@ -198,7 +253,7 @@ void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
      *      in behavioral code.
      */
     vpi_put_value((vpiHandle)(gpi_hdl->sim_hdl), value_p, NULL, vpiNoDelay);
-
+    check_vpi_error();
     FEXIT
 }
 
@@ -229,7 +284,7 @@ void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
      *      in behavioral code.
      */
     vpi_put_value((vpiHandle)(gpi_hdl->sim_hdl), value_p, NULL, vpiNoDelay);
-
+    check_vpi_error();
     free(buff);
     FEXIT
 }
@@ -266,6 +321,7 @@ char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
     p_vpi_value value_p = &value_s;
 
     vpi_get_value((vpiHandle)(gpi_hdl->sim_hdl), value_p);
+    check_vpi_error();
 
     char *result = gpi_copy_name(value_p->value.str);
     FEXIT
@@ -274,8 +330,9 @@ char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
 
 char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl)
 {
-    FENTER
+    FENTER 
     const char *name = vpi_get_str(vpiFullName, (vpiHandle)(gpi_hdl->sim_hdl));
+    check_vpi_error();
     char *result = gpi_copy_name(name);
     FEXIT
     return result;
@@ -285,6 +342,7 @@ char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl)
 {
     FENTER
     const char *name = vpi_get_str(vpiType, (vpiHandle)(gpi_hdl->sim_hdl));
+    check_vpi_error();
     char *result = gpi_copy_name(name);
     FEXIT
     return result;
@@ -304,7 +362,7 @@ static p_vpi_cb_user_data gpi_get_user_data(gpi_sim_hdl hdl)
      FENTER
 
      vpi_get_cb_info((vpiHandle)hdl, &cbdata);
-
+     check_vpi_error();
      user_data = (p_vpi_cb_user_data)cbdata.user_data;
 
      FEXIT
@@ -382,11 +440,13 @@ static int gpi_free_one_time(p_vpi_cb_user_data user_data)
 
     // If the callback has not been called we also need to call
     // remove as well
-    if (!user_data->called)
+    if (!user_data->called) {
         rc = vpi_remove_cb(cb_hdl);
-    else 
+        check_vpi_error();
+   } else {
         rc = vpi_free_object(cb_hdl);
-
+        check_vpi_error();
+   }
     FEXIT
     return 1;
 }
@@ -405,6 +465,7 @@ static int gpi_free_recurring(p_vpi_cb_user_data user_data)
     }
 
     rc = vpi_remove_cb(cb_hdl);
+    check_vpi_error();
     FEXIT
     return rc;
 }
@@ -441,6 +502,7 @@ gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(void *), void
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
+    check_vpi_error();
     FEXIT
 
     return &user_data->gpi_hdl;
@@ -478,6 +540,7 @@ gpi_sim_hdl gpi_register_readonly_callback(int (*gpi_function)(void *), void *gp
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
+    check_vpi_error();
 
     FEXIT
     return &user_data->gpi_hdl;
@@ -514,6 +577,7 @@ gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *), void *g
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
+    check_vpi_error();
     FEXIT
     return &user_data->gpi_hdl;
 }
@@ -549,7 +613,8 @@ gpi_sim_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *), void *gp
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
-  
+    check_vpi_error();
+ 
     FEXIT
     return &user_data->gpi_hdl;
 }
@@ -585,6 +650,7 @@ gpi_sim_hdl gpi_register_timed_callback(int (*gpi_function)(void *), void *gpi_c
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
+    check_vpi_error();
     FEXIT
 
     return &user_data->gpi_hdl;
@@ -617,6 +683,7 @@ gpi_sim_hdl gpi_register_sim_start_callback(int (*gpi_function)(void *), void *g
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
+    check_vpi_error();
     FEXIT
     return &user_data->gpi_hdl;
 
@@ -649,6 +716,7 @@ gpi_sim_hdl gpi_register_sim_end_callback(int (*gpi_function)(void *), void *gpi
     cb_data_s.user_data = (char *)user_data;
 
     user_data->cb_hdl = vpi_register_cb(&cb_data_s);
+    check_vpi_error();
     FEXIT
     return &user_data->gpi_hdl;
 
@@ -747,7 +815,7 @@ void gpi_sim_end()
 
     sim_finish_cb = NULL;
     vpi_control(vpiFinish);
-
+    check_vpi_error();
     FEXIT
 }
 
