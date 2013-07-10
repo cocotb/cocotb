@@ -96,7 +96,7 @@ def _initialise_testbench(root_handle):
 
     global regression
 
-    regression = RegressionManager(dut, modules, test=test_str)
+    regression = RegressionManager(dut, modules, tests=test_str)
     regression.initialise()
     regression.execute()
 

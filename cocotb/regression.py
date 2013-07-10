@@ -51,7 +51,7 @@ def _my_import(name):
 class RegressionManager(object):
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, dut, modules, test=None):
+    def __init__(self, dut, modules, tests=None):
         """
         Args:
             modules (list): A list of python module names to run
@@ -61,7 +61,7 @@ class RegressionManager(object):
         self._queue = []
         self._dut = dut
         self._modules = modules
-        self._function = test
+        self._functions = tests
         self._running_test = None
         self.log = logging.getLogger("cocotb.regression")
 
@@ -76,15 +76,16 @@ class RegressionManager(object):
         for module_name in self._modules:
             module = _my_import(module_name)
 
-            if self._function:
+            if self._functions:
 
-                # Single function specified, don't auto discover
-                if not hasattr(module, self._function):
-                    raise AttributeError("Test %s doesn't exist in %s" %
-                        (self._function, module_name))
+                # Specific functions specified, don't auto discover
+                for test in self._functions.rsplit(','):
+                    if not hasattr(module, test):
+                        raise AttributeError("Test %s doesn't exist in %s" %
+                            (test, module_name))
 
-                self._queue.append(getattr(module, self._function)(self._dut))
-                self.ntests = 1
+                    self._queue.append(getattr(module, test)(self._dut))
+                    self.ntests += 1
                 break
 
             for thing in vars(module).values():
@@ -96,9 +97,11 @@ class RegressionManager(object):
                         xml += xunit_output(thing.name, module_name, 0.0, skipped=True)
                         continue
                     self.ntests += 1
-                    self.log.info("Found test %s.%s" %
-                        (self._queue[-1].module,
-                        self._queue[-1].funcname))
+
+        for valid_tests in self._queue:
+            self.log.info("Found test %s.%s" %
+                        (valid_tests.module,
+                         valid_tests.funcname))
 
         self.start_xml(self.ntests)
         self._fout.write(xml + '\n')
@@ -158,7 +161,7 @@ class RegressionManager(object):
                 test = cocotb.scheduler.new_test(self._running_test)
             self.count+=1
         else:
-            self.tear_down()   
+            self.tear_down()
 
 
 def xunit_output(name, classname, time, skipped=False, failure="", error=""):
