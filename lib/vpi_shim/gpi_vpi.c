@@ -81,7 +81,6 @@ static int check_vpi_error(void)
   int loglevel;
   char msg_buf [100];
   level = vpi_chk_error(&info);
-
   if (level == 0) {
     return;
   }
