@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     Example usage of the testbench framework
 """
 
-import cocotb, simulator
+import cocotb
 from cocotb.decorators import coroutine
 from cocotb.triggers import Timer, Edge, Event
 
