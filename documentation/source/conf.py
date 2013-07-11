@@ -231,7 +231,8 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'cocotb', u'cocotb Documentation',
-   u'PotentialVentures', 'cocotb', 'One line description of project.',
+   u'PotentialVentures', 'cocotb', 'Coroutine Cosimulation TestBench \
+     environment for efficient verification of RTL using Python.',
    'Miscellaneous'),
 ]
 
@@ -246,3 +247,6 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+# For now show the todoy 
+todo_include_todos = True
