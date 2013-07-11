@@ -431,15 +431,16 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 }
 
 
-static PyObject *iterate_signals(PyObject *self, PyObject *args)
+static PyObject *iterate(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
+    uint32_t type;
     gpi_iterator_hdl result;
 
-    if (!PyArg_ParseTuple(args, "l", &hdl))
+    if (!PyArg_ParseTuple(args, "il", &type, &hdl))
         return NULL;
 
-    result = gpi_iterate(hdl);
+    result = gpi_iterate(type, hdl);
 
     return Py_BuildValue("l", result);
 }
@@ -452,6 +453,13 @@ static PyObject *next(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "l", &hdl))
         return NULL;
+
+    // It's valid for iterate to return a NULL handle, to make the Python
+    // intuitive we simply raise StopIteration on the first iteration
+    if (!hdl) {
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
 
     result = gpi_next(hdl);
 
@@ -647,8 +655,22 @@ static PyObject *stop_clock(PyObject *self, PyObject *args)
 }
 
 
+
+
 PyMODINIT_FUNC
 initsimulator(void)
 {
-    (void) Py_InitModule("simulator", SimulatorMethods);
+    PyObject* simulator;
+    simulator = Py_InitModule("simulator", SimulatorMethods);
+
+    // Make the GPI constants accessible from the C world
+    int rc = 0;
+    rc |= PyModule_AddIntConstant(simulator, "MEMORY",        gpiMemory);
+    rc |= PyModule_AddIntConstant(simulator, "MODULE",        gpiModule);
+    rc |= PyModule_AddIntConstant(simulator, "PARAMETER",     gpiParameter);
+    rc |= PyModule_AddIntConstant(simulator, "REG",           gpiReg);
+    rc |= PyModule_AddIntConstant(simulator, "NET",           gpiNet);
+    rc |= PyModule_AddIntConstant(simulator, "NETARRAY",      gpiNetArray);
+    if (rc != 0)
+        fprintf(stderr, "Failed to add module constants!\n");
 }

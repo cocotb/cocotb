@@ -30,7 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
 import ctypes
 
-import simulator as simulator
+import simulator
 import cocotb
 from cocotb.binary import BinaryValue
 
@@ -136,3 +136,21 @@ class SimHandle(object):
 
         # Use the comparison method of the other object against our value
         return self.value.__cmp__(other)
+
+
+    def __iter__(self):
+        """Iterates over all known types defined by simulator module"""
+        for handle_type in [simulator.MODULE,
+                            simulator.PARAMETER,
+                            simulator.REG,
+                            simulator.NET,
+                            simulator.NETARRAY]:
+            iterator = simulator.iterate(handle_type, self._handle)
+            while True:
+                try:
+                    thing = simulator.next(iterator)
+                except StopIteration:
+                    break
+                hdl = SimHandle(thing)
+                self._sub_handles[hdl.name] = hdl
+                yield hdl
