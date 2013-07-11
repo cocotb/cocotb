@@ -97,7 +97,6 @@ class XUnitReporter(object):
                 elem.tail = i
 
     def write(self):
-        print 'Capturing results to ', self.filename
         self.indent(self.results)
         ET.ElementTree(self.results).write(self.filename, xml_declaration = True, method = "xml", encoding="UTF-8")
 
