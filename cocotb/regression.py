@@ -131,7 +131,7 @@ class RegressionManager(object):
         if isinstance(result, TestFailure):
             self.xunit.add_failure("\n".join(self._running_test.error_messages))
 
-    self.execute()
+        self.execute()
 
     def execute(self):
         self._running_test = cocotb.regression.next_test()

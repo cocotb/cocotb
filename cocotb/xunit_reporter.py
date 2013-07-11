@@ -77,7 +77,7 @@ class XUnitReporter(object):
         log = SubElement(testcase, "failure", **kwargs)
 
     def add_skipped(self, testcase=None, **kwargs):
-        if testcase ==None
+        if testcase == None:
             testcase = self.last_testcase
         log = SubElement(testcase, "skipped", **kwargs)
         
