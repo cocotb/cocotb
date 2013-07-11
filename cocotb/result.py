@@ -23,8 +23,17 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
-# Exceptions used to indicate test results
-class TestComplete(StopIteration): pass
+# TODO: Coule use cStringIO?
+from StringIO import StringIO
+
+class TestComplete(StopIteration):
+    """
+        Exceptions are used to pass test results around.
+    """
+    def __init__(self, *args, **kwargs):
+        super(TestComplete, self).__init__(*args, **kwargs)
+        self.stdout = StringIO()
+        self.stderr = StringIO()
 
 class TestError(TestComplete): pass
 

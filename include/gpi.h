@@ -99,10 +99,22 @@ void gpi_get_sim_time(uint32_t *high, uint32_t *low);
 gpi_sim_hdl gpi_get_root_handle();
 gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent);
 
+// Types that can be passed to the iterator.
+//
+// Note these are strikingly similar to the VPI types...
+#define gpiMemory      29
+#define gpiModule      32
+#define gpiNet         36
+#define gpiParameter   41
+#define gpiReg         48
+#define gpiNetArray   114
 
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls
-gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base);
+//
+// NB the iterator handle may be NULL if no objects of the requested type are
+// found
+gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base);
 
 // Returns NULL when there are no more objects
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
