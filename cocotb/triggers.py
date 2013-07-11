@@ -78,14 +78,20 @@ class GPITrigger(Trigger):
     """
     def __init__(self):
         Trigger.__init__(self)
-        self.cbhdl = None
+        self.cbhdl = simulator.create_callback(self)
 
     def unprime(self):
         """Unregister a prior registered timed callback"""
         Trigger.unprime(self)
         if self.cbhdl is not None:
             simulator.deregister_callback(self.cbhdl)
-            self.cbhdl = None
+
+    def __del__(self):
+        """Remove knowledge of the trigger"""
+        if self.cbhdl is not None:
+            simulator.remove_callback(self.cbhdl)
+            self.chhdl = None
+        Trigger.__del__(self)
 
 
 class Timer(GPITrigger):
@@ -100,7 +106,7 @@ class Timer(GPITrigger):
 
     def prime(self, callback):
         """Register for a timed callback"""
-        self.cbhdl = simulator.register_timed_callback(self.time_ps, callback, self)
+        simulator.register_timed_callback(self.cbhdl, self.time_ps, callback, self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%dps)" % self.time_ps
@@ -115,7 +121,7 @@ class Edge(GPITrigger):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
-        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, self)
+        simulator.register_value_change_callback(self.chbdl, self.signal._handle, callback, self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -129,7 +135,7 @@ class ReadOnly(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        self.cbhdl = simulator.register_readonly_callback(callback, self)
+        simulator.register_readonly_callback(self.cbhdl, callback, self)
 
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
@@ -143,7 +149,7 @@ class ReadWrite(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        self.cbhdl = simulator.register_rwsynch_callback(callback, self)
+        simulator.register_rwsynch_callback(self.cbhdl, callback, self)
 
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
@@ -156,7 +162,7 @@ class NextTimeStep(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        self.cbhdl = simulator.register_nextstep_callback(callback, self)
+        simulator.register_nextstep_callback(self.cbhdl, callback, self)
 
     def __str__(self):
         return self.__class__.__name__ + "(nexttimestep)"
@@ -175,9 +181,9 @@ class RisingEdge(Edge):
             if self.signal.value:
                 self._callback(self)
             else:
-                self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+                simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self)
 
-        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+        simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -201,9 +207,9 @@ class ClockCycles(Edge):
                     self._callback(self)
                     return
 
-            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+            simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self)
 
-        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+        simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -306,5 +312,5 @@ class NullTrigger(PythonTrigger):
 #    def __init__(self, exception):
 #        super(self).__init__(self)
 
-    
+
 

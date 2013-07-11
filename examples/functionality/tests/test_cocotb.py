@@ -63,6 +63,18 @@ def test_function_not_a_coroutine_fork(dut):
     cocotb.fork(function_not_a_coroutine())
     yield Timer(500)
 
+@cocotb.test(expect_fail=False)
+def test_function_reentrant_clock(dut):
+    """Test yielding a reentrant clock"""
+    clock = dut.clk
+    timer = Timer(100)
+    for i in range(10):
+        clock <= 0
+        yield timer
+        clock <= 1
+        yield timer
+
+
 @cocotb.coroutine
 def clock_gen(clock):
     """Example clock gen for test use"""
@@ -71,7 +83,7 @@ def clock_gen(clock):
         yield Timer(100)
         clock <= 1
         yield Timer(100)
-    clock.log.warning("Clock generator finished!") 
+    clock.log.warning("Clock generator finished!")
 
 @cocotb.test(expect_fail=False)
 def test_yield_list(dut):
@@ -88,7 +100,7 @@ test_flag = False
 def clock_yield(generator):
     global test_flag
     yield Join(generator)
-    test_flag = True 
+    test_flag = True
 
 @cocotb.test(expect_fail=True)
 def test_duplicate_yield(dut):

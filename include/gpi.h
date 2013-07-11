@@ -125,17 +125,27 @@ void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
 void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
 
 // The callback registering functions all return a gpi_sim_hdl;
-gpi_sim_hdl gpi_register_sim_start_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_sim_end_callback                (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_timed_callback                  (int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
-gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
-gpi_sim_hdl gpi_register_readonly_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_nexttime_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_readwrite_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
+int gpi_register_sim_start_callback              (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
+int gpi_register_sim_end_callback                (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
+int gpi_register_timed_callback                  (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
+int gpi_register_value_change_callback           (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
+int gpi_register_readonly_callback               (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
+int gpi_register_nexttime_callback               (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
+int gpi_register_readwrite_callback              (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
 
+// Calling convention is that 0 = success and negative numbers a failure
+// For implementers of GPI the provided macro GPI_RET(x) is provided
+gpi_sim_hdl gpi_create_cb_handle(void);
+void gpi_destroy_cb_handle(gpi_sim_hdl gpi_hdl);
 int gpi_deregister_callback(gpi_sim_hdl gpi_hdl);
 gpi_sim_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int cycles);
 void gpi_clock_unregister(gpi_sim_hdl clock);
+
+#define GPI_RET(_code) \
+    if (_code == 1) \
+        return 0; \
+    else \
+        return -1
 
 EXTERN_C_END
 
