@@ -164,14 +164,15 @@ class RunningTest(RunningCoroutine):
         if not self.started:
             self.error_messages = []
             self.log.info("Starting test: \"%s\"\nDescription: %s" % (self.funcname, self.__doc__))
-            self.start_time = time.time()            
+            self.start_time = time.time()
             self.started = True
 
         try:
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
-        except TestFailure as e:
+        except TestComplete as e:
             self.log.info(str(e))
+            e.stderr.write("\n".join(self.error_messages))
             raise
         except StopIteration:
             raise TestSuccess()
@@ -197,7 +198,9 @@ class coroutine(object):
             return RunningCoroutine(self._func(*args, **kwargs), self)
         except Exception as e:
             traceback.print_exc()
-            raise TestError(str(e))
+            result = TestError(str(e))
+            traceback.print_exc(file=result.stderr)
+            raise result
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
@@ -229,7 +232,9 @@ class test(coroutine):
                 return RunningTest(self._func(*args, **kwargs), self)
             except Exception as e:
                 traceback.print_exc()
-                raise TestError(str(e))
+                result = TestError(str(e))
+                traceback.print_exc(file=result.stderr)
+                raise result
 
         _wrapped_test.im_test = True    # For auto-regressions
         _wrapped_test.name = self._func.__name__

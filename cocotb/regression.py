@@ -92,9 +92,9 @@ class RegressionManager(object):
                 if hasattr(thing, "im_test"):
                     try:
                         self._queue.append(thing(self._dut))
-                    except TestError:
+                    except TestError as result:
                         self.log.warning("Skipping test %s" % thing.name)
-                        xml += xunit_output(thing.name, module_name, 0.0, skipped=True)
+                        xml += xunit_output(thing.name, module_name, 0.0, skipped=True, error=result.stderr.getvalue())
                         continue
                     self.ntests += 1
 
@@ -132,17 +132,19 @@ class RegressionManager(object):
 
         Args: result (TestComplete exception)
         """
-
-        if isinstance(result, TestFailure) and not \
+        if isinstance(result, TestSuccess) or self._running_test.expect_fail:
+            self._fout.write(xunit_output(self._running_test.funcname,
+                            self._running_test.module,
+                            time.time() - self._running_test.start_time))
+            self.log.info("Test Passed: %s" % self._running_test.funcname)
+        if isinstance(result, (TestFailure, TestError)) and not \
             self._running_test.expect_fail:
             self._fout.write(xunit_output(self._running_test.funcname,
                             self._running_test.module,
                             time.time() - self._running_test.start_time,
-                            failure="\n".join(self._running_test.error_messages)))
-        else:
-            self._fout.write(xunit_output(self._running_test.funcname,
-                            self._running_test.module,
-                            time.time() - self._running_test.start_time))
+                            failure=result.stderr.getvalue()))
+            self.log.warning("Test Failed: %s (result was %s)" % (
+                        self._running_test.funcname, result.__class__.__name__))
 
 	self.execute()
 
@@ -154,7 +156,7 @@ class RegressionManager(object):
                ANSI.BLUE_BG +ANSI.BLACK_FG,
                     self.count, self.ntests,
                ANSI.DEFAULT_FG + ANSI.DEFAULT_BG,
-                    self._running_test))
+                    self._running_test.funcname))
             if self.count is 1:
                 test = cocotb.scheduler.add(self._running_test)
             else:

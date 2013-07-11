@@ -241,8 +241,6 @@ class Scheduler(object):
         # TestComplete indication is game over, tidy up
         except TestComplete as test_result:
 
-    #        self.log.error(str(test_result))
-
             # Tag that close down is needed, save the test_result
             # for later use in cleanup handler
             self._terminate = True
@@ -251,7 +249,7 @@ class Scheduler(object):
             self._readonly = self.add(self.move_to_cleanup())
 
             self.log.debug("Coroutine completed execution with TestComplete: %s" % str(coroutine))
-            return                
+            return
 
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))
 
