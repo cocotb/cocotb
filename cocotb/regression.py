@@ -132,13 +132,19 @@ class RegressionManager(object):
 
         Args: result (TestComplete exception)
         """
-        if isinstance(result, TestSuccess) or self._running_test.expect_fail:
+        if isinstance(result, TestSuccess):
             self._fout.write(xunit_output(self._running_test.funcname,
                             self._running_test.module,
                             time.time() - self._running_test.start_time))
             self.log.info("Test Passed: %s" % self._running_test.funcname)
-        if isinstance(result, (TestFailure, TestError)) and not \
-            self._running_test.expect_fail:
+
+        elif self._running_test.expect_fail:
+            self._fout.write(xunit_output(self._running_test.funcname,
+                            self._running_test.module,
+                            time.time() - self._running_test.start_time))
+            self.log.info("Test failed as expected: %s (result was %s)" % (
+                        self._running_test.funcname, result.__class__.__name__))
+        else:
             self._fout.write(xunit_output(self._running_test.funcname,
                             self._running_test.module,
                             time.time() - self._running_test.start_time,
