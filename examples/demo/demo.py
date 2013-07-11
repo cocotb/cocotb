@@ -29,8 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     Example usage of the testbench framework
 """
 
-from cocotb.handle import *
-import cocotb, simulator
+import cocotb
 from cocotb.decorators import coroutine
 from cocotb.triggers import Timer, Edge, Event
 
@@ -108,5 +107,5 @@ def example_test(dut):
 @cocotb.test()
 def example_test2(dut):
     """This is another example test"""
-    result = yield Timer(1000000) 
+    result = yield Timer(1000000)
     dut.log.warning("test complete!")
