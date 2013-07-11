@@ -108,7 +108,5 @@ def example_test(dut):
 @cocotb.test()
 def example_test2(dut):
     """This is another example test"""
-    s = simulator.get_handle_by_name(dut._handle, "foo")
-    simulator.get_name_string(s)
     result = yield Timer(1000000) 
     dut.log.warning("test complete!")
