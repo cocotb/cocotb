@@ -75,45 +75,45 @@ typedef gpi_clock_t *gpi_clock_hdl;
 // Should be run after every VPI call to check error status
 static int check_vpi_error(void)
 {
-  int level=0;
+    int level=0;
 #if VPI_CHECKING
-  s_vpi_error_info info;
-  int loglevel;
-  char msg_buf [100];
-  level = vpi_chk_error(&info);
-  if (level == 0) {
-    return;
+    s_vpi_error_info info;
+    int loglevel;
+    char msg_buf [100];
+    level = vpi_chk_error(&info);
+    if (level == 0) {
+        return;
   }
   
-  switch (level) {
-    case vpiNotice:   loglevel = GPIInfo;
-		      break;
-    case vpiWarning:  loglevel = GPIWarning;
-		      break;
-    case vpiError:    loglevel = GPIError;
-		      break;
-    case vpiSystem:  
-    case vpiInternal: loglevel = GPICritical;
-		      break;
+    switch (level) {
+        case vpiNotice:   loglevel = GPIInfo;
+		    break;
+        case vpiWarning:  loglevel = GPIWarning;
+		    break;
+        case vpiError:    loglevel = GPIError;
+            break;
+        case vpiSystem:  
+        case vpiInternal: loglevel = GPICritical;
+	        break;
   }
 
-  snprintf(msg_buf, 100, "VPI Error level %d\n", level  );
-  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+    snprintf(msg_buf, 100, "VPI Error level %d\n", level  );
+    gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
 
-  snprintf(msg_buf, 100, "MESG %s\n", info.message  );
-  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+    snprintf(msg_buf, 100, "MESG %s\n", info.message  );
+    gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
 
-  snprintf(msg_buf, 100, "PROD %s\n", info.product  );
-  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+    snprintf(msg_buf, 100, "PROD %s\n", info.product  );
+    gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
 
-  snprintf(msg_buf, 100, "CODE %s\n", info.code );
-  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+    snprintf(msg_buf, 100, "CODE %s\n", info.code );
+    gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
 
-  snprintf(msg_buf, 100, "FILE %s\n", info.file  );
-  gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
+    snprintf(msg_buf, 100, "FILE %s\n", info.file  );
+    gpi_log("cocotb.gpi", loglevel, __FILE__, __func__, __LINE__, msg_buf);
 
 #endif
-  return level;
+    return level;
 }
 
 void gpi_free_handle(gpi_sim_hdl gpi_hdl)
@@ -150,8 +150,8 @@ gpi_sim_hdl gpi_get_root_handle()
     // Need to free the iterator if it didn't return NULL
     if (root != NULL && !vpi_free_object(iterator)) {
         LOG_WARN("VPI: Attempting to free root iterator failed!");
+        check_vpi_error();
     }
-    check_vpi_error();
 
     rv = gpi_alloc_handle();
     rv->sim_hdl = root;
@@ -329,7 +329,7 @@ char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
 
 char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl)
 {
-    FENTER 
+    FENTER
     const char *name = vpi_get_str(vpiFullName, (vpiHandle)(gpi_hdl->sim_hdl));
     check_vpi_error();
     char *result = gpi_copy_name(name);
@@ -442,10 +442,10 @@ static int gpi_free_one_time(p_vpi_cb_user_data user_data)
     if (!user_data->called) {
         rc = vpi_remove_cb(cb_hdl);
         check_vpi_error();
-   } else {
+    } else {
         rc = vpi_free_object(cb_hdl);
         check_vpi_error();
-   }
+    }
     FEXIT
     return 1;
 }

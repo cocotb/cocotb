@@ -175,13 +175,13 @@ typedef struct t_cb_data
 
 typedef struct t_vpi_error_info
 {
-  int32_t state;
-  int32_t level;
-  char *message;
-  char *product;
-  char *code;
-  char *file;
-  int32_t line;
+    int32_t state;
+    int32_t level;
+    char *message;
+    char *product;
+    char *code;
+    char *file;
+    int32_t line;
 } s_vpi_error_info, *p_vpi_error_info;
 
 extern vpiHandle  vpi_register_cb(p_cb_data cb_data_p);
