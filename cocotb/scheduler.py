@@ -210,7 +210,7 @@ class Scheduler(object):
             # Normal co-routine completion
             except cocotb.decorators.CoroutineComplete as exc:
                 self.log.debug("Coroutine completed execution with CoroutineComplete: %s" % str(coroutine))
-    
+
                 # Call any pending callbacks that were waiting for this coroutine to exit
                 exc()
                 return
@@ -243,13 +243,16 @@ class Scheduler(object):
 
             # Tag that close down is needed, save the test_result
             # for later use in cleanup handler
-            self._terminate = True
-            self._test_result = test_result
-            self.cleanup()
-            self._readonly = self.add(self.move_to_cleanup())
+            # If we're already tearing down we ignore any further test results
+            # that may be raised. Required because currently Python triggers don't unprime
+            if not self._terminate:
+                self._terminate = True
+                self._test_result = test_result
+                self.cleanup()
+                self._readonly = self.add(self.move_to_cleanup())
 
-            self.log.debug("Coroutine completed execution with TestComplete: %s" % str(coroutine))
-            return
+                self.log.warning("Coroutine completed execution with %s: %s" % (test_result.__class__.__name__, str(coroutine)))
+                return
 
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))
 

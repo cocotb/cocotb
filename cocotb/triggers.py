@@ -66,7 +66,11 @@ class Trigger(object):
 class PythonTrigger(Trigger):
     """Python triggers don't use GPI at all
 
-        For example notification of coroutine completion etc"""
+        For example notification of coroutine completion etc
+
+        TODO:
+            Still need to implement unprime
+        """
     pass
 
 
