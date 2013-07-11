@@ -1,4 +1,4 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
+    ''' Copyright (c) 2013 Potential Ventures Ltd
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -95,7 +95,8 @@ class RegressionManager(object):
                         self._queue.append(thing(self._dut))
                     except TestError:
                         self.log.warning("Skipping test %s" % thing.name)
-                        self.xunit.add_testcase(name=thing.name, classname=module_name, time="0.0", skipped=True)
+                        self.xunit.add_testcase(name=thing.name, classname=module_name, time="0.0")
+                        self.xunit_add_skipped()
                         continue
                     self.ntests += 1
 
@@ -105,12 +106,12 @@ class RegressionManager(object):
                  valid_tests.funcname))
 
 
-
     def tear_down(self):
         """It's the end of the world as we know it"""
         self.log.info("Shutting down...")
         self.xunit.write()
         simulator.stop_simulator()
+
 
     def next_test(self):
         """Get the next test to run"""
@@ -130,7 +131,7 @@ class RegressionManager(object):
         if isinstance(result, TestFailure):
             self.xunit.add_failure("\n".join(self._running_test.error_messages))
 
-	self.execute()
+    self.execute()
 
     def execute(self):
         self._running_test = cocotb.regression.next_test()

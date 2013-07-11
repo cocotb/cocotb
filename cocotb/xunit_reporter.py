@@ -76,7 +76,11 @@ class XUnitReporter(object):
             testcase = self.last_testcase
         log = SubElement(testcase, "failure", **kwargs)
 
-
+    def add_skipped(self, testcase=None, **kwargs):
+        if testcase ==None
+            testcase = self.last_testcase
+        log = SubElement(testcase, "skipped", **kwargs)
+        
     def indent(self, elem, level=0):
         i = "\n" + level*"  "
         if len(elem):
