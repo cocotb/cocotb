@@ -145,10 +145,11 @@ class RegressionManager(object):
             self.log.info("Test failed as expected: %s (result was %s)" % (
                         self._running_test.funcname, result.__class__.__name__))
         else:
+            msg = str(result) + '\n' + result.stderr.getvalue()
             self._fout.write(xunit_output(self._running_test.funcname,
                             self._running_test.module,
                             time.time() - self._running_test.start_time,
-                            failure=result.stderr.getvalue()))
+                            failure=msg))
             self.log.warning("Test Failed: %s (result was %s)" % (
                         self._running_test.funcname, result.__class__.__name__))
 
