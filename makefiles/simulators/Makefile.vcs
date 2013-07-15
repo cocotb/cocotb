@@ -28,6 +28,10 @@
 OBJ_DIR := obj
 VPI_LIB := vpi
 
+ifeq ($(ARCH),x86_64)
+EXTRA_ARGS += -full64
+endif
+
 all: $(OBJ_DIR) sim
 
 $(OBJ_DIR):
