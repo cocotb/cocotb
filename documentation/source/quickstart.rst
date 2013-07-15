@@ -2,6 +2,52 @@
 Quickstart Guide
 ################
 
+
+Installing cocotb
+=================
+
+Pre-requisites
+--------------
+
+Cocotb has the following requirements:
+
+* Python 2.6+
+* Python-dev packages
+* A verilog simulator
+
+
+Running an example
+------------------
+
+.. code-block:: bash
+
+    $> git clone https://github.com/potentialventures/cocotb
+    $> cd cocotb
+    $> make
+    $> cd examples/demo
+    $> make
+
+To run a test using a different simulator:
+
+.. code-block:: bash
+
+    $> make SIM=vcs
+
+
+Supported simulators
+--------------------
+
+* Icarus Verilog
+* Synopsys VCS
+* Aldec Riviera-PRO
+* Mentor Questa
+* Cadance Incisive
+
+
+
+Using cocotb
+============
+
 A typical cocotb testbench requires no additional RTL code.
 The Design Under Test (DUT) is instantiated as the toplevel in the simulator without any wrapper code.
 Cocotb drives stimulus onto the inputs to the DUT (or further down the hierarchy) and monitors the outputs directly from Python.
