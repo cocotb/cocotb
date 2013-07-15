@@ -116,7 +116,6 @@ class RegressionManager(object):
         self._fout.close()
         self.log.info("Shutting down...")
         simulator.stop_simulator()
-        self.hplog.close()
 
     def next_test(self):
         """Get the next test to run"""
