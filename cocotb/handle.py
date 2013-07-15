@@ -34,6 +34,7 @@ import simulator
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
+from cocotb.result import TestFailure
 
 class SimHandle(object):
 
@@ -59,7 +60,7 @@ class SimHandle(object):
             return self._sub_handles[name]
         new_handle = simulator.get_handle_by_name(self._handle, name)
         if not new_handle:
-            raise AttributeError("%s contains no object named %s" % (self.name, name))
+            raise TestFailure("%s contains no object named %s" % (self.name, name))
         self._sub_handles[name] = SimHandle(new_handle)
         return self._sub_handles[name]
 

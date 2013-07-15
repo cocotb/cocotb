@@ -171,13 +171,18 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
         len = strlen(name) + 1;
 
     buff = (char *)malloc(len);
-    if (buff== NULL) {
+    if (buff == NULL) {
         LOG_CRITICAL("VPI: Attempting allocate string buffer failed!");
-        return;
+        return NULL;
     }
 
     strncpy(buff, name, len);
     obj = vpi_handle_by_name(buff, (vpiHandle)(parent->sim_hdl));
+    if (!obj) {
+        LOG_CRITICAL("VPI: Handle not found!");
+        return NULL;
+    }
+
     free(buff);
 
     rv = gpi_alloc_handle();
@@ -290,21 +295,24 @@ static char *gpi_copy_name(const char *name)
 {
     int len;
     char *result;
+    char *null = "NULL";
 
     if (name)
         len = strlen(name) + 1;
     else {
         LOG_CRITICAL("NULL came back from VPI\n");
-        len = 20;
+        len = strlen(null);
+        name = null;
     }
 
     result = (char *)malloc(len);
     if (result == NULL) {
         LOG_CRITICAL("VPI: Attempting allocate string buffer failed!");
-        return NULL;
+        len = strlen(null);
+        name = null;
     }
 
-    snprintf(result, len, "%s\0", name ? name : "UNKNOWN");
+    snprintf(result, len, "%s\0", name);
 
     return result;
 }
