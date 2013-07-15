@@ -42,8 +42,6 @@ from cocotb.regression import RegressionManager
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine
 
-from guppy import hpy
-
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference
 # so that cocotb.scheduler gives you the singleton instance and not the
