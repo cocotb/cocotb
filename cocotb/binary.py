@@ -105,7 +105,7 @@ class BinaryValue(object):
     def set_buff(self, buff):
         self._str = ""
         for char in buff:
-            self._str = "{:08b}".format(ord(char)) + self._str
+            self._str = "{0:08b}".format(ord(char)) + self._str
         self._adjust()
 
     buff = property(get_buff, set_buff, None, "Access to the value as a buffer")
