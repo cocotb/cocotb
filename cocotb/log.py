@@ -31,6 +31,7 @@ import os
 import sys
 import logging
 import simulator
+import inspect
 
 import cocotb.ANSI as ANSI
 from pdb import set_trace
@@ -61,25 +62,40 @@ class SimBaseLog(logging.getLoggerClass()):
 class SimLog():
     def __init__(self, name, ident=None):
         self._ident = ident
+        self._name = name
         self.logger = logging.getLogger(name)
 
+    def _makeRecord(self, msg, level):
+        if self.logger.isEnabledFor(level):
+            frame = inspect.stack()[2]
+            info = inspect.getframeinfo(frame[0])
+            record = self.logger.makeRecord(self._name,
+                                            level,
+                                            info.filename,
+                                            info.lineno,
+                                            msg,
+                                            None,
+                                            None,
+                                            info.function)
+            self.logger.handle(record)
+
     def warn(self, msg):
-        self.logger.warn(self, msg)
+        self._makeRecord(msg, logging.WARNING)
 
     def warning(self, msg):
-        self.warn(msg)
+        self._makeRecord(msg, logging.WARNING)
 
     def debug(self, msg):
-        self.logger.debug(self, msg)
+        self._makeRecord(msg, logging.DEBUG)
 
     def error(self, msg):
-        self.logger.error(self, msg)
+        self._makeRecord(msg, logging.ERROR)
 
     def critical(self, msg):
-        self.logger.critical(self, msg)
+        self._makeRecord(msg, logging.CRITICAL)
 
     def info(self, msg):
-        self.logger.info(self, msg)
+        self._makeRecord(msg, logging.INFO)
 
     def addHandler(self, handler):
         self.logger.addHandler(handler)
