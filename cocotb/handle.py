@@ -49,7 +49,7 @@ class SimHandle(object):
 
         self.name = simulator.get_name_string(self._handle)
         self.fullname = self.name + '(%s)' % simulator.get_type_string(self._handle)
-        self.log = SimLog('cocotb.' + self.name, "0x%x" % id(self))
+        self.log = SimLog('cocotb.' + self.name, id(self))
         self.log.debug("Created!")
 
     def __str__(self):

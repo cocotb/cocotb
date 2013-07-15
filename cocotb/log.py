@@ -54,22 +54,26 @@ class SimBaseLog(logging.getLoggerClass()):
         self.propagate = False
         logging.__init__(name)
         self.addHandler(hdlr)
-        self.setLevel(logging.INFO)
+        self.setLevel(logging.DEBUG)
 
 """ Need to play with this to get the path of the called back,
     construct our own makeRecord for this """
 
-class SimLog():
+class SimLog(object):
     def __init__(self, name, ident=None):
         self._ident = ident
         self._name = name
         self.logger = logging.getLogger(name)
+        if self._ident is not None:
+            self._log_name = "%s.0x%x" % (self._name, self._ident)
+        else:
+            self._log_name = name
 
     def _makeRecord(self, msg, level):
         if self.logger.isEnabledFor(level):
             frame = inspect.stack()[2]
             info = inspect.getframeinfo(frame[0])
-            record = self.logger.makeRecord(self._name,
+            record = self.logger.makeRecord(self._log_name,
                                             level,
                                             info.filename,
                                             info.lineno,

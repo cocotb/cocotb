@@ -77,7 +77,7 @@ class RunningCoroutine(object):
     """
     def __init__(self, inst, parent):
         self.__name__ = "%s.0x%x" % (inst.__name__, id(self))
-        self.log = SimLog("cocotb.coroutine.%s" % self.__name__, "0x%x" % id(self))
+        self.log = SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
         self._coro = inst
         self._finished = False
         self._callbacks = []
