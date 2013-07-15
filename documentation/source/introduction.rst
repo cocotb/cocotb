@@ -11,45 +11,17 @@ What is cocotb?
 
 **Cocotb** still requires a simulator to simulate the RTL. Simulators that have been tested and known to work with cocotb:
 
-* Icarus
-* Aldec Riviera-PRO
+* Icarus Verilog
 * Synopsys VCS
-
-.. note::
-   See the `Simulator Support`_ page for full details of supported simulators.
-
-
-Why create cocotb?
-==================
-
-Verification is the hardest part of realising a working design. 
-The EDA industry has invested heavily in helping us verify designs, 
-adding software contructs to verilog when creating SystemVerilog, 
-mandating that simulators need to implement constrain solvers, 
-converging on UVM as a standard methodology. Why is this inadequate?
-
-Fundamentally the process of verification is writing software, specifically software to test a design, 
-where the design happens to be synthesisable into real hardware. If VHDL, Verilog or 
-SystemVerilog excelled as software languages would there not be examples of their use outside of EDA?
-
-
-Case study: UVM
----------------
-
-UVM is a prime example of how the EDA industry solves a problem and the solution isn't pretty. While the ideas driving
-UVM are valid and good (defining a common testbench structure, promoting code re-use, using constrained-random testing), 
-the outcome is a not the much needed giant leap forward for the following reasons:
-
-* **UVM is ugly** Given the rapid progress being made in software development and evolution of new languages, creating a framework that requires so much boilerplate and relies so heavily on macros is actually impressive!
-* **UVM is niche** UVM is a niche within an already highly specialised area. Finding good UVM guys is difficult and expensive.
-* **UVM is expensive** I have to pay for a simulator.  I then have to pay more to enable SystemVerilog verification features. I have to hire expensive people. This is good for EDA vendors but bad for innovation.
+* Aldec Riviera-PRO
+* Mentor Questa
+* Cadance Incisive
 
 
 How is cocotb different?
 ------------------------
 
-Cocotb encourages the same philosophy of design re-use and randomised testing as UVM, however is implemented in 
-Python rather than SystemVerilog.
+Cocotb encourages the same philosophy of design re-use and randomised testing as UVM, however is implemented in Python rather than SystemVerilog.
 
 
 The right tool for the job
