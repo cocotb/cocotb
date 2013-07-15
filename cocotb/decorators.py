@@ -26,12 +26,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import sys
 import time
 import logging
-
 import traceback
 
 import cocotb
+from cocotb.log import SimLog
 from cocotb.triggers import Join
-
 from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess
 
 
@@ -78,7 +77,7 @@ class RunningCoroutine(object):
     """
     def __init__(self, inst, parent):
         self.__name__ = "%s.0x%x" % (inst.__name__, id(self))
-        self.log =  logging.getLogger("cocotb.coroutine.%s" % self.__name__)
+        self.log = SimLog("cocotb.coroutine.%s" % self.__name__, "0x%x" % id(self))
         self._coro = inst
         self._finished = False
         self._callbacks = []
@@ -191,7 +190,7 @@ class coroutine(object):
 
     def __init__(self, func):
         self._func = func
-        self.log =  logging.getLogger("cocotb.function.%s" % self._func.__name__)
+        self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
 
     def __call__(self, *args, **kwargs):
         try:

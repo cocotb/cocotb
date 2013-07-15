@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     transactions
 """
 
-import logging
 import math
 
 import cocotb
@@ -41,8 +40,7 @@ from cocotb.decorators import coroutine
 from cocotb.triggers import Edge, Event, RisingEdge, ReadOnly
 from cocotb.binary import BinaryValue
 from cocotb.bus import Bus
-
-
+from cocotb.log import SimLog
 
 
 class MonitorStatistics(object):
@@ -70,7 +68,7 @@ class Monitor(object):
 
         # Subclasses may already set up logging
         if not hasattr(self, "log"):
-            self.log = logging.getLogger("cocotb.monitor.%s" % (self.__class__.__name__))
+            self.log = SimLog("cocotb.monitor.%s" % (self.__class__.__name__))
 
         if callback is not None:
             self.add_callback(callback)
@@ -126,7 +124,7 @@ class BusMonitor(Monitor):
     Wrapper providing common functionality for monitoring busses
     """
     def __init__(self, entity, name, clock, callback=None, event=None):
-        self.log = logging.getLogger("cocotb.%s.%s" % (entity.name, name))
+        self.log = SimLog("cocotb.%s.%s" % (entity.name, name))
         self.entity = entity
         self.name = name
         self.clock = clock

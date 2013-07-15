@@ -106,7 +106,7 @@ void embed_sim_init(void)
         return;
     }
 
-
+#if 0
     // Extact a reference to the logger object to unitfy logging mechanism
     pLogger = PyObject_GetAttrString(pModule, "log");
     PyObject *pHandler= PyObject_GetAttrString(pLogger, "handle");              // New reference
@@ -130,6 +130,7 @@ void embed_sim_init(void)
     Py_DECREF(pHandler);
     Py_DECREF(pRecordFn);
     Py_DECREF(pFilterFn);
+#endif
 
     // Save a handle to the lock object
     lock = PyObject_GetAttrString(pModule, "_rlock");

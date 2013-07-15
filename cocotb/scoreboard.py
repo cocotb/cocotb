@@ -28,11 +28,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
     Common scoreboarding capability.
 """
-import logging
 import cocotb
 
 from cocotb.utils import hexdump, hexdiffs
-
+from cocotb.log import SimLog
 from cocotb.monitors import Monitor
 from cocotb.result import TestFailure
 
@@ -51,7 +50,7 @@ class Scoreboard(object):
 
     def __init__(self, dut, reorder_depth=0):
         self.dut = dut
-        self.log = logging.getLogger("cocotb.scoreboard.%s" % self.dut.name)
+        self.log = SimLog("cocotb.scoreboard.%s" % self.dut.name)
         self.errors = 0
 
     def add_interface(self, monitor, expected_output):

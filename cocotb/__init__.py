@@ -34,34 +34,31 @@ import logging
 import threading
 from functools import wraps
 
-
 import cocotb.handle
 from cocotb.scheduler import Scheduler
-from cocotb.log import SimLogFormatter
+from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine
 
+from guppy import hpy
+
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
+
+# Top level logger object
+logging.basicConfig()
+logging.setLoggerClass(SimBaseLog)
+log = SimLog('cocotb')
+
 scheduler = Scheduler()
 regression = None
 
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
-
-# Top level logger object
-log = logging.getLogger('cocotb')
-log.setLevel(logging.INFO)
-
-# Add our default log handler
-hdlr = logging.StreamHandler(sys.stdout)
-hdlr.setFormatter(SimLogFormatter())
-log.addHandler(hdlr)
-
 
 class TestFailed(Exception):
     pass

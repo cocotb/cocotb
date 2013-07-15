@@ -26,8 +26,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
     A collections of triggers which a testbench can 'yield'
 """
-import logging
 import simulator
+import cocotb
+from cocotb.log import SimLog
 
 
 
@@ -37,14 +38,13 @@ class TriggerException(Exception):
 class Trigger(object):
     """Base class to derive from"""
     def __init__(self):
-        self.log = logging.getLogger("cocotb.%s.0x%x" % (self.__class__.__name__, id(self)))
+        self.log = SimLog("cocotb.%s" % (self.__class__.__name__), "0x%x" % id(self))
         self.peers = []
         self.signal = None
 
     def unprime(self):
         """Remove any pending callbacks if necessary"""
-        if self.peers:
-           self.peers = None
+        self.peers = []
 
     def addpeers(self, peers):
         """Store any relate triggers"""

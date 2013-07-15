@@ -26,15 +26,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
     A clock class
 """
-import logging
 import simulator
 
+from cocotb.log import SimLog
 
 class BaseClock(object):
     """Base class to derive from"""
     def __init__(self, signal):
         self.signal = signal
-        self.log = logging.getLogger("cocotb.%s.%s" % (self.__class__.__name__, self.signal.name))
+        self.log = SimLog("cocotb.%s.%s" % (self.__class__.__name__, self.signal.name))
 
 class Clock(BaseClock):
     """

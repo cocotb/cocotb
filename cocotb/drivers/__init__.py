@@ -36,6 +36,7 @@ import cocotb
 from cocotb.decorators import coroutine
 from cocotb.triggers import Event, RisingEdge
 from cocotb.bus import Bus
+from cocotb.log import SimLog
 
 
 class BitDriver(object):
@@ -64,7 +65,7 @@ class BitDriver(object):
 
         edge = RisingEdge(self._clk)
 
-        # Actual thread 
+        # Actual thread
         while True:
             on,off = self._generator.next()
             self._signal <= 1
@@ -92,7 +93,7 @@ class Driver(object):
 
         # Subclasses may already set up logging
         if not hasattr(self, "log"):
-            self.log = logging.getLogger("cocotb.driver.%s" % (self.__class__.__name__))
+            self.log = SimLog("cocotb.driver.%s" % (self.__class__.__name__))
 
         # Create an independent coroutine which can send stuff
         self._thread = cocotb.scheduler.add(self._send_thread())
@@ -187,7 +188,7 @@ class BusDriver(Driver):
 
             clock (SimHandle) : A handle to the clock associated with this bus
         """
-        self.log = logging.getLogger("cocotb.%s.%s" % (entity.name, name))
+        self.log = SimLog("cocotb.%s.%s" % (entity.name, name))
         Driver.__init__(self)
         self.entity = entity
         self.name = name

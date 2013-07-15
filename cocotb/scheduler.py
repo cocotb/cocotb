@@ -32,20 +32,19 @@ import types
 import threading
 import collections
 import os
-import logging
 
 import simulator
 import cocotb
 import cocotb.decorators
 from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite, NullTrigger
-
+from cocotb.log import SimLog
 from cocotb.result import TestComplete, TestError
 
 class Scheduler(object):
 
     def __init__(self):
         self.waiting = collections.defaultdict(list)
-        self.log = logging.getLogger("cocotb.scheduler")
+        self.log = SimLog("cocotb.scheduler")
         self.writes = {}
         self.writes_lock = threading.RLock()
         self._remove = []

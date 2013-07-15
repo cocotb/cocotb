@@ -28,11 +28,12 @@ Everything related to logging
 """
 
 import os
+import sys
 import logging
-
 import simulator
 
 import cocotb.ANSI as ANSI
+from pdb import set_trace
 
 # Column alignment
 _LEVEL_CHARS    = len("CRITICAL")
@@ -41,6 +42,47 @@ _FILENAME_CHARS = 20
 _LINENO_CHARS   = 4
 _FUNCNAME_CHARS = 31
 
+class SimBaseLog(logging.getLoggerClass()):
+    def __init__(self, name):
+        hdlr = logging.StreamHandler(sys.stdout)
+        hdlr.setFormatter(SimLogFormatter())
+        self.name = name
+        self.handlers = []
+        self.disabled = False
+        self.filters = []
+        self.propagate = False
+        logging.__init__(name)
+        self.addHandler(hdlr)
+        self.setLevel(logging.INFO)
+
+""" Need to play with this to get the path of the called back,
+    construct our own makeRecord for this """
+
+class SimLog():
+    def __init__(self, name, ident=None):
+        self._ident = ident
+        self.logger = logging.getLogger(name)
+
+    def warn(self, msg):
+        self.logger.warn(self, msg)
+
+    def warning(self, msg):
+        self.warn(msg)
+
+    def debug(self, msg):
+        self.logger.debug(self, msg)
+
+    def error(self, msg):
+        self.logger.error(self, msg)
+
+    def critical(self, msg):
+        self.logger.critical(self, msg)
+
+    def info(self, msg):
+        self.logger.info(self, msg)
+
+    def addHandler(self, handler):
+        self.logger.addHandler(handler)
 
 class SimLogFormatter(logging.Formatter):
 
@@ -65,8 +107,8 @@ class SimLogFormatter(logging.Formatter):
             if len(string) > chars: return string[:chars-2] + ".."
             return string.rjust(chars)
 
-        if record.args:  msg = record.msg % record.args
-        else:            msg = record.msg
+        if record.args: msg = record.args
+        else:           msg = record.msg
 
         msg = SimLogFormatter.loglevel2colour[record.levelno] % msg
         level = SimLogFormatter.loglevel2colour[record.levelno] % \

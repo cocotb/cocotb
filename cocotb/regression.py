@@ -30,14 +30,12 @@ All things relating to regression capabilities
 import time
 import logging
 
-
 import simulator
 
 import cocotb
-from cocotb.triggers import NullTrigger
-
 import cocotb.ANSI as ANSI
-
+from cocotb.log import SimLog
+from cocotb.triggers import NullTrigger
 from cocotb.result import TestError, TestFailure, TestSuccess
 
 def _my_import(name):
@@ -63,7 +61,7 @@ class RegressionManager(object):
         self._modules = modules
         self._functions = tests
         self._running_test = None
-        self.log = logging.getLogger("cocotb.regression")
+        self.log = SimLog("cocotb.regression", id(self))
 
     def initialise(self):
 
@@ -93,7 +91,7 @@ class RegressionManager(object):
                     try:
                         self._queue.append(thing(self._dut))
                     except TestError as result:
-                        self.log.warning("Skipping test %s" % thing.name)
+                        self.log.warn("Skipping test %s" % thing.name)
                         xml += xunit_output(thing.name, module_name, 0.0, skipped=True, error=result.stderr.getvalue())
                         continue
                     self.ntests += 1
@@ -118,6 +116,7 @@ class RegressionManager(object):
         self._fout.close()
         self.log.info("Shutting down...")
         simulator.stop_simulator()
+        self.hplog.close()
 
     def next_test(self):
         """Get the next test to run"""
@@ -150,10 +149,10 @@ class RegressionManager(object):
                             self._running_test.module,
                             time.time() - self._running_test.start_time,
                             failure=msg))
-            self.log.warning("Test Failed: %s (result was %s)" % (
+            self.log.warn("Test Failed: %s (result was %s)" % (
                         self._running_test.funcname, result.__class__.__name__))
 
-	self.execute()
+    	self.execute()
 
     def execute(self):
         self._running_test = cocotb.regression.next_test()

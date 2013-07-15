@@ -29,6 +29,7 @@ import logging
 logging.getLogger("scapy").setLevel(1)
 
 import cocotb
+from cocotb.log import SimLog
 from scapy.all import *
 
 class Feed(object):
@@ -37,7 +38,7 @@ class Feed(object):
         self._packets = {}
         self._filepath = filepath
         self.fullname = '\'' + self.name + '\''
-        self.log = logging.getLogger('cocotb.' + self.name)
+        self.log = SimLog('cocotb.' + self.name)
         if self._filepath:
             self._source = open(self._filepath)
             self.log.debug("loaded file %s" % self._filepath)
