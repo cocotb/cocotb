@@ -29,6 +29,7 @@ All things relating to regression capabilities
 
 import time
 import logging
+from xml.sax.saxutils import escape
 
 import simulator
 
@@ -205,10 +206,10 @@ def xunit_output(name, classname, time, skipped=False, failure="", error=""):
 
     if failure:
         xml += "    <failure message=\"test failure\">%s\n    </failure>\n" % \
-            failure
+            escape(failure)
 
     if error:
         xml += "    <error message=\"test failure\">%s\n    </error>\n" % \
-            error
+            escape(error)
 
     return xml + "  </testcase>\n"
