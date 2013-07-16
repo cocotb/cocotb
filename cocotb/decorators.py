@@ -125,6 +125,7 @@ class RunningCoroutine(object):
         self.log.debug("Coroutine finished calling pending callbacks (%d pending)" % len(self._callbacks))
         for cb in self._callbacks:
             cb()
+        self._callbacks = []
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits"""
