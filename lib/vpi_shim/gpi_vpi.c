@@ -315,11 +315,15 @@ void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
     value_p->value.integer = value;
     value_p->format = vpiIntVal;
 
-    /*  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
-     *      may be NULL, in this case. This is like a blocking assignment
-     *      in behavioral code.
-     */
-    vpi_put_value((vpiHandle)(gpi_hdl->sim_hdl), value_p, NULL, vpiNoDelay);
+    s_vpi_time vpi_time_s;
+    p_vpi_time vpi_time_p = &vpi_time_s;
+
+    vpi_time_p->type = vpiSimTime;
+    vpi_time_p->high = 0;
+    vpi_time_p->low  = 0;
+
+    // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+    vpi_put_value((vpiHandle)(gpi_hdl->sim_hdl), value_p, vpi_time_p, vpiInertialDelay);
 
     FEXIT
 }
