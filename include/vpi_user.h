@@ -51,6 +51,7 @@ typedef uint32_t *vpiHandle;
 #define vpiFullName             3   /* full hierarchical name */
 
 #define vpiNoDelay              1
+#define vpiInertialDelay        2
 
 typedef struct t_vpi_time
 {
