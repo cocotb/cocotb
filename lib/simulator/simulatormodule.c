@@ -562,6 +562,21 @@ static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
     return Py_BuildValue("l", result);
 }
 
+static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
+{
+    uint32_t index;
+    gpi_sim_hdl hdl;
+    gpi_sim_hdl result;
+
+    if (!PyArg_ParseTuple(args, "li", &hdl, &index))
+        return NULL;
+
+    result = gpi_get_handle_by_index((gpi_sim_hdl)hdl, index);
+
+    return Py_BuildValue("l", result);
+}
+
+
 
 static PyObject *get_name_string(PyObject *self, PyObject *args)
 {

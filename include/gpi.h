@@ -99,6 +99,7 @@ void gpi_get_sim_time(uint32_t *high, uint32_t *low);
 // Should be freed with gpi_free_handle
 gpi_sim_hdl gpi_get_root_handle(const char *name);
 gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent);
+gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index);
 void gpi_free_handle(gpi_sim_hdl);
 
 // Types that can be passed to the iterator.

@@ -230,6 +230,34 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     return rv;
 }
 
+/**
+ * @brief   Get a handle for an object based on its index within a parent
+ *
+ * @param parent <gpi_sim_hdl> handle to the parent
+ * @param indext <uint32_t> Index to retrieve
+ *
+ * Can be used on bit-vectors to access a specific bit or
+ * memories to access an address
+ */
+gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
+{
+    FENTER
+    gpi_sim_hdl rv;
+    vpiHandle obj;
+
+    obj = vpi_handle_by_index((vpiHandle)(parent->sim_hdl), index);
+    if (!obj) {
+        LOG_CRITICAL("VPI: Handle not found!");
+        return NULL;
+    }
+
+    rv = gpi_alloc_handle();
+    rv->sim_hdl = obj;
+
+    FEXIT
+    return rv;
+}
+
 
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls

@@ -67,6 +67,16 @@ class SimHandle(object):
         self._sub_handles[name] = SimHandle(new_handle)
         return self._sub_handles[name]
 
+    def __getitem__(self, index):
+        if index in self._sub_handles:
+            return self._sub_handles[index]
+        new_handle = simulator.get_handle_by_index(self._handle, index)
+        if not new_handle:
+            raise TestError("%s contains no object at index %d" % (self.name, index))
+        self._sub_handles[index] = SimHandle(new_handle)
+        return self._sub_handles[index]
+
+
     def getvalue(self):
         result = BinaryValue()
         result.binstr = self._get_value_str()
