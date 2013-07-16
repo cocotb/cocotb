@@ -137,27 +137,65 @@ static gpi_sim_hdl gpi_alloc_handle()
 }
 
 // Handle related functions
-gpi_sim_hdl gpi_get_root_handle()
+/**
+ * @name    Find the root handle
+ * @brief   Find the root handle using a optional name
+ *
+ * Get a handle to the root simulator object.  This is usually the toplevel.
+ *
+ * If no name is defined, we return the first root instance.
+ *
+ * If name is provided, we check the name against the available objects until
+ * we find a match.  If no match is found we return NULL
+ */
+gpi_sim_hdl gpi_get_root_handle(const char* name)
 {
     FENTER
     vpiHandle root;
     vpiHandle iterator;
     gpi_sim_hdl rv;
 
+    const char* found;
+
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
-    root = vpi_scan(iterator);
 
-    // Need to free the iterator if it didn't return NULL
-    if (root != NULL && !vpi_free_object(iterator)) {
-        LOG_WARN("VPI: Attempting to free root iterator failed!");
+    for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
+
+        if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
+            break;
     }
 
+    if (!root)
+        goto error;
+
+    // Need to free the iterator if it didn't return NULL
+    if (!vpi_free_object(iterator)) {
+        LOG_WARN("VPI: Attempting to free root iterator failed!");
+    }
+    
     rv = gpi_alloc_handle();
     rv->sim_hdl = root;
 
     FEXIT
     return rv;
+
+  error:
+
+    fprintf(stderr, "Couldn't find root handle %s\n", name);
+
+    iterator = vpi_iterate(vpiModule, NULL);
+
+    for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
+
+        fprintf(stderr, "Toplevel instances: %s != %s...\n", name, vpi_get_str(vpiFullName, root));
+
+        if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
+            break;
+    }
+
+    FEXIT
+    return NULL;
 }
 
 gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)

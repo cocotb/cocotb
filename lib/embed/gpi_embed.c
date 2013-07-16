@@ -86,7 +86,13 @@ void embed_sim_init(void)
     FENTER
 
     // Find the simulation root
-    gpi_sim_hdl dut = gpi_get_root_handle();
+    gpi_sim_hdl dut = gpi_get_root_handle(getenv("TOPLEVEL"));
+
+    if (dut == NULL)
+    {
+        fprintf(stderr, "Unable to find root instance!\n");
+        gpi_sim_end();
+    }
 
     PyObject *pName, *pModule, *pDict, *pFunc, *pArgs;
     PyObject *pValue, *pLogger;

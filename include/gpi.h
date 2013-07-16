@@ -96,7 +96,7 @@ void gpi_get_sim_time(uint32_t *high, uint32_t *low);
 
 // Functions for extracting a gpi_sim_hdl to an object
 // Returns a handle to the root simulation object
-gpi_sim_hdl gpi_get_root_handle();
+gpi_sim_hdl gpi_get_root_handle(const char *name);
 gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent);
 
 // Types that can be passed to the iterator.
