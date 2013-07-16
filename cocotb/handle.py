@@ -56,6 +56,9 @@ class SimHandle(object):
         return "%s @0x%x" % (self.name, self._handle)
 
     def __getattr__(self, name):
+        """ Query the simulator for a object with the specified name
+            and cache the result to build a tree
+        """
         if name in self._sub_handles:
             return self._sub_handles[name]
         new_handle = simulator.get_handle_by_name(self._handle, name)
@@ -156,3 +159,7 @@ class SimHandle(object):
                 hdl = SimHandle(thing)
                 self._sub_handles[hdl.name] = hdl
                 yield hdl
+    def __del__(self):
+        """Free handle from gpi that was allocated on construction"""
+        if self.handle is not None:
+            simulator.free_handle(self.handle)
