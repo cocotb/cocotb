@@ -76,7 +76,7 @@ class RunningCoroutine(object):
             coro.kill() will destroy a coroutine instance (and cause any Join triggers to fire
     """
     def __init__(self, inst, parent):
-        self.__name__ = "%s.0x%x" % (inst.__name__, id(self))
+        self.__name__ = "%s" % inst.__name__
         self.log = SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
         self._coro = inst
         self._finished = False
