@@ -30,8 +30,8 @@ Everything related to logging
 import os
 import sys
 import logging
-import simulator
 import inspect
+import simulator
 
 import cocotb.ANSI as ANSI
 from pdb import set_trace
@@ -46,7 +46,10 @@ _FUNCNAME_CHARS = 31
 class SimBaseLog(logging.getLoggerClass()):
     def __init__(self, name):
         hdlr = logging.StreamHandler(sys.stdout)
-        hdlr.setFormatter(SimLogFormatter())
+        if sys.stdout.isatty():
+            hdlr.setFormatter(SimColourLogFormatter())
+        else:
+            hdlr.setFormatter(SimLogFormatter())
         self.name = name
         self.handlers = []
         self.disabled = False
@@ -104,7 +107,48 @@ class SimLog(object):
     def addHandler(self, handler):
         self.logger.addHandler(handler)
 
+
 class SimLogFormatter(logging.Formatter):
+
+    """Log formatter to provide consistent log message handling."""
+
+    # Justify and truncate
+    @staticmethod
+    def ljust(string, chars):
+        if len(string) > chars: return string[:chars-2] + ".."
+        return string.ljust(chars)
+
+    @staticmethod
+    def rjust(string, chars):
+        if len(string) > chars: return string[:chars-2] + ".."
+        return string.rjust(chars)
+
+    def _format(self, timeh, timel, level, record, msg):
+        simtime = "% 6d.%02dns" % ((timel/1000), (timel%1000)/10)        
+        prefix = simtime + ' ' + level + ' ' + \
+            self.ljust(record.name, _RECORD_CHARS) + \
+            self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
+            ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
+            ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
+
+        pad = "\n" + " " * (len(prefix) - 10)
+        return prefix + pad.join(msg.split('\n'))
+
+
+    def format(self, record):
+        """pretify the log output, annotate with simulation time"""
+        if record.args: msg = record.msg % record.args
+        else:           msg = record.msg
+
+        msg = str(msg)
+        level = record.levelname.ljust(_LEVEL_CHARS)
+        timeh, timel = simulator.get_sim_time()
+
+        return self._format(timeh, timel, level, record, msg)
+
+
+
+class SimColourLogFormatter(SimLogFormatter):
 
     """Log formatter to provide consistent log message handling."""
     loglevel2colour = {
@@ -118,29 +162,12 @@ class SimLogFormatter(logging.Formatter):
     def format(self, record):
         """pretify the log output, annotate with simulation time"""
 
-        # Justify and truncate
-        def ljust(string, chars):
-            if len(string) > chars: return string[:chars-2] + ".."
-            return string.ljust(chars)
-
-        def rjust(string, chars):
-            if len(string) > chars: return string[:chars-2] + ".."
-            return string.rjust(chars)
-
-        if record.args: msg = record.args
+        if record.args: msg = record.msg % record.args
         else:           msg = record.msg
 
-        msg = SimLogFormatter.loglevel2colour[record.levelno] % msg
-        level = SimLogFormatter.loglevel2colour[record.levelno] % \
+        msg = SimColourLogFormatter.loglevel2colour[record.levelno] % msg
+        level = SimColourLogFormatter.loglevel2colour[record.levelno] % \
                                         record.levelname.ljust(_LEVEL_CHARS)
 
         timeh, timel = simulator.get_sim_time()
-        simtime = "% 6d.%02dns" % ((timel/1000), (timel%1000)/10)
-
-        prefix = simtime + ' ' + level + ljust(record.name, _RECORD_CHARS) + \
-                 rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
-                 ':' + ljust(str(record.lineno), _LINENO_CHARS) + \
-                 ' in ' + ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
-
-        pad = "\n" + " " * (len(prefix) - 10)
-        return prefix + pad.join(msg.split('\n'))
+        return self._format(timeh, timel, level, record, msg)
