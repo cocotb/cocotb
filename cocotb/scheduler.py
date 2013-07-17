@@ -36,7 +36,7 @@ import os
 import simulator
 import cocotb
 import cocotb.decorators
-from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite, NullTrigger
+from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite
 from cocotb.log import SimLog
 from cocotb.result import TestComplete, TestError
 
@@ -176,7 +176,6 @@ class Scheduler(object):
         while self._remove:
             delroutine, cb = self._remove.pop(0)
             for trigger, waiting in self.waiting.items():
-                if isinstance(trigger, NullTrigger): continue
                 for coro in waiting:
                     if coro is delroutine:
                         self.log.debug("Closing %s" % str(coro))

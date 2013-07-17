@@ -36,7 +36,6 @@ import simulator
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
-from cocotb.triggers import NullTrigger
 from cocotb.result import TestError, TestFailure, TestSuccess
 
 def _my_import(name):
