@@ -83,6 +83,29 @@ class SimLog(object):
                                             info.function)
             self.logger.handle(record)
 
+    def _willLog(self, level):
+        """ This is for user from the C world
+            it allows a check on if the message will
+            be printed. Saves doing lots of work
+            for no reason.
+        """
+        return self.logger.isEnabledFor(level)
+
+    def _printRecord(self, level, filename, lineno, msg, function):
+        """ This is for use from the C world and will
+            be printed regardless
+        """
+        if self.logger.isEnabledFor(level):
+            record = self.logger.makeRecord(self._log_name,
+                                            level,
+                                            filename,
+                                            lineno,
+                                            msg,
+                                            None,
+                                            None,
+                                            function)
+            self.logger.handle(record)
+
     def warn(self, msg):
         self._makeRecord(msg, logging.WARNING)
 

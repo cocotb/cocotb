@@ -47,10 +47,10 @@ from cocotb.decorators import test, coroutine
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
 
-# Top level logger object
+# GPI logging instance
 logging.basicConfig()
 logging.setLoggerClass(SimBaseLog)
-log = SimLog('cocotb')
+log = SimLog('cocotb.gpi')
 
 scheduler = Scheduler()
 regression = None

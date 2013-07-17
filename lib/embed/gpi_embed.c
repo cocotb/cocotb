@@ -81,6 +81,23 @@ void embed_init_python(void)
  *
  * Loads the Python module called cocotb and calls the _initialise_testbench function
  */
+
+#define COCOTB_MODULE "cocotb"
+
+int get_module_ref(const char *modname, PyObject **mod)
+{
+    PyObject *pModule = PyImport_Import(PyString_FromString(modname));
+
+    if (pModule == NULL) {
+        PyErr_Print();
+        fprintf(stderr, "Failed to load \"%s\"\n", modname);
+        return -1;
+    }
+
+    *mod = pModule;
+    return 0;
+}
+
 void embed_sim_init(void)
 {
     FENTER
@@ -88,94 +105,98 @@ void embed_sim_init(void)
     // Find the simulation root
     gpi_sim_hdl dut = gpi_get_root_handle(getenv("TOPLEVEL"));
 
-    if (dut == NULL)
-    {
+    if (dut == NULL) {
         fprintf(stderr, "Unable to find root instance!\n");
         gpi_sim_end();
     }
 
-    PyObject *pName, *pModule, *pDict, *pFunc, *pArgs;
-    PyObject *pValue, *pLogger;
+    PyObject *cocotb_module, *cocotb_init, *cocotb_args, *cocotb_retval;
+    PyObject *simlog_class, *simlog_obj, *simlog_args, *simlog_func;
 
 
     //Ensure that the current thread is ready to callthe Python C API
     PyGILState_STATE gstate = PyGILState_Ensure();
-    // Python allowed
 
-    pModule = PyImport_Import(PyString_FromString("cocotb"));
+    if (get_module_ref(COCOTB_MODULE, &cocotb_module))
+        goto cleanup;
 
-    if (pModule == NULL)
-    {
+    // Create a logger object
+    simlog_obj = PyObject_GetAttrString(cocotb_module, "log");
+
+    if (simlog_obj == NULL) {
         PyErr_Print();
-        fprintf(stderr, "Failed to load \"%s\"\n", "cocotb");
-        PyGILState_Release(gstate);
-        return;
+        fprintf(stderr, "Failed to to get simlog object\n");
     }
 
-#if 0
-    // Extact a reference to the logger object to unitfy logging mechanism
-    pLogger = PyObject_GetAttrString(pModule, "log");
-    PyObject *pHandler= PyObject_GetAttrString(pLogger, "handle");              // New reference
-    PyObject *pRecordFn= PyObject_GetAttrString(pLogger, "makeRecord");
-    PyObject *pFilterFn= PyObject_GetAttrString(pLogger, "filter");
-
-    if (pLogger == NULL || pHandler == NULL || pRecordFn == NULL)
-    {
+    simlog_func = PyObject_GetAttrString(simlog_obj, "_printRecord");
+    if (simlog_func == NULL) {
         PyErr_Print();
-        fprintf(stderr, "Failed to find handle to logging object \"log\" from module cocotb\n");
-        PyGILState_Release(gstate);
-        return;
+        fprintf(stderr, "Failed to get the _printRecord method");
+        goto cleanup;
     }
 
-    set_log_handler(pHandler);
-    set_make_record(pRecordFn);
-    set_log_filter(pFilterFn);
+    if (!PyCallable_Check(simlog_func)) {
+        PyErr_Print();
+        fprintf(stderr, "_printRecord is not callable");
+        goto cleanup;
+    }
 
+    set_log_handler(simlog_func);
 
-    Py_DECREF(pLogger);
-    Py_DECREF(pHandler);
-    Py_DECREF(pRecordFn);
-    Py_DECREF(pFilterFn);
-#endif
+    Py_DECREF(simlog_func);
+
+    simlog_func = PyObject_GetAttrString(simlog_obj, "_willLog");
+    if (simlog_func == NULL) {
+        PyErr_Print();
+        fprintf(stderr, "Failed to get the _willLog method");
+        goto cleanup;
+    }   
+
+    if (!PyCallable_Check(simlog_func)) {
+        PyErr_Print();
+        fprintf(stderr, "_willLog is not callable");
+        goto cleanup;
+    }   
+
+    set_log_filter(simlog_func);
+
+    // Now that logging has been set up ok we initialise the testbench
 
     // Save a handle to the lock object
-    lock = PyObject_GetAttrString(pModule, "_rlock");
+    lock = PyObject_GetAttrString(cocotb_module, "_rlock");
 
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
 
-    pFunc = PyObject_GetAttrString(pModule, "_initialise_testbench");         // New reference
+    cocotb_init = PyObject_GetAttrString(cocotb_module, "_initialise_testbench");         // New reference
 
-    if (pFunc == NULL || !PyCallable_Check(pFunc))
-    {
+    if (cocotb_init == NULL || !PyCallable_Check(cocotb_init)) {
         if (PyErr_Occurred())
             PyErr_Print();
         fprintf(stderr, "Cannot find function \"%s\"\n", "_initialise_testbench");
-        Py_DECREF(pFunc);
-        Py_DECREF(pModule);
-        PyGILState_Release(gstate);
-        return;
+        Py_DECREF(cocotb_init);
+        goto cleanup;
     }
 
-    pArgs = PyTuple_New(1);
-    PyTuple_SetItem(pArgs, 0, PyLong_FromLong((long)dut));        // Note: This function “steals” a reference to o.
-    pValue = PyObject_CallObject(pFunc, pArgs);
+    cocotb_args = PyTuple_New(1);
+    PyTuple_SetItem(cocotb_args, 0, PyLong_FromLong((long)dut));        // Note: This function “steals” a reference to o.
+    cocotb_retval = PyObject_CallObject(cocotb_init, cocotb_args);
 
-    if (pValue != NULL)
-    {
+    if (cocotb_retval != NULL) {
         LOG_INFO("_initialise_testbench successful");
-        Py_DECREF(pValue);
+        Py_DECREF(cocotb_retval);
     } else {
         PyErr_Print();
         fprintf(stderr,"Call failed\n");
         gpi_sim_end();
+        goto cleanup;
     }
 
-    Py_DECREF(pFunc);
-    Py_DECREF(pModule);
-
-    PyGILState_Release(gstate);
-
     FEXIT
+
+cleanup:
+    if (cocotb_module)
+        Py_DECREF(cocotb_module);
+    PyGILState_Release(gstate);
 }
 
 void embed_sim_end(void)

@@ -30,18 +30,11 @@
 // Used to log using the standard python mechanism
 static PyObject *pLogHandler;
 static PyObject *pLogFilter;
-static PyObject *pLogMakeRecord;
 
 void set_log_handler(void *handler)
 {
     pLogHandler = (PyObject *)handler;
     Py_INCREF(pLogHandler);
-}
-
-void set_make_record(void *makerecord)
-{
-    pLogMakeRecord = (PyObject *)makerecord;
-    Py_INCREF(pLogMakeRecord);
 }
 
 void set_log_filter(void *filter)
@@ -79,11 +72,16 @@ const char *log_level(long level)
   return str;
 }
 
-
+// We keep this module global to avoid reallocation
+// we do not need to worry about locking here as
+// are single threaded and can not have to calls
+// into gpi_log at once.
+#define LOG_SIZE    512
+static char log_buff[LOG_SIZE];
 
 /**
  * @name    GPI logging
- * @brief   Write a log message using Python logging module
+ * @brief   Write a log message using cocotb SimLog class
  * @ingroup python_c_api
  *
  * GILState before calling: Unknown
@@ -94,79 +92,62 @@ const char *log_level(long level)
  *
  * If the Python logging mechanism is not initialised, dumps to stderr.
  *
- * TODO: correct handling of VARARGS for format strings
  */
 void gpi_log(const char *name, long level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
 {
+    /* We first check that the log level means this will be printed
+     * before going to the expense of processing the variable
+     * arguments
+     */
+    va_list ap;
+    int n;
+    int curr_level;
 
-    if (pLogMakeRecord != NULL && pLogHandler != NULL && pLogFilter != NULL) {
-
-        //Ensure that the current thread is ready to callthe Python C API
-        PyGILState_STATE gstate = PyGILState_Ensure();
-
-        if (PyCallable_Check(pLogMakeRecord) && PyCallable_Check(pLogHandler)) {
-            PyObject *pArgs = PyTuple_New(7);
-            PyTuple_SetItem(pArgs, 0, PyString_FromString(name));       // Note: This function “steals” a reference to o.
-            PyTuple_SetItem(pArgs, 1, PyInt_FromLong(level));           // Note: This function “steals” a reference to o.
-            PyTuple_SetItem(pArgs, 2, PyString_FromString(pathname));   // Note: This function “steals” a reference to o.
-            PyTuple_SetItem(pArgs, 3, PyInt_FromLong(lineno));          // Note: This function “steals” a reference to o.
-            PyTuple_SetItem(pArgs, 4, PyString_FromString(msg));        // Note: This function “steals” a reference to o.
-            PyTuple_SetItem(pArgs, 5, Py_None); //NONE
-            PyTuple_SetItem(pArgs, 6, Py_None); //NONE
-
-            Py_INCREF(Py_None);                 // Need to provide a reference to steal
-            Py_INCREF(Py_None);                 // Need to provide a reference to steal
-
-            PyObject *pDict;
-            pDict = Py_BuildValue("{s:s}", "func", funcname);
-
-            PyObject *pLogRecord = PyObject_Call(pLogMakeRecord, pArgs, pDict);
-            Py_DECREF(pArgs);
-            Py_DECREF(pDict);
-
-            PyObject *pLogArgs = PyTuple_Pack(1, pLogRecord);
-            Py_DECREF(pLogRecord);
-
-            // Filter here
-#ifdef FILTER
-            PyObject *pShouldFilter = PyObject_CallObject(pLogFilter, pLogArgs);
-            if (pShouldFilter == Py_True) {
-#endif
-                PyObject *pLogResult = PyObject_CallObject(pLogHandler, pLogArgs);
-                Py_DECREF(pLogResult);
-#ifdef FILTER
-            }
-
-            Py_DECREF(pShouldFilter);
-#endif
-            Py_DECREF(pLogArgs);
-
-        } else {
-            PyGILState_Release(gstate);
-            goto clog;
-
-            fprintf(stderr, "ERROR: Unable to log into python - logging functions aren't callable\n");
-            fprintf(stderr, "%s", msg);
-            fprintf(stderr, "\n");
-
+    if (!pLogHandler) {
+        if (level >= 20) {
+            va_start(ap, msg);
+            n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
+            va_end(ap);
+ 
+            fprintf(stdout, "     -.--ns ");
+            fprintf(stdout, "%-8s", log_level(level));
+            fprintf(stdout, "%-35s", name);
+            fprintf(stdout, "%20s:", pathname);
+            fprintf(stdout, "%-4ld", lineno);
+            fprintf(stdout, " in %-31s ", funcname);
+            fprintf(stdout, "%s", msg);
+            fprintf(stdout, "\n");
         }
-
-        // Matching call to release GIL
-        PyGILState_Release(gstate);
-
-    // Python logging not available, just dump to stdout (No filtering)
-    } else {
-clog:
-        if (level < 20) return;
-        fprintf(stdout, "     -.--ns ");
-        fprintf(stdout, "%-8s", log_level(level));
-        fprintf(stdout, "%-35s", name);
-        fprintf(stdout, "%20s:", pathname);
-        fprintf(stdout, "%-4ld", lineno);
-        fprintf(stdout, " in %-31s ", funcname);
-        fprintf(stdout, "%s", msg);
-        fprintf(stdout, "\n");
+        return;
     }
 
-    return;
+    // Ignore truncation
+    // calling args is level, filename, lineno, msg, function
+    
+    PyGILState_STATE gstate = PyGILState_Ensure();
+
+    PyObject *check_args = PyTuple_New(1);
+    PyTuple_SetItem(check_args, 0, PyInt_FromLong(level));
+    PyObject *retuple = PyObject_CallObject(pLogFilter, check_args);
+
+    if (retuple != Py_True)
+        return;
+
+    va_start(ap, msg);
+    n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
+    va_end(ap);
+
+    PyObject *call_args = PyTuple_New(5);
+    PyTuple_SetItem(call_args, 0, PyInt_FromLong(level));           // Note: This function steals a reference.
+    PyTuple_SetItem(call_args, 1, PyString_FromString(pathname));   // Note: This function steals a reference.
+    PyTuple_SetItem(call_args, 2, PyInt_FromLong(lineno));          // Note: This function steals a reference.
+    PyTuple_SetItem(call_args, 3, PyString_FromString(log_buff));   // Note: This function steals a reference.
+    PyTuple_SetItem(call_args, 4, PyString_FromString(funcname));
+
+    PyObject_CallObject(pLogHandler, call_args);
+    Py_DECREF(call_args);
+    Py_DECREF(retuple);
+    Py_DECREF(check_args);
+
+    PyGILState_Release(gstate);
 }
