@@ -87,7 +87,7 @@ typedef struct __gpi_iterator_hdl *gpi_iterator_hdl;
 // Functions for controlling/querying the simulation state
 
 // Stop the simulator
-void gpi_sim_end();
+void gpi_sim_end(void);
 
 
 // Returns simulation time as a float. Units are default sim units

@@ -32,7 +32,7 @@
 
 static PyThreadState *gtstate;
 
-static char *progname = "cocotb";
+static char progname[] = "cocotb";
 static PyObject *thread_dict;
 static PyObject *lock;
 

@@ -125,7 +125,7 @@ void gpi_free_handle(gpi_sim_hdl gpi_hdl)
     free(gpi_hdl);
 }
 
-static gpi_sim_hdl gpi_alloc_handle()
+static gpi_sim_hdl gpi_alloc_handle(void)
 {
     gpi_sim_hdl new_hdl = calloc(1, sizeof(*new_hdl));
     if (!new_hdl) {
@@ -365,7 +365,7 @@ static char *gpi_copy_name(const char *name)
 {
     int len;
     char *result;
-    char *null = "NULL";
+    const char null[] = "NULL";
 
     if (name)
         len = strlen(name) + 1;
@@ -901,7 +901,7 @@ void register_final_callback(void)
 
 // If the Pything world wants things to shut down then unregister
 // the callback for end of sim
-void gpi_sim_end()
+void gpi_sim_end(void)
 {
     FENTER
 
@@ -911,7 +911,7 @@ void gpi_sim_end()
     FEXIT
 }
 
-void (*vlog_startup_routines[])() = {
+void (*vlog_startup_routines[])(void) = {
     register_embed,
     register_initial_callback,
     register_final_callback,
@@ -920,7 +920,7 @@ void (*vlog_startup_routines[])() = {
 
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines symbol
-void vlog_startup_routines_bootstrap() {
+void vlog_startup_routines_bootstrap(void) {
     void (*routine)(void);
     int i;
     routine = vlog_startup_routines[0];

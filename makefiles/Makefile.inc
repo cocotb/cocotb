@@ -52,7 +52,9 @@ export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
 ifeq ($(OS),Darwin)
 GCC_ARGS    :=  -g -DDEBUG -fpic
 else
-GCC_ARGS	:=	-Werror -g -DDEBUG -fpic 
+GCC_ARGS	:=	-Werror -Wcast-qual -Wcast-align -Wwrite-strings \
+				-Waggregate-return -Wstrict-prototypes           \
+				-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
 endif
 
 

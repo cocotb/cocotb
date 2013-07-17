@@ -209,7 +209,7 @@ extern vpiHandle  vpi_handle_by_multi_index(vpiHandle obj,
 
 
 
-void (*vlog_startup_routines[])();
+void (*vlog_startup_routines[])(void);
 
 #ifdef  __cplusplus
 }
