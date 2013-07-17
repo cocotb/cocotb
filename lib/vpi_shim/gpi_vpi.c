@@ -81,6 +81,31 @@ typedef struct gpi_clock_s {
 
 typedef gpi_clock_t *gpi_clock_hdl;
 
+// Add to this over time
+static const char * vpi_reason_to_string(int reason)
+{
+    switch (reason) {
+    case cbValueChange:
+        return "cbValueChange";
+    case cbAtStartOfSimTime:
+        return "cbAtStartOfSimTime";
+    case cbReadWriteSynch:
+        return "cbReadWriteSynch";
+    case cbReadOnlySynch:
+        return "cbReadOnlySynch";
+    case cbNextSimTime:
+        return "cbNextSimTime";
+    case cbAfterDelay:
+        return "cbAfterDelay";
+    case cbStartOfSimulation:
+        return "cbStartOfSimulation";
+    case cbEndOfSimulation:
+        return "cbEndOfSimulation";
+    default:
+        return "unknown";
+    }
+}
+
 static inline int __gpi_register_cb(p_vpi_cb_user_data user, p_cb_data cb_data)
 {
     /* If the user data already has a callback handle then deregister
@@ -92,7 +117,8 @@ static inline int __gpi_register_cb(p_vpi_cb_user_data user, p_cb_data cb_data)
         gpi_deregister_callback(&user->gpi_hdl);
 
     if (!new_hdl) {
-        printf("Unable to get a handle %d\n", new_hdl);
+        LOG_CRITICAL("VPI: Unable to register callback a handle for VPI type %s(%d)\n",
+                     vpi_reason_to_string(cb_data->reason), cb_data->reason);
     }
 
     user->cb_hdl = new_hdl;
@@ -104,7 +130,7 @@ static inline p_vpi_cb_user_data __gpi_alloc_user(void)
 {
     p_vpi_cb_user_data new_data = calloc(1, sizeof(*new_data));
     if (new_data == NULL) {
-        printf("VPI: Attempting allocate user_data for %s failed!", __func__);
+        LOG_CRITICAL("VPI: Attempting allocate user_data failed!");
     }
 
     return new_data;
@@ -182,13 +208,13 @@ gpi_sim_hdl gpi_get_root_handle(const char* name)
 
   error:
 
-    fprintf(stderr, "Couldn't find root handle %s\n", name);
+    LOG_CRITICAL("VPI: Couldn't find root handle %s\n", name);
 
     iterator = vpi_iterate(vpiModule, NULL);
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
 
-        fprintf(stderr, "Toplevel instances: %s != %s...\n", name, vpi_get_str(vpiFullName, root));
+        LOG_CRITICAL("VPI: Toplevel instances: %s != %s...\n", name, vpi_get_str(vpiFullName, root));
 
         if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
             break;
@@ -217,7 +243,7 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     strncpy(buff, name, len);
     obj = vpi_handle_by_name(buff, (vpiHandle)(parent->sim_hdl));
     if (!obj) {
-        LOG_CRITICAL("VPI: Handle not found!");
+        LOG_ERROR("VPI: Handle '%s' not found!", name);
         return NULL;
     }
 
@@ -247,7 +273,7 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
 
     obj = vpi_handle_by_index((vpiHandle)(parent->sim_hdl), index);
     if (!obj) {
-        LOG_CRITICAL("VPI: Handle not found!");
+        LOG_ERROR("VPI: Handle idx '%d' not found!", index);
         return NULL;
     }
 
@@ -370,7 +396,7 @@ static char *gpi_copy_name(const char *name)
     if (name)
         len = strlen(name) + 1;
     else {
-        LOG_CRITICAL("NULL came back from VPI\n");
+        LOG_CRITICAL("VPI: NULL came back from VPI\n");
         len = strlen(null);
         name = null;
     }
@@ -451,7 +477,7 @@ static int32_t handle_vpi_callback(p_cb_data cb_data)
     user_data = (p_vpi_cb_user_data)cb_data->user_data;
 
     if (!user_data)
-        printf("USER DATA NULL\n");
+        LOG_CRITICAL("VPI: Callback data corrupted");
 
     user_data->state = VPI_PRE_CALL;
     old_cb = user_data->cb_hdl;
@@ -542,7 +568,7 @@ static int gpi_free_one_time(p_vpi_cb_user_data user_data)
     int rc;
     vpiHandle cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
-        printf("VPI: %s passed a NULL pointer\n", __func__);
+        LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING\n");
         exit(1);
     }
 
@@ -566,7 +592,7 @@ static int gpi_free_recurring(p_vpi_cb_user_data user_data)
     int rc;
     vpiHandle cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
-        printf("VPI: %s passed a NULL pointer\n", __func__);
+        printf("VPI: %s passed a NULL pointer : ABORTING");
         exit(1);
     }
 
@@ -834,7 +860,7 @@ gpi_sim_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int cyc
 
     gpi_clock_hdl hdl = malloc(sizeof(gpi_clock_t));
     if (!hdl)
-        LOG_WARN("Unable to allocate memory");
+        LOG_CRITICAL("VPI: Unable to allocate memory");
 
     hdl->period = period;
     hdl->value = 0;
