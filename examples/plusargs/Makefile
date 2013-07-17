@@ -25,27 +25,14 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-OBJ_DIR := obj
-VPI_LIB := vpi
-VPI_LD_PATH := $(ICARUS_BASE)/lib
 
-all: $(OBJ_DIR) sim
+TOPLEVEL = tb_top
 
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
+VERILOG_SOURCES = tb_top.v
+MODULE=plusargs
 
-.PHONY: sim
-sim: $(OBJ_DIR) $(VERILOG_SOURCES)
-	iverilog -o $(OBJ_DIR)/sim.vvp $(VERILOG_SOURCES)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-        vvp -M $(LIB_DIR) -m gpivpi $(OBJ_DIR)/sim.vvp $(PLUSARGS)
-.PHONY: gdb
-gdb: $(OBJ_DIR) $(VERILOG_SOURCES)
-	iverilog -o $(OBJ_DIR)/sim.vvp $(VERILOG_SOURCES)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-		gdb --args vvp -M $(LIB_DIR) -m gpivpi $(OBJ_DIR)/sim.vvp $(PLUSARGS)
+PLUSARGS=+foo=bar +test1 +test2 +options=fubar
 
-clean:
-	rm -rf $(OBJ_DIR)
+include ../../makefiles/Makefile.inc
+include ../../makefiles/Makefile.sim
+

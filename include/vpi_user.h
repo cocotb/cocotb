@@ -68,6 +68,14 @@ typedef struct t_vpi_time
 #define vpiSimTime        2
 #define vpiSuppressTime   3
 
+/* VPI Simulator information */
+typedef struct t_vpi_vlog_info
+{
+    int32_t   argc;
+    char      **argv;
+    char      *product;
+    char      *version;
+} s_vpi_vlog_info, *p_vpi_vlog_info;
 
 /* generic value */
 typedef struct t_vpi_value
@@ -209,7 +217,7 @@ extern vpiHandle  vpi_handle_by_multi_index(vpiHandle obj,
 
 
 
-void (*vlog_startup_routines[])(void);
+extern void (*vlog_startup_routines[])(void);
 
 #ifdef  __cplusplus
 }

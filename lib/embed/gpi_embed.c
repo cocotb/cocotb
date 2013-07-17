@@ -98,10 +98,12 @@ int get_module_ref(const char *modname, PyObject **mod)
     return 0;
 }
 
-void embed_sim_init(void)
+void embed_sim_init(gpi_sim_info_t *info)
 {
     FENTER
 
+    int i;
+ 
     // Find the simulation root
     gpi_sim_hdl dut = gpi_get_root_handle(getenv("TOPLEVEL"));
 
@@ -112,6 +114,7 @@ void embed_sim_init(void)
 
     PyObject *cocotb_module, *cocotb_init, *cocotb_args, *cocotb_retval;
     PyObject *simlog_class, *simlog_obj, *simlog_args, *simlog_func;
+    PyObject *argv_list, *argc, *arg_dict, *arg_value;
 
 
     //Ensure that the current thread is ready to callthe Python C API
@@ -160,8 +163,25 @@ void embed_sim_init(void)
 
     set_log_filter(simlog_func);
 
-    // Now that logging has been set up ok we initialise the testbench
+    argv_list = PyList_New(0);
+    for (i = 0; i < info->argc; i++) {
+        arg_value = PyString_FromString(info->argv[i]);
+        PyList_Append(argv_list, arg_value);
+    }
 
+    arg_dict = PyModule_GetDict(cocotb_module);
+    PyDict_SetItemString(arg_dict, "argv", argv_list);
+
+    argc = PyInt_FromLong(info->argc);
+    PyDict_SetItemString(arg_dict, "argc", argc);
+
+    if (!PyCallable_Check(simlog_func)) {
+        PyErr_Print();
+        fprintf(stderr, "_printRecord is not callable");
+        goto cleanup;
+    }
+
+    // Now that logging has been set up ok we initialise the testbench
     // Save a handle to the lock object
     lock = PyObject_GetAttrString(cocotb_module, "_rlock");
 
@@ -196,6 +216,8 @@ void embed_sim_init(void)
 cleanup:
     if (cocotb_module)
         Py_DECREF(cocotb_module);
+    if (arg_dict)
+        Py_DECREF(arg_dict);
     PyGILState_Release(gstate);
 }
 

@@ -57,6 +57,8 @@ log = SimLog('cocotb.gpi')
 scheduler = Scheduler()
 regression = None
 
+plusargs = {}
+
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
 
@@ -92,6 +94,9 @@ def _initialise_testbench(root_handle):
 
     # Create the base handle type
     dut = cocotb.handle.SimHandle(root_handle)
+
+    process_plusargs()
+
     module_str = os.getenv('MODULE')
     test_str = os.getenv('TESTCASE')
 
@@ -109,4 +114,21 @@ def _initialise_testbench(root_handle):
 
     _rlock.release()
     return True
+
+
+def process_plusargs():
+
+    global plusargs
+
+    plusargs = {}
+
+    for option in cocotb.argv:
+        if option.startswith('+'):
+            if option.find('=') != -1:
+                (name, value) = option[1:].split('=')
+                plusargs[name] = value
+            else:
+                plusargs[option[1:]] = True
+
+    print plusargs
 

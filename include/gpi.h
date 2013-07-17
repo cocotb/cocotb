@@ -76,6 +76,15 @@ we have to create a process with the signal on the sensitivity list to imitate a
 
 EXTERN_C_START
 
+typedef struct gpi_sim_info_s
+{     
+    int32_t   argc;
+    char      **argv;
+    char      *product;
+    char      *version;
+    int32_t   *reserved[4];
+} gpi_sim_info_t;
+
 // Define a type for our simulation handle.
 typedef struct gpi_sim_hdl_s {
     void *sim_hdl;
