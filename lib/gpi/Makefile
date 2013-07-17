@@ -28,7 +28,6 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
-OBJ_DIR		:= obj
 INCLUDES	+= 
 GCC_ARGS	+= -DFILTER
 

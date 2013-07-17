@@ -64,6 +64,8 @@ else
 LINKER_ARGS := -shared -Xlinker -export-dynamic $(PYLIBS)
 endif
 
+OBJ_DIR := obj/$(ARCH)
+
 # Disable some inbuild rules
 %: %.c
 %: %.o
