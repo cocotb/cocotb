@@ -29,6 +29,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import logging
 import ctypes
+import traceback
+import sys
+from StringIO import StringIO
 
 import simulator
 import cocotb
@@ -63,16 +66,26 @@ class SimHandle(object):
             return self._sub_handles[name]
         new_handle = simulator.get_handle_by_name(self._handle, name)
         if not new_handle:
-            raise TestError("%s contains no object named %s" % (self.name, name))
+            self._raise_testerror("%s contains no object named %s" % (self.name, name))
         self._sub_handles[name] = SimHandle(new_handle)
         return self._sub_handles[name]
+
+    def _raise_testerror(self, msg):
+        buff = StringIO()
+        lastframe = sys._getframe(2)
+        traceback.print_stack(lastframe, file=buff)
+        self.log.error("%s\n%s" % (msg, buff.getvalue()))
+        exception = TestError(msg)
+        exception.stderr.write(buff.getvalue())
+        buff.close()
+        raise exception
 
     def __getitem__(self, index):
         if index in self._sub_handles:
             return self._sub_handles[index]
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
-            raise TestError("%s contains no object at index %d" % (self.name, index))
+            self._raise_testerror("%s contains no object at index %d" % (self.name, index))
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 

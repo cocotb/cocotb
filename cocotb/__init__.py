@@ -32,7 +32,9 @@ import os
 import sys
 import logging
 import threading
-from functools import wraps
+import random
+import time
+
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
@@ -77,6 +79,16 @@ def _initialise_testbench(root_handle):
         TESTCASE
     """
     _rlock.acquire()
+
+    # Seed the Python random number generator to make this repeatable
+    seed = os.getenv('RANDOM_SEED')
+    if seed is None:
+        seed = int(time.time())
+        log.info("Seeding Python random module with %d" % (seed))
+    else:
+        seed = int(seed)
+        log.info("Seeding Python random module with supplied seed %d" % (seed))
+    random.seed(seed)
 
     # Create the base handle type
     dut = cocotb.handle.SimHandle(root_handle)
