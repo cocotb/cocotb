@@ -37,7 +37,21 @@ LIBS:= lib/simulator lib/embed lib/vpi_shim lib/gpi
 
 .PHONY: $(LIBS)
 
-all: $(LIBS)
+libs_native: $(LIBS)
+
+libs_64_32:
+	ARCH=i686 make
+
+inst_64_32:
+	ARCH=i686 make lib_install
+
+ifeq ($(ARCH),x86_64)
+libs: libs_native libs_64_32
+install_lib: lib_install inst_64_32
+else
+libs: libs_native
+install_lib: lib_install
+endif
 
 $(LIBS): dirs
 	$(MAKE) -C $@
@@ -60,10 +74,12 @@ test: $(LIBS)
 pycode:
 	cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
 
-lib_install: $(LIBS)
-	@mkdir -p $(FULL_INSTALL_DIR)/lib
-	@mkdir -p $(FULL_INSTALL_DIR)/bin
-	@cp -R $(LIB_DIR)/* $(FULL_INSTALL_DIR)/lib
+lib_install:
+	@mkdir -p $(FULL_INSTALL_DIR)/lib/$(ARCH)
+	@mkdir -p $(FULL_INSTALL_DIR)/bin/$(ARCH)
+	@cp -R $(LIB_DIR)/* $(FULL_INSTALL_DIR)/lib/$(ARCH)
+
+common_install:
 	@cp -R bin/cocotbenv.py $(FULL_INSTALL_DIR)/bin/
 	@cp -R makefiles $(FULL_INSTALL_DIR)/
 	@rm -rf $(FULL_INSTALL_DIR)/makefiles/Makefile.inc
@@ -80,11 +96,12 @@ $(FULL_INSTALL_DIR)/bin/cocotb_uninstall:
 
 scripts: $(FULL_INSTALL_DIR)/bin/cocotb_uninstall $(FULL_INSTALL_DIR)/makefiles/Makefile.inc
 
-install: all lib_install pycode scripts
+install: install_lib common_install pycode scripts
 	@echo -e "\nInstalled to $(FULL_INSTALL_DIR)"
 	@echo -e "To uninstall run $(FULL_INSTALL_DIR)/bin/cocotb_uninstall\n"
 
 help:
-	@echo -e "\nCoCoTB make help\n\nall\t- Build libaries"
+	@echo -e "\nCoCoTB make help\n\nall\t- Build libaries for native"
+	@echo -e "libs\t- Build libs for possible ARCHs"
 	@echo -e "install\t- Build and install libaries to FULL_INSTALL_DIR (default=$(FULL_INSTALL_DIR))"
 	@echo -e "clean\t- Clean the build dir\n\n"
