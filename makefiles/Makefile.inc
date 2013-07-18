@@ -55,6 +55,9 @@ else
 GCC_ARGS	:=	-Werror -Wcast-qual -Wcast-align -Wwrite-strings \
 				-Waggregate-return -Wstrict-prototypes           \
 				-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
+ifeq ($(ARCH),i686)
+GCC_ARGS    += -m32
+endif
 endif
 
 
