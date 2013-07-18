@@ -37,19 +37,12 @@ OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
 LIB_NAME	:= libsim.so
 
-all : $(LIB_DIR)/simulator.so
-
-$(OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
-
-$(OBJ_DIR) :
-	mkdir -p $(OBJ_DIR)
- 
-$(LIB_DIR)/$(LIB_NAME) : $(OBJ_DIR) $(OBJS)
-	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) $(LIBS) $(LD_PATH)
+all: $(LIB_DIR)/simulator.so
 
 $(LIB_DIR)/simulator.so: $(LIB_DIR)/$(LIB_NAME)
 	ln -sf $(LIB_NAME) $@
 
 clean :
 	@rm -rf $(OBJ_DIR)
+
+include $(SIM_ROOT)/makefiles/Makefile.rules

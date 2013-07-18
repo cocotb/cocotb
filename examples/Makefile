@@ -28,7 +28,8 @@
 
 
 SMOKE_TESTS :=  demo \
-		comb_seq
+				comb_seq \
+				functionality/tests
 
 .PHONY: $(SMOKE_TESTS)
 

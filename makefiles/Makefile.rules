@@ -25,49 +25,16 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##############################################################################
 
-# Common makefile included by everything
 
-ifeq ($(SIM_ROOT),)
-export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
-endif
+# Disable some inbuild rules
+%: %.c
+%: %.o
 
-ifeq ($(USER_DIR),)
-export USER_DIR:=/tmp/cocotb
-endif
+# Define some of our own
+OBJS:= $(SRCS:%.c=$(LIB_OBJ_DIR)/%.o)
 
-BUILD_DIR=$(USER_DIR)/build
-export BUILD_DIR
+$(LIB_OBJ_DIR)/%.o: %.c
+	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
 
-ARCH?=$(shell uname -m)
-export ARCH
-
-OS=$(shell uname)
-export OS
-
-include $(SIM_ROOT)/makefiles/Makefile.paths
-include $(SIM_ROOT)/makefiles/Makefile.pylib
-
-export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
-
-
-# Base GCC flags
-ifeq ($(OS),Darwin)
-GCC_ARGS    :=  -g -DDEBUG -fpic
-else
-GCC_ARGS	:=	-Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-				-Waggregate-return -Wstrict-prototypes           \
-				-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
-ifeq ($(ARCH),i686)
-GCC_ARGS    += -m32
-endif
-endif
-
-
-ifeq ($(OS),Darwin)
-LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
-else
-LINKER_ARGS := -shared -Xlinker -export-dynamic
-endif
-
-LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
+$(LIB_DIR)/$(LIB_NAME): $(LIB_OBJ_DIR) $(OBJS)
+	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) $(LIBS) $(LD_PATH)

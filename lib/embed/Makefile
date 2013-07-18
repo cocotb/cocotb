@@ -33,20 +33,12 @@ LIBS		:= $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
 
 SRCS		:= gpi_embed.c
-OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
 LIB_NAME	:= libcocotb.so
 
 all: $(LIB_DIR)/$(LIB_NAME)
 
-$(OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
-
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
-
-$(LIB_DIR)/$(LIB_NAME): $(OBJ_DIR) $(OBJS)
-	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) $(LIBS) $(LD_PATH)
-
 clean:
 	rm -rf $(OBJ_DIR)
+
+include $(SIM_ROOT)/makefiles/Makefile.rules

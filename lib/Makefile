@@ -23,51 +23,31 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##############################################################################
+###############################################################################
 
-# Common makefile included by everything
+include $(SIM_ROOT)/makefiles/Makefile.inc
 
-ifeq ($(SIM_ROOT),)
-export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
-endif
+CLIBS:= $(SIM_ROOT)/lib/simulator \
+		$(SIM_ROOT)/lib/embed \
+		$(SIM_ROOT)/lib/vpi_shim \
+		$(SIM_ROOT)/lib/gpi
 
-ifeq ($(USER_DIR),)
-export USER_DIR:=/tmp/cocotb
-endif
+libs_native: $(CLIBS)
 
-BUILD_DIR=$(USER_DIR)/build
-export BUILD_DIR
+force_32:
+	ARCH=i686 make
 
-ARCH?=$(shell uname -m)
-export ARCH
+$(SIM_ROOT)/lib/vpi_shim: $(SIM_ROOT)/lib/embed $(SIM_ROOT)/lib/gpi
+$(SIM_ROOT)/lib/simulator: $(SIM_ROOT)/lib/vpi_shim
 
-OS=$(shell uname)
-export OS
+$(LIB_OBJ_DIR):
+	mkdir -p $@
 
-include $(SIM_ROOT)/makefiles/Makefile.paths
-include $(SIM_ROOT)/makefiles/Makefile.pylib
+$(LIB_DIR): $(LIB_OBJ_DIR)
+	mkdir -p $@
 
-export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
+$(CLIBS): $(LIB_DIR)
+	$(MAKE) -C $@
 
-
-# Base GCC flags
-ifeq ($(OS),Darwin)
-GCC_ARGS    :=  -g -DDEBUG -fpic
-else
-GCC_ARGS	:=	-Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-				-Waggregate-return -Wstrict-prototypes           \
-				-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
-ifeq ($(ARCH),i686)
-GCC_ARGS    += -m32
-endif
-endif
-
-
-ifeq ($(OS),Darwin)
-LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
-else
-LINKER_ARGS := -shared -Xlinker -export-dynamic
-endif
-
-LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
+clean_lib:
+	-@rm -rf $(BUILD_DIR)

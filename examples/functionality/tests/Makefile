@@ -33,4 +33,3 @@ MODULE=test_cocotb,test_multiple_modules,test_discovery
 
 include ../../../makefiles/Makefile.inc
 include ../../../makefiles/Makefile.sim
-

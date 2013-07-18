@@ -30,20 +30,14 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES	+= 
 GCC_ARGS	+= -DFILTER
-
+LIBS		:= $(PYLIBS)
 SRCS		:= gpi_logging.c
-OBJS            := $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
-all: $(LIB_DIR)/libgpilog.so
+LIB_NAME    := libgpilog.so
 
-$(OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
-
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
-
-$(LIB_DIR)/libgpilog.so: $(OBJ_DIR) $(OBJS)
-	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) 
+all: $(LIB_DIR)/$(LIB_NAME)
 
 clean:
 	rm -rf $(OBJ_DIR)
+
+include $(SIM_ROOT)/makefiles/Makefile.rules

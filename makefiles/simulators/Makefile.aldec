@@ -69,7 +69,7 @@ end\n\
 endmodule\n" > $@
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
-$(SIM_DIR)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_DIR)
+$(SIM_DIR)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_DIR) libs_native
 	echo "alib work" > $@
 	echo "set worklib work" >> $@
 	cd $(SIM_DIR) && create_project.py $(VERILOG_SOURCES) >> runsim.tcl

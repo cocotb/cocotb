@@ -25,42 +25,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include makefiles/Makefile.inc
-include version
-
-export BUILD_DIR=$(shell pwd)/build
-
 INSTALL_DIR?=/usr/local
 FULL_INSTALL_DIR=$(INSTALL_DIR)/cocotb-$(VERSION)
 
-LIBS:= lib/simulator lib/embed lib/vpi_shim lib/gpi
+all: test
 
-.PHONY: $(LIBS)
-
-libs_native: $(LIBS)
-
-libs_64_32:
-	ARCH=i686 make
-
-inst_64_32:
-	ARCH=i686 make lib_install
-
-ifeq ($(ARCH),x86_64)
-libs: libs_native libs_64_32
-install_lib: lib_install inst_64_32
-else
-libs: libs_native
-install_lib: lib_install
-endif
-
-$(LIBS): dirs
-	$(MAKE) -C $@
-
-lib/vpi_shim: lib/gpi lib/embed
-lib/simulator: lib/vpi_shim
-
-dirs:
-	@mkdir -p $(LIB_DIR)
+include makefiles/Makefile.inc
+include version
 
 clean:
 	-@rm -rf $(BUILD_DIR)
@@ -68,16 +39,16 @@ clean:
 	-@find . -name "*.pyc" | xargs rm -rf
 	-@find . -name "results.xml" | xargs rm -rf
 
-test: $(LIBS)
+test: 
 	$(MAKE) -C examples
 
 pycode:
 	@cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
 
-lib_install:
-	@mkdir -p $(FULL_INSTALL_DIR)/lib/$(ARCH)
+src_install:
+	@mkdir -p $(FULL_INSTALL_DIR)/lib
 	@mkdir -p $(FULL_INSTALL_DIR)/bin
-	@cp -R $(LIB_DIR)/* $(FULL_INSTALL_DIR)/lib/$(ARCH)
+	@cp -R lib/* $(FULL_INSTALL_DIR)/lib/
 
 common_install:
 	@cp -R bin/cocotbenv.py $(FULL_INSTALL_DIR)/bin/
@@ -88,7 +59,7 @@ common_install:
 create_files:
 	bin/create_files.py $(FULL_INSTALL_DIR)
 
-install: install_lib common_install pycode create_files
+install: src_install common_install pycode create_files
 	@echo -e "\nInstalled to $(FULL_INSTALL_DIR)"
 	@echo -e "To uninstall run $(FULL_INSTALL_DIR)/bin/cocotb_uninstall\n"
 
