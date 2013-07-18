@@ -72,31 +72,23 @@ test: $(LIBS)
 	$(MAKE) -C examples
 
 pycode:
-	cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
+	@cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
 
 lib_install:
 	@mkdir -p $(FULL_INSTALL_DIR)/lib/$(ARCH)
-	@mkdir -p $(FULL_INSTALL_DIR)/bin/$(ARCH)
+	@mkdir -p $(FULL_INSTALL_DIR)/bin
 	@cp -R $(LIB_DIR)/* $(FULL_INSTALL_DIR)/lib/$(ARCH)
 
 common_install:
 	@cp -R bin/cocotbenv.py $(FULL_INSTALL_DIR)/bin/
+	@cp -R bin/create_project.py $(FULL_INSTALL_DIR)/bin/
 	@cp -R makefiles $(FULL_INSTALL_DIR)/
 	@rm -rf $(FULL_INSTALL_DIR)/makefiles/Makefile.inc
 
-$(FULL_INSTALL_DIR)/makefiles/Makefile.inc:
-	@echo "export SIM_ROOT:=$(FULL_INSTALL_DIR)" > $@
-	@echo "export LIB_DIR=$(FULL_INSTALL_DIR)/lib" >> $@
+create_files:
+	bin/create_files.py $(FULL_INSTALL_DIR)
 
-$(FULL_INSTALL_DIR)/bin/cocotb_uninstall:
-	@echo "#!/bin/bash" > bin/cocotb_uninstall
-	@echo "rm -rf $(FULL_INSTALL_DIR)" >> bin/cocotb_uninstall
-	install -m 544 bin/cocotb_uninstall $@
-	rm -rf bin/cocotb_uninstall
-
-scripts: $(FULL_INSTALL_DIR)/bin/cocotb_uninstall $(FULL_INSTALL_DIR)/makefiles/Makefile.inc
-
-install: install_lib common_install pycode scripts
+install: install_lib common_install pycode create_files
 	@echo -e "\nInstalled to $(FULL_INSTALL_DIR)"
 	@echo -e "To uninstall run $(FULL_INSTALL_DIR)/bin/cocotb_uninstall\n"
 
