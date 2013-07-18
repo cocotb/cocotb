@@ -54,11 +54,10 @@ def print_uninstall(path):
     uninstall.write(file_contents)
 
 def print_files(path):
-    print_make_inc(path)
     print_uninstall(path)
 
     call("install -m 544 /tmp/cocotb_uninstall " + path + "/bin/cocotb_uninstall", shell=True)
-    call("install -m 666 /tmp/Makefile.inc " + path + "/makefiles/Makefile.inc", shell=True)
+    call("rm -rf /tmp/cocotb_uninstall", shell=True)
 
 def check_args(args):
     if len(args) is not 1:

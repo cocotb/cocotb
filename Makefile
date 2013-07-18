@@ -48,13 +48,14 @@ pycode:
 src_install:
 	@mkdir -p $(FULL_INSTALL_DIR)/lib
 	@mkdir -p $(FULL_INSTALL_DIR)/bin
+	@mkdir -p $(FULL_INSTALL_DIR)/include
 	@cp -R lib/* $(FULL_INSTALL_DIR)/lib/
+	@cp -R include/* $(FULL_INSTALL_DIR)/include/
 
 common_install:
 	@cp -R bin/cocotbenv.py $(FULL_INSTALL_DIR)/bin/
 	@cp -R bin/create_project.py $(FULL_INSTALL_DIR)/bin/
 	@cp -R makefiles $(FULL_INSTALL_DIR)/
-	@rm -rf $(FULL_INSTALL_DIR)/makefiles/Makefile.inc
 
 create_files:
 	bin/create_files.py $(FULL_INSTALL_DIR)

@@ -34,7 +34,7 @@ endif
 
 all: $(SIM_OBJ_DIR) sim
 
-$(SIM_OBJ_DIR):
+$(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
 

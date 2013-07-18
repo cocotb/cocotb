@@ -32,7 +32,7 @@ export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 endif
 
 ifeq ($(USER_DIR),)
-export USER_DIR:=/tmp/cocotb
+export USER_DIR:=$(SIM_ROOT)
 endif
 
 BUILD_DIR=$(USER_DIR)/build
@@ -48,7 +48,9 @@ include $(SIM_ROOT)/makefiles/Makefile.paths
 include $(SIM_ROOT)/makefiles/Makefile.pylib
 
 export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
+export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
 export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
+
 
 
 # Base GCC flags
@@ -69,5 +71,3 @@ LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
 else
 LINKER_ARGS := -shared -Xlinker -export-dynamic
 endif
-
-LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)

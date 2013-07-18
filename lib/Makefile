@@ -27,17 +27,17 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
-CLIBS:= $(SIM_ROOT)/lib/simulator \
+CLIBS:= $(SIM_ROOT)/lib/gpi \
 		$(SIM_ROOT)/lib/embed \
 		$(SIM_ROOT)/lib/vpi_shim \
-		$(SIM_ROOT)/lib/gpi
+		$(SIM_ROOT)/lib/simulator
 
 libs_native: $(CLIBS)
 
 force_32:
 	ARCH=i686 make
 
-$(SIM_ROOT)/lib/vpi_shim: $(SIM_ROOT)/lib/embed $(SIM_ROOT)/lib/gpi
+$(SIM_ROOT)/lib/vpi_shim: $(SIM_ROOT)/lib/gpi $(SIM_ROOT)/lib/embed
 $(SIM_ROOT)/lib/simulator: $(SIM_ROOT)/lib/vpi_shim
 
 $(LIB_OBJ_DIR):
