@@ -66,6 +66,5 @@ install: src_install common_install pycode create_files
 
 help:
 	@echo -e "\nCoCoTB make help\n\nall\t- Build libaries for native"
-	@echo -e "libs\t- Build libs for possible ARCHs"
 	@echo -e "install\t- Build and install libaries to FULL_INSTALL_DIR (default=$(FULL_INSTALL_DIR))"
 	@echo -e "clean\t- Clean the build dir\n\n"
