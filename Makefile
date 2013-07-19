@@ -68,3 +68,9 @@ help:
 	@echo -e "\nCoCoTB make help\n\nall\t- Build libaries for native"
 	@echo -e "install\t- Build and install libaries to FULL_INSTALL_DIR (default=$(FULL_INSTALL_DIR))"
 	@echo -e "clean\t- Clean the build dir\n\n"
+	@echo -e "To build natively just run make.\nTo build for 32bit on a 64 bit system set ARCH=i686\n"
+	@echo -e "Default simulator is Icarus. To use another set environment variable SIM as below\n"
+	@for X in $(shell ls makefiles/simulators/); do \
+		echo $$X | sed 's/^[^.]*./export SIM=/';\
+	done
+	@echo -e "\n\n"
