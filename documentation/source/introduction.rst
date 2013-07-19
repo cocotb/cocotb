@@ -17,6 +17,8 @@ What is cocotb?
 * Mentor Questa
 * Cadance Incisive
 
+**Cocotb** has recently been developed with the support of `SolarFlare Communications Ltd <http://www.solarflare.com/>`_ for use on thier `AOE product line <http://www.solarflare.com/ApplicationOnloadEngine>`_.
+
 
 How is cocotb different?
 ------------------------
