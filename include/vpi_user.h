@@ -175,6 +175,23 @@ typedef struct t_cb_data
 #define cbInteractiveScopeChange 23
 #define cbUnresolvedSystf        24
 
+/* error severity levels */
+#define vpiNotice               1
+#define vpiWarning              2
+#define vpiError                3
+#define vpiSystem               4
+#define vpiInternal             5
+
+typedef struct t_vpi_error_info
+{
+    int32_t state;
+    int32_t level;
+    char *message;
+    char *product;
+    char *code;
+    char *file;
+    int32_t line;
+} s_vpi_error_info, *p_vpi_error_info;
 
 extern vpiHandle  vpi_register_cb(p_cb_data cb_data_p);
 
@@ -216,6 +233,7 @@ extern vpiHandle  vpi_handle_by_multi_index(vpiHandle obj,
                                             int32_t *index_array);
 
 
+extern int32_t    vpi_chk_error(p_vpi_error_info);
 
 extern void (*vlog_startup_routines[])(void);
 

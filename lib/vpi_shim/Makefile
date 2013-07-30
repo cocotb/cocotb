@@ -28,7 +28,7 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES	+= 
-GCC_ARGS	+=
+GCC_ARGS	+= -DVPI_CHECKING
 LIBS		:= -lgpilog -lcocotb
 LD_PATH		:= -L$(LIB_DIR)
 

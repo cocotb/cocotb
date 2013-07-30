@@ -38,6 +38,7 @@ clean:
 	-@find . -name "obj" | xargs rm -rf
 	-@find . -name "*.pyc" | xargs rm -rf
 	-@find . -name "results.xml" | xargs rm -rf
+	$(MAKE) -C examples clean
 
 test: 
 	$(MAKE) -C examples

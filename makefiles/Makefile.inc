@@ -48,7 +48,7 @@ include $(SIM_ROOT)/makefiles/Makefile.paths
 include $(SIM_ROOT)/makefiles/Makefile.pylib
 
 export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
-export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
+export LIB_OBJ_DIR:= $(BUILD_DIR)/libs/$(ARCH)/obj
 export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
 
 
