@@ -29,6 +29,7 @@
 
 SMOKE_TESTS :=  demo \
 				comb_seq \
+				plusargs \
 				functionality/tests
 
 .PHONY: $(SMOKE_TESTS)
@@ -37,3 +38,6 @@ all: $(SMOKE_TESTS)
 
 $(SMOKE_TESTS):
 	@cd $@ && $(MAKE)
+
+clean:
+	$(foreach TEST, $(SMOKE_TESTS), $(MAKE) -C $(TEST) clean;)

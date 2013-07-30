@@ -41,7 +41,7 @@ clean:
 	$(MAKE) -C examples clean
 
 test: 
-	$(MAKE) -C examples
+	$(MAKE) -k -C examples
 
 pycode:
 	@cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
