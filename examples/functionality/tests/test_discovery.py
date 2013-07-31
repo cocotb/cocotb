@@ -41,3 +41,13 @@ def access_single_bit_erroneous(dut):
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
+
+
+@cocotb.test(skip=True)
+def skip_a_test(dut):
+    """This test shouldn't execute"""
+    yield Timer(10)
+    dut.log.info("%s = %d bits" % (str(dut.stream_in_data), len(dut.stream_in_data)))
+    bit = len(dut.stream_in_data) + 4
+    dut.stream_in_data[bit] <= 1
+    yield Timer(10)

@@ -98,5 +98,5 @@ class XUnitReporter(object):
 
     def write(self):
         self.indent(self.results)
-        ET.ElementTree(self.results).write(self.filename, xml_declaration = True, method = "xml", encoding="UTF-8")
+        ET.ElementTree(self.results).write(self.filename, encoding="UTF-8")
 

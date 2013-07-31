@@ -156,6 +156,7 @@ class RunningTest(RunningCoroutine):
         self.started = False
         self.start_time = 0
         self.expect_fail = parent.expect_fail
+        self.skip = parent.skip
 
         self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
         cocotb.log.addHandler(self.handler)
@@ -219,10 +220,19 @@ class test(coroutine):
     All tests are coroutines.  The test decorator provides
     some common reporting etc, a test timeout and allows
     us to mark tests as expected failures.
+
+    KWargs:
+        timeout: (int)
+            value representing simulation timeout (not implemented)
+        expect_fail: (bool):
+            Don't mark the result as a failure if the test fails
+        skip: (bool):
+            Don't execute this test as part of the regression
     """
-    def __init__(self, timeout=None, expect_fail=False):
+    def __init__(self, timeout=None, expect_fail=False, skip=False):
         self.timeout = timeout
         self.expect_fail = expect_fail
+        self.skip = skip
 
     def __call__(self, f):
         super(test, self).__init__(f)

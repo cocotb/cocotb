@@ -89,13 +89,20 @@ class RegressionManager(object):
             for thing in vars(module).values():
                 if hasattr(thing, "im_test"):
                     try:
-                        self._queue.append(thing(self._dut))
+                        test = thing(self._dut)
                     except TestError:
                         self.log.warning("Skipping test %s" % thing.name)
                         self.xunit.add_testcase(name=thing.name, classname=module_name, time="0.0")
                         self.xunit.add_skipped()
                         continue
+
                     self.ntests += 1
+                    if test.skip:
+                        self.log.info("Skipping test %s" % thing.name)
+                        self.xunit.add_testcase(name=thing.name, classname=module_name, time="0.0")
+                        self.xunit.add_skipped()
+                    else:
+                        self._queue.append(test)
 
         for valid_tests in self._queue:
             self.log.info("Found test %s.%s" %
