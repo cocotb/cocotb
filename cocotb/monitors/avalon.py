@@ -29,6 +29,7 @@ See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 
 NB Currently we only support a very small subset of functionality
 """
+from cocotb.utils import hexdump
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
 from cocotb.triggers import RisingEdge, ReadOnly
@@ -61,7 +62,8 @@ class AvalonSTPkts(BusMonitor):
     """
     Packetised AvalonST bus
     """
-    _signals = AvalonST._signals + ["startofpacket", "endofpacket", "ready", "empty", "error"]
+    _signals = ["valid", "data", "startofpacket", "endofpacket", "empty"]
+    _optional_signals = ["error", "channel", "ready"]
 
     @coroutine
     def _monitor_recv(self):

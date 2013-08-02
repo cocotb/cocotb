@@ -131,3 +131,5 @@ class BusMonitor(Monitor):
         self.bus = Bus(self.entity, self.name, self._signals)
         Monitor.__init__(self, callback=callback, event=event)
 
+    def __str__(self):
+        return "%s(%s)" % (self.__class__.__name__, self.name)
