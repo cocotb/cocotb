@@ -42,7 +42,7 @@ from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine
+from cocotb.decorators import test, coroutine, function
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference

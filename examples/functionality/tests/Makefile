@@ -29,7 +29,7 @@
 TOPLEVEL = sample_module
 
 VERILOG_SOURCES = ../hdl/sample_module.v
-MODULE=test_cocotb,test_multiple_modules,test_discovery
+MODULE=test_cocotb,test_multiple_modules,test_discovery,test_calling
 
 include ../../../makefiles/Makefile.inc
 include ../../../makefiles/Makefile.sim
