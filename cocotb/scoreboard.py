@@ -48,11 +48,12 @@ class Scoreboard(object):
         Statistics for end-of-test summary etc.
     """
 
-    def __init__(self, dut, reorder_depth=0):
+    def __init__(self, dut, reorder_depth=0, fail_immediately=True):
         self.dut = dut
         self.log = SimLog("cocotb.scoreboard.%s" % self.dut.name)
         self.errors = 0
         self.expected = {}
+        self._imm = fail_immediately
 
     @property
     def result(self):
@@ -64,10 +65,17 @@ class Scoreboard(object):
                                 callable function rather than a list" % str(monitor))
                 continue
             if len(expected_output):
-                self.log.warn("Still expecting %d transaction on %s" % (len(expected_output), str(monitor)))
+                self.log.warn("Still expecting %d transactions on %s" % (len(expected_output), str(monitor)))
+                for index, transaction in enumerate(expected_output):
+                    self.log.info("Expecting %d:\n%s" % (index, hexdump(str(transaction))))
+                    if index > 5:
+                        self.log.info("... and %d more to come" % len(expected_output) - index - 1)
+                        break
                 fail = True
         if fail:
             return TestFailure("Not all expected output was received")
+        if self.errors:
+            return TestFailure("Errors were recorded during the test")
         return TestSuccess()
 
     def add_interface(self, monitor, expected_output):
@@ -92,7 +100,7 @@ class Scoreboard(object):
             if not expected_output:
                 self.errors += 1
                 self.log.error("%s" % (transaction))    # TODO hexdump
-                raise TestFailure("Recieved a transaction but wasn't expecting anything")
+                if self._imm: raise TestFailure("Recieved a transaction but wasn't expecting anything")
 
             if callable(expected_output): 
                 exp = expected_output()
@@ -102,7 +110,7 @@ class Scoreboard(object):
                 self.errors += 1
                 self.log.error("Received transaction is a different type to expected transaction")
                 self.log.info("Got: %s but expected %s" % (str(type(transaction)), str(type(exp))))
-                raise TestFailure("Received transaction of wrong type")
+                if self._imm: raise TestFailure("Received transaction of wrong type")
 
             if transaction != exp:
                 self.errors += 1
@@ -118,7 +126,7 @@ class Scoreboard(object):
                         for word in transaction: self.log.info(str(word))
                     except: pass
                 self.log.warning(hexdiffs(exp, transaction))
-                raise TestFailure("Received transaction differed from expected transaction")
+                if self._imm: raise TestFailure("Received transaction differed from expected transaction")
             else:
                 self.log.debug("Received expected transaction %d bytes" % (len(transaction)))
                 self.log.debug(repr(transaction))
