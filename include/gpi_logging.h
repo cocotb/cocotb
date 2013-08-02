@@ -53,13 +53,13 @@ enum gpi_log_levels {
 #define LOG_ERROR(...)     gpi_log("cocotb.gpi", GPIError,         __FILE__, __func__, __LINE__, __VA_ARGS__);
 #define LOG_CRITICAL(...)  gpi_log("cocotb.gpi", GPICritical,      __FILE__, __func__, __LINE__, __VA_ARGS__);
 
-#ifdef DEBUG
-#define FENTER LOG_DEBUG(__func__)
-#define FEXIT  LOG_DEBUG(__func__)
-#else
+// #ifdef DEBUG
+// #define FENTER LOG_DEBUG(__func__)
+// #define FEXIT  LOG_DEBUG(__func__)
+// #else
 #define FENTER
 #define FEXIT
-#endif
+// #endif
 
 void set_log_handler(void *handler);
 void set_make_record(void *makerecord);

@@ -129,21 +129,26 @@ class RegressionManager(object):
 
         Args: result (TestComplete exception)
         """
-        if isinstance(result, TestSuccess):
-            self.log.info("Test Passed: %s" % self._running_test.funcname)
-
-        elif self._running_test.expect_fail:
-            self.log.info("Test failed as expected: %s (result was %s)" % (
-                        self._running_test.funcname, result.__class__.__name__))
-        else:
-            self.log.warn("Test Failed: %s (result was %s)" % (
-                        self._running_test.funcname, result.__class__.__name__))
-
         self.xunit.add_testcase(name =self._running_test.funcname,
                                 classname=self._running_test.module,
                                 time=repr(time.time() - self._running_test.start_time) )
-        if isinstance(result, TestFailure):
-            self.xunit.add_failure("\n".join(self._running_test.error_messages))
+
+        if isinstance(result, TestSuccess) and not self._running_test.expect_fail:
+            self.log.info("Test Passed: %s" % self._running_test.funcname)
+
+        elif isinstance(result, TestFailure) and self._running_test.expect_fail:
+            self.log.info("Test failed as expected: %s (result was %s)" % (
+                        self._running_test.funcname, result.__class__.__name__))
+
+        elif isinstance(result, TestSuccess):
+            self.log.error("Test passed but we expected a failure: %s (result was %s)" % (
+                        self._running_test.funcname, result.__class__.__name__))
+            self.xunit.add_failure(stdout=str(result), stderr="\n".join(self._running_test.error_messages))
+
+        else:
+            self.log.error("Test Failed: %s (result was %s)" % (
+                        self._running_test.funcname, result.__class__.__name__))
+            self.xunit.add_failure(stdout=str(result), stderr="\n".join(self._running_test.error_messages))
 
         self.execute()
 

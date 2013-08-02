@@ -193,6 +193,24 @@ typedef struct t_vpi_error_info
     int32_t line;
 } s_vpi_error_info, *p_vpi_error_info;
 
+
+typedef struct t_vpi_systf_data {
+      int32_t type;
+      int32_t sysfunctype;
+      const char *tfname;
+      int32_t (*calltf)   (char*);
+      int32_t (*compiletf)(char*);
+      int32_t (*sizetf)   (char*);
+      char *user_data;
+} s_vpi_systf_data, *p_vpi_systf_data;
+
+#define vpiSysTask  1
+#define vpiSysFunc  2
+#define vpiIntFunc  1
+#define vpiSysTfCall   85
+#define vpiArgument    89
+
+
 extern vpiHandle  vpi_register_cb(p_cb_data cb_data_p);
 
 extern int32_t    vpi_remove_cb(vpiHandle cb_obj);
