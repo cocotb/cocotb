@@ -33,7 +33,7 @@ import cocotb
 from cocotb.utils import hexdump, hexdiffs
 from cocotb.log import SimLog
 from cocotb.monitors import Monitor
-from cocotb.result import TestFailure
+from cocotb.result import TestFailure, TestSuccess
 
 
 class Scoreboard(object):
@@ -52,6 +52,23 @@ class Scoreboard(object):
         self.dut = dut
         self.log = SimLog("cocotb.scoreboard.%s" % self.dut.name)
         self.errors = 0
+        self.expected = {}
+
+    @property
+    def result(self):
+        """determine the test result - do we have any pending data remaining?"""
+        fail = False
+        for monitor, expected_output in self.expected.iteritems():
+            if callable(expected_output):
+                self.log.debug("Can't check all data returned for %s since expected output is \
+                                callable function rather than a list" % str(monitor))
+                continue
+            if len(expected_output):
+                self.log.warn("Still expecting %d transaction on %s" % (len(expected_output), str(monitor)))
+                fail = True
+        if fail:
+            return TestFailure("Not all expected output was received")
+        return TestSuccess()
 
     def add_interface(self, monitor, expected_output):
         """Add an interface to be scoreboarded.
@@ -61,6 +78,9 @@ class Scoreboard(object):
             Simply check against the expected output.
 
         """
+        # save a handle to the expected output so we can check if all expected data has
+        # been received at the end of a test.
+        self.expected[monitor] = expected_output
 
         # Enforce some type checking as we only work with a real monitor
         if not isinstance(monitor, Monitor):
@@ -74,7 +94,8 @@ class Scoreboard(object):
                 self.log.error("%s" % (transaction))    # TODO hexdump
                 raise TestFailure("Recieved a transaction but wasn't expecting anything")
 
-            if callable(expected_output): exp = expected_output()
+            if callable(expected_output): 
+                exp = expected_output()
             else: exp = expected_output.pop(0)
 
             if type(transaction) != type(exp):
