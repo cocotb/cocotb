@@ -41,6 +41,7 @@ from cocotb.scheduler import Scheduler
 from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
 
+
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine
 
@@ -114,6 +115,13 @@ def _initialise_testbench(root_handle):
 
     _rlock.release()
     return True
+
+
+def _fail_test(message):
+    """Function that can be called externally to fail a test"""
+    from cocotb.result import TestFailure
+    scheduler.log.error("Failing test at simulator request")
+    scheduler.finish_test(TestFailure("Failure from external source: %s" % message))
 
 
 def process_plusargs():

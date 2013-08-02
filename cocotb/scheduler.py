@@ -244,15 +244,18 @@ class Scheduler(object):
             # If we're already tearing down we ignore any further test results
             # that may be raised. Required because currently Python triggers don't unprime
             if not self._terminate:
-                self._terminate = True
-                self._test_result = test_result
-                self.cleanup()
-                self._readonly = self.add(self.move_to_cleanup())
-
+                self.finish_test(test_result)
                 self.log.warning("Coroutine completed execution with %s: %s" % (test_result.__class__.__name__, str(coroutine)))
                 return
 
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))
+
+    def finish_test(self, test_result):
+        if not self._terminate:
+            self._terminate = True
+            self._test_result = test_result
+            self.cleanup()
+            self._readonly = self.add(self.move_to_cleanup())
 
     def cleanup(self):
         """ Clear up all our state

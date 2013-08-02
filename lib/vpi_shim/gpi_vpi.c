@@ -997,6 +997,39 @@ void register_final_callback(void)
     FEXIT
 }
 
+
+// System function to permit code in the simulator to fail a test
+// TODO: Pass in an error string
+static int system_function_fail_test(char *userdata)
+{
+
+    vpiHandle systfref, args_iter, argh;
+    struct t_vpi_value argval;
+
+    // Obtain a handle to the argument list
+    systfref = vpi_handle(vpiSysTfCall, NULL);
+    args_iter = vpi_iterate(vpiArgument, systfref);
+
+    // Grab the value of the first argument
+    argh = vpi_scan(args_iter);
+    argval.format = vpiStringVal;
+    vpi_get_value(argh, &argval);
+
+    fail_test(argval.value.str);
+
+    // Cleanup and return
+    vpi_free_object(args_iter);
+    return 0;
+}
+
+void register_system_functions(void)
+{
+    FENTER
+    s_vpi_systf_data data = {vpiSysTask, vpiIntFunc, "$fail_test", system_function_fail_test, NULL, NULL, NULL};
+    vpi_register_systf(&data);
+    FEXIT
+}
+
 // If the Pything world wants things to shut down then unregister
 // the callback for end of sim
 void gpi_sim_end(void)
@@ -1011,6 +1044,7 @@ void gpi_sim_end(void)
 
 void (*vlog_startup_routines[])(void) = {
     register_embed,
+    register_system_functions,
     register_initial_callback,
     register_final_callback,
     0

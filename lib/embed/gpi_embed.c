@@ -34,8 +34,7 @@ static PyThreadState *gtstate;
 
 static char progname[] = "cocotb";
 static PyObject *thread_dict;
-static PyObject *lock;
-
+static PyObject *pFailTestFn;
 
 
 /**
@@ -103,7 +102,7 @@ void embed_sim_init(gpi_sim_info_t *info)
     FENTER
 
     int i;
- 
+
     // Find the simulation root
     gpi_sim_hdl dut = gpi_get_root_handle(getenv("TOPLEVEL"));
 
@@ -153,13 +152,13 @@ void embed_sim_init(gpi_sim_info_t *info)
         PyErr_Print();
         fprintf(stderr, "Failed to get the _willLog method");
         goto cleanup;
-    }   
+    }
 
     if (!PyCallable_Check(simlog_func)) {
         PyErr_Print();
         fprintf(stderr, "_willLog is not callable");
         goto cleanup;
-    }   
+    }
 
     set_log_filter(simlog_func);
 
@@ -181,11 +180,19 @@ void embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
 
-    // Now that logging has been set up ok we initialise the testbench
-    // Save a handle to the lock object
-    lock = PyObject_GetAttrString(cocotb_module, "_rlock");
-
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
+
+    // Now that logging has been set up ok we initialise the testbench
+
+    // Hold onto a reference to our _fail_test function
+    pFailTestFn = PyObject_GetAttrString(cocotb_module, "_fail_test");
+
+    if (!PyCallable_Check(pFailTestFn)) {
+        PyErr_Print();
+        fprintf(stderr, "cocotb._fail_test is not callable");
+        goto cleanup;
+    }
+    Py_INCREF(pFailTestFn);
 
     cocotb_init = PyObject_GetAttrString(cocotb_module, "_initialise_testbench");         // New reference
 
@@ -225,5 +232,25 @@ void embed_sim_end(void)
 {
     FENTER
     LOG_WARN("Closing down cocotb at simulator request!");
+    FEXIT
+}
+
+
+void fail_test(const char *message)
+{
+    FENTER
+
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
+
+    LOG_WARN("Failing the test at simulator request!");
+
+    PyObject *fArgs = PyTuple_New(1);
+    PyTuple_SetItem(fArgs, 0, PyString_FromString(message));
+    PyObject *pValue = PyObject_Call(pFailTestFn, fArgs, NULL);
+
+    Py_DECREF(fArgs);
+    PyGILState_Release(gstate);
+
     FEXIT
 }
