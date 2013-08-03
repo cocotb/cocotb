@@ -96,15 +96,14 @@ class Scoreboard(object):
 
         def check_received_transaction(transaction):
             """Called back by the monitor when a new transaction has been received"""
-
-            if not expected_output:
+            if callable(expected_output):
+                exp = expected_output()
+            elif len(expected_output):
+                exp = expected_output.pop(0)
+            else:
                 self.errors += 1
                 self.log.error("%s" % (transaction))    # TODO hexdump
                 if self._imm: raise TestFailure("Recieved a transaction but wasn't expecting anything")
-
-            if callable(expected_output): 
-                exp = expected_output()
-            else: exp = expected_output.pop(0)
 
             if type(transaction) != type(exp):
                 self.errors += 1
