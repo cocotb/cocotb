@@ -104,12 +104,14 @@ class Scoreboard(object):
                 self.errors += 1
                 self.log.error("%s" % (transaction))    # TODO hexdump
                 if self._imm: raise TestFailure("Recieved a transaction but wasn't expecting anything")
+                return
 
             if type(transaction) != type(exp):
                 self.errors += 1
                 self.log.error("Received transaction is a different type to expected transaction")
                 self.log.info("Got: %s but expected %s" % (str(type(transaction)), str(type(exp))))
                 if self._imm: raise TestFailure("Received transaction of wrong type")
+                return
 
             if transaction != exp:
                 self.errors += 1
