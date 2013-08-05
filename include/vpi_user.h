@@ -175,6 +175,9 @@ typedef struct t_cb_data
 #define cbInteractiveScopeChange 23
 #define cbUnresolvedSystf        24
 
+/* Object Types */
+#define vpiPort                 44
+
 /* error severity levels */
 #define vpiNotice               1
 #define vpiWarning              2
