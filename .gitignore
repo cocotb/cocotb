@@ -22,3 +22,6 @@ __pycache__
 
 # Waveforms
 *.vcd
+
+# Results
+results.xml
