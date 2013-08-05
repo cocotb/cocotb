@@ -50,13 +50,13 @@ def function_not_a_coroutine():
     """If we don't yield, this isn't a coroutine"""
     return "This should fail"
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_error=True)
 def test_function_not_a_coroutine(dut):
     """Example of trying to yield a coroutine that isn't a coroutine"""
     yield Timer(500)
     yield function_not_a_coroutine()
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_error=True)
 def test_function_not_a_coroutine_fork(dut):
     """Example of trying to fork a coroutine that isn't a coroutine"""
     yield Timer(500)
@@ -121,7 +121,7 @@ def test_coroutine_kill(dut):
     if test_flag is not True:
         raise cocotb.TestFailed
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_error=True)
 def test_adding_a_coroutine_without_starting(dut):
     """Catch (and provide useful error) for attempts to fork coroutines incorrectly"""
     yield Timer(100)

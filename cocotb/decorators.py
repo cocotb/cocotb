@@ -157,6 +157,7 @@ class RunningTest(RunningCoroutine):
         self.started = False
         self.start_time = 0
         self.expect_fail = parent.expect_fail
+        self.expect_error = parent.expect_error
         self.skip = parent.skip
 
         self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
@@ -259,12 +260,16 @@ class test(coroutine):
             value representing simulation timeout (not implemented)
         expect_fail: (bool):
             Don't mark the result as a failure if the test fails
+        expect_error: (bool):
+            Don't make the result as an error if an error is raised
+            This is for cocotb internal regression use
         skip: (bool):
             Don't execute this test as part of the regression
     """
-    def __init__(self, timeout=None, expect_fail=False, skip=False):
+    def __init__(self, timeout=None, expect_fail=False, expect_error=False, skip=False):
         self.timeout = timeout
         self.expect_fail = expect_fail
+        self.expect_error = expect_error
         self.skip = skip
 
     def __call__(self, f):

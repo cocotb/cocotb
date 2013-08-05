@@ -138,12 +138,16 @@ class RegressionManager(object):
 
         elif isinstance(result, TestFailure) and self._running_test.expect_fail:
             self.log.info("Test failed as expected: %s (result was %s)" % (
-                        self._running_test.funcname, result.__class__.__name__))
+                          self._running_test.funcname, result.__class__.__name__))
 
         elif isinstance(result, TestSuccess):
             self.log.error("Test passed but we expected a failure: %s (result was %s)" % (
-                        self._running_test.funcname, result.__class__.__name__))
+                           self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=str(result), stderr="\n".join(self._running_test.error_messages))
+
+        elif isinstance(result, TestError) and self._running_test.expect_error:
+            self.log.info("Test errored as expected: %s (result was %s)" % (
+                          self._running_test.funcname, result.__class__.__name__))
 
         else:
             self.log.error("Test Failed: %s (result was %s)" % (

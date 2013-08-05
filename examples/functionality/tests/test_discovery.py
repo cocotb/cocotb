@@ -9,7 +9,7 @@ def discover_module_values(dut):
     for thing in dut:
         thing.log.info("Found something: %s" % thing.fullname)
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_error=True)
 def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
     yield Timer(0)
@@ -33,7 +33,7 @@ def access_single_bit(dut):
 
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_error=True)
 def access_single_bit_erroneous(dut):
     """Access a non-existent single bit"""
     yield Timer(10)
