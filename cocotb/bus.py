@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
     A bus is simply defined as a collection of signals
 """
+from cocotb.result import TestError
 
 class Bus(object):
     """
@@ -68,14 +69,16 @@ class Bus(object):
         # Also support a set of optional signals that don't have to be present
         for signal in optional_signals:
             signame = name + "_" + signal
-            try:
+            # Attempts to access a signal that doesn't exist will print a
+            # backtrace so we 'peek' first, slightly un-pythonic
+            if entity.__hasattr__(signame):
                 hdl = getattr(entity, signame)
-            except AttributeError:
-                self._entity.log.debug("Ignoring optional missing signal %s \
-                    on bus %s" % signal, name)
-                continue
-            setattr(self, signal, hdl)
-            self._signals[signal] = getattr(self, signal)
+                setattr(self, signal, hdl)
+                self._signals[signal] = getattr(self, signal)
+            else:
+                self._entity.log.info("Ignoring optional missing signal %s on bus %s"
+                    % (signal, name))
+
 
     def drive(self, obj, strict=False):
         """

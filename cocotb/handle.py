@@ -80,6 +80,12 @@ class SimHandle(object):
         buff.close()
         raise exception
 
+    def __hasattr__(self, name):
+        """Since calling hasattr(handle, "something") will print out a
+            backtrace to the log since usually attempting to access a
+            non-existent member is an error we provide a 'peek function"""
+        return bool(simulator.get_handle_by_name(self._handle, name))
+
     def __getitem__(self, index):
         if index in self._sub_handles:
             return self._sub_handles[index]

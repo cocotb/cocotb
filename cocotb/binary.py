@@ -81,7 +81,7 @@ class BinaryValue(object):
         return int(resolve(self._str), 2)
 
     def set_value(self, integer):
-        self._str = "{:b}".format(integer)
+        self._str = bin(integer)[2:]
         self._adjust()
 
     value = property(get_value, set_value, None, "Integer access to the value")
