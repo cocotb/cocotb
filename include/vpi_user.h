@@ -256,6 +256,8 @@ extern vpiHandle  vpi_handle_by_multi_index(vpiHandle obj,
 
 extern int32_t    vpi_chk_error(p_vpi_error_info);
 
+extern int32_t    vpi_get_vlog_info(p_vpi_vlog_info info_p);
+
 extern void (*vlog_startup_routines[])(void);
 
 #ifdef  __cplusplus

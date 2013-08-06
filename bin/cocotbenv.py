@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     Determines how to execute the cocotb world
 """
 
-import os, sys, inspect
+import os, sys, inspect, platform
 from subprocess import call
 
 class SimType():
@@ -40,7 +40,7 @@ class SimType():
     def execute(self, cmd):
         print("Running cocotb against %s simulator" % self._name)
         print(cmd)
-        try: 
+        try:
             call(cmd, shell=True)
         except KeyboardInterrupt:
             print("Closing Test Bench")
@@ -136,7 +136,7 @@ Options:
     # and the arch that it is running on
     exec_path = inspect.getfile(inspect.currentframe())
     base_path = exec_path.split('/bin', 1)[0]
-    lib_path = base_path + '/build/libs/i686'
+    lib_path = base_path + '/build/libs/' + platform.machine()
     py_path = base_path
     py_path = py_path + ':' + lib_path
     py_path = py_path + ':' + os.getcwd()
