@@ -34,74 +34,88 @@ Also used a regression test of cocotb capabilities
 import threading
 import time
 import cocotb
-from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly
+from cocotb.result import ReturnValue, TestFailure
+from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge
 
-signal = None
+test_count = 0
+g_dut = None
 
 # Tests relating to calling convention and operation
 
-def create_thread():
-    new_thread = threading.Thread(group=None, target=blocking_function, name="Test_thread", args=(), kwargs={})
-    new_thread.start()
-
 @cocotb.function
-def blocking_function():
-    global signal
-    stime = 2
-    print("Blocking for %d seconds then asserting clock" % stime)
-    time.sleep(stime)
-    signal <= 1
-    print("Block finished")
+def decorated_test_read(dut, signal):
+    global test_count
+    dut.log.info("Inside decorated_test_read")
+    test_count = 0
+    while test_count is not 5:
+        yield RisingEdge(dut.clk)
+        test_count += 1
 
-clock_count = 0
+    raise ReturnValue(test_count)
+
+def test_read(dut, signal):
+    global test_count
+    dut.log.info("Inside test_read")
+    test_count = 0
+    while test_count is not 5:
+        yield RisingEdge(dut.clk)
+        test_count += 1
+
+def hal_read(function):
+    global g_dut
+    global test_count
+    function(g_dut, g_dut.stream_out_ready)
+    g_dut.log.info("Cycles seen is %d" % test_count)
+
+def create_thread(function):
+    """ Create a thread to simulate an external calling entity """
+    new_thread = threading.Thread(group=None, target=hal_read, name="Test_thread", args=([function]), kwargs={})
+    new_thread.start()
 
 @cocotb.coroutine
 def clock_gen(clock):
     """Drive the clock signal"""
-    global clock_count
 
     for i in range(10000):
         clock <= 0
-        yield Timer(1000)
+        yield Timer(100)
         clock <= 1
-        yield Timer(1000)
-        clock_count += 1
+        yield Timer(100)
 
     clock.log.warning("Clock generator finished!")
 
-signal_count = 0
-
-@cocotb.coroutine
-def signal_monitor(signal):
-    """Check that the clock is moving and increment
-    a counter
-    """
-    global signal_count
-
-    yield RisingEdge(signal)
-    signal_count += 1
-
-    print("Clock mon exiting")
-
-
 @cocotb.test(expect_fail=False)
 def test_callable(dut):
-    """Test ability to call a blocking function that will block but allow other coroutines to continue
+    """Test ability to call a function that will block but allow other coroutines to continue
 
-    The test creates another thread that will block for a period of time. This would normally
-    mean that the simulator could not progress since control would not pass back to the simulator
-
-    In this test the clock driver should continue to be able to toggle pins
-    we monitor this as well and count that the number of observed transitions matches the number of sets
+    Test creates a thread to simulate another context. This thread will then "block" for
+    5 clock cycles. 5 cycles should be seen by the thread
     """
-    global clock_count
-    global signal
-    signal = dut.stream_in_valid
-    signal_mon = cocotb.scheduler.add(signal_monitor(signal))
+    global g_dut
+    global test_count
+    g_dut = dut
+    create_thread(decorated_test_read)
+    dut.log.info("Test thread created")
     clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
-    create_thread()
-    #blocking_function()
-    yield Timer(1000)
-    yield Join(signal_mon)
+    yield Timer(10000)
     clk_gen.kill()
-    print("Have had %d transitions" % clock_count)
+    if test_count is not 5:
+        raise TestFailure
+
+@cocotb.test(expect_fail=True)
+def test_callable_fail(dut):
+    """Test ability to call a function that will block but allow other coroutines to continue
+
+    Test creates a thread to simulate another context. This thread will then "block" for
+    5 clock cycles but not using the function decorator. No cycls should be seen.
+    """
+    global g_dut
+    global test_count
+    g_dut = dut
+    create_thread(test_read)
+    dut.log.info("Test thread created")
+    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
+    yield Timer(10000)
+    clk_gen.kill()
+    if test_count is not 5:
+        raise TestFailure

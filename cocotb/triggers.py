@@ -284,10 +284,12 @@ class Join(PythonTrigger):
     def __init__(self, coroutine):
         Trigger.__init__(self)
         self._coroutine = coroutine
+        self.retval = None
 
     def prime(self, callback):
         """Register our calback for when the coroutine exits"""
         def _cb():
+            self.retval = self._coroutine.retval
             callback(self)
 
         self._coroutine._callbacks.append(_cb)

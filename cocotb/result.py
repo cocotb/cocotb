@@ -26,6 +26,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 # TODO: Coule use cStringIO?
 from StringIO import StringIO
 
+class ReturnValue(StopIteration):
+    def __init__(self, retval):
+        self.retval = retval
+
 class TestComplete(StopIteration):
     """
         Exceptions are used to pass test results around.

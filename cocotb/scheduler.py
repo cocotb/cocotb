@@ -128,6 +128,7 @@ class Scheduler(object):
 
     def queue(self, coroutine):
         """Queue a coroutine for execution"""
+        self.log.info("Adding coroutine %s to queue" % coroutine.__name__)
         self._pending_adds.append(coroutine)
 
     def add(self, coroutine):
@@ -198,12 +199,16 @@ class Scheduler(object):
             trigger (cocotb.triggers.Trigger): The trigger that caused this
                                                 coroutine to be scheduled
         """
-
-        coroutine.log.debug("Scheduling (%s)" % str(trigger))
+        if hasattr(trigger, "pass_retval"):
+            self.log.debug("Coroutine returned a retval")
+            sendval = trigger.retval
+        else:
+            coroutine.log.debug("Scheduling (%s)" % str(trigger))
+            sendval = trigger
         try:
 
             try:
-                result = coroutine.send(trigger)
+                result = coroutine.send(sendval)
 
             # Normal co-routine completion
             except cocotb.decorators.CoroutineComplete as exc:
@@ -227,7 +232,9 @@ class Scheduler(object):
 
                     # Queue current routine to schedule when the nested routine exits
                     self.queue(result)
-                    self._add_trigger(result.join(), coroutine)
+                    new_trigger = result.join()
+                    new_trigger.pass_retval = True
+                    self._add_trigger(new_trigger, coroutine)
 
             elif isinstance(result, list):
                 for trigger in result:
@@ -238,7 +245,7 @@ class Scheduler(object):
 
         # TestComplete indication is game over, tidy up
         except TestComplete as test_result:
-
+            if hasattr(test_result, "stderr"): print str(test_result.stderr.getvalue())
             # Tag that close down is needed, save the test_result
             # for later use in cleanup handler
             # If we're already tearing down we ignore any further test results

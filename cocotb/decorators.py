@@ -32,7 +32,7 @@ import threading
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Join, PythonTrigger, Timer
-from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess
+from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess, ReturnValue
 
 
 def public(f):
@@ -86,6 +86,7 @@ class RunningCoroutine(object):
         self.__doc__ = parent._func.__doc__
         self.module = parent._func.__module__
         self.funcname = parent._func.__name__
+        self.retval = None
 
         if not hasattr(self._coro, "send"):
             self.log.error("%s isn't a value coroutine! Did you use the yield keyword?"
@@ -104,6 +105,9 @@ class RunningCoroutine(object):
         except TestComplete as e:
             self.log.info(str(e))
             raise
+        except ReturnValue as e:
+            self.retval = e.retval
+            raise CoroutineComplete(callback=self._finished_cb)
         except StopIteration:
             raise CoroutineComplete(callback=self._finished_cb)
 
@@ -200,6 +204,7 @@ class coroutine(object):
         try:
             return RunningCoroutine(self._func(*args, **kwargs), self)
         except Exception as e:
+            print "bing"
             traceback.print_exc()
             result = TestError(str(e))
             traceback.print_exc(file=result.stderr)
@@ -215,17 +220,6 @@ class coroutine(object):
     def __str__(self):
         return str(self._func.__name__)
 
-#@coroutine
-def block_handler(block_function, event, *args, **kwargs):
-    """To get back from the threading context just triggers the event
-       for the moment
-    """
-    # Bit of a hack here
-#    yield Timer(0)
-    event.result = block_function(*args, **kwargs)
-    event.set()
-
-
 @public
 class function(object):
     """Decorator class that allows a a function to block
@@ -238,10 +232,16 @@ class function(object):
         self._func = func
         self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
 
+
     def __call__(self, *args, **kwargs):
+
+        @coroutine
+        def execute_func(self, event):
+            event.result = yield cocotb.coroutine(self._func)(*args, **kwargs)
+            event.set()
+
         self._event = threading.Event()
-        #cocotb.scheduler.queue(block_handler(self._func, self._event, *args, **kwargs))
-        block_handler(self._func, self._event, *args, **kwargs)
+        coro = cocotb.scheduler.queue(execute_func(self, self._event))
         self._event.wait()
         return self._event.result
 
