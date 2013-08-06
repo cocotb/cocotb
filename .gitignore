@@ -25,3 +25,6 @@ __pycache__
 
 # Results
 results.xml
+
+# VCS files
+*.tab
