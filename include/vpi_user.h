@@ -258,6 +258,8 @@ extern int32_t    vpi_chk_error(p_vpi_error_info);
 
 extern int32_t    vpi_get_vlog_info(p_vpi_vlog_info info_p);
 
+extern int32_t    vpi_register_systf(p_vpi_systf_data data_p);
+
 extern void (*vlog_startup_routines[])(void);
 
 #ifdef  __cplusplus
