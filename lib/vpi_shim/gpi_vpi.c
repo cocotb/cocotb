@@ -501,25 +501,6 @@ char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl)
 
 // Callback related functions
 
-// Ask the attached simulator to return the user pointer
-// that was given when the callback was registered
-// Useful for operating on the data before the callback
-// has fired since we only have the handle in hand
-static p_vpi_cb_user_data gpi_get_user_data(gpi_sim_hdl hdl)
-{
-     p_vpi_cb_user_data user_data;
-     s_cb_data cbdata;
-     FENTER
-
-     vpi_get_cb_info((vpiHandle)hdl, &cbdata);
-     check_vpi_error();
-     user_data = (p_vpi_cb_user_data)cbdata.user_data;
-
-     FEXIT
-     return user_data;
-}
-
-
 static int32_t handle_vpi_callback(p_cb_data cb_data)
 {
     FENTER
@@ -596,7 +577,7 @@ int gpi_deregister_callback(gpi_sim_hdl gpi_hdl)
     p_vpi_cb_user_data user_data;
     int rc = 1;
     FENTER
-    // We should be able to user gpi_get_user_data
+    // We should be able to user vpi_get_cb_info
     // but this is not implemented in ICARUS
     // and gets upset on VCS. So instead we
     // do some pointer magic.
