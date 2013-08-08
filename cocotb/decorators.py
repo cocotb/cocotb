@@ -31,7 +31,7 @@ import threading
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import Join, PythonTrigger, Timer, Event
+from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess, ReturnValue
 
 
@@ -245,6 +245,12 @@ class function(object):
         self._event.wait()
         return self._event.result
 
+@function
+def unblock_external(event):
+    event._release = NullTrigger()
+    event.set()
+    yield event._release
+
 def external(func):
     """Decorator to apply to an external function to enable calling from cocotb
 
@@ -255,20 +261,21 @@ def external(func):
     @coroutine
     def wrapped(*args, **kwargs):
 
-        # Call the function that was decorated in the context of the thread
-        def execute_func(func, event):
-            event.result = func(*args, **kwargs)
-            event.set()
+        # Call the function in thread context
+        def execute_func(func, _event):
+            _event.result = func(*args, **kwargs)
+            # Queue a co-routine to
+            unblock_external(_event)
 
         # Start up the thread, this is done in coroutine context
         event = Event()
         thread = threading.Thread(group=None, target=execute_func,
-                                  name="Test_thread", args=([func, event]), kwargs={})
+                                  name=str(func) + "thread", args=([func, event]), kwargs={})
         thread.start()
         yield event.wait()
         if event.result is not None:
             raise ReturnValue(event.result)
-
+        event._release.set()
 
     return wrapped
 
