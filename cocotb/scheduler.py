@@ -128,7 +128,6 @@ class Scheduler(object):
 
     def queue(self, coroutine):
         """Queue a coroutine for execution"""
-        self.log.info("Adding coroutine %s to queue" % coroutine.__name__)
         self._pending_adds.append(coroutine)
 
     def add(self, coroutine):
