@@ -31,7 +31,7 @@ import threading
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import Join, PythonTrigger, Timer
+from cocotb.triggers import Join, PythonTrigger, Timer, Event
 from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess, ReturnValue
 
 
@@ -245,7 +245,32 @@ class function(object):
         self._event.wait()
         return self._event.result
 
+def external(func):
+    """Decorator to apply to an external function to enable calling from cocotb
 
+    This currently creates a new execution context for each function that is
+    call. Scope for this to be streamlined to a queue in future
+    """
+
+    @coroutine
+    def wrapped(*args, **kwargs):
+
+        # Call the function that was decorated in the context of the thread
+        def execute_func(func, event):
+            event.result = func(*args, **kwargs)
+            event.set()
+
+        # Start up the thread, this is done in coroutine context
+        event = Event()
+        thread = threading.Thread(group=None, target=execute_func,
+                                  name="Test_thread", args=([func, event]), kwargs={})
+        thread.start()
+        yield event.wait()
+        if event.result is not None:
+            raise ReturnValue(event.result)
+
+
+    return wrapped
 
 @public
 class test(coroutine):

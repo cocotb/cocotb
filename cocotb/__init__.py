@@ -43,7 +43,7 @@ from cocotb.regression import RegressionManager
 
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine, function
+from cocotb.decorators import test, coroutine, function, external
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference

@@ -37,6 +37,8 @@ import cocotb
 from cocotb.result import ReturnValue, TestFailure
 from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge
 
+from cocotb.decorators import external
+
 test_count = 0
 g_dut = None
 
@@ -119,3 +121,26 @@ def test_callable_fail(dut):
     clk_gen.kill()
     if test_count is not 5:
         raise TestFailure
+
+def test_ext_function(dut):
+    dut.log.info("Sleeping")
+    time.sleep(0.01)
+
+def test_ext_function_return(dut):
+    value = 2
+    dut.log.info("Sleepoing and returning %s" % value)
+    time.sleep(0.01)
+    return value
+
+@cocotb.test(expect_fail=False)
+def test_ext_call_return(dut):
+    """Test ability to yeild on an external non cocotb coroutine decorated function"""
+    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
+    value = yield external(test_ext_function_return)(dut)
+    dut.log.info("Value back was %d" % value)
+
+@cocotb.test(expect_fail=False)
+def test_ext_call_nreturn(dut):
+    """Test ability to yeild on an external non cocotb coroutine decorated function"""
+    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
+    yield external(test_ext_function)(dut)
