@@ -104,6 +104,8 @@ class RegressionManager(object):
                         self._queue.append(test)
                         self.ntests += 1
 
+        self._queue.sort(key=lambda test: "%s.%s" % (test.module, test.funcname))
+
         for valid_tests in self._queue:
             self.log.info("Found test %s.%s" %
                         (valid_tests.module,

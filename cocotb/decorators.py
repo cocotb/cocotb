@@ -318,4 +318,5 @@ class test(coroutine):
 
         _wrapped_test.im_test = True    # For auto-regressions
         _wrapped_test.name = self._func.__name__
+        _wrapped_test.__name__ = self._func.__name__
         return _wrapped_test

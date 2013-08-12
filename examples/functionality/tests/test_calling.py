@@ -104,7 +104,7 @@ def test_callable(dut):
     if test_count is not 5:
         raise TestFailure
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_fail=True, skip=True)
 def test_callable_fail(dut):
     """Test ability to call a function that will block but allow other coroutines to continue
 
