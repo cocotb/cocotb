@@ -245,6 +245,11 @@ class function(object):
         self._event.wait()
         return self._event.result
 
+    def __get__(self, obj, type=None):
+        """Permit the decorator to be used on class methods
+            and standalone functions"""
+        return self.__class__(self._func.__get__(obj, type))
+
 @function
 def unblock_external(event):
     event._release = NullTrigger()
