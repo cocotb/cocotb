@@ -30,7 +30,7 @@ See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 NB Currently we only support a very small subset of functionality
 """
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep
+from cocotb.triggers import RisingEdge, ReadOnly
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -85,12 +85,16 @@ class AvalonMaster(AvalonMM):
         # Wait for waitrequest to be low
         yield self._wait_for_nsignal(self.bus.waitrequest)
 
-        # Get the data
-        data = self.bus.readdata.value
+        # Assume readLatency = 1
+        # FIXME need to configure this, should take a dictionary of Avalon properties.
+        yield RisingEdge(self.clock)
+
         # Deassert read
-        yield NextTimeStep()
         self.bus.read <= 0
-        # Ensure that !read has been applied to bus
+
+        # Get the data
+        yield ReadOnly()
+        data = self.bus.readdata.value
 
         raise ReturnValue(data)
 
@@ -113,7 +117,7 @@ class AvalonMaster(AvalonMM):
             csr.log.warning("Waiting for %d loops for waitrequest to go low" % count)
 
         # Deassert write
-        yield NextTimeStep()
+        yield RisingEdge(self.clock)
         self.bus.write <= 0
 
 
