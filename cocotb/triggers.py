@@ -277,6 +277,21 @@ class Event(PythonTrigger):
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.name
 
+class NullTrigger(Trigger):
+    """
+    Trigger for internal interfacing use"
+    """
+    def __init__(self, name=""):
+        Trigger.__init__(self)
+        self._callback = None
+        self.name = name
+
+    def prime(self, callback):
+        pass
+
+    def set(self):
+        pass
+
 class Join(PythonTrigger):
     """
     Join a coroutine, firing when it exits

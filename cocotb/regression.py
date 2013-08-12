@@ -96,13 +96,13 @@ class RegressionManager(object):
                         self.xunit.add_skipped()
                         continue
 
-                    self.ntests += 1
                     if test.skip:
                         self.log.info("Skipping test %s" % thing.name)
                         self.xunit.add_testcase(name=thing.name, classname=module_name, time="0.0")
                         self.xunit.add_skipped()
                     else:
                         self._queue.append(test)
+                        self.ntests += 1
 
         for valid_tests in self._queue:
             self.log.info("Found test %s.%s" %
