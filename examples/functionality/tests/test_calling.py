@@ -58,7 +58,6 @@ def decorated_test_read(dut, signal):
 def test_read(dut, signal):
     global test_count
     dut.log.info("Inside test_read")
-    test_count = 0
     while test_count is not 5:
         yield RisingEdge(dut.clk)
         test_count += 1
@@ -66,6 +65,7 @@ def test_read(dut, signal):
 def hal_read(function):
     global g_dut
     global test_count
+    test_count = 0
     function(g_dut, g_dut.stream_out_ready)
     g_dut.log.info("Cycles seen is %d" % test_count)
 
