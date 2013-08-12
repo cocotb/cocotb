@@ -30,10 +30,11 @@ See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 NB Currently we only support a very small subset of functionality
 """
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
+from cocotb.result import ReturnValue
 
 class AvalonMM(BusDriver):
     """Avalon-MM Driver
@@ -41,8 +42,8 @@ class AvalonMM(BusDriver):
     Currently we only support the mode required to communicate with SF avalon_mapper which
     is a limited subset of all the signals
 
-
-    This needs some thought... do we do a transaction based mechanism or 'blocking' read/write calls?
+    Blocking operation is all that is supported at the moment, and for the near future as well
+    Posted responses from a slave are not supported.
     """
     _signals = ["readdata", "read", "write", "waitrequest", "writedata", "address"]
 
@@ -52,17 +53,78 @@ class AvalonMM(BusDriver):
         # Drive some sensible defaults
         self.bus.read           <= 0
         self.bus.write          <= 0
-
+        self.bus.address            <= 0
 
     def read(self, address):
-        """
-        """
         pass
 
-    def write(self, address):
-        """
-        """
+
+    def write(self, address, value):
         pass
+
+class AvalonMaster(AvalonMM):
+    """Avalon-MM master
+    """
+    def __init__(self, entity, name, clock):
+        AvalonMM.__init__(self, entity, name, clock)
+        self.log.warning("AvalonMaster created")
+
+    @coroutine
+    def read(self, address):
+        """
+        Issue a request to the bus and block until this
+        comes back. Simulation time still progresses
+        but syntactically it blocks.
+        See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
+        """
+        # Apply values for next clock edge
+        yield RisingEdge(self.clock)
+        self.bus.address <= address
+        self.bus.read <= 1
+
+        # Wait for waitrequest to be low
+        yield self._wait_for_nsignal(self.bus.waitrequest)
+
+        # Get the data
+        data = self.bus.readdata.value
+        # Deassert read
+        yield NextTimeStep()
+        self.bus.read <= 0
+        # Ensure that !read has been applied to bus
+
+        raise ReturnValue(data)
+
+    @coroutine
+    def write(self, address, value):
+        """
+        Issue a write to the given address with the specified
+        value.
+        See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
+        """
+        # Apply valuse to bus
+        yield RisingEdge(self.clock)
+        self.bus.address <= address
+        self.bus.writedata <= value
+        self.bus.write <= 1
+
+        # Wait for waitrequest to be low
+        count = yield self._wait_for_nsignal(self.bus.waitrequest)
+        if count is not 0:
+            csr.log.warning("Waiting for %d loops for waitrequest to go low" % count)
+
+        # Deassert write
+        yield NextTimeStep()
+        self.bus.write <= 0
+
+
+
+class AvalonSlave(AvalonMM):
+    """Avalon-MM Slave
+
+    This is not supported at the moment
+    """
+    def __init__(self, entity, name, clock):
+        AvalonMM.__init__(self, entity, name, clock)
 
 
 class AvalonST(ValidatedBusDriver):
@@ -81,10 +143,7 @@ class AvalonSTPkts(ValidatedBusDriver):
 
             FIXME assumes readyLatency of 0
         """
-        yield ReadOnly()
-        while not self.bus.ready.value:
-            yield RisingEdge(self.clock)
-            yield ReadOnly()
+        yield self._wait_for_signal(self.bus.ready)
 
     @coroutine
     def _send_string(self, string):
@@ -135,7 +194,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             nbytes = min(len(string), bus_width)
             data = string[:nbytes]
             word.buff = data[::-1]      # Big Endian FIXME
-                
+
 
             if len(string) <= bus_width:
                 self.bus.endofpacket <= 1

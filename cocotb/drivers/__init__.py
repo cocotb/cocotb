@@ -34,9 +34,10 @@ import logging
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Event, RisingEdge
+from cocotb.triggers import Event, RisingEdge, ReadOnly
 from cocotb.bus import Bus
 from cocotb.log import SimLog
+from cocotb.result import ReturnValue
 
 
 class BitDriver(object):
@@ -200,6 +201,39 @@ class BusDriver(Driver):
     def _driver_send(self, transaction):
         yield RisingEdge(self.clock)
         self.bus <= transaction
+
+    @coroutine
+    def __wait_for_value_on_signal(self, signal, level):
+        loops = 0
+        yield ReadOnly()
+        while not signal.value is not level:
+            yield RisingEdge(self.clock)
+            yield ReadOnly()
+            loops += 1
+
+        raise ReturnValue(loops)
+
+    @coroutine
+    def _wait_for_signal(self, signal):
+        """This method will return with the specified signal
+        has hit logic 1. The state will be in the ReadOnly phase
+        so sim will need to move to NextTimeStep before
+        registering more callbacks can occour
+        """
+        res = yield self.__wait_for_value_on_signal(signal, 1)
+
+        raise ReturnValue(res)
+
+    @coroutine
+    def _wait_for_nsignal(self, signal):
+        """This method will return with the specified signal
+        has hit logic 0. The state will be in the ReadOnly phase
+        so sim will need to move to NextTimeStep before
+        registering more callbacks can occour
+        """
+        res = yield self.__wait_for_value_on_signal(signal, 0)
+
+        raise ReturnValue(res)
 
 
 class ValidatedBusDriver(BusDriver):
