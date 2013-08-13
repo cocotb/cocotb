@@ -68,7 +68,7 @@ class BinaryValue(object):
         if the string contains any characters that aren't 0, 1, X or Z
         then we interpret the string as a binary buffer...
         """
-        if isinstance(value, int):
+        if isinstance(value, (int, long)):
             self.value = value
         elif isinstance(value, str):
             try:
