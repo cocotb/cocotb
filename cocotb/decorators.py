@@ -253,7 +253,7 @@ class function(object):
 @function
 def unblock_external(event):
     event.set()
-    yield NullTrigger
+    yield NullTrigger()
 
 def external(func):
     """Decorator to apply to an external function to enable calling from cocotb
