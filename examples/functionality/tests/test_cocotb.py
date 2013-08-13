@@ -140,5 +140,8 @@ def test_internal_clock(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
     clk_gen = Clock(dut.clk, 100)
     clk_gen.start()
-    yield RisingEdge(dut.clk)
+    count = 0
+    while count is not 100:
+        yield RisingEdge(dut.clk)
+        count += 1
     clk_gen.stop()
