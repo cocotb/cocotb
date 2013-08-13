@@ -44,14 +44,22 @@ class Clock(BaseClock):
         BaseClock.__init__(self, signal)
         self.period = period
         self.frequency = 1.0 / period * 1000000
+        self.hdl = None
 
 
     def start(self, cycles=0):
-        self.hdl = simulator.create_clock(self.signal._handle, self.period, cycles)
-        self.log.debug("Clock %s Started with period %d" % (str(self.signal), self.period))
+        """
+        cycles = 0 will not auto stop the clock
+        """
+        if self.hdl is None:
+            self.hdl = simulator.create_clock(self.signal._handle, self.period, cycles)
+            self.log.debug("Clock %s Started with period %d" % (str(self.signal), self.period))
+        else:
+            self.log.warning("Clock %s already started" % (str(self.signal)))
 
     def stop(self):
-        simulator.stop_clock(self.hdl)
+        if self.hdl is not None:
+            simulator.stop_clock(self.hdl)
 
     def __str__(self):
         return self.__class__.__name__ + "(%3.1fMHz)" % self.frequency

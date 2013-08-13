@@ -36,7 +36,7 @@ import time
 import cocotb
 from cocotb.result import ReturnValue, TestFailure
 from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge
-
+from cocotb.clock import Clock
 from cocotb.decorators import external
 
 test_count = 0
@@ -98,9 +98,10 @@ def test_callable(dut):
     g_dut = dut
     create_thread(decorated_test_read)
     dut.log.info("Test thread created")
-    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
+    clk_gen = Clock(dut.clk,  100)
+    clk_gen.start()
     yield Timer(10000)
-    clk_gen.kill()
+    clk_gen.stop()
     if test_count is not 5:
         raise TestFailure
 
@@ -116,37 +117,49 @@ def test_callable_fail(dut):
     g_dut = dut
     create_thread(test_read)
     dut.log.info("Test thread created")
-    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
+    clk_gen = Clock(dut.clk, 100)
+    clk_gen.start()
     yield Timer(10000)
-    clk_gen.kill()
+    clk_gen.stop()
     if test_count is not 5:
         raise TestFailure
 
 def test_ext_function(dut):
     dut.log.info("Sleeping")
-    time.sleep(0.01)
+    return 2
 
 def test_ext_function_return(dut):
-    value = 2
-    dut.log.info("Sleepoing and returning %s" % value)
-    time.sleep(1)
+    value = dut.clk.value.value
+    dut.log.info("Sleeping and returning %s" % value)
     return value
 
+@cocotb.coroutine
+def clock_monitor(dut):
+    count = 0
+    while True:
+        yield RisingEdge(dut.clk)
+        count += 1
 
 @cocotb.test(expect_fail=False)
 def test_ext_call_return(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
-    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
-    value = yield external(test_ext_function_return)(dut)
-    dut.log.info("Value back was %d" % value)
+    mon = cocotb.scheduler.queue(clock_monitor(dut))
+    clk_gen = Clock(dut.clk, 100)
+    clk_gen.start()
+    value = yield external(test_ext_function)(dut)
+    clk_gen.stop()
+    dut.log.info("Value was %d" % value)
 
 @cocotb.test(expect_fail=False)
 def test_ext_call_nreturn(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
-    clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
+    mon = cocotb.scheduler.queue(clock_monitor(dut))
+    clk_gen = Clock(dut.clk, 100)
+    clk_gen.start()
     yield external(test_ext_function)(dut)
+    clk_gen.stop()
 
-@cocotb.test(expect_fail=False)
+@cocotb.test(expect_fail=True)
 def test_ext_exit_error(dut):
     """Test that a premature exit of the sim at it's request still results in the
     clean close down of the sim world"""

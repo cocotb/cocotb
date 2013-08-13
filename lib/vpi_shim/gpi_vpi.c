@@ -885,7 +885,7 @@ int gpi_clock_handler(void *clock)
     gpi_clock_hdl hdl = (gpi_clock_hdl)clock;
     gpi_sim_hdl cb_hdl;
 
-    if (hdl->exit || (hdl->max_cycles == hdl->curr_cycle))
+    if (hdl->exit || ((hdl->max_cycles != 0) && (hdl->max_cycles == hdl->curr_cycle)))
         return;
 
     /* Unregister/free the last callback that just fired */

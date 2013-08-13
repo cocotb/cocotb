@@ -32,8 +32,8 @@ Also used a regression test of cocotb capabilities
 """
 
 import cocotb
-from cocotb.triggers import Timer, Join
-
+from cocotb.triggers import Timer, Join, RisingEdge
+from cocotb.clock import Clock
 
 
 
@@ -135,4 +135,10 @@ def test_failure_from_system_task(dut):
     """Allow the dut to call $fail_test() from verilog"""
     yield Timer(10000000)
 
-
+@cocotb.test(expect_fail=False)
+def test_internal_clock(dut):
+    """Test ability to yeild on an external non cocotb coroutine decorated function"""
+    clk_gen = Clock(dut.clk, 100)
+    clk_gen.start()
+    yield RisingEdge(dut.clk)
+    clk_gen.stop()
