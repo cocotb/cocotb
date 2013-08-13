@@ -129,8 +129,9 @@ def test_ext_function(dut):
 def test_ext_function_return(dut):
     value = 2
     dut.log.info("Sleepoing and returning %s" % value)
-    time.sleep(0.01)
+    time.sleep(1)
     return value
+
 
 @cocotb.test(expect_fail=False)
 def test_ext_call_return(dut):
@@ -144,3 +145,13 @@ def test_ext_call_nreturn(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
     clk_gen = cocotb.scheduler.add(clock_gen(dut.clk))
     yield external(test_ext_function)(dut)
+
+@cocotb.test(expect_fail=False)
+def test_ext_exit_error(dut):
+    """Test that a premature exit of the sim at it's request still results in the
+    clean close down of the sim world"""
+    value = yield external(test_ext_function_return)(dut)
+    if value is not None:
+        dut.log.info("Value back was %d" % value)
+    else:
+        dut.log.info("Bit odd that it was None")
