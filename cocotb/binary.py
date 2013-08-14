@@ -148,7 +148,7 @@ class BinaryValue(object):
             return
         l = len(self._str)
         if l < self._bits:
-            self._str = "0" * (l-self._bits) + self._str
+            self._str = "0" * (self._bits-l) + self._str
         elif l > self._bits:
             print "WARNING truncating value to match requested number of bits (%d)" % l
             self._str = self._str[l - self._bits:]
