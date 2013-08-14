@@ -32,7 +32,7 @@ import threading
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
-from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess, ReturnValue
+from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess, ReturnValue, raise_error
 
 
 def public(f):
@@ -251,9 +251,23 @@ class function(object):
         return self.__class__(self._func.__get__(obj, type))
 
 @function
-def unblock_external(event):
-    event.set()
+def unblock_external(bridge):
     yield NullTrigger()
+    print("Back from trigger")
+    bridge.set_out()
+
+@public
+class test_locker(object):
+    def __init__(self):
+        self.in_event = None
+        self.out_event = Event()
+        self.result = None
+
+    def set_in(self):
+        self.in_event.set()
+
+    def set_out(self):
+        self.out_event.set()
 
 def external(func):
     """Decorator to apply to an external function to enable calling from cocotb
@@ -266,21 +280,21 @@ def external(func):
     def wrapped(*args, **kwargs):
 
         # Call the function in thread context
-        def execute_func(func, _event):
-            _event.result = func(*args, **kwargs)
+        def execute_func(func, obj):
+            print("before call")
+            obj.result = func(*args, **kwargs)
             # Queue a co-routine to
-            unblock_external(_event)
+            unblock_external(obj)
 
         # Start up the thread, this is done in coroutine context
-        event = Event()
-        event.result = None
+        bridge = test_locker()
         thread = threading.Thread(group=None, target=execute_func,
-                                  name=str(func) + "thread", args=([func, event]), kwargs={})
+                                  name=str(func) + "thread", args=([func, bridge]), kwargs={})
         thread.start()
-        yield event.wait()
+        yield bridge.out_event.wait()
 
-        if event.result is not None:
-            raise ReturnValue(event.result)
+        if bridge.result is not None:
+            raise ReturnValue(bridge.result)
 
     return wrapped
 
@@ -316,10 +330,7 @@ class test(coroutine):
             try:
                 return RunningTest(self._func(*args, **kwargs), self)
             except Exception as e:
-                traceback.print_exc()
-                result = TestError(str(e))
-                traceback.print_exc(file=result.stderr)
-                raise result
+                raise_error(self, str(e))
 
         _wrapped_test.im_test = True    # For auto-regressions
         _wrapped_test.name = self._func.__name__

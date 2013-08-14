@@ -138,14 +138,15 @@ def clock_monitor(dut):
     count = 0
     while True:
         yield RisingEdge(dut.clk)
+        yield Timer(1000)
         count += 1
 
 @cocotb.test(expect_fail=False)
 def test_ext_call_return(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = Clock(dut.clk, 1000)
+    clk_gen.start(cycles=20)
     value = yield external(test_ext_function)(dut)
     clk_gen.stop()
     dut.log.info("Value was %d" % value)

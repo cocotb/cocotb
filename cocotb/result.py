@@ -24,7 +24,19 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 # TODO: Coule use cStringIO?
+import traceback
+import sys
 from StringIO import StringIO
+
+def raise_error(obj, msg):
+    buff = StringIO()
+    lastframe = sys._getframe(2)
+    traceback.print_stack(lastframe, file=buff)
+    obj.log.error("%s\n%s" % (msg, buff.getvalue()))
+    exception = TestError(msg)
+    exception.stderr.write(buff.getvalue())
+    buff.close()
+    raise exception
 
 class ReturnValue(StopIteration):
     def __init__(self, retval):

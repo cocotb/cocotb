@@ -78,6 +78,8 @@ class SimLog(object):
             self._log_name = name
 
     def _makeRecord(self, msg, level):
+        return
+
         if self.logger.isEnabledFor(level):
             frame = inspect.stack()[2]
             info = inspect.getframeinfo(frame[0])

@@ -279,7 +279,8 @@ class Event(PythonTrigger):
 
 class NullTrigger(Trigger):
     """
-    Trigger for internal interfacing use"
+    Trigger for internal interfacing use call the callback as soon
+    as it is primed and then remove it's self from the scheduler
     """
     def __init__(self, name=""):
         Trigger.__init__(self)
@@ -287,10 +288,8 @@ class NullTrigger(Trigger):
         self.name = name
 
     def prime(self, callback):
-        pass
+        callback(self)
 
-    def set(self):
-        pass
 
 class Join(PythonTrigger):
     """

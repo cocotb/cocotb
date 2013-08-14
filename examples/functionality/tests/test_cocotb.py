@@ -136,7 +136,7 @@ def test_failure_from_system_task(dut):
     yield Timer(10000000)
 
 @cocotb.test(expect_fail=False)
-def test_internal_clock(dut):
+def test_anternal_clock(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
     clk_gen = Clock(dut.clk, 100)
     clk_gen.start()

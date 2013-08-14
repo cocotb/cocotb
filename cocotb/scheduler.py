@@ -38,7 +38,7 @@ import cocotb
 import cocotb.decorators
 from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite
 from cocotb.log import SimLog
-from cocotb.result import TestComplete, TestError
+from cocotb.result import TestComplete, TestError, ReturnValue
 
 class Scheduler(object):
 
@@ -88,8 +88,8 @@ class Scheduler(object):
 
         self.log.debug("Completed scheduling loop, still waiting on:")
 
-        for trig, routines in self.waiting.items():
-            self.log.debug("\t%s: [%s]" % (str(trig).ljust(30), " ".join([routine.__name__ for routine in routines])))
+        #for trig, routines in self.waiting.items():
+        #    self.log.debug("\t%s: [%s]" % (str(trig).ljust(30), " ".join([routine.__name__ for routine in routines])))
 
         # If we've performed any writes that are cached then schedule
         # another callback for the read-write part of the sim cycle, but
@@ -121,8 +121,8 @@ class Scheduler(object):
     def _add_trigger(self, trigger, coroutine):
         """Adds a new trigger which will cause the coroutine to continue when fired"""
         try:
-            trigger.prime(self.react)
             self.waiting[trigger].append(coroutine)
+            trigger.prime(self.react)
         except Exception as e:
             raise TestError("Unable to prime a trigger: %s" % str(e))
 
