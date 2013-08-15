@@ -165,7 +165,10 @@ class AvalonSTPkts(ValidatedBusDriver):
 
             FIXME assumes readyLatency of 0
         """
-        yield self._wait_for_signal(self.bus.ready)
+        yield ReadOnly()
+        while not self.bus.ready.value:
+            yield RisingEdge(self.clock)
+            yield ReadOnly()
 
     @coroutine
     def _send_string(self, string):
