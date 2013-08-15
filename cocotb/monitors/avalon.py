@@ -65,13 +65,30 @@ class AvalonSTPkts(BusMonitor):
     _signals = ["valid", "data", "startofpacket", "endofpacket", "empty"]
     _optional_signals = ["error", "channel", "ready"]
 
+    _default_config = {
+        "dataBitsPerSymbol"             : 8,
+        "firstSymbolInHighOrderBits"    : True,
+        "maxChannel"                    : 0,
+        "readyLatency"                  : 0
+    }
+
+    def __init__(self, *args, **kwargs):
+        BusMonitor.__init__(self, *args, **kwargs)
+
+        self.config = AvalonSTPkts._default_config
+
+        config = kwargs.pop('config', {})
+
+        for configoption, value in config.iteritems():
+            self.config[configoption] = value
+
     @coroutine
     def _monitor_recv(self):
         """Watch the pins and reconstruct transactions"""
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
-        rdonly  = ReadOnly()        
+        rdonly  = ReadOnly()
         pkt = ""
 
         while True:
@@ -79,6 +96,7 @@ class AvalonSTPkts(BusMonitor):
             yield rdonly
             if self.bus.valid.value and self.bus.startofpacket.value:
                 vec = self.bus.data.value
+                vec.big_endian = self.config['firstSymbolInHighOrderBits']
                 pkt += vec.buff
                 while True:
                     yield clkedge
