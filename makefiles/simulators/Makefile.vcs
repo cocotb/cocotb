@@ -37,6 +37,10 @@ ifeq ($(ARCH),x86_64)
 EXTRA_ARGS += -full64
 endif
 
+sim:
+	-@rm -rf results.xml
+	$(MAKE) results.xml
+
 $(SIM_BUILD):
 	mkdir -p $(SIM_BUILD)
 
@@ -50,16 +54,13 @@ $(SIM_BUILD)/pli.tab :
 
 .PHONY: regression sim
 
-sim:
-	-@rm -rf results.xml
-	$(MAKE) results.xml
-
 regression: build_simv results.xml
 
-PYTHON_FILES:=$(shell find $(SIM_ROOT)/cocotb/ -name "*.py" | xargs) $(MODULE).py
+MODULE_FILES:=$(shell for X in $(echo "test1,test2" | sed 's/,/ /g'); do echo $X.py; done)
+PYTHON_FILES:=$(shell find $(SIM_ROOT)/cocotb/ -name "*.py" | xargs) $(MODULE_FILES)
 
 results.xml: $(SIM_BUILD)/simv $(PYTHON_FILES)
-	-PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE)         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	-PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
         $(SIM_BUILD)/simv +define+COCOTB_SIM=1 $(EXTRA_ARGS)
 
 dve: $(SIM_BUILD)/simv_dve

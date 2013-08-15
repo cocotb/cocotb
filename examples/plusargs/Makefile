@@ -28,7 +28,9 @@
 
 TOPLEVEL = tb_top
 
-VERILOG_SOURCES = tb_top.v
+PWD=$(shell pwd)
+
+VERILOG_SOURCES = $(PWD)/tb_top.v
 MODULE=plusargs
 
 PLUSARGS=+foo=bar +test1 +test2 +options=fubar
