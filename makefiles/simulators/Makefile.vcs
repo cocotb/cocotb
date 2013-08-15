@@ -25,40 +25,59 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-OBJ_DIR := obj
+ifeq ($(SIM_BUILD_ROOT),)
+SIM_BUILD := sim_build
+else
+SIM_BUILD := $(SIM_BUILD_ROOT)
+endif
+
 VPI_LIB := vpi
 
 ifeq ($(ARCH),x86_64)
 EXTRA_ARGS += -full64
 endif
 
-all: $(SIM_OBJ_DIR) sim
-
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
-
+$(SIM_BUILD):
+	mkdir -p $(SIM_BUILD)
 
 # TODO:
 # investigate +vpi+1 option which reduces memory requirements
 
 # Can't do this using an argument, we have to create a PLI table file
 # enabling write access to the design
-pli.tab :
+$(SIM_BUILD)/pli.tab :
 	echo "acc+=rw,wn:*" > $@
 
-.PHONY: sim
-sim: $(OBJ_DIR) $(VERILOG_SOURCES) pli.tab libs_native
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-		vcs -R +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -debug -load libgpi.so $(VERILOG_SOURCES)
+.PHONY: regression sim
 
-dve: $(OBJ_DIR) $(VERILOG_SOURCES) pli.tab libs_native
+sim:
+	-@rm -rf results.xml
+	$(MAKE) results.xml
+
+regression: build_simv results.xml
+
+PYTHON_FILES:=$(shell find $(SIM_ROOT)/cocotb/ -name "*.py" | xargs) $(MODULE).py
+
+results.xml: $(SIM_BUILD)/simv $(PYTHON_FILES)
+	-PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE)         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+        $(SIM_BUILD)/simv +define+COCOTB_SIM=1 $(EXTRA_ARGS)
+
+dve: $(SIM_BUILD)/simv_dve
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-		vcs -R +acc+1 +vpi+1+assertion -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -gui -load libgpi.so $(VERILOG_SOURCES)
-clean:
-	-@rm -rf $(OBJ_DIR)
-	-@rm -f pli.tab
-	-@rm -rf csrc
+		vcs +acc+1 +vpi+1+assertion -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -gui -load libgpi.so $(VERILOG_SOURCES)
+
+.PHONY: build_simv
+build_simv: $(SIM_BUILD)/simv
+
+$(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab libs_native
+	cd $(SIM_BUILD) && \
+    LD_LIBRARY_PATH=$(LIB_DIR) TOPLEVEL=$(TOPLEVEL) \
+    vcs +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -debug -load libgpi.so             $(VERILOG_SOURCES)
+
+.PHONY: clean
+clean::
+	-@rm -rf $(SIM_BUILD)
 	-@rm -rf simv.daidir
-	-@rm -f simv
-	-@rm -f ucli.key
-
+	-@rm -rf cm.log
+	-@rm -rf results.xml
+	-@rm -rf ucli.key
