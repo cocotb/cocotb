@@ -123,6 +123,9 @@ class BusMonitor(Monitor):
     """
     Wrapper providing common functionality for monitoring busses
     """
+    _signals = []
+    _optional_signals = []
+
     def __init__(self, entity, name, clock, callback=None, event=None):
         self.log = SimLog("cocotb.%s.%s" % (entity.name, name))
         self.entity = entity
