@@ -28,3 +28,5 @@ results.xml
 
 # VCS files
 *.tab
+sim_build
+ucli.key
