@@ -128,7 +128,7 @@ class BusMonitor(Monitor):
         self.entity = entity
         self.name = name
         self.clock = clock
-        self.bus = Bus(self.entity, self.name, self._signals)
+        self.bus = Bus(self.entity, self.name, self._signals, optional_signals=self._optional_signals)
         Monitor.__init__(self, callback=callback, event=event)
 
     def __str__(self):

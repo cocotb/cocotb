@@ -91,25 +91,28 @@ class AvalonSTPkts(BusMonitor):
         rdonly  = ReadOnly()
         pkt = ""
 
+        def valid():
+            if hasattr(self.bus, 'ready'):
+                return self.bus.valid.value and self.bus.ready.value
+            return self.bus.valid.value
+
         while True:
             yield clkedge
             yield rdonly
-            if self.bus.valid.value and self.bus.startofpacket.value:
+
+            if valid():
+                if self.bus.startofpacket.value:
+                    pkt = ""
+
                 vec = self.bus.data.value
                 vec.big_endian = self.config['firstSymbolInHighOrderBits']
                 pkt += vec.buff
-                while True:
-                    yield clkedge
-                    yield rdonly
-                    if self.bus.valid.value:
-                        vec = self.bus.data.value
-                        pkt += vec.buff
-                        if self.bus.endofpacket.value:
-                            # Truncate the empty bits
-                            if self.bus.empty.value.value:
-                                pkt = pkt[:-self.bus.empty.value.value]
-                            self.log.info("Recieved a packet of %d bytes" % len(pkt))
-                            self.log.debug(hexdump(str((pkt))))
-                            self._recv(pkt)
-                            pkt = ""
-                            break
+
+                if self.bus.endofpacket.value:
+                    # Truncate the empty bits
+                    if self.bus.empty.value.value:
+                        pkt = pkt[:-self.bus.empty.value.value]
+                    self.log.info("Recieved a packet of %d bytes" % len(pkt))
+                    self.log.debug(hexdump(str((pkt))))
+                    self._recv(pkt)
+                    pkt = ""
