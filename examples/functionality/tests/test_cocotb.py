@@ -130,7 +130,7 @@ def test_adding_a_coroutine_without_starting(dut):
     yield Join(forked)
     yield Timer(100)
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_fail=True, skip=True)
 def test_failure_from_system_task(dut):
     """Allow the dut to call $fail_test() from verilog"""
     yield Timer(10000000)
