@@ -121,7 +121,7 @@ def _fail_test(message):
     """Function that can be called externally to fail a test"""
     from cocotb.result import TestFailure
     scheduler.log.error("Failing test at simulator request")
-    scheduler.finish_test(TestFailure("Failure from external source: %s" % message))
+    scheduler.finish_scheduler(TestFailure("Failure from external source: %s" % message))
 
 
 def process_plusargs():

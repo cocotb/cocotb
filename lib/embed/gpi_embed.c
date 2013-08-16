@@ -231,7 +231,7 @@ cleanup:
 void embed_sim_end(void)
 {
     FENTER
-    LOG_WARN("Closing down cocotb at simulator request!");
+    LOG_WARN("Simulator requested orderly shutdown");
     FEXIT
 }
 

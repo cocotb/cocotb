@@ -256,6 +256,12 @@ class Scheduler(object):
 
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))
 
+    def finish_scheduler(self, test_result):
+        # if the sim it's self has issued a close down then the
+        # normal shutdown will not work
+        self.cleanup()
+        self.issue_result(test_result)
+
     def finish_test(self, test_result):
         if not self._terminate:
             self._terminate = True
@@ -272,15 +278,18 @@ class Scheduler(object):
                  self.log.debug("Killing %s" % str(coro))
                  coro.kill()
 
+    def issue_result(self, test_result):
+        # Tell the handler what the result was
+        self.log.debug("Issue test result to regresssion object")
+        cocotb.regression.handle_result(test_result)
+
     @cocotb.decorators.coroutine
     def move_to_cleanup(self):
         yield Timer(1)
         self.prune_routines()
         self._readonly = None
 
-        # Tell the handler what the result was
-        self.log.debug("Issue test result to regresssion object")
-        cocotb.regression.handle_result(self._test_result)
+        self.issue_result(self._test_result)
         self._test_result = None
 
         # If another test was added to queue kick it off
