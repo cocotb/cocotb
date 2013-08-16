@@ -62,13 +62,19 @@ class Bus(object):
         self._signals = {}
 
         for signal in signals:
-            signame = name + "_" + signal
+            if name:
+                signame = name + "_" + signal
+            else:
+                signame = signal
             setattr(self, signal, getattr(entity, signame))
             self._signals[signal] = getattr(self, signal)
 
         # Also support a set of optional signals that don't have to be present
         for signal in optional_signals:
-            signame = name + "_" + signal
+            if name:
+                signame = name + "_" + signal
+            else:
+                signame = signal
             # Attempts to access a signal that doesn't exist will print a
             # backtrace so we 'peek' first, slightly un-pythonic
             if entity.__hasattr__(signame):
