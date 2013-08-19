@@ -231,6 +231,7 @@ cleanup:
 void embed_sim_end(void)
 {
     FENTER
+    /* Indicate to the upper layer that this needs to close down */
     LOG_WARN("Simulator requested orderly shutdown");
     FEXIT
 }

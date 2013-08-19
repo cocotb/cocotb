@@ -966,10 +966,9 @@ int handle_sim_end(void *gpi_cb_data)
     if (sim_finish_cb) {
         sim_finish_cb = NULL;
         /* This means that we have been asked to close */
-        fail_test("Simulator has asked for forceable close");
-    } else {
         embed_sim_end();
-    }
+    } /* Other sise we have already been here from the top down so do not need
+         to inform the upper layers that anything has occoured */
     __gpi_free_callback(sim_init_cb);
     FEXIT
 }

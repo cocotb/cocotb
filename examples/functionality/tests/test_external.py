@@ -125,12 +125,13 @@ def test_callable_fail(dut):
         raise TestFailure
 
 def test_ext_function(dut):
-    dut.log.info("Sleeping")
+    #dut.log.info("Sleeping")
     return 2
 
 def test_ext_function_return(dut):
     value = dut.clk.value.value
-    dut.log.info("Sleeping and returning %s" % value)
+    #dut.log.info("Sleeping and returning %s" % value)
+    #time.sleep(0.2)
     return value
 
 @cocotb.coroutine
@@ -159,6 +160,15 @@ def test_ext_call_nreturn(dut):
     clk_gen.start()
     yield external(test_ext_function)(dut)
     clk_gen.stop()
+
+@cocotb.test(expect_fail=False)
+def test_multiple_externals(dut):
+    clk_gen = Clock(dut.clk, 100)
+    clk_gen.start()
+    yield external(test_ext_function)(dut)
+    dut.log.info("First one completed")
+    yield external(test_ext_function)(dut)
+    dut.log.info("Second one completed")
 
 @cocotb.test(expect_fail=True)
 def ztest_ext_exit_error(dut):

@@ -279,19 +279,23 @@ def external(func):
     @coroutine
     def wrapped(*args, **kwargs):
 
-        # Call the function in thread context
-        def execute_func(func, obj):
-            print("before call")
-            obj.result = func(*args, **kwargs)
-            # Queue a co-routine to
-            unblock_external(obj)
-
         # Start up the thread, this is done in coroutine context
         bridge = test_locker()
+
+        def execute_func(func, _event):
+            print("Before")
+            _event.result = func(*args, **kwargs)
+            print("After")
+            # Queue a co-routine to
+            unblock_external(_event)
+            print("Back from unblock")
+
+        print("Before thread start")
         thread = threading.Thread(group=None, target=execute_func,
                                   name=str(func) + "thread", args=([func, bridge]), kwargs={})
         thread.start()
         yield bridge.out_event.wait()
+        print("Back from wait")
 
         if bridge.result is not None:
             raise ReturnValue(bridge.result)
