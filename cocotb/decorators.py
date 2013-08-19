@@ -252,8 +252,8 @@ class function(object):
 
 @function
 def unblock_external(event):
-    event.set()
     yield NullTrigger()
+    event.set()
 
 def external(func):
     """Decorator to apply to an external function to enable calling from cocotb
@@ -267,17 +267,23 @@ def external(func):
 
         # Call the function in thread context
         def execute_func(func, _event):
+            print("Before")
             _event.result = func(*args, **kwargs)
+            print("After")
             # Queue a co-routine to
             unblock_external(_event)
+            print("Back from unblock")
 
         # Start up the thread, this is done in coroutine context
         event = Event()
         event.result = None
+        print("Before thread start")
         thread = threading.Thread(group=None, target=execute_func,
                                   name=str(func) + "thread", args=([func, event]), kwargs={})
         thread.start()
+        print("Thread started")
         yield event.wait()
+        print("Back from wait")
 
         if event.result is not None:
             raise ReturnValue(event.result)

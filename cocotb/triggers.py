@@ -287,6 +287,7 @@ class NullTrigger(Trigger):
         self.name = name
 
     def prime(self, callback):
+        callback(self)
         pass
 
     def set(self):
