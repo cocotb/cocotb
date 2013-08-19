@@ -161,11 +161,8 @@ def test_ext_call_nreturn(dut):
     clk_gen.stop()
 
 @cocotb.test(expect_fail=True)
-def test_ext_exit_error(dut):
+def ztest_ext_exit_error(dut):
     """Test that a premature exit of the sim at it's request still results in the
     clean close down of the sim world"""
-    value = yield external(test_ext_function_return)(dut)
-    if value is not None:
-        dut.log.info("Value back was %d" % value)
-    else:
-        dut.log.info("Bit odd that it was None")
+    yield external(test_ext_function_return)(dut)
+    yield Timer(100)
