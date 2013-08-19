@@ -65,33 +65,54 @@ class AvalonSTPkts(BusMonitor):
     _signals = ["valid", "data", "startofpacket", "endofpacket", "empty"]
     _optional_signals = ["error", "channel", "ready"]
 
+    _default_config = {
+        "dataBitsPerSymbol"             : 8,
+        "firstSymbolInHighOrderBits"    : True,
+        "maxChannel"                    : 0,
+        "readyLatency"                  : 0
+    }
+
+    def __init__(self, *args, **kwargs):
+        BusMonitor.__init__(self, *args, **kwargs)
+
+        self.config = AvalonSTPkts._default_config
+
+        config = kwargs.pop('config', {})
+
+        for configoption, value in config.iteritems():
+            self.config[configoption] = value
+
     @coroutine
     def _monitor_recv(self):
         """Watch the pins and reconstruct transactions"""
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
-        rdonly  = ReadOnly()        
+        rdonly  = ReadOnly()
         pkt = ""
+
+        def valid():
+            if hasattr(self.bus, 'ready'):
+                return self.bus.valid.value and self.bus.ready.value
+            return self.bus.valid.value
 
         while True:
             yield clkedge
             yield rdonly
-            if self.bus.valid.value and self.bus.startofpacket.value:
+
+            if valid():
+                if self.bus.startofpacket.value:
+                    pkt = ""
+
                 vec = self.bus.data.value
+                vec.big_endian = self.config['firstSymbolInHighOrderBits']
                 pkt += vec.buff
-                while True:
-                    yield clkedge
-                    yield rdonly
-                    if self.bus.valid.value:
-                        vec = self.bus.data.value
-                        pkt += vec.buff
-                        if self.bus.endofpacket.value:
-                            # Truncate the empty bits
-                            if self.bus.empty.value.value:
-                                pkt = pkt[:-self.bus.empty.value.value]
-                            self.log.info("Recieved a packet of %d bytes" % len(pkt))
-                            self.log.debug(hexdump(str((pkt))))
-                            self._recv(pkt)
-                            pkt = ""
-                            break
+
+                if self.bus.endofpacket.value:
+                    # Truncate the empty bits
+                    if self.bus.empty.value.value:
+                        pkt = pkt[:-self.bus.empty.value.value]
+                    self.log.info("Recieved a packet of %d bytes" % len(pkt))
+                    self.log.debug(hexdump(str((pkt))))
+                    self._recv(pkt)
+                    pkt = ""

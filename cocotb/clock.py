@@ -53,9 +53,9 @@ class Clock(BaseClock):
         """
         if self.hdl is None:
             self.hdl = simulator.create_clock(self.signal._handle, self.period, cycles)
-            self.log.debug("Clock %s Started with period %d" % (str(self.signal), self.period))
+            self.log.info("Clock %s Started with period %d" % (str(self.signal), self.period))
         else:
-            self.log.warning("Clock %s already started" % (str(self.signal)))
+            self.log.debug("Clock %s already started" % (str(self.signal)))
 
     def stop(self):
         if self.hdl is not None:

@@ -29,7 +29,9 @@
 # FIXME these should come from some cunning script, possibly from the FDK :)
 TOPLEVEL = first_counter
 
-VERILOG_SOURCES = counter.v
+PWD=$(shell pwd)
+
+VERILOG_SOURCES = $(PWD)/counter.v
 MODULE=demo
 
 include ../../makefiles/Makefile.inc

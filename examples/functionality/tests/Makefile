@@ -28,8 +28,10 @@
 
 TOPLEVEL = sample_module
 
-VERILOG_SOURCES = ../hdl/sample_module.v
-MODULE=test_cocotb,test_multiple_modules,test_discovery,test_calling
+PWD=$(shell pwd)
+
+VERILOG_SOURCES = $(PWD)/../hdl/sample_module.v
+MODULE=test_cocotb,test_multiple_modules,test_discovery
 
 include ../../../makefiles/Makefile.inc
 include ../../../makefiles/Makefile.sim

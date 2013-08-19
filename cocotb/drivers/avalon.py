@@ -36,6 +36,7 @@ from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
 from cocotb.result import ReturnValue
 
+
 class AvalonMM(BusDriver):
     """Avalon-MM Driver
 
@@ -53,7 +54,7 @@ class AvalonMM(BusDriver):
         # Drive some sensible defaults
         self.bus.read           <= 0
         self.bus.write          <= 0
-        self.bus.address            <= 0
+        self.bus.address        <= 0
 
     def read(self, address):
         pass
@@ -139,6 +140,23 @@ class AvalonSTPkts(ValidatedBusDriver):
     _signals = ["valid", "data", "startofpacket", "endofpacket", "empty"]
     _optional_signals = ["error", "channel", "ready"]
 
+    _default_config = {
+        "dataBitsPerSymbol"             : 8,
+        "firstSymbolInHighOrderBits"    : True,
+        "maxChannel"                    : 0,
+        "readyLatency"                  : 0
+    }
+
+    def __init__(self, *args, **kwargs):
+        ValidatedBusDriver.__init__(self, *args, **kwargs)
+
+        self.config = AvalonSTPkts._default_config
+
+        config = kwargs.pop('config', {})
+
+        for configoption, value in config.iteritems():
+            self.config[configoption] = value
+
     @coroutine
     def _wait_ready(self):
         """Wait for a ready cycle on the bus before continuing
@@ -147,7 +165,10 @@ class AvalonSTPkts(ValidatedBusDriver):
 
             FIXME assumes readyLatency of 0
         """
-        yield self._wait_for_signal(self.bus.ready)
+        yield ReadOnly()
+        while not self.bus.ready.value:
+            yield RisingEdge(self.clock)
+            yield ReadOnly()
 
     @coroutine
     def _send_string(self, string):
@@ -161,8 +182,8 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         # FIXME busses that aren't integer numbers of bytes
         bus_width = len(self.bus.data) / 8
-        word = BinaryValue(bits=len(self.bus.data))
 
+        word = BinaryValue(bits=len(self.bus.data), bigEndian=self.config['firstSymbolInHighOrderBits'])
 
         # Drive some defaults since we don't know what state we're in
         self.bus.empty <= 0
@@ -170,7 +191,6 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.endofpacket <= 0
         self.bus.error <= 0
         self.bus.valid <= 0
-
 
         while string:
             yield clkedge
@@ -197,8 +217,7 @@ class AvalonSTPkts(ValidatedBusDriver):
 
             nbytes = min(len(string), bus_width)
             data = string[:nbytes]
-            word.buff = data[::-1]      # Big Endian FIXME
-
+            word.buff = data
 
             if len(string) <= bus_width:
                 self.bus.endofpacket <= 1

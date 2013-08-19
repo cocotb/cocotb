@@ -69,7 +69,7 @@ class Scoreboard(object):
                 for index, transaction in enumerate(expected_output):
                     self.log.info("Expecting %d:\n%s" % (index, hexdump(str(transaction))))
                     if index > 5:
-                        self.log.info("... and %d more to come" % len(expected_output) - index - 1)
+                        self.log.info("... and %d more to come" % (len(expected_output) - index - 1))
                         break
                 fail = True
         if fail:

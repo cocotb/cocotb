@@ -28,7 +28,9 @@
 
 TOPLEVEL = issue12
 
-VERILOG_SOURCES = issue12.v
+PWD=$(shell pwd)
+
+VERILOG_SOURCES = $(PWD)/issue12.v
 MODULE=issue12
 
 include ../../makefiles/Makefile.inc

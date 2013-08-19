@@ -25,8 +25,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
+
 def resolve(string):
-    for char in "xXzZ":
+    for char in BinaryValue._resolve_to_0:
         string = string.replace(char, "0")
     return string
 
@@ -50,12 +51,23 @@ class BinaryValue(object):
     '*'
 
     """
-    _permitted_chars = "01xXzZ"
+    _resolve_to_0    = "xXzZuU"
+    _permitted_chars = "xXzZuU" + "01"
 
 
-    def __init__(self, value=None, bits=None):
+    def __init__(self, value=None, bits=None, bigEndian=True):
+        """
+        Kwagrs:
+            Value (string or int or long): value to assign to the bus
+
+            bits (int): Number of bits to use for the underlying binary representation
+
+            bigEndian (bool): Interpret the binary as big-endian when converting
+                                to/from a string buffer.
+        """
         self._str = ""
         self._bits = bits
+        self.big_endian = bigEndian
 
         if value is not None:
             self.assign(value)
@@ -91,21 +103,28 @@ class BinaryValue(object):
             e.g. vector "0000000100011111".buff == "\x01\x1F"
             TODO: Doctest this!
         """
-        bits = self._str
-        if len(bits) % 8: bits = "0" * (8 - len(bits) % 8) + bits
-        bits = resolve(bits)
+        bits = resolve(self._str)
+        if len(bits) % 8:
+            bits = "0" * (8 - len(bits) % 8) + bits
+
         buff = ""
         while bits:
             byte = bits[:8]
             bits = bits[8:]
             val = int(byte, 2)
-            buff += chr(val)
+            if self.big_endian:
+                buff += chr(val)
+            else:
+                buff = chr(val) + buff
         return buff
 
     def set_buff(self, buff):
         self._str = ""
         for char in buff:
-            self._str = "{0:08b}".format(ord(char)) + self._str
+            if self.big_endian:
+                self._str += "{0:08b}".format(ord(char))
+            else:
+                self._str = "{0:08b}".format(ord(char)) + self._str
         self._adjust()
 
     buff = property(get_buff, set_buff, None, "Access to the value as a buffer")
@@ -129,7 +148,10 @@ class BinaryValue(object):
             return
         l = len(self._str)
         if l < self._bits:
-            self._str = "0" * (l-self._bits) + self._str
+            if self.big_endian:
+                self._str = self._str + "0" * (self._bits-l)
+            else:
+                self._str = "0" * (self._bits-l) + self._str
         elif l > self._bits:
             print "WARNING truncating value to match requested number of bits (%d)" % l
             self._str = self._str[l - self._bits:]
