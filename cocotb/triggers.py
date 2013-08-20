@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
 import simulator
 import cocotb
+import pdb
 from cocotb.log import SimLog
 
 

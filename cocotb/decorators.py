@@ -28,6 +28,7 @@ import time
 import logging
 import traceback
 import threading
+import pdb
 
 import cocotb
 from cocotb.log import SimLog
@@ -236,13 +237,15 @@ class function(object):
     def __call__(self, *args, **kwargs):
 
         @coroutine
-        def execute_func(self, event):
+        def execute_function(self, event):
             event.result = yield cocotb.coroutine(self._func)(*args, **kwargs)
             event.set()
 
         self._event = threading.Event()
-        coro = cocotb.scheduler.queue(execute_func(self, self._event))
+        self._event.result = None
+        coro = cocotb.scheduler.queue_external(execute_function(self, self._event))
         self._event.wait()
+
         return self._event.result
 
     def __get__(self, obj, type=None):
@@ -253,7 +256,6 @@ class function(object):
 @function
 def unblock_external(bridge):
     yield NullTrigger()
-    print("Back from trigger")
     bridge.set_out()
 
 @public
@@ -278,24 +280,20 @@ def external(func):
 
     @coroutine
     def wrapped(*args, **kwargs):
-
+        cocotb.scheduler.set_external()
         # Start up the thread, this is done in coroutine context
         bridge = test_locker()
 
-        def execute_func(func, _event):
-            print("Before")
+        def execute_external(func, _event):
             _event.result = func(*args, **kwargs)
-            print("After")
             # Queue a co-routine to
             unblock_external(_event)
-            print("Back from unblock")
 
-        print("Before thread start")
-        thread = threading.Thread(group=None, target=execute_func,
+        thread = threading.Thread(group=None, target=execute_external,
                                   name=str(func) + "thread", args=([func, bridge]), kwargs={})
         thread.start()
+
         yield bridge.out_event.wait()
-        print("Back from wait")
 
         if bridge.result is not None:
             raise ReturnValue(bridge.result)

@@ -34,6 +34,7 @@ Also used a regression test of cocotb capabilities
 import threading
 import time
 import cocotb
+import pdb
 from cocotb.result import ReturnValue, TestFailure
 from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge
 from cocotb.clock import Clock
@@ -100,7 +101,7 @@ def test_callable(dut):
     dut.log.info("Test thread created")
     clk_gen = Clock(dut.clk,  100)
     clk_gen.start()
-    yield Timer(10000)
+    yield Timer(100000)
     clk_gen.stop()
     if test_count is not 5:
         raise TestFailure
@@ -119,7 +120,7 @@ def test_callable_fail(dut):
     dut.log.info("Test thread created")
     clk_gen = Clock(dut.clk, 100)
     clk_gen.start()
-    yield Timer(10000)
+    yield Timer(100000)
     clk_gen.stop()
     if test_count is not 5:
         raise TestFailure
@@ -146,7 +147,7 @@ def clock_monitor(dut):
 def test_ext_call_return(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
-    clk_gen = Clock(dut.clk, 1000)
+    clk_gen = Clock(dut.clk, 100)
     clk_gen.start(cycles=20)
     value = yield external(test_ext_function)(dut)
     clk_gen.stop()
@@ -165,14 +166,15 @@ def test_ext_call_nreturn(dut):
 def test_multiple_externals(dut):
     clk_gen = Clock(dut.clk, 100)
     clk_gen.start()
-    yield external(test_ext_function)(dut)
+    value = yield external(test_ext_function)(dut)
     dut.log.info("First one completed")
-    yield external(test_ext_function)(dut)
+    value = yield external(test_ext_function)(dut)
     dut.log.info("Second one completed")
+    clk_gen.stop()
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_fail=True, skip=True)
 def ztest_ext_exit_error(dut):
     """Test that a premature exit of the sim at it's request still results in the
     clean close down of the sim world"""
     yield external(test_ext_function_return)(dut)
-    yield Timer(100)
+    yield Timer(1000)

@@ -32,13 +32,17 @@ import types
 import threading
 import collections
 import os
+import threading
+import time
+import pdb
 
 import simulator
 import cocotb
 import cocotb.decorators
-from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite
+from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite, NullTrigger
 from cocotb.log import SimLog
 from cocotb.result import TestComplete, TestError, ReturnValue
+from threading import RLock
 
 class Scheduler(object):
 
@@ -53,6 +57,11 @@ class Scheduler(object):
         self._terminate = False
         self._test_result = None
         self._readonly = None
+        self._entry_lock = RLock()
+        self._external_trigger = threading.Semaphore(1)
+        self._external_trigger._value = 0
+        self._react_timer = None
+        self._external = False
         # Keep this last
         self._readwrite = self.add(self.move_to_rw())
 
@@ -95,18 +104,37 @@ class Scheduler(object):
         # another callback for the read-write part of the sim cycle, but
         # if we are terminating then do not allow another callback to be
         # scheduled
-        if len(self.writes) and self._readwrite is None and self._terminate is False:
-            self._readwrite = self.add(self.move_to_rw())
 
+        if self._terminate is False and len(self.writes) and self._readwrite is None:
+            self._readwrite = self.add(self.move_to_rw())
 
         # If the python has caused any subsequent events to fire we might
         # need to schedule more coroutines before we drop back into the
         # simulator
         while self._pending_adds:
+            self._entry_lock.acquire()
             coroutine = self._pending_adds.pop(0)
+            self._entry_lock.release()
             self.add(coroutine)
 
+        # if we get the lock then there was nothing in progress
+        # if we do not then there was so schedule a loop
+        # to come back in until we managed to add to the pending
+        # list and so can progress past this time step
+        result = self._external_trigger.acquire(blocking=False)
+        if self._external_trigger._value:
+            self.enable_react_delay()
+        else:
+            self._external_trigger.release()
+
         return
+
+    def set_external(self):
+        """ Take the semaphore to indicate to the react later that there an external
+        is being added to the list
+        """
+        self._external_trigger.acquire()
+        self._external_trigger._value = 1
 
     def playout_writes(self):
         if self.writes:
@@ -121,14 +149,28 @@ class Scheduler(object):
     def _add_trigger(self, trigger, coroutine):
         """Adds a new trigger which will cause the coroutine to continue when fired"""
         try:
+            self._entry_lock.acquire()
             self.waiting[trigger].append(coroutine)
+            self._entry_lock.release()
+            # We drop the lock before calling out to the simulator (most likely consequence of prime)
             trigger.prime(self.react)
         except Exception as e:
             raise TestError("Unable to prime a trigger: %s" % str(e))
 
     def queue(self, coroutine):
         """Queue a coroutine for execution"""
+        self._entry_lock.acquire()
         self._pending_adds.append(coroutine)
+        self._entry_lock.release()
+
+    def queue_external(self, coroutine):
+        """Add a coroutine that is part of an external thread"""
+        # We do not need to take the lock here as are protected by the external trigger
+        self._entry_lock.acquire()
+        self._pending_adds.append(coroutine)
+        self._entry_lock.release()
+        self._external_trigger._value = 0
+        self._external_trigger.release()
 
     def add(self, coroutine):
         """Add a new coroutine. Required because we cant send to a just started generator (FIXME)"""
@@ -151,22 +193,44 @@ class Scheduler(object):
 
 
         self.log.debug("Queuing new coroutine %s" % coroutine.__name__)
+        self.log.debug("Adding  %s" % coroutine.__name__)
         self.schedule(coroutine)
         return coroutine
+
+    @cocotb.decorators.coroutine
+    def go_to_null(self):
+        yield NullTrigger()
+
+    def add_and_react(self, coroutine):
+        """Add a coroutine and also schedule a callback from the sim"""
+        self._entry_lock.acquire()
+        self.queue(coroutine)
+
+        #if self._readwrite is None:
+        #    test_coro = self.move_to_rw()
+        #    pdb.set_trace()
+        #self._readwrite = self.add(test_coro)
+        self.add(self.go_to_null())
+
+        self._entry_lock.release()
 
     def new_test(self, coroutine):
         self._startpoint = coroutine
 
     def remove(self, trigger):
         """Remove a trigger from the list of pending coroutines"""
+        self._entry_lock.acquire()
         self.waiting.pop(trigger)
+        self._entry_lock.release()
         trigger.unprime()
 
     def schedule_remove(self, coroutine, callback):
         """Adds the specified coroutine to the list of routines
            That will be removed at the end of the current loop
         """
+        self._entry_lock.acquire()
         self._remove.append((coroutine, callback))
+        self._entry_lock.release()
 
     def prune_routines(self):
         """
@@ -174,19 +238,27 @@ class Scheduler(object):
         execution of a parent routine
         """
         while self._remove:
+            self._entry_lock.acquire()
             delroutine, cb = self._remove.pop(0)
             for trigger, waiting in self.waiting.items():
                 for coro in waiting:
                     if coro is delroutine:
                         self.log.debug("Closing %s" % str(coro))
+                        self._entry_lock.release()
                         cb()
+                        self._entry_lock.acquire()
                         self.waiting[trigger].remove(coro)
+                        self._entry_lock.release()
                         coro.close()
+                        self._entry_lock.acquire()
             # Clean up any triggers that no longer have pending coroutines
             for trigger, waiting in self.waiting.items():
                 if not waiting:
+                    self._entry_lock.release()
                     trigger.unprime()
+                    self._entry_lock.acquire()
                     del self.waiting[trigger]
+            self._entry_lock.release()
 
     def schedule(self, coroutine, trigger=None):
         """
@@ -307,3 +379,12 @@ class Scheduler(object):
         yield ReadWrite()
         self._readwrite = None
         self.playout_writes()
+
+    def enable_react_delay(self):
+        if self._react_timer is None:
+            self._react_timer = self.add(self.react_delay())
+
+    @cocotb.decorators.coroutine
+    def react_delay(self):
+        yield Timer(0)
+        self._react_timer = None
