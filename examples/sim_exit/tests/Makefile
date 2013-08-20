@@ -4,14 +4,14 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-# * Neither the name of Potential Ventures Ltd nor the
-# names of its contributors may be used to endorse or promote products
-# derived from this software without specific prior written permission.
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -26,19 +26,12 @@
 ###############################################################################
 
 
+TOPLEVEL = close_module
 
-SMOKE_TESTS :=  demo \
-				comb_seq \
-				plusargs \
-				sim_exit \
-				functionality/tests
+PWD=$(shell pwd)
 
-.PHONY: $(SMOKE_TESTS)
+VERILOG_SOURCES = $(PWD)/../hdl/close_module.v
+MODULE=test_closedown
 
-all: $(SMOKE_TESTS)
-
-$(SMOKE_TESTS):
-	-@cd $@ && $(MAKE)
-
-clean:
-	$(foreach TEST, $(SMOKE_TESTS), $(MAKE) -C $(TEST) clean;)
+include ../../../makefiles/Makefile.inc
+include ../../../makefiles/Makefile.sim
