@@ -116,12 +116,21 @@ def _initialise_testbench(root_handle):
     _rlock.release()
     return True
 
-
-def _fail_test(message):
-    """Function that can be called externally to fail a test"""
+def _sim_event(level, message):
+    """Function that can be called externally to signal an event"""
+    SIM_INFO = 0
+    SIM_TEST_FAIL = 1
+    SIM_FAIL = 2
     from cocotb.result import TestFailure
-    scheduler.log.error("Failing test at simulator request")
-    scheduler.finish_scheduler(TestFailure("Failure from external source: %s" % message))
+
+    if level is SIM_TEST_FAIL:
+        scheduler.log.error("Failing test at simulator request")
+        scheduler.finish_test(TestFailure("Failure from external source: %s" % message))
+    elif level is SIM_FAIL:
+        scheduler.log.error("Failing test at simulator request before test run completion: %s" % message)
+        scheduler.finish_scheduler(TestFailure("Failing test at simulator request before test run completion"))
+    else:
+        scheduler.log.error("Unsupported sim event")
 
 
 def process_plusargs():

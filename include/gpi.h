@@ -76,6 +76,12 @@ we have to create a process with the signal on the sensitivity list to imitate a
 
 EXTERN_C_START
 
+typedef enum gpi_event_e {
+    SIM_INFO = 0,
+    SIM_TEST_FAIL = 1,
+    SIM_FAIL = 2,
+} gpi_event_t;
+
 typedef struct gpi_sim_info_s
 {     
     int32_t   argc;

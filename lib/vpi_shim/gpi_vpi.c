@@ -987,7 +987,7 @@ int handle_sim_end(void *gpi_cb_data)
     if (sim_finish_cb) {
         sim_finish_cb = NULL;
         /* This means that we have been asked to close */
-        embed_sim_end();
+        embed_sim_event(SIM_FAIL, "Simulator shutdown prematurely");
     } /* Other sise we have already been here from the top down so do not need
          to inform the upper layers that anything has occoured */
     __gpi_free_callback(sim_init_cb);
@@ -1020,7 +1020,7 @@ static int system_function_fail_test(char *userdata)
     argval.format = vpiStringVal;
     vpi_get_value(argh, &argval);
 
-    fail_test(argval.value.str);
+    embed_sim_event(SIM_TEST_FAIL, argval.value.str);
 
     // Cleanup and return
     vpi_free_object(args_iter);

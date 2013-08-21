@@ -34,7 +34,7 @@ static PyThreadState *gtstate;
 
 static char progname[] = "cocotb";
 static PyObject *thread_dict;
-static PyObject *pFailTestFn;
+static PyObject *pEventFn;
 
 
 /**
@@ -185,14 +185,14 @@ void embed_sim_init(gpi_sim_info_t *info)
     // Now that logging has been set up ok we initialise the testbench
 
     // Hold onto a reference to our _fail_test function
-    pFailTestFn = PyObject_GetAttrString(cocotb_module, "_fail_test");
+    pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");
 
-    if (!PyCallable_Check(pFailTestFn)) {
+    if (!PyCallable_Check(pEventFn)) {
         PyErr_Print();
-        fprintf(stderr, "cocotb._fail_test is not callable");
+        fprintf(stderr, "cocotb._sim_event is not callable");
         goto cleanup;
     }
-    Py_INCREF(pFailTestFn);
+    Py_INCREF(pEventFn);
 
     cocotb_init = PyObject_GetAttrString(cocotb_module, "_initialise_testbench");         // New reference
 
@@ -228,27 +228,20 @@ cleanup:
     PyGILState_Release(gstate);
 }
 
-void embed_sim_end(void)
+void embed_sim_event(gpi_event_t level, const char *msg)
 {
     FENTER
-    /* Indicate to the upper layer that this needs to close down */
-    LOG_WARN("Simulator requested orderly shutdown");
-    FEXIT
-}
-
-
-void fail_test(const char *message)
-{
-    FENTER
+    /* Indicate to the upper layer a sim event occoured */
 
     PyGILState_STATE gstate;
     gstate = PyGILState_Ensure();
 
     LOG_WARN("Failing the test at simulator request!");
 
-    PyObject *fArgs = PyTuple_New(1);
-    PyTuple_SetItem(fArgs, 0, PyString_FromString(message));
-    PyObject *pValue = PyObject_Call(pFailTestFn, fArgs, NULL);
+    PyObject *fArgs = PyTuple_New(2);
+    PyTuple_SetItem(fArgs, 0, PyInt_FromLong(level));
+    PyTuple_SetItem(fArgs, 1, PyString_FromString(msg));
+    PyObject *pValue = PyObject_Call(pEventFn, fArgs, NULL);
 
     Py_DECREF(fArgs);
     PyGILState_Release(gstate);
