@@ -111,7 +111,8 @@ class Timer(GPITrigger):
 
     def prime(self, callback):
         """Register for a timed callback"""
-        simulator.register_timed_callback(self.cbhdl, self.time_ps, callback, self)
+        if simulator.register_timed_callback(self.cbhdl, self.time_ps, callback, self):
+            raise TestError("Unable set up Timer Trigger")
 
     def __str__(self):
         return self.__class__.__name__ + "(%dps)" % self.time_ps
@@ -126,7 +127,8 @@ class Edge(GPITrigger):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
-        simulator.register_value_change_callback(self.chbdl, self.signal._handle, callback, self)
+        if simulator.register_value_change_callback(self.chbdl, self.signal._handle, callback, self):
+            raise TestError("Unable set up Edge Trigger")
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -140,7 +142,8 @@ class ReadOnly(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        simulator.register_readonly_callback(self.cbhdl, callback, self)
+        if simulator.register_readonly_callback(self.cbhdl, callback, self):
+            raise TestError("Unable set up ReadOnly Trigger")
 
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
@@ -154,7 +157,8 @@ class ReadWrite(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        simulator.register_rwsynch_callback(self.cbhdl, callback, self)
+        if simulator.register_rwsynch_callback(self.cbhdl, callback, self):
+            raise TestError("Unable set up ReadWrite Trigger")
 
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
@@ -186,9 +190,12 @@ class RisingEdge(Edge):
             if self.signal.value:
                 self._callback(self)
             else:
-                simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self)
+                if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
+                    raise TestError("Unable set up RisingEdge Trigger")
 
-        simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self)
+        if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
+            raise TestError("Unable set up RisingEdge Trigger")
+
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -212,9 +219,12 @@ class ClockCycles(Edge):
                     self._callback(self)
                     return
 
-            simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self)
+            if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
+                raise TestError("Unable set up ClockCycles Trigger")
 
-        simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self)
+
+        if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
+            raise TestError("Unable set up ClockCycles Trigger")
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name

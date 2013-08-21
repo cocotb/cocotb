@@ -152,11 +152,13 @@ static inline int __gpi_register_cb(p_vpi_cb_user_data user, p_cb_data cb_data)
      * before getting the new one
      */
     vpiHandle new_hdl = vpi_register_cb(cb_data);
+    int ret = 0;
 
     if (!new_hdl) {
         LOG_CRITICAL("VPI: Unable to register callback a handle for VPI type %s(%d)\n",
                      vpi_reason_to_string(cb_data->reason), cb_data->reason);
         check_vpi_error();
+        ret = -1;
     }
 
     if (user->cb_hdl != NULL)
@@ -164,7 +166,7 @@ static inline int __gpi_register_cb(p_vpi_cb_user_data user, p_cb_data cb_data)
 
     user->cb_hdl = new_hdl;
 
-    return 0;
+    return ret;
 }
 
 static inline p_vpi_cb_user_data __gpi_alloc_user(void)
@@ -538,11 +540,17 @@ static int32_t handle_vpi_callback(p_cb_data cb_data)
  */
 gpi_sim_hdl gpi_create_cb_handle(void)
 {
+    gpi_sim_hdl ret = NULL;
     FENTER
+
     p_vpi_cb_user_data user_data = __gpi_alloc_user();
-    user_data->state = VPI_FREE;
+    if (user_data) {
+        user_data->state = VPI_FREE;
+        ret = &user_data->gpi_hdl;
+    }
+
     FEXIT
-    return &user_data->gpi_hdl;
+    return ret;
 }
 
 /* Destroys the memory associated with the sim handle
@@ -659,6 +667,7 @@ int gpi_register_value_change_callback(gpi_sim_hdl cb,
     s_vpi_time vpi_time_s;
     s_vpi_value  vpi_value_s;
     p_vpi_cb_user_data user_data;
+    int ret;
 
     user_data = gpi_container_of(cb, s_vpi_cb_user_data, gpi_hdl);
 
@@ -677,12 +686,12 @@ int gpi_register_value_change_callback(gpi_sim_hdl cb,
     cb_data_s.value     = &user_data->cb_value;
     cb_data_s.user_data = (char *)user_data;
 
-    __gpi_register_cb(user_data, &cb_data_s);
+    ret = __gpi_register_cb(user_data, &cb_data_s);
     user_data->state = VPI_PRIMED;
 
     FEXIT
 
-    return 0;
+    return ret;
 }
 
 
@@ -694,6 +703,7 @@ int gpi_register_readonly_callback(gpi_sim_hdl cb,
     s_cb_data cb_data_s;
     s_vpi_time vpi_time_s;
     p_vpi_cb_user_data user_data;
+    int ret;
 
     user_data = gpi_container_of(cb, s_vpi_cb_user_data, gpi_hdl);
 
@@ -712,11 +722,11 @@ int gpi_register_readonly_callback(gpi_sim_hdl cb,
     cb_data_s.value     = NULL;
     cb_data_s.user_data = (char *)user_data;
 
-    __gpi_register_cb(user_data, &cb_data_s);
+    ret = __gpi_register_cb(user_data, &cb_data_s);
     user_data->state = VPI_PRIMED;
 
     FEXIT
-    return 0;
+    return ret;
 }
 
 int gpi_register_readwrite_callback(gpi_sim_hdl cb,
@@ -727,6 +737,7 @@ int gpi_register_readwrite_callback(gpi_sim_hdl cb,
     s_cb_data cb_data_s;
     s_vpi_time vpi_time_s;
     p_vpi_cb_user_data user_data;
+    int ret;
 
     user_data = gpi_container_of(cb, s_vpi_cb_user_data, gpi_hdl);
 
@@ -745,11 +756,11 @@ int gpi_register_readwrite_callback(gpi_sim_hdl cb,
     cb_data_s.value     = NULL;
     cb_data_s.user_data = (char *)user_data;
 
-    __gpi_register_cb(user_data, &cb_data_s);
+    ret = __gpi_register_cb(user_data, &cb_data_s);
     user_data->state = VPI_PRIMED;
 
     FEXIT
-    return 0;
+    return ret;
 }
 
 int gpi_register_nexttime_callback(gpi_sim_hdl cb,
@@ -760,6 +771,7 @@ int gpi_register_nexttime_callback(gpi_sim_hdl cb,
     s_cb_data cb_data_s;
     s_vpi_time vpi_time_s;
     p_vpi_cb_user_data user_data;
+    int ret;
 
     user_data = gpi_container_of(cb, s_vpi_cb_user_data, gpi_hdl);
 
@@ -778,11 +790,11 @@ int gpi_register_nexttime_callback(gpi_sim_hdl cb,
     cb_data_s.value     = NULL;
     cb_data_s.user_data = (char *)user_data;
 
-    __gpi_register_cb(user_data, &cb_data_s);
+    ret = __gpi_register_cb(user_data, &cb_data_s);
     user_data->state = VPI_PRIMED;
   
     FEXIT
-    return 0;
+    return ret;
 }
 
 int gpi_register_timed_callback(gpi_sim_hdl cb,
@@ -794,6 +806,7 @@ int gpi_register_timed_callback(gpi_sim_hdl cb,
     s_cb_data cb_data_s;
     s_vpi_time vpi_time_s;
     p_vpi_cb_user_data user_data;
+    int ret;
 
     user_data = gpi_container_of(cb, s_vpi_cb_user_data, gpi_hdl);
 
@@ -812,12 +825,12 @@ int gpi_register_timed_callback(gpi_sim_hdl cb,
     cb_data_s.value     = NULL;
     cb_data_s.user_data = (char *)user_data;
 
-    __gpi_register_cb(user_data, &cb_data_s);
+    ret = __gpi_register_cb(user_data, &cb_data_s);
     user_data->state = VPI_PRIMED;
 
     FEXIT
 
-    return 0;
+    return ret;
 }
 
 int gpi_register_sim_start_callback(gpi_sim_hdl cb,
@@ -842,6 +855,10 @@ int gpi_register_sim_start_callback(gpi_sim_hdl cb,
     cb_data_s.value     = NULL;
     cb_data_s.user_data = (char *)user_data;
 
+    /* We ignore the return value here as VCS does some silly
+     * things on comilation that means it tries to run through
+     * the vlog_startup_routines and so call this routine
+     */
     __gpi_register_cb(user_data, &cb_data_s);
     user_data->state = VPI_PRIMED;
 
@@ -872,6 +889,10 @@ int gpi_register_sim_end_callback(gpi_sim_hdl cb,
     cb_data_s.value     = NULL;
     cb_data_s.user_data = (char *)user_data;
 
+    /* We ignore the return value here as VCS does some silly
+     * things on comilation that means it tries to run through
+     * the vlog_startup_routines and so call this routine
+     */
     __gpi_register_cb(user_data, &cb_data_s);
     user_data->state = VPI_PRIMED;
 
