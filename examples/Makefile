@@ -27,9 +27,7 @@
 
 
 
-SMOKE_TESTS :=  demo \
-				comb_seq \
-				plusargs \
+SMOKE_TESTS :=  plusargs \
 				sim_exit \
 				functionality/tests
 
