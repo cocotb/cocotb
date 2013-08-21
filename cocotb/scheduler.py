@@ -41,7 +41,7 @@ import cocotb
 import cocotb.decorators
 from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite, NullTrigger
 from cocotb.log import SimLog
-from cocotb.result import TestComplete, TestError, ReturnValue
+from cocotb.result import TestComplete, TestError, ReturnValue, raise_error
 from threading import RLock
 
 class Scheduler(object):
@@ -94,11 +94,6 @@ class Scheduler(object):
                 self.remove(del_list.pop(0))
             self.schedule(coroutine, trigger=trigger)
             self.log.debug("Scheduled coroutine %s" % (coroutine.__name__))
-
-        self.log.debug("Completed scheduling loop, still waiting on:")
-
-        #for trig, routines in self.waiting.items():
-        #    self.log.debug("\t%s: [%s]" % (str(trig).ljust(30), " ".join([routine.__name__ for routine in routines])))
 
         # If we've performed any writes that are cached then schedule
         # another callback for the read-write part of the sim cycle, but
@@ -154,8 +149,13 @@ class Scheduler(object):
             self._entry_lock.release()
             # We drop the lock before calling out to the simulator (most likely consequence of prime)
             trigger.prime(self.react)
+        except TestError as e:
+            self.waiting[trigger].remove(coroutine)
+            # Do not re-call raise_error since the error will already be logged at point of interest
+            raise e
         except Exception as e:
-            raise TestError("Unable to prime a trigger: %s" % str(e))
+            self.waiting[trigger].remove(coroutine)
+            raise_error(self, "Unable to prime a trigger: %s" % str(e))
 
     def queue(self, coroutine):
         """Queue a coroutine for execution"""

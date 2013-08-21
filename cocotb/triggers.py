@@ -30,7 +30,7 @@ import simulator
 import cocotb
 import pdb
 from cocotb.log import SimLog
-
+from cocotb.result import raise_error
 
 
 class TriggerException(Exception):
@@ -112,7 +112,7 @@ class Timer(GPITrigger):
     def prime(self, callback):
         """Register for a timed callback"""
         if simulator.register_timed_callback(self.cbhdl, self.time_ps, callback, self):
-            raise TestError("Unable set up Timer Trigger")
+            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(%dps)" % self.time_ps
@@ -128,7 +128,7 @@ class Edge(GPITrigger):
     def prime(self, callback):
         """Register notification of a value change via a callback"""
         if simulator.register_value_change_callback(self.chbdl, self.signal._handle, callback, self):
-            raise TestError("Unable set up Edge Trigger")
+            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -143,7 +143,7 @@ class ReadOnly(GPITrigger):
 
     def prime(self, callback):
         if simulator.register_readonly_callback(self.cbhdl, callback, self):
-            raise TestError("Unable set up ReadOnly Trigger")
+            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
@@ -158,7 +158,7 @@ class ReadWrite(GPITrigger):
 
     def prime(self, callback):
         if simulator.register_rwsynch_callback(self.cbhdl, callback, self):
-            raise TestError("Unable set up ReadWrite Trigger")
+            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
@@ -191,10 +191,10 @@ class RisingEdge(Edge):
                 self._callback(self)
             else:
                 if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
-                    raise TestError("Unable set up RisingEdge Trigger")
+                    raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
         if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
-            raise TestError("Unable set up RisingEdge Trigger")
+            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
 
     def __str__(self):
@@ -220,11 +220,11 @@ class ClockCycles(Edge):
                     return
 
             if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
-                raise TestError("Unable set up ClockCycles Trigger")
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
 
         if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
-            raise TestError("Unable set up ClockCycles Trigger")
+            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
