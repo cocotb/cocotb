@@ -60,6 +60,10 @@ class Clock(BaseClock):
     def stop(self):
         if self.hdl is not None:
             simulator.stop_clock(self.hdl)
+            self.log.info("Clock %s Stopped" % (str(self.signal)))
+            self.hdl = None
+        else:
+            self.log.debug("Clock %s already stopped" % (str(self.signal)))
 
     def __str__(self):
         return self.__class__.__name__ + "(%3.1fMHz)" % self.frequency
