@@ -32,7 +32,7 @@ Also used a regression test of cocotb capabilities
 """
 
 import cocotb
-from cocotb.triggers import Timer, Join, RisingEdge
+from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, ReadWrite
 from cocotb.clock import Clock
 
 
@@ -130,11 +130,6 @@ def test_adding_a_coroutine_without_starting(dut):
     yield Join(forked)
     yield Timer(100)
 
-@cocotb.test(expect_fail=True, skip=True)
-def test_failure_from_system_task(dut):
-    """Allow the dut to call $fail_test() from verilog"""
-    yield Timer(10000000)
-
 @cocotb.test(expect_fail=False)
 def test_anternal_clock(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
@@ -144,4 +139,51 @@ def test_anternal_clock(dut):
     while count is not 100:
         yield RisingEdge(dut.clk)
         count += 1
+    clk_gen.stop()
+
+@cocotb.coroutine
+def do_test_readwrite_in_readonly(dut):
+    yield RisingEdge(dut.clk)
+    yield ReadOnly()
+    dut.clk <= 0
+    yield ReadWrite()
+
+@cocotb.test(expect_error=True)
+def test_readwrite_in_readonly(dut):
+    """Test doing invalid sim operation"""
+    clk_gen = Clock(dut.clk, 100)
+    clk_gen.start()
+    coro = cocotb.fork(do_test_readwrite_in_readonly(dut))
+    yield Timer(10000)
+    clk.stop()
+
+@cocotb.coroutine
+def clock_one(dut):
+    count = 0
+    while count is not 50:
+        yield RisingEdge(dut.clk)
+        yield Timer(10000)
+        count += 1
+
+@cocotb.coroutine
+def clock_two(dut):
+    count = 0
+    while count is not 50:
+        yield RisingEdge(dut.clk)
+        yield Timer(100000)
+        count += 1
+
+@cocotb.test(expect_fail=False)
+def test_coroutine_close_down(dut):
+    clk_gen = Clock(dut.clk, 100)
+    clk_gen.start()
+
+    coro_one = cocotb.fork(clock_one(dut))
+    coro_two = cocotb.fork(clock_two(dut))
+
+    yield Join(coro_one)
+    yield Join(coro_two)
+
+    dut.log.info("Back from joins")
+
     clk_gen.stop()
