@@ -136,7 +136,7 @@ static int __check_vpi_error(const char *func, long line)
     }
 
     gpi_log("cocotb.gpi", loglevel, __FILE__, func, line,
-            "VPI Error level %d\nPROD %s\nCODE %s\nFILE %s\n",
+            "VPI Error level %d\nPROD %s\nCODE %s\nFILE %s",
             info.message, info.product, info.code, info.file);
 
 #endif
@@ -155,7 +155,7 @@ static inline int __gpi_register_cb(p_vpi_cb_user_data user, p_cb_data cb_data)
     int ret = 0;
 
     if (!new_hdl) {
-        LOG_CRITICAL("VPI: Unable to register callback a handle for VPI type %s(%d)\n",
+        LOG_CRITICAL("VPI: Unable to register callback a handle for VPI type %s(%d)",
                      vpi_reason_to_string(cb_data->reason), cb_data->reason);
         check_vpi_error();
         ret = -1;
@@ -198,7 +198,7 @@ static gpi_sim_hdl gpi_alloc_handle(void)
 {
     gpi_sim_hdl new_hdl = calloc(1, sizeof(*new_hdl));
     if (!new_hdl) {
-        LOG_CRITICAL("VPI: Could not allocate handle\n");
+        LOG_CRITICAL("VPI: Could not allocate handle");
         exit(1);
     }
 
@@ -255,13 +255,13 @@ gpi_sim_hdl gpi_get_root_handle(const char* name)
 
   error:
 
-    LOG_CRITICAL("VPI: Couldn't find root handle %s\n", name);
+    LOG_CRITICAL("VPI: Couldn't find root handle %s", name);
 
     iterator = vpi_iterate(vpiModule, NULL);
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
 
-        LOG_CRITICAL("VPI: Toplevel instances: %s != %s...\n", name, vpi_get_str(vpiFullName, root));
+        LOG_CRITICAL("VPI: Toplevel instances: %s != %s...", name, vpi_get_str(vpiFullName, root));
 
         if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
             break;
@@ -448,7 +448,7 @@ static char *gpi_copy_name(const char *name)
     if (name)
         len = strlen(name) + 1;
     else {
-        LOG_CRITICAL("VPI: NULL came back from VPI\n");
+        LOG_CRITICAL("VPI: NULL came back from VPI");
         len = strlen(null);
         name = null;
     }
@@ -610,7 +610,7 @@ static int gpi_free_one_time(p_vpi_cb_user_data user_data)
     int rc;
     vpiHandle cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
-        LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING\n");
+        LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
         exit(1);
     }
 
