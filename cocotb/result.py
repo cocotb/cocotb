@@ -30,7 +30,7 @@ from StringIO import StringIO
 
 def raise_error(obj, msg):
     buff = StringIO()
-    lastframe = sys._getframe(2)
+    lastframe = sys._getframe(1)
     traceback.print_stack(lastframe, file=buff)
     obj.log.error("%s\n%s" % (msg, buff.getvalue()))
     exception = TestError(msg)
