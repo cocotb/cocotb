@@ -642,7 +642,7 @@ static int gpi_free_recurring(p_vpi_cb_user_data user_data)
     int rc;
     vpiHandle cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
-        printf("VPI: %s passed a NULL pointer : ABORTING");
+        LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
         exit(1);
     }
 
