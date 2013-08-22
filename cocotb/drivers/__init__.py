@@ -34,7 +34,7 @@ import logging
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Event, RisingEdge, ReadOnly
+from cocotb.triggers import Event, RisingEdge, ReadOnly, Timer, NextTimeStep
 from cocotb.bus import Bus
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
@@ -203,26 +203,17 @@ class BusDriver(Driver):
         self.bus <= transaction
 
     @coroutine
-    def __wait_for_value_on_signal(self, signal, level):
-        loops = 0
-        yield ReadOnly()
-        while not signal.value is not level:
-            yield RisingEdge(self.clock)
-            yield ReadOnly()
-            loops += 1
-
-        raise ReturnValue(loops)
-
-    @coroutine
     def _wait_for_signal(self, signal):
         """This method will return with the specified signal
         has hit logic 1. The state will be in the ReadOnly phase
         so sim will need to move to NextTimeStep before
         registering more callbacks can occour
         """
-        res = yield self.__wait_for_value_on_signal(signal, 1)
-
-        raise ReturnValue(res)
+        yield RisingEdge(self.clock)
+        yield ReadOnly()
+        if signal.value.value is not 1:
+            yield RisingEdge(signal)
+        yield NextTimeStep()
 
     @coroutine
     def _wait_for_nsignal(self, signal):
@@ -231,9 +222,15 @@ class BusDriver(Driver):
         so sim will need to move to NextTimeStep before
         registering more callbacks can occour
         """
-        res = yield self.__wait_for_value_on_signal(signal, 0)
+        yield RisingEdge(self.clock)
+        yield ReadOnly()
+        if signal.value.value is not 0:
+            yield Edge(signal)
+        yield NextTimeStep()
 
-        raise ReturnValue(res)
+    def __str__(self):
+        """Provide the name of the bus"""
+        return str(self.name)
 
 
 class ValidatedBusDriver(BusDriver):

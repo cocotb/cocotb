@@ -30,7 +30,7 @@ See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 NB Currently we only support a very small subset of functionality
 """
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -96,6 +96,7 @@ class AvalonMaster(AvalonMM):
         # Get the data
         yield ReadOnly()
         data = self.bus.readdata.value
+        yield NextTimeStep()
 
         raise ReturnValue(data)
 
