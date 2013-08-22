@@ -109,6 +109,7 @@ void embed_sim_init(gpi_sim_info_t *info)
     if (dut == NULL) {
         fprintf(stderr, "Unable to find root instance!\n");
         gpi_sim_end();
+        return;
     }
 
     PyObject *cocotb_module, *cocotb_init, *cocotb_args, *cocotb_retval;
