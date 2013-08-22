@@ -115,8 +115,6 @@ class AvalonMaster(AvalonMM):
 
         # Wait for waitrequest to be low
         count = yield self._wait_for_nsignal(self.bus.waitrequest)
-        if count is not 0:
-            csr.log.warning("Waiting for %d loops for waitrequest to go low" % count)
 
         # Deassert write
         yield RisingEdge(self.clock)
