@@ -136,6 +136,8 @@ class SimLog(object):
     def addHandler(self, handler):
         self.logger.addHandler(handler)
 
+    def setLevel(self, level):
+        self.logger.setLevel(level)
 
 class SimLogFormatter(logging.Formatter):
 
