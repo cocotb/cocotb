@@ -111,6 +111,8 @@ class RunningCoroutine(object):
             raise CoroutineComplete(callback=self._finished_cb)
         except StopIteration:
             raise CoroutineComplete(callback=self._finished_cb)
+        except Exception as e:
+            raise_error(self, "send raised %s" % (str(e)))
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -184,6 +186,8 @@ class RunningTest(RunningCoroutine):
             raise
         except StopIteration:
             raise TestSuccess()
+        except Exception as e:
+            raise_error(self, "send raised %s" % (str(e)))
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
