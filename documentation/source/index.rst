@@ -14,6 +14,7 @@ Contents:
    introduction
    overview
    quickstart
+   building
    coroutines
    triggers
    roadmap
