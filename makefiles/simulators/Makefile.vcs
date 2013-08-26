@@ -61,11 +61,11 @@ PYTHON_FILES:=$(shell find $(SIM_ROOT)/cocotb/ -name "*.py" | xargs) $(MODULE_FI
 
 results.xml: $(SIM_BUILD)/simv $(PYTHON_FILES)
 	-PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-        $(SIM_BUILD)/simv +define+COCOTB_SIM=1 $(EXTRA_ARGS)
+        $(SIM_BUILD)/simv +define+COCOTB_SIM=1 $(SIM_ARGS) $(EXTRA_ARGS)
 
 dve: $(SIM_BUILD)/simv_dve
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-		vcs +acc+1 +vpi+1+assertion -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -gui -load libgpi.so $(VERILOG_SOURCES)
+		vcs +acc+1 +vpi+1+assertion -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -gui -load libgpi.so $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
 .PHONY: build_simv
 build_simv: $(SIM_BUILD)/simv
@@ -73,7 +73,7 @@ build_simv: $(SIM_BUILD)/simv
 $(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab libs_native
 	cd $(SIM_BUILD) && \
     LD_LIBRARY_PATH=$(LIB_DIR) TOPLEVEL=$(TOPLEVEL) \
-    vcs +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -debug -load libgpi.so             $(VERILOG_SOURCES)
+    vcs +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -debug -load libgpi.so $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
 .PHONY: clean
 clean::

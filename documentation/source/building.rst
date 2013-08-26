@@ -5,10 +5,50 @@ Build options and Environment Variables
 Make System
 ===========
 
+Makefiles are provided for a variety of simulators in cocotb/makefiles/simulators.  The common Makefile cocotb/makefiles/Makefile.sim includes the appropriate simulator makefile based on the contents of the SIM variable.
+
+Variables
+---------
+
+SIM
+~~~
+
+Selects which simulator Makefile to use.  Attempts to include cocotb/makefiles/makefile.$(SIM)
+
+
+VERILOG_SOURCES
+~~~~~~~~~~~~~~~
+
+A list of the verilog source files to include.
+
+
+COMPILE_ARGS
+~~~~~~~~~~~~
+
+Any arguments or flags to pass to the compile stage of the simulation. Only applies to simulators with a separate compilation stage (currently Icarus and VCS).
+
+
+SIM_ARGS
+~~~~~~~~
+
+Any arguments or flags to pass to the execution of the compiled simulation.  Only applies to simulators with a separate compilation stage (currently Icarus and VCS).
+
+EXTRA_ARGS
+~~~~~~~~~~
+
+Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run commad for simulators which don't have a distinct compilation stage.
+
+
 
 Environment Variables
 =====================
 
+
+
+TOPLEVEL
+--------
+
+Used to indicate the instance in the hierarchy to use as the DUT.  If this isn't defined then the first root instance is used.
 
 
 RANDOM_SEED
