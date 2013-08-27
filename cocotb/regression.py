@@ -61,7 +61,7 @@ class RegressionManager(object):
         self._modules = modules
         self._functions = tests
         self._running_test = None
-        self.log = SimLog("cocotb.regression", id(self))
+        self.log = SimLog("cocotb.regression")
 
     def initialise(self):
 
