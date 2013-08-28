@@ -187,3 +187,29 @@ def test_coroutine_close_down(dut):
     dut.log.info("Back from joins")
 
     clk_gen.stop()
+
+@cocotb.coroutine
+def syntax_error():
+    yield Timer(100)
+    fail
+
+@cocotb.test(expect_error=True)
+def test_syntax_error(dut):
+    """Syntax error in the test"""
+    yield Timer(100)
+
+    fail
+
+@cocotb.test(expect_error=True)
+def test_coroutine_syntax_error(dut):
+    """Syntax error in a coroutine that we yield"""
+    yield Timer(100)
+    yield syntax_error()
+
+@cocotb.test(expect_error=True)
+def test_fork_syntax_error(dut):
+    """Syntax error in a coroutine that we fork"""
+    yield Timer(100)
+    cocotb.fork(syntax_error())
+    yield Timer(100)
+
