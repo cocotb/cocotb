@@ -29,14 +29,19 @@ import sys
 from StringIO import StringIO
 
 def raise_error(obj, msg):
+    """Creates a TestError exception and raises it after printing a traceback
+
+            obj has a log method
+            msg is a string
+    """
+    exc_type, exc_value, exc_traceback = sys.exc_info()    
     buff = StringIO()
-    lastframe = sys._getframe(1)
-    traceback.print_stack(lastframe, file=buff)
+    traceback.print_tb(exc_traceback, file=buff)
     obj.log.error("%s\n%s" % (msg, buff.getvalue()))
     exception = TestError(msg)
     exception.stderr.write(buff.getvalue())
-    buff.close()
     raise exception
+
 
 class ReturnValue(StopIteration):
     def __init__(self, retval):
