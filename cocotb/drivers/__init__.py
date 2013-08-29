@@ -211,7 +211,7 @@ class BusDriver(Driver):
         """
         yield RisingEdge(self.clock)
         yield ReadOnly()
-        if signal.value.value is not 1:
+        if signal.value.integer != 1:
             yield RisingEdge(signal)
         yield NextTimeStep()
 
@@ -224,7 +224,7 @@ class BusDriver(Driver):
         """
         yield RisingEdge(self.clock)
         yield ReadOnly()
-        if signal.value.value is not 0:
+        if signal.value.integer != 0:
             yield Edge(signal)
         yield NextTimeStep()
 
