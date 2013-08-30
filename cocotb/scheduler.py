@@ -386,5 +386,5 @@ class Scheduler(object):
 
     @cocotb.decorators.coroutine
     def react_delay(self):
-        yield Timer(0)
+        yield NextTimeStep()
         self._react_timer = None
