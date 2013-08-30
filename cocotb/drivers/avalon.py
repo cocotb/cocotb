@@ -199,10 +199,12 @@ class AvalonSTPkts(ValidatedBusDriver):
                 self.bus.valid <= 0
                 for i in range(self.off):
                     yield clkedge
-                self.on, self.off = self.valid_generator.next()
+
+                # Grab the next set of on/off values
+                self._next_valids()
 
             # Consume a valid cycle
-            if self.on is not True:
+            if self.on is not True and self.on:
                 self.on -= 1
 
             self.bus.valid <= 1
@@ -251,14 +253,15 @@ class AvalonSTPkts(ValidatedBusDriver):
 
             # Insert a gap where valid is low
             if not self.on:
-                self.log.debug("Inserting %d non-valid cycles" % (self.off))
                 self.bus.valid <= 0
                 for i in range(self.off):
                     yield clkedge
-                self.on, self.off = self.valid_generator.next()
+
+                # Grab the next set of on/off values
+                self._next_valids()
 
             # Consume a valid cycle
-            if self.on is not True:
+            if self.on is not True and self.on:
                 self.on -= 1
 
             self.bus <= word
