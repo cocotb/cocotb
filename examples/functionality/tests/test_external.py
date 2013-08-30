@@ -104,7 +104,10 @@ def test_callable(dut):
     yield Timer(100000)
     clk_gen.stop()
     if test_count is not 5:
+        print("Count was %d" % test_count)
+        clk_gen.stop()
         raise TestFailure
+    clk_gen.stop()
 
 @cocotb.test(expect_fail=True, skip=True)
 def test_callable_fail(dut):
