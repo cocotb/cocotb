@@ -130,7 +130,7 @@ def test_ext_function(dut):
     return 2
 
 def test_ext_function_return(dut):
-    value = dut.clk.value.value
+    value = dut.clk.value.integer
     #dut.log.info("Sleeping and returning %s" % value)
     #time.sleep(0.2)
     return value

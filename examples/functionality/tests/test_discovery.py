@@ -26,10 +26,10 @@ def access_single_bit(dut):
     dut.log.info("%s = %d bits" % (str(dut.stream_in_data), len(dut.stream_in_data)))
     dut.stream_in_data[2] <= 1
     yield Timer(10)
-    if dut.stream_out_data_comb.value.value != (1<<2):
+    if dut.stream_out_data_comb.value.integer != (1<<2):
         raise TestError("%s.%s != %d" %
                 (str(dut.stream_out_data_comb),
-                dut.stream_out_data_comb.value.value, (1<<2)))
+                dut.stream_out_data_comb.value.integer, (1<<2)))
 
 
 

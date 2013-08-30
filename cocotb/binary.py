@@ -37,14 +37,16 @@ class BinaryValue(object):
 
     The underlying value can be set or accessed using three aliasing attributes,
 
-        - BinaryValue.value is an integer
+        - BinaryValue.integer is an integer
         - BinaryValue.binstr is a string of "01xXzZ"
         - BinaryValue.buff is a binary buffer of bytes
+
+        - BinaryValue.value is an integer *** deprecated ***
 
     For example:
 
     >>> vec = BinaryValue()
-    >>> vec.value = 42
+    >>> vec.integer = 42
     >>> print vec.binstr
     101010
     >>> print repr(vec.buff)
@@ -96,7 +98,8 @@ class BinaryValue(object):
         self._str = bin(integer)[2:]
         self._adjust()
 
-    value = property(get_value, set_value, None, "Integer access to the value")
+    value = property(get_value, set_value, None, "Integer access to the value *** deprecated ***")
+    integer = property(get_value, set_value, None, "Integer access to the value")
 
     def get_buff(self):
         """Attribute self.buff represents the value as a binary string buffer
@@ -169,7 +172,7 @@ class BinaryValue(object):
         >>> if val: print "True"
         ... else:   print "False"
         False
-        >>> val.value = 42
+        >>> val.integer = 42
         >>> if val: print "True"
         ... else:   print "False"
         True

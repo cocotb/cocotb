@@ -110,8 +110,8 @@ class AvalonSTPkts(BusMonitor):
 
                 if self.bus.endofpacket.value:
                     # Truncate the empty bits
-                    if self.bus.empty.value.value:
-                        pkt = pkt[:-self.bus.empty.value.value]
+                    if self.bus.empty.value.integer:
+                        pkt = pkt[:-self.bus.empty.value.integer]
                     self.log.info("Recieved a packet of %d bytes" % len(pkt))
                     self.log.debug(hexdump(str((pkt))))
                     self._recv(pkt)

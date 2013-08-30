@@ -211,7 +211,7 @@ class BusDriver(Driver):
         """
         yield RisingEdge(self.clock)
         yield ReadOnly()
-        if signal.value.value is not 1:
+        if signal.value.integer != 1:
             yield RisingEdge(signal)
         yield NextTimeStep()
 
@@ -224,7 +224,7 @@ class BusDriver(Driver):
         """
         yield RisingEdge(self.clock)
         yield ReadOnly()
-        if signal.value.value is not 0:
+        if signal.value.integer != 0:
             yield Edge(signal)
         yield NextTimeStep()
 
@@ -255,18 +255,35 @@ class ValidatedBusDriver(BusDriver):
         self.set_valid_generator(valid_generator=valid_generator)
 
 
+    def _next_valids(self):
+        """
+        Optionally insert invalid cycles every N cycles
+        Generator should return a tuple with the number of cycles to be
+        on followed by the number of cycles to be off.
+        The 'on' cycles should be non-zero, we skip invalid generator entries
+        """
+        self.on = False
+
+        if self.valid_generator is not None:
+            while not self.on:
+                try:
+                    self.on, self.off = self.valid_generator.next()
+                except StopIteration:
+                    self.on = True  # If the generator runs out stop inserting non-valid cycles
+                    self.log.info("Valid generator exhausted, not inserting non-valid cycles anymore")
+                    return
+
+            self.log.debug("Will be on for %d cycles, off for %s" % (self.on, self.off))
+        else:
+            # Valid every clock cycle
+            self.on, self.off = True, False
+            self.log.debug("Not using valid generator")
+
+
     def set_valid_generator(self, valid_generator=None):
         """
         Set a new valid generator for this bus
         """
 
         self.valid_generator = valid_generator
-
-        # Optionally insert invalid cycles every N
-        if self.valid_generator is not None:
-            self.on, self.off = valid_generator.next()
-            self.log.debug("Will be on for %d cycles, off for %s" % (self.on, self.off))
-        else:
-            # Valid every clock cycle
-            self.on, self.off = True, False
-            self.log.debug("Not using valid generator")
+        self._next_valids()

@@ -316,14 +316,12 @@ class Scheduler(object):
 
         # TestComplete indication is game over, tidy up
         except TestComplete as test_result:
-            if hasattr(test_result, "stderr"): print str(test_result.stderr.getvalue())
             # Tag that close down is needed, save the test_result
             # for later use in cleanup handler
             # If we're already tearing down we ignore any further test results
             # that may be raised. Required because currently Python triggers don't unprime
             if not self._terminate:
                 self.finish_test(test_result)
-                self.log.warning("Coroutine completed execution with %s: %s" % (test_result.__class__.__name__, str(coroutine)))
                 return
 
         coroutine.log.debug("Finished sheduling coroutine (%s)" % str(trigger))

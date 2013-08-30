@@ -112,7 +112,7 @@ class RunningCoroutine(object):
         except StopIteration:
             raise CoroutineComplete(callback=self._finished_cb)
         except Exception as e:
-            raise_error(self, "send raised %s" % (str(e)))
+            raise_error(self, "Send raised exception: %s" % (str(e)))
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -187,7 +187,7 @@ class RunningTest(RunningCoroutine):
         except StopIteration:
             raise TestSuccess()
         except Exception as e:
-            raise_error(self, "send raised %s" % (str(e)))
+            raise_error(self, "Send raised exception: %s" % (str(e)))
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
@@ -209,7 +209,6 @@ class coroutine(object):
         try:
             return RunningCoroutine(self._func(*args, **kwargs), self)
         except Exception as e:
-            print "bing"
             traceback.print_exc()
             result = TestError(str(e))
             traceback.print_exc(file=result.stderr)
