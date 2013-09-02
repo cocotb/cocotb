@@ -28,7 +28,7 @@
 
 
 SMOKE_TESTS :=  plusargs \
-				sim_exit \
+				sim_exit/tests \
 				functionality/tests
 
 .PHONY: $(SMOKE_TESTS)
