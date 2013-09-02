@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
     Common scoreboarding capability.
 """
+import logging
 import cocotb
 
 from cocotb.utils import hexdump, hexdiffs
@@ -78,7 +79,7 @@ class Scoreboard(object):
             return TestFailure("Errors were recorded during the test")
         return TestSuccess()
 
-    def add_interface(self, monitor, expected_output):
+    def add_interface(self, monitor, expected_output, compare_fn=None):
         """Add an interface to be scoreboarded.
 
             Provides a function which the monitor will callback with received transactions
@@ -94,42 +95,52 @@ class Scoreboard(object):
         if not isinstance(monitor, Monitor):
             raise TypeError("Expected monitor on the interface but got %s" % (monitor.__class__.__name__))
 
+        if compare_fn is not None:
+            if callable(compare_fn):
+                monitor.add_callback(compare_fn)
+                return
+            raise TypeError("Expected a callable compare function but got %s" % str(type(compare_fn)))
+
         def check_received_transaction(transaction):
             """Called back by the monitor when a new transaction has been received"""
+
+            log = logging.getLogger(self.log.name + '.' + monitor.name)
+
             if callable(expected_output):
-                exp = expected_output()
+                exp = expected_output(transaction)
             elif len(expected_output):
                 exp = expected_output.pop(0)
             else:
                 self.errors += 1
-                self.log.error("%s" % (transaction))    # TODO hexdump
+                log.error("Received a transaction but wasn't expecting anything")
+                log.info("Got: %s" % (hexdump(str(transaction))))
                 if self._imm: raise TestFailure("Recieved a transaction but wasn't expecting anything")
                 return
 
             if type(transaction) != type(exp):
                 self.errors += 1
-                self.log.error("Received transaction is a different type to expected transaction")
-                self.log.info("Got: %s but expected %s" % (str(type(transaction)), str(type(exp))))
+                log.error("Received transaction is a different type to expected transaction")
+                log.info("Got: %s but expected %s" % (str(type(transaction)), str(type(exp))))
                 if self._imm: raise TestFailure("Received transaction of wrong type")
                 return
 
             if transaction != exp:
                 self.errors += 1
-                self.log.error("Received transaction differed from expected output")
-                self.log.info("Expected:\n" + hexdump(exp))
+                log.error("Received transaction differed from expected output")
+                log.info("Expected:\n" + hexdump(exp))
                 if not isinstance(exp, str):
                     try:
                         for word in exp: self.log.info(str(word))
                     except: pass
-                self.log.info("Received:\n" + hexdump(transaction))
+                log.info("Received:\n" + hexdump(transaction))
                 if not isinstance(transaction, str):
                     try:
                         for word in transaction: self.log.info(str(word))
                     except: pass
-                self.log.warning(hexdiffs(exp, transaction))
+                log.warning(hexdiffs(exp, transaction))
                 if self._imm: raise TestFailure("Received transaction differed from expected transaction")
             else:
-                self.log.debug("Received expected transaction %d bytes" % (len(transaction)))
-                self.log.debug(repr(transaction))
+                log.debug("Received expected transaction %d bytes" % (len(transaction)))
+                log.debug(repr(transaction))
 
         monitor.add_callback(check_received_transaction)
