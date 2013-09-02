@@ -133,11 +133,10 @@ class SimLog(object):
     def info(self, msg):
         self._makeRecord(msg, logging.INFO)
 
-    def addHandler(self, handler):
-        self.logger.addHandler(handler)
+    def __getattr__(self, attribute):
+        """Forward any other attribute accesses on to our logger object"""
+        return getattr(self.logger, attribute)
 
-    def setLevel(self, level):
-        self.logger.setLevel(level)
 
 class SimLogFormatter(logging.Formatter):
 
@@ -146,12 +145,12 @@ class SimLogFormatter(logging.Formatter):
     # Justify and truncate
     @staticmethod
     def ljust(string, chars):
-        if len(string) > chars: return string[:chars-2] + ".."
+        if len(string) > chars: return ".." + string[(chars-2)*-1:]
         return string.ljust(chars)
 
     @staticmethod
     def rjust(string, chars):
-        if len(string) > chars: return string[:chars-2] + ".."
+        if len(string) > chars: return ".." + string[(chars-2)*-1:]
         return string.rjust(chars)
 
     def _format(self, timeh, timel, level, record, msg):
@@ -162,7 +161,7 @@ class SimLogFormatter(logging.Formatter):
             ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
             ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
 
-        pad = "\n" + " " * (len(prefix) - 10)
+        pad = "\n" + " " * (len(prefix))
         return prefix + pad.join(msg.split('\n'))
 
 
