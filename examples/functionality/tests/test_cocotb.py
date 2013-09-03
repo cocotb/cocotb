@@ -141,21 +141,50 @@ def test_anternal_clock(dut):
         count += 1
     clk_gen.stop()
 
+exited = False
+
 @cocotb.coroutine
 def do_test_readwrite_in_readonly(dut):
     yield RisingEdge(dut.clk)
     yield ReadOnly()
     dut.clk <= 0
     yield ReadWrite()
+    exited = True
+
+@cocotb.coroutine
+def do_test_afterdelay_in_readonly(dut):
+    yield RisingEdge(dut.clk)
+    yield ReadOnly()
+    yield Timer(0)
+    exited = True
 
 @cocotb.test(expect_error=True)
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
+    global exited
+    exited = False
     clk_gen = Clock(dut.clk, 100)
     clk_gen.start()
     coro = cocotb.fork(do_test_readwrite_in_readonly(dut))
     yield Timer(10000)
-    clk.stop()
+    yield [Join(coro), Timer(1000)]
+    clk_gen.stop()
+    if exited is not True:
+        raise cocotb.TestFailed
+
+@cocotb.test(expect_error=True)
+def test_afterdelay_in_readonly(dut):
+    """Test doing invalid sim operation"""
+    global exited
+    exited = False
+    clk_gen = Clock(dut.clk, 100)
+    clk_gen.start()
+    coro = cocotb.fork(do_test_afterdelay_in_readonly(dut))
+    yield Timer(10000)
+    yield [Join(coro), Timer(1000)]
+    clk_gen.stop()
+    if exited is not True:
+        raise cocotb.TestFailed
 
 @cocotb.coroutine
 def clock_one(dut):
