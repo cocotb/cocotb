@@ -36,7 +36,7 @@ import time
 import cocotb
 import pdb
 from cocotb.result import ReturnValue, TestFailure
-from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge
+from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge, ReadWrite
 from cocotb.clock import Clock
 from cocotb.decorators import external
 
@@ -87,7 +87,7 @@ def clock_gen(clock):
 
     clock.log.warning("Clock generator finished!")
 
-@cocotb.test(expect_fail=False)
+@cocotb.test(expect_fail=False, skip=True)
 def test_callable(dut):
     """Test ability to call a function that will block but allow other coroutines to continue
 
@@ -132,6 +132,15 @@ def test_ext_function(dut):
     #dut.log.info("Sleeping")
     return 2
 
+@cocotb.function
+def yield_to_readwrite(dut):
+    yield RisingEdge(dut.clk)
+    dut.log.info("Returning from yield_to_readwrite")
+    raise ReturnValue(2)
+
+def test_ext_function_access(dut):
+    return yield_to_readwrite(dut)
+
 def test_ext_function_return(dut):
     value = dut.clk.value.integer
     #dut.log.info("Sleeping and returning %s" % value)
@@ -151,10 +160,10 @@ def test_ext_call_return(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
     clk_gen = Clock(dut.clk, 100)
-    clk_gen.start(cycles=20)
+    clk_gen.start()
     value = yield external(test_ext_function)(dut)
-    clk_gen.stop()
     dut.log.info("Value was %d" % value)
+    clk_gen.stop()
 
 @cocotb.test(expect_fail=False)
 def test_ext_call_nreturn(dut):
@@ -175,9 +184,20 @@ def test_multiple_externals(dut):
     dut.log.info("Second one completed")
     clk_gen.stop()
 
+@cocotb.test(expect_fail=False)
+def test_external_from_readonly(dut):
+    clk_gen = Clock(dut.clk, 100)
+    clk_gen.start()
+
+    yield ReadOnly()
+    dut.log.info("In readonly")
+    value = yield external(test_ext_function_access)(dut)
+
+    clk_gen.stop()
+
 @cocotb.test(expect_fail=True, skip=True)
 def ztest_ext_exit_error(dut):
     """Test that a premature exit of the sim at it's request still results in the
     clean close down of the sim world"""
-    yield external(test_ext_function_return)(dut)
+    yield external(test_ext_function)(dut)
     yield Timer(1000)

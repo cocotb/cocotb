@@ -34,6 +34,7 @@ Also used a regression test of cocotb capabilities
 import cocotb
 from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, ReadWrite
 from cocotb.clock import Clock
+from cocotb.result import ReturnValue
 
 
 
@@ -145,6 +146,7 @@ exited = False
 
 @cocotb.coroutine
 def do_test_readwrite_in_readonly(dut):
+    global exited
     yield RisingEdge(dut.clk)
     yield ReadOnly()
     dut.clk <= 0
@@ -153,12 +155,13 @@ def do_test_readwrite_in_readonly(dut):
 
 @cocotb.coroutine
 def do_test_afterdelay_in_readonly(dut):
+    global exited
     yield RisingEdge(dut.clk)
     yield ReadOnly()
     yield Timer(0)
     exited = True
 
-@cocotb.test(expect_error=True)
+@cocotb.test()
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -166,13 +169,12 @@ def test_readwrite_in_readonly(dut):
     clk_gen = Clock(dut.clk, 100)
     clk_gen.start()
     coro = cocotb.fork(do_test_readwrite_in_readonly(dut))
-    yield Timer(10000)
-    yield [Join(coro), Timer(1000)]
+    yield [Join(coro), Timer(10000)]
     clk_gen.stop()
     if exited is not True:
         raise cocotb.TestFailed
 
-@cocotb.test(expect_error=True)
+@cocotb.test()
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -180,8 +182,7 @@ def test_afterdelay_in_readonly(dut):
     clk_gen = Clock(dut.clk, 100)
     clk_gen.start()
     coro = cocotb.fork(do_test_afterdelay_in_readonly(dut))
-    yield Timer(10000)
-    yield [Join(coro), Timer(1000)]
+    yield [Join(coro), Timer(100000)]
     clk_gen.stop()
     if exited is not True:
         raise cocotb.TestFailed
@@ -191,7 +192,7 @@ def clock_one(dut):
     count = 0
     while count is not 50:
         yield RisingEdge(dut.clk)
-        yield Timer(10000)
+        yield Timer(1000)
         count += 1
 
 @cocotb.coroutine
@@ -199,7 +200,7 @@ def clock_two(dut):
     count = 0
     while count is not 50:
         yield RisingEdge(dut.clk)
-        yield Timer(100000)
+        yield Timer(10000)
         count += 1
 
 @cocotb.test(expect_fail=False)
