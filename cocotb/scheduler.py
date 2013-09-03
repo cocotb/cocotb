@@ -39,7 +39,7 @@ import pdb
 import simulator
 import cocotb
 import cocotb.decorators
-from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite, NullTrigger
+from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite, RisingEdge
 from cocotb.log import SimLog
 from cocotb.result import TestComplete, TestError, ReturnValue, raise_error
 from threading import RLock
@@ -48,6 +48,7 @@ class Scheduler(object):
 
     def __init__(self):
         self.waiting = collections.defaultdict(list)
+        self.delay_waiting = collections.defaultdict(list)
         self.log = SimLog("cocotb.scheduler")
         self.writes = {}
         self.writes_lock = threading.RLock()
@@ -56,12 +57,13 @@ class Scheduler(object):
         self._startpoint = None
         self._terminate = False
         self._test_result = None
-        self._readonly = None
+        self._do_cleanup = None
         self._entry_lock = RLock()
         self._external_trigger = threading.Semaphore(1)
-        self._external_trigger._value = 0
-        self._react_timer = None
+        self._external_trigger._value = False
         self._external = False
+        self._readonly = False
+        self._react_timer = None
         # Keep this last
         self._readwrite = self.add(self.move_to_rw())
 
@@ -71,6 +73,10 @@ class Scheduler(object):
             trigger and schedule them.
         """
         trigger.log.debug("Fired!")
+
+        if isinstance(trigger, ReadOnly):
+            self.enable_react_delay()
+            self._readonly = True
 
         if trigger not in self.waiting:
             # This isn't actually an error - often might do event.set() without knowing
@@ -95,32 +101,37 @@ class Scheduler(object):
             self.schedule(coroutine, trigger=trigger)
             self.log.debug("Scheduled coroutine %s" % (coroutine.__name__))
 
+        if self._readonly is False:
+            # We may also have possible routines that need to be added since
+            # the exit from ReadOnly
+            for ptrigger, pwaiting in self.delay_waiting.items():
+                for pcoro in pwaiting:
+                    self.delay_waiting[ptrigger].remove(pcoro)
+                    self._add_trigger(ptrigger, pcoro)
+                del self.delay_waiting[ptrigger]
+
         # If we've performed any writes that are cached then schedule
         # another callback for the read-write part of the sim cycle, but
         # if we are terminating then do not allow another callback to be
-        # scheduled
+        # scheduled, only do this if this trigger was not ReadOnly as
+        # Scheduling ReadWrite is a violation, it will be picked up
+        # on next react
 
-        if self._terminate is False and len(self.writes) and self._readwrite is None:
-            self._readwrite = self.add(self.move_to_rw())
+        if self._readonly is False:
+            if self._terminate is False and len(self.writes) and self._readwrite is None:
+                self._readwrite = self.add(self.move_to_rw())
 
         # If the python has caused any subsequent events to fire we might
         # need to schedule more coroutines before we drop back into the
         # simulator
-        while self._pending_adds:
+        if self._readonly is False:
             self._entry_lock.acquire()
-            coroutine = self._pending_adds.pop(0)
+            while self._pending_adds:
+                coroutine = self._pending_adds.pop(0)
+                self._entry_lock.release()
+                self.add(coroutine)
+                self._entry_lock.acquire()
             self._entry_lock.release()
-            self.add(coroutine)
-
-        # if we get the lock then there was nothing in progress
-        # if we do not then there was so schedule a loop
-        # to come back in until we managed to add to the pending
-        # list and so can progress past this time step
-        result = self._external_trigger.acquire(blocking=False)
-        if self._external_trigger._value:
-            self.enable_react_delay()
-        else:
-            self._external_trigger.release()
 
         return
 
@@ -128,8 +139,8 @@ class Scheduler(object):
         """ Take the semaphore to indicate to the react later that there an external
         is being added to the list
         """
-        self._external_trigger.acquire()
-        self._external_trigger._value = 1
+#        self._external_trigger.acquire()
+        self._external_trigger._value = True
 
     def playout_writes(self):
         if self.writes:
@@ -144,15 +155,26 @@ class Scheduler(object):
     def _add_trigger(self, trigger, coroutine):
         """Adds a new trigger which will cause the coroutine to continue when fired"""
         try:
-            self._entry_lock.acquire()
-            self.waiting[trigger].append(coroutine)
-            self._entry_lock.release()
-            # We drop the lock before calling out to the simulator (most likely consequence of prime)
-            trigger.prime(self.react)
+            # If we are in readonly for the currently firing trigger then new coroutines
+            # are not added to the waiting list and primed, they are instead
+            # added to a secondary list of events that will then be handled on the next
+            # entry to react when we exit ReadOnly into NextTimeStep
+            if self._readonly is True:
+                self._entry_lock.acquire()
+                self.delay_waiting[trigger].append(coroutine)
+                self._entry_lock.release()
+            else:
+                self._entry_lock.acquire()
+                self.waiting[trigger].append(coroutine)
+                self._entry_lock.release()
+                # We drop the lock before calling out to the simulator (most likely consequence of prime)
+                trigger.prime(self.react)
+
         except TestError as e:
             self.waiting[trigger].remove(coroutine)
             # Do not re-call raise_error since the error will already be logged at point of interest
             raise e
+
         except Exception as e:
             self.waiting[trigger].remove(coroutine)
             raise_error(self, "Unable to prime a trigger: %s" % str(e))
@@ -162,15 +184,6 @@ class Scheduler(object):
         self._entry_lock.acquire()
         self._pending_adds.append(coroutine)
         self._entry_lock.release()
-
-    def queue_external(self, coroutine):
-        """Add a coroutine that is part of an external thread"""
-        # We do not need to take the lock here as are protected by the external trigger
-        self._entry_lock.acquire()
-        self._pending_adds.append(coroutine)
-        self._entry_lock.release()
-        self._external_trigger._value = 0
-        self._external_trigger.release()
 
     def add(self, coroutine):
         """Add a new coroutine. Required because we cant send to a just started generator (FIXME)"""
@@ -196,23 +209,6 @@ class Scheduler(object):
         self.log.debug("Adding  %s" % coroutine.__name__)
         self.schedule(coroutine)
         return coroutine
-
-    @cocotb.decorators.coroutine
-    def go_to_null(self):
-        yield NullTrigger()
-
-    def add_and_react(self, coroutine):
-        """Add a coroutine and also schedule a callback from the sim"""
-        self._entry_lock.acquire()
-        self.queue(coroutine)
-
-        #if self._readwrite is None:
-        #    test_coro = self.move_to_rw()
-        #    pdb.set_trace()
-        #self._readwrite = self.add(test_coro)
-        self.add(self.go_to_null())
-
-        self._entry_lock.release()
 
     def new_test(self, coroutine):
         self._startpoint = coroutine
@@ -337,7 +333,7 @@ class Scheduler(object):
             self._terminate = True
             self._test_result = test_result
             self.cleanup()
-            self._readonly = self.add(self.move_to_cleanup())
+            self._do_cleanup = self.add(self.move_to_cleanup())
 
     def cleanup(self):
         """ Clear up all our state
@@ -357,7 +353,7 @@ class Scheduler(object):
     def move_to_cleanup(self):
         yield Timer(1)
         self.prune_routines()
-        self._readonly = None
+        self._do_cleanup = None
 
         self.issue_result(self._test_result)
         self._test_result = None
@@ -378,6 +374,11 @@ class Scheduler(object):
         self._readwrite = None
         self.playout_writes()
 
+    @cocotb.decorators.coroutine
+    def internal_clock(self, clock):
+        while True:
+            yield RisingEdge(clock)
+
     def enable_react_delay(self):
         if self._react_timer is None:
             self._react_timer = self.add(self.react_delay())
@@ -386,3 +387,5 @@ class Scheduler(object):
     def react_delay(self):
         yield NextTimeStep()
         self._react_timer = None
+        self._readonly = False
+

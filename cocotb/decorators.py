@@ -246,7 +246,7 @@ class function(object):
 
         self._event = threading.Event()
         self._event.result = None
-        coro = cocotb.scheduler.queue_external(execute_function(self, self._event))
+        coro = cocotb.scheduler.queue(execute_function(self, self._event))
         self._event.wait()
 
         return self._event.result
@@ -283,7 +283,6 @@ def external(func):
 
     @coroutine
     def wrapped(*args, **kwargs):
-        cocotb.scheduler.set_external()
         # Start up the thread, this is done in coroutine context
         bridge = test_locker()
 

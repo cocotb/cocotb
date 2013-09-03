@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     A clock class
 """
 import simulator
-
+import cocotb
 from cocotb.log import SimLog
 
 class BaseClock(object):
@@ -45,6 +45,7 @@ class Clock(BaseClock):
         self.period = period
         self.frequency = 1.0 / period * 1000000
         self.hdl = None
+        self.clock_coro = cocotb.scheduler.add(cocotb.scheduler.internal_clock(signal))
 
 
     def start(self, cycles=0):
