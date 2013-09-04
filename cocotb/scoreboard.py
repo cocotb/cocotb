@@ -114,7 +114,7 @@ class Scoreboard(object):
                 self.errors += 1
                 log.error("Received a transaction but wasn't expecting anything")
                 log.info("Got: %s" % (hexdump(str(transaction))))
-                if self._imm: raise TestFailure("Recieved a transaction but wasn't expecting anything")
+                if self._imm: raise TestFailure("Received a transaction but wasn't expecting anything")
                 return
 
             if type(transaction) != type(exp):
