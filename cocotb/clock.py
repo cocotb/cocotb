@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import simulator
 import cocotb
 from cocotb.log import SimLog
+from cocotb.triggers import Timer, RisingEdge
 
 class BaseClock(object):
     """Base class to derive from"""
@@ -43,28 +44,20 @@ class Clock(BaseClock):
     def __init__(self, signal, period):
         BaseClock.__init__(self, signal)
         self.period = period
+        self.half_period = period / 2
         self.frequency = 1.0 / period * 1000000
         self.hdl = None
-        self.clock_coro = cocotb.scheduler.add(cocotb.scheduler.internal_clock(signal))
+        self.signal = signal
+        self.coro = None
+        self.mcoro = None
 
-
+    @cocotb.coroutine
     def start(self, cycles=0):
-        """
-        cycles = 0 will not auto stop the clock
-        """
-        if self.hdl is None:
-            self.hdl = simulator.create_clock(self.signal._handle, self.period, cycles)
-            self.log.info("Clock %s Started with period %d" % (str(self.signal), self.period))
-        else:
-            self.log.debug("Clock %s already started" % (str(self.signal)))
-
-    def stop(self):
-        if self.hdl is not None:
-            simulator.stop_clock(self.hdl)
-            self.log.info("Clock %s Stopped" % (str(self.signal)))
-            self.hdl = None
-        else:
-            self.log.debug("Clock %s already stopped" % (str(self.signal)))
+        while True:
+            self.signal <= 1
+            yield Timer(self.half_period)
+            self.signal <= 0
+            yield Timer(self.half_period)
 
     def __str__(self):
         return self.__class__.__name__ + "(%3.1fMHz)" % self.frequency
