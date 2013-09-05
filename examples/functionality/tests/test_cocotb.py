@@ -134,13 +134,12 @@ def test_adding_a_coroutine_without_starting(dut):
 @cocotb.test(expect_fail=False)
 def test_anternal_clock(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     count = 0
     while count is not 100:
         yield RisingEdge(dut.clk)
         count += 1
-    clk_gen.stop()
+    clk_gen.kill()
 
 exited = False
 
@@ -166,11 +165,10 @@ def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
     exited = False
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     coro = cocotb.fork(do_test_readwrite_in_readonly(dut))
     yield [Join(coro), Timer(10000)]
-    clk_gen.stop()
+    clk_gen.kill()
     if exited is not True:
         raise cocotb.TestFailed
 
@@ -179,11 +177,10 @@ def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
     exited = False
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     coro = cocotb.fork(do_test_afterdelay_in_readonly(dut))
     yield [Join(coro), Timer(100000)]
-    clk_gen.stop()
+    clk_gen.kill()
     if exited is not True:
         raise cocotb.TestFailed
 
@@ -205,8 +202,7 @@ def clock_two(dut):
 
 @cocotb.test(expect_fail=False)
 def test_coroutine_close_down(dut):
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
     coro_one = cocotb.fork(clock_one(dut))
     coro_two = cocotb.fork(clock_two(dut))
@@ -215,8 +211,6 @@ def test_coroutine_close_down(dut):
     yield Join(coro_two)
 
     dut.log.info("Back from joins")
-
-    clk_gen.stop()
 
 @cocotb.coroutine
 def syntax_error():

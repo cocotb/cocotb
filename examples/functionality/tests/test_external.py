@@ -99,15 +99,12 @@ def test_callable(dut):
     g_dut = dut
     create_thread(decorated_test_read)
     dut.log.info("Test thread created")
-    clk_gen = Clock(dut.clk,  100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield Timer(100000)
-    clk_gen.stop()
+    clk_gen.kill()
     if test_count is not 5:
         print("Count was %d" % test_count)
-        clk_gen.stop()
         raise TestFailure
-    clk_gen.stop()
 
 @cocotb.test(expect_fail=True, skip=True)
 def test_callable_fail(dut):
@@ -121,10 +118,9 @@ def test_callable_fail(dut):
     g_dut = dut
     create_thread(test_read)
     dut.log.info("Test thread created")
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield Timer(100000)
-    clk_gen.stop()
+    clk_gen.kill()
     if test_count is not 5:
         raise TestFailure
 
@@ -159,41 +155,32 @@ def clock_monitor(dut):
 def test_ext_call_return(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     value = yield external(test_ext_function)(dut)
     dut.log.info("Value was %d" % value)
-    clk_gen.stop()
 
 @cocotb.test(expect_fail=False)
 def test_ext_call_nreturn(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield external(test_ext_function)(dut)
-    clk_gen.stop()
 
 @cocotb.test(expect_fail=False)
 def test_multiple_externals(dut):
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     value = yield external(test_ext_function)(dut)
     dut.log.info("First one completed")
     value = yield external(test_ext_function)(dut)
     dut.log.info("Second one completed")
-    clk_gen.stop()
 
 @cocotb.test(expect_fail=False)
 def test_external_from_readonly(dut):
-    clk_gen = Clock(dut.clk, 100)
-    clk_gen.start()
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
     yield ReadOnly()
     dut.log.info("In readonly")
     value = yield external(test_ext_function_access)(dut)
-
-    clk_gen.stop()
 
 @cocotb.test(expect_fail=True, skip=True)
 def ztest_ext_exit_error(dut):
