@@ -37,10 +37,11 @@ import math
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Edge, Event, RisingEdge, ReadOnly
+from cocotb.triggers import Edge, Event, RisingEdge, ReadOnly, Timer
 from cocotb.binary import BinaryValue
 from cocotb.bus import Bus
 from cocotb.log import SimLog
+from cocotb.result import ReturnValue
 
 
 class MonitorStatistics(object):
@@ -62,6 +63,7 @@ class Monitor(object):
         event used to notify any consumers.
         """
         self._event = event
+        self._wait_event = None
         self._recvQ = []
         self._callbacks = []
         self.stats = MonitorStatistics()
@@ -92,6 +94,22 @@ class Monitor(object):
         self._callbacks.append(callback)
 
     @coroutine
+    def wait_for_recv(self, timeout=None):
+        self._wait_event = Event()
+        if timeout:
+            yield [self._wait_event.wait(), Timer(timeout)]
+        else
+            yield self._wait_event.wait()
+
+        res, pkt = self._wait_event.has_fired()
+        if res:
+            # Event was set and not the Timer, send the packet back
+            raise ReturnValue(pkt)
+        else:
+            # Timer fired instead
+            raise ReturnValue(None)
+
+    @coroutine
     def _monitor_recv(self):
         """
         actual impementation of the receiver
@@ -117,6 +135,10 @@ class Monitor(object):
 
         if self._event is not None:
             self._event.set()
+
+        # If anyone was waiting then let them know
+        if self._wait_event is not None:
+            self._wait_event.set(data=transaction)
 
 
 class BusMonitor(Monitor):

@@ -271,12 +271,16 @@ class Event(PythonTrigger):
         Trigger.__init__(self)
         self._callback = None
         self.name = name
+        self.fired = False
+        self.data = None
 
     def prime(self, callback):
         self._callback = callback
 
-    def set(self):
+    def set(self, data=None):
         """Wake up any coroutines blocked on this event"""
+        self.fired = True
+        self.data = data
         if not self._callback:
             pass # nobody waiting
         self._callback(self)
@@ -284,6 +288,11 @@ class Event(PythonTrigger):
     def wait(self):
         """This can be yielded to block this coroutine until another wakes it"""
         return self
+
+    def has_fired(self):
+        """Query If the Event has already been triggered. Useful when the Trigger
+        is used in a list"""
+        return self.fired, self.data
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.name
