@@ -98,7 +98,7 @@ class Monitor(object):
         self._wait_event = Event()
         if timeout:
             yield [self._wait_event.wait(), Timer(timeout)]
-        else
+        else:
             yield self._wait_event.wait()
 
         res, pkt = self._wait_event.has_fired()
