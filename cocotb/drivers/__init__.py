@@ -119,17 +119,22 @@ class Driver(object):
         self._pending.set()
 
     @coroutine
-    def send(self, transaction):
+    def send(self, transaction, sync=True):
         """
         Blocking send call (hence must be "yielded" rather than called)
 
         Sends the transaction over the bus
+
+        Args:
+            transaction (any): the transaction to send
+
+        Kwargs:
+            sync (boolean): synchronise the transfer by waiting for risingedge
         """
-        #yield self.busy.acquire()
-        yield self._send(transaction, None, None)
+        yield self._send(transaction, None, None, sync=sync)
 
 
-    def _driver_send(self, transaction):
+    def _driver_send(self, transaction, sync=True):
         """
         actual impementation of the send.
 
@@ -139,13 +144,13 @@ class Driver(object):
 
 
     @coroutine
-    def _send(self, transaction, callback, event):
+    def _send(self, transaction, callback, event, sync=True):
         """
         assumes the caller has already acquired the busy lock
 
         releases busy lock once sending is complete
         """
-        yield self._driver_send(transaction)
+        yield self._driver_send(transaction, sync=sync)
 
         # Notify the world that this transaction is complete
         if event:       event.set()
@@ -162,12 +167,13 @@ class Driver(object):
             while not self._sendQ:
                 yield self._pending.wait()
 
-                transaction, callback, event = self._sendQ.pop(0)
-                # Send the pending transaction
-                self.log.info("Sending packet...")
-                yield self._send(transaction, callback, event)
-                self.log.info("Done, shouldn't be waiting on _send.join() anymore..")
+            synchronised = False
 
+            while self._senqQ:
+                transaction, callback, event = self._sendQ.pop(0)
+                self.log.debug("Sending queued packet...")
+                yield self._send(transaction, callback, event, sync=not synchronised)
+                synchronised = True
 
 class BusDriver(Driver):
     """
@@ -198,8 +204,9 @@ class BusDriver(Driver):
 
 
     @coroutine
-    def _driver_send(self, transaction):
-        yield RisingEdge(self.clock)
+    def _driver_send(self, transaction, sync=True):
+        if sync:
+            yield RisingEdge(self.clock)
         self.bus <= transaction
 
     @coroutine

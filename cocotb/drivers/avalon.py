@@ -170,7 +170,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             yield ReadOnly()
 
     @coroutine
-    def _send_string(self, string):
+    def _send_string(self, string, sync=True):
         """
         Args:
             string (str): A string of bytes to send over the bus
@@ -192,7 +192,8 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.valid <= 0
 
         while string:
-            yield clkedge
+            if not firstword or (firstword and sync):
+                yield clkedge
 
             # Insert a gap where valid is low
             if not self.on:
@@ -240,16 +241,20 @@ class AvalonSTPkts(ValidatedBusDriver):
 
 
     @coroutine
-    def _send_iterable(self, pkt):
+    def _send_iterable(self, pkt, sync=True):
         """
         Args:
             pkt (iterable): Will yield objects with attributes matching the
                             signal names for each individual bus cycle
         """
         clkedge = RisingEdge(self.clock)
+        firstword = True
 
         for word in pkt:
-            yield clkedge
+            if not firstword or (firstword and sync):
+                yield clkedge
+
+            firstword = False
 
             # Insert a gap where valid is low
             if not self.on:
@@ -276,7 +281,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.valid <= 0
 
     @coroutine
-    def _driver_send(self, pkt):
+    def _driver_send(self, pkt, sync=True):
         """Send a packet over the bus
 
         Args:
@@ -290,12 +295,13 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         # Avoid spurious object creation by recycling
 
-        self.log.info("Sending packet of length %d bytes" % len(pkt))
+        self.log.debug("Sending packet of length %d bytes" % len(pkt))
         self.log.debug(hexdump(pkt))
 
         if isinstance(pkt, str):
-            yield self._send_string(pkt)
+            yield self._send_string(pkt, sync=sync)
         else:
-            yield self._send_iterable(pkt)
+            yield self._send_iterable(pkt, sync=sync)
 
-        self.log.info("Packet sent successfully")
+        self.log.info("Sucessfully sent packet of length %d bytes" % (len(pkt)))
+
