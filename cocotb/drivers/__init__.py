@@ -161,7 +161,6 @@ class Driver(object):
 
     @coroutine
     def _send_thread(self):
-        import pdb
         while True:
 
             # Sleep until we have something to send
@@ -169,8 +168,6 @@ class Driver(object):
                 yield self._pending.wait()
 
             synchronised = False
-
-            pdb.set_trace()
 
             while self._sendQ:
                 transaction, callback, event = self._sendQ.pop(0)
