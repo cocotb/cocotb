@@ -64,6 +64,13 @@ def test_function_not_a_coroutine_fork(dut):
     cocotb.fork(function_not_a_coroutine())
     yield Timer(500)
 
+def normal_function(dut):
+    return True
+
+@cocotb.test(expect_error=True)
+def test_function_not_decorated(dut):
+    yield normal_function(dut)
+
 @cocotb.test(expect_fail=False)
 def test_function_reentrant_clock(dut):
     """Test yielding a reentrant clock"""

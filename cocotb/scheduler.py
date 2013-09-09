@@ -308,7 +308,7 @@ class Scheduler(object):
                     trigger.addpeers(result)
                     self._add_trigger(trigger, coroutine)
             else:
-                raise TestError(("Unable to schedule coroutine since it's returning stuff %s" % repr(result)))
+                raise_error(self, "Coroutine %s yield something that was not a trigger or a coroutine, did you forget to decorate?" % (str(coroutine)))
 
         # TestComplete indication is game over, tidy up
         except TestComplete as test_result:
