@@ -282,7 +282,7 @@ class Event(PythonTrigger):
         self.fired = True
         self.data = data
         if not self._callback:
-            pass # nobody waiting
+            return
         self._callback(self)
 
     def wait(self):
