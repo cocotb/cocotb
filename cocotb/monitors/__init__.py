@@ -98,7 +98,7 @@ class Monitor(object):
     def wait_for_recv(self, timeout=None):
         if timeout:
             t = Timer(timeout)
-            fired = yield [self._wait_event.wait(), Timer(timeout)]
+            fired = yield [self._wait_event.wait(), t]
             if fired is t:
                 raise ReturnValue(None)
         else:
