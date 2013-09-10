@@ -67,6 +67,7 @@ class Monitor(object):
         self._recvQ = []
         self._callbacks = []
         self.stats = MonitorStatistics()
+        self._wait_event = Event()
 
         # Subclasses may already set up logging
         if not hasattr(self, "log"):
@@ -95,19 +96,16 @@ class Monitor(object):
 
     @coroutine
     def wait_for_recv(self, timeout=None):
-        self._wait_event = Event()
         if timeout:
-            yield [self._wait_event.wait(), Timer(timeout)]
+            t = Timer(timeout)
+            fired = yield [self._wait_event.wait(), Timer(timeout)]
+            if fired is t:
+                raise ReturnValue(None)
         else:
             yield self._wait_event.wait()
 
-        res, pkt = self._wait_event.has_fired()
-        if res:
-            # Event was set and not the Timer, send the packet back
-            raise ReturnValue(pkt)
-        else:
-            # Timer fired instead
-            raise ReturnValue(None)
+        pkt = self._wait_event.data
+        raise ReturnValue(pkt)
 
     @coroutine
     def _monitor_recv(self):
@@ -139,6 +137,7 @@ class Monitor(object):
         # If anyone was waiting then let them know
         if self._wait_event is not None:
             self._wait_event.set(data=transaction)
+            self._wait_event.clear()
 
 
 class BusMonitor(Monitor):

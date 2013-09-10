@@ -289,10 +289,11 @@ class Event(PythonTrigger):
         """This can be yielded to block this coroutine until another wakes it"""
         return self
 
-    def has_fired(self):
-        """Query If the Event has already been triggered. Useful when the Trigger
-        is used in a list"""
-        return self.fired, self.data
+    def clear(self):
+        """Clear this event that's fired.
+
+        Subsequent calls to wait will block until set() is called again"""
+        self.fired = False
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.name

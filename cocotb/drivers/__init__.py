@@ -165,15 +165,18 @@ class Driver(object):
 
             # Sleep until we have something to send
             while not self._sendQ:
+                self._pending.clear()
                 yield self._pending.wait()
 
             synchronised = False
 
+            # Send in all the queued packets, only synchronise on the first send
             while self._sendQ:
                 transaction, callback, event = self._sendQ.pop(0)
                 self.log.debug("Sending queued packet...")
                 yield self._send(transaction, callback, event, sync=not synchronised)
                 synchronised = True
+
 
 class BusDriver(Driver):
     """
