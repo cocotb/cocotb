@@ -140,7 +140,10 @@ class Scoreboard(object):
                 log.warning(hexdiffs(exp, transaction))
                 if self._imm: raise TestFailure("Received transaction differed from expected transaction")
             else:
-                log.debug("Received expected transaction %d bytes" % (len(transaction)))
-                log.debug(repr(transaction))
+                # Don't want to fail the test if we're passed something without __len__
+                try:
+                    log.debug("Received expected transaction %d bytes" % (len(transaction)))
+                    log.debug(repr(transaction))
+                except: pass
 
         monitor.add_callback(check_received_transaction)
