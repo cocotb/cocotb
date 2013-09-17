@@ -121,7 +121,7 @@ class SimHandle(object):
             value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
         if isinstance(value, BinaryValue):
             simulator.set_signal_val_str(self._handle, value.binstr)
-        elif isinstance(value, int):
+        elif isinstance(value, (int, long)):
             simulator.set_signal_val(self._handle, value)
         else:
             self.log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
