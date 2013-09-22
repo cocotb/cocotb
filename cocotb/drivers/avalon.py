@@ -68,7 +68,7 @@ class AvalonMaster(AvalonMM):
     """
     def __init__(self, entity, name, clock):
         AvalonMM.__init__(self, entity, name, clock)
-        self.log.warning("AvalonMaster created")
+        self.log.debug("AvalonMaster created")
 
     @coroutine
     def read(self, address):
@@ -147,14 +147,14 @@ class AvalonSTPkts(ValidatedBusDriver):
     }
 
     def __init__(self, *args, **kwargs):
+        config = kwargs.pop('config', {})
         ValidatedBusDriver.__init__(self, *args, **kwargs)
 
-        self.config = AvalonSTPkts._default_config
-
-        config = kwargs.pop('config', {})
+        self.config = AvalonSTPkts._default_config.copy()
 
         for configoption, value in config.iteritems():
             self.config[configoption] = value
+            self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
 
     @coroutine
     def _wait_ready(self):
@@ -188,8 +188,9 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.empty <= 0
         self.bus.startofpacket <= 0
         self.bus.endofpacket <= 0
-        self.bus.error <= 0
         self.bus.valid <= 0
+        if hasattr(self.bus, 'error'):
+            self.bus.error <= 0
 
         while string:
             if not firstword or (firstword and sync):

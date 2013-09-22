@@ -73,14 +73,14 @@ class AvalonSTPkts(BusMonitor):
     }
 
     def __init__(self, *args, **kwargs):
+        config = kwargs.pop('config', {})
         BusMonitor.__init__(self, *args, **kwargs)
 
-        self.config = AvalonSTPkts._default_config
-
-        config = kwargs.pop('config', {})
+        self.config = AvalonSTPkts._default_config.copy()
 
         for configoption, value in config.iteritems():
             self.config[configoption] = value
+            self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
 
     @coroutine
     def _monitor_recv(self):
