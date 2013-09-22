@@ -146,7 +146,7 @@ class Scheduler(object):
         if self.writes:
             while self.writes:
                 handle, args = self.writes.popitem()
-                handle.setimeadiatevalue(args)
+                handle.setimmediatevalue(args)
 
 
     def save_write(self, handle, args):

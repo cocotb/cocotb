@@ -7,6 +7,14 @@ Make System
 
 Makefiles are provided for a variety of simulators in cocotb/makefiles/simulators.  The common Makefile cocotb/makefiles/Makefile.sim includes the appropriate simulator makefile based on the contents of the SIM variable.
 
+Targets
+-------
+
+Makefiles define two targets, 'regression' and 'sim', the default target is sim.
+
+Both rules create a results file in the calling directory called 'results.xml'.  This file is a JUnit-compatible output file suitable for use with `Jenkins <http://jenkins-ci.org/>`_. The 'sim' targets unconditionally re-runs the simulator whereas the regression target only re-builds if any dependencies have changed.
+
+
 Variables
 ---------
 
