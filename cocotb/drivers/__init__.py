@@ -34,7 +34,7 @@ import logging
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Event, RisingEdge, ReadOnly, Timer, NextTimeStep
+from cocotb.triggers import Event, RisingEdge, ReadOnly, Timer, NextTimeStep, Edge
 from cocotb.bus import Bus
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
