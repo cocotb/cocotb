@@ -41,9 +41,12 @@ module endian_swapper #(
     input [31:0]                           csr_writedata
 );
 
+
+reg flush_pipe;
 reg in_packet;
 reg byteswapping;
 reg [31:0] packet_count;
+reg stream_in_endofpacket_d;
 
 function [DATA_BYTES*8-1:0] byteswap(input [DATA_BYTES*8-1:0] data);
 
@@ -65,17 +68,22 @@ function [DATA_BYTES*8-1:0] byteswap(input [DATA_BYTES*8-1:0] data);
 endfunction
 
 
+always @(*)
+    stream_out_valid = (stream_in_valid & ~stream_out_endofpacket) | flush_pipe;
 
 always @(posedge clk or negedge reset_n) begin
     if (!reset_n) begin
-        stream_out_valid <= 1'b0;
+        flush_pipe       <= 1'b0;
         in_packet        <= 1'b0;
         packet_count     <= 32'd0;
     end else begin
 
-        stream_out_valid             <= stream_in_valid;
+        if (flush_pipe & stream_out_ready)
+            flush_pipe <= 1'b0;
+        else if (!flush_pipe)
+            flush_pipe <= stream_in_endofpacket & stream_in_valid & stream_out_ready;
 
-        if (stream_out_ready) begin
+        if (stream_out_ready & stream_in_valid) begin
             stream_out_empty         <= stream_in_empty;
             stream_out_startofpacket <= stream_in_startofpacket;
             stream_out_endofpacket   <= stream_in_endofpacket;
@@ -99,8 +107,8 @@ end
 
 
 
-always @(reset_n, stream_in_startofpacket, stream_in_valid)
-    csr_waitrequest = !reset_n || in_packet || (stream_in_startofpacket & stream_in_valid);
+always @(*)
+    csr_waitrequest = !reset_n || in_packet || (stream_in_startofpacket & stream_in_valid) || flush_pipe;
 
 
 // Workaround Icarus bug where a simple assign doesn't work
@@ -110,7 +118,8 @@ always @(stream_out_ready)
 
 always @(posedge clk or negedge reset_n) begin
     if (!reset_n) begin
-        byteswapping <= 1'b0;
+        byteswapping      <= 1'b0;
+        csr_readdatavalid <= 1'b0;
     end else begin
         if (csr_read) begin
             csr_readdatavalid <= !csr_waitrequest;
