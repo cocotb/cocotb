@@ -210,6 +210,7 @@ class coroutine(object):
     def __init__(self, func):
         self._func = func
         self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
+        self.__name__ = self._func.__name__
 
     def __call__(self, *args, **kwargs):
         try:
