@@ -29,6 +29,8 @@ All things relating to regression capabilities
 
 import time
 import logging
+import inspect
+from itertools import product
 
 import simulator
 
@@ -179,4 +181,133 @@ class RegressionManager(object):
             self.count+=1
         else:
             self.tear_down()
+
+
+def _create_test(function, name, documentation, mod, *args, **kwargs):
+    """Factory function to create tests, avoids late binding
+
+    Creates a test dynamically.  The test will call the supplied
+    function with the supplied arguments.
+
+    Args:
+        function: (function)    the test function to run
+
+        name: (string)          the name of the test
+
+        documentation: (string) the docstring for the test
+
+        mod: (module)           the module this function belongs to
+
+        *args:                  remaining args to pass to test function
+
+    Kwaygs:
+        **kwargs:               passed to the test function
+
+    Returns:
+        decorated test function
+    """
+    def _my_test(dut):
+        yield function(dut, *args, **kwargs)
+
+    _my_test.__name__ = name
+    _my_test.__doc__ = documentation
+    _my_test.__module__ = mod.__name__
+    return cocotb.test()(_my_test)
+
+
+class TestFactory(object):
+
+    """
+    Used to automatically generate tests.
+
+    Assuming we have a common test function that will run a test. This test
+    function will take keyword arguments (for example generators for each of
+    the input interfaces) and generate tests that call the supplied function.
+
+    This Factory allows us to generate sets of tests based on the different
+    permutations of the possible arguments to the test function.
+
+    For example if we have a module that takes backpressure and idles and
+    have some packet generations routines gen_a and gen_b.
+
+    tf = TestFactory(run_test)
+
+    tf.add_option('data_in', [gen_a, gen_b])
+    tf.add_option('backpressure', [None, random_backpressure])
+    tf.add_option('idles', [None, random_idles])
+    tf.generate_tests()
+
+    We would get the following tests:
+        gen_a with no backpressure and no idles
+        gen_a with no backpressure and random_idles
+        gen_a with random_backpressure and no idles
+        gen_a with random_backpressure and random_idles
+        gen_b with no backpressure and no idles
+        gen_b with no backpressure and random_idles
+        gen_b with random_backpressure and no idles
+        gen_b with random_backpressure and random_idles
+
+    The tests are appended to the calling module for aut-discovery.
+
+    Tests are simply named test_function_N. The docstring for the test (hence
+    the test description) includes the name and description of each generator.
+    """
+
+    def __init__(self, test_function, *args):
+        """
+        Args:
+            test_function (function): the function that executes a test.
+                                      Must take 'dut' as the first argument.
+
+            *args: Remaining args are passed directly to the test function.
+                   Note that these arguments are not varied. An argument that
+                   varies with each test must be a keyword argument to the
+                   test function.
+        """
+        if not isinstance(test_function, cocotb.coroutine):
+            raise TypeError("TestFactory requires a cocotb coroutine")
+        self.test_function = test_function
+        self.name = self.test_function._func.__name__
+
+        self.args = args
+        self.kwargs = {}
+
+    def add_option(self, name, optionlist):
+        """Add a named option to the test.
+
+        Args:
+           name (string): name of the option. passed to test as a keyword
+                          argument
+
+           optionlist (list): A list of possible options for this test knob
+        """
+        self.kwargs[name] = optionlist
+
+    def generate_tests(self):
+        """
+        Generates exhasutive set of tests using the cartesian product of the
+        possible keyword arguments.
+
+        The generated tests are appended to the namespace of the calling 
+        module.
+        """
+
+        frm = inspect.stack()[1]
+        mod = inspect.getmodule(frm[0])
+
+        d = self.kwargs
+
+        for index, testoptions in enumerate( (dict(zip(d, v)) for v in product(*d.values())) ):
+
+            name = "%s_%03d" % (self.name, index + 1)
+            doc = "Automatically generated test\n\n"
+
+            for optname, optvalue in testoptions.iteritems():
+                if callable(optvalue):
+                    doc += "\t%s: %s (%s)\n" % (optname, optvalue.__name__, optvalue.__doc__.split('\n')[0])
+                else:
+                    doc += "\t%s: %s\n" % (optname, repr(optvalue))
+
+            cocotb.log.debug("Adding generated test \"%s\" to module \"%s\"" % (name, mod.__name__))
+            setattr(mod, name, _create_test(self.test_function, name, doc, mod, *self.args, **testoptions))
 
