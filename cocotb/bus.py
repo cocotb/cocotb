@@ -82,7 +82,7 @@ class Bus(object):
                 setattr(self, signal, hdl)
                 self._signals[signal] = getattr(self, signal)
             else:
-                self._entity.log.info("Ignoring optional missing signal %s on bus %s"
+                self._entity.log.debug("Ignoring optional missing signal %s on bus %s"
                     % (signal, name))
 
 
