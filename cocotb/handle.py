@@ -101,7 +101,7 @@ class SimHandle(object):
         result.binstr = self._get_value_str()
         return result
 
-    def setimeadiatevalue(self, value):
+    def setimmediatevalue(self, value):
         """
         Set the value of the underlying simulation object to value.
 
