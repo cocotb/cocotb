@@ -104,7 +104,10 @@ class RunningCoroutine(object):
         try:
             return self._coro.send(value)
         except TestComplete as e:
-            self.log.info(str(e))
+            if isinstance(e, TestFailure):
+                self.log.warning(str(e))
+            else:
+                self.log.info(str(e))
             raise
         except ReturnValue as e:
             self.retval = e.retval
@@ -181,7 +184,10 @@ class RunningTest(RunningCoroutine):
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
         except TestComplete as e:
-            self.log.info(str(e))
+            if isinstance(e, TestFailure):
+                self.log.warning(str(e))
+            else:
+                self.log.info(str(e))
             e.stderr.write("\n".join(self.error_messages))
             raise
         except StopIteration:
