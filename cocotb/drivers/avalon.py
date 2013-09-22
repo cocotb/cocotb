@@ -30,7 +30,7 @@ See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 NB Currently we only support a very small subset of functionality
 """
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep
+from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -69,6 +69,19 @@ class AvalonMaster(AvalonMM):
     def __init__(self, entity, name, clock):
         AvalonMM.__init__(self, entity, name, clock)
         self.log.debug("AvalonMaster created")
+        self.busy_event = Event("%s_busy" % name)
+        self.busy = False
+
+    @coroutine
+    def _acquire_lock(self):
+        if self.busy:
+            yield self.busy_event.wait()
+        self.busy_event.clear()
+        self.busy = True
+
+    def _release_lock(self):
+        self.busy = False
+        self.busy_event.set()
 
     @coroutine
     def read(self, address):
@@ -78,6 +91,8 @@ class AvalonMaster(AvalonMM):
         but syntactically it blocks.
         See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
         """
+        yield self._acquire_lock()
+
         # Apply values for next clock edge
         yield RisingEdge(self.clock)
         self.bus.address <= address
@@ -97,7 +112,7 @@ class AvalonMaster(AvalonMM):
         yield ReadOnly()
         data = self.bus.readdata.value
         yield NextTimeStep()
-
+        self._release_lock()
         raise ReturnValue(data)
 
     @coroutine
@@ -107,6 +122,8 @@ class AvalonMaster(AvalonMM):
         value.
         See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
         """
+        yield self._acquire_lock()
+
         # Apply valuse to bus
         yield RisingEdge(self.clock)
         self.bus.address <= address
@@ -119,7 +136,7 @@ class AvalonMaster(AvalonMM):
         # Deassert write
         yield RisingEdge(self.clock)
         self.bus.write <= 0
-
+        self._release_lock()
 
 
 class AvalonSlave(AvalonMM):
