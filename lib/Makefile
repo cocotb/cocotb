@@ -27,27 +27,32 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
-CLIBS:= $(SIM_ROOT)/lib/gpi \
-		$(SIM_ROOT)/lib/embed \
-		$(SIM_ROOT)/lib/vpi_shim \
-		$(SIM_ROOT)/lib/simulator
+$(LIB_OBJ_DIR):
+	mkdir -p $@
 
-libs_native: $(CLIBS)
+$(LIB_DIR):
+	mkdir -p $@
+
+CLIBS   :=  $(LIB_DIR) $(LIB_OBJ_DIR)
+
+include $(SIM_ROOT)/lib/gpi/Makefile
+#include $(SIM_ROOT)/lib/embed/Makefile
+#include $(SIM_ROOT)/lib/vpi_shim/Makefile
+#include $(SIM_ROOT)/lib/simulator/Makefile
+#include $(SIM_ROOT)/makefiles/Makefile.rules
+
+libs: $(CLIBS)
+
+#libs_native: $(LIB_DIR) all
 
 force_32:
 	ARCH=i686 make
 
-$(SIM_ROOT)/lib/vpi_shim: $(SIM_ROOT)/lib/gpi $(SIM_ROOT)/lib/embed
-$(SIM_ROOT)/lib/simulator: $(SIM_ROOT)/lib/vpi_shim
+#vpi_shim: gpi embed
+#simulator: vpi_shim
 
-$(LIB_OBJ_DIR):
-	mkdir -p $@
+#$(CLIBS):
+#	$(MAKE) -C $(SIM_ROOT)/lib/$@
 
-$(LIB_DIR): $(LIB_OBJ_DIR)
-	mkdir -p $@
-
-$(CLIBS): $(LIB_DIR)
-	$(MAKE) -C $@
-
-clean_lib:
+clean::
 	-@rm -rf $(BUILD_DIR)

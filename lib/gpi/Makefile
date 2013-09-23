@@ -25,19 +25,16 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+LIB_BASE    := libgpilog
+LIB_NAME    := $(LIB_BASE).so
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
-INCLUDES	+= 
-GCC_ARGS	+= -DFILTER
-LIBS		:= $(PYLIBS)
-SRCS		:= gpi_logging.c
+INCLUDES    +=
+GCC_ARGS    += -DFILTER
+LIBS        := $(PYLIBS)
+SRCS        := gpi_logging.c
 
-LIB_NAME    := libgpilog.so
-
-all: $(LIB_DIR)/$(LIB_NAME)
-
-clean:
-	rm -rf $(OBJ_DIR)
+CLIBS       += $(LIB_DIR)/$(LIB_NAME)
 
 include $(SIM_ROOT)/makefiles/Makefile.rules

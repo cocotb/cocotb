@@ -31,10 +31,10 @@
 %: %.o
 
 # Define some of our own
-OBJS:= $(SRCS:%.c=$(LIB_OBJ_DIR)/%.o)
+$(LIB_NAME)_OBJS:= $(SRCS:%.c=$(LIB_OBJ_DIR)/%.o)
 
 $(LIB_OBJ_DIR)/%.o: %.c
 	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
 
-$(LIB_DIR)/$(LIB_NAME): $(LIB_OBJ_DIR) $(OBJS)
-	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $(OBJS) $(LIBS) $(LD_PATH)
+$(LIB_DIR)/$(LIB_NAME): $($(LIB_NAME)_OBJS)
+	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $($(LIB_NAME)_OBJS) $(LIBS) $(LD_PATH)

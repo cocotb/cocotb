@@ -25,24 +25,19 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(SIM_ROOT)/makefiles/Makefile.inc 
+LIB_BASE    := libsim
+LIB_NAME    := $(LIB_BASE).so
 
-INCLUDES	+=  
-GCC_ARGS	+=
-LIBS		:= -lgpi $(PYLIBS)
-LD_PATH		:= -L$(LIB_DIR)
+INCLUDES    +=
+GCC_ARGS    +=
+LIBS        := -lgpi $(PYLIBS)
+LD_PATH     := -L$(LIB_DIR)
 
-SRCS		:= simulatormodule.c
-OBJS		:= $(SRCS:%.c=$(OBJ_DIR)/%.o)
+SRCS        := simulatormodule.c
 
-LIB_NAME	:= libsim.so
-
-all: $(LIB_DIR)/simulator.so
+CLIBS       += $(LIB_DIR)/$(LIB_NAME)
 
 $(LIB_DIR)/simulator.so: $(LIB_DIR)/$(LIB_NAME)
 	ln -sf $(LIB_NAME) $@
-
-clean :
-	@rm -rf $(OBJ_DIR)
 
 include $(SIM_ROOT)/makefiles/Makefile.rules
