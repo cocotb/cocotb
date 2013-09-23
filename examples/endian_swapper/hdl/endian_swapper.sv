@@ -4,6 +4,9 @@ Endian swapping module.
 
 Simple example with Avalon streaming interfaces and a CSR bus
 
+Avalon-ST has readyLatency of 0
+Avalon-MM has fixed readLatency of 1
+
 Exposes 2 32-bit registers via the Avalon-MM interface
 
    Address 0:  bit     0  [R/W] byteswap enable
@@ -42,14 +45,8 @@ module endian_swapper #(
 );
 
 
-reg flush_pipe;
-reg in_packet;
-reg byteswapping;
-reg [31:0] packet_count;
-reg stream_in_endofpacket_d;
 
 function [DATA_BYTES*8-1:0] byteswap(input [DATA_BYTES*8-1:0] data);
-
 /*
     // FIXME Icarus doesn't seem to like this....
     reg [$clog2(DATA_BYTES)-1:0] i;
@@ -57,6 +54,8 @@ function [DATA_BYTES*8-1:0] byteswap(input [DATA_BYTES*8-1:0] data);
     for (i=0; i<DATA_BYTES; i=i+1)
         byteswap[i*8+7 -:8] = data[(DATA_BYTES-i)*8-1 -:8];
 */
+
+    // Hardwire for now
     byteswap = { data[7:0],
                  data[15:8],
                  data[23:16],
@@ -68,8 +67,11 @@ function [DATA_BYTES*8-1:0] byteswap(input [DATA_BYTES*8-1:0] data);
 endfunction
 
 
-always @(*)
-    stream_out_valid = (stream_in_valid & ~stream_out_endofpacket) | flush_pipe;
+reg flush_pipe;
+reg in_packet;
+reg byteswapping;
+reg [31:0] packet_count;
+
 
 always @(posedge clk or negedge reset_n) begin
     if (!reset_n) begin
@@ -105,8 +107,12 @@ always @(posedge clk or negedge reset_n) begin
     end
 end
 
+always @(*)
+    stream_out_valid = (stream_in_valid & ~stream_out_endofpacket) | flush_pipe;
 
 
+// Hold off CSR accesses during packet transfers to prevent changing of
+// endian configuration mid-packet
 always @(*)
     csr_waitrequest = !reset_n || in_packet || (stream_in_startofpacket & stream_in_valid) || flush_pipe;
 
