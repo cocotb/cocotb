@@ -71,6 +71,9 @@ class TestFailed(Exception):
 # FIXME is this really required?
 _rlock = threading.RLock()
 
+def mem_debug(port):
+    import cocotb.memdebug
+    memdebug.start(port)
 
 def _initialise_testbench(root_handle):
     """
@@ -82,6 +85,10 @@ def _initialise_testbench(root_handle):
         TESTCASE
     """
     _rlock.acquire()
+
+    memcheck_port = os.getenv('MEMCHECK')
+    if memcheck_port is not None:
+        mem_debug(int(memcheck_port))
 
     # Seed the Python random number generator to make this repeatable
     seed = os.getenv('RANDOM_SEED')
