@@ -25,13 +25,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-LIB_BASE	:= libgpi
-LIB_NAME	:= $(LIB_BASE).so
+include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GCC_ARGS    += -DVPI_CHECKING
 LIBS        := -lgpilog -lcocotb
 LD_PATH     := -L$(LIB_DIR)
+LIB_NAME    := libgpi.so
 
 SRCS        := gpi_vpi.c
 
@@ -42,5 +42,9 @@ CLIBS       += $(LIB_DIR)/gpivpi.vpl
 # inerface at the start of the simulation
 $(LIB_DIR)/gpivpi.vpl: $(LIB_DIR)/$(LIB_NAME)
 	ln -sf $(LIB_NAME) $@
+
+clean:
+	-@rm -rf $(LIB_DIR)/gpivpi.vpl
+	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
 
 include $(SIM_ROOT)/makefiles/Makefile.rules

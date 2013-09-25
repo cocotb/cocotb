@@ -30,29 +30,26 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 $(LIB_OBJ_DIR):
 	mkdir -p $@
 
-$(LIB_DIR):
+$(LIB_DIR): $(LIB_OBJ_DIR)
 	mkdir -p $@
 
-CLIBS   :=  $(LIB_DIR) $(LIB_OBJ_DIR)
+$(LIB_DIR)/libgpilog.so:
+	make -C $(SIM_ROOT)/lib/gpi
 
-include $(SIM_ROOT)/lib/gpi/Makefile
-#include $(SIM_ROOT)/lib/embed/Makefile
-#include $(SIM_ROOT)/lib/vpi_shim/Makefile
-#include $(SIM_ROOT)/lib/simulator/Makefile
-#include $(SIM_ROOT)/makefiles/Makefile.rules
+$(LIB_DIR)/libcocotb.so:
+	make -C $(SIM_ROOT)/lib/embed
 
-libs: $(CLIBS)
+$(LIB_DIR)/libgpi.so:
+	make -C $(SIM_ROOT)/lib/vpi_shim
 
-#libs_native: $(LIB_DIR) all
+$(LIB_DIR)/libsim.so:
+	make -C $(SIM_ROOT)/lib/simulator
 
-force_32:
-	ARCH=i686 make
-
-#vpi_shim: gpi embed
-#simulator: vpi_shim
-
-#$(CLIBS):
-#	$(MAKE) -C $(SIM_ROOT)/lib/$@
+libs: $(LIB_DIR) \
+	$(LIB_DIR)/libgpilog.so \
+	$(LIB_DIR)/libcocotb.so \
+	$(LIB_DIR)/libgpi.so \
+	$(LIB_DIR)/libsim.so
 
 clean::
 	-@rm -rf $(BUILD_DIR)

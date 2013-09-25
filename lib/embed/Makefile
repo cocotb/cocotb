@@ -25,16 +25,19 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-LIB_BASE    := libcocotb
-LIB_NAME    := $(LIB_BASE).so
+include $(SIM_ROOT)/makefiles/Makefile.inc
 
-INCLUDES    +=
-GCC_ARGS    +=
-LIBS        := $(PYLIBS)
-LD_PATH     := -L$(LIB_DIR)
+INCLUDES	+=
+GCC_ARGS	+=
+LIBS		:= $(PYLIBS)
+LD_PATH		:= -L$(LIB_DIR)
+SRCS		:= gpi_embed.c
 
-SRCS        := gpi_embed.c
+LIB_NAME	:= libcocotb.so
 
-CLIBS       += $(LIB_DIR)/$(LIB_NAME)
+all: $(LIB_DIR)/$(LIB_NAME)
+
+clean:
+	-@rm -rf $(OBJ_DIR)
 
 include $(SIM_ROOT)/makefiles/Makefile.rules

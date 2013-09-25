@@ -49,4 +49,4 @@ gdb: $(OBJ_DIR) $(VERILOG_SOURCES) libs
 		gdb --args vvp -M $(LIB_DIR) -m gpivpi $(OBJ_DIR)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
 clean::
-	rm -rf $(OBJ_DIR)
+	-@rm -rf $(OBJ_DIR)
