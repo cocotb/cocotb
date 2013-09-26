@@ -51,10 +51,10 @@ class AvalonMM(BusDriver):
     def __init__(self, entity, name, clock):
         BusDriver.__init__(self, entity, name, clock)
 
-        # Drive some sensible defaults
-        self.bus.read           <= 0
-        self.bus.write          <= 0
-        self.bus.address        <= 0
+        # Drive some sensible defaults (setimmediatevalue to avoid x asserts)
+        self.bus.read.setimmediatevalue(0)
+        self.bus.write.setimmediatevalue(0)
+        self.bus.address.setimmediatevalue(0)
 
     def read(self, address):
         pass
