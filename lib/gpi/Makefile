@@ -27,19 +27,18 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
-INCLUDES	+= 
-GCC_ARGS	+= -DFILTER
-LIBS		:= $(PYLIBS)
-SRCS		:= gpi_logging.c
+INCLUDES    +=
+GCC_ARGS    += -DFILTER
+LIBS        := $(PYLIBS)
+SRCS        := gpi_logging.c
 
 LIB_NAME    := libgpilog.so
 
 all: $(LIB_DIR)/$(LIB_NAME)
 
 clean:
-	rm -rf $(OBJ_DIR)
+	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
 
 include $(SIM_ROOT)/makefiles/Makefile.rules

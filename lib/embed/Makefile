@@ -29,11 +29,10 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
-INCLUDES	+=  
+INCLUDES	+=
 GCC_ARGS	+=
 LIBS		:= $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
-
 SRCS		:= gpi_embed.c
 
 LIB_NAME	:= libcocotb.so
@@ -41,6 +40,6 @@ LIB_NAME	:= libcocotb.so
 all: $(LIB_DIR)/$(LIB_NAME)
 
 clean:
-	rm -rf $(OBJ_DIR)
+	-@rm -rf $(OBJ_DIR)
 
 include $(SIM_ROOT)/makefiles/Makefile.rules

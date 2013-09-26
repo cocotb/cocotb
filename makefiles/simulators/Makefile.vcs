@@ -76,7 +76,7 @@ dve: $(SIM_BUILD)/simv_dve $(CUSTOM_COMPILE_DEPS)
 .PHONY: build_simv
 build_simv: $(SIM_BUILD)/simv
 
-$(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab libs_native $(CUSTOM_COMPILE_DEPS)
+$(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab libs $(CUSTOM_COMPILE_DEPS)
 	cd $(SIM_BUILD) && \
     LD_LIBRARY_PATH=$(LIB_DIR) TOPLEVEL=$(TOPLEVEL) \
     vcs +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -debug -load libgpi.so $(COMPILE_ARGS) $(VERILOG_SOURCES)
