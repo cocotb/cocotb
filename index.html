@@ -36,7 +36,7 @@
 
 <p><strong>cocotb</strong> is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.</p>
 
-<p><strong>v0.2 pre-release now available</strong> <a href="https://github.com/potentialventures/cocotb/archive/v0.2.tar.gz">source</a></p>
+<p><strong>v0.3 Release now available</strong> <a href="https://github.com/potentialventures/cocotb/archive/v0.3.tar.gz">source</a></p>
 
 <ul>
 <li>Read the <a href="http://cocotb.readthedocs.org">documentation</a>
@@ -44,6 +44,7 @@
 <li>Get involved: <a href="https://github.com/potentialventures/cocotb/issues/new">Raise a bug / request an enhancement</a> (Requires a GitHub account)</li>
 <li>Get in contact: <a href="mailto:cocotb@potentialventures.com">E-mail us</a>
 </li>
+<li>This release would not have been possible without the support of SolarFlare</li>
 </ul><h1>
 <a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h1>
 
@@ -68,7 +69,7 @@
 
 <p>A simplistic example of generating a clock with 10ns period:</p>
 
-<div class="highlight"><pre><span class="nd">@cocotb.coroutine</span>
+<div class="highlight highlight-python"><pre><span class="nd">@cocotb.coroutine</span>
 <span class="k">def</span> <span class="nf">clock</span><span class="p">(</span><span class="n">signal</span><span class="p">):</span>
     <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
         <span class="n">signal</span> <span class="o">&lt;=</span> <span class="mi">1</span>
@@ -81,7 +82,7 @@
 
 <p>This may seem pretty pointless, in fact a Verilog process to perform the same operation requires fewer lines of code. Let's examine a more useful example:</p>
 
-<div class="highlight"><pre><span class="nd">@cocotb.coroutine</span>
+<div class="highlight highlight-python"><pre><span class="nd">@cocotb.coroutine</span>
 <span class="k">def</span> <span class="nf">pcap_replay</span><span class="p">(</span><span class="n">bus</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
     <span class="n">prevtime</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">packet</span> <span class="ow">in</span> <span class="n">dpkt</span><span class="o">.</span><span class="n">pcap</span><span class="o">.</span><span class="n">Reader</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'r'</span><span class="p">)):</span>
@@ -91,7 +92,7 @@
 
 <p>Here we utilise a thirdparty python library called dpkt to iterate over packets in a PCAP packet capture. This becomes trivially easy in Python when compared to a VHDL/Verilog/SystemVerilog implementation. The argument "bus" is an instance of a Driver class which provides a send method to serialise the packet transaction over multiple cycles on the bus. Although the majority of the complexity is hidden in this (reusable) Driver class the actual implementation is once again straightforward:</p>
 
-<div class="highlight"><pre><span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packet</span><span class="p">):</span>
+<div class="highlight highlight-python"><pre><span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packet</span><span class="p">):</span>
 
     <span class="n">words</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span>
 
