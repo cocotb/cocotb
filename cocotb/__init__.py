@@ -102,6 +102,16 @@ def _initialise_testbench(root_handle):
         log.info("Seeding Python random module with supplied seed %d" % (seed))
     random.seed(seed)
 
+    exec_path = os.getenv('SIM_ROOT')
+    if exec_path is None:
+        exec_path = 'Unknown'
+
+    version = os.getenv('VERSION')
+    if version is None:
+        log.info("Unable to determine version")
+    else:
+        log.info("Running tests with CoCoTB-%s from %s" % (version, exec_path))
+
     # Create the base handle type
     dut = cocotb.handle.SimHandle(root_handle)
 

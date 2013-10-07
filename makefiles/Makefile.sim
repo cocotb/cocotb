@@ -46,3 +46,5 @@ endif
 include $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 include $(SIM_ROOT)/lib/Makefile
 
+include $(SIM_ROOT)/version
+export VERSION
