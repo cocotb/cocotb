@@ -35,5 +35,5 @@ PWD=$(shell pwd)
 VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
 MODULE=test_endian_swapper
 
-include ../../../makefiles/Makefile.inc
-include ../../../makefiles/Makefile.sim
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim

@@ -27,7 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
+COCOTB?=$(shell pwd)/../
+export COCOTB
 
 SMOKE_TESTS :=  plusargs \
 				sim_exit/tests \

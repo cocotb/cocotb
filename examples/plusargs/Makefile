@@ -37,6 +37,6 @@ MODULE=plusargs
 
 PLUSARGS=+foo=bar +test1 +test2 +options=fubar
 
-include ../../makefiles/Makefile.inc
-include ../../makefiles/Makefile.sim
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim
 

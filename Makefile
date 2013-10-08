@@ -59,6 +59,7 @@ common_install:
 	@cp -R bin/cocotbenv.py $(FULL_INSTALL_DIR)/bin/
 	@cp -R bin/create_project.py $(FULL_INSTALL_DIR)/bin/
 	@cp -R makefiles $(FULL_INSTALL_DIR)/
+	@cp version $(FULL_INSTALL_DIR)/
 
 create_files:
 	bin/create_files.py $(FULL_INSTALL_DIR)
