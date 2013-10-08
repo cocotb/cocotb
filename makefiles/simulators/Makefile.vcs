@@ -27,12 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-ifeq ($(SIM_BUILD_ROOT),)
-SIM_BUILD := sim_build
-else
-SIM_BUILD := $(SIM_BUILD_ROOT)
-endif
-
 VPI_LIB := vpi
 
 ifeq ($(ARCH),x86_64)
@@ -42,9 +36,6 @@ endif
 sim:
 	-@rm -rf results.xml
 	$(MAKE) results.xml
-
-$(SIM_BUILD):
-	mkdir -p $(SIM_BUILD)
 
 # TODO:
 # investigate +vpi+1 option which reduces memory requirements

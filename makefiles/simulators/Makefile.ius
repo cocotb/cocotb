@@ -27,20 +27,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-OBJ_DIR := obj
 VPI_LIB := vpi
 
-all: $(OBJ_DIR) sim
-
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
-
+all: $(SIM_BUILD) sim
 
 .PHONY: sim
-sim: $(OBJ_DIR) $(VERILOG_SOURCES) libs_native
+sim: $(SIM_BUILD) $(VERILOG_SOURCES) libs_native
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 		irun -sv $(EXTRA_ARGS) -64bit -loadvpi $(BUILD_DIR)/libgpi:vlog_startup_routines_bootstrap +access+rwc $(VERILOG_SOURCES)
 
 clean:
-	-@rm -rf $(OBJ_DIR)
+	-@rm -rf $(SIM_BUILD)
 

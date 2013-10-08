@@ -27,28 +27,23 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-OBJ_DIR := obj
 VPI_LIB := vpi
-VPI_LD_PATH := $(ICARUS_BASE)/lib
 
-all: $(OBJ_DIR) sim
-
-$(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
+all: $(SIM_BUILD) sim
 
 .PHONY: sim
-sim: $(OBJ_DIR) $(VERILOG_SOURCES) libs
-	iverilog -o $(OBJ_DIR)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+sim: $(SIM_BUILD) $(VERILOG_SOURCES) libs
+	iverilog -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-        vvp -M $(LIB_DIR) -m gpivpi $(OBJ_DIR)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+        vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
 .PHONY: gdb
-gdb: $(OBJ_DIR) $(VERILOG_SOURCES) libs
-	iverilog -o $(OBJ_DIR)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+gdb: $(SIM_BUILD) $(VERILOG_SOURCES) libs
+	iverilog -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-		gdb --args vvp -M $(LIB_DIR) -m gpivpi $(OBJ_DIR)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+		gdb --args vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
 clean::
-	-@rm -rf $(OBJ_DIR)
+	-@rm -rf $(SIM_BUILD)

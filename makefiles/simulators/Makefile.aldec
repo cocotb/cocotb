@@ -28,22 +28,11 @@
 ###############################################################################
 
 
-COCOTB =  $(SIM_ROOT)/sim_core/cocotb
-VPI_FILE = $(SIM_ROOT)/build/cocotb.vpi
-OBJ_DIR := obj
+VPI_FILE = $(LIB_DIR)/cocotb.vpi
 VPI_LIB := aldecpli
 VPI_LD_PATH := $(RIVERA_BASE)/lib
 
 all : sim
-
-$(OBJ_DIR) :
-	mkdir -p $(OBJ_DIR)
-
-core:
-	make -C $(SIM_ROOT)/sim_core
-
-# By default create output goes in a build directory
-SIM_DIR ?= sim_output
 
 # Common Makefile for Aldec Riviera-PRO simulator
 
@@ -53,16 +42,11 @@ else
     CMD := vsimsa
 endif
 
-$(SIM_DIR):
-	mkdir -p $(SIM_DIR)
-
-
-
 # Aldec requires a process in the verilog - if the only
 # timesteps are PLI initiated then the sim finishes immediately
 #
 # FIXME this doesn't work, still need this code in the toplevel GRRRR
- $(SIM_DIR)/initial.v : $(SIM_DIR)
+$(SIM_BUILD)/initial.v: 
 	echo -e "module fake_initial;\n\
 initial begin\n\
     $display (\"Initial statement began\");\n\
@@ -71,10 +55,10 @@ end\n\
 endmodule\n" > $@
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
-$(SIM_DIR)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_DIR) libs_native
+$(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_BUILD) libs_native
 	echo "alib work" > $@
 	echo "set worklib work" >> $@
-	cd $(SIM_DIR) && create_project.py $(VERILOG_SOURCES) >> runsim.tcl
+	cd $(SIM_BUILD) && create_project.py $(VERILOG_SOURCES) >> runsim.tcl
 	echo "asim +access +w -O2 -dbg -pli libcocotb $(TOPLEVEL)" >> $@
 ifeq ($(GUI),1)
 	echo "wave -rec *" >> $@
@@ -87,11 +71,10 @@ endif
 # that turns on batch mode (i.e. exit on completion/error)
 .PHONY: sim
 
-sim: $(SIM_DIR)/runsim.tcl core
-	-cd $(SIM_DIR) && ln -sf $(VPI_FILE) libcocotb.so
-	cd $(SIM_DIR) && PYTHONPATH=$(LIB_DIR):$(PWD)/testbench:$(SIM_ROOT)/sim_core:$(PWD):$(PYTHONPATH) \
+sim: $(SIM_BUILD)/runsim.tcl core
+	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(PWD)/testbench:$(SIM_ROOT)/sim_core:$(PWD):$(PYTHONPATH) \
 	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(VSIMSABIN)/Linux64 MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
 
 clean::
-	rm -rf $(SIM_DIR)
+	rm -rf $(SIM_BUILD)
 

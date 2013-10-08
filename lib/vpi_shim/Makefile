@@ -42,7 +42,13 @@ CLIBS       += $(LIB_DIR)/gpivpi.vpl
 # More rules such that this may be needed depending on the requirements of
 # different simulators, icarus for instance loads a <name>.vpi libraray to use the vpi
 # inerface at the start of the simulation
+
+all: $(LIB_DIR)/gpivpi.vpl $(LIB_DIR)/cocotb.vpi
+
 $(LIB_DIR)/gpivpi.vpl: $(LIB_DIR)/$(LIB_NAME)
+	ln -sf $(LIB_NAME) $@
+
+$(LIB_DIR)/cocotb.vpi: $(LIB_DIR)/$(LIB_NAME)
 	ln -sf $(LIB_NAME) $@
 
 clean:

@@ -28,7 +28,11 @@
 ###############################################################################
 
 # This is a simple wrapper Makefile to pull in the appropriate Makefile for
-# the desired simulator
+# the desired simulator and set up common paths for the sims to use to build in
+
+
+SIM_BUILD ?= sim_build
+export SIM_BUILD
 
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
@@ -48,3 +52,6 @@ include $(SIM_ROOT)/lib/Makefile
 
 include $(SIM_ROOT)/version
 export VERSION
+
+$(SIM_BUILD):
+	mkdir -p $@
