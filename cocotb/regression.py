@@ -71,6 +71,8 @@ class RegressionManager(object):
 
         self.ntests = 0
         self.count = 1
+        self.skipped = 0
+        self.failures = 0
         self.xunit = XUnitReporter()
         self.xunit.add_testsuite(name="all", tests=repr(self.ntests), package="all")
 
@@ -94,16 +96,16 @@ class RegressionManager(object):
                 if hasattr(thing, "im_test"):
                     try:
                         test = thing(self._dut)
+                        skip = test.skip
                     except TestError:
-                        self.log.warning("Skipping test %s" % thing.name)
-                        self.xunit.add_testcase(name=thing.name, classname=module_name, time="0.0")
-                        self.xunit.add_skipped()
-                        continue
+                        skip = True
+                        self.log.warning("Failed to initialise test%s" % thing.name)
 
-                    if test.skip:
+                    if skip:
                         self.log.info("Skipping test %s" % thing.name)
                         self.xunit.add_testcase(name=thing.name, classname=module_name, time="0.0")
                         self.xunit.add_skipped()
+                        self.skipped += 1                        
                     else:
                         self._queue.append(test)
                         self.ntests += 1
@@ -117,6 +119,12 @@ class RegressionManager(object):
 
     def tear_down(self):
         """It's the end of the world as we know it"""
+        if self.failures:
+            self.log.error("Failed %d out of %d tests (%d skipped)" %
+                (self.failures, self.count, self.skipped))
+        else:
+            self.log.info("Passed %d tests (%d skipped)"  %
+                (self.count, self.skipped))
         self.log.info("Shutting down...")
         self.xunit.write()
         simulator.stop_simulator()
@@ -150,11 +158,13 @@ class RegressionManager(object):
             self.log.error("Test passed but we expected an error: %s (result was %s)" % (
                            self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=str(result), stderr="\n".join(self._running_test.error_messages))
+            self.failures += 1
 
         elif isinstance(result, TestSuccess):
             self.log.error("Test passed but we expected a failure: %s (result was %s)" % (
                            self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=str(result), stderr="\n".join(self._running_test.error_messages))
+            self.failures += 1            
 
         elif isinstance(result, TestError) and self._running_test.expect_error:
             self.log.info("Test errored as expected: %s (result was %s)" % (
@@ -164,6 +174,7 @@ class RegressionManager(object):
             self.log.error("Test Failed: %s (result was %s)" % (
                         self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=str(result), stderr="\n".join(self._running_test.error_messages))
+            self.failures += 1            
 
         self.execute()
 
