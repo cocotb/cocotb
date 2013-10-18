@@ -124,7 +124,7 @@ class RegressionManager(object):
                 (self.failures, self.count, self.skipped))
         else:
             self.log.info("Passed %d tests (%d skipped)"  %
-                (self.count, self.skipped))
+                (self.count-1, self.skipped))
         self.log.info("Shutting down...")
         self.xunit.write()
         simulator.stop_simulator()
