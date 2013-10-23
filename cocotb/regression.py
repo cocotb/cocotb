@@ -121,7 +121,7 @@ class RegressionManager(object):
         """It's the end of the world as we know it"""
         if self.failures:
             self.log.error("Failed %d out of %d tests (%d skipped)" %
-                (self.failures, self.count, self.skipped))
+                (self.failures, self.count-1, self.skipped))
         else:
             self.log.info("Passed %d tests (%d skipped)"  %
                 (self.count-1, self.skipped))
