@@ -120,6 +120,12 @@ class Driver(object):
         self._sendQ.append((transaction, callback, event))
         self._pending.set()
 
+    def clear(self):
+        """
+        Clear any queued transactions without sending them onto the bus
+        """
+        self._sendQ = []
+
     @coroutine
     def send(self, transaction, sync=True):
         """
