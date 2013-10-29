@@ -239,7 +239,7 @@ class Combine(PythonTrigger):
     """
 
     def __init__(self, *args):
-        Trigger.__init__(self)
+        PythonTrigger.__init__(self)
         self._triggers = args
         # TODO: check that trigger is an iterable containing only Trigger objects
         try:
@@ -270,7 +270,7 @@ class Event(PythonTrigger):
     Event to permit synchronisation between two coroutines
     """
     def __init__(self, name=""):
-        Trigger.__init__(self)
+        PythonTrigger.__init__(self)
         self._callback = None
         self.name = name
         self.fired = False
@@ -300,6 +300,75 @@ class Event(PythonTrigger):
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.name
 
+
+class _Lock(PythonTrigger):
+    """
+    Unique instance used by the Lock object.
+
+    One created for each attempt to acquire the Lock so that the scheduler
+    can maintain a dictionary of indexing each individual coroutine
+    """
+    def __init__(self, parent):
+        PythonTrigger.__init__(self)
+        self.parent = parent
+
+    def prime(self, callback):
+        self._callback = callback
+        self.parent.prime(callback, self)
+
+    def __call__(self):
+        self._callback(self)
+
+
+class Lock(PythonTrigger):
+    """
+    Lock primitive (not re-entrant)
+    """
+
+    def __init__(self, name=""):
+        PythonTrigger.__init__(self)
+        self._pending_unprimed = []
+        self._pending_primed   = []
+        self.name = name
+        self.locked = False
+
+    def prime(self, callback, trigger):
+
+        self._pending_unprimed.remove(trigger)
+
+        if not self.locked:
+            self.locked = True
+            callback(trigger)
+        else:
+            self._pending_primed.append(trigger)
+
+    def acquire(self):
+        """This can be yielded to block until the lock is acquired"""
+        trig = _Lock(self)
+        self._pending_unprimed.append(trig)
+        return trig
+
+
+    def release(self):
+
+        if not self.locked:
+            raise_error(self, "Attempt to release an unacquired Lock %s" % (str(self)))
+
+        self.locked = False
+
+        # nobody waiting for this lock
+        if not self._pending_primed:
+            return
+
+        trigger = self._pending_primed.pop(0)
+        self.locked = True
+        trigger()
+
+    def __str__(self):
+        return self.__class__.__name__ + "(%s) [%s waiting]" % (
+                self.name, len(self._pending_primed))
+
+
 class NullTrigger(Trigger):
     """
     Trigger for internal interfacing use call the callback as soon
@@ -319,7 +388,7 @@ class Join(PythonTrigger):
     Join a coroutine, firing when it exits
     """
     def __init__(self, coroutine):
-        Trigger.__init__(self)
+        PythonTrigger.__init__(self)
         self._coroutine = coroutine
         self.retval = None
 
