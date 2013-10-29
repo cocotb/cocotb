@@ -265,31 +265,57 @@ class Combine(PythonTrigger):
             trigger.unprime()
 
 
+class _Event(PythonTrigger):
+    """
+    Unique instance used by the Event object.
+
+    One created for each attempt to wait on the event so that the scheduler
+    can maintain a dictionary of indexing each individual coroutine
+
+    FIXME: This will leak - need to use peers to ensure everything is removed
+    """
+    def __init__(self, parent):
+        PythonTrigger.__init__(self)
+        self.parent = parent
+
+    def prime(self, callback):
+        self._callback = callback
+        self.parent.prime(callback, self)
+
+    def __call__(self):
+        self._callback(self)
+
+
+
 class Event(PythonTrigger):
     """
     Event to permit synchronisation between two coroutines
     """
     def __init__(self, name=""):
         PythonTrigger.__init__(self)
-        self._callback = None
+        self._pending = []
         self.name = name
         self.fired = False
         self.data = None
 
-    def prime(self, callback):
-        self._callback = callback
+    def prime(self, callback, trigger):
+        self._pending.append(trigger)
 
     def set(self, data=None):
         """Wake up any coroutines blocked on this event"""
         self.fired = True
         self.data = data
-        if not self._callback:
-            return
-        self._callback(self)
+
+        p = self._pending[:]
+
+        self._pending = []
+
+        for trigger in p:
+            trigger()
 
     def wait(self):
         """This can be yielded to block this coroutine until another wakes it"""
-        return self
+        return _Event(self)
 
     def clear(self):
         """Clear this event that's fired.
@@ -307,6 +333,8 @@ class _Lock(PythonTrigger):
 
     One created for each attempt to acquire the Lock so that the scheduler
     can maintain a dictionary of indexing each individual coroutine
+
+    FIXME: This will leak - need to use peers to ensure everything is removed
     """
     def __init__(self, parent):
         PythonTrigger.__init__(self)
