@@ -37,7 +37,7 @@ sim: $(SIM_BUILD) $(VERILOG_SOURCES) libs_native
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(PYTHON_LIBDIR):$(PYTHON_DYNLIBDIR) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	qverilog -64 -R -pli $(VPI_FILE) - +acc $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
-clean:
+clean::
 	-@rm -rf $(SIM_BUILD)
 	-@rm -rf INCA_libs
 	-@rm -rf qverilog.log
