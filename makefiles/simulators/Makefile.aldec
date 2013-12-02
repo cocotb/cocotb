@@ -55,10 +55,10 @@ end\n\
 endmodule\n" > $@
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
-$(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_BUILD) libs_native
+$(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_BUILD) libs
 	echo "alib work" > $@
 	echo "set worklib work" >> $@
-	cd $(SIM_BUILD) && create_project.py $(VERILOG_SOURCES) >> runsim.tcl
+	cd $(SIM_BUILD) && $(COCOTB)/bin/create_project.py $(VERILOG_SOURCES) >> runsim.tcl
 	echo "asim +access +w -O2 -dbg -pli libcocotb $(TOPLEVEL)" >> $@
 ifeq ($(GUI),1)
 	echo "wave -rec *" >> $@
@@ -71,7 +71,7 @@ endif
 # that turns on batch mode (i.e. exit on completion/error)
 .PHONY: sim
 
-sim: $(SIM_BUILD)/runsim.tcl core
+sim: $(SIM_BUILD)/runsim.tcl
 	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(PWD)/testbench:$(SIM_ROOT)/sim_core:$(PWD):$(PYTHONPATH) \
 	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(VSIMSABIN)/Linux64 MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
 
