@@ -192,5 +192,5 @@ class SimHandle(object):
                 yield hdl
     def __del__(self):
         """Free handle from gpi that was allocated on construction"""
-        if self.handle is not None:
-            simulator.free_handle(self.handle)
+        if self._handle is not None:
+            simulator.free_handle(self._handle)
