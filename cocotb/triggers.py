@@ -29,8 +29,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     A collections of triggers which a testbench can 'yield'
 """
 import simulator
-import cocotb
-import pdb
 from cocotb.log import SimLog
 from cocotb.result import raise_error
 
@@ -85,13 +83,14 @@ class GPITrigger(Trigger):
     """
     def __init__(self):
         Trigger.__init__(self)
-        self.cbhdl = simulator.create_callback(self)
+        self.cbhdl = None
 
     def unprime(self):
         """Unregister a prior registered timed callback"""
         Trigger.unprime(self)
         if self.cbhdl is not None:
             simulator.deregister_callback(self.cbhdl)
+            self.chhdl = None
 
     def __del__(self):
         """Remove knowledge of the trigger"""
@@ -113,6 +112,7 @@ class Timer(GPITrigger):
 
     def prime(self, callback):
         """Register for a timed callback"""
+        self.cbhdl = simulator.create_callback(self)
         if simulator.register_timed_callback(self.cbhdl, self.time_ps, callback, self):
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
@@ -129,6 +129,7 @@ class Edge(GPITrigger):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
+        self.cbhdl = simulator.create_callback(self)
         if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, callback, self):
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
@@ -144,6 +145,7 @@ class ReadOnly(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        self.cbhdl = simulator.create_callback(self)
         if simulator.register_readonly_callback(self.cbhdl, callback, self):
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
@@ -159,6 +161,7 @@ class ReadWrite(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        self.cbhdl = simulator.create_callback(self)
         if simulator.register_rwsynch_callback(self.cbhdl, callback, self):
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
@@ -173,6 +176,7 @@ class NextTimeStep(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        self.cbhdl = simulator.create_callback(self)
         simulator.register_nextstep_callback(self.cbhdl, callback, self)
 
     def __str__(self):
@@ -181,6 +185,9 @@ class NextTimeStep(GPITrigger):
 class RisingEdge(Edge):
     """
     Execution will resume when a rising edge occurs on the provided signal
+    
+    NB Riviera doesn't seem to like re-using a callback handle?
+    
     """
     def __init__(self, signal):
         Edge.__init__(self, signal)
@@ -192,9 +199,12 @@ class RisingEdge(Edge):
             if self.signal.value:
                 self._callback(self)
             else:
+                simulator.deregister_callback(self.cbhdl)
+                self.cbhdl = simulator.create_callback(self)
                 if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
                     raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
+        self.cbhdl = simulator.create_callback(self)
         if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
@@ -221,10 +231,12 @@ class ClockCycles(Edge):
                     self._callback(self)
                     return
 
+            simulator.deregister_callback(self.cbhdl)
+            self.cbhdl = simulator.create_callback(self)
             if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
-
+        self.cbhdl = simulator.create_callback(self)
         if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 

@@ -174,6 +174,7 @@ end
 initial begin                                                                                                    
   $dumpfile ("waveform.vcd");
   $dumpvars (0,endian_swapper);
+  #1;
 end
 `endif
 
