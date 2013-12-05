@@ -42,7 +42,7 @@ _debug_str = "-dbg" if _DEBUG else ""
 
 def riviera(source_files):
     for filename in source_files:
-        print "alog +define+COCOTB_SIM %s %s" % (_debug_str, filename)
+        print "alog -coverage sbe +define+COCOTB_SIM %s %s" % (_debug_str, filename)
 
 
 if __name__ == "__main__":

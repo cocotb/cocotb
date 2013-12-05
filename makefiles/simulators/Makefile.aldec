@@ -37,17 +37,25 @@ else
     CMD := vsimsa
 endif
 
+ifeq ($(COVERAGE),1)
+    ASIM_ARGS += "-acdb"
+endif
+
+
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
 $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_BUILD)
 	echo "alib work" > $@
 	echo "set worklib work" >> $@
 	cd $(SIM_BUILD) && $(COCOTB)/bin/create_project.py $(VERILOG_SOURCES) >> runsim.tcl
-	echo "asim +access +w -O2 -dbg -pli libgpi $(TOPLEVEL)" >> $@
+	echo "asim $(ASIM_ARGS) +access +w -O2 -dbg -pli libgpi $(TOPLEVEL)" >> $@
 ifeq ($(GUI),1)
 	echo "wave -rec *" >> $@
 else
 	echo "run -all" >> $@
 	echo "endsim" >> $@
+endif
+ifeq ($(COVERAGE),1)
+	echo "acdb report -db work.acdb -html" >> $@
 endif
 
 # Note it's the redirection of the output rather than the 'do' command
