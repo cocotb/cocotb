@@ -1,6 +1,5 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2013 Potential Ventures Ltd
-// Copyright (c) 2013 SolarFlare Communications Inc
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
