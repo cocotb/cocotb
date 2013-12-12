@@ -31,5 +31,5 @@ def main(path, output):
     ET.ElementTree(result).write(output, encoding="UTF-8")
 
 if __name__ == "__main__":
-    main(".", "results.xml")
+    main(".", "combined_results.xml")
 
