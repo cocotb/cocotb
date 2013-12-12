@@ -44,6 +44,7 @@ clean:
 
 test: 
 	$(MAKE) -k -C examples
+	./bin/combine_results.py
 
 pycode:
 	@cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
