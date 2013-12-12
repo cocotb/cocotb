@@ -37,8 +37,11 @@ else
     CMD := vsimsa
 endif
 
+ALOG_ARGS += "+define+COCOTB_SIM -dbg"
+
 ifeq ($(COVERAGE),1)
     ASIM_ARGS += "-acdb"
+    ALOG_ARGS += "-coverage sbe"
 endif
 
 
@@ -46,7 +49,8 @@ endif
 $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_BUILD)
 	echo "alib work" > $@
 	echo "set worklib work" >> $@
-	cd $(SIM_BUILD) && $(COCOTB)/bin/create_project.py $(VERILOG_SOURCES) >> runsim.tcl
+	$(foreach src,$(VERILOG_SOURCES),\
+	echo "alog $(ALOG_ARGS) $(src)" >> $@)
 	echo "asim $(ASIM_ARGS) +access +w -O2 -dbg -pli libgpi $(TOPLEVEL)" >> $@
 ifeq ($(GUI),1)
 	echo "wave -rec *" >> $@
