@@ -293,7 +293,7 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     obj = vpi_handle_by_name(buff, (vpiHandle)(parent->sim_hdl));
     if (!obj) {
         LOG_DEBUG("VPI: Handle '%s' not found!", name);
-        check_vpi_error();
+//         check_vpi_error();
         return NULL;
     }
 
