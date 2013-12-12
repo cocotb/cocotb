@@ -117,7 +117,7 @@ def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backp
 
     cocotb.fork(clock_gen(dut.clk))
     tb = EndianSwapperTB(dut)
-    
+
     yield tb.reset()
     dut.stream_out_ready <= 1
 
@@ -132,13 +132,13 @@ def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backp
     # Send in the packets
     for transaction in data_in():
         yield tb.stream_in.send(transaction)
-       
+
     # Wait at least 2 cycles where output ready is low before ending the test
     for i in xrange(2):
         yield RisingEdge(dut.clk)
         while not dut.stream_out_ready.value:
             yield RisingEdge(dut.clk)
- 
+
     pkt_count = yield tb.csr.read(1)
 
     if pkt_count.integer != tb.pkts_sent:

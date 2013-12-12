@@ -110,7 +110,7 @@ always @(posedge clk or negedge reset_n) begin
     end else begin
 
         if (flush_pipe & stream_out_ready)
-            flush_pipe <= 1'b0;
+            flush_pipe <= stream_in_endofpacket & stream_in_valid & stream_out_ready;
         else if (!flush_pipe)
             flush_pipe <= stream_in_endofpacket & stream_in_valid & stream_out_ready;
 
@@ -171,9 +171,10 @@ always @(posedge clk or negedge reset_n) begin
 end
 
 `ifdef COCOTB_SIM
-initial begin                                                                                                    
+initial begin
   $dumpfile ("waveform.vcd");
   $dumpvars (0,endian_swapper);
+  #1;
 end
 `endif
 

@@ -242,8 +242,9 @@ class BusDriver(Driver):
         """
         yield RisingEdge(self.clock)
         yield ReadOnly()
-        if signal.value.integer != 0:
+        while signal.value.integer != 0:
             yield Edge(signal)
+            yield ReadOnly()
         yield NextTimeStep()
 
     def __str__(self):
