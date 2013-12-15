@@ -24,7 +24,7 @@ Running an example
     $> git clone https://github.com/potentialventures/cocotb
     $> cd cocotb
     $> make
-    $> cd examples/demo
+    $> cd examples/endian_swapper
     $> make
 
 To run a test using a different simulator:
