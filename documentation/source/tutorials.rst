@@ -6,7 +6,7 @@ Tutorials
 Endian Swapper
 ==============
 
-In this tutorial we'll use some of the built-in features of Cocotb to create a complex testbench.
+In this tutorial we'll use some of the built-in features of Cocotb to quickly create a complex testbench.
 
 .. note:: All the code and sample output from this example are available on `EDA Playground <http://www.edaplayground.com/s/example/199>`_
 
@@ -47,8 +47,27 @@ To begin with we create a class to encapsulate all the common code for the testb
 
 With the above code we have created a testbench with the following structure:
 
-..image:: diagrams/svg/endian_swapper_testbench.svg
+.. image:: diagrams/svg/endian_swapper_testbench.svg
 
+If we inspect this line-by-line:
 
+.. code-block:: python
 
+    self.stream_in  = AvalonSTDriver(dut, "stream_in", dut.clk)
 
+Here we're creating an AvalonSTDriver instance. The constructor requires 3 arguments - a handle to the entity containing the interface (**dut**), the name of the interface (**stream_in**) and the associated clock with which to drive the interface (**dut.clk**).  The driver will auto-discover the signals for the interface, assuming that they follow the following naming convention interface_name_signal.
+
+In this case we have the following signals defined for the stream_in interface:
+
+=====                   ======          =======
+Name                    Type            Description (from Avalon Specification)
+=====                   ======          =======
+stream_in_data          data            The data signal from the source to the sink
+stream_in_empty         empty           Indicates the number of symbols that are empty during cycles that contain the end of a packet
+stream_in_valid         valid           Asserted by the source to qualify all other source to sink signals
+stream_in_startofpacket startofpacket   Asserted by the source to mark the beginning of a packet
+stream_in_endofpacket   endofpacket     Asserted by the source to mark the end of a packet
+stream_in_ready         ready           Asserted high to indicate that the sink can accept data
+=====                   ======          =======
+
+By following the signal naming convention the driver can find the signals associated with this interface automatically.
