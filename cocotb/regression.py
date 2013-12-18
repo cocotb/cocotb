@@ -317,7 +317,9 @@ class TestFactory(object):
 
             for optname, optvalue in testoptions.iteritems():
                 if callable(optvalue):
-                    doc += "\t%s: %s (%s)\n" % (optname, optvalue.__name__, optvalue.__doc__.split('\n')[0])
+                    if not optvalue.__doc__: desc = "No docstring supplied"
+                    else: desc = optvalue.__doc__.split('\n')[0]
+                    doc += "\t%s: %s (%s)\n" % (optname, optvalue.__name__, desc)
                 else:
                     doc += "\t%s: %s\n" % (optname, repr(optvalue))
 
