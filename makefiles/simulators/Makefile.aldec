@@ -41,7 +41,7 @@ ALOG_ARGS += "+define+COCOTB_SIM -dbg"
 
 ifeq ($(COVERAGE),1)
     ASIM_ARGS += "-acdb"
-    ALOG_ARGS += "-coverage sbe"
+    ALOG_ARGS += "-coverage sb"
 endif
 
 
