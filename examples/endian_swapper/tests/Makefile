@@ -31,7 +31,7 @@
 TOPLEVEL = endian_swapper
 
 PWD=$(shell pwd)
-
+COCOTB=$(PWD)/../../..
 VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
 MODULE=test_endian_swapper
 
