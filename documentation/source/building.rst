@@ -7,21 +7,28 @@ Make System
 
 Makefiles are provided for a variety of simulators in cocotb/makefiles/simulators.  The common Makefile cocotb/makefiles/Makefile.sim includes the appropriate simulator makefile based on the contents of the SIM variable.
 
-Targets
--------
+Make Targets
+------------
 
 Makefiles define two targets, 'regression' and 'sim', the default target is sim.
 
 Both rules create a results file in the calling directory called 'results.xml'.  This file is a JUnit-compatible output file suitable for use with `Jenkins <http://jenkins-ci.org/>`_. The 'sim' targets unconditionally re-runs the simulator whereas the regression target only re-builds if any dependencies have changed.
 
 
-Variables
----------
+Make phases
+-----------
+
+Typically the makefiles provided with Cocotb for various simulators use a separate *compile* and *run* target.  This allows for a rapid re-running of a simulator if none of the RTL source files have changed and therefore the simulator does not need to recompile the RTL.
+
+
+
+Make Variables
+--------------
 
 SIM
 ~~~
 
-Selects which simulator Makefile to use.  Attempts to include cocotb/makefiles/makefile.$(SIM)
+Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from cocotb/makefiles/makefile.$(SIM)
 
 
 VERILOG_SOURCES
@@ -46,6 +53,15 @@ EXTRA_ARGS
 
 Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run commad for simulators which don't have a distinct compilation stage.
 
+CUSTOM_COMPILE_DEPS
+~~~~~~~~~~~~~~~~~~~
+
+Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in **VERILOG_SOURCES**.
+
+CUSTOM_SIM_DEPS
+~~~~~~~~~~~~~~~
+
+Use to add additional dependencies to the simulation target.
 
 
 Environment Variables
@@ -100,4 +116,5 @@ TESTCASE
 The name of the test function(s) to run.  If this variable is not defined cocotb discovers and executes all functions decorated with @cocotb.test() decorator in the supplied modules.
 
 Multiple functions can be specified in a comma-separated list.
+
 

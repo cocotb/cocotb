@@ -5,7 +5,7 @@ Installation
 Get the Source
 ==============
 
-Source can be obtained as a tar ball for the current `release <https://github.com/potentialventures/cocotb/tree/v0.2>`_.
+Source can be obtained as a tar ball for the current `release <https://github.com/potentialventures/cocotb/tree/v0.3>`_.
 
 Or by cloning the repository `git@github.com:potentialventures/cocotb.git`
 
@@ -21,4 +21,4 @@ The list of supported simulators for the version you have can be found by *make 
 Centralised Usage
 =================
 
-A build can be installed in a centralised location with *make install INSTALL_PATH=<dir>". This will also generate and uninstall script.
+A build can be installed in a centralised location with *make install INSTALL_PATH=<dir>*. This will also generate an uninstall script.
