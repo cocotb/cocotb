@@ -42,6 +42,7 @@ _XGMII_TERMINATE= "\xFD"
 
 # Preamble is technically supposed to be 7 bytes of 0x55 but it seems that it's
 # permissible for the start byte to replace one of the preamble bytes
+# see http://grouper.ieee.org/groups/802/3/10G_study/email/msg04647.html
 _PREAMBLE_SFD = "\x55\x55\x55\x55\x55\x55\xD5"
 
 class _XGMIIBus(object):
