@@ -51,8 +51,8 @@ endif
 # We want to include the Python files from Cocotb in the dependencies
 CUSTOM_SIM_DEPS += $(shell find $(SIM_ROOT)/cocotb/ -name "*.py")
 
-include $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 include $(SIM_ROOT)/lib/Makefile
+include $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 
 include $(SIM_ROOT)/version
 export VERSION
