@@ -27,8 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-all : sim
-
 # Common Makefile for Aldec Riviera-PRO simulator
 
 ifeq ($(GUI),1)
@@ -65,11 +63,9 @@ endif
 
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
-.PHONY: sim
-
-sim: $(SIM_BUILD)/runsim.tcl libs
-	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
-	LD_LIBRARY_PATH=$(LIB_DIR):$(VSIMSABIN)/Linux64 MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
+results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(CUSTOM_SIM_DEPS)
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
+	LD_LIBRARY_PATH=$(LIB_DIR):$(VSIMSABIN)/Linux64 MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do $(SIM_BUILS)/runsim.tcl | tee $(SIM_BUILD)/sim.log
 
 clean::
 	rm -rf $(SIM_BUILD)

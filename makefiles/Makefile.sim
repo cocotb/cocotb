@@ -28,8 +28,9 @@
 ###############################################################################
 
 # This is a simple wrapper Makefile to pull in the appropriate Makefile for
-# the desired simulator and set up common paths for the sims to use to build in
+# the desired simulator and set up common paths for the sims to use to build with
 
+all: sim
 
 SIM_BUILD ?= sim_build
 export SIM_BUILD
@@ -47,6 +48,9 @@ ifeq ($(HAVE_SIMULATOR),0)
 $(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simualtors: $(AVAILABLE_SIMULATORS)")
 endif
 
+# We want to include the Python files from Cocotb in the dependencies
+CUSTOM_SIM_DEPS += $(shell find $(SIM_ROOT)/cocotb/ -name "*.py")
+
 include $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 include $(SIM_ROOT)/lib/Makefile
 
@@ -55,3 +59,14 @@ export VERSION
 
 $(SIM_BUILD):
 	mkdir -p $@
+
+# Regression rule uses Make dependencies to determine whether to run the simulation
+.PHONY: regression
+regression: results.xml
+
+# Default sim rule will force a re-run of the simulation (though the cocotb library
+# and RTL compilation phases are still evaluated by makefile dependencies)
+.PHONY: sim
+sim:
+	-@rm results.xml
+	$(MAKE) results.xml

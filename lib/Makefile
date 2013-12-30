@@ -29,29 +29,31 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
+# FIXME it's a bit nasty to have the source files listed here as dependencies
+# but better than re-building the libraries every time.
+
 $(LIB_OBJ_DIR):
 	mkdir -p $@
 
 $(LIB_DIR): $(LIB_OBJ_DIR)
 	mkdir -p $@
 
-$(LIB_DIR)/libgpilog.so:
+$(LIB_DIR)/libgpilog.so: $(SIM_ROOT)/lib/gpi/gpi_logging.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/gpi
 
-$(LIB_DIR)/libcocotb.so:
+$(LIB_DIR)/libcocotb.so: $(SIM_ROOT)/lib/embed/gpi_embed.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/embed
 
-$(LIB_DIR)/libgpi.so:
+$(LIB_DIR)/libgpi.so: $(SIM_ROOT)/lib/vpi_shim/gpi_vpi.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/vpi_shim
 
-$(LIB_DIR)/libsim.so:
+$(LIB_DIR)/libsim.so: $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/simulator
 
-libs: $(LIB_DIR) \
-	$(LIB_DIR)/libgpilog.so \
-	$(LIB_DIR)/libcocotb.so \
-	$(LIB_DIR)/libgpi.so \
-	$(LIB_DIR)/libsim.so
+COCOTB_LIBS = $(LIB_DIR)/libgpilog.so \
+	      $(LIB_DIR)/libcocotb.so \
+	      $(LIB_DIR)/libgpi.so \
+	      $(LIB_DIR)/libsim.so
 
 clean::
 	-@rm -rf $(BUILD_DIR)

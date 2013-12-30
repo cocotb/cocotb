@@ -27,23 +27,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-VPI_LIB := vpi
-
-all: $(SIM_BUILD) sim
-
-.PHONY: sim
-sim: $(SIM_BUILD) $(VERILOG_SOURCES) libs
+# Compilation phase
+$(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
 	iverilog -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+
+# Execution phase
+results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
         vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
-
-.PHONY: gdb
-gdb: $(SIM_BUILD) $(VERILOG_SOURCES) libs
-	iverilog -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-		gdb --args vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
 clean::
 	-@rm -rf $(SIM_BUILD)
