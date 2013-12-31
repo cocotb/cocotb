@@ -115,7 +115,6 @@ class _XGMIIBus(object):
         """
         self._value.integer = self._integer
         self._integer = long(0)
-        print "self._integer is 0"
         return self._value
 
     def __len__(self):
