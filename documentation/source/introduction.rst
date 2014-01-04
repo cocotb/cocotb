@@ -17,7 +17,7 @@ What is cocotb?
 * Mentor Questa
 * Cadance Incisive
 
-**Cocotb** was developed by Potential Ventures with the support of `Solarflare Communications Ltd <http://www.solarflare.com/>`_ and contributions from Gordon McGreggor and Finn Grimwood.
+**Cocotb** was developed by Potential Ventures with the support of `Solarflare Communications Ltd <http://www.solarflare.com/>`_ and contributions from Gordon McGregor and Finn Grimwood.
 
 
 
