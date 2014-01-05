@@ -30,6 +30,7 @@
 TOPLEVEL = icmp_reply
 
 PWD=$(shell pwd)
+COCOTB=$(PWD)/../../..
 
 VERILOG_SOURCES = $(PWD)/../hdl/icmp_reply.sv
 MODULE=test_icmp_reply
