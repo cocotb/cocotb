@@ -7,9 +7,7 @@ to the simulator. Using Python we can **ping** out DUT in fewer than 100 lines
 of code.
 
 For the impatient this an example is provided with Cocotb and you can run this
-example thusly:
-
-.. code-block::
+example thusly::
 
     cd examples/ping_tun_tap/tests
     sudo make
