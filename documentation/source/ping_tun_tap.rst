@@ -2,12 +2,12 @@ Tutorial: Ping
 ==============
 
 One of the benefits of Python is the ease with which interfacing is possible.
-In this tutorial we'll look at interfacing the standard GNU **ping** command
-to the simulator. Using Python we can **ping** out DUT in fewer than 100 lines
-of code.
+In this tutorial we'll look at interfacing the standard GNU `ping`_ command
+to the simulator. Using Python we can ping our DUT with fewer than 50 lines of
+code.
 
-For the impatient this an example is provided with Cocotb and you can run this
-example thusly::
+For the impatient this tutorial is provided as an example with Cocotb. You can
+run this example from a fresh checkout::
 
     cd examples/ping_tun_tap/tests
     sudo make
