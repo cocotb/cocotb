@@ -1,10 +1,6 @@
-#########
-Tutorials
-#########
 
-
-Endian Swapper
-==============
+Tutorial: Endian Swapper
+========================
 
 In this tutorial we'll use some of the built-in features of Cocotb to quickly create a complex testbench.
 

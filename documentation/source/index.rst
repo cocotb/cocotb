@@ -17,7 +17,8 @@ Contents:
    building
    coroutines
    triggers
-   tutorials
+   endian_swapper
+   ping_tun_tap
    roadmap
    simulator_support
 
