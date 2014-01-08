@@ -64,8 +64,8 @@ endif
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
 results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(CUSTOM_SIM_DEPS)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
-	LD_LIBRARY_PATH=$(LIB_DIR):$(VSIMSABIN)/Linux64:$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do $(SIM_BUILD)/runsim.tcl | tee $(SIM_BUILD)/sim.log
+	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
+	LD_LIBRARY_PATH=$(LIB_DIR):$(VSIMSABIN)/Linux64:$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
 
 clean::
 	rm -rf $(SIM_BUILD)
