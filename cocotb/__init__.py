@@ -108,9 +108,9 @@ def _initialise_testbench(root_handle):
 
     version = os.getenv('VERSION')
     if version is None:
-        log.info("Unable to determine version")
+        log.info("Unable to determine Cocotb version from %s" % exec_path)
     else:
-        log.info("Running tests with CoCoTB-%s from %s" % (version, exec_path))
+        log.info("Running tests with Cocotb v%s from %s" % (version, exec_path))
 
     # Create the base handle type
     dut = cocotb.handle.SimHandle(root_handle)
@@ -165,6 +165,4 @@ def process_plusargs():
                 plusargs[name] = value
             else:
                 plusargs[option[1:]] = True
-
-    print plusargs
 
