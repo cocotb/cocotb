@@ -310,7 +310,10 @@ class Scheduler(object):
                     trigger.addpeers(result)
                     self._add_trigger(trigger, coroutine)
             else:
-                raise_error(self, "Coroutine %s yield something that was not a trigger or a coroutine, did you forget to decorate?" % (str(coroutine)))
+                msg = "Coroutine %s yielded something that was not a trigger or a coroutine!" % str(coroutine)
+                msg += "\nGot type: %s repr: %s str: %s" % (type(result), repr(result), str(result))
+                msg += "\nDid you forget to decorate with @cocotb.cocorutine?"
+                raise_error(self, msg)
 
         # TestComplete indication is game over, tidy up
         except TestComplete as test_result:
