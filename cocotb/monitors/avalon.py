@@ -36,6 +36,9 @@ from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
 from cocotb.triggers import RisingEdge, ReadOnly
 
+
+class AvalonProtocolError(Exception): pass
+
 class AvalonST(BusMonitor):
     """
     AvalonST bus.
@@ -104,6 +107,10 @@ class AvalonSTPkts(BusMonitor):
 
             if valid():
                 if self.bus.startofpacket.value:
+                    if pkt:
+                        raise AvalonProtocolError(
+                            "Duplicate start-of-packet received on %s" % (
+                                str(self.bus.startofpacket)))
                     pkt = ""
 
                 vec = self.bus.data.value
