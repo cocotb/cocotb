@@ -50,6 +50,9 @@ $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_BUILD)
 	echo -e $(foreach src,$(VERILOG_SOURCES),\
 	"alog $(ALOG_ARGS) $(src)\n") >> $@
 	echo "asim $(ASIM_ARGS) +access +w -O2 -dbg -pli libgpi $(TOPLEVEL)" >> $@
+ifeq ($(WAVES),1)
+	echo "log -recursive *" >> $@
+endif
 ifeq ($(GUI),1)
 	echo "wave -rec *" >> $@
 else
