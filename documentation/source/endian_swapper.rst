@@ -6,6 +6,11 @@ In this tutorial we'll use some of the built-in features of Cocotb to quickly cr
 
 .. note:: All the code and sample output from this example are available on `EDA Playground <http://www.edaplayground.com/s/example/199>`_
 
+For the impatient this tutorial is provided as an example with Cocotb. You can run this example from a fresh checkout::
+
+    cd examples/endian_swapper/tests
+    make
+
 
 Design
 ------
@@ -49,20 +54,20 @@ If we inspect this line-by-line:
 
     self.stream_in  = AvalonSTDriver(dut, "stream_in", dut.clk)
 
-Here we're creating an AvalonSTDriver instance. The constructor requires 3 arguments - a handle to the entity containing the interface (**dut**), the name of the interface (**stream_in**) and the associated clock with which to drive the interface (**dut.clk**).  The driver will auto-discover the signals for the interface, assuming that they follow the following naming convention interface_name_signal.
+Here we're creating an AvalonSTDriver instance. The constructor requires 3 arguments - a handle to the entity containing the interface (**dut**), the name of the interface (**stream_in**) and the associated clock with which to drive the interface (**dut.clk**).  The driver will auto-discover the signals for the interface, assuming that they follow the following naming convention **interface_name** _ *signal*.
 
 In this case we have the following signals defined for the **stream_in** interface:
 
-=====                   ======          =======================================
+======================= =============== ==============================================================================================
 Name                    Type            Description (from Avalon Specification)
-=====                   ======          =======================================
+======================= =============== ==============================================================================================
 stream_in_data          data            The data signal from the source to the sink
 stream_in_empty         empty           Indicates the number of symbols that are empty during cycles that contain the end of a packet
 stream_in_valid         valid           Asserted by the source to qualify all other source to sink signals
 stream_in_startofpacket startofpacket   Asserted by the source to mark the beginning of a packet
 stream_in_endofpacket   endofpacket     Asserted by the source to mark the end of a packet
 stream_in_ready         ready           Asserted high to indicate that the sink can accept data
-=====                   ======          =======================================
+======================= =============== ==============================================================================================
 
 By following the signal naming convention the driver can find the signals associated with this interface automatically.
 
@@ -96,4 +101,74 @@ Finally we create another Monitor instance, this time connected to the **stream_
         """Model the DUT based on the input transaction"""
         self.expected_output.append(transaction)
         self.pkts_sent += 1
-    
+
+
+Test Function
+~~~~~~~~~~~~~
+
+There are various 'knobs' we can tweak on this tesbench to vary the behaviour:
+
+* Packet size
+* Backpressure on the **stream_out** interface
+* Idle cycles on the **stream_in** interface
+* Configuration switching of the endian swap register during the test.
+
+We want to run different variations of tests but they will all have a very similar structure so we create a common ``run_test`` function.  To generate backpressure on the **stream_out** interface we use the ``BitDriver`` class from ``cocotb.drivers``.
+
+.. code-block:: python
+
+    @cocotb.coroutine
+    def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backpressure_inserter=None):
+        
+        cocotb.fork(clock_gen(dut.clk))
+        tb = EndianSwapperTB(dut)
+        
+        yield tb.reset()
+        dut.stream_out_ready <= 1
+        
+        # Start off any optional coroutines
+        if config_coroutine is not None:
+            cocotb.fork(config_coroutine(tb.csr))
+        if idle_inserter is not None:
+            tb.stream_in.set_valid_generator(idle_inserter())
+        if backpressure_inserter is not None:
+            tb.backpressure.start(backpressure_inserter())
+        
+        # Send in the packets
+        for transaction in data_in():
+            yield tb.stream_in.send(transaction)
+        
+        # Wait at least 2 cycles where output ready is low before ending the test
+        for i in xrange(2):
+            yield RisingEdge(dut.clk)
+            while not dut.stream_out_ready.value:
+                yield RisingEdge(dut.clk)
+        
+        pkt_count = yield tb.csr.read(1)
+        
+        if pkt_count.integer != tb.pkts_sent:
+            raise TestFailure("DUT recorded %d packets but tb counted %d" % (
+                            pkt_count.integer, tb.pkts_sent))
+        else:
+            dut.log.info("DUT correctly counted %d packets" % pkt_count.integer)
+        
+        raise tb.scoreboard.result
+
+We can see that this test function creates an instance of the tesbench, resets the DUT by running the coroutine ``tb.reset()`` and then starts off any optional coroutines passed in using the keyword arguments.  We then send in all the packets from ``data_in``, ensure that all the packets have been received by waiting 2 cycles at the end.  We read the packet count and compare this with the number of packets.  Finally we use the ``tb.scoreboard.result`` to determine the status of the test.  If any transactions didn't match the expected output then this member would be and instance of the ``TestFailure`` result.
+
+
+Test permutations
+~~~~~~~~~~~~~~~~~
+
+Having defined a test function we can now auto-generate different permutations of tests using the ``TestFactory`` class:
+
+.. code-block:: python
+
+    factory = TestFactory(run_test)
+    factory.add_option("data_in",                 [random_packet_sizes])
+    factory.add_option("config_coroutine",        [None, randomly_switch_config])
+    factory.add_option("idle_inserter",           [None, wave, intermittent_single_cycles, random_50_percent])
+    factory.add_option("backpressure_inserter",   [None, wave, intermittent_single_cycles, random_50_percent])
+    factory.generate_tests()
+
+This will generate 32 tests (named run_test_001 to run_test_032) with all possible permutations of options provided for each argument.  Note that we utilise some of the built-in generators to toggle backpressure and insert idle cycles.
