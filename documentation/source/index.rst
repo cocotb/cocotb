@@ -17,7 +17,6 @@ Contents:
    building
    coroutines
    library_reference
-   triggers
    endian_swapper
    ping_tun_tap
    roadmap

@@ -37,3 +37,38 @@ Interacting with the Simulator
 
 .. autoclass:: cocotb.bus.Bus
     :members:
+
+
+Triggers
+--------
+
+Triggers are used to indicate when the scheduler should resume coroutine execution.  Typically a coroutine will **yield** a trigger or a list of triggers.
+
+Simulation Timing
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: cocotb.triggers.Timer
+
+.. autoclass:: cocotb.triggers.ReadOnly
+
+
+Signal related
+~~~~~~~~~~~~~~
+
+.. autoclass:: cocotb.triggers.Edge
+
+.. autoclass:: cocotb.triggers.RisingEdge
+
+
+Python Triggers
+~~~~~~~~~~~~~~~
+
+
+.. autoclass:: cocotb.triggers.Event
+    :members:
+
+.. autoclass:: cocotb.triggers.Lock
+    :members:
+
+.. autoclass:: cocotb.triggers.Join
+    :members:
