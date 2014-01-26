@@ -28,7 +28,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
     A collections of triggers which a testbench can 'yield'
 """
-import simulator
+import os
+
+# For autodocumentation don't need the extension modules
+if "SPHINX_BUILD" in os.environ:
+    simulator = None
+else:
+    import simulator
 from cocotb.log import SimLog
 from cocotb.result import raise_error
 

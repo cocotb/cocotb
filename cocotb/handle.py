@@ -35,7 +35,14 @@ import traceback
 import sys
 from StringIO import StringIO
 
-import simulator
+import os
+
+# For autodocumentation don't need the extension modules
+if "SPHINX_BUILD" in os.environ:
+    simulator = None
+else:
+    import simulator
+
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog

@@ -34,7 +34,12 @@ import logging
 import inspect
 from itertools import product
 
-import simulator
+import os
+# For autodocumentation don't need the extension modules
+if "SPHINX_BUILD" in os.environ:
+    simulator = None
+else:
+    import simulator
 
 import cocotb
 import cocotb.ANSI as ANSI
@@ -243,24 +248,23 @@ class TestFactory(object):
     For example if we have a module that takes backpressure and idles and
     have some packet generations routines gen_a and gen_b.
 
-    tf = TestFactory(run_test)
-
-    tf.add_option('data_in', [gen_a, gen_b])
-    tf.add_option('backpressure', [None, random_backpressure])
-    tf.add_option('idles', [None, random_idles])
-    tf.generate_tests()
+    >>> tf = TestFactory(run_test)
+    >>> tf.add_option('data_in', [gen_a, gen_b])
+    >>> tf.add_option('backpressure', [None, random_backpressure])
+    >>> tf.add_option('idles', [None, random_idles])
+    >>> tf.generate_tests()
 
     We would get the following tests:
-        gen_a with no backpressure and no idles
-        gen_a with no backpressure and random_idles
-        gen_a with random_backpressure and no idles
-        gen_a with random_backpressure and random_idles
-        gen_b with no backpressure and no idles
-        gen_b with no backpressure and random_idles
-        gen_b with random_backpressure and no idles
-        gen_b with random_backpressure and random_idles
+        * gen_a with no backpressure and no idles
+        * gen_a with no backpressure and random_idles
+        * gen_a with random_backpressure and no idles
+        * gen_a with random_backpressure and random_idles
+        * gen_b with no backpressure and no idles
+        * gen_b with no backpressure and random_idles
+        * gen_b with random_backpressure and no idles
+        * gen_b with random_backpressure and random_idles
 
-    The tests are appended to the calling module for aut-discovery.
+    The tests are appended to the calling module for auto-discovery.
 
     Tests are simply named test_function_N. The docstring for the test (hence
     the test description) includes the name and description of each generator.

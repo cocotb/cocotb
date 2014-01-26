@@ -33,7 +33,11 @@ import os
 import sys
 import logging
 import inspect
-import simulator
+# For autodocumentation don't need the extension modules
+if "SPHINX_BUILD" in os.environ:
+    simulator = None
+else:
+    import simulator
 
 import cocotb.ANSI as ANSI
 from pdb import set_trace

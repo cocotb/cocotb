@@ -53,9 +53,11 @@ from cocotb.decorators import test, coroutine, function, external
 # scheduler package
 
 # GPI logging instance
-logging.basicConfig()
-logging.setLoggerClass(SimBaseLog)
-log = SimLog('cocotb.gpi')
+# For autodocumentation don't need the extension modules
+if "SPHINX_BUILD" not in os.environ:
+    logging.basicConfig()
+    logging.setLoggerClass(SimBaseLog)
+    log = SimLog('cocotb.gpi')
 
 scheduler = Scheduler()
 regression = None

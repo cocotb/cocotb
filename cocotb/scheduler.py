@@ -38,7 +38,12 @@ import threading
 import time
 import pdb
 
-import simulator
+# For autodocumentation don't need the extension modules
+if "SPHINX_BUILD" in os.environ:
+    simulator = None
+else:
+    import simulator
+
 import cocotb
 import cocotb.decorators
 from cocotb.triggers import Trigger, Timer, ReadOnly, NextTimeStep, ReadWrite, RisingEdge
