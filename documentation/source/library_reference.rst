@@ -72,3 +72,19 @@ Python Triggers
 
 .. autoclass:: cocotb.triggers.Join
     :members:
+
+
+Testbench Structure
+===================
+
+.. autoclass:: cocotb.drivers.Driver
+    :members:
+
+.. autoclass:: cocotb.monitors.Monitor
+    :members:
+
+.. autoclass:: cocotb.scoreboard.Scoreboard
+    :members:
+
+
+
