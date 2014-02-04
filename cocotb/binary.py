@@ -190,6 +190,63 @@ class BinaryValue(object):
             other = other.value
         return self.value.__cmp__(other)
 
+    def __int__(self):
+        return self.integer
+
+    def __long__(self):
+        return self.integer
+
+    def __add__(self, other):
+        return self.integer + int(other)
+
+    def __iadd__(self, other):
+        self.integer = self.integer + int(other)
+        return self
+
+    def __sub__(self, other):
+        return self.integer - int(other)
+
+    def __isub__(self, other):
+        self.integer = self.integer - int(other)
+        return self
+
+    def __mul__(self, other):
+        return self.integer * int(other)
+
+    def __imul__(self, other):
+        self.integer = self.integer * int(other)
+        return self
+
+    def __divmod__(self, other):
+        return self.integer // int(other)
+
+    def __idivmod__(self, other):
+        self.integer = self.integer // int(other)
+        return self
+
+    def __mod__(self, other):
+        return self.integer % int(other)
+
+    def __imod__(self, other):
+        self.integer = self.integer % int(other)
+        return self
+
+    def __lshift__(self, other):
+         return int(self) << int(other)
+
+    def __ilshift__(self, other):
+        """Preserves X values"""
+        self.binstr = self.binstr[other:] + self.binstr[:other]
+        return self
+
+    def __rshift__(self, other):
+        return int(self) >> int(other)
+
+    def __irshift__(self, other):
+        """Preserves X values"""
+        self.binstr = self.binstr[-other:] + self.binstr[:-other]
+        return self
+
 
 if __name__ == "__main__":
     import doctest
