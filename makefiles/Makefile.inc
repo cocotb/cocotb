@@ -70,5 +70,5 @@ endif
 ifeq ($(OS),Darwin)
 LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
 else
-LINKER_ARGS := -shared -Xlinker -export-dynamic
+LINKER_ARGS := -shared -Xlinker -export-dynamic -L$(PYTHON_LIBDIR)
 endif
