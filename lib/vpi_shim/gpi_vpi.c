@@ -1004,36 +1004,95 @@ void register_final_callback(void)
     FEXIT
 }
 
+// Called at compile time to validate the arguments to the system functions
+// we redefine (info, warning, error, fatal).
+//
+// Expect either no arguments or a single string
+static int system_function_compiletf(char *userdata)
+{
+    vpiHandle systf_handle, arg_iterator, arg_handle;
+    int tfarg_type;
+
+    systf_handle = vpi_handle(vpiSysTfCall, NULL);
+    arg_iterator = vpi_iterate(vpiArgument, systf_handle);
+
+    if (arg_iterator == NULL)
+        return 0;
+
+    arg_handle = vpi_scan(arg_iterator);
+    tfarg_type = vpi_get(vpiType, arg_handle);
+
+    // FIXME: HACK for some reason Icarus returns a vpiRealVal type for strings?
+    if (vpiStringVal != tfarg_type && vpiRealVal != tfarg_type) {
+        vpi_printf("ERROR: $[info|warning|error|fata] argument wrong type: %d\n",
+                    tfarg_type);
+        vpi_free_object(arg_iterator);
+        vpi_control(vpiFinish, 1);
+    }
+}
+
+static int systf_info_level           = GPIInfo;
+static int systf_warning_level        = GPIWarning;
+static int systf_error_level          = GPIError;
+static int systf_fatal_level          = GPICritical;
 
 // System function to permit code in the simulator to fail a test
 // TODO: Pass in an error string
-static int system_function_fail_test(char *userdata)
+static int system_function_overload(char *userdata)
 {
-
     vpiHandle systfref, args_iter, argh;
     struct t_vpi_value argval;
+    const char *msg = "*** NO MESSAGE PROVIDED ***";
 
     // Obtain a handle to the argument list
     systfref = vpi_handle(vpiSysTfCall, NULL);
     args_iter = vpi_iterate(vpiArgument, systfref);
 
-    // Grab the value of the first argument
-    argh = vpi_scan(args_iter);
-    argval.format = vpiStringVal;
-    vpi_get_value(argh, &argval);
+    if (args_iter) {
+        // Grab the value of the first argument
+        argh = vpi_scan(args_iter);
+        argval.format = vpiStringVal;
+        vpi_get_value(argh, &argval);
+        vpi_free_object(args_iter);
+        msg = argval.value.str;
+    }
 
-    embed_sim_event(SIM_TEST_FAIL, argval.value.str);
+    gpi_log("simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), msg );
 
-    // Cleanup and return
-    vpi_free_object(args_iter);
+    // Fail the test for critical errors
+    if (GPICritical == *userdata)
+        embed_sim_event(SIM_TEST_FAIL, argval.value.str);
+
     return 0;
 }
+
+
 
 void register_system_functions(void)
 {
     FENTER
-    s_vpi_systf_data data = {vpiSysTask, vpiIntFunc, "$fail_test", system_function_fail_test, NULL, NULL, NULL};
-    vpi_register_systf(&data);
+    s_vpi_systf_data tfData = { vpiSysTask, vpiSysTask };
+
+    tfData.sizetf       = NULL;
+    tfData.compiletf    = system_function_compiletf;
+    tfData.calltf       = system_function_overload;
+
+    tfData.user_data    = (void *)&systf_info_level;
+    tfData.tfname       = "$info";
+    vpi_register_systf( &tfData );
+
+    tfData.user_data    = (void *)&systf_warning_level;
+    tfData.tfname       = "$warning";
+    vpi_register_systf( &tfData );
+
+    tfData.user_data    = (void *)&systf_error_level;
+    tfData.tfname       = "$error";
+    vpi_register_systf( &tfData );
+
+    tfData.user_data    = (void *)&systf_fatal_level;
+    tfData.tfname       = "$fatal";
+    vpi_register_systf( &tfData );
+
     FEXIT
 }
 

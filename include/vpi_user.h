@@ -137,6 +137,10 @@ typedef struct t_vpi_value
 #define vpiL                  5
 #define vpiDontCare           6
 
+/* properties */
+#define vpiFile               5
+#define vpiLineNo             6
+
 /* normal callback structure */
 typedef struct t_cb_data
 {
@@ -260,7 +264,7 @@ extern int32_t    vpi_chk_error(p_vpi_error_info);
 
 extern int32_t    vpi_get_vlog_info(p_vpi_vlog_info info_p);
 
-extern int32_t    vpi_register_systf(p_vpi_systf_data data_p);
+extern vpiHandle  vpi_register_systf(p_vpi_systf_data data_p);
 
 extern void (*vlog_startup_routines[])(void);
 

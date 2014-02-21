@@ -55,8 +55,13 @@ always @(stream_out_ready)
 initial begin
      $dumpfile("waveform.vcd");
      $dumpvars(0,close_module);
-
-     #500000 $fail_test("Test timed out, failing...");
+     #10 $info;
+     #10 $info("This is an info message");
+     #10 $warning;
+     #10 $warning("This is a  warning message");
+     #10 $error;
+     #10 $error("This is an error message");
+     #1000 $fatal("This is a a fatal message that fails the test");
 end
 
 endmodule

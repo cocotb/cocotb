@@ -31,7 +31,7 @@
 TOPLEVEL = close_module
 
 PWD=$(shell pwd)
-
+COCOTB=$(PWD)/../../..
 VERILOG_SOURCES = $(PWD)/../hdl/close_module.v
 MODULE=test_closedown
 
