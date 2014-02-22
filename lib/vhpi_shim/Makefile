@@ -32,14 +32,11 @@ INCLUDES    +=
 GCC_ARGS    += -DVPI_CHECKING
 LIBS        := -lgpilog -lcocotb
 LD_PATH     := -L$(LIB_DIR)
-LIB_NAME    := libgpi.so
+LIB_NAME    := libgpivhpi.so
 
 SRCS        := gpi_vhpi.c
 
-all: $(LIB_DIR)/cocotb.so
-
-$(LIB_DIR)/cocotb.so: $(LIB_DIR)/$(LIB_NAME)
-	ln -sf $(LIB_NAME) $@
+all: $(LIB_DIR)/$(LIB_NAME)
 
 clean:
 	-@rm -rf $(LIB_DIR)/gpivpi.vpl

@@ -47,12 +47,16 @@ $(LIB_DIR)/libcocotb.so: $(SIM_ROOT)/lib/embed/gpi_embed.c | $(LIB_DIR)
 $(LIB_DIR)/libgpi.so: $(SIM_ROOT)/lib/vpi_shim/gpi_vpi.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/vpi_shim
 
+$(LIB_DIR)/libgpivhpi.so: $(SIM_ROOT)/lib/vhpi_shim/gpi_vhpi.c | $(LIB_DIR)
+	make -C $(SIM_ROOT)/lib/vhpi_shim
+	
 $(LIB_DIR)/libsim.so: $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/simulator
 
 COCOTB_LIBS = $(LIB_DIR)/libgpilog.so \
 	      $(LIB_DIR)/libcocotb.so \
 	      $(LIB_DIR)/libgpi.so \
+	      $(LIB_DIR)/libgpivhpi.so \
 	      $(LIB_DIR)/libsim.so
 
 clean::
