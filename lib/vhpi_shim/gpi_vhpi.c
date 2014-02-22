@@ -121,17 +121,18 @@ static int __check_vhpi_error(const char *func, long line)
         return;
 
     switch (level) {
-        case vpiNotice:
+        case vhpiNote:
             loglevel = GPIInfo;
             break;
-        case vpiWarning:
+        case vhpiWarning:
             loglevel = GPIWarning;
             break;
-        case vpiError:
+        case vhpiError:
             loglevel = GPIError;
             break;
-        case vpiSystem:
-        case vpiInternal:
+        case vhpiFailure:
+        case vhpiSystem:
+        case vhpiInternal:
             loglevel = GPICritical;
             break;
     }
@@ -225,6 +226,7 @@ gpi_sim_hdl gpi_get_root_handle(const char* name)
 {
     FENTER
     vhpiHandleT root;
+    vhpiHandleT dut;
     gpi_sim_hdl rv;
 
     root = vhpi_handle(vhpiRootInst, NULL);
@@ -236,17 +238,29 @@ gpi_sim_hdl gpi_get_root_handle(const char* name)
         return NULL;
     }
 
-    const char *found = vhpi_get_str(vhpiFullNameP, root);
+    if (name)
+        dut = vhpi_handle_by_name(name, NULL);
+    else
+        dut = vhpi_handle(vhpiDesignUnit, root);
+    check_vhpi_error();
+
+    if (!dut) {
+        LOG_ERROR("VHPI: Attempting to get the DUT handle failed");
+        FEXIT
+        return NULL;
+    }
+
+    const char *found = vhpi_get_str(vhpiNameP, dut);
     check_vhpi_error();
 
     if (name != NULL && strcmp(name, found)) {
-        LOG_WARN("VHPI: Root %s doesn't match requested toplevel %s", name, found);
+        LOG_WARN("VHPI: Root '%s' doesn't match requested toplevel %s", found, name);
         FEXIT
         return NULL;
     }
 
     rv = gpi_alloc_handle();
-    rv->sim_hdl = root;
+    rv->sim_hdl = dut;
 
     FEXIT
     return rv;
@@ -363,6 +377,11 @@ void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
     vhpiValueT  value_s;
     value_s.format = vhpiIntVal;
     value_s.value.intg = value;
+    value_s.bufSize = sizeof(vhpiIntT);
+
+//     printf("Setting %s to %d\n", 
+//         vhpi_get_str(vhpiFullNameP, (vhpiHandleT)(gpi_hdl->sim_hdl)),
+//            value);
 
     vhpi_put_value((vhpiHandleT)(gpi_hdl->sim_hdl), &value_s, vhpiForcePropagate);
     check_vhpi_error();
@@ -428,16 +447,38 @@ static char *gpi_copy_name(const char *name)
 }
 
 
+// FIXME Seem to have a problem here
+// According to VHPI spec we should call vhpi_get_value once to determine
+// how much memory to allocate for the result... it appears that we just
+// get bogus values back so we'll use a fixed size buffer for now
 char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
 {
     FENTER
-    vhpiValueT value_s = {vhpiBinStrVal};
+    vhpiValueT value_s;
     vhpiValueT *value_p = &value_s;
+    char *result;
+    size_t size;
+    value_p->format = vhpiBinStrVal;
 
+//     // Call once to find out how long the string is
+//     vhpi_get_value((vhpiHandleT)(gpi_hdl->sim_hdl), value_p);
+//     check_vhpi_error();
+
+//     size = value_p->bufSize;
+//     LOG_ERROR("After initial call to get value: bufSize=%u", size);
+
+    result = (char *)malloc(512);
+    if (result == NULL) {
+        LOG_CRITICAL("VHPI: Attempting allocate string buffer failed!");
+    }
+
+    // Call again to get the value
+    value_p->bufSize = 512;
+    value_p->value.str = result;
     vhpi_get_value((vhpiHandleT)(gpi_hdl->sim_hdl), value_p);
     check_vhpi_error();
 
-    char *result = gpi_copy_name(value_p->value.str);
+//     char *result = gpi_copy_name(value_p->value.str);
     FEXIT
     return result;
 }
@@ -969,3 +1010,15 @@ void (*vhpi_startup_routines[])(void) = {
     register_final_callback,
     0
 };
+
+// For non-VPI compliant applications that cannot find vlog_startup_routines symbol
+void vhpi_startup_routines_bootstrap(void) {
+    void (*routine)(void);
+    int i;
+    routine = vhpi_startup_routines[0];
+    for (i = 0, routine = vhpi_startup_routines[i];
+         routine;
+         routine = vhpi_startup_routines[++i]) {
+        routine();
+    }
+}
