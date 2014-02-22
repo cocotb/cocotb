@@ -183,6 +183,7 @@ void embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
 
+    LOG_INFO("Running on %s version %s", info->product, info->version);
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
 
     // Now that logging has been set up ok we initialise the testbench
@@ -212,7 +213,7 @@ void embed_sim_init(gpi_sim_info_t *info)
     cocotb_retval = PyObject_CallObject(cocotb_init, cocotb_args);
 
     if (cocotb_retval != NULL) {
-        LOG_INFO("_initialise_testbench successful");
+        LOG_DEBUG("_initialise_testbench successful");
         Py_DECREF(cocotb_retval);
     } else {
         PyErr_Print();
@@ -238,8 +239,6 @@ void embed_sim_event(gpi_event_t level, const char *msg)
 
     PyGILState_STATE gstate;
     gstate = PyGILState_Ensure();
-
-    LOG_WARN("Failing the test at simulator request!");
 
     PyObject *fArgs = PyTuple_New(2);
     PyTuple_SetItem(fArgs, 0, PyInt_FromLong(level));
