@@ -89,6 +89,13 @@ class SimHandle(object):
         buff.close()
         raise exception
 
+    def __setattr__(self, name, value):
+        """Provide transparent access to signals"""
+        if not name.startswith('_') and self.__hasattr__(name):
+            getattr(self, name).setcachedvalue(value)
+            return
+        object.__setattr__(self, name, value)
+
     def __hasattr__(self, name):
         """Since calling hasattr(handle, "something") will print out a
             backtrace to the log since usually attempting to access a
@@ -104,6 +111,9 @@ class SimHandle(object):
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
+    def __setitem__(self, index, value):
+        """Provide transparent assignment to bit index"""
+        self.__getitem__(index).setcachedvalue(value)
 
     def getvalue(self):
         result = BinaryValue()

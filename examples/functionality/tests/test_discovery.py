@@ -44,6 +44,18 @@ def discover_value_not_in_dut(dut):
 
 
 @cocotb.test()
+def access_signal(dut):
+    """Access a signal using the assignment mechanism"""
+    dut.stream_in_data = 1
+    yield Timer(10)
+    if dut.stream_in_data.value.integer != 1:
+        raise TestError("%s.%s != %d" % (
+           str(dut.stream_in_data.value.integer),
+           dut.stream_in_data.value.integer))
+
+
+
+@cocotb.test()
 def access_single_bit(dut):
     """Access a single bit in a vector of the dut"""
     # FIXME this test fails on Icarus but works on VCS
@@ -57,7 +69,19 @@ def access_single_bit(dut):
                 (str(dut.stream_out_data_comb),
                 dut.stream_out_data_comb.value.integer, (1<<2)))
 
-
+@cocotb.test()
+def access_single_bit_assignment(dut):
+    """Access a single bit in a vector of the dut using the assignment mechanism"""
+    # FIXME this test fails on Icarus but works on VCS
+    dut.stream_in_data = 0
+    yield Timer(10)
+    dut.log.info("%s = %d bits" % (str(dut.stream_in_data), len(dut.stream_in_data)))
+    dut.stream_in_data[2] = 1
+    yield Timer(10)
+    if dut.stream_out_data_comb.value.integer != (1<<2):
+        raise TestError("%s.%s != %d" %
+                (str(dut.stream_out_data_comb),
+                dut.stream_out_data_comb.value.integer, (1<<2)))
 
 @cocotb.test(expect_error=True)
 def access_single_bit_erroneous(dut):
