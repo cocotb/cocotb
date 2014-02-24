@@ -9,8 +9,7 @@
 *    * Redistributions in binary form must reproduce the above copyright
 *      notice, this list of conditions and the following disclaimer in the
 *      documentation and/or other materials provided with the distribution.
-*    * Neither the name of Potential Ventures Ltd,
-*       SolarFlare Communications Inc nor the
+*    * Neither the name of Potential Ventures Ltd not the
 *      names of its contributors may be used to endorse or promote products
 *      derived from this software without specific prior written permission.
 *
@@ -26,6 +25,18 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+// TODO:
+// Now that we have VPI and VHPI we could refactor some of the common code into
+// another file (e.g. gpi_copy_name).
+//
+// This file could be neater, for example by using a mapping of callback type to
+// free_one_time vs. free_recurring.
+//
+// Some functions are completely untested (gpi_get_handle_by_index) and others
+// need optimisation.
+//
+// VHPI seems to run significantly slower the VPI, need to investigate.
+
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -40,15 +51,10 @@
         ((_type *)((uintptr_t)(_address) -      \
          (uintptr_t)(&((_type *)0)->_member)))
 
-#define VPI_CHECKING 1
+#define VHPI_CHECKING 1
 
 static gpi_sim_hdl sim_init_cb;
 static gpi_sim_hdl sim_finish_cb;
-
-static int alloc_count = 0;
-static int dealloc_count = 0;
-static int clear_count = 0;
-static int total_count = 0;
 
 typedef enum vhpi_cb_state_e {
     VHPI_FREE = 0,
@@ -84,7 +90,6 @@ typedef struct gpi_clock_s {
 
 typedef gpi_clock_t *gpi_clock_hdl;
 
-// Add to this over time
 static const char * vhpi_reason_to_string(int reason)
 {
     switch (reason) {
@@ -104,16 +109,61 @@ static const char * vhpi_reason_to_string(int reason)
         return "vhpiCbStartOfSimulation";
     case vhpiCbEndOfSimulation:
         return "vhpiCbEndOfSimulation";
+    case vhpiCbEndOfProcesses:
+        return "vhpiCbEndOfProcesses";
+    case vhpiCbLastKnownDeltaCycle:
+        return "vhpiCbLastKnownDeltaCycle";
     default:
         return "unknown";
     }
 }
 
+static const char * vhpi_format_to_string(int reason)
+{
+    switch (reason) {
+    case vhpiBinStrVal:
+        return "vhpiBinStrVal";
+    case vhpiOctStrVal:
+        return "vhpiOctStrVal";
+    case vhpiDecStrVal:
+        return "vhpiDecStrVal";
+    case vhpiHexStrVal:
+        return "vhpiHexStrVal";
+    case vhpiEnumVal:
+        return "vhpiEnumVal";
+    case vhpiIntVal:
+        return "vhpiIntVal";
+    case vhpiLogicVal:
+        return "vhpiLogicVal";
+    case vhpiRealVal:
+        return "vhpiRealVal";
+    case vhpiStrVal:
+        return "vhpiStrVal";
+    case vhpiCharVal:
+        return "vhpiCharVal";
+    case vhpiTimeVal:
+        return "vhpiTimeVal";
+    case vhpiPhysVal:
+        return "vhpiPhysVal";
+    case vhpiObjTypeVal:
+        return "vhpiObjTypeVal";
+    case vhpiPtrVal:
+        return "vhpiPtrVal";
+    case vhpiEnumVecVal:
+        return "vhpiEnumVecVal";
+
+    default:
+        return "unknown";
+    }
+}
+
+
+
 // Should be run after every VPI call to check error status
 static int __check_vhpi_error(const char *func, long line)
 {
     int level=0;
-#if VPI_CHECKING
+#if VHPI_CHECKING
     vhpiErrorInfoT info;
     int loglevel;
     level = vhpi_check_error(&info);
@@ -157,14 +207,16 @@ static inline int __gpi_register_cb(p_vhpi_cb_user_data user, vhpiCbDataT *cb_da
     int ret = 0;
 
     if (!new_hdl) {
-        LOG_CRITICAL("VPI: Unable to register callback a handle for VHPI type %s(%d)",
+        LOG_CRITICAL("VHPI: Unable to register callback a handle for VHPI type %s(%d)",
                      vhpi_reason_to_string(cb_data->reason), cb_data->reason);
         check_vhpi_error();
         ret = -1;
     }
 
-    if (user->cb_hdl != NULL)
+    if (user->cb_hdl != NULL) {
+        printf("VHPI: Attempt to register a callback that's already registered...\n");
         gpi_deregister_callback(&user->gpi_hdl);
+    }
 
     user->cb_hdl = new_hdl;
 
@@ -371,51 +423,126 @@ void gpi_get_sim_time(uint32_t *high, uint32_t *low)
 }
 
 // Value related functions
+static vhpiEnumT chr2vhpi(const char value) {
+    switch (value) {
+        case '0':
+            return vhpi0;
+        case '1':
+            return vhpi1;
+        case 'U':
+        case 'u':
+            return vhpiU;
+        case 'Z':
+        case 'z':
+            return vhpiZ;
+        case 'X':
+        case 'x':
+            return vhpiX;
+        default:
+            return vhpiDontCare;
+    }
+}
+
+// Unfortunately it seems that format conversion is not well supported
+// We have to set values using vhpiEnum*
 void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
 {
     FENTER
-    vhpiValueT  value_s;
-    value_s.format = vhpiIntVal;
-    value_s.value.intg = value;
-    value_s.bufSize = sizeof(vhpiIntT);
+    vhpiValueT value_s;
+    vhpiValueT *value_p = &value_s;
+    int size, i;
 
-//     printf("Setting %s to %d\n", 
-//         vhpi_get_str(vhpiFullNameP, (vhpiHandleT)(gpi_hdl->sim_hdl)),
-//            value);
+    // Determine the type of object, either scalar or vector
+    value_s.format = vhpiObjTypeVal;
+    value_s.bufSize = 0;
+    value_s.value.str = NULL;
+
+    vhpi_get_value((vhpiHandleT)(gpi_hdl->sim_hdl), &value_s);
+    check_vhpi_error();
+
+    switch (value_s.format) {
+        case vhpiEnumVal: {
+            value_s.value.enumv = value ? vhpi1 : vhpi0;
+            break;
+        }
+
+        case vhpiEnumVecVal: {
+            size = vhpi_get(vhpiSizeP, (vhpiHandleT)(gpi_hdl->sim_hdl));
+            value_s.bufSize = size*sizeof(vhpiEnumT); 
+            value_s.value.enumvs = (vhpiEnumT *)malloc(size*sizeof(vhpiEnumT));
+
+            for (i=0; i<size; i++)
+                value_s.value.enumvs[size-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
+
+            break;
+        }
+
+        default: {
+            LOG_CRITICAL("Unable to assign value to %s (%d) format object",
+                         vhpi_format_to_string(value_s.format), value_s.format);
+        }
+    }
 
     vhpi_put_value((vhpiHandleT)(gpi_hdl->sim_hdl), &value_s, vhpiForcePropagate);
     check_vhpi_error();
 
+    if (vhpiEnumVecVal == value_s.format)
+        free(value_s.value.enumvs);
     FEXIT
 }
 
+
+
+// Unfortunately it seems that format conversion is not well supported
+// We have to set values using vhpiEnum*
 void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
 {
     FENTER
     vhpiValueT value_s;
     vhpiValueT *value_p = &value_s;
+    int len, size, i;
+    const char *ptr;
 
-    int len;
-    char *buff;
-    if (str)
-        len = strlen(str) + 1;
+    // Determine the type of object, either scalar or vector
+    value_s.format = vhpiObjTypeVal;
+    value_s.bufSize = 0;
+    value_s.value.str = NULL;
 
-    buff = (char *)malloc(len);
-    if (buff== NULL) {
-        LOG_CRITICAL("VPI: Attempting allocate string buffer failed!");
-        return;
+    vhpi_get_value((vhpiHandleT)(gpi_hdl->sim_hdl), &value_s);
+    check_vhpi_error();
+
+    switch (value_s.format) {
+         case vhpiEnumVal: {
+            value_s.value.enumv = chr2vhpi(*str);
+            break;
+        }
+
+        case vhpiEnumVecVal: {
+            len = strlen(str);
+            size = vhpi_get(vhpiSizeP, (vhpiHandleT)(gpi_hdl->sim_hdl));
+            value_s.bufSize = size*sizeof(vhpiEnumT); 
+            value_s.value.enumvs = (vhpiEnumT *)malloc(size*sizeof(vhpiEnumT));
+
+            // Initialise to 0s
+            for (i=0; i<size; i++)
+                value_s.value.enumvs[size-i-1] = vhpi0;
+
+            for (i=0, ptr=str; i<len; ptr++, i++)
+                value_s.value.enumvs[i] = chr2vhpi(*ptr);
+
+            break;
+        }
+
+        default: {
+            LOG_CRITICAL("Unable to assign value to %s (%d) format object",
+                         vhpi_format_to_string(value_s.format), value_s.format);
+        }
     }
-
-    strncpy(buff, str, len);
-
-    value_p->bufSize = len;
-    value_p->numElems = len;
-    value_p->value.str = buff;
-    value_p->format = vhpiBinStrVal;
 
     vhpi_put_value((vhpiHandleT)(gpi_hdl->sim_hdl), &value_s, vhpiForcePropagate);
     check_vhpi_error();
-    free(buff);
+    if(value_s.format == vhpiEnumVecVal)
+        free(value_s.value.enumvs);
     FEXIT
 }
 
@@ -447,10 +574,6 @@ static char *gpi_copy_name(const char *name)
 }
 
 
-// FIXME Seem to have a problem here
-// According to VHPI spec we should call vhpi_get_value once to determine
-// how much memory to allocate for the result... it appears that we just
-// get bogus values back so we'll use a fixed size buffer for now
 char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
 {
     FENTER
@@ -460,25 +583,33 @@ char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
     size_t size;
     value_p->format = vhpiBinStrVal;
 
-//     // Call once to find out how long the string is
-//     vhpi_get_value((vhpiHandleT)(gpi_hdl->sim_hdl), value_p);
-//     check_vhpi_error();
 
-//     size = value_p->bufSize;
-//     LOG_ERROR("After initial call to get value: bufSize=%u", size);
+// FIXME Seem to have a problem here
+// According to VHPI spec we should call vhpi_get_value once to determine
+// how much memory to allocate for the result... it appears that we just
+// get bogus values back so we'll use a fixed size buffer for now
+#if 0
+    // Call once to find out how long the string is
+    vhpi_get_value((vhpiHandleT)(gpi_hdl->sim_hdl), value_p);
+    check_vhpi_error();
 
-    result = (char *)malloc(512);
+    size = value_p->bufSize;
+    LOG_ERROR("After initial call to get value: bufSize=%u", size);
+#else
+    size = 512;
+#endif
+
+    result = (char *)malloc(size);
     if (result == NULL) {
         LOG_CRITICAL("VHPI: Attempting allocate string buffer failed!");
     }
 
     // Call again to get the value
-    value_p->bufSize = 512;
+    value_p->bufSize = size;
     value_p->value.str = result;
     vhpi_get_value((vhpiHandleT)(gpi_hdl->sim_hdl), value_p);
     check_vhpi_error();
 
-//     char *result = gpi_copy_name(value_p->value.str);
     FEXIT
     return result;
 }
@@ -590,7 +721,7 @@ int gpi_deregister_callback(gpi_sim_hdl gpi_hdl)
 
     user_data = gpi_container_of(gpi_hdl, s_vhpi_cb_user_data, gpi_hdl);
 
-    if (user_data->cb_hdl) {
+    if (user_data->cb_hdl != NULL) {
         rc = user_data->gpi_cleanup(user_data);
         user_data->cb_hdl = NULL;
     }
@@ -605,7 +736,7 @@ int gpi_deregister_callback(gpi_sim_hdl gpi_hdl)
 static int gpi_free_one_time(p_vhpi_cb_user_data user_data)
 {
     FENTER
-    int rc;
+    int rc = 0;
     vhpiHandleT cb_hdl = user_data->cb_hdl;
     if (!cb_hdl) {
         LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
@@ -707,7 +838,7 @@ int gpi_register_readonly_callback(gpi_sim_hdl cb,
     user_data->gpi_function = gpi_function;
     user_data->gpi_cleanup = gpi_free_one_time;
 
-    cb_data_s.reason    = vhpiCbEndOfTimeStep;
+    cb_data_s.reason    = vhpiCbLastKnownDeltaCycle;
     cb_data_s.cb_rtn    = handle_vhpi_callback;
     cb_data_s.obj       = NULL;
     cb_data_s.time      = &time;
@@ -1011,7 +1142,7 @@ void (*vhpi_startup_routines[])(void) = {
     0
 };
 
-// For non-VPI compliant applications that cannot find vlog_startup_routines symbol
+// For non-VPI compliant applications that cannot find vlog_startup_routines
 void vhpi_startup_routines_bootstrap(void) {
     void (*routine)(void);
     int i;

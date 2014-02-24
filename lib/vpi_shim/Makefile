@@ -31,8 +31,8 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GCC_ARGS    += -DVPI_CHECKING
-LIBS        := -lgpilog -lcocotb
-LD_PATH     := -L$(LIB_DIR)
+LIBS        := -lgpilog -lcocotb $(EXTRA_LIBS)
+LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libgpi.so
 
 SRCS        := gpi_vpi.c

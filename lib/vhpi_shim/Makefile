@@ -29,10 +29,10 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
-GCC_ARGS    += -DVPI_CHECKING
-LIBS        := -lgpilog -lcocotb
-LD_PATH     := -L$(LIB_DIR)
-LIB_NAME    := libgpivhpi.so
+GCC_ARGS    += -DVHPI_CHECKING
+LIBS        := -lgpilog -lcocotb $(EXTRA_LIBS)
+LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
+LIB_NAME    := libgpi.so
 
 SRCS        := gpi_vhpi.c
 
