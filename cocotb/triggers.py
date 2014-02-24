@@ -414,6 +414,10 @@ class Lock(PythonTrigger):
         return self.__class__.__name__ + "(%s) [%s waiting]" % (
                 self.name, len(self._pending_primed))
 
+    def __nonzero__(self):
+        """Provide boolean of a Lock"""
+        return self.locked
+
 
 class NullTrigger(Trigger):
     """
