@@ -76,7 +76,7 @@ const char *log_level(long level)
 
 // We keep this module global to avoid reallocation
 // we do not need to worry about locking here as
-// are single threaded and can not have to calls
+// are single threaded and can not have multiple calls
 // into gpi_log at once.
 #define LOG_SIZE    512
 static char log_buff[LOG_SIZE];
