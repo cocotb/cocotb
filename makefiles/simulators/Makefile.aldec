@@ -35,11 +35,26 @@ else
     CMD := vsimsa
 endif
 
+EXTRA_LIBS = -laldecpli -lstdc++ -lsupc++
+EXTRA_LIBDIRS = -L$(ALDEC_PATH)/bin/Linux64
+
 ALOG_ARGS += "+define+COCOTB_SIM -dbg"
+ACOM_ARGS += "-dbg"
 
 ifeq ($(COVERAGE),1)
     ASIM_ARGS += "-acdb"
     ALOG_ARGS += "-coverage sb"
+endif
+
+ifeq ($(GPI_IMPL),vpi)
+    GPI_ARGS = -pli libgpi
+endif
+ifeq ($(GPI_IMPL),vhpi)
+    GPI_ARGS = -loadvhpi $(LIB_DIR)/libgpi:vhpi_startup_routines_bootstrap
+endif
+
+ifndef GPI_ARGS
+   $(error "Unable to determine appropriate GPI layer to use")
 endif
 
 
@@ -47,9 +62,14 @@ endif
 $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_BUILD)
 	echo "alib work" > $@
 	echo "set worklib work" >> $@
+	echo -e $(foreach src,$(VHDL_SOURCES),\
+	"acom $(ACOM_ARGS) $(src)\n") >> $@
 	echo -e $(foreach src,$(VERILOG_SOURCES),\
 	"alog $(ALOG_ARGS) $(src)\n") >> $@
-	echo "asim $(ASIM_ARGS) +access +w -O2 -dbg -pli libgpi $(TOPLEVEL)" >> $@
+ifdef SCRIPT_FILE
+	echo "do $(SCRIPT_FILE)" >> $@
+endif
+	echo "asim $(ASIM_ARGS) +access +w -O2 -dbg $(GPI_ARGS) $(TOPLEVEL)" >> $@
 ifeq ($(WAVES),1)
 	echo "log -recursive *" >> $@
 endif

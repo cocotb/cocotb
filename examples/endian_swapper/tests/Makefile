@@ -28,11 +28,25 @@
 ###############################################################################
 
 
+# Override this variable to use VHPI instead of VPI
+GPI_IMPL ?= vpi
+
+
 TOPLEVEL = endian_swapper
 
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
-VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
+
+
+
+ifeq ($(GPI_IMPL),vpi)
+    VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
+endif
+
+ifeq ($(GPI_IMPL),vhpi)
+    VHDL_SOURCES = $(PWD)/../hdl/endian_swapper.vhdl
+endif
+
 MODULE=test_endian_swapper
 
 include $(COCOTB)/makefiles/Makefile.inc
