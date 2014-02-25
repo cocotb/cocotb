@@ -34,13 +34,12 @@ To run a test using a different simulator:
     $> make SIM=vcs
 
 
-Supported simulators
---------------------
+Compatible Simulators
+---------------------
 
 * Icarus Verilog
 * Synopsys VCS
 * Aldec Riviera-PRO
-* Mentor Questa
 * Cadance Incisive
 
 
@@ -72,15 +71,19 @@ The same mechanism can be used to access signals inside the design.
 Assigning values to signals
 ---------------------------
 
-Values can be assigned to signals using either the .value property of a handle object or using the overloaded less than or equal to operator
+Values can be assigned to signals using either the .value property of a handle object or using direct assignment while traversing the hierarchy
 
 .. code-block:: python
     
-    # Assign the value 12 to signal "input_signal" on DUT
-    dut.input_signal.value = 12
+    # Get a reference to the "clk" signal and assign a value
+    clk = dut.clk
+    clk.value = 1
     
-    # Use the overloaded less than or equal to operator
-    dut.input_signal <= 12
+    # Direct assignment through the hierarchy
+    dut.input_signal = 12
+
+    # Assign a value to a memory deep in the hierarchy
+    dut.sub_block.memory.array[4] = 2
         
         
 Reading values from signals
@@ -95,8 +98,8 @@ Accessing the .value property of a handle object will return a :class:`BinaryVal
     >>> 
     >>> print count.binstr
     1X1010
-    >>> # Resolve the value (X or Z treated as 0)
-    >>> print count.value
+    >>> # Resolve the value to an integer (X or Z treated as 0)
+    >>> print count.integer
     42
 
 

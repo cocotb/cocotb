@@ -12,13 +12,12 @@ Contents:
    :maxdepth: 2
 
    introduction
-   overview
    quickstart
-   building
    coroutines
-   library_reference
    endian_swapper
    ping_tun_tap
+   library_reference
+   building
    roadmap
    simulator_support
 
