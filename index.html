@@ -36,7 +36,7 @@
 
 <p><strong>cocotb</strong> is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.</p>
 
-<p><strong>v0.3 Release now available</strong> <a href="https://github.com/potentialventures/cocotb/archive/v0.3.tar.gz">source</a></p>
+<p><strong>v0.4 Release now available</strong> <a href="https://github.com/potentialventures/cocotb/archive/v0.4.tar.gz">source</a></p>
 
 <ul>
 <li>Read the <a href="http://cocotb.readthedocs.org">documentation</a>
@@ -64,56 +64,14 @@
 <li>Python has a huge library of existing code to <strong>re-use</strong> like <a href="https://code.google.com/p/or-tools/">constraint solvers</a> <a href="http://www.secdev.org/projects/scapy/">packet parsing/generation</a> libraries.</li>
 <li>Python is <strong>interpreted</strong>. Tests can be edited and re-run them without having to recompile the design or even exit the simulator GUI.</li>
 <li>Writing Python is <strong>fast</strong>, it's <em>easy to understand</em> and <em>everybody</em> knows it.</li>
-</ul><h2>
-<a name="example" class="anchor" href="#example"><span class="octicon octicon-link"></span></a>Example</h2>
-
-<p>A simplistic example of generating a clock with 10ns period:</p>
-
-<div class="highlight highlight-python"><pre><span class="nd">@cocotb.coroutine</span>
-<span class="k">def</span> <span class="nf">clock</span><span class="p">(</span><span class="n">signal</span><span class="p">):</span>
-    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
-        <span class="n">signal</span> <span class="o">&lt;=</span> <span class="mi">1</span>
-        <span class="k">yield</span> <span class="n">Timer</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-        <span class="n">signal</span> <span class="o">&lt;=</span> <span class="mi">0</span>
-        <span class="k">yield</span> <span class="n">Timer</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-</pre></div>
-
-<p>The python <strong>yield</strong> keyword is used to suspend the coroutine and return control back to the simulator until a condition is met. In this case, the condition is a simple timer that fires after 5ns of simulation time.</p>
-
-<p>This may seem pretty pointless, in fact a Verilog process to perform the same operation requires fewer lines of code. Let's examine a more useful example:</p>
-
-<div class="highlight highlight-python"><pre><span class="nd">@cocotb.coroutine</span>
-<span class="k">def</span> <span class="nf">pcap_replay</span><span class="p">(</span><span class="n">bus</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-    <span class="n">prevtime</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">packet</span> <span class="ow">in</span> <span class="n">dpkt</span><span class="o">.</span><span class="n">pcap</span><span class="o">.</span><span class="n">Reader</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'r'</span><span class="p">)):</span>
-        <span class="k">yield</span> <span class="n">Timer</span><span class="p">((</span><span class="n">timestamp</span> <span class="o">-</span> <span class="n">prevtime</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
-        <span class="k">yield</span> <span class="n">bus</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
-</pre></div>
-
-<p>Here we utilise a thirdparty python library called dpkt to iterate over packets in a PCAP packet capture. This becomes trivially easy in Python when compared to a VHDL/Verilog/SystemVerilog implementation. The argument "bus" is an instance of a Driver class which provides a send method to serialise the packet transaction over multiple cycles on the bus. Although the majority of the complexity is hidden in this (reusable) Driver class the actual implementation is once again straightforward:</p>
-
-<div class="highlight highlight-python"><pre><span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packet</span><span class="p">):</span>
-
-    <span class="n">words</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span>
-
-    <span class="k">yield</span> <span class="n">RisingEdge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clk</span><span class="p">)</span>            <span class="c"># Synchronise to bus clock</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">sop</span> <span class="o">&lt;=</span> <span class="mi">1</span>                         <span class="c"># First word is start-of-packet</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">&lt;=</span> <span class="mi">1</span>
-
-    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">packet</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">&lt;=</span> <span class="n">word</span>
-        <span class="k">yield</span> <span class="n">rising_edge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clk</span><span class="p">)</span>        
-        <span class="bp">self</span><span class="o">.</span><span class="n">sop</span> <span class="o">&lt;=</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="n">words</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">eop</span> <span class="o">&lt;=</span> <span class="mi">1</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">len</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
-
-    <span class="k">yield</span> <span class="n">rising_edge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clk</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">eop</span> <span class="o">&lt;=</span> <span class="mi">0</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">&lt;=</span> <span class="mi">0</span>
-</pre></div>
-
+</ul>
 <p>For further details refer to the <a href="http://cocotb.readthedocs.org">documentation</a>.</p>
+
+<h2><a name="NMI-presentation" class="anchor" href="#NMI-presentation"><span class="otcicon octicon-link"></span></a>NMI Slidedeck</span></a></h2>
+
+<p>Slides from the Potential Ventures presentation at the NMI FPGA Verification event:</p>
+
+<iframe src="https://docs.google.com/presentation/d/1U22Y_yyQRAecXXvOKFbHU8p_pGsB-u7iaK57Tw92U_A/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="749" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
 
 <h2>
 <a name="similar-projects" class="anchor" href="#similar-projects"><span class="octicon octicon-link"></span></a>Similar projects</h2>
