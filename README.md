@@ -21,3 +21,10 @@
     
     # View the waveform
     gtkwave sim_build/waveform.vcd
+
+
+## Tutorials and examples
+
+* [Endian Swapper tutorial](https://cocotb.readthedocs.org/en/latest/endian_swapper.html)
+* [Ping using TUN/TAP tutorial](https://cocotb.readthedocs.org/en/latest/ping_tun_tap.html)
+* [OpenCores JPEG Encoder example](https://github.com/chiggs/oc_jpegencode/)
