@@ -34,7 +34,7 @@ PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
 VERILOG_SOURCES = $(PWD)/../hdl/sample_module.v
-MODULE=test_cocotb,test_discovery,test_external
+MODULE=test_cocotb,test_discovery,test_external,test_regression
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
