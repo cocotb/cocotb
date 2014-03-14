@@ -108,7 +108,10 @@ class Scheduler(object):
             self.schedule(coroutine, trigger=trigger)
             self.log.debug("Scheduled coroutine %s" % (coroutine.__name__))
 
+        # Various interactions with the simulator cannot occur during
+        # ReadOnly event periods
         if self._readonly is False:
+
             # We may also have possible routines that need to be added since
             # the exit from ReadOnly
             for ptrigger, pwaiting in self.delay_waiting.items():
@@ -117,21 +120,9 @@ class Scheduler(object):
                     self._add_trigger(ptrigger, pcoro)
                 del self.delay_waiting[ptrigger]
 
-        # If we've performed any writes that are cached then schedule
-        # another callback for the read-write part of the sim cycle, but
-        # if we are terminating then do not allow another callback to be
-        # scheduled, only do this if this trigger was not ReadOnly as
-        # Scheduling ReadWrite is a violation, it will be picked up
-        # on next react
-
-        if self._readonly is False:
-            if self._terminate is False and len(self.writes) and self._readwrite is None:
-                self._readwrite = self.add(self.move_to_rw())
-
-        # If the python has caused any subsequent events to fire we might
-        # need to schedule more coroutines before we drop back into the
-        # simulator
-        if self._readonly is False:
+            # If the python has caused any subsequent events to fire we might
+            # need to schedule more coroutines before we drop back into the
+            # simulator
             self._entry_lock.acquire()
             while self._pending_adds:
                 coroutine = self._pending_adds.pop(0)
@@ -139,6 +130,15 @@ class Scheduler(object):
                 self.add(coroutine)
                 self._entry_lock.acquire()
             self._entry_lock.release()
+
+            # If we've performed any writes that are cached then schedule
+            # another callback for the read-write part of the sim cycle, but
+            # if we are terminating then do not allow another callback to be
+            # scheduled, only do this if this trigger was not ReadOnly as
+            # Scheduling ReadWrite is a violation, it will be picked up
+            # on next react
+            if self._terminate is False and len(self.writes) and self._readwrite is None:
+                self._readwrite = self.add(self.move_to_rw())
 
         return
 
