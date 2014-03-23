@@ -37,7 +37,7 @@ sim:
 	-@rm -rf results.xml
 	$(MAKE) results.xml
 
-results.xml: $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) libs
+results.xml: $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	vlib work
 	vlog -writetoplevels modelsim.tops '-timescale' '1ns/1ns' '-mfcu' '+acc=rmb' '-sv' $(VERILOG_SOURCES)
 	LD_LIBRARY_PATH=$(LIB_DIR): MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
