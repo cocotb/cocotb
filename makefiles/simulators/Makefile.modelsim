@@ -27,33 +27,20 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# All common pyhon related rules
+VPI_LIB := vpi
 
-PYTHON_PREFIX = $(shell python-config --prefix)
+# Modelsim is 32-bit only
+ARCH:=i686
 
-NATIVE_ARCH=$(shell uname -m)
 
-ifeq ($(NATIVE_ARCH),$(ARCH))
-    STD_LIB=True
-else
-    STD_LIB=False
-endif
+sim:
+	-@rm -rf results.xml
+	$(MAKE) results.xml
 
-# We might work with other Python versions
-PYTHON_VERSION?=$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version()')
-PYTHON_LIBDIR:=$(shell python -c 'import os.path,distutils.sysconfig;print os.path.sep+os.path.join(*list(distutils.sysconfig.get_python_lib(standard_lib=$(STD_LIB)).split(os.path.sep)[:-1]))')
-
-PYTHON_DYNLIBDIR:=$(PYTHON_LIBDIR)/lib-dynload
-
-# Since we don't know which modules we might need or whether the simulator
-# we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
-# is we simply link against all dynamic libraries in the Python installation
-ifeq ($(OS),Linux)
-PYLIBS = $(wildcard $(PYTHON_DYNLIBDIR)/*.so) $(shell python-config --libs)
-else
-PYLIBS = $(shell python-config --libs)
-endif
-
-PYTHON_INCLUDEDIR := -I$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
-
+results.xml: $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) libs
+	vlib work
+	vlog -writetoplevels modelsim.tops '-timescale' '1ns/1ns' '-mfcu' '+acc=rmb' '-sv' $(VERILOG_SOURCES)
+	LD_LIBRARY_PATH=$(LIB_DIR): MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
+	vsim -c -do "onElabError resume; run -all; exit" -f modelsim.tops -pli libgpi.so 2>&1 | tee sim.log
 
