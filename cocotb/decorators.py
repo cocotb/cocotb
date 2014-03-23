@@ -34,7 +34,7 @@ import pdb
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
+from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess, ReturnValue, raise_error
 
 
@@ -65,9 +65,6 @@ class CoroutineComplete(StopIteration):
         StopIteration.__init__(self, text)
         self.callback = callback
 
-    def __call__(self):
-        if self.callback is not None: self.callback()
-
 
 class RunningCoroutine(object):
     """Per instance wrapper around an function to turn it into a coroutine
@@ -85,6 +82,7 @@ class RunningCoroutine(object):
         self._coro = inst
         self._finished = False
         self._callbacks = []
+        self._join = _Join(self)
         self._parent = parent
         self.__doc__ = parent._func.__doc__
         self.module = parent._func.__module__
@@ -108,8 +106,6 @@ class RunningCoroutine(object):
         except TestComplete as e:
             if isinstance(e, TestFailure):
                 self.log.warning(str(e))
-            else:
-                self.log.info(str(e))
             raise
         except ReturnValue as e:
             self.retval = e.retval
@@ -128,21 +124,17 @@ class RunningCoroutine(object):
     def kill(self):
         """Kill a coroutine"""
         self.log.debug("kill() called on coroutine")
-        cocotb.scheduler.schedule_remove(self, self._finished_cb)
+        cocotb.scheduler.unschedule(self)
 
     def _finished_cb(self):
         """Called when the coroutine completes.
             Allows us to mark the coroutine as finished so that boolean testing works.
             Also call any callbacks, usually the result of coroutine.join()"""
         self._finished = True
-        self.log.debug("Coroutine finished calling pending callbacks (%d pending)" % len(self._callbacks))
-        for cb in self._callbacks:
-            cb()
-        self._callbacks = []
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits"""
-        return Join(self)
+        return self._join
 
     def __nonzero__(self):
         """Provide boolean testing

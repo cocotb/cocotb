@@ -745,7 +745,7 @@ static int gpi_free_one_time(p_vhpi_cb_user_data user_data)
 
     // If the callback has not been called we also need to call
     // remove as well
-    if (!user_data->state == VHPI_PRIMED) {
+    if (user_data->state == VHPI_PRIMED) {
         rc = vhpi_remove_cb(cb_hdl);
         if (!rc) {
             check_vhpi_error();

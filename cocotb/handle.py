@@ -47,6 +47,7 @@ import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
+from cocotb.triggers import _RisingEdge
 
 class SimHandle(object):
 
@@ -63,6 +64,7 @@ class SimHandle(object):
         self.fullname = self.name + '(%s)' % simulator.get_type_string(self._handle)
         self.log = SimLog('cocotb.' + self.name)
         self.log.debug("Created!")
+        self._edge = _RisingEdge(self)
 
     def __str__(self):
         return "%s @0x%x" % (self.name, self._handle)
@@ -91,7 +93,8 @@ class SimHandle(object):
 
     def __setattr__(self, name, value):
         """Provide transparent access to signals"""
-        if not name.startswith('_') and self.__hasattr__(name):
+        if not name.startswith('_') and not name in ["name", "fullname", "log"] \
+                                                     and self.__hasattr__(name):
             getattr(self, name).setcachedvalue(value)
             return
         object.__setattr__(self, name, value)

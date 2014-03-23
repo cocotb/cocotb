@@ -55,11 +55,12 @@ class Clock(BaseClock):
 
     @cocotb.coroutine
     def start(self, cycles=0):
+        t = Timer(self.half_period)
         while True:
             self.signal <= 1
-            yield Timer(self.half_period)
+            yield t
             self.signal <= 0
-            yield Timer(self.half_period)
+            yield t
 
     def __str__(self):
         return self.__class__.__name__ + "(%3.1fMHz)" % self.frequency

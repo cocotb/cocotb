@@ -49,5 +49,26 @@ endif
 
 MODULE=test_endian_swapper
 
+
+
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
+
+
+# Stuff below is useful for profiling
+# Need grof2dot from https://code.google.com/p/jrfonseca.gprof2dot/
+test_profile.pstat: sim
+
+callgraph.svg: test_profile.pstat
+	gprof2dot.py -f pstats $< | dot -Tsvg -o $@
+
+.PHONY: profile
+profile:
+	COCOTB_ENABLE_PROFILING=1 $(MAKE) callgraph.svg
+
+
+clean::
+	-rm -rf test_profile.pstat
+	-rm -rf callgraph.svg
+
+
