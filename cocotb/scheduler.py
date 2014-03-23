@@ -219,7 +219,7 @@ class Scheduler(object):
             _profile.disable()
 
 
-    def react(self, trigger):
+    def react(self, trigger, depth=0):
         """
         React called when a trigger fires.
 
@@ -228,11 +228,12 @@ class Scheduler(object):
         """
         if _debug:
             trigger.log.debug("Fired!")
-        if _profiling:
+        if _profiling and not depth:
             _profile.enable()
 
         # We can always unprime the trigger that actually fired - if it's 
         # recycled then prime will be called again.
+        self.log.debug("Unprimed %s" % str(trigger))
         trigger.unprime()
 
         if self._mode == Scheduler._MODE_TERM:
@@ -267,6 +268,7 @@ class Scheduler(object):
                 self.log.error(
                     "Moved to next timestep without any pending writes!")
             else:
+                self.log.debug("Priming ReadWrite trigger so we can playback writes")
                 self._readwrite.prime(self.react)
 
             if _profiling:
@@ -328,16 +330,17 @@ class Scheduler(object):
             if _debug:
                 self.log.debug("Scheduling pending trigger %s" % (
                                                 str(self._pending_triggers[0])))
-            self.react(self._pending_triggers.pop(0))
+            self.react(self._pending_triggers.pop(0), depth=depth+1)
 
-        self.advance()
+        if not depth:
+            self.advance()
 
-        if _debug:
-            self.log.debug(
-                "All coroutines scheduled, handing control back to simulator")
+            if _debug:
+                self.log.debug(
+                    "All coroutines scheduled, handing control back to simulator")
 
-        if _profiling:
-            _profile.disable()
+            if _profiling:
+                _profile.disable()
         return
 
 
@@ -503,6 +506,7 @@ class Scheduler(object):
 
     def finish_test(self, test_result):
         """Cache the test result and set the terminate flag"""
+        self.log.debug("finish_test called with %s" % (repr(test_result)))
         if not self._terminate:
             self._terminate = True
             self._test_result = test_result

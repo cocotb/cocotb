@@ -153,6 +153,11 @@ static inline int __gpi_register_cb(p_vpi_cb_user_data user, p_cb_data cb_data)
     /* If the user data already has a callback handle then deregister
      * before getting the new one
      */
+    if (user->state == VPI_PRIMED) {
+        fprintf(stderr, "Attempt to prime an already primed trigger for %s!\n", 
+                                        vpi_reason_to_string(cb_data->reason));
+    }
+
     vpiHandle new_hdl = vpi_register_cb(cb_data);
     int ret = 0;
 
@@ -163,8 +168,11 @@ static inline int __gpi_register_cb(p_vpi_cb_user_data user, p_cb_data cb_data)
         ret = -1;
     }
 
-    if (user->cb_hdl != NULL)
+    if (user->cb_hdl != NULL) {
+        fprintf(stderr, "user->cb_hdl is not null, deregistering %s!\n",
+                                        vpi_reason_to_string(cb_data->reason));
         gpi_deregister_callback(&user->gpi_hdl);
+    }
 
     user->cb_hdl = new_hdl;
 
@@ -521,8 +529,11 @@ static int32_t handle_vpi_callback(p_cb_data cb_data)
     old_cb = user_data->cb_hdl;
     rv = user_data->gpi_function(user_data->gpi_cb_data);
 
+// HACK: Investigate further - this breaks modelsim
+#if 0
     if (old_cb == user_data->cb_hdl)
         gpi_deregister_callback(&user_data->gpi_hdl);
+#endif
 
     /* A request to delete could have been done
      * inside gpi_function
@@ -619,18 +630,23 @@ static int gpi_free_one_time(p_vpi_cb_user_data user_data)
     // If the callback has not been called we also need to call
     // remove as well
     if (user_data->state == VPI_PRIMED) {
+
         rc = vpi_remove_cb(cb_hdl);
         if (!rc) {
             check_vpi_error();
             return rc;
         }
 
+// HACK: Calling vpi_free_object after vpi_remove_cb causes Modelsim to VPIEndOfSimulationCallback
+#if 0
         rc = vpi_free_object(cb_hdl);
         if (!rc) {
             check_vpi_error();
             return rc;
         }
+#endif
     }
+    user_data->state = VPI_FREE;
     FEXIT
     return rc;
 }
@@ -679,7 +695,6 @@ int gpi_register_value_change_callback(gpi_sim_hdl cb,
     user_data->cb_value.format = vpiIntVal;
 
     vpi_time_s.type = vpiSuppressTime;
-    vpi_value_s.format = vpiIntVal;
 
     cb_data_s.reason    = cbValueChange;
     cb_data_s.cb_rtn    = handle_vpi_callback;

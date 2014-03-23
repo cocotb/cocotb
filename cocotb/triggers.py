@@ -95,7 +95,6 @@ class GPITrigger(Trigger):
         """Remove knowledge of the trigger"""
         if self.cbhdl is not None:
             simulator.remove_callback(self.cbhdl)
-            self.chhdl = None
         Trigger.__del__(self)
 
 
