@@ -32,15 +32,33 @@ VPI_LIB := vpi
 # Modelsim is 32-bit only
 ARCH:=i686
 
+ifdef VERILOG_INCLUDE_DIRS
+VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
+endif
 
-sim:
-	-@rm -rf results.xml
-	$(MAKE) results.xml
+ifeq ($(GUI),1)
+SIM_CMD = vsim -gui
+else
+SIM_CMD = vsim -c
+endif
 
-results.xml: $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
-	vlib work
-	vlog -writetoplevels modelsim.tops '-timescale' '1ns/1ns' '-mfcu' '+acc=rmb' '-sv' $(VERILOG_SOURCES)
+
+runsim.do : $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
+	echo "vlib work" > $@
+	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
+	echo "vsim -pli libgpi.so  $(VSIM_ARGS) work.$(TOPLEVEL) -onfinish stop" >> $@
+ifneq ($(GUI),1)
+	echo "run -all" >> $@
+	echo "exit" >> $@
+endif
+
+
+results.xml: runsim.do $(COCOTB_LIBS)
 	LD_LIBRARY_PATH=$(LIB_DIR): MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
-	vsim -c -do "onElabError resume; run -all; exit" -f modelsim.tops -pli libgpi.so 2>&1 | tee sim.log
+	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
+
+clean::
+	-rm -rf runsim.do
+	-rm -rf sim.log
 

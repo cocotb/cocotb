@@ -38,12 +38,12 @@ endif
 EXTRA_LIBS = -laldecpli -lstdc++ -lsupc++
 EXTRA_LIBDIRS = -L$(ALDEC_PATH)/bin/Linux64
 
-ALOG_ARGS += "+define+COCOTB_SIM -dbg"
-ACOM_ARGS += "-dbg"
+ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
+ACOM_ARGS += -dbg
 
 ifeq ($(COVERAGE),1)
-    ASIM_ARGS += "-acdb"
-    ALOG_ARGS += "-coverage sb"
+    ASIM_ARGS += -acdb
+    ALOG_ARGS += -coverage sb
 endif
 
 ifeq ($(GPI_IMPL),vpi)
@@ -62,10 +62,12 @@ endif
 $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(SIM_BUILD)
 	echo "alib work" > $@
 	echo "set worklib work" >> $@
-	echo -e $(foreach src,$(VHDL_SOURCES),\
-	"acom $(ACOM_ARGS) $(src)\n") >> $@
-	echo -e $(foreach src,$(VERILOG_SOURCES),\
-	"alog $(ALOG_ARGS) $(src)\n") >> $@
+ifdef VHDL_SOURCES
+	echo "acom $(ACOM_ARGS) $(VHDL_SOURCES)" >> $@
+endif
+ifdef VERILOG_SOURCES
+	echo "alog $(ALOG_ARGS) $(VERILOG_SOURCES)" >> $@
+endif
 ifdef SCRIPT_FILE
 	echo "do $(SCRIPT_FILE)" >> $@
 endif

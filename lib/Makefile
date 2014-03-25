@@ -53,7 +53,7 @@ $(LIB_DIR)/libcocotb.so: $(SIM_ROOT)/lib/embed/gpi_embed.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/embed
 
 $(LIB_DIR)/libgpi.so: $(SIM_ROOT)/lib/$(GPI_IMPL)_shim/gpi_$(GPI_IMPL).c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/$(GPI_IMPL)_shim
+	make -C $(SIM_ROOT)/lib/$(GPI_IMPL)_shim EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
 
 $(LIB_DIR)/libsim.so: $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/simulator
