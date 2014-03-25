@@ -32,6 +32,7 @@
 PYTHON_PREFIX = $(shell python-config --prefix)
 
 NATIVE_ARCH=$(shell uname -m)
+ARCH?=$(NATIVE_ARCH)
 
 ifeq ($(NATIVE_ARCH),$(ARCH))
     STD_LIB=True
@@ -41,7 +42,7 @@ endif
 
 # We might work with other Python versions
 PYTHON_VERSION?=$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version()')
-PYTHON_LIBDIR:=$(shell python -c 'import os.path,distutils.sysconfig;print os.path.sep+os.path.join(*list(distutils.sysconfig.get_python_lib(standard_lib=$(STD_LIB)).split(os.path.sep)[:-1]))')
+PYTHON_LIBDIR:=$(shell python -c 'import os.path,distutils.sysconfig;print distutils.sysconfig.get_python_lib(standard_lib=$(STD_LIB)).rstrip("site-packages").rstrip("/")')
 
 PYTHON_DYNLIBDIR:=$(PYTHON_LIBDIR)/lib-dynload
 
