@@ -59,7 +59,7 @@ else:
 
 import cocotb
 import cocotb.decorators
-from cocotb.triggers import Trigger, GPITrigger, Timer, ReadOnly, _NextTimeStep, ReadWrite
+from cocotb.triggers import Trigger, GPITrigger, Timer, ReadOnly, _NextTimeStep, _ReadWrite
 from cocotb.log import SimLog
 from cocotb.result import TestComplete, TestError, ReturnValue, raise_error
 
@@ -122,7 +122,7 @@ class Scheduler(object):
     # Singleton events, recycled to avoid spurious object creation
     _readonly = ReadOnly()
     _next_timestep = _NextTimeStep()
-    _readwrite = ReadWrite()
+    _readwrite = _ReadWrite()
     _timer1 = Timer(1)
     _timer0 = Timer(0)
 
@@ -167,7 +167,8 @@ class Scheduler(object):
         if not self._terminate and self._writes:
 
             if self._mode == Scheduler._MODE_NORMAL:
-                self._readwrite.prime(self.react)
+                if not self._readwrite.primed:
+                    self._readwrite.prime(self.react)
             elif not self._next_timestep.primed:
                 self._next_timestep.prime(self.react)
 
@@ -177,9 +178,10 @@ class Scheduler(object):
             for t in self._trigger2coros:
                 t.unprime()
 
-            if self._timer1.primed:
-                self.log.debug("Un-priming already primed Timer trigger")
-                self._timer1.unprime()
+            for t in [self._readwrite, self._readonly, self._next_timestep, \
+                        self._timer1, self._timer0]:
+                if t.primed:
+                    t.unprime()
 
             self._timer1.prime(self.begin_test)
             self._trigger2coros = collections.defaultdict(list)
