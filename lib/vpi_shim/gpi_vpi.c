@@ -1063,6 +1063,11 @@ static int system_function_overload(char *userdata)
     systfref = vpi_handle(vpiSysTfCall, NULL);
     args_iter = vpi_iterate(vpiArgument, systfref);
 
+    // The first argument to fatal is the FinishNum which we discard
+    if (args_iter && *userdata == systf_fatal_level) {
+        argh = vpi_scan(args_iter);
+    }
+
     if (args_iter) {
         // Grab the value of the first argument
         argh = vpi_scan(args_iter);

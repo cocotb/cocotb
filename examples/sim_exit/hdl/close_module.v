@@ -61,7 +61,7 @@ initial begin
      #10 $warning("This is a  warning message");
      #10 $error;
      #10 $error("This is an error message");
-     #1000 $fatal("This is a a fatal message that fails the test");
+     #1000 $fatal(1, "This is a a fatal message that fails the test");
 end
 
 endmodule
