@@ -216,6 +216,7 @@ class Scheduler(object):
             test = self._entrypoint
             self._entrypoint = None
             self.schedule(test)
+            self.advance()
 
         if _profiling:
             _profile.disable()
@@ -418,6 +419,7 @@ class Scheduler(object):
             self.log.debug("Adding new coroutine %s" % coroutine.__name__)
 
         self.schedule(coroutine)
+        self.advance()
         return coroutine
 
     def new_test(self, coroutine):
