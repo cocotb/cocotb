@@ -41,7 +41,7 @@ class AXI4LiteMaster(BusDriver):
 
     TODO: Kill all pending transactions if reset is asserted...
     """
-    _signals = ["ARESETn",
+    _signals = ["ARESETN",
                 "AWVALID", "AWADDR", "AWREADY",         # Write address channel
                 "WVALID", "WREADY", "WDATA", "WSTRB",   # Write data channel
                 "BVALID", "BREADY", "BRESP",            # Write response channel
@@ -151,7 +151,7 @@ class AXI4LiteMaster(BusDriver):
 
         while True:
             yield ReadOnly()
-            if self.bus.WREADY.value:
+            if self.bus.ARREADY.value:
                 break
             yield RisingEdge(self.clock)
 
