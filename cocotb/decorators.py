@@ -109,10 +109,13 @@ class RunningCoroutine(object):
             raise
         except ReturnValue as e:
             self.retval = e.retval
+            self._finished = True
             raise CoroutineComplete(callback=self._finished_cb)
         except StopIteration:
+            self._finished = True
             raise CoroutineComplete(callback=self._finished_cb)
         except Exception as e:
+            self._finished = True
             raise_error(self, "Send raised exception: %s" % (str(e)))
 
     def throw(self, exc):

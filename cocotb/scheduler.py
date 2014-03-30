@@ -29,6 +29,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
     Coroutine scheduler.
+
+
+FIXME: We have a problem here.  If a coroutine schedules a read-only but we
+also have pending writes we have to schedule the ReadWrite callback before
+the ReadOnly (and this is invalid, at least in Modelsim).
 """
 import collections
 import os
@@ -335,7 +340,8 @@ class Scheduler(object):
                                                 str(self._pending_triggers[0])))
             self.react(self._pending_triggers.pop(0), depth=depth+1)
 
-        if not depth:
+        # We only advance for GPI triggers
+        if not depth and isinstance(trigger, GPITrigger):
             self.advance()
 
             if _debug:
