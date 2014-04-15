@@ -31,12 +31,15 @@ See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 
 NB Currently we only support a very small subset of functionality
 """
+import random
+
+import cocotb
 from cocotb.decorators import coroutine
 from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
-from cocotb.result import ReturnValue
+from cocotb.result import ReturnValue, TestError
 
 
 class AvalonMM(BusDriver):
@@ -48,14 +51,23 @@ class AvalonMM(BusDriver):
     Blocking operation is all that is supported at the moment, and for the near future as well
     Posted responses from a slave are not supported.
     """
-    _signals = ["readdata", "read", "write", "waitrequest", "writedata", "address"]
+    _signals = ["address"]
+    _optional_signals = ["readdata", "read", "write", "waitrequest", "writedata", "readdatavalid"]
 
     def __init__(self, entity, name, clock):
         BusDriver.__init__(self, entity, name, clock)
+        self._can_read  = False
+        self._can_write = False
 
         # Drive some sensible defaults (setimmediatevalue to avoid x asserts)
-        self.bus.read.setimmediatevalue(0)
-        self.bus.write.setimmediatevalue(0)
+        if hasattr(self.bus, "read"):
+            self.bus.read.setimmediatevalue(0)
+            self._can_read = True
+
+        if hasattr(self.bus, "write"):
+            self.bus.write.setimmediatevalue(0)
+            self._can_write = True
+
         self.bus.address.setimmediatevalue(0)
 
     def read(self, address):
@@ -73,6 +85,7 @@ class AvalonMaster(AvalonMM):
         self.log.debug("AvalonMaster created")
         self.busy_event = Event("%s_busy" % name)
         self.busy = False
+
 
     @coroutine
     def _acquire_lock(self):
@@ -93,6 +106,10 @@ class AvalonMaster(AvalonMM):
         but syntactically it blocks.
         See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
         """
+        if not self._can_read:
+            self.log.error("Cannot read - have no read signal")
+            raise TestError("Attempt to read on a write-only AvalonMaster")
+
         yield self._acquire_lock()
 
         # Apply values for next clock edge
@@ -101,7 +118,8 @@ class AvalonMaster(AvalonMM):
         self.bus.read <= 1
 
         # Wait for waitrequest to be low
-        yield self._wait_for_nsignal(self.bus.waitrequest)
+        if hasattr(self.bus, "waitrequest"):
+            yield self._wait_for_nsignal(self.bus.waitrequest)
 
         # Assume readLatency = 1
         # FIXME need to configure this, should take a dictionary of Avalon properties.
@@ -124,6 +142,10 @@ class AvalonMaster(AvalonMM):
         value.
         See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
         """
+        if not self._can_write:
+            self.log.error("Cannot write - have no write signal")
+            raise TestError("Attempt to write on a read-only AvalonMaster")
+
         yield self._acquire_lock()
 
         # Apply valuse to bus
@@ -133,7 +155,8 @@ class AvalonMaster(AvalonMM):
         self.bus.write <= 1
 
         # Wait for waitrequest to be low
-        count = yield self._wait_for_nsignal(self.bus.waitrequest)
+        if hasattr(self.bus, "waitrequest"):
+            count = yield self._wait_for_nsignal(self.bus.waitrequest)
 
         # Deassert write
         yield RisingEdge(self.clock)
@@ -141,13 +164,94 @@ class AvalonMaster(AvalonMM):
         self._release_lock()
 
 
-class AvalonSlave(AvalonMM):
-    """Avalon-MM Slave
-
-    This is not supported at the moment
+class AvalonMemory(BusDriver):
     """
-    def __init__(self, entity, name, clock):
-        AvalonMM.__init__(self, entity, name, clock)
+    Emulate a memory, with back-door access
+    """
+    _signals = ["address"]
+    _optional_signals = ["write", "read", "writedata", "readdatavalid", "readdata"]
+
+    def __init__(self, entity, name, clock, readlatency_min=1, readlatency_max=1, memory=None):
+        BusDriver.__init__(self, entity, name, clock)
+
+        self._readable = False
+        self._writeable = False
+
+        if hasattr(self.bus, "readdata"):
+            self._width = len(self.bus.readdata)
+            self._readable = True
+
+        if hasattr(self.bus, "writedata"):
+            self._width = len(self.bus.writedata)
+            self._writeable = True
+
+        if not self._readable and not self._writeable:
+            raise TestError("Attempt to instantiate useless memory")
+
+        # Allow dual port RAMs by referencing the same dictionary
+        if memory is None:
+            self._mem = {}
+        else:
+            self._mem = memory
+
+        self._val = BinaryValue(bits=self._width, bigEndian=False)
+        self._readlatency_min = readlatency_min
+        self._readlatency_max = readlatency_max
+        self._responses = []
+        self._coro = cocotb.fork(self._respond())
+
+        if hasattr(self.bus, "readdatavalid"):
+            self.bus.readdatavalid.setimmediatevalue(0)
+
+    def _pad(self):
+        """Pad response queue up to read latency"""
+        l = random.randint(self._readlatency_min, self._readlatency_max)
+        while len(self._responses) < l:
+            self._responses.append(None)
+
+    @coroutine
+    def _respond(self):
+        """
+        Coroutine to response to the actual requests
+        """
+        edge = RisingEdge(self.clock)
+        while True:
+            yield edge
+
+            if self._responses:
+                resp = self._responses.pop(0)
+            else:
+                resp = None
+
+            if resp is not None:
+                if resp is True:
+                    self._val.binstr = "x"*self._width
+                else:
+                    self._val.integer = resp
+                    self.log.debug("sending 0x%x (%s)" % (self._val.integer, self._val.binstr))
+                self.bus.readdata <= self._val
+                self.bus.readdatavalid <= 1
+            else:
+                self.bus.readdatavalid <= 0
+
+            yield ReadOnly()
+
+            if self._readable and self.bus.read.value:
+                self._pad()
+                addr = self.bus.address.value.integer
+                if addr not in self._mem:
+                    self.log.warning("Attempt to read from uninitialised address 0x%x" % addr)
+                    self._responses.append(True)
+                else:
+                    self.log.debug("Read from address 0x%x returning 0x%x" % (addr, self._mem[addr]))
+                    self._responses.append(self._mem[addr])
+
+            if self._writeable and self.bus.write.value:
+                addr = self.bus.address.value.integer
+                data = self.bus.writedata.value.integer
+                self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
+                self._mem[addr] = data
+
 
 
 class AvalonST(ValidatedBusDriver):
