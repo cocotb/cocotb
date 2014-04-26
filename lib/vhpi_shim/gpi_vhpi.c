@@ -568,7 +568,7 @@ static char *gpi_copy_name(const char *name)
         name = null;
     }
 
-    snprintf(result, len, "%s\0", name);
+    snprintf(result, len, "%s", name);
 
     return result;
 }
