@@ -93,8 +93,6 @@ static PyMethodDef SimulatorMethods[] = {
     {"register_readonly_callback", register_readonly_callback, METH_VARARGS, "Register a callback for readonly section"},
     {"register_nextstep_callback", register_nextstep_callback, METH_VARARGS, "Register a cllback for the nextsimtime callback"},
     {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS, "Register a callback for the readwrite section"},
-    {"create_clock", create_clock, METH_VARARGS, "Register a clock object"},
-    {"stop_clock", stop_clock, METH_VARARGS, "Terminate a clock"},
     {"stop_simulator", stop_simulator, METH_VARARGS, "Instruct the attached simulator to stop"},
     {"iterate", iterate, METH_VARARGS, "Get an iterator handle to loop over all members in an object"},
     {"next", next, METH_VARARGS, "Get the next object from the iterator"},
