@@ -454,51 +454,8 @@ static int32_t handle_vpi_callback(p_cb_data cb_data)
     FEXIT
     return rv;
 };
-#if 0
 
-/* Allocates memory that will persist for the lifetime of the
- * callback handle. This is not the same as the handle to the object
- * that the callback is registered for, this may be short or long. 
- * A call to create must have a matching call to destroy at some point
- */
-gpi_sim_hdl gpi_create_cb_handle(void)
-{
-    gpi_sim_hdl ret = NULL;
-    FENTER
 
-    p_vpi_cb_user_data user_data = __gpi_alloc_user();
-    if (user_data) {
-        user_data->state = VPI_FREE;
-        ret = &user_data->gpi_hdl;
-    }
-
-    FEXIT
-    return ret;
-}
-
-/* Destroys the memory associated with the sim handle
- * this can only be called on a handle that has been
- * returned by a call to gpi_create_cb_handle
- */
-void gpi_destroy_cb_handle(gpi_sim_hdl gpi_hdl)
-{
-    /* Check that is has been called, if this has not
-     * happend then also close down the sim data as well
-     */
-    FENTER
-    p_vpi_cb_user_data user_data;
-    user_data = gpi_container_of(gpi_hdl, s_vpi_cb_user_data, gpi_hdl);
-
-    if (user_data->state == VPI_PRE_CALL) {
-        user_data->state = VPI_DELETE;
-    } else {
-        gpi_deregister_callback(gpi_hdl);
-        __gpi_free_callback(gpi_hdl);
-    }
-    FEXIT
-}
-
-#endif
 /* Deregister a prior set up callback with the simulator
  * The handle must have been allocated with gpi_create_cb_handle
  * This can be called at any point between
