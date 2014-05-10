@@ -34,13 +34,14 @@ To run a test using a different simulator:
     $> make SIM=vcs
 
 
-Compatible Simulators
----------------------
+Running a VHDL example
+----------------------
 
-* Icarus Verilog
-* Synopsys VCS
-* Aldec Riviera-PRO
-* Cadance Incisive
+The endian swapper example includes both a VHDL and Verlog RTL implementation.  The Cocotb testbench can execute against either implementation using VPI for Verilog and VHPI for VHDL.  To run the test suite against the VHDL implementation use the following command (a VHPI capable simulator must be used):
+
+.. code-block:: bash
+
+    $> make SIM=aldec GPI_IMPL=vhpi
 
 
 
