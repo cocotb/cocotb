@@ -36,7 +36,7 @@ initial begin
     $display("Plusargs test");
     result = $value$plusargs("foo=%s", foo_string);	
     $display("Plusarg foo has value %0s", foo_string);
-    #1 $diplay("Test running");
+    #1 $display("Test running");
 end
 
 endmodule //: tb_top

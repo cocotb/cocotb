@@ -93,7 +93,7 @@ class SimHandle(object):
 
     def __setattr__(self, name, value):
         """Provide transparent access to signals"""
-        if not name.startswith('_') and not name in ["name", "fullname", "log"] \
+        if not name.startswith('_') and not name in ["name", "fullname", "log", "value"] \
                                                      and self.__hasattr__(name):
             getattr(self, name).setcachedvalue(value)
             return
