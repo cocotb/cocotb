@@ -46,8 +46,8 @@ $(LIB_OBJ_DIR):
 $(LIB_DIR): $(LIB_OBJ_DIR)
 	mkdir -p $@
 
-$(LIB_DIR)/libgpilog.so: $(SIM_ROOT)/lib/gpi/gpi_logging.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/gpi
+$(LIB_DIR)/libgpilog.so: $(SIM_ROOT)/lib/gpi_log/gpi_logging.c | $(LIB_DIR)
+	make -C $(SIM_ROOT)/lib/gpi_log
 
 $(LIB_DIR)/libcocotb.so: $(SIM_ROOT)/lib/embed/gpi_embed.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/embed
