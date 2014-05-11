@@ -728,17 +728,23 @@ int vpi_register_timed_callback(gpi_sim_hdl cb,
 /* Checking of validity is done in the common code */
 gpi_cb_hdl vpi_create_cb_handle(void)
 {
+    gpi_sim_hdl ret = NULL;
+    FENTER
+
     p_vpi_cb new_cb_hdl = calloc(1, sizeof(*new_cb_hdl));
     if (new_cb_hdl)
-        return &new_cb_hdl->gpi_cb_data;
+        ret = &new_cb_hdl->gpi_cb_data;
 
-    return NULL;
+    FEXIT
+    return ret;
 }
 
 void vpi_destroy_cb_handle(gpi_cb_hdl hdl)
 {
+    FENTER
     p_vpi_cb vpi_hdl = gpi_container_of(hdl, s_vpi_cb, gpi_cb_data);
     free(vpi_hdl);
+    FEXIT
 }
 
 // If the Pything world wants things to shut down then unregister
