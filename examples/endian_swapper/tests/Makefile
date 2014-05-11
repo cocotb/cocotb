@@ -38,7 +38,6 @@ PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
 
-
 ifeq ($(GPI_IMPL),vpi)
     VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
 endif
@@ -49,11 +48,20 @@ endif
 
 MODULE=test_endian_swapper
 
+CUSTOM_COMPILE_DEPS = hal
+PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
+export PYTHONPATH
+
+LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
+export LD_LIBRARY_PATH
 
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
 
+.PHONY: hal
+hal:
+	-cd ../cosim && make
 
 # Stuff below is useful for profiling
 # Need grof2dot from https://code.google.com/p/jrfonseca.gprof2dot/

@@ -64,57 +64,59 @@ static PyObject *set_read_function(PyObject *self, PyObject *args) {
 // Functions called by C (exported in a shared library)
 unsigned int IORD(unsigned int base, unsigned int address) {
 
-    printf("In IORD\n");
-
-//     *buffer = 4;
-//     return 1;
+    unsigned int value;
 
     if (!PyCallable_Check(pRdFunction)) {
         printf("Read function not callable...\n");
         return 0;
     }
 
-//     PyObject *call_args = PyTuple_New(1);
-//     PyObject *rv;
-// 
-//     PyTuple_SetItem(call_args, 0, PyInt_FromLong(address));
-// 
-//     printf("Attempting to call our read function...\n");
-//     rv = PyObject_CallObject(pRdFunction, call_args);
-//     printf("Called!\n");
-//     *buffer = PyInt_AsLong(rv);
-// 
-//     if (PyErr_Occurred())
-//         PyErr_Print();
-// 
-//     Py_DECREF(rv);
-//     Py_DECREF(call_args);
+    PyObject *call_args = PyTuple_New(1);
+    PyObject *rv;
 
-    return 1;
+    PyTuple_SetItem(call_args, 0, PyInt_FromLong(base + address));
+
+    rv = PyObject_CallObject(pRdFunction, call_args);
+    value = PyInt_AsLong(rv);
+
+    if (PyErr_Occurred())
+        PyErr_Print();
+
+    Py_DECREF(rv);
+    Py_DECREF(call_args);
+
+    return value;
 }
 
-int IOWR(unsigned int base, unsigned int address, unsigned int data)
+int IOWR(unsigned int base, unsigned int address, unsigned int value)
 {
-    printf("In IOWR\n");
 
     if (!PyCallable_Check(pWrFunction)) {
         printf("Write function isn't callable...\n");
-        return 0;
+        return -1;
     }
 
-//     PyObject *call_args = PyTuple_New(2);
-//     PyObject *rv;
-// 
-//     PyTuple_SetItem(call_args, 0, PyInt_FromLong(address));
-//     PyTuple_SetItem(call_args, 1, PyInt_FromLong(value));
-// 
-//     rv = PyObject_CallObject(pWrFunction, call_args);
-// 
-//     if (PyErr_Occurred())
-//         PyErr_Print();
-// 
-//     Py_DECREF(rv);
-//     Py_DECREF(call_args);
+    PyObject *call_args = PyTuple_New(2);
+    PyObject *rv;
 
-    return 1;
+    PyTuple_SetItem(call_args, 0, PyInt_FromLong(base + address));
+    PyTuple_SetItem(call_args, 1, PyInt_FromLong(value));
+
+    rv = PyObject_CallObject(pWrFunction, call_args);
+
+    if (PyErr_Occurred())
+        PyErr_Print();
+
+    Py_DECREF(rv);
+    Py_DECREF(call_args);
+
+    return 0;
 }
+
+PyMODINIT_FUNC
+initio_module(void)
+{
+    PyObject* io_module;
+    io_module = Py_InitModule("io_module", io_module_methods);
+}
+

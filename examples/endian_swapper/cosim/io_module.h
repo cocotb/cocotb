@@ -33,7 +33,7 @@
 static PyObject *set_write_function(PyObject *self, PyObject *args);
 static PyObject *set_read_function(PyObject *self, PyObject *args);
 
-static PyMethodDef IOModuleMethods[] = {
+static PyMethodDef io_module_methods[] = {
     {"set_write_function", set_write_function, METH_VARARGS, "Set the write function"},
     {"set_read_function",  set_read_function,  METH_VARARGS, "Set the read function"},
     {NULL, NULL, 0, NULL}        /* Sentinel */

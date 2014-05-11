@@ -1,7 +1,7 @@
 
 all: io_module.so _hal.so
 
-io_module.o: io.c
+io_module.o: io.c io_module.h io.h
 	gcc -pthread -fno-strict-aliasing -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -mtune=generic -D_GNU_SOURCE -fPIC -fwrapv -DNDEBUG -I/usr/include/python2.7 -c $< -o $@
 
 io_module.so: io_module.o
