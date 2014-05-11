@@ -10,6 +10,15 @@ software abstraction layer or driver which communicates with the hardware. In
 this tutorial we will call unmodified production software from our testbench
 and re-use the code written to configure the entity.
 
+For the impatient this tutorial is provided as an example with Cocotb. You can
+run this example from a fresh checkout::
+
+    cd examples/endian_swapper/tests
+    make MODULE=test_endian_swapper_hal
+
+.. note:: `SWIG`_ is required to compile the example
+
+
 
 
 Difficulties with Driver Co-simulation
