@@ -83,7 +83,12 @@ class GPITrigger(Trigger):
     """
     def __init__(self):
         Trigger.__init__(self)
-        self.cbhdl = simulator.create_callback(self)
+
+        # Required to ensure documentation can build
+        if simulator is not None:
+            self.cbhdl = simulator.create_callback(self)
+        else:
+            self.cbhdl = None
 
     def unprime(self):
         """Unregister a prior registered timed callback"""
