@@ -584,7 +584,6 @@ int vpi_register_value_change_callback(gpi_sim_hdl cb,
     return ret;
 }
 
-
 int vpi_register_readonly_callback(gpi_sim_hdl cb,
                                    int (*gpi_function)(void *),
                                    void *gpi_cb_data)
@@ -728,7 +727,7 @@ int vpi_register_timed_callback(gpi_sim_hdl cb,
 /* Checking of validity is done in the common code */
 gpi_cb_hdl vpi_create_cb_handle(void)
 {
-    gpi_sim_hdl ret = NULL;
+    gpi_cb_hdl ret = NULL;
     FENTER
 
     p_vpi_cb new_cb_hdl = calloc(1, sizeof(*new_cb_hdl));
