@@ -88,7 +88,7 @@ typedef enum gpi_event_e {
 } gpi_event_t;
 
 typedef struct gpi_sim_info_s
-{     
+{
     int32_t   argc;
     char      **argv;
     char      *product;
@@ -105,7 +105,7 @@ typedef struct gpi_sim_hdl_s {
 typedef struct gpi_cb_hdl_s {
     gpi_sim_hdl_t hdl;
     int (*gpi_function)(void *);    // GPI function to callback
-    void *gpi_cb_data;              // GPI data supplied to "gpi_functin"
+    void *gpi_cb_data;              // GPI data supplied to "gpi_function"
 } gpi_cb_hdl_t, *gpi_cb_hdl;
 
 // Define a handle type for iterators
@@ -184,6 +184,11 @@ gpi_sim_hdl gpi_create_handle(void);
 void gpi_free_handle(gpi_sim_hdl gpi_hdl);
 
 void gpi_deregister_callback(gpi_sim_hdl gpi_hdl);
+
+// Because the internal structures may be different for different implementations
+// of GPI we provide a convenience function to extract the callback data
+void *gpi_get_callback_data(gpi_sim_hdl gpi_hdl);
+
 
 #define GPI_RET(_code) \
     if (_code == 1) \

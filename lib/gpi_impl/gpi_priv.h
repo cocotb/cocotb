@@ -55,6 +55,7 @@ typedef struct t_gpi_impl_tbl {
 	gpi_cb_hdl (*create_cb_handle)(void);
 	void (*destroy_cb_handle)(gpi_cb_hdl gpi_hdl);
 	int (*deregister_callback)(gpi_sim_hdl gpi_hdl);
+	void* (*get_callback_data)(gpi_sim_hdl gpi_hdl);
 } s_gpi_impl_tbl, *gpi_impl_tbl;
 
 int gpi_register_impl(gpi_impl_tbl func_tbl, int type);
@@ -66,3 +67,4 @@ void gpi_embed_init_python(void);
 char *gpi_copy_name(const char *name);
 
 void gpi_handle_callback(gpi_sim_hdl cb_data);
+

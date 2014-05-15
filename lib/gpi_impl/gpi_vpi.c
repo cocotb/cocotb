@@ -240,7 +240,11 @@ static gpi_sim_hdl vpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     obj = vpi_handle_by_name(buff, (vpiHandle)(parent->sim_hdl));
     if (!obj) {
         LOG_DEBUG("VPI: Handle '%s' not found!", name);
-        check_vpi_error();
+
+        // NB we deliberately don't dump an error message here because it's
+        // a valid use case to attempt to grab a signal by name - for example
+        // optional signals on a bus.
+        // check_vpi_error();
         return NULL;
     }
 
@@ -749,6 +753,15 @@ static void vpi_destroy_cb_handle(gpi_cb_hdl hdl)
     FEXIT
 }
 
+static void *vpi_get_callback_data(gpi_sim_hdl gpi_hdl)
+{
+    FENTER
+    gpi_cb_hdl gpi_user_data;
+    gpi_user_data = gpi_container_of(gpi_hdl, gpi_cb_hdl_t, hdl);
+    return gpi_user_data->gpi_cb_data;
+}
+
+
 // If the Pything world wants things to shut down then unregister
 // the callback for end of sim
 static void vpi_sim_end(void)
@@ -779,6 +792,7 @@ static s_gpi_impl_tbl vpi_table = {
     .register_nexttime_callback = vpi_register_nexttime_callback,
     .register_value_change_callback = vpi_register_value_change_callback,
     .register_readonly_callback = vpi_register_readonly_callback,
+    .get_callback_data = vpi_get_callback_data,
 };
 
 static void register_embed(void)

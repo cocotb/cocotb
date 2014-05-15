@@ -215,13 +215,10 @@ class _RisingEdge(Edge):
             if self.signal.value:
                 self._callback(self)
             else:
-                simulator.deregister_callback(self.cbhdl)
-                if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
-                    raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                simulator.reenable_callback(self.cbhdl)
 
         if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
-
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name

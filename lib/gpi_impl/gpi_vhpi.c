@@ -184,8 +184,13 @@ static inline int __vhpi_register_cb(p_vhpi_cb user, vhpiCbDataT *cb_data)
         ret = -1;
     }
 
+    vhpiStateT cbState = vhpi_get(vhpiStateP, new_hdl);
+    if (cbState != vhpiEnable) {
+        LOG_CRITICAL("VHPI ERROR: Registered callback isn't enabled! Got %d\n", cbState);
+    }
+
     if (user->cb_hdl != NULL) {
-        printf("VHPI: Attempt to register a callback that's already registered...\n");
+        LOG_ERROR("VHPI: Attempt to register a callback that's already registered...\n");
         vhpi_deregister_callback(&user->gpi_cb_data.hdl);
     }
 
@@ -560,8 +565,15 @@ static void handle_vhpi_callback(const vhpiCbDataT *cb_data)
     old_cb = user_data->cb_hdl;
     gpi_handle_callback(&user_data->gpi_cb_data.hdl);
 
-    if (old_cb == user_data->cb_hdl)
-        gpi_deregister_callback(&user_data->gpi_cb_data.hdl);
+    if (old_cb == user_data->cb_hdl) {
+
+        // Don't de-register recurring callbacks - VHPI only seems to allow
+        // a single registration per recurring callback.  For edge events on
+        // signals etc. we never want to remove.
+        vhpiStateT cbState = vhpi_get(vhpiStateP, user_data->cb_hdl);
+        if (vhpiMature == cbState)
+            gpi_deregister_callback(&user_data->gpi_cb_data.hdl);
+    }
 
     /* A request to delete could have been done
      * inside gpi_function
@@ -583,8 +595,8 @@ static gpi_cb_hdl vhpi_create_cb_handle(void)
 {
     gpi_cb_hdl ret = NULL;
     FENTER
-
     p_vhpi_cb user_data = calloc(1, sizeof(*user_data));
+
     if (user_data)
         ret = &user_data->gpi_cb_data;
 
@@ -607,6 +619,16 @@ static void vhpi_destroy_cb_handle(gpi_cb_hdl hdl)
     free(user_data);
     FEXIT
 }
+
+
+static void *vhpi_get_callback_data(gpi_sim_hdl gpi_hdl)
+{
+    FENTER
+    gpi_cb_hdl gpi_user_data;
+    gpi_user_data = gpi_container_of(gpi_hdl, gpi_cb_hdl_t, hdl);
+    return gpi_user_data->gpi_cb_data;
+}
+
 
 /* Deregister a prior set up callback with the simulator
  * The handle must have been allocated with gpi_create_cb_handle
@@ -885,11 +907,13 @@ static s_gpi_impl_tbl vhpi_table = {
     .register_nexttime_callback = vhpi_register_nexttime_callback,
     .register_value_change_callback = vhpi_register_value_change_callback,
     .register_readonly_callback = vhpi_register_readonly_callback,
+    .get_callback_data = vhpi_get_callback_data,
 };
 
 static void register_embed(void)
 {
     FENTER
+    gpi_register_impl(&vhpi_table, 0xfeed);
     gpi_embed_init_python();
     FEXIT
 }
@@ -919,6 +943,7 @@ static void register_initial_callback(void)
     p_vhpi_cb vhpi_user_data;
     gpi_cb_hdl gpi_user_data;
 
+
     sim_init_cb = gpi_create_cb_handle();
 
     gpi_user_data = gpi_container_of(sim_init_cb, gpi_cb_hdl_t, hdl);
@@ -936,10 +961,6 @@ static void register_initial_callback(void)
     cb_data_s.value     = NULL;
     cb_data_s.user_data = (char *)vhpi_user_data;
 
-    /* We ignore the return value here as VCS does some silly
-     * things on comilation that means it tries to run through
-     * the vlog_startup_routines and so call this routine
-     */
     __vhpi_register_cb(vhpi_user_data, &cb_data_s);
 
     FEXIT
@@ -968,7 +989,7 @@ static void register_final_callback(void)
 
     sim_finish_cb = gpi_create_cb_handle();
 
-    gpi_user_data = gpi_container_of(sim_init_cb, gpi_cb_hdl_t, hdl);
+    gpi_user_data = gpi_container_of(sim_finish_cb, gpi_cb_hdl_t, hdl);
     vhpi_user_data = gpi_container_of(gpi_user_data, s_vhpi_cb, gpi_cb_data);
 
     gpi_user_data->gpi_cb_data = NULL;

@@ -43,7 +43,7 @@ static r_impl registed_impls[MAX_IMPLS] = {{NULL,0},};
 static inline void set_user_data(gpi_sim_hdl hdl, int (*gpi_function)(void*), void *data)
 {
     gpi_cb_hdl gpi_user_data = gpi_container_of(hdl, gpi_cb_hdl_t, hdl);
-    
+
     gpi_user_data->gpi_cb_data = data;
     gpi_user_data->gpi_function = gpi_function;
 }
@@ -123,6 +123,10 @@ void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
     IMPL_ROOT->set_signal_value_str(gpi_hdl, str);
 }
 
+void *gpi_get_callback_data(gpi_sim_hdl gpi_hdl)
+{
+    return IMPL_ROOT->get_callback_data(gpi_hdl);
+}
 
 int gpi_register_timed_callback(gpi_sim_hdl hdl,
                                 int (*gpi_function)(void *),
