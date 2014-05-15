@@ -115,11 +115,16 @@ int handle_gpi_callback(void *user_data)
 
     // Free up our mess
     Py_DECREF(pValue);
-    Py_DECREF(callback_data_p->function);
-    Py_DECREF(callback_data_p->args);
 
-    // Free the callback data
-    free(callback_data_p);
+    // Callbacks may have been re-enabled
+    if (callback_data_p->id_value == COCOTB_INACTIVE_ID) {
+        Py_DECREF(callback_data_p->function);
+        Py_DECREF(callback_data_p->args);
+
+        // Free the callback data
+        free(callback_data_p);
+    }
+
 
     DROP_GIL(gstate);
 
@@ -756,7 +761,36 @@ static PyObject *free_handle(PyObject *self, PyObject *args)
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
     gpi_sim_end();
-    return Py_BuildValue("s", "OK!");    
+    return Py_BuildValue("s", "OK!");
+}
+
+static PyObject *reenable_callback(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    p_callback_data callback_data_p;
+    PyObject *pSihHdl;
+    PyObject *value;
+
+    FENTER
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    pSihHdl = PyTuple_GetItem(args, 0);
+    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
+    callback_data_p = (p_callback_data)gpi_get_callback_data(hdl);
+
+//     printf("Reenable callback, previous id_value: %08x\n", callback_data_p->id_value);
+
+    callback_data_p->id_value = COCOTB_ACTIVE_ID;
+//     printf("Now id_value: %08x\n", callback_data_p->id_value);
+
+    value = Py_BuildValue("s", "OK!");
+
+    DROP_GIL(gstate);
+
+    FEXIT
+    return value;
 }
 
 
@@ -798,7 +832,7 @@ static PyObject *remove_callback(PyObject *self, PyObject *args)
     pSihHdl = PyTuple_GetItem(args, 0);
     hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
 
-    gpi_destroy_cb_handle(hdl);
+    gpi_free_cb_handle(hdl);
 
     value = Py_BuildValue("s", "OK!");
 
@@ -826,55 +860,6 @@ static PyObject *create_callback(PyObject *self, PyObject *args)
     FEXIT
     return value;
 }
-
-static PyObject *create_clock(PyObject *self, PyObject *args)
-{
-    gpi_sim_hdl hdl;
-    int period;
-    unsigned int mcycles;
-
-    PyGILState_STATE gstate;
-    gstate = TAKE_GIL();
-
-    Py_ssize_t numargs = PyTuple_Size(args);
-
-    if (numargs < 3) {
-        fprintf(stderr, "Attempt to create a clock with without enough arguments!\n");
-        DROP_GIL(gstate);
-        return NULL;
-    }
-
-    PyObject *pSihHdl = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
-
-    PyObject *pPeriod = PyTuple_GetItem(args, 1);
-    period = (int)PyInt_AsLong(pPeriod);
-
-    PyObject *pCycles = PyTuple_GetItem(args, 2);
-    mcycles = (unsigned int)PyLong_AsUnsignedLong(pCycles);
-
-    gpi_sim_hdl clk_hdl = gpi_clock_register(hdl, period, mcycles);
-    PyObject *rv = Py_BuildValue("l", clk_hdl);
-
-    DROP_GIL(gstate);
-    return rv;
-}
-
-
-static PyObject *stop_clock(PyObject *self, PyObject *args)
-{
-    gpi_sim_hdl clk_hdl;
-
-    if (!PyArg_ParseTuple(args, "l", &clk_hdl))
-       return NULL;
-
-    gpi_clock_unregister(clk_hdl);
-    PyObject *rv = Py_BuildValue("l", NULL);
-    return rv;
-}
-
-
-
 
 PyMODINIT_FUNC
 initsimulator(void)

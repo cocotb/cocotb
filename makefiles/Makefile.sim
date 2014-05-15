@@ -68,5 +68,5 @@ regression: results.xml
 # and RTL compilation phases are still evaluated by makefile dependencies)
 .PHONY: sim
 sim:
-	-@rm results.xml
+	-@rm -f results.xml
 	$(MAKE) results.xml

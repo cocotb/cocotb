@@ -34,7 +34,7 @@
 Generic Language Interface
 
 This header file defines a Generic Language Interface into any simulator.
-Implementations should include this header file and MUST
+Implementations need to implement the underlying functions in gpi_priv.h
 
 The functions are essentially a limited subset of VPI/VHPI/FLI.
 
@@ -54,7 +54,10 @@ we have to create a process with the signal on the sensitivity list to imitate a
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
+
+#include <gpi_logging.h>
 
 #if defined(__MINGW32__) || defined (__CYGWIN32__)
 #  define DLLEXPORT __declspec(dllexport)
@@ -85,7 +88,7 @@ typedef enum gpi_event_e {
 } gpi_event_t;
 
 typedef struct gpi_sim_info_s
-{     
+{
     int32_t   argc;
     char      **argv;
     char      *product;
@@ -95,8 +98,15 @@ typedef struct gpi_sim_info_s
 
 // Define a type for our simulation handle.
 typedef struct gpi_sim_hdl_s {
-    void *sim_hdl;
+    void *sim_hdl; // Opaque handle for for a simulator object
 } gpi_sim_hdl_t, *gpi_sim_hdl;
+
+// Define a type for a simulator callback handle
+typedef struct gpi_cb_hdl_s {
+    gpi_sim_hdl_t hdl;
+    int (*gpi_function)(void *);    // GPI function to callback
+    void *gpi_cb_data;              // GPI data supplied to "gpi_function"
+} gpi_cb_hdl_t, *gpi_cb_hdl;
 
 // Define a handle type for iterators
 typedef struct __gpi_iterator_hdl *gpi_iterator_hdl;
@@ -156,9 +166,7 @@ char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
 void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
 
-// The callback registering functions all return a gpi_sim_hdl;
-int gpi_register_sim_start_callback              (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
-int gpi_register_sim_end_callback                (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
+// The callback registering functions
 int gpi_register_timed_callback                  (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
 int gpi_register_value_change_callback           (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
 int gpi_register_readonly_callback               (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
@@ -167,11 +175,20 @@ int gpi_register_readwrite_callback              (gpi_sim_hdl, int (*gpi_functio
 
 // Calling convention is that 0 = success and negative numbers a failure
 // For implementers of GPI the provided macro GPI_RET(x) is provided
+//gpi_sim_hdl gpi_create_cb_handle(void);
+//void gpi_destroy_cb_handle(gpi_sim_hdl gpi_hdl);
 gpi_sim_hdl gpi_create_cb_handle(void);
-void gpi_destroy_cb_handle(gpi_sim_hdl gpi_hdl);
-int gpi_deregister_callback(gpi_sim_hdl gpi_hdl);
-gpi_sim_hdl gpi_clock_register(gpi_sim_hdl sim_hdl, int period, unsigned int cycles);
-void gpi_clock_unregister(gpi_sim_hdl clock);
+void gpi_free_cb_handle(gpi_sim_hdl gpi_hdl);
+
+gpi_sim_hdl gpi_create_handle(void);
+void gpi_free_handle(gpi_sim_hdl gpi_hdl);
+
+void gpi_deregister_callback(gpi_sim_hdl gpi_hdl);
+
+// Because the internal structures may be different for different implementations
+// of GPI we provide a convenience function to extract the callback data
+void *gpi_get_callback_data(gpi_sim_hdl gpi_hdl);
+
 
 #define GPI_RET(_code) \
     if (_code == 1) \
