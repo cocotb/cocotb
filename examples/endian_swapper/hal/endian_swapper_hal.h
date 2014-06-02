@@ -37,6 +37,8 @@ extern "C"
 
 typedef struct endian_swapper_state_s
 {
+    int                 fd;
+    void *              map;
     unsigned int        base;
 } endian_swapper_state_t;
 
