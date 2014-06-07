@@ -175,8 +175,6 @@ int gpi_register_readwrite_callback              (gpi_sim_hdl, int (*gpi_functio
 
 // Calling convention is that 0 = success and negative numbers a failure
 // For implementers of GPI the provided macro GPI_RET(x) is provided
-//gpi_sim_hdl gpi_create_cb_handle(void);
-//void gpi_destroy_cb_handle(gpi_sim_hdl gpi_hdl);
 gpi_sim_hdl gpi_create_cb_handle(void);
 void gpi_free_cb_handle(gpi_sim_hdl gpi_hdl);
 

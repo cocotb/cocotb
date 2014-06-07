@@ -454,7 +454,7 @@ static int32_t handle_vpi_callback(p_cb_data cb_data)
      * inside gpi_function
      */
     if (user_data->state == VPI_DELETE)
-        vpi_destroy_cb_handle(&user_data->gpi_cb_data);
+        gpi_free_cb_handle(&user_data->gpi_cb_data.hdl);
     else
         user_data->state = VPI_POST_CALL;
 

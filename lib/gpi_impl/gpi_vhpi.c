@@ -580,7 +580,7 @@ static void handle_vhpi_callback(const vhpiCbDataT *cb_data)
      * inside gpi_function
      */
     if (user_data->state == VHPI_DELETE)
-        vhpi_destroy_cb_handle(&user_data->gpi_cb_data);
+        gpi_free_cb_handle(&user_data->gpi_cb_data.hdl);
     else
         user_data->state = VHPI_POST_CALL;
 
