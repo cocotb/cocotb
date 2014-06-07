@@ -367,6 +367,8 @@ class Scheduler(object):
         if coro._join in self._trigger2coros:
             self._pending_triggers.append(coro._join)
 
+        # Remove references to allow GC to clean up
+        del coro._join
 
     def save_write(self, handle, value):
         self._writes[handle] = value

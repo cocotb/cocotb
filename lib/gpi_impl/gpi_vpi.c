@@ -55,6 +55,7 @@ typedef struct t_vpi_cb {
 
 // Forward declarations
 static int vpi_deregister_callback(gpi_sim_hdl gpi_hdl);
+static void vpi_destroy_cb_handle(gpi_cb_hdl hdl);
 
 // Add to this over time
 static const char * vpi_reason_to_string(int reason)
@@ -453,7 +454,7 @@ static int32_t handle_vpi_callback(p_cb_data cb_data)
      * inside gpi_function
      */
     if (user_data->state == VPI_DELETE)
-        gpi_destroy_cb_handle(&user_data->gpi_cb_data);
+        vpi_destroy_cb_handle(&user_data->gpi_cb_data);
     else
         user_data->state = VPI_POST_CALL;
 
@@ -465,7 +466,7 @@ static int32_t handle_vpi_callback(p_cb_data cb_data)
 /* Deregister a prior set up callback with the simulator
  * The handle must have been allocated with gpi_create_cb_handle
  * This can be called at any point between
- * gpi_create_cb_handle and gpi_destroy_cb_handle
+ * gpi_create_cb_handle and gpi_free_cb_handle
  */
 static int vpi_deregister_callback(gpi_sim_hdl gpi_hdl)
 {   
