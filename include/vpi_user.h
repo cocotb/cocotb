@@ -44,12 +44,14 @@ typedef uint32_t *vpiHandle;
 
 #define vpiNet                 36   /* scalar or vector net */
 #define vpiModule              32   /* module instance */
+#define vpiStructVar           618
 
 #define vpiStop                66  /* execute simulator's $stop */
 #define vpiFinish              67  /* execute simulator's $finish */
 #define vpiReset               68  /* execute simulator's $reset */
 
 #define vpiType                 1   /* type of object */
+#define vpiName                 2   /* local name of object */
 #define vpiFullName             3   /* full hierarchical name */
 
 #define vpiNoDelay              1
@@ -183,6 +185,7 @@ typedef struct t_cb_data
 
 /* Object Types */
 #define vpiPort                 44
+#define vpiMember               742
 
 /* error severity levels */
 #define vpiNotice               1

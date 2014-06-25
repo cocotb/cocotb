@@ -195,7 +195,7 @@ static gpi_sim_hdl vpi_get_root_handle(const char* name)
         LOG_WARN("VPI: Attempting to free root iterator failed!");
         check_vpi_error();
     }
-    
+
     rv = gpi_create_handle();
     rv->sim_hdl = root;
 
@@ -221,13 +221,47 @@ static gpi_sim_hdl vpi_get_root_handle(const char* name)
 }
 
 
+/**
+ * @brief   Get a handle to an object under the scope of parent
+ *
+ * @param   name of the object to find
+ * @param   parent handle to parent object defining the scope to search
+ *
+ * @return  gpi_sim_hdl for the new object or NULL if object not found
+ */
 static gpi_sim_hdl vpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
 {
     FENTER
     gpi_sim_hdl rv;
     vpiHandle obj;
+    vpiHandle iterator;
     int len;
     char *buff;
+
+    // Structures aren't technically a scope, according to the LRM. If parent
+    // is a structure then we have to iterate over the members comparing names
+    if (vpiStructVar == vpi_get(vpiType, (vpiHandle)(parent->sim_hdl))) {
+
+        iterator = vpi_iterate(vpiMember, (vpiHandle)(parent->sim_hdl));
+
+        for (obj = vpi_scan(iterator); obj != NULL; obj = vpi_scan(iterator)) {
+
+            if (!strcmp(name, strrchr(vpi_get_str(vpiName, obj), 46) + 1))
+                break;
+        }
+
+        if (!obj)
+            return NULL;
+
+        // Need to free the iterator if it didn't return NULL
+        if (!vpi_free_object(iterator)) {
+            LOG_WARN("VPI: Attempting to free root iterator failed!");
+            check_vpi_error();
+        }
+
+        goto success;
+    }
+
     if (name)
         len = strlen(name) + 1;
 
@@ -246,11 +280,13 @@ static gpi_sim_hdl vpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
         // a valid use case to attempt to grab a signal by name - for example
         // optional signals on a bus.
         // check_vpi_error();
+        free(buff);
         return NULL;
     }
 
     free(buff);
 
+success:
     rv = gpi_create_handle();
     rv->sim_hdl = obj;
 
