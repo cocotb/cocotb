@@ -25,6 +25,13 @@ Typically the makefiles provided with Cocotb for various simulators use a separa
 Make Variables
 --------------
 
+GUI
+~~~
+
+Set this to 1 to enable the GUI mode in the simulator (if supported).
+
+
+
 SIM
 ~~~
 
