@@ -34,16 +34,17 @@ PYTHON_PREFIX = $(shell python-config --prefix)
 NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
 
-ifeq ($(NATIVE_ARCH),$(ARCH))
-    STD_LIB=True
-else
-    STD_LIB=False
-endif
-
 # We might work with other Python versions
 PYTHON_VERSION?=$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version()')
 PYTHON_LIBDIR:=$(shell python -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBDIR")')
 PYTHON_DYNLIBDIR:=$(shell python -c 'from distutils import sysconfig; print sysconfig.get_config_var("DESTSHARED")')
+
+# Nasty hack but there's no way in Python properly get the directories for 32-bit Python on a 64-bit system
+# TODO: Under OSX we can use "export VERSIONER_PYTHON_PREFER_32_BIT=yes", no Linux equivalent though
+ifneq ($(NATIVE_ARCH),$(ARCH))
+    PYTHON_LIBDIR:=$(subst 64,,$(PYTHON_LIBDIR))
+    PYTHON_DYNLIBDIR:=$(subst 64,,$(PYTHON_DYNLIBDIR))
+endif
 
 # Since we don't know which modules we might need or whether the simulator
 # we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
