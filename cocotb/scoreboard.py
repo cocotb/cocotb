@@ -139,7 +139,7 @@ class Scoreboard(object):
                     try:
                         for word in transaction: self.log.info(str(word))
                     except: pass
-                log.warning(hexdiffs(exp, transaction))
+                log.warning("Difference:\n%s" % hexdiffs(exp, transaction))
                 if self._imm: raise TestFailure("Received transaction differed from expected transaction")
             else:
                 # Don't want to fail the test if we're passed something without __len__
