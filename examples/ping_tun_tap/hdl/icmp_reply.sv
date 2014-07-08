@@ -125,7 +125,9 @@ always @(posedge clk or negedge reset_n) begin
 
                 if (stream_out_ready) begin
                     tx_word_ptr                 <= tx_word_ptr + 1;
-                    stream_out_startofpacket    <= 1'b0;
+
+                    if (tx_word_ptr)
+                        stream_out_startofpacket<= 1'b0;
 
                     if (tx_word_ptr == rx_word_ptr - 1) begin
                         stream_out_empty        <= empty_saved;
