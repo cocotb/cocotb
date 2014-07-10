@@ -214,3 +214,8 @@ class SimHandle(object):
         """Free handle from gpi that was allocated on construction"""
         if self._handle is not None:
             simulator.free_handle(self._handle)
+
+    def __int__(self):
+        return int(self.value)
+
+
