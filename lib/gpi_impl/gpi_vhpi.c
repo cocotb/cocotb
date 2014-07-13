@@ -403,12 +403,14 @@ static void vhpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
     check_vhpi_error();
 
     switch (value_s.format) {
-        case vhpiEnumVal: {
+        case vhpiEnumVal:
+        case vhpiLogicVal: {
             value_s.value.enumv = value ? vhpi1 : vhpi0;
             break;
         }
 
-        case vhpiEnumVecVal: {
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal: {
             size = vhpi_get(vhpiSizeP, (vhpiHandleT)(gpi_hdl->sim_hdl));
             value_s.bufSize = size*sizeof(vhpiEnumT); 
             value_s.value.enumvs = (vhpiEnumT *)malloc(size*sizeof(vhpiEnumT));
@@ -454,12 +456,14 @@ static void vhpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
     check_vhpi_error();
 
     switch (value_s.format) {
-         case vhpiEnumVal: {
+        case vhpiEnumVal:
+        case vhpiLogicVal: {
             value_s.value.enumv = chr2vhpi(*str);
             break;
         }
 
-        case vhpiEnumVecVal: {
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal: {
             len = strlen(str);
             size = vhpi_get(vhpiSizeP, (vhpiHandleT)(gpi_hdl->sim_hdl));
             value_s.bufSize = size*sizeof(vhpiEnumT); 
