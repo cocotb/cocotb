@@ -118,6 +118,8 @@ void embed_sim_init(gpi_sim_info_t *info)
     PyObject *simlog_class, *simlog_obj, *simlog_args, *simlog_func;
     PyObject *argv_list, *argc, *arg_dict, *arg_value;
 
+    cocotb_module = NULL;
+    arg_dict = NULL;
 
     //Ensure that the current thread is ready to callthe Python C API
     PyGILState_STATE gstate = PyGILState_Ensure();
