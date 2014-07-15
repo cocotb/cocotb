@@ -118,6 +118,8 @@ void embed_sim_init(gpi_sim_info_t *info)
     PyObject *simlog_class, *simlog_obj, *simlog_args, *simlog_func;
     PyObject *argv_list, *argc, *arg_dict, *arg_value;
 
+    cocotb_module = NULL;
+    arg_dict = NULL;
 
     //Ensure that the current thread is ready to callthe Python C API
     PyGILState_STATE gstate = PyGILState_Ensure();
@@ -237,16 +239,18 @@ void embed_sim_event(gpi_event_t level, const char *msg)
     FENTER
     /* Indicate to the upper layer a sim event occoured */
 
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
+    if (pEventFn) {
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
 
-    PyObject *fArgs = PyTuple_New(2);
-    PyTuple_SetItem(fArgs, 0, PyInt_FromLong(level));
-    PyTuple_SetItem(fArgs, 1, PyString_FromString(msg));
-    PyObject *pValue = PyObject_Call(pEventFn, fArgs, NULL);
+        PyObject *fArgs = PyTuple_New(2);
+        PyTuple_SetItem(fArgs, 0, PyInt_FromLong(level));
+        PyTuple_SetItem(fArgs, 1, PyString_FromString(msg));
+        PyObject *pValue = PyObject_Call(pEventFn, fArgs, NULL);
 
-    Py_DECREF(fArgs);
-    PyGILState_Release(gstate);
+        Py_DECREF(fArgs);
+        PyGILState_Release(gstate);
+    }
 
     FEXIT
 }
