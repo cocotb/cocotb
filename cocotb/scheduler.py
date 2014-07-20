@@ -234,14 +234,13 @@ class Scheduler(object):
         We find any coroutines that are waiting on the particular trigger and
         schedule them.
         """
-        if _debug:
-            trigger.log.debug("Fired!")
         if _profiling and not depth:
             _profile.enable()
 
         # We can always unprime the trigger that actually fired - if it's 
         # recycled then prime will be called again.
-        self.log.debug("Unprimed %s" % str(trigger))
+        if _debug:
+            self.log.debug("Trigger fired: %s... unpriming" % str(trigger))
         trigger.unprime()
 
         if self._mode == Scheduler._MODE_TERM:
@@ -313,11 +312,10 @@ class Scheduler(object):
         scheduling = self._trigger2coros.pop(trigger)
 
         if _debug:
-            self.log.debug("%d pending coroutines for event %s\n%s" % (
-                  len(scheduling), str(trigger), 
-                       "\n\t".join([coro.__name__ for coro in scheduling])))
-            for coro in scheduling:
-                coro.log.debug("I was waiting")
+            debugstr = "\n\t".join([coro.__name__ for coro in scheduling])
+            if len(scheduling): debugstr = "\n\t" + debugstr
+            self.log.debug("%d pending coroutines for event %s%s" % (
+                  len(scheduling), str(trigger), debugstr))
 
         # If the coroutine was waiting on multiple triggers we may be able
         # to unprime the other triggers that didn't fire
