@@ -28,6 +28,8 @@
 ##############################################################################
 
 # Common makefile included by everything
+include $(SIM_ROOT)/makefiles/Makefile.paths
+include $(SIM_ROOT)/makefiles/Makefile.pylib
 
 ifeq ($(SIM_ROOT),)
 export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
@@ -40,35 +42,92 @@ endif
 BUILD_DIR=$(USER_DIR)/build
 export BUILD_DIR
 
-ARCH?=$(shell uname -m)
+ARCH ?= $(shell uname -m)
 export ARCH
 
+export LIB_DIR = $(BUILD_DIR)/libs/$(ARCH)
+export LIB_OBJ_DIR = $(BUILD_DIR)/obj/$(ARCH)
+
+# windows
+# -------
+ifeq ($(OS),Windows_NT)
+    
+# shared lib = .dll
+LIB_SUFFIX := dll
+export LIB_SUFFIX
+
+# python extension = .pyd
+PY_EXT_SUFFIX := pyd
+export PY_EXT_SUFFIX
+
+# set compiler and additional libs
+ifeq ($(SIM), modelsim)
+# modelsim needs MTI recommended version of MINGW compiler
+CC = $(shell cygpath -u "$(MTI_HOME)/gcc-4.2.1-mingw32vc9/bin/gcc.exe")
+
+# vpi libs (TODO: add more platforms: DE, PE, SE) 
+EXTRA_LIBDIRS = -L$(shell cygpath -m "$(MTI_HOME)/win32aloem")
+EXTRA_LIBS = -lmtipli   
+
+else
+# MINGW compiler
+CC = $(shell cygpath -u "$(MINGW_HOME)/bin/gcc.exe")
+
+# vpi libs
+EXTRA_LIBDIRS = -L$(shell cygpath -m "$(ICARUS_HOME)/lib")
+EXTRA_LIBS = -lvpi 
+endif
+
+# include dirs
+export INCLUDES = -I$(shell cygpath -m $(SIM_ROOT)/include) -I$(PYTHON_INCLUDEDIR)
+
+# compiler flags
+GCC_ARGS := -Wall -Wno-unused-parameter 
+
+# 32 bit?
+ifeq ($(ARCH),i686)
+GCC_ARGS += -m32
+endif
+
+# linker flags
+LINKER_ARGS := -shared
+
+    
+# linux/darwin
+# ------------
+else
 OS=$(shell uname)
 export OS
 
-include $(SIM_ROOT)/makefiles/Makefile.paths
-include $(SIM_ROOT)/makefiles/Makefile.pylib
+# shared lib = .so
+LIB_SUFFIX := so
+export LIB_SUFFIX
 
-export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
-export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
+# python extension = .so
+PY_EXT_SUFFIX := so
+export PY_EXT_SUFFIX
 
+# include dirs
+export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
 
-# Base GCC flags
+# compiler flags
 ifeq ($(OS),Darwin)
-GCC_ARGS    :=  -g -DDEBUG -fpic
+GCC_ARGS := -g -DDEBUG -fpic
 else
-GCC_ARGS	:=	-Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-				-Waggregate-return -Wstrict-prototypes           \
-				-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
+GCC_ARGS :=	-Werror -Wcast-qual -Wcast-align -Wwrite-strings \
+            -Waggregate-return -Wstrict-prototypes           \
+            -Wno-unused-parameter -fno-common -g -DDEBUG -fpic
+
 ifeq ($(ARCH),i686)
-GCC_ARGS    += -m32
+GCC_ARGS += -m32
 endif
-endif
+endif    
 
-
+# linker flags
 ifeq ($(OS),Darwin)
 LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
 else
 LINKER_ARGS := -shared -Xlinker -export-dynamic -L$(PYTHON_LIBDIR)
 endif
+endif
+
