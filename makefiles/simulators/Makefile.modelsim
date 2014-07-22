@@ -27,10 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+# TODO: is this var needed, or should this be GPI_IMPL?
 VPI_LIB := vpi 
-
-# temp hack to bypass makefile from tests
-#MODULE=test_endian_swapper
 
 # Modelsim is 32-bit only
 ARCH:=i686
@@ -45,7 +43,7 @@ else
 SIM_CMD = vsim -c
 endif
 
-# Windows
+# windows
 # -------
 ifeq ($(OS),Windows_NT)
 
@@ -60,14 +58,15 @@ endif
 
 results.xml: runsim.do $(COCOTB_LIBS)
 # TODO: add to PATH rather than LD_LIBRARY_PATH
+#       sort out PYTHONPATH 
 #	LD_LIBRARY_PATH=$(LIB_DIR)::$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	PYTHONPATH=$(shell cygpath -m $(LIB_DIR));$(shell cygpath -m $(SIM_ROOT));$(shell cygpath -m $(PWD));$(PYTHONPATH) \
 	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
 
     
-# Linux
-# -----   
+# linux/darwin
+# ------------   
 else
 
 runsim.do : $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
