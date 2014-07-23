@@ -138,16 +138,22 @@ class SimHandle(object):
         object eg net, signal or variable.
 
         We determine the library call to make based on the type of the value
+
+        Assigning integers less than 32-bits is faster
         """
+        if isinstance(value, (int, long)) and value < 0x7fffffff:
+            simulator.set_signal_val(self._handle, value)
+            return
+
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
-        if isinstance(value, BinaryValue):
-            simulator.set_signal_val_str(self._handle, value.binstr)
         elif isinstance(value, (int, long)):
-            simulator.set_signal_val(self._handle, value)
-        else:
+            value = BinaryValue(value=value, bits=len(self), bigEndian=False)
+        elif not isinstance(value, BinaryValue):
             self.log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+
+        simulator.set_signal_val_str(self._handle, value.binstr)
 
     def setcachedvalue(self, value):
         """Intercept the store of a value and hold in cache.

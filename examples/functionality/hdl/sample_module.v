@@ -35,6 +35,7 @@ module sample_module (
     output reg                                  stream_in_ready,
     input                                       stream_in_valid,
     input  [7:0]                                stream_in_data,
+    input  [63:0]                               stream_in_data_wide,
 
     input                                       stream_out_ready,
     output reg [7:0]                            stream_out_data_comb,
