@@ -65,15 +65,26 @@ ifeq ($(SIM), modelsim)
 # modelsim needs MTI recommended version of MINGW compiler
 CC = $(shell cygpath -u "$(MTI_HOME)/gcc-4.2.1-mingw32vc9/bin/gcc.exe")
 
-# vpi libs (TODO: add more platforms: DE, PE, SE) 
-EXTRA_LIBDIRS = -L$(shell cygpath -m "$(MTI_HOME)/win32aloem")
+# modelsim vpi libs 
 EXTRA_LIBS = -lmtipli   
+
+ifneq ($(wildcard $(shell cygpath -u "$(MTI_HOME)/win32aloem/mtipli.dll")),)
+EXTRA_LIBDIRS = -L$(shell cygpath -m "$(MTI_HOME)/win32aloem")
+else 
+ifneq ($(wildcard $(shell cygpath -u "$(MTI_HOME)/win32pe/mtipli.dll")),)
+EXTRA_LIBDIRS = -L$(shell cygpath -m "$(MTI_HOME)/win32pe")
+else
+ifneq ($(wildcard $(shell cygpath -u "$(MTI_HOME)/win32se/mtipli.dll")),)
+EXTRA_LIBDIRS = -L$(shell cygpath -m "$(MTI_HOME)/win32se")
+endif
+endif
+endif
 
 else
 # MINGW compiler
 CC = $(shell cygpath -u "$(MINGW_HOME)/bin/gcc.exe")
 
-# vpi libs
+# icarus vpi libs
 EXTRA_LIBDIRS = -L$(shell cygpath -m "$(ICARUS_HOME)/lib")
 EXTRA_LIBS = -lvpi 
 endif
