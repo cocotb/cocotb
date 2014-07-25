@@ -57,14 +57,12 @@ ifneq ($(GUI),1)
 endif
 
 results.xml: runsim.do $(COCOTB_LIBS)
-# TODO: add to PATH rather than LD_LIBRARY_PATH
-#       sort out PYTHONPATH 
-#	LD_LIBRARY_PATH=$(LIB_DIR)::$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	PYTHONPATH="$(shell cygpath -w -p $(LIB_DIR):$(SIM_ROOT):$(PWD));$(PYTHONPATH)" \
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	PYTHONPATH=$(shell cygpath -m $(LIB_DIR));$(shell cygpath -m $(SIM_ROOT));$(shell cygpath -m $(PWD));$(PYTHONPATH) \
 	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
+# TODO: try adding LIB_DIR to PATH
+#	PATH="$(shell cygpath -w $(LIB_DIR));$(shell cygpath -w -p "$(PATH)")" \
 
-    
 # linux/darwin
 # ------------   
 else
@@ -83,9 +81,9 @@ results.xml: runsim.do $(COCOTB_LIBS)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
 
-endif    
-    
-    
+endif
+
+
 clean::
 	-rm -rf runsim.do
 	-rm -rf sim.log
