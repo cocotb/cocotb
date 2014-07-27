@@ -252,7 +252,8 @@ class Scheduler(object):
 
         if trigger is self._readonly:
             self._mode = Scheduler._MODE_READONLY
-        else:
+        # Only GPI triggers affect the simulator scheduling mode
+        elif isinstance(trigger, GPITrigger):
             self._mode = Scheduler._MODE_NORMAL
 
         # We're the only source of ReadWrite triggers which are only used for
@@ -367,6 +368,8 @@ class Scheduler(object):
         if coro._join in self._trigger2coros:
             self._pending_triggers.append(coro._join)
 
+        # Remove references to allow GC to clean up
+        del coro._join
 
     def save_write(self, handle, value):
         self._writes[handle] = value

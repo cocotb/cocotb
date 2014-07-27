@@ -16,6 +16,7 @@ Contents:
    coroutines
    endian_swapper
    ping_tun_tap
+   hal_cosimulation 
    library_reference
    building
    roadmap

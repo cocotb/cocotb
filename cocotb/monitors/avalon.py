@@ -95,6 +95,7 @@ class AvalonSTPkts(BusMonitor):
         clkedge = RisingEdge(self.clock)
         rdonly  = ReadOnly()
         pkt = ""
+        in_pkt = False
 
         def valid():
             if hasattr(self.bus, 'ready'):
@@ -105,6 +106,9 @@ class AvalonSTPkts(BusMonitor):
             yield clkedge
             yield rdonly
 
+            if self.in_reset:
+                continue
+
             if valid():
                 if self.bus.startofpacket.value:
                     if pkt:
@@ -112,6 +116,10 @@ class AvalonSTPkts(BusMonitor):
                             "Duplicate start-of-packet received on %s" % (
                                 str(self.bus.startofpacket)))
                     pkt = ""
+                    in_pkt = True
+
+                if not in_pkt:
+                    raise AvalonProtocolError("Data transfer outside of packet")
 
                 vec = self.bus.data.value
                 vec.big_endian = self.config['firstSymbolInHighOrderBits']
@@ -125,3 +133,4 @@ class AvalonSTPkts(BusMonitor):
                     self.log.debug(hexdump(str((pkt))))
                     self._recv(pkt)
                     pkt = ""
+                    in_pkt = False

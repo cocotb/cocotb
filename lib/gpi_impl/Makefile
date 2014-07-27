@@ -35,7 +35,7 @@ LIBS        := -lgpilog -lcocotb $(EXTRA_LIBS)
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libgpi.so
 
-SRCS        := gpi_vpi.c
+SRCS        := gpi_common.c gpi_vpi.c gpi_vhpi.c
 
 CLIBS       += $(LIB_DIR)/gpivpi.vpl
 
