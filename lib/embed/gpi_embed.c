@@ -35,6 +35,7 @@
 static PyThreadState *gtstate;
 
 static char progname[] = "cocotb";
+static char *argv[] = { progname };
 static PyObject *thread_dict;
 static PyObject *pEventFn;
 
@@ -60,6 +61,7 @@ void embed_init_python(void)
 
     Py_SetProgramName(progname);
     Py_Initialize();                    /* Initialize the interpreter */
+    PySys_SetArgvEx(1, argv, 0);
     PyEval_InitThreads();               /* Create (and acquire) the interpreter lock */
 
     /* Swap out and return current thread state and release the GIL */
