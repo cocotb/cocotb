@@ -28,8 +28,6 @@
 ##############################################################################
 
 # Common makefile included by everything
-include $(SIM_ROOT)/makefiles/Makefile.paths
-include $(SIM_ROOT)/makefiles/Makefile.pylib
 
 ifeq ($(SIM_ROOT),)
 export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
@@ -47,6 +45,9 @@ export ARCH
 
 export LIB_DIR = $(BUILD_DIR)/libs/$(ARCH)
 export LIB_OBJ_DIR = $(BUILD_DIR)/obj/$(ARCH)
+
+include $(SIM_ROOT)/makefiles/Makefile.paths
+include $(SIM_ROOT)/makefiles/Makefile.pylib
 
 # windows
 # -------
@@ -93,7 +94,7 @@ endif
 export INCLUDES = -I$(shell cygpath -m $(SIM_ROOT)/include) -I$(PYTHON_INCLUDEDIR)
 
 # compiler flags
-GCC_ARGS := -Wall -Wno-unused-parameter 
+GCC_ARGS := -O2 -Wall -Wno-unused-parameter 
 
 # 32 bit?
 ifeq ($(ARCH),i686)
