@@ -11,9 +11,19 @@ Pre-requisites
 
 Cocotb has the following requirements:
 
+Linux/OSX
+~~~~~~~~~
 * Python 2.6+
 * Python-dev packages
 * A verilog simulator
+
+Windows
+~~~~~~~
+* Cygwin
+* Cygwin 'make' package
+* Python 2.6+ (native windows python only, no cygwin python!) 
+* Mingw compiler (included in winpython and python-xy packages)
+* Modelsim
 
 
 Running an example
@@ -33,6 +43,15 @@ To run a test using a different simulator:
 
     $> make SIM=vcs
 
+Windows notes
+~~~~~~~~~~~~~
+* The full path to the cocotb/build/libs/i686 directory containing cocotb.dll should be added to the PATH environment variable.
+* When using Modelsim, environment variable MTI_HOME, pointing to the Modelsim installation directory, should be defined. Modelsim assumes that gcc-4.2.1-mingw32vc9 compiler is installed under $MTI_HOME/gcc-4.2.1-mingw32vc9. This compiler will be used by default unless another is specified on the command line. Different versions of Mingw, such as the ones bundled with winpython or python-xy should work as well with modelsim. Assuming MINGW_HOME, pointing to the Mingw installation directory, is defined you can override the 'CC' variable from the command line:
+
+.. code-block:: bash
+
+    $> make SIM=modelsim CC=$MINGW_HOME/bin/gcc.exe 
+    
 
 Running a VHDL example
 ----------------------
