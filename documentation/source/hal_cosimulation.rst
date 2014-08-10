@@ -17,7 +17,7 @@ run this example from a fresh checkout::
     make MODULE=test_endian_swapper_hal
 
 .. note:: `SWIG`_ is required to compile the example
-
+.. note:: Driver Cosimulation is currently not supported under Windows
 
 
 

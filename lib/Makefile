@@ -40,6 +40,62 @@ endif
 # FIXME it's a bit nasty to have the source files listed here as dependencies
 # but better than re-building the libraries every time.
 
+# windows
+# -------
+ifeq ($(OS),Windows_NT)
+
+$(LIB_OBJ_DIR):
+	mkdir -p $@
+
+$(LIB_DIR): $(LIB_OBJ_DIR)
+	mkdir -p $@
+
+$(LIB_OBJ_DIR)/gpi_logging.o: $(SIM_ROOT)/lib/gpi_log/gpi_logging.c | $(LIB_OBJ_DIR)
+	$(CC) -c $(INCLUDES) $(GCC_ARGS) -DFILTER -o $(shell cygpath -m $@) $(shell cygpath -m $<)
+
+$(LIB_OBJ_DIR)/gpi_embed.o: $(SIM_ROOT)/lib/embed/gpi_embed.c | $(LIB_OBJ_DIR)
+	$(CC) -c $(INCLUDES) $(GCC_ARGS) -o $(shell cygpath -m $@) $(shell cygpath -m $<)
+
+$(LIB_OBJ_DIR)/gpi_common.o: $(SIM_ROOT)/lib/gpi_impl/gpi_common.c | $(LIB_OBJ_DIR)
+	$(CC) -c $(INCLUDES) $(GCC_ARGS) -DVPI_CHECKING -o $(shell cygpath -m $@) $(shell cygpath -m $<)
+
+$(LIB_OBJ_DIR)/gpi_vpi.o: $(SIM_ROOT)/lib/gpi_impl/gpi_vpi.c | $(LIB_OBJ_DIR)
+	$(CC) -c $(INCLUDES) $(GCC_ARGS) -DVPI_CHECKING -o $(shell cygpath -m $@) $(shell cygpath -m $<)
+
+$(LIB_OBJ_DIR)/gpi_vhpi.o: $(SIM_ROOT)/lib/gpi_impl/gpi_vhpi.c | $(LIB_OBJ_DIR)
+	$(CC) -c $(INCLUDES) $(GCC_ARGS) -DVPI_CHECKING -o $(shell cygpath -m $@) $(shell cygpath -m $<)
+
+$(LIB_OBJ_DIR)/simulatormodule.o: $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_OBJ_DIR)
+	$(CC) -c $(INCLUDES) $(GCC_ARGS) -o $(shell cygpath -m $@) $(shell cygpath -m $<)
+
+$(LIB_DIR)/libgpilog.$(LIB_SUFFIX): $(LIB_OBJ_DIR)/gpi_logging.o | $(LIB_DIR)
+	$(CC) $(GCC_ARGS) $(LINKER_ARGS) -o $(shell cygpath -m $@) $(shell cygpath -m $<) -L$(PYTHON_LIBDIR) -l$(PYTHON_LIB)
+
+$(LIB_DIR)/libgpi.$(LIB_SUFFIX): $(LIB_OBJ_DIR)/gpi_common.o $(LIB_OBJ_DIR)/gpi_vpi.o $(LIB_OBJ_DIR)/gpi_vhpi.o $(LIB_OBJ_DIR)/gpi_embed.o $(LIB_DIR)/libgpilog.$(LIB_SUFFIX) | $(LIB_DIR)
+	$(CC) $(GCC_ARGS) $(LINKER_ARGS) -o $(shell cygpath -m $@) $(shell cygpath -m $(filter-out %.$(LIB_SUFFIX), $^)) -L$(shell cygpath -m $(LIB_DIR)) -lgpilog $(EXTRA_LIBDIRS) $(EXTRA_LIBS) -L$(PYTHON_LIBDIR) -l$(PYTHON_LIB)
+ifeq ($(SIM),icarus)
+	cp -f $@ $(LIB_DIR)/gpivpi.vpl
+	cp -f $@ $(LIB_DIR)/cocotb.vpi
+endif
+
+$(LIB_DIR)/libcocotb.$(LIB_SUFFIX): $(LIB_OBJ_DIR)/gpi_embed.o $(LIB_DIR)/libgpilog.$(LIB_SUFFIX) $(LIB_DIR)/libgpi.$(LIB_SUFFIX) | $(LIB_DIR)
+	$(CC) $(GCC_ARGS) $(LINKER_ARGS) -o $(shell cygpath -m $@) $(shell cygpath -m $<) -L$(shell cygpath -m $(LIB_DIR)) -lgpilog -lgpi -L$(PYTHON_LIBDIR) -l$(PYTHON_LIB)
+
+$(LIB_DIR)/libsim.$(LIB_SUFFIX): $(LIB_OBJ_DIR)/simulatormodule.o $(LIB_OBJ_DIR)/gpi_embed.o $(LIB_DIR)/libgpilog.$(LIB_SUFFIX) $(LIB_DIR)/libgpi.$(LIB_SUFFIX) | $(LIB_DIR)     
+	$(CC) $(GCC_ARGS) $(LINKER_ARGS) -o $(shell cygpath -m $@) $(shell cygpath -m $(filter-out %.$(LIB_SUFFIX), $^)) -L$(shell cygpath -m $(LIB_DIR)) -lgpilog -lgpi $(EXTRA_LIBDIRS) $(EXTRA_LIBS) -L$(PYTHON_LIBDIR) -l$(PYTHON_LIB)
+	cp -f $@ $(LIB_DIR)/simulator.$(PY_EXT_SUFFIX)
+
+
+COCOTB_LIBS = $(LIB_DIR)/libgpilog.$(LIB_SUFFIX) \
+	      $(LIB_DIR)/libcocotb.$(LIB_SUFFIX) \
+	      $(LIB_DIR)/libgpi.$(LIB_SUFFIX) \
+	      $(LIB_DIR)/libsim.$(LIB_SUFFIX)
+
+
+# linux/darwin
+# ------------
+else
+
 $(LIB_OBJ_DIR):
 	mkdir -p $@
 
@@ -64,6 +120,8 @@ COCOTB_LIBS = $(LIB_DIR)/libgpilog.so \
 	      $(LIB_DIR)/libcocotb.so \
 	      $(LIB_DIR)/libgpi.so \
 	      $(LIB_DIR)/libsim.so
+
+endif
 
 clean::
 	-@rm -rf $(BUILD_DIR)

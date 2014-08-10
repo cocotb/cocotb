@@ -27,7 +27,24 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# All common pyhon related rules
+# All common python related rules
+
+# windows
+# -------
+ifeq ($(OS),Windows_NT)
+
+# We might work with other Python versions
+PYTHON_VERSION ?= $(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version().replace(".","")')
+
+PYTHON_LIBDIR := $(shell python -c 'import sys; print sys.prefix.replace("\\","/")')/libs
+
+PYTHON_LIB := python$(PYTHON_VERSION) 
+
+PYTHON_INCLUDEDIR := $(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc().replace("\\","/")')
+
+# linux
+# -----
+else
 
 PYTHON_PREFIX = $(shell python-config --prefix)
 
@@ -57,4 +74,4 @@ endif
 
 PYTHON_INCLUDEDIR := -I$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
 
-
+endif

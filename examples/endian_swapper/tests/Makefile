@@ -48,6 +48,10 @@ endif
 
 MODULE=test_endian_swapper
 
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim
+
+ifneq ($(OS),Windows_NT)
 CUSTOM_COMPILE_DEPS = hal
 PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
 export PYTHONPATH
@@ -55,13 +59,11 @@ export PYTHONPATH
 LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
 export LD_LIBRARY_PATH
 
-
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
-
 .PHONY: hal
 hal:
 	-cd ../cosim && make
+
+endif
 
 # Stuff below is useful for profiling
 # Need grof2dot from https://code.google.com/p/jrfonseca.gprof2dot/

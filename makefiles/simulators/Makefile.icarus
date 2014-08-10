@@ -27,6 +27,26 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+# windows
+# -------
+ifeq ($(OS),Windows_NT)
+
+# Compilation phase
+$(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
+	iverilog -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(shell cygpath -m -p $(VERILOG_SOURCES))
+
+# Execution phase
+results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
+	PYTHONPATH="$(shell cygpath -w -p $(LIB_DIR):$(SIM_ROOT):$(PWD));$(PYTHONPATH)" \
+	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	vvp -M $(shell cygpath -m $(LIB_DIR)) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+# TODO: add LIB_DIR to PATH
+
+
+# linux/darwin
+# ------------
+else
+
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
 	iverilog -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
@@ -36,6 +56,8 @@ results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
         vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+
+endif
 
 clean::
 	-@rm -rf $(SIM_BUILD)

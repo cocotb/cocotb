@@ -27,7 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-VPI_LIB := vpi
+# TODO: is this var needed, or should this be GPI_IMPL?
+VPI_LIB := vpi 
 
 # Modelsim is 32-bit only
 ARCH:=i686
@@ -42,21 +43,46 @@ else
 SIM_CMD = vsim -c
 endif
 
+# windows
+# -------
+ifeq ($(OS),Windows_NT)
 
 runsim.do : $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
 	echo "vlib work" > $@
-	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
-	echo "vsim -pli libgpi.so  $(VSIM_ARGS) work.$(TOPLEVEL) -onfinish stop" >> $@
+	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(shell cygpath -m $(VERILOG_SOURCES))" >> $@
+	echo "vsim -pli libgpi.$(LIB_SUFFIX) $(VSIM_ARGS) work.$(TOPLEVEL) -onfinish stop" >> $@
 ifneq ($(GUI),1)
 	echo "run -all" >> $@
 	echo "exit" >> $@
 endif
 
+results.xml: runsim.do $(COCOTB_LIBS)
+	PYTHONPATH="$(shell cygpath -w -p $(LIB_DIR):$(SIM_ROOT):$(PWD));$(PYTHONPATH)" \
+	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
+# TODO: try adding LIB_DIR to PATH
+#	PATH="$(shell cygpath -w $(LIB_DIR));$(shell cygpath -w -p "$(PATH)")" \
+
+# linux/darwin
+# ------------   
+else
+
+runsim.do : $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
+	echo "vlib work" > $@
+	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
+	echo "vsim -pli libgpi.$(LIB_SUFFIX)  $(VSIM_ARGS) work.$(TOPLEVEL) -onfinish stop" >> $@
+ifneq ($(GUI),1)
+	echo "run -all" >> $@
+	echo "exit" >> $@
+endif
 
 results.xml: runsim.do $(COCOTB_LIBS)
 	LD_LIBRARY_PATH=$(LIB_DIR)::$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
+
+endif
+
 
 clean::
 	-rm -rf runsim.do
