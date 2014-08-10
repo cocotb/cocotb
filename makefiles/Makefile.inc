@@ -94,7 +94,7 @@ endif
 export INCLUDES = -I$(shell cygpath -m $(SIM_ROOT)/include) -I$(PYTHON_INCLUDEDIR)
 
 # compiler flags
-GCC_ARGS := -O2 -Wall -Wno-unused-parameter 
+GCC_ARGS := -O2 -Wall -Wno-unused-variable
 
 # 32 bit?
 ifeq ($(ARCH),i686)
