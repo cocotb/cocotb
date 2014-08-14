@@ -160,7 +160,6 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     PyObject *function;
     PyObject *handle;
     gpi_sim_hdl hdl;
-    char *result;
     int ret;
 
     PyGILState_STATE gstate;
@@ -222,7 +221,6 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     PyObject *function;
     PyObject *handle;
     gpi_sim_hdl hdl;
-    char *result;
     int ret;
 
     PyGILState_STATE gstate;
@@ -282,9 +280,6 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    uint64_t time_ps;
-    char *result;
-    PyObject *retstr;
     PyObject *handle;
     gpi_sim_hdl hdl;
     int ret;
@@ -423,10 +418,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 
     PyObject *fArgs;
     PyObject *function;
-    uint64_t time_ps;
     gpi_sim_hdl sig_hdl;
-    char *result;
-    PyObject *retstr;
     PyObject *handle;
     gpi_sim_hdl hdl;
     int ret;

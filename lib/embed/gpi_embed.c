@@ -36,7 +36,6 @@ static PyThreadState *gtstate;
 
 static char progname[] = "cocotb";
 static char *argv[] = { progname };
-static PyObject *thread_dict;
 static PyObject *pEventFn;
 
 
@@ -117,7 +116,7 @@ void embed_sim_init(gpi_sim_info_t *info)
     }
 
     PyObject *cocotb_module, *cocotb_init, *cocotb_args, *cocotb_retval;
-    PyObject *simlog_class, *simlog_obj, *simlog_args, *simlog_func;
+    PyObject *simlog_obj, *simlog_func;
     PyObject *argv_list, *argc, *arg_dict, *arg_value;
 
     cocotb_module = NULL;
@@ -249,6 +248,9 @@ void embed_sim_event(gpi_event_t level, const char *msg)
         PyTuple_SetItem(fArgs, 0, PyInt_FromLong(level));
         PyTuple_SetItem(fArgs, 1, PyString_FromString(msg));
         PyObject *pValue = PyObject_Call(pEventFn, fArgs, NULL);
+        if (!pValue) {
+            LOG_ERROR("Passing event to upper layer failed");
+        }
 
         Py_DECREF(fArgs);
         PyGILState_Release(gstate);

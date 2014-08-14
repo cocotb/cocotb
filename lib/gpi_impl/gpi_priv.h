@@ -28,6 +28,7 @@
 ******************************************************************************/
 
 #include <gpi.h>
+#include <embed.h>
 
 #define gpi_container_of(_address, _type, _member)  \
         ((_type *)((uintptr_t)(_address) -      \
