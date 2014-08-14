@@ -228,10 +228,12 @@ void embed_sim_init(gpi_sim_info_t *info)
     FEXIT
 
 cleanup:
-    if (cocotb_module)
+    if (cocotb_module) {
         Py_DECREF(cocotb_module);
-    if (arg_dict)
+    }
+    if (arg_dict) {
         Py_DECREF(arg_dict);
+    }
     PyGILState_Release(gstate);
 }
 
