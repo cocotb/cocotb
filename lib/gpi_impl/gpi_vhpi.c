@@ -140,7 +140,7 @@ static int __check_vhpi_error(const char *func, long line)
     int loglevel;
     level = vhpi_check_error(&info);
     if (level == 0)
-        return;
+        return 0;
 
     switch (level) {
         case vhpiNote:
@@ -342,7 +342,6 @@ static gpi_iterator_hdl vhpi_iterate_hdl(uint32_t type, gpi_sim_hdl base) {
 static gpi_sim_hdl vhpi_next_hdl(gpi_iterator_hdl iterator)
 {
     FENTER
-    vhpiHandleT result;
     gpi_sim_hdl rv = gpi_create_handle();
 
     rv->sim_hdl = vhpi_scan((vhpiHandleT) iterator);
@@ -391,7 +390,6 @@ static void vhpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
 {
     FENTER
     vhpiValueT value_s;
-    vhpiValueT *value_p = &value_s;
     int size, i;
 
     // Determine the type of object, either scalar or vector
@@ -443,7 +441,6 @@ static void vhpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
 {
     FENTER
     vhpiValueT value_s;
-    vhpiValueT *value_p = &value_s;
     int len, size, i;
     const char *ptr;
 
@@ -557,7 +554,6 @@ static char *vhpi_get_signal_type_str(gpi_sim_hdl gpi_hdl)
 static void handle_vhpi_callback(const vhpiCbDataT *cb_data)
 {
     FENTER
-    int rv = 0;
     vhpiHandleT old_cb;
 
     p_vhpi_cb user_data;
@@ -648,7 +644,7 @@ static int vhpi_deregister_callback(gpi_sim_hdl gpi_hdl)
     int rc = 1;
 
     gpi_user_data = gpi_container_of(gpi_hdl, gpi_cb_hdl_t, hdl);
-    vhpi_user_data = gpi_container_of(gpi_hdl, s_vhpi_cb, gpi_cb_data);
+    vhpi_user_data = gpi_container_of(gpi_user_data, s_vhpi_cb, gpi_cb_data);
 
     if (vhpi_user_data->cb_hdl != NULL) {
         rc = vhpi_user_data->vhpi_cleanup(vhpi_user_data);
@@ -938,6 +934,8 @@ static int handle_sim_init(void *gpi_cb_data)
     free(sim_info.version);
 
     FEXIT
+
+    return 0;
 }
 
 static void register_initial_callback(void)
@@ -982,6 +980,8 @@ static int handle_sim_end(void *gpi_cb_data)
          to inform the upper layers that anything has occoured */
     gpi_free_cb_handle(sim_init_cb);
     FEXIT
+
+    return 0;
 }
 
 static void register_final_callback(void)

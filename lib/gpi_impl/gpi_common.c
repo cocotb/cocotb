@@ -133,7 +133,7 @@ int gpi_register_timed_callback(gpi_sim_hdl hdl,
                                 void *gpi_cb_data, uint64_t time_ps)
 {
     set_user_data(hdl, gpi_function, gpi_cb_data);
-    IMPL_ROOT->register_timed_callback(hdl, gpi_function, gpi_cb_data, time_ps);
+    return IMPL_ROOT->register_timed_callback(hdl, gpi_function, gpi_cb_data, time_ps);
 }
 
 int gpi_register_value_change_callback(gpi_sim_hdl hdl,
@@ -141,7 +141,7 @@ int gpi_register_value_change_callback(gpi_sim_hdl hdl,
                                        void *gpi_cb_data, gpi_sim_hdl gpi_hdl)
 {
     set_user_data(hdl, gpi_function, gpi_cb_data);
-    IMPL_ROOT->register_value_change_callback(hdl, gpi_function, gpi_cb_data, gpi_hdl);
+    return IMPL_ROOT->register_value_change_callback(hdl, gpi_function, gpi_cb_data, gpi_hdl);
 }
 
 int gpi_register_readonly_callback(gpi_sim_hdl hdl,
@@ -149,7 +149,7 @@ int gpi_register_readonly_callback(gpi_sim_hdl hdl,
                                    void *gpi_cb_data)
 {
     set_user_data(hdl, gpi_function, gpi_cb_data);
-    IMPL_ROOT->register_readonly_callback(hdl, gpi_function, gpi_cb_data);
+    return IMPL_ROOT->register_readonly_callback(hdl, gpi_function, gpi_cb_data);
 }
 
 int gpi_register_nexttime_callback(gpi_sim_hdl hdl,
@@ -157,7 +157,7 @@ int gpi_register_nexttime_callback(gpi_sim_hdl hdl,
                                    void *gpi_cb_data)
 {
     set_user_data(hdl, gpi_function, gpi_cb_data);
-    IMPL_ROOT->register_nexttime_callback(hdl, gpi_function, gpi_cb_data);
+    return IMPL_ROOT->register_nexttime_callback(hdl, gpi_function, gpi_cb_data);
 }
 
 int gpi_register_readwrite_callback(gpi_sim_hdl hdl,
@@ -165,7 +165,7 @@ int gpi_register_readwrite_callback(gpi_sim_hdl hdl,
                                     void *gpi_cb_data)
 {
     set_user_data(hdl, gpi_function, gpi_cb_data);
-    IMPL_ROOT->register_readwrite_callback(hdl, gpi_function, gpi_cb_data);
+    return IMPL_ROOT->register_readwrite_callback(hdl, gpi_function, gpi_cb_data);
 }
 
 void gpi_deregister_callback(gpi_sim_hdl hdl)

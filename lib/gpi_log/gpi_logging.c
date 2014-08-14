@@ -103,13 +103,16 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
      */
     va_list ap;
     int n;
-    int curr_level;
 
     if (!pLogHandler) {
         if (level >= 20) {
             va_start(ap, msg);
             n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
             va_end(ap);
+
+            if (0 > n) {
+               fprintf(stderr, "Log message construction failed\n");
+            }
  
             fprintf(stdout, "     -.--ns ");
             fprintf(stdout, "%-8s", log_level(level));

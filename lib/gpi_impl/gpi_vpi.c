@@ -92,7 +92,7 @@ static int __check_vpi_error(const char *func, long line)
     int loglevel;
     level = vpi_chk_error(&info);
     if (level == 0)
-        return;
+        return 0;
 
     switch (level) {
         case vpiNotice:
@@ -172,8 +172,6 @@ static gpi_sim_hdl vpi_get_root_handle(const char* name)
     vpiHandle root;
     vpiHandle iterator;
     gpi_sim_hdl rv;
-
-    const char* found;
 
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
@@ -342,7 +340,6 @@ static gpi_iterator_hdl vpi_iterate_hdl(uint32_t type, gpi_sim_hdl base) {
 static gpi_sim_hdl vpi_next_hdl(gpi_iterator_hdl iterator)
 {
     FENTER
-    vpiHandle result;
     gpi_sim_hdl rv = gpi_create_handle();
 
     rv->sim_hdl = vpi_scan((vpiHandle) iterator);
@@ -468,7 +465,7 @@ static int32_t handle_vpi_callback(p_cb_data cb_data)
 {
     FENTER
     int rv = 0;
-    vpiHandle old_cb;
+    //vpiHandle old_cb;
 
     p_vpi_cb user_data;
     user_data = (p_vpi_cb)cb_data->user_data;
@@ -477,7 +474,7 @@ static int32_t handle_vpi_callback(p_cb_data cb_data)
         LOG_CRITICAL("VPI: Callback data corrupted");
 
     user_data->state = VPI_PRE_CALL;
-    old_cb = user_data->cb_hdl;
+    //old_cb = user_data->cb_hdl;
     gpi_handle_callback(&user_data->gpi_cb_data.hdl);
     
 // HACK: Investigate further - this breaks modelsim
@@ -855,6 +852,8 @@ static int handle_sim_init(void *gpi_cb_data)
     gpi_embed_init(&sim_info);
 
     FEXIT
+
+    return 0;
 }
 
 static void register_initial_callback(void)
@@ -902,6 +901,8 @@ static int handle_sim_end(void *gpi_cb_data)
          to inform the upper layers that anything has occoured */
     gpi_free_cb_handle(sim_init_cb);
     FEXIT
+
+    return 0;
 }
 
 static void register_final_callback(void)
@@ -963,7 +964,9 @@ static int system_function_compiletf(char *userdata)
                     tfarg_type);
         vpi_free_object(arg_iterator);
         vpi_control(vpiFinish, 1);
+        return -1;
     }
+    return 0;
 }
 
 static int systf_info_level           = GPIInfo;

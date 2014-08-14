@@ -67,8 +67,6 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args);
 static PyObject *register_nextstep_callback(PyObject *self, PyObject *args);
 static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args);
 static PyObject *reenable_callback(PyObject *self, PyObject *args);
-static PyObject *create_clock(PyObject *self, PyObject *args);
-static PyObject *stop_clock(PyObject *self, PyObject *args);
 static PyObject *stop_simulator(PyObject *self, PyObject *args);
 
 static PyObject *iterate(PyObject *self, PyObject *args);

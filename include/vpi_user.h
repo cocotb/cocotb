@@ -255,6 +255,9 @@ extern vpiHandle  vpi_put_value(vpiHandle object,
 extern void       vpi_get_time(vpiHandle object,
                                p_vpi_time time_p);
 
+extern int32_t    vpi_get(int property,
+                          vpiHandle ref);
+
 extern int32_t    vpi_free_object(vpiHandle object);
 
 extern int32_t    vpi_control(int32_t operation, ...);
@@ -268,6 +271,8 @@ extern int32_t    vpi_chk_error(p_vpi_error_info);
 extern int32_t    vpi_get_vlog_info(p_vpi_vlog_info info_p);
 
 extern vpiHandle  vpi_register_systf(p_vpi_systf_data data_p);
+
+extern int32_t    vpi_printf(const char *fmt, ...) __attribute__((format (printf,1,2)));
 
 extern void (*vlog_startup_routines[])(void);
 
