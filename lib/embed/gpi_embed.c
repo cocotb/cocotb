@@ -32,7 +32,7 @@
 #include <Python.h>
 #include "embed.h"
 
-static PyThreadState *gtstate;
+static PyThreadState *gtstate = NULL;
 
 static char progname[] = "cocotb";
 static char *argv[] = { progname };
