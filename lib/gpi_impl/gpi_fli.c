@@ -50,6 +50,7 @@ static gpi_sim_hdl fli_get_root_handle(const char* name)
 {
     FENTER
     mtiRegionIdT root;
+    gpi_sim_hdl rv;
 
     for (root = mti_GetTopRegion(); root != NULL; root = mti_NextRegion(root)) {
         if (name == NULL || !strcmp(name, mti_GetRegionName(root)))
@@ -95,23 +96,37 @@ static gpi_sim_hdl fli_get_handle_by_name(const char *name, gpi_sim_hdl parent)
 {
     FENTER
     mtiRegionIdT hdl = (mtiRegionIdT)parent->sim_hdl;
-    mtiRegionIdT result;
+    gpi_sim_hdl rv;
+    void *result;
+    mtiRegionIdT result_reg;
+    mtiSignalIdT result_sig;
+    mtiVariableIdT result_var;
+    size_t baselen = strlen(mti_GetRegionFullName(hdl));
     char *fullname;
+    char *ptr;
 
-    fullname = (char *)malloc(strlen(mti_GetRegionFullName(root) + strlen(name) + 2);
+    fullname = (char *)malloc(baselen + strlen(name) + 2);
 
     if (fullname == NULL) {
         LOG_CRITICAL("FLI: Attempting allocate string buffer failed!");
         return NULL;
     }
 
-    result = mti_FindRegion(fullname);
-    if (result) goto success;
-    result = mti_FindPort(fullname);
-    if (result) goto success;
-    result = mti_FindSignal(fullname);
-    if (result) goto success;
-    result = mti_FindVar(fullname);
+    strncpy(fullname, mti_GetRegionFullName(hdl), baselen);
+    ptr = fullname + baselen;
+    *ptr++ = '/';
+    strncpy(ptr, name, strlen(name));
+
+    result_reg = mti_FindRegion(fullname);
+    result = (void *)result_reg;
+    if (result_reg) goto success;
+//     result = mti_FindPort(fullname);
+//     if (result) goto success;
+    result_sig = mti_FindSignal(fullname);
+    result = (void *)result_sig;
+    if (result_sig) goto success;
+    result_var = mti_FindVar(fullname);
+    result = (void *)result_var;
     if (result) goto success;
 
 error:
@@ -120,13 +135,13 @@ error:
     // NB we deliberately don't dump an error message here because it's
     // a valid use case to attempt to grab a signal by name - for example
     // optional signals on a bus.
-    free(buff);
+    free(fullname);
     return NULL;
 
 success:
-    free(buff);
+    free(fullname);
     rv = gpi_create_handle();
-    rv->sim_hdl = obj;
+    rv->sim_hdl = result;
 
     FEXIT
     return rv;
@@ -188,9 +203,11 @@ static void fli_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
 static void fli_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
 {
     FENTER
+    char * str_copy = strdup(str);              // Mentor discard const qualifier
     int rc = mti_ForceSignal((mtiSignalIdT)(gpi_hdl->sim_hdl),
-                             str,
-                             (mtiDelayT)-1,     // If the delay parameter is negative, then the force is applied immediately.
+                             str_copy,
+                             -1,                // If the delay parameter is negative,
+                                                // then the force is applied immediately.
                              MTI_FORCE_DEPOSIT,
                              -1,                // cancel_period
                              -1);               // repeat_period
@@ -198,24 +215,25 @@ static void fli_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
     if (!rc)
         LOG_ERROR("Attempt to force signal %s failed", 
                     mti_GetSignalName((mtiSignalIdT)gpi_hdl->sim_hdl));
+    free(str_copy);
     FEXIT
 }
 
 static char *fli_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
 {
     FENTER
-
+    mtiInt32T value;
     switch (mti_GetTypeKind(mti_GetSignalType((mtiSignalIdT)gpi_hdl->sim_hdl))){
         case MTI_TYPE_SCALAR:
         case MTI_TYPE_ENUM:
         case MTI_TYPE_PHYSICAL:
-            mti_PrintFormatted( "%d\n", mti_GetSignalValue( sigid ) );
+            value = mti_GetSignalValue((mtiSignalIdT)gpi_hdl->sim_hdl);
             break;
         default:
             mti_PrintFormatted( "(Type not supported)\n" );
             break;
     }
-    char *result = gpi_copy_name(value_p->value.str);
+    char *result;// = gpi_copy_name(value_p->value.str);
     FEXIT
     return result;
 }
@@ -223,7 +241,7 @@ static char *fli_get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
 static char *fli_get_signal_name_str(gpi_sim_hdl gpi_hdl)
 {
     FENTER
-    const char *name = mti_GetSignalName((mtiSignalIdT)gpi_hdl->sim_hdl));
+    const char *name = mti_GetSignalName((mtiSignalIdT)gpi_hdl->sim_hdl);
     char *result = gpi_copy_name(name);
     FEXIT
     return result;
@@ -232,25 +250,25 @@ static char *fli_get_signal_name_str(gpi_sim_hdl gpi_hdl)
 static char *fli_get_signal_type_str(gpi_sim_hdl gpi_hdl)
 {
     switch (mti_GetTypeKind(mti_GetSignalType((mtiSignalIdT)gpi_hdl->sim_hdl))){
-        case MTI_TYPE_SCALAR   : return "Scalar";
-        case MTI_TYPE_ARRAY    : return "Array";
-        case MTI_TYPE_RECORD   : return "Record";
-        case MTI_TYPE_ENUM     : return "Enum";
-        case MTI_TYPE_INTEGER  : return "Integer";
-        case MTI_TYPE_PHYSICAL : return "Physical";
-        case MTI_TYPE_REAL     : return "Real";
-        case MTI_TYPE_ACCESS   : return "Access";
-        case MTI_TYPE_FILE     : return "File";
-        case MTI_TYPE_TIME     : return "Time";
-        case MTI_TYPE_C_REAL   : return "C Real";
-        case MTI_TYPE_C_ENUM   : return "C Enum";
-        default                : return "Unknown!";
+        case MTI_TYPE_SCALAR   : return strdup("Scalar");
+        case MTI_TYPE_ARRAY    : return strdup("Array");
+        case MTI_TYPE_RECORD   : return strdup("Record");
+        case MTI_TYPE_ENUM     : return strdup("Enum");
+        case MTI_TYPE_INTEGER  : return strdup("Integer");
+        case MTI_TYPE_PHYSICAL : return strdup("Physical");
+        case MTI_TYPE_REAL     : return strdup("Real");
+        case MTI_TYPE_ACCESS   : return strdup("Access");
+        case MTI_TYPE_FILE     : return strdup("File");
+        case MTI_TYPE_TIME     : return strdup("Time");
+        case MTI_TYPE_C_REAL   : return strdup("C Real");
+        case MTI_TYPE_C_ENUM   : return strdup("C Enum");
+        default                : return strdup("Unknown!");
     }
 }
 
 
 // Callback related functions
-static int32_t handle_fli_callback(p_cb_data cb_data)
+static int32_t handle_fli_callback(gpi_cb_hdl cb_data)
 {
     FENTER
     LOG_CRITICAL("FLI: Callbacks not implemented yet");
@@ -320,6 +338,29 @@ static int fli_register_timed_callback(gpi_sim_hdl cb,
     FEXIT
     return 0;
 }
+
+static void fli_sim_end(void)
+{
+    sim_finish_cb = NULL;
+    mti_Quit();
+}
+
+
+/* Checking of validity is done in the common code */
+static gpi_cb_hdl fli_create_cb_handle(void)
+{
+    gpi_cb_hdl ret = NULL;
+
+    FENTER
+
+    void * new_cb_hdl = calloc(1, sizeof(*new_cb_hdl));
+    if (new_cb_hdl)
+        ret = &new_cb_hdl->gpi_cb_data;
+
+    FEXIT
+    return ret;
+}
+
 
 
 static s_gpi_impl_tbl fli_table = {

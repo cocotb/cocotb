@@ -54,6 +54,7 @@ $(LIB_DIR)/libcocotb.so: $(SIM_ROOT)/lib/embed/gpi_embed.c | $(LIB_DIR)
 
 $(LIB_DIR)/libgpi.so: $(SIM_ROOT)/lib/gpi_impl/gpi_common.c \
 		      $(SIM_ROOT)/lib/gpi_impl/gpi_vpi.c \
+                      $(SIM_ROOT)/lib/gpi_impl/gpi_fli.c \
 		      $(SIM_ROOT)/lib/gpi_impl/gpi_vhpi.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/gpi_impl EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
 
