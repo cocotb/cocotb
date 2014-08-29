@@ -33,4 +33,4 @@
 extern unsigned int IORD(unsigned int base, unsigned int address);
 extern int IOWR(unsigned int base, unsigned int address, unsigned int data);
 
-#endif // __IO_H__
+#endif // __IO_H_
