@@ -30,6 +30,7 @@
 # Common Makefile for Cadence Incisive
 
 EXTRA_ARGS += -64bit
+EXTRA_ARGS += -nclibdirname $(SIM_BUILD)
 
 ifeq ($(GUI),1)
     EXTRA_ARGS += -gui
@@ -45,10 +46,9 @@ endif
 
 ifeq ($(GPI_IMPL),vhpi)
     GPI_ARGS = -loadvhpi $(LIB_DIR)/libgpi:vhpi_startup_routines_bootstrap
-    EXTRA_ARGS += -work $(SIM_BUILD)
-    EXTRA_ARGS += -cdslib cds.lib
+    #EXTRA_ARGS += -cdslib cds.lib
     EXTRA_ARGS += -v93
-    EXTRA_ARGS += -top work.$(TOPLEVEL)
+    EXTRA_ARGS += -top worklib.$(TOPLEVEL)
     HDL_SOURCES = $(VHDL_SOURCES)
 endif
 
