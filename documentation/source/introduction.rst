@@ -14,7 +14,7 @@ What is cocotb?
 * Icarus Verilog
 * Synopsys VCS
 * Aldec Riviera-PRO
-* Cadance Incisive
+* Cadence Incisive
 * Mentor Modelsim
 
 **Cocotb** was developed by `Potential Ventures <http://potential.ventures>_` with the support of `Solarflare Communications Ltd <http://www.solarflare.com/>`_ and contributions from Gordon McGregor and Finn Grimwood.
