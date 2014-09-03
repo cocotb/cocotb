@@ -30,7 +30,7 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES	+=
-GCC_ARGS	+=
+GCC_ARGS	+= -DPYTHON_SO_LIB=libpython$(PYTHON_VERSION).so
 LIBS		:= $(PYLIBS)
 LD_PATH		:= -L$(LIB_DIR)
 SRCS		:= gpi_embed.c

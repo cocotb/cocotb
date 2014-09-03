@@ -51,13 +51,23 @@ static PyObject *pEventFn;
  *
  * Stores the thread state for cocotb in static variable gtstate
  */
+
+#define xstr(a) str(a)
+#define str(a) #a
+
 void embed_init_python(void)
 {
     FENTER;
 
-    void *ret = dlopen("/usr/lib/x86_64-linux-gnu/libpython2.7.so", RTLD_LAZY | RTLD_GLOBAL);
+#ifndef PYTHON_SO_LIB
+#error "Python version needs passing in with -DPYTHON_SO_VERSION=libpython<ver>.so"
+#else
+#define PY_SO_LIB xstr(PYTHON_SO_LIB)
+#endif
+
+    void *ret = dlopen(PY_SO_LIB, RTLD_LAZY | RTLD_GLOBAL);
     if (!ret) {
-        fprintf(stderr, "Failed to find python lib (%s)\n", dlerror());
+        fprintf(stderr, "Failed to find python lib %s (%s)\n", PY_SO_LIB, dlerror());
     }
 
     // Don't initialise python if already running
