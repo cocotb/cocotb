@@ -196,6 +196,11 @@ void embed_sim_init(gpi_sim_info_t *info)
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
 
     // Now that logging has been set up ok we initialise the testbench
+    if (-1 == PyObject_SetAttrString(cocotb_module, "SIM_NAME", PyString_FromString(info->product))) {
+        PyErr_Print();
+        fprintf(stderr, "Unable to set SIM_NAME");
+        goto cleanup;
+    }
 
     // Hold onto a reference to our _fail_test function
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");
@@ -254,7 +259,10 @@ void embed_sim_event(gpi_event_t level, const char *msg)
 
         PyObject *fArgs = PyTuple_New(2);
         PyTuple_SetItem(fArgs, 0, PyInt_FromLong(level));
-        PyTuple_SetItem(fArgs, 1, PyString_FromString(msg));
+        if (msg != NULL)
+            PyTuple_SetItem(fArgs, 1, PyString_FromString(msg));
+        else
+            PyTuple_SetItem(fArgs, 1, PyString_FromString("No message provided"));
         PyObject *pValue = PyObject_Call(pEventFn, fArgs, NULL);
         if (!pValue) {
             LOG_ERROR("Passing event to upper layer failed");

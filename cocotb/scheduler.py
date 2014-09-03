@@ -405,7 +405,7 @@ class Scheduler(object):
                           "Attempt to schedule a coroutine that hasn't started")
             coroutine.log.error("This is the failing coroutine")
             self.log.warning(
-                    "Did you forget to add paranthesis to the @test decorator?")
+                    "Did you forget to add parentheses to the @test decorator?")
             self._test_result = TestError(
                           "Attempt to schedule a coroutine that hasn't started")
             self._terminate = True
