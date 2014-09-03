@@ -2,7 +2,7 @@ Coroutines
 ==========
 
 Testbenches built using Cocotb use coroutines. While the coroutine is executing 
-the simulation is paused. The coroutine use the :keyword:`yield` keyword to
+the simulation is paused. The coroutine uses the :keyword:`yield` keyword to
 pass control of execution back to the simulator and simulation time can advance 
 again.
 
