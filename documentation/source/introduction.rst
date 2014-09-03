@@ -39,7 +39,7 @@ In cocotb VHDL/Verilog/SystemVerilog are only used for the synthesisable design.
 
 **Cocotb** has built-in support for integrating with the `Jenkins <http://jenkins-ci.org/>`_ continuous integration system.
 
-**Cocotb** automatically discovers tests to that no additional step is required to add a test to a regression.
+**Cocotb** automatically discovers tests so that no additional step is required to add a test to a regression.
 
 
 How does Cocotb work
