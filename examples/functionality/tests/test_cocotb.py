@@ -169,7 +169,7 @@ def do_test_afterdelay_in_readonly(dut):
     yield Timer(0)
     exited = True
 
-@cocotb.test()
+@cocotb.test(expect_error=True)
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
