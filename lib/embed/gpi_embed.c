@@ -30,6 +30,7 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
+#include <dlfcn.h>
 #include "embed.h"
 
 static PyThreadState *gtstate = NULL;
@@ -53,6 +54,11 @@ static PyObject *pEventFn;
 void embed_init_python(void)
 {
     FENTER;
+
+    void *ret = dlopen("/usr/lib/x86_64-linux-gnu/libpython2.7.so", RTLD_LAZY | RTLD_GLOBAL);
+    if (!ret) {
+        fprintf(stderr, "Failed to find python lib (%s)\n", dlerror());
+    }
 
     // Don't initialise python if already running
     if (gtstate)
