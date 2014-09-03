@@ -40,7 +40,7 @@ from cocotb.result import TestFailure, TestSuccess
 
 
 class Scoreboard(object):
-    """Generic scorboarding class
+    """Generic scoreboarding class
 
     We can add interfaces by providing a monitor and an expected output queue
 
@@ -60,7 +60,7 @@ class Scoreboard(object):
 
     @property
     def result(self):
-        """determine the test result - do we have any pending data remaining?"""
+        """Determine the test result - do we have any pending data remaining?"""
         fail = False
         for monitor, expected_output in self.expected.iteritems():
             if callable(expected_output):
