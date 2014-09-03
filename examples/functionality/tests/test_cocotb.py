@@ -181,7 +181,7 @@ def test_readwrite_in_readonly(dut):
     if exited is not True:
         raise cocotb.TestFailed
 
-@cocotb.test(expect_error=True)
+@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
