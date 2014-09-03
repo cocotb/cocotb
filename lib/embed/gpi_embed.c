@@ -190,6 +190,11 @@ void embed_sim_init(gpi_sim_info_t *info)
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
 
     // Now that logging has been set up ok we initialise the testbench
+    if (-1 == PyObject_SetAttrString(cocotb_module, "SIM_NAME", PyString_FromString(info->product))) {
+        PyErr_Print();
+        fprintf(stderr, "Unable to set SIM_NAME");
+        goto cleanup;
+    }
 
     // Hold onto a reference to our _fail_test function
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");
