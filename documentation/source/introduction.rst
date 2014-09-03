@@ -17,7 +17,7 @@ What is cocotb?
 * Cadence Incisive
 * Mentor Modelsim
 
-**Cocotb** was developed by `Potential Ventures <http://potential.ventures>_` with the support of `Solarflare Communications Ltd <http://www.solarflare.com/>`_ and contributions from Gordon McGregor and Finn Grimwood.
+**Cocotb** was developed by `Potential Ventures <http://potential.ventures>`_ with the support of `Solarflare Communications Ltd <http://www.solarflare.com/>`_ and contributions from Gordon McGregor and Finn Grimwood.
 
 **Cocotb** can be used live in a web-browser on the excellent `EDA Playground <http://www.edaplayground.com>`_.
 
