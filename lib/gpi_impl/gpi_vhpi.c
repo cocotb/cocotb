@@ -29,7 +29,7 @@
 // Some functions are completely untested (vhpi_get_handle_by_index) and others
 // need optimisation.
 //
-// VHPI seems to run significantly slower the VPI, need to investigate.
+// VHPI seems to run significantly slower than VPI, need to investigate.
 
 
 #include "gpi_priv.h"

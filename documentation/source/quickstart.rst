@@ -13,7 +13,7 @@ Cocotb has the following requirements:
 
 * Python 2.6+
 * Python-dev packages
-* A verilog simulator
+* A Verilog simulator
 
 
 Running an example
@@ -37,7 +37,7 @@ To run a test using a different simulator:
 Running a VHDL example
 ----------------------
 
-The endian swapper example includes both a VHDL and Verlog RTL implementation.  The Cocotb testbench can execute against either implementation using VPI for Verilog and VHPI for VHDL.  To run the test suite against the VHDL implementation use the following command (a VHPI capable simulator must be used):
+The endian swapper example includes both a VHDL and Verilog RTL implementation.  The Cocotb testbench can execute against either implementation using VPI for Verilog and VHPI for VHDL.  To run the test suite against the VHDL implementation use the following command (a VHPI capable simulator must be used):
 
 .. code-block:: bash
 
@@ -72,7 +72,7 @@ The same mechanism can be used to access signals inside the design.
 Assigning values to signals
 ---------------------------
 
-Values can be assigned to signals using either the .value property of a handle object or using direct assignment while traversing the hierarchy
+Values can be assigned to signals using either the .value property of a handle object or using direct assignment while traversing the hierarchy.
 
 .. code-block:: python
     
