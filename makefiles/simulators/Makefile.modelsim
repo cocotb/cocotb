@@ -38,18 +38,20 @@ endif
 
 ifeq ($(GUI),1)
 SIM_CMD = vsim -gui
+VSIM_ARGS += -onfinish stop
 else
 SIM_CMD = vsim -c
+VSIM_ARGS += -onfinish exit
 endif
 
 
 runsim.do : $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
 	echo "vlib work" > $@
 	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
-	echo "vsim -pli libgpi.so -gblso libgpi.so $(VSIM_ARGS) work.$(TOPLEVEL) -onfinish stop" >> $@
+	echo "vsim -pli libgpi.so  $(VSIM_ARGS) work.$(TOPLEVEL)" >> $@
 ifneq ($(GUI),1)
 	echo "run -all" >> $@
-	echo "exit" >> $@
+	echo "quit" >> $@
 endif
 
 
