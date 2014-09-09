@@ -80,7 +80,7 @@ def initial_hal_test(dut, debug=True):
 
     # Check the actual value
     if dut.byteswapping.value:
-        raise TestFailure("Byteswapping is enabled but havne't configured DUT")
+        raise TestFailure("Byteswapping is enabled but haven't configured DUT")
 
     yield cocotb.external(hal.endian_swapper_enable)(state)
 

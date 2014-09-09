@@ -41,7 +41,13 @@ Selects which simulator Makefile to use.  Attempts to include a simulator specif
 VERILOG_SOURCES
 ~~~~~~~~~~~~~~~
 
-A list of the verilog source files to include.
+A list of the Verilog source files to include.
+
+
+VHDL_SOURCES
+~~~~~~~~~~~~~~~
+
+A list of the VHDL source files to include.
 
 
 COMPILE_ARGS
@@ -58,12 +64,12 @@ Any arguments or flags to pass to the execution of the compiled simulation.  Onl
 EXTRA_ARGS
 ~~~~~~~~~~
 
-Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run commad for simulators which don't have a distinct compilation stage.
+Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
 
 CUSTOM_COMPILE_DEPS
 ~~~~~~~~~~~~~~~~~~~
 
-Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in **VERILOG_SOURCES**.
+Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in **VERILOG_SOURCES** or **VHDL_SOURCES**.
 
 CUSTOM_SIM_DEPS
 ~~~~~~~~~~~~~~~
@@ -108,7 +114,7 @@ ANSI colour codes if the output is a terminal (isatty()).
 
 COCOTB_ANSI_OUTPUT=1 forces output to be ANSI regardless of the type stdout
 
-COCOTB_ANDI_OUTPUT=0 supresses the ANSI output in the log messages
+COCOTB_ANSI_OUTPUT=0 supresses the ANSI output in the log messages
 
 
 MODULE

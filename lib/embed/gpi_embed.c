@@ -30,6 +30,7 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
+#include <dlfcn.h>
 #include "embed.h"
 
 static PyThreadState *gtstate = NULL;
@@ -50,9 +51,24 @@ static PyObject *pEventFn;
  *
  * Stores the thread state for cocotb in static variable gtstate
  */
+
+#define xstr(a) str(a)
+#define str(a) #a
+
 void embed_init_python(void)
 {
     FENTER;
+
+#ifndef PYTHON_SO_LIB
+#error "Python version needs passing in with -DPYTHON_SO_VERSION=libpython<ver>.so"
+#else
+#define PY_SO_LIB xstr(PYTHON_SO_LIB)
+#endif
+
+    void *ret = dlopen(PY_SO_LIB, RTLD_LAZY | RTLD_GLOBAL);
+    if (!ret) {
+        fprintf(stderr, "Failed to find python lib %s (%s)\n", PY_SO_LIB, dlerror());
+    }
 
     // Don't initialise python if already running
     if (gtstate)
@@ -190,6 +206,11 @@ void embed_sim_init(gpi_sim_info_t *info)
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
 
     // Now that logging has been set up ok we initialise the testbench
+    if (-1 == PyObject_SetAttrString(cocotb_module, "SIM_NAME", PyString_FromString(info->product))) {
+        PyErr_Print();
+        fprintf(stderr, "Unable to set SIM_NAME");
+        goto cleanup;
+    }
 
     // Hold onto a reference to our _fail_test function
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");
@@ -248,7 +269,10 @@ void embed_sim_event(gpi_event_t level, const char *msg)
 
         PyObject *fArgs = PyTuple_New(2);
         PyTuple_SetItem(fArgs, 0, PyInt_FromLong(level));
-        PyTuple_SetItem(fArgs, 1, PyString_FromString(msg));
+        if (msg != NULL)
+            PyTuple_SetItem(fArgs, 1, PyString_FromString(msg));
+        else
+            PyTuple_SetItem(fArgs, 1, PyString_FromString("No message provided"));
         PyObject *pValue = PyObject_Call(pEventFn, fArgs, NULL);
         if (!pValue) {
             LOG_ERROR("Passing event to upper layer failed");

@@ -162,14 +162,14 @@ def do_test_readwrite_in_readonly(dut):
     exited = True
 
 @cocotb.coroutine
-def do_test_afterdelay_in_readonly(dut):
+def do_test_afterdelay_in_readonly(dut, delay):
     global exited
     yield RisingEdge(dut.clk)
     yield ReadOnly()
-    yield Timer(0)
+    yield Timer(delay)
     exited = True
 
-@cocotb.test()
+@cocotb.test(expect_error=True)
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -181,13 +181,25 @@ def test_readwrite_in_readonly(dut):
     if exited is not True:
         raise cocotb.TestFailed
 
-@cocotb.test()
+@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
     exited = False
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-    coro = cocotb.fork(do_test_afterdelay_in_readonly(dut))
+    coro = cocotb.fork(do_test_afterdelay_in_readonly(dut, 0))
+    yield [Join(coro), Timer(100000)]
+    clk_gen.kill()
+    if exited is not True:
+        raise cocotb.TestFailed
+
+@cocotb.test()
+def test_afterdelay_in_readonly_valid(dut):
+    """Same as test_afterdelay_in_readonly but with valid delay > 0"""
+    global exited
+    exited = False
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+    coro = cocotb.fork(do_test_afterdelay_in_readonly(dut, 1))
     yield [Join(coro), Timer(100000)]
     clk_gen.kill()
     if exited is not True:

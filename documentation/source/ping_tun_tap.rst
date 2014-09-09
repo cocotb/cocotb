@@ -20,7 +20,7 @@ Architecture
 ------------
 
 We have a simple RTL block that takes ICMP echo requests and generates an ICMP
-echo response.  To verify this behaviour we want to run `ping`_ utility
+echo response.  To verify this behaviour we want to run the `ping`_ utility
 against our RTL running in the simulator.
 
 In order to achieve this we need to capture the packets that are created by

@@ -31,10 +31,11 @@ import sys
 from StringIO import StringIO
 
 def raise_error(obj, msg):
-    """Creates a TestError exception and raises it after printing a traceback
+    """
+    Creates a TestError exception and raises it after printing a traceback
 
-            obj has a log method
-            msg is a string
+        obj has a log method
+        msg is a string
     """
     exc_type, exc_value, exc_traceback = sys.exc_info()    
     buff = StringIO()
@@ -43,6 +44,17 @@ def raise_error(obj, msg):
     exception = TestError(msg)
     exception.stderr.write(buff.getvalue())
     raise exception
+
+def create_error(obj, msg):
+    """
+    As above, but return the exception rather than raise it, simply to avoid
+    too many levels of nested try/except blocks
+    """
+    try:
+        raise_error(obj, msg)
+    except TestError as error:
+        return error
+    return TestError("Creating error traceback failed")
 
 
 class ReturnValue(StopIteration):

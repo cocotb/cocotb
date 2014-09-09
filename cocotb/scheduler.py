@@ -66,7 +66,7 @@ import cocotb
 import cocotb.decorators
 from cocotb.triggers import Trigger, GPITrigger, Timer, ReadOnly, _NextTimeStep, _ReadWrite
 from cocotb.log import SimLog
-from cocotb.result import TestComplete, TestError, ReturnValue, raise_error
+from cocotb.result import TestComplete, TestError, ReturnValue, raise_error, create_error
 
 
 
@@ -386,8 +386,10 @@ class Scheduler(object):
                 try:
                     trigger.prime(self.react)
                 except Exception as e:
-                    raise_error(self, "Unable to prime trigger %s: %s" % (
-                                                        str(trigger), str(e)))
+                    # Convert any exceptions into a test result
+                    self.finish_test(
+                        create_error(self, "Unable to prime trigger %s: %s" % (
+                                                        str(trigger), str(e))))
 
     def queue(self, coroutine):
         """Queue a coroutine for execution"""
@@ -405,7 +407,7 @@ class Scheduler(object):
                           "Attempt to schedule a coroutine that hasn't started")
             coroutine.log.error("This is the failing coroutine")
             self.log.warning(
-                    "Did you forget to add paranthesis to the @test decorator?")
+                    "Did you forget to add parentheses to the @test decorator?")
             self._test_result = TestError(
                           "Attempt to schedule a coroutine that hasn't started")
             self._terminate = True

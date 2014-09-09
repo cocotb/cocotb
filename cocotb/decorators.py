@@ -308,7 +308,7 @@ def external(func):
 
 @public
 class test(coroutine):
-    """Decorator to mark a fucntion as a test
+    """Decorator to mark a function as a test
 
     All tests are coroutines.  The test decorator provides
     some common reporting etc, a test timeout and allows
