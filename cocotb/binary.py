@@ -40,6 +40,7 @@ class BinaryValue(object):
     The underlying value can be set or accessed using three aliasing attributes,
 
         - BinaryValue.integer is an integer
+        - BinaryValue.signed_integer is a signed integer
         - BinaryValue.binstr is a string of "01xXzZ"
         - BinaryValue.buff is a binary buffer of bytes
 
@@ -96,12 +97,23 @@ class BinaryValue(object):
         """value is an integer representaion of the underlying vector"""
         return int(resolve(self._str), 2)
 
+    def get_value_signed(self):
+        """value is an signed integer representaion of the underlying vector"""
+        ival = int(resolve(self._str), 2)
+        bits = len(self._str)
+        signbit = (1 << (bits - 1))
+        if (ival & signbit) == 0:
+            return ival
+        else:
+            return -1 * (int(~ival+1) & (signbit - 1)) 
+
     def set_value(self, integer):
         self._str = bin(integer)[2:]
         self._adjust()
 
     value = property(get_value, set_value, None, "Integer access to the value *** deprecated ***")
     integer = property(get_value, set_value, None, "Integer access to the value")
+    signed_integer = property(get_value_signed, set_value, None, "Signed integer access to the value")
 
     def get_buff(self):
         """Attribute self.buff represents the value as a binary string buffer
