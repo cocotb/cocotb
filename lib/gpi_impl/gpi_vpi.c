@@ -32,9 +32,6 @@
 
 #define VPI_CHECKING 1
 
-//#define FENTER LOG_INFO("Entering %s",__FUNCTION__);
-//#define FEXIT  LOG_INFO("Exiting  %s",__FUNCTION__);
-
 static gpi_sim_hdl sim_init_cb;
 static gpi_sim_hdl sim_finish_cb;
 
