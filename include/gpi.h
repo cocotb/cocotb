@@ -79,6 +79,7 @@ we have to create a process with the signal on the sensitivity list to imitate a
 #endif
 
 
+
 EXTERN_C_START
 
 typedef enum gpi_event_e {
@@ -100,13 +101,6 @@ typedef struct gpi_sim_info_s
 typedef struct gpi_sim_hdl_s {
     void *sim_hdl; // Opaque handle for for a simulator object
 } gpi_sim_hdl_t, *gpi_sim_hdl;
-
-// Define a type for a simulator callback handle
-typedef struct gpi_cb_hdl_s {
-    gpi_sim_hdl_t hdl;
-    int (*gpi_function)(void *);    // GPI function to callback
-    void *gpi_cb_data;              // GPI data supplied to "gpi_function"
-} gpi_cb_hdl_t, *gpi_cb_hdl;
 
 // Define a handle type for iterators
 typedef struct __gpi_iterator_hdl *gpi_iterator_hdl;

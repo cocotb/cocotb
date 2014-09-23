@@ -56,14 +56,16 @@ export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
 
 # Base GCC flags
 ifeq ($(OS),Darwin)
-GCC_ARGS    :=  -g -DDEBUG -fpic
+GXX_ARGS	:= -g -DDEBUG -fpic
+GCC_ARGS	:= $(GXX_ARGS)
 else
-GCC_ARGS	:=	-Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-				-Waggregate-return -Wstrict-prototypes -Wall           \
-				-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
 ifeq ($(ARCH),i686)
-GCC_ARGS    += -m32
+GXX_ARGS        := -m32
 endif
+GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
+			-Waggregate-return -Wall \
+			-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
+GCC_ARGS	+= $(GXX_ARGS) -Wstrict-prototypes
 endif
 
 

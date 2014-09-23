@@ -52,17 +52,25 @@ $(LIB_DIR)/libgpilog.so: $(SIM_ROOT)/lib/gpi_log/gpi_logging.c | $(LIB_DIR)
 $(LIB_DIR)/libcocotb.so: $(SIM_ROOT)/lib/embed/gpi_embed.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/embed
 
-$(LIB_DIR)/libgpi.so: $(SIM_ROOT)/lib/gpi_impl/gpi_common.c \
-		      $(SIM_ROOT)/lib/gpi_impl/gpi_vpi.c \
-		      $(SIM_ROOT)/lib/gpi_impl/gpi_vhpi.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/gpi_impl EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
+$(LIB_DIR)/libvpi.so: $(SIM_ROOT)/lib/vpi/gpi_vpi.cpp | $(LIB_DIR)
+	make -C $(SIM_ROOT)/lib/vpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
+
+$(LIB_DIR)/libvhpi.so: $(SIM_ROOT)/lib/vhpi/gpi_vhpi.c | $(LIB_DIR)
+	make -C $(SIM_ROOT)/lib/vhpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
+
+$(LIB_DIR)/libgpi.so: $(SIM_ROOT)/lib/gpi/gpi_common.cpp | $(LIB_DIR)
+	make -C $(SIM_ROOT)/lib/gpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
 
 $(LIB_DIR)/libsim.so: $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/simulator
 
-COCOTB_LIBS = $(LIB_DIR)/libgpilog.so \
+COCOTB_LIBS = $(LIB_DIR)/libvpi.so
+
+#COCOTB_LIBS = $(LIB_DIR)/libgpilog.so \
 	      $(LIB_DIR)/libcocotb.so \
 	      $(LIB_DIR)/libgpi.so \
+	      $(LIB_DIR)/libvpi.so \
+	      $(LIB_DIR)/libvhpi.so \
 	      $(LIB_DIR)/libsim.so
 
 clean::

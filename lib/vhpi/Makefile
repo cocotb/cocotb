@@ -25,23 +25,21 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##############################################################################
+###############################################################################
 
+include $(SIM_ROOT)/makefiles/Makefile.inc
 
-# Disable some inbuild rules
-%: %.c
-%: %.o
-%: %.cpp
+INCLUDES    +=
+GCC_ARGS    += -DVPI_CHECKING
+LIBS        := -lgpilog
+LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
+LIB_NAME    := libvhpi.so
 
-# Define some of our own
-$(LIB_NAME)_OBJS:= $(patsubst %.c,$(LIB_OBJ_DIR)/%.o,$(filter %.c,$(SRCS)))
-$(LIB_NAME)_OBJS+= $(patsubst %.cpp,$(LIB_OBJ_DIR)/%.o,$(filter %.cpp,$(SRCS)))
+SRCS        := gpi_vhpi.c
 
-$(LIB_OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
+all: $(LIB_DIR)/$(LIB_NAME)
 
-$(LIB_OBJ_DIR)/%.o: %.cpp
-	g++ $(GXX_ARGS) -c -fpic $(INCLUDES) -o $@ $<
+clean:
+	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
 
-$(LIB_DIR)/$(LIB_NAME): $($(LIB_NAME)_OBJS)
-	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $($(LIB_NAME)_OBJS) $(LIBS) $(LD_PATH)
+include $(SIM_ROOT)/makefiles/Makefile.rules

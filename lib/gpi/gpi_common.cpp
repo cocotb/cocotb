@@ -32,7 +32,7 @@
 #define MAX_IMPLS 5
 
 typedef struct impls {
-    gpi_impl_tbl tbl;
+    gpi_impl_tbl *tbl;
     int type;
 } r_impl;
 
@@ -218,14 +218,11 @@ void gpi_free_handle(gpi_sim_hdl hdl)
     free(hdl);
 }
 
-int gpi_register_impl(gpi_impl_tbl func_tbl, int type)
+int gpi_register_impl(gpi_impl_tbl *func_tbl, int type)
 {
     int idx;
     for (idx = 0; idx < MAX_IMPLS; idx++) {
         if (!registed_impls[idx].tbl) {
-            /* TODO
-             * check that the pointers are set and error if not
-             */
             registed_impls[idx].tbl = func_tbl;
             registed_impls[idx].type = type;
         }

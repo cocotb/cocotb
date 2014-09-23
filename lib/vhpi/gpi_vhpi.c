@@ -32,7 +32,7 @@
 // VHPI seems to run significantly slower than VPI, need to investigate.
 
 
-#include "gpi_priv.h"
+#include "../gpi/gpi_priv.h"
 #include <vhpi_user.h>
 
 #define VHPI_CHECKING 1
