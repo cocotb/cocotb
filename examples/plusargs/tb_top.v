@@ -33,10 +33,10 @@ module tb_top ;
     integer result;
 
 initial begin
-    $display("Plusargs test");
-    result = $value$plusargs("foo=%s", foo_string);	
-    $display("Plusarg foo has value %0s", foo_string);
-    #1 $display("Test running");
+    $display("SIM: Plusargs test");
+    result = $value$plusargs("foo=%s", foo_string);
+    $display("SIM: Plusarg foo has value %0s", foo_string);
+    #1 $display("SIM: Test running");
 end
 
 endmodule //: tb_top

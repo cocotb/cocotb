@@ -42,7 +42,7 @@ def plusargs_test(dut):
     yield Timer(10000)
 
     for name in cocotb.plusargs:
-        print name, cocotb.plusargs[name]
+        print "COCOTB:", name, cocotb.plusargs[name]
 
     yield Timer(10000)
 
