@@ -93,6 +93,8 @@ int handle_gpi_callback(void *user_data)
 
     // Python allowed
 
+    LOG_ERROR("Callback now");
+
     if (!PyCallable_Check(callback_data_p->function)) {
         fprintf(stderr, "Callback fired but function isn't callable?!\n");
         DROP_GIL(gstate);

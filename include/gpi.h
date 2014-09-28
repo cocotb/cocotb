@@ -98,12 +98,10 @@ typedef struct gpi_sim_info_s
 } gpi_sim_info_t;
 
 // Define a type for our simulation handle.
-typedef struct gpi_sim_hdl_s {
-    void *sim_hdl; // Opaque handle for for a simulator object
-} gpi_sim_hdl_t, *gpi_sim_hdl;
+typedef void * gpi_sim_hdl;
 
 // Define a handle type for iterators
-typedef struct __gpi_iterator_hdl *gpi_iterator_hdl;
+typedef void * gpi_iterator_hdl;
 
 // Functions for controlling/querying the simulation state
 

@@ -58,15 +58,13 @@ $(LIB_DIR)/libvpi.so: $(SIM_ROOT)/lib/vpi/gpi_vpi.cpp | $(LIB_DIR)
 $(LIB_DIR)/libvhpi.so: $(SIM_ROOT)/lib/vhpi/gpi_vhpi.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/vhpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
 
-$(LIB_DIR)/libgpi.so: $(SIM_ROOT)/lib/gpi/gpi_common.cpp | $(LIB_DIR)
+$(LIB_DIR)/libgpi.so: $(SIM_ROOT)/lib/gpi/gpi_common.cpp $(SIM_ROOT)/lib/gpi/gpi_cb_hdl.cpp | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/gpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
 
 $(LIB_DIR)/libsim.so: $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/simulator
 
-COCOTB_LIBS = $(LIB_DIR)/libvpi.so
-
-#COCOTB_LIBS = $(LIB_DIR)/libgpilog.so \
+COCOTB_LIBS = $(LIB_DIR)/libgpilog.so \
 	      $(LIB_DIR)/libcocotb.so \
 	      $(LIB_DIR)/libgpi.so \
 	      $(LIB_DIR)/libvpi.so \

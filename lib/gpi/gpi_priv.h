@@ -29,65 +29,125 @@
 
 #include <gpi.h>
 #include <embed.h>
+#include <string>
 
-#define gpi_container_of(_address, _type, _member)  \
-        ((_type *)((uintptr_t)(_address) -      \
-         (uintptr_t)(&((_type *)0)->_member)))
+using namespace std;
 
-// Define a type for a simulator callback handle
-//typedef struct gpi_cb_hdl_s {
-//    gpi_sim_hdl_t hdl;
-//    int (*gpi_function)(void *);    // GPI function to callback
-//    void *gpi_cb_data;              // GPI data supplied to "gpi_function"
-//} gpi_cb_hdl_t, *gpi_cb_hdl;
+class gpi_impl_interface;
 
-class gpi_cb_hdl {
+class gpi_hdl {
 public:
-    gpi_cb_hdl();
-    virtual ~gpi_cb_hdl() {
+    gpi_hdl();
+    virtual ~gpi_hdl() { }
 
-    }
-private:
+    void set_gpi_impl(gpi_impl_interface *impl);
+
+public:
+    gpi_impl_interface *m_impl;     // Implementation routines
+};
+
+class gpi_obj_hdl : public gpi_hdl {
+public:
+    char *gpi_copy_name(const char *name);
+};
+
+class gpi_cb_hdl : public gpi_hdl {
+public:
+    /* Override to change behaviour as needed */
+    int handle_callback(void);
+    virtual int arm_callback(void);
+    virtual int run_callback(void);
+    virtual int cleanup_callback(void) = 0;
+
+    int set_user_data(int (*gpi_function)(void*), void *data);
+    void *get_user_data(void);
+
+protected:
     int (*gpi_function)(void *);    // GPI function to callback
-    void *gpi_cb_data;              // GPI data supplied to "gpi_function"
+    void *m_cb_data;              // GPI data supplied to "gpi_function"
+};
+
+class gpi_recurring_cb : public gpi_cb_hdl {
+public:
+    int cleanup_callback(void);
+};
+
+class gpi_onetime_cb : public gpi_cb_hdl {
+public:
+    int cleanup_callback(void);
+};
+
+class gpi_cb_timed : public gpi_onetime_cb {
+public:
+    int run_callback(void);
+};
+
+class gpi_cb_value_change : public gpi_recurring_cb {
+public:
+    int run_callback(void);
+};
+
+class gpi_cb_readonly_phase : public gpi_onetime_cb {
+public:
+    int run_callback(void);
+};
+
+class gpi_cb_nexttime_phase : public gpi_onetime_cb {
+public:
+    int run_callback(void);
+};
+
+class gpi_cb_readwrite_phase : public gpi_onetime_cb {
+public:
+    int run_callback(void);
+};
+
+class gpi_iterator {
+public:
+	gpi_obj_hdl *parent;
 };
 
 class gpi_impl_interface {
 public:
-	gpi_impl_interface();
-	virtual ~gpi_impl_interface() = 0;
+    string m_name;
 
-	virtual void sim_end(void) = 0;
-	virtual void get_sim_time(uint32_t *high, uint32_t *low);
-	virtual gpi_sim_hdl get_root_handle(const char *name) = 0;
-	virtual gpi_sim_hdl get_handle_by_name(const char *name, gpi_sim_hdl parent) = 0;
-	virtual gpi_sim_hdl get_handle_by_index(gpi_sim_hdl parent, uint32_t index) = 0;
-	virtual void free_handle(gpi_sim_hdl) = 0;
-	virtual gpi_iterator_hdl iterate_handle(uint32_t type, gpi_sim_hdl base) = 0;
-	virtual gpi_sim_hdl next_handle(gpi_iterator_hdl iterator) = 0;
-	virtual char* get_signal_value_binstr(gpi_sim_hdl gpi_hdl) = 0;
-	virtual char* get_signal_name_str(gpi_sim_hdl gpi_hdl) = 0;
-	virtual char* get_signal_type_str(gpi_sim_hdl gpi_hdl) = 0;
-	virtual void set_signal_value_int(gpi_sim_hdl gpi_hdl, int value) = 0;
-	virtual void set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str) = 0;    // String of binary char(s) [1, 0, x, z]
-	virtual int register_timed_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps) = 0;
-	virtual int register_value_change_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl) = 0;
-	virtual int register_readonly_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data) = 0;
-	virtual int register_nexttime_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data) = 0;
-	virtual int register_readwrite_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data) = 0;
-	virtual gpi_cb_hdl *create_cb_handle(void) = 0;
-	virtual void destroy_cb_handle(gpi_cb_hdl *gpi_hdl) = 0;
-	virtual int deregister_callback(gpi_sim_hdl gpi_hdl) = 0;
-	//virtual void* get_callback_data(gpi_sim_hdl gpi_hdl) = 0;
+public:
+    gpi_impl_interface(const string& name);
+    virtual ~gpi_impl_interface() = 0;
+
+    /* Sim related */
+    virtual void sim_end(void) = 0;
+    virtual void get_sim_time(uint32_t *high, uint32_t *low) = 0;
+
+    /* Signal related */
+    virtual gpi_obj_hdl *get_root_handle(const char *name) = 0;
+    virtual gpi_obj_hdl *get_handle_by_name(const char *name, gpi_obj_hdl *parent) = 0;
+    virtual gpi_obj_hdl *get_handle_by_index(gpi_obj_hdl *parent, uint32_t index) = 0;
+    virtual void free_handle(gpi_obj_hdl*) = 0;
+    virtual gpi_iterator *iterate_handle(uint32_t type, gpi_obj_hdl *base) = 0;
+    virtual gpi_obj_hdl *next_handle(gpi_iterator *iterator) = 0;
+    virtual char* get_signal_value_binstr(gpi_obj_hdl *gpi_hdl) = 0;
+    virtual char* get_signal_name_str(gpi_obj_hdl *gpi_hdl) = 0;
+    virtual char* get_signal_type_str(gpi_obj_hdl *gpi_hdl) = 0;
+    virtual void set_signal_value_int(gpi_obj_hdl *gpi_hdl, int value) = 0;
+    virtual void set_signal_value_str(gpi_obj_hdl *gpi_hdl, const char *str) = 0;    // String of binary char(s) [1, 0, x, z]
+    
+    /* Callback related */
+    virtual gpi_cb_timed *register_timed_callback(gpi_cb_hdl*, uint64_t time_ps) = 0;
+    virtual gpi_cb_value_change *register_value_change_callback(gpi_cb_hdl *gpi_hdl, gpi_obj_hdl *obj_hdl) = 0;
+    virtual gpi_cb_readonly_phase *register_readonly_callback(gpi_cb_hdl *gpi_hdl) = 0;
+    virtual gpi_cb_nexttime_phase *register_nexttime_callback(gpi_cb_hdl *gpi_hdl) = 0;
+    virtual gpi_cb_readwrite_phase *register_readwrite_callback(gpi_cb_hdl *gpi_hdl) = 0;
+    virtual int deregister_callback(gpi_cb_hdl *gpi_hdl) = 0;
+
+    virtual gpi_cb_hdl *create_cb_handle(void) = 0;
+    virtual void destroy_cb_handle(gpi_cb_hdl *gpi_hdl) = 0;
+    //virtual void* get_callback_data(gpi_sim_hdl gpi_hdl) = 0;
 };
 
-int gpi_register_impl(const gpi_impl_interface &func_tbl, int type);
+/* Called from implementaton layers back up the stack */
+int gpi_register_impl(gpi_impl_interface *func_tbl);
 
 void gpi_embed_init(gpi_sim_info_t *info);
 void gpi_embed_end(void);
 void gpi_embed_init_python(void);
-
-char *gpi_copy_name(const char *name);
-
-void gpi_handle_callback(gpi_sim_hdl cb_data);
-

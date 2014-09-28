@@ -63,9 +63,9 @@ ifeq ($(ARCH),i686)
 GXX_ARGS        := -m32
 endif
 GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-			-Waggregate-return -Wall \
-			-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
-GCC_ARGS	+= $(GXX_ARGS) -Wstrict-prototypes
+			-Wall -Wno-unused-parameter \
+			-fno-common -g -DDEBUG -fpic
+GCC_ARGS	+= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
 endif
 
 
