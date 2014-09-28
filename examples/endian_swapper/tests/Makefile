@@ -32,7 +32,6 @@
 GPI_IMPL ?= vpi
 
 
-TOPLEVEL = endian_swapper
 
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
@@ -40,10 +39,12 @@ COCOTB=$(PWD)/../../..
 
 ifeq ($(GPI_IMPL),vpi)
     VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
+    TOPLEVEL = endian_swapper_sv
 endif
 
 ifeq ($(GPI_IMPL),vhpi)
     VHDL_SOURCES = $(PWD)/../hdl/endian_swapper.vhdl
+    TOPLEVEL = endian_swapper_vhdl
 endif
 
 MODULE=test_endian_swapper

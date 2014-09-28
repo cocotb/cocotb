@@ -44,7 +44,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity endian_swapper is
+entity endian_swapper_vhdl is
     generic (
         DATA_BYTES              : integer := 8);
     port (
@@ -75,7 +75,7 @@ entity endian_swapper is
     );
 end;
 
-architecture impl of endian_swapper is
+architecture impl of endian_swapper_vhdl is
 
 
 function byteswap(data : in std_ulogic_vector(63 downto 0)) return std_ulogic_vector is begin
