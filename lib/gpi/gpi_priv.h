@@ -37,7 +37,7 @@ class gpi_impl_interface;
 
 class gpi_hdl {
 public:
-    gpi_hdl();
+    gpi_hdl() {}
     virtual ~gpi_hdl() { }
 
     void set_gpi_impl(gpi_impl_interface *impl);
@@ -133,11 +133,11 @@ public:
     virtual void set_signal_value_str(gpi_obj_hdl *gpi_hdl, const char *str) = 0;    // String of binary char(s) [1, 0, x, z]
     
     /* Callback related */
-    virtual gpi_cb_timed *register_timed_callback(gpi_cb_hdl*, uint64_t time_ps) = 0;
-    virtual gpi_cb_value_change *register_value_change_callback(gpi_cb_hdl *gpi_hdl, gpi_obj_hdl *obj_hdl) = 0;
-    virtual gpi_cb_readonly_phase *register_readonly_callback(gpi_cb_hdl *gpi_hdl) = 0;
-    virtual gpi_cb_nexttime_phase *register_nexttime_callback(gpi_cb_hdl *gpi_hdl) = 0;
-    virtual gpi_cb_readwrite_phase *register_readwrite_callback(gpi_cb_hdl *gpi_hdl) = 0;
+    virtual gpi_cb_hdl *register_timed_callback(uint64_t time_ps) = 0;
+    virtual gpi_cb_hdl *register_value_change_callback(gpi_obj_hdl *obj_hdl) = 0;
+    virtual gpi_cb_hdl *register_readonly_callback(void) = 0;
+    virtual gpi_cb_hdl *register_nexttime_callback(void) = 0;
+    virtual gpi_cb_hdl *register_readwrite_callback(void) = 0;
     virtual int deregister_callback(gpi_cb_hdl *gpi_hdl) = 0;
 
     virtual gpi_cb_hdl *create_cb_handle(void) = 0;

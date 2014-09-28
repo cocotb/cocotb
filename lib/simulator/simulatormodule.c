@@ -160,9 +160,9 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    PyObject *handle;
+    //PyObject *handle;
     gpi_sim_hdl hdl;
-    int ret;
+    //int ret;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
@@ -176,11 +176,11 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    handle = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
+    //handle = PyTuple_GetItem(args, 0);
+    //hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 1);
+    function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
         fprintf(stderr, "Attempt to register ReadOnly without supplying a callback!\n");
         return NULL;
@@ -189,7 +189,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 
     // Remaining args for function
     if (numargs > 2)
-        fArgs = PyTuple_GetSlice(args, 2, numargs);   // New reference
+        fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
     else
         fArgs = PyTuple_New(0); // args must not be NULL, use an empty tuple if no arguments are needed.
 
@@ -204,10 +204,10 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     callback_data_p->function = function;
     callback_data_p->args = fArgs;
     callback_data_p->kwargs = NULL;
-    callback_data_p->cb_hdl = hdl;
-    ret = gpi_register_readonly_callback(hdl, handle_gpi_callback, (void *)callback_data_p);
+    //callback_data_p->cb_hdl = hdl;
+    hdl = gpi_register_readonly_callback(handle_gpi_callback, (void *)callback_data_p);
 
-    PyObject *rv = Py_BuildValue("i", ret);
+    PyObject *rv = Py_BuildValue("l", hdl);
     DROP_GIL(gstate);
     FEXIT
 
@@ -221,9 +221,9 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    PyObject *handle;
+    //PyObject *handle;
     gpi_sim_hdl hdl;
-    int ret;
+    //int ret;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
@@ -237,11 +237,11 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    handle = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
+    //handle = PyTuple_GetItem(args, 0);
+    //hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 1);
+    function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
         fprintf(stderr, "Attempt to register ReadOnly without supplying a callback!\n");
         return NULL;
@@ -265,10 +265,10 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     callback_data_p->function = function;
     callback_data_p->args = fArgs;
     callback_data_p->kwargs = NULL;
-    callback_data_p->cb_hdl = hdl;
-    ret = gpi_register_readwrite_callback(hdl, handle_gpi_callback, (void *)callback_data_p);
+    //callback_data_p->cb_hdl = hdl;
+    hdl = gpi_register_readwrite_callback(handle_gpi_callback, (void *)callback_data_p);
 
-    PyObject *rv = Py_BuildValue("i", ret);
+    PyObject *rv = Py_BuildValue("l", hdl);
     DROP_GIL(gstate);
     FEXIT
 
@@ -282,9 +282,9 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    PyObject *handle;
+    //PyObject *handle;
     gpi_sim_hdl hdl;
-    int ret;
+    //int ret;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
@@ -298,11 +298,11 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    handle = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
+    //handle = PyTuple_GetItem(args, 0);
+    //hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 1);
+    function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
         fprintf(stderr, "Attempt to register ReadOnly without supplying a callback!\n");
         return NULL;
@@ -326,10 +326,10 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     callback_data_p->function = function;
     callback_data_p->args = fArgs;
     callback_data_p->kwargs = NULL;
-    callback_data_p->cb_hdl = hdl;
-    ret = gpi_register_nexttime_callback(hdl, handle_gpi_callback, (void *)callback_data_p);
+    //callback_data_p->cb_hdl = hdl;
+    hdl = gpi_register_nexttime_callback(handle_gpi_callback, (void *)callback_data_p);
 
-    PyObject *rv = Py_BuildValue("i", ret);
+    PyObject *rv = Py_BuildValue("l", hdl);
     DROP_GIL(gstate);
     FEXIT
 
@@ -347,10 +347,10 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    PyObject *handle;
+    //PyObject *handle;
     gpi_sim_hdl hdl;
     uint64_t time_ps;
-    int ret;
+    //int ret;
 
     p_callback_data callback_data_p;
 
@@ -365,15 +365,15 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     }
 
     // Get the handle
-    handle = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
+    //handle = PyTuple_GetItem(args, 0);
+    //hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
 
     // Extract the time
-    PyObject *pTime = PyTuple_GetItem(args, 1);
+    PyObject *pTime = PyTuple_GetItem(args, 0);
     time_ps = PyLong_AsLongLong(pTime);
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 2);
+    function = PyTuple_GetItem(args, 1);
     if (!PyCallable_Check(function)) {
         fprintf(stderr, "Attempt to register timed callback without passing a callable callback!\n");
         return NULL;
@@ -381,8 +381,8 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     Py_INCREF(function);
 
     // Remaining args for function
-    if (numargs > 3)
-        fArgs = PyTuple_GetSlice(args, 3, numargs);   // New reference
+    if (numargs > 2)
+        fArgs = PyTuple_GetSlice(args, 2, numargs);   // New reference
     else
         fArgs = PyTuple_New(0); // args must not be NULL, use an empty tuple if no arguments are needed.
 
@@ -398,11 +398,11 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     callback_data_p->function = function;
     callback_data_p->args = fArgs;
     callback_data_p->kwargs = NULL;
-    callback_data_p->cb_hdl = hdl;
-    ret = gpi_register_timed_callback(hdl, handle_gpi_callback, (void *)callback_data_p, time_ps);
+    //callback_data_p->cb_hdl = hdl;
+    hdl = gpi_register_timed_callback(handle_gpi_callback, (void *)callback_data_p, time_ps);
 
     // Check success
-    PyObject *rv = Py_BuildValue("i", ret);
+    PyObject *rv = Py_BuildValue("l", hdl);
     DROP_GIL(gstate);
     FEXIT
 
@@ -421,9 +421,9 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     PyObject *fArgs;
     PyObject *function;
     gpi_sim_hdl sig_hdl;
-    PyObject *handle;
+    //PyObject *handle;
     gpi_sim_hdl hdl;
-    int ret;
+    //int ret;
 
 
 
@@ -439,14 +439,14 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
         return NULL;
     }
 
-    handle = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
+    //handle = PyTuple_GetItem(args, 0);
+    //hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(handle);
 
-    PyObject *pSihHdl = PyTuple_GetItem(args, 1);
+    PyObject *pSihHdl = PyTuple_GetItem(args, 0);
     sig_hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 2);
+    function = PyTuple_GetItem(args, 1);
     if (!PyCallable_Check(function)) {
         fprintf(stderr, "Attempt to register value change callback without passing a callable callback!\n");
         return NULL;
@@ -472,11 +472,11 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     callback_data_p->function = function;
     callback_data_p->args = fArgs;
     callback_data_p->kwargs = NULL;
-    callback_data_p->cb_hdl = hdl;
-    ret = gpi_register_value_change_callback(hdl, handle_gpi_callback, (void *)callback_data_p, sig_hdl);
+    //callback_data_p->cb_hdl = hdl;
+    hdl = gpi_register_value_change_callback(handle_gpi_callback, (void *)callback_data_p, sig_hdl);
 
     // Check success
-    PyObject *rv = Py_BuildValue("i", ret);
+    PyObject *rv = Py_BuildValue("l", hdl);
 
     DROP_GIL(gstate);
     FEXIT

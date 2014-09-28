@@ -32,18 +32,14 @@
 
 #define VPI_CHECKING 1
 
-extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
+extern "C" { 
+int32_t handle_vpi_callback(p_cb_data cb_data);
+int __check_vpi_error(const char *func, long line);
+}
 
-typedef enum vpi_cb_state_e {
-    VPI_FREE = 0,
-    VPI_PRIMED = 1,
-    VPI_PRE_CALL = 2,
-    VPI_POST_CALL = 3,
-    VPI_DELETE = 4,
-} vpi_cb_state_t;
 
 // Should be run after every VPI call to check error status
-static int __check_vpi_error(const char *func, long line)
+int __check_vpi_error(const char *func, long line)
 {
     int level=0;
 #if VPI_CHECKING
@@ -81,19 +77,18 @@ static int __check_vpi_error(const char *func, long line)
     __check_vpi_error(__func__, __LINE__); \
 } while (0)
 
-class vpi_callback_handler;
-class vpi_onetime_handler;
-class vpi_recurring_handler;
+typedef enum vpi_cb_state_e {
+    VPI_FREE = 0,
+    VPI_PRIMED = 1,
+    VPI_PRE_CALL = 2,
+    VPI_POST_CALL = 3,
+    VPI_DELETE = 4,
+} vpi_cb_state_t;
 
 class vpi_cb_hdl : public gpi_cb_hdl {
-friend class vpi_onetime_handler;
-friend class vpi_recurring_handler;
-private:
-    s_vpi_value  cb_value;
-    vpi_cb_state_t state;
-    //gpi_cb_hdl gpi_cb_data;
+protected:
     vpiHandle vpi_hdl;
-    vpi_callback_handler *handler;
+    vpi_cb_state_t state;
 
 public:
     vpi_cb_hdl() : vpi_hdl(NULL) {
@@ -103,89 +98,104 @@ public:
 
     }
 
-    const char *vpi_reason_to_string(int reason);
+protected:
+    /* If the user data already has a callback handle then deregister
+     * before getting the new one
+     */
+    int register_cb(p_cb_data cb_data) {
+        if (state == VPI_PRIMED) {
+            fprintf(stderr,
+                    "Attempt to prime an already primed trigger for %s!\n", 
+                    vpi_reason_to_string(cb_data->reason));
+        }
 
-    void set_state(vpi_cb_state_t new_state) {
-        state = new_state;
+        if (vpi_hdl != NULL) {
+            fprintf(stderr,
+                    "We seem to already be registered, deregistering %s!\n",
+                    vpi_reason_to_string(cb_data->reason));
+
+            cleanup_callback();
+        }
+
+        vpiHandle new_hdl = vpi_register_cb(cb_data);
+        int ret = 0;
+
+        if (!new_hdl) {
+            LOG_CRITICAL("VPI: Unable to register callback a handle for VPI type %s(%d)",
+                         vpi_reason_to_string(cb_data->reason), cb_data->reason);
+            check_vpi_error();
+            ret = -1;
+        }
+
+        vpi_hdl = new_hdl;
+        state = VPI_PRIMED;
+
+        return ret;
     }
 
-    int arm_callback(p_cb_data cb_data, vpi_callback_handler *hdlr);
-    int run_callback(void);
-    int cancel_callback(void);
+    const char *vpi_reason_to_string(int reason)
+    {
+        switch (reason) {
+        case cbValueChange:
+            return "cbValueChange";
+        case cbAtStartOfSimTime:
+            return "cbAtStartOfSimTime";
+        case cbReadWriteSynch:
+            return "cbReadWriteSynch";
+        case cbReadOnlySynch:
+            return "cbReadOnlySynch";
+        case cbNextSimTime:
+            return "cbNextSimTime";
+        case cbAfterDelay:
+            return "cbAfterDelay";
+        case cbStartOfSimulation:
+            return "cbStartOfSimulation";
+        case cbEndOfSimulation:
+            return "cbEndOfSimulation";
+        default:
+            return "unknown";
+        }
+    }
+
 };
 
-class vpi_callback_handler {
+class vpi_onetime_cb : public vpi_cb_hdl {
 public:
-    virtual ~vpi_callback_handler() {
-
-    }
-    virtual int cleanup_handler(vpi_cb_hdl *cb) {
-        return 0;
-    }
-    virtual int run_handler(vpi_cb_hdl *cb) {
-        return 0;
-    }
-};
-
-class vpi_onetime_handler : public vpi_callback_handler {
-public:
-    int cleanup_handler(vpi_cb_hdl *cb) {
+    int cleanup_callback(void) {
         FENTER
         int rc = 0;
-        if (!cb->vpi_hdl) {
+        if (!vpi_hdl) {
             LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
             exit(1);
         }
-
-        // If the callback has not been called we also need to call
-        // remove as well
-        if (cb->state == VPI_PRIMED) {
-
-            rc = vpi_remove_cb(cb->vpi_hdl);
-            if (!rc) {
-                check_vpi_error();
-                return rc;
-            }
-            cb->vpi_hdl = NULL;
-
-    // HACK: Calling vpi_free_object after vpi_remove_cb causes Modelsim to VPIEndOfSimulationCallback
-    #if 0
-            rc = vpi_free_object(cb_hdl);
-            if (!rc) {
-                check_vpi_error();
-                return rc;
-            }
-    #endif
-        }
-        cb->state = VPI_FREE;
         FEXIT
         return rc;
     }
 };
 
-class vpi_recurring_handler : public vpi_callback_handler {
+class vpi_recurring_cb : public vpi_cb_hdl {
 public:
-    int cleanup_handler(vpi_cb_hdl *cb) {
+    int cleanup_handler(void) {
         FENTER
         int rc;
 
-        LOG_ERROR("In cleanup");
-
-        if (!cb->vpi_hdl) {
+        if (!vpi_hdl) {
             LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
             exit(1);
         }
-
-        rc = vpi_remove_cb(cb->vpi_hdl);
-        check_vpi_error();
         FEXIT
         return rc;
     }
 };
 
-class vpi_startup_handler : public vpi_onetime_handler {
+class vpi_cb_value_change : public vpi_recurring_cb {
 public:
-    int run_handler(vpi_cb_hdl *cb) {
+
+};
+
+class vpi_cb_startup : public vpi_onetime_cb {
+public:
+    int run_callback(void) {
         s_vpi_vlog_info info;
         gpi_sim_info_t sim_info;
 
@@ -200,22 +210,46 @@ public:
 
         return 0;
     }
-};
+    int arm_callback(void) {
+        s_cb_data cb_data_s;
 
+        cb_data_s.reason    = cbStartOfSimulation;
+        cb_data_s.cb_rtn    = handle_vpi_callback;
+        cb_data_s.obj       = NULL;
+        cb_data_s.time      = NULL;
+        cb_data_s.value     = NULL;
+        cb_data_s.user_data = (char*)this;
 
-class vpi_shutdown_handler : public vpi_onetime_handler {
-public:
-    int run_handler(vpi_cb_hdl *cb) {
-        //gpi_embed_end();
-        return 0;
+        return register_cb(&cb_data_s);
     }
 };
 
-class vpi_timed_handler : public vpi_onetime_handler {
+
+class vpi_cb_shutdown : public vpi_onetime_cb {
 public:
-    int run_handler(vpi_cb_hdl *cb) {
+    int run_callback(void) {
+        gpi_embed_end();
+        return 0;
+    }
+
+    int arm_callback(void) {
+        s_cb_data cb_data_s;
+
+        cb_data_s.reason    = cbEndOfSimulation;
+        cb_data_s.cb_rtn    = handle_vpi_callback;
+        cb_data_s.obj       = NULL;
+        cb_data_s.time      = NULL;
+        cb_data_s.value     = NULL;
+        cb_data_s.user_data = (char*)this;
+
+        return register_cb(&cb_data_s);
+    }
+};
+
+class vpi_cb_timed : public vpi_onetime_cb {
+public:
+    int run_callback(vpi_cb_hdl *cb) {
         LOG_ERROR("In timed handler")
-        gpi_handle_callback(cb);
         return 0;
     }
 };
@@ -224,420 +258,80 @@ class vpi_impl : public gpi_impl_interface {
 public:
     vpi_impl(const string& name) : gpi_impl_interface(name) { }
 
+     /* Sim related */
     void sim_end(void);
-    void get_sim_time(uint32_t *high, uint32_t *low);
-    gpi_sim_hdl get_root_handle(const char *name);
-    gpi_sim_hdl get_handle_by_name(const char *name, gpi_sim_hdl parent);
-    gpi_sim_hdl get_handle_by_index(gpi_sim_hdl parent, uint32_t index);
-    void free_handle(gpi_sim_hdl);
-    gpi_iterator_hdl iterate_handle(uint32_t type, gpi_sim_hdl base);
-    gpi_sim_hdl next_handle(gpi_iterator_hdl iterator);
-    char* get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
-    char* get_signal_name_str(gpi_sim_hdl gpi_hdl);
-    char* get_signal_type_str(gpi_sim_hdl gpi_hdl);
-    void set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
-    void set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
-    int register_timed_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
-    int register_value_change_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
-    int register_readonly_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
-    int register_nexttime_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
-    int register_readwrite_callback(gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
-    gpi_cb_hdl *create_cb_handle(void);
-    void destroy_cb_handle(gpi_cb_hdl *gpi_hdl);
-    int deregister_callback(gpi_sim_hdl gpi_hdl);
+    void get_sim_time(uint32_t *high, uint32_t *low) { }
+
+    /* Signal related */
+    gpi_obj_hdl *get_root_handle(const char *name) { return NULL;}
+    gpi_obj_hdl *get_handle_by_name(const char *name, gpi_obj_hdl *parent) { return NULL; }
+    gpi_obj_hdl *get_handle_by_index(gpi_obj_hdl *parent, uint32_t index) { return NULL; }
+    void free_handle(gpi_obj_hdl*) { }
+    gpi_iterator *iterate_handle(uint32_t type, gpi_obj_hdl *base) { return NULL; }
+    gpi_obj_hdl *next_handle(gpi_iterator *iterator) { return NULL; }
+    char* get_signal_value_binstr(gpi_obj_hdl *gpi_hdl) { return NULL; }
+    char* get_signal_name_str(gpi_obj_hdl *gpi_hdl) { return NULL; }
+    char* get_signal_type_str(gpi_obj_hdl *gpi_hdl) { return NULL; }
+    void set_signal_value_int(gpi_obj_hdl *gpi_hdl, int value) { }
+    void set_signal_value_str(gpi_obj_hdl *gpi_hdl, const char *str) { }    // String of binary char(s) [1, 0, x, z]
+    
+    /* Callback related */
+    gpi_cb_hdl *register_timed_callback(uint64_t time_ps) { return NULL; }
+    gpi_cb_hdl *register_value_change_callback(gpi_obj_hdl *obj_hdl) { return NULL; }
+    gpi_cb_hdl *register_readonly_callback(void) { return NULL; }
+    gpi_cb_hdl *register_nexttime_callback(void) { return NULL; }
+    gpi_cb_hdl *register_readwrite_callback(void) { return NULL; }
+    int deregister_callback(gpi_cb_hdl *gpi_hdl) { return 0; }
+
+    gpi_cb_hdl *create_cb_handle(void) { return NULL; }
+    void destroy_cb_handle(gpi_cb_hdl *gpi_hdl) { }
 };
+
+#if 0
+gpi_cb_hdl *vpi_impl::register_timed_callback(uint64_t time_ps)
+{
+    FENTER
+
+    int ret;
+    s_cb_data cb_data_s;
+    s_vpi_time vpi_time_s;
+
+    vpi_time_s.type = vpiSimTime;
+    vpi_time_s.high = (uint32_t)(time_ps>>32);
+    vpi_time_s.low  = (uint32_t)(time_ps);
+
+    cb_data_s.reason    = cbAfterDelay;
+    cb_data_s.cb_rtn    = handle_vpi_callback;
+    cb_data_s.obj       = NULL;
+    cb_data_s.time      = &vpi_time_s;
+    cb_data_s.value     = NULL;
+    cb_data_s.user_data = (char *)hdl;
+
+    ret = hdl->arm_callback(&cb_data_s);
+
+    FEXIT
+    return ret;
+}
+#endif
+
+extern "C" {
 
 static vpi_cb_hdl *sim_init_cb;
 static vpi_cb_hdl *sim_finish_cb;
+static vpi_impl *vpi_table;
 
-// Add to this over time
-const char * vpi_cb_hdl::vpi_reason_to_string(int reason)
-{
-    switch (reason) {
-    case cbValueChange:
-        return "cbValueChange";
-    case cbAtStartOfSimTime:
-        return "cbAtStartOfSimTime";
-    case cbReadWriteSynch:
-        return "cbReadWriteSynch";
-    case cbReadOnlySynch:
-        return "cbReadOnlySynch";
-    case cbNextSimTime:
-        return "cbNextSimTime";
-    case cbAfterDelay:
-        return "cbAfterDelay";
-    case cbStartOfSimulation:
-        return "cbStartOfSimulation";
-    case cbEndOfSimulation:
-        return "cbEndOfSimulation";
-    default:
-        return "unknown";
-    }
 }
 
-int vpi_cb_hdl::arm_callback(p_cb_data cb_data, vpi_callback_handler *hdlr)
+// If the Pything world wants things to shut down then unregister
+// the callback for end of sim
+void vpi_impl::sim_end(void)
 {
-    /* If the user data already has a callback handle then deregister
-     * before getting the new one
-     */
-    if (state == VPI_PRIMED) {
-        fprintf(stderr,
-                "Attempt to prime an already primed trigger for %s!\n", 
-                vpi_reason_to_string(cb_data->reason));
-    }
-
-    if (vpi_hdl != NULL) {
-        fprintf(stderr,
-                "We seem to already be registered, deregistering %s!\n",
-                vpi_reason_to_string(cb_data->reason));
-#ifdef FIX_THIS
-        vpi_deregister_callback(&cb_hdl);
-#endif
-    }
-
-    vpiHandle new_hdl = vpi_register_cb(cb_data);
-    int ret = 0;
-
-    if (!new_hdl) {
-        LOG_CRITICAL("VPI: Unable to register callback a handle for VPI type %s(%d)",
-                     vpi_reason_to_string(cb_data->reason), cb_data->reason);
-        check_vpi_error();
-        ret = -1;
-    }
-
-    vpi_hdl = new_hdl;
-    handler = hdlr;
-    state = VPI_PRIMED;
-
-    return ret;
-}
-
-int vpi_cb_hdl::run_callback(void)
-{
-    vpi_hdl = NULL;
-    handler->run_handler(this);
-    delete(handler);
-    handler = NULL;
-    /* Can now be re-used */
-    return 0;
-}
-
-int vpi_cb_hdl::cancel_callback(void)
-{
-    return handler->cleanup_handler(this);
-}
-
-
-// Handle related functions
-/**
- * @name    Find the root handle
- * @brief   Find the root handle using a optional name
- *
- * Get a handle to the root simulator object.  This is usually the toplevel.
- *
- * If no name is defined, we return the first root instance.
- *
- * If name is provided, we check the name against the available objects until
- * we find a match.  If no match is found we return NULL
- */
-gpi_sim_hdl vpi_impl::get_root_handle(const char* name)
-{
-    FENTER
-    vpiHandle root;
-    vpiHandle iterator;
-    gpi_sim_hdl rv;
-
-    // vpi_iterate with a ref of NULL returns the top level module
-    iterator = vpi_iterate(vpiModule, NULL);
+    sim_finish_cb = NULL;
+    vpi_control(vpiFinish);
     check_vpi_error();
-
-    for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
-
-        if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
-            break;
-    }
-
-    if (!root) {
-        check_vpi_error();
-        goto error;
-    }
-
-    // Need to free the iterator if it didn't return NULL
-    if (!vpi_free_object(iterator)) {
-        LOG_WARN("VPI: Attempting to free root iterator failed!");
-        check_vpi_error();
-    }
-
-    rv = gpi_create_handle();
-    rv->sim_hdl = root;
-
-    FEXIT
-    return rv;
-
-  error:
-
-    LOG_CRITICAL("VPI: Couldn't find root handle %s", name);
-
-    iterator = vpi_iterate(vpiModule, NULL);
-
-    for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
-
-        LOG_CRITICAL("VPI: Toplevel instances: %s != %s...", name, vpi_get_str(vpiFullName, root));
-
-        if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
-            break;
-    }
-
-    FEXIT
-    return NULL;
 }
 
-
-/**
- * @brief   Get a handle to an object under the scope of parent
- *
- * @param   name of the object to find
- * @param   parent handle to parent object defining the scope to search
- *
- * @return  gpi_sim_hdl for the new object or NULL if object not found
- */
-gpi_sim_hdl vpi_impl::get_handle_by_name(const char *name, gpi_sim_hdl parent)
-{
-    FENTER
-    gpi_sim_hdl rv;
-    vpiHandle obj;
-    vpiHandle iterator;
-    int len;
-    char *buff;
-
-    // Structures aren't technically a scope, according to the LRM. If parent
-    // is a structure then we have to iterate over the members comparing names
-    if (vpiStructVar == vpi_get(vpiType, (vpiHandle)(parent->sim_hdl))) {
-
-        iterator = vpi_iterate(vpiMember, (vpiHandle)(parent->sim_hdl));
-
-        for (obj = vpi_scan(iterator); obj != NULL; obj = vpi_scan(iterator)) {
-
-            if (!strcmp(name, strrchr(vpi_get_str(vpiName, obj), 46) + 1))
-                break;
-        }
-
-        if (!obj)
-            return NULL;
-
-        // Need to free the iterator if it didn't return NULL
-        if (!vpi_free_object(iterator)) {
-            LOG_WARN("VPI: Attempting to free root iterator failed!");
-            check_vpi_error();
-        }
-
-        goto success;
-    }
-
-    if (name)
-        len = strlen(name) + 1;
-
-    buff = (char *)malloc(len);
-    if (buff == NULL) {
-        LOG_CRITICAL("VPI: Attempting allocate string buffer failed!");
-        return NULL;
-    }
-
-    strncpy(buff, name, len);
-    obj = vpi_handle_by_name(buff, (vpiHandle)(parent->sim_hdl));
-    if (!obj) {
-        LOG_DEBUG("VPI: Handle '%s' not found!", name);
-
-        // NB we deliberately don't dump an error message here because it's
-        // a valid use case to attempt to grab a signal by name - for example
-        // optional signals on a bus.
-        // check_vpi_error();
-        free(buff);
-        return NULL;
-    }
-
-    free(buff);
-
-success:
-    rv = gpi_create_handle();
-    rv->sim_hdl = obj;
-
-    FEXIT
-    return rv;
-}
-
-/**
- * @brief   Get a handle for an object based on its index within a parent
- *
- * @param parent <gpi_sim_hdl> handle to the parent
- * @param indext <uint32_t> Index to retrieve
- *
- * Can be used on bit-vectors to access a specific bit or
- * memories to access an address
- */
-gpi_sim_hdl vpi_impl::get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
-{
-    FENTER
-    gpi_sim_hdl rv;
-    vpiHandle obj;
-
-    obj = vpi_handle_by_index((vpiHandle)(parent->sim_hdl), index);
-    if (!obj) {
-        LOG_ERROR("VPI: Handle idx '%d' not found!", index);
-        return NULL;
-    }
-
-    rv = gpi_create_handle();
-    rv->sim_hdl = obj;
-
-    FEXIT
-    return rv;
-}
-
-
-// Functions for iterating over entries of a handle
-// Returns an iterator handle which can then be used in gpi_next calls
-// NB May return NULL if no objects of the request type exist
-gpi_iterator_hdl vpi_impl::iterate_handle(uint32_t type, gpi_sim_hdl base)
-{
-    FENTER
-
-    vpiHandle iterator;
-
-    iterator = vpi_iterate(type, (vpiHandle)(base->sim_hdl));
-    check_vpi_error();
-
-    FEXIT
-    return (gpi_iterator_hdl)iterator;
-}
-
-void vpi_impl::free_handle(gpi_sim_hdl)
-{
-
-}
-
-// Returns NULL when there are no more objects
-gpi_sim_hdl vpi_impl::next_handle(gpi_iterator_hdl iterator)
-{
-    FENTER
-    gpi_sim_hdl rv = gpi_create_handle();
-
-    rv->sim_hdl = vpi_scan((vpiHandle) iterator);
-    check_vpi_error();
-    if (!rv->sim_hdl) {
-        gpi_free_handle(rv);
-        rv = NULL;
-    }
-
-    // Don't need to call vpi_free_object on the iterator handle
-    // From VPI spec:
-    // After returning NULL, memory associated with the iteratod handle is
-    // freed, making the handle invalid.
-
-    FEXIT
-    return rv;
-}
-
-// double gpi_get_sim_time()
-void vpi_impl::get_sim_time(uint32_t *high, uint32_t *low)
-{
-    s_vpi_time vpi_time_s;
-    vpi_time_s.type = vpiSimTime;//vpiScaledRealTime;        //vpiSimTime;
-    vpi_get_time(NULL, &vpi_time_s);
-    check_vpi_error();
-    *high = vpi_time_s.high;
-    *low = vpi_time_s.low;
-}
-
-// Value related functions
-void vpi_impl::set_signal_value_int(gpi_sim_hdl gpi_hdl, int value)
-{
-    FENTER
-    s_vpi_value value_s;
-    p_vpi_value value_p = &value_s;
-
-    value_p->value.integer = value;
-    value_p->format = vpiIntVal;
-
-    s_vpi_time vpi_time_s;
-    p_vpi_time vpi_time_p = &vpi_time_s;
-
-    vpi_time_p->type = vpiSimTime;
-    vpi_time_p->high = 0;
-    vpi_time_p->low  = 0;
-
-    // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
-    vpi_put_value((vpiHandle)(gpi_hdl->sim_hdl), value_p, vpi_time_p, vpiInertialDelay);
-    check_vpi_error();
-
-    FEXIT
-}
-
-void vpi_impl::set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str)
-{
-    FENTER
-    s_vpi_value value_s;
-    p_vpi_value value_p = &value_s;
-
-    int len;
-    char *buff;
-    if (str)
-        len = strlen(str) + 1;
-
-    buff = (char *)malloc(len);
-    if (buff== NULL) {
-        LOG_CRITICAL("VPI: Attempting allocate string buffer failed!");
-        return;
-    }
-
-    strncpy(buff, str, len);
-
-    value_p->value.str = buff;
-    value_p->format = vpiBinStrVal;
-
-    /*  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
-     *      may be NULL, in this case. This is like a blocking assignment
-     *      in behavioral code.
-     */
-    vpi_put_value((vpiHandle)(gpi_hdl->sim_hdl), value_p, NULL, vpiNoDelay);
-    check_vpi_error();
-    free(buff);
-    FEXIT
-}
-
-char *vpi_impl::get_signal_value_binstr(gpi_sim_hdl gpi_hdl)
-{
-    FENTER
-    s_vpi_value value_s = {vpiBinStrVal};
-    p_vpi_value value_p = &value_s;
-
-    vpi_get_value((vpiHandle)(gpi_hdl->sim_hdl), value_p);
-    check_vpi_error();
-
-    char *result = gpi_copy_name(value_p->value.str);
-    FEXIT
-    return result;
-}
-
-char *vpi_impl::get_signal_name_str(gpi_sim_hdl gpi_hdl)
-{
-    FENTER
-    const char *name = vpi_get_str(vpiFullName, (vpiHandle)(gpi_hdl->sim_hdl));
-    check_vpi_error();
-    char *result = gpi_copy_name(name);
-    FEXIT
-    return result;
-}
-
-char *vpi_impl::get_signal_type_str(gpi_sim_hdl gpi_hdl)
-{
-    FENTER
-    const char *name = vpi_get_str(vpiType, (vpiHandle)(gpi_hdl->sim_hdl));
-    check_vpi_error();
-    char *result = gpi_copy_name(name);
-    FEXIT
-    return result;
-}
+extern "C" {
 
 // Main re-entry point for callbacks from simulator
 int32_t handle_vpi_callback(p_cb_data cb_data)
@@ -651,7 +345,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     if (!cb_hdl)
         LOG_CRITICAL("VPI: Callback data corrupted");
 
-    cb_hdl->set_state(VPI_PRE_CALL);
+    //cb_hdl->set_state(VPI_PRE_CALL);
     //old_cb = user_data->cb_hdl;
     cb_hdl->run_callback();
     
@@ -670,315 +364,43 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     else
         user_data->state = VPI_POST_CALL;
 #endif
-    cb_hdl->set_state(VPI_POST_CALL);
+    //cb_hdl->set_state(VPI_POST_CALL);
 
     FEXIT
     return rv;
 };
 
 
-/* Deregister a prior set up callback with the simulator
- * The handle must have been allocated with gpi_create_cb_handle
- * This can be called at any point between
- * gpi_create_cb_handle and gpi_free_cb_handle
- */
-int vpi_impl::deregister_callback(gpi_sim_hdl gpi_hdl)
-{   
-    FENTER
-    int rc = 1;
-    // We should be able to user vpi_get_cb_info
-    // but this is not implemented in ICARUS
-    // and gets upset on VCS. So instead we
-    // do some pointer magic.
-
-    vpi_cb_hdl *hdl = reinterpret_cast<vpi_cb_hdl*>(gpi_hdl->sim_hdl);
-    (void)hdl;
-    hdl->cancel_callback();
-
-    FEXIT
-    GPI_RET(rc);
-}
-
-
-
-/* These functions request a callback to be active with the current
- * handle and associated data. A callback handle needs to have been
- * allocated with gpi_create_cb_handle first
- */
-
-
-int vpi_impl::register_value_change_callback(gpi_sim_hdl cb,
-                                            int (*gpi_function)(void *),
-                                            void *gpi_cb_data,
-                                            gpi_sim_hdl gpi_hdl)
-{
-#if 0
-    FENTER
- 
-    int ret;
-    s_cb_data cb_data_s;
-    s_vpi_time vpi_time_s;
-    p_vpi_cb vpi_user_data;
-    gpi_cb_hdl gpi_user_data;
-
-    gpi_user_data = gpi_container_of(cb, gpi_cb_hdl_t, hdl);
-    vpi_user_data = gpi_container_of(gpi_user_data, s_vpi_cb, gpi_cb_data);
-
-    vpi_user_data->vpi_cleanup = vpi_free_recurring;
-    vpi_user_data->cb_value.format = vpiIntVal;
-
-    vpi_time_s.type = vpiSuppressTime;
-
-    cb_data_s.reason    = cbValueChange;
-    cb_data_s.cb_rtn    = handle_vpi_callback;
-    cb_data_s.obj       = (vpiHandle)(gpi_hdl->sim_hdl);
-    cb_data_s.time      = &vpi_time_s;
-    cb_data_s.value     = &vpi_user_data->cb_value;
-    cb_data_s.user_data = (char *)vpi_user_data;
-
-    ret = vpi_user_data.__vpi_register_cb(&cb_data_s);
-
-    FEXIT
-
-    return ret;
-#else
-    return 0;
-#endif
-}
-
-int vpi_impl::register_readonly_callback(gpi_sim_hdl cb,
-                                         int (*gpi_function)(void *),
-                                         void *gpi_cb_data)
-{
-#if 0
-    FENTER
-
-    int ret;
-    s_cb_data cb_data_s;
-    s_vpi_time vpi_time_s;
-    p_vpi_cb vpi_user_data;
-    gpi_cb_hdl gpi_user_data;
-
-    gpi_user_data = gpi_container_of(cb, gpi_cb_hdl_t, hdl);
-    vpi_user_data = gpi_container_of(gpi_user_data, s_vpi_cb, gpi_cb_data);
-
-    vpi_user_data->vpi_cleanup = vpi_free_one_time;
-
-    vpi_time_s.type = vpiSimTime;
-    vpi_time_s.high = 0;
-    vpi_time_s.low = 0;
-
-    cb_data_s.reason    = cbReadOnlySynch;
-    cb_data_s.cb_rtn    = handle_vpi_callback;
-    cb_data_s.obj       = NULL;
-    cb_data_s.time      = &vpi_time_s;
-    cb_data_s.value     = NULL;
-    cb_data_s.user_data = (char *)vpi_user_data;
-
-    ret = __vpi_register_cb(vpi_user_data, &cb_data_s);
-
-    FEXIT
-    return ret;
-#else
-    return 0;
-#endif
-}
-
-int vpi_impl::register_readwrite_callback(gpi_sim_hdl cb,
-                                          int (*gpi_function)(void *),
-                                          void *gpi_cb_data)
-{
-#if 0
-    FENTER
-
-    int ret;
-    s_cb_data cb_data_s;
-    s_vpi_time vpi_time_s;
-    p_vpi_cb vpi_user_data;
-    gpi_cb_hdl gpi_user_data;
-
-    gpi_user_data = gpi_container_of(cb, gpi_cb_hdl_t, hdl);
-    vpi_user_data = gpi_container_of(gpi_user_data, s_vpi_cb, gpi_cb_data);
-
-    vpi_user_data->vpi_cleanup = vpi_free_one_time;
-
-    vpi_time_s.type = vpiSimTime;
-    vpi_time_s.high = 0;
-    vpi_time_s.low = 0;
-
-    cb_data_s.reason    = cbReadWriteSynch;
-    cb_data_s.cb_rtn    = handle_vpi_callback;
-    cb_data_s.obj       = NULL;
-    cb_data_s.time      = &vpi_time_s;
-    cb_data_s.value     = NULL;
-    cb_data_s.user_data = (char *)vpi_user_data;
-
-    ret = __vpi_register_cb(vpi_user_data, &cb_data_s);
-
-    FEXIT
-    return ret;
-#else
-    return 0;
-#endif
-}
-
-
-int vpi_impl::register_nexttime_callback(gpi_sim_hdl cb,
-                                         int (*gpi_function)(void *),
-                                        void *gpi_cb_data)
-{
-#if 0
-    FENTER
-    
-    int ret;
-    s_cb_data cb_data_s;
-    s_vpi_time vpi_time_s;
-    p_vpi_cb vpi_user_data;
-    gpi_cb_hdl gpi_user_data;
-
-    gpi_user_data = gpi_container_of(cb, gpi_cb_hdl_t, hdl);
-    vpi_user_data = gpi_container_of(gpi_user_data, s_vpi_cb, gpi_cb_data);
-
-    vpi_user_data->vpi_cleanup = vpi_free_one_time;
-
-    vpi_time_s.type = vpiSimTime;
-    vpi_time_s.high = 0;
-    vpi_time_s.low = 0;
-
-    cb_data_s.reason    = cbNextSimTime;
-    cb_data_s.cb_rtn    = handle_vpi_callback;
-    cb_data_s.obj       = NULL;
-    cb_data_s.time      = &vpi_time_s;
-    cb_data_s.value     = NULL;
-    cb_data_s.user_data = (char *)vpi_user_data;
-
-    ret = __vpi_register_cb(vpi_user_data, &cb_data_s);
-  
-    FEXIT
-    return ret;
-#else
-    return 0;
-#endif
-}
- 
-int vpi_impl::register_timed_callback(gpi_sim_hdl cb,
-                                      int (*gpi_function)(void *),
-                                      void *gpi_cb_data,
-                                      uint64_t time_ps)
-{
-    FENTER
-
-    int ret;
-    s_cb_data cb_data_s;
-    s_vpi_time vpi_time_s;
-    vpi_cb_hdl *hdl = reinterpret_cast<vpi_cb_hdl*>(cb->sim_hdl);
-
-    vpi_time_s.type = vpiSimTime;
-    vpi_time_s.high = (uint32_t)(time_ps>>32);
-    vpi_time_s.low  = (uint32_t)(time_ps);
-
-    cb_data_s.reason    = cbAfterDelay;
-    cb_data_s.cb_rtn    = handle_vpi_callback;
-    cb_data_s.obj       = NULL;
-    cb_data_s.time      = &vpi_time_s;
-    cb_data_s.value     = NULL;
-    cb_data_s.user_data = (char *)hdl;
-
-    vpi_timed_handler *handler = new vpi_timed_handler();
-    ret = hdl->arm_callback(&cb_data_s, handler);
-
-    FEXIT
-    return ret;
-}
-
-
-/* Checking of validity is done in the common code */
-gpi_cb_hdl *vpi_impl::create_cb_handle(void)
-{
-    FENTER
-
-    vpi_cb_hdl *new_hdl = new vpi_cb_hdl();
-
-    FEXIT
-    return new_hdl;
-}
-
-void vpi_impl::destroy_cb_handle(gpi_cb_hdl *hdl)
-{
-    FENTER
-    delete(hdl);
-    FEXIT
-}
-
-//void *vpi_impl::get_callback_data(gpi_sim_hdl gpi_hdl)
-//{
-//    FENTER
-//    gpi_cb_hdl gpi_user_data;
-//    gpi_user_data = gpi_container_of(gpi_hdl, gpi_cb_hdl_t, hdl);
-//    return gpi_user_data->gpi_cb_data;
-//}
-
-
-// If the Pything world wants things to shut down then unregister
-// the callback for end of sim
-void vpi_impl::sim_end(void)
-{
-    sim_finish_cb = NULL;
-    vpi_control(vpiFinish);
-    check_vpi_error();
-}
-
-extern "C" {
-
 static void register_embed(void)
 {
-    vpi_impl *vpi_table = new vpi_impl("VPI");
-    gpi_register_impl(vpi_table, 0xfeed);
+    vpi_table = new vpi_impl("VPI");
+    gpi_register_impl(vpi_table);
     gpi_embed_init_python();
 }
 
 
 static void register_initial_callback(void)
 {
-    sim_init_cb = new vpi_cb_hdl();
-    vpi_startup_handler *handler = new vpi_startup_handler();
+    sim_init_cb = new vpi_cb_startup();
 
     /* We ignore the return value here as VCS does some silly
      * things on comilation that means it tries to run through
      * the vlog_startup_routines and so call this routine
      */
-    s_cb_data cb_data_s;
 
-    cb_data_s.reason    = cbStartOfSimulation;
-    cb_data_s.cb_rtn    = handle_vpi_callback;
-    cb_data_s.obj       = NULL;
-    cb_data_s.time      = NULL;
-    cb_data_s.value     = NULL;
-    cb_data_s.user_data = (char*)sim_init_cb;
-
-    sim_init_cb->arm_callback(&cb_data_s, handler);
+    sim_init_cb->arm_callback();
 }
 
 static void register_final_callback(void)
 {
-    sim_finish_cb = new vpi_cb_hdl();
-    vpi_shutdown_handler *handler = new vpi_shutdown_handler();
+    sim_finish_cb = new vpi_cb_shutdown();
 
     /* We ignore the return value here as VCS does some silly
      * things on comilation that means it tries to run through
      * the vlog_startup_routines and so call this routine
      */
 
-    s_cb_data cb_data_s;
-
-    cb_data_s.reason    = cbEndOfSimulation;
-    cb_data_s.cb_rtn    = handle_vpi_callback;
-    cb_data_s.obj       = NULL;
-    cb_data_s.time      = NULL;
-    cb_data_s.value     = NULL;
-    cb_data_s.user_data = (char*)sim_finish_cb;
-
-    sim_finish_cb->arm_callback(&cb_data_s, handler);
+    sim_finish_cb->arm_callback();
 }
 
 

@@ -197,59 +197,71 @@ void *gpi_get_callback_data(gpi_sim_hdl sim_hdl)
     return cb_hdl->get_user_data();
 }
 
-gpi_sim_hdl gpi_register_value_change_callback(gpi_sim_hdl cb_hdl,
-                                       int (*gpi_function)(void *),
-                                       void *gpi_cb_data, gpi_sim_hdl sig_hdl)
+gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(void *),
+                                               void *gpi_cb_data,
+                                               gpi_sim_hdl sig_hdl)
 {
-    gpi_cb_hdl *gpi_hdl = sim_to_cbhdl(cb_hdl, false);
     gpi_obj_hdl *obj_hdl = sim_to_objhdl(sig_hdl, false);
+    gpi_cb_hdl *gpi_hdl = obj_hdl->m_impl->register_value_change_callback(obj_hdl);
+    if (!gpi_hdl)
+        LOG_ERROR("Failed to register a value change callback");
+
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl->m_impl->register_value_change_callback(gpi_hdl, obj_hdl);
+    return (gpi_sim_hdl)gpi_hdl;
 }
 
 /* It should not matter which implementation we use for this so just pick the first
    one
 */
-gpi_sim_hdl gpi_register_timed_callback(gpi_sim_hdl cb_hdl,
+gpi_sim_hdl gpi_register_timed_callback(
                                 int (*gpi_function)(void *),
                                 void *gpi_cb_data, uint64_t time_ps)
 {
-    gpi_cb_hdl *gpi_hdl = sim_to_cbhdl(cb_hdl, false);
+    gpi_cb_hdl *gpi_hdl = registed_impls[0]->register_timed_callback(time_ps);
+    if (!gpi_hdl)
+        LOG_ERROR("Failed to register a timed callback");
+    
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl->m_impl->register_timed_callback(gpi_hdl, time_ps);
+    return (gpi_sim_hdl)gpi_hdl;
 }
 
 /* It should not matter which implementation we use for this so just pick the first
    one
 */
-gpi_sim_hdl gpi_register_readonly_callback(gpi_sim_hdl cb_hdl,
-                                   int (*gpi_function)(void *),
-                                   void *gpi_cb_data)
+gpi_sim_hdl gpi_register_readonly_callback(int (*gpi_function)(void *),
+                                           void *gpi_cb_data)
 {
-    gpi_cb_hdl *gpi_hdl = sim_to_cbhdl(cb_hdl, false);
+    gpi_cb_hdl *gpi_hdl = registed_impls[0]->register_readonly_callback();
+    if (!gpi_hdl)
+        LOG_ERROR("Failed to register a readonly callback");
+    
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl->m_impl->register_readonly_callback(gpi_hdl);
+    return (gpi_sim_hdl)gpi_hdl;
 }
 
-gpi_sim_hdl gpi_register_nexttime_callback(gpi_sim_hdl cb_hdl,
-                                   int (*gpi_function)(void *),
-                                   void *gpi_cb_data)
+gpi_sim_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *),
+                                           void *gpi_cb_data)
 {
-    gpi_cb_hdl *gpi_hdl = sim_to_cbhdl(cb_hdl, false);
+    gpi_cb_hdl *gpi_hdl = registed_impls[0]->register_nexttime_callback();
+    if (!gpi_hdl)
+        LOG_ERROR("Failed to register a nexttime callback");
+    
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl->m_impl->register_nexttime_callback(gpi_hdl);
+    return (gpi_sim_hdl)gpi_hdl;
 }
 
 /* It should not matter which implementation we use for this so just pick the first
    one
 */
-gpi_sim_hdl gpi_register_readwrite_callback(gpi_sim_hdl cb_hdl,
-                                    int (*gpi_function)(void *),
-                                    void *gpi_cb_data)
+gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *),
+                                            void *gpi_cb_data)
 {
-    gpi_cb_hdl *gpi_hdl = sim_to_cbhdl(cb_hdl, false);
+    gpi_cb_hdl *gpi_hdl = registed_impls[0] ->register_nexttime_callback();
+    if (!gpi_hdl)
+        LOG_ERROR("Failed to register a readwrite callback");
+    
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
-    return gpi_hdl->m_impl->register_readwrite_callback(gpi_hdl);
+    return (gpi_sim_hdl)gpi_hdl;
 }
 
 
@@ -262,6 +274,7 @@ void gpi_deregister_callback(gpi_sim_hdl hdl)
 /* Callback handles are abstracted to the implementation layer since
    they may need to have some state stored on a per handle basis. 
 */
+#if 0
 gpi_sim_hdl gpi_create_cb_handle(void)
 {
     gpi_cb_hdl *cb_hdl = new gpi_cb_hdl();
@@ -277,6 +290,7 @@ void gpi_free_cb_handle(gpi_sim_hdl hdl)
     gpi_cb_hdl *cb_hdl = sim_to_cbhdl(hdl, true);
     delete(cb_hdl);
 }
+#endif
 
 
 /* This needs to be filled with the pointer to the table */

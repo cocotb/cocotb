@@ -159,11 +159,11 @@ void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
 void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
 
 // The callback registering functions
-int gpi_register_timed_callback                  (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
-int gpi_register_value_change_callback           (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
-int gpi_register_readonly_callback               (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
-int gpi_register_nexttime_callback               (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
-int gpi_register_readwrite_callback              (gpi_sim_hdl, int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_timed_callback                  (int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
+gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
+gpi_sim_hdl gpi_register_readonly_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_nexttime_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_readwrite_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
 
 // Calling convention is that 0 = success and negative numbers a failure
 // For implementers of GPI the provided macro GPI_RET(x) is provided
