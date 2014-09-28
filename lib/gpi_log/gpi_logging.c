@@ -136,12 +136,12 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     PyObject *retuple = PyObject_CallObject(pLogFilter, check_args);
 
     if (retuple != Py_True) {
-        Py_DECREF(retuple);
         Py_DECREF(check_args);
         return;
     }
 
     Py_DECREF(retuple);
+    Py_DECREF(check_args);
 
     va_start(ap, msg);
     n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
@@ -155,9 +155,13 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     PyTuple_SetItem(call_args, 4, PyString_FromString(funcname));
 
     retuple = PyObject_CallObject(pLogHandler, call_args);
+
+    if (retuple != Py_True) {
+        return;
+    }
+
     Py_DECREF(call_args);
     Py_DECREF(retuple);
-    Py_DECREF(check_args);
 
     PyGILState_Release(gstate);
 }

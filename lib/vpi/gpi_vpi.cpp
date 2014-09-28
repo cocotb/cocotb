@@ -85,18 +85,23 @@ typedef enum vpi_cb_state_e {
     VPI_DELETE = 4,
 } vpi_cb_state_t;
 
+class vpi_obj_hdl : public gpi_obj_hdl {
+public:
+    vpi_obj_hdl(vpiHandle hdl, gpi_impl_interface *impl) : gpi_obj_hdl(impl),
+                                                           vpi_hdl(hdl) { }
+private:
+    vpiHandle vpi_hdl;
+
+};
+
 class vpi_cb_hdl : public gpi_cb_hdl {
 protected:
     vpiHandle vpi_hdl;
     vpi_cb_state_t state;
 
 public:
-    vpi_cb_hdl() : vpi_hdl(NULL) {
-
-    }
-    virtual ~vpi_cb_hdl() {
-
-    }
+    vpi_cb_hdl(gpi_impl_interface *impl) : gpi_cb_hdl(impl),
+                                           vpi_hdl(NULL) { }
 
 protected:
     /* If the user data already has a callback handle then deregister
@@ -161,6 +166,7 @@ protected:
 
 class vpi_onetime_cb : public vpi_cb_hdl {
 public:
+    vpi_onetime_cb(gpi_impl_interface *impl) : vpi_cb_hdl(impl) { }
     int cleanup_callback(void) {
         FENTER
         int rc = 0;
@@ -175,6 +181,7 @@ public:
 
 class vpi_recurring_cb : public vpi_cb_hdl {
 public:
+    vpi_recurring_cb(gpi_impl_interface *impl) : vpi_cb_hdl(impl) { }
     int cleanup_handler(void) {
         FENTER
         int rc;
@@ -195,6 +202,7 @@ public:
 
 class vpi_cb_startup : public vpi_onetime_cb {
 public:
+    vpi_cb_startup(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
     int run_callback(void) {
         s_vpi_vlog_info info;
         gpi_sim_info_t sim_info;
@@ -227,6 +235,7 @@ public:
 
 class vpi_cb_shutdown : public vpi_onetime_cb {
 public:
+    vpi_cb_shutdown(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
     int run_callback(void) {
         gpi_embed_end();
         return 0;
@@ -248,6 +257,7 @@ public:
 
 class vpi_cb_timed : public vpi_onetime_cb {
 public:
+    vpi_cb_timed(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
     int run_callback(vpi_cb_hdl *cb) {
         LOG_ERROR("In timed handler")
         return 0;
@@ -263,7 +273,7 @@ public:
     void get_sim_time(uint32_t *high, uint32_t *low) { }
 
     /* Signal related */
-    gpi_obj_hdl *get_root_handle(const char *name) { return NULL;}
+    gpi_obj_hdl *get_root_handle(const char *name);
     gpi_obj_hdl *get_handle_by_name(const char *name, gpi_obj_hdl *parent) { return NULL; }
     gpi_obj_hdl *get_handle_by_index(gpi_obj_hdl *parent, uint32_t index) { return NULL; }
     void free_handle(gpi_obj_hdl*) { }
@@ -286,6 +296,57 @@ public:
     gpi_cb_hdl *create_cb_handle(void) { return NULL; }
     void destroy_cb_handle(gpi_cb_hdl *gpi_hdl) { }
 };
+
+gpi_obj_hdl *vpi_impl::get_root_handle(const char* name)
+{
+    FENTER
+    vpiHandle root;
+    vpiHandle iterator;
+    vpi_obj_hdl *rv;
+
+    // vpi_iterate with a ref of NULL returns the top level module
+    iterator = vpi_iterate(vpiModule, NULL);
+    check_vpi_error();
+
+    for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
+
+        if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
+            break;
+    }
+
+    if (!root) {
+        check_vpi_error();
+        goto error;
+    }
+
+    // Need to free the iterator if it didn't return NULL
+    if (!vpi_free_object(iterator)) {
+        LOG_WARN("VPI: Attempting to free root iterator failed!");
+        check_vpi_error();
+    }
+
+    rv = new vpi_obj_hdl(root, this);
+
+    FEXIT
+    return rv;
+
+  error:
+
+    LOG_CRITICAL("VPI: Couldn't find root handle %s", name);
+
+    iterator = vpi_iterate(vpiModule, NULL);
+
+    for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
+
+        LOG_CRITICAL("VPI: Toplevel instances: %s != %s...", name, vpi_get_str(vpiFullName, root));
+
+        if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
+            break;
+    }
+
+    FEXIT
+    return NULL;
+}
 
 #if 0
 gpi_cb_hdl *vpi_impl::register_timed_callback(uint64_t time_ps)
@@ -381,7 +442,7 @@ static void register_embed(void)
 
 static void register_initial_callback(void)
 {
-    sim_init_cb = new vpi_cb_startup();
+    sim_init_cb = new vpi_cb_startup(vpi_table);
 
     /* We ignore the return value here as VCS does some silly
      * things on comilation that means it tries to run through
@@ -393,7 +454,7 @@ static void register_initial_callback(void)
 
 static void register_final_callback(void)
 {
-    sim_finish_cb = new vpi_cb_shutdown();
+    sim_finish_cb = new vpi_cb_shutdown(vpi_table);
 
     /* We ignore the return value here as VCS does some silly
      * things on comilation that means it tries to run through

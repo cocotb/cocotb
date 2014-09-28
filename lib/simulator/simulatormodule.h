@@ -74,8 +74,6 @@ static PyObject *next(PyObject *self, PyObject *args);
 
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
 static PyObject *deregister_callback(PyObject *self, PyObject *args);
-static PyObject *remove_callback(PyObject *self, PyObject *args);
-static PyObject *create_callback(PyObject *self, PyObject *args);
 static PyObject *free_handle(PyObject *self, PyObject *args);
 
 static PyMethodDef SimulatorMethods[] = {
@@ -101,8 +99,6 @@ static PyMethodDef SimulatorMethods[] = {
     // FIXME METH_NOARGS => initialization from incompatible pointer type
     {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as a float"},
     {"deregister_callback", deregister_callback, METH_VARARGS, "Deregister a callback"},
-    {"remove_callback", remove_callback, METH_VARARGS, "Remove a callback"},
-    {"create_callback", create_callback, METH_VARARGS, "Creates a callback"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

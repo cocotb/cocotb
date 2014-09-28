@@ -85,10 +85,10 @@ class GPITrigger(Trigger):
         Trigger.__init__(self)
 
         # Required to ensure documentation can build
-        if simulator is not None:
-            self.cbhdl = simulator.create_callback(self)
-        else:
-            self.cbhdl = None
+        #if simulator is not None:
+        #    self.cbhdl = simulator.create_callback(self)
+        #else:
+        self.cbhdl = None
 
     def unprime(self):
         """Unregister a prior registered timed callback"""
@@ -98,8 +98,8 @@ class GPITrigger(Trigger):
 
     def __del__(self):
         """Remove knowledge of the trigger"""
-        if self.cbhdl is not None:
-            simulator.remove_callback(self.cbhdl)
+        if self.cbhdl is None:
+            self.cbhdl = simulator.remove_callback()
         Trigger.__del__(self)
 
 
@@ -116,7 +116,8 @@ class Timer(GPITrigger):
     def prime(self, callback):
         """Register for a timed callback"""
         Trigger.prime(self)
-        if simulator.register_timed_callback(self.cbhdl, self.time_ps, callback, self):
+        self.cbhdl = simulator.register_timed_callback(self.time_ps, callback, self)
+        if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
@@ -133,7 +134,8 @@ class Edge(GPITrigger):
     def prime(self, callback):
         """Register notification of a value change via a callback"""
         Trigger.prime(self)
-        if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, callback, self):
+        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, self)
+        if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
@@ -149,7 +151,8 @@ class _ReadOnly(GPITrigger):
 
     def prime(self, callback):
         Trigger.prime(self)
-        if simulator.register_readonly_callback(self.cbhdl, callback, self):
+        self.chhdl = simulator.register_readonly_callback(callback, self)
+        if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
@@ -169,7 +172,8 @@ class _ReadWrite(GPITrigger):
 
     def prime(self, callback):
         Trigger.prime(self)
-        if simulator.register_rwsynch_callback(self.cbhdl, callback, self):
+        self.cbhdl = simulator.register_rwsynch_callback(callback, self)
+        if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
@@ -188,7 +192,9 @@ class _NextTimeStep(GPITrigger):
 
     def prime(self, callback):
         Trigger.prime(self)
-        simulator.register_nextstep_callback(self.cbhdl, callback, self)
+        self.cbhdl = simulator.register_nextstep_callback(callback, self)
+        if self.cbhdl is None:
+            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(nexttimestep)"
@@ -217,7 +223,8 @@ class _RisingEdge(Edge):
             else:
                 simulator.reenable_callback(self.cbhdl)
 
-        if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
+        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+        if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
@@ -247,10 +254,12 @@ class ClockCycles(Edge):
                     self._callback(self)
                     return
 
-            if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
+            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+            if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
-        if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
+        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+        if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):

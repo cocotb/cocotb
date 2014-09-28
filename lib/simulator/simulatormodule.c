@@ -812,49 +812,6 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     return value;
 }
 
-static PyObject *remove_callback(PyObject *self, PyObject *args)
-{
-    gpi_sim_hdl hdl;
-    PyObject *pSihHdl;
-    PyObject *value;
-
-    FENTER
-
-    PyGILState_STATE gstate;
-    gstate = TAKE_GIL();
-
-    pSihHdl = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
-
-    gpi_free_cb_handle(hdl);
-
-    value = Py_BuildValue("s", "OK!");
-
-    DROP_GIL(gstate);
-
-    FEXIT
-    return value;
-}
-
-static PyObject *create_callback(PyObject *self, PyObject *args)
-{
-    FENTER
-
-    PyObject *value;
-
-    gpi_sim_hdl cb_hdl = gpi_create_cb_handle();
-
-    PyGILState_STATE gstate;
-    gstate = TAKE_GIL();
-
-    value = Py_BuildValue("l", cb_hdl);
-
-    DROP_GIL(gstate);
-
-    FEXIT
-    return value;
-}
-
 PyMODINIT_FUNC
 initsimulator(void)
 {

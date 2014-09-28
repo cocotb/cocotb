@@ -37,10 +37,8 @@ class gpi_impl_interface;
 
 class gpi_hdl {
 public:
-    gpi_hdl() {}
+    gpi_hdl(gpi_impl_interface *impl) : m_impl(impl) { }
     virtual ~gpi_hdl() { }
-
-    void set_gpi_impl(gpi_impl_interface *impl);
 
 public:
     gpi_impl_interface *m_impl;     // Implementation routines
@@ -48,12 +46,14 @@ public:
 
 class gpi_obj_hdl : public gpi_hdl {
 public:
+    gpi_obj_hdl(gpi_impl_interface *impl) : gpi_hdl(impl) { }
     char *gpi_copy_name(const char *name);
 };
 
 class gpi_cb_hdl : public gpi_hdl {
 public:
     /* Override to change behaviour as needed */
+    gpi_cb_hdl(gpi_impl_interface *impl) : gpi_hdl(impl) { }
     int handle_callback(void);
     virtual int arm_callback(void);
     virtual int run_callback(void);
@@ -61,6 +61,9 @@ public:
 
     int set_user_data(int (*gpi_function)(void*), void *data);
     void *get_user_data(void);
+
+private:
+    gpi_cb_hdl();
 
 protected:
     int (*gpi_function)(void *);    // GPI function to callback
