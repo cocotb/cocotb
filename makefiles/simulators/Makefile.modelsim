@@ -48,7 +48,7 @@ endif
 runsim.do : $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
 	echo "vlib work" > $@
 	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
-	echo "vsim -pli libgpi.so  $(VSIM_ARGS) work.$(TOPLEVEL)" >> $@
+	echo "vsim -pli libvpi.so  $(VSIM_ARGS) work.$(TOPLEVEL)" >> $@
 ifneq ($(GUI),1)
 	echo "run -all" >> $@
 	echo "quit" >> $@

@@ -38,7 +38,7 @@ endif
 EXTRA_LIBS = -laldecpli -lstdc++ -lsupc++
 EXTRA_LIBDIRS = -L$(ALDEC_PATH)/bin/Linux64
 
-ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
+ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libvpi
 ACOM_ARGS += -dbg
 
 ifeq ($(COVERAGE),1)
@@ -47,10 +47,10 @@ ifeq ($(COVERAGE),1)
 endif
 
 ifeq ($(GPI_IMPL),vpi)
-    GPI_ARGS = -pli libgpi
+    GPI_ARGS = -pli libvpi
 endif
 ifeq ($(GPI_IMPL),vhpi)
-    GPI_ARGS = -loadvhpi $(LIB_DIR)/libgpi:vhpi_startup_routines_bootstrap
+    GPI_ARGS = -loadvhpi $(LIB_DIR)/libvhpi:vhpi_startup_routines_bootstrap
 endif
 
 ifndef GPI_ARGS
