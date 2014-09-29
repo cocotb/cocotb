@@ -65,11 +65,11 @@ static inline gpi_iterator * sim_to_iterhdl(gpi_sim_hdl hdl, bool fatal)
     return iter_hdl;
 }
 
-static vector<gpi_impl_interface*> registed_impls;
+static vector<gpi_impl_interface*> registered_impls;
 
 int gpi_register_impl(gpi_impl_interface *func_tbl)
 {
-    registed_impls.push_back(func_tbl);
+    registered_impls.push_back(func_tbl);
     return 0;
 }
 
@@ -85,7 +85,7 @@ void gpi_embed_end(void)
 
 void gpi_sim_end(void)
 {
-    registed_impls[0]->sim_end();
+    registered_impls[0]->sim_end();
 }
 
 void gpi_embed_init_python(void)
@@ -95,7 +95,7 @@ void gpi_embed_init_python(void)
 
 void gpi_get_sim_time(uint32_t *high, uint32_t *low)
 {
-    registed_impls[0]->get_sim_time(high, low);
+    registered_impls[0]->get_sim_time(high, low);
 }
 
 gpi_sim_hdl gpi_get_root_handle(const char *name)
@@ -106,8 +106,8 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
 
     gpi_obj_hdl *hdl;
 
-    for (iter = registed_impls.begin();
-         iter != registed_impls.end();
+    for (iter = registered_impls.begin();
+         iter != registered_impls.end();
          iter++) {
         if ((hdl = (*iter)->get_root_handle(name))) {
             return (void*)hdl;
@@ -124,8 +124,8 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     gpi_obj_hdl *base = sim_to_objhdl(parent, true);
 
     /* Either want this or use the parent */
-    for (iter = registed_impls.begin();
-         iter != registed_impls.end();
+    for (iter = registered_impls.begin();
+         iter != registered_impls.end();
          iter++) {
         if ((hdl = (*iter)->get_handle_by_name(name, base))) {
             return (void*)hdl;
@@ -140,6 +140,7 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
 {
+    /* Either want this or use the parent */
     gpi_obj_hdl *obj_hdl = sim_to_objhdl(parent, false);
     return (void*)obj_hdl->m_impl->get_handle_by_index(obj_hdl, index);
 }
@@ -148,7 +149,7 @@ gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base)
 {
     gpi_obj_hdl *obj_hdl = sim_to_objhdl(base, false);
     gpi_iterator *iter = obj_hdl->m_impl->iterate_handle(type, obj_hdl);
-    if (iter) {
+    if (!iter) {
         return NULL;
     }
     iter->parent = obj_hdl;
@@ -203,8 +204,10 @@ gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(void *),
 {
     gpi_obj_hdl *obj_hdl = sim_to_objhdl(sig_hdl, false);
     gpi_cb_hdl *gpi_hdl = obj_hdl->m_impl->register_value_change_callback(obj_hdl);
-    if (!gpi_hdl)
+    if (!gpi_hdl) {
         LOG_ERROR("Failed to register a value change callback");
+        return NULL;
+    }
 
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
@@ -213,13 +216,14 @@ gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(void *),
 /* It should not matter which implementation we use for this so just pick the first
    one
 */
-gpi_sim_hdl gpi_register_timed_callback(
-                                int (*gpi_function)(void *),
-                                void *gpi_cb_data, uint64_t time_ps)
+gpi_sim_hdl gpi_register_timed_callback(int (*gpi_function)(void *),
+                                        void *gpi_cb_data, uint64_t time_ps)
 {
-    gpi_cb_hdl *gpi_hdl = registed_impls[0]->register_timed_callback(time_ps);
-    if (!gpi_hdl)
+    gpi_cb_hdl *gpi_hdl = registered_impls[0]->register_timed_callback(time_ps);
+    if (!gpi_hdl) {
         LOG_ERROR("Failed to register a timed callback");
+        return NULL;
+    }
     
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
@@ -231,9 +235,11 @@ gpi_sim_hdl gpi_register_timed_callback(
 gpi_sim_hdl gpi_register_readonly_callback(int (*gpi_function)(void *),
                                            void *gpi_cb_data)
 {
-    gpi_cb_hdl *gpi_hdl = registed_impls[0]->register_readonly_callback();
-    if (!gpi_hdl)
+    gpi_cb_hdl *gpi_hdl = registered_impls[0]->register_readonly_callback();
+    if (!gpi_hdl) {
         LOG_ERROR("Failed to register a readonly callback");
+        return NULL;
+    }
     
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
@@ -242,9 +248,11 @@ gpi_sim_hdl gpi_register_readonly_callback(int (*gpi_function)(void *),
 gpi_sim_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *),
                                            void *gpi_cb_data)
 {
-    gpi_cb_hdl *gpi_hdl = registed_impls[0]->register_nexttime_callback();
-    if (!gpi_hdl)
+    gpi_cb_hdl *gpi_hdl = registered_impls[0]->register_nexttime_callback();
+    if (!gpi_hdl) {
         LOG_ERROR("Failed to register a nexttime callback");
+        return NULL;
+    }
     
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
@@ -256,7 +264,7 @@ gpi_sim_hdl gpi_register_nexttime_callback(int (*gpi_function)(void *),
 gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *),
                                             void *gpi_cb_data)
 {
-    gpi_cb_hdl *gpi_hdl = registed_impls[0] ->register_nexttime_callback();
+    gpi_cb_hdl *gpi_hdl = registered_impls[0] ->register_readwrite_callback();
     if (!gpi_hdl)
         LOG_ERROR("Failed to register a readwrite callback");
     
@@ -269,40 +277,6 @@ void gpi_deregister_callback(gpi_sim_hdl hdl)
 {
     gpi_cb_hdl *cb_hdl = sim_to_cbhdl(hdl, false);
     cb_hdl->m_impl->deregister_callback(cb_hdl);
-}
-
-/* Callback handles are abstracted to the implementation layer since
-   they may need to have some state stored on a per handle basis. 
-*/
-#if 0
-gpi_sim_hdl gpi_create_cb_handle(void)
-{
-    gpi_cb_hdl *cb_hdl = new gpi_cb_hdl();
-    if (!cb_hdl) {
-        LOG_CRITICAL("GPI: Attempting allocate callback handle failed!");
-        exit(1);
-    }
-    return (void*)cb_hdl;
-}
-
-void gpi_free_cb_handle(gpi_sim_hdl hdl)
-{
-    gpi_cb_hdl *cb_hdl = sim_to_cbhdl(hdl, true);
-    delete(cb_hdl);
-}
-#endif
-
-
-/* This needs to be filled with the pointer to the table */
-gpi_sim_hdl gpi_create_handle(void)
-{
-    gpi_obj_hdl *new_hdl = new gpi_obj_hdl();
-    if (!new_hdl) {
-        LOG_CRITICAL("GPI: Could not allocate handle");
-        exit(1);
-    }
-
-    return (void*)new_hdl;
 }
 
 void gpi_free_handle(gpi_sim_hdl hdl)

@@ -89,13 +89,13 @@ class vpi_obj_hdl : public gpi_obj_hdl {
 public:
     vpi_obj_hdl(vpiHandle hdl, gpi_impl_interface *impl) : gpi_obj_hdl(impl),
                                                            vpi_hdl(hdl) { }
-private:
+public:
     vpiHandle vpi_hdl;
 
 };
 
 class vpi_cb_hdl : public gpi_cb_hdl {
-protected:
+public:
     vpiHandle vpi_hdl;
     vpi_cb_state_t state;
 
@@ -169,12 +169,33 @@ public:
     vpi_onetime_cb(gpi_impl_interface *impl) : vpi_cb_hdl(impl) { }
     int cleanup_callback(void) {
         FENTER
-        int rc = 0;
+        int rc;
         if (!vpi_hdl) {
             LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
             exit(1);
         }
-        FEXIT
+
+        // If the callback has not been called we also need to call
+        // remove as well
+        if (state == VPI_PRIMED) {
+
+            rc = vpi_remove_cb(vpi_hdl);
+            if (!rc) {
+                check_vpi_error();
+                return rc;
+            }
+            vpi_hdl = NULL;
+
+    // HACK: Calling vpi_free_object after vpi_remove_cb causes Modelsim to VPIEndOfSimulationCallback
+    #if 0
+            rc = vpi_free_object(cb_hdl);
+            if (!rc) {
+                check_vpi_error();
+                return rc;
+            }
+    #endif
+        }
+        state = VPI_FREE;
         return rc;
     }
 };
@@ -182,14 +203,16 @@ public:
 class vpi_recurring_cb : public vpi_cb_hdl {
 public:
     vpi_recurring_cb(gpi_impl_interface *impl) : vpi_cb_hdl(impl) { }
-    int cleanup_handler(void) {
+    int cleanup_callback(void) {
         FENTER
         int rc;
-
         if (!vpi_hdl) {
             LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
             exit(1);
         }
+
+        rc = vpi_remove_cb(vpi_hdl);
+        check_vpi_error();
         FEXIT
         return rc;
     }
@@ -197,7 +220,21 @@ public:
 
 class vpi_cb_value_change : public vpi_recurring_cb {
 public:
+    vpi_cb_value_change(gpi_impl_interface *impl) : vpi_recurring_cb(impl) { }
+    int arm_callback(vpi_obj_hdl *vpi_hdl) {
+        s_cb_data cb_data_s;
+        s_vpi_time vpi_time_s = {.type = vpiSuppressTime };
+        s_vpi_value cb_value = {.format = vpiIntVal };
 
+        cb_data_s.reason    = cbValueChange;
+        cb_data_s.cb_rtn    = handle_vpi_callback;
+        cb_data_s.obj       = vpi_hdl->vpi_hdl;
+        cb_data_s.time      = &vpi_time_s;
+        cb_data_s.value     = &cb_value;
+        cb_data_s.user_data = (char *)this;
+
+        return register_cb(&cb_data_s);
+    }
 };
 
 class vpi_cb_startup : public vpi_onetime_cb {
@@ -218,6 +255,7 @@ public:
 
         return 0;
     }
+
     int arm_callback(void) {
         s_cb_data cb_data_s;
 
@@ -232,11 +270,34 @@ public:
     }
 };
 
+class vpi_cb_readonly : public vpi_onetime_cb {
+public:
+    vpi_cb_readonly(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
+    int arm_callback(void) {
+        s_cb_data cb_data_s;
+        s_vpi_time vpi_time_s;
+
+        vpi_time_s.type = vpiSimTime,
+        vpi_time_s.low = 0,
+        vpi_time_s.high = 0,
+
+        cb_data_s.reason    = cbReadOnlySynch;
+        cb_data_s.cb_rtn    = handle_vpi_callback;
+        cb_data_s.obj       = NULL;
+        cb_data_s.time      = &vpi_time_s;
+        cb_data_s.value     = NULL;
+        cb_data_s.user_data = (char *)this;
+
+        return register_cb(&cb_data_s);
+    }
+};
+
 
 class vpi_cb_shutdown : public vpi_onetime_cb {
 public:
     vpi_cb_shutdown(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
     int run_callback(void) {
+        LOG_WARN("Shutdown called");
         gpi_embed_end();
         return 0;
     }
@@ -258,9 +319,46 @@ public:
 class vpi_cb_timed : public vpi_onetime_cb {
 public:
     vpi_cb_timed(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
-    int run_callback(vpi_cb_hdl *cb) {
-        LOG_ERROR("In timed handler")
-        return 0;
+
+    int arm_callback(uint64_t time_ps) {
+        s_cb_data cb_data_s;
+        s_vpi_time vpi_time_s;
+
+        vpi_time_s.type = vpiSimTime;
+        vpi_time_s.high = (uint32_t)(time_ps>>32);
+        vpi_time_s.low  = (uint32_t)(time_ps);
+
+        cb_data_s.reason    = cbAfterDelay;
+        cb_data_s.cb_rtn    = handle_vpi_callback;
+        cb_data_s.obj       = NULL;
+        cb_data_s.time      = &vpi_time_s;
+        cb_data_s.value     = NULL;
+        cb_data_s.user_data = (char *)this;
+
+        return register_cb(&cb_data_s);
+    }
+};
+
+class vpi_cb_readwrite : public vpi_onetime_cb {
+public:
+    vpi_cb_readwrite(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
+
+    int arm_callback(void) {
+        s_cb_data cb_data_s;
+        s_vpi_time vpi_time_s;
+
+        vpi_time_s.type = vpiSimTime;
+        vpi_time_s.high = 0;
+        vpi_time_s.low = 0;
+
+        cb_data_s.reason    = cbReadWriteSynch;
+        cb_data_s.cb_rtn    = handle_vpi_callback;
+        cb_data_s.obj       = NULL;
+        cb_data_s.time      = &vpi_time_s;
+        cb_data_s.value     = NULL;
+        cb_data_s.user_data = (char *)this;
+
+        return register_cb(&cb_data_s);
     }
 };
 
@@ -270,32 +368,50 @@ public:
 
      /* Sim related */
     void sim_end(void);
-    void get_sim_time(uint32_t *high, uint32_t *low) { }
+    void get_sim_time(uint32_t *high, uint32_t *low);
 
     /* Signal related */
     gpi_obj_hdl *get_root_handle(const char *name);
-    gpi_obj_hdl *get_handle_by_name(const char *name, gpi_obj_hdl *parent) { return NULL; }
-    gpi_obj_hdl *get_handle_by_index(gpi_obj_hdl *parent, uint32_t index) { return NULL; }
+    gpi_obj_hdl *get_handle_by_name(const char *name, gpi_obj_hdl *parent);
+    gpi_obj_hdl *get_handle_by_index(gpi_obj_hdl *parent, uint32_t index);
     void free_handle(gpi_obj_hdl*) { }
     gpi_iterator *iterate_handle(uint32_t type, gpi_obj_hdl *base) { return NULL; }
     gpi_obj_hdl *next_handle(gpi_iterator *iterator) { return NULL; }
-    char* get_signal_value_binstr(gpi_obj_hdl *gpi_hdl) { return NULL; }
-    char* get_signal_name_str(gpi_obj_hdl *gpi_hdl) { return NULL; }
-    char* get_signal_type_str(gpi_obj_hdl *gpi_hdl) { return NULL; }
-    void set_signal_value_int(gpi_obj_hdl *gpi_hdl, int value) { }
-    void set_signal_value_str(gpi_obj_hdl *gpi_hdl, const char *str) { }    // String of binary char(s) [1, 0, x, z]
+    char* get_signal_value_binstr(gpi_obj_hdl *gpi_hdl);
+    char* get_signal_name_str(gpi_obj_hdl *gpi_hdl);
+    char* get_signal_type_str(gpi_obj_hdl *gpi_hdl);
+    void set_signal_value_int(gpi_obj_hdl *gpi_hdl, int value);
+    void set_signal_value_str(gpi_obj_hdl *gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
     
     /* Callback related */
-    gpi_cb_hdl *register_timed_callback(uint64_t time_ps) { return NULL; }
-    gpi_cb_hdl *register_value_change_callback(gpi_obj_hdl *obj_hdl) { return NULL; }
-    gpi_cb_hdl *register_readonly_callback(void) { return NULL; }
+    gpi_cb_hdl *register_timed_callback(uint64_t time_ps);
+    gpi_cb_hdl *register_value_change_callback(gpi_obj_hdl *obj_hdl);
+    gpi_cb_hdl *register_readonly_callback(void);
     gpi_cb_hdl *register_nexttime_callback(void) { return NULL; }
-    gpi_cb_hdl *register_readwrite_callback(void) { return NULL; }
-    int deregister_callback(gpi_cb_hdl *gpi_hdl) { return 0; }
+    gpi_cb_hdl *register_readwrite_callback(void);
+    int deregister_callback(gpi_cb_hdl *gpi_hdl);
 
     gpi_cb_hdl *create_cb_handle(void) { return NULL; }
     void destroy_cb_handle(gpi_cb_hdl *gpi_hdl) { }
 };
+
+extern "C" {
+
+static vpi_cb_hdl *sim_init_cb;
+static vpi_cb_hdl *sim_finish_cb;
+static vpi_impl *vpi_table;
+
+}
+
+void vpi_impl::get_sim_time(uint32_t *high, uint32_t *low)
+{
+    s_vpi_time vpi_time_s;
+    vpi_time_s.type = vpiSimTime;//vpiScaledRealTime;        //vpiSimTime;
+    vpi_get_time(NULL, &vpi_time_s);
+    check_vpi_error();
+    *high = vpi_time_s.high;
+    *low = vpi_time_s.low;
+}
 
 gpi_obj_hdl *vpi_impl::get_root_handle(const char* name)
 {
@@ -348,46 +464,277 @@ gpi_obj_hdl *vpi_impl::get_root_handle(const char* name)
     return NULL;
 }
 
-#if 0
+/**
+ * @brief   Get a handle to an object under the scope of parent
+ *
+ * @param   name of the object to find
+ * @param   parent handle to parent object defining the scope to search
+ *
+ * @return  gpi_sim_hdl for the new object or NULL if object not found
+ */
+gpi_obj_hdl *vpi_impl::get_handle_by_name(const char *name, gpi_obj_hdl *parent)
+{
+    FENTER
+    gpi_obj_hdl *rv;
+    vpiHandle obj;
+    vpiHandle iterator;
+    int len;
+    char *buff;
+    vpi_obj_hdl *vpi_obj = reinterpret_cast<vpi_obj_hdl*>(parent);
+
+    // Structures aren't technically a scope, according to the LRM. If parent
+    // is a structure then we have to iterate over the members comparing names
+    if (vpiStructVar == vpi_get(vpiType, vpi_obj->vpi_hdl)) {
+
+        iterator = vpi_iterate(vpiMember, vpi_obj->vpi_hdl);
+
+        for (obj = vpi_scan(iterator); obj != NULL; obj = vpi_scan(iterator)) {
+
+            if (!strcmp(name, strrchr(vpi_get_str(vpiName, obj), 46) + 1))
+                break;
+        }
+
+        if (!obj)
+            return NULL;
+
+        // Need to free the iterator if it didn't return NULL
+        if (!vpi_free_object(iterator)) {
+            LOG_WARN("VPI: Attempting to free root iterator failed!");
+            check_vpi_error();
+        }
+
+        goto success;
+    }
+
+    if (name)
+        len = strlen(name) + 1;
+
+    buff = (char *)malloc(len);
+    if (buff == NULL) {
+        LOG_CRITICAL("VPI: Attempting allocate string buffer failed!");
+        return NULL;
+    }
+
+    strncpy(buff, name, len);
+    obj = vpi_handle_by_name(buff, vpi_obj->vpi_hdl);
+    if (!obj) {
+        LOG_DEBUG("VPI: Handle '%s' not found!", name);
+
+        // NB we deliberately don't dump an error message here because it's
+        // a valid use case to attempt to grab a signal by name - for example
+        // optional signals on a bus.
+        // check_vpi_error();
+        free(buff);
+        return NULL;
+    }
+
+    free(buff);
+
+success:
+    rv = new vpi_obj_hdl(obj, this);
+
+    FEXIT
+    return rv;
+}
+
+/**
+ * @brief   Get a handle for an object based on its index within a parent
+ *
+ * @param parent <gpi_sim_hdl> handle to the parent
+ * @param indext <uint32_t> Index to retrieve
+ *
+ * Can be used on bit-vectors to access a specific bit or
+ * memories to access an address
+ */
+gpi_obj_hdl *vpi_impl::get_handle_by_index(gpi_obj_hdl *parent, uint32_t index)
+{
+    FENTER
+    vpiHandle obj;
+    gpi_obj_hdl *rv;
+    vpi_obj_hdl *vpi_obj = reinterpret_cast<vpi_obj_hdl*>(parent);
+
+    obj = vpi_handle_by_index(vpi_obj->vpi_hdl, index);
+    if (!obj) {
+        LOG_ERROR("VPI: Handle idx '%d' not found!", index);
+        return NULL;
+    }
+
+    rv = new vpi_obj_hdl(obj, this);
+
+    FEXIT
+    return rv;
+}
+
+// Value related functions
+void vpi_impl::set_signal_value_int(gpi_obj_hdl *gpi_hdl, int value)
+{
+    FENTER
+    s_vpi_value value_s;
+    p_vpi_value value_p = &value_s;
+
+    value_p->value.integer = value;
+    value_p->format = vpiIntVal;
+
+    s_vpi_time vpi_time_s;
+    p_vpi_time vpi_time_p = &vpi_time_s;
+
+    vpi_time_p->type = vpiSimTime;
+    vpi_time_p->high = 0;
+    vpi_time_p->low  = 0;
+
+    // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+    vpi_obj_hdl *vpi_obj = reinterpret_cast<vpi_obj_hdl*>(gpi_hdl);
+    vpi_put_value(vpi_obj->vpi_hdl, value_p, vpi_time_p, vpiInertialDelay);
+    check_vpi_error();
+
+    FEXIT
+}
+
+void vpi_impl::set_signal_value_str(gpi_obj_hdl *gpi_hdl, const char *str)
+{
+    FENTER
+    s_vpi_value value_s;
+    p_vpi_value value_p = &value_s;
+
+    int len;
+    char *buff;
+    if (str)
+        len = strlen(str) + 1;
+
+    buff = (char *)malloc(len);
+    if (buff== NULL) {
+        LOG_CRITICAL("VPI: Attempting allocate string buffer failed!");
+        return;
+    }
+
+    strncpy(buff, str, len);
+
+    value_p->value.str = buff;
+    value_p->format = vpiBinStrVal;
+
+    /*  vpiNoDelay -- Set the value immediately. The p_vpi_time parameter
+     *      may be NULL, in this case. This is like a blocking assignment
+     *      in behavioral code.
+     */
+    vpi_obj_hdl *vpi_obj = reinterpret_cast<vpi_obj_hdl*>(gpi_hdl);
+    vpi_put_value(vpi_obj->vpi_hdl, value_p, NULL, vpiNoDelay);
+    check_vpi_error();
+    free(buff);
+    FEXIT
+}
+
+char *vpi_impl::get_signal_type_str(gpi_obj_hdl *gpi_hdl)
+{
+    FENTER
+    vpi_obj_hdl *vpi_obj = reinterpret_cast<vpi_obj_hdl*>(gpi_hdl);
+    const char *name = vpi_get_str(vpiType, vpi_obj->vpi_hdl);
+    check_vpi_error();
+    char *result = gpi_hdl->gpi_copy_name(name);
+    FEXIT
+    return result;
+}
+
+char *vpi_impl::get_signal_name_str(gpi_obj_hdl *gpi_hdl)
+{
+    FENTER
+    vpi_obj_hdl *vpi_obj = reinterpret_cast<vpi_obj_hdl*>(gpi_hdl);
+    const char *name = vpi_get_str(vpiFullName, vpi_obj->vpi_hdl);
+    check_vpi_error();
+    char *result = gpi_hdl->gpi_copy_name(name);
+    FEXIT
+    return result;
+}
+
+char *vpi_impl::get_signal_value_binstr(gpi_obj_hdl *gpi_hdl)
+{
+    FENTER
+    vpi_obj_hdl *vpi_obj = reinterpret_cast<vpi_obj_hdl*>(gpi_hdl);
+    s_vpi_value value_s = {vpiBinStrVal};
+    p_vpi_value value_p = &value_s;
+
+    vpi_get_value(vpi_obj->vpi_hdl, value_p);
+    check_vpi_error();
+
+    char *result = gpi_hdl->gpi_copy_name(value_p->value.str);
+    FEXIT
+    return result;
+}
+
 gpi_cb_hdl *vpi_impl::register_timed_callback(uint64_t time_ps)
 {
     FENTER
 
-    int ret;
-    s_cb_data cb_data_s;
-    s_vpi_time vpi_time_s;
+    vpi_cb_timed *hdl = new vpi_cb_timed(vpi_table);
 
-    vpi_time_s.type = vpiSimTime;
-    vpi_time_s.high = (uint32_t)(time_ps>>32);
-    vpi_time_s.low  = (uint32_t)(time_ps);
-
-    cb_data_s.reason    = cbAfterDelay;
-    cb_data_s.cb_rtn    = handle_vpi_callback;
-    cb_data_s.obj       = NULL;
-    cb_data_s.time      = &vpi_time_s;
-    cb_data_s.value     = NULL;
-    cb_data_s.user_data = (char *)hdl;
-
-    ret = hdl->arm_callback(&cb_data_s);
+    if (hdl->arm_callback(time_ps)) {
+        delete(hdl);
+        hdl = NULL;
+    }
 
     FEXIT
-    return ret;
+    return hdl;
 }
-#endif
 
-extern "C" {
+gpi_cb_hdl *vpi_impl::register_readwrite_callback(void)
+{
+    FENTER
 
-static vpi_cb_hdl *sim_init_cb;
-static vpi_cb_hdl *sim_finish_cb;
-static vpi_impl *vpi_table;
+    vpi_cb_readwrite *hdl = new vpi_cb_readwrite(vpi_table);
 
+    if (hdl->arm_callback()) {
+        delete(hdl);
+        hdl = NULL;
+    }
+
+    FEXIT
+    return hdl;
+}
+
+gpi_cb_hdl *vpi_impl::register_value_change_callback(gpi_obj_hdl *gpi_hdl)
+{
+    FENTER
+
+    vpi_obj_hdl *vpi_obj = reinterpret_cast<vpi_obj_hdl*>(gpi_hdl);
+    vpi_cb_value_change *hdl = new vpi_cb_value_change(vpi_table);
+
+    if (hdl->arm_callback(vpi_obj)) {
+        delete(hdl);
+        hdl = NULL;
+    }
+
+    FEXIT
+    return hdl;
+}
+
+gpi_cb_hdl *vpi_impl::register_readonly_callback(void)
+{
+    FENTER
+
+    vpi_cb_readonly *hdl = new vpi_cb_readonly(vpi_table);
+
+    if (hdl->arm_callback()) {
+        delete(hdl);
+        hdl = NULL;
+    }
+
+    FEXIT
+    return hdl;
+}
+
+int vpi_impl::deregister_callback(gpi_cb_hdl *gpi_hdl)
+{
+    vpi_cb_hdl *vpi_obj = reinterpret_cast<vpi_cb_hdl*>(gpi_hdl);
+    return vpi_obj->cleanup_callback();
 }
 
 // If the Pything world wants things to shut down then unregister
 // the callback for end of sim
 void vpi_impl::sim_end(void)
 {
-    sim_finish_cb = NULL;
+    /* Some sims do not seem to be able to deregister the end of sim callback
+     * so we need to make sure we have tracked this and not call the handler
+     */
+    sim_finish_cb->state = VPI_DELETE;
     vpi_control(vpiFinish);
     check_vpi_error();
 }
@@ -408,7 +755,9 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
     //cb_hdl->set_state(VPI_PRE_CALL);
     //old_cb = user_data->cb_hdl;
-    cb_hdl->run_callback();
+    if (cb_hdl->state == VPI_PRIMED)
+        cb_hdl->run_callback();
+    //gpi_deregister_callback(cb_hdl);
     
 #if 0
 // HACK: Investigate further - this breaks modelsim
