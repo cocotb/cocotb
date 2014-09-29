@@ -48,6 +48,8 @@ class gpi_obj_hdl : public gpi_hdl {
 public:
     gpi_obj_hdl(gpi_impl_interface *impl) : gpi_hdl(impl) { }
     char *gpi_copy_name(const char *name);
+
+    virtual ~gpi_obj_hdl() { }
 };
 
 class gpi_cb_hdl : public gpi_hdl {
@@ -61,6 +63,8 @@ public:
 
     int set_user_data(int (*gpi_function)(void*), void *data);
     void *get_user_data(void);
+
+    virtual ~gpi_cb_hdl() { }
 
 private:
     gpi_cb_hdl();

@@ -89,6 +89,7 @@ class vpi_obj_hdl : public gpi_obj_hdl {
 public:
     vpi_obj_hdl(vpiHandle hdl, gpi_impl_interface *impl) : gpi_obj_hdl(impl),
                                                            vpi_hdl(hdl) { }
+    virtual ~vpi_obj_hdl() { }
 public:
     vpiHandle vpi_hdl;
 
@@ -101,7 +102,10 @@ public:
 
 public:
     vpi_cb_hdl(gpi_impl_interface *impl) : gpi_cb_hdl(impl),
-                                           vpi_hdl(NULL) { }
+                                           vpi_hdl(NULL),
+                                           state(VPI_FREE) { }
+    virtual int cleanup_callback(void) { return 0; }
+    virtual ~vpi_cb_hdl() { }
 
 protected:
     /* If the user data already has a callback handle then deregister
@@ -176,6 +180,16 @@ public:
             exit(1);
         }
 
+        // HACK: Calling vpi_free_object after vpi_remove_cb causes Modelsim
+        // to VPIEndOfSimulationCallback
+#if 0
+        rc = vpi_free_object(vpi_hdl);
+        if (!rc) {
+            check_vpi_error();
+            return rc;
+        }
+#endif
+
         // If the callback has not been called we also need to call
         // remove as well
         if (state == VPI_PRIMED) {
@@ -187,18 +201,13 @@ public:
             }
         }
 
-        // HACK: Calling vpi_free_object after vpi_remove_cb causes Modelsim to VPIEndOfSimulationCallback
 
-        rc = vpi_free_object(vpi_hdl);
-        if (!rc) {
-            check_vpi_error();
-            return rc;
-        }
 
         vpi_hdl = NULL;
         state = VPI_FREE;
         return rc;
     }
+    virtual ~vpi_onetime_cb() { }
 };
 
 class vpi_recurring_cb : public vpi_cb_hdl {
@@ -215,9 +224,14 @@ public:
 
         rc = vpi_remove_cb(vpi_hdl);
         check_vpi_error();
+
+        vpi_hdl = NULL;
+        state = VPI_FREE;
+
         FEXIT
         return rc;
     }
+    virtual ~vpi_recurring_cb() { }
 };
 
 class vpi_cb_value_change : public vpi_recurring_cb {
@@ -240,6 +254,7 @@ public:
 
         return register_cb(&cb_data_s);
     }
+    virtual ~vpi_cb_value_change() { }
 };
 
 class vpi_cb_startup : public vpi_onetime_cb {
@@ -273,6 +288,8 @@ public:
 
         return register_cb(&cb_data_s);
     }
+
+    virtual ~vpi_cb_startup() { }
 };
 
 class vpi_cb_readonly : public vpi_onetime_cb {
@@ -295,6 +312,8 @@ public:
 
         return register_cb(&cb_data_s);
     }
+
+    virtual ~vpi_cb_readonly() { }
 };
 
 
@@ -319,6 +338,8 @@ public:
 
         return register_cb(&cb_data_s);
     }
+
+    virtual ~vpi_cb_shutdown() { }
 };
 
 class vpi_cb_timed : public vpi_onetime_cb {
@@ -342,6 +363,8 @@ public:
 
         return register_cb(&cb_data_s);
     }
+
+    virtual ~vpi_cb_timed() { }
 };
 
 class vpi_cb_readwrite : public vpi_onetime_cb {
@@ -365,6 +388,8 @@ public:
 
         return register_cb(&cb_data_s);
     }
+
+    virtual ~vpi_cb_readwrite() { }
 };
 
 class vpi_cb_nexttime : public vpi_onetime_cb {
@@ -388,6 +413,8 @@ public:
 
         return register_cb(&cb_data_s);
     }
+
+    virtual ~vpi_cb_nexttime() { }
 };
 
 class vpi_impl : public gpi_impl_interface {
@@ -683,8 +710,6 @@ char *vpi_impl::get_signal_value_binstr(gpi_obj_hdl *gpi_hdl)
     vpi_get_value(vpi_obj->vpi_hdl, value_p);
     check_vpi_error();
 
-    LOG_WARN("Value is %s", value_p->value.str)
-
     char *result = gpi_hdl->gpi_copy_name(value_p->value.str);
     FEXIT
     return result;
@@ -769,8 +794,14 @@ gpi_cb_hdl *vpi_impl::register_nexttime_callback(void)
 int vpi_impl::deregister_callback(gpi_cb_hdl *gpi_hdl)
 {
     vpi_cb_hdl *vpi_obj = reinterpret_cast<vpi_cb_hdl*>(gpi_hdl);
+    if (vpi_obj->state == VPI_PRE_CALL) {
+        //LOG_INFO("Not deleting yet %p", vpi_obj);
+        return 0;
+    }
+
     int rc = vpi_obj->cleanup_callback();
-    //delete(vpi_obj);
+    //  LOG_INFO("DELETING %p", vpi_obj);
+    delete(vpi_obj);
     return rc;
 }
 
@@ -800,15 +831,16 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     if (!cb_hdl)
         LOG_CRITICAL("VPI: Callback data corrupted");
 
-    //cb_hdl->set_state(VPI_PRE_CALL);
-    //old_cb = user_data->cb_hdl;
+    LOG_DEBUG("Running %p", cb_hdl);
+
     if (cb_hdl->state == VPI_PRIMED) {
         cb_hdl->state = VPI_PRE_CALL;
         cb_hdl->run_callback();
         cb_hdl->state = VPI_POST_CALL;
     }
-    //gpi_deregister_callback(cb_hdl);
-    
+
+    gpi_deregister_callback(cb_hdl);
+
 #if 0
 // HACK: Investigate further - this breaks modelsim
 #if 0

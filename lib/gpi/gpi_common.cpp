@@ -265,8 +265,10 @@ gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(void *),
                                             void *gpi_cb_data)
 {
     gpi_cb_hdl *gpi_hdl = registered_impls[0] ->register_readwrite_callback();
-    if (!gpi_hdl)
+    if (!gpi_hdl) {
         LOG_ERROR("Failed to register a readwrite callback");
+        return NULL;
+    }
     
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
