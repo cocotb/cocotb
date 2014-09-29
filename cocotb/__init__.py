@@ -153,6 +153,8 @@ def _sim_event(level, message):
     else:
         scheduler.log.error("Unsupported sim event")
 
+    return True
+
 
 def process_plusargs():
 

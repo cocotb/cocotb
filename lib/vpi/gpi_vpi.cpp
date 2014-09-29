@@ -169,6 +169,7 @@ public:
     vpi_onetime_cb(gpi_impl_interface *impl) : vpi_cb_hdl(impl) { }
     int cleanup_callback(void) {
         FENTER
+        //LOG_WARN("Cleanup %p state is %d", this, state);
         int rc;
         if (!vpi_hdl) {
             LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
@@ -184,17 +185,17 @@ public:
                 check_vpi_error();
                 return rc;
             }
-            vpi_hdl = NULL;
-
-    // HACK: Calling vpi_free_object after vpi_remove_cb causes Modelsim to VPIEndOfSimulationCallback
-    #if 0
-            rc = vpi_free_object(cb_hdl);
-            if (!rc) {
-                check_vpi_error();
-                return rc;
-            }
-    #endif
         }
+
+        // HACK: Calling vpi_free_object after vpi_remove_cb causes Modelsim to VPIEndOfSimulationCallback
+
+        rc = vpi_free_object(vpi_hdl);
+        if (!rc) {
+            check_vpi_error();
+            return rc;
+        }
+
+        vpi_hdl = NULL;
         state = VPI_FREE;
         return rc;
     }
@@ -205,6 +206,7 @@ public:
     vpi_recurring_cb(gpi_impl_interface *impl) : vpi_cb_hdl(impl) { }
     int cleanup_callback(void) {
         FENTER
+        //LOG_WARN("Cleanup %p", this);
         int rc;
         if (!vpi_hdl) {
             LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
@@ -219,12 +221,15 @@ public:
 };
 
 class vpi_cb_value_change : public vpi_recurring_cb {
+private:
+    s_vpi_value cb_value;
 public:
-    vpi_cb_value_change(gpi_impl_interface *impl) : vpi_recurring_cb(impl) { }
+    vpi_cb_value_change(gpi_impl_interface *impl) : vpi_recurring_cb(impl) {
+        cb_value.format = vpiIntVal;
+    }
     int arm_callback(vpi_obj_hdl *vpi_hdl) {
         s_cb_data cb_data_s;
         s_vpi_time vpi_time_s = {.type = vpiSuppressTime };
-        s_vpi_value cb_value = {.format = vpiIntVal };
 
         cb_data_s.reason    = cbValueChange;
         cb_data_s.cb_rtn    = handle_vpi_callback;
@@ -362,6 +367,29 @@ public:
     }
 };
 
+class vpi_cb_nexttime : public vpi_onetime_cb {
+public:
+    vpi_cb_nexttime(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
+
+    int arm_callback(void) {
+        s_cb_data cb_data_s;
+        s_vpi_time vpi_time_s;
+
+        vpi_time_s.type = vpiSimTime;
+        vpi_time_s.high = 0;
+        vpi_time_s.low = 0;
+
+        cb_data_s.reason    = cbNextSimTime;
+        cb_data_s.cb_rtn    = handle_vpi_callback;
+        cb_data_s.obj       = NULL;
+        cb_data_s.time      = &vpi_time_s;
+        cb_data_s.value     = NULL;
+        cb_data_s.user_data = (char *)this;
+
+        return register_cb(&cb_data_s);
+    }
+};
+
 class vpi_impl : public gpi_impl_interface {
 public:
     vpi_impl(const string& name) : gpi_impl_interface(name) { }
@@ -387,7 +415,7 @@ public:
     gpi_cb_hdl *register_timed_callback(uint64_t time_ps);
     gpi_cb_hdl *register_value_change_callback(gpi_obj_hdl *obj_hdl);
     gpi_cb_hdl *register_readonly_callback(void);
-    gpi_cb_hdl *register_nexttime_callback(void) { return NULL; }
+    gpi_cb_hdl *register_nexttime_callback(void);
     gpi_cb_hdl *register_readwrite_callback(void);
     int deregister_callback(gpi_cb_hdl *gpi_hdl);
 
@@ -655,6 +683,8 @@ char *vpi_impl::get_signal_value_binstr(gpi_obj_hdl *gpi_hdl)
     vpi_get_value(vpi_obj->vpi_hdl, value_p);
     check_vpi_error();
 
+    LOG_WARN("Value is %s", value_p->value.str)
+
     char *result = gpi_hdl->gpi_copy_name(value_p->value.str);
     FEXIT
     return result;
@@ -721,10 +751,27 @@ gpi_cb_hdl *vpi_impl::register_readonly_callback(void)
     return hdl;
 }
 
+gpi_cb_hdl *vpi_impl::register_nexttime_callback(void)
+{
+    FENTER
+    
+    vpi_cb_nexttime *hdl = new vpi_cb_nexttime(vpi_table);
+
+    if (hdl->arm_callback()) {
+        delete(hdl);
+        hdl = NULL;
+    }
+
+    FEXIT
+    return hdl;
+}
+
 int vpi_impl::deregister_callback(gpi_cb_hdl *gpi_hdl)
 {
     vpi_cb_hdl *vpi_obj = reinterpret_cast<vpi_cb_hdl*>(gpi_hdl);
-    return vpi_obj->cleanup_callback();
+    int rc = vpi_obj->cleanup_callback();
+    //delete(vpi_obj);
+    return rc;
 }
 
 // If the Pything world wants things to shut down then unregister
@@ -755,8 +802,11 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
     //cb_hdl->set_state(VPI_PRE_CALL);
     //old_cb = user_data->cb_hdl;
-    if (cb_hdl->state == VPI_PRIMED)
+    if (cb_hdl->state == VPI_PRIMED) {
+        cb_hdl->state = VPI_PRE_CALL;
         cb_hdl->run_callback();
+        cb_hdl->state = VPI_POST_CALL;
+    }
     //gpi_deregister_callback(cb_hdl);
     
 #if 0

@@ -92,14 +92,16 @@ class GPITrigger(Trigger):
 
     def unprime(self):
         """Unregister a prior registered timed callback"""
-        if self.primed:
+        if self.cbhdl:
+            #self.log.warn("Unpriming %s" % (str(self)))
             simulator.deregister_callback(self.cbhdl)
+            self.cbhdl = None
         Trigger.unprime(self)
 
     def __del__(self):
         """Remove knowledge of the trigger"""
-        if self.cbhdl is None:
-            self.cbhdl = simulator.remove_callback()
+        if self.cbhdl is not None:
+            self.unprime()
         Trigger.__del__(self)
 
 
@@ -151,7 +153,7 @@ class _ReadOnly(GPITrigger):
 
     def prime(self, callback):
         Trigger.prime(self)
-        self.chhdl = simulator.register_readonly_callback(callback, self)
+        self.cbhdl = simulator.register_readonly_callback(callback, self)
         if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
@@ -218,10 +220,12 @@ class _RisingEdge(Edge):
         self._callback = callback
 
         def _check(obj):
-            if self.signal.value:
-                self._callback(self)
-            else:
-                simulator.reenable_callback(self.cbhdl)
+            if 0:
+                if self.signal.value:
+                    self._callback(self)
+                else:
+                    simulator.reenable_callback(self.cbhdl)
+            self._callback(self)
 
         self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
         if self.cbhdl is None:

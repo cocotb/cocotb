@@ -68,7 +68,6 @@ COCOTB_LIBS = $(LIB_DIR)/libgpilog.so \
 	      $(LIB_DIR)/libcocotb.so \
 	      $(LIB_DIR)/libgpi.so \
 	      $(LIB_DIR)/libvpi.so \
-	      $(LIB_DIR)/libvhpi.so \
 	      $(LIB_DIR)/libsim.so
 
 clean::
