@@ -35,6 +35,14 @@ using namespace std;
 
 class gpi_impl_interface;
 
+typedef enum gpi_cb_state_e {
+    GPI_FREE = 0,
+    GPI_PRIMED = 1,
+    GPI_PRE_CALL = 2,
+    GPI_POST_CALL = 3,
+    GPI_DELETE = 4,
+} gpi_cb_state_t;
+
 class gpi_hdl {
 public:
     gpi_hdl(gpi_impl_interface *impl) : m_impl(impl) { }
@@ -55,7 +63,8 @@ public:
 class gpi_cb_hdl : public gpi_hdl {
 public:
     /* Override to change behaviour as needed */
-    gpi_cb_hdl(gpi_impl_interface *impl) : gpi_hdl(impl) { }
+    gpi_cb_hdl(gpi_impl_interface *impl) : gpi_hdl(impl),
+                                           m_state(GPI_FREE) { }
     int handle_callback(void);
     virtual int arm_callback(void);
     virtual int run_callback(void);
@@ -72,6 +81,9 @@ private:
 protected:
     int (*gpi_function)(void *);    // GPI function to callback
     void *m_cb_data;              // GPI data supplied to "gpi_function"
+
+public:
+    gpi_cb_state_t m_state;
 };
 
 class gpi_recurring_cb : public gpi_cb_hdl {

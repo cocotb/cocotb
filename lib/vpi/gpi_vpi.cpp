@@ -77,14 +77,6 @@ int __check_vpi_error(const char *func, long line)
     __check_vpi_error(__func__, __LINE__); \
 } while (0)
 
-typedef enum vpi_cb_state_e {
-    VPI_FREE = 0,
-    VPI_PRIMED = 1,
-    VPI_PRE_CALL = 2,
-    VPI_POST_CALL = 3,
-    VPI_DELETE = 4,
-} vpi_cb_state_t;
-
 class vpi_obj_hdl : public gpi_obj_hdl {
 public:
     vpi_obj_hdl(vpiHandle hdl, gpi_impl_interface *impl) : gpi_obj_hdl(impl),
@@ -98,12 +90,10 @@ public:
 class vpi_cb_hdl : public gpi_cb_hdl {
 public:
     vpiHandle vpi_hdl;
-    vpi_cb_state_t state;
 
 public:
     vpi_cb_hdl(gpi_impl_interface *impl) : gpi_cb_hdl(impl),
-                                           vpi_hdl(NULL),
-                                           state(VPI_FREE) { }
+                                           vpi_hdl(NULL) { }
     virtual int cleanup_callback(void) { return 0; }
     virtual ~vpi_cb_hdl() { }
 
@@ -112,7 +102,7 @@ protected:
      * before getting the new one
      */
     int register_cb(p_cb_data cb_data) {
-        if (state == VPI_PRIMED) {
+        if (m_state == GPI_PRIMED) {
             fprintf(stderr,
                     "Attempt to prime an already primed trigger for %s!\n", 
                     vpi_reason_to_string(cb_data->reason));
@@ -137,7 +127,7 @@ protected:
         }
 
         vpi_hdl = new_hdl;
-        state = VPI_PRIMED;
+        m_state = GPI_PRIMED;
 
         return ret;
     }
@@ -180,19 +170,9 @@ public:
             exit(1);
         }
 
-        // HACK: Calling vpi_free_object after vpi_remove_cb causes Modelsim
-        // to VPIEndOfSimulationCallback
-#if 0
-        rc = vpi_free_object(vpi_hdl);
-        if (!rc) {
-            check_vpi_error();
-            return rc;
-        }
-#endif
-
         // If the callback has not been called we also need to call
         // remove as well
-        if (state == VPI_PRIMED) {
+        if (m_state == GPI_PRIMED) {
 
             rc = vpi_remove_cb(vpi_hdl);
             if (!rc) {
@@ -201,10 +181,8 @@ public:
             }
         }
 
-
-
         vpi_hdl = NULL;
-        state = VPI_FREE;
+        m_state = GPI_FREE;
         return rc;
     }
     virtual ~vpi_onetime_cb() { }
@@ -226,7 +204,7 @@ public:
         check_vpi_error();
 
         vpi_hdl = NULL;
-        state = VPI_FREE;
+        m_state = GPI_FREE;
 
         FEXIT
         return rc;
@@ -794,7 +772,7 @@ gpi_cb_hdl *vpi_impl::register_nexttime_callback(void)
 int vpi_impl::deregister_callback(gpi_cb_hdl *gpi_hdl)
 {
     vpi_cb_hdl *vpi_obj = reinterpret_cast<vpi_cb_hdl*>(gpi_hdl);
-    if (vpi_obj->state == VPI_PRE_CALL) {
+    if (vpi_obj->m_state == GPI_PRE_CALL) {
         //LOG_INFO("Not deleting yet %p", vpi_obj);
         return 0;
     }
@@ -812,7 +790,7 @@ void vpi_impl::sim_end(void)
     /* Some sims do not seem to be able to deregister the end of sim callback
      * so we need to make sure we have tracked this and not call the handler
      */
-    sim_finish_cb->state = VPI_DELETE;
+    sim_finish_cb->m_state = GPI_DELETE;
     vpi_control(vpiFinish);
     check_vpi_error();
 }
@@ -833,30 +811,13 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
     LOG_DEBUG("Running %p", cb_hdl);
 
-    if (cb_hdl->state == VPI_PRIMED) {
-        cb_hdl->state = VPI_PRE_CALL;
+    if (cb_hdl->m_state == GPI_PRIMED) {
+        cb_hdl->m_state = GPI_PRE_CALL;
         cb_hdl->run_callback();
-        cb_hdl->state = VPI_POST_CALL;
+        cb_hdl->m_state = GPI_POST_CALL;
     }
 
     gpi_deregister_callback(cb_hdl);
-
-#if 0
-// HACK: Investigate further - this breaks modelsim
-#if 0
-    if (old_cb == user_data->cb_hdl)
-        gpi_deregister_callback(&user_data->gpi_hdl);
-#endif
-
-    /* A request to delete could have been done
-     * inside gpi_function
-     */
-    if (user_data->state == VPI_DELETE)
-        gpi_free_cb_handle(&user_data->gpi_cb_data.hdl);
-    else
-        user_data->state = VPI_POST_CALL;
-#endif
-    //cb_hdl->set_state(VPI_POST_CALL);
 
     FEXIT
     return rv;
