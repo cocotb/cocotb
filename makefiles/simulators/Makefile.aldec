@@ -38,7 +38,7 @@ endif
 EXTRA_LIBS = -laldecpli -lstdc++ -lsupc++
 EXTRA_LIBDIRS = -L$(ALDEC_PATH)/bin/Linux64
 
-ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libvpi
+ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
 ACOM_ARGS += -dbg
 
 ifeq ($(COVERAGE),1)
