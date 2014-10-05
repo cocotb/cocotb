@@ -19,7 +19,7 @@
 * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 * DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
 * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE dGOODS OR SERVICES;
 * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
@@ -126,17 +126,17 @@ public:
     virtual int cleanup_callback(void) = 0;     // Cleanup the callback, arm can be called after
 
     // Set the data to be used for run callback, seperate to arm_callback so data can be re-used
-    int set_user_data(int (*gpi_function)(void*), const void *data);
+    int set_user_data(const int (*gpi_function)(const void*), const void *data);
     const void *get_user_data(void);
 
     void set_call_state(gpi_cb_state_e new_state);
     gpi_cb_state_e get_call_state(void);
 
-    virtual ~GpiCbHdl() { }
+    virtual ~GpiCbHdl();
 
 protected:
-    int (*gpi_function)(void *);    // GPI function to callback
-    void *m_cb_data;                // GPI data supplied to "gpi_function"
+    const int (*gpi_function)(const void *);    // GPI function to callback
+    const void *m_cb_data;                // GPI data supplied to "gpi_function"
     gpi_cb_state_e m_state;         // GPI state of the callback through its cycle
 };
 

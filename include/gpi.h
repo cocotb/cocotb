@@ -164,11 +164,11 @@ typedef enum gpi_edge {
 } gpi_edge_e;
 
 // The callback registering functions
-gpi_sim_hdl gpi_register_timed_callback                  (int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
-gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
-gpi_sim_hdl gpi_register_readonly_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_nexttime_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_readwrite_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_timed_callback                  (const int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
+gpi_sim_hdl gpi_register_value_change_callback           (const int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
+gpi_sim_hdl gpi_register_readonly_callback               (const int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_nexttime_callback               (const int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_sim_hdl gpi_register_readwrite_callback              (const int (*gpi_function)(const void *), void *gpi_cb_data);
 
 // Calling convention is that 0 = success and negative numbers a failure
 // For implementers of GPI the provided macro GPI_RET(x) is provided

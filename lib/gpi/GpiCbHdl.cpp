@@ -1,6 +1,5 @@
 /******************************************************************************
 * Copyright (c) 2013 Potential Ventures Ltd
-* Copyright (c) 2013 SolarFlare Communications Inc
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -28,12 +27,9 @@
 ******************************************************************************/
 
 #include "gpi_priv.h"
-#include <iostream>
-
-using namespace std;
 
 /* Genertic base clss implementations */
-char *gpi_obj_hdl::gpi_copy_name(const char *name)
+const char *GpiHdl::gpi_copy_name(const char *name)
 {
     int len;
     char *result;
@@ -59,22 +55,32 @@ char *gpi_obj_hdl::gpi_copy_name(const char *name)
     return result;
 }
 
-int gpi_cb_hdl::handle_callback(void)
+#if 0
+int GpiCbHdl::handle_callback(void)
 {
     return this->gpi_function(m_cb_data);
 }
+#endif
 
-int gpi_cb_hdl::arm_callback(void)
+int GpiCbHdl::run_callback(void)
 {
+    LOG_WARN("Generic run_callback");
+    return this->gpi_function(m_cb_data);
+}
+
+int GpiCbHdl::cleanup_callback(void)
+{
+    LOG_WARN("Generic cleanu_handler");
     return 0;
 }
 
-int gpi_cb_hdl::run_callback(void)
+int GpiCbHdl::arm_callback(void)
 {
-    return this->gpi_function(m_cb_data);
+    LOG_WARN("Generic arm_callback");
+    return 0;
 }
 
-int gpi_cb_hdl::set_user_data(int (*gpi_function)(void*), void *data)
+int GpiCbHdl::set_user_data(const int (*gpi_function)(const void*), const void *data)
 {
     if (!gpi_function) {
         LOG_ERROR("gpi_function to set_user_data is NULL");
@@ -84,51 +90,22 @@ int gpi_cb_hdl::set_user_data(int (*gpi_function)(void*), void *data)
     return 0;
 }
 
-void * gpi_cb_hdl::get_user_data(void)
+const void * GpiCbHdl::get_user_data(void)
 {
     return m_cb_data;
 }
 
-int gpi_cb_hdl::cleanup_callback(void)
+void GpiCbHdl::set_call_state(gpi_cb_state_e new_state)
 {
-    LOG_WARN("Generic cleanup handler");
-    return 0;
+    m_state = new_state;
 }
 
-/* Specific callback types */
-
-int gpi_recurring_cb::cleanup_callback(void)
+gpi_cb_state_e GpiCbHdl::get_call_state(void)
 {
-    LOG_ERROR("Need to override");
-    return 0;
+    return m_state;
 }
 
-int gpi_onetime_cb::cleanup_callback(void)
+GpiCbHdl::~GpiCbHdl(void)
 {
-    LOG_ERROR("Need to override");
-    return 0;
-}
-
-int gpi_cb_value_change::run_callback(void)
-{
-    LOG_ERROR("Need to override");
-    return 0;
-}
-
-int gpi_cb_readonly_phase::run_callback(void)
-{
-    LOG_ERROR("Need to override");
-    return 0;
-}
-
-int gpi_cb_nexttime_phase::run_callback(void)
-{
-    LOG_ERROR("Need to override");
-    return 0;
-}
-
-int gpi_cb_readwrite_phase::run_callback(void)
-{
-    LOG_ERROR("Need to override");
-    return 0;
+    LOG_WARN("In GpiCbHdl Destructor");
 }

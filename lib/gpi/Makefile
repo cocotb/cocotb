@@ -35,7 +35,7 @@ LIBS        := -lgpilog -lcocotb -lstdc++ $(EXTRA_LIBS)
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libgpi.so
 
-SRCS        := gpi_cb_hdl.cpp gpi_common.cpp
+SRCS        := GpiCbHdl.cpp GpiCommon.cpp
 
 all: $(LIB_DIR)/$(LIB_NAME)
 	ln -sf $(LIB_NAME) $@
