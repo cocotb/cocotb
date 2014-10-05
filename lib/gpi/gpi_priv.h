@@ -1,6 +1,5 @@
 /******************************************************************************
 * Copyright (c) 2013 Potential Ventures Ltd
-* Copyright (c) 2013 SolarFlare Communications Inc
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -31,141 +30,174 @@
 #include <embed.h>
 #include <string>
 
-using namespace std;
-
-class gpi_impl_interface;
-
-typedef enum gpi_cb_state_e {
+typedef enum gpi_cb_state {
     GPI_FREE = 0,
     GPI_PRIMED = 1,
     GPI_PRE_CALL = 2,
     GPI_POST_CALL = 3,
     GPI_DELETE = 4,
-} gpi_cb_state_t;
+} gpi_cb_state_e;
 
-class gpi_hdl {
+class GpiCbHdl;
+class GpiImplInterface;
+class GpiIterator;
+class GpiCbHdl;
+
+/* Base GPI class others are derived from */
+class GpiHdl {
 public:
-    gpi_hdl(gpi_impl_interface *impl) : m_impl(impl) { }
-    virtual ~gpi_hdl() { }
-
-public:
-    gpi_impl_interface *m_impl;     // Implementation routines
-};
-
-class gpi_obj_hdl : public gpi_hdl {
-public:
-    gpi_obj_hdl(gpi_impl_interface *impl) : gpi_hdl(impl) { }
-    char *gpi_copy_name(const char *name);
-
-    virtual ~gpi_obj_hdl() { }
-};
-
-class gpi_cb_hdl : public gpi_hdl {
-public:
-    /* Override to change behaviour as needed */
-    gpi_cb_hdl(gpi_impl_interface *impl) : gpi_hdl(impl),
-                                           m_state(GPI_FREE) { }
-    int handle_callback(void);
-    virtual int arm_callback(void);
-    virtual int run_callback(void);
-    virtual int cleanup_callback(void) = 0;
-
-    int set_user_data(int (*gpi_function)(void*), void *data);
-    void *get_user_data(void);
-
-    virtual ~gpi_cb_hdl() { }
+    GpiHdl(GpiImplInterface *impl) : m_impl(impl) { }
+    virtual ~GpiHdl() { }
+    virtual int Initialise(void);                   // Post constructor init
 
 private:
-    gpi_cb_hdl();
+    GpiHdl() { }   // Disable default constructor
+
+public:
+    GpiImplInterface *m_impl;             // VPI/VHPI/FLI routines
+    const char *gpi_copy_name(const char *name);  // Might not be needed
+};
+
+/* GPI object handle, maps to a simulation object */
+// An object is any item in the hierarchy
+// Provides methods for iterating through children or finding by name
+// Initial object is returned by call to GpiImplInterface::get_root_handle()
+// Susequent operations to get children go through this handle.
+// GpiObjHdl::get_handle_by_name/get_handle_by_index are really factories
+// that construct an object derived from GpiSignalObjHdl or GpiObjHdl
+class GpiObjHdl : public GpiHdl {
+public:
+    GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl) { }
+    virtual ~GpiObjHdl() { }
+
+    // The following methods permit children below this level of the hierarchy
+    // to be discovered and instantiated
+    virtual GpiObjHdl *get_handle_by_name(const char *name) = 0;
+    virtual GpiObjHdl *get_handle_by_index(uint32_t index) = 0;
+    virtual GpiIterator *iterate_handle(uint32_t type) = 0;
+    virtual GpiObjHdl *next_handle(GpiIterator *iterator) = 0;
+
+    virtual const char* get_name_str(void) = 0;
+    virtual const char* get_type_str(void) = 0;
+
+    std::string m_name;
+    std::string m_type;
+};
+
+
+/* GPI Signal object handle, maps to a simulation object */
+//
+// Identical to an object but adds additional methods for getting/setting the
+// value of the signal (which doesn't apply to non signal items in the hierarchy
+class GpiSignalObjHdl : public GpiObjHdl {
+public:
+    GpiSignalObjHdl(GpiImplInterface *impl) : GpiObjHdl(impl) { }
+    virtual ~GpiSignalObjHdl() { }
+    // Provide public access to the implementation (composition vs inheritance)
+    virtual const char* get_signal_value_binstr(void) = 0;
+
+    int m_length;
+
+    virtual int set_signal_value(const int value) = 0;
+    virtual int set_signal_value(const char *str) = 0;
+    //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
+    // but the explicit ones are probably better
+
+    // Also think we want the triggers here?
+    virtual GpiCbHdl *rising_edge_cb(void) = 0;
+    virtual GpiCbHdl *falling_edge_cb(void) = 0;
+    virtual GpiCbHdl *value_change_cb(void) = 0;
+
+private:
+    //GpiCbHdl value_change_cb;
+};
+
+
+/* GPI Callback handle */
+// To set a callback it needs the signal to do this on,
+// vpiHandle/vhpiHandleT for instance. The 
+class GpiCbHdl : public GpiHdl {
+public:
+    GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl),
+                                       m_state(GPI_FREE) { }
+    // Pure virtual functions for derived classes
+    virtual int arm_callback(void) = 0;         // Register with siumlator
+    virtual int run_callback(void) = 0;         // Entry point from simulator
+    virtual int cleanup_callback(void) = 0;     // Cleanup the callback, arm can be called after
+
+    // Set the data to be used for run callback, seperate to arm_callback so data can be re-used
+    int set_user_data(int (*gpi_function)(void*), const void *data);
+    const void *get_user_data(void);
+
+    void set_call_state(gpi_cb_state_e new_state);
+    gpi_cb_state_e get_call_state(void);
+
+    virtual ~GpiCbHdl() { }
 
 protected:
     int (*gpi_function)(void *);    // GPI function to callback
-    void *m_cb_data;              // GPI data supplied to "gpi_function"
-
-public:
-    gpi_cb_state_t m_state;
+    void *m_cb_data;                // GPI data supplied to "gpi_function"
+    gpi_cb_state_e m_state;         // GPI state of the callback through its cycle
 };
 
-class gpi_recurring_cb : public gpi_cb_hdl {
+/* We would then have */
+class GpiClockHdl {
 public:
-    int cleanup_callback(void);
+    GpiClockHdl(GpiObjHdl *clk) { }
+    GpiClockHdl(const char *clk) { }
+    ~GpiClockHdl() { }
+    int start_clock(const int period_ps); /* Do things with the GpiSignalObjHdl */
+    int stop_clock(void);
 };
 
-class gpi_onetime_cb : public gpi_cb_hdl {
-public:
-    int cleanup_callback(void);
+class GpiNextTime : public GpiCbHdl {
+
 };
 
-class gpi_cb_timed : public gpi_onetime_cb {
-public:
-    int run_callback(void);
+class GpiTimer : public GpiCbHdl {
+
 };
 
-class gpi_cb_value_change : public gpi_recurring_cb {
-public:
-    int run_callback(void);
+class GpiReadOnly : public GpiCbHdl {
+
 };
 
-class gpi_cb_readonly_phase : public gpi_onetime_cb {
-public:
-    int run_callback(void);
+class GpiReadWrite : public GpiCbHdl {
+
 };
 
-class gpi_cb_nexttime_phase : public gpi_onetime_cb {
+class GpiIterator {
 public:
-    int run_callback(void);
+	GpiObjHdl *parent;
 };
 
-class gpi_cb_readwrite_phase : public gpi_onetime_cb {
+class GpiImplInterface {
 public:
-    int run_callback(void);
-};
-
-class gpi_iterator {
-public:
-	gpi_obj_hdl *parent;
-};
-
-class gpi_impl_interface {
-public:
-    string m_name;
-
-public:
-    gpi_impl_interface(const string& name);
-    virtual ~gpi_impl_interface() = 0;
+    GpiImplInterface(const std::string& name);
+    const char *get_name_c(void);
+    const std::string& get_name_s(void);
+    virtual ~GpiImplInterface() = 0;
 
     /* Sim related */
     virtual void sim_end(void) = 0;
     virtual void get_sim_time(uint32_t *high, uint32_t *low) = 0;
 
-    /* Signal related */
-    virtual gpi_obj_hdl *get_root_handle(const char *name) = 0;
-    virtual gpi_obj_hdl *get_handle_by_name(const char *name, gpi_obj_hdl *parent) = 0;
-    virtual gpi_obj_hdl *get_handle_by_index(gpi_obj_hdl *parent, uint32_t index) = 0;
-    virtual void free_handle(gpi_obj_hdl*) = 0;
-    virtual gpi_iterator *iterate_handle(uint32_t type, gpi_obj_hdl *base) = 0;
-    virtual gpi_obj_hdl *next_handle(gpi_iterator *iterator) = 0;
-    virtual char* get_signal_value_binstr(gpi_obj_hdl *gpi_hdl) = 0;
-    virtual char* get_signal_name_str(gpi_obj_hdl *gpi_hdl) = 0;
-    virtual char* get_signal_type_str(gpi_obj_hdl *gpi_hdl) = 0;
-    virtual void set_signal_value_int(gpi_obj_hdl *gpi_hdl, int value) = 0;
-    virtual void set_signal_value_str(gpi_obj_hdl *gpi_hdl, const char *str) = 0;    // String of binary char(s) [1, 0, x, z]
-    
-    /* Callback related */
-    virtual gpi_cb_hdl *register_timed_callback(uint64_t time_ps) = 0;
-    virtual gpi_cb_hdl *register_value_change_callback(gpi_obj_hdl *obj_hdl) = 0;
-    virtual gpi_cb_hdl *register_readonly_callback(void) = 0;
-    virtual gpi_cb_hdl *register_nexttime_callback(void) = 0;
-    virtual gpi_cb_hdl *register_readwrite_callback(void) = 0;
-    virtual int deregister_callback(gpi_cb_hdl *gpi_hdl) = 0;
+    /* Hierachy related */
+    virtual GpiObjHdl *get_root_handle(const char *name) = 0;
 
-    virtual gpi_cb_hdl *create_cb_handle(void) = 0;
-    virtual void destroy_cb_handle(gpi_cb_hdl *gpi_hdl) = 0;
-    //virtual void* get_callback_data(gpi_sim_hdl gpi_hdl) = 0;
+    /* Callback related, these may (will) return the same handle*/
+    virtual GpiCbHdl *register_timed_callback(uint64_t time_ps) = 0;
+    virtual GpiCbHdl *register_readonly_callback(void) = 0;
+    virtual GpiCbHdl *register_nexttime_callback(void) = 0;
+    virtual GpiCbHdl *register_readwrite_callback(void) = 0;
+    virtual int deregister_callback(GpiCbHdl *obj_hdl) = 0;
+
+private:
+    std::string m_name;
 };
 
 /* Called from implementaton layers back up the stack */
-int gpi_register_impl(gpi_impl_interface *func_tbl);
+int gpi_register_impl(GpiImplInterface *func_tbl);
 
 void gpi_embed_init(gpi_sim_info_t *info);
 void gpi_embed_end(void);

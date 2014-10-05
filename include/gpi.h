@@ -148,9 +148,9 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
 // Caller responsible for freeing the returned string.
 // This is all slightly verbose but it saves having to enumerate various value types
 // We only care about a limited subset of values.
-char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
-char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
-char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
+const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
+const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
+const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
 
 
@@ -158,9 +158,14 @@ char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
 void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
 
+typedef enum gpi_edge {
+    GPI_RISING = 1,
+    GPI_FALLING = 2,
+} gpi_edge_e;
+
 // The callback registering functions
 gpi_sim_hdl gpi_register_timed_callback                  (int (*gpi_function)(void *), void *gpi_cb_data, uint64_t time_ps);
-gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl);
+gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
 gpi_sim_hdl gpi_register_readonly_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
 gpi_sim_hdl gpi_register_nexttime_callback               (int (*gpi_function)(void *), void *gpi_cb_data);
 gpi_sim_hdl gpi_register_readwrite_callback              (int (*gpi_function)(void *), void *gpi_cb_data);
