@@ -37,7 +37,7 @@ static PyThreadState *gtstate = NULL;
 
 static char progname[] = "cocotb";
 static char *argv[] = { progname };
-static PyObject *pEventFn;
+static PyObject *pEventFn = NULL;
 
 
 /**
@@ -65,14 +65,14 @@ void embed_init_python(void)
 #define PY_SO_LIB xstr(PYTHON_SO_LIB)
 #endif
 
+    // Don't initialise python if already running
+    if (gtstate)
+        return;
+
     void *ret = dlopen(PY_SO_LIB, RTLD_LAZY | RTLD_GLOBAL);
     if (!ret) {
         fprintf(stderr, "Failed to find python lib %s (%s)\n", PY_SO_LIB, dlerror());
     }
-
-    // Don't initialise python if already running
-    if (gtstate)
-        return;
 
     Py_SetProgramName(progname);
     Py_Initialize();                    /* Initialize the interpreter */
@@ -121,6 +121,10 @@ void embed_sim_init(gpi_sim_info_t *info)
     FENTER
 
     int i;
+
+    /* Check that we are not already initialised */
+    if (pEventFn)
+        return;
 
     // Find the simulation root
     gpi_sim_hdl dut = gpi_get_root_handle(getenv("TOPLEVEL"));
