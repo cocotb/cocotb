@@ -35,7 +35,7 @@ LIBS        := -lgpilog -lgpi -lstdc++
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libvpi.so
 
-SRCS        := gpi_vpi.cpp
+SRCS        := VpiImpl.cpp VpiCbHdl.cpp
 
 CLIBS       += $(LIB_DIR)/gpivpi.vpl
 
