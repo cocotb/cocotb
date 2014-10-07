@@ -143,6 +143,8 @@ typedef struct t_vpi_value
 #define vpiFile               5
 #define vpiLineNo             6
 
+#define vpiUnknown            3
+
 /* normal callback structure */
 typedef struct t_cb_data
 {
