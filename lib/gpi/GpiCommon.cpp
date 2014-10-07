@@ -89,6 +89,9 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
          iter != registered_impls.end();
          iter++) {
         if ((hdl = (*iter)->get_root_handle(name))) {
+            LOG_WARN("Got a handle (%s) back from %s",
+                hdl->get_name_str(),
+                (*iter)->get_name_c());
             return (void*)hdl;
         }
     }

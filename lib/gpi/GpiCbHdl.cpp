@@ -28,6 +28,21 @@
 
 #include "gpi_priv.h"
 
+bool GpiObjHdl::is_native_impl(GpiImplInterface *impl)
+{
+    return impl->native_check(m_name);
+}
+
+const char * GpiObjHdl::get_name_str(void)
+{
+    return m_name.c_str();
+}
+
+const char * GpiObjHdl::get_type_str(void)
+{
+    return m_type.c_str();
+}
+
 /* Genertic base clss implementations */
 const char *GpiHdl::gpi_copy_name(const char *name)
 {
@@ -53,6 +68,18 @@ const char *GpiHdl::gpi_copy_name(const char *name)
     snprintf(result, len, "%s", name);
 
     return result;
+}
+
+int GpiHdl::initialise(std::string name)
+{
+    LOG_WARN("Generic initialise, doubt you should have called this");
+    return 0;
+}
+
+int GpiObjHdl::initialise(std::string name)
+{
+    m_name = name;
+    return 0;
 }
 
 #if 0

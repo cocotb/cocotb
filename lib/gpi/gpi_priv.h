@@ -26,6 +26,9 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#ifndef COCOTB_GPI_PRIV_H_
+#define COCOTB_GPI_PRIV_H_
+
 #include <gpi.h>
 #include <embed.h>
 #include <string>
@@ -46,12 +49,13 @@ class GpiCbHdl;
 /* Base GPI class others are derived from */
 class GpiHdl {
 public:
+    GpiHdl() : m_impl(NULL) { }
     GpiHdl(GpiImplInterface *impl) : m_impl(impl) { }
     virtual ~GpiHdl() { }
-    virtual int Initialise(void);                   // Post constructor init
+    virtual int initialise(std::string name);                   // Post constructor init
 
 private:
-    GpiHdl() { }   // Disable default constructor
+    //GpiHdl() { }   // Disable default constructor
 
 public:
     GpiImplInterface *m_impl;             // VPI/VHPI/FLI routines
@@ -67,6 +71,7 @@ public:
 // that construct an object derived from GpiSignalObjHdl or GpiObjHdl
 class GpiObjHdl : public GpiHdl {
 public:
+    GpiObjHdl(std::string name) : GpiHdl(NULL), m_name(name) { }
     GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl) { }
     virtual ~GpiObjHdl() { }
 
@@ -77,9 +82,13 @@ public:
     virtual GpiIterator *iterate_handle(uint32_t type) = 0;
     virtual GpiObjHdl *next_handle(GpiIterator *iterator) = 0;
 
-    virtual const char* get_name_str(void) = 0;
-    virtual const char* get_type_str(void) = 0;
+    const char* get_name_str(void);
+    const char* get_type_str(void);
 
+    bool is_native_impl(GpiImplInterface *impl);
+    virtual int initialise(std::string name);
+
+protected:
     std::string m_name;
     std::string m_type;
 };
@@ -122,7 +131,7 @@ public:
                                        m_state(GPI_FREE) { }
     // Pure virtual functions for derived classes
     virtual int arm_callback(void) = 0;         // Register with siumlator
-    virtual int run_callback(void) = 0;         // Entry point from simulator
+    virtual int run_callback(void);         // Entry point from simulator
     virtual int cleanup_callback(void) = 0;     // Cleanup the callback, arm can be called after
 
     // Set the data to be used for run callback, seperate to arm_callback so data can be re-used
@@ -183,6 +192,8 @@ public:
     virtual void get_sim_time(uint32_t *high, uint32_t *low) = 0;
 
     /* Hierachy related */
+    virtual bool is_native(GpiObjHdl *hdl) = 0;
+    virtual bool native_check(std::string &name) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
 
     /* Callback related, these may (will) return the same handle*/
@@ -202,3 +213,5 @@ int gpi_register_impl(GpiImplInterface *func_tbl);
 void gpi_embed_init(gpi_sim_info_t *info);
 void gpi_embed_end(void);
 void gpi_embed_init_python(void);
+
+#endif /* COCOTB_GPI_PRIV_H_ */
