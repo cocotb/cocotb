@@ -46,16 +46,28 @@ class GpiImplInterface;
 class GpiIterator;
 class GpiCbHdl;
 
+template<class To, class Ti>
+inline To sim_to_hdl(Ti input)
+{
+    To result = reinterpret_cast<To>(input);
+    if (!result) {
+        LOG_CRITICAL("GPI: Handle passed down is not valid gpi_sim_hdl");
+        exit(1);
+    }
+
+    return result;
+}
+
 /* Base GPI class others are derived from */
 class GpiHdl {
 public:
-    GpiHdl() : m_impl(NULL) { }
+    //GpiHdl() : m_impl(NULL) { }
     GpiHdl(GpiImplInterface *impl) : m_impl(impl) { }
     virtual ~GpiHdl() { }
     virtual int initialise(std::string name);                   // Post constructor init
 
 private:
-    //GpiHdl() { }   // Disable default constructor
+    GpiHdl() { }   // Disable default constructor
 
 public:
     GpiImplInterface *m_impl;             // VPI/VHPI/FLI routines
@@ -77,7 +89,7 @@ public:
 
     // The following methods permit children below this level of the hierarchy
     // to be discovered and instantiated
-    virtual GpiObjHdl *get_handle_by_name(const char *name) = 0;
+    virtual GpiObjHdl *get_handle_by_name(std::string &name) = 0;
     virtual GpiObjHdl *get_handle_by_index(uint32_t index) = 0;
     virtual GpiIterator *iterate_handle(uint32_t type) = 0;
     virtual GpiObjHdl *next_handle(GpiIterator *iterator) = 0;
@@ -192,8 +204,7 @@ public:
     virtual void get_sim_time(uint32_t *high, uint32_t *low) = 0;
 
     /* Hierachy related */
-    virtual bool is_native(GpiObjHdl *hdl) = 0;
-    virtual bool native_check(std::string &name) = 0;
+    virtual bool native_check(std::string &name, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
 
     /* Callback related, these may (will) return the same handle*/

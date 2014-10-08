@@ -28,11 +28,6 @@
 
 #include "gpi_priv.h"
 
-bool GpiObjHdl::is_native_impl(GpiImplInterface *impl)
-{
-    return impl->native_check(m_name);
-}
-
 const char * GpiObjHdl::get_name_str(void)
 {
     return m_name.c_str();

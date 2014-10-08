@@ -46,15 +46,13 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vpi_time_s.low;
 }
 
-bool VpiImpl::is_native(GpiObjHdl *hdl)
-{
-    return hdl->is_native_impl(this);
-}
-
-bool VpiImpl::native_check(std::string &name)
+/* Not interested in the hierachy for checking that a handle
+in in this implementation */
+bool VpiImpl::native_check(std::string &name, GpiObjHdl *parent)
 {
     bool ret = true;
-    vpiHandle vpi_hdl = NULL;
+    VpiObjHdl *parent_hdl = sim_to_hdl<VpiObjHdl*>(parent);
+    vpiHandle vpi_hdl = parent_hdl->get_handle();
     std::vector<char> writable(name.begin(), name.end());
     writable.push_back('\0');
     

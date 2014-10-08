@@ -32,18 +32,6 @@
 
 using namespace std;
 
-template<class To, class Ti>
-inline To sim_to_hdl(Ti input)
-{
-    To result = reinterpret_cast<To>(input);
-    if (!result) {
-        LOG_CRITICAL("GPI: Handle passed down is not valid gpi_sim_hdl");
-        exit(1);
-    }
-
-    return result;
-}
-
 static vector<GpiImplInterface*> registered_impls;
 
 int gpi_register_impl(GpiImplInterface *func_tbl)
@@ -89,10 +77,10 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
          iter != registered_impls.end();
          iter++) {
         if ((hdl = (*iter)->get_root_handle(name))) {
-            LOG_WARN("Got a handle (%s) back from %s",
+            LOG_WARN("Got a Root handle (%s) back from %s",
                 hdl->get_name_str(),
                 (*iter)->get_name_c());
-            return (void*)hdl;
+            return (gpi_sim_hdl)hdl;
         }
     }
     return NULL;
@@ -100,30 +88,30 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
 
 gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
 {
-#if 0
+
     vector<GpiImplInterface*>::iterator iter;
 
     GpiObjHdl *hdl;
-    GpiObjHdl *base = sim_to_hdl<GpiObjHdl>(parent);
+    GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
+    std::string s_name = name;
 
 
-    /* Either want this or use the parent */
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
-        LOG_WARN("Quering impl %s", (*iter)->get_name());
-        if ((hdl = (*iter)->get_handle_by_name(name, base))) {
-            return (void*)hdl;
+        LOG_WARN("Checking if %s native though impl %s ", name, (*iter)->get_name_c());
+        if ((*iter)->native_check(s_name, base)) {
+            LOG_WARN("Found %s via %s", name, (*iter)->get_name_c());
+            hdl = base->get_handle_by_name(s_name);
         }
     }
-    hdl = base->m_impl->get_handle_by_name(name, base);
-    return (void*)hdl;
-#endif
-    return NULL;
+
+    return (gpi_sim_hdl)hdl;
 }
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
 {
+    LOG_WARN("Trying index");
 #if 0
     /* Either want this or use the parent */
     GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(parent);

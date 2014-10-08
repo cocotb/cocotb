@@ -28,6 +28,7 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
+#include <vector>
 
 extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
 
@@ -55,6 +56,11 @@ const char *VpiObjHdl::reason_to_string(int reason)
     }
 }
 
+vpiHandle VpiObjHdl::get_handle(void)
+{
+    return vpi_hdl;
+}
+
 /**
  * @brief   Get a handle to an object under the scope of parent
  *
@@ -62,14 +68,16 @@ const char *VpiObjHdl::reason_to_string(int reason)
  *
  * @return  gpi_sim_hdl for the new object or NULL if object not found
  */
-GpiObjHdl *VpiObjHdl::get_handle_by_name(const char *name)
+GpiObjHdl *VpiObjHdl::get_handle_by_name(std::string &name)
 {
     FENTER
     GpiObjHdl *rv = NULL;
     vpiHandle obj;
     vpiHandle iterator;
-    int len;
-    char *buff;
+    std::vector<char> writable(name.begin(), name.end());
+    writable.push_back('\0');
+    //int len;
+    //char *buff;
 
     // Structures aren't technically a scope, according to the LRM. If parent
     // is a structure then we have to iterate over the members comparing names
@@ -79,7 +87,7 @@ GpiObjHdl *VpiObjHdl::get_handle_by_name(const char *name)
 
         for (obj = vpi_scan(iterator); obj != NULL; obj = vpi_scan(iterator)) {
 
-            if (!strcmp(name, strrchr(vpi_get_str(vpiName, obj), 46) + 1))
+            if (!strcmp(name.c_str(), strrchr(vpi_get_str(vpiName, obj), 46) + 1))
                 break;
         }
 
@@ -95,6 +103,8 @@ GpiObjHdl *VpiObjHdl::get_handle_by_name(const char *name)
         goto success;
     }
 
+    #if 0
+     Do we need this
     if (name)
         len = strlen(name) + 1;
 
@@ -105,19 +115,22 @@ GpiObjHdl *VpiObjHdl::get_handle_by_name(const char *name)
     }
 
     strncpy(buff, name, len);
-    obj = vpi_handle_by_name(buff, vpi_hdl);
+    #endif
+    
+
+    obj = vpi_handle_by_name(&writable[0], vpi_hdl);
     if (!obj) {
-        LOG_DEBUG("VPI: Handle '%s' not found!", name);
+        LOG_DEBUG("VPI: Handle '%s' not found!", name.c_str());
 
         // NB we deliberately don't dump an error message here because it's
         // a valid use case to attempt to grab a signal by name - for example
         // optional signals on a bus.
         // check_vpi_error();
-        free(buff);
+        //free(buff);
         return NULL;
     }
 
-    free(buff);
+    //free(buff);
 
 success:
     //  rv = new VpiObjHdl(obj);

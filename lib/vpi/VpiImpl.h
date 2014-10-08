@@ -81,7 +81,6 @@ public:
     void get_sim_time(uint32_t *high, uint32_t *low);
 
     /* Hierachy related */
-    bool is_native(GpiObjHdl *hdl);
     GpiObjHdl *get_root_handle(const char *name);
 
     /* Callback related, these may (will) return the same handle*/
@@ -90,7 +89,7 @@ public:
     GpiCbHdl *register_nexttime_callback(void);
     GpiCbHdl *register_readwrite_callback(void);
     int deregister_callback(GpiCbHdl *obj_hdl);
-    bool native_check(std::string &name);
+    bool native_check(std::string &name, GpiObjHdl *parent);
 };
 
 class VpiObjHdl : public GpiObjHdl {
@@ -99,14 +98,15 @@ public:
                                                        vpi_hdl(hdl) { }
     virtual ~VpiObjHdl() { }
 
-    virtual GpiObjHdl *get_handle_by_name(const char *name);
+    virtual GpiObjHdl *get_handle_by_name(std::string &name);
     virtual GpiObjHdl *get_handle_by_index(uint32_t index);
     virtual GpiIterator *iterate_handle(uint32_t type) { return NULL ;}
     virtual GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
-    bool is_native_impl(GpiImplInterface *impl);
 
     const char* get_name_str(void);
     const char* get_type_str(void);
+
+    vpiHandle get_handle(void); 
 
 protected:
     const char * reason_to_string(int reason);
