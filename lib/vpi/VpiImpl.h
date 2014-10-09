@@ -90,6 +90,8 @@ public:
     GpiCbHdl *register_readwrite_callback(void);
     int deregister_callback(GpiCbHdl *obj_hdl);
     bool native_check(std::string &name, GpiObjHdl *parent);
+
+    const char * reason_to_string(int reason);
 };
 
 class VpiObjHdl : public GpiObjHdl {
@@ -109,17 +111,13 @@ public:
     vpiHandle get_handle(void); 
 
 protected:
-    const char * reason_to_string(int reason);
-
-protected:
     vpiHandle vpi_hdl;
 
 };
 
-class VpiCbHdl : public GpiCbHdl, public VpiObjHdl {
+class VpiCbHdl : public GpiCbHdl {
 public:
-    VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
-                                       VpiObjHdl(impl, NULL) { }
+    VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) { }
     virtual ~VpiCbHdl() { }
 
     virtual int arm_callback(void);
@@ -127,6 +125,7 @@ public:
 
 protected:
     int register_cb(p_cb_data cb_data);
+    vpiHandle vpi_hdl;
 };
 
 class VpiSignalObjHdl : public GpiSignalObjHdl {

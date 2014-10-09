@@ -32,30 +32,6 @@
 
 extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
 
-const char *VpiObjHdl::reason_to_string(int reason)
-{
-    switch (reason) {
-    case cbValueChange:
-        return "cbValueChange";
-    case cbAtStartOfSimTime:
-        return "cbAtStartOfSimTime";
-    case cbReadWriteSynch:
-        return "cbReadWriteSynch";
-    case cbReadOnlySynch:
-        return "cbReadOnlySynch";
-    case cbNextSimTime:
-        return "cbNextSimTime";
-    case cbAfterDelay:
-        return "cbAfterDelay";
-    case cbStartOfSimulation:
-        return "cbStartOfSimulation";
-    case cbEndOfSimulation:
-        return "cbEndOfSimulation";
-    default:
-        return "unknown";
-    }
-}
-
 vpiHandle VpiObjHdl::get_handle(void)
 {
     return vpi_hdl;
@@ -173,13 +149,13 @@ int VpiCbHdl::register_cb(p_cb_data cb_data) {
     if (m_state == GPI_PRIMED) {
         fprintf(stderr,
                 "Attempt to prime an already primed trigger for %s!\n", 
-                reason_to_string(cb_data->reason));
+                m_impl->reason_to_string(cb_data->reason));
     }
 
     if (vpi_hdl != NULL) {
         fprintf(stderr,
                 "We seem to already be registered, deregistering %s!\n",
-                reason_to_string(cb_data->reason));
+                m_impl->reason_to_string(cb_data->reason));
 
         cleanup_callback();
     }
@@ -189,7 +165,7 @@ int VpiCbHdl::register_cb(p_cb_data cb_data) {
 
     if (!new_hdl) {
         LOG_CRITICAL("VPI: Unable to register callback a handle for VPI type %s(%d)",
-                     reason_to_string(cb_data->reason), cb_data->reason);
+                     m_impl->reason_to_string(cb_data->reason), cb_data->reason);
         check_vpi_error();
         ret = -1;
     }
@@ -281,7 +257,7 @@ int VpiTimedCbHdl::arm_callback(uint64_t time_ps) {
 #if 0
 class vpi_onetime_cb : public vpi_cb_hdl {
 public:
-    vpi_onetime_cb(gpi_impl_interface *impl) : vpi_cb_hdl(impl) { }
+    vpi_onetime_cb(gpi_m_impl_interface *m_impl) : vpi_cb_hdl(m_impl) { }
     int cleanup_callback(void) {
         FENTER
         //LOG_WARN("Cleanup %p state is %d", this, state);
@@ -311,7 +287,7 @@ public:
 
 class vpi_recurring_cb : public vpi_cb_hdl {
 public:
-    vpi_recurring_cb(gpi_impl_interface *impl) : vpi_cb_hdl(impl) { }
+    vpi_recurring_cb(gpi_m_impl_interface *m_impl) : vpi_cb_hdl(m_impl) { }
     int cleanup_callback(void) {
         FENTER
         //LOG_WARN("Cleanup %p", this);
@@ -337,7 +313,7 @@ class vpi_cb_value_change : public vpi_recurring_cb {
 private:
     s_vpi_value cb_value;
 public:
-    vpi_cb_value_change(gpi_impl_interface *impl) : vpi_recurring_cb(impl) {
+    vpi_cb_value_change(gpi_m_impl_interface *m_impl) : vpi_recurring_cb(m_impl) {
         cb_value.format = vpiIntVal;
     }
     int arm_callback(vpi_obj_hdl *vpi_hdl) {
@@ -358,7 +334,7 @@ public:
 
 class vpi_cb_readonly : public vpi_onetime_cb {
 public:
-    vpi_cb_readonly(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
+    vpi_cb_readonly(gpi_m_impl_interface *m_impl) : vpi_onetime_cb(m_impl) { }
     int arm_callback(void) {
         s_cb_data cb_data_s;
         s_vpi_time vpi_time_s;
@@ -383,7 +359,7 @@ public:
 
 class vpi_cb_timed : public vpi_onetime_cb {
 public:
-    vpi_cb_timed(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
+    vpi_cb_timed(gpi_m_impl_interface *m_impl) : vpi_onetime_cb(m_impl) { }
 
     int arm_callback(uint64_t time_ps) {
         s_cb_data cb_data_s;
@@ -408,7 +384,7 @@ public:
 
 class vpi_cb_readwrite : public vpi_onetime_cb {
 public:
-    vpi_cb_readwrite(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
+    vpi_cb_readwrite(gpi_m_impl_interface *m_impl) : vpi_onetime_cb(m_impl) { }
 
     int arm_callback(void) {
         s_cb_data cb_data_s;
@@ -433,7 +409,7 @@ public:
 
 class vpi_cb_nexttime : public vpi_onetime_cb {
 public:
-    vpi_cb_nexttime(gpi_impl_interface *impl) : vpi_onetime_cb(impl) { }
+    vpi_cb_nexttime(gpi_m_impl_interface *m_impl) : vpi_onetime_cb(m_impl) { }
 
     int arm_callback(void) {
         s_cb_data cb_data_s;

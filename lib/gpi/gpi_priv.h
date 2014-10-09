@@ -214,6 +214,9 @@ public:
     virtual GpiCbHdl *register_readwrite_callback(void) = 0;
     virtual int deregister_callback(GpiCbHdl *obj_hdl) = 0;
 
+    /* Method to provide strings from operation types */
+    virtual const char * reason_to_string(int reason) = 0;
+
 private:
     std::string m_name;
 };

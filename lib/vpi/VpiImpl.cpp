@@ -36,6 +36,30 @@ static VpiImpl *vpi_table;
 
 }
 
+const char *VpiImpl::reason_to_string(int reason)
+{
+    switch (reason) {
+    case cbValueChange:
+        return "cbValueChange";
+    case cbAtStartOfSimTime:
+        return "cbAtStartOfSimTime";
+    case cbReadWriteSynch:
+        return "cbReadWriteSynch";
+    case cbReadOnlySynch:
+        return "cbReadOnlySynch";
+    case cbNextSimTime:
+        return "cbNextSimTime";
+    case cbAfterDelay:
+        return "cbAfterDelay";
+    case cbStartOfSimulation:
+        return "cbStartOfSimulation";
+    case cbEndOfSimulation:
+        return "cbEndOfSimulation";
+    default:
+        return "unknown";
+    }
+}
+
 void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 {
     s_vpi_time vpi_time_s;
