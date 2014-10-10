@@ -74,21 +74,65 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 in in this implementation */
 bool VpiImpl::native_check(std::string &name, GpiObjHdl *parent)
 {
+    int32_t type;
     bool ret = true;
     VpiObjHdl *parent_hdl = sim_to_hdl<VpiObjHdl*>(parent);
     vpiHandle vpi_hdl = parent_hdl->get_handle();
+    vpiHandle new_hdl;
     std::vector<char> writable(name.begin(), name.end());
     writable.push_back('\0');
     
-    vpi_handle_by_name(&writable[0], vpi_hdl);
+    new_hdl = vpi_handle_by_name(&writable[0], vpi_hdl);
 
-    if (vpiUnknown == vpi_get(vpiType, vpi_hdl)) {
+    if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
         ret = false;
     }
 
     vpi_free_object(vpi_hdl);
 
     return ret;
+}
+
+GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
+{
+    int32_t type;
+    VpiObjHdl *parent_hdl = sim_to_hdl<VpiObjHdl*>(parent);
+    vpiHandle vpi_hdl = parent_hdl->get_handle();
+    vpiHandle new_hdl;
+    VpiObjHdl *new_obj = NULL; 
+    std::vector<char> writable(name.begin(), name.end());
+    writable.push_back('\0');
+    
+    new_hdl = vpi_handle_by_name(&writable[0], vpi_hdl);
+
+    if (!new_hdl)
+        return NULL;
+
+    if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
+        vpi_free_object(vpi_hdl);
+        return new_obj;
+    }
+
+    /* What sort of isntance is this ?*/
+    switch (type) {
+        case vpiNet:
+            new_obj = new VpiSignalObjHdl(this, new_hdl);
+            LOG_WARN("Created VpiSignalObjHdl");
+            break;
+        case vpiModule:
+            new_obj = new VpiObjHdl(this, new_hdl);
+            LOG_WARN("Created VpiObjHdl");
+            break;
+        default:
+            LOG_CRITICAL("Not sure what to do with type %d for entity (%s)", type, name.c_str());
+            return false;
+    }
+
+    LOG_WARN("Type was %d", type);
+    /* Might move the object creation inside here */
+    new_obj->initialise(name);
+
+    return new_obj;
 }
 
 GpiObjHdl *VpiImpl::get_root_handle(const char* name)
@@ -161,10 +205,9 @@ GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
 
 GpiCbHdl *VpiImpl::register_readwrite_callback(void)
 {
-    #if 0
     FENTER
 
-    vpi_cb_readwrite *hdl = new VpiReadWriteCbHdl(this);
+    VpiReadwriteCbHdl *hdl = new VpiReadwriteCbHdl(this);
 
     if (hdl->arm_callback()) {
         delete(hdl);
@@ -173,8 +216,6 @@ GpiCbHdl *VpiImpl::register_readwrite_callback(void)
 
     FEXIT
     return hdl;
-    #endif
-    return NULL;
 }
 
 GpiCbHdl *VpiImpl::register_readonly_callback(void)

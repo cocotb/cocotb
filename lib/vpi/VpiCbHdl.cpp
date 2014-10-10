@@ -186,6 +186,61 @@ int VpiCbHdl::arm_callback(void)
     return 0;
 }
 
+const char* VpiSignalObjHdl::get_signal_value_binstr(void)
+{
+    FENTER
+    s_vpi_value value_s = {vpiBinStrVal};
+    p_vpi_value value_p = &value_s;
+
+    vpi_get_value(vpi_hdl, value_p);
+    check_vpi_error();
+
+    LOG_WARN("Value back was %s", value_p->value.str);
+
+    return value_p->value.str;
+}
+
+// Value related functions
+int VpiSignalObjHdl::set_signal_value(int value)
+{
+    FENTER
+    s_vpi_value value_s;
+
+    value_s.value.integer = value;
+    value_s.format = vpiIntVal;
+
+    s_vpi_time vpi_time_s;
+
+    vpi_time_s.type = vpiSimTime;
+    vpi_time_s.high = 0;
+    vpi_time_s.low  = 0;
+
+    // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+    vpi_put_value(vpi_hdl, &value_s, &vpi_time_s, vpiInertialDelay);
+    check_vpi_error();
+
+    FEXIT
+    return 0;
+}
+
+int VpiSignalObjHdl::set_signal_value(std::string &value)
+{
+    FENTER
+    s_vpi_value value_s;
+
+    std::vector<char> writable(value.begin(), value.end());
+    writable.push_back('\0');
+
+    value_s.value.str = &writable[0];
+    value_s.format = vpiBinStrVal;
+
+    vpi_put_value(vpi_hdl, &value_s, NULL, vpiNoDelay);
+    check_vpi_error();
+
+    FEXIT
+    return 0;
+}
+
 int VpiStartupCbHdl::run_callback(void) {
     s_vpi_vlog_info info;
     gpi_sim_info_t sim_info;
@@ -253,6 +308,23 @@ int VpiTimedCbHdl::arm_callback(uint64_t time_ps) {
     return register_cb(&cb_data_s);
 }
 
+int VpiReadwriteCbHdl::arm_callback(void) {
+    s_cb_data cb_data_s;
+    s_vpi_time vpi_time_s;
+
+    vpi_time_s.type = vpiSimTime;
+    vpi_time_s.high = 0;
+    vpi_time_s.low = 0;
+
+    cb_data_s.reason    = cbReadWriteSynch;
+    cb_data_s.cb_rtn    = handle_vpi_callback;
+    cb_data_s.obj       = NULL;
+    cb_data_s.time      = &vpi_time_s;
+    cb_data_s.value     = NULL;
+    cb_data_s.user_data = (char *)this;
+
+    return register_cb(&cb_data_s);
+}
 
 #if 0
 class vpi_onetime_cb : public vpi_cb_hdl {
@@ -380,31 +452,6 @@ public:
     }
 
     virtual ~vpi_cb_timed() { }
-};
-
-class vpi_cb_readwrite : public vpi_onetime_cb {
-public:
-    vpi_cb_readwrite(gpi_m_impl_interface *m_impl) : vpi_onetime_cb(m_impl) { }
-
-    int arm_callback(void) {
-        s_cb_data cb_data_s;
-        s_vpi_time vpi_time_s;
-
-        vpi_time_s.type = vpiSimTime;
-        vpi_time_s.high = 0;
-        vpi_time_s.low = 0;
-
-        cb_data_s.reason    = cbReadWriteSynch;
-        cb_data_s.cb_rtn    = handle_vpi_callback;
-        cb_data_s.obj       = NULL;
-        cb_data_s.time      = &vpi_time_s;
-        cb_data_s.value     = NULL;
-        cb_data_s.user_data = (char *)this;
-
-        return register_cb(&cb_data_s);
-    }
-
-    virtual ~vpi_cb_readwrite() { }
 };
 
 class vpi_cb_nexttime : public vpi_onetime_cb {

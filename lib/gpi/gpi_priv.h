@@ -94,8 +94,8 @@ public:
     virtual GpiIterator *iterate_handle(uint32_t type) = 0;
     virtual GpiObjHdl *next_handle(GpiIterator *iterator) = 0;
 
-    const char* get_name_str(void);
-    const char* get_type_str(void);
+    virtual const char* get_name_str(void);
+    virtual const char* get_type_str(void);
 
     bool is_native_impl(GpiImplInterface *impl);
     virtual int initialise(std::string name);
@@ -120,7 +120,7 @@ public:
     int m_length;
 
     virtual int set_signal_value(const int value) = 0;
-    virtual int set_signal_value(const char *str) = 0;
+    virtual int set_signal_value(std::string &value) = 0;
     //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
     // but the explicit ones are probably better
 
@@ -205,6 +205,7 @@ public:
 
     /* Hierachy related */
     virtual bool native_check(std::string &name, GpiObjHdl *parent) = 0;
+    virtual GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
 
     /* Callback related, these may (will) return the same handle*/

@@ -95,14 +95,15 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
     std::string s_name = name;
 
+    LOG_WARN("Searchingn for %s", name);
 
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
         LOG_WARN("Checking if %s native though impl %s ", name, (*iter)->get_name_c());
-        if ((*iter)->native_check(s_name, base)) {
+        if ((hdl = (*iter)->native_check_create(s_name, base))) {
             LOG_WARN("Found %s via %s", name, (*iter)->get_name_c());
-            hdl = base->get_handle_by_name(s_name);
+            //hdl = base->get_handle_by_name(s_name);
         }
     }
 
@@ -166,8 +167,9 @@ void gpi_set_signal_value_int(gpi_sim_hdl sig_hdl, int value)
 
 void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str)
 {
+    std::string value = str;
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
-    obj_hdl->set_signal_value(str);
+    obj_hdl->set_signal_value(value);
 }
 
 gpi_sim_hdl gpi_register_value_change_callback(const int (*gpi_function)(const void *),
