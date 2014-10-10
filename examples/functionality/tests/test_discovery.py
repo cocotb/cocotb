@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import cocotb
 from cocotb.triggers import Timer
+from cocotb.result import TestError
 
 @cocotb.test()
 def discover_module_values(dut):
