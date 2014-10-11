@@ -100,10 +100,18 @@ class SimHandle(object):
         object.__setattr__(self, name, value)
 
     def __hasattr__(self, name):
-        """Since calling hasattr(handle, "something") will print out a
-            backtrace to the log since usually attempting to access a
-            non-existent member is an error we provide a 'peek function"""
-        return bool(simulator.get_handle_by_name(self._handle, name))
+        """
+        Since calling hasattr(handle, "something") will print out a
+        backtrace to the log since usually attempting to access a
+        non-existent member is an error we provide a 'peek function
+
+        We still add the found handle to our dictionary to prevent leaking
+        handles.
+        """
+        new_handle = simulator.get_handle_by_name(self._handle, name)
+        if new_handle:
+            self._sub_handles[name] = SimHandle(new_handle)
+        return new_handle
 
     def __getitem__(self, index):
         if index in self._sub_handles:
