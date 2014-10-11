@@ -91,6 +91,7 @@ public:
     int deregister_callback(GpiCbHdl *obj_hdl);
     bool native_check(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
 
     const char * reason_to_string(int reason);
 };

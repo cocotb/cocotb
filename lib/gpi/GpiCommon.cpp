@@ -112,13 +112,24 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
 {
+    vector<GpiImplInterface*>::iterator iter;
+
+    GpiObjHdl *hdl;
+    GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
+
     LOG_WARN("Trying index");
-#if 0
-    /* Either want this or use the parent */
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(parent);
-    return (void*)obj_hdl->m_impl->get_handle_by_index(obj_hdl, index);
-#endif
-    return NULL;
+
+    for (iter = registered_impls.begin();
+         iter != registered_impls.end();
+         iter++) {
+        LOG_WARN("Checking if %d native though impl %s ", index, (*iter)->get_name_c());
+        if ((hdl = (*iter)->native_check_create(index, base))) {
+            LOG_WARN("Found %d via %s", index, (*iter)->get_name_c());
+            //hdl = base->get_handle_by_name(s_name);
+        }
+    }
+
+    return (gpi_sim_hdl)hdl;
 }
 
 gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base)

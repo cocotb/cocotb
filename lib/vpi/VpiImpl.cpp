@@ -116,6 +116,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     /* What sort of isntance is this ?*/
     switch (type) {
         case vpiNet:
+        case vpiReg:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
             LOG_WARN("Created VpiSignalObjHdl");
             break;
@@ -131,6 +132,48 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     LOG_WARN("Type was %d", type);
     /* Might move the object creation inside here */
     new_obj->initialise(name);
+
+    return new_obj;
+}
+
+GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
+{
+    int32_t type;
+    VpiObjHdl *parent_hdl = sim_to_hdl<VpiObjHdl*>(parent);
+    vpiHandle vpi_hdl = parent_hdl->get_handle();
+    vpiHandle new_hdl;
+    VpiObjHdl *new_obj = NULL; 
+    
+    new_hdl = vpi_handle_by_index(vpi_hdl, index);
+
+    if (!new_hdl)
+        return NULL;
+
+    if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
+        vpi_free_object(vpi_hdl);
+        return new_obj;
+    }
+
+    /* What sort of isntance is this ?*/
+    switch (type) {
+        case vpiNet:
+        case vpiNetBit:
+            new_obj = new VpiSignalObjHdl(this, new_hdl);
+            LOG_WARN("Created VpiSignalObjHdl");
+            break;
+        case vpiModule:
+            new_obj = new VpiObjHdl(this, new_hdl);
+            LOG_WARN("Created VpiObjHdl");
+            break;
+        default:
+            LOG_CRITICAL("Not sure what to do with type %d below entity (%s) at index (%d)",
+                         type, parent->get_name_str(), index);
+            return false;
+    }
+
+    LOG_WARN("Type was %d", type);
+    /* Might move the object creation inside here */
+    //new_obj->initialise(name);
 
     return new_obj;
 }
