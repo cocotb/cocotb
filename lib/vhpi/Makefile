@@ -31,11 +31,11 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GCC_ARGS    += -DVPI_CHECKING
-LIBS        := -lgpilog
+LIBS        := -lgpilog -lgpi -lstdc++
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libvhpi.so
 
-SRCS        := gpi_vhpi.c
+SRCS        := VhpiImpl.cpp VhpiCbHdl.cpp
 
 all: $(LIB_DIR)/$(LIB_NAME)
 

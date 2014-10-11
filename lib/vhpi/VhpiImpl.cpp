@@ -32,16 +32,15 @@
 // VHPI seems to run significantly slower than VPI, need to investigate.
 
 
-#include "../gpi/gpi_priv.h"
-#include <vhpi_user.h>
-
-#define VHPI_CHECKING 1
+#include "VhpiImpl.h"
+#include <vector>
 
 extern "C" {
-void handle_vhpi_callback(const vhpiCbDataT *cb_data);
-int __check_vhpi_error(const char *func, long line);
-const char * vhpi_format_to_string(int reason);
-const vhpiEnumT chr2vhpi(const char value);
+
+static VhpiCbHdl *sim_init_cb;
+static VhpiCbHdl *sim_finish_cb;
+static VhpiImpl  *vhpi_table;
+
 }
 
 const char * vhpi_format_to_string(int reason)
@@ -105,54 +104,16 @@ const vhpiEnumT chr2vhpi(const char value)
     }
 }
 
-// Should be run after every VPI call to check error status
-int __check_vhpi_error(const char *func, long line)
-{
-    int level=0;
-#if VHPI_CHECKING
-    vhpiErrorInfoT info;
-    int loglevel;
-    level = vhpi_check_error(&info);
-    if (level == 0)
-        return 0;
-
-    switch (level) {
-        case vhpiNote:
-            loglevel = GPIInfo;
-            break;
-        case vhpiWarning:
-            loglevel = GPIWarning;
-            break;
-        case vhpiError:
-            loglevel = GPIError;
-            break;
-        case vhpiFailure:
-        case vhpiSystem:
-        case vhpiInternal:
-            loglevel = GPICritical;
-            break;
-    }
-
-    gpi_log("cocotb.gpi", loglevel, __FILE__, func, line,
-            "VHPI Error level %d: %s\nFILE %s:%d",
-            info.severity, info.message, info.file, info.line);
-
-#endif
-    return level;
-}
-
-#define check_vhpi_error() \
-    __check_vhpi_error(__func__, __LINE__)
-
-class vhpi_obj_hdl : public gpi_obj_hdl {
+#if 0
+class VhpiObjHdl : public GpiObjHdl {
 private:
     int m_size;
     vhpiValueT m_value;
 public:
-    vhpi_obj_hdl(vhpiHandleT hdl, gpi_impl_interface *impl) : gpi_obj_hdl(impl),
+    VhpiObjHdl(vhpiHandleT hdl, gpi_impl_interface *impl) : GpiObjHdl(impl),
                                                               m_size(0),
                                                               vhpi_hdl(hdl) { }
-    virtual ~vhpi_obj_hdl() {
+    virtual ~VhpiObjHdl() {
         if (m_value.format == vhpiEnumVecVal ||
             m_value.format == vhpiLogicVecVal) {
             free(m_value.value.enumvs);
@@ -262,182 +223,51 @@ public:
         return check_vhpi_error();
     }
 };
+#endif
 
-class vhpi_cb_hdl : public gpi_cb_hdl {
-protected:
-    vhpiCbDataT cb_data;
-    vhpiHandleT vhpi_hdl;
-public:
-    vhpi_cb_hdl(gpi_impl_interface *impl) : gpi_cb_hdl(impl) {
-        cb_data.reason    = 0;
-        cb_data.cb_rtn    = handle_vhpi_callback;
-        cb_data.obj       = NULL;
-        cb_data.time      = NULL;
-        cb_data.value     = NULL;
-        cb_data.user_data = (char *)this;
+const char *VhpiImpl::reason_to_string(int reason) 
+{
+    switch (reason) {
+    case vhpiCbValueChange:
+        return "vhpiCbValueChange";
+    case vhpiCbStartOfNextCycle:
+        return "vhpiCbStartOfNextCycle";
+    case vhpiCbStartOfPostponed:
+        return "vhpiCbStartOfPostponed";
+    case vhpiCbEndOfTimeStep:
+        return "vhpiCbEndOfTimeStep";
+    case vhpiCbNextTimeStep:
+        return "vhpiCbNextTimeStep";
+    case vhpiCbAfterDelay:
+        return "vhpiCbAfterDelay";
+    case vhpiCbStartOfSimulation:
+        return "vhpiCbStartOfSimulation";
+    case vhpiCbEndOfSimulation:
+        return "vhpiCbEndOfSimulation";
+    case vhpiCbEndOfProcesses:
+        return "vhpiCbEndOfProcesses";
+    case vhpiCbLastKnownDeltaCycle:
+        return "vhpiCbLastKnownDeltaCycle";
+    default:
+        return "unknown";
     }
+}
 
-    int arm_callback(void) {
-        vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
-        int ret = 0;
+void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
+{
+    vhpiTimeT vhpi_time_s;
+    vhpi_get_time(&vhpi_time_s, NULL);
+    check_vhpi_error();
+    *high = vhpi_time_s.high;
+    *low = vhpi_time_s.low;
+}
 
-        if (!new_hdl) {
-            LOG_CRITICAL("VHPI: Unable to register callback a handle for VHPI type %s(%d)",
-                         reason_to_string(cb_data.reason), cb_data.reason);
-            check_vhpi_error();
-            ret = -1;
-        }
-
-        vhpiStateT cbState = (vhpiStateT)vhpi_get(vhpiStateP, new_hdl);
-        if (cbState != vhpiEnable) {
-            LOG_CRITICAL("VHPI ERROR: Registered callback isn't enabled! Got %d\n", cbState);
-        }
-
-        vhpi_hdl = new_hdl;
-        m_state = GPI_PRIMED;
-
-        return ret;
-    };
-
-    int cleanup_callback(void) {
-        vhpiStateT cbState = (vhpiStateT)vhpi_get(vhpiStateP, vhpi_hdl);
-        if (vhpiMature == cbState)
-            return vhpi_remove_cb(vhpi_hdl);
-        return 0;
-    }
-
-    const char *reason_to_string(int reason) {
-        switch (reason) {
-        case vhpiCbValueChange:
-            return "vhpiCbValueChange";
-        case vhpiCbStartOfNextCycle:
-            return "vhpiCbStartOfNextCycle";
-        case vhpiCbStartOfPostponed:
-            return "vhpiCbStartOfPostponed";
-        case vhpiCbEndOfTimeStep:
-            return "vhpiCbEndOfTimeStep";
-        case vhpiCbNextTimeStep:
-            return "vhpiCbNextTimeStep";
-        case vhpiCbAfterDelay:
-            return "vhpiCbAfterDelay";
-        case vhpiCbStartOfSimulation:
-            return "vhpiCbStartOfSimulation";
-        case vhpiCbEndOfSimulation:
-            return "vhpiCbEndOfSimulation";
-        case vhpiCbEndOfProcesses:
-            return "vhpiCbEndOfProcesses";
-        case vhpiCbLastKnownDeltaCycle:
-            return "vhpiCbLastKnownDeltaCycle";
-        default:
-            return "unknown";
-        }
-    }
-
-};
-
-class vhpi_cb_startup : public vhpi_cb_hdl {
-public:
-    vhpi_cb_startup(gpi_impl_interface *impl) : vhpi_cb_hdl(impl) { 
-        cb_data.reason = vhpiCbStartOfSimulation;
-    }
-
-    int run_callback(void) {
-        FENTER
-        gpi_sim_info_t sim_info;
-        sim_info.argc = 0;
-        sim_info.argv = NULL;
-        sim_info.product = gpi_copy_name(vhpi_get_str(vhpiNameP, NULL));
-        sim_info.version = gpi_copy_name(vhpi_get_str(vhpiToolVersionP, NULL));
-        gpi_embed_init(&sim_info);
-
-        free(sim_info.product);
-        free(sim_info.version);
-        
-        FEXIT
-
-        return 0;
-    }
-};
-
-class vhpi_cb_shutdown : public vhpi_cb_hdl {
-public:
-    vhpi_cb_shutdown(gpi_impl_interface *impl) : vhpi_cb_hdl(impl) { 
-        cb_data.reason = vhpiCbEndOfSimulation;
-    } 
-    int run_callback(void) {
-        gpi_embed_end();
-        return 0;
-    }
-};
-
-class vhpi_cb_timed : public vhpi_cb_hdl {
-private:
-vhpiTimeT time;
-public:
-    vhpi_cb_timed(gpi_impl_interface *impl, uint64_t time_ps) : vhpi_cb_hdl(impl) {
-        time.high = (uint32_t)(time_ps>>32);
-        time.low  = (uint32_t)(time_ps); 
-
-        cb_data.reason = vhpiCbAfterDelay;
-        cb_data.time = &time;
-    }
-};
-
-
-class vhpi_impl : public gpi_impl_interface {
-public:
-    vhpi_impl(const string& name) : gpi_impl_interface(name) { }
-
-     /* Sim related */
-    void sim_end(void) { }
-    void get_sim_time(uint32_t *high, uint32_t *low) { }
-
-    /* Signal related */
-    gpi_obj_hdl *get_root_handle(const char *name);
-    gpi_obj_hdl *get_handle_by_name(const char *name, gpi_obj_hdl *parent) { return NULL; }
-    gpi_obj_hdl *get_handle_by_index(gpi_obj_hdl *parent, uint32_t index) { return NULL; }
-    void free_handle(gpi_obj_hdl*) { }
-    gpi_iterator *iterate_handle(uint32_t type, gpi_obj_hdl *base) { return NULL; }
-    gpi_obj_hdl *next_handle(gpi_iterator *iterator) { return NULL; }
-    char* get_signal_value_binstr(gpi_obj_hdl *gpi_hdl) { return NULL; }
-    char* get_signal_name_str(gpi_obj_hdl *gpi_hdl);
-    char* get_signal_type_str(gpi_obj_hdl *gpi_hdl);
-    void set_signal_value_int(gpi_obj_hdl *gpi_hdl, int value);
-    void set_signal_value_str(gpi_obj_hdl *gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
-    
-    /* Callback related */
-    gpi_cb_hdl *register_timed_callback(uint64_t time_ps);
-    gpi_cb_hdl *register_value_change_callback(gpi_obj_hdl *obj_hdl) { return NULL; }
-    gpi_cb_hdl *register_readonly_callback(void) { return NULL; }
-    gpi_cb_hdl *register_nexttime_callback(void) { return NULL; }
-    gpi_cb_hdl *register_readwrite_callback(void) { return NULL; }
-    int deregister_callback(gpi_cb_hdl *gpi_hdl) { return 0; }
-
-    gpi_cb_hdl *create_cb_handle(void) { return NULL; }
-    void destroy_cb_handle(gpi_cb_hdl *gpi_hdl) { }
-};
-
-// Handle related functions
-/**
- * @name    Find the root handle
- * @brief   Find the root handle using a optional name
- *
- * Get a handle to the root simulator object.  This is usually the toplevel.
- *
- * FIXME: In VHPI we always return the first root instance
- * 
- * TODO: Investigate possibility of iterating and checking names as per VHPI
- * If no name is defined, we return the first root instance.
- *
- * If name is provided, we check the name against the available objects until
- * we find a match.  If no match is found we return NULL
- */
-gpi_obj_hdl *vhpi_impl::get_root_handle(const char* name)
+GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
 {
     FENTER
     vhpiHandleT root;
     vhpiHandleT dut;
-    gpi_obj_hdl *rv;
+    GpiObjHdl *rv;
 
     root = vhpi_handle(vhpiRootInst, NULL);
     check_vhpi_error();
@@ -469,39 +299,16 @@ gpi_obj_hdl *vhpi_impl::get_root_handle(const char* name)
         return NULL;
     }
 
-    rv = new vhpi_obj_hdl(root, this);
+    rv = new VhpiObjHdl(this, root);
 
     FEXIT
     return rv;
 }
 
-char *vhpi_impl::get_signal_name_str(gpi_obj_hdl *gpi_hdl)
-{
-    FENTER
-    vhpi_obj_hdl *vhpi_obj = reinterpret_cast<vhpi_obj_hdl*>(gpi_hdl);
-    const char *name = vhpi_get_str(vhpiFullNameP, vhpi_obj->vhpi_hdl);
-    check_vhpi_error();
-    char *result = vhpi_obj->gpi_copy_name(name);
-    LOG_WARN("Signal name was %s", name);
-    FEXIT
-    return result;
-}
 
-char *vhpi_impl::get_signal_type_str(gpi_obj_hdl *gpi_hdl)
+GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time_ps)
 {
-    FENTER
-    vhpi_obj_hdl *vhpi_obj = reinterpret_cast<vhpi_obj_hdl*>(gpi_hdl);
-    const char *name = vhpi_get_str(vhpiKindStrP, vhpi_obj->vhpi_hdl);
-    check_vhpi_error();
-    char *result = vhpi_obj->gpi_copy_name(name);
-    LOG_WARN("Signal type was %s", name);
-    FEXIT
-    return result;
-}
-
-gpi_cb_hdl *vhpi_impl::register_timed_callback(uint64_t time_ps)
-{
-    vhpi_cb_timed *hdl = new vhpi_cb_timed(this, time_ps);
+    VhpiTimedCbHdl *hdl = new VhpiTimedCbHdl(this, time_ps);
 
     if (hdl->arm_callback()) {
         delete(hdl);
@@ -511,41 +318,21 @@ gpi_cb_hdl *vhpi_impl::register_timed_callback(uint64_t time_ps)
     return hdl;
 }
 
-// Unfortunately it seems that format conversion is not well supported
-// We have to set values using vhpiEnum*
-void vhpi_impl::set_signal_value_int(gpi_obj_hdl *gpi_hdl, int value)
+void VhpiImpl::sim_end(void)
 {
-    FENTER
-
-    vhpi_obj_hdl *vhpi_obj = reinterpret_cast<vhpi_obj_hdl*>(gpi_hdl);
-    vhpi_obj->write_new_value(value);
-
-    FEXIT
-}
-
-void vhpi_impl::set_signal_value_str(gpi_obj_hdl *gpi_hdl, const char *str)
-{
-    FENTER
-
-    vhpi_obj_hdl *vhpi_obj = reinterpret_cast<vhpi_obj_hdl*>(gpi_hdl);
-    vhpi_obj->write_new_value(str);
-
-    FEXIT
+    sim_finish_cb = NULL;
+    vhpi_control(vhpiFinish);
+    check_vhpi_error();
 }
 
 extern "C" {
-
-static vhpi_cb_hdl *sim_init_cb;
-static vhpi_cb_hdl *sim_finish_cb;
-static vhpi_impl *vhpi_table;
-
 
 // Main entry point for callbacks from simulator
 void handle_vhpi_callback(const vhpiCbDataT *cb_data)
 {
     FENTER
 
-    vhpi_cb_hdl *cb_hdl = (vhpi_cb_hdl*)cb_data->user_data;
+    VhpiCbHdl *cb_hdl = (VhpiCbHdl*)cb_data->user_data;
 
     if (!cb_hdl)
         LOG_CRITICAL("VPI: Callback data corrupted");
@@ -567,7 +354,7 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data)
 static void register_initial_callback(void)
 {
     FENTER
-    sim_init_cb = new vhpi_cb_startup(vhpi_table);
+    sim_init_cb = new VhpiStartupCbHdl(vhpi_table);
     sim_init_cb->arm_callback();
     FEXIT
 }
@@ -575,14 +362,14 @@ static void register_initial_callback(void)
 static void register_final_callback(void)
 {
     FENTER
-    sim_finish_cb = new vhpi_cb_shutdown(vhpi_table);
+    sim_finish_cb = new VhpiShutdownCbHdl(vhpi_table);
     sim_finish_cb->arm_callback();
     FEXIT
 }
 
 static void register_embed(void)
 {
-    vhpi_table = new vhpi_impl("VHPI");
+    vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
     gpi_embed_init_python();
 }
