@@ -77,13 +77,6 @@ int GpiObjHdl::initialise(std::string name)
     return 0;
 }
 
-#if 0
-int GpiCbHdl::handle_callback(void)
-{
-    return this->gpi_function(m_cb_data);
-}
-#endif
-
 int GpiCbHdl::run_callback(void)
 {
     LOG_WARN("Generic run_callback");

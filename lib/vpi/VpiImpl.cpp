@@ -235,9 +235,9 @@ GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
 {
     FENTER
 
-    VpiTimedCbHdl *hdl = new VpiTimedCbHdl(this);
+    VpiTimedCbHdl *hdl = new VpiTimedCbHdl(this, time_ps);
 
-    if (hdl->arm_callback(time_ps)) {
+    if (hdl->arm_callback()) {
         delete(hdl);
         hdl = NULL;
     }

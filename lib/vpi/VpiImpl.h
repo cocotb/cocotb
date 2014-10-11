@@ -102,13 +102,10 @@ public:
                                                        vpi_hdl(hdl) { }
     virtual ~VpiObjHdl() { }
 
-    virtual GpiObjHdl *get_handle_by_name(std::string &name);
-    virtual GpiObjHdl *get_handle_by_index(uint32_t index);
+    virtual GpiObjHdl *get_handle_by_name(std::string &name) { return NULL; }
+    virtual GpiObjHdl *get_handle_by_index(uint32_t index) { return NULL; }
     virtual GpiIterator *iterate_handle(uint32_t type) { return NULL ;}
     virtual GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
-
-    //const char* get_name_str(void);
-    //const char* get_type_str(void);
 
     vpiHandle get_handle(void); 
 
@@ -119,16 +116,15 @@ protected:
 
 class VpiCbHdl : public GpiCbHdl {
 public:
-    VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
-                                       vpi_hdl(NULL) { }
+    VpiCbHdl(GpiImplInterface *impl);
     virtual ~VpiCbHdl() { }
 
     virtual int arm_callback(void);
     virtual int cleanup_callback(void);
 
 protected:
-    int register_cb(p_cb_data cb_data);
     vpiHandle vpi_hdl;
+    s_cb_data cb_data;
 };
 
 class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
@@ -171,8 +167,7 @@ public:
 
 class VpiTimedCbHdl : public VpiCbHdl {
 public:
-    VpiTimedCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) { }
-    int arm_callback(uint64_t time_ps);
+    VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
     virtual ~VpiTimedCbHdl() { }
 };
 
@@ -192,24 +187,21 @@ class VpiNextPhaseCbHdl : public VpiCbHdl {
 
 class VpiStartupCbHdl : public VpiCbHdl {
 public:
-    VpiStartupCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) { }
+    VpiStartupCbHdl(GpiImplInterface *impl);
     int run_callback(void);
-    int arm_callback(void);
     virtual ~VpiStartupCbHdl() { }
 };
 
 class VpiShutdownCbHdl : public VpiCbHdl {
 public:
-    VpiShutdownCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) { }
+    VpiShutdownCbHdl(GpiImplInterface *impl);
     int run_callback(void);
-    int arm_callback(void);
     virtual ~VpiShutdownCbHdl() { }
 };
 
 class VpiReadwriteCbHdl : public VpiCbHdl {
 public:
-    VpiReadwriteCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl) { }
-    int arm_callback(void);
+    VpiReadwriteCbHdl(GpiImplInterface *impl);
     virtual ~VpiReadwriteCbHdl() { }
 };
 
