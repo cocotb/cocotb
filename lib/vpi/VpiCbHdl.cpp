@@ -176,8 +176,6 @@ int VpiShutdownCbHdl::run_callback(void) {
 
 VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VpiCbHdl(impl)
 {
-    s_vpi_time vpi_time;
-
     vpi_time.type = vpiSimTime;
     vpi_time.high = (uint32_t)(time_ps>>32);
     vpi_time.low  = (uint32_t)(time_ps);
@@ -188,8 +186,6 @@ VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VpiCbHd
 
 VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 {
-    s_vpi_time vpi_time;
-
     vpi_time.type = vpiSimTime;
     vpi_time.high = 0;
     vpi_time.low = 0;

@@ -169,6 +169,8 @@ class VpiTimedCbHdl : public VpiCbHdl {
 public:
     VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
     virtual ~VpiTimedCbHdl() { }
+private:
+    s_vpi_time vpi_time;
 };
 
 #if 0
@@ -203,6 +205,8 @@ class VpiReadwriteCbHdl : public VpiCbHdl {
 public:
     VpiReadwriteCbHdl(GpiImplInterface *impl);
     virtual ~VpiReadwriteCbHdl() { }
+private:
+    s_vpi_time vpi_time;
 };
 
 #endif /*COCOTB_VPI_IMPL_H_  */
