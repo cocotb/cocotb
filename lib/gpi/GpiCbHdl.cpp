@@ -39,7 +39,7 @@ const char * GpiObjHdl::get_type_str(void)
 }
 
 /* Genertic base clss implementations */
-const char *GpiHdl::gpi_copy_name(const char *name)
+char *GpiHdl::gpi_copy_name(const char *name)
 {
     int len;
     char *result;

@@ -71,7 +71,7 @@ private:
 
 public:
     GpiImplInterface *m_impl;             // VPI/VHPI/FLI routines
-    const char *gpi_copy_name(const char *name);  // Might not be needed
+    char *gpi_copy_name(const char *name);  // Might not be needed
 };
 
 /* GPI object handle, maps to a simulation object */
