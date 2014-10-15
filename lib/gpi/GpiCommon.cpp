@@ -52,6 +52,7 @@ void gpi_embed_end(void)
 
 void gpi_sim_end(void)
 {
+    LOG_WARN("Sim end called");
     registered_impls[0]->sim_end();
 }
 
@@ -94,20 +95,29 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     GpiObjHdl *hdl;
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
     std::string s_name = name;
+    std::string fq_name = base->get_name() + "." + s_name;
 
-    LOG_WARN("Searchingn for %s", name);
+    LOG_WARN("Searching for %s", name);
 
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
         LOG_WARN("Checking if %s native though impl %s ", name, (*iter)->get_name_c());
-        if ((hdl = (*iter)->native_check_create(s_name, base))) {
+
+        /* If the current interface is not the same as the one that we
+           are going to query then append the name we are looking for to
+           the parent, such as <parent>.name. This is so that it entity can
+           be seen discovered even if the parents implementation is not the same
+           as the one that we are querying through */
+
+        //std::string &to_query = base->is_this_impl(*iter) ? s_name : fq_name;
+        if ((hdl = (*iter)->native_check_create(fq_name, base))) {
             LOG_WARN("Found %s via %s", name, (*iter)->get_name_c());
-            //hdl = base->get_handle_by_name(s_name);
+            return (gpi_sim_hdl)hdl;
         }
     }
 
-    return (gpi_sim_hdl)hdl;
+    return NULL;
 }
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)

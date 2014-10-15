@@ -43,9 +43,9 @@ static VhpiImpl  *vhpi_table;
 
 }
 
-const char * vhpi_format_to_string(int reason)
+const char * VhpiImpl::format_to_string(int format)
 {
-    switch (reason) {
+    switch (format) {
     case vhpiBinStrVal:
         return "vhpiBinStrVal";
     case vhpiOctStrVal:
@@ -81,149 +81,6 @@ const char * vhpi_format_to_string(int reason)
         return "unknown";
     }
 }
-
-// Value related functions
-const vhpiEnumT chr2vhpi(const char value)
-{
-    switch (value) {
-        case '0':
-            return vhpi0;
-        case '1':
-            return vhpi1;
-        case 'U':
-        case 'u':
-            return vhpiU;
-        case 'Z':
-        case 'z':
-            return vhpiZ;
-        case 'X':
-        case 'x':
-            return vhpiX;
-        default:
-            return vhpiDontCare;
-    }
-}
-
-#if 0
-class VhpiObjHdl : public GpiObjHdl {
-private:
-    int m_size;
-    vhpiValueT m_value;
-public:
-    VhpiObjHdl(vhpiHandleT hdl, gpi_impl_interface *impl) : GpiObjHdl(impl),
-                                                              m_size(0),
-                                                              vhpi_hdl(hdl) { }
-    virtual ~VhpiObjHdl() {
-        if (m_value.format == vhpiEnumVecVal ||
-            m_value.format == vhpiLogicVecVal) {
-            free(m_value.value.enumvs);
-        }
-    }
-public:
-    vhpiHandleT vhpi_hdl;
-
-    int initialise(void) {
-        // Determine the type of object, either scalar or vector
-        m_value.format = vhpiObjTypeVal;
-        m_value.bufSize = 0;
-        m_value.value.str = NULL;
-
-        vhpi_get_value(vhpi_hdl, &m_value);
-        check_vhpi_error();
-
-        switch (m_value.format) {
-            case vhpiEnumVal:
-            case vhpiLogicVal: {
-                m_value.value.enumv = vhpi0;
-                break;
-            }
-
-            case vhpiEnumVecVal:
-            case vhpiLogicVecVal: {
-                m_size = vhpi_get(vhpiSizeP, vhpi_hdl);
-                m_value.bufSize = m_size*sizeof(vhpiEnumT); 
-                m_value.value.enumvs = (vhpiEnumT *)malloc(m_size*sizeof(vhpiEnumT));
-
-                memset(&m_value.value.enumvs, m_size, vhpi0);
-                //for (i=0; i<size; i++)
-                //    value_s.value.enumvs[size-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
-
-                break;
-            }
-
-            default: {
-                LOG_CRITICAL("Unable to assign value to %s (%d) format object",
-                             vhpi_format_to_string(m_value.format), m_value.format);
-            }
-        }
-        return 0;
-    }
-
-    int write_new_value(int value) {
-        switch (m_value.format) {
-            case vhpiEnumVal:
-            case vhpiLogicVal: {
-                m_value.value.enumv = value ? vhpi1 : vhpi0;
-                break;
-            }
-
-            case vhpiEnumVecVal:
-            case vhpiLogicVecVal: {
-                int i;
-                for (i=0; i<m_size; i++)
-                    m_value.value.enumvs[m_size-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
-
-                break;
-            }
-
-            default: {
-                LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
-            }
-        }
-        vhpi_put_value(vhpi_hdl, &m_value, vhpiForcePropagate);
-        return check_vhpi_error();
-    }
-
-    int write_new_value(const char *str) {
-        switch (m_value.format) {
-            case vhpiEnumVal:
-            case vhpiLogicVal: {
-                m_value.value.enumv = chr2vhpi(*str);
-                break;
-            }
-
-            case vhpiEnumVecVal:
-            case vhpiLogicVecVal: {
-
-                const char *ptr;
-                int len = strlen(str);
-                if (len > m_size) {
-                    LOG_ERROR("VHPI: Attempt to write string longer than signal %d > %d",
-                              len, m_size);
-                    return -1;
-                }
-                int i;
-                for (i=0, ptr=str; i<len; ptr++, i++)
-                    m_value.value.enumvs[i] = chr2vhpi(*ptr);
-
-                // Initialise to 0s
-                for (i=len; i<m_size; i++)
-                    m_value.value.enumvs[i] = vhpi0;
-
-                break;
-            }
-
-            default: {
-                LOG_CRITICAL("Unable to assign value to %s (%d) format object",
-                             vhpi_format_to_string(m_value.format), m_value.format);
-            }
-        }
-
-        vhpi_put_value(vhpi_hdl, &m_value, vhpiForcePropagate);
-        return check_vhpi_error();
-    }
-};
-#endif
 
 const char *VhpiImpl::reason_to_string(int reason) 
 {
@@ -262,12 +119,63 @@ void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vhpi_time_s.low;
 }
 
+GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
+{
+    vhpiIntT type;
+    VhpiObjHdl *parent_hdl = sim_to_hdl<VhpiObjHdl*>(parent);
+    vhpiHandleT vpi_hdl = parent_hdl->get_handle();
+    vhpiHandleT new_hdl;
+    VhpiObjHdl *new_obj = NULL;
+    unsigned int name_start = 0;
+    std::vector<char> writable(name.begin(), name.end());
+    writable.push_back('\0');
+
+    new_hdl = vhpi_handle_by_name(&writable[name_start], NULL);
+
+    if (!new_hdl)
+        return NULL;
+
+    if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
+        vpi_free_object(vpi_hdl);
+        LOG_DEBUG("Not a VHPI object");
+        return NULL;
+    }
+
+    /* What sort of isntance is this ?*/
+    switch (type) {
+        case vhpiPortDeclK:
+        case vhpiSigDeclK:
+            new_obj = new VhpiSignalObjHdl(this, new_hdl);
+            LOG_DEBUG("Created VhpiSignalObjHdl");
+            break;
+        case vhpiCompInstStmtK:
+            new_obj = new VhpiObjHdl(this, new_hdl);
+            LOG_DEBUG("Created VhpiObjHdl");
+            break;
+        default:
+            LOG_CRITICAL("Not sure what to do with type %d for entity (%s)", type, name.c_str());
+            return NULL;
+    }
+
+    LOG_DEBUG("Type was %d", type);
+    /* Might move the object creation inside here */
+    new_obj->initialise(name);
+
+    return new_obj;
+}
+
+GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
+{
+    return NULL;
+}
+
 GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
 {
     FENTER
     vhpiHandleT root;
     vhpiHandleT dut;
     GpiObjHdl *rv;
+    std::string root_name = name;
 
     root = vhpi_handle(vhpiRootInst, NULL);
     check_vhpi_error();
@@ -300,6 +208,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
     }
 
     rv = new VhpiObjHdl(this, root);
+    rv->initialise(root_name);
 
     FEXIT
     return rv;
@@ -336,8 +245,6 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data)
 
     if (!cb_hdl)
         LOG_CRITICAL("VPI: Callback data corrupted");
-
-    LOG_DEBUG("Running %p", cb_hdl);
 
     if (cb_hdl->get_call_state() == GPI_PRIMED) {
         cb_hdl->set_call_state(GPI_PRE_CALL);

@@ -38,6 +38,11 @@ const char * GpiObjHdl::get_type_str(void)
     return m_type.c_str();
 }
 
+const std::string & GpiObjHdl::get_name(void)
+{
+    return m_name;
+}
+
 /* Genertic base clss implementations */
 char *GpiHdl::gpi_copy_name(const char *name)
 {
@@ -65,13 +70,18 @@ char *GpiHdl::gpi_copy_name(const char *name)
     return result;
 }
 
-int GpiHdl::initialise(std::string name)
+bool GpiHdl::is_this_impl(GpiImplInterface *impl)
+{
+    return impl == this->m_impl;
+}
+
+int GpiHdl::initialise(std::string &name)
 {
     LOG_WARN("Generic initialise, doubt you should have called this");
     return 0;
 }
 
-int GpiObjHdl::initialise(std::string name)
+int GpiObjHdl::initialise(std::string &name)
 {
     m_name = name;
     return 0;
@@ -80,7 +90,9 @@ int GpiObjHdl::initialise(std::string name)
 int GpiCbHdl::run_callback(void)
 {
     LOG_WARN("Generic run_callback");
-    return this->gpi_function(m_cb_data);
+    this->gpi_function(m_cb_data);
+    LOG_WARN("Generic run_callback done");
+    return 0;
 }
 
 int GpiCbHdl::cleanup_callback(void)

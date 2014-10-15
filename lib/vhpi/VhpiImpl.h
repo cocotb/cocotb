@@ -91,10 +91,11 @@ public:
     GpiCbHdl *register_readwrite_callback(void) { return NULL; }
     int deregister_callback(GpiCbHdl *obj_hdl) { return 0; }
     bool native_check(std::string &name, GpiObjHdl *parent) { return false; }
-    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) { return NULL; }
-    GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent) { return NULL; }
+    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
 
     const char * reason_to_string(int reason);
+    const char * format_to_string(int format);
 };
 
 class VhpiObjHdl : public GpiObjHdl {
@@ -107,8 +108,10 @@ public:
     virtual GpiObjHdl *get_handle_by_index(uint32_t index) { return NULL; }
     virtual GpiIterator *iterate_handle(uint32_t type) { return NULL ;}
     virtual GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
+    //int initialise(std::string &name);
 
     vhpiHandleT get_handle(void); 
+
 
 protected:
     vhpiHandleT vhpi_hdl;
@@ -130,8 +133,9 @@ protected:
 class VhpiSignalObjHdl : public VhpiObjHdl, public GpiSignalObjHdl {
 public:
     VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : VhpiObjHdl(impl, hdl),
-                                                                GpiSignalObjHdl(impl) { }
-    virtual ~VhpiSignalObjHdl() { }
+                                                                GpiSignalObjHdl(impl),
+                                                                m_size(0) { }
+    virtual ~VhpiSignalObjHdl();
 
     const char* get_signal_value_binstr(void);
 
@@ -160,9 +164,13 @@ public:
     {
         return VhpiObjHdl::next_handle(iterator);
     }
-    virtual int initialise(std::string name) {
-        return VhpiObjHdl::initialise(name);
-    }
+    virtual int initialise(std::string &name);
+
+private:
+    const vhpiEnumT chr2vhpi(const char value);
+    unsigned int m_size;
+    vhpiValueT m_value;
+    vhpiValueT m_binvalue;
 };
 
 class VhpiTimedCbHdl : public VhpiCbHdl {

@@ -35,6 +35,69 @@ vhpiHandleT VhpiObjHdl::get_handle(void)
     return vhpi_hdl;
 }
 
+VhpiSignalObjHdl::~VhpiSignalObjHdl()
+{
+    if (m_value.format == vhpiEnumVecVal ||
+        m_value.format == vhpiLogicVecVal) {
+        free(m_value.value.enumvs);
+    }
+
+    free(m_binvalue.value.str);
+}
+
+int VhpiSignalObjHdl::initialise(std::string &name) {
+    // Determine the type of object, either scalar or vector
+    m_value.format = vhpiObjTypeVal;
+    m_value.bufSize = 0;
+    m_value.value.str = NULL;
+
+    vhpi_get_value(vhpi_hdl, &m_value);
+    check_vhpi_error();
+
+    switch (m_value.format) {
+        case vhpiEnumVal:
+        case vhpiLogicVal: {
+            m_value.value.enumv = vhpi0;
+            break;
+        }
+
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal: {
+            m_size = vhpi_get(vhpiSizeP, vhpi_hdl);
+            m_value.bufSize = m_size*sizeof(vhpiEnumT); 
+            m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize);
+            if (!m_value.value.enumvs) {
+                LOG_CRITICAL("Unable to alloc mem for write buffer");
+            }
+
+            memset(&m_value.value.enumvs, m_size, vhpi0);
+
+            break;
+        }
+
+        default: {
+            LOG_CRITICAL("Unable to determine property for %s (%d) format object",
+                         ((VhpiImpl*)VhpiObjHdl::m_impl)->format_to_string(m_value.format), m_value.format);
+        }
+    }
+
+    /* We also alloc a second value member for use with read string operations */
+    m_binvalue.format = vhpiBinStrVal;
+    m_binvalue.bufSize = 0;//m_size*sizeof(vhpiCharT);
+    m_binvalue.value.str = NULL;//(vhpiCharT *)calloc(m_binvalue.bufSize, m_binvalue.bufSize);
+
+    int new_size = vhpi_get_value(vhpi_hdl, &m_binvalue);
+
+    m_binvalue.bufSize = new_size*sizeof(vhpiCharT);
+    m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, m_binvalue.bufSize);
+
+    if (!m_value.value.str) {
+        LOG_CRITICAL("Unable to alloc mem for read buffer");
+    }
+
+    return 0;
+}
+
 VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                vhpi_hdl(NULL)
 {
@@ -77,29 +140,108 @@ int VhpiCbHdl::arm_callback(void)
     return ret;
 }
 
-const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
+// Value related functions
+const vhpiEnumT VhpiSignalObjHdl::chr2vhpi(const char value)
 {
-    s_vpi_value value_s = {vpiBinStrVal};
-
-    vpi_get_value(vhpi_hdl, &value_s);
-    check_vhpi_error();
-
-    LOG_WARN("Value back was %s", value_s.value.str);
-
-    return value_s.value.str;
+    switch (value) {
+        case '0':
+            return vhpi0;
+        case '1':
+            return vhpi1;
+        case 'U':
+        case 'u':
+            return vhpiU;
+        case 'Z':
+        case 'z':
+            return vhpiZ;
+        case 'X':
+        case 'x':
+            return vhpiX;
+        default:
+            return vhpiDontCare;
+    }
 }
 
 // Value related functions
 int VhpiSignalObjHdl::set_signal_value(int value)
 {
- 
+    switch (m_value.format) {
+        case vhpiEnumVal:
+        case vhpiLogicVal: {
+            m_value.value.enumv = value ? vhpi1 : vhpi0;
+            break;
+        }
+
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal: {
+            unsigned int i;
+            for (i=0; i<m_size; i++)
+                m_value.value.enumvs[m_size-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
+
+            break;
+        }
+
+        default: {
+            LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
+        }
+    }
+    vhpi_put_value(vhpi_hdl, &m_value, vhpiForcePropagate);
+    check_vhpi_error();
     return 0;
 }
 
 int VhpiSignalObjHdl::set_signal_value(std::string &value)
 {
- 
+    switch (m_value.format) {
+        case vhpiEnumVal:
+        case vhpiLogicVal: {
+            m_value.value.enumv = chr2vhpi(value.c_str()[0]);
+            break;
+        }
+
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal: {
+
+            unsigned int len = value.length();
+
+            if (len > m_size)  {
+                LOG_ERROR("VHPI: Attempt to write string longer than signal %d > %d",
+                          len, m_size);
+                return -1;
+            }
+
+            std::string::iterator iter;
+
+            unsigned int i = 0;
+            for (iter = value.begin();
+                 iter != value.end();
+                 iter++, i++) {
+                m_value.value.enumvs[i] = chr2vhpi(*iter);
+            }
+
+            // Fill bits at the end of the value to 0's
+            for (i = len; i < m_size; i++)
+                m_value.value.enumvs[i] = vhpi0;
+
+            break;
+        }
+
+        default: {
+           LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
+        }
+    }
+
+    vhpi_put_value(vhpi_hdl, &m_value, vhpiForcePropagate);
+    check_vhpi_error();
     return 0;
+}
+
+const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
+{
+    vhpi_get_value(vhpi_hdl, &m_binvalue);
+    check_vhpi_error();
+
+    return m_binvalue.value.str;
 }
 
 VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
@@ -127,7 +269,7 @@ VhpiShutdownCbHdl::VhpiShutdownCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
 }
 
 int VhpiShutdownCbHdl::run_callback(void) {
-    LOG_WARN("Shutdown called");
+    //LOG_WARN("Shutdown called");
     gpi_embed_end();
     return 0;
 }

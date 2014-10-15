@@ -102,14 +102,17 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     VpiObjHdl *new_obj = NULL; 
     std::vector<char> writable(name.begin(), name.end());
     writable.push_back('\0');
-    
-    new_hdl = vpi_handle_by_name(&writable[0], vpi_hdl);
+
+    LOG_WARN("Name passed in is %s", name.c_str());
+
+    new_hdl = vpi_handle_by_name(&writable[0], NULL);
 
     if (!new_hdl)
         return NULL;
 
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
         vpi_free_object(vpi_hdl);
+        LOG_WARN("Not a VPI object")
         return new_obj;
     }
 
@@ -126,7 +129,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
             break;
         default:
             LOG_CRITICAL("Not sure what to do with type %d for entity (%s)", type, name.c_str());
-            return false;
+            return NULL;
     }
 
     LOG_WARN("Type was %d", type);
@@ -168,7 +171,7 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         default:
             LOG_CRITICAL("Not sure what to do with type %d below entity (%s) at index (%d)",
                          type, parent->get_name_str(), index);
-            return false;
+            return NULL;
     }
 
     LOG_WARN("Type was %d", type);
@@ -184,6 +187,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     vpiHandle root;
     vpiHandle iterator;
     VpiObjHdl *rv;
+    std::string root_name = name;
 
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
@@ -207,7 +211,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     }
 
     rv = new VpiObjHdl(this, root);
-    rv->initialise(name);
+    rv->initialise(root_name);
 
     FEXIT
     return rv;
@@ -323,7 +327,9 @@ void VpiImpl::sim_end(void)
      */
     sim_finish_cb->set_call_state(GPI_DELETE);
     vpi_control(vpiFinish);
+    LOG_WARN("Returned from vpi_control");
     check_vpi_error();
+    LOG_WARN("Returned from check_error");
 }
 
 extern "C" {
@@ -340,7 +346,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     if (!cb_hdl)
         LOG_CRITICAL("VPI: Callback data corrupted");
 
-    LOG_DEBUG("Running %p", cb_hdl);
+    LOG_WARN("Running %p", cb_hdl);
 
     if (cb_hdl->get_call_state() == GPI_PRIMED) {
         cb_hdl->set_call_state(GPI_PRE_CALL);
@@ -348,7 +354,11 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
         cb_hdl->set_call_state(GPI_POST_CALL);
     }
 
+    LOG_WARN("Running %p done", cb_hdl);
+
     gpi_deregister_callback(cb_hdl);
+
+    LOG_WARN("Deregister %p done", cb_hdl);
 
     FEXIT
     return rv;

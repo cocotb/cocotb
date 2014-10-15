@@ -64,14 +64,15 @@ public:
     //GpiHdl() : m_impl(NULL) { }
     GpiHdl(GpiImplInterface *impl) : m_impl(impl) { }
     virtual ~GpiHdl() { }
-    virtual int initialise(std::string name);                   // Post constructor init
+    virtual int initialise(std::string &name);                   // Post constructor init
 
 private:
     GpiHdl() { }   // Disable default constructor
 
 public:
-    GpiImplInterface *m_impl;             // VPI/VHPI/FLI routines
-    char *gpi_copy_name(const char *name);  // Might not be needed
+    GpiImplInterface *m_impl;                  // VPI/VHPI/FLI routines
+    char *gpi_copy_name(const char *name);     // Might not be needed
+    bool is_this_impl(GpiImplInterface *impl); // Is the passed interface the one this object uses
 };
 
 /* GPI object handle, maps to a simulation object */
@@ -96,9 +97,10 @@ public:
 
     virtual const char* get_name_str(void);
     virtual const char* get_type_str(void);
+    const std::string & get_name(void);
 
     bool is_native_impl(GpiImplInterface *impl);
-    virtual int initialise(std::string name);
+    virtual int initialise(std::string &name);
 
 protected:
     std::string m_name;

@@ -160,7 +160,7 @@ public:
     {
         return VpiObjHdl::next_handle(iterator);
     }
-    virtual int initialise(std::string name) {
+    virtual int initialise(std::string &name) {
         return VpiObjHdl::initialise(name);
     }
 };
