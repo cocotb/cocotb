@@ -194,6 +194,26 @@ VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
     cb_data.time = &vpi_time;
 }
 
+VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
+{
+    vpi_time.type = vpiSimTime;
+    vpi_time.high = 0;
+    vpi_time.low = 0;
+
+    cb_data.reason = cbReadOnlySynch;
+    cb_data.time = &vpi_time;
+}
+
+VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
+{
+    vpi_time.type = vpiSimTime;
+    vpi_time.high = 0;
+    vpi_time.low = 0;
+
+    cb_data.reason = cbNextSimTime;
+    cb_data.time = &vpi_time;
+}
+
 #if 0
 class vpi_onetime_cb : public vpi_cb_hdl {
 public:

@@ -173,19 +173,22 @@ private:
     s_vpi_time vpi_time;
 };
 
-#if 0
+
 class VpiReadOnlyCbHdl : public VpiCbHdl {
-
-};
-
-class VpiReadWriteCbHdl : public VpiCbHdl {
-
+public:
+    VpiReadOnlyCbHdl(GpiImplInterface *impl);
+    virtual ~VpiReadOnlyCbHdl() { }
+private:
+    s_vpi_time vpi_time;
 };
 
 class VpiNextPhaseCbHdl : public VpiCbHdl {
-
+public:
+    VpiNextPhaseCbHdl(GpiImplInterface *impl);
+    virtual ~VpiNextPhaseCbHdl() { }
+private:
+    s_vpi_time vpi_time;
 };
-#endif
 
 class VpiStartupCbHdl : public VpiCbHdl {
 public:

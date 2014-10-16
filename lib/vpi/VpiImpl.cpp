@@ -267,10 +267,9 @@ GpiCbHdl *VpiImpl::register_readwrite_callback(void)
 
 GpiCbHdl *VpiImpl::register_readonly_callback(void)
 {
-    #if 0
     FENTER
 
-    vpi_cb_readonly *hdl = new VpiReadOnlyCbHdl(this);
+    VpiReadOnlyCbHdl *hdl = new VpiReadOnlyCbHdl(this);
 
     if (hdl->arm_callback()) {
         delete(hdl);
@@ -279,16 +278,13 @@ GpiCbHdl *VpiImpl::register_readonly_callback(void)
 
     FEXIT
     return hdl;
-    #endif
-    return NULL;
 }
 
 GpiCbHdl *VpiImpl::register_nexttime_callback(void)
 {
-    #if 0
     FENTER
     
-    vpi_cb_nexttime *hdl = new VpiNextPhaseCbHdl(this);
+    VpiNextPhaseCbHdl *hdl = new VpiNextPhaseCbHdl(this);
 
     if (hdl->arm_callback()) {
         delete(hdl);
@@ -297,8 +293,6 @@ GpiCbHdl *VpiImpl::register_nexttime_callback(void)
 
     FEXIT
     return hdl;
-    #endif
-    return NULL;
 }
 
 int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
