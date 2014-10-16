@@ -367,6 +367,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
 static void register_embed(void)
 {
+    printf("%s %d Registered VPI \n", __func__, __LINE__);
     vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
     gpi_embed_init_python();
@@ -375,6 +376,7 @@ static void register_embed(void)
 
 static void register_initial_callback(void)
 {
+    LOG_WARN("Initial callback registering");
     sim_init_cb = new VpiStartupCbHdl(vpi_table);
 
     /* We ignore the return value here as VCS does some silly

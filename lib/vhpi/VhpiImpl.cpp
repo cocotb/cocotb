@@ -261,6 +261,7 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data)
 static void register_initial_callback(void)
 {
     FENTER
+    LOG_WARN("Initial callback registering");
     sim_init_cb = new VhpiStartupCbHdl(vhpi_table);
     sim_init_cb->arm_callback();
     FEXIT
@@ -276,6 +277,7 @@ static void register_final_callback(void)
 
 static void register_embed(void)
 {
+    printf("%s %d Registered VHPI \n", __func__, __LINE__);
     vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
     gpi_embed_init_python();
