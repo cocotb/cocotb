@@ -70,7 +70,7 @@ int VpiCbHdl::arm_callback(void) {
     int ret = 0;
 
     if (!new_hdl) {
-        LOG_CRITICAL("VPI: Unable to register callback a handle for VPI type %s(%d)",
+        LOG_CRITICAL("VPI: Unable to register a callback handle for VPI type %s(%d)",
                      m_impl->reason_to_string(cb_data.reason), cb_data.reason);
         check_vpi_error();
         ret = -1;
@@ -84,7 +84,26 @@ int VpiCbHdl::arm_callback(void) {
 
 int VpiCbHdl::cleanup_callback(void)
 {
-    return 0;
+    int rc;
+    if (!vpi_hdl) {
+        LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
+        exit(1);
+    }
+
+    // If the callback has not been called we also need to call
+    // remove as well
+    if (m_state == GPI_PRIMED) {
+
+        rc = vpi_remove_cb(vpi_hdl);
+        if (!rc) {
+            check_vpi_error();
+            return rc;
+        }
+    }
+
+    vpi_hdl = NULL;
+    m_state = GPI_FREE;
+    return rc;
 }
 
 const char* VpiSignalObjHdl::get_signal_value_binstr(void)
@@ -95,8 +114,6 @@ const char* VpiSignalObjHdl::get_signal_value_binstr(void)
 
     vpi_get_value(vpi_hdl, value_p);
     check_vpi_error();
-
-    LOG_WARN("Value back was %s", value_p->value.str);
 
     return value_p->value.str;
 }
@@ -140,6 +157,43 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
 
     FEXIT
     return 0;
+}
+
+GpiCbHdl * VpiSignalObjHdl::value_change_cb(void)
+{
+    value_cb = new VpiValueCbHdl(VpiObjHdl::m_impl, this);
+
+    if (value_cb->arm_callback())
+        return NULL;
+
+    return value_cb;
+}
+
+VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig) : VpiCbHdl(impl)
+{
+    vpi_time.type = vpiSuppressTime;
+
+    cb_data.reason = cbValueChange;
+    cb_data.time = &vpi_time;
+    cb_data.obj = sig->get_handle();
+}
+
+int VpiValueCbHdl::cleanup_callback(void)
+{
+    //LOG_WARN("Cleanup %p", this);
+    int rc;
+    if (!vpi_hdl) {
+        LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
+        exit(1);
+    }
+
+    rc = vpi_remove_cb(vpi_hdl);
+    check_vpi_error();
+
+    vpi_hdl = NULL;
+    m_state = GPI_FREE;
+
+    return rc;
 }
 
 VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
@@ -213,158 +267,3 @@ VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
     cb_data.reason = cbNextSimTime;
     cb_data.time = &vpi_time;
 }
-
-#if 0
-class vpi_onetime_cb : public vpi_cb_hdl {
-public:
-    vpi_onetime_cb(gpi_m_impl_interface *m_impl) : vpi_cb_hdl(m_impl) { }
-    int cleanup_callback(void) {
-        FENTER
-        //LOG_WARN("Cleanup %p state is %d", this, state);
-        int rc;
-        if (!vpi_hdl) {
-            LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
-            exit(1);
-        }
-
-        // If the callback has not been called we also need to call
-        // remove as well
-        if (m_state == GPI_PRIMED) {
-
-            rc = vpi_remove_cb(vpi_hdl);
-            if (!rc) {
-                check_vpi_error();
-                return rc;
-            }
-        }
-
-        vpi_hdl = NULL;
-        m_state = GPI_FREE;
-        return rc;
-    }
-    virtual ~vpi_onetime_cb() { }
-};
-
-class vpi_recurring_cb : public vpi_cb_hdl {
-public:
-    vpi_recurring_cb(gpi_m_impl_interface *m_impl) : vpi_cb_hdl(m_impl) { }
-    int cleanup_callback(void) {
-        FENTER
-        //LOG_WARN("Cleanup %p", this);
-        int rc;
-        if (!vpi_hdl) {
-            LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
-            exit(1);
-        }
-
-        rc = vpi_remove_cb(vpi_hdl);
-        check_vpi_error();
-
-        vpi_hdl = NULL;
-        m_state = GPI_FREE;
-
-        FEXIT
-        return rc;
-    }
-    virtual ~vpi_recurring_cb() { }
-};
-
-class vpi_cb_value_change : public vpi_recurring_cb {
-private:
-    s_vpi_value cb_value;
-public:
-    vpi_cb_value_change(gpi_m_impl_interface *m_impl) : vpi_recurring_cb(m_impl) {
-        cb_value.format = vpiIntVal;
-    }
-    int arm_callback(vpi_obj_hdl *vpi_hdl) {
-        s_cb_data cb_data_s;
-        s_vpi_time vpi_time_s = {.type = vpiSuppressTime };
-
-        cb_data_s.reason    = cbValueChange;
-        cb_data_s.cb_rtn    = handle_vpi_callback;
-        cb_data_s.obj       = vpi_hdl->vpi_hdl;
-        cb_data_s.time      = &vpi_time_s;
-        cb_data_s.value     = &cb_value;
-        cb_data_s.user_data = (char *)this;
-
-        return register_cb(&cb_data_s);
-    }
-    virtual ~vpi_cb_value_change() { }
-};
-
-class vpi_cb_readonly : public vpi_onetime_cb {
-public:
-    vpi_cb_readonly(gpi_m_impl_interface *m_impl) : vpi_onetime_cb(m_impl) { }
-    int arm_callback(void) {
-        s_cb_data cb_data_s;
-        s_vpi_time vpi_time_s;
-
-        vpi_time_s.type = vpiSimTime,
-        vpi_time_s.low = 0,
-        vpi_time_s.high = 0,
-
-        cb_data_s.reason    = cbReadOnlySynch;
-        cb_data_s.cb_rtn    = handle_vpi_callback;
-        cb_data_s.obj       = NULL;
-        cb_data_s.time      = &vpi_time_s;
-        cb_data_s.value     = NULL;
-        cb_data_s.user_data = (char *)this;
-
-        return register_cb(&cb_data_s);
-    }
-
-    virtual ~vpi_cb_readonly() { }
-};
-
-
-class vpi_cb_timed : public vpi_onetime_cb {
-public:
-    vpi_cb_timed(gpi_m_impl_interface *m_impl) : vpi_onetime_cb(m_impl) { }
-
-    int arm_callback(uint64_t time_ps) {
-        s_cb_data cb_data_s;
-        s_vpi_time vpi_time_s;
-
-        vpi_time_s.type = vpiSimTime;
-        vpi_time_s.high = (uint32_t)(time_ps>>32);
-        vpi_time_s.low  = (uint32_t)(time_ps);
-
-        cb_data_s.reason    = cbAfterDelay;
-        cb_data_s.cb_rtn    = handle_vpi_callback;
-        cb_data_s.obj       = NULL;
-        cb_data_s.time      = &vpi_time_s;
-        cb_data_s.value     = NULL;
-        cb_data_s.user_data = (char *)this;
-
-        return register_cb(&cb_data_s);
-    }
-
-    virtual ~vpi_cb_timed() { }
-};
-
-class vpi_cb_nexttime : public vpi_onetime_cb {
-public:
-    vpi_cb_nexttime(gpi_m_impl_interface *m_impl) : vpi_onetime_cb(m_impl) { }
-
-    int arm_callback(void) {
-        s_cb_data cb_data_s;
-        s_vpi_time vpi_time_s;
-
-        vpi_time_s.type = vpiSimTime;
-        vpi_time_s.high = 0;
-        vpi_time_s.low = 0;
-
-        cb_data_s.reason    = cbNextSimTime;
-        cb_data_s.cb_rtn    = handle_vpi_callback;
-        cb_data_s.obj       = NULL;
-        cb_data_s.time      = &vpi_time_s;
-        cb_data_s.value     = NULL;
-        cb_data_s.user_data = (char *)this;
-
-        return register_cb(&cb_data_s);
-    }
-
-    virtual ~vpi_cb_nexttime() { }
-};
-
-#endif

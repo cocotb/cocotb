@@ -103,8 +103,6 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     std::vector<char> writable(name.begin(), name.end());
     writable.push_back('\0');
 
-    LOG_WARN("Name passed in is %s", name.c_str());
-
     new_hdl = vpi_handle_by_name(&writable[0], NULL);
 
     if (!new_hdl)
@@ -112,7 +110,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
         vpi_free_object(vpi_hdl);
-        LOG_WARN("Not a VPI object")
+        LOG_WARN("Not a VPI object");
         return new_obj;
     }
 
@@ -121,19 +119,17 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         case vpiNet:
         case vpiReg:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
-            LOG_WARN("Created VpiSignalObjHdl");
+            LOG_DEBUG("Created VpiSignalObjHdl");
             break;
         case vpiModule:
             new_obj = new VpiObjHdl(this, new_hdl);
-            LOG_WARN("Created VpiObjHdl");
+            LOG_DEBUG("Created VpiObjHdl");
             break;
         default:
             LOG_CRITICAL("Not sure what to do with type %d for entity (%s)", type, name.c_str());
             return NULL;
     }
 
-    LOG_WARN("Type was %d", type);
-    /* Might move the object creation inside here */
     new_obj->initialise(name);
 
     return new_obj;
@@ -162,21 +158,17 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         case vpiNet:
         case vpiNetBit:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
-            LOG_WARN("Created VpiSignalObjHdl");
+            LOG_DEBUG("Created VpiSignalObjHdl");
             break;
         case vpiModule:
             new_obj = new VpiObjHdl(this, new_hdl);
-            LOG_WARN("Created VpiObjHdl");
+            LOG_DEBUG("Created VpiObjHdl");
             break;
         default:
             LOG_CRITICAL("Not sure what to do with type %d below entity (%s) at index (%d)",
                          type, parent->get_name_str(), index);
             return NULL;
     }
-
-    LOG_WARN("Type was %d", type);
-    /* Might move the object creation inside here */
-    //new_obj->initialise(name);
 
     return new_obj;
 }
@@ -297,19 +289,15 @@ GpiCbHdl *VpiImpl::register_nexttime_callback(void)
 
 int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
-    #if 0
-    VpiCbHdl *vpi_obj = reinterpret_cast<VpiCbHdl*>(gpi_hdl);
-    if (vpi_obj->get_call_state() == GPI_PRE_CALL) {
+    if (gpi_hdl->get_call_state() == GPI_PRE_CALL) {
         //LOG_INFO("Not deleting yet %p", vpi_obj);
         return 0;
     }
 
-    int rc = vpi_obj->cleanup_callback();
+    int rc = gpi_hdl->cleanup_callback();
     //  LOG_INFO("DELETING %p", vpi_obj);
-    delete(vpi_obj);
+    delete(gpi_hdl);
     return rc;
-    #endif
-    return 0;
 }
 
 // If the Pything world wants things to shut down then unregister
@@ -340,7 +328,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     if (!cb_hdl)
         LOG_CRITICAL("VPI: Callback data corrupted");
 
-    LOG_WARN("Running %p", cb_hdl);
+    LOG_DEBUG("Running %p", cb_hdl);
 
     if (cb_hdl->get_call_state() == GPI_PRIMED) {
         cb_hdl->set_call_state(GPI_PRE_CALL);
@@ -348,11 +336,11 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
         cb_hdl->set_call_state(GPI_POST_CALL);
     }
 
-    LOG_WARN("Running %p done", cb_hdl);
+    LOG_DEBUG("Running %p done", cb_hdl);
 
     gpi_deregister_callback(cb_hdl);
 
-    LOG_WARN("Deregister %p done", cb_hdl);
+    LOG_DEBUG("Deregister %p done", cb_hdl);
 
     FEXIT
     return rv;

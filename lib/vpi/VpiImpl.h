@@ -127,42 +127,15 @@ protected:
     s_cb_data cb_data;
 };
 
-class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
+class VpiSignalObjHdl;
+
+class VpiValueCbHdl : public VpiCbHdl {
 public:
-    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl) : VpiObjHdl(impl, hdl),
-                                                             GpiSignalObjHdl(impl) { }
-    virtual ~VpiSignalObjHdl() { }
-
-    const char* get_signal_value_binstr(void);
-
-    int set_signal_value(const int value);
-    int set_signal_value(std::string &value);
-    //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
-    // but the explicit ones are probably better
-
-    // Also think we want the triggers here?
-    virtual GpiCbHdl *rising_edge_cb(void) { return NULL; }
-    virtual GpiCbHdl *falling_edge_cb(void) { return NULL; }
-    virtual GpiCbHdl *value_change_cb(void) { return NULL; }
-
-    /* Functions that I would like to inherit but do not ?*/
-    virtual GpiObjHdl *get_handle_by_name(std::string &name) {
-        return VpiObjHdl::get_handle_by_name(name);
-    }
-    virtual GpiObjHdl *get_handle_by_index(uint32_t index) {
-        return VpiObjHdl::get_handle_by_index(index);
-    }
-    virtual GpiIterator *iterate_handle(uint32_t type)
-    {
-        return VpiObjHdl::iterate_handle(type);
-    }
-    virtual GpiObjHdl *next_handle(GpiIterator *iterator)
-    {
-        return VpiObjHdl::next_handle(iterator);
-    }
-    virtual int initialise(std::string &name) {
-        return VpiObjHdl::initialise(name);
-    }
+    VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig);
+    virtual ~VpiValueCbHdl() { }
+    int cleanup_callback(void);
+private:
+    s_vpi_time vpi_time;
 };
 
 class VpiTimedCbHdl : public VpiCbHdl {
@@ -172,7 +145,6 @@ public:
 private:
     s_vpi_time vpi_time;
 };
-
 
 class VpiReadOnlyCbHdl : public VpiCbHdl {
 public:
@@ -210,6 +182,46 @@ public:
     virtual ~VpiReadwriteCbHdl() { }
 private:
     s_vpi_time vpi_time;
+};
+
+class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
+public:
+    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl) : VpiObjHdl(impl, hdl),
+                                                             GpiSignalObjHdl(impl) { }
+    virtual ~VpiSignalObjHdl() { }
+
+    const char* get_signal_value_binstr(void);
+
+    int set_signal_value(const int value);
+    int set_signal_value(std::string &value);
+    //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
+    // but the explicit ones are probably better
+
+    // Also think we want the triggers here?
+    virtual GpiCbHdl *rising_edge_cb(void) { return NULL; }
+    virtual GpiCbHdl *falling_edge_cb(void) { return NULL; }
+    virtual GpiCbHdl *value_change_cb(void);
+
+    /* Functions that I would like to inherit but do not ?*/
+    virtual GpiObjHdl *get_handle_by_name(std::string &name) {
+        return VpiObjHdl::get_handle_by_name(name);
+    }
+    virtual GpiObjHdl *get_handle_by_index(uint32_t index) {
+        return VpiObjHdl::get_handle_by_index(index);
+    }
+    virtual GpiIterator *iterate_handle(uint32_t type)
+    {
+        return VpiObjHdl::iterate_handle(type);
+    }
+    virtual GpiObjHdl *next_handle(GpiIterator *iterator)
+    {
+        return VpiObjHdl::next_handle(iterator);
+    }
+    virtual int initialise(std::string &name) {
+        return VpiObjHdl::initialise(name);
+    }
+private:
+    VpiValueCbHdl *value_cb;
 };
 
 #endif /*COCOTB_VPI_IMPL_H_  */

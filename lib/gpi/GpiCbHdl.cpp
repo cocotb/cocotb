@@ -89,9 +89,9 @@ int GpiObjHdl::initialise(std::string &name)
 
 int GpiCbHdl::run_callback(void)
 {
-    LOG_WARN("Generic run_callback");
+    LOG_DEBUG("Generic run_callback");
     this->gpi_function(m_cb_data);
-    LOG_WARN("Generic run_callback done");
+    LOG_DEBUG("Generic run_callback done");
     return 0;
 }
 
@@ -134,5 +134,5 @@ gpi_cb_state_e GpiCbHdl::get_call_state(void)
 
 GpiCbHdl::~GpiCbHdl(void)
 {
-    LOG_WARN("In GpiCbHdl Destructor");
+
 }

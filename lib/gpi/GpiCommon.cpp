@@ -99,12 +99,12 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     std::string s_name = name;
     std::string fq_name = base->get_name() + "." + s_name;
 
-    LOG_WARN("Searching for %s", name);
+    LOG_DEBUG("Searching for %s", name);
 
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
-        LOG_WARN("Checking if %s native though impl %s ", name, (*iter)->get_name_c());
+        LOG_DEBUG("Checking if %s native though impl %s ", name, (*iter)->get_name_c());
 
         /* If the current interface is not the same as the one that we
            are going to query then append the name we are looking for to
@@ -114,7 +114,7 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
 
         //std::string &to_query = base->is_this_impl(*iter) ? s_name : fq_name;
         if ((hdl = (*iter)->native_check_create(fq_name, base))) {
-            LOG_WARN("Found %s via %s", name, (*iter)->get_name_c());
+            LOG_DEBUG("Found %s via %s", name, (*iter)->get_name_c());
             return (gpi_sim_hdl)hdl;
         }
     }
@@ -200,11 +200,11 @@ gpi_sim_hdl gpi_register_value_change_callback(const int (*gpi_function)(const v
                                                gpi_sim_hdl sig_hdl,
                                                int rising)
 {
-    #if 0
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+
+    GpiSignalObjHdl *signal_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
 
     /* Do something based on int & GPI_RISING | GPI_FALLING */
-    GpiCbHdl *gpi_hdl = obj_hdl->value_change_cb();
+    GpiCbHdl *gpi_hdl = signal_hdl->value_change_cb();
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a value change callback");
         return NULL;
@@ -212,8 +212,6 @@ gpi_sim_hdl gpi_register_value_change_callback(const int (*gpi_function)(const v
 
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
-    #endif
-    return NULL;
 }
 
 /* It should not matter which implementation we use for this so just pick the first
