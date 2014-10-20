@@ -48,7 +48,7 @@ def issue_120_scheduling(dut):
    
 
 
-@cocotb.test()
+@cocotb.test(skip=True)
 def issue_142_overflow_error(dut):
     """Tranparently convert ints too long to pass
        through the GPI interface natively into BinaryValues"""
