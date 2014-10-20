@@ -137,6 +137,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
 
     if (retuple != Py_True) {
         Py_DECREF(check_args);
+        PyGILState_Release(gstate);
         return;
     }
 
@@ -157,6 +158,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     retuple = PyObject_CallObject(pLogHandler, call_args);
 
     if (retuple != Py_True) {
+        PyGILState_Release(gstate);
         return;
     }
 
