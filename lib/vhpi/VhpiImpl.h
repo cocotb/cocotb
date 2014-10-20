@@ -88,7 +88,7 @@ public:
     GpiCbHdl *register_timed_callback(uint64_t time_ps);
     GpiCbHdl *register_readonly_callback(void) { return NULL; }
     GpiCbHdl *register_nexttime_callback(void) { return NULL; }
-    GpiCbHdl *register_readwrite_callback(void) { return NULL; }
+    GpiCbHdl *register_readwrite_callback(void);
     int deregister_callback(GpiCbHdl *obj_hdl) { return 0; }
     bool native_check(std::string &name, GpiObjHdl *parent) { return false; }
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
@@ -130,47 +130,15 @@ protected:
     vhpiCbDataT cb_data;
 };
 
-class VhpiSignalObjHdl : public VhpiObjHdl, public GpiSignalObjHdl {
+class VhpiSignalObjHdl;
+
+class VhpiValueCbHdl : public VhpiCbHdl {
 public:
-    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : VhpiObjHdl(impl, hdl),
-                                                                GpiSignalObjHdl(impl),
-                                                                m_size(0) { }
-    virtual ~VhpiSignalObjHdl();
-
-    const char* get_signal_value_binstr(void);
-
-    int set_signal_value(const int value);
-    int set_signal_value(std::string &value);
-    //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
-    // but the explicit ones are probably better
-
-    // Also think we want the triggers here?
-    virtual GpiCbHdl *rising_edge_cb(void) { return NULL; }
-    virtual GpiCbHdl *falling_edge_cb(void) { return NULL; }
-    virtual GpiCbHdl *value_change_cb(void) { return NULL; }
-
-    /* Functions that I would like to inherit but do not ?*/
-    virtual GpiObjHdl *get_handle_by_name(std::string &name) {
-        return VhpiObjHdl::get_handle_by_name(name);
-    }
-    virtual GpiObjHdl *get_handle_by_index(uint32_t index) {
-        return VhpiObjHdl::get_handle_by_index(index);
-    }
-    virtual GpiIterator *iterate_handle(uint32_t type)
-    {
-        return VhpiObjHdl::iterate_handle(type);
-    }
-    virtual GpiObjHdl *next_handle(GpiIterator *iterator)
-    {
-        return VhpiObjHdl::next_handle(iterator);
-    }
-    virtual int initialise(std::string &name);
-
+    VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig);
+    virtual ~VhpiValueCbHdl() { }
+    int cleanup_callback(void);
 private:
-    const vhpiEnumT chr2vhpi(const char value);
-    unsigned int m_size;
-    vhpiValueT m_value;
-    vhpiValueT m_binvalue;
+    vhpiTimeT vhpi_time;
 };
 
 class VhpiTimedCbHdl : public VhpiCbHdl {
@@ -213,6 +181,52 @@ class VhpiReadwriteCbHdl : public VhpiCbHdl {
 public:
     VhpiReadwriteCbHdl(GpiImplInterface *impl);
     virtual ~VhpiReadwriteCbHdl() { }
+private:
+    vhpiTimeT vhpi_time;
+};
+
+class VhpiSignalObjHdl : public VhpiObjHdl, public GpiSignalObjHdl {
+public:
+    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : VhpiObjHdl(impl, hdl),
+                                                                GpiSignalObjHdl(impl),
+                                                                m_size(0) { }
+    virtual ~VhpiSignalObjHdl();
+
+    const char* get_signal_value_binstr(void);
+
+    int set_signal_value(const int value);
+    int set_signal_value(std::string &value);
+    //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
+    // but the explicit ones are probably better
+
+    // Also think we want the triggers here?
+    virtual GpiCbHdl *rising_edge_cb(void) { return NULL; }
+    virtual GpiCbHdl *falling_edge_cb(void) { return NULL; }
+    virtual GpiCbHdl *value_change_cb(void);
+
+    /* Functions that I would like to inherit but do not ?*/
+    virtual GpiObjHdl *get_handle_by_name(std::string &name) {
+        return VhpiObjHdl::get_handle_by_name(name);
+    }
+    virtual GpiObjHdl *get_handle_by_index(uint32_t index) {
+        return VhpiObjHdl::get_handle_by_index(index);
+    }
+    virtual GpiIterator *iterate_handle(uint32_t type)
+    {
+        return VhpiObjHdl::iterate_handle(type);
+    }
+    virtual GpiObjHdl *next_handle(GpiIterator *iterator)
+    {
+        return VhpiObjHdl::next_handle(iterator);
+    }
+    virtual int initialise(std::string &name);
+
+private:
+    const vhpiEnumT chr2vhpi(const char value);
+    unsigned int m_size;
+    vhpiValueT m_value;
+    vhpiValueT m_binvalue;
+    VhpiValueCbHdl *value_cb;
 };
 
 #endif /*COCOTB_VHPI_IMPL_H_  */
