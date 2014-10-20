@@ -52,7 +52,6 @@ void gpi_embed_end(void)
 
 void gpi_sim_end(void)
 {
-    LOG_WARN("Sim end called");
     registered_impls[0]->sim_end();
 }
 

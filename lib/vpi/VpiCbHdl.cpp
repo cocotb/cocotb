@@ -223,7 +223,6 @@ VpiShutdownCbHdl::VpiShutdownCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 }
 
 int VpiShutdownCbHdl::run_callback(void) {
-    LOG_WARN("Shutdown called");
     gpi_embed_end();
     return 0;
 }

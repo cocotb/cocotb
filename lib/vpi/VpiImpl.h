@@ -122,7 +122,7 @@ public:
     virtual int arm_callback(void);
     virtual int cleanup_callback(void);
 
-protected:
+public:
     vpiHandle vpi_hdl;
     s_cb_data cb_data;
 };

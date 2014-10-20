@@ -26,6 +26,8 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
+#include <sys/types.h>
+#include <unistd.h>
 #include <vector>
 
 extern "C" {
@@ -309,9 +311,7 @@ void VpiImpl::sim_end(void)
      */
     sim_finish_cb->set_call_state(GPI_DELETE);
     vpi_control(vpiFinish);
-    LOG_WARN("Returned from vpi_control");
     check_vpi_error();
-    LOG_WARN("Returned from check_error");
 }
 
 extern "C" {
@@ -321,14 +321,11 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 {
     FENTER
     int rv = 0;
-    //vpiHandle old_cb;
 
     VpiCbHdl *cb_hdl = (VpiCbHdl*)cb_data->user_data;
 
     if (!cb_hdl)
         LOG_CRITICAL("VPI: Callback data corrupted");
-
-    LOG_DEBUG("Running %p", cb_hdl);
 
     if (cb_hdl->get_call_state() == GPI_PRIMED) {
         cb_hdl->set_call_state(GPI_PRE_CALL);
@@ -336,11 +333,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
         cb_hdl->set_call_state(GPI_POST_CALL);
     }
 
-    LOG_DEBUG("Running %p done", cb_hdl);
-
     gpi_deregister_callback(cb_hdl);
-
-    LOG_DEBUG("Deregister %p done", cb_hdl);
 
     FEXIT
     return rv;
@@ -349,7 +342,6 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
 static void register_embed(void)
 {
-    printf("%s %d Registered VPI \n", __func__, __LINE__);
     vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
     gpi_embed_init_python();
@@ -358,7 +350,6 @@ static void register_embed(void)
 
 static void register_initial_callback(void)
 {
-    LOG_WARN("Initial callback registering");
     sim_init_cb = new VpiStartupCbHdl(vpi_table);
 
     /* We ignore the return value here as VCS does some silly
