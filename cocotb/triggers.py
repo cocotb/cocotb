@@ -197,24 +197,21 @@ _nxts = _NextTimeStep()
 def NextTimeStep():
     return _nxts
 
-class _RisingEdge(Edge):
-    """
-    Execution will resume when a rising edge occurs on the provided signal
-
-    NB Riviera doesn't seem to like re-using a callback handle?
-
-    """
-    def __init__(self, signal):
+class _RisingOrFallingEdge(Edge):
+    def __init__(self, signal, rising):
         Edge.__init__(self, signal)
+        self._rising = rising
 
     def prime(self, callback):
         Trigger.prime(self)
         self._callback = callback
 
         def _check(obj):
-            if self.signal.value:
+            condition = self.signal.value == self._rising
+            if condition:
                 self._callback(self)
             else:
+                #Riviera doesn't seem to like re-using a callback handle?
                 simulator.reenable_callback(self.cbhdl)
 
         if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
@@ -223,9 +220,22 @@ class _RisingEdge(Edge):
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
 
+class _RisingEdge(_RisingOrFallingEdge):
+    """
+    Execution will resume when a rising edge occurs on the provided signal
+    """
+    def __init__(self, signal):
+        _RisingOrFallingEdge.__init__(self, signal, rising=True)
 
 def RisingEdge(signal):
     return signal._edge
+
+class FallingEdge(_RisingOrFallingEdge):
+    """
+    Execution will resume when a falling edge occurs on the provided signal
+    """
+    def __init__(self, signal):
+        _RisingOrFallingEdge.__init__(self, signal, rising=False)
 
 class ClockCycles(Edge):
     """
