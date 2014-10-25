@@ -174,7 +174,7 @@ class BinaryValue(object):
         if self._bits is None:
             return
         l = len(x)
-        if l < self._bits:
+        if l <= self._bits:
             if self.big_endian:
                 rv = x + '0' * (self._bits-l)
             else:
@@ -192,7 +192,7 @@ class BinaryValue(object):
         if self._bits is None:
             return
         l = len(x)
-        if l < self._bits:
+        if l <= self._bits:
             if self.big_endian:
                 rv = x[:-1] + '0' * (self._bits-1-l)
                 rv = rv + x[-1]
@@ -213,7 +213,7 @@ class BinaryValue(object):
         if self._bits is None:
             return
         l = len(x)
-        if l < self._bits:
+        if l <= self._bits:
             if self.big_endian:
                 rv = x +  x[-1] * (self._bits-l)
             else:
