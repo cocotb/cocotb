@@ -61,7 +61,8 @@ void FliImpl::get_sim_time(uint32_t *high, uint32_t *low)
 GpiObjHdl *FliImpl::get_root_handle(const char *name)
 {
     mtiRegionIdT root;
-    VpiObjHdl rv;
+    FliObjHdl *rv;
+    std::string root_name = name;
 
     for (root = mti_GetTopRegion(); root != NULL; root = mti_NextRegion(root)) {
         if (name == NULL || !strcmp(name, mti_GetRegionName(root)))
@@ -73,7 +74,7 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
     }
 
     rv = new FliObjHdl(this, root);
-    rv->initialise(name);
+    rv->initialise(root_name);
     return rv;
 
   error:
@@ -90,3 +91,10 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
     return NULL;
 }
 
+extern "C" {
+
+void cocotb_init(void) {
+    printf("cocotb_init called\n");
+}
+
+} // extern "C"

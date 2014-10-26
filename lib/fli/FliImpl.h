@@ -29,36 +29,10 @@
 #define COCOTB_FLI_IMPL_H_ 
 
 #include "../gpi/gpi_priv.h"
-#include <mti.h>
+#include "mti.h"
 
 
 
-class FliImpl : public GpiImplInterface {
-public:
-    FliImpl(const std::string& name) : GpiImplInterface(name) { }
-
-     /* Sim related */
-    void sim_end(void);
-    void get_sim_time(uint32_t *high, uint32_t *low);
-
-    /* Hierachy related */
-    GpiObjHdl *get_root_handle(const char *name);
-
-    GpiCbHdl *register_timed_callback(uint64_t time_ps);
-
-    /* Callback related, these may (will) return the same handle*/
-    GpiCbHdl *register_readonly_callback(void);
-    GpiCbHdl *register_nexttime_callback(void);
-    GpiCbHdl *register_readwrite_callback(void);
-    int deregister_callback(GpiCbHdl *obj_hdl);
-    bool native_check(std::string &name, GpiObjHdl *parent);
-
-private:
-    GpiCbHdl m_readonly_cbhdl;
-    GpiCbHdl m_nexttime_cbhdl;
-    GpiCbHdl m_readwrite_cbhdl;
-
-};
 
 class FliObjHdl : public GpiObjHdl {
 public:
@@ -95,19 +69,18 @@ protected:
 // In FLI some callbacks require us to register a process
 // We use a subclass to track the process state related to the callback
 class FliProcessCbHdl : public FliCbHdl {
-
 public:
-    FliCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+    FliProcessCbHdl(GpiImplInterface *impl) : FliCbHdl(impl),
                                        m_proc_hdl(NULL) { }
-    virtual ~FliCbHdl() { }
+    virtual ~FliProcessCbHdl() { }
 
     virtual int arm_callback(void);
     virtual int cleanup_callback(void);
 
 private:
-    mtiProcessIdt       m_proc_hdl;
+    mtiProcessIdT       m_proc_hdl;
     bool                m_sensitised;
-}
+};
 
 
 class FliSignalObjHdl : public GpiSignalObjHdl {
@@ -123,7 +96,7 @@ public:
     virtual GpiCbHdl *value_change_cb(void);
 
 private:
-    mtiSignalIdt  fli_hdl;
+    mtiSignalIdT  fli_hdl;
 
 };
 
@@ -149,5 +122,37 @@ public:
     int arm_callback(void);
     virtual ~FliShutdownCbHdl() { }
 };
+
+
+class FliImpl : public GpiImplInterface {
+public:
+    FliImpl(const std::string& name) : GpiImplInterface(name),
+                                       m_readonly_cbhdl(NULL),
+                                       m_nexttime_cbhdl(NULL),
+                                       m_readwrite_cbhdl(NULL) { }
+
+     /* Sim related */
+    void sim_end(void);
+    void get_sim_time(uint32_t *high, uint32_t *low);
+
+    /* Hierachy related */
+    GpiObjHdl *get_root_handle(const char *name);
+
+    GpiCbHdl *register_timed_callback(uint64_t time_ps);
+
+    /* Callback related, these may (will) return the same handle*/
+    GpiCbHdl *register_readonly_callback(void);
+    GpiCbHdl *register_nexttime_callback(void);
+    GpiCbHdl *register_readwrite_callback(void);
+    int deregister_callback(GpiCbHdl *obj_hdl);
+    bool native_check(std::string &name, GpiObjHdl *parent);
+
+private:
+    FliTimedCbHdl m_readonly_cbhdl;
+    FliTimedCbHdl m_nexttime_cbhdl;
+    FliTimedCbHdl m_readwrite_cbhdl;
+
+};
+
 
 #endif /*COCOTB_FLI_IMPL_H_  */
