@@ -488,7 +488,6 @@ class Scheduler(object):
 
             self.queue(result)
             new_trigger = result.join()
-            new_trigger.pass_retval = True
             self._coroutine_yielded(coroutine, [new_trigger])
 
         elif isinstance(result, Trigger):

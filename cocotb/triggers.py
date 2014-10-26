@@ -462,6 +462,7 @@ class _Join(PythonTrigger):
     def __init__(self, coroutine):
         PythonTrigger.__init__(self)
         self._coroutine = coroutine
+        self.pass_retval = True
 
     @property
     def retval(self):
