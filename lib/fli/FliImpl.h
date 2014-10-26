@@ -32,34 +32,48 @@
 #include "mti.h"
 
 
-
-
 class FliObjHdl : public GpiObjHdl {
 public:
-    FliObjHdl(GpiImplInterface *impl, mtiRegionIdT hdl) : GpiObjHdl(impl),
-                                                          fli_hdl(hdl) { }
+    FliObjHdl(GpiImplInterface *impl) : GpiObjHdl(impl) { }
     virtual ~FliObjHdl() { }
 
-    virtual GpiObjHdl *get_handle_by_name(std::string &name);
-    virtual GpiObjHdl *get_handle_by_index(uint32_t index);
-    virtual GpiIterator *iterate_handle(uint32_t type) { return NULL ;}
-    virtual GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
+    GpiObjHdl *get_handle_by_name(std::string &name) {return NULL; };
+    GpiObjHdl *get_handle_by_index(uint32_t index) {return NULL; } ;
+    GpiIterator *iterate_handle(uint32_t type) { return NULL; }
+    GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
 
-    const char* get_name_str(void);
-    const char* get_type_str(void);
+    int initialise(std::string &name);
+};
+
+class FliRegionObjHdl : public FliObjHdl {
+public:
+    FliRegionObjHdl(GpiImplInterface *impl, mtiRegionIdT hdl) : FliObjHdl(impl),
+                                                                m_fli_hdl(hdl) { }
+    virtual ~FliRegionObjHdl() { }
 
 protected:
-     mtiRegionIdT fli_hdl;
+     mtiRegionIdT m_fli_hdl;
+};
+
+
+class FliSignalObjHdl : public FliObjHdl {
+public:
+    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : FliObjHdl(impl),
+                                                                m_fli_hdl(hdl) { }
+    virtual ~FliSignalObjHdl() { }
+protected:
+     mtiSignalIdT m_fli_hdl;
 
 };
+
 
 class FliCbHdl : public GpiCbHdl {
 public:
     FliCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) { }
     virtual ~FliCbHdl() { }
 
-    virtual int arm_callback(void);
-    virtual int cleanup_callback(void);
+    virtual int arm_callback(void) = 0;
+    virtual int cleanup_callback(void) = 0;
 
 protected:
     int register_cb(p_cb_data cb_data);
@@ -71,49 +85,53 @@ protected:
 class FliProcessCbHdl : public FliCbHdl {
 public:
     FliProcessCbHdl(GpiImplInterface *impl) : FliCbHdl(impl),
-                                       m_proc_hdl(NULL) { }
+                                              m_proc_hdl(NULL) { }
     virtual ~FliProcessCbHdl() { }
 
-    virtual int arm_callback(void);
-    virtual int cleanup_callback(void);
+    virtual int arm_callback(void) = 0;
+    int cleanup_callback(void);
 
-private:
+protected:
     mtiProcessIdT       m_proc_hdl;
     bool                m_sensitised;
 };
 
+// One class of callbacks uses mti_Sensitize to react to a signal
+class FliSignalCbHdl : public FliProcessCbHdl {
 
-class FliSignalObjHdl : public GpiSignalObjHdl {
 public:
-    FliSignalObjHdl(GpiImplInterface *impl) : GpiSignalObjHdl(impl) { }
-    virtual ~FliSignalObjHdl() { }
+    FliSignalCbHdl(GpiImplInterface *impl, mtiSignalIdT sig_hdl) : FliProcessCbHdl(impl), m_sig_hdl(sig_hdl) { }
+    virtual ~FliSignalCbHdl() { }
 
-    virtual int set_signal_value(const int value);
-    virtual int set_signal_value(const char *str);
-
-    virtual GpiCbHdl *rising_edge_cb(void);
-    virtual GpiCbHdl *falling_edge_cb(void);
-    virtual GpiCbHdl *value_change_cb(void);
+    int arm_callback(void);
 
 private:
-    mtiSignalIdT  fli_hdl;
-
+    mtiSignalIdT        m_sig_hdl;
 };
 
-class FliTimedCbHdl : public FliCbHdl {
-public:
-    FliTimedCbHdl(GpiImplInterface *impl) : FliCbHdl(impl) { }
-    int arm_callback(uint64_t time_ps);
-    virtual ~FliTimedCbHdl() { }
-};
 
-class FliStartupCbHdl : public FliCbHdl {
+// All other callbacks are related to the simulation phasing
+class FliSimPhaseCbHdl : public FliProcessCbHdl {
+
 public:
-    FliStartupCbHdl(GpiImplInterface *impl) : FliCbHdl(impl) { }
-    int run_callback(void);
+    FliSimPhaseCbHdl(GpiImplInterface *impl) : FliProcessCbHdl(impl) { }
+    virtual ~FliSimPhaseCbHdl() { }
+
     int arm_callback(void);
-    virtual ~FliStartupCbHdl() { }
+
+protected:
+    mtiProcessPriorityT         m_priority;
 };
+
+class FliTimedCbHdl : public FliProcessCbHdl {
+public:
+    FliTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : FliProcessCbHdl(impl), m_time_ps(time_ps) {};
+    virtual ~FliTimedCbHdl() { }
+    int arm_callback(void);
+private:
+    uint64_t m_time_ps;
+};
+
 
 class FliShutdownCbHdl : public FliCbHdl {
 public:
@@ -136,21 +154,25 @@ public:
     void get_sim_time(uint32_t *high, uint32_t *low);
 
     /* Hierachy related */
+    bool native_check(std::string &name, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
     GpiObjHdl *get_root_handle(const char *name);
 
-    GpiCbHdl *register_timed_callback(uint64_t time_ps);
-
     /* Callback related, these may (will) return the same handle*/
+    GpiCbHdl *register_timed_callback(uint64_t time_ps);
     GpiCbHdl *register_readonly_callback(void);
     GpiCbHdl *register_nexttime_callback(void);
     GpiCbHdl *register_readwrite_callback(void);
     int deregister_callback(GpiCbHdl *obj_hdl);
-    bool native_check(std::string &name, GpiObjHdl *parent);
+
+    /* Method to provide strings from operation types */
+    const char *reason_to_string(int reason);
 
 private:
-    FliTimedCbHdl m_readonly_cbhdl;
-    FliTimedCbHdl m_nexttime_cbhdl;
-    FliTimedCbHdl m_readwrite_cbhdl;
+    FliSimPhaseCbHdl m_readonly_cbhdl;
+    FliSimPhaseCbHdl m_nexttime_cbhdl;
+    FliSimPhaseCbHdl m_readwrite_cbhdl;
 
 };
 
