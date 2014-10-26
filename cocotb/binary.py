@@ -170,9 +170,9 @@ class BinaryValue(object):
                 inverted = inverted + bit
         return inverted
     
-    def _adjust_unsigned   (self,x):
+    def _adjust_unsigned(self,x):
         if self._bits is None:
-            return
+            return x
         l = len(x)
         if l <= self._bits:
             if self.big_endian:
@@ -187,10 +187,10 @@ class BinaryValue(object):
                 rv = x[:l - self._bits]
         return rv
 
-    def _adjust_signed_mag (self,x):
+    def _adjust_signed_mag(self,x):
         """Pad/truncate the bit string to the correct length"""
         if self._bits is None:
-            return
+            return x
         l = len(x)
         if l <= self._bits:
             if self.big_endian:
@@ -209,9 +209,9 @@ class BinaryValue(object):
             rv = x
         return rv
         
-    def _adjust_twos_comp  (self,x):
+    def _adjust_twos_comp(self,x):
         if self._bits is None:
-            return
+            return x
         l = len(x)
         if l <= self._bits:
             if self.big_endian:
