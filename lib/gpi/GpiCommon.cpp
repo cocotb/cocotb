@@ -28,6 +28,8 @@
 ******************************************************************************/
 
 #include "gpi_priv.h"
+#include <sys/types.h>
+#include <unistd.h>
 #include <vector>
 
 using namespace std;
@@ -197,13 +199,13 @@ void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str)
 gpi_sim_hdl gpi_register_value_change_callback(const int (*gpi_function)(const void *),
                                                void *gpi_cb_data,
                                                gpi_sim_hdl sig_hdl,
-                                               int rising)
+                                               unsigned int edge)
 {
 
     GpiSignalObjHdl *signal_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
 
     /* Do something based on int & GPI_RISING | GPI_FALLING */
-    GpiCbHdl *gpi_hdl = signal_hdl->value_change_cb();
+    GpiCbHdl *gpi_hdl = signal_hdl->value_change_cb(edge);
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a value change callback");
         return NULL;

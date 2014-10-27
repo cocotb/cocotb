@@ -74,7 +74,10 @@ static inline int __check_vpi_error(const char *func, long line)
 
 class VpiImpl : public GpiImplInterface {
 public:
-    VpiImpl(const std::string& name) : GpiImplInterface(name) { }
+    VpiImpl(const std::string& name) : GpiImplInterface(name), 
+                                       m_read_write(NULL),
+                                       m_next_phase(NULL),
+                                       m_read_only(NULL) { }
 
      /* Sim related */
     void sim_end(void);
@@ -94,6 +97,12 @@ public:
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
 
     const char * reason_to_string(int reason);
+
+private:
+    /* Singleton callbacks */
+    GpiCbHdl *m_read_write;
+    GpiCbHdl *m_next_phase;
+    GpiCbHdl *m_read_only;
 };
 
 class VpiObjHdl : public GpiObjHdl {
@@ -122,7 +131,7 @@ public:
     virtual int arm_callback(void);
     virtual int cleanup_callback(void);
 
-public:
+protected:
     vpiHandle vpi_hdl;
     s_cb_data cb_data;
 };
@@ -131,11 +140,16 @@ class VpiSignalObjHdl;
 
 class VpiValueCbHdl : public VpiCbHdl {
 public:
-    VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig);
+    VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig, unsigned int edge);
     virtual ~VpiValueCbHdl() { }
     int cleanup_callback(void);
+    int run_callback(void);
 private:
     s_vpi_time vpi_time;
+    std::string initial_value;
+    bool rising;
+    bool falling;
+    VpiSignalObjHdl *signal;
 };
 
 class VpiTimedCbHdl : public VpiCbHdl {
@@ -187,7 +201,8 @@ private:
 class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
 public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl) : VpiObjHdl(impl, hdl),
-                                                             GpiSignalObjHdl(impl) { }
+                                                             GpiSignalObjHdl(impl),
+                                                             value_cb(NULL) { }
     virtual ~VpiSignalObjHdl() { }
 
     const char* get_signal_value_binstr(void);
@@ -200,7 +215,7 @@ public:
     // Also think we want the triggers here?
     virtual GpiCbHdl *rising_edge_cb(void) { return NULL; }
     virtual GpiCbHdl *falling_edge_cb(void) { return NULL; }
-    virtual GpiCbHdl *value_change_cb(void);
+    virtual GpiCbHdl *value_change_cb(unsigned int edge);
 
     /* Functions that I would like to inherit but do not ?*/
     virtual GpiObjHdl *get_handle_by_name(std::string &name) {

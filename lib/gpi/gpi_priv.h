@@ -129,7 +129,7 @@ public:
     // Also think we want the triggers here?
     virtual GpiCbHdl *rising_edge_cb(void) = 0;
     virtual GpiCbHdl *falling_edge_cb(void) = 0;
-    virtual GpiCbHdl *value_change_cb(void) = 0;
+    virtual GpiCbHdl *value_change_cb(unsigned int edge) = 0;
 
 private:
     //GpiCbHdl value_change_cb;
@@ -171,22 +171,6 @@ public:
     ~GpiClockHdl() { }
     int start_clock(const int period_ps); /* Do things with the GpiSignalObjHdl */
     int stop_clock(void);
-};
-
-class GpiNextTime : public GpiCbHdl {
-
-};
-
-class GpiTimer : public GpiCbHdl {
-
-};
-
-class GpiReadOnly : public GpiCbHdl {
-
-};
-
-class GpiReadWrite : public GpiCbHdl {
-
 };
 
 class GpiIterator {

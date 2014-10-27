@@ -48,6 +48,7 @@ class Trigger(object):
         self.log = SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
         self.signal = None
         self.primed = False
+        self.registered = False
 
     def prime(self, *args):
         self.primed = True
@@ -91,7 +92,7 @@ class GPITrigger(Trigger):
         self.cbhdl = None
 
     def unprime(self):
-        """Unregister a prior registered timed callback"""
+        """Disable a primed trigger, can be reprimed"""
         if self.cbhdl:
             simulator.deregister_callback(self.cbhdl)
         self.cbhdl = None
@@ -215,17 +216,10 @@ class _RisingEdge(Edge):
         Edge.__init__(self, signal)
 
     def prime(self, callback):
-        self._callback = callback
-
-        def _check(obj):
-            if self.signal.value:
-                self._callback(self)
-            else:
-                self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
-
-        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
         if self.cbhdl is None:
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
+            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, 1, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):

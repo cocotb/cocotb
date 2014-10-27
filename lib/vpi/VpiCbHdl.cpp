@@ -58,11 +58,12 @@ int VpiCbHdl::arm_callback(void) {
                 m_impl->reason_to_string(cb_data.reason));
     }
 
-    if (vpi_hdl != NULL) {
+    // Only a problem if we have not been asked to deregister and register
+    // in the same simultion callback
+    if ((vpi_hdl != NULL) && (m_state != GPI_DELETE)) {
         fprintf(stderr,
                 "We seem to already be registered, deregistering %s!\n",
                 m_impl->reason_to_string(cb_data.reason));
-
         cleanup_callback();
     }
 
@@ -85,24 +86,27 @@ int VpiCbHdl::arm_callback(void) {
 int VpiCbHdl::cleanup_callback(void)
 {
     int rc;
+
+    // If the callback has not been called we also need to call
+    // remove as well
+    if (m_state == GPI_FREE)
+        return 0;
+
     if (!vpi_hdl) {
         LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
         exit(1);
     }
 
-    // If the callback has not been called we also need to call
-    // remove as well
-    if (m_state == GPI_PRIMED) {
-
-        rc = vpi_remove_cb(vpi_hdl);
-        if (!rc) {
-            check_vpi_error();
-            return rc;
-        }
-    }
+    rc = vpi_remove_cb(vpi_hdl);
+    check_vpi_error();
 
     vpi_hdl = NULL;
+
+    if (m_state == GPI_DELETE)
+        return 0;
+
     m_state = GPI_FREE;
+
     return rc;
 }
 
@@ -159,28 +163,46 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
     return 0;
 }
 
-GpiCbHdl * VpiSignalObjHdl::value_change_cb(void)
+GpiCbHdl * VpiSignalObjHdl::value_change_cb(unsigned int edge)
 {
-    value_cb = new VpiValueCbHdl(VpiObjHdl::m_impl, this);
+    if (!value_cb) 
+        value_cb = new VpiValueCbHdl(VpiObjHdl::m_impl, this, edge);
 
-    if (value_cb->arm_callback())
-        return NULL;
+    if (value_cb->arm_callback()) {
+        delete value_cb;
+        value_cb = NULL;
+    }
 
     return value_cb;
 }
 
-VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig) : VpiCbHdl(impl)
+VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
+                             VpiSignalObjHdl *sig,
+                             unsigned int edge) : VpiCbHdl(impl),
+                                                  rising(false),
+                                                  falling(false),                           
+                                                  signal(sig)
 {
     vpi_time.type = vpiSuppressTime;
 
     cb_data.reason = cbValueChange;
     cb_data.time = &vpi_time;
-    cb_data.obj = sig->get_handle();
+    cb_data.obj = signal->get_handle();
+
+
+    if (edge & 1)
+        rising = true;
+
+    if (edge & 2)
+        falling = true;
+
 }
 
 int VpiValueCbHdl::cleanup_callback(void)
 {
-    //LOG_WARN("Cleanup %p", this);
+    if (m_state == GPI_FREE)
+        return 0;
+
     int rc;
     if (!vpi_hdl) {
         LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
@@ -191,9 +213,42 @@ int VpiValueCbHdl::cleanup_callback(void)
     check_vpi_error();
 
     vpi_hdl = NULL;
+
+    if (m_state == GPI_DELETE)
+        return 0;
+
     m_state = GPI_FREE;
 
     return rc;
+}
+
+int VpiValueCbHdl::run_callback(void)
+{
+    std::string current_value;
+    std::string required;
+    bool pass = false;
+    if (rising && falling) {
+        pass = true;
+        goto check;
+    }
+
+    current_value = signal->get_signal_value_binstr();
+    if (rising && (current_value  == "1")) {
+        pass = true;
+        goto check;
+    }
+
+    if (falling && (current_value  == "0")) {
+        pass = true;
+        goto check;
+    }
+
+check:
+    if (pass) {
+        this->gpi_function(m_cb_data);
+    }
+
+    return 1;
 }
 
 VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)

@@ -36,7 +36,7 @@ Also used a regression test of cocotb capabilities
 import cocotb
 from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, ReadWrite
 from cocotb.clock import Clock
-from cocotb.result import ReturnValue
+from cocotb.result import ReturnValue, TestError
 
 
 
@@ -257,3 +257,38 @@ def test_fork_syntax_error(dut):
     cocotb.fork(syntax_error())
     yield clock_gen(dut.clk)
 
+
+@cocotb.coroutine
+def do_edge_check(dut, level):
+   """Do test for rising edge"""
+   old_value = dut.clk.value.integer
+   if old_value is level:
+       raise TestError("%s not to start with" % (dut.clk, not level))
+
+   if level:
+   	yield RisingEdge(dut.clk)
+   else:
+        yield FallingEdge(dut.clk)
+
+   new_value = dut.clk.value.integer
+   dut.log.info("Value was %d" % old_value)
+   if new_value is not level:
+       raise TestError("%s not 1 at end" % (dut.clk, level))
+
+@cocotb.test()
+def test_rising_edge(dut):
+   """Test that a rising edge can be yielded on"""
+   test = cocotb.fork(do_edge_check(dut, 1))
+   yield Timer(10)
+   dut.clk <= 1
+   yield [Timer(1000), Join(test)]
+
+@cocotb.test(expect_error=True)
+def test_falling_edge(dut):
+   """Test that a falling edge can be yielded on"""
+   dut.clk <= 1
+   yield Timer(10)
+   test = cocotb.fork(do_edge_check(dut, 0))
+   yield Timer(10)
+   dut.clk <= 0
+   yield [Timer(1000), Join(test)]

@@ -26,8 +26,6 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
-#include <sys/types.h>
-#include <unistd.h>
 #include <vector>
 
 extern "C" {
@@ -177,7 +175,6 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 
 GpiObjHdl *VpiImpl::get_root_handle(const char* name)
 {
-    FENTER
     vpiHandle root;
     vpiHandle iterator;
     VpiObjHdl *rv;
@@ -207,7 +204,6 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     rv = new VpiObjHdl(this, root);
     rv->initialise(root_name);
 
-    FEXIT
     return rv;
 
   error:
@@ -224,15 +220,12 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
             break;
     }
 
-    FEXIT
     return NULL;
 }
 
 
 GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
 {
-    FENTER
-
     VpiTimedCbHdl *hdl = new VpiTimedCbHdl(this, time_ps);
 
     if (hdl->arm_callback()) {
@@ -240,66 +233,68 @@ GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
         hdl = NULL;
     }
 
-    FEXIT
     return hdl;
 }
 
 GpiCbHdl *VpiImpl::register_readwrite_callback(void)
 {
-    FENTER
+    VpiReadwriteCbHdl *hdl;
 
-    VpiReadwriteCbHdl *hdl = new VpiReadwriteCbHdl(this);
-
-    if (hdl->arm_callback()) {
-        delete(hdl);
-        hdl = NULL;
+    if (m_read_write)
+        hdl = reinterpret_cast<VpiReadwriteCbHdl*>(m_read_write);
+    else {
+        hdl = new VpiReadwriteCbHdl(this);
+        m_read_write = hdl;
     }
 
-    FEXIT
-    return hdl;
+    if (hdl->arm_callback())
+        return NULL;
+
+    return m_read_write;
 }
 
 GpiCbHdl *VpiImpl::register_readonly_callback(void)
 {
-    FENTER
+    VpiReadOnlyCbHdl *hdl;
 
-    VpiReadOnlyCbHdl *hdl = new VpiReadOnlyCbHdl(this);
-
-    if (hdl->arm_callback()) {
-        delete(hdl);
-        hdl = NULL;
+    if (m_read_only)
+        hdl = reinterpret_cast<VpiReadOnlyCbHdl*>(m_read_only);
+    else {
+        hdl = new VpiReadOnlyCbHdl(this);
+        m_read_only = hdl;
     }
 
-    FEXIT
+
+    if (hdl->arm_callback())
+        hdl = NULL;
+
     return hdl;
 }
 
 GpiCbHdl *VpiImpl::register_nexttime_callback(void)
 {
-    FENTER
-    
-    VpiNextPhaseCbHdl *hdl = new VpiNextPhaseCbHdl(this);
+    VpiNextPhaseCbHdl *hdl;
 
-    if (hdl->arm_callback()) {
-        delete(hdl);
-        hdl = NULL;
+    if (m_next_phase)
+        hdl = reinterpret_cast<VpiNextPhaseCbHdl*>(m_next_phase);
+    else {
+        hdl = new VpiNextPhaseCbHdl(this);
+        m_next_phase = hdl;
     }
 
-    FEXIT
+    if (hdl->arm_callback())
+        hdl = NULL;
+
     return hdl;
 }
 
 int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
-    if (gpi_hdl->get_call_state() == GPI_PRE_CALL) {
-        //LOG_INFO("Not deleting yet %p", vpi_obj);
-        return 0;
-    }
-
-    int rc = gpi_hdl->cleanup_callback();
-    //  LOG_INFO("DELETING %p", vpi_obj);
-    delete(gpi_hdl);
-    return rc;
+    /* This can only be called from callback context,
+       we handle the deletion later as we unwind
+       */
+    gpi_hdl->set_call_state(GPI_DELETE);
+    return 0;
 }
 
 // If the Pything world wants things to shut down then unregister
@@ -309,9 +304,11 @@ void VpiImpl::sim_end(void)
     /* Some sims do not seem to be able to deregister the end of sim callback
      * so we need to make sure we have tracked this and not call the handler
      */
-    sim_finish_cb->set_call_state(GPI_DELETE);
-    vpi_control(vpiFinish);
-    check_vpi_error();
+    if (GPI_DELETE != sim_finish_cb->get_call_state()) {
+        sim_finish_cb->set_call_state(GPI_DELETE);
+        vpi_control(vpiFinish);
+        check_vpi_error();
+    }
 }
 
 extern "C" {
@@ -319,7 +316,6 @@ extern "C" {
 // Main re-entry point for callbacks from simulator
 int32_t handle_vpi_callback(p_cb_data cb_data)
 {
-    FENTER
     int rv = 0;
 
     VpiCbHdl *cb_hdl = (VpiCbHdl*)cb_data->user_data;
@@ -328,14 +324,17 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
         LOG_CRITICAL("VPI: Callback data corrupted");
 
     if (cb_hdl->get_call_state() == GPI_PRIMED) {
+        int rearm = 0;
         cb_hdl->set_call_state(GPI_PRE_CALL);
-        cb_hdl->run_callback();
-        cb_hdl->set_call_state(GPI_POST_CALL);
+        rearm = cb_hdl->run_callback();
+        cb_hdl->cleanup_callback();
+
+        if (cb_hdl->get_call_state() != GPI_DELETE &&
+            rearm) {
+            cb_hdl->arm_callback();
+        }
     }
 
-    gpi_deregister_callback(cb_hdl);
-
-    FEXIT
     return rv;
 };
 
@@ -351,24 +350,12 @@ static void register_embed(void)
 static void register_initial_callback(void)
 {
     sim_init_cb = new VpiStartupCbHdl(vpi_table);
-
-    /* We ignore the return value here as VCS does some silly
-     * things on comilation that means it tries to run through
-     * the vlog_startup_routines and so call this routine
-     */
-
     sim_init_cb->arm_callback();
 }
 
 static void register_final_callback(void)
 {
     sim_finish_cb = new VpiShutdownCbHdl(vpi_table);
-
-    /* We ignore the return value here as VCS does some silly
-     * things on comilation that means it tries to run through
-     * the vlog_startup_routines and so call this routine
-     */
-
     sim_finish_cb->arm_callback();
 }
 
@@ -444,7 +431,6 @@ static int system_function_overload(char *userdata)
 
 static void register_system_functions(void)
 {
-    FENTER
     s_vpi_systf_data tfData = { vpiSysTask, vpiSysTask };
 
     tfData.sizetf       = NULL;
@@ -467,7 +453,6 @@ static void register_system_functions(void)
     tfData.tfname       = "$fatal";
     vpi_register_systf( &tfData );
 
-    FEXIT
 }
 
 void (*vlog_startup_routines[])(void) = {

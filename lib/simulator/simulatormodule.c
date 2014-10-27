@@ -83,11 +83,11 @@ int handle_gpi_callback(void *user_data)
 {
     p_callback_data callback_data_p = (p_callback_data)user_data;
 
-    if (callback_data_p->id_value != COCOTB_ACTIVE_ID) {
-        fprintf(stderr, "Userdata corrupted!\n");
-        return 1;
-    }
-    callback_data_p->id_value = COCOTB_INACTIVE_ID;
+    //if (callback_data_p->id_value != COCOTB_ACTIVE_ID) {
+    //    fprintf(stderr, "Userdata corrupted!\n");
+    //    return 1;
+    //}
+    //callback_data_p->id_value = COCOTB_INACTIVE_ID;
 
 
     PyGILState_STATE gstate;
@@ -400,7 +400,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     PyObject *function;
     gpi_sim_hdl sig_hdl;
     gpi_sim_hdl hdl;
-    int edge;
+    unsigned int edge;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
@@ -425,9 +425,12 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     }
     Py_INCREF(function);
 
+    PyObject *pedge = PyTuple_GetItem(args, 2);
+    edge = (unsigned int)PyLong_AsUnsignedLong(pedge);
+
     // Remaining args for function
-    if (numargs > 2)
-        fArgs = PyTuple_GetSlice(args, 2, numargs);   // New reference
+    if (numargs > 3)
+        fArgs = PyTuple_GetSlice(args, 3, numargs);   // New reference
     else
         fArgs = PyTuple_New(0); // args must not be NULL, use an empty tuple if no arguments are needed.
 
