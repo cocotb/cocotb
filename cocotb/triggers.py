@@ -135,7 +135,7 @@ class Edge(GPITrigger):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
-        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, self)
+        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, 3, self)
         if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
