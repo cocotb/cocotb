@@ -118,6 +118,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     switch (type) {
         case vpiNet:
         case vpiReg:
+        case vpiParameter:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
             LOG_DEBUG("Created VpiSignalObjHdl");
             break;
