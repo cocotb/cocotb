@@ -83,11 +83,11 @@ int handle_gpi_callback(void *user_data)
 {
     p_callback_data callback_data_p = (p_callback_data)user_data;
 
-    //if (callback_data_p->id_value != COCOTB_ACTIVE_ID) {
-    //    fprintf(stderr, "Userdata corrupted!\n");
-    //    return 1;
-    //}
-    //callback_data_p->id_value = COCOTB_INACTIVE_ID;
+    if (callback_data_p->id_value != COCOTB_ACTIVE_ID) {
+        fprintf(stderr, "Userdata corrupted!\n");
+        return 1;
+    }
+    callback_data_p->id_value = COCOTB_INACTIVE_ID;
 
 
     PyGILState_STATE gstate;

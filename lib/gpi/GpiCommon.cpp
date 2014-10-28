@@ -127,7 +127,7 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
 {
     vector<GpiImplInterface*>::iterator iter;
 
-    GpiObjHdl *hdl;
+    GpiObjHdl *hdl = NULL;
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
 
     LOG_WARN("Trying index");
