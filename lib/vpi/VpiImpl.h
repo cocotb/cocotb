@@ -128,6 +128,10 @@ class VpiTimedCbHdl : public VpiCbHdl {
 public:
     VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
     virtual ~VpiTimedCbHdl() { }
+    int cleanup_callback() {
+        VpiCbHdl::cleanup_callback();
+        return 1;
+    }
 private:
     s_vpi_time vpi_time;
 };
