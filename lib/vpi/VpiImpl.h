@@ -142,7 +142,7 @@ class VpiValueCbHdl : public VpiCbHdl {
 public:
     VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig, unsigned int edge);
     virtual ~VpiValueCbHdl() { }
-    int cleanup_callback(void);
+    //int cleanup_callback(void);
     int run_callback(void);
 private:
     s_vpi_time vpi_time;

@@ -290,10 +290,8 @@ GpiCbHdl *VpiImpl::register_nexttime_callback(void)
 
 int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
-    /* This can only be called from callback context,
-       we handle the deletion later as we unwind
-       */
-    gpi_hdl->set_call_state(GPI_DELETE);
+    gpi_hdl->cleanup_callback();
+    //gpi_hdl->set_call_state(GPI_DELETE);
     return 0;
 }
 
@@ -323,16 +321,19 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     if (!cb_hdl)
         LOG_CRITICAL("VPI: Callback data corrupted");
 
-    if (cb_hdl->get_call_state() == GPI_PRIMED) {
-        int rearm = 0;
-        cb_hdl->set_call_state(GPI_PRE_CALL);
-        rearm = cb_hdl->run_callback();
-        cb_hdl->cleanup_callback();
+    gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-        if (cb_hdl->get_call_state() != GPI_DELETE &&
-            rearm) {
-            cb_hdl->arm_callback();
-        }
+    if (old_state == GPI_PRIMED) { 
+
+        cb_hdl->set_call_state(GPI_CALL);
+        cb_hdl->run_callback();
+
+        gpi_cb_state_e new_state = cb_hdl->get_call_state();
+        
+        /* We have re-primed in the handler */
+        if (new_state != GPI_PRIMED)
+            cb_hdl->cleanup_callback();
+
     }
 
     return rv;

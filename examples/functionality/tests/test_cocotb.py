@@ -188,7 +188,7 @@ def test_afterdelay_in_readonly(dut):
     exited = False
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     coro = cocotb.fork(do_test_afterdelay_in_readonly(dut, 0))
-    yield [Join(coro), Timer(100000)]
+    yield [Join(coro), Timer(1000)]
     clk_gen.kill()
     if exited is not True:
         raise cocotb.TestFailed

@@ -325,6 +325,7 @@ class Scheduler(object):
                 for others in self._trigger2coros[pending]:
                     if others not in scheduling: break
                 else:
+                    #if pending is not trigger and pending.primed: pending.unprime()
                     if pending.primed: pending.unprime()
                     del self._trigger2coros[pending]
 

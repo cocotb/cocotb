@@ -52,6 +52,7 @@ VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
  * before getting the new one
  */
 int VpiCbHdl::arm_callback(void) {
+
     if (m_state == GPI_PRIMED) {
         fprintf(stderr,
                 "Attempt to prime an already primed trigger for %s!\n", 
@@ -60,7 +61,7 @@ int VpiCbHdl::arm_callback(void) {
 
     // Only a problem if we have not been asked to deregister and register
     // in the same simultion callback
-    if ((vpi_hdl != NULL) && (m_state != GPI_DELETE)) {
+    if (vpi_hdl != NULL && m_state != GPI_DELETE) {
         fprintf(stderr,
                 "We seem to already be registered, deregistering %s!\n",
                 m_impl->reason_to_string(cb_data.reason));
@@ -89,6 +90,7 @@ int VpiCbHdl::cleanup_callback(void)
 
     // If the callback has not been called we also need to call
     // remove as well
+
     if (m_state == GPI_FREE)
         return 0;
 
@@ -101,10 +103,6 @@ int VpiCbHdl::cleanup_callback(void)
     check_vpi_error();
 
     vpi_hdl = NULL;
-
-    if (m_state == GPI_DELETE)
-        return 0;
-
     m_state = GPI_FREE;
 
     return rc;
@@ -198,30 +196,6 @@ VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
 
 }
 
-int VpiValueCbHdl::cleanup_callback(void)
-{
-    if (m_state == GPI_FREE)
-        return 0;
-
-    int rc;
-    if (!vpi_hdl) {
-        LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
-        exit(1);
-    }
-
-    rc = vpi_remove_cb(vpi_hdl);
-    check_vpi_error();
-
-    vpi_hdl = NULL;
-
-    if (m_state == GPI_DELETE)
-        return 0;
-
-    m_state = GPI_FREE;
-
-    return rc;
-}
-
 int VpiValueCbHdl::run_callback(void)
 {
     std::string current_value;
@@ -245,10 +219,16 @@ int VpiValueCbHdl::run_callback(void)
 
 check:
     if (pass) {
+        //LOG_WARN("Running Value change passup");
         this->gpi_function(m_cb_data);
+    } else {
+        //LOG_WARN("Running Value change NO passup");
+        //set_call_state(GPI_REPRIME);
+        cleanup_callback();
+        arm_callback();
     }
 
-    return 1;
+    return 0;
 }
 
 VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)

@@ -48,7 +48,6 @@ class Trigger(object):
         self.log = SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
         self.signal = None
         self.primed = False
-        self.registered = False
 
     def prime(self, *args):
         self.primed = True
@@ -56,7 +55,6 @@ class Trigger(object):
     def unprime(self):
         """Remove any pending callbacks if necessary"""
         self.primed = False
-        self.log.debug("Unprimed")
 
     def __del__(self):
         """Ensure if a trigger drops out of scope we remove any pending callbacks"""
@@ -117,9 +115,10 @@ class Timer(GPITrigger):
 
     def prime(self, callback):
         """Register for a timed callback"""
-        self.cbhdl = simulator.register_timed_callback(self.time_ps, callback, self)
         if self.cbhdl is None:
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
+            self.cbhdl = simulator.register_timed_callback(self.time_ps, callback, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):
@@ -135,9 +134,10 @@ class Edge(GPITrigger):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
-        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, 3, self)
         if self.cbhdl is None:
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
+            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, 3, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):
@@ -152,9 +152,10 @@ class _ReadOnly(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        self.cbhdl = simulator.register_readonly_callback(callback, self)
         if self.cbhdl is None:
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
+            self.cbhdl = simulator.register_readonly_callback(callback, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):
@@ -173,9 +174,12 @@ class _ReadWrite(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        self.cbhdl = simulator.register_rwsynch_callback(callback, self)
         if self.cbhdl is None:
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
+            #import pdb
+            #pdb.set_trace()
+            self.cbhdl = simulator.register_rwsynch_callback(callback, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):
@@ -193,9 +197,10 @@ class _NextTimeStep(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        self.cbhdl = simulator.register_nextstep_callback(callback, self)
         if self.cbhdl is None:
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
+            self.cbhdl = simulator.register_nextstep_callback(callback, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):

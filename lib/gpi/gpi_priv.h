@@ -36,8 +36,8 @@
 typedef enum gpi_cb_state {
     GPI_FREE = 0,
     GPI_PRIMED = 1,
-    GPI_PRE_CALL = 2,
-    GPI_POST_CALL = 3,
+    GPI_CALL = 2,
+    GPI_REPRIME = 3,
     GPI_DELETE = 4,
 } gpi_cb_state_e;
 
