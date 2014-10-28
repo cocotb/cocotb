@@ -238,60 +238,31 @@ GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
 
 GpiCbHdl *VpiImpl::register_readwrite_callback(void)
 {
-    VpiReadwriteCbHdl *hdl;
-
-    if (m_read_write)
-        hdl = reinterpret_cast<VpiReadwriteCbHdl*>(m_read_write);
-    else {
-        hdl = new VpiReadwriteCbHdl(this);
-        m_read_write = hdl;
-    }
-
-    if (hdl->arm_callback())
+    if (m_read_write.arm_callback())
         return NULL;
 
-    return m_read_write;
+    return &m_read_write;
 }
 
 GpiCbHdl *VpiImpl::register_readonly_callback(void)
 {
-    VpiReadOnlyCbHdl *hdl;
+    if (m_read_only.arm_callback())
+        return NULL;
 
-    if (m_read_only)
-        hdl = reinterpret_cast<VpiReadOnlyCbHdl*>(m_read_only);
-    else {
-        hdl = new VpiReadOnlyCbHdl(this);
-        m_read_only = hdl;
-    }
-
-
-    if (hdl->arm_callback())
-        hdl = NULL;
-
-    return hdl;
+    return &m_read_only;
 }
 
 GpiCbHdl *VpiImpl::register_nexttime_callback(void)
 {
-    VpiNextPhaseCbHdl *hdl;
+    if (m_next_phase.arm_callback())
+        return NULL;
 
-    if (m_next_phase)
-        hdl = reinterpret_cast<VpiNextPhaseCbHdl*>(m_next_phase);
-    else {
-        hdl = new VpiNextPhaseCbHdl(this);
-        m_next_phase = hdl;
-    }
-
-    if (hdl->arm_callback())
-        hdl = NULL;
-
-    return hdl;
+    return &m_next_phase;
 }
 
 int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
     gpi_hdl->cleanup_callback();
-    //gpi_hdl->set_call_state(GPI_DELETE);
     return 0;
 }
 

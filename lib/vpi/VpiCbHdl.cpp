@@ -163,20 +163,18 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
 
 GpiCbHdl * VpiSignalObjHdl::value_change_cb(unsigned int edge)
 {
-    if (!value_cb) 
-        value_cb = new VpiValueCbHdl(VpiObjHdl::m_impl, this, edge);
+    m_value_cb.set_edge(edge);
 
-    if (value_cb->arm_callback()) {
-        delete value_cb;
-        value_cb = NULL;
+    if (m_value_cb.arm_callback()) {
+        return NULL;
     }
 
-    return value_cb;
+    return &m_value_cb;
 }
 
 VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
-                             VpiSignalObjHdl *sig,
-                             unsigned int edge) : VpiCbHdl(impl),
+                             VpiSignalObjHdl *sig) : 
+                                                  VpiCbHdl(impl),
                                                   rising(false),
                                                   falling(false),                           
                                                   signal(sig)
@@ -186,14 +184,15 @@ VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
     cb_data.reason = cbValueChange;
     cb_data.time = &vpi_time;
     cb_data.obj = signal->get_handle();
+}
 
-
+void VpiValueCbHdl::set_edge(unsigned int edge)
+{
     if (edge & 1)
         rising = true;
 
     if (edge & 2)
         falling = true;
-
 }
 
 int VpiValueCbHdl::run_callback(void)
