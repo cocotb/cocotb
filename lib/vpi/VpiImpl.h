@@ -58,6 +58,8 @@ static inline int __check_vpi_error(const char *func, long line)
         case vpiInternal:
             loglevel = GPICritical;
             break;
+        default:
+            return level;
     }
 
     gpi_log("cocotb.gpi", loglevel, __FILE__, func, line,
@@ -156,6 +158,10 @@ class VpiStartupCbHdl : public VpiCbHdl {
 public:
     VpiStartupCbHdl(GpiImplInterface *impl);
     int run_callback(void);
+    int cleanup_callback() {
+        /* Too many sims get upset with this so we override to do nothing */
+        return 0;
+    }
     virtual ~VpiStartupCbHdl() { }
 };
 
@@ -163,6 +169,10 @@ class VpiShutdownCbHdl : public VpiCbHdl {
 public:
     VpiShutdownCbHdl(GpiImplInterface *impl);
     int run_callback(void);
+    int cleanup_callback() {
+        /* Too many sims get upset with this so we override to do nothing */
+        return 0;
+    }
     virtual ~VpiShutdownCbHdl() { }
 };
 

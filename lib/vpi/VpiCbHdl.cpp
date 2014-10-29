@@ -76,21 +76,17 @@ int VpiCbHdl::arm_callback(void) {
                      m_impl->reason_to_string(cb_data.reason), cb_data.reason);
         check_vpi_error();
         ret = -1;
+    } else {
+        m_state = GPI_PRIMED;
     }
-
+    
     vpi_hdl = new_hdl;
-    m_state = GPI_PRIMED;
 
     return ret;
 }
 
 int VpiCbHdl::cleanup_callback(void)
 {
-    int rc;
-
-    // If the callback has not been called we also need to call
-    // remove as well
-
     if (m_state == GPI_FREE)
         return 0;
 
@@ -99,13 +95,17 @@ int VpiCbHdl::cleanup_callback(void)
         exit(1);
     }
 
-    rc = vpi_remove_cb(vpi_hdl);
+    if (!(vpi_remove_cb(vpi_hdl))) {
+        LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
+        exit(1);
+    }
+
     check_vpi_error();
 
     vpi_hdl = NULL;
     m_state = GPI_FREE;
 
-    return rc;
+    return 0;
 }
 
 const char* VpiSignalObjHdl::get_signal_value_binstr(void)

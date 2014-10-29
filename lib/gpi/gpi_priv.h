@@ -169,8 +169,8 @@ public:
     GpiClockHdl(GpiObjHdl *clk) { }
     GpiClockHdl(const char *clk) { }
     ~GpiClockHdl() { }
-    int start_clock(const int period_ps); /* Do things with the GpiSignalObjHdl */
-    int stop_clock(void);
+    int start_clock(const int period_ps) { return 0; } ; /* Do things with the GpiSignalObjHdl */
+    int stop_clock(void) { return 0; }
 };
 
 class GpiIterator {
