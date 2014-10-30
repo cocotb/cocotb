@@ -216,6 +216,17 @@ void embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
 
+    // Set languare in use
+    const char *lang = getenv("LANGUAGE");
+    if (!lang)
+       fprintf(stderr, "You should really set LANGUAGE to \"verilog/vhdl\"");
+    else {
+        if (-1 == PyObject_SetAttrString(cocotb_module, "LANGUAGE", PyString_FromString(lang))) {
+            fprintf(stderr, "Unable to set LANGUAGE");
+            goto cleanup;
+        }
+    }
+
     // Hold onto a reference to our _fail_test function
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");
 

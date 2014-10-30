@@ -115,7 +115,6 @@ class VpiValueCbHdl : public VpiCbHdl {
 public:
     VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig);
     virtual ~VpiValueCbHdl() { }
-    //int cleanup_callback(void);
     int run_callback(void);
     void set_edge(unsigned int edge);
 private:

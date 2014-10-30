@@ -95,6 +95,8 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
         LOG_CRITICAL("Unable to alloc mem for read buffer");
     }
 
+    VhpiObjHdl::initialise(name);
+
     return 0;
 }
 
@@ -111,9 +113,15 @@ VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 
 int VhpiCbHdl::cleanup_callback(void)
 {
+    if (m_state == GPI_FREE)
+        return 0;
+
     vhpiStateT cbState = (vhpiStateT)vhpi_get(vhpiStateP, vhpi_hdl);
-    if (vhpiMature == cbState)
-        return vhpi_remove_cb(vhpi_hdl);
+    if (vhpiMature != cbState)
+        vhpi_remove_cb(vhpi_hdl);
+
+    vhpi_hdl = NULL;
+    m_state = GPI_FREE;
     return 0;
 }
 
@@ -244,6 +252,23 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
     return m_binvalue.value.str;
 }
 
+GpiCbHdl * VhpiSignalObjHdl::value_change_cb(unsigned int edge)
+{
+    value_cb = new VhpiValueCbHdl(VhpiObjHdl::m_impl, this);
+
+    if (value_cb->arm_callback())
+        return NULL;
+
+    return value_cb;
+}
+
+VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig) : VhpiCbHdl(impl)
+{
+    cb_data.reason = vhpiCbValueChange;
+    cb_data.time = &vhpi_time;
+    cb_data.obj = sig->get_handle();
+}
+
 VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
 {
     cb_data.reason = vhpiCbStartOfSimulation;
@@ -269,7 +294,7 @@ VhpiShutdownCbHdl::VhpiShutdownCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
 }
 
 int VhpiShutdownCbHdl::run_callback(void) {
-    //LOG_WARN("Shutdown called");
+    set_call_state(GPI_DELETE);
     gpi_embed_end();
     return 0;
 }
@@ -280,5 +305,32 @@ VhpiTimedCbHdl::VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VhpiC
     vhpi_time.low  = (uint32_t)(time_ps); 
 
     cb_data.reason = vhpiCbAfterDelay;
+    cb_data.time = &vhpi_time;
+}
+
+VhpiReadwriteCbHdl::VhpiReadwriteCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
+{
+    vhpi_time.high = 0;
+    vhpi_time.low = 0;
+
+    cb_data.reason = vhpiCbEndOfProcesses;
+    cb_data.time = &vhpi_time;
+}
+
+VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
+{
+    vhpi_time.high = 0;
+    vhpi_time.low = 0;
+
+    cb_data.reason = vhpiCbLastKnownDeltaCycle;
+    cb_data.time = &vhpi_time;
+}
+
+VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
+{
+    vhpi_time.high = 0;
+    vhpi_time.low = 0;
+
+    cb_data.reason = vhpiCbNextTimeStep;
     cb_data.time = &vhpi_time;
 }

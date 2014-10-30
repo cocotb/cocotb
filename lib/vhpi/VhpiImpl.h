@@ -73,31 +73,6 @@ static inline int __check_vhpi_error(const char *func, long line)
     __check_vhpi_error(__func__, __LINE__); \
 } while (0)
 
-class VhpiImpl : public GpiImplInterface {
-public:
-    VhpiImpl(const std::string& name) : GpiImplInterface(name) { }
-
-     /* Sim related */
-    void sim_end(void);
-    void get_sim_time(uint32_t *high, uint32_t *low);
-
-    /* Hierachy related */
-    GpiObjHdl *get_root_handle(const char *name);
-
-    /* Callback related, these may (will) return the same handle*/
-    GpiCbHdl *register_timed_callback(uint64_t time_ps);
-    GpiCbHdl *register_readonly_callback(void) { return NULL; }
-    GpiCbHdl *register_nexttime_callback(void) { return NULL; }
-    GpiCbHdl *register_readwrite_callback(void);
-    int deregister_callback(GpiCbHdl *obj_hdl) { return 0; }
-    bool native_check(std::string &name, GpiObjHdl *parent) { return false; }
-    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
-    GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
-
-    const char * reason_to_string(int reason);
-    const char * format_to_string(int format);
-};
-
 class VhpiObjHdl : public GpiObjHdl {
 public:
     VhpiObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : GpiObjHdl(impl),
@@ -136,7 +111,6 @@ class VhpiValueCbHdl : public VhpiCbHdl {
 public:
     VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig);
     virtual ~VhpiValueCbHdl() { }
-    int cleanup_callback(void);
 private:
     vhpiTimeT vhpi_time;
 };
@@ -149,24 +123,30 @@ private:
     vhpiTimeT vhpi_time;
 };
 
-#if 0
 class VhpiReadOnlyCbHdl : public VhpiCbHdl {
-
-};
-
-class VhpiReadWriteCbHdl : public VhpiCbHdl {
-
+public:
+    VhpiReadOnlyCbHdl(GpiImplInterface *impl);
+    virtual ~VhpiReadOnlyCbHdl() { }
+private:
+    vhpiTimeT vhpi_time;
 };
 
 class VhpiNextPhaseCbHdl : public VhpiCbHdl {
-
+public:
+    VhpiNextPhaseCbHdl(GpiImplInterface *impl);
+    virtual ~VhpiNextPhaseCbHdl() { }
+private:
+    vhpiTimeT vhpi_time;
 };
-#endif
 
 class VhpiStartupCbHdl : public VhpiCbHdl {
 public:
     VhpiStartupCbHdl(GpiImplInterface *impl);
     int run_callback(void);
+    int cleanup_callback() {
+        /* Too many sims get upset with this so we override to do nothing */
+        return 0;
+    }
     virtual ~VhpiStartupCbHdl() { }
 };
 
@@ -174,6 +154,10 @@ class VhpiShutdownCbHdl : public VhpiCbHdl {
 public:
     VhpiShutdownCbHdl(GpiImplInterface *impl);
     int run_callback(void);
+    int cleanup_callback() {
+        /* Too many sims get upset with this so we override to do nothing */
+        return 0;
+    }
     virtual ~VhpiShutdownCbHdl() { }
 };
 
@@ -189,7 +173,8 @@ class VhpiSignalObjHdl : public VhpiObjHdl, public GpiSignalObjHdl {
 public:
     VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : VhpiObjHdl(impl, hdl),
                                                                 GpiSignalObjHdl(impl),
-                                                                m_size(0) { }
+                                                                m_size(0),
+                                                                value_cb(NULL) { }
     virtual ~VhpiSignalObjHdl();
 
     const char* get_signal_value_binstr(void);
@@ -202,7 +187,7 @@ public:
     // Also think we want the triggers here?
     virtual GpiCbHdl *rising_edge_cb(void) { return NULL; }
     virtual GpiCbHdl *falling_edge_cb(void) { return NULL; }
-    virtual GpiCbHdl *value_change_cb(void);
+    virtual GpiCbHdl *value_change_cb(unsigned int edge);
 
     /* Functions that I would like to inherit but do not ?*/
     virtual GpiObjHdl *get_handle_by_name(std::string &name) {
@@ -227,6 +212,39 @@ private:
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
     VhpiValueCbHdl *value_cb;
+};
+
+class VhpiImpl : public GpiImplInterface {
+public:
+    VhpiImpl(const std::string& name) : GpiImplInterface(name),
+                                        m_read_write(this),
+                                        m_next_phase(this),
+                                        m_read_only(this) { }
+
+     /* Sim related */
+    void sim_end(void);
+    void get_sim_time(uint32_t *high, uint32_t *low);
+
+    /* Hierachy related */
+    GpiObjHdl *get_root_handle(const char *name);
+
+    /* Callback related, these may (will) return the same handle*/
+    GpiCbHdl *register_timed_callback(uint64_t time_ps);
+    GpiCbHdl *register_readonly_callback(void);
+    GpiCbHdl *register_nexttime_callback(void);
+    GpiCbHdl *register_readwrite_callback(void);
+    int deregister_callback(GpiCbHdl *obj_hdl);
+    bool native_check(std::string &name, GpiObjHdl *parent) { return false; }
+    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
+
+    const char * reason_to_string(int reason);
+    const char * format_to_string(int format);
+
+private:
+    VhpiReadwriteCbHdl m_read_write;
+    VhpiNextPhaseCbHdl m_next_phase;
+    VhpiReadOnlyCbHdl m_read_only;
 };
 
 #endif /*COCOTB_VHPI_IMPL_H_  */

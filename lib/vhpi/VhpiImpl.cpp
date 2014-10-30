@@ -158,7 +158,6 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     }
 
     LOG_DEBUG("Type was %d", type);
-    /* Might move the object creation inside here */
     new_obj->initialise(name);
 
     return new_obj;
@@ -166,7 +165,45 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 
 GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
-    return NULL;
+    vhpiIntT type;
+    VhpiObjHdl *parent_hdl = sim_to_hdl<VhpiObjHdl*>(parent);
+    vhpiHandleT vpi_hdl = parent_hdl->get_handle();
+    vhpiHandleT new_hdl;
+    VhpiObjHdl *new_obj = NULL;
+
+    new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vpi_hdl, index);
+    check_vhpi_error();
+
+    if (!new_hdl)
+        return NULL;
+
+    if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
+        vpi_free_object(vpi_hdl);
+        LOG_DEBUG("Not a VHPI object");
+        return NULL;
+    }
+
+    /* What sort of isntance is this ?*/
+    switch (type) {
+        case vhpiIndexedNameK:
+            new_obj = new VhpiSignalObjHdl(this, new_hdl);
+            LOG_DEBUG("Created VhpiSignalObjHdl");
+            break;
+        case vhpiCompInstStmtK:
+            new_obj = new VhpiObjHdl(this, new_hdl);
+            LOG_DEBUG("Created VhpiObjHdl");
+            break;
+        default:
+            LOG_CRITICAL("Not sure what to do with type %d below entity (%s) at index (%d)",
+                         type, parent->get_name_str(), index);
+            return NULL;
+    }
+
+    LOG_DEBUG("Type was %d", type);
+    std::string name = vhpi_get_str(vhpiNameP, new_hdl);
+    new_obj->initialise(name);
+
+    return new_obj;
 }
 
 GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
@@ -227,9 +264,39 @@ GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time_ps)
     return hdl;
 }
 
+GpiCbHdl *VhpiImpl::register_readwrite_callback(void)
+{
+    if (m_read_write.arm_callback())
+        return NULL;
+
+    return &m_read_write;
+}
+
+GpiCbHdl *VhpiImpl::register_readonly_callback(void)
+{
+    if (m_read_only.arm_callback())
+        return NULL;
+
+    return &m_read_only;
+}
+
+GpiCbHdl *VhpiImpl::register_nexttime_callback(void)
+{
+    if (m_next_phase.arm_callback())
+        return NULL;
+
+    return &m_next_phase;
+}
+
+int VhpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
+{
+    gpi_hdl->cleanup_callback();
+    return 0;
+}
+
 void VhpiImpl::sim_end(void)
 {
-    sim_finish_cb = NULL;
+    sim_finish_cb->set_call_state(GPI_DELETE);
     vhpi_control(vhpiFinish);
     check_vhpi_error();
 }
@@ -239,29 +306,33 @@ extern "C" {
 // Main entry point for callbacks from simulator
 void handle_vhpi_callback(const vhpiCbDataT *cb_data)
 {
-    FENTER
-
     VhpiCbHdl *cb_hdl = (VhpiCbHdl*)cb_data->user_data;
 
     if (!cb_hdl)
-        LOG_CRITICAL("VPI: Callback data corrupted");
+        LOG_CRITICAL("VHPI: Callback data corrupted");
 
-    if (cb_hdl->get_call_state() == GPI_PRIMED) {
-        cb_hdl->set_call_state(GPI_PRE_CALL);
+    gpi_cb_state_e old_state = cb_hdl->get_call_state();
+
+    if (old_state == GPI_PRIMED) { 
+
+        cb_hdl->set_call_state(GPI_CALL);
         cb_hdl->run_callback();
-        cb_hdl->set_call_state(GPI_POST_CALL);
+
+        gpi_cb_state_e new_state = cb_hdl->get_call_state();
+        
+        /* We have re-primed in the handler */
+        if (new_state != GPI_PRIMED)
+            if (cb_hdl->cleanup_callback())
+                delete cb_hdl;
+
     }
 
-    gpi_deregister_callback(cb_hdl);
-
-    FEXIT
     return;
 };
 
 static void register_initial_callback(void)
 {
     FENTER
-    LOG_WARN("Initial callback registering");
     sim_init_cb = new VhpiStartupCbHdl(vhpi_table);
     sim_init_cb->arm_callback();
     FEXIT
@@ -277,7 +348,6 @@ static void register_final_callback(void)
 
 static void register_embed(void)
 {
-    printf("%s %d Registered VHPI \n", __func__, __LINE__);
     vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
     gpi_embed_init_python();
