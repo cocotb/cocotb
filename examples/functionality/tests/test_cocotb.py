@@ -276,21 +276,27 @@ def do_single_edge_check(dut, level):
 
 @cocotb.test()
 def test_rising_edge(dut):
-   """Test that a rising edge can be yielded on"""
-   test = cocotb.fork(do_single_edge_check(dut, 1))
-   yield Timer(10)
-   dut.clk <= 1
-   yield [Timer(1000), Join(test)]
+    """Test that a rising edge can be yielded on"""
+    test = cocotb.fork(do_single_edge_check(dut, 1))
+    yield Timer(10)
+    dut.clk <= 1
+    fail_timer = Timer(1000)
+    result = yield [fail_timer, test.join()]
+    if result is fail_timer:
+        raise TestError("Test timed out")
 
 @cocotb.test(expect_error=True)
 def test_falling_edge(dut):
-   """Test that a falling edge can be yielded on"""
-   dut.clk <= 1
-   yield Timer(10)
-   test = cocotb.fork(do_single_edge_check(dut, 0))
-   yield Timer(10)
-   dut.clk <= 0
-   yield [Timer(1000), Join(test)]
+    """Test that a falling edge can be yielded on"""
+    dut.clk <= 1
+    yield Timer(10)
+    test = cocotb.fork(do_single_edge_check(dut, 0))
+    yield Timer(10)
+    dut.clk <= 0
+    fail_time = Timer(1000)
+    result = yield [fail_timer, test.join()]
+    if result is fail_timer:
+        raise TestError("Test timed out")
 
 @cocotb.coroutine
 def do_either_edge_test(dut):
