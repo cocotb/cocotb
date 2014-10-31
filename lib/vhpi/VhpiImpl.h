@@ -111,8 +111,14 @@ class VhpiValueCbHdl : public VhpiCbHdl {
 public:
     VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig);
     virtual ~VhpiValueCbHdl() { }
+    int run_callback(void);
+    void set_edge(unsigned int edge);
 private:
     vhpiTimeT vhpi_time;
+    std::string initial_value;
+    bool rising;
+    bool falling;
+    VhpiSignalObjHdl *signal;
 };
 
 class VhpiTimedCbHdl : public VhpiCbHdl {
@@ -174,7 +180,7 @@ public:
     VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : VhpiObjHdl(impl, hdl),
                                                                 GpiSignalObjHdl(impl),
                                                                 m_size(0),
-                                                                value_cb(NULL) { }
+                                                                m_value_cb(impl, this) { }
     virtual ~VhpiSignalObjHdl();
 
     const char* get_signal_value_binstr(void);
@@ -211,7 +217,7 @@ private:
     unsigned int m_size;
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
-    VhpiValueCbHdl *value_cb;
+    VhpiValueCbHdl m_value_cb;
 };
 
 class VhpiImpl : public GpiImplInterface {

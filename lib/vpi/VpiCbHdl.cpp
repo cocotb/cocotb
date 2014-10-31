@@ -222,7 +222,6 @@ check:
         this->gpi_function(m_cb_data);
     } else {
         //LOG_WARN("Running Value change NO passup");
-        //set_call_state(GPI_REPRIME);
         cleanup_callback();
         arm_callback();
     }

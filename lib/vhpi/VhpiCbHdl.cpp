@@ -254,19 +254,68 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
 
 GpiCbHdl * VhpiSignalObjHdl::value_change_cb(unsigned int edge)
 {
-    value_cb = new VhpiValueCbHdl(VhpiObjHdl::m_impl, this);
+    m_value_cb.set_edge(edge);
 
-    if (value_cb->arm_callback())
+    if (m_value_cb.arm_callback())
         return NULL;
 
-    return value_cb;
+    return &m_value_cb;
 }
 
-VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig) : VhpiCbHdl(impl)
+VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl,
+                               VhpiSignalObjHdl *sig) :
+                                                      VhpiCbHdl(impl),
+                                                      rising(false),
+                                                      falling(false),
+                                                      signal(sig)
 {
     cb_data.reason = vhpiCbValueChange;
     cb_data.time = &vhpi_time;
-    cb_data.obj = sig->get_handle();
+    cb_data.obj = signal->get_handle();
+}
+
+void VhpiValueCbHdl::set_edge(unsigned int edge)
+{
+    if (edge & 1)
+        rising = true;
+
+    if (edge & 2)
+        falling = true;
+}
+
+int VhpiValueCbHdl::run_callback(void)
+{
+    std::string current_value;
+    std::string required;
+    bool pass = false;
+    if (rising && falling) {
+        pass = true;
+        goto check;
+    }
+
+    current_value = signal->get_signal_value_binstr();
+    if (rising && (current_value  == "1")) {
+        pass = true;
+        goto check;
+    }
+
+    if (falling && (current_value  == "0")) {
+        pass = true;
+        goto check;
+    }
+
+check:
+    if (pass) {
+        LOG_WARN("Running Value change passup");
+        this->gpi_function(m_cb_data);
+    } else {
+        LOG_WARN("Running Value change NO passup");
+        //set_call_state(GPI_REPRIME);
+        cleanup_callback();
+        arm_callback();
+    }
+
+    return 0;
 }
 
 VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
