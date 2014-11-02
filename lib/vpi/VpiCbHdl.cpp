@@ -218,10 +218,8 @@ int VpiValueCbHdl::run_callback(void)
 
 check:
     if (pass) {
-        //LOG_WARN("Running Value change passup");
         this->gpi_function(m_cb_data);
     } else {
-        //LOG_WARN("Running Value change NO passup");
         cleanup_callback();
         arm_callback();
     }

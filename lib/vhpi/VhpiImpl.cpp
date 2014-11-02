@@ -36,11 +36,9 @@
 #include <vector>
 
 extern "C" {
-
 static VhpiCbHdl *sim_init_cb;
 static VhpiCbHdl *sim_finish_cb;
 static VhpiImpl  *vhpi_table;
-
 }
 
 const char * VhpiImpl::format_to_string(int format)
@@ -146,18 +144,15 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         case vhpiPortDeclK:
         case vhpiSigDeclK:
             new_obj = new VhpiSignalObjHdl(this, new_hdl);
-            LOG_DEBUG("Created VhpiSignalObjHdl");
             break;
         case vhpiCompInstStmtK:
             new_obj = new VhpiObjHdl(this, new_hdl);
-            LOG_DEBUG("Created VhpiObjHdl");
             break;
         default:
-            LOG_CRITICAL("Not sure what to do with type %d for entity (%s)", type, name.c_str());
+            LOG_DEBUG("Not sure what to do with type %d for entity (%s)", type, name.c_str());
             return NULL;
     }
 
-    LOG_DEBUG("Type was %d", type);
     new_obj->initialise(name);
 
     return new_obj;
@@ -194,12 +189,11 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
             LOG_DEBUG("Created VhpiObjHdl");
             break;
         default:
-            LOG_CRITICAL("Not sure what to do with type %d below entity (%s) at index (%d)",
+            LOG_DEBUG("Not sure what to do with type %d below entity (%s) at index (%d)",
                          type, parent->get_name_str(), index);
             return NULL;
     }
 
-    LOG_DEBUG("Type was %d", type);
     std::string name = vhpi_get_str(vhpiNameP, new_hdl);
     new_obj->initialise(name);
 
@@ -374,3 +368,5 @@ void vhpi_startup_routines_bootstrap(void) {
 }
 
 }
+
+GPI_ENTRY_POINT(vhpi, register_embed)

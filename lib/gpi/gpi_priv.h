@@ -216,4 +216,16 @@ void gpi_embed_init(gpi_sim_info_t *info);
 void gpi_embed_end(void);
 void gpi_embed_init_python(void);
 
+typedef const void (*layer_entry_func)(void);
+
+/* Use this macro in an implementation layer to define an enty point */
+#define GPI_ENTRY_POINT(NAME, func) \
+    extern "C" { \
+        const void NAME##_entry_point(void)  \
+        { \
+            printf("In entry point for " #NAME "\n"); \
+            func(); \
+        } \
+    }
+
 #endif /* COCOTB_GPI_PRIV_H_ */

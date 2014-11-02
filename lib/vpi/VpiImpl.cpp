@@ -127,7 +127,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
             LOG_DEBUG("Created VpiObjHdl");
             break;
         default:
-            LOG_CRITICAL("Not sure what to do with type %d for entity (%s)", type, name.c_str());
+            LOG_DEBUG("Not sure what to do with type %d for entity (%s)", type, name.c_str());
             return NULL;
     }
 
@@ -159,17 +159,18 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         case vpiNet:
         case vpiNetBit:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
-            LOG_DEBUG("Created VpiSignalObjHdl");
             break;
         case vpiModule:
             new_obj = new VpiObjHdl(this, new_hdl);
-            LOG_DEBUG("Created VpiObjHdl");
             break;
         default:
-            LOG_CRITICAL("Not sure what to do with type %d below entity (%s) at index (%d)",
+            LOG_DEBUG("Not sure what to do with type %d below entity (%s) at index (%d)",
                          type, parent->get_name_str(), index);
             return NULL;
     }
+
+    std::string name = vpi_get_str(vpiFullName, new_hdl);
+    new_obj->initialise(name);
 
     return new_obj;
 }
@@ -451,3 +452,5 @@ void vlog_startup_routines_bootstrap(void) {
 }
 
 }
+
+GPI_ENTRY_POINT(vpi, register_embed)

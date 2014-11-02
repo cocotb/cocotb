@@ -341,3 +341,4 @@ int FliSimPhaseCbHdl::arm_callback(void) {
     return 0;
 }
 
+GPI_ENTRY_POINT(fli, cocotb_init);

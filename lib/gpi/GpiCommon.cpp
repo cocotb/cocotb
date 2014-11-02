@@ -30,6 +30,7 @@
 #include "gpi_priv.h"
 #include <sys/types.h>
 #include <unistd.h>
+#include <dlfcn.h>
 #include <vector>
 
 using namespace std;
@@ -57,8 +58,66 @@ void gpi_sim_end(void)
     registered_impls[0]->sim_end();
 }
 
+static void gpi_load_libs(std::vector<std::string> to_load)
+{
+    std::vector<std::string>::iterator iter;
+
+    for (iter = to_load.begin();
+         iter != to_load.end();
+         iter++)
+    {
+        void *lib_handle = NULL;
+        std::string full_name = "lib" + *iter + ".so";
+        const char *now_loading = (full_name).c_str();
+
+        lib_handle = dlopen(now_loading, RTLD_GLOBAL | RTLD_NOW);
+        if (!lib_handle) {
+            printf("Error loading lib %s (%s)\n", now_loading, dlerror());
+            exit(1);
+        }
+        std::string sym = (*iter) + "_entry_point";
+        void *entry_point = dlsym(lib_handle, sym.c_str());
+        if (!entry_point) {
+            printf("Unable to find entry point for %s (%s)\n", now_loading, dlerror());
+            exit(1);
+        }
+        layer_entry_func new_lib_entry = (layer_entry_func)entry_point;
+        new_lib_entry();
+
+        dlerror();
+    }
+}
+
 void gpi_embed_init_python(void)
 {
+    static bool loading = false;
+    
+    if (loading)
+        return;
+    
+    /* Lets look at what other libs we where asked to load too */
+    char *lib_env = getenv("GPI_EXTRA");
+
+    if (lib_env) {
+        std::string lib_list = lib_env;
+        std::string delim = ":";
+        std::vector<std::string> to_load;
+
+        size_t e_pos = 0;
+        while (std::string::npos != (e_pos = lib_list.find(delim))) {
+            std::string lib = lib_list.substr(0, e_pos);
+            lib_list.erase(0, e_pos + delim.length());
+
+            to_load.push_back(lib);
+        }
+        if (lib_list.length()) {
+            to_load.push_back(lib_list);
+        }
+
+        loading = true;
+        gpi_load_libs(to_load);
+    }
+
     embed_init_python();
 }
 
@@ -75,13 +134,13 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
 
     GpiObjHdl *hdl;
 
-    LOG_WARN("Looking for root handle over %d impls", registered_impls.size());
+    LOG_DEBUG("Looking for root handle over %d impls", registered_impls.size());
 
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
         if ((hdl = (*iter)->get_root_handle(name))) {
-            LOG_WARN("Got a Root handle (%s) back from %s",
+            LOG_DEBUG("Got a Root handle (%s) back from %s",
                 hdl->get_name_str(),
                 (*iter)->get_name_c());
             return (gpi_sim_hdl)hdl;

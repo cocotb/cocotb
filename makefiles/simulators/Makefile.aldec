@@ -52,12 +52,9 @@ endif
 ifeq ($(GPI_IMPL),vhpi)
     GPI_ARGS = -loadvhpi $(LIB_DIR)/libvhpi:vhpi_startup_routines_bootstrap
 endif
-ifeq ($(GPI_IMPL),mixed)
-    GPI_ARGS = -pli libvpi -loadvhpi $(LIB_DIR)/libvhpi:vhpi_startup_routines_bootstrap
-endif
 
 ifndef GPI_ARGS
-   $(error "Unable to determine appropriate GPI layer to use")
+   $(error "Unable to determine appropriate GPI layer to use as main entry point")
 endif
 
 
