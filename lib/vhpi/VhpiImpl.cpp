@@ -182,11 +182,9 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     switch (type) {
         case vhpiIndexedNameK:
             new_obj = new VhpiSignalObjHdl(this, new_hdl);
-            LOG_DEBUG("Created VhpiSignalObjHdl");
             break;
         case vhpiCompInstStmtK:
             new_obj = new VhpiObjHdl(this, new_hdl);
-            LOG_DEBUG("Created VhpiObjHdl");
             break;
         default:
             LOG_DEBUG("Not sure what to do with type %d below entity (%s) at index (%d)",

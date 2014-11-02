@@ -120,11 +120,9 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         case vpiReg:
         case vpiParameter:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
-            LOG_DEBUG("Created VpiSignalObjHdl");
             break;
         case vpiModule:
             new_obj = new VpiObjHdl(this, new_hdl);
-            LOG_DEBUG("Created VpiObjHdl");
             break;
         default:
             LOG_DEBUG("Not sure what to do with type %d for entity (%s)", type, name.c_str());
