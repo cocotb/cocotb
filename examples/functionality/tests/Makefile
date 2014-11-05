@@ -29,16 +29,18 @@
 
 
 TOPLEVEL := sample_module
-LANGUAGE ?= verilog
+TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
-ifeq ($(LANGUAGE),vhdl)
+ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES = $(PWD)/../hdl/sample_module.vhdl
     TOPLEVEL := $(TOPLEVEL)
+    GPI_IMPL := vhpi
 else
     VERILOG_SOURCES = $(PWD)/../hdl/sample_module.v
+    GPI_IMPL := vpi
 endif
 
 MODULE ?= test_cocotb,test_discovery,test_external,test_regression
