@@ -46,6 +46,10 @@ VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.time      = NULL;
     cb_data.value     = NULL;
     cb_data.user_data = (char*)this;
+
+    vpi_time.high = 0;
+    vpi_time.low = 0;
+    vpi_time.type = vpiSimTime;
 }
 
 /* If the user data already has a callback handle then deregister
@@ -260,7 +264,6 @@ int VpiShutdownCbHdl::run_callback(void) {
 
 VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VpiCbHdl(impl)
 {
-    vpi_time.type = vpiSimTime;
     vpi_time.high = (uint32_t)(time_ps>>32);
     vpi_time.low  = (uint32_t)(time_ps);
 
@@ -270,30 +273,18 @@ VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VpiCbHd
 
 VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 {
-    vpi_time.type = vpiSimTime;
-    vpi_time.high = 0;
-    vpi_time.low = 0;
-
     cb_data.reason = cbReadWriteSynch;
     cb_data.time = &vpi_time;
 }
 
 VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 {
-    vpi_time.type = vpiSimTime;
-    vpi_time.high = 0;
-    vpi_time.low = 0;
-
     cb_data.reason = cbReadOnlySynch;
     cb_data.time = &vpi_time;
 }
 
 VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 {
-    vpi_time.type = vpiSimTime;
-    vpi_time.high = 0;
-    vpi_time.low = 0;
-
     cb_data.reason = cbNextSimTime;
     cb_data.time = &vpi_time;
 }

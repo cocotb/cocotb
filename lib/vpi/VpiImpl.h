@@ -107,6 +107,7 @@ public:
 protected:
     vpiHandle vpi_hdl;
     s_cb_data cb_data;
+    s_vpi_time vpi_time;
 };
 
 class VpiSignalObjHdl;
@@ -118,7 +119,6 @@ public:
     int run_callback(void);
     void set_edge(unsigned int edge);
 private:
-    s_vpi_time vpi_time;
     std::string initial_value;
     bool rising;
     bool falling;
@@ -133,31 +133,25 @@ public:
         VpiCbHdl::cleanup_callback();
         return 1;
     }
-private:
-    s_vpi_time vpi_time;
 };
 
 class VpiReadOnlyCbHdl : public VpiCbHdl {
 public:
     VpiReadOnlyCbHdl(GpiImplInterface *impl);
     virtual ~VpiReadOnlyCbHdl() { }
-private:
-    s_vpi_time vpi_time;
 };
 
 class VpiNextPhaseCbHdl : public VpiCbHdl {
 public:
     VpiNextPhaseCbHdl(GpiImplInterface *impl);
     virtual ~VpiNextPhaseCbHdl() { }
-private:
-    s_vpi_time vpi_time;
 };
 
 class VpiStartupCbHdl : public VpiCbHdl {
 public:
     VpiStartupCbHdl(GpiImplInterface *impl);
     int run_callback(void);
-    int cleanup_callback() {
+    int cleanup_callback(void) {
         /* Too many sims get upset with this so we override to do nothing */
         return 0;
     }
@@ -168,7 +162,7 @@ class VpiShutdownCbHdl : public VpiCbHdl {
 public:
     VpiShutdownCbHdl(GpiImplInterface *impl);
     int run_callback(void);
-    int cleanup_callback() {
+    int cleanup_callback(void) {
         /* Too many sims get upset with this so we override to do nothing */
         return 0;
     }
@@ -179,8 +173,6 @@ class VpiReadwriteCbHdl : public VpiCbHdl {
 public:
     VpiReadwriteCbHdl(GpiImplInterface *impl);
     virtual ~VpiReadwriteCbHdl() { }
-private:
-    s_vpi_time vpi_time;
 };
 
 class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
