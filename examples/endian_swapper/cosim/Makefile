@@ -6,7 +6,7 @@ SWIG ?= swig
 all: io_module.so _hal.so
 
 io_module.o: io.c io_module.h io.h
-	gcc -pthread -fno-strict-aliasing -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -mtune=generic -D_GNU_SOURCE -fPIC -fwrapv -DNDEBUG -I$(PYTHON_INCDIR) -c $< -o $@
+	gcc -pthread -fno-strict-aliasing -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -mtune=generic -D_GNU_SOURCE -fPIC -fwrapv -DNDEBUG -I$(PYTHON_INCDIR) -c $< -o $@
 
 io_module.so: io_module.o
 	gcc -pthread -shared -Wl,-z,relro $< -L$(PYTHON_LIBDIR) -lpython2.7 -o $@
