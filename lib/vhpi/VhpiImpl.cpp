@@ -314,8 +314,9 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data)
         
         /* We have re-primed in the handler */
         if (new_state != GPI_PRIMED)
-            if (cb_hdl->cleanup_callback())
+            if (cb_hdl->cleanup_callback()) {
                 delete cb_hdl;
+            }
 
     }
 

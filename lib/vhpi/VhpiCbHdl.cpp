@@ -70,8 +70,6 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
                 LOG_CRITICAL("Unable to alloc mem for write buffer");
             }
 
-            memset(&m_value.value.enumvs, m_size, vhpi0);
-
             break;
         }
 
@@ -83,12 +81,12 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
 
     /* We also alloc a second value member for use with read string operations */
     m_binvalue.format = vhpiBinStrVal;
-    m_binvalue.bufSize = 0;//m_size*sizeof(vhpiCharT);
-    m_binvalue.value.str = NULL;//(vhpiCharT *)calloc(m_binvalue.bufSize, m_binvalue.bufSize);
+    m_binvalue.bufSize = 0;
+    m_binvalue.value.str = NULL;
 
     int new_size = vhpi_get_value(vhpi_hdl, &m_binvalue);
 
-    m_binvalue.bufSize = new_size*sizeof(vhpiCharT);
+    m_binvalue.bufSize = new_size*sizeof(vhpiCharT) + 1;
     m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, m_binvalue.bufSize);
 
     if (!m_value.value.str) {
@@ -109,40 +107,67 @@ VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.time      = NULL;
     cb_data.value     = NULL;
     cb_data.user_data = (char *)this;
+
+    vhpi_time.high = 0;
+    vhpi_time.low = 0;
 }
 
 int VhpiCbHdl::cleanup_callback(void)
 {
+    /* For non timer callbacks we disable rather than remove */
+    int ret = 0;
     if (m_state == GPI_FREE)
         return 0;
 
     vhpiStateT cbState = (vhpiStateT)vhpi_get(vhpiStateP, vhpi_hdl);
-    if (vhpiMature != cbState)
-        vhpi_remove_cb(vhpi_hdl);
+    if (vhpiEnable == cbState) {
+        ret = vhpi_disable_cb(vhpi_hdl);
+        m_state = GPI_FREE;
+    }
 
-    vhpi_hdl = NULL;
-    m_state = GPI_FREE;
+    if (ret)
+        check_vhpi_error();
+
     return 0;
 }
 
 int VhpiCbHdl::arm_callback(void)
 {
-    vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
     int ret = 0;
+    vhpiStateT cbState;
 
-    if (!new_hdl) {
-        LOG_CRITICAL("VHPI: Unable to register callback a handle for VHPI type %s(%d)",
-                     m_impl->reason_to_string(cb_data.reason), cb_data.reason);
-        check_vhpi_error();
-        ret = -1;
+    if (m_state == GPI_PRIMED)
+        return 0;
+
+    /* Do we already have a handle, if so and it is disabled then
+       just re-enable it */
+
+    if (vhpi_hdl) {
+        cbState = (vhpiStateT)vhpi_get(vhpiStateP, vhpi_hdl);
+        if (vhpiDisable == cbState) {
+            if (vhpi_enable_cb(vhpi_hdl)) {
+                check_vhpi_error();
+                ret = -1;
+            }
+         }
+    } else {
+
+        vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
+
+        if (!new_hdl) {
+            LOG_CRITICAL("VHPI: Unable to register callback a handle for VHPI type %s(%d)",
+                         m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+            check_vhpi_error();
+            ret = -1;
+        }
+
+        cbState = (vhpiStateT)vhpi_get(vhpiStateP, new_hdl);
+        if (vhpiEnable != cbState) {
+            LOG_CRITICAL("VHPI ERROR: Registered callback isn't enabled! Got %d\n", cbState);
+        }
+
+        vhpi_hdl = new_hdl;
     }
-
-    vhpiStateT cbState = (vhpiStateT)vhpi_get(vhpiStateP, new_hdl);
-    if (cbState != vhpiEnable) {
-        LOG_CRITICAL("VHPI ERROR: Registered callback isn't enabled! Got %d\n", cbState);
-    }
-
-    vhpi_hdl = new_hdl;
     m_state = GPI_PRIMED;
 
     return ret;
@@ -228,8 +253,9 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
             }
 
             // Fill bits at the end of the value to 0's
-            for (i = len; i < m_size; i++)
+            for (i = len; i < m_size; i++) {
                 m_value.value.enumvs[i] = vhpi0;
+            }
 
             break;
         }
@@ -305,12 +331,10 @@ int VhpiValueCbHdl::run_callback(void)
     }
 
 check:
-    if (pass) {
+    if (pass)
         this->gpi_function(m_cb_data);
-    } else {
-        cleanup_callback();
-        arm_callback();
-    }
+    else
+        m_state = GPI_PRIMED;
 
     return 0;
 }
@@ -354,29 +378,32 @@ VhpiTimedCbHdl::VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VhpiC
     cb_data.time = &vhpi_time;
 }
 
+int VhpiTimedCbHdl::cleanup_callback(void)
+{
+    if (m_state == GPI_FREE)
+        return 1;
+
+    vhpi_remove_cb(vhpi_hdl);
+
+    vhpi_hdl = NULL;
+    m_state = GPI_FREE;
+    return 1;
+}
+
 VhpiReadwriteCbHdl::VhpiReadwriteCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
 {
-    vhpi_time.high = 0;
-    vhpi_time.low = 0;
-
-    cb_data.reason = vhpiCbEndOfProcesses;
+    cb_data.reason = vhpiCbRepEndOfProcesses;
     cb_data.time = &vhpi_time;
 }
 
 VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
 {
-    vhpi_time.high = 0;
-    vhpi_time.low = 0;
-
-    cb_data.reason = vhpiCbLastKnownDeltaCycle;
+    cb_data.reason = vhpiCbRepLastKnownDeltaCycle;
     cb_data.time = &vhpi_time;
 }
 
 VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
 {
-    vhpi_time.high = 0;
-    vhpi_time.low = 0;
-
-    cb_data.reason = vhpiCbNextTimeStep;
+    cb_data.reason = vhpiCbRepNextTimeStep;
     cb_data.time = &vhpi_time;
 }
