@@ -29,7 +29,7 @@
 
 
 # Override this variable to use VHPI instead of VPI
-GPI_IMPL ?= vpi
+TOPLEVEL_LANG ?= verilog
 
 
 
@@ -37,14 +37,16 @@ PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
 
-ifeq ($(GPI_IMPL),vpi)
+ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
     TOPLEVEL = endian_swapper_sv
+    GPI_IMPL=vpi
 endif
 
-ifeq ($(GPI_IMPL),vhpi)
+ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES = $(PWD)/../hdl/endian_swapper.vhdl
     TOPLEVEL = endian_swapper_vhdl
+    GPI_IMPL=vhpi
 endif
 
 MODULE=test_endian_swapper
