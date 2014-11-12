@@ -217,9 +217,9 @@ void embed_sim_init(gpi_sim_info_t *info)
     }
 
     // Set languare in use
-    const char *lang = getenv("LANGUAGE");
+    const char *lang = getenv("TOPLEVEL_LANG");
     if (!lang)
-       fprintf(stderr, "You should really set LANGUAGE to \"verilog/vhdl\"");
+       fprintf(stderr, "You should really set TOPLEVEL_LANG to \"verilog/vhdl\"");
     else {
         if (-1 == PyObject_SetAttrString(cocotb_module, "LANGUAGE", PyString_FromString(lang))) {
             fprintf(stderr, "Unable to set LANGUAGE");
