@@ -81,5 +81,5 @@ profile:
 clean::
 	-rm -rf test_profile.pstat
 	-rm -rf callgraph.svg
-
+	-cd ../cosim && make clean
 
