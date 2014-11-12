@@ -51,8 +51,9 @@ include $(SIM_ROOT)/makefiles/Makefile.pylib
 
 export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
+export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
 export GPI_EXTRA
+export GPI_LANGUAGE
 
 
 # Base GCC flags
