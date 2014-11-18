@@ -40,16 +40,17 @@ vpiHandle VpiObjHdl::get_handle(void)
 VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                              vpi_hdl(NULL)
 {
-    cb_data.reason    = 0;
-    cb_data.cb_rtn    = handle_vpi_callback;
-    cb_data.obj       = NULL;
-    cb_data.time      = NULL;
-    cb_data.value     = NULL;
-    cb_data.user_data = (char*)this;
 
     vpi_time.high = 0;
     vpi_time.low = 0;
     vpi_time.type = vpiSimTime;
+
+    cb_data.reason    = 0;
+    cb_data.cb_rtn    = handle_vpi_callback;
+    cb_data.obj       = NULL;
+    cb_data.time      = &vpi_time;
+    cb_data.value     = NULL;
+    cb_data.user_data = (char*)this;
 }
 
 /* If the user data already has a callback handle then deregister
@@ -73,12 +74,14 @@ int VpiCbHdl::arm_callback(void) {
     }
 
     vpiHandle new_hdl = vpi_register_cb(&cb_data);
+    check_vpi_error();
+    
     int ret = 0;
 
     if (!new_hdl) {
         LOG_CRITICAL("VPI: Unable to register a callback handle for VPI type %s(%d)",
                      m_impl->reason_to_string(cb_data.reason), cb_data.reason);
-        check_vpi_error();
+        
         ret = -1;
     } else {
         m_state = GPI_PRIMED;
@@ -94,17 +97,31 @@ int VpiCbHdl::cleanup_callback(void)
     if (m_state == GPI_FREE)
         return 0;
 
-    if (!vpi_hdl) {
-        LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
-        exit(1);
+    /* If the one-time callback has not come back then
+     * remove it, it is has then free it. The remove is done
+     * internally */
+    if (m_state == GPI_PRIMED) {
+        if (!vpi_hdl) {
+            LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
+            exit(1);
+        }
+
+        if (!(vpi_remove_cb(vpi_hdl))) {
+            LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
+            exit(1);
+        }
+
+        check_vpi_error();
+    } else {
+#ifndef MODELSIM
+        /* This is disabled for now, causes a small leak going to put back in */
+        if (!(vpi_free_object(vpi_hdl))) {
+            LOG_CRITICAL("VPI: unbale to free handle : ABORTING");
+            exit(1);
+        }
+#endif
     }
 
-    if (!(vpi_remove_cb(vpi_hdl))) {
-        LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
-        exit(1);
-    }
-
-    check_vpi_error();
 
     vpi_hdl = NULL;
     m_state = GPI_FREE;
@@ -184,9 +201,11 @@ VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
                                                   signal(sig)
 {
     vpi_time.type = vpiSuppressTime;
+    m_vpi_value.format = vpiIntVal;
 
     cb_data.reason = cbValueChange;
     cb_data.time = &vpi_time;
+    cb_data.value = &m_vpi_value;
     cb_data.obj = signal->get_handle();
 }
 
@@ -231,6 +250,23 @@ check:
     return 0;
 }
 
+int VpiValueCbHdl::cleanup_callback(void)
+{
+    if (m_state == GPI_FREE)
+        return 0;
+
+    /* This is a recurring callback so just remove when
+     * not wanted */
+    if (!(vpi_remove_cb(vpi_hdl))) {
+        LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
+        exit(1);
+    }
+
+    vpi_hdl = NULL;
+    m_state = GPI_FREE;
+    return 0;
+}
+
 VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 {
     cb_data.reason = cbStartOfSimulation;
@@ -266,25 +302,22 @@ VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VpiCbHd
 {
     vpi_time.high = (uint32_t)(time_ps>>32);
     vpi_time.low  = (uint32_t)(time_ps);
+    vpi_time.type = vpiSimTime;
 
     cb_data.reason = cbAfterDelay;
-    cb_data.time = &vpi_time;
 }
 
 VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 {
     cb_data.reason = cbReadWriteSynch;
-    cb_data.time = &vpi_time;
 }
 
 VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 {
     cb_data.reason = cbReadOnlySynch;
-    cb_data.time = &vpi_time;
 }
 
 VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 {
     cb_data.reason = cbNextSimTime;
-    cb_data.time = &vpi_time;
 }

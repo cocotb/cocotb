@@ -91,10 +91,10 @@ static void gpi_load_libs(std::vector<std::string> to_load)
 void gpi_embed_init_python(void)
 {
     static bool loading = false;
-    
+
     if (loading)
         return;
-    
+
     /* Lets look at what other libs we where asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
 

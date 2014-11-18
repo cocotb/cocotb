@@ -88,7 +88,7 @@ bool VpiImpl::native_check(std::string &name, GpiObjHdl *parent)
         ret = false;
     }
 
-    vpi_free_object(vpi_hdl);
+    //vpi_free_object(vpi_hdl);
 
     return ret;
 }
@@ -96,8 +96,6 @@ bool VpiImpl::native_check(std::string &name, GpiObjHdl *parent)
 GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     int32_t type;
-    VpiObjHdl *parent_hdl = sim_to_hdl<VpiObjHdl*>(parent);
-    vpiHandle vpi_hdl = parent_hdl->get_handle();
     vpiHandle new_hdl;
     VpiObjHdl *new_obj = NULL; 
     std::vector<char> writable(name.begin(), name.end());
@@ -109,8 +107,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         return NULL;
 
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
-        vpi_free_object(vpi_hdl);
-        LOG_WARN("Not a VPI object");
+        vpi_free_object(new_hdl);
         return new_obj;
     }
 
@@ -195,8 +192,8 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
         goto error;
     }
 
-    // Need to free the iterator if it didn't return NULL
-    if (!vpi_free_object(iterator)) {
+    //Need to free the iterator if it didn't return NULL
+    if (iterator && !vpi_free_object(iterator)) {
         LOG_WARN("VPI: Attempting to free root iterator failed!");
         check_vpi_error();
     }

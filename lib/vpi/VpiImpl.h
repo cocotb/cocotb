@@ -40,8 +40,10 @@ static inline int __check_vpi_error(const char *func, long line)
 #if VPI_CHECKING
     s_vpi_error_info info;
     int loglevel;
+
+    memset(&info, 0, sizeof(info));
     level = vpi_chk_error(&info);
-    if (level == 0)
+    if (info.code == 0 && level == 0)
         return 0;
 
     switch (level) {
@@ -59,11 +61,11 @@ static inline int __check_vpi_error(const char *func, long line)
             loglevel = GPICritical;
             break;
         default:
-            return level;
+            loglevel = GPIWarning;
     }
 
     gpi_log("cocotb.gpi", loglevel, __FILE__, func, line,
-            "VPI Error level %d\nPROD %s\nCODE %s\nFILE %s",
+            "VPI Error %s\nPROD %s\nCODE %s\nFILE %s",
             info.message, info.product, info.code, info.file);
 
 #endif
@@ -118,11 +120,13 @@ public:
     virtual ~VpiValueCbHdl() { }
     int run_callback(void);
     void set_edge(unsigned int edge);
+    int cleanup_callback(void);
 private:
     std::string initial_value;
     bool rising;
     bool falling;
     VpiSignalObjHdl *signal;
+    s_vpi_value m_vpi_value;
 };
 
 class VpiTimedCbHdl : public VpiCbHdl {
@@ -131,6 +135,7 @@ public:
     virtual ~VpiTimedCbHdl() { }
     int cleanup_callback() {
         VpiCbHdl::cleanup_callback();
+        /* Return one so we delete this object */
         return 1;
     }
 };
@@ -145,6 +150,12 @@ class VpiNextPhaseCbHdl : public VpiCbHdl {
 public:
     VpiNextPhaseCbHdl(GpiImplInterface *impl);
     virtual ~VpiNextPhaseCbHdl() { }
+};
+
+class VpiReadwriteCbHdl : public VpiCbHdl {
+public:
+    VpiReadwriteCbHdl(GpiImplInterface *impl);
+    virtual ~VpiReadwriteCbHdl() { }
 };
 
 class VpiStartupCbHdl : public VpiCbHdl {
@@ -167,12 +178,6 @@ public:
         return 0;
     }
     virtual ~VpiShutdownCbHdl() { }
-};
-
-class VpiReadwriteCbHdl : public VpiCbHdl {
-public:
-    VpiReadwriteCbHdl(GpiImplInterface *impl);
-    virtual ~VpiReadwriteCbHdl() { }
 };
 
 class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
