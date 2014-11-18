@@ -579,10 +579,10 @@ static void handle_vhpi_callback(const vhpiCbDataT *cb_data)
     /* A request to delete could have been done
      * inside gpi_function
      */
-    if (user_data->state == VHPI_DELETE)
+    const vhpi_cb_state_t old_state = user_data->state;
+    user_data->state = VHPI_POST_CALL;
+    if (old_state == VHPI_DELETE)
         gpi_free_cb_handle(&user_data->gpi_cb_data.hdl);
-    else
-        user_data->state = VHPI_POST_CALL;
 
     FEXIT
     return;
@@ -617,7 +617,22 @@ static void vhpi_destroy_cb_handle(gpi_cb_hdl hdl)
     FENTER
     p_vhpi_cb user_data = gpi_container_of(hdl, s_vhpi_cb, gpi_cb_data);
 
-    free(user_data);
+    switch (user_data->state) {
+    case VHPI_PRE_CALL:
+        /* The callback is already executing: flag it for deletion later
+         */
+        user_data->state = VHPI_DELETE;
+        break;
+
+    case VHPI_DELETE:
+        /* This callback has already been flagged for deletion: do nothing
+         */
+        break;
+
+    default:
+        free(user_data);
+    }
+
     FEXIT
 }
 
