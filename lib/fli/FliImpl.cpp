@@ -36,8 +36,8 @@ extern "C" {
 
 static FliImpl *fli_table;
 
-void cocotb_init(void) {
-    LOG_INFO("cocotb_init called\n");
+void fli_elab_cb(void *nothing) {
+    LOG_INFO("fli_elab_cb called\n");
 
     fli_table = new FliImpl("FLI");
     gpi_register_impl(fli_table);
@@ -58,6 +58,13 @@ void cocotb_init(void) {
     gpi_embed_init(&sim_info);
 }
 
+void cocotb_init(void) {
+    LOG_INFO("cocotb_init called\n");
+    mti_AddLoadDoneCB(fli_elab_cb, NULL);
+}
+
+
+
 // Main re-entry point for callbacks from simulator
 void handle_fli_callback(void *data)
 {
@@ -66,13 +73,20 @@ void handle_fli_callback(void *data)
     if (!cb_hdl)
         LOG_CRITICAL("FLI: Callback data corrupted");
 
-    if (cb_hdl->get_call_state() == GPI_PRIMED) {
-        cb_hdl->set_call_state(GPI_PRE_CALL);
-        cb_hdl->run_callback();
-        cb_hdl->set_call_state(GPI_POST_CALL);
-    }
+    gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-    gpi_deregister_callback(cb_hdl);
+    if (old_state == GPI_PRIMED) { 
+
+        cb_hdl->set_call_state(GPI_CALL);
+        cb_hdl->run_callback();
+
+        gpi_cb_state_e new_state = cb_hdl->get_call_state();
+
+        /* We have re-primed in the handler */
+        if (new_state != GPI_PRIMED)
+            if (cb_hdl->cleanup_callback())
+                delete cb_hdl;
+    }
 };
 
 } // extern "C"
@@ -279,10 +293,6 @@ GpiCbHdl *FliImpl::register_nexttime_callback(void)
 
 int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
-    if (gpi_hdl->get_call_state() == GPI_PRE_CALL) {
-        return 0;
-    }
-
     int rc = gpi_hdl->cleanup_callback();
     // TOOD: Don't delete if it's a re-usable doobery
 //     delete(gpi_hdl);
@@ -311,8 +321,10 @@ int FliProcessCbHdl::cleanup_callback(void) {
 }
 
 int FliTimedCbHdl::arm_callback(void) {
+    LOG_INFO("Creating a new process to sensitise with timer");
     m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, MTI_PROC_IMMEDIATE);
     mti_ScheduleWakeup(m_proc_hdl, m_time_ps);
+    LOG_INFO("Wakeup scheduled on %p for %llu", m_proc_hdl, m_time_ps);
     m_sensitised = true;
     return 0;
 }
@@ -320,7 +332,7 @@ int FliTimedCbHdl::arm_callback(void) {
 int FliSignalCbHdl::arm_callback(void) {
 
     if (NULL == m_proc_hdl) {
-        LOG_DEBUG("Creating a new process to sensitise to signal %s", mti_GetSignalName(m_sig_hdl));
+        LOG_INFO("Creating a new process to sensitise to signal %s", mti_GetSignalName(m_sig_hdl));
         m_proc_hdl = mti_CreateProcess(NULL, handle_fli_callback, (void *)this);
     }
 
@@ -332,7 +344,7 @@ int FliSignalCbHdl::arm_callback(void) {
 int FliSimPhaseCbHdl::arm_callback(void) {
 
     if (NULL == m_proc_hdl) {
-        LOG_DEBUG("Creating a new process to sensitise with priority %d", m_priority);
+        LOG_INFO("Creating a new process to sensitise with priority %d", m_priority);
         m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, m_priority);
     }
 
@@ -342,3 +354,43 @@ int FliSimPhaseCbHdl::arm_callback(void) {
 }
 
 GPI_ENTRY_POINT(fli, cocotb_init);
+
+
+
+FliSignalCbHdl *FliSignalObjHdl::value_change_cb(void) {
+
+    LOG_INFO("Creating value change callback for %s", m_name.c_str());
+
+    if (NULL == m_cb_hdl) {
+        m_cb_hdl = new FliSignalCbHdl(m_impl, m_fli_hdl);
+    }
+    m_cb_hdl->arm_callback();
+
+    return m_cb_hdl;
+}
+
+GpiCbHdl *FliSignalObjHdl::rising_edge_cb(void) {
+    LOG_INFO("Creating rising edge callback for %s", m_name.c_str());
+    return m_cb_hdl;
+}
+
+GpiCbHdl *FliSignalObjHdl::falling_edge_cb(void) {
+
+    LOG_INFO("Creating falling edge callback for %s", m_name.c_str());
+    return m_cb_hdl;
+}
+
+
+
+const char* FliSignalObjHdl::get_signal_value_binstr(void) {
+    return "010101";
+}
+
+int FliSignalObjHdl::set_signal_value(const int value) {
+    return 0;
+}
+
+int FliSignalObjHdl::set_signal_value(std::string &value) {
+    return 0;
+}
+

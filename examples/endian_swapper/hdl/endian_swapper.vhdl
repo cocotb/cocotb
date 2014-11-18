@@ -176,7 +176,9 @@ end process;
 -- Unfortunately this workaround is required for Aldec: Need to schedule an event
 fake_process :process
 begin
+    report "Time 0....";
     wait for 50 ns;
+    report "50 ns has elapsed";
 end process;
 
 

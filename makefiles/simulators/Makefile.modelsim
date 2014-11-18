@@ -44,11 +44,19 @@ SIM_CMD = vsim -c
 VSIM_ARGS += -onfinish exit
 endif
 
+ifeq ($(GPI_IMPL),vhpi)
+VSIM_ARGS += -foreign \"cocotb_init libfli.so\" -trace_foreign 3
+else
+VSIM_ARGS += -pli libvpi.so
+endif
 
-runsim.do : $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
+runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
 	echo "vlib work" > $@
+ifdef $(VERILOG_SOURCES)
 	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
-	echo "vsim -pli libvpi.so  $(VSIM_ARGS) work.$(TOPLEVEL)" >> $@
+endif
+	echo "vcom $(VHDL_ARGS) $(VHDL_SOURCES)" >> $@
+	echo "vsim $(VSIM_ARGS) $(TOPLEVEL)" >> $@
 ifneq ($(GUI),1)
 	echo "run -all" >> $@
 	echo "quit" >> $@

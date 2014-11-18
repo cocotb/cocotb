@@ -116,6 +116,7 @@ def clock_gen(signal):
 def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backpressure_inserter=None):
 
     cocotb.fork(clock_gen(dut.clk))
+    yield RisingEdge(dut.clk)
     tb = EndianSwapperTB(dut)
 
     yield tb.reset()

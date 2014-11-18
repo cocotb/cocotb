@@ -31,7 +31,7 @@
 #include "../gpi/gpi_priv.h"
 #include "mti.h"
 
-
+// FLI versions of base types
 class FliObjHdl : public GpiObjHdl {
 public:
     FliObjHdl(GpiImplInterface *impl) : GpiObjHdl(impl) { }
@@ -45,28 +45,6 @@ public:
     int initialise(std::string &name);
 };
 
-class FliRegionObjHdl : public FliObjHdl {
-public:
-    FliRegionObjHdl(GpiImplInterface *impl, mtiRegionIdT hdl) : FliObjHdl(impl),
-                                                                m_fli_hdl(hdl) { }
-    virtual ~FliRegionObjHdl() { }
-
-protected:
-     mtiRegionIdT m_fli_hdl;
-};
-
-
-class FliSignalObjHdl : public FliObjHdl {
-public:
-    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : FliObjHdl(impl),
-                                                                m_fli_hdl(hdl) { }
-    virtual ~FliSignalObjHdl() { }
-protected:
-     mtiSignalIdT m_fli_hdl;
-
-};
-
-
 class FliCbHdl : public GpiCbHdl {
 public:
     FliCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) { }
@@ -79,6 +57,10 @@ protected:
     int register_cb(p_cb_data cb_data);
 };
 
+
+
+
+// Callback handles
 
 // In FLI some callbacks require us to register a process
 // We use a subclass to track the process state related to the callback
@@ -114,7 +96,8 @@ private:
 class FliSimPhaseCbHdl : public FliProcessCbHdl {
 
 public:
-    FliSimPhaseCbHdl(GpiImplInterface *impl) : FliProcessCbHdl(impl) { }
+    FliSimPhaseCbHdl(GpiImplInterface *impl, mtiProcessPriorityT priority) : FliProcessCbHdl(impl),
+                                                                             m_priority(priority) { }
     virtual ~FliSimPhaseCbHdl() { }
 
     int arm_callback(void);
@@ -122,6 +105,26 @@ public:
 protected:
     mtiProcessPriorityT         m_priority;
 };
+
+// FIXME templates?
+class FliReadWriteCbHdl : public FliSimPhaseCbHdl {
+public:
+    FliReadWriteCbHdl(GpiImplInterface *impl) : FliSimPhaseCbHdl(impl, MTI_PROC_SYNCH) { }
+    virtual ~FliReadWriteCbHdl() { }
+};
+
+class FliNextPhaseCbHdl : public FliSimPhaseCbHdl {
+public:
+    FliNextPhaseCbHdl(GpiImplInterface *impl) : FliSimPhaseCbHdl(impl, MTI_PROC_IMMEDIATE) { }
+    virtual ~FliNextPhaseCbHdl() { }
+};
+class FliReadOnlyCbHdl : public FliSimPhaseCbHdl {
+public:
+    FliReadOnlyCbHdl(GpiImplInterface *impl) : FliSimPhaseCbHdl(impl, MTI_PROC_POSTPONED) { }
+    virtual ~FliReadOnlyCbHdl() { }
+};
+
+
 
 class FliTimedCbHdl : public FliProcessCbHdl {
 public:
@@ -140,6 +143,55 @@ public:
     int arm_callback(void);
     virtual ~FliShutdownCbHdl() { }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FliRegionObjHdl : public FliObjHdl {
+public:
+    FliRegionObjHdl(GpiImplInterface *impl, mtiRegionIdT hdl) : FliObjHdl(impl),
+                                                                m_fli_hdl(hdl) { }
+    virtual ~FliRegionObjHdl() { }
+
+protected:
+     mtiRegionIdT m_fli_hdl;
+};
+
+
+class FliSignalObjHdl : public FliObjHdl, public GpiSignalObjHdl {
+public:
+    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : FliObjHdl(impl),
+                                                                GpiSignalObjHdl(impl),
+                                                                m_fli_hdl(hdl),
+                                                                m_cb_hdl(NULL) { }
+    virtual ~FliSignalObjHdl() { }
+
+    const char* get_signal_value_binstr(void);
+    int set_signal_value(const int value);
+    int set_signal_value(std::string &value);
+    GpiCbHdl *rising_edge_cb(void);// { return NULL; }
+    GpiCbHdl *falling_edge_cb(void);// { return NULL; }
+    FliSignalCbHdl *value_change_cb(void);
+protected:
+     mtiSignalIdT       m_fli_hdl;
+     FliSignalCbHdl     *m_cb_hdl;
+};
+
+
+
+
 
 
 class FliImpl : public GpiImplInterface {
@@ -170,9 +222,9 @@ public:
     const char *reason_to_string(int reason);
 
 private:
-    FliSimPhaseCbHdl m_readonly_cbhdl;
-    FliSimPhaseCbHdl m_nexttime_cbhdl;
-    FliSimPhaseCbHdl m_readwrite_cbhdl;
+    FliReadOnlyCbHdl  m_readonly_cbhdl;
+    FliNextPhaseCbHdl m_nexttime_cbhdl;
+    FliReadWriteCbHdl m_readwrite_cbhdl;
 
 };
 
