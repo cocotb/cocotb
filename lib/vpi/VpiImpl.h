@@ -172,6 +172,10 @@ public:
             return VpiCbHdl::cleanup_callback();
         }
     }
+    int arm_callback(void) {
+        delay_kill = false;
+        return VpiCbHdl::arm_callback();
+    }
 private:
     bool delay_kill;
 };

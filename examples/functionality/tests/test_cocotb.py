@@ -181,7 +181,7 @@ def test_readwrite_in_readonly(dut):
     if exited is not True:
         raise cocotb.TestFailed
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
+@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog", "Chronologic Simulation VCS Release "])
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -264,7 +264,7 @@ def do_single_edge_check(dut, level):
    old_value = dut.clk.value.integer
    dut.log.info("Value of %s is %d" % (dut.clk, old_value))
    if old_value is level:
-       raise TestError("%s not to start with" % (dut.clk, not level))
+       raise TestError("%s not to %d start with" % (dut.clk, not level))
    if level:
    	yield RisingEdge(dut.clk)
    else:
@@ -272,11 +272,13 @@ def do_single_edge_check(dut, level):
    new_value = dut.clk.value.integer
    dut.log.info("Value of %s is %d" % (dut.clk, new_value))
    if new_value is not level:
-       raise TestError("%s not 1 at end" % (dut.clk, level))
+       raise TestError("%s not %d at end" % (dut.clk, level))
 
 @cocotb.test()
 def test_rising_edge(dut):
     """Test that a rising edge can be yielded on"""
+    dut.clk <= 0
+    yield Timer(1)
     test = cocotb.fork(do_single_edge_check(dut, 1))
     yield Timer(10)
     dut.clk <= 1
