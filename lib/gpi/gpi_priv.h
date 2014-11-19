@@ -130,9 +130,6 @@ public:
     virtual GpiCbHdl *rising_edge_cb(void) = 0;
     virtual GpiCbHdl *falling_edge_cb(void) = 0;
     virtual GpiCbHdl *value_change_cb(unsigned int edge) = 0;
-
-private:
-    //GpiCbHdl value_change_cb;
 };
 
 
@@ -161,8 +158,6 @@ protected:
     const int (*gpi_function)(const void *);    // GPI function to callback
     const void *m_cb_data;                // GPI data supplied to "gpi_function"
     gpi_cb_state_e m_state;         // GPI state of the callback through its cycle
-public:
-    std::string m_type;
 };
 
 /* We would then have */
