@@ -100,6 +100,7 @@ int VpiCbHdl::cleanup_callback(void)
     /* If the one-time callback has not come back then
      * remove it, it is has then free it. The remove is done
      * internally */
+
     if (m_state == GPI_PRIMED) {
         if (!vpi_hdl) {
             LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
@@ -310,6 +311,7 @@ VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VpiCbHd
 VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
 {
     cb_data.reason = cbReadWriteSynch;
+    delay_kill = false;
 }
 
 VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
