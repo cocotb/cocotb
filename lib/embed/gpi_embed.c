@@ -206,6 +206,7 @@ void embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
 
+    gpi_print_registered_impl();
     LOG_INFO("Running on %s version %s", info->product, info->version);
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
 

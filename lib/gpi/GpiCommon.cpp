@@ -37,6 +37,18 @@ using namespace std;
 
 static vector<GpiImplInterface*> registered_impls;
 
+int gpi_print_registered_impl(void)
+{
+    vector<GpiImplInterface*>::iterator iter;
+    for (iter = registered_impls.begin();
+         iter != registered_impls.end();
+         iter++)
+    {
+        LOG_INFO("%s registered", (*iter)->get_name_c());
+    }
+    return registered_impls.size();
+}
+
 int gpi_register_impl(GpiImplInterface *func_tbl)
 {
     registered_impls.push_back(func_tbl);
