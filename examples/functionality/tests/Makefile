@@ -43,6 +43,8 @@ else
     GPI_IMPL := vpi
 endif
 
+export TOPLEVEL_LANG
+
 MODULE ?= test_cocotb,test_discovery,test_external,test_regression
 
 include $(COCOTB)/makefiles/Makefile.inc

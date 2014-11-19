@@ -53,8 +53,6 @@ export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
 export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
 export GPI_EXTRA
-export TOPLEVEL_LANG
-
 
 # Base GCC flags
 ifeq ($(OS),Darwin)

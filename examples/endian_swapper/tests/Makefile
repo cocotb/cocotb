@@ -31,8 +31,6 @@
 # Override this variable to use VHPI instead of VPI
 TOPLEVEL_LANG ?= verilog
 
-
-
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
@@ -49,6 +47,8 @@ ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_IMPL=vhpi
 endif
 
+export TOPLEVEL_LANG
+
 MODULE=test_endian_swapper
 
 CUSTOM_COMPILE_DEPS = hal
@@ -57,7 +57,6 @@ export PYTHONPATH
 
 LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
 export LD_LIBRARY_PATH
-
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
