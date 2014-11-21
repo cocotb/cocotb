@@ -51,6 +51,16 @@ int gpi_print_registered_impl(void)
 
 int gpi_register_impl(GpiImplInterface *func_tbl)
 {
+    vector<GpiImplInterface*>::iterator iter;
+    for (iter = registered_impls.begin();
+         iter != registered_impls.end();
+         iter++)
+    {
+        if ((*iter)->get_name_s() == func_tbl->get_name_s()) {
+            LOG_WARN("%s already registered, Check GPI_EXTRA", func_tbl->get_name_c());
+            return -1;
+        }
+    }
     registered_impls.push_back(func_tbl);
     return 0;
 }
