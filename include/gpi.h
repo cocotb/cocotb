@@ -119,7 +119,7 @@ void gpi_get_sim_time(uint32_t *high, uint32_t *low);
 gpi_sim_hdl gpi_get_root_handle(const char *name);
 gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent);
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index);
-void gpi_free_handle(gpi_sim_hdl);
+void gpi_free_handle(gpi_sim_hdl gpi_hdl);
 
 // Types that can be passed to the iterator.
 //
@@ -141,10 +141,7 @@ gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base);
 // Returns NULL when there are no more objects
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
 
-
-
 // Functions for querying the properties of a handle
-
 // Caller responsible for freeing the returned string.
 // This is all slightly verbose but it saves having to enumerate various value types
 // We only care about a limited subset of values.
@@ -172,12 +169,6 @@ gpi_sim_hdl gpi_register_readwrite_callback              (const int (*gpi_functi
 
 // Calling convention is that 0 = success and negative numbers a failure
 // For implementers of GPI the provided macro GPI_RET(x) is provided
-gpi_sim_hdl gpi_create_cb_handle(void);
-void gpi_free_cb_handle(gpi_sim_hdl gpi_hdl);
-
-gpi_sim_hdl gpi_create_handle(void);
-void gpi_free_handle(gpi_sim_hdl gpi_hdl);
-
 void gpi_deregister_callback(gpi_sim_hdl gpi_hdl);
 
 // Because the internal structures may be different for different implementations

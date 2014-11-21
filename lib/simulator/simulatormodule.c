@@ -543,7 +543,6 @@ static PyObject *get_signal_val(PyObject *self, PyObject *args)
 
     result = gpi_get_signal_value_binstr(hdl);
     retstr = Py_BuildValue("s", result);
-    //free(result);
 
     DROP_GIL(gstate);
 
@@ -663,7 +662,6 @@ static PyObject *get_name_string(PyObject *self, PyObject *args)
 
     result = gpi_get_signal_name_str((gpi_sim_hdl)hdl);
     retstr = Py_BuildValue("s", result);
-    //free(result);
 
     DROP_GIL(gstate);
 
@@ -687,7 +685,6 @@ static PyObject *get_type_string(PyObject *self, PyObject *args)
 
     result = gpi_get_signal_type_str((gpi_sim_hdl)hdl);
     retstr = Py_BuildValue("s", result);
-    //free(result);
 
     DROP_GIL(gstate);
 
