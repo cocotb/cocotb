@@ -231,7 +231,6 @@ public:
     GpiCbHdl *register_nexttime_callback(void);
     GpiCbHdl *register_readwrite_callback(void);
     int deregister_callback(GpiCbHdl *obj_hdl);
-    bool native_check(std::string &name, GpiObjHdl *parent) { return false; }
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
 

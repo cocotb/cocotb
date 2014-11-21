@@ -97,37 +97,6 @@ void FliImpl::sim_end(void)
 }
 
 /**
- * @name    Native Check
- * @brief   Determine whether a simulation object is native to FLI
- */
-bool FliImpl::native_check(std::string &name, GpiObjHdl *parent)
-{
-    bool ret = true;
-    int kind = 0;// = mti_GetRegionKind();
-
-    // FIXME:   Not clear where all these types are defined and how to ascertain
-    //          a definitive mapping here...
-    switch (kind) {
-        case accPackage:
-        case accArchitecture:
-            ret = true;
-            break;
-        case accFunction:
-        case accModule:
-        case accForeign:
-        case accTask:
-            ret = false;
-            break;
-        default:
-//             LOG_ERROR("Unrecognised kind for %s: %d", name, kind);
-            ret = false;
-            break;
-    }
-
-    return ret;
-}
-
-/**
  * @name    Native Check Create
  * @brief   Determine whether a simulation object is native to FLI and create
  *          a handle if it is

@@ -70,29 +70,6 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vpi_time_s.low;
 }
 
-/* Not interested in the hierachy for checking that a handle
-in in this implementation */
-bool VpiImpl::native_check(std::string &name, GpiObjHdl *parent)
-{
-    int32_t type;
-    bool ret = true;
-    VpiObjHdl *parent_hdl = sim_to_hdl<VpiObjHdl*>(parent);
-    vpiHandle vpi_hdl = parent_hdl->get_handle();
-    vpiHandle new_hdl;
-    std::vector<char> writable(name.begin(), name.end());
-    writable.push_back('\0');
-    
-    new_hdl = vpi_handle_by_name(&writable[0], vpi_hdl);
-
-    if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
-        ret = false;
-    }
-
-    //vpi_free_object(vpi_hdl);
-
-    return ret;
-}
-
 GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     int32_t type;

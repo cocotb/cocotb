@@ -206,7 +206,6 @@ public:
     void get_sim_time(uint32_t *high, uint32_t *low);
 
     /* Hierachy related */
-    bool native_check(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
     GpiObjHdl *get_root_handle(const char *name);
