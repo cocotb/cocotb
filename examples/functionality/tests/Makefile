@@ -28,13 +28,24 @@
 ###############################################################################
 
 
-TOPLEVEL = sample_module
+TOPLEVEL := sample_module
+TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
-VERILOG_SOURCES = $(PWD)/../hdl/sample_module.v
-MODULE=test_cocotb,test_discovery,test_external,test_regression
+ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES = $(PWD)/../hdl/sample_module.vhdl
+    TOPLEVEL := $(TOPLEVEL)
+    GPI_IMPL := vhpi
+else
+    VERILOG_SOURCES = $(PWD)/../hdl/sample_module.v
+    GPI_IMPL := vpi
+endif
+
+export TOPLEVEL_LANG
+
+MODULE ?= test_cocotb,test_discovery,test_external,test_regression
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim

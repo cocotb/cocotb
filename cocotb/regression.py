@@ -104,7 +104,7 @@ class RegressionManager(object):
                         skip = test.skip
                     except TestError:
                         skip = True
-                        self.log.warning("Failed to initialise test%s" % thing.name)
+                        self.log.warning("Failed to initialise test %s" % thing.name)
 
                     if skip:
                         self.log.info("Skipping test %s" % thing.name)

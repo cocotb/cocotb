@@ -47,14 +47,14 @@ ifeq ($(COVERAGE),1)
 endif
 
 ifeq ($(GPI_IMPL),vpi)
-    GPI_ARGS = -pli libgpi
+    GPI_ARGS = -pli libvpi
 endif
 ifeq ($(GPI_IMPL),vhpi)
-    GPI_ARGS = -loadvhpi $(LIB_DIR)/libgpi:vhpi_startup_routines_bootstrap
+    GPI_ARGS = -loadvhpi $(LIB_DIR)/libvhpi:vhpi_startup_routines_bootstrap
 endif
 
 ifndef GPI_ARGS
-   $(error "Unable to determine appropriate GPI layer to use")
+   $(error "Unable to determine appropriate GPI layer to use as main entry point")
 endif
 
 

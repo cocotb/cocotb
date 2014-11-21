@@ -237,11 +237,10 @@ class Scheduler(object):
         if _profiling and not depth:
             _profile.enable()
 
-        # We can always unprime the trigger that actually fired - if it's 
-        # recycled then prime will be called again.
+        # When a trigger fires it is unprimed internally
         if _debug:
-            self.log.debug("Trigger fired: %s... unpriming" % str(trigger))
-        trigger.unprime()
+            self.log.debug("Trigger fired: %s" % str(trigger))
+        #trigger.unprime()
 
         if self._mode == Scheduler._MODE_TERM:
             if _debug:
@@ -264,6 +263,8 @@ class Scheduler(object):
             while self._writes:
                 handle, value = self._writes.popitem()
                 handle.setimmediatevalue(value)
+
+            self._readwrite.unprime()
 
             if _profiling:
                 _profile.disable()
@@ -324,6 +325,7 @@ class Scheduler(object):
                 for others in self._trigger2coros[pending]:
                     if others not in scheduling: break
                 else:
+                    #if pending is not trigger and pending.primed: pending.unprime()
                     if pending.primed: pending.unprime()
                     del self._trigger2coros[pending]
 

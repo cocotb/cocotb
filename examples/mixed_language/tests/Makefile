@@ -14,11 +14,15 @@ VHDL_SOURCES    = $(PWD)/../../endian_swapper/hdl/endian_swapper.vhdl
 
 ifeq ($(TOPLEVEL_LANG),sv)
     VERILOG_SOURCES += $(PWD)/../hdl/toplevel.sv
+    GPI_IMPL=vpi
+    GPI_EXTRA=vhpi
 endif
 
 ifeq ($(TOPLEVEL_LANG),vhdl)
     $(error "VHDL toplevel not yet implemented")
     VHDL_SOURCES += $(PWD)/../hdl/toplevel.vhdl
+    GPI_IMPL=vhpi
+    GPI_EXTRA=vpi
 endif
 
 

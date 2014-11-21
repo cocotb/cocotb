@@ -37,7 +37,7 @@ static PyThreadState *gtstate = NULL;
 
 static char progname[] = "cocotb";
 static char *argv[] = { progname };
-static PyObject *pEventFn;
+static PyObject *pEventFn = NULL;
 
 
 /**
@@ -65,14 +65,14 @@ void embed_init_python(void)
 #define PY_SO_LIB xstr(PYTHON_SO_LIB)
 #endif
 
+    // Don't initialise python if already running
+    if (gtstate)
+        return;
+
     void *ret = dlopen(PY_SO_LIB, RTLD_LAZY | RTLD_GLOBAL);
     if (!ret) {
         fprintf(stderr, "Failed to find python lib %s (%s)\n", PY_SO_LIB, dlerror());
     }
-
-    // Don't initialise python if already running
-    if (gtstate)
-        return;
 
     Py_SetProgramName(progname);
     Py_Initialize();                    /* Initialize the interpreter */
@@ -121,6 +121,10 @@ void embed_sim_init(gpi_sim_info_t *info)
     FENTER
 
     int i;
+
+    /* Check that we are not already initialised */
+    if (pEventFn)
+        return;
 
     // Find the simulation root
     gpi_sim_hdl dut = gpi_get_root_handle(getenv("TOPLEVEL"));
@@ -202,6 +206,7 @@ void embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
 
+    gpi_print_registered_impl();
     LOG_INFO("Running on %s version %s", info->product, info->version);
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
 
@@ -210,6 +215,17 @@ void embed_sim_init(gpi_sim_info_t *info)
         PyErr_Print();
         fprintf(stderr, "Unable to set SIM_NAME");
         goto cleanup;
+    }
+
+    // Set languare in use
+    const char *lang = getenv("TOPLEVEL_LANG");
+    if (!lang)
+       fprintf(stderr, "You should really set TOPLEVEL_LANG to \"verilog/vhdl\"");
+    else {
+        if (-1 == PyObject_SetAttrString(cocotb_module, "LANGUAGE", PyString_FromString(lang))) {
+            fprintf(stderr, "Unable to set LANGUAGE");
+            goto cleanup;
+        }
     }
 
     // Hold onto a reference to our _fail_test function
@@ -269,11 +285,12 @@ void embed_sim_event(gpi_event_t level, const char *msg)
 
         PyObject *fArgs = PyTuple_New(2);
         PyTuple_SetItem(fArgs, 0, PyInt_FromLong(level));
+
         if (msg != NULL)
             PyTuple_SetItem(fArgs, 1, PyString_FromString(msg));
         else
             PyTuple_SetItem(fArgs, 1, PyString_FromString("No message provided"));
-        PyObject *pValue = PyObject_Call(pEventFn, fArgs, NULL);
+        PyObject *pValue = PyObject_CallObject(pEventFn, fArgs);
         if (!pValue) {
             LOG_ERROR("Passing event to upper layer failed");
         }

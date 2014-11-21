@@ -39,13 +39,13 @@ else
 endif
 
 ifeq ($(GPI_IMPL),vpi)
-    GPI_ARGS = -loadvpi $(LIB_DIR)/libgpi:vlog_startup_routines_bootstrap
+    GPI_ARGS = -loadvpi $(LIB_DIR)/libvpi:vlog_startup_routines_bootstrap
     EXTRA_ARGS += -sv
     HDL_SOURCES = $(VERILOG_SOURCES)
 endif
 
 ifeq ($(GPI_IMPL),vhpi)
-    GPI_ARGS = -loadvhpi $(LIB_DIR)/libgpi:vhpi_startup_routines_bootstrap
+    GPI_ARGS = -loadvhpi $(LIB_DIR)/libvhpi:vhpi_startup_routines_bootstrap
     #EXTRA_ARGS += -cdslib cds.lib
     EXTRA_ARGS += -v93
     EXTRA_ARGS += -top worklib.$(TOPLEVEL)

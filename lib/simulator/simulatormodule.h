@@ -66,7 +66,6 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args);
 static PyObject *register_readonly_callback(PyObject *self, PyObject *args);
 static PyObject *register_nextstep_callback(PyObject *self, PyObject *args);
 static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args);
-static PyObject *reenable_callback(PyObject *self, PyObject *args);
 static PyObject *stop_simulator(PyObject *self, PyObject *args);
 
 static PyObject *iterate(PyObject *self, PyObject *args);
@@ -74,9 +73,6 @@ static PyObject *next(PyObject *self, PyObject *args);
 
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
 static PyObject *deregister_callback(PyObject *self, PyObject *args);
-static PyObject *remove_callback(PyObject *self, PyObject *args);
-static PyObject *create_callback(PyObject *self, PyObject *args);
-static PyObject *free_handle(PyObject *self, PyObject *args);
 
 static PyMethodDef SimulatorMethods[] = {
     {"log_msg",         log_msg, METH_VARARGS, "Log a message"},
@@ -92,17 +88,13 @@ static PyMethodDef SimulatorMethods[] = {
     {"register_readonly_callback", register_readonly_callback, METH_VARARGS, "Register a callback for readonly section"},
     {"register_nextstep_callback", register_nextstep_callback, METH_VARARGS, "Register a cllback for the nextsimtime callback"},
     {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS, "Register a callback for the readwrite section"},
-    {"reenable_callback", reenable_callback, METH_VARARGS, "Re-enable a recurring callback"},
     {"stop_simulator", stop_simulator, METH_VARARGS, "Instruct the attached simulator to stop"},
     {"iterate", iterate, METH_VARARGS, "Get an iterator handle to loop over all members in an object"},
     {"next", next, METH_VARARGS, "Get the next object from the iterator"},
-    {"free_handle", free_handle, METH_VARARGS, "Free a handle"},
 
     // FIXME METH_NOARGS => initialization from incompatible pointer type
     {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as a float"},
     {"deregister_callback", deregister_callback, METH_VARARGS, "Deregister a callback"},
-    {"remove_callback", remove_callback, METH_VARARGS, "Remove a callback"},
-    {"create_callback", create_callback, METH_VARARGS, "Creates a callback"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

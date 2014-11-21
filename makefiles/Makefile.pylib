@@ -51,7 +51,7 @@ endif
 # is we simply link against all dynamic libraries in the Python installation
 PYLIBS = $(shell python-config --libs)
 
-PYTHON_INCLUDEDIR := -I$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
+PYTHON_INCLUDEDIR := $(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
 
 #debug::
 #	@echo "Debug from Makefile.pylib"

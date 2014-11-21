@@ -42,8 +42,12 @@ extern "C" {
 
 typedef uint32_t *vpiHandle;
 
-#define vpiNet                 36   /* scalar or vector net */
 #define vpiModule              32   /* module instance */
+#define vpiNet                 36   /* scalar or vector net */
+#define vpiNetBit              37   /* bit of a vector net */
+#define vpiReg                 48   /* scalar or vector reg */
+#define vpiRegBit              49   /* bit of vector reg */
+#define vpiParameter           41   /* module parameter */
 #define vpiStructVar           618
 
 #define vpiStop                66  /* execute simulator's $stop */
@@ -142,6 +146,8 @@ typedef struct t_vpi_value
 /* properties */
 #define vpiFile               5
 #define vpiLineNo             6
+
+#define vpiUnknown            3
 
 /* normal callback structure */
 typedef struct t_cb_data

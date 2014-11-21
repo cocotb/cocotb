@@ -55,7 +55,6 @@ class Trigger(object):
     def unprime(self):
         """Remove any pending callbacks if necessary"""
         self.primed = False
-        self.log.debug("Unprimed")
 
     def __del__(self):
         """Ensure if a trigger drops out of scope we remove any pending callbacks"""
@@ -85,21 +84,22 @@ class GPITrigger(Trigger):
         Trigger.__init__(self)
 
         # Required to ensure documentation can build
-        if simulator is not None:
-            self.cbhdl = simulator.create_callback(self)
-        else:
-            self.cbhdl = None
+        #if simulator is not None:
+        #    self.cbhdl = simulator.create_callback(self)
+        #else:
+        self.cbhdl = None
 
     def unprime(self):
-        """Unregister a prior registered timed callback"""
-        if self.primed:
+        """Disable a primed trigger, can be reprimed"""
+        if self.cbhdl:
             simulator.deregister_callback(self.cbhdl)
+        self.cbhdl = None
         Trigger.unprime(self)
 
     def __del__(self):
         """Remove knowledge of the trigger"""
         if self.cbhdl is not None:
-            simulator.remove_callback(self.cbhdl)
+            self.unprime()
         Trigger.__del__(self)
 
 
@@ -115,9 +115,11 @@ class Timer(GPITrigger):
 
     def prime(self, callback):
         """Register for a timed callback"""
+        if self.cbhdl is None:
+            self.cbhdl = simulator.register_timed_callback(self.time_ps, callback, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
-        if simulator.register_timed_callback(self.cbhdl, self.time_ps, callback, self):
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(%dps)" % self.time_ps
@@ -132,9 +134,11 @@ class Edge(GPITrigger):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
+        if self.cbhdl is None:
+            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, 3, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
-        if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, callback, self):
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -148,9 +152,11 @@ class _ReadOnly(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        if self.cbhdl is None:
+            self.cbhdl = simulator.register_readonly_callback(callback, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
-        if simulator.register_readonly_callback(self.cbhdl, callback, self):
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
@@ -168,9 +174,13 @@ class _ReadWrite(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        if self.cbhdl is None:
+            #import pdb
+            #pdb.set_trace()
+            self.cbhdl = simulator.register_rwsynch_callback(callback, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
-        if simulator.register_rwsynch_callback(self.cbhdl, callback, self):
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
@@ -187,8 +197,11 @@ class _NextTimeStep(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        if self.cbhdl is None:
+            self.cbhdl = simulator.register_nextstep_callback(callback, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
-        simulator.register_nextstep_callback(self.cbhdl, callback, self)
 
     def __str__(self):
         return self.__class__.__name__ + "(nexttimestep)"
@@ -203,19 +216,15 @@ class _RisingOrFallingEdge(Edge):
         self._rising = rising
 
     def prime(self, callback):
-        Trigger.prime(self)
-        self._callback = callback
-
-        def _check(obj):
-            condition = self.signal.value == self._rising
-            if condition:
-                self._callback(self)
+        if self.cbhdl is None:
+            if self._rising:
+                rising = 1;
             else:
-                #Riviera doesn't seem to like re-using a callback handle?
-                simulator.reenable_callback(self.cbhdl)
-
-        if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                rising - 0;
+            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, rising, self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+        Trigger.prime(self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -230,12 +239,15 @@ class _RisingEdge(_RisingOrFallingEdge):
 def RisingEdge(signal):
     return signal._edge
 
-class FallingEdge(_RisingOrFallingEdge):
+class _FallingEdge(_RisingOrFallingEdge):
     """
     Execution will resume when a falling edge occurs on the provided signal
     """
     def __init__(self, signal):
         _RisingOrFallingEdge.__init__(self, signal, rising=False)
+
+def FallingEdge(signal):
+    return signal._edge
 
 class ClockCycles(Edge):
     """
@@ -246,7 +258,6 @@ class ClockCycles(Edge):
         self.num_cycles = num_cycles
 
     def prime(self, callback):
-        Trigger.prime(self)
         self._callback = callback
 
         def _check(obj):
@@ -257,11 +268,14 @@ class ClockCycles(Edge):
                     self._callback(self)
                     return
 
-            if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
+            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+            if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
-        if simulator.register_value_change_callback(self.cbhdl, self.signal._handle, _check, self):
+        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+        if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
+        Trigger.prime(self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
@@ -285,11 +299,11 @@ class Combine(PythonTrigger):
             raise TriggerException("%s requires a list of Trigger objects" % self.__class__.__name__)
 
     def prime(self, callback):
-        Trigger.prime(self)
         self._callback = callback
         self._fired = []
         for trigger in self._triggers:
             trigger.prime(self._check_all_fired)
+        Trigger.prime(self)
 
     def _check_all_fired(self, trigger):
         self._fired.append(trigger)
@@ -315,9 +329,9 @@ class _Event(PythonTrigger):
         self.parent = parent
 
     def prime(self, callback):
-        Trigger.prime(self)
         self._callback = callback
         self.parent.prime(callback, self)
+        Trigger.prime(self)
 
     def __call__(self):
         self._callback(self)
@@ -336,8 +350,8 @@ class Event(PythonTrigger):
         self.data = None
 
     def prime(self, callback, trigger):
-        Trigger.prime(self)
         self._pending.append(trigger)
+        Trigger.prime(self)
 
     def set(self, data=None):
         """Wake up any coroutines blocked on this event"""
@@ -379,9 +393,9 @@ class _Lock(PythonTrigger):
         self.parent = parent
 
     def prime(self, callback):
-        Trigger.prime(self)
         self._callback = callback
         self.parent.prime(callback, self)
+        Trigger.prime(self)
 
     def __call__(self):
         self._callback(self)

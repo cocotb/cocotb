@@ -27,49 +27,33 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-VPI_LIB := vpi
+include $(SIM_ROOT)/makefiles/Makefile.inc
 
-# Modelsim is 32-bit only
-ARCH:=i686
+INCLUDES    +=
+GXX_ARGS    += -DVPI_CHECKING
+LIBS        := -lgpilog -lgpi -lstdc++
+LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
+LIB_NAME    := libvpi.so
 
-ifdef VERILOG_INCLUDE_DIRS
-VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
-endif
+SRCS        := VpiImpl.cpp VpiCbHdl.cpp
 
-ifeq ($(GUI),1)
-SIM_CMD = vsim -gui
-VSIM_ARGS += -onfinish stop
-else
-SIM_CMD = vsim -c
-VSIM_ARGS += -onfinish exit
-endif
+CLIBS       += $(LIB_DIR)/gpivpi.vpl
 
-ifeq ($(GPI_IMPL),vhpi)
-VSIM_ARGS += -foreign \"cocotb_init libfli.so\" -trace_foreign 3
-else
-VSIM_ARGS += -pli libvpi.so
-endif
+# More rules such that this may be needed depending on the requirements of
+# different simulators, icarus for instance loads a <name>.vpi libraray to use the vpi
+# inerface at the start of the simulation
 
-runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
-	echo "vlib work" > $@
-ifneq ($(VERILOG_SOURCES),)
-	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
-else
-	echo "vcom $(VHDL_ARGS) $(VHDL_SOURCES)" >> $@
-endif
-	echo "vsim $(VSIM_ARGS) $(TOPLEVEL)" >> $@
-ifneq ($(GUI),1)
-	echo "run -all" >> $@
-	echo "quit" >> $@
-endif
+all: $(LIB_DIR)/gpivpi.vpl $(LIB_DIR)/cocotb.vpi $(IMPS)
 
+$(LIB_DIR)/gpivpi.vpl: $(LIB_DIR)/$(LIB_NAME)
+	ln -sf $(LIB_NAME) $@
 
-results.xml: runsim.do $(COCOTB_LIBS)
-	LD_LIBRARY_PATH=$(LIB_DIR)::$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
-	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
+$(LIB_DIR)/cocotb.vpi: $(LIB_DIR)/$(LIB_NAME)
+	ln -sf $(LIB_NAME) $@
 
-clean::
-	-rm -rf runsim.do
-	-rm -rf sim.log
+clean:
+	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
+	-@rm -rf $(LIB_DIR)/gpivpi.vpl
+	-@rm -rf $(LIB_DIR)/cocotb.vpi
 
+include $(SIM_ROOT)/makefiles/Makefile.rules

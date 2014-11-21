@@ -51,19 +51,21 @@ include $(SIM_ROOT)/makefiles/Makefile.pylib
 
 export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
-
+export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
+export GPI_EXTRA
 
 # Base GCC flags
 ifeq ($(OS),Darwin)
-GCC_ARGS    :=  -g -DDEBUG -fpic
+GXX_ARGS	:= -g -DDEBUG -fpic
+GCC_ARGS	:= $(GXX_ARGS)
 else
-GCC_ARGS	:=	-Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-				-Waggregate-return -Wstrict-prototypes -Wall           \
-				-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
 ifeq ($(ARCH),i686)
-GCC_ARGS    += -m32
+GXX_ARGS        := -m32
 endif
+GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
+			-Wall -Wno-unused-parameter \
+			-fno-common -g -DDEBUG -fpic
+GCC_ARGS	+= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
 endif
 
 

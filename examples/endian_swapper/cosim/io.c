@@ -118,5 +118,9 @@ initio_module(void)
 {
     PyObject* io_module;
     io_module = Py_InitModule("io_module", io_module_methods);
+    if (!io_module) {
+        printf("Failed to load io_module\n");
+        exit(1);
+    }
 }
 
