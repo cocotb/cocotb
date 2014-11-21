@@ -34,7 +34,7 @@ Also used a regression test of cocotb capabilities
 """
 
 import cocotb
-from cocotb.triggers import Timer, Join, RisingEdge, Edge, ReadOnly, ReadWrite
+from cocotb.triggers import Timer, Join, RisingEdge, FallingEdge, Edge, ReadOnly, ReadWrite
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError
 
@@ -296,19 +296,19 @@ def count_edges_cycles(signal, edges):
 
 @cocotb.coroutine
 def do_single_edge_check(dut, level):
-   """Do test for rising edge"""
-   old_value = dut.clk.value.integer
-   dut.log.info("Value of %s is %d" % (dut.clk, old_value))
-   if old_value is level:
-       raise TestError("%s not to %d start with" % (dut.clk, not level))
-   if level:
-   	yield RisingEdge(dut.clk)
-   else:
+    """Do test for rising edge"""
+    old_value = dut.clk.value.integer
+    dut.log.info("Value of %s is %d" % (dut.clk, old_value))
+    if old_value is level:
+        raise TestError("%s not to %d start with" % (dut.clk, not level))
+    if level == 1:
+        yield RisingEdge(dut.clk)
+    else:
         yield FallingEdge(dut.clk)
-   new_value = dut.clk.value.integer
-   dut.log.info("Value of %s is %d" % (dut.clk, new_value))
-   if new_value is not level:
-       raise TestError("%s not %d at end" % (dut.clk, level))
+    new_value = dut.clk.value.integer
+    dut.log.info("Value of %s is %d" % (dut.clk, new_value))
+    if new_value is not level:
+        raise TestError("%s not %d at end" % (dut.clk, level))
 
 @cocotb.test()
 def test_rising_edge(dut):
@@ -323,60 +323,53 @@ def test_rising_edge(dut):
     if result is fail_timer:
         raise TestError("Test timed out")
 
-@cocotb.test(expect_error=True)
+@cocotb.test()
 def test_falling_edge(dut):
     """Test that a falling edge can be yielded on"""
     dut.clk <= 1
-    yield Timer(10)
+    yield Timer(1)
     test = cocotb.fork(do_single_edge_check(dut, 0))
     yield Timer(10)
     dut.clk <= 0
-    fail_time = Timer(1000)
+    fail_timer = Timer(1000)
     result = yield [fail_timer, test.join()]
     if result is fail_timer:
         raise TestError("Test timed out")
-
-@cocotb.coroutine
-def do_either_edge_test(dut):
-    """Run do either edge test"""
-    yield Edge(dut.clk)
-    dut.log.info("Value of %s is %d" % (dut.clk, dut.clk.value.integer))
-    #if dut.clk.value.integer is not 1:
-    #    raise TestError("Value should be 0")
-    yield Edge(dut.clk)
-    dut.log.info("Value of %s is %d" % (dut.clk, dut.clk.value.integer))
-    #if dut.clk.value.integer is not 0:
-    #    raise TestError("Value should be 1")
-    yield Timer(100)
 
 @cocotb.test()
 def test_either_edge(dut):
     """Test that either edge can be triggered on"""
     dut.clk <= 0
-    yield Timer(10)
-    dut.log.info("First timer")
-    yield Timer(10)
-    test = cocotb.fork(do_either_edge_test(dut))
+    yield Timer(1)
     dut.clk <= 1
+    yield Edge(dut.clk)
+    if dut.clk.value.integer is not 1:
+        raise TestError("Value should be 0")
     yield Timer(10)
-    dut.log.info("Second timer")
     dut.clk <= 0
+    yield Edge(dut.clk)
+    if dut.clk.value.integer is not 0:
+        raise TestError("Value should be 0")
     yield Timer(10)
-    dut.log.info("Third timer")
     dut.clk <= 1
+    yield Edge(dut.clk)
+    if dut.clk.value.integer is not 1:
+        raise TestError("Value should be 0")
     yield Timer(10)
-    dut.log.info("fourth timer")
     dut.clk <= 0
+    yield Edge(dut.clk)
+    if dut.clk.value.integer is not 0:
+        raise TestError("Value should be 0")
     yield Timer(10)
-    dut.log.info("Fifth timer")
     dut.clk <= 1
+    yield Edge(dut.clk)
+    if dut.clk.value.integer is not 1:
+        raise TestError("Value should be 0")
     yield Timer(10)
-    dut.log.info("Sixth timer")
-
-    fail_timer = Timer(1000)
-    result = yield [fail_timer, test.join()]
-    if result is fail_timer:
-        raise TestError("Test timed out")
+    dut.clk <= 0
+    yield Edge(dut.clk)
+    if dut.clk.value.integer is not 0:
+        raise TestError("Value should be 0")
 
 @cocotb.coroutine
 def do_clock(dut, limit, period):

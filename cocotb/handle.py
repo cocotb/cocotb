@@ -47,7 +47,7 @@ import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
-from cocotb.triggers import _RisingEdge
+from cocotb.triggers import _RisingEdge, _FallingEdge
 
 class SimHandle(object):
 
@@ -64,7 +64,8 @@ class SimHandle(object):
         self.fullname = self.name + '(%s)' % simulator.get_type_string(self._handle)
         self.log = SimLog('cocotb.' + self.name)
         self.log.debug("Created!")
-        self._edge = _RisingEdge(self)
+        self._r_edge = _RisingEdge(self)
+        self._f_edge = _FallingEdge(self)
 
     def __str__(self):
         return "%s @0x%x" % (self.name, self._handle)

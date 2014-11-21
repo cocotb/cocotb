@@ -213,15 +213,14 @@ def NextTimeStep():
 class _RisingOrFallingEdge(Edge):
     def __init__(self, signal, rising):
         Edge.__init__(self, signal)
-        self._rising = rising
+        if rising == True:
+            self._rising = 1
+        else:
+            self._rising = 2
 
     def prime(self, callback):
         if self.cbhdl is None:
-            if self._rising:
-                rising = 1;
-            else:
-                rising - 0;
-            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, rising, self)
+            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, self._rising, self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
@@ -237,7 +236,7 @@ class _RisingEdge(_RisingOrFallingEdge):
         _RisingOrFallingEdge.__init__(self, signal, rising=True)
 
 def RisingEdge(signal):
-    return signal._edge
+    return signal._r_edge
 
 class _FallingEdge(_RisingOrFallingEdge):
     """
@@ -247,7 +246,7 @@ class _FallingEdge(_RisingOrFallingEdge):
         _RisingOrFallingEdge.__init__(self, signal, rising=False)
 
 def FallingEdge(signal):
-    return signal._edge
+    return signal._f_edge
 
 class ClockCycles(Edge):
     """
