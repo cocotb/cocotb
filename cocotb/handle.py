@@ -224,10 +224,6 @@ class SimHandle(object):
                 hdl = SimHandle(thing)
                 self._sub_handles[hdl.name] = hdl
                 yield hdl
-    def __del__(self):
-        """Free handle from gpi that was allocated on construction"""
-        if self._handle is not None:
-            simulator.free_handle(self._handle)
 
     def __int__(self):
         return int(self.value)

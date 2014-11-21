@@ -73,7 +73,6 @@ static PyObject *next(PyObject *self, PyObject *args);
 
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
 static PyObject *deregister_callback(PyObject *self, PyObject *args);
-static PyObject *free_handle(PyObject *self, PyObject *args);
 
 static PyMethodDef SimulatorMethods[] = {
     {"log_msg",         log_msg, METH_VARARGS, "Log a message"},
@@ -92,7 +91,6 @@ static PyMethodDef SimulatorMethods[] = {
     {"stop_simulator", stop_simulator, METH_VARARGS, "Instruct the attached simulator to stop"},
     {"iterate", iterate, METH_VARARGS, "Get an iterator handle to loop over all members in an object"},
     {"next", next, METH_VARARGS, "Get the next object from the iterator"},
-    {"free_handle", free_handle, METH_VARARGS, "Free a handle"},
 
     // FIXME METH_NOARGS => initialization from incompatible pointer type
     {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as a float"},

@@ -714,19 +714,6 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
     return pTuple;
 }
 
-static PyObject *free_handle(PyObject *self, PyObject *args)
-{
-    gpi_sim_hdl hdl;
-
-    if (!PyArg_ParseTuple(args, "l", &hdl))
-        return NULL;
-
-    gpi_free_handle(hdl);
-
-    return Py_BuildValue("s", "OK!");
-}
-
-
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
     gpi_sim_end();

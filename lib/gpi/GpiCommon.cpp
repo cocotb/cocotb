@@ -368,12 +368,6 @@ void gpi_deregister_callback(gpi_sim_hdl hdl)
     cb_hdl->m_impl->deregister_callback(cb_hdl);
 }
 
-void gpi_free_handle(gpi_sim_hdl hdl)
-{
-    GpiObjHdl *obj = sim_to_hdl<GpiObjHdl*>(hdl);
-    delete(obj);
-}
-
 GpiImplInterface::~GpiImplInterface() { }
 GpiImplInterface::GpiImplInterface(const std::string& name) : m_name(name) { }
 const char* GpiImplInterface::get_name_c(void) {
