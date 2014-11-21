@@ -41,7 +41,7 @@ void fli_elab_cb(void *nothing) {
 
     fli_table = new FliImpl("FLI");
     gpi_register_impl(fli_table);
-    gpi_embed_init_python();
+    gpi_load_extra_libs();
 
     // Elaboration has already happened so jump straight in!
     gpi_sim_info_t sim_info;

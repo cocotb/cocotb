@@ -100,7 +100,7 @@ static void gpi_load_libs(std::vector<std::string> to_load)
     }
 }
 
-void gpi_embed_init_python(void)
+void gpi_load_extra_libs(void)
 {
     static bool loading = false;
 
@@ -130,6 +130,7 @@ void gpi_embed_init_python(void)
         gpi_load_libs(to_load);
     }
 
+    /* Finally embed python */
     embed_init_python();
 }
 

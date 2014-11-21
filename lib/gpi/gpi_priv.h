@@ -211,7 +211,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl);
 
 void gpi_embed_init(gpi_sim_info_t *info);
 void gpi_embed_end(void);
-void gpi_embed_init_python(void);
+void gpi_load_extra_libs(void);
 
 typedef const void (*layer_entry_func)(void);
 

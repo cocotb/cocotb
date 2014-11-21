@@ -313,7 +313,7 @@ static void register_embed(void)
 {
     vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
-    gpi_embed_init_python();
+    gpi_load_extra_libs();
 }
 
 

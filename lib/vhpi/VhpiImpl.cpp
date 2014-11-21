@@ -343,7 +343,7 @@ static void register_embed(void)
 {
     vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
-    gpi_embed_init_python();
+    gpi_load_extra_libs();
 }
 
 // pre-defined VHPI registration table
