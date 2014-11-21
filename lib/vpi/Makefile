@@ -30,7 +30,7 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
-GCC_ARGS    += -DVPI_CHECKING
+GXX_ARGS    += -DVPI_CHECKING
 LIBS        := -lgpilog -lgpi -lstdc++
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libvpi.so

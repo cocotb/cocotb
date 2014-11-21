@@ -29,7 +29,7 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    += -I/local/tools/modelsim/10.3c/modelsim_dlx/include
-GCC_ARGS    += -DFLI_CHECKING
+GXX_ARGS    += -DFLI_CHECKING
 LIBS        := -lgpilog -lgpi -lstdc++
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libfli.so
