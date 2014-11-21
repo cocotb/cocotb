@@ -31,8 +31,6 @@
 #include "../gpi/gpi_priv.h"
 #include <vpi_user.h>
 
-#define VPI_CHECKING 1
-
 // Should be run after every VPI call to check error status
 static inline int __check_vpi_error(const char *func, long line)
 {
