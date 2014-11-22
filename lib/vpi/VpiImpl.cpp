@@ -32,6 +32,7 @@ extern "C" {
 
 static VpiCbHdl *sim_init_cb;
 static VpiCbHdl *sim_finish_cb;
+static VpiCbHdl *sim_error_cb;
 static VpiImpl *vpi_table;
 
 }
@@ -306,6 +307,12 @@ static void register_final_callback(void)
     sim_finish_cb->arm_callback();
 }
 
+static void register_error_callback(void)
+{
+    sim_error_cb = new VpiErrorCbHdl(vpi_table);
+    sim_error_cb->arm_callback();
+}
+
 
 // Called at compile time to validate the arguments to the system functions
 // we redefine (info, warning, error, fatal).
@@ -406,6 +413,7 @@ void (*vlog_startup_routines[])(void) = {
     register_embed,
     register_system_functions,
     register_initial_callback,
+    register_error_callback,
     register_final_callback,
     0
 };

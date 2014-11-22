@@ -67,11 +67,6 @@ plusargs = {}
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
 
-class TestFailed(Exception):
-    pass
-
-
-
 # FIXME is this really required?
 _rlock = threading.RLock()
 
@@ -142,14 +137,15 @@ def _sim_event(level, message):
     SIM_INFO = 0
     SIM_TEST_FAIL = 1
     SIM_FAIL = 2
-    from cocotb.result import TestFailure
+    from cocotb.result import TestFailure, SimFailure
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
         scheduler.finish_test(TestFailure("Failure from external source: %s" % message))
     elif level is SIM_FAIL:
+        # We simply return here as the simulator will exit so no cleanup is needed
         scheduler.log.error("Failing test at simulator request before test run completion: %s" % message)
-        scheduler.finish_scheduler(TestFailure("Failing test at simulator request before test run completion"))
+        scheduler.finish_scheduler(SimFailure("Failing test at simulator request before test run completion %s" % message))
     else:
         scheduler.log.error("Unsupported sim event")
 

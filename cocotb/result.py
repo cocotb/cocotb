@@ -75,3 +75,5 @@ class TestError(TestComplete): pass
 class TestFailure(TestComplete): pass
 
 class TestSuccess(TestComplete): pass
+
+class SimFailure(TestComplete): pass

@@ -299,6 +299,17 @@ int VpiShutdownCbHdl::run_callback(void) {
     return 0;
 }
 
+VpiErrorCbHdl::VpiErrorCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
+{
+    cb_data.reason = cbError;
+}
+
+int VpiErrorCbHdl::run_callback(void) {
+    LOG_CRITICAL("Critical error");
+    gpi_embed_end();
+    return 0;
+}
+
 VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VpiCbHdl(impl)
 {
     vpi_time.high = (uint32_t)(time_ps>>32);

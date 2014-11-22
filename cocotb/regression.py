@@ -44,7 +44,7 @@ else:
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
-from cocotb.result import TestError, TestFailure, TestSuccess
+from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
 from cocotb.xunit_reporter import XUnitReporter
 
 def _my_import(name):
@@ -126,7 +126,7 @@ class RegressionManager(object):
         """It's the end of the world as we know it"""
         if self.failures:
             self.log.error("Failed %d out of %d tests (%d skipped)" %
-                (self.failures, self.count-1, self.skipped))
+                (self.failures, self.count -1, self.skipped))
         else:
             self.log.info("Passed %d tests (%d skipped)"  %
                 (self.count-1, self.skipped))
@@ -169,17 +169,27 @@ class RegressionManager(object):
             self.log.error("Test passed but we expected a failure: %s (result was %s)" % (
                            self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=repr(str(result)), stderr="\n".join(self._running_test.error_messages))
-            self.failures += 1            
+            self.failures += 1
 
         elif isinstance(result, TestError) and self._running_test.expect_error:
             self.log.info("Test errored as expected: %s (result was %s)" % (
                           self._running_test.funcname, result.__class__.__name__))
 
+        elif isinstance(result, SimFailure):
+            if self._running_test.expect_error:
+                self.log.info("Test errored as expected: %s (result was %s)" % (
+                              self._running_test.funcname, result.__class__.__name__))
+            else:
+                self.log.error("Test error has lead to simulator shuttting us down")
+                self.failures += 1
+                self.tear_down()
+                return
+
         else:
             self.log.error("Test Failed: %s (result was %s)" % (
                         self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=repr(str(result)), stderr="\n".join(self._running_test.error_messages))
-            self.failures += 1            
+            self.failures += 1
 
         self.execute()
 
