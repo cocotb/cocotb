@@ -114,15 +114,12 @@ class VpiSignalObjHdl;
 
 class VpiValueCbHdl : public VpiCbHdl {
 public:
-    VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig);
+    VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig, int edge);
     virtual ~VpiValueCbHdl() { }
     int run_callback(void);
-    void set_edge(unsigned int edge);
     int cleanup_callback(void);
 private:
-    std::string initial_value;
-    bool rising;
-    bool falling;
+    std::string required_value;
     VpiSignalObjHdl *signal;
     s_vpi_value m_vpi_value;
 };
@@ -215,7 +212,9 @@ class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
 public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl) : VpiObjHdl(impl, hdl),
                                                              GpiSignalObjHdl(impl),
-                                                             m_value_cb(impl, this) { }
+                                                             m_rising_cb(impl, this, GPI_RISING),
+                                                             m_falling_cb(impl, this, GPI_FALLING),
+                                                             m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
     virtual ~VpiSignalObjHdl() { }
 
     const char* get_signal_value_binstr(void);
@@ -249,7 +248,9 @@ public:
         return VpiObjHdl::initialise(name);
     }
 private:
-    VpiValueCbHdl m_value_cb;
+    VpiValueCbHdl m_rising_cb;
+    VpiValueCbHdl m_falling_cb;
+    VpiValueCbHdl m_either_cb;
 };
 
 class VpiImpl : public GpiImplInterface {

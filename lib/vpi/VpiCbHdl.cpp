@@ -185,20 +185,33 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
 
 GpiCbHdl * VpiSignalObjHdl::value_change_cb(unsigned int edge)
 {
-    m_value_cb.set_edge(edge);
+    VpiValueCbHdl *cb = NULL;
 
-    if (m_value_cb.arm_callback()) {
+    switch (edge) {
+    case 1:
+        cb = &m_rising_cb;
+        break;
+    case 2:
+        cb = &m_falling_cb;
+        break;
+    case 3:
+        cb = &m_either_cb;
+        break;
+    default:
         return NULL;
     }
 
-    return &m_value_cb;
+    if (cb->arm_callback()) {
+        return NULL;
+    }
+
+    return cb;
 }
 
 VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
-                             VpiSignalObjHdl *sig) : 
+                             VpiSignalObjHdl *sig,
+                             int edge) : 
                                                   VpiCbHdl(impl),
-                                                  rising(false),
-                                                  falling(false),                           
                                                   signal(sig)
 {
     vpi_time.type = vpiSuppressTime;
@@ -208,39 +221,28 @@ VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
     cb_data.time = &vpi_time;
     cb_data.value = &m_vpi_value;
     cb_data.obj = signal->get_handle();
-}
 
-void VpiValueCbHdl::set_edge(unsigned int edge)
-{
-    if (edge & 1)
-        rising = true;
-
-    if (edge & 2)
-        falling = true;
+    if (edge == (GPI_RISING | GPI_FALLING))
+        required_value = "X";
+    else if (edge & GPI_RISING)
+        required_value = "1";
+    else if (edge & GPI_FALLING)
+        required_value = "0";
 }
 
 int VpiValueCbHdl::run_callback(void)
 {
     std::string current_value;
-    std::string required;
-    bool pass = false;
-    if (rising && falling) {
+    bool pass;
+
+    if (required_value == "X")
         pass = true;
-        goto check;
+    else {
+        current_value = signal->get_signal_value_binstr();
+        if (current_value  == required_value)
+            pass = true;
     }
 
-    current_value = signal->get_signal_value_binstr();
-    if (rising && (current_value  == "1")) {
-        pass = true;
-        goto check;
-    }
-
-    if (falling && (current_value  == "0")) {
-        pass = true;
-        goto check;
-    }
-
-check:
     if (pass) {
         this->gpi_function(m_cb_data);
     } else {
