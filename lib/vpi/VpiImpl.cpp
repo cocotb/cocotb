@@ -113,7 +113,7 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
     int32_t type;
     VpiObjHdl *parent_hdl = sim_to_hdl<VpiObjHdl*>(parent);
-    vpiHandle vpi_hdl = parent_hdl->get_handle();
+    vpiHandle vpi_hdl = parent_hdl->get_handle<vpiHandle>();
     vpiHandle new_hdl;
     VpiObjHdl *new_obj = NULL; 
     

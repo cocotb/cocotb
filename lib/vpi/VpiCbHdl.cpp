@@ -32,13 +32,12 @@
 
 extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
 
-vpiHandle VpiObjHdl::get_handle(void)
-{
-    return vpi_hdl;
-}
+//vpiHandle VpiObjHdl::get_handle(void)
+//{
+//    return m_obj_hdl;
+//}
 
-VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
-                                             vpi_hdl(NULL)
+VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl)
 {
 
     vpi_time.high = 0;
@@ -66,7 +65,7 @@ int VpiCbHdl::arm_callback(void) {
 
     // Only a problem if we have not been asked to deregister and register
     // in the same simultion callback
-    if (vpi_hdl != NULL && m_state != GPI_DELETE) {
+    if (m_obj_hdl != NULL && m_state != GPI_DELETE) {
         fprintf(stderr,
                 "We seem to already be registered, deregistering %s!\n",
                 m_impl->reason_to_string(cb_data.reason));
@@ -87,7 +86,7 @@ int VpiCbHdl::arm_callback(void) {
         m_state = GPI_PRIMED;
     }
     
-    vpi_hdl = new_hdl;
+    m_obj_hdl = new_hdl;
 
     return ret;
 }
@@ -102,12 +101,12 @@ int VpiCbHdl::cleanup_callback(void)
      * internally */
 
     if (m_state == GPI_PRIMED) {
-        if (!vpi_hdl) {
+        if (!m_obj_hdl) {
             LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
             exit(1);
         }
 
-        if (!(vpi_remove_cb(vpi_hdl))) {
+        if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
             LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
             exit(1);
         }
@@ -116,7 +115,7 @@ int VpiCbHdl::cleanup_callback(void)
     } else {
 #ifndef MODELSIM
         /* This is disabled for now, causes a small leak going to put back in */
-        if (!(vpi_free_object(vpi_hdl))) {
+        if (!(vpi_free_object(get_handle<vpiHandle>()))) {
             LOG_CRITICAL("VPI: unbale to free handle : ABORTING");
             exit(1);
         }
@@ -124,7 +123,7 @@ int VpiCbHdl::cleanup_callback(void)
     }
 
 
-    vpi_hdl = NULL;
+    m_obj_hdl = NULL;
     m_state = GPI_FREE;
 
     return 0;
@@ -136,7 +135,7 @@ const char* VpiSignalObjHdl::get_signal_value_binstr(void)
     s_vpi_value value_s = {vpiBinStrVal};
     p_vpi_value value_p = &value_s;
 
-    vpi_get_value(vpi_hdl, value_p);
+    vpi_get_value(VpiObjHdl::get_handle<vpiHandle>(), value_p);
     check_vpi_error();
 
     return value_p->value.str;
@@ -158,7 +157,7 @@ int VpiSignalObjHdl::set_signal_value(int value)
     vpi_time_s.low  = 0;
 
     // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
-    vpi_put_value(vpi_hdl, &value_s, &vpi_time_s, vpiInertialDelay);
+    vpi_put_value(VpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
     check_vpi_error();
 
     FEXIT
@@ -176,7 +175,7 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
     value_s.value.str = &writable[0];
     value_s.format = vpiBinStrVal;
 
-    vpi_put_value(vpi_hdl, &value_s, NULL, vpiNoDelay);
+    vpi_put_value(VpiObjHdl::get_handle<vpiHandle>(), &value_s, NULL, vpiNoDelay);
     check_vpi_error();
 
     FEXIT
@@ -210,9 +209,9 @@ GpiCbHdl * VpiSignalObjHdl::value_change_cb(unsigned int edge)
 
 VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
                              VpiSignalObjHdl *sig,
-                             int edge) : 
+                             int edge) :GpiCbHdl(impl), 
                                         VpiCbHdl(impl),
-                                        signal(sig)
+                                        GpiValueCbHdl(impl,sig,edge)
 {
     vpi_time.type = vpiSuppressTime;
     m_vpi_value.format = vpiIntVal;
@@ -220,37 +219,7 @@ VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
     cb_data.reason = cbValueChange;
     cb_data.time = &vpi_time;
     cb_data.value = &m_vpi_value;
-    cb_data.obj = signal->get_handle();
-
-    if (edge == (GPI_RISING | GPI_FALLING))
-        required_value = "X";
-    else if (edge & GPI_RISING)
-        required_value = "1";
-    else if (edge & GPI_FALLING)
-        required_value = "0";
-}
-
-int VpiValueCbHdl::run_callback(void)
-{
-    std::string current_value;
-    bool pass;
-
-    if (required_value == "X")
-        pass = true;
-    else {
-        current_value = signal->get_signal_value_binstr();
-        if (current_value  == required_value)
-            pass = true;
-    }
-
-    if (pass) {
-        this->gpi_function(m_cb_data);
-    } else {
-        cleanup_callback();
-        arm_callback();
-    }
-
-    return 0;
+    cb_data.obj = m_signal->get_handle<vpiHandle>();
 }
 
 int VpiValueCbHdl::cleanup_callback(void)
@@ -260,17 +229,18 @@ int VpiValueCbHdl::cleanup_callback(void)
 
     /* This is a recurring callback so just remove when
      * not wanted */
-    if (!(vpi_remove_cb(vpi_hdl))) {
+    if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
         LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
         exit(1);
     }
 
-    vpi_hdl = NULL;
+    m_obj_hdl = NULL;
     m_state = GPI_FREE;
     return 0;
 }
 
-VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
+VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                           VpiCbHdl(impl)
 {
     cb_data.reason = cbStartOfSimulation;
 }
@@ -291,7 +261,8 @@ int VpiStartupCbHdl::run_callback(void) {
     return 0;
 }
 
-VpiShutdownCbHdl::VpiShutdownCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
+VpiShutdownCbHdl::VpiShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                             VpiCbHdl(impl)
 {
     cb_data.reason = cbEndOfSimulation;
 }
@@ -301,7 +272,8 @@ int VpiShutdownCbHdl::run_callback(void) {
     return 0;
 }
 
-VpiErrorCbHdl::VpiErrorCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
+VpiErrorCbHdl::VpiErrorCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                       VpiCbHdl(impl)
 {
     cb_data.reason = cbError;
 }
@@ -312,7 +284,8 @@ int VpiErrorCbHdl::run_callback(void) {
     return 0;
 }
 
-VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VpiCbHdl(impl)
+VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCbHdl(impl),
+                                                                         VpiCbHdl(impl)
 {
     vpi_time.high = (uint32_t)(time_ps>>32);
     vpi_time.low  = (uint32_t)(time_ps);
@@ -321,18 +294,21 @@ VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VpiCbHd
     cb_data.reason = cbAfterDelay;
 }
 
-VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
+VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                               VpiCbHdl(impl)
 {
     cb_data.reason = cbReadWriteSynch;
     delay_kill = false;
 }
 
-VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
+VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                             VpiCbHdl(impl)
 {
     cb_data.reason = cbReadOnlySynch;
 }
 
-VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : VpiCbHdl(impl)
+VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                               VpiCbHdl(impl)
 {
     cb_data.reason = cbNextSimTime;
 }

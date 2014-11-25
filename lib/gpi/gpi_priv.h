@@ -62,9 +62,14 @@ inline To sim_to_hdl(Ti input)
 class GpiHdl {
 public:
     //GpiHdl() : m_impl(NULL) { }
-    GpiHdl(GpiImplInterface *impl) : m_impl(impl) { }
+    GpiHdl(GpiImplInterface *impl, void *hdl) : m_impl(impl), m_obj_hdl(hdl) { }
     virtual ~GpiHdl() { }
     virtual int initialise(std::string &name);                   // Post constructor init
+
+
+    template<typename T> T get_handle(void) {
+        return static_cast<T>(m_obj_hdl);
+    }
 
 private:
     GpiHdl() { }   // Disable default constructor
@@ -73,6 +78,9 @@ public:
     GpiImplInterface *m_impl;                  // VPI/VHPI/FLI routines
     char *gpi_copy_name(const char *name);     // Might not be needed
     bool is_this_impl(GpiImplInterface *impl); // Is the passed interface the one this object uses
+
+protected:
+    void *m_obj_hdl;
 };
 
 /* GPI object handle, maps to a simulation object */
@@ -84,8 +92,9 @@ public:
 // that construct an object derived from GpiSignalObjHdl or GpiObjHdl
 class GpiObjHdl : public GpiHdl {
 public:
-    GpiObjHdl(std::string name) : GpiHdl(NULL), m_name(name) { }
-    GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl) { }
+    GpiObjHdl(std::string name) : GpiHdl(NULL, NULL), m_name(name) { }
+    GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL) { }
+    GpiObjHdl(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
     virtual ~GpiObjHdl() { }
 
     // The following methods permit children below this level of the hierarchy
@@ -114,7 +123,7 @@ protected:
 // value of the signal (which doesn't apply to non signal items in the hierarchy
 class GpiSignalObjHdl : public GpiObjHdl {
 public:
-    GpiSignalObjHdl(GpiImplInterface *impl) : GpiObjHdl(impl) { }
+    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl) : GpiObjHdl(impl, hdl) { }
     virtual ~GpiSignalObjHdl() { }
     // Provide public access to the implementation (composition vs inheritance)
     virtual const char* get_signal_value_binstr(void) = 0;
@@ -135,7 +144,7 @@ public:
 // vpiHandle/vhpiHandleT for instance. The 
 class GpiCbHdl : public GpiHdl {
 public:
-    GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl),
+    GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
                                        m_state(GPI_FREE) { }
     // Pure virtual functions for derived classes
     virtual int arm_callback(void) = 0;         // Register with siumlator
@@ -155,6 +164,18 @@ protected:
     const int (*gpi_function)(const void *);    // GPI function to callback
     const void *m_cb_data;                // GPI data supplied to "gpi_function"
     gpi_cb_state_e m_state;         // GPI state of the callback through its cycle
+};
+
+class GpiValueCbHdl : public virtual GpiCbHdl {
+public:
+    GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal, int edge);
+    virtual ~GpiValueCbHdl() { }
+    virtual int run_callback(void);
+    virtual int cleanup_callback(void) = 0;
+    //virtual int arm_callback(void);
+protected:
+    std::string required_value;
+    GpiSignalObjHdl *m_signal;
 };
 
 /* We would then have */

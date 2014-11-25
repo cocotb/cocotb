@@ -136,3 +136,39 @@ GpiCbHdl::~GpiCbHdl(void)
 {
 
 }
+
+GpiValueCbHdl::GpiValueCbHdl(GpiImplInterface *impl,
+                             GpiSignalObjHdl *signal,
+                             int edge) : GpiCbHdl(impl),
+                                         m_signal(signal)
+{
+    if (edge == (GPI_RISING | GPI_FALLING))
+        required_value = "X";
+    else if (edge & GPI_RISING)
+        required_value = "1";
+    else if (edge & GPI_FALLING)
+        required_value = "0";
+}
+
+int GpiValueCbHdl::run_callback(void)
+{
+    std::string current_value;
+    bool pass;
+
+    if (required_value == "X")
+        pass = true;
+    else {
+        current_value = m_signal->get_signal_value_binstr();
+        if (current_value  == required_value)
+            pass = true;
+    }
+
+    if (pass) {
+        this->gpi_function(m_cb_data);
+    } else {
+        cleanup_callback();
+        arm_callback();
+    }
+
+    return 0;
+}

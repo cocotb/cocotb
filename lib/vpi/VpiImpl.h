@@ -80,23 +80,17 @@ class VpiReadOnlyCbHdl;
 
 class VpiObjHdl : public GpiObjHdl {
 public:
-    VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl) : GpiObjHdl(impl),
-                                                       vpi_hdl(hdl) { }
+    VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl) : GpiObjHdl(impl, hdl)
+                                                        { }
     virtual ~VpiObjHdl() { }
 
     virtual GpiObjHdl *get_handle_by_name(std::string &name) { return NULL; }
     virtual GpiObjHdl *get_handle_by_index(uint32_t index) { return NULL; }
     virtual GpiIterator *iterate_handle(uint32_t type) { return NULL ;}
     virtual GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
-
-    vpiHandle get_handle(void); 
-
-protected:
-    vpiHandle vpi_hdl;
-
 };
 
-class VpiCbHdl : public GpiCbHdl {
+class VpiCbHdl : public virtual GpiCbHdl {
 public:
     VpiCbHdl(GpiImplInterface *impl);
     virtual ~VpiCbHdl() { }
@@ -105,22 +99,18 @@ public:
     virtual int cleanup_callback(void);
 
 protected:
-    vpiHandle vpi_hdl;
     s_cb_data cb_data;
     s_vpi_time vpi_time;
 };
 
 class VpiSignalObjHdl;
 
-class VpiValueCbHdl : public VpiCbHdl {
+class VpiValueCbHdl : public VpiCbHdl, public GpiValueCbHdl {
 public:
     VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig, int edge);
     virtual ~VpiValueCbHdl() { }
-    int run_callback(void);
     int cleanup_callback(void);
 private:
-    std::string required_value;
-    VpiSignalObjHdl *signal;
     s_vpi_value m_vpi_value;
 };
 
@@ -211,7 +201,7 @@ public:
 class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
 public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl) : VpiObjHdl(impl, hdl),
-                                                             GpiSignalObjHdl(impl),
+                                                             GpiSignalObjHdl(impl, hdl),
                                                              m_rising_cb(impl, this, GPI_RISING),
                                                              m_falling_cb(impl, this, GPI_FALLING),
                                                              m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
