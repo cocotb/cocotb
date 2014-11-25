@@ -73,24 +73,18 @@ static inline int __check_vhpi_error(const char *func, long line)
 
 class VhpiObjHdl : public GpiObjHdl {
 public:
-    VhpiObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : GpiObjHdl(impl),
-                                                          vhpi_hdl(hdl) { }
+    VhpiObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : GpiObjHdl(impl, hdl)
+                                                           { }
     virtual ~VhpiObjHdl() { }
 
     virtual GpiObjHdl *get_handle_by_name(std::string &name) { return NULL; }
     virtual GpiObjHdl *get_handle_by_index(uint32_t index) { return NULL; }
     virtual GpiIterator *iterate_handle(uint32_t type) { return NULL ;}
     virtual GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
-    //int initialise(std::string &name);
 
-    vhpiHandleT get_handle(void); 
-
-
-protected:
-    vhpiHandleT vhpi_hdl;
 };
 
-class VhpiCbHdl : public GpiCbHdl {
+class VhpiCbHdl : public virtual GpiCbHdl {
 public:
     VhpiCbHdl(GpiImplInterface *impl); 
     virtual ~VhpiCbHdl() { }
@@ -99,19 +93,19 @@ public:
     virtual int cleanup_callback(void);
 
 protected:
-    vhpiHandleT vhpi_hdl;
     vhpiCbDataT cb_data;
     vhpiTimeT vhpi_time;
 };
 
 class VhpiSignalObjHdl;
 
-class VhpiValueCbHdl : public VhpiCbHdl {
+class VhpiValueCbHdl : public VhpiCbHdl, public GpiValueCbHdl {
 public:
-    VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig);
+    VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig, int edge);
     virtual ~VhpiValueCbHdl() { }
-    int run_callback(void);
-    void set_edge(unsigned int edge);
+    int cleanup_callback(void) {
+        return VhpiCbHdl::cleanup_callback();
+    }
 private:
     std::string initial_value;
     bool rising;
@@ -169,9 +163,11 @@ public:
 class VhpiSignalObjHdl : public VhpiObjHdl, public GpiSignalObjHdl {
 public:
     VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : VhpiObjHdl(impl, hdl),
-                                                                GpiSignalObjHdl(impl),
+                                                                GpiSignalObjHdl(impl, hdl),
                                                                 m_size(0),
-                                                                m_value_cb(impl, this) { }
+                                                                m_rising_cb(impl, this, GPI_RISING),
+                                                                m_falling_cb(impl, this, GPI_FALLING),
+                                                                m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
     virtual ~VhpiSignalObjHdl();
 
     const char* get_signal_value_binstr(void);
@@ -204,7 +200,9 @@ private:
     unsigned int m_size;
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
-    VhpiValueCbHdl m_value_cb;
+    VhpiValueCbHdl m_rising_cb;
+    VhpiValueCbHdl m_falling_cb;
+    VhpiValueCbHdl m_either_cb;
 };
 
 class VhpiImpl : public GpiImplInterface {

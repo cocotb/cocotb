@@ -32,11 +32,6 @@
 
 extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
 
-//vpiHandle VpiObjHdl::get_handle(void)
-//{
-//    return m_obj_hdl;
-//}
-
 VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl)
 {
 

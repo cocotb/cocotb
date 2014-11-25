@@ -121,7 +121,7 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vhpiIntT type;
     VhpiObjHdl *parent_hdl = sim_to_hdl<VhpiObjHdl*>(parent);
-    vhpiHandleT vpi_hdl = parent_hdl->get_handle();
+    vhpiHandleT vpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
     vhpiHandleT new_hdl;
     VhpiObjHdl *new_obj = NULL;
     unsigned int name_start = 0;
@@ -162,7 +162,7 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
     vhpiIntT type;
     VhpiObjHdl *parent_hdl = sim_to_hdl<VhpiObjHdl*>(parent);
-    vhpiHandleT vpi_hdl = parent_hdl->get_handle();
+    vhpiHandleT vpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
     vhpiHandleT new_hdl;
     VhpiObjHdl *new_obj = NULL;
 

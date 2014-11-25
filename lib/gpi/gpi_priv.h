@@ -172,7 +172,7 @@ public:
     virtual ~GpiValueCbHdl() { }
     virtual int run_callback(void);
     virtual int cleanup_callback(void) = 0;
-    //virtual int arm_callback(void);
+
 protected:
     std::string required_value;
     GpiSignalObjHdl *m_signal;

@@ -30,11 +30,6 @@
 
 extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 
-vhpiHandleT VhpiObjHdl::get_handle(void)
-{
-    return vhpi_hdl;
-}
-
 VhpiSignalObjHdl::~VhpiSignalObjHdl()
 {
     if (m_value.format == vhpiEnumVecVal ||
@@ -51,7 +46,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     m_value.bufSize = 0;
     m_value.value.str = NULL;
 
-    vhpi_get_value(vhpi_hdl, &m_value);
+    vhpi_get_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
     check_vhpi_error();
 
     switch (m_value.format) {
@@ -63,7 +58,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
 
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
-            m_size = vhpi_get(vhpiSizeP, vhpi_hdl);
+            m_size = vhpi_get(vhpiSizeP, VhpiObjHdl::get_handle<vhpiHandleT>());
             m_value.bufSize = m_size*sizeof(vhpiEnumT); 
             m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize);
             if (!m_value.value.enumvs) {
@@ -84,7 +79,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     m_binvalue.bufSize = 0;
     m_binvalue.value.str = NULL;
 
-    int new_size = vhpi_get_value(vhpi_hdl, &m_binvalue);
+    int new_size = vhpi_get_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
 
     m_binvalue.bufSize = new_size*sizeof(vhpiCharT) + 1;
     m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, m_binvalue.bufSize);
@@ -98,8 +93,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     return 0;
 }
 
-VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
-                                               vhpi_hdl(NULL)
+VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl)
 {
     cb_data.reason    = 0;
     cb_data.cb_rtn    = handle_vhpi_callback;
@@ -119,9 +113,9 @@ int VhpiCbHdl::cleanup_callback(void)
     if (m_state == GPI_FREE)
         return 0;
 
-    vhpiStateT cbState = (vhpiStateT)vhpi_get(vhpiStateP, vhpi_hdl);
+    vhpiStateT cbState = (vhpiStateT)vhpi_get(vhpiStateP, get_handle<vhpiHandleT>());
     if (vhpiEnable == cbState) {
-        ret = vhpi_disable_cb(vhpi_hdl);
+        ret = vhpi_disable_cb(get_handle<vhpiHandleT>());
         m_state = GPI_FREE;
     }
 
@@ -142,10 +136,10 @@ int VhpiCbHdl::arm_callback(void)
     /* Do we already have a handle, if so and it is disabled then
        just re-enable it */
 
-    if (vhpi_hdl) {
-        cbState = (vhpiStateT)vhpi_get(vhpiStateP, vhpi_hdl);
+    if (get_handle<vhpiHandleT>()) {
+        cbState = (vhpiStateT)vhpi_get(vhpiStateP, get_handle<vhpiHandleT>());
         if (vhpiDisable == cbState) {
-            if (vhpi_enable_cb(vhpi_hdl)) {
+            if (vhpi_enable_cb(get_handle<vhpiHandleT>())) {
                 check_vhpi_error();
                 ret = -1;
             }
@@ -166,7 +160,7 @@ int VhpiCbHdl::arm_callback(void)
             LOG_CRITICAL("VHPI ERROR: Registered callback isn't enabled! Got %d\n", cbState);
         }
 
-        vhpi_hdl = new_hdl;
+        m_obj_hdl = new_hdl;
     }
     m_state = GPI_PRIMED;
 
@@ -218,7 +212,7 @@ int VhpiSignalObjHdl::set_signal_value(int value)
             LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
         }
     }
-    vhpi_put_value(vhpi_hdl, &m_value, vhpiForcePropagate);
+    vhpi_put_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
     check_vhpi_error();
     return 0;
 }
@@ -265,14 +259,14 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
         }
     }
 
-    vhpi_put_value(vhpi_hdl, &m_value, vhpiForcePropagate);
+    vhpi_put_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
     check_vhpi_error();
     return 0;
 }
 
 const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
 {
-    vhpi_get_value(vhpi_hdl, &m_binvalue);
+    vhpi_get_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
     check_vhpi_error();
 
     return m_binvalue.value.str;
@@ -280,66 +274,42 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
 
 GpiCbHdl * VhpiSignalObjHdl::value_change_cb(unsigned int edge)
 {
-    m_value_cb.set_edge(edge);
+    VhpiValueCbHdl *cb = NULL;
 
-    if (m_value_cb.arm_callback())
+    switch (edge) {
+    case 1:
+        cb = &m_rising_cb;
+        break;
+    case 2:
+        cb = &m_falling_cb;
+        break;
+    case 3:
+        cb = &m_either_cb;
+        break;
+    default:
         return NULL;
+    }
 
-    return &m_value_cb;
+    if (cb->arm_callback()) {
+        return NULL;
+    }
+
+    return cb;
 }
 
 VhpiValueCbHdl::VhpiValueCbHdl(GpiImplInterface *impl,
-                               VhpiSignalObjHdl *sig) :
-                                                      VhpiCbHdl(impl),
-                                                      rising(false),
-                                                      falling(false),
-                                                      signal(sig)
+                               VhpiSignalObjHdl *sig,
+                               int edge) : GpiCbHdl(impl),
+                                           VhpiCbHdl(impl),
+                                           GpiValueCbHdl(impl,sig,edge)
 {
     cb_data.reason = vhpiCbValueChange;
     cb_data.time = &vhpi_time;
-    cb_data.obj = signal->get_handle();
+    cb_data.obj = m_signal->get_handle<vhpiHandleT>();
 }
 
-void VhpiValueCbHdl::set_edge(unsigned int edge)
-{
-    if (edge & 1)
-        rising = true;
-
-    if (edge & 2)
-        falling = true;
-}
-
-int VhpiValueCbHdl::run_callback(void)
-{
-    std::string current_value;
-    std::string required;
-    bool pass = false;
-    if (rising && falling) {
-        pass = true;
-        goto check;
-    }
-
-    current_value = signal->get_signal_value_binstr();
-    if (rising && (current_value  == "1")) {
-        pass = true;
-        goto check;
-    }
-
-    if (falling && (current_value  == "0")) {
-        pass = true;
-        goto check;
-    }
-
-check:
-    if (pass)
-        this->gpi_function(m_cb_data);
-    else
-        m_state = GPI_PRIMED;
-
-    return 0;
-}
-
-VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
+VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                             VhpiCbHdl(impl)
 {
     cb_data.reason = vhpiCbStartOfSimulation;
 }
@@ -358,7 +328,8 @@ int VhpiStartupCbHdl::run_callback(void) {
     return 0;
 }
 
-VhpiShutdownCbHdl::VhpiShutdownCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
+VhpiShutdownCbHdl::VhpiShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                               VhpiCbHdl(impl)
 {
     cb_data.reason = vhpiCbEndOfSimulation;
 }
@@ -369,7 +340,8 @@ int VhpiShutdownCbHdl::run_callback(void) {
     return 0;
 }
 
-VhpiTimedCbHdl::VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : VhpiCbHdl(impl)
+VhpiTimedCbHdl::VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCbHdl(impl),
+                                                                           VhpiCbHdl(impl)
 {
     vhpi_time.high = (uint32_t)(time_ps>>32);
     vhpi_time.low  = (uint32_t)(time_ps); 
@@ -383,26 +355,29 @@ int VhpiTimedCbHdl::cleanup_callback(void)
     if (m_state == GPI_FREE)
         return 1;
 
-    vhpi_remove_cb(vhpi_hdl);
+    vhpi_remove_cb(get_handle<vhpiHandleT>());
 
-    vhpi_hdl = NULL;
+    m_obj_hdl = NULL;
     m_state = GPI_FREE;
     return 1;
 }
 
-VhpiReadwriteCbHdl::VhpiReadwriteCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
+VhpiReadwriteCbHdl::VhpiReadwriteCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                                 VhpiCbHdl(impl)
 {
     cb_data.reason = vhpiCbRepEndOfProcesses;
     cb_data.time = &vhpi_time;
 }
 
-VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
+VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                               VhpiCbHdl(impl)
 {
     cb_data.reason = vhpiCbRepLastKnownDeltaCycle;
     cb_data.time = &vhpi_time;
 }
 
-VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : VhpiCbHdl(impl)
+VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                                                 VhpiCbHdl(impl)
 {
     cb_data.reason = vhpiCbRepNextTimeStep;
     cb_data.time = &vhpi_time;
