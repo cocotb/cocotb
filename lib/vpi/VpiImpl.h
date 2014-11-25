@@ -187,17 +187,6 @@ public:
     virtual ~VpiShutdownCbHdl() { }
 };
 
-class VpiErrorCbHdl : public VpiCbHdl {
-public:
-    VpiErrorCbHdl(GpiImplInterface *impl);
-    int run_callback(void);
-    int cleanup_callback(void) {
-        /* Too many sims get upset with this so we override to do nothing */
-        return 0;
-    }
-    virtual ~VpiErrorCbHdl() { }
-};
-
 class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
 public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl) : VpiObjHdl(impl, hdl),
