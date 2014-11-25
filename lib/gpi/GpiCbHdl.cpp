@@ -153,7 +153,7 @@ GpiValueCbHdl::GpiValueCbHdl(GpiImplInterface *impl,
 int GpiValueCbHdl::run_callback(void)
 {
     std::string current_value;
-    bool pass;
+    bool pass = false;
 
     if (required_value == "X")
         pass = true;
