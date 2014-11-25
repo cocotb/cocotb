@@ -97,7 +97,7 @@ int GpiCbHdl::run_callback(void)
 
 int GpiCbHdl::cleanup_callback(void)
 {
-    LOG_WARN("Generic cleanu_handler");
+    LOG_WARN("Generic cleanup_handler");
     return 0;
 }
 

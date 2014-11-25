@@ -178,12 +178,8 @@ public:
 
     int set_signal_value(const int value);
     int set_signal_value(std::string &value);
-    //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
-    // but the explicit ones are probably better
-
-    // Also think we want the triggers here?
-    virtual GpiCbHdl *rising_edge_cb(void) { return NULL; }
-    virtual GpiCbHdl *falling_edge_cb(void) { return NULL; }
+    
+    /* Value change callback accessor */
     virtual GpiCbHdl *value_change_cb(unsigned int edge);
 
     /* Functions that I would like to inherit but do not ?*/

@@ -211,8 +211,8 @@ GpiCbHdl * VpiSignalObjHdl::value_change_cb(unsigned int edge)
 VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
                              VpiSignalObjHdl *sig,
                              int edge) : 
-                                                  VpiCbHdl(impl),
-                                                  signal(sig)
+                                        VpiCbHdl(impl),
+                                        signal(sig)
 {
     vpi_time.type = vpiSuppressTime;
     m_vpi_value.format = vpiIntVal;
