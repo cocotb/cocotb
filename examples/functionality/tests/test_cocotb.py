@@ -405,4 +405,4 @@ def test_edge_count(dut):
     yield Timer(clk_period * (edge_count + 1))
 
     if edge_count is not edges_seen:
-        raise cocotb.TestFailed
+        raise TestFailure("Correct edge count failed saw %d wanted %d" % (edges_seen, edge_count))
