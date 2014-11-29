@@ -50,7 +50,7 @@ else
 VSIM_ARGS += -pli libvpi.so
 endif
 
-runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
+$(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
 	echo "vlib work" > $@
 ifneq ($(VERILOG_SOURCES),)
 	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
@@ -64,12 +64,11 @@ ifneq ($(GUI),1)
 endif
 
 
-results.xml: runsim.do $(COCOTB_LIBS)
-	LD_LIBRARY_PATH=$(LIB_DIR)::$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS)
+	cd $(SIM_BUILD) && LD_LIBRARY_PATH=$(LIB_DIR)::$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
 
 clean::
-	-rm -rf runsim.do
-	-rm -rf sim.log
+	-rm -rf $(SIM_BUILD)
 
