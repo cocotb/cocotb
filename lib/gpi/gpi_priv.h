@@ -152,7 +152,7 @@ public:
     virtual int cleanup_callback(void) = 0;     // Cleanup the callback, arm can be called after
 
     // Set the data to be used for run callback, seperate to arm_callback so data can be re-used
-    int set_user_data(const int (*gpi_function)(const void*), const void *data);
+    int set_user_data(int (*gpi_function)(const void*), const void *data);
     const void *get_user_data(void);
 
     void set_call_state(gpi_cb_state_e new_state);
@@ -161,7 +161,7 @@ public:
     virtual ~GpiCbHdl();
 
 protected:
-    const int (*gpi_function)(const void *);    // GPI function to callback
+    int (*gpi_function)(const void *);    // GPI function to callback
     const void *m_cb_data;                // GPI data supplied to "gpi_function"
     gpi_cb_state_e m_state;         // GPI state of the callback through its cycle
 };
