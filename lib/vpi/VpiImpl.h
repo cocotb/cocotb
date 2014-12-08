@@ -261,3 +261,4 @@ private:
 };
 
 #endif /*COCOTB_VPI_IMPL_H_  */
+
