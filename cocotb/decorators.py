@@ -77,8 +77,11 @@ class RunningCoroutine(object):
             coro.kill() will destroy a coroutine instance (and cause any Join triggers to fire
     """
     def __init__(self, inst, parent):
-        self.__name__ = "%s" % inst.__name__
-        self.log = SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
+        if hasattr(inst, "__name__"):
+            self.__name__ = "%s" % inst.__name__
+            self.log = SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
+        else:
+            self.log = SimLog("cocotb.coroutine.fail")
         self._coro = inst
         self._finished = False
         self._callbacks = []
@@ -91,7 +94,7 @@ class RunningCoroutine(object):
 
         if not hasattr(self._coro, "send"):
             self.log.error("%s isn't a value coroutine! Did you use the yield keyword?"
-                % self.__name__)
+                % self.funcname)
             raise CoroutineComplete(callback=self._finished_cb)
 
     def __iter__(self):
