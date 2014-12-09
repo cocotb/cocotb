@@ -39,7 +39,7 @@ static int releases = 0;
 
 #include "simulatormodule.h"
 
-typedef const int (*gpi_function_t)(const void *);
+typedef int (*gpi_function_t)(const void *);
 
 PyGILState_STATE TAKE_GIL(void)
 {

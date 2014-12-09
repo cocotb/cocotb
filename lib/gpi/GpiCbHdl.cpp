@@ -107,7 +107,7 @@ int GpiCbHdl::arm_callback(void)
     return 0;
 }
 
-int GpiCbHdl::set_user_data(const int (*gpi_function)(const void*), const void *data)
+int GpiCbHdl::set_user_data(int (*gpi_function)(const void*), const void *data)
 {
     if (!gpi_function) {
         LOG_ERROR("gpi_function to set_user_data is NULL");
