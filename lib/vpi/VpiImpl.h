@@ -78,18 +78,6 @@ class VpiReadwriteCbHdl;
 class VpiNextPhaseCbHdl;
 class VpiReadOnlyCbHdl;
 
-class VpiObjHdl : public GpiObjHdl {
-public:
-    VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl) : GpiObjHdl(impl, hdl)
-                                                        { }
-    virtual ~VpiObjHdl() { }
-
-    virtual GpiObjHdl *get_handle_by_name(std::string &name) { return NULL; }
-    virtual GpiObjHdl *get_handle_by_index(uint32_t index) { return NULL; }
-    virtual GpiIterator *iterate_handle(uint32_t type) { return NULL ;}
-    virtual GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
-};
-
 class VpiCbHdl : public virtual GpiCbHdl {
 public:
     VpiCbHdl(GpiImplInterface *impl);
@@ -187,10 +175,9 @@ public:
     virtual ~VpiShutdownCbHdl() { }
 };
 
-class VpiSignalObjHdl : public VpiObjHdl, public GpiSignalObjHdl {
+class VpiSignalObjHdl : public GpiSignalObjHdl {
 public:
-    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl) : VpiObjHdl(impl, hdl),
-                                                             GpiSignalObjHdl(impl, hdl),
+    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl) : GpiSignalObjHdl(impl, hdl),
                                                              m_rising_cb(impl, this, GPI_RISING),
                                                              m_falling_cb(impl, this, GPI_FALLING),
                                                              m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
@@ -202,26 +189,8 @@ public:
     int set_signal_value(std::string &value);
 
     /* Value change callback accessor */
-    virtual GpiCbHdl *value_change_cb(unsigned int edge);
+    GpiCbHdl *value_change_cb(unsigned int edge);
 
-    /* Functions that I would like to inherit but do not ?*/
-    virtual GpiObjHdl *get_handle_by_name(std::string &name) {
-        return VpiObjHdl::get_handle_by_name(name);
-    }
-    virtual GpiObjHdl *get_handle_by_index(uint32_t index) {
-        return VpiObjHdl::get_handle_by_index(index);
-    }
-    virtual GpiIterator *iterate_handle(uint32_t type)
-    {
-        return VpiObjHdl::iterate_handle(type);
-    }
-    virtual GpiObjHdl *next_handle(GpiIterator *iterator)
-    {
-        return VpiObjHdl::next_handle(iterator);
-    }
-    virtual int initialise(std::string &name) {
-        return VpiObjHdl::initialise(name);
-    }
 private:
     VpiValueCbHdl m_rising_cb;
     VpiValueCbHdl m_falling_cb;

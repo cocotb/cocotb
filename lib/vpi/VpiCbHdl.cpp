@@ -130,7 +130,7 @@ const char* VpiSignalObjHdl::get_signal_value_binstr(void)
     s_vpi_value value_s = {vpiBinStrVal};
     p_vpi_value value_p = &value_s;
 
-    vpi_get_value(VpiObjHdl::get_handle<vpiHandle>(), value_p);
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), value_p);
     check_vpi_error();
 
     return value_p->value.str;
@@ -152,7 +152,7 @@ int VpiSignalObjHdl::set_signal_value(int value)
     vpi_time_s.low  = 0;
 
     // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
-    vpi_put_value(VpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
+    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
     check_vpi_error();
 
     FEXIT
@@ -170,7 +170,7 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
     value_s.value.str = &writable[0];
     value_s.format = vpiBinStrVal;
 
-    vpi_put_value(VpiObjHdl::get_handle<vpiHandle>(), &value_s, NULL, vpiNoDelay);
+    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, NULL, vpiNoDelay);
     check_vpi_error();
 
     FEXIT

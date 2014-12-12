@@ -74,7 +74,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     int32_t type;
     vpiHandle new_hdl;
-    VpiObjHdl *new_obj = NULL; 
+    GpiObjHdl *new_obj = NULL; 
     std::vector<char> writable(name.begin(), name.end());
     writable.push_back('\0');
 
@@ -96,7 +96,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
             new_obj = new VpiSignalObjHdl(this, new_hdl);
             break;
         case vpiModule:
-            new_obj = new VpiObjHdl(this, new_hdl);
+            new_obj = new GpiObjHdl(this, new_hdl);
             break;
         default:
             LOG_DEBUG("Not sure what to do with type %d for entity (%s)", type, name.c_str());
@@ -111,10 +111,10 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
     int32_t type;
-    VpiObjHdl *parent_hdl = sim_to_hdl<VpiObjHdl*>(parent);
+    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
     vpiHandle vpi_hdl = parent_hdl->get_handle<vpiHandle>();
     vpiHandle new_hdl;
-    VpiObjHdl *new_obj = NULL; 
+    GpiObjHdl *new_obj = NULL; 
     
     new_hdl = vpi_handle_by_index(vpi_hdl, index);
 
@@ -133,7 +133,7 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
             new_obj = new VpiSignalObjHdl(this, new_hdl);
             break;
         case vpiModule:
-            new_obj = new VpiObjHdl(this, new_hdl);
+            new_obj = new GpiObjHdl(this, new_hdl);
             break;
         default:
             LOG_DEBUG("Not sure what to do with type %d below entity (%s) at index (%d)",
@@ -151,7 +151,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
 {
     vpiHandle root;
     vpiHandle iterator;
-    VpiObjHdl *rv;
+    GpiObjHdl *rv;
     std::string root_name = name;
 
     // vpi_iterate with a ref of NULL returns the top level module
@@ -175,7 +175,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
         check_vpi_error();
     }
 
-    rv = new VpiObjHdl(this, root);
+    rv = new GpiObjHdl(this, root);
     rv->initialise(root_name);
 
     return rv;

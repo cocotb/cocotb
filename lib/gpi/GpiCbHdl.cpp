@@ -84,6 +84,7 @@ int GpiHdl::initialise(std::string &name)
 int GpiObjHdl::initialise(std::string &name)
 {
     m_name = name;
+    m_type = "unknown";
     return 0;
 }
 

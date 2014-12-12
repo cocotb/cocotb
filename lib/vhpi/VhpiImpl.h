@@ -71,19 +71,6 @@ static inline int __check_vhpi_error(const char *func, long line)
     __check_vhpi_error(__func__, __LINE__); \
 } while (0)
 
-class VhpiObjHdl : public GpiObjHdl {
-public:
-    VhpiObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : GpiObjHdl(impl, hdl)
-                                                           { }
-    virtual ~VhpiObjHdl() { }
-
-    virtual GpiObjHdl *get_handle_by_name(std::string &name) { return NULL; }
-    virtual GpiObjHdl *get_handle_by_index(uint32_t index) { return NULL; }
-    virtual GpiIterator *iterate_handle(uint32_t type) { return NULL ;}
-    virtual GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
-
-};
-
 class VhpiCbHdl : public virtual GpiCbHdl {
 public:
     VhpiCbHdl(GpiImplInterface *impl); 
@@ -160,10 +147,9 @@ public:
     virtual ~VhpiReadwriteCbHdl() { }
 };
 
-class VhpiSignalObjHdl : public VhpiObjHdl, public GpiSignalObjHdl {
+class VhpiSignalObjHdl : public GpiSignalObjHdl {
 public:
-    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : VhpiObjHdl(impl, hdl),
-                                                                GpiSignalObjHdl(impl, hdl),
+    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : GpiSignalObjHdl(impl, hdl),
                                                                 m_size(0),
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
@@ -176,24 +162,8 @@ public:
     int set_signal_value(std::string &value);
     
     /* Value change callback accessor */
-    virtual GpiCbHdl *value_change_cb(unsigned int edge);
-
-    /* Functions that I would like to inherit but do not ?*/
-    virtual GpiObjHdl *get_handle_by_name(std::string &name) {
-        return VhpiObjHdl::get_handle_by_name(name);
-    }
-    virtual GpiObjHdl *get_handle_by_index(uint32_t index) {
-        return VhpiObjHdl::get_handle_by_index(index);
-    }
-    virtual GpiIterator *iterate_handle(uint32_t type)
-    {
-        return VhpiObjHdl::iterate_handle(type);
-    }
-    virtual GpiObjHdl *next_handle(GpiIterator *iterator)
-    {
-        return VhpiObjHdl::next_handle(iterator);
-    }
-    virtual int initialise(std::string &name);
+    GpiCbHdl *value_change_cb(unsigned int edge);
+    int initialise(std::string &name);
 
 private:
     const vhpiEnumT chr2vhpi(const char value);

@@ -46,7 +46,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     m_value.bufSize = 0;
     m_value.value.str = NULL;
 
-    vhpi_get_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
+    vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
     check_vhpi_error();
 
     switch (m_value.format) {
@@ -58,7 +58,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
 
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
-            m_size = vhpi_get(vhpiSizeP, VhpiObjHdl::get_handle<vhpiHandleT>());
+            m_size = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
             m_value.bufSize = m_size*sizeof(vhpiEnumT); 
             m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize);
             if (!m_value.value.enumvs) {
@@ -70,7 +70,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
 
         default: {
             LOG_CRITICAL("Unable to determine property for %s (%d) format object",
-                         ((VhpiImpl*)VhpiObjHdl::m_impl)->format_to_string(m_value.format), m_value.format);
+                         ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format), m_value.format);
         }
     }
 
@@ -79,7 +79,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     m_binvalue.bufSize = 0;
     m_binvalue.value.str = NULL;
 
-    int new_size = vhpi_get_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
+    int new_size = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
 
     m_binvalue.bufSize = new_size*sizeof(vhpiCharT) + 1;
     m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, m_binvalue.bufSize);
@@ -88,7 +88,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
         LOG_CRITICAL("Unable to alloc mem for read buffer");
     }
 
-    VhpiObjHdl::initialise(name);
+    GpiObjHdl::initialise(name);
 
     return 0;
 }
@@ -212,7 +212,7 @@ int VhpiSignalObjHdl::set_signal_value(int value)
             LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
         }
     }
-    vhpi_put_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
+    vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
     check_vhpi_error();
     return 0;
 }
@@ -259,14 +259,14 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
         }
     }
 
-    vhpi_put_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
+    vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
     check_vhpi_error();
     return 0;
 }
 
 const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
 {
-    vhpi_get_value(VhpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
+    vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
     check_vhpi_error();
 
     return m_binvalue.value.str;

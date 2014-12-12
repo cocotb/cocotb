@@ -25,13 +25,6 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-// TODO:
-// Some functions are completely untested (vhpi_get_handle_by_index) and others
-// need optimisation.
-//
-// VHPI seems to run significantly slower than VPI, need to investigate.
-
-
 #include "VhpiImpl.h"
 #include <vector>
 
@@ -120,10 +113,10 @@ void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vhpiIntT type;
-    VhpiObjHdl *parent_hdl = sim_to_hdl<VhpiObjHdl*>(parent);
+    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
     vhpiHandleT vpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
     vhpiHandleT new_hdl;
-    VhpiObjHdl *new_obj = NULL;
+    GpiObjHdl *new_obj = NULL;
     unsigned int name_start = 0;
     std::vector<char> writable(name.begin(), name.end());
     writable.push_back('\0');
@@ -146,7 +139,7 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
             new_obj = new VhpiSignalObjHdl(this, new_hdl);
             break;
         case vhpiCompInstStmtK:
-            new_obj = new VhpiObjHdl(this, new_hdl);
+            new_obj = new GpiObjHdl(this, new_hdl);
             break;
         default:
             LOG_DEBUG("Not sure what to do with type %d for entity (%s)", type, name.c_str());
@@ -161,10 +154,10 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
     vhpiIntT type;
-    VhpiObjHdl *parent_hdl = sim_to_hdl<VhpiObjHdl*>(parent);
+    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
     vhpiHandleT vpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
     vhpiHandleT new_hdl;
-    VhpiObjHdl *new_obj = NULL;
+    GpiObjHdl *new_obj = NULL;
 
     new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vpi_hdl, index);
     check_vhpi_error();
@@ -184,7 +177,7 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
             new_obj = new VhpiSignalObjHdl(this, new_hdl);
             break;
         case vhpiCompInstStmtK:
-            new_obj = new VhpiObjHdl(this, new_hdl);
+            new_obj = new GpiObjHdl(this, new_hdl);
             break;
         default:
             LOG_DEBUG("Not sure what to do with type %d below entity (%s) at index (%d)",
@@ -236,7 +229,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
         return NULL;
     }
 
-    rv = new VhpiObjHdl(this, root);
+    rv = new GpiObjHdl(this, root);
     rv->initialise(root_name);
 
     FEXIT

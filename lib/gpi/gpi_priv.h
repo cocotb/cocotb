@@ -46,10 +46,10 @@ class GpiImplInterface;
 class GpiIterator;
 class GpiCbHdl;
 
-template<class To, class Ti>
-inline To sim_to_hdl(Ti input)
+template<class To>
+inline To sim_to_hdl(gpi_sim_hdl input)
 {
-    To result = reinterpret_cast<To>(input);
+    To result = static_cast<To>(input);
     if (!result) {
         LOG_CRITICAL("GPI: Handle passed down is not valid gpi_sim_hdl");
         exit(1);
@@ -97,13 +97,6 @@ public:
     GpiObjHdl(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
     virtual ~GpiObjHdl() { }
 
-    // The following methods permit children below this level of the hierarchy
-    // to be discovered and instantiated
-    virtual GpiObjHdl *get_handle_by_name(std::string &name) = 0;
-    virtual GpiObjHdl *get_handle_by_index(uint32_t index) = 0;
-    virtual GpiIterator *iterate_handle(uint32_t type) = 0;
-    virtual GpiObjHdl *next_handle(GpiIterator *iterator) = 0;
-
     virtual const char* get_name_str(void);
     virtual const char* get_type_str(void);
     const std::string & get_name(void);
@@ -123,7 +116,8 @@ protected:
 // value of the signal (which doesn't apply to non signal items in the hierarchy
 class GpiSignalObjHdl : public GpiObjHdl {
 public:
-    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl) : GpiObjHdl(impl, hdl) { }
+    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl) : GpiObjHdl(impl, hdl),
+                                                         m_length(0) { }
     virtual ~GpiSignalObjHdl() { }
     // Provide public access to the implementation (composition vs inheritance)
     virtual const char* get_signal_value_binstr(void) = 0;

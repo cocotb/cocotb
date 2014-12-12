@@ -243,8 +243,11 @@ gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base)
 
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
 {
+#if 0
     GpiIterator *iter = sim_to_hdl<GpiIterator*>(iterator);
     return (gpi_sim_hdl)iter->parent->next_handle(iter);
+#endif
+    return NULL;
 }
 
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl)
@@ -357,7 +360,7 @@ gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(const void *),
     return (gpi_sim_hdl)gpi_hdl;
 }
 
-gpi_sim_hdl gpi_create_clock(gpi_sim_hdl *clk_signal, const int period)
+gpi_sim_hdl gpi_create_clock(gpi_sim_hdl clk_signal, const int period)
 {
     GpiObjHdl *clk_hdl = sim_to_hdl<GpiObjHdl*>(clk_signal);
     GpiClockHdl *clock = new GpiClockHdl(clk_hdl);
@@ -365,7 +368,7 @@ gpi_sim_hdl gpi_create_clock(gpi_sim_hdl *clk_signal, const int period)
     return (gpi_sim_hdl)clock;
 }
 
-void gpi_stop_clock(gpi_sim_hdl *clk_object)
+void gpi_stop_clock(gpi_sim_hdl clk_object)
 {
     GpiClockHdl *clock = sim_to_hdl<GpiClockHdl*>(clk_object);
     clock->stop_clock();
