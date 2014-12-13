@@ -95,6 +95,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         case vpiParameter:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
             break;
+        case vpiStructVar:
         case vpiModule:
             new_obj = new GpiObjHdl(this, new_hdl);
             break;
