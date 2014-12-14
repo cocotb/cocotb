@@ -59,6 +59,7 @@ static PyObject *set_signal_val(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_str(PyObject *self, PyObject *args);
 static PyObject *get_handle_by_name(PyObject *self, PyObject *args);
 static PyObject *get_handle_by_index(PyObject *self, PyObject *args);
+static PyObject *get_root_handle(PyObject *self, PyObject *args);
 static PyObject *get_name_string(PyObject *self, PyObject *args);
 static PyObject *get_type_string(PyObject *self, PyObject *args);
 static PyObject *register_timed_callback(PyObject *self, PyObject *args);
@@ -81,6 +82,7 @@ static PyMethodDef SimulatorMethods[] = {
     {"set_signal_val_str",  set_signal_val_str, METH_VARARGS, "Set the value of a signal using a binary string"},
     {"get_handle_by_name",  get_handle_by_name, METH_VARARGS, "Get handle of a named object"},
     {"get_handle_by_index", get_handle_by_index, METH_VARARGS, "Get handle of a object at an index in a parent"},
+    {"get_root_handle", get_root_handle, METH_VARARGS, "Get the root handle"},
     {"get_name_string", get_name_string, METH_VARARGS, "Get the name of an object"},
     {"get_type_string", get_type_string, METH_VARARGS, "Get the type of an object"},
     {"register_timed_callback", register_timed_callback, METH_VARARGS, "Register a timed callback"},

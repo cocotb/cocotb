@@ -644,6 +644,28 @@ static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
     return value;
 }
 
+static PyObject *get_root_handle(PyObject *self, PyObject *args)
+{
+    const char *name;
+    gpi_sim_hdl result;
+    PyObject *value;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "s", &name)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_root_handle(name);
+
+    value = Py_BuildValue("l", result);
+
+    DROP_GIL(gstate);
+
+    return value;
+}
 
 
 static PyObject *get_name_string(PyObject *self, PyObject *args)

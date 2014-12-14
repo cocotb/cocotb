@@ -74,7 +74,7 @@ def mem_debug(port):
     import cocotb.memdebug
     memdebug.start(port)
 
-def _initialise_testbench(root_handle):
+def _initialise_testbench(root_name):
     """
     This function is called after the simulator has elaborated all
     entities and is ready to run the test.
@@ -110,7 +110,6 @@ def _initialise_testbench(root_handle):
         log.info("Running tests with Cocotb v%s from %s" % (version, exec_path))
 
     # Create the base handle type
-    dut = cocotb.handle.SimHandle(root_handle)
 
     process_plusargs()
 
@@ -125,7 +124,7 @@ def _initialise_testbench(root_handle):
 
     global regression
 
-    regression = RegressionManager(dut, modules, tests=test_str)
+    regression = RegressionManager(root_name, modules, tests=test_str)
     regression.initialise()
     regression.execute()
 

@@ -131,7 +131,7 @@ int embed_sim_init(gpi_sim_info_t *info)
         return ret;
 
     // Find the simulation root
-    gpi_sim_hdl dut = gpi_get_root_handle(getenv("TOPLEVEL"));
+    const char *dut = getenv("TOPLEVEL");
 
     if (dut == NULL) {
         fprintf(stderr, "Unable to find root instance!\n");
@@ -252,7 +252,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     }
 
     cocotb_args = PyTuple_New(1);
-    PyTuple_SetItem(cocotb_args, 0, PyLong_FromLong((long)dut));        // Note: This function “steals” a reference to o.
+    PyTuple_SetItem(cocotb_args, 0, PyString_FromString(dut));        // Note: This function “steals” a reference to o.
     cocotb_retval = PyObject_CallObject(cocotb_init, cocotb_args);
 
     if (cocotb_retval != NULL) {
