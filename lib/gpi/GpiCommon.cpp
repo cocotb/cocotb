@@ -67,7 +67,8 @@ int gpi_register_impl(GpiImplInterface *func_tbl)
 
 void gpi_embed_init(gpi_sim_info_t *info)
 {
-    embed_sim_init(info);
+    if (embed_sim_init(info))
+        gpi_sim_end();
 }
 
 void gpi_embed_end(void)

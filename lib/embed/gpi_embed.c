@@ -119,23 +119,23 @@ int get_module_ref(const char *modname, PyObject **mod)
     return 0;
 }
 
-void embed_sim_init(gpi_sim_info_t *info)
+int embed_sim_init(gpi_sim_info_t *info)
 {
     FENTER
 
     int i;
+    int ret = 0;
 
     /* Check that we are not already initialised */
     if (pEventFn)
-        return;
+        return ret;
 
     // Find the simulation root
     gpi_sim_hdl dut = gpi_get_root_handle(getenv("TOPLEVEL"));
 
     if (dut == NULL) {
         fprintf(stderr, "Unable to find root instance!\n");
-        gpi_sim_end();
-        return;
+        return -1;
     }
 
     PyObject *cocotb_module, *cocotb_init, *cocotb_args, *cocotb_retval;
@@ -261,13 +261,15 @@ void embed_sim_init(gpi_sim_info_t *info)
     } else {
         PyErr_Print();
         fprintf(stderr,"Call failed\n");
-        gpi_sim_end();
         goto cleanup;
     }
 
     FEXIT
+    goto ok;
 
 cleanup:
+    ret = -1;
+ok:
     if (cocotb_module) {
         Py_DECREF(cocotb_module);
     }
@@ -275,6 +277,8 @@ cleanup:
         Py_DECREF(arg_dict);
     }
     PyGILState_Release(gstate);
+
+    return ret;
 }
 
 void embed_sim_event(gpi_event_t level, const char *msg)
