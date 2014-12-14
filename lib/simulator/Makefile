@@ -39,11 +39,11 @@ SRCS        := simulatormodule.c
 
 CLIBS       += $(LIB_DIR)/$(LIB_NAME)
 
-$(LIB_DIR)/simulator.so: $(LIB_DIR)/$(LIB_NAME).so
-	ln -sf $(LIB_NAME).so $@
+$(LIB_DIR)/simulator.$(LIB_EXT): $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
+	ln -sf $(LIB_NAME).$(LIB_EXT) $@
 
 clean:
-	-@rm -rf $(LIB_DIR)/simulator.so
-	-@rm -rf $(LIB_DIR)/$(LIB_NAME).so
+	-@rm -rf $(LIB_DIR)/simulator.$(LIB_EXT)
+	-@rm -rf $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 
 include $(SIM_ROOT)/makefiles/Makefile.rules

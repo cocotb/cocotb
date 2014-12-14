@@ -45,14 +45,14 @@ CLIBS       += $(LIB_DIR)/gpivpi.vpl
 
 all: $(LIB_DIR)/gpivpi.vpl $(LIB_DIR)/cocotb.vpi
 
-$(LIB_DIR)/gpivpi.vpl: $(LIB_DIR)/$(LIB_NAME).so
-	ln -sf $(LIB_NAME).so $@
+$(LIB_DIR)/gpivpi.vpl: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
+	ln -sf $(LIB_NAME).$(LIB_EXT) $@
 
-$(LIB_DIR)/cocotb.vpi: $(LIB_DIR)/$(LIB_NAME).so
-	ln -sf $(LIB_NAME).so $@
+$(LIB_DIR)/cocotb.vpi: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
+	ln -sf $(LIB_NAME).$(LIB_EXT) $@
 
 clean:
-	-@rm -rf $(LIB_DIR)/$(LIB_NAME).so
+	-@rm -rf $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 	-@rm -rf $(LIB_DIR)/gpivpi.vpl
 	-@rm -rf $(LIB_DIR)/cocotb.vpi
 

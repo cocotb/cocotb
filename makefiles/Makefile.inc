@@ -54,6 +54,8 @@ export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
 export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
 export GPI_EXTRA
 
+LIB_EXT     := so
+
 # Base GCC flags
 ifeq ($(ARCH),i686)
 GXX_ARGS    := -m32
@@ -65,6 +67,7 @@ endif
 ifeq ($(OS),MINGW32_NT-6.1)
 GXX_ARGS 	+= -g -DDEBUG -shared
 GCC_ARGS	:= $(GCC_ARGS)
+LIB_EXT     := dll
 endif
 ifeq ($(OS),Linux)
 GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \

@@ -37,7 +37,7 @@ LIB_NAME    := libvhpi
 
 SRCS        := VhpiImpl.cpp VhpiCbHdl.cpp
 
-all: $(LIB_DIR)/$(LIB_NAME).so
+all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 
 clean:
 	-@rm -rf $(LIB_DIR)/$(LIB_NAME)

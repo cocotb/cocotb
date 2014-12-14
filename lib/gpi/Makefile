@@ -37,7 +37,7 @@ LIB_NAME    := libgpi
 
 SRCS        := GpiCbHdl.cpp GpiCommon.cpp
 
-all: $(LIB_DIR)/$(LIB_NAME).so
+all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 	ln -sf $(LIB_NAME) $@
 
 clean:
