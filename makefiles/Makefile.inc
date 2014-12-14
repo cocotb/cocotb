@@ -69,7 +69,7 @@ endif
 ifeq ($(OS),Linux)
 GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
 			-Wall -Wno-unused-parameter \
-			-fno-common -g -DDEBUG
+			-fno-common -g -DDEBUG -fpic
 GCC_ARGS	= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
 endif
 
