@@ -38,10 +38,10 @@ $(LIB_NAME)_OBJS:= $(patsubst %.c,$(LIB_OBJ_DIR)/%.o,$(filter %.c,$(SRCS)))
 $(LIB_NAME)_OBJS+= $(patsubst %.cpp,$(LIB_OBJ_DIR)/%.o,$(filter %.cpp,$(SRCS)))
 
 $(LIB_OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c -fpic $(INCLUDES) -o $@ $<
+	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
 
 $(LIB_OBJ_DIR)/%.o: %.cpp
-	g++ $(GXX_ARGS) -c -fpic $(INCLUDES) -o $@ $<
+	g++ $(GXX_ARGS) -c $(INCLUDES) -o $@ $<
 
 $(LIB_DIR)/$(LIB_NAME): $($(LIB_NAME)_OBJS)
 	gcc $(GCC_ARGS) $(LINKER_ARGS) -o $@ $($(LIB_NAME)_OBJS) $(LIBS) $(LD_PATH)

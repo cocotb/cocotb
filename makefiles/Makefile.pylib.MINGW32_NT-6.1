@@ -29,20 +29,18 @@
 
 # All common pyhon related rules
 
-PYTHON_PREFIX = $(shell python-config --prefix)
+PYTHON_DIR=/tools/Python27
+PYTHON_BIN=$(PYTHON_DIR)/python.exe
 
-NATIVE_ARCH=$(shell uname -m)
-ARCH?=$(NATIVE_ARCH)
+# We might work with other Python versions
+PYTHON_VERSION?=$(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version()')
+PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from distutils import sysconfig; print sysconfig.get_config_var("DESTSHARED")')
+PYTHON_LIBDIR=$(PYTHON_DIR)/libs
 
-include $(SIM_ROOT)/makefiles/Makefile.pylib.$(OS)
+period := .
+empty := 
+LOCAL_VERSION=$(subst $(period),$(empty),$(PYTHON_VERSION))
+PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
 
-#debug::
-#	@echo "Debug from Makefile.pylib"
-#	@echo -e "\tUsing PYTHON_VERSION=$(PYTHON_VERSION)"
-#	@echo -e "\tUsing PYTHON_LIBDIR=$(PYTHON_LIBDIR)"
-#	@echo -e "\tUsing PYTHON_DYN_LIB=$(PYTHON_DYN_LIB)"
-#	@echo -e "\tUsing PYTHON_DYNLIBDIR=$(PYTHON_DYNLIBDIR)"
-#	@echo -e "\tUsing PYTHON_INCLUDEDIR=$(PYTHON_INCLUDEDIR)"
-#	file $(PYTHON_LIBDIR)/$(PYTHON_DYN_LIB)
-#	file -L $(PYTHON_LIBDIR)/$(PYTHON_DYN_LIB)
-
+PYLIBS = -lPython$(LOCAL_VERSION)
+PYTHON_DYN_LIB=Python$(LOCAL_VERSION).lib

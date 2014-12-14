@@ -55,22 +55,26 @@ export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
 export GPI_EXTRA
 
 # Base GCC flags
-ifeq ($(OS),Darwin)
-GXX_ARGS	:= -g -DDEBUG -fpic
-GCC_ARGS	:= $(GXX_ARGS)
-else
 ifeq ($(ARCH),i686)
-GXX_ARGS        := -m32
+GXX_ARGS    := -m32
 endif
+ifeq ($(OS),Darwin)
+GXX_ARGS	+= -g -DDEBUG -fpic
+GCC_ARGS	:= $(GXX_ARGS)
+endif
+ifeq ($(OS),MINGW32_NT-6.1)
+GXX_ARGS 	+= -g -DDEBUG -shared
+GCC_ARGS	:= $(GCC_ARGS)
+endif
+ifeq ($(OS),Linux)
 GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
 			-Wall -Wno-unused-parameter \
-			-fno-common -g -DDEBUG -fpic
-GCC_ARGS	+= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
+			-fno-common -g -DDEBUG
+GCC_ARGS	= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
 endif
-
 
 ifeq ($(OS),Darwin)
 LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
 else
-LINKER_ARGS := -shared -Xlinker -export-dynamic -L$(PYTHON_LIBDIR)
+LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
 endif
