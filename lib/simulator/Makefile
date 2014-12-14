@@ -33,17 +33,17 @@ INCLUDES    +=
 GCC_ARGS    +=
 LIBS        := -lgpi $(PYLIBS)
 LD_PATH     := -L$(LIB_DIR)
-LIB_NAME    := libsim.so
+LIB_NAME    := libsim
 
 SRCS        := simulatormodule.c
 
 CLIBS       += $(LIB_DIR)/$(LIB_NAME)
 
-$(LIB_DIR)/simulator.so: $(LIB_DIR)/$(LIB_NAME)
-	ln -sf $(LIB_NAME) $@
+$(LIB_DIR)/simulator.so: $(LIB_DIR)/$(LIB_NAME).so
+	ln -sf $(LIB_NAME).so $@
 
 clean:
 	-@rm -rf $(LIB_DIR)/simulator.so
-	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
+	-@rm -rf $(LIB_DIR)/$(LIB_NAME).so
 
 include $(SIM_ROOT)/makefiles/Makefile.rules

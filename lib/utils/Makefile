@@ -30,15 +30,11 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES	+=
-GCC_ARGS	+= -DPYTHON_SO_LIB=libpython$(PYTHON_VERSION).so
-ARS 		+= $(LIB_DIR)/libcocotbutils.a
-LIBS		:= $(PYLIBS)
-LD_PATH		:= -L$(LIB_DIR)
-SRCS		:= gpi_embed.c
+SRCS		:= cocotb_utils.c
 
-LIB_NAME	:= libcocotb
+LIB_NAME	:= libcocotbutils
 
-all: $(LIB_DIR)/$(LIB_NAME).so
+all: $(LIB_DIR)/$(LIB_NAME).a
 
 clean:
 	-@rm -rf $(OBJ_DIR)

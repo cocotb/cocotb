@@ -76,5 +76,6 @@ endif
 ifeq ($(OS),Darwin)
 LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
 else
-LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
+SO_LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
+AR_LINKER_ARGS := cr
 endif

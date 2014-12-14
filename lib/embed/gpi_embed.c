@@ -19,7 +19,10 @@
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 * DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* void * ret = DIRECT, INDIRECT,
+if (!ret) {
+        fprintf(stderr, "Failed to find python lib %s (%s)\n", lib_name, dlerror());
+    } INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -30,7 +33,7 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
-#include <dlfcn.h>
+#include <cocotb_utils.h>
 #include "embed.h"
 
 static PyThreadState *gtstate = NULL;
@@ -69,9 +72,9 @@ void embed_init_python(void)
     if (gtstate)
         return;
 
-    void *ret = dlopen(PY_SO_LIB, RTLD_LAZY | RTLD_GLOBAL);
+    void * ret = utils_dyn_open(PY_SO_LIB);
     if (!ret) {
-        fprintf(stderr, "Failed to find python lib %s (%s)\n", PY_SO_LIB, dlerror());
+        fprintf(stderr, "Failed to find python lib\n");
     }
 
     Py_SetProgramName(progname);

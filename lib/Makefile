@@ -67,12 +67,16 @@ $(LIB_DIR)/libfli.so: $(SIM_ROOT)/lib/fli/FliImpl.cpp | $(LIB_DIR)
 $(LIB_DIR)/libsim.so: $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/simulator
 
-COCOTB_LIBS := $(LIB_DIR)/libgpilog.so \
-			  $(LIB_DIR)/libcocotb.so \
-			  $(LIB_DIR)/libgpi.so \
-			  $(LIB_DIR)/libvpi.so \
-			  $(LIB_DIR)/libsim.so \
-			  $(LIB_DIR)/libvhpi.so
+$(LIB_DIR)/libcocotbutils.a: $(SIM_ROOT)/lib/utils/cocotb_utils.c | $(LIB_DIR)
+	make -C $(SIM_ROOT)/lib/utils
+
+COCOTB_LIBS := $(LIB_DIR)/libcocotbutils.a \
+	       $(LIB_DIR)/libgpilog.so \
+	       $(LIB_DIR)/libcocotb.so \
+	       $(LIB_DIR)/libgpi.so \
+	       $(LIB_DIR)/libvpi.so \
+	       $(LIB_DIR)/libsim.so \
+	       $(LIB_DIR)/libvhpi.so
 
 ifdef BUILD_FLI
 COCOTB_LIBS += $(LIB_DIR)/libfli.so

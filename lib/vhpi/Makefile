@@ -33,11 +33,11 @@ INCLUDES    +=
 GXX_ARGS    += -DVHPI_CHECKING
 LIBS        := -lgpilog -lgpi -lstdc++
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
-LIB_NAME    := libvhpi.so
+LIB_NAME    := libvhpi
 
 SRCS        := VhpiImpl.cpp VhpiCbHdl.cpp
 
-all: $(LIB_DIR)/$(LIB_NAME)
+all: $(LIB_DIR)/$(LIB_NAME).so
 
 clean:
 	-@rm -rf $(LIB_DIR)/$(LIB_NAME)

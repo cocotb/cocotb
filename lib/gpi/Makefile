@@ -33,11 +33,11 @@ INCLUDES    +=
 GXX_ARGS    += -DVPI_CHECKING
 LIBS        := -lgpilog -lcocotb -lstdc++ $(EXTRA_LIBS)
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
-LIB_NAME    := libgpi.so
+LIB_NAME    := libgpi
 
 SRCS        := GpiCbHdl.cpp GpiCommon.cpp
 
-all: $(LIB_DIR)/$(LIB_NAME)
+all: $(LIB_DIR)/$(LIB_NAME).so
 	ln -sf $(LIB_NAME) $@
 
 clean:
