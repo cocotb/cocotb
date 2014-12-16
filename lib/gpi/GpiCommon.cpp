@@ -110,7 +110,9 @@ static void gpi_load_libs(std::vector<std::string> to_load)
             printf("Unable to find entry point for %s\n", now_loading);
             exit(1);
         }
-    
+
+        layer_entry_func new_lib_entry = (layer_entry_func)entry_point;
+        new_lib_entry();
     }
 }
 
@@ -146,6 +148,7 @@ void gpi_load_extra_libs(void)
 
     /* Finally embed python */
     embed_init_python();
+    gpi_print_registered_impl();
 }
 
 void gpi_get_sim_time(uint32_t *high, uint32_t *low)
