@@ -29,6 +29,12 @@
 
 TOPLEVEL = icmp_reply
 
+ifeq ($(OS),MINGW32_NT-6.1)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
+
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
