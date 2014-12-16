@@ -31,16 +31,15 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GXX_ARGS    += -DVPI_CHECKING
-LIBS        := -lgpilog -lcocotb -lstdc++ $(EXTRA_LIBS)
+LIBS        := -lcocotbutils -lgpilog -lcocotb -lstdc++ $(EXTRA_LIBS)
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libgpi
 
 SRCS        := GpiCbHdl.cpp GpiCommon.cpp
 
 all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
-	ln -sf $(LIB_NAME) $@
 
 clean:
-	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
+	-@rm -rf $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 
 include $(SIM_ROOT)/makefiles/Makefile.rules

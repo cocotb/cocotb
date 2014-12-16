@@ -67,10 +67,10 @@ $(LIB_DIR)/libfli.$(LIB_EXT): $(SIM_ROOT)/lib/fli/FliImpl.cpp | $(LIB_DIR)
 $(LIB_DIR)/libsim.$(LIB_EXT): $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/simulator
 
-$(LIB_DIR)/libcocotbutils.a: $(SIM_ROOT)/lib/utils/cocotb_utils.c | $(LIB_DIR)
+$(LIB_DIR)/libcocotbutils.$(LIB_EXT): $(SIM_ROOT)/lib/utils/cocotb_utils.c | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/utils
 
-COCOTB_LIBS := $(LIB_DIR)/libcocotbutils.a \
+COCOTB_LIBS := $(LIB_DIR)/libcocotbutils.$(LIB_EXT) \
 	       $(LIB_DIR)/libgpilog.$(LIB_EXT) \
 	       $(LIB_DIR)/libcocotb.$(LIB_EXT) \
 	       $(LIB_DIR)/libgpi.$(LIB_EXT) \

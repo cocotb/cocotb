@@ -30,10 +30,19 @@
 #ifndef COCOTB_UTILS_H_
 #define COCOTB_UTILS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __linux__
 #include <dlfcn.h>
 #endif
 
-void* utils_dyn_open(const char* lib_name);
+extern void* utils_dyn_open(const char* lib_name);
+extern void* utils_dyn_sym(void *handle, const char* sym_name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COCOTB_UTILS_H_ */

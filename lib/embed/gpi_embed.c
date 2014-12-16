@@ -19,10 +19,7 @@
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 * DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-* void * ret = DIRECT, INDIRECT,
-if (!ret) {
-        fprintf(stderr, "Failed to find python lib %s (%s)\n", lib_name, dlerror());
-    } INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -209,7 +206,7 @@ int embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
 
-    gpi_print_registered_impl();
+    //gpi_print_registered_impl();
     LOG_INFO("Running on %s version %s", info->product, info->version);
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
 

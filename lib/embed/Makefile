@@ -31,8 +31,7 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES	+=
 GCC_ARGS	+= -DPYTHON_SO_LIB=libpython$(PYTHON_VERSION).$(LIB_EXT)
-ARS 		+= $(LIB_DIR)/libcocotbutils.a
-LIBS		:= $(PYLIBS) -lgpilog
+LIBS		:= $(PYLIBS) -lgpilog -lcocotbutils
 LD_PATH		:= -L$(LIB_DIR)
 SRCS		:= gpi_embed.c
 

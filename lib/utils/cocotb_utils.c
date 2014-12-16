@@ -30,9 +30,13 @@
 #include <cocotb_utils.h>
 #include <stdio.h>
 
-void* utils_dyn_open(const char* lib_name) {
+void* utils_dyn_open(const char* lib_name)
+{
     void *ret = NULL;
 #ifdef __linux__
+    /* Clear status */
+    dlerror();
+
     ret = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL);
     if (!ret) {
         printf("Unable to open lib %s (%s)\n", lib_name, dlerror());
@@ -41,4 +45,18 @@ void* utils_dyn_open(const char* lib_name) {
     printf("Do something for windows here\n");
 #endif
     return ret;
+}
+
+void* utils_dyn_sym(void *handle, const char* sym_name)
+{
+    void *entry_point;
+#ifdef __linux__
+    entry_point = dlsym(handle, sym_name);
+    if (!entry_point) {
+        printf("Unable to find symbol %s (%s)\n", sym_name, dlerror());
+    }
+#else
+    printf("Do something for windows here\n");
+#endif
+    return entry_point;
 }

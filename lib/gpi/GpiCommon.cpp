@@ -28,9 +28,9 @@
 ******************************************************************************/
 
 #include "gpi_priv.h"
+#include <cocotb_utils.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <dlfcn.h>
 #include <vector>
 
 using namespace std;
@@ -72,6 +72,7 @@ void gpi_embed_init(gpi_sim_info_t *info)
 }
 
 void gpi_embed_end(void)
+
 {
     embed_sim_event(SIM_FAIL, "Simulator shutdown prematurely");
 }
@@ -79,6 +80,11 @@ void gpi_embed_end(void)
 void gpi_sim_end(void)
 {
     registered_impls[0]->sim_end();
+}
+
+void gpi_embed_event(gpi_event_t level, const char *msg)
+{
+    embed_sim_event(level, msg);
 }
 
 static void gpi_load_libs(std::vector<std::string> to_load)
@@ -93,21 +99,18 @@ static void gpi_load_libs(std::vector<std::string> to_load)
         std::string full_name = "lib" + *iter + ".so";
         const char *now_loading = (full_name).c_str();
 
-        lib_handle = dlopen(now_loading, RTLD_GLOBAL | RTLD_NOW);
+        lib_handle = utils_dyn_open(now_loading);
         if (!lib_handle) {
-            printf("Error loading lib %s (%s)\n", now_loading, dlerror());
+            printf("Error loading lib %s\n", now_loading);
             exit(1);
         }
         std::string sym = (*iter) + "_entry_point";
-        void *entry_point = dlsym(lib_handle, sym.c_str());
+        void *entry_point = utils_dyn_sym(lib_handle, sym.c_str());
         if (!entry_point) {
-            printf("Unable to find entry point for %s (%s)\n", now_loading, dlerror());
+            printf("Unable to find entry point for %s\n", now_loading);
             exit(1);
         }
-        layer_entry_func new_lib_entry = (layer_entry_func)entry_point;
-        new_lib_entry();
-
-        dlerror();
+    
     }
 }
 
