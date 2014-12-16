@@ -31,8 +31,8 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GXX_ARGS    += -DVPI_CHECKING
-LIBS        := -lgpilog -lgpi -lstdc++
-LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
+LIBS        := $(EXTRA_LIBS) -lgpilog -lgpi -lstdc++
+LD_PATH     := $(EXTRA_LIBDIRS) -L$(LIB_DIR)
 LIB_NAME    := libvpi
 
 SRCS        := VpiImpl.cpp VpiCbHdl.cpp

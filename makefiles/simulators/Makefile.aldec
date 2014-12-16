@@ -35,7 +35,7 @@ else
     CMD := vsimsa
 endif
 
-EXTRA_LIBS = -laldecpli -lstdc++ -lsupc++
+EXTRA_LIBS = -laldecpli -lsupc++
 EXTRA_LIBDIRS = -L$(ALDEC_PATH)/bin/Linux64
 
 ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
@@ -88,7 +88,7 @@ endif
 
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
-results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(CUSTOM_SIM_DEPS)
+results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_SIM_DEPS)
 	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	LD_LIBRARY_PATH=$(LIB_DIR):$(VSIMSABIN)/Linux64:$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
 

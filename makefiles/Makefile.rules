@@ -45,6 +45,3 @@ $(LIB_OBJ_DIR)/%.o: %.cpp
 
 $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT): $($(LIB_NAME)_OBJS)
 	gcc $(GCC_ARGS) $(SO_LINKER_ARGS) -o $@ $($(LIB_NAME)_OBJS) $(ARS) $(LIBS) $(LD_PATH)
-
-$(LIB_DIR)/$(LIB_NAME).a: $($(LIB_NAME)_OBJS)
-	ar $(AR_LINKER_ARGS) -o $@ $($(LIB_NAME)_OBJS) $(LIBS) $(LD_PATH)

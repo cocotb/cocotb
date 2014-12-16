@@ -55,30 +55,37 @@ export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
 export GPI_EXTRA
 
 LIB_EXT     := so
+PY_EXT	    := so
 
 # Base GCC flags
 ifeq ($(ARCH),i686)
 GXX_ARGS    := -m32
 endif
+
 ifeq ($(OS),Darwin)
 GXX_ARGS	+= -g -DDEBUG -fpic
 GCC_ARGS	:= $(GXX_ARGS)
-endif
-ifeq ($(OS),MINGW32_NT-6.1)
+else ifeq ($(OS),MINGW32_NT-6.1)
 GXX_ARGS 	+= -g -DDEBUG -shared
 GCC_ARGS	:= $(GCC_ARGS)
-LIB_EXT     := dll
-endif
-ifeq ($(OS),Linux)
+LIB_EXT		:= dll
+PY_EXT		:= pyd
+else ifeq ($(OS),Linux)
 GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
 			-Wall -Wno-unused-parameter \
 			-fno-common -g -DDEBUG -fpic
 GCC_ARGS	= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
+else
+$(error "Unsupported os " $(OS))
 endif
 
 ifeq ($(OS),Darwin)
-LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
-else
+SO_LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
+else ifeq ($(OS),Linux)
 SO_LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
-AR_LINKER_ARGS := cr
+else ifeq ($(OS),MINGW32_NT-6.1)
+SO_LINKER_ARGS :=  -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2 \
+			-Wl,--enable-auto-import -L$(PYTHON_LIBDIR)
+else
+$(error "Unsupported os" $(OS))
 endif

@@ -74,13 +74,13 @@ COCOTB_LIBS := $(LIB_DIR)/libcocotbutils.$(LIB_EXT) \
 	       $(LIB_DIR)/libgpilog.$(LIB_EXT) \
 	       $(LIB_DIR)/libcocotb.$(LIB_EXT) \
 	       $(LIB_DIR)/libgpi.$(LIB_EXT) \
-	       $(LIB_DIR)/libvpi.$(LIB_EXT) \
-	       $(LIB_DIR)/libsim.$(LIB_EXT) \
-	       $(LIB_DIR)/libvhpi.$(LIB_EXT)
+	       $(LIB_DIR)/libsim.$(LIB_EXT)
 
-ifdef BUILD_FLI
-COCOTB_LIBS += $(LIB_DIR)/libfli.$(LIB_EXT)
-endif
+COCOTB_VPI_LIB := $(LIB_DIR)/libvpi.$(LIB_EXT)
+
+COCOTB_VHPI_LIB := $(LIB_DIR)/libvhpi.$(LIB_EXT)
+
+COCOTB_FLI_LIB := $(LIB_DIR)/libfli.$(LIB_EXT)
 
 clean::
 	-@rm -rf $(BUILD_DIR)

@@ -31,7 +31,7 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GCC_ARGS    +=
-LIBS        := -lgpi $(PYLIBS)
+LIBS        := -lgpi -lgpilog $(PYLIBS)
 LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libsim
 
@@ -39,7 +39,7 @@ SRCS        := simulatormodule.c
 
 CLIBS       += $(LIB_DIR)/$(LIB_NAME)
 
-$(LIB_DIR)/simulator.$(LIB_EXT): $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
+$(LIB_DIR)/simulator.$(PY_EXT): $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 	ln -sf $(LIB_NAME).$(LIB_EXT) $@
 
 clean:

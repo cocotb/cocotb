@@ -31,8 +31,8 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GXX_ARGS    += -DVPI_CHECKING
-LIBS        := -lcocotbutils -lgpilog -lcocotb -lstdc++ $(EXTRA_LIBS)
-LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
+LIBS        := -lcocotbutils -lgpilog -lcocotb -lstdc++
+LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libgpi
 
 SRCS        := GpiCbHdl.cpp GpiCommon.cpp
