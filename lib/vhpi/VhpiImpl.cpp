@@ -127,7 +127,7 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         return NULL;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
-        vpi_free_object(vpi_hdl);
+        vhpi_release_handle(vpi_hdl);
         LOG_DEBUG("Not a VHPI object");
         return NULL;
     }
@@ -166,7 +166,7 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         return NULL;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
-        vpi_free_object(vpi_hdl);
+        vhpi_release_handle(vpi_hdl);
         LOG_DEBUG("Not a VHPI object");
         return NULL;
     }
