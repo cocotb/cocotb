@@ -37,10 +37,10 @@ class Wavedrom(object):
     """
     def __init__(self, obj):
 
-        self._hdls = {}
+        self._hdls = OrderedDict()
         if isinstance(obj, Bus):
-            for name, hdl in obj._signals.iteritems():
-                self._hdls[name] = hdl
+            for name in sorted(obj._signals.keys()):
+                self._hdls[name] = obj._signals[name]
             self._name = obj._name
         else:
             self._hdls[obj.name] = obj
@@ -91,7 +91,8 @@ class Wavedrom(object):
         """
         siglist = []
         traces = []
-        for name, samples in self._samples.iteritems():
+        for name in self._hdls.iterkeys():
+            samples = self._samples[name]
             traces.append({"name": name, "wave": "".join(samples)})
             if name in self._data:
                 traces[-1]["data"] = " ".join([repr(s) for s in self._data[name]])
@@ -175,4 +176,4 @@ class trace(object):
             trace["head"] = {"text": header}
         if footer:
             trace["foot"] = {"text": footer}
-        return json.dumps(trace)
+        return json.dumps(trace, indent=4, sort_keys=False)
