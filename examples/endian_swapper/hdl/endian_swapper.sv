@@ -156,6 +156,7 @@ always @(posedge clk or negedge reset_n) begin
         byteswapping      <= 1'b0;
         csr_readdatavalid <= 1'b0;
     end else begin
+        csr_readdatavalid <= 1'b0;
         if (csr_read) begin
             csr_readdatavalid <= !csr_waitrequest;
             case (csr_address)

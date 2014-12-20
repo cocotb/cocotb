@@ -170,3 +170,21 @@ factory.add_option("idle_inserter",           [None, wave, intermittent_single_c
 factory.add_option("backpressure_inserter",   [None, wave, intermittent_single_cycles, random_50_percent])
 factory.generate_tests()
 
+import cocotb.wavedrom
+
+@cocotb.test()
+def wavedrom_test(dut):
+    """
+    Generate a JSON wavedrom diagram of a trace
+    """
+    cocotb.fork(clock_gen(dut.clk))
+    yield RisingEdge(dut.clk)
+    tb = EndianSwapperTB(dut)
+    yield tb.reset()
+
+    with cocotb.wavedrom.trace(dut.reset_n, tb.csr.bus, clk=dut.clk) as waves:
+        yield RisingEdge(dut.clk)
+        yield tb.csr.read(0)
+        yield RisingEdge(dut.clk)
+        yield RisingEdge(dut.clk)
+        dut.log.info(waves.dumpj())
