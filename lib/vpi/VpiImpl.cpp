@@ -97,10 +97,12 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
             break;
         case vpiStructVar:
         case vpiModule:
-            new_obj = new GpiObjHdl(this, new_hdl);
+        case vpiInterface:
+        case vpiModport:
+            new_obj = new VpiObjHdl(this, new_hdl);
             break;
         default:
-            LOG_DEBUG("Not sure what to do with type %d for entity (%s)", type, name.c_str());
+            LOG_INFO("Not sure what to do with type %d for entity (%s)", type, name.c_str());
             return NULL;
     }
 

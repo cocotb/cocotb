@@ -49,6 +49,8 @@ typedef uint32_t *vpiHandle;
 #define vpiRegBit              49   /* bit of vector reg */
 #define vpiParameter           41   /* module parameter */
 #define vpiStructVar           618
+#define vpiInterface           601
+#define vpiModport             606
 
 #define vpiStop                66  /* execute simulator's $stop */
 #define vpiFinish              67  /* execute simulator's $finish */
