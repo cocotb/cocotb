@@ -37,7 +37,7 @@ ifndef GPI_IMPL
 endif
 
 
-# FIXME it's a bit nasty to have the.$(LIB_EXT)urce files listed here as dependencies
+# FIXME it's a bit nasty to have the source files listed here as dependencies
 # but better than re-building the libraries every time.
 
 $(LIB_OBJ_DIR):
