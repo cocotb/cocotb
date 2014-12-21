@@ -232,7 +232,6 @@ typedef const void (*layer_entry_func)(void);
     extern "C" { \
         const void NAME##_entry_point(void)  \
         { \
-            printf("In entry point for " #NAME "\n"); \
             func(); \
         } \
     }

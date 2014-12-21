@@ -52,9 +52,6 @@ static PyObject *pEventFn = NULL;
  * Stores the thread state for cocotb in static variable gtstate
  */
 
-#define xstr(a) str(a)
-#define str(a) #a
-
 void embed_init_python(void)
 {
     FENTER;

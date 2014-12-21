@@ -89,6 +89,7 @@ void gpi_embed_event(gpi_event_t level, const char *msg)
 
 static void gpi_load_libs(std::vector<std::string> to_load)
 {
+#define DOT_LIB_EXT "."xstr(LIB_EXT)
     std::vector<std::string>::iterator iter;
 
     for (iter = to_load.begin();
@@ -96,7 +97,7 @@ static void gpi_load_libs(std::vector<std::string> to_load)
          iter++)
     {
         void *lib_handle = NULL;
-        std::string full_name = "lib" + *iter + ".so";
+        std::string full_name = "lib" + *iter + DOT_LIB_EXT;
         const char *now_loading = (full_name).c_str();
 
         lib_handle = utils_dyn_open(now_loading);

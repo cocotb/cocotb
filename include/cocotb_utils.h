@@ -34,9 +34,8 @@
 extern "C" {
 #endif
 
-#ifdef __linux__
-#include <dlfcn.h>
-#endif
+#define xstr(a) str(a)
+#define str(a) #a
 
 extern void* utils_dyn_open(const char* lib_name);
 extern void* utils_dyn_sym(void *handle, const char* sym_name);

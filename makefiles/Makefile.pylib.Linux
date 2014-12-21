@@ -52,14 +52,4 @@ endif
 PYLIBS = $(shell python-config --libs)
 
 PYTHON_INCLUDEDIR := $(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
-
-#debug::
-#	@echo "Debug from Makefile.pylib"
-#	@echo -e "\tUsing PYTHON_VERSION=$(PYTHON_VERSION)"
-#	@echo -e "\tUsing PYTHON_LIBDIR=$(PYTHON_LIBDIR)"
-#	@echo -e "\tUsing PYTHON_SO_LIB=libpython$(PYTHON_VERSION).so"
-#	@echo -e "\tUsing PYTHON_DYNLIBDIR=$(PYTHON_DYNLIBDIR)"
-#	@echo -e "\tUsing PYTHON_INCLUDEDIR=$(PYTHON_INCLUDEDIR)"
-#	file $(PYTHON_LIBDIR)/libpython$(PYTHON_VERSION).so
-#	file -L $(PYTHON_LIBDIR)/libpython$(PYTHON_VERSION).so
-
+PYTHON_DYN_LIB = libpython$(PYTHON_VERSION).so

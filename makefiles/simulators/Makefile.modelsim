@@ -71,9 +71,8 @@ $(error "Need to set MODELSIM_PATH")
 endif
 
 EXTRA_LIBS := -lmtipli
-EXTRA_LIBDIRS := -L$(MODELSIM_PATH)/modelsim_ase/win32aloem
+EXTRA_LIBDIRS := -L$(MODELSIM_PATH)/win32aloem
 
-LIB_LIAD :=
 else
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
 endif

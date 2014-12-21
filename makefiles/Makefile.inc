@@ -67,7 +67,7 @@ GXX_ARGS	+= -g -DDEBUG -fpic
 GCC_ARGS	:= $(GXX_ARGS)
 else ifeq ($(OS),MINGW32_NT-6.1)
 GXX_ARGS 	+= -g -DDEBUG -shared
-GCC_ARGS	:= $(GCC_ARGS)
+GCC_ARGS	:= $(GXX_ARGS)
 LIB_EXT		:= dll
 PY_EXT		:= pyd
 else ifeq ($(OS),Linux)

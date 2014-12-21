@@ -30,10 +30,22 @@
 #include <cocotb_utils.h>
 #include <stdio.h>
 
+#ifdef __linux__
+#include <dlfcn.h>
+#else
+#include <windows.h>
+#endif
+
 void* utils_dyn_open(const char* lib_name)
 {
     void *ret = NULL;
-#ifdef __linux__
+#ifndef __linux__
+    SetErrorMode(0);
+    ret = LoadLibrary(lib_name);
+    if (!ret) {
+        printf("Unable to open lib %s\n", lib_name);
+    }
+#else
     /* Clear status */
     dlerror();
 
@@ -41,8 +53,6 @@ void* utils_dyn_open(const char* lib_name)
     if (!ret) {
         printf("Unable to open lib %s (%s)\n", lib_name, dlerror());
     }
-#else
-    printf("Do something for windows here\n");
 #endif
     return ret;
 }
@@ -50,13 +60,16 @@ void* utils_dyn_open(const char* lib_name)
 void* utils_dyn_sym(void *handle, const char* sym_name)
 {
     void *entry_point;
-#ifdef __linux__
+#ifndef __linux__
+    entry_point = GetProcAddress(handle, sym_name);
+    if (!entry_point) {
+        printf("Unable to find symbol %s\n", sym_name);
+    }
+#else
     entry_point = dlsym(handle, sym_name);
     if (!entry_point) {
         printf("Unable to find symbol %s (%s)\n", sym_name, dlerror());
     }
-#else
-    printf("Do something for windows here\n");
 #endif
     return entry_point;
 }
