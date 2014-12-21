@@ -27,23 +27,21 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#ifndef COCOTB_EMBED_H_
-#define COCOTB_EMBED_H_
-
-#include <gpi.h>
-#include <gpi_logging.h>
-#include <vpi_user.h>
+#ifndef COCOTB_UTILS_H_
+#define COCOTB_UTILS_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern void embed_init_python(void);
-extern int embed_sim_init(gpi_sim_info_t *info);
-extern void embed_sim_event(gpi_event_t level, const char *msg);
+#define xstr(a) str(a)
+#define str(a) #a
+
+extern void* utils_dyn_open(const char* lib_name);
+extern void* utils_dyn_sym(void *handle, const char* sym_name);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* COCOTB_EMBED_H_ */
+#endif /* COCOTB_UTILS_H_ */

@@ -32,11 +32,11 @@ INCLUDES    += -I/local/tools/modelsim/10.3c/modelsim_dlx/include
 GXX_ARGS    += -DFLI_CHECKING
 LIBS        := -lgpilog -lgpi -lstdc++
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
-LIB_NAME    := libfli.so
+LIB_NAME    := libfli
 
 SRCS        := FliImpl.cpp
 
-all: $(LIB_DIR)/$(LIB_NAME)
+all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 
 clean:
 	-@rm -rf $(LIB_DIR)/$(LIB_NAME)

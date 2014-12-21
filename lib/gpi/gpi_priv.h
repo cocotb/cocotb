@@ -222,6 +222,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl);
 
 void gpi_embed_init(gpi_sim_info_t *info);
 void gpi_embed_end(void);
+void gpi_embed_event(gpi_event_t level, const char *msg);
 void gpi_load_extra_libs(void);
 
 typedef const void (*layer_entry_func)(void);
@@ -231,7 +232,6 @@ typedef const void (*layer_entry_func)(void);
     extern "C" { \
         const void NAME##_entry_point(void)  \
         { \
-            printf("In entry point for " #NAME "\n"); \
             func(); \
         } \
     }

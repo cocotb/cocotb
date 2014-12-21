@@ -34,12 +34,18 @@ TOPLEVEL_LANG ?= verilog
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
+ifeq ($(OS),MINGW32_NT-6.1)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
+
 ifeq ($(TOPLEVEL_LANG),vhdl)
-    VHDL_SOURCES = $(PWD)/../hdl/sample_module.vhdl
+    VHDL_SOURCES = $(WPWD)/../hdl/sample_module.vhdl
     TOPLEVEL := $(TOPLEVEL)
     GPI_IMPL := vhpi
 else
-    VERILOG_SOURCES = $(PWD)/../hdl/sample_module.v
+    VERILOG_SOURCES = $(WPWD)/../hdl/sample_module.v
     GPI_IMPL := vpi
 endif
 

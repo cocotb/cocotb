@@ -35,9 +35,6 @@ else
     CMD := vsimsa
 endif
 
-EXTRA_LIBS = -laldecpli -lstdc++ -lsupc++
-EXTRA_LIBDIRS = -L$(ALDEC_PATH)/bin/Linux64
-
 ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
 ACOM_ARGS += -dbg
 
@@ -50,7 +47,12 @@ ifeq ($(GPI_IMPL),vpi)
     GPI_ARGS = -pli libvpi
 endif
 ifeq ($(GPI_IMPL),vhpi)
-    GPI_ARGS = -loadvhpi $(LIB_DIR)/libvhpi:vhpi_startup_routines_bootstrap
+ifeq ($(OS),MINGW32_NT-6.1)
+    VHPI_LIB = $(shell sh -c 'cd $(LIB_DIR) && pwd -W')/libvhpi
+else
+    VHPI_LIB = $(LIB_DIR)/libvhpi
+endif
+    GPI_ARGS = -loadvhpi $(VHPI_LIB):vhpi_startup_routines_bootstrap
 endif
 
 ifndef GPI_ARGS
@@ -86,11 +88,26 @@ ifeq ($(COVERAGE),1)
 	echo "acdb report -db work.acdb -txt -o coverage/acdb_report.txt" >> $@
 endif
 
+ifeq ($(ALDEC_PATH),)
+$(error "Need to set ALDEC_PATH")
+endif
+
+ifeq ($(OS),MINGW32_NT-6.1)
+
+EXTRA_LIBS := -laldecpli
+EXTRA_LIBDIRS := -L$(ALDEC_PATH)/bin/
+else
+
+EXTRA_LIBS = -laldecpli
+EXTRA_LIBDIRS = -L$(ALDEC_PATH)/bin/Linux64
+LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
+endif
+
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
-results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(CUSTOM_SIM_DEPS)
+results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_SIM_DEPS)
 	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
-	LD_LIBRARY_PATH=$(LIB_DIR):$(VSIMSABIN)/Linux64:$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
+	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
 
 clean::
 	rm -rf $(SIM_BUILD)

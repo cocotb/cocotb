@@ -25,23 +25,22 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##############################################################################
+###############################################################################
 
+# All common pyhon related rules
 
-# Disable some inbuild rules
-%: %.c
-%: %.o
-%: %.cpp
+PYTHON_DIR=/tools/Python27
+PYTHON_BIN=$(PYTHON_DIR)/python.exe
 
-# Define some of our own
-$(LIB_NAME)_OBJS:= $(patsubst %.c,$(LIB_OBJ_DIR)/%.o,$(filter %.c,$(SRCS)))
-$(LIB_NAME)_OBJS+= $(patsubst %.cpp,$(LIB_OBJ_DIR)/%.o,$(filter %.cpp,$(SRCS)))
+# We might work with other Python versions
+LOCAL_PYTHON_VERSION?=$(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version()')
+PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from distutils import sysconfig; print sysconfig.get_config_var("DESTSHARED")')
+PYTHON_LIBDIR=$(PYTHON_DIR)/libs
 
-$(LIB_OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
+period := .
+empty := 
+PYTHON_VERSION=$(subst $(period),$(empty),$(LOCAL_PYTHON_VERSION))
+PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
 
-$(LIB_OBJ_DIR)/%.o: %.cpp
-	g++ $(GXX_ARGS) -c $(INCLUDES) -o $@ $<
-
-$(LIB_DIR)/$(LIB_NAME).$(LIB_EXT): $($(LIB_NAME)_OBJS)
-	gcc $(GCC_ARGS) $(SO_LINKER_ARGS) -o $@ $($(LIB_NAME)_OBJS) $(ARS) $(LIBS) $(LD_PATH)
+PYLIBS = -lPython$(PYTHON_VERSION)
+PYTHON_DYN_LIB = Python$(PYTHON_VERSION).dll
