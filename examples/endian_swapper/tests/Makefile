@@ -31,18 +31,24 @@
 # Override this variable to use VHPI instead of VPI
 TOPLEVEL_LANG ?= verilog
 
+WPWD=$(shell sh -c 'pwd -W')
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
+ifeq ($(OS),MINGW32_NT-6.1)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
 
 ifeq ($(TOPLEVEL_LANG),verilog)
-    VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
+    VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv
     TOPLEVEL = endian_swapper_sv
     GPI_IMPL=vpi
 endif
 
 ifeq ($(TOPLEVEL_LANG),vhdl)
-    VHDL_SOURCES = $(PWD)/../hdl/endian_swapper.vhdl
+    VHDL_SOURCES = $(WPWD)/../hdl/endian_swapper.vhdl
     TOPLEVEL = endian_swapper_vhdl
     GPI_IMPL=vhpi
 endif

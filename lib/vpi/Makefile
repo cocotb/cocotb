@@ -31,9 +31,9 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GXX_ARGS    += -DVPI_CHECKING
-LIBS        := -lgpilog -lgpi -lstdc++
-LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
-LIB_NAME    := libvpi.so
+LIBS        := $(EXTRA_LIBS) -lgpilog -lgpi -lstdc++
+LD_PATH     := $(EXTRA_LIBDIRS) -L$(LIB_DIR)
+LIB_NAME    := libvpi
 
 SRCS        := VpiImpl.cpp VpiCbHdl.cpp
 
@@ -43,16 +43,16 @@ CLIBS       += $(LIB_DIR)/gpivpi.vpl
 # different simulators, icarus for instance loads a <name>.vpi libraray to use the vpi
 # inerface at the start of the simulation
 
-all: $(LIB_DIR)/gpivpi.vpl $(LIB_DIR)/cocotb.vpi $(IMPS)
+all: $(LIB_DIR)/gpivpi.vpl $(LIB_DIR)/cocotb.vpi
 
-$(LIB_DIR)/gpivpi.vpl: $(LIB_DIR)/$(LIB_NAME)
-	ln -sf $(LIB_NAME) $@
+$(LIB_DIR)/gpivpi.vpl: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
+	ln -sf $(LIB_NAME).$(LIB_EXT) $@
 
-$(LIB_DIR)/cocotb.vpi: $(LIB_DIR)/$(LIB_NAME)
-	ln -sf $(LIB_NAME) $@
+$(LIB_DIR)/cocotb.vpi: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
+	ln -sf $(LIB_NAME).$(LIB_EXT) $@
 
 clean:
-	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
+	-@rm -rf $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 	-@rm -rf $(LIB_DIR)/gpivpi.vpl
 	-@rm -rf $(LIB_DIR)/cocotb.vpi
 

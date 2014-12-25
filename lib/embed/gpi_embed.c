@@ -30,7 +30,7 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
-#include <dlfcn.h>
+#include <cocotb_utils.h>
 #include "embed.h"
 
 static PyThreadState *gtstate = NULL;
@@ -52,9 +52,6 @@ static PyObject *pEventFn = NULL;
  * Stores the thread state for cocotb in static variable gtstate
  */
 
-#define xstr(a) str(a)
-#define str(a) #a
-
 void embed_init_python(void)
 {
     FENTER;
@@ -69,9 +66,9 @@ void embed_init_python(void)
     if (gtstate)
         return;
 
-    void *ret = dlopen(PY_SO_LIB, RTLD_LAZY | RTLD_GLOBAL);
+    void * ret = utils_dyn_open(PY_SO_LIB);
     if (!ret) {
-        fprintf(stderr, "Failed to find python lib %s (%s)\n", PY_SO_LIB, dlerror());
+        fprintf(stderr, "Failed to find python lib\n");
     }
 
     Py_SetProgramName(progname);
@@ -116,23 +113,23 @@ int get_module_ref(const char *modname, PyObject **mod)
     return 0;
 }
 
-void embed_sim_init(gpi_sim_info_t *info)
+int embed_sim_init(gpi_sim_info_t *info)
 {
     FENTER
 
     int i;
+    int ret = 0;
 
     /* Check that we are not already initialised */
     if (pEventFn)
-        return;
+        return ret;
 
     // Find the simulation root
-    gpi_sim_hdl dut = gpi_get_root_handle(getenv("TOPLEVEL"));
+    const char *dut = getenv("TOPLEVEL");
 
     if (dut == NULL) {
         fprintf(stderr, "Unable to find root instance!\n");
-        gpi_sim_end();
-        return;
+        return -1;
     }
 
     PyObject *cocotb_module, *cocotb_init, *cocotb_args, *cocotb_retval;
@@ -206,7 +203,6 @@ void embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
 
-    gpi_print_registered_impl();
     LOG_INFO("Running on %s version %s", info->product, info->version);
     LOG_INFO("Python interpreter initialised and cocotb loaded!");
 
@@ -249,7 +245,7 @@ void embed_sim_init(gpi_sim_info_t *info)
     }
 
     cocotb_args = PyTuple_New(1);
-    PyTuple_SetItem(cocotb_args, 0, PyLong_FromLong((long)dut));        // Note: This function “steals” a reference to o.
+    PyTuple_SetItem(cocotb_args, 0, PyString_FromString(dut));        // Note: This function “steals” a reference to o.
     cocotb_retval = PyObject_CallObject(cocotb_init, cocotb_args);
 
     if (cocotb_retval != NULL) {
@@ -258,13 +254,15 @@ void embed_sim_init(gpi_sim_info_t *info)
     } else {
         PyErr_Print();
         fprintf(stderr,"Call failed\n");
-        gpi_sim_end();
         goto cleanup;
     }
 
     FEXIT
+    goto ok;
 
 cleanup:
+    ret = -1;
+ok:
     if (cocotb_module) {
         Py_DECREF(cocotb_module);
     }
@@ -272,6 +270,8 @@ cleanup:
         Py_DECREF(arg_dict);
     }
     PyGILState_Release(gstate);
+
+    return ret;
 }
 
 void embed_sim_event(gpi_event_t level, const char *msg)

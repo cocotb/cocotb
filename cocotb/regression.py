@@ -58,7 +58,7 @@ def _my_import(name):
 class RegressionManager(object):
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, dut, modules, tests=None):
+    def __init__(self, root_name, modules, tests=None):
         """
         Args:
             modules (list): A list of python module names to run
@@ -66,7 +66,8 @@ class RegressionManager(object):
         Kwargs
         """
         self._queue = []
-        self._dut = dut
+        self._root_name = root_name
+        self._dut = None
         self._modules = modules
         self._functions = tests
         self._running_test = None
@@ -80,6 +81,10 @@ class RegressionManager(object):
         self.failures = 0
         self.xunit = XUnitReporter()
         self.xunit.add_testsuite(name="all", tests=repr(self.ntests), package="all")
+
+        self._dut = cocotb.handle.SimHandle(simulator.get_root_handle(self._root_name))
+        if self._dut is None:
+            raise AttributeError("Can not find Root Handle (%s)" % root_name)
 
         # Auto discovery
         for module_name in self._modules:

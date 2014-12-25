@@ -373,7 +373,7 @@ static int system_function_overload(char *userdata)
 
     // Fail the test for critical errors
     if (GPICritical == *userdata)
-        embed_sim_event(SIM_TEST_FAIL, argval.value.str);
+        gpi_embed_event(SIM_TEST_FAIL, argval.value.str);
 
     return 0;
 }

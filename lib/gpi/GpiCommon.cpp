@@ -28,9 +28,9 @@
 ******************************************************************************/
 
 #include "gpi_priv.h"
+#include <cocotb_utils.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <dlfcn.h>
 #include <vector>
 
 using namespace std;
@@ -67,10 +67,12 @@ int gpi_register_impl(GpiImplInterface *func_tbl)
 
 void gpi_embed_init(gpi_sim_info_t *info)
 {
-    embed_sim_init(info);
+    if (embed_sim_init(info))
+        gpi_sim_end();
 }
 
 void gpi_embed_end(void)
+
 {
     embed_sim_event(SIM_FAIL, "Simulator shutdown prematurely");
 }
@@ -80,8 +82,14 @@ void gpi_sim_end(void)
     registered_impls[0]->sim_end();
 }
 
+void gpi_embed_event(gpi_event_t level, const char *msg)
+{
+    embed_sim_event(level, msg);
+}
+
 static void gpi_load_libs(std::vector<std::string> to_load)
 {
+#define DOT_LIB_EXT "."xstr(LIB_EXT)
     std::vector<std::string>::iterator iter;
 
     for (iter = to_load.begin();
@@ -89,24 +97,23 @@ static void gpi_load_libs(std::vector<std::string> to_load)
          iter++)
     {
         void *lib_handle = NULL;
-        std::string full_name = "lib" + *iter + ".so";
+        std::string full_name = "lib" + *iter + DOT_LIB_EXT;
         const char *now_loading = (full_name).c_str();
 
-        lib_handle = dlopen(now_loading, RTLD_GLOBAL | RTLD_NOW);
+        lib_handle = utils_dyn_open(now_loading);
         if (!lib_handle) {
-            printf("Error loading lib %s (%s)\n", now_loading, dlerror());
+            printf("Error loading lib %s\n", now_loading);
             exit(1);
         }
         std::string sym = (*iter) + "_entry_point";
-        void *entry_point = dlsym(lib_handle, sym.c_str());
+        void *entry_point = utils_dyn_sym(lib_handle, sym.c_str());
         if (!entry_point) {
-            printf("Unable to find entry point for %s (%s)\n", now_loading, dlerror());
+            printf("Unable to find entry point for %s\n", now_loading);
             exit(1);
         }
+
         layer_entry_func new_lib_entry = (layer_entry_func)entry_point;
         new_lib_entry();
-
-        dlerror();
     }
 }
 
@@ -142,6 +149,7 @@ void gpi_load_extra_libs(void)
 
     /* Finally embed python */
     embed_init_python();
+    gpi_print_registered_impl();
 }
 
 void gpi_get_sim_time(uint32_t *high, uint32_t *low)

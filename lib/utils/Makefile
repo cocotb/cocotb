@@ -25,23 +25,18 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##############################################################################
+###############################################################################
 
+include $(SIM_ROOT)/makefiles/Makefile.inc
 
-# Disable some inbuild rules
-%: %.c
-%: %.o
-%: %.cpp
+INCLUDES	+=
+SRCS		:= cocotb_utils.c
 
-# Define some of our own
-$(LIB_NAME)_OBJS:= $(patsubst %.c,$(LIB_OBJ_DIR)/%.o,$(filter %.c,$(SRCS)))
-$(LIB_NAME)_OBJS+= $(patsubst %.cpp,$(LIB_OBJ_DIR)/%.o,$(filter %.cpp,$(SRCS)))
+LIB_NAME	:= libcocotbutils
 
-$(LIB_OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
+all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 
-$(LIB_OBJ_DIR)/%.o: %.cpp
-	g++ $(GXX_ARGS) -c $(INCLUDES) -o $@ $<
+clean:
+	-@rm -rf $(OBJ_DIR)
 
-$(LIB_DIR)/$(LIB_NAME).$(LIB_EXT): $($(LIB_NAME)_OBJS)
-	gcc $(GCC_ARGS) $(SO_LINKER_ARGS) -o $@ $($(LIB_NAME)_OBJS) $(ARS) $(LIBS) $(LD_PATH)
+include $(SIM_ROOT)/makefiles/Makefile.rules
