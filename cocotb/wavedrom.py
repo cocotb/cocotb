@@ -43,7 +43,7 @@ class Wavedrom(object):
                 self._hdls[name] = obj._signals[name]
             self._name = obj._name
         else:
-            self._hdls[obj.name] = obj
+            self._hdls[obj.name.split(".")[-1]] = obj
 
         self.clear()
 
@@ -54,7 +54,7 @@ class Wavedrom(object):
 
         def _lastval(samples):
             for x in range(len(samples)-1, -1, -1):
-                if samples[x] not in "=.": return samples[x]
+                if samples[x] not in "=.|": return samples[x]
             return None
 
         for name, hdl in self._hdls.iteritems():
@@ -85,6 +85,10 @@ class Wavedrom(object):
         """
         self._samples = defaultdict(list)
         self._data = defaultdict(list)
+
+    def gap(self):
+        for name, hdl in self._hdls.iteritems():
+            self._samples[name].append("|")
 
     def get(self, add_clock=True):
         """
@@ -136,6 +140,7 @@ class trace(object):
             self._signals.append(Wavedrom(arg))
         self._coro = None
         self._clocks = 0
+        self._enabled = False
 
         if self._clock is None:
             raise ValueError("Trace requires a clock to sample")
@@ -146,13 +151,26 @@ class trace(object):
         while True:
             yield RisingEdge(self._clock)
             yield ReadOnly()
+            if not self._enabled: continue
             self._clocks += 1
             for sig in self._signals:
                 sig.sample()
 
+    def insert_gap(self):
+        self._clocks += 1
+        for sig in self._signals:
+            sig.gap()
+
+    def disable(self):
+        self._enabled = False
+
+    def enable(self):
+        self._enabled = True
+
     def __enter__(self):
         for sig in self._signals:
             sig.clear()
+        self.enable()
         self._coro = cocotb.fork(self._monitor())
         return self
 
@@ -160,6 +178,7 @@ class trace(object):
         self._coro.kill()
         for sig in self._signals:
             sig.clear()
+        self.disable()
         return None
 
     def write(self, filename, **kwargs):
