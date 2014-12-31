@@ -96,6 +96,8 @@ ifeq ($(OS),MINGW32_NT-6.1)
 
 EXTRA_LIBS := -laldecpli
 EXTRA_LIBDIRS := -L$(ALDEC_PATH)/bin/
+OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
+LIB_LOAD := PATH=$(OLD_PATH):$(LIB_DIR)
 else
 
 EXTRA_LIBS = -laldecpli

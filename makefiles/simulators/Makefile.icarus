@@ -42,7 +42,8 @@ endif
 
 EXTRA_LIBS := -lvpi
 EXTRA_LIBDIRS := -L$(ICARUS_PATH)/lib
-LIB_LOAD :=
+OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
+LIB_LOAD := PATH=$(OLD_PATH):$(LIB_DIR)
 else
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
 endif
