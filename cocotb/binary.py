@@ -240,7 +240,7 @@ class BinaryValue(object):
         if (ival & signbit) == 0:
             return ival
         else:
-            return -1 * (int(~ival+1) & (signbit - 1)) 
+            return -1 * (1+(int(~ival) & (signbit - 1)))
 
     def set_value(self, integer):
         self._str = self._convert_to[self.binaryRepresentation](integer)
