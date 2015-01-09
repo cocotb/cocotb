@@ -33,13 +33,21 @@ import time
 import logging
 import inspect
 from itertools import product
-
+import sys
 import os
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
     simulator = None
 else:
     import simulator
+
+# Optional support for coverage collection of testbench files
+coverage = None
+if "COVERAGE" in os.environ:
+    try:
+        import coverage
+    except ImportError:
+        sys.stderr.write("Coverage collection requested but coverage module not availble")
 
 import cocotb
 import cocotb.ANSI as ANSI
@@ -71,6 +79,7 @@ class RegressionManager(object):
         self._modules = modules
         self._functions = tests
         self._running_test = None
+        self._cov = None
         self.log = SimLog("cocotb.regression")
 
     def initialise(self):
@@ -81,6 +90,11 @@ class RegressionManager(object):
         self.failures = 0
         self.xunit = XUnitReporter()
         self.xunit.add_testsuite(name="all", tests=repr(self.ntests), package="all")
+
+        if coverage is not None:
+            self.log.info("Enabling coverage collection of Python code")
+            self._cov = coverage.coverage(branch=True, omit=["*cocotb*"])
+            self._cov.start()
 
         self._dut = cocotb.handle.SimHandle(simulator.get_root_handle(self._root_name))
         if self._dut is None:
@@ -135,6 +149,11 @@ class RegressionManager(object):
         else:
             self.log.info("Passed %d tests (%d skipped)"  %
                 (self.count-1, self.skipped))
+        if self._cov:
+            self._cov.stop()
+            self.log.info("Writing coverage data")
+            self._cov.save()
+            self._cov.html_report()
         self.log.info("Shutting down...")
         self.xunit.write()
         simulator.stop_simulator()
