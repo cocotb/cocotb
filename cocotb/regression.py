@@ -46,8 +46,9 @@ coverage = None
 if "COVERAGE" in os.environ:
     try:
         import coverage
-    except ImportError:
-        sys.stderr.write("Coverage collection requested but coverage module not availble")
+    except ImportError as e:
+        sys.stderr.write("Coverage collection requested but coverage module not availble\n")
+        sys.stderr.write("Import error was: %s\n" % repr(e))
 
 import cocotb
 import cocotb.ANSI as ANSI
