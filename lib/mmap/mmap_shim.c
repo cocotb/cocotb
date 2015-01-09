@@ -99,15 +99,18 @@
 
 #endif
 
-#define NOTANFD 234
-
-// Cunningly the same size as "/dev/mem"
-#define MMAP_FNAME "/tmp/mms"
-
 // Python read function just takes an offset in bytes and a buffer
 static PyObject *pWrFunction;
+
 // Python read function just takes an offset in bytes and returns a value
 static PyObject *pRdFunction;
+
+// The filename we catch an open call to
+static char *fname;
+
+// The filename we use as a replacement
+static char *replacement_fname;
+
 
 // Functions called by Python
 static PyObject *set_write_function(PyObject *self, PyObject *args) {
@@ -124,6 +127,32 @@ static PyObject *set_read_function(PyObject *self, PyObject *args) {
     pRdFunction = PyTuple_GetItem(args, 0);
     Py_INCREF(pRdFunction);
 
+    PyObject *retstr = Py_BuildValue("s", "OK!");
+    return retstr;
+}
+
+
+// Set the fname
+static PyObject *set_mmap_fname(PyObject *self, PyObject *args) {
+    PyObject *pFnameStr= PyTuple_GetItem(args, 0);
+    const char *py_str = PyString_AsString(pFnameStr);
+
+    int len = strnlen(py_str, 1024);
+
+    fname = (char*)malloc((len+1)*sizeof(char));
+    replacement_fname = (char*)malloc((len+1)*sizeof(char));
+
+    fname = strncpy(fname, py_str, strnlen(py_str, 1024) + 1);
+
+    // New filename length must be less than or equal to length original
+    if (len<6) {
+        printf("Unable to generate replacement fname?!\n");
+        *replacement_fname = "/_f";
+    } else {
+        replacement_fname = strncpy(replacement_fname, "/tmp/_", 6);
+    }
+    printf("Set fname to %s\n", fname);
+    printf("Set new fname to %s\n", replacement_fname);
     PyObject *retstr = Py_BuildValue("s", "OK!");
     return retstr;
 }
@@ -381,11 +410,17 @@ static PyObject *execute(PyObject *self, PyObject *args) {
     int              child_fd = -1;
 
     if (!PyArg_ParseTuple(args, "s", &prog)) {
+        PyErr_SetString(PyExc_ValueError, "Unable to parse program agrument");
+        return NULL;
+    }
+
+    if (fname == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "No call to set_mmap_fname has been made");
         return NULL;
     }
 
     // Create our shared memory region
-    int fd = open(MMAP_FNAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    int fd = open(replacement_fname, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
     if (fd < 0)
         return NULL;
 
@@ -448,10 +483,10 @@ static PyObject *execute(PyObject *self, PyObject *args) {
                         fflush(stdout);
                         str = (char *)calloc(9, sizeof(char));
                         getdata(child, OPEN_ARG_FILENAME(regs), str, 9);
-                        if (!strncmp("/dev/mem", str, strlen("/dev/mem"))) {
+                        if (!strncmp(fname, str, strlen(fname))) {
                             OPEN_ARG_FLAGS(regs) |= O_CREAT | O_APPEND | O_RDWR;
                             OPEN_ARG_MODE(regs) |= S_IRUSR | S_IWUSR;
-                            putdata(child, OPEN_ARG_FILENAME(regs), MMAP_FNAME, 9);
+                            putdata(child, OPEN_ARG_FILENAME(regs), replacement_fname, strlen(replacement_fname)+1);
                             ptrace(PTRACE_SETREGS, child, NULL, &regs);
                             getdata(child, OPEN_ARG_FILENAME(regs), str, 9);
                             state = MODIFY_OPEN_EXIT;

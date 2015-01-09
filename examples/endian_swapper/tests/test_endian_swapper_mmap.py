@@ -81,6 +81,7 @@ def initial_hal_test(dut, debug=True):
 
     mmap_shim.set_write_function(write)
     mmap_shim.set_read_function(read)
+    mmap_shim.set_mmap_fname("/dev/mem")
 
     dut.log.info("Running cosim/config")
     config = os.path.join(os.path.dirname(__file__), "../cosim/config")
