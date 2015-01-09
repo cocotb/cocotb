@@ -99,7 +99,7 @@ class AvalonMaster(AvalonMM):
         self.busy_event.set()
 
     @coroutine
-    def read(self, address):
+    def read(self, address, sync=True):
         """
         Issue a request to the bus and block until this
         comes back. Simulation time still progresses
@@ -113,7 +113,8 @@ class AvalonMaster(AvalonMM):
         yield self._acquire_lock()
 
         # Apply values for next clock edge
-        yield RisingEdge(self.clock)
+        if sync:
+            yield RisingEdge(self.clock)
         self.bus.address <= address
         self.bus.read <= 1
 

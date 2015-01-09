@@ -1,21 +1,31 @@
+include $(SIM_ROOT)/makefiles/Makefile.pylib
+
 HAL_SOURCE=../hal/endian_swapper_hal.c
+PYTHON_LIBDIR ?= /usr/lib64
+SWIG ?= swig
+CC=gcc
+ifeq ($(ARCH),i686)
+	CC += -m32
+endif
 
-
+.PHONY: all
 all: io_module.so _hal.so config
 
 io_module.o: io.c io_module.h io.h
-	gcc -pthread -fno-strict-aliasing -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -grecord-gcc-switches -mtune=generic -D_GNU_SOURCE -fPIC -fwrapv -DNDEBUG -I/usr/include/python2.7 -c $< -o $@
+	$(CC) -pthread -fno-strict-aliasing -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
+	-fexceptions --param=ssp-buffer-size=4 -mtune=generic -D_GNU_SOURCE -fPIC \
+	-fwrapv -DNDEBUG -I$(PYTHON_INCLUDEDIR) -c $< -o $@
 
 io_module.so: io_module.o
-	gcc -pthread -shared -Wl,-z,relro $< -L/usr/lib64 -lpython2.7 -o $@
+	$(CC) -pthread -shared -Wl,-z,relro $< -L$(PYTHON_LIBDIR) -lpython$(PYTHON_VERSION) -o $@
 
-_hal.so : $(HAL_SOURCE) endian_swapper_hal_wrap.c io_module.so
-	gcc -g -ldl -shared -fPIC -I$(shell pwd) -I/usr/include/python2.7 -I../hal $(HAL_SOURCE) endian_swapper_hal_wrap.c io_module.so -o $@
+_hal.so: $(HAL_SOURCE) endian_swapper_hal_wrap.c io_module.so
+	$(CC) -g -ldl -shared -fPIC -I$(shell pwd) -I$(PYTHON_INCLUDEDIR) -I../hal $(HAL_SOURCE) endian_swapper_hal_wrap.c io_module.so -o $@
 
 endian_swapper_hal_wrap.c: ../hal/endian_swapper_hal.h
-	swig -python -outcurrentdir ../hal/endian_swapper_hal.h
+	$(SWIG) -python -outcurrentdir ../hal/endian_swapper_hal.h
 
-config: ../hal/endian_swapper_mmap.c
+config: ../hal/endian_swapper_mmap.c _hal.so
 	gcc -g -I../hal $< -o $@
 	
 

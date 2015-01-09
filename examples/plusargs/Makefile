@@ -30,7 +30,11 @@
 
 TOPLEVEL = tb_top
 
+ifeq ($(OS),MINGW32_NT-6.1)
+PWD=$(shell sh -c 'pwd -W')
+else
 PWD=$(shell pwd)
+endif
 
 VERILOG_SOURCES = $(PWD)/tb_top.v
 MODULE=plusargs

@@ -14,10 +14,10 @@ What is cocotb?
 * Icarus Verilog
 * Synopsys VCS
 * Aldec Riviera-PRO
-* Cadance Incisive
+* Cadence Incisive
 * Mentor Modelsim
 
-**Cocotb** was developed by `Potential Ventures <http://potential.ventures>_` with the support of `Solarflare Communications Ltd <http://www.solarflare.com/>`_ and contributions from Gordon McGregor and Finn Grimwood.
+**Cocotb** was developed by `Potential Ventures <http://potential.ventures>`_ with the support of `Solarflare Communications Ltd <http://www.solarflare.com/>`_ and contributions from Gordon McGregor and Finn Grimwood.
 
 **Cocotb** can be used live in a web-browser on the excellent `EDA Playground <http://www.edaplayground.com>`_.
 
@@ -39,7 +39,7 @@ In cocotb VHDL/Verilog/SystemVerilog are only used for the synthesisable design.
 
 **Cocotb** has built-in support for integrating with the `Jenkins <http://jenkins-ci.org/>`_ continuous integration system.
 
-**Cocotb** automatically discovers tests to that no additional step is required to add a test to a regression.
+**Cocotb** automatically discovers tests so that no additional step is required to add a test to a regression.
 
 
 How does Cocotb work

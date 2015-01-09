@@ -1,5 +1,6 @@
 ###############################################################################
-# Copyright (c) 2014 Potential Ventures Ltd
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,20 +27,20 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(SIM_ROOT)/makefiles/Makefile.inc
+# All common pyhon related rules
 
-INCLUDES    +=
-GCC_ARGS    += -DVHPI_CHECKING
-LIBS        := -lgpilog -lcocotb $(EXTRA_LIBS)
-LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
-LIB_NAME    := libgpi.so
+PYTHON_DIR=/tools/Python27
+PYTHON_BIN=$(PYTHON_DIR)/python.exe
 
-SRCS        := gpi_vhpi.c
+# We might work with other Python versions
+LOCAL_PYTHON_VERSION?=$(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version()')
+PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from distutils import sysconfig; print sysconfig.get_config_var("DESTSHARED")')
+PYTHON_LIBDIR=$(PYTHON_DIR)/libs
 
-all: $(LIB_DIR)/$(LIB_NAME)
+period := .
+empty := 
+PYTHON_VERSION=$(subst $(period),$(empty),$(LOCAL_PYTHON_VERSION))
+PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
 
-clean:
-	-@rm -rf $(LIB_DIR)/gpivpi.vpl
-	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
-
-include $(SIM_ROOT)/makefiles/Makefile.rules
+PYLIBS = -lPython$(PYTHON_VERSION)
+PYTHON_DYN_LIB = Python$(PYTHON_VERSION).dll

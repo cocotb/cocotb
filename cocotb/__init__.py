@@ -67,11 +67,6 @@ plusargs = {}
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
 
-class TestFailed(Exception):
-    pass
-
-
-
 # FIXME is this really required?
 _rlock = threading.RLock()
 
@@ -79,7 +74,7 @@ def mem_debug(port):
     import cocotb.memdebug
     memdebug.start(port)
 
-def _initialise_testbench(root_handle):
+def _initialise_testbench(root_name):
     """
     This function is called after the simulator has elaborated all
     entities and is ready to run the test.
@@ -115,7 +110,6 @@ def _initialise_testbench(root_handle):
         log.info("Running tests with Cocotb v%s from %s" % (version, exec_path))
 
     # Create the base handle type
-    dut = cocotb.handle.SimHandle(root_handle)
 
     process_plusargs()
 
@@ -130,7 +124,7 @@ def _initialise_testbench(root_handle):
 
     global regression
 
-    regression = RegressionManager(dut, modules, tests=test_str)
+    regression = RegressionManager(root_name, modules, tests=test_str)
     regression.initialise()
     regression.execute()
 
@@ -142,16 +136,19 @@ def _sim_event(level, message):
     SIM_INFO = 0
     SIM_TEST_FAIL = 1
     SIM_FAIL = 2
-    from cocotb.result import TestFailure
+    from cocotb.result import TestFailure, SimFailure
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
         scheduler.finish_test(TestFailure("Failure from external source: %s" % message))
     elif level is SIM_FAIL:
+        # We simply return here as the simulator will exit so no cleanup is needed
         scheduler.log.error("Failing test at simulator request before test run completion: %s" % message)
-        scheduler.finish_scheduler(TestFailure("Failing test at simulator request before test run completion"))
+        scheduler.finish_scheduler(SimFailure("Failing test at simulator request before test run completion %s" % message))
     else:
         scheduler.log.error("Unsupported sim event")
+
+    return True
 
 
 def process_plusargs():

@@ -25,6 +25,6 @@ Aldec Riviera-PRO
 Mentor Questa
 -------------
 
-Cadance Incisive
+Cadence Incisive
 ----------------
 

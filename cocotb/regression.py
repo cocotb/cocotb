@@ -44,7 +44,7 @@ else:
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
-from cocotb.result import TestError, TestFailure, TestSuccess
+from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
 from cocotb.xunit_reporter import XUnitReporter
 
 def _my_import(name):
@@ -58,7 +58,7 @@ def _my_import(name):
 class RegressionManager(object):
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, dut, modules, tests=None):
+    def __init__(self, root_name, modules, tests=None):
         """
         Args:
             modules (list): A list of python module names to run
@@ -66,7 +66,8 @@ class RegressionManager(object):
         Kwargs
         """
         self._queue = []
-        self._dut = dut
+        self._root_name = root_name
+        self._dut = None
         self._modules = modules
         self._functions = tests
         self._running_test = None
@@ -80,6 +81,10 @@ class RegressionManager(object):
         self.failures = 0
         self.xunit = XUnitReporter()
         self.xunit.add_testsuite(name="all", tests=repr(self.ntests), package="all")
+
+        self._dut = cocotb.handle.SimHandle(simulator.get_root_handle(self._root_name))
+        if self._dut is None:
+            raise AttributeError("Can not find Root Handle (%s)" % root_name)
 
         # Auto discovery
         for module_name in self._modules:
@@ -104,7 +109,7 @@ class RegressionManager(object):
                         skip = test.skip
                     except TestError:
                         skip = True
-                        self.log.warning("Failed to initialise test%s" % thing.name)
+                        self.log.warning("Failed to initialise test %s" % thing.name)
 
                     if skip:
                         self.log.info("Skipping test %s" % thing.name)
@@ -126,7 +131,7 @@ class RegressionManager(object):
         """It's the end of the world as we know it"""
         if self.failures:
             self.log.error("Failed %d out of %d tests (%d skipped)" %
-                (self.failures, self.count-1, self.skipped))
+                (self.failures, self.count -1, self.skipped))
         else:
             self.log.info("Passed %d tests (%d skipped)"  %
                 (self.count-1, self.skipped))
@@ -169,17 +174,27 @@ class RegressionManager(object):
             self.log.error("Test passed but we expected a failure: %s (result was %s)" % (
                            self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=repr(str(result)), stderr="\n".join(self._running_test.error_messages))
-            self.failures += 1            
+            self.failures += 1
 
         elif isinstance(result, TestError) and self._running_test.expect_error:
             self.log.info("Test errored as expected: %s (result was %s)" % (
                           self._running_test.funcname, result.__class__.__name__))
 
+        elif isinstance(result, SimFailure):
+            if self._running_test.expect_error:
+                self.log.info("Test errored as expected: %s (result was %s)" % (
+                              self._running_test.funcname, result.__class__.__name__))
+            else:
+                self.log.error("Test error has lead to simulator shuttting us down")
+                self.failures += 1
+                self.tear_down()
+                return
+
         else:
             self.log.error("Test Failed: %s (result was %s)" % (
                         self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=repr(str(result)), stderr="\n".join(self._running_test.error_messages))
-            self.failures += 1            
+            self.failures += 1
 
         self.execute()
 

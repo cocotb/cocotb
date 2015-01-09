@@ -46,7 +46,7 @@ a low-level function to access the hardware, often something like ``ioread32``.
 We need this call to block while simulation time advances and a value is
 either read or written on the bus.  To achieve this we link the HAL against
 a C library that provides the low level read/write functions.  These functions
-in turn call into Cocotb and perform an the relevant access on the DUT.
+in turn call into Cocotb and perform the relevant access on the DUT.
 
 
 Cocotb infrastructure
@@ -107,7 +107,7 @@ IO Module
 This module acts as the bridge between the C HAL and the Python testbench.  It
 exposes the ``IORD`` and ``IOWR`` calls to link the HAL against, but also
 provides a Python interface to allow the read/write bindings to be dynamically
-set (through ``set_write_function`` and ``set_read_function`` module functions.
+set (through ``set_write_function`` and ``set_read_function`` module functions).
 
 In a more complicated scenario, this could act as an interconnect, dispatching
 the access to the appropriate driver depending on address decoding, for

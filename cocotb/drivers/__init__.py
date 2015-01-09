@@ -227,10 +227,10 @@ class BusDriver(Driver):
         so sim will need to move to NextTimeStep before
         registering more callbacks can occour
         """
-        yield RisingEdge(self.clock)
         yield ReadOnly()
-        if signal.value.integer != 1:
+        while signal.value.integer != 1:
             yield RisingEdge(signal)
+            yield ReadOnly()
         yield NextTimeStep()
 
     @coroutine
@@ -240,7 +240,6 @@ class BusDriver(Driver):
         so sim will need to move to NextTimeStep before
         registering more callbacks can occour
         """
-        yield RisingEdge(self.clock)
         yield ReadOnly()
         while signal.value.integer != 0:
             yield Edge(signal)

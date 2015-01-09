@@ -68,9 +68,10 @@ install: src_install common_install pycode create_files
 	@echo -e "To uninstall run $(FULL_INSTALL_DIR)/bin/cocotb_uninstall\n"
 
 help:
-	@echo -e "\nCoCoTB make help\n\nall\t- Build libaries for native"
+	@echo -e "\nCocotb make help\n\nall\t- Build libaries for native"
 	@echo -e "install\t- Build and install libaries to FULL_INSTALL_DIR (default=$(FULL_INSTALL_DIR))"
-	@echo -e "clean\t- Clean the build dir\n\n"
+	@echo -e "clean\t- Clean the build dir"
+	@echo -e "debug\t- Dump out some useful debug info\n\n"
 	@echo -e "To build natively just run make.\nTo build for 32bit on a 64 bit system set ARCH=i686\n"
 	@echo -e "Default simulator is Icarus. To use another set environment variable SIM as below\n"
 	@for X in $(shell ls makefiles/simulators/); do \

@@ -34,27 +34,15 @@ PYTHON_PREFIX = $(shell python-config --prefix)
 NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
 
-ifeq ($(NATIVE_ARCH),$(ARCH))
-    STD_LIB=True
-else
-    STD_LIB=False
-endif
+include $(SIM_ROOT)/makefiles/Makefile.pylib.$(OS)
 
-# We might work with other Python versions
-PYTHON_VERSION?=$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_version()')
-PYTHON_LIBDIR:=$(shell python -c 'import os.path,distutils.sysconfig;print distutils.sysconfig.get_python_lib(standard_lib=$(STD_LIB)).rstrip("site-packages").rstrip("/")')
-
-PYTHON_DYNLIBDIR:=$(PYTHON_LIBDIR)/lib-dynload
-
-# Since we don't know which modules we might need or whether the simulator
-# we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
-# is we simply link against all dynamic libraries in the Python installation
-ifeq ($(OS),Linux)
-PYLIBS = $(wildcard $(PYTHON_DYNLIBDIR)/*.so) $(shell python-config --libs)
-else
-PYLIBS = $(shell python-config --libs)
-endif
-
-PYTHON_INCLUDEDIR := -I$(shell python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()')
-
+#debug::
+#	@echo "Debug from Makefile.pylib"
+#	@echo -e "\tUsing PYTHON_VERSION=$(PYTHON_VERSION)"
+#	@echo -e "\tUsing PYTHON_LIBDIR=$(PYTHON_LIBDIR)"
+#	@echo -e "\tUsing PYTHON_DYN_LIB=$(PYTHON_DYN_LIB)"
+#	@echo -e "\tUsing PYTHON_DYNLIBDIR=$(PYTHON_DYNLIBDIR)"
+#	@echo -e "\tUsing PYTHON_INCLUDEDIR=$(PYTHON_INCLUDEDIR)"
+#	file $(PYTHON_LIBDIR)/$(PYTHON_DYN_LIB)
+#	file -L $(PYTHON_LIBDIR)/$(PYTHON_DYN_LIB)
 
