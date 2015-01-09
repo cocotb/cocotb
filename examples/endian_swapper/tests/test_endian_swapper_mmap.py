@@ -24,6 +24,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
+import os
 import logging
 
 import cocotb
@@ -47,6 +48,8 @@ def reset(dut, duration=10000):
 
 @cocotb.coroutine
 def run(program):
+    if not os.path.isfile(program):
+        raise ValueError("%s isn't a valid program" % program)
     result = yield cocotb.external(mmap_shim.execute)(program)
     print "Got: %s" % str(result)
 
@@ -79,7 +82,9 @@ def initial_hal_test(dut, debug=True):
     mmap_shim.set_write_function(write)
     mmap_shim.set_read_function(read)
 
-    yield run("/home/chiggs/code/cocotb/examples/endian_swapper/cosim/config") 
+    dut.log.info("Running cosim/config")
+    config = os.path.join(os.path.dirname(__file__), "../cosim/config")
+    yield run(config) 
 
     if not dut.byteswapping.value:
         raise TestFailure("Byteswapping wasn't enabled after calling endian_swapper_enable")

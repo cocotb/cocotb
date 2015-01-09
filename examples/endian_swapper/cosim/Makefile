@@ -4,7 +4,7 @@ HAL_SOURCE=../hal/endian_swapper_hal.c
 all: io_module.so _hal.so config
 
 io_module.o: io.c io_module.h io.h
-	gcc -pthread -fno-strict-aliasing -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -mtune=generic -D_GNU_SOURCE -fPIC -fwrapv -DNDEBUG -I/usr/include/python2.7 -c $< -o $@
+	gcc -pthread -fno-strict-aliasing -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -grecord-gcc-switches -mtune=generic -D_GNU_SOURCE -fPIC -fwrapv -DNDEBUG -I/usr/include/python2.7 -c $< -o $@
 
 io_module.so: io_module.o
 	gcc -pthread -shared -Wl,-z,relro $< -L/usr/lib64 -lpython2.7 -o $@

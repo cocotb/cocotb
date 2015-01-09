@@ -404,11 +404,15 @@ static PyObject *execute(PyObject *self, PyObject *args) {
         execl(prog, "", NULL);
     } else {
 
+        // PTRACE_O_EXITKILL only in new linux >= 3.8
+#if defined ( PTRACE_O_EXITKILL )
         ptrace(PTRACE_SETOPTIONS, child, NULL, PTRACE_O_EXITKILL);
+#else
+        ptrace(PTRACE_SETOPTIONS, child, NULL, PTRACE_O_TRACEEXIT);
+#endif
 
 
         while(1) {
-
             wait(&status);
             p_reason = PTRACE_SYSCALL;
 
