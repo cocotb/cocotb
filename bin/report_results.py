@@ -22,7 +22,7 @@ def report_results(xml_filename):
             report[tc.result] += 1
            
         print 'Test Report:', report
-        if report['failed'] or report['errored'] or report['skipped']:
+        if report['failed'] or report['errored']:
             return 1
         
         return 0
