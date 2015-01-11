@@ -27,32 +27,25 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# All common pyhon related rules
 
-PYTHON_PREFIX = $(shell python-config --prefix)
+TOPLEVEL := adder
+TOPLEVEL_LANG ?= verilog
 
-NATIVE_ARCH=$(shell uname -m)
-ARCH?=$(NATIVE_ARCH)
+PWD=$(shell pwd)
+COCOTB=$(PWD)/../../..
 
-# We might work with other Python versions
-PYTHON_MAJOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info.major)")
-PYTHON_MINOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info.minor)")
-PYTHON_VERSION?=$(PYTHON_MAJOR_VERSION).$(PYTHON_MINOR_VERSION)
-
-PYTHON_LIBDIR:=$(shell python -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
-PYTHON_DYNLIBDIR:=$(shell python -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("DESTSHARED"))')
-
-# Nasty hack but there's no way in Python properly get the directories for 32-bit Python on a 64-bit system
-# TODO: Under OSX we can use "export VERSIONER_PYTHON_PREFER_32_BIT=yes", no Linux equivalent though
-ifneq ($(NATIVE_ARCH),$(ARCH))
-    PYTHON_LIBDIR:=$(subst 64,,$(PYTHON_LIBDIR))
-    PYTHON_DYNLIBDIR:=$(subst 64,,$(PYTHON_DYNLIBDIR))
+ifeq ($(OS),MINGW32_NT-6.1)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
 endif
 
-# Since we don't know which modules we might need or whether the simulator
-# we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
-# is we simply link against all dynamic libraries in the Python installation
-PYLIBS = $(shell python-config --libs)
+VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
+GPI_IMPL := vpi
 
-PYTHON_INCLUDEDIR := $(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
-PYTHON_DYN_LIB = libpython$(PYTHON_VERSION).so
+export TOPLEVEL_LANG
+
+MODULE ?= test_adder
+
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim

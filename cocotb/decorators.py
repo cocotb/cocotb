@@ -32,6 +32,8 @@ import traceback
 import threading
 import pdb
 
+from io import StringIO, BytesIO
+
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
@@ -218,7 +220,14 @@ class coroutine(object):
         except Exception as e:
             traceback.print_exc()
             result = TestError(str(e))
-            traceback.print_exc(file=result.stderr)
+            if sys.version_info.major >= 3:
+                buff = StringIO()
+                traceback.print_exc(file=buff)
+            else:
+                buff_bytes = BytesIO()
+                traceback.print_exc(file=buff_bytes)
+                buff = StringIO(buff_bytes.getvalue().decode("UTF-8"))
+            result.stderr.write(buff.getvalue())
             raise result
 
     def __get__(self, obj, type=None):

@@ -1,3 +1,4 @@
+from __future__ import print_function
 ''' Copyright (c) 2013 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
@@ -42,7 +43,7 @@ def plusargs_test(dut):
     yield Timer(10000)
 
     for name in cocotb.plusargs:
-        print "COCOTB:", name, cocotb.plusargs[name]
+        print("COCOTB:", name, cocotb.plusargs[name])
 
     yield Timer(10000)
 

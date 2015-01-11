@@ -30,6 +30,11 @@
 
 #include <Python.h>
 
+#if PY_MAJOR_VERSION >= 3
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_AsLong PyLong_AsLong
+#endif
+
 static PyObject *set_write_function(PyObject *self, PyObject *args);
 static PyObject *set_read_function(PyObject *self, PyObject *args);
 

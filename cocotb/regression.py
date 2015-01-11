@@ -354,7 +354,7 @@ class TestFactory(object):
             name = "%s_%03d" % (self.name, index + 1)
             doc = "Automatically generated test\n\n"
 
-            for optname, optvalue in testoptions.iteritems():
+            for optname, optvalue in testoptions.items():
                 if callable(optvalue):
                     if not optvalue.__doc__: desc = "No docstring supplied"
                     else: desc = optvalue.__doc__.split('\n')[0]

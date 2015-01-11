@@ -35,7 +35,7 @@ LIBS        := -lgpi -lgpilog $(PYLIBS)
 LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libsim
 
-SRCS        := simulatormodule.c
+SRCS        := simulatormodule.c 
 
 CLIBS       += $(LIB_DIR)/$(LIB_NAME)
 

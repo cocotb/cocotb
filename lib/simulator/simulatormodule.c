@@ -767,20 +767,8 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     return value;
 }
 
-PyMODINIT_FUNC
-initsimulator(void)
-{
-    PyObject* simulator;
-    simulator = Py_InitModule("simulator", SimulatorMethods);
-
-    // Make the GPI constants accessible from the C world
-    int rc = 0;
-    rc |= PyModule_AddIntConstant(simulator, "MEMORY",        gpiMemory);
-    rc |= PyModule_AddIntConstant(simulator, "MODULE",        gpiModule);
-    rc |= PyModule_AddIntConstant(simulator, "PARAMETER",     gpiParameter);
-    rc |= PyModule_AddIntConstant(simulator, "REG",           gpiReg);
-    rc |= PyModule_AddIntConstant(simulator, "NET",           gpiNet);
-    rc |= PyModule_AddIntConstant(simulator, "NETARRAY",      gpiNetArray);
-    if (rc != 0)
-        fprintf(stderr, "Failed to add module constants!\n");
-}
+#if PY_MAJOR_VERSION >= 3
+#include "simulatormodule_python3.c"
+#else
+#include "simulatormodule_python2.c"
+#endif

@@ -33,7 +33,9 @@ import logging
 import ctypes
 import traceback
 import sys
-from StringIO import StringIO
+#from StringIO import StringIO
+
+from io import StringIO, BytesIO
 
 import os
 
@@ -48,6 +50,7 @@ from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
 from cocotb.triggers import _RisingEdge, _FallingEdge
+from cocotb.utils import get_python_integer_types
 
 class SimHandle(object):
 
@@ -83,9 +86,14 @@ class SimHandle(object):
         return self._sub_handles[name]
 
     def _raise_testerror(self, msg):
-        buff = StringIO()
         lastframe = sys._getframe(2)
-        traceback.print_stack(lastframe, file=buff)
+        if sys.version_info.major >= 3:
+            buff = StringIO()
+            traceback.print_stack(lastframe, file=buff)
+        else:
+            buff_bytes = BytesIO()
+            traceback.print_stack(lastframe, file=buff_bytes)
+            buff = StringIO(buff_bytes.getvalue().decode("UTF8"))
         self.log.error("%s\n%s" % (msg, buff.getvalue()))
         exception = TestError(msg)
         exception.stderr.write(buff.getvalue())
@@ -150,13 +158,13 @@ class SimHandle(object):
 
         Assigning integers less than 32-bits is faster
         """
-        if isinstance(value, (int, long)) and value < 0x7fffffff:
+        if isinstance(value, get_python_integer_types()) and value < 0x7fffffff:
             simulator.set_signal_val(self._handle, value)
             return
 
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
-        elif isinstance(value, (int, long)):
+        elif isinstance(value, get_python_integer_types()):
             value = BinaryValue(value=value, bits=len(self), bigEndian=False)
         elif not isinstance(value, BinaryValue):
             self.log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))

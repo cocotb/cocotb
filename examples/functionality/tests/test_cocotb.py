@@ -288,7 +288,7 @@ def test_fork_and_monitor(dut, period=1000, clocks=6):
 @cocotb.coroutine
 def count_edges_cycles(signal, edges):
     edge = RisingEdge(signal)
-    for i in xrange(edges):
+    for i in range(edges):
         yield edge
         signal.log.info("Rising edge %d detected" % i)
     signal.log.info("Finished, returning %d" % edges)

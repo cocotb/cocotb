@@ -33,7 +33,8 @@ export COCOTB
 SMOKE_TESTS :=  plusargs \
 				sim_exit/tests \
 				functionality/tests \
-				endian_swapper/tests
+				adder/tests \
+				endian_swapper/tests \
 
 .PHONY: $(SMOKE_TESTS)
 
