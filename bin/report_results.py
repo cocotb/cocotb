@@ -21,7 +21,7 @@ def report_results(xml_filename):
         for tc in ts:
             report[tc.result] += 1
            
-        print 'Test Report:', report
+        print('Test Report:', report)
         if report['failed'] or report['errored']:
             return 1
         
@@ -29,7 +29,7 @@ def report_results(xml_filename):
 
 if __name__ == "__main__":
     if len(sys.argv) is not 2:
-        print "Please specify a result file"
+        print("Please specify a result file")
         exit(1)
         
     exit(report_results(sys.argv[1]))
