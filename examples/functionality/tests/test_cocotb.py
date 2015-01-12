@@ -126,10 +126,10 @@ def test_coroutine_kill(dut):
     yield Timer(100)
     clk_gen.kill()
     if test_flag is not False:
-        raise cocotb.TestFailed
+        raise TestFailure
     yield Timer(1000)
     if test_flag is not True:
-        raise cocotb.TestFailed
+        raise TestFailure
 
 @cocotb.test(expect_error=True)
 def test_adding_a_coroutine_without_starting(dut):
@@ -169,7 +169,7 @@ def do_test_afterdelay_in_readonly(dut, delay):
     yield Timer(delay)
     exited = True
 
-@cocotb.test(expect_error=True)
+@cocotb.test(expect_error=True, expect_fail=cocotb.SIM_NAME in ["Icarus Verilog"])
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -179,9 +179,9 @@ def test_readwrite_in_readonly(dut):
     yield [Join(coro), Timer(10000)]
     clk_gen.kill()
     if exited is not True:
-        raise cocotb.TestFailed
+        raise TestFailure
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog", "Chronologic Simulation VCS Release "])
+@cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog", "Chronologic Simulation VCS Release "])
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -191,7 +191,7 @@ def test_afterdelay_in_readonly(dut):
     yield [Join(coro), Timer(1000)]
     clk_gen.kill()
     if exited is not True:
-        raise cocotb.TestFailed
+        raise TestFailure
 
 @cocotb.test()
 def test_afterdelay_in_readonly_valid(dut):
@@ -203,7 +203,7 @@ def test_afterdelay_in_readonly_valid(dut):
     yield [Join(coro), Timer(100000)]
     clk_gen.kill()
     if exited is not True:
-        raise cocotb.TestFailed
+        raise TestFailure
 
 @cocotb.coroutine
 def clock_one(dut):
