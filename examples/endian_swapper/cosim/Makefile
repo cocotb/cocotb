@@ -16,7 +16,7 @@ io_module.o: io.c io_module.h io.h
 	-fwrapv -DNDEBUG -I$(PYTHON_INCLUDEDIR) -c $< -o $@
 
 io_module.so: io_module.o
-	$(CC) -pthread -shared -Wl,-z,relro $< -L$(PYTHON_LIBDIR) -lpython$(PYTHON_VERSION) -o $@
+	$(CC) -pthread -shared -Wl,-z,relro $< -L$(PYTHON_LIBDIR) $(PYTHON_LD_FLAGS) -o $@
 
 _hal.so: ../hal/endian_swapper_hal.c endian_swapper_hal_wrap.c io_module.so
 	$(CC) -g -ldl -shared -fPIC -I$(shell pwd) -I$(PYTHON_INCLUDEDIR) -I../hal ../hal/endian_swapper_hal.c endian_swapper_hal_wrap.c io_module.so -o $@

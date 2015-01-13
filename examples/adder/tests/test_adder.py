@@ -37,7 +37,7 @@ def adder_randomised_test(dut):
         if int(dut.X) != (A + B):
             raise TestFailure(
                 "Randomised test failed with: %s + %s = %s" %
-                (dut.A, dut.B, dut.X))
+                (int(dut.A), int(dut.B), int(dut.X)))
         else: # these last two lines are not strictly necessary
         	dut.log.info("Ok!")
 
