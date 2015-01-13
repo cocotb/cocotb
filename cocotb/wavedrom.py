@@ -96,7 +96,7 @@ class Wavedrom(object):
         """
         siglist = []
         traces = []
-        for name in self._hdls.iterkeys():
+        for name in self._hdls.keys():
             samples = self._samples[name]
             traces.append({"name": name, "wave": "".join(samples)})
             if name in self._data:

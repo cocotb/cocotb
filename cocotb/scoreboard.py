@@ -165,7 +165,7 @@ class Scoreboard(object):
                 exp = expected_output(transaction)
 
             elif len(expected_output):
-                for i in xrange(min((reorder_depth+1), len(expected_output))):
+                for i in range(min((reorder_depth+1), len(expected_output))):
                     if expected_output[i] == transaction:
                         break
                 else:

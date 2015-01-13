@@ -324,6 +324,9 @@ class BinaryValue(object):
     def __str__(self):
         return "%d" % (self.value)
 
+    def __bool__(self):
+        return self.__nonzero__()
+
     def __nonzero__(self):
         """Provide boolean testing of a binstr.
 

@@ -72,7 +72,7 @@ class AXI4LiteMaster(BusDriver):
         Send the write address, with optional delay
         """
         yield self.write_address_busy.acquire()
-        for cycle in xrange(delay):
+        for cycle in range(delay):
             yield RisingEdge(self.clock)
 
         self.bus.AWADDR         <= address
@@ -93,7 +93,7 @@ class AXI4LiteMaster(BusDriver):
         Send the write address, with optional delay
         """
         yield self.write_data_busy.acquire()
-        for cycle in xrange(delay):
+        for cycle in range(delay):
             yield RisingEdge(self.clock)
 
         self.bus.WDATA          <= data

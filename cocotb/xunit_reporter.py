@@ -42,7 +42,7 @@ class File(file):
 
     def head(self, lines_2find=1):
         self.seek(0)                            #Rewind file
-        return [self.next() for x in xrange(lines_2find)]
+        return [self.next() for x in range(lines_2find)]
 
     def tail(self, lines_2find=1):
         self.seek(0, 2)                         #go to end of file
