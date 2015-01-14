@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 ''' Copyright (c) 2013 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
@@ -28,6 +30,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """Collection of handy functions"""
 
 import ctypes
+
+# python2 to python3 helper functions
+def get_python_integer_types():
+    try:
+        isinstance(1, long)
+    except NameError:
+        return (int,) # python 3
+    else:
+        return (int, long) # python 2
 
 # Ctypes helper functions
 
@@ -259,7 +270,7 @@ if __name__ == "__main__":
         b = b[:offset] + chr(random.randint(0,255)) + b[offset+1:]
 
     diff = hexdiffs(a,b)
-    print diff
+    print(diff)
 
     space = '\n' + (" " * 20)
-    print space.join(diff.split('\n'))
+    print(space.join(diff.split('\n')))

@@ -62,7 +62,7 @@ class Scoreboard(object):
     def result(self):
         """Determine the test result - do we have any pending data remaining?"""
         fail = False
-        for monitor, expected_output in self.expected.iteritems():
+        for monitor, expected_output in self.expected.items():
             if callable(expected_output):
                 self.log.debug("Can't check all data returned for %s since expected output is \
                                 callable function rather than a list" % str(monitor))

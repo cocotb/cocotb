@@ -57,7 +57,7 @@ class Wavedrom(object):
                 if samples[x] not in "=.|": return samples[x]
             return None
 
-        for name, hdl in self._hdls.iteritems():
+        for name, hdl in self._hdls.items():
             val = hdl.value
             valstr = val.binstr.lower()
 
@@ -87,7 +87,7 @@ class Wavedrom(object):
         self._data = defaultdict(list)
 
     def gap(self):
-        for name, hdl in self._hdls.iteritems():
+        for name, hdl in self._hdls.items():
             self._samples[name].append("|")
 
     def get(self, add_clock=True):

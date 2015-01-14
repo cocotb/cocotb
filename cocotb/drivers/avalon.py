@@ -276,7 +276,7 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         self.config = AvalonSTPkts._default_config.copy()
 
-        for configoption, value in config.iteritems():
+        for configoption, value in config.items():
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
 

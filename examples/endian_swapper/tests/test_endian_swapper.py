@@ -135,7 +135,7 @@ def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backp
         yield tb.stream_in.send(transaction)
 
     # Wait at least 2 cycles where output ready is low before ending the test
-    for i in xrange(2):
+    for i in range(2):
         yield RisingEdge(dut.clk)
         while not dut.stream_out_ready.value:
             yield RisingEdge(dut.clk)
@@ -153,7 +153,7 @@ def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backp
 
 def random_packet_sizes(min_size=1, max_size=150, npackets=10):
     """random string data of a random length"""
-    for i in xrange(npackets):
+    for i in range(npackets):
         yield get_bytes(random.randint(min_size, max_size), random_data())
 
 @cocotb.coroutine

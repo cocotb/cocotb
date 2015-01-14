@@ -25,67 +25,27 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##############################################################################
+###############################################################################
 
-# Common makefile included by everything
 
-ifeq ($(SIM_ROOT),)
-export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
-endif
+TOPLEVEL := adder
+TOPLEVEL_LANG ?= verilog
 
-ifeq ($(USER_DIR),)
-export USER_DIR:=$(SIM_ROOT)
-endif
+PWD=$(shell pwd)
+COCOTB=$(PWD)/../../..
 
-BUILD_DIR=$(USER_DIR)/build
-export BUILD_DIR
-
-ARCH?=$(shell uname -m)
-export ARCH
-
-OS=$(shell uname)
-export OS
-
-include $(SIM_ROOT)/makefiles/Makefile.paths
-include $(SIM_ROOT)/makefiles/Makefile.pylib
-
-export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
-export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
-export GPI_EXTRA
-
-LIB_EXT     := so
-PY_EXT	    := so
-
-# Base GCC flags
-ifeq ($(ARCH),i686)
-GXX_ARGS    := -m32
-endif
-
-ifeq ($(OS),Darwin)
-GXX_ARGS	+= -g -DDEBUG -fpic
-GCC_ARGS	:= $(GXX_ARGS)
-else ifeq ($(OS),MINGW32_NT-6.1)
-GXX_ARGS 	+= -g -DDEBUG -shared
-GCC_ARGS	:= $(GXX_ARGS)
-LIB_EXT		:= dll
-PY_EXT		:= pyd
-else ifeq ($(OS),Linux)
-GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-			-Wall -Wno-unused-parameter \
-			-fno-common -g -DDEBUG -fpic
-GCC_ARGS	= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
+ifeq ($(OS),MINGW32_NT-6.1)
+WPWD=$(shell sh -c 'pwd -W')
 else
-$(error "Unsupported os " $(OS))
+WPWD=$(shell pwd)
 endif
 
-ifeq ($(OS),Darwin)
-SO_LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
-else ifeq ($(OS),Linux)
-SO_LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
-else ifeq ($(OS),MINGW32_NT-6.1)
-SO_LINKER_ARGS :=  -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2 \
-			-Wl,--enable-auto-import $(PYTHON_LD_FLAGS)
-else
-$(error "Unsupported os" $(OS))
-endif
+VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
+GPI_IMPL := vpi
+
+export TOPLEVEL_LANG
+
+MODULE ?= test_adder
+
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim

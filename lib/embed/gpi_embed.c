@@ -32,11 +32,18 @@
 #include <Python.h>
 #include <cocotb_utils.h>
 #include "embed.h"
+#include "../compat/python3_compat.h"
 
 static PyThreadState *gtstate = NULL;
 
+#if PY_MAJOR_VERSION >= 3
+static wchar_t progname[] = L"cocotb";
+static wchar_t *argv[] = { progname };
+#else
 static char progname[] = "cocotb";
 static char *argv[] = { progname };
+#endif
+
 static PyObject *pEventFn = NULL;
 
 
@@ -101,7 +108,7 @@ void embed_init_python(void)
 
 int get_module_ref(const char *modname, PyObject **mod)
 {
-    PyObject *pModule = PyImport_Import(PyString_FromString(modname));
+    PyObject *pModule = PyImport_ImportModule(modname);
 
     if (pModule == NULL) {
         PyErr_Print();

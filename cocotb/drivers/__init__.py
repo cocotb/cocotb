@@ -31,7 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     Set of common driver base classes
 """
 
-
 import logging
 
 import cocotb
@@ -70,7 +69,7 @@ class BitDriver(object):
 
         # Actual thread
         while True:
-            on,off = self._generator.next()
+            on,off = next(self._generator)
             self._signal <= 1
             for i in range(on):
                 yield edge
@@ -285,7 +284,7 @@ class ValidatedBusDriver(BusDriver):
         if self.valid_generator is not None:
             while not self.on:
                 try:
-                    self.on, self.off = self.valid_generator.next()
+                    self.on, self.off = next(self.valid_generator)
                 except StopIteration:
                     self.on = True  # If the generator runs out stop inserting non-valid cycles
                     self.log.info("Valid generator exhausted, not inserting non-valid cycles anymore")

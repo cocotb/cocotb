@@ -28,7 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 # TODO: Coule use cStringIO?
 import traceback
 import sys
-from StringIO import StringIO
+#from StringIO import StringIO
+from io import StringIO, BytesIO
 
 def raise_error(obj, msg):
     """
@@ -38,8 +39,13 @@ def raise_error(obj, msg):
         msg is a string
     """
     exc_type, exc_value, exc_traceback = sys.exc_info()    
-    buff = StringIO()
-    traceback.print_tb(exc_traceback, file=buff)
+    if sys.version_info.major >= 3:
+        buff = StringIO()
+        traceback.print_tb(exc_traceback, file=buff)
+    else:
+        buff_bytes = BytesIO()
+        traceback.print_tb(exc_traceback, file=buff_bytes)
+        buff = StringIO(buff_bytes.getvalue().decode("UTF-8"))
     obj.log.error("%s\n%s" % (msg, buff.getvalue()))
     exception = TestError(msg)
     exception.stderr.write(buff.getvalue())

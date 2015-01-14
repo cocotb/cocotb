@@ -28,6 +28,7 @@
 ******************************************************************************/
 
 #include <Python.h>
+#include "../compat/python3_compat.h"
 
 // Used to log using the standard python mechanism
 static PyObject *pLogHandler;
@@ -132,7 +133,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     PyGILState_STATE gstate = PyGILState_Ensure();
 
     PyObject *check_args = PyTuple_New(1);
-    PyTuple_SetItem(check_args, 0, PyInt_FromLong(level));
+    PyTuple_SetItem(check_args, 0, PyLong_FromLong(level));
     PyObject *retuple = PyObject_CallObject(pLogFilter, check_args);
 
     if (retuple != Py_True) {
@@ -149,11 +150,11 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     va_end(ap);
 
     PyObject *call_args = PyTuple_New(5);
-    PyTuple_SetItem(call_args, 0, PyInt_FromLong(level));           // Note: This function steals a reference.
-    PyTuple_SetItem(call_args, 1, PyString_FromString(pathname));   // Note: This function steals a reference.
-    PyTuple_SetItem(call_args, 2, PyInt_FromLong(lineno));          // Note: This function steals a reference.
-    PyTuple_SetItem(call_args, 3, PyString_FromString(log_buff));   // Note: This function steals a reference.
-    PyTuple_SetItem(call_args, 4, PyString_FromString(funcname));
+    PyTuple_SetItem(call_args, 0, PyLong_FromLong(level));           // Note: This function steals a reference.
+    PyTuple_SetItem(call_args, 1, PyUnicode_FromString(pathname));   // Note: This function steals a reference.
+    PyTuple_SetItem(call_args, 2, PyLong_FromLong(lineno));          // Note: This function steals a reference.
+    PyTuple_SetItem(call_args, 3, PyUnicode_FromString(log_buff));   // Note: This function steals a reference.
+    PyTuple_SetItem(call_args, 4, PyUnicode_FromString(funcname));
 
     retuple = PyObject_CallObject(pLogHandler, call_args);
 

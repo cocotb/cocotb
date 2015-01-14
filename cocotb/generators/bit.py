@@ -49,7 +49,7 @@ def bit_toggler(gen_on, gen_off):
         gen_off (generator): generator that yields number of cycles off
     """
     while True:
-        yield int(abs(gen_on.next())), int(abs(gen_off.next()))
+        yield int(abs(next(gen_on))), int(abs(next(gen_off)))
 
 @public
 def intermittent_single_cycles(mean=10, sigma=None):
