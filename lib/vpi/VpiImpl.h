@@ -106,11 +106,7 @@ class VpiTimedCbHdl : public VpiCbHdl {
 public:
     VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
     virtual ~VpiTimedCbHdl() { }
-    int cleanup_callback() {
-        VpiCbHdl::cleanup_callback();
-        /* Return one so we delete this object */
-        return 1;
-    }
+    int cleanup_callback();
 };
 
 class VpiReadOnlyCbHdl : public VpiCbHdl {
