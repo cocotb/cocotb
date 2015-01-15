@@ -55,4 +55,4 @@ endif
 PYLIBS = $(shell python-config --libs)
 
 PYTHON_INCLUDEDIR := $(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
-#PYTHON_DYN_LIB = libpython$(PYTHON_VERSION).so
+PYTHON_DYN_LIB = libpython$(PYTHON_VERSION).so
