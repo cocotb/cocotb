@@ -85,7 +85,7 @@ else ifeq ($(OS),Linux)
 SO_LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
 else ifeq ($(OS),MINGW32_NT-6.1)
 SO_LINKER_ARGS :=  -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2 \
-			-Wl,--enable-auto-import $(PYTHON_LD_FLAGS)
+			-Wl,--enable-auto-import -L$(PYTHON_LIBDIR)
 else
 $(error "Unsupported os" $(OS))
 endif
