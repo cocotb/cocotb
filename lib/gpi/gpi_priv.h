@@ -92,7 +92,9 @@ protected:
 // that construct an object derived from GpiSignalObjHdl or GpiObjHdl
 class GpiObjHdl : public GpiHdl {
 public:
-    GpiObjHdl(std::string name) : GpiHdl(NULL, NULL), m_name(name) { }
+    GpiObjHdl(std::string name) : GpiHdl(NULL, NULL),
+                                  m_name(name),
+                                  m_type("unknown") { }
     GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL) { }
     GpiObjHdl(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
     virtual ~GpiObjHdl() { }
