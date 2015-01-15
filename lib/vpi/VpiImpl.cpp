@@ -93,6 +93,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         case vpiNet:
         case vpiReg:
         case vpiParameter:
+        case vpiEnumNet:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
             break;
         case vpiStructVar:
@@ -133,6 +134,7 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     switch (type) {
         case vpiNet:
         case vpiNetBit:
+        case vpiEnumNet:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
             break;
         case vpiModule:
