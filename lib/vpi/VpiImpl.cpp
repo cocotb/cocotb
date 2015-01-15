@@ -283,6 +283,10 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
             if (cb_hdl->cleanup_callback())
                 delete cb_hdl;
 
+    } else {
+        /* Issue #188: This is a work around for a modelsim */
+        if (cb_hdl->cleanup_callback())
+            delete cb_hdl;
     }
 
     return rv;

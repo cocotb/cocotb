@@ -277,6 +277,26 @@ VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCbHd
     cb_data.reason = cbAfterDelay;
 }
 
+int VpiTimedCbHdl::cleanup_callback(void)
+{
+    switch (m_state) {
+    case GPI_PRIMED:
+        /* Issue #188: Work around for modelsim that is harmless to othes too,
+           we tag the time as delete, let it fire then do not pass up
+           */
+        LOG_DEBUG("Not removing PRIMED timer %d\n",vpi_time.low);
+        m_state = GPI_DELETE;
+        return 0;
+    case GPI_DELETE:
+        LOG_DEBUG("Removing DELETE timer %d\n",vpi_time.low);
+    default:
+        break;
+    }
+    VpiCbHdl::cleanup_callback();
+    /* Return one so we delete this object */
+    return 1;
+}
+
 VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                                VpiCbHdl(impl)
 {
