@@ -311,7 +311,7 @@ def external(func):
             unblock_external(_event)
 
         thread = threading.Thread(group=None, target=execute_external,
-                                  name=str(func) + "thread", args=([func, bridge]), kwargs={})
+            name=func.__name__ + "thread", args=([func, bridge]), kwargs={})
         thread.start()
 
         yield bridge.out_event.wait()
