@@ -105,7 +105,7 @@ class BinaryValue(object):
         if the string contains any characters that aren't 0, 1, X or Z
         then we interpret the string as a binary buffer...
         """
-        if isinstance(value, utils.get_python_integer_types()):
+        if isinstance(value, get_python_integer_types()):
             self.value = value
         elif isinstance(value, str):
             try:
