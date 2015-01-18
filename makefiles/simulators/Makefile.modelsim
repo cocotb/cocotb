@@ -71,7 +71,7 @@ $(error "Need to set MODELSIM_PATH")
 endif
 
 EXTRA_LIBS := -lmtipli
-EXTRA_LIBDIRS := -L$(MODELSIM_PATH)/win32aloem
+EXTRA_LIBDIRS := -L$(shell find $(MODELSIM_PATH) -maxdepth 2 -type f -name 'mtipli.dll' -printf '%h')
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 LIB_LOAD := PATH=$(OLD_PATH):$(LIB_DIR)
 
