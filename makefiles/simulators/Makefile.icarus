@@ -34,7 +34,7 @@ $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
 	iverilog -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),Msys)
 
 ifeq ($(ICARUS_PATH),)
 $(error "Need to set ICARUS_PATH")

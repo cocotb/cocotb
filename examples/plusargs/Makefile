@@ -30,7 +30,7 @@
 
 TOPLEVEL = tb_top
 
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),Msys)
 PWD=$(shell sh -c 'pwd -W')
 else
 PWD=$(shell pwd)

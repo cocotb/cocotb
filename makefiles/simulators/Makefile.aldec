@@ -47,7 +47,7 @@ ifeq ($(GPI_IMPL),vpi)
     GPI_ARGS = -pli libvpi
 endif
 ifeq ($(GPI_IMPL),vhpi)
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),Msys)
     VHPI_LIB = $(shell sh -c 'cd $(LIB_DIR) && pwd -W')/libvhpi
 else
     VHPI_LIB = $(LIB_DIR)/libvhpi
@@ -92,7 +92,7 @@ ifeq ($(ALDEC_PATH),)
 $(error "Need to set ALDEC_PATH")
 endif
 
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),Msys)
 
 EXTRA_LIBS := -laldecpli
 EXTRA_LIBDIRS := -L$(ALDEC_PATH)/bin/

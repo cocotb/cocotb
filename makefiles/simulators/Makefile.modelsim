@@ -64,7 +64,7 @@ ifneq ($(GUI),1)
 endif
 
 
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),Msys)
 
 ifeq ($(MODELSIM_PATH),)
 $(error "Need to set MODELSIM_PATH")
