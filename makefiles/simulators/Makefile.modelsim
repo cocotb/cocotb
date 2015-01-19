@@ -63,15 +63,18 @@ ifneq ($(GUI),1)
 	echo "quit" >> $@
 endif
 
-
 ifeq ($(OS),MINGW32_NT-6.1)
 
-ifeq ($(MODELSIM_PATH),)
-$(error "Need to set MODELSIM_PATH")
+# auto-detect modelsim dir from system path
+MODELSIM_BIN_DIR = $(shell which vsim | sed 's|/vsim.exe||')
+
+# make sure python dir was set properly
+ifeq ($(MODELSIM_BIN_DIR),)
+$(error "Directory containing ModelSim binaries must be included in system path")
 endif
 
 EXTRA_LIBS := -lmtipli
-EXTRA_LIBDIRS := -L$(MODELSIM_PATH)/win32aloem
+EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 LIB_LOAD := PATH=$(OLD_PATH):$(LIB_DIR)
 

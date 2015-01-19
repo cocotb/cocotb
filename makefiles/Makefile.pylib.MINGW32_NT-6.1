@@ -27,9 +27,18 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# All common pyhon related rules
+# All common python related rules
 
-PYTHON_DIR=/tools/Python27
+# if not explicitly set, auto-detect python dir from system path
+ifeq ($(PYTHON_DIR),)
+PYTHON_DIR = $(shell which python | sed 's|/python.exe||')
+endif
+
+# make sure python dir was set properly
+ifeq ($(PYTHON_DIR),)
+$(error "Path to Python directory must be included in system path or defined in PYTHON_DIR environment variable")
+endif
+
 PYTHON_BIN=$(PYTHON_DIR)/python.exe
 
 # We might work with other Python versions
