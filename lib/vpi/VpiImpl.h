@@ -215,10 +215,10 @@ public:
     int deregister_callback(GpiCbHdl *obj_hdl);
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
-
     const char * reason_to_string(int reason);
 
 private:
+    GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name);
     /* Singleton callbacks */
     VpiReadwriteCbHdl m_read_write;
     VpiNextPhaseCbHdl m_next_phase;
