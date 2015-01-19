@@ -68,15 +68,23 @@ ifeq ($(OS),MINGW32_NT-6.1)
 # auto-detect modelsim dir from system path
 MODELSIM_BIN_DIR = $(shell which vsim | sed 's|/vsim.exe||')
 
-# make sure python dir was set properly
+# make sure modelsim dir was found
 ifeq ($(MODELSIM_BIN_DIR),)
 $(error "Directory containing ModelSim binaries must be included in system path")
 endif
 
+# Windows allows the situation where the libstc++ used at link time as
+# specified by -L can be different to the one that is used at runtime which
+# comes from the first libstdc++ that it finds in the path. As such
+# we use the mingw lib used at build time and put this at the start of the path
+# before running
+
+MINGW_BIN_DIR = $(shell which gcc | sed 's|/gcc.exe||')
+
 EXTRA_LIBS := -lmtipli
 EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
-LIB_LOAD := PATH=$(OLD_PATH):$(LIB_DIR)
+LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
 
 else
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
