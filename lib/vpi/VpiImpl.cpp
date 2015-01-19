@@ -91,6 +91,8 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiModule:
         case vpiInterface:
         case vpiModport:
+        case vpiInterfaceArray:
+        case vpiRefObj:
             new_obj = new GpiObjHdl(this, new_hdl);
             break;
         default:
