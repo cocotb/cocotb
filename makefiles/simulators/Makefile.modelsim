@@ -86,6 +86,7 @@ EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 
 LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
+PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' | sed 's/\([a-zA-Z]\)\(:\)\//\/\1\//g' | sed 's/;/:/g')
 
 else
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)

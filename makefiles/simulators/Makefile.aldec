@@ -106,6 +106,7 @@ EXTRA_LIBS := -laldecpli
 EXTRA_LIBDIRS := -L$(ALDEC_PATH)/bin/
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
+PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' | sed 's/\([a-zA-Z]\)\(:\)\//\/\1\//g' | sed 's/;/:/g')
 else
 
 EXTRA_LIBS = -laldecpli
