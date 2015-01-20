@@ -340,13 +340,23 @@ class TestFactory(object):
         """
         self.kwargs[name] = optionlist
 
-    def generate_tests(self):
+    def generate_tests(self, prefix="", postfix=""):
         """
         Generates exhasutive set of tests using the cartesian product of the
         possible keyword arguments.
 
         The generated tests are appended to the namespace of the calling 
         module.
+
+        Args:
+            prefix:  Text string to append to start of test_function name
+                     when naming generated test cases. This allows reuse of
+                     a single test_function with multiple TestFactories without
+                     name clashes.
+            postfix: Text string to append to end of test_function name
+                     when naming generated test cases. This allows reuse of
+                     a single test_function with multiple TestFactories without
+                     name clashes.
         """
 
         frm = inspect.stack()[1]
@@ -356,7 +366,7 @@ class TestFactory(object):
 
         for index, testoptions in enumerate( (dict(zip(d, v)) for v in product(*d.values())) ):
 
-            name = "%s_%03d" % (self.name, index + 1)
+            name = "%s%s%s_%03d" % (prefix, self.name, postfix, index + 1)
             doc = "Automatically generated test\n\n"
 
             for optname, optvalue in testoptions.items():
