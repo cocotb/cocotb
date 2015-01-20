@@ -53,7 +53,9 @@ class Bus(object):
         """
         Args:
             entity (SimHandle):   SimHandle instance to the entity containing the bus
-            name (str):           name of the bus
+            name (str):           name of the bus. None for nameless bus, e.g.
+                                  bus-signals in an interface or a modport
+                                  (untested on struct/record, but could work here as well)
             signals (list):       array of signal names
 
         Kwargs:

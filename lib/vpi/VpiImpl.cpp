@@ -70,25 +70,16 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vpi_time_s.low;
 }
 
-GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
+GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name)
 {
     int32_t type;
-    vpiHandle new_hdl;
-    GpiObjHdl *new_obj = NULL; 
-    std::vector<char> writable(name.begin(), name.end());
-    writable.push_back('\0');
-
-    new_hdl = vpi_handle_by_name(&writable[0], NULL);
-
-    if (!new_hdl)
-        return NULL;
-
+    GpiObjHdl *new_obj = NULL;
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
-        vpi_free_object(new_hdl);
-        return new_obj;
+        LOG_ERROR("vpiUnknown returned from vpi_get(vpiType, ...)")
+        return NULL;
     }
 
-    /* What sort of isntance is this ?*/
+    /* What sort of instance is this ?*/
     switch (type) {
         case vpiNet:
         case vpiReg:
@@ -100,10 +91,12 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         case vpiModule:
         case vpiInterface:
         case vpiModport:
+        case vpiInterfaceArray:
+        case vpiRefObj:
             new_obj = new GpiObjHdl(this, new_hdl);
             break;
         default:
-            LOG_INFO("Not sure what to do with type %d for entity (%s)", type, name.c_str());
+            LOG_WARN("Not able to map type %d to object.");
             return NULL;
     }
 
@@ -112,43 +105,45 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     return new_obj;
 }
 
+GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
+{
+    vpiHandle new_hdl;
+    std::vector<char> writable(name.begin(), name.end());
+    writable.push_back('\0');
+
+    new_hdl = vpi_handle_by_name(&writable[0], NULL);
+    if (new_hdl == NULL) {
+        LOG_WARN("Could not get vpi_get_handle_by_name %s", name.c_str());
+        return NULL;
+    }
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
+    if (new_obj == NULL) {
+        vpi_free_object(new_hdl);
+        LOG_WARN("Could not fetch object %s", name.c_str());
+        return NULL;
+    }
+    return new_obj;
+}
+
 GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
-    int32_t type;
     GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
     vpiHandle vpi_hdl = parent_hdl->get_handle<vpiHandle>();
     vpiHandle new_hdl;
-    GpiObjHdl *new_obj = NULL; 
     
     new_hdl = vpi_handle_by_index(vpi_hdl, index);
-
-    if (!new_hdl)
+    if (new_hdl == NULL) {
+        LOG_WARN("Error for vpi_get_handle_by_index %d. Is index out of bounds?", index);
         return NULL;
-
-    if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
-        vpi_free_object(vpi_hdl);
-        return new_obj;
     }
-
-    /* What sort of isntance is this ?*/
-    switch (type) {
-        case vpiNet:
-        case vpiNetBit:
-        case vpiEnumNet:
-            new_obj = new VpiSignalObjHdl(this, new_hdl);
-            break;
-        case vpiModule:
-            new_obj = new GpiObjHdl(this, new_hdl);
-            break;
-        default:
-            LOG_DEBUG("Not sure what to do with type %d below entity (%s) at index (%d)",
-                         type, parent->get_name_str(), index);
-            return NULL;
-    }
-
     std::string name = vpi_get_str(vpiFullName, new_hdl);
-    new_obj->initialise(name);
-
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
+    if (new_obj == NULL) {
+        vpi_free_object(new_hdl);
+        LOG_WARN("Could not fetch object below entity (%s) at index (%d)",
+                                 parent->get_name_str(), index);
+        return NULL;
+    }
     return new_obj;
 }
 
