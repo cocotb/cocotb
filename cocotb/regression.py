@@ -305,13 +305,17 @@ class TestFactory(object):
     the test description) includes the name and description of each generator.
     """
 
-    def __init__(self, test_function, *args):
+    def __init__(self, test_function, *args, **kwargs):
         """
         Args:
             test_function (function): the function that executes a test.
                                       Must take 'dut' as the first argument.
 
             *args: Remaining args are passed directly to the test function.
+                   Note that these arguments are not varied. An argument that
+                   varies with each test must be a keyword argument to the
+                   test function.
+            *kwargs: Remaining kwargs are passed directly to the test function.
                    Note that these arguments are not varied. An argument that
                    varies with each test must be a keyword argument to the
                    test function.
@@ -322,6 +326,7 @@ class TestFactory(object):
         self.name = self.test_function._func.__name__
 
         self.args = args
+        self.kwargs_constant = kwargs
         self.kwargs = {}
 
     def add_option(self, name, optionlist):
@@ -335,13 +340,23 @@ class TestFactory(object):
         """
         self.kwargs[name] = optionlist
 
-    def generate_tests(self):
+    def generate_tests(self, prefix="", postfix=""):
         """
         Generates exhasutive set of tests using the cartesian product of the
         possible keyword arguments.
 
         The generated tests are appended to the namespace of the calling 
         module.
+
+        Args:
+            prefix:  Text string to append to start of test_function name
+                     when naming generated test cases. This allows reuse of
+                     a single test_function with multiple TestFactories without
+                     name clashes.
+            postfix: Text string to append to end of test_function name
+                     when naming generated test cases. This allows reuse of
+                     a single test_function with multiple TestFactories without
+                     name clashes.
         """
 
         frm = inspect.stack()[1]
@@ -351,7 +366,7 @@ class TestFactory(object):
 
         for index, testoptions in enumerate( (dict(zip(d, v)) for v in product(*d.values())) ):
 
-            name = "%s_%03d" % (self.name, index + 1)
+            name = "%s%s%s_%03d" % (prefix, self.name, postfix, index + 1)
             doc = "Automatically generated test\n\n"
 
             for optname, optvalue in testoptions.items():
@@ -363,5 +378,11 @@ class TestFactory(object):
                     doc += "\t%s: %s\n" % (optname, repr(optvalue))
 
             cocotb.log.debug("Adding generated test \"%s\" to module \"%s\"" % (name, mod.__name__))
-            setattr(mod, name, _create_test(self.test_function, name, doc, mod, *self.args, **testoptions))
+            kwargs = {}
+            kwargs.update(self.kwargs_constant)
+            kwargs.update(testoptions)
+            if hasattr(mod, name):
+                cocotb.log.error("Overwriting %s in module %s. This causes previously defined testcase "
+                                 "not to be run. Consider setting/changing name_postfix" % (name, mod))
+            setattr(mod, name, _create_test(self.test_function, name, doc, mod, *self.args, **kwargs))
 

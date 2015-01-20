@@ -9,8 +9,7 @@
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Potential Ventures Ltd,
-#       SolarFlare Communications Inc nor the
+#     * Neither the name of Potential Ventures Ltd, nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
@@ -26,19 +25,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(SIM_ROOT)/makefiles/Makefile.inc
+# Compilation phase
+$(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_LIBS)
+	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) \
+        cvc64 +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=libvpi:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
-INCLUDES    += -I$(MODELSIM_BIN_DIR)/../include
-GXX_ARGS    += -DFLI_CHECKING
-LIBS        := -lgpilog -lgpi -lstdc++
-LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
-LIB_NAME    := libfli
+# Execution phase
+results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
+        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+        $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
-SRCS        := FliImpl.cpp
+clean::
+	-@rm -rf $(SIM_BUILD)
 
-all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
-
-clean:
-	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
-
-include $(SIM_ROOT)/makefiles/Makefile.rules

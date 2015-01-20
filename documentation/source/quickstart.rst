@@ -22,9 +22,7 @@ Running an example
 .. code-block:: bash
 
     $> git clone https://github.com/potentialventures/cocotb
-    $> cd cocotb
-    $> make
-    $> cd examples/endian_swapper
+    $> cd cocotb/examples/endian_swapper/tests
     $> make
 
 To run a test using a different simulator:
@@ -45,12 +43,58 @@ The endian swapper example includes both a VHDL and Verilog RTL implementation. 
 
 
 
-Using cocotb
+Using Cocotb
 ============
 
-A typical cocotb testbench requires no additional RTL code.
+A typical Cocotb testbench requires no additional RTL code.
 The Design Under Test (DUT) is instantiated as the toplevel in the simulator without any wrapper code.
-Cocotb drives stimulus onto the inputs to the DUT (or further down the hierarchy) and monitors the outputs directly from Python.
+Cocotb drives stimulus onto the inputs to the DUT and monitors the outputs directly from Python.
+
+
+Creating a Makefile
+-------------------
+
+To create a Cocotb test we typically have to create a Makefile.  Cocotb provides
+rules which make it easy to get started.  We simply inform Cocotb of the
+source files we need compiling, the toplevel entity to instantiate and the
+python test script to load.
+
+.. code-block:: bash
+
+    VERILOG_SOURCES = $(PWD)/submodule.sv $(PWD)/my_design.sv
+    TOPLEVEL=my_design
+    MODULE=test_my_design
+    include $(COCOTB)/makefiles/Makefile.inc
+    include $(COCOTB)/makefiles/Makefile.sim
+
+We would then create a file called ``test_my_design.py`` containing our tests.
+
+
+Creating a test
+---------------
+
+The test is written in Python.  Assuming we have a toplevel port called ``clk``
+we could create a test file containing the following:
+
+.. code-block:: python
+
+    import cocotb
+    from cocotb.triggers import Timer
+    
+    @cocotb.test()
+    def my_first_test(dut):
+        """
+        Try accessing the design
+        """
+        dut.log.info("Running test!")
+        for cycle in range(10):
+            dut.clk = 0
+            yield Timer(1000)
+            dut.clk = 1
+            yield Timer(1000)
+        dut.log.info("Running test!")
+
+This will drive a square wave clock onto the ``clk`` port of the toplevel.
 
 
 Accessing the design
@@ -101,6 +145,13 @@ Accessing the .value property of a handle object will return a :class:`BinaryVal
     1X1010
     >>> # Resolve the value to an integer (X or Z treated as 0)
     >>> print count.integer
+    42
+
+We can also cast the signal handle directly to an integer:
+
+.. code-block:: python
+    
+    >>> print int(dut.counter)
     42
 
 

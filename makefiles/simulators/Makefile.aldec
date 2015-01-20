@@ -94,10 +94,18 @@ endif
 
 ifeq ($(OS),Msys)
 
+# Windows allows the situation where the libstc++ used at link time as
+# specified by -L can be different to the one that is used at runtime which
+# comes from the first libstdc++ that it finds in the path. As such
+# we use the mingw lib used at build time and put this at the start of the path
+# before running
+
+MINGW_BIN_DIR = $(shell which gcc | sed 's|/gcc.exe||')
+
 EXTRA_LIBS := -laldecpli
 EXTRA_LIBDIRS := -L$(ALDEC_PATH)/bin/
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
-LIB_LOAD := PATH=$(OLD_PATH):$(LIB_DIR)
+LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
 else
 
 EXTRA_LIBS = -laldecpli
