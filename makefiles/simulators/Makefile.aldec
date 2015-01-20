@@ -100,7 +100,7 @@ ifeq ($(OS),Msys)
 # we use the mingw lib used at build time and put this at the start of the path
 # before running
 
-MINGW_BIN_DIR = $(shell which gcc | sed 's|/gcc.exe||')
+MINGW_BIN_DIR = $(shell dirname $(shell which gcc))
 
 EXTRA_LIBS := -laldecpli
 EXTRA_LIBDIRS := -L$(ALDEC_PATH)/bin/

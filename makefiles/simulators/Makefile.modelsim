@@ -66,7 +66,7 @@ endif
 ifeq ($(OS),Msys)
 
 # auto-detect modelsim dir from system path
-MODELSIM_BIN_DIR = $(shell which vsim | sed 's|/vsim.exe||')
+MODELSIM_BIN_DIR = $(shell dirname $(shell which vsim))
 
 # make sure modelsim dir was found
 ifeq ($(MODELSIM_BIN_DIR),)
@@ -79,7 +79,7 @@ endif
 # we use the mingw lib used at build time and put this at the start of the path
 # before running
 
-MINGW_BIN_DIR = $(shell which gcc | sed 's|/gcc.exe||')
+MINGW_BIN_DIR = $(shell dirname $(shell which gcc))
 
 EXTRA_LIBS := -lmtipli
 EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
