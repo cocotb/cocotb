@@ -75,13 +75,14 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
     int32_t type;
     GpiObjHdl *new_obj = NULL;
     if (vpiUnknown == (type = vpi_get(vpiType, new_hdl))) {
-        LOG_ERROR("vpiUnknown returned from vpi_get(vpiType, ...)")
+        LOG_DEBUG("vpiUnknown returned from vpi_get(vpiType, ...)")
         return NULL;
     }
 
     /* What sort of instance is this ?*/
     switch (type) {
         case vpiNet:
+        case vpiNetBit:
         case vpiReg:
         case vpiParameter:
         case vpiEnumNet:
@@ -96,7 +97,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
             new_obj = new GpiObjHdl(this, new_hdl);
             break;
         default:
-            LOG_WARN("Not able to map type %d to object.");
+            LOG_WARN("Not able to map type %d to object.", type);
             return NULL;
     }
 
@@ -113,13 +114,13 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 
     new_hdl = vpi_handle_by_name(&writable[0], NULL);
     if (new_hdl == NULL) {
-        LOG_WARN("Could not get vpi_get_handle_by_name %s", name.c_str());
+        LOG_WARN("Failed to query vpi_get_handle_by_name %s", name.c_str());
         return NULL;
     }
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_WARN("Could not fetch object %s", name.c_str());
+        LOG_WARN("Failed to query fetch object %s", name.c_str());
         return NULL;
     }
     return new_obj;
