@@ -38,7 +38,7 @@ def raise_error(obj, msg):
         obj has a log method
         msg is a string
     """
-    exc_type, exc_value, exc_traceback = sys.exc_info()    
+    exc_type, exc_value, exc_traceback = sys.exc_info()
     if sys.version_info.major >= 3:
         buff = StringIO()
         traceback.print_tb(exc_traceback, file=buff)

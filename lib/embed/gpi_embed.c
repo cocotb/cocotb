@@ -262,8 +262,8 @@ int embed_sim_init(gpi_sim_info_t *info)
         Py_DECREF(cocotb_retval);
     } else {
         PyErr_Print();
-        fprintf(stderr,"Call failed\n");
-        goto cleanup;
+        fprintf(stderr,"Cocotb initialisation failed - exiting\n");
+	exit(1);
     }
 
     FEXIT
