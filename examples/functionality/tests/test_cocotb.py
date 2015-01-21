@@ -169,7 +169,7 @@ def do_test_afterdelay_in_readonly(dut, delay):
     yield Timer(delay)
     exited = True
 
-@cocotb.test(expect_error=True, expect_fail=cocotb.SIM_NAME in ["Icarus Verilog", "Riviera-PRO"])
+@cocotb.test(expect_error=True, expect_fail=cocotb.SIM_NAME in ["Icarus Verilog", "Riviera-PRO", "ModelSim DE", "ModelSim ALTERA STARTER EDITION"])
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
