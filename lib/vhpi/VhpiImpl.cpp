@@ -110,39 +110,27 @@ void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vhpi_time_s.low;
 }
 
-GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
+GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string &name)
 {
     vhpiIntT type;
-    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
-    vhpiHandleT vpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
-    vhpiHandleT new_hdl;
     GpiObjHdl *new_obj = NULL;
-    unsigned int name_start = 0;
-    std::vector<char> writable(name.begin(), name.end());
-    writable.push_back('\0');
-
-    new_hdl = vhpi_handle_by_name(&writable[name_start], NULL);
-
-    if (!new_hdl)
-        return NULL;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
-        vhpi_release_handle(vpi_hdl);
-        LOG_DEBUG("Not a VHPI object");
+        LOG_DEBUG("vhpiVerilog returned from vhpi_get(vhpiType, ...)")
         return NULL;
     }
-
     /* What sort of isntance is this ?*/
     switch (type) {
         case vhpiPortDeclK:
         case vhpiSigDeclK:
+        case vhpiIndexedNameK:
             new_obj = new VhpiSignalObjHdl(this, new_hdl);
             break;
         case vhpiCompInstStmtK:
             new_obj = new GpiObjHdl(this, new_hdl);
             break;
         default:
-            LOG_DEBUG("Not sure what to do with type %d for entity (%s)", type, name.c_str());
+            LOG_WARN("Not able to map type %d to object.");
             return NULL;
     }
 
@@ -151,42 +139,50 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     return new_obj;
 }
 
+GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
+{
+    vhpiHandleT new_hdl;
+    std::vector<char> writable(name.begin(), name.end());
+    writable.push_back('\0');
+
+    new_hdl = vhpi_handle_by_name(&writable[0], NULL);
+
+    if (new_hdl == NULL) {
+        LOG_DEBUG("Unable to query vhpi_handle_by_name %s", name.c_str());
+        return NULL;
+    }
+
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
+    if (new_obj == NULL) {
+        vhpi_release_handle(new_hdl);
+        LOG_DEBUG("Unable to fetch object %s", name.c_str());
+        return NULL;
+    }
+
+    return new_obj;
+}
+
 GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
-    vhpiIntT type;
     GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
     vhpiHandleT vpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
     vhpiHandleT new_hdl;
-    GpiObjHdl *new_obj = NULL;
 
     new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vpi_hdl, index);
-    check_vhpi_error();
 
-    if (!new_hdl)
+    if (new_hdl == NULL) {
+        LOG_DEBUG("Unable to query vhpi_handle_by_index %s", index);
         return NULL;
-
-    if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
-        vhpi_release_handle(vpi_hdl);
-        LOG_DEBUG("Not a VHPI object");
-        return NULL;
-    }
-
-    /* What sort of isntance is this ?*/
-    switch (type) {
-        case vhpiIndexedNameK:
-            new_obj = new VhpiSignalObjHdl(this, new_hdl);
-            break;
-        case vhpiCompInstStmtK:
-            new_obj = new GpiObjHdl(this, new_hdl);
-            break;
-        default:
-            LOG_DEBUG("Not sure what to do with type %d below entity (%s) at index (%d)",
-                         type, parent->get_name_str(), index);
-            return NULL;
     }
 
     std::string name = vhpi_get_str(vhpiNameP, new_hdl);
-    new_obj->initialise(name);
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
+    if (new_obj == NULL) {
+        vhpi_release_handle(new_hdl);
+        LOG_DEBUG("Could not fetch object below entity (%s) at index (%d)",
+                                 parent->get_name_str(), index);
+        return NULL;
+    }
 
     return new_obj;
 }

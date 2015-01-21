@@ -202,6 +202,7 @@ public:
     const char * format_to_string(int format);
 
 private:
+    GpiObjHdl *create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string &name);
     VhpiReadwriteCbHdl m_read_write;
     VhpiNextPhaseCbHdl m_next_phase;
     VhpiReadOnlyCbHdl m_read_only;
