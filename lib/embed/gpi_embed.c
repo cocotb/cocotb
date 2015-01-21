@@ -220,15 +220,17 @@ int embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
 
-    // Set languare in use
+    // Set language in use as an attribute to cocotb module, or None if not provided
     const char *lang = getenv("TOPLEVEL_LANG");
-    if (!lang)
-       fprintf(stderr, "You should really set TOPLEVEL_LANG to \"verilog/vhdl\"");
-    else {
-        if (-1 == PyObject_SetAttrString(cocotb_module, "LANGUAGE", PyString_FromString(lang))) {
-            fprintf(stderr, "Unable to set LANGUAGE");
-            goto cleanup;
-        }
+    PyObject* PyLang;
+    if (lang)
+        PyLang = PyString_FromString(lang);
+    else
+        PyLang = Py_None;
+
+    if (-1 == PyObject_SetAttrString(cocotb_module, "LANGUAGE", PyLang)) {
+        fprintf(stderr, "Unable to set LANGUAGE");
+        goto cleanup;
     }
 
     // Hold onto a reference to our _fail_test function
