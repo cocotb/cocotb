@@ -39,6 +39,11 @@ SRCS        := VpiImpl.cpp VpiCbHdl.cpp
 
 CLIBS       += $(LIB_DIR)/gpivpi.vpl
 
+#temporary hack for cvc
+ifeq ($(SIM),cvc)
+    GXX_ARGS    += -DMODELSIM
+endif
+
 # More rules such that this may be needed depending on the requirements of
 # different simulators, icarus for instance loads a <name>.vpi libraray to use the vpi
 # inerface at the start of the simulation
