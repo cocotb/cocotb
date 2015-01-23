@@ -170,7 +170,14 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
     value_s.value.str = &writable[0];
     value_s.format = vpiBinStrVal;
 
-    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, NULL, vpiNoDelay);
+    s_vpi_time vpi_time_s;
+
+    vpi_time_s.type = vpiSimTime;
+    vpi_time_s.high = 0;
+    vpi_time_s.low  = 0;
+
+    // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
     check_vpi_error();
 
     FEXIT
