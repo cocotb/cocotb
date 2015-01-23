@@ -153,7 +153,9 @@ const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
 // Functions for setting the properties of a handle
 void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
+void gpi_set_signal_value_int_delay(gpi_sim_hdl gpi_hdl, int value, uint64_t inertial_delay);
 void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
+void gpi_set_signal_value_str_delay(gpi_sim_hdl gpi_hdl, const char *str, uint64_t inertial_delay);    // String of binary char(s) [1, 0, x, z]
 
 typedef enum gpi_edge {
     GPI_RISING = 1,

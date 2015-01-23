@@ -282,11 +282,24 @@ void gpi_set_signal_value_int(gpi_sim_hdl sig_hdl, int value)
     obj_hdl->set_signal_value(value);
 }
 
+void gpi_set_signal_value_int_delay(gpi_sim_hdl sig_hdl, int value, uint64_t inertial_delay)
+{
+    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    obj_hdl->set_signal_value(value, inertial_delay);
+}
+
 void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str)
 {
     std::string value = str;
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
     obj_hdl->set_signal_value(value);
+}
+
+void gpi_set_signal_value_str_delay(gpi_sim_hdl sig_hdl, const char *str, uint64_t inertial_delay)
+{
+    std::string value = str;
+    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    obj_hdl->set_signal_value(value, inertial_delay);
 }
 
 gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),
