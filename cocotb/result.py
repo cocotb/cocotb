@@ -39,7 +39,8 @@ def raise_error(obj, msg):
         msg is a string
     """
     exc_type, exc_value, exc_traceback = sys.exc_info()
-    if sys.version_info.major >= 3:
+    # 2.6 cannot use named access
+    if sys.version_info[0] >= 3:
         buff = StringIO()
         traceback.print_tb(exc_traceback, file=buff)
     else:
