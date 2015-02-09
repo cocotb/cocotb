@@ -46,6 +46,7 @@ endif
 
 ifeq ($(GPI_IMPL),vhpi)
 VSIM_ARGS += -foreign \"cocotb_init libfli.so\" -trace_foreign 3
+CUSTOM_SIM_DEPS += $(LIB_DIR)/libfli.so
 else
 VSIM_ARGS += -pli libvpi.$(LIB_EXT)
 endif
