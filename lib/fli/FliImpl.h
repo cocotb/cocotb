@@ -80,21 +80,42 @@ protected:
     bool                m_sensitised;
 };
 
+class FliSignalObjHdl;
+
 // One class of callbacks uses mti_Sensitize to react to a signal
-class FliSignalCbHdl : public FliProcessCbHdl {
+class FliSignalCbHdl : public FliProcessCbHdl, public GpiValueCbHdl {
 
 public:
-    FliSignalCbHdl(GpiImplInterface *impl, mtiSignalIdT sig_hdl) : FliProcessCbHdl(impl), m_sig_hdl(sig_hdl) { }
-    virtual ~FliSignalCbHdl() { }
+    FliSignalCbHdl(GpiImplInterface *impl,
+                   FliSignalObjHdl *sig_hdl,
+                   unsigned int edge);
 
+    virtual ~FliSignalCbHdl() { }
     int arm_callback(void);
-    int run_callback(void) {
-	fprintf(stderr, "Hello\n"); fflush(stderr);
-	return 0;
-    }
+    int cleanup_callback(void) { fprintf(stderr, "Things\n"); fflush(stderr); return 0; }
 
 private:
     mtiSignalIdT        m_sig_hdl;
+};
+
+class FliSignalObjHdl : public GpiSignalObjHdl {
+public:
+    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : GpiSignalObjHdl(impl, hdl),
+                                                                m_fli_hdl(hdl),
+                                                                m_rising_cb(impl, this, GPI_RISING),
+                                                                m_falling_cb(impl, this, GPI_FALLING),
+                                                                m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
+    virtual ~FliSignalObjHdl() { }
+
+    const char* get_signal_value_binstr(void);
+    int set_signal_value(const int value);
+    int set_signal_value(std::string &value);
+    GpiCbHdl *value_change_cb(unsigned int edge);
+protected:
+     mtiSignalIdT       m_fli_hdl;
+     FliSignalCbHdl     m_rising_cb;
+     FliSignalCbHdl     m_falling_cb;
+     FliSignalCbHdl     m_either_cb;
 };
 
 
@@ -168,27 +189,6 @@ public:
 protected:
      mtiRegionIdT m_fli_hdl;
 };
-
-
-class FliSignalObjHdl : public GpiSignalObjHdl {
-public:
-    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : GpiSignalObjHdl(impl, hdl),
-                                                                m_fli_hdl(hdl),
-                                                                m_cb_hdl(NULL) { }
-    virtual ~FliSignalObjHdl() { }
-
-    const char* get_signal_value_binstr(void);
-    int set_signal_value(const int value);
-    int set_signal_value(std::string &value);
-    GpiCbHdl *value_change_cb(unsigned int edge);
-protected:
-     mtiSignalIdT       m_fli_hdl;
-     FliSignalCbHdl     *m_cb_hdl;
-};
-
-
-
-
 
 
 class FliImpl : public GpiImplInterface {

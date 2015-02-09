@@ -68,7 +68,6 @@ void cocotb_init(void) {
 // Main re-entry point for callbacks from simulator
 void handle_fli_callback(void *data)
 {
-//     fprintf(stderr, "Got a callback\n");
     fflush(stderr);
 
     FliCbHdl *cb_hdl = (FliCbHdl*)data;
@@ -78,18 +77,18 @@ void handle_fli_callback(void *data)
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-//     fprintf(stderr, "FLI: Old state was %d!\n", old_state);
-//     fflush(stderr);
+//    fprintf(stderr, "FLI: Old state was %d!\n", old_state);
+//    fflush(stderr);
 
     if (old_state == GPI_PRIMED) { 
 
         cb_hdl->set_call_state(GPI_CALL);
 
-//         fprintf(stderr, "FLI: Calling run_callback\n");
-//         fflush(stderr);
+//        fprintf(stderr, "FLI: Calling run_callback\n");
+//        fflush(stderr);
         cb_hdl->run_callback();
-//         fprintf(stderr, "FLI: Callback executed\n");
-//         fflush(stderr);
+//        fprintf(stderr, "FLI: Callback executed\n");
+//        fflush(stderr);
         gpi_cb_state_e new_state = cb_hdl->get_call_state();
 
         /* We have re-primed in the handler */
@@ -322,7 +321,7 @@ int FliSignalCbHdl::arm_callback(void) {
 
     mti_Sensitize(m_proc_hdl, m_sig_hdl, MTI_EVENT);
     m_sensitised = true;
-    m_state = GPI_PRIMED;
+    GpiValueCbHdl::m_state = GPI_PRIMED;
     return 0;
 }
 
@@ -339,23 +338,42 @@ int FliSimPhaseCbHdl::arm_callback(void) {
     return 0;
 }
 
-GPI_ENTRY_POINT(fli, cocotb_init);
-
+FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface *impl,
+                	       FliSignalObjHdl *sig_hdl,
+                   	       unsigned int edge) : GpiCbHdl(impl),
+                                		    FliProcessCbHdl(impl),
+                                        	    GpiValueCbHdl(impl, sig_hdl, edge)
+{
+    m_sig_hdl = m_signal->get_handle<mtiSignalIdT>();
+}
 
 
 GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge) {
 
     LOG_INFO("Creating value change callback for %s", m_name.c_str());
 
-    if (NULL == m_cb_hdl) {
-        m_cb_hdl = new FliSignalCbHdl(m_impl, m_fli_hdl);
+    FliSignalCbHdl *cb = NULL;
+
+    switch (edge) {
+    case 1:
+        cb = &m_rising_cb;
+        break;
+    case 2:
+        cb = &m_falling_cb;
+        break;
+    case 3:
+        cb = &m_either_cb;
+        break;
+    default:
+        return NULL;
     }
-    m_cb_hdl->arm_callback();
 
-    return m_cb_hdl;
+    if (cb->arm_callback()) {
+        return NULL;
+    }
+
+    return (GpiValueCbHdl*)cb;
 }
-
-
 
 // TODO: Could cache various settings here which would save some of the calls
 // into FLI
@@ -421,4 +439,6 @@ int FliSignalObjHdl::set_signal_value(std::string &value) {
     }
     return rc-1;
 }
+
+GPI_ENTRY_POINT(fli, cocotb_init);
 
