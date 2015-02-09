@@ -44,9 +44,9 @@ Exposes 2 32-bit registers via the Avalon-MM interface
 
 */
 
-module endian_swapper #(
+module endian_swapper_sv #(
     parameter                              DATA_BYTES = 8
-) (    
+) (
     input                                  clk,
     input                                  reset_n,
 
@@ -156,6 +156,7 @@ always @(posedge clk or negedge reset_n) begin
         byteswapping      <= 1'b0;
         csr_readdatavalid <= 1'b0;
     end else begin
+        csr_readdatavalid <= 1'b0;
         if (csr_read) begin
             csr_readdatavalid <= !csr_waitrequest;
             case (csr_address)
@@ -173,7 +174,7 @@ end
 `ifdef COCOTB_SIM
 initial begin
   $dumpfile ("waveform.vcd");
-  $dumpvars (0,endian_swapper);
+  $dumpvars (0,endian_swapper_sv);
   #1;
 end
 `endif

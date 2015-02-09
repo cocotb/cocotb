@@ -6,12 +6,12 @@
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
 	cd $(SIM_BUILD) && nvc -a $(VHDL_SOURCES)
 
-results.xml: analyse $(COCOTB_LIBS)
+results.xml: analyse $(COCOTB_LIBS) $(COCOTB_LIB_VPI)
 	cd $(SIM_BUILD) && LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) nvc -e $(TOPLEVEL)
 	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	LD_LIBRARY_PATH=$(LIB_DIR) \
-	nvc -r --load $(LIB_DIR)/libgpi.so $(TOPLEVEL)
+	nvc -r --load $(LIB_DIR)/libvhpi.so $(TOPLEVEL)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

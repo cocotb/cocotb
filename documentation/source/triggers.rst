@@ -34,11 +34,16 @@ Registers a callback that will continue execution of the coroutine on any value 
    Behaviour for vectors
 
 
-
 RisingEdge(signal)
 ^^^^^^^^^^^^^^^^^^
 
 Registers a callback that will continue execution of the coroutine on a transition from 0 to 1 of signal.
+
+
+FallingEdge(signal)
+^^^^^^^^^^^^^^^^^^
+
+Registers a callback that will continue execution of the coroutine on a transition from 1 to 0 of signal.
 
 
 ClockCycles(signal, num_cycles)

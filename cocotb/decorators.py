@@ -24,13 +24,15 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-
+from __future__ import print_function
 import sys
 import time
 import logging
 import traceback
 import threading
 import pdb
+
+from io import StringIO, BytesIO
 
 import cocotb
 from cocotb.log import SimLog
@@ -77,8 +79,11 @@ class RunningCoroutine(object):
             coro.kill() will destroy a coroutine instance (and cause any Join triggers to fire
     """
     def __init__(self, inst, parent):
-        self.__name__ = "%s" % inst.__name__
-        self.log = SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
+        if hasattr(inst, "__name__"):
+            self.__name__ = "%s" % inst.__name__
+            self.log = SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
+        else:
+            self.log = SimLog("cocotb.coroutine.fail")
         self._coro = inst
         self._finished = False
         self._callbacks = []
@@ -91,7 +96,7 @@ class RunningCoroutine(object):
 
         if not hasattr(self._coro, "send"):
             self.log.error("%s isn't a value coroutine! Did you use the yield keyword?"
-                % self.__name__)
+                % self.funcname)
             raise CoroutineComplete(callback=self._finished_cb)
 
     def __iter__(self):
@@ -152,7 +157,7 @@ class RunningTest(RunningCoroutine):
     class ErrorLogHandler(logging.Handler):
         def __init__(self, fn):
             self.fn = fn
-            logging.Handler.__init__(self, level=logging.ERROR)
+            logging.Handler.__init__(self, level=logging.DEBUG)
 
         def handle(self, record):
             self.fn(self.format(record))
@@ -176,7 +181,6 @@ class RunningTest(RunningCoroutine):
             self.log.info("Starting test: \"%s\"\nDescription: %s" % (self.funcname, self.__doc__))
             self.start_time = time.time()
             self.started = True
-
         try:
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
@@ -185,7 +189,11 @@ class RunningTest(RunningCoroutine):
                 self.log.warning(str(e))
             else:
                 self.log.info(str(e))
-            e.stderr.write("\n".join(self.error_messages))
+            
+            buff = StringIO();
+            for message in self.error_messages:
+                print(message, file=buff) 
+            e.stderr.write(buff.getvalue())
             raise
         except StopIteration:
             raise TestSuccess()
@@ -215,7 +223,14 @@ class coroutine(object):
         except Exception as e:
             traceback.print_exc()
             result = TestError(str(e))
-            traceback.print_exc(file=result.stderr)
+            if sys.version_info.major >= 3:
+                buff = StringIO()
+                traceback.print_exc(file=buff)
+            else:
+                buff_bytes = BytesIO()
+                traceback.print_exc(file=buff_bytes)
+                buff = StringIO(buff_bytes.getvalue().decode("UTF-8"))
+            result.stderr.write(buff.getvalue())
             raise result
 
     def __get__(self, obj, type=None):
@@ -296,7 +311,7 @@ def external(func):
             unblock_external(_event)
 
         thread = threading.Thread(group=None, target=execute_external,
-                                  name=str(func) + "thread", args=([func, bridge]), kwargs={})
+            name=func.__name__ + "thread", args=([func, bridge]), kwargs={})
         thread.start()
 
         yield bridge.out_event.wait()
@@ -308,7 +323,7 @@ def external(func):
 
 @public
 class test(coroutine):
-    """Decorator to mark a fucntion as a test
+    """Decorator to mark a function as a test
 
     All tests are coroutines.  The test decorator provides
     some common reporting etc, a test timeout and allows

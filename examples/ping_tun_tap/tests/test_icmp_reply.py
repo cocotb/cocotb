@@ -95,7 +95,7 @@ def tun_tap_example_test(dut):
     subprocess.check_call('ping -c 5 192.168.255.2 &', shell=True)
 
     # Respond to 5 pings, then quit
-    for i in xrange(5):
+    for i in range(5):
 
         cocotb.log.info("Waiting for packets on tun interface")
         packet = os.read(fd, 2048)

@@ -33,7 +33,9 @@ import logging
 import ctypes
 import traceback
 import sys
-from StringIO import StringIO
+#from StringIO import StringIO
+
+from io import StringIO, BytesIO
 
 import os
 
@@ -47,7 +49,8 @@ import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
-from cocotb.triggers import _RisingEdge
+from cocotb.triggers import _RisingEdge, _FallingEdge
+from cocotb.utils import get_python_integer_types
 
 class SimHandle(object):
 
@@ -64,7 +67,11 @@ class SimHandle(object):
         self.fullname = self.name + '(%s)' % simulator.get_type_string(self._handle)
         self.log = SimLog('cocotb.' + self.name)
         self.log.debug("Created!")
-        self._edge = _RisingEdge(self)
+        self._r_edge = _RisingEdge(self)
+        self._f_edge = _FallingEdge(self)
+
+    def __hash__(self):
+        return self._handle
 
     def __str__(self):
         return "%s @0x%x" % (self.name, self._handle)
@@ -82,9 +89,14 @@ class SimHandle(object):
         return self._sub_handles[name]
 
     def _raise_testerror(self, msg):
-        buff = StringIO()
         lastframe = sys._getframe(2)
-        traceback.print_stack(lastframe, file=buff)
+        if sys.version_info.major >= 3:
+            buff = StringIO()
+            traceback.print_stack(lastframe, file=buff)
+        else:
+            buff_bytes = BytesIO()
+            traceback.print_stack(lastframe, file=buff_bytes)
+            buff = StringIO(buff_bytes.getvalue().decode("UTF8"))
         self.log.error("%s\n%s" % (msg, buff.getvalue()))
         exception = TestError(msg)
         exception.stderr.write(buff.getvalue())
@@ -100,10 +112,20 @@ class SimHandle(object):
         object.__setattr__(self, name, value)
 
     def __hasattr__(self, name):
-        """Since calling hasattr(handle, "something") will print out a
-            backtrace to the log since usually attempting to access a
-            non-existent member is an error we provide a 'peek function"""
-        return bool(simulator.get_handle_by_name(self._handle, name))
+        """
+        Since calling hasattr(handle, "something") will print out a
+        backtrace to the log since usually attempting to access a
+        non-existent member is an error we provide a 'peek function
+
+        We still add the found handle to our dictionary to prevent leaking
+        handles.
+        """
+        if name in self._sub_handles:
+            return self._sub_handles[name]
+        new_handle = simulator.get_handle_by_name(self._handle, name)
+        if new_handle:
+            self._sub_handles[name] = SimHandle(new_handle)
+        return new_handle
 
     def __getitem__(self, index):
         if index in self._sub_handles:
@@ -138,16 +160,22 @@ class SimHandle(object):
         object eg net, signal or variable.
 
         We determine the library call to make based on the type of the value
+
+        Assigning integers less than 32-bits is faster
         """
+        if isinstance(value, get_python_integer_types()) and value < 0x7fffffff:
+            simulator.set_signal_val(self._handle, value)
+            return
+
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
-        if isinstance(value, BinaryValue):
-            simulator.set_signal_val_str(self._handle, value.binstr)
-        elif isinstance(value, (int, long)):
-            simulator.set_signal_val(self._handle, value)
-        else:
+        elif isinstance(value, get_python_integer_types()):
+            value = BinaryValue(value=value, bits=len(self), bigEndian=False)
+        elif not isinstance(value, BinaryValue):
             self.log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+
+        simulator.set_signal_val_str(self._handle, value.binstr)
 
     def setcachedvalue(self, value):
         """Intercept the store of a value and hold in cache.
@@ -210,10 +238,6 @@ class SimHandle(object):
                 hdl = SimHandle(thing)
                 self._sub_handles[hdl.name] = hdl
                 yield hdl
-    def __del__(self):
-        """Free handle from gpi that was allocated on construction"""
-        if self._handle is not None:
-            simulator.free_handle(self._handle)
 
     def __int__(self):
         return int(self.value)

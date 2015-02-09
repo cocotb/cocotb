@@ -99,7 +99,7 @@ class AvalonMaster(AvalonMM):
         self.busy_event.set()
 
     @coroutine
-    def read(self, address):
+    def read(self, address, sync=True):
         """
         Issue a request to the bus and block until this
         comes back. Simulation time still progresses
@@ -113,7 +113,8 @@ class AvalonMaster(AvalonMM):
         yield self._acquire_lock()
 
         # Apply values for next clock edge
-        yield RisingEdge(self.clock)
+        if sync:
+            yield RisingEdge(self.clock)
         self.bus.address <= address
         self.bus.read <= 1
 
@@ -275,7 +276,7 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         self.config = AvalonSTPkts._default_config.copy()
 
-        for configoption, value in config.iteritems():
+        for configoption, value in config.items():
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
 
@@ -303,7 +304,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         firstword = True
 
         # FIXME busses that aren't integer numbers of bytes
-        bus_width = len(self.bus.data) / 8
+        bus_width = int(len(self.bus.data) / 8)
 
         word = BinaryValue(bits=len(self.bus.data), bigEndian=self.config['firstSymbolInHighOrderBits'])
 

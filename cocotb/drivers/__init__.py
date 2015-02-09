@@ -31,7 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     Set of common driver base classes
 """
 
-
 import logging
 
 import cocotb
@@ -70,7 +69,7 @@ class BitDriver(object):
 
         # Actual thread
         while True:
-            on,off = self._generator.next()
+            on,off = next(self._generator)
             self._signal <= 1
             for i in range(on):
                 yield edge
@@ -202,8 +201,9 @@ class BusDriver(Driver):
         Args:
             entity (SimHandle) : a handle to the simulator entity
 
-            name (str) : name of this bus
-
+            name (str) : name of this bus. None for nameless bus, e.g.
+                         bus-signals in an interface or a modport
+                         (untested on struct/record, but could work here as well)
             clock (SimHandle) : A handle to the clock associated with this bus
         """
         self.log = SimLog("cocotb.%s.%s" % (entity.name, name))
@@ -227,10 +227,10 @@ class BusDriver(Driver):
         so sim will need to move to NextTimeStep before
         registering more callbacks can occour
         """
-        yield RisingEdge(self.clock)
         yield ReadOnly()
-        if signal.value.integer != 1:
+        while signal.value.integer != 1:
             yield RisingEdge(signal)
+            yield ReadOnly()
         yield NextTimeStep()
 
     @coroutine
@@ -240,7 +240,6 @@ class BusDriver(Driver):
         so sim will need to move to NextTimeStep before
         registering more callbacks can occour
         """
-        yield RisingEdge(self.clock)
         yield ReadOnly()
         while signal.value.integer != 0:
             yield Edge(signal)
@@ -286,7 +285,7 @@ class ValidatedBusDriver(BusDriver):
         if self.valid_generator is not None:
             while not self.on:
                 try:
-                    self.on, self.off = self.valid_generator.next()
+                    self.on, self.off = next(self.valid_generator)
                 except StopIteration:
                     self.on = True  # If the generator runs out stop inserting non-valid cycles
                     self.log.info("Valid generator exhausted, not inserting non-valid cycles anymore")

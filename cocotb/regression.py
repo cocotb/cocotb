@@ -33,7 +33,7 @@ import time
 import logging
 import inspect
 from itertools import product
-
+import sys
 import os
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
@@ -41,10 +41,19 @@ if "SPHINX_BUILD" in os.environ:
 else:
     import simulator
 
+# Optional support for coverage collection of testbench files
+coverage = None
+if "COVERAGE" in os.environ:
+    try:
+        import coverage
+    except ImportError as e:
+        sys.stderr.write("Coverage collection requested but coverage module not availble\n")
+        sys.stderr.write("Import error was: %s\n" % repr(e))
+
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
-from cocotb.result import TestError, TestFailure, TestSuccess
+from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
 from cocotb.xunit_reporter import XUnitReporter
 
 def _my_import(name):
@@ -58,7 +67,7 @@ def _my_import(name):
 class RegressionManager(object):
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, dut, modules, tests=None):
+    def __init__(self, root_name, modules, tests=None):
         """
         Args:
             modules (list): A list of python module names to run
@@ -66,10 +75,12 @@ class RegressionManager(object):
         Kwargs
         """
         self._queue = []
-        self._dut = dut
+        self._root_name = root_name
+        self._dut = None
         self._modules = modules
         self._functions = tests
         self._running_test = None
+        self._cov = None
         self.log = SimLog("cocotb.regression")
 
     def initialise(self):
@@ -80,6 +91,15 @@ class RegressionManager(object):
         self.failures = 0
         self.xunit = XUnitReporter()
         self.xunit.add_testsuite(name="all", tests=repr(self.ntests), package="all")
+
+        if coverage is not None:
+            self.log.info("Enabling coverage collection of Python code")
+            self._cov = coverage.coverage(branch=True, omit=["*cocotb*"])
+            self._cov.start()
+
+        self._dut = cocotb.handle.SimHandle(simulator.get_root_handle(self._root_name))
+        if self._dut is None:
+            raise AttributeError("Can not find Root Handle (%s)" % root_name)
 
         # Auto discovery
         for module_name in self._modules:
@@ -104,7 +124,7 @@ class RegressionManager(object):
                         skip = test.skip
                     except TestError:
                         skip = True
-                        self.log.warning("Failed to initialise test%s" % thing.name)
+                        self.log.warning("Failed to initialise test %s" % thing.name)
 
                     if skip:
                         self.log.info("Skipping test %s" % thing.name)
@@ -126,10 +146,15 @@ class RegressionManager(object):
         """It's the end of the world as we know it"""
         if self.failures:
             self.log.error("Failed %d out of %d tests (%d skipped)" %
-                (self.failures, self.count-1, self.skipped))
+                (self.failures, self.count -1, self.skipped))
         else:
             self.log.info("Passed %d tests (%d skipped)"  %
                 (self.count-1, self.skipped))
+        if self._cov:
+            self._cov.stop()
+            self.log.info("Writing coverage data")
+            self._cov.save()
+            self._cov.html_report()
         self.log.info("Shutting down...")
         self.xunit.write()
         simulator.stop_simulator()
@@ -169,17 +194,27 @@ class RegressionManager(object):
             self.log.error("Test passed but we expected a failure: %s (result was %s)" % (
                            self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=repr(str(result)), stderr="\n".join(self._running_test.error_messages))
-            self.failures += 1            
+            self.failures += 1
 
         elif isinstance(result, TestError) and self._running_test.expect_error:
             self.log.info("Test errored as expected: %s (result was %s)" % (
                           self._running_test.funcname, result.__class__.__name__))
 
+        elif isinstance(result, SimFailure):
+            if self._running_test.expect_error:
+                self.log.info("Test errored as expected: %s (result was %s)" % (
+                              self._running_test.funcname, result.__class__.__name__))
+            else:
+                self.log.error("Test error has lead to simulator shuttting us down")
+                self.failures += 1
+                self.tear_down()
+                return
+
         else:
             self.log.error("Test Failed: %s (result was %s)" % (
                         self._running_test.funcname, result.__class__.__name__))
             self.xunit.add_failure(stdout=repr(str(result)), stderr="\n".join(self._running_test.error_messages))
-            self.failures += 1            
+            self.failures += 1
 
         self.execute()
 
@@ -270,13 +305,17 @@ class TestFactory(object):
     the test description) includes the name and description of each generator.
     """
 
-    def __init__(self, test_function, *args):
+    def __init__(self, test_function, *args, **kwargs):
         """
         Args:
             test_function (function): the function that executes a test.
                                       Must take 'dut' as the first argument.
 
             *args: Remaining args are passed directly to the test function.
+                   Note that these arguments are not varied. An argument that
+                   varies with each test must be a keyword argument to the
+                   test function.
+            *kwargs: Remaining kwargs are passed directly to the test function.
                    Note that these arguments are not varied. An argument that
                    varies with each test must be a keyword argument to the
                    test function.
@@ -287,6 +326,7 @@ class TestFactory(object):
         self.name = self.test_function._func.__name__
 
         self.args = args
+        self.kwargs_constant = kwargs
         self.kwargs = {}
 
     def add_option(self, name, optionlist):
@@ -300,13 +340,23 @@ class TestFactory(object):
         """
         self.kwargs[name] = optionlist
 
-    def generate_tests(self):
+    def generate_tests(self, prefix="", postfix=""):
         """
         Generates exhasutive set of tests using the cartesian product of the
         possible keyword arguments.
 
         The generated tests are appended to the namespace of the calling 
         module.
+
+        Args:
+            prefix:  Text string to append to start of test_function name
+                     when naming generated test cases. This allows reuse of
+                     a single test_function with multiple TestFactories without
+                     name clashes.
+            postfix: Text string to append to end of test_function name
+                     when naming generated test cases. This allows reuse of
+                     a single test_function with multiple TestFactories without
+                     name clashes.
         """
 
         frm = inspect.stack()[1]
@@ -316,10 +366,10 @@ class TestFactory(object):
 
         for index, testoptions in enumerate( (dict(zip(d, v)) for v in product(*d.values())) ):
 
-            name = "%s_%03d" % (self.name, index + 1)
+            name = "%s%s%s_%03d" % (prefix, self.name, postfix, index + 1)
             doc = "Automatically generated test\n\n"
 
-            for optname, optvalue in testoptions.iteritems():
+            for optname, optvalue in testoptions.items():
                 if callable(optvalue):
                     if not optvalue.__doc__: desc = "No docstring supplied"
                     else: desc = optvalue.__doc__.split('\n')[0]
@@ -328,5 +378,11 @@ class TestFactory(object):
                     doc += "\t%s: %s\n" % (optname, repr(optvalue))
 
             cocotb.log.debug("Adding generated test \"%s\" to module \"%s\"" % (name, mod.__name__))
-            setattr(mod, name, _create_test(self.test_function, name, doc, mod, *self.args, **testoptions))
+            kwargs = {}
+            kwargs.update(self.kwargs_constant)
+            kwargs.update(testoptions)
+            if hasattr(mod, name):
+                cocotb.log.error("Overwriting %s in module %s. This causes previously defined testcase "
+                                 "not to be run. Consider setting/changing name_postfix" % (name, mod))
+            setattr(mod, name, _create_test(self.test_function, name, doc, mod, *self.args, **kwargs))
 

@@ -51,24 +51,41 @@ include $(SIM_ROOT)/makefiles/Makefile.pylib
 
 export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include $(PYTHON_INCLUDEDIR)
+export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
+export GPI_EXTRA
 
+LIB_EXT     := so
+PY_EXT	    := so
 
 # Base GCC flags
-ifeq ($(OS),Darwin)
-GCC_ARGS    :=  -g -DDEBUG -fpic
-else
-GCC_ARGS	:=	-Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-				-Waggregate-return -Wstrict-prototypes           \
-				-Wno-unused-parameter -fno-common -g -DDEBUG -fpic
 ifeq ($(ARCH),i686)
-GCC_ARGS    += -m32
+GXX_ARGS    := -m32
 endif
-endif
-
 
 ifeq ($(OS),Darwin)
-LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
+GXX_ARGS	+= -g -DDEBUG -fpic
+GCC_ARGS	:= $(GXX_ARGS)
+else ifeq ($(OS),MINGW32_NT-6.1)
+GXX_ARGS 	+= -g -DDEBUG -shared
+GCC_ARGS	:= $(GXX_ARGS)
+LIB_EXT		:= dll
+PY_EXT		:= pyd
+else ifeq ($(OS),Linux)
+GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
+			-Wall -Wno-unused-parameter \
+			-fno-common -g -DDEBUG -fpic
+GCC_ARGS	= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
 else
-LINKER_ARGS := -shared -Xlinker -export-dynamic -L$(PYTHON_LIBDIR)
+$(error "Unsupported os " $(OS))
+endif
+
+ifeq ($(OS),Darwin)
+SO_LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
+else ifeq ($(OS),Linux)
+SO_LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
+else ifeq ($(OS),MINGW32_NT-6.1)
+SO_LINKER_ARGS :=  -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2 \
+			-Wl,--enable-auto-import -L$(PYTHON_LIBDIR)
+else
+$(error "Unsupported os" $(OS))
 endif

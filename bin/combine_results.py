@@ -22,7 +22,7 @@ def main(path, output):
 
     for fname in find_all("results.xml", path):
         tree = ET.parse(fname)
-        for element in tree.iter("testcase"):
+        for element in tree.getiterator("testcase"):
             testsuite.append(element)
 
     result = ET.Element("testsuites", name="results")

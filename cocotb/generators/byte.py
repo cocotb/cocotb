@@ -40,7 +40,7 @@ def get_bytes(nbytes, generator):
     """Get nbytes from generator"""
     result = ""
     for i in range(nbytes):
-        result += generator.next()
+        result += next(generator)
     return result
 
 @public

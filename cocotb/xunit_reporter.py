@@ -28,10 +28,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 from xml.etree.ElementTree import Element, SubElement
 import xml.etree.ElementTree as ET
 
+from io import StringIO
+
 TRUNCATE_LINES = 100
 
 # file from  http://stackoverflow.com/questions/136168/get-last-n-lines-of-a-file-with-python-similar-to-tail
-class File(file):
+class File(StringIO):
 
     def countlines(self):
         buf = mmap.mmap(self.fileno(), 0)
@@ -42,7 +44,7 @@ class File(file):
 
     def head(self, lines_2find=1):
         self.seek(0)                            #Rewind file
-        return [self.next() for x in xrange(lines_2find)]
+        return [self.next() for x in range(lines_2find)]
 
     def tail(self, lines_2find=1):
         self.seek(0, 2)                         #go to end of file

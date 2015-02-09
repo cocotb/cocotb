@@ -29,22 +29,31 @@
 
 
 # Override this variable to use VHPI instead of VPI
-GPI_IMPL ?= vpi
+TOPLEVEL_LANG ?= verilog
 
-
-TOPLEVEL = endian_swapper
-
+WPWD=$(shell sh -c 'pwd -W')
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
-
-ifeq ($(GPI_IMPL),vpi)
-    VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
+ifeq ($(OS),MINGW32_NT-6.1)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
 endif
 
-ifeq ($(GPI_IMPL),vhpi)
-    VHDL_SOURCES = $(PWD)/../hdl/endian_swapper.vhdl
+ifeq ($(TOPLEVEL_LANG),verilog)
+    VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv
+    TOPLEVEL = endian_swapper_sv
+    GPI_IMPL=vpi
 endif
+
+ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES = $(WPWD)/../hdl/endian_swapper.vhdl
+    TOPLEVEL = endian_swapper_vhdl
+    GPI_IMPL=vhpi
+endif
+
+export TOPLEVEL_LANG
 
 MODULE=test_endian_swapper
 
@@ -54,7 +63,6 @@ export PYTHONPATH
 
 LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
 export LD_LIBRARY_PATH
-
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
@@ -78,5 +86,5 @@ profile:
 clean::
 	-rm -rf test_profile.pstat
 	-rm -rf callgraph.svg
-
+	-cd ../cosim && make clean
 

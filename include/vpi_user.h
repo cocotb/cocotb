@@ -36,15 +36,37 @@
 
 #include <stdarg.h>
 
+
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
+#if !defined(__linux__)
+#ifndef VPI_DLLISPEC
+#define VPI_DLLISPEC __declspec(dllimport)
+#define VPI_DLL_LOCAL 1
+#endif
+#else
+#ifndef VPI_DLLISPEC
+#define VPI_DLLISPEC
+#endif
+#endif
+
 typedef uint32_t *vpiHandle;
 
-#define vpiNet                 36   /* scalar or vector net */
 #define vpiModule              32   /* module instance */
+#define vpiNet                 36   /* scalar or vector net */
+#define vpiNetBit              37   /* bit of a vector net */
+#define vpiReg                 48   /* scalar or vector reg */
+#define vpiRegBit              49   /* bit of vector reg */
+#define vpiParameter           41   /* module parameter */
 #define vpiStructVar           618
+#define vpiInterface           601
+#define vpiInterfaceArray      603
+#define vpiModport             606
+#define vpiRefObj              608
+#define vpiEnumNet             680  /* SystemVerilog */
 
 #define vpiStop                66  /* execute simulator's $stop */
 #define vpiFinish              67  /* execute simulator's $finish */
@@ -143,6 +165,8 @@ typedef struct t_vpi_value
 #define vpiFile               5
 #define vpiLineNo             6
 
+#define vpiUnknown            3
+
 /* normal callback structure */
 typedef struct t_cb_data
 {
@@ -223,53 +247,63 @@ typedef struct t_vpi_systf_data {
 #define vpiArgument    89
 
 
-extern vpiHandle  vpi_register_cb(p_cb_data cb_data_p);
+extern VPI_DLLISPEC vpiHandle  vpi_register_cb(p_cb_data cb_data_p);
 
-extern int32_t    vpi_remove_cb(vpiHandle cb_obj);
+extern VPI_DLLISPEC int32_t    vpi_remove_cb(vpiHandle cb_obj);
 
-extern vpiHandle  vpi_handle_by_name(char *name,
+extern VPI_DLLISPEC vpiHandle  vpi_handle_by_name(char *name,
                                      vpiHandle scope);
 
-extern vpiHandle  vpi_handle_by_index(vpiHandle object,
+extern VPI_DLLISPEC vpiHandle  vpi_handle_by_index(vpiHandle object,
                                       int32_t indx);
 
-extern vpiHandle  vpi_handle(int32_t type,
+extern VPI_DLLISPEC vpiHandle  vpi_handle(int32_t type,
                              vpiHandle refHandle);
 
-extern vpiHandle  vpi_iterate(int32_t type,
+extern VPI_DLLISPEC vpiHandle  vpi_iterate(int32_t type,
                               vpiHandle refHandle);
 
-extern vpiHandle  vpi_scan(vpiHandle iterator);
+extern VPI_DLLISPEC vpiHandle  vpi_scan(vpiHandle iterator);
 
-extern char      *vpi_get_str(int32_t property,
+extern VPI_DLLISPEC char      *vpi_get_str(int32_t property,
                               vpiHandle object);
 
-extern void       vpi_get_value(vpiHandle expr,
+extern VPI_DLLISPEC void       vpi_get_value(vpiHandle expr,
                                 p_vpi_value value_p);
 
-extern vpiHandle  vpi_put_value(vpiHandle object,
+extern VPI_DLLISPEC vpiHandle  vpi_put_value(vpiHandle object,
                                 p_vpi_value value_p,
                                 p_vpi_time time_p,
                                 int32_t flags);
 
-extern void       vpi_get_time(vpiHandle object,
+extern VPI_DLLISPEC void       vpi_get_time(vpiHandle object,
                                p_vpi_time time_p);
 
-extern int32_t    vpi_free_object(vpiHandle object);
+extern VPI_DLLISPEC int32_t    vpi_get(int property,
+                          vpiHandle ref);
 
-extern int32_t    vpi_control(int32_t operation, ...);
-extern vpiHandle  vpi_handle_by_multi_index(vpiHandle obj,
+extern VPI_DLLISPEC int32_t    vpi_free_object(vpiHandle object);
+
+extern VPI_DLLISPEC int32_t    vpi_control(int32_t operation, ...);
+extern VPI_DLLISPEC vpiHandle  vpi_handle_by_multi_index(vpiHandle obj,
                                             int32_t num_index,
                                             int32_t *index_array);
 
 
-extern int32_t    vpi_chk_error(p_vpi_error_info);
+extern VPI_DLLISPEC int32_t    vpi_chk_error(p_vpi_error_info);
 
-extern int32_t    vpi_get_vlog_info(p_vpi_vlog_info info_p);
+extern VPI_DLLISPEC int32_t    vpi_get_vlog_info(p_vpi_vlog_info info_p);
 
-extern vpiHandle  vpi_register_systf(p_vpi_systf_data data_p);
+extern VPI_DLLISPEC vpiHandle  vpi_register_systf(p_vpi_systf_data data_p);
 
-extern void (*vlog_startup_routines[])(void);
+extern VPI_DLLISPEC int32_t    vpi_printf(const char *fmt, ...) __attribute__((format (printf,1,2)));
+
+extern VPI_DLLISPEC void (*vlog_startup_routines[])(void);
+
+#ifdef VPI_DLL_LOCAL
+#undef VPI_DLL_LOCAL
+#undef VPI_DLLISPEC
+#endif
 
 #ifdef  __cplusplus
 }

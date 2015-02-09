@@ -38,27 +38,63 @@ endif
 
 ifeq ($(GUI),1)
 SIM_CMD = vsim -gui
+VSIM_ARGS += -onfinish stop
 else
 SIM_CMD = vsim -c
+VSIM_ARGS += -onfinish exit
 endif
 
+ifeq ($(GPI_IMPL),vhpi)
+VSIM_ARGS += -foreign \"cocotb_init libfli.so\" -trace_foreign 3
+else
+VSIM_ARGS += -pli libvpi.$(LIB_EXT)
+endif
 
-runsim.do : $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS)
+$(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
 	echo "vlib work" > $@
+ifneq ($(VERILOG_SOURCES),)
 	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
-	echo "vsim -pli libgpi.so  $(VSIM_ARGS) work.$(TOPLEVEL) -onfinish stop" >> $@
+else
+	echo "vcom $(VHDL_ARGS) $(VHDL_SOURCES)" >> $@
+endif
+	echo "vsim $(VSIM_ARGS) $(TOPLEVEL)" >> $@
 ifneq ($(GUI),1)
 	echo "run -all" >> $@
-	echo "exit" >> $@
+	echo "quit" >> $@
 endif
 
+ifeq ($(OS),MINGW32_NT-6.1)
 
-results.xml: runsim.do $(COCOTB_LIBS)
-	LD_LIBRARY_PATH=$(LIB_DIR)::$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+# auto-detect modelsim dir from system path
+MODELSIM_BIN_DIR = $(shell which vsim | sed 's|/vsim.exe||')
+
+# make sure modelsim dir was found
+ifeq ($(MODELSIM_BIN_DIR),)
+$(error "Directory containing ModelSim binaries must be included in system path")
+endif
+
+# Windows allows the situation where the libstc++ used at link time as
+# specified by -L can be different to the one that is used at runtime which
+# comes from the first libstdc++ that it finds in the path. As such
+# we use the mingw lib used at build time and put this at the start of the path
+# before running
+
+MINGW_BIN_DIR = $(shell which gcc | sed 's|/gcc.exe||')
+
+EXTRA_LIBS := -lmtipli
+EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
+OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
+LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
+
+else
+LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
+endif
+
+results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
 
 clean::
-	-rm -rf runsim.do
-	-rm -rf sim.log
+	-rm -rf $(SIM_BUILD)
 

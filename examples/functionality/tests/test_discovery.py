@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import cocotb
 from cocotb.triggers import Timer
+from cocotb.result import TestError
 
 @cocotb.test()
 def discover_module_values(dut):
@@ -46,7 +47,7 @@ def discover_value_not_in_dut(dut):
 @cocotb.test()
 def access_signal(dut):
     """Access a signal using the assignment mechanism"""
-    dut.stream_in_data = 1
+    dut.stream_in_data.setimmediatevalue(1)
     yield Timer(10)
     if dut.stream_in_data.value.integer != 1:
         raise TestError("%s.%s != %d" % (
@@ -55,10 +56,14 @@ def access_signal(dut):
 
 
 
-@cocotb.test()
+@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
+             skip=cocotb.LANGUAGE in ["vhdl"])
 def access_single_bit(dut):
-    """Access a single bit in a vector of the dut"""
-    # FIXME this test fails on Icarus but works on VCS
+    """
+    Access a single bit in a vector of the dut
+
+    Icarus v0.96 doesn't support single bit access to vectors
+    """
     dut.stream_in_data <= 0
     yield Timer(10)
     dut.log.info("%s = %d bits" % (str(dut.stream_in_data), len(dut.stream_in_data)))
@@ -69,10 +74,14 @@ def access_single_bit(dut):
                 (str(dut.stream_out_data_comb),
                 dut.stream_out_data_comb.value.integer, (1<<2)))
 
-@cocotb.test()
+@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
+             skip=cocotb.LANGUAGE in ["vhdl"])
 def access_single_bit_assignment(dut):
-    """Access a single bit in a vector of the dut using the assignment mechanism"""
-    # FIXME this test fails on Icarus but works on VCS
+    """
+    Access a single bit in a vector of the dut using the assignment mechanism
+
+    Icarus v0.96 doesn't support single bit access to vectors
+    """
     dut.stream_in_data = 0
     yield Timer(10)
     dut.log.info("%s = %d bits" % (str(dut.stream_in_data), len(dut.stream_in_data)))

@@ -33,14 +33,15 @@ export COCOTB
 SMOKE_TESTS :=  plusargs \
 				sim_exit/tests \
 				functionality/tests \
-				endian_swapper/tests
+				adder/tests \
+				endian_swapper/tests \
 
 .PHONY: $(SMOKE_TESTS)
 
 all: $(SMOKE_TESTS)
 
 $(SMOKE_TESTS):
-	-@cd $@ && $(MAKE)
+	@cd $@ && $(MAKE)
 
 clean:
 	$(foreach TEST, $(SMOKE_TESTS), $(MAKE) -C $(TEST) clean;)

@@ -66,7 +66,7 @@ import cocotb
 import cocotb.decorators
 from cocotb.triggers import Trigger, GPITrigger, Timer, ReadOnly, _NextTimeStep, _ReadWrite
 from cocotb.log import SimLog
-from cocotb.result import TestComplete, TestError, ReturnValue, raise_error
+from cocotb.result import TestComplete, TestError, ReturnValue, raise_error, create_error
 
 
 
@@ -234,15 +234,13 @@ class Scheduler(object):
         We find any coroutines that are waiting on the particular trigger and
         schedule them.
         """
-        if _debug:
-            trigger.log.debug("Fired!")
         if _profiling and not depth:
             _profile.enable()
 
-        # We can always unprime the trigger that actually fired - if it's 
-        # recycled then prime will be called again.
-        self.log.debug("Unprimed %s" % str(trigger))
-        trigger.unprime()
+        # When a trigger fires it is unprimed internally
+        if _debug:
+            self.log.debug("Trigger fired: %s" % str(trigger))
+        #trigger.unprime()
 
         if self._mode == Scheduler._MODE_TERM:
             if _debug:
@@ -265,6 +263,8 @@ class Scheduler(object):
             while self._writes:
                 handle, value = self._writes.popitem()
                 handle.setimmediatevalue(value)
+
+            self._readwrite.unprime()
 
             if _profiling:
                 _profile.disable()
@@ -313,11 +313,10 @@ class Scheduler(object):
         scheduling = self._trigger2coros.pop(trigger)
 
         if _debug:
-            self.log.debug("%d pending coroutines for event %s\n%s" % (
-                  len(scheduling), str(trigger), 
-                       "\n\t".join([coro.__name__ for coro in scheduling])))
-            for coro in scheduling:
-                coro.log.debug("I was waiting")
+            debugstr = "\n\t".join([coro.__name__ for coro in scheduling])
+            if len(scheduling): debugstr = "\n\t" + debugstr
+            self.log.debug("%d pending coroutines for event %s%s" % (
+                  len(scheduling), str(trigger), debugstr))
 
         # If the coroutine was waiting on multiple triggers we may be able
         # to unprime the other triggers that didn't fire
@@ -326,6 +325,7 @@ class Scheduler(object):
                 for others in self._trigger2coros[pending]:
                     if others not in scheduling: break
                 else:
+                    #if pending is not trigger and pending.primed: pending.unprime()
                     if pending.primed: pending.unprime()
                     del self._trigger2coros[pending]
 
@@ -388,8 +388,10 @@ class Scheduler(object):
                 try:
                     trigger.prime(self.react)
                 except Exception as e:
-                    raise_error(self, "Unable to prime trigger %s: %s" % (
-                                                        str(trigger), str(e)))
+                    # Convert any exceptions into a test result
+                    self.finish_test(
+                        create_error(self, "Unable to prime trigger %s: %s" % (
+                                                        str(trigger), str(e))))
 
     def queue(self, coroutine):
         """Queue a coroutine for execution"""
@@ -407,7 +409,7 @@ class Scheduler(object):
                           "Attempt to schedule a coroutine that hasn't started")
             coroutine.log.error("This is the failing coroutine")
             self.log.warning(
-                    "Did you forget to add paranthesis to the @test decorator?")
+                    "Did you forget to add parentheses to the @test decorator?")
             self._test_result = TestError(
                           "Attempt to schedule a coroutine that hasn't started")
             self._terminate = True
@@ -488,7 +490,6 @@ class Scheduler(object):
 
             self.queue(result)
             new_trigger = result.join()
-            new_trigger.pass_retval = True
             self._coroutine_yielded(coroutine, [new_trigger])
 
         elif isinstance(result, Trigger):
@@ -525,6 +526,11 @@ class Scheduler(object):
             self._test_result = test_result
             self.cleanup()
 
+    def finish_scheduler(self, test_result):
+        """Directly call into the regression manager and end test
+           once we return the sim will close us so no cleanup is needed"""
+        self.log.debug("Issue sim closedown result to regresssion object")
+        cocotb.regression.handle_result(test_result)
 
     def cleanup(self):
         """
