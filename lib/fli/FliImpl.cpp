@@ -378,12 +378,9 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge) {
 // TODO: Could cache various settings here which would save some of the calls
 // into FLI
 static char val_buff[1024];
+static const char value_enum[10] = "UX01ZWLH-";
 
 const char* FliSignalObjHdl::get_signal_value_binstr(void) {
-
-
-    fprintf(stderr, "Getting signal value\n");
-    fflush(stderr);
 
     switch (mti_GetTypeKind(mti_GetSignalType(m_fli_hdl))) {
 
@@ -392,22 +389,27 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void) {
         case MTI_TYPE_PHYSICAL:
             mtiInt32T scalar_val;
             scalar_val = mti_GetSignalValue(m_fli_hdl);
-            snprintf(val_buff, 1, "%d", scalar_val);
+            val_buff[0] = value_enum[scalar_val];
+            val_buff[1] = '\0';
             break;
         case MTI_TYPE_ARRAY: {
             mtiInt32T *array_val;
             array_val = (mtiInt32T *)mti_GetArraySignalValue(m_fli_hdl, NULL);
             int num_elems = mti_TickLength(mti_GetSignalType(m_fli_hdl));
             for (int i = 0; i < num_elems; i++ ) {
-                snprintf(&val_buff[i], 1, "%d", array_val[i]);
+                val_buff[i] = value_enum[array_val[i]];
             }
+            val_buff[num_elems] = '\0';
             mti_VsimFree(array_val);
             } break;
         default:
-            LOG_CRITICAL("Signal type %d not currently supported", 
-                         mti_GetTypeKind(mti_GetSignalType(m_fli_hdl)));
+            LOG_CRITICAL("Signal %s type %d not currently supported", 
+                m_name.c_str(), mti_GetTypeKind(mti_GetSignalType(m_fli_hdl)));
             break;
     }
+
+    LOG_DEBUG("Retrieved \"%s\" for signal %s", &val_buff, m_name.c_str());
+
     return &val_buff[0];
 }
 
