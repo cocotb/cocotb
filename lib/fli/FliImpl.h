@@ -88,6 +88,10 @@ public:
     virtual ~FliSignalCbHdl() { }
 
     int arm_callback(void);
+    int run_callback(void) {
+	fprintf(stderr, "Hello\n"); fflush(stderr);
+	return 0;
+    }
 
 private:
     mtiSignalIdT        m_sig_hdl;
@@ -196,9 +200,9 @@ protected:
 class FliImpl : public GpiImplInterface {
 public:
     FliImpl(const std::string& name) : GpiImplInterface(name),
-                                       m_readonly_cbhdl(NULL),
-                                       m_nexttime_cbhdl(NULL),
-                                       m_readwrite_cbhdl(NULL) { }
+                                       m_readonly_cbhdl(this),
+                                       m_nexttime_cbhdl(this),
+                                       m_readwrite_cbhdl(this) { }
 
      /* Sim related */
     void sim_end(void);
