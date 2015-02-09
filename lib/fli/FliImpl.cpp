@@ -395,23 +395,16 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void) {
 
 int FliSignalObjHdl::set_signal_value(const int value) {
 
-//     fprintf(stderr, "Setting signal to %d\n", value);
-//     fflush(stderr);
-
     int rc;
     char buff[20];
 
-    snprintf(buff, 19, "16#%016x", value);
+    snprintf(buff, 20, "16#%016X", value);
 
     rc = mti_ForceSignal(m_fli_hdl, &buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
 
-//     if (!rc) {
-//         fprintf(stderr, "Setting signal value failed!\n");
-//         fflush(stderr);
-//     } else {
-//         fprintf(stderr, "Setting signal value worked!\n");
-//         fflush(stderr);
-//     }
+    if (!rc) {
+        LOG_CRITICAL("Setting signal value failed!\n");
+    }
     return rc-1;
 }
 
@@ -422,8 +415,10 @@ int FliSignalObjHdl::set_signal_value(std::string &value) {
     int len = value.copy(buff, value.length());
     buff[len] = '\0';
 
-//     fprintf(stderr, "Setting signal to %s\n", value.c_str());
     rc = mti_ForceSignal(m_fli_hdl, &buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
+    if (!rc) {
+        LOG_CRITICAL("Setting signal value failed!\n");
+    }
     return rc-1;
 }
 
