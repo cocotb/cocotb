@@ -370,7 +370,7 @@ int FliSignalObjHdl::set_signal_value(const int value) {
 
     snprintf(buff, 19, "16#%016x", value);
 
-    rc = mti_ForceSignal(m_fli_hdl, buff, 0, MTI_FORCE_DEPOSIT, -1, -1);
+    rc = mti_ForceSignal(m_fli_hdl, &buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
 
     if (!rc) {
         fprintf(stderr, "Setting signal value failed!\n");
@@ -384,7 +384,13 @@ int FliSignalObjHdl::set_signal_value(const int value) {
 
 int FliSignalObjHdl::set_signal_value(std::string &value) {
 
+    int rc;
+    char buff[128];
+    int len = value.copy(buff, value.length());
+    buff[len] = '\0';
+
     fprintf(stderr, "Setting signal to %s\n", value.c_str());
-    return 0;
+    rc = mti_ForceSignal(m_fli_hdl, &buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
+    return rc-1;
 }
 
