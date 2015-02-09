@@ -68,12 +68,18 @@ void cocotb_init(void) {
 // Main re-entry point for callbacks from simulator
 void handle_fli_callback(void *data)
 {
+    fprintf(stderr, "Got a callback\n");
+    fflush(stderr);
+
     FliCbHdl *cb_hdl = (FliCbHdl*)data;
 
     if (!cb_hdl)
         LOG_CRITICAL("FLI: Callback data corrupted");
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
+
+    fprintf(stderr, "FLI: Old state was %d!\n", old_state);
+    fflush(stderr);
 
     if (old_state == GPI_PRIMED) { 
 
@@ -297,6 +303,7 @@ int FliTimedCbHdl::arm_callback(void) {
     mti_ScheduleWakeup(m_proc_hdl, m_time_ps);
     LOG_INFO("Wakeup scheduled on %p for %llu", m_proc_hdl, m_time_ps);
     m_sensitised = true;
+    m_state = GPI_PRIMED;
     return 0;
 }
 
@@ -309,6 +316,7 @@ int FliSignalCbHdl::arm_callback(void) {
 
     mti_Sensitize(m_proc_hdl, m_sig_hdl, MTI_EVENT);
     m_sensitised = true;
+    m_state = GPI_PRIMED;
     return 0;
 }
 
@@ -321,6 +329,7 @@ int FliSimPhaseCbHdl::arm_callback(void) {
 
     mti_ScheduleWakeup(m_proc_hdl, 0);
     m_sensitised = true;
+    m_state = GPI_PRIMED;
     return 0;
 }
 
