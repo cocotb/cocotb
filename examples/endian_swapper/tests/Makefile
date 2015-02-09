@@ -29,7 +29,9 @@
 
 
 # Override this variable to use VHPI instead of VPI
-TOPLEVEL_LANG ?= verilog
+TOPLEVEL_LANG ?= vhdl
+SIM ?= modelsim
+VSIM_ARGS += "-trace_foreign 1"
 
 WPWD=$(shell sh -c 'pwd -W')
 PWD=$(shell pwd)
