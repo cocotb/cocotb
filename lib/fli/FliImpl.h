@@ -32,10 +32,11 @@
 #include "mti.h"
 
 // FLI versions of base types
-class FliObjHdl : public GpiObjHdl {
+#if 0
+class GpiObjHdl : public GpiObjHdl {
 public:
-    FliObjHdl(GpiImplInterface *impl) : GpiObjHdl(impl) { }
-    virtual ~FliObjHdl() { }
+    GpiObjHdl(GpiImplInterface *impl) : GpiObjHdl(impl) { }
+    virtual ~GpiObjHdl() { }
 
     GpiObjHdl *get_handle_by_name(std::string &name) {return NULL; };
     GpiObjHdl *get_handle_by_index(uint32_t index) {return NULL; } ;
@@ -44,6 +45,7 @@ public:
 
     int initialise(std::string &name);
 };
+#endif
 
 class FliCbHdl : public GpiCbHdl {
 public:
@@ -159,9 +161,9 @@ public:
 
 
 
-class FliRegionObjHdl : public FliObjHdl {
+class FliRegionObjHdl : public GpiObjHdl {
 public:
-    FliRegionObjHdl(GpiImplInterface *impl, mtiRegionIdT hdl) : FliObjHdl(impl),
+    FliRegionObjHdl(GpiImplInterface *impl, mtiRegionIdT hdl) : GpiObjHdl(impl),
                                                                 m_fli_hdl(hdl) { }
     virtual ~FliRegionObjHdl() { }
 
@@ -170,10 +172,9 @@ protected:
 };
 
 
-class FliSignalObjHdl : public FliObjHdl, public GpiSignalObjHdl {
+class FliSignalObjHdl : public GpiSignalObjHdl {
 public:
-    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : FliObjHdl(impl),
-                                                                GpiSignalObjHdl(impl),
+    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : GpiSignalObjHdl(impl, hdl),
                                                                 m_fli_hdl(hdl),
                                                                 m_cb_hdl(NULL) { }
     virtual ~FliSignalObjHdl() { }
@@ -181,9 +182,7 @@ public:
     const char* get_signal_value_binstr(void);
     int set_signal_value(const int value);
     int set_signal_value(std::string &value);
-    GpiCbHdl *rising_edge_cb(void);// { return NULL; }
-    GpiCbHdl *falling_edge_cb(void);// { return NULL; }
-    FliSignalCbHdl *value_change_cb(void);
+    GpiCbHdl *value_change_cb(unsigned int edge);
 protected:
      mtiSignalIdT       m_fli_hdl;
      FliSignalCbHdl     *m_cb_hdl;

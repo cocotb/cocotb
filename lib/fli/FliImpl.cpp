@@ -106,7 +106,7 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     LOG_INFO("Looking for child %s from %s", name.c_str(), parent->get_name_str());
 
 
-    FliObjHdl *new_obj = NULL; 
+    GpiObjHdl *new_obj = NULL; 
     std::vector<char> writable(name.begin(), name.end());
     writable.push_back('\0');
 
@@ -154,6 +154,7 @@ void FliImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = mti_Now();
 }
 
+#if 0
 /**
  * @name    Find the root handle
  * @brief   Find the root handle using an optional name
@@ -171,6 +172,7 @@ int FliObjHdl::initialise(std::string &name) {
 
     return 0;
 }
+#endif
 
 
 /**
@@ -187,7 +189,7 @@ int FliObjHdl::initialise(std::string &name) {
 GpiObjHdl *FliImpl::get_root_handle(const char *name)
 {
     mtiRegionIdT root;
-    FliObjHdl *rv;
+    GpiObjHdl *rv;
     std::string root_name = name;
 
     for (root = mti_GetTopRegion(); root != NULL; root = mti_NextRegion(root)) {
@@ -326,7 +328,7 @@ GPI_ENTRY_POINT(fli, cocotb_init);
 
 
 
-FliSignalCbHdl *FliSignalObjHdl::value_change_cb(void) {
+GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge) {
 
     LOG_INFO("Creating value change callback for %s", m_name.c_str());
 
@@ -338,16 +340,6 @@ FliSignalCbHdl *FliSignalObjHdl::value_change_cb(void) {
     return m_cb_hdl;
 }
 
-GpiCbHdl *FliSignalObjHdl::rising_edge_cb(void) {
-    LOG_INFO("Creating rising edge callback for %s", m_name.c_str());
-    return m_cb_hdl;
-}
-
-GpiCbHdl *FliSignalObjHdl::falling_edge_cb(void) {
-
-    LOG_INFO("Creating falling edge callback for %s", m_name.c_str());
-    return m_cb_hdl;
-}
 
 
 
