@@ -68,7 +68,7 @@ void cocotb_init(void) {
 // Main re-entry point for callbacks from simulator
 void handle_fli_callback(void *data)
 {
-    fprintf(stderr, "Got a callback\n");
+//     fprintf(stderr, "Got a callback\n");
     fflush(stderr);
 
     FliCbHdl *cb_hdl = (FliCbHdl*)data;
@@ -78,18 +78,18 @@ void handle_fli_callback(void *data)
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-    fprintf(stderr, "FLI: Old state was %d!\n", old_state);
-    fflush(stderr);
+//     fprintf(stderr, "FLI: Old state was %d!\n", old_state);
+//     fflush(stderr);
 
     if (old_state == GPI_PRIMED) { 
 
         cb_hdl->set_call_state(GPI_CALL);
 
-        fprintf(stderr, "FLI: Calling run_callback\n");
-        fflush(stderr);
+//         fprintf(stderr, "FLI: Calling run_callback\n");
+//         fflush(stderr);
         cb_hdl->run_callback();
-        fprintf(stderr, "FLI: Callback executed\n");
-        fflush(stderr);
+//         fprintf(stderr, "FLI: Callback executed\n");
+//         fflush(stderr);
         gpi_cb_state_e new_state = cb_hdl->get_call_state();
 
         /* We have re-primed in the handler */
@@ -274,6 +274,8 @@ GpiCbHdl *FliImpl::register_nexttime_callback(void)
 
 int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
+//     fprintf(stderr, "Dereigster callback called....\n");
+//     fflush(stderr);
     int rc = gpi_hdl->cleanup_callback();
     // TOOD: Don't delete if it's a re-usable doobery
 //     delete(gpi_hdl);
@@ -355,15 +357,46 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge) {
 
 
 
+// TODO: Could cache various settings here which would save some of the calls
+// into FLI
+static char val_buff[1024];
 
 const char* FliSignalObjHdl::get_signal_value_binstr(void) {
-    return "010101";
+
+
+    fprintf(stderr, "Getting signal value\n");
+    fflush(stderr);
+
+    switch (mti_GetTypeKind(mti_GetSignalType(m_fli_hdl))) {
+
+        case MTI_TYPE_ENUM:
+        case MTI_TYPE_SCALAR:
+        case MTI_TYPE_PHYSICAL:
+            mtiInt32T scalar_val;
+            scalar_val = mti_GetSignalValue(m_fli_hdl);
+            snprintf(val_buff, 1, "%d", scalar_val);
+            break;
+        case MTI_TYPE_ARRAY: {
+            mtiInt32T *array_val;
+            array_val = (mtiInt32T *)mti_GetArraySignalValue(m_fli_hdl, NULL);
+            int num_elems = mti_TickLength(mti_GetSignalType(m_fli_hdl));
+            for (int i = 0; i < num_elems; i++ ) {
+                snprintf(&val_buff[i], 1, "%d", array_val[i]);
+            }
+            mti_VsimFree(array_val);
+            } break;
+        default:
+            LOG_CRITICAL("Signal type %d not currently supported", 
+                         mti_GetTypeKind(mti_GetSignalType(m_fli_hdl)));
+            break;
+    }
+    return &val_buff[0];
 }
 
 int FliSignalObjHdl::set_signal_value(const int value) {
 
-    fprintf(stderr, "Setting signal to %d\n", value);
-    fflush(stderr);
+//     fprintf(stderr, "Setting signal to %d\n", value);
+//     fflush(stderr);
 
     int rc;
     char buff[20];
@@ -372,13 +405,13 @@ int FliSignalObjHdl::set_signal_value(const int value) {
 
     rc = mti_ForceSignal(m_fli_hdl, &buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
 
-    if (!rc) {
-        fprintf(stderr, "Setting signal value failed!\n");
-        fflush(stderr);
-    } else {
-        fprintf(stderr, "Setting signal value worked!\n");
-        fflush(stderr);
-    }
+//     if (!rc) {
+//         fprintf(stderr, "Setting signal value failed!\n");
+//         fflush(stderr);
+//     } else {
+//         fprintf(stderr, "Setting signal value worked!\n");
+//         fflush(stderr);
+//     }
     return rc-1;
 }
 
@@ -389,7 +422,7 @@ int FliSignalObjHdl::set_signal_value(std::string &value) {
     int len = value.copy(buff, value.length());
     buff[len] = '\0';
 
-    fprintf(stderr, "Setting signal to %s\n", value.c_str());
+//     fprintf(stderr, "Setting signal to %s\n", value.c_str());
     rc = mti_ForceSignal(m_fli_hdl, &buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
     return rc-1;
 }
