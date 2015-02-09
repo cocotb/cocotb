@@ -84,8 +84,12 @@ void handle_fli_callback(void *data)
     if (old_state == GPI_PRIMED) { 
 
         cb_hdl->set_call_state(GPI_CALL);
-        cb_hdl->run_callback();
 
+        fprintf(stderr, "FLI: Calling run_callback\n");
+        fflush(stderr);
+        cb_hdl->run_callback();
+        fprintf(stderr, "FLI: Callback executed\n");
+        fflush(stderr);
         gpi_cb_state_e new_state = cb_hdl->get_call_state();
 
         /* We have re-primed in the handler */
@@ -357,10 +361,30 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void) {
 }
 
 int FliSignalObjHdl::set_signal_value(const int value) {
-    return 0;
+
+    fprintf(stderr, "Setting signal to %d\n", value);
+    fflush(stderr);
+
+    int rc;
+    char buff[20];
+
+    snprintf(buff, 19, "16#%016x", value);
+
+    rc = mti_ForceSignal(m_fli_hdl, buff, 0, MTI_FORCE_DEPOSIT, -1, -1);
+
+    if (!rc) {
+        fprintf(stderr, "Setting signal value failed!\n");
+        fflush(stderr);
+    } else {
+        fprintf(stderr, "Setting signal value worked!\n");
+        fflush(stderr);
+    }
+    return rc-1;
 }
 
 int FliSignalObjHdl::set_signal_value(std::string &value) {
+
+    fprintf(stderr, "Setting signal to %s\n", value.c_str());
     return 0;
 }
 
