@@ -159,12 +159,6 @@ public:
 
 
 
-
-
-
-
-
-
 class FliRegionObjHdl : public GpiObjHdl {
 public:
     FliRegionObjHdl(GpiImplInterface *impl, mtiRegionIdT hdl) : GpiObjHdl(impl),
