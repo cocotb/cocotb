@@ -41,7 +41,7 @@ SMOKE_TESTS :=  plusargs \
 all: $(SMOKE_TESTS)
 
 $(SMOKE_TESTS):
-	-@cd $@ && $(MAKE)
+	@cd $@ && $(MAKE)
 
 clean:
 	$(foreach TEST, $(SMOKE_TESTS), $(MAKE) -C $(TEST) clean;)

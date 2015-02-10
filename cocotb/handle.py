@@ -70,6 +70,9 @@ class SimHandle(object):
         self._r_edge = _RisingEdge(self)
         self._f_edge = _FallingEdge(self)
 
+    def __hash__(self):
+        return self._handle
+
     def __str__(self):
         return "%s @0x%x" % (self.name, self._handle)
 
@@ -117,6 +120,8 @@ class SimHandle(object):
         We still add the found handle to our dictionary to prevent leaking
         handles.
         """
+        if name in self._sub_handles:
+            return self._sub_handles[name]
         new_handle = simulator.get_handle_by_name(self._handle, name)
         if new_handle:
             self._sub_handles[name] = SimHandle(new_handle)

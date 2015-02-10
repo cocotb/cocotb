@@ -201,8 +201,9 @@ class BusDriver(Driver):
         Args:
             entity (SimHandle) : a handle to the simulator entity
 
-            name (str) : name of this bus
-
+            name (str) : name of this bus. None for nameless bus, e.g.
+                         bus-signals in an interface or a modport
+                         (untested on struct/record, but could work here as well)
             clock (SimHandle) : A handle to the clock associated with this bus
         """
         self.log = SimLog("cocotb.%s.%s" % (entity.name, name))

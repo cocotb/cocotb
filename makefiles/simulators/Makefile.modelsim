@@ -89,6 +89,7 @@ LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
 PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' | sed 's/\([a-zA-Z]\)\(:\)\//\/\1\//g' | sed 's/;/:/g')
 
 else
+export MODELSIM_BIN_DIR = $(shell which vsim | sed 's|/vsim||')
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
 endif
 
