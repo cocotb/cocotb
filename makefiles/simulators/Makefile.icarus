@@ -44,10 +44,20 @@ EXTRA_LIBS := -lvpi
 EXTRA_LIBDIRS := -L$(ICARUS_PATH)/lib
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 LIB_LOAD := PATH=$(OLD_PATH):$(LIB_DIR)
-PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' | sed 's/\([a-zA-Z]\)\(:\)\//\/\1\//g' | sed 's/;/:/g')
+OLD_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' | sed 's/\([a-zA-Z]\)\(:\)\//\/\1\//g' | sed 's/;/:/g')
+
+results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(OLD_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+        vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+
+debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(OLD_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+        gdb --args vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+
 else
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
-endif
 
 results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
@@ -58,6 +68,8 @@ debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
         gdb --args vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+
+endif
 
 clean::
 	-@rm -rf $(SIM_BUILD)
