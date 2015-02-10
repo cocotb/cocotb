@@ -93,7 +93,7 @@ public:
 
     virtual ~FliSignalCbHdl() { }
     int arm_callback(void);
-    int cleanup_callback(void) { fprintf(stderr, "Things\n"); fflush(stderr); return 0; }
+    int cleanup_callback(void) { return FliProcessCbHdl::cleanup_callback(); }
 
 private:
     mtiSignalIdT        m_sig_hdl;
@@ -176,7 +176,7 @@ private:
 
 class FliShutdownCbHdl : public FliCbHdl {
 public:
-    FliShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl*impl), FliCbHdl(impl) { }
+    FliShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl), FliCbHdl(impl) { }
     int run_callback(void);
     int arm_callback(void);
     virtual ~FliShutdownCbHdl() { }

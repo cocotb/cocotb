@@ -68,7 +68,7 @@ class SimBaseLog(logging.getLoggerClass()):
         self.propagate = False
         logging.__init__(name)
         self.addHandler(hdlr)
-        self.setLevel(logging.DEBUG)
+        self.setLevel(logging.INFO)
 
 """ Need to play with this to get the path of the called back,
     construct our own makeRecord for this """

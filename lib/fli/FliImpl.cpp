@@ -77,8 +77,8 @@ void handle_fli_callback(void *data)
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-    fprintf(stderr, "FLI: Old state was %d at %p!\n", old_state, cb_hdl);
-    fflush(stderr);
+//    fprintf(stderr, "FLI: Old state was %d at %p!\n", old_state, cb_hdl);
+//    fflush(stderr);
 
     if (old_state == GPI_PRIMED) { 
 
@@ -319,7 +319,7 @@ int FliSignalCbHdl::arm_callback(void) {
         m_proc_hdl = mti_CreateProcess(NULL, handle_fli_callback, (void *)this);
     }
 
-    fprintf(stderr, "Just armed %p\n", this);
+    //fprintf(stderr, "Just armed %p\n", this);
 
     mti_Sensitize(m_proc_hdl, m_sig_hdl, MTI_EVENT);
     m_sensitised = true;
@@ -400,8 +400,15 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void) {
             mtiInt32T *array_val;
             array_val = (mtiInt32T *)mti_GetArraySignalValue(m_fli_hdl, NULL);
             int num_elems = mti_TickLength(mti_GetSignalType(m_fli_hdl));
-            for (int i = 0; i < num_elems; i++ ) {
-                val_buff[i] = value_enum[array_val[i]];
+            if (num_elems <= 256) {
+                char *iter = (char*)array_val;
+                for (int i = 0; i < num_elems; i++ ) {
+                    val_buff[i] = value_enum[(int)iter[i]];
+                }
+            } else {
+                for (int i = 0; i < num_elems; i++ ) {
+                    val_buff[i] = value_enum[array_val[i]];
+                }
             }
             val_buff[num_elems] = '\0';
             mti_VsimFree(array_val);
@@ -412,7 +419,7 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void) {
             break;
     }
 
-    LOG_DEBUG("Retrieved \"%s\" for signal %s", &val_buff, m_name.c_str());
+    LOG_INFO("Retrieved \"%s\" for signal %s", &val_buff, m_name.c_str());
 
     return &val_buff[0];
 }
