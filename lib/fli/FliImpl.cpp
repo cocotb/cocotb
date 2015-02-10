@@ -77,8 +77,8 @@ void handle_fli_callback(void *data)
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-//    fprintf(stderr, "FLI: Old state was %d!\n", old_state);
-//    fflush(stderr);
+    fprintf(stderr, "FLI: Old state was %d at %p!\n", old_state, cb_hdl);
+    fflush(stderr);
 
     if (old_state == GPI_PRIMED) { 
 
@@ -319,9 +319,12 @@ int FliSignalCbHdl::arm_callback(void) {
         m_proc_hdl = mti_CreateProcess(NULL, handle_fli_callback, (void *)this);
     }
 
+    fprintf(stderr, "Just armed %p\n", this);
+
     mti_Sensitize(m_proc_hdl, m_sig_hdl, MTI_EVENT);
     m_sensitised = true;
-    GpiValueCbHdl::m_state = GPI_PRIMED;
+    set_call_state(GPI_PRIMED);
+    //GpiValueCbHdl::m_state = GPI_PRIMED;
     return 0;
 }
 
@@ -339,10 +342,11 @@ int FliSimPhaseCbHdl::arm_callback(void) {
 }
 
 FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface *impl,
-                	       FliSignalObjHdl *sig_hdl,
-                   	       unsigned int edge) : GpiCbHdl(impl),
-                                		    FliProcessCbHdl(impl),
-                                        	    GpiValueCbHdl(impl, sig_hdl, edge)
+                	           FliSignalObjHdl *sig_hdl,
+                   	           unsigned int edge) : GpiCbHdl(impl),
+                                                    FliCbHdl(impl),
+                                		            FliProcessCbHdl(impl),
+                                        	        GpiValueCbHdl(impl, sig_hdl, edge)
 {
     m_sig_hdl = m_signal->get_handle<mtiSignalIdT>();
 }
