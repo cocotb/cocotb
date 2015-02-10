@@ -72,15 +72,15 @@ void handle_fli_callback(void *data)
 {
     fflush(stderr);
 
-    FliCbHdl *cb_hdl = (FliCbHdl*)data;
+    FliProcessCbHdl *cb_hdl = (FliProcessCbHdl*)data;
 
     if (!cb_hdl)
         LOG_CRITICAL("FLI: Callback data corrupted");
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-//    fprintf(stderr, "FLI: Old state was %d at %p!\n", old_state, cb_hdl);
-//    fflush(stderr);
+    //fprintf(stderr, "FLI: Old state was %d at %p!\n", old_state, cb_hdl);
+    //fflush(stderr);
 
     if (old_state == GPI_PRIMED) { 
 
@@ -326,7 +326,6 @@ int FliSimPhaseCbHdl::arm_callback(void)
 FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface *impl,
                 	           FliSignalObjHdl *sig_hdl,
                    	           unsigned int edge) : GpiCbHdl(impl),
-                                                    FliCbHdl(impl),
                                 		            FliProcessCbHdl(impl),
                                         	        GpiValueCbHdl(impl, sig_hdl, edge)
 {

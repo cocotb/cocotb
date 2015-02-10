@@ -31,6 +31,7 @@
 #include "../gpi/gpi_priv.h"
 #include "mti.h"
 
+#if 0
 class FliCbHdl : public virtual GpiCbHdl {
 public:
     FliCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) { }
@@ -42,15 +43,15 @@ public:
 protected:
     int register_cb(p_cb_data cb_data);
 };
+#endif
 
 // Callback handles
 
 // In FLI some callbacks require us to register a process
 // We use a subclass to track the process state related to the callback
-class FliProcessCbHdl : public virtual FliCbHdl {
+class FliProcessCbHdl : public virtual GpiCbHdl {
 public:
     FliProcessCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
-                                              FliCbHdl(impl),
                                               m_proc_hdl(NULL) { }
     virtual ~FliProcessCbHdl() { }
 
@@ -108,7 +109,6 @@ class FliSimPhaseCbHdl : public FliProcessCbHdl {
 
 public:
     FliSimPhaseCbHdl(GpiImplInterface *impl, mtiProcessPriorityT priority) : GpiCbHdl(impl),
-                                                                             FliCbHdl(impl),
                                                                              FliProcessCbHdl(impl),
                                                                              m_priority(priority) { }
     virtual ~FliSimPhaseCbHdl() { }
@@ -123,7 +123,6 @@ protected:
 class FliReadWriteCbHdl : public FliSimPhaseCbHdl {
 public:
     FliReadWriteCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
-                                                FliCbHdl(impl),
                                                 FliSimPhaseCbHdl(impl, MTI_PROC_SYNCH) { }
     virtual ~FliReadWriteCbHdl() { }
 };
@@ -131,14 +130,12 @@ public:
 class FliNextPhaseCbHdl : public FliSimPhaseCbHdl {
 public:
     FliNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
-                                                FliCbHdl(impl),
                                                 FliSimPhaseCbHdl(impl, MTI_PROC_IMMEDIATE) { }
     virtual ~FliNextPhaseCbHdl() { }
 };
 class FliReadOnlyCbHdl : public FliSimPhaseCbHdl {
 public:
     FliReadOnlyCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
-                                               FliCbHdl(impl),
                                                FliSimPhaseCbHdl(impl, MTI_PROC_POSTPONED) { }
     virtual ~FliReadOnlyCbHdl() { }
 };
@@ -146,7 +143,6 @@ public:
 class FliTimedCbHdl : public FliProcessCbHdl {
 public:
     FliTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCbHdl(impl),
-                                                              FliCbHdl(impl),
                                                               FliProcessCbHdl(impl), m_time_ps(time_ps) {};
     virtual ~FliTimedCbHdl() { }
     int arm_callback(void);
@@ -155,9 +151,9 @@ private:
 };
 
 
-class FliShutdownCbHdl : public FliCbHdl {
+class FliShutdownCbHdl : public GpiCbHdl {
 public:
-    FliShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl), FliCbHdl(impl) { }
+    FliShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) { }
     int run_callback(void);
     int arm_callback(void);
     virtual ~FliShutdownCbHdl() { }
