@@ -25,27 +25,11 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#ifndef COCOTB_FLI_IMPL_H_ 
-#define COCOTB_FLI_IMPL_H_ 
+#ifndef COCOTB_FLI_IMPL_H_
+#define COCOTB_FLI_IMPL_H_
 
 #include "../gpi/gpi_priv.h"
 #include "mti.h"
-
-// FLI versions of base types
-#if 0
-class GpiObjHdl : public GpiObjHdl {
-public:
-    GpiObjHdl(GpiImplInterface *impl) : GpiObjHdl(impl) { }
-    virtual ~GpiObjHdl() { }
-
-    GpiObjHdl *get_handle_by_name(std::string &name) {return NULL; };
-    GpiObjHdl *get_handle_by_index(uint32_t index) {return NULL; } ;
-    GpiIterator *iterate_handle(uint32_t type) { return NULL; }
-    GpiObjHdl *next_handle(GpiIterator *iterator) { return NULL; }
-
-    int initialise(std::string &name);
-};
-#endif
 
 class FliCbHdl : public virtual GpiCbHdl {
 public:
@@ -58,9 +42,6 @@ public:
 protected:
     int register_cb(p_cb_data cb_data);
 };
-
-
-
 
 // Callback handles
 
@@ -82,7 +63,6 @@ protected:
 };
 
 class FliSignalObjHdl;
-
 // One class of callbacks uses mti_Sensitize to react to a signal
 class FliSignalCbHdl : public FliProcessCbHdl, public GpiValueCbHdl {
 
@@ -93,7 +73,9 @@ public:
 
     virtual ~FliSignalCbHdl() { }
     int arm_callback(void);
-    int cleanup_callback(void) { return FliProcessCbHdl::cleanup_callback(); }
+    int cleanup_callback(void) { 
+        return FliProcessCbHdl::cleanup_callback();
+    }
 
 private:
     mtiSignalIdT        m_sig_hdl;
@@ -112,11 +94,12 @@ public:
     int set_signal_value(const int value);
     int set_signal_value(std::string &value);
     GpiCbHdl *value_change_cb(unsigned int edge);
+
 protected:
-     mtiSignalIdT       m_fli_hdl;
-     FliSignalCbHdl     m_rising_cb;
-     FliSignalCbHdl     m_falling_cb;
-     FliSignalCbHdl     m_either_cb;
+    mtiSignalIdT       m_fli_hdl;
+    FliSignalCbHdl     m_rising_cb;
+    FliSignalCbHdl     m_falling_cb;
+    FliSignalCbHdl     m_either_cb;
 };
 
 
@@ -160,8 +143,6 @@ public:
     virtual ~FliReadOnlyCbHdl() { }
 };
 
-
-
 class FliTimedCbHdl : public FliProcessCbHdl {
 public:
     FliTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCbHdl(impl),
@@ -181,14 +162,6 @@ public:
     int arm_callback(void);
     virtual ~FliShutdownCbHdl() { }
 };
-
-
-
-
-
-
-
-
 
 
 class FliRegionObjHdl : public GpiObjHdl {
@@ -236,4 +209,4 @@ private:
 };
 
 
-#endif /*COCOTB_FLI_IMPL_H_  */
+#endif /*COCOTB_FLI_IMPL_H_ */

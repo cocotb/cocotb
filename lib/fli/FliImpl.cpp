@@ -36,7 +36,8 @@ extern "C" {
 
 static FliImpl *fli_table;
 
-void fli_elab_cb(void *nothing) {
+void fli_elab_cb(void *nothing)
+{
     LOG_INFO("fli_elab_cb called\n");
 
     fli_table = new FliImpl("FLI");
@@ -58,7 +59,8 @@ void fli_elab_cb(void *nothing) {
     gpi_embed_init(&sim_info);
 }
 
-void cocotb_init(void) {
+void cocotb_init(void)
+{
     LOG_INFO("cocotb_init called\n");
     mti_AddLoadDoneCB(fli_elab_cb, NULL);
 }
@@ -163,27 +165,6 @@ void FliImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = mti_Now();
 }
 
-#if 0
-/**
- * @name    Find the root handle
- * @brief   Find the root handle using an optional name
- *
- * Get a handle to the root simulator object.  This is usually the toplevel.
- *
- * If no name is provided, we return the first root instance.
- *
- * If name is provided, we check the name against the available objects until
- * we find a match.  If no match is found we return NULL
- */
-int FliObjHdl::initialise(std::string &name) {
-    m_name = name;
-    m_type = "unknown";
-
-    return 0;
-}
-#endif
-
-
 /**
  * @name    Find the root handle
  * @brief   Find the root handle using an optional name
@@ -219,7 +200,7 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
     LOG_INFO("Returning root handle %p", rv);
     return rv;
 
-  error:
+error:
 
     LOG_CRITICAL("FLI: Couldn't find root handle %s", name);
 
@@ -282,9 +263,6 @@ int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 }
 
 
-
-
-
 /**
  * @name    cleanup callback
  * @brief   Called while unwinding after a GPI callback
@@ -294,7 +272,8 @@ int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
  * NB need a way to determine if should leave it sensitised, hmmm...
  * 
  */
-int FliProcessCbHdl::cleanup_callback(void) {
+int FliProcessCbHdl::cleanup_callback(void)
+{
 
     if (m_sensitised)
         mti_Desensitize(m_proc_hdl);
@@ -302,7 +281,8 @@ int FliProcessCbHdl::cleanup_callback(void) {
     return 0;
 }
 
-int FliTimedCbHdl::arm_callback(void) {
+int FliTimedCbHdl::arm_callback(void)
+{
     LOG_INFO("Creating a new process to sensitise with timer");
     m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, MTI_PROC_IMMEDIATE);
     mti_ScheduleWakeup(m_proc_hdl, m_time_ps);
@@ -312,7 +292,8 @@ int FliTimedCbHdl::arm_callback(void) {
     return 0;
 }
 
-int FliSignalCbHdl::arm_callback(void) {
+int FliSignalCbHdl::arm_callback(void)
+{
 
     if (NULL == m_proc_hdl) {
         LOG_INFO("Creating a new process to sensitise to signal %s", mti_GetSignalName(m_sig_hdl));
@@ -328,7 +309,8 @@ int FliSignalCbHdl::arm_callback(void) {
     return 0;
 }
 
-int FliSimPhaseCbHdl::arm_callback(void) {
+int FliSimPhaseCbHdl::arm_callback(void)
+{
 
     if (NULL == m_proc_hdl) {
         LOG_INFO("Creating a new process to sensitise with priority %d", m_priority);
@@ -352,7 +334,8 @@ FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface *impl,
 }
 
 
-GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge) {
+GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
+{
 
     LOG_INFO("Creating value change callback for %s", m_name.c_str());
 
@@ -384,8 +367,8 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge) {
 static char val_buff[1024];
 static const char value_enum[10] = "UX01ZWLH-";
 
-const char* FliSignalObjHdl::get_signal_value_binstr(void) {
-
+const char* FliSignalObjHdl::get_signal_value_binstr(void)
+{
     switch (mti_GetTypeKind(mti_GetSignalType(m_fli_hdl))) {
 
         case MTI_TYPE_ENUM:
@@ -424,8 +407,8 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void) {
     return &val_buff[0];
 }
 
-int FliSignalObjHdl::set_signal_value(const int value) {
-
+int FliSignalObjHdl::set_signal_value(const int value)
+{
     int rc;
     char buff[20];
 
@@ -439,8 +422,8 @@ int FliSignalObjHdl::set_signal_value(const int value) {
     return rc-1;
 }
 
-int FliSignalObjHdl::set_signal_value(std::string &value) {
-
+int FliSignalObjHdl::set_signal_value(std::string &value)
+{
     int rc;
     char buff[128];
     int len = value.copy(buff, value.length());
