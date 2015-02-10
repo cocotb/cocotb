@@ -210,7 +210,7 @@ error:
 
 GpiCbHdl *FliImpl::register_timed_callback(uint64_t time_ps)
 {
-    FliTimedCbHdl *hdl = new FliTimedCbHdl(this, time_ps);
+    FliTimedCbHdl *hdl = cache.get_timer(time_ps);
 
     if (hdl->arm_callback()) {
         delete(hdl);
@@ -271,11 +271,17 @@ int FliProcessCbHdl::cleanup_callback(void)
     m_sensitised = false;
     return 0;
 }
+FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface *impl,
+                             uint64_t time_ps) : GpiCbHdl(impl),
+                                                 FliProcessCbHdl(impl),
+                                                 m_time_ps(time_ps)
+{
+    m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, MTI_PROC_IMMEDIATE);
+}
 
 int FliTimedCbHdl::arm_callback(void)
 {
     LOG_DEBUG("Creating a new process to sensitise with timer");
-    m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, MTI_PROC_IMMEDIATE);
     mti_ScheduleWakeup(m_proc_hdl, m_time_ps);
     LOG_DEBUG("Wakeup scheduled on %p for %llu", m_proc_hdl, m_time_ps);
     m_sensitised = true;
@@ -285,7 +291,6 @@ int FliTimedCbHdl::arm_callback(void)
 
 int FliSignalCbHdl::arm_callback(void)
 {
-
     if (NULL == m_proc_hdl) {
         LOG_DEBUG("Creating a new process to sensitise to signal %s", mti_GetSignalName(m_sig_hdl));
         m_proc_hdl = mti_CreateProcess(NULL, handle_fli_callback, (void *)this);
@@ -299,7 +304,6 @@ int FliSignalCbHdl::arm_callback(void)
 
 int FliSimPhaseCbHdl::arm_callback(void)
 {
-
     if (NULL == m_proc_hdl) {
         LOG_DEBUG("Creating a new process to sensitise with priority %d", m_priority);
         m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, m_priority);
@@ -418,6 +422,36 @@ int FliSignalObjHdl::set_signal_value(std::string &value)
         LOG_CRITICAL("Setting signal value failed!\n");
     }
     return rc-1;
+}
+
+FliTimedCbHdl* FliTimerCache::get_timer(uint64_t time_ps)
+{
+#ifdef USE_CACHE
+    FliTimedCbHdl *hdl;
+
+    if (free_list.size()) {
+        //LOG_DEBUG("Popping timer from cache list of %d\n", free_list.size()  );
+        std::vector<FliTimedCbHdl*>::iterator first = free_list.begin();
+        hdl = *first;
+        free_list.erase(first);
+        hdl->reset_time(time_ps);
+    } else {
+        //LOG_DEBUG("Created new timer\n");
+        hdl = new FliTimedCbHdl(impl, time_ps);
+    }
+
+    return hdl;
+#else
+    return new FliTimedCbHdl(impl, time_ps);
+#endif
+}
+
+void FliTimerCache::put_timer(FliTimedCbHdl* hdl)
+{
+#ifdef USE_CACHE
+    free_list.push_back(hdl);
+    //LOG_INFO("Adding timer to cache, now at %d\n", free_list.size());
+#endif
 }
 
 GPI_ENTRY_POINT(fli, cocotb_init);

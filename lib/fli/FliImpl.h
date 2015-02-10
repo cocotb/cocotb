@@ -126,17 +126,6 @@ public:
     virtual ~FliReadOnlyCbHdl() { }
 };
 
-class FliTimedCbHdl : public FliProcessCbHdl {
-public:
-    FliTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCbHdl(impl),
-                                                              FliProcessCbHdl(impl), m_time_ps(time_ps) {};
-    virtual ~FliTimedCbHdl() { }
-    int arm_callback(void);
-private:
-    uint64_t m_time_ps;
-};
-
-
 class FliShutdownCbHdl : public GpiCbHdl {
 public:
     FliShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) { }
@@ -156,13 +145,29 @@ protected:
      mtiRegionIdT m_fli_hdl;
 };
 
+class FliImpl;
+class FliTimedCbHdl;
+class FliTimerCache {
+public:
+    FliTimerCache(FliImpl* impl) : impl(impl) { }
+    ~FliTimerCache() { }
+
+    FliTimedCbHdl* get_timer(uint64_t time_ps);
+    void put_timer(FliTimedCbHdl*);
+
+private:
+    std::vector<FliTimedCbHdl*> free_list;
+    FliImpl *impl;
+};
+
 
 class FliImpl : public GpiImplInterface {
 public:
     FliImpl(const std::string& name) : GpiImplInterface(name),
                                        m_readonly_cbhdl(this),
                                        m_nexttime_cbhdl(this),
-                                       m_readwrite_cbhdl(this) { }
+                                       m_readwrite_cbhdl(this),
+                                       cache(this) { }
 
      /* Sim related */
     void sim_end(void);
@@ -187,8 +192,27 @@ private:
     FliReadOnlyCbHdl  m_readonly_cbhdl;
     FliNextPhaseCbHdl m_nexttime_cbhdl;
     FliReadWriteCbHdl m_readwrite_cbhdl;
+public:
+    FliTimerCache cache;
 
 };
 
+class FliTimedCbHdl : public FliProcessCbHdl {
+public:
+    FliTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
+    virtual ~FliTimedCbHdl() { }
+
+    int arm_callback(void);
+    void reset_time(uint64_t new_time) {
+        m_time_ps = new_time;
+    }
+    int cleanup_callback(void) {
+        FliImpl* impl = (FliImpl*)m_impl;
+        impl->cache.put_timer(this);
+        return 0;
+    }
+private:
+    uint64_t m_time_ps;
+};
 
 #endif /*COCOTB_FLI_IMPL_H_ */
