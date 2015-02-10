@@ -57,19 +57,36 @@ export TOPLEVEL_LANG
 
 MODULE=test_endian_swapper
 
-CUSTOM_COMPILE_DEPS = hal
-PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
-export PYTHONPATH
+# Special set-up for particular tests
+ifeq ($(MODULE),test_endian_swapper_mmap)
+    CUSTOM_COMPILE_DEPS += mmap
+    CUSTOM_COMPILE_DEPS += hal
+    PYTHONPATH:=$(COCOTB)/lib/mmap:$(PWD)/../cosim:$(PYTHONPATH)
+    export PYTHONPATH
 
-LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
-export LD_LIBRARY_PATH
+    LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
+    export LD_LIBRARY_PATH
+endif
+
+ifeq ($(MODULE),test_endian_swapper_hal)
+    CUSTOM_COMPILE_DEPS = hal
+    PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
+    export PYTHONPATH
+
+    LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
+    export LD_LIBRARY_PATH
+endif
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
 
+.PHONY: mmap
+mmap:
+	cd ../../../lib/mmap && make
+
 .PHONY: hal
 hal:
-	-cd ../cosim && make
+	cd ../cosim && make
 
 # Stuff below is useful for profiling
 # Need grof2dot from https://code.google.com/p/jrfonseca.gprof2dot/

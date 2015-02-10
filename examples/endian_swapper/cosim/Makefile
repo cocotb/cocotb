@@ -1,5 +1,6 @@
 include $(SIM_ROOT)/makefiles/Makefile.pylib
 
+HAL_SOURCE=../hal/endian_swapper_hal.c
 PYTHON_LIBDIR ?= /usr/lib64
 SWIG ?= swig
 CC=gcc
@@ -8,7 +9,7 @@ ifeq ($(ARCH),i686)
 endif
 
 .PHONY: all
-all: io_module.so _hal.so
+all: io_module.so _hal.so config
 
 io_module.o: io.c io_module.h io.h
 	$(CC) -pthread -fno-strict-aliasing -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
@@ -18,11 +19,15 @@ io_module.o: io.c io_module.h io.h
 io_module.so: io_module.o
 	$(CC) -pthread -shared -Wl,-z,relro $< -L$(PYTHON_LIBDIR) $(PYTHON_LD_FLAGS) -o $@
 
-_hal.so: ../hal/endian_swapper_hal.c endian_swapper_hal_wrap.c io_module.so
-	$(CC) -g -ldl -shared -fPIC -I$(shell pwd) -I$(PYTHON_INCLUDEDIR) -I../hal ../hal/endian_swapper_hal.c endian_swapper_hal_wrap.c io_module.so -o $@
+_hal.so: $(HAL_SOURCE) endian_swapper_hal_wrap.c io_module.so
+	$(CC) -g -ldl -shared -fPIC -I$(shell pwd) -I$(PYTHON_INCLUDEDIR) -I../hal $(HAL_SOURCE) endian_swapper_hal_wrap.c io_module.so -o $@
 
 endian_swapper_hal_wrap.c: ../hal/endian_swapper_hal.h
 	$(SWIG) -python -outcurrentdir ../hal/endian_swapper_hal.h
+
+config: ../hal/endian_swapper_mmap.c _hal.so
+	gcc -g -I../hal $< -o $@
+	
 
 .PHONY: clean
 clean:
