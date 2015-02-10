@@ -79,18 +79,11 @@ void handle_fli_callback(void *data)
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-    //fprintf(stderr, "FLI: Old state was %d at %p!\n", old_state, cb_hdl);
-    //fflush(stderr);
-
     if (old_state == GPI_PRIMED) { 
 
         cb_hdl->set_call_state(GPI_CALL);
 
-//        fprintf(stderr, "FLI: Calling run_callback\n");
-//        fflush(stderr);
         cb_hdl->run_callback();
-//        fprintf(stderr, "FLI: Callback executed\n");
-//        fflush(stderr);
         gpi_cb_state_e new_state = cb_hdl->get_call_state();
 
         /* We have re-primed in the handler */
@@ -114,7 +107,7 @@ void FliImpl::sim_end(void)
  */
 GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
-    LOG_INFO("Looking for child %s from %s", name.c_str(), parent->get_name_str());
+    LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent->get_name_str());
 
 
     GpiObjHdl *new_obj = NULL; 
@@ -124,12 +117,12 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     mtiSignalIdT sig_hdl;
     sig_hdl = mti_FindSignal(&writable[0]);
     if (sig_hdl) {
-        LOG_INFO("Found a signal %s -> %p", &writable[0], sig_hdl);
+        LOG_DEBUG("Found a signal %s -> %p", &writable[0], sig_hdl);
         new_obj = new FliSignalObjHdl(this, sig_hdl);
     }
 
     if (NULL == new_obj) {
-        LOG_WARN("Didn't find anything named %s", &writable[0]);
+        LOG_DEBUG("Didn't find anything named %s", &writable[0]);
         return NULL;
     }
 
@@ -183,7 +176,7 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
     std::string root_name = name;
 
     for (root = mti_GetTopRegion(); root != NULL; root = mti_NextRegion(root)) {
-        LOG_INFO("Iterating over: %s", mti_GetRegionName(root));
+        LOG_DEBUG("Iterating over: %s", mti_GetRegionName(root));
         if (name == NULL || !strcmp(name, mti_GetRegionName(root)))
             break;
     }
@@ -192,12 +185,12 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
         goto error;
     }
 
-    LOG_INFO("Found toplevel: %s, creating handle....", name);
+    LOG_DEBUG("Found toplevel: %s, creating handle....", name);
 
     rv = new FliRegionObjHdl(this, root);
     rv->initialise(root_name);
 
-    LOG_INFO("Returning root handle %p", rv);
+    LOG_DEBUG("Returning root handle %p", rv);
     return rv;
 
 error:
@@ -254,8 +247,6 @@ GpiCbHdl *FliImpl::register_nexttime_callback(void)
 
 int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
-//     fprintf(stderr, "Dereigster callback called....\n");
-//     fflush(stderr);
     int rc = gpi_hdl->cleanup_callback();
     // TOOD: Don't delete if it's a re-usable doobery
 //     delete(gpi_hdl);
@@ -283,12 +274,12 @@ int FliProcessCbHdl::cleanup_callback(void)
 
 int FliTimedCbHdl::arm_callback(void)
 {
-    LOG_INFO("Creating a new process to sensitise with timer");
+    LOG_DEBUG("Creating a new process to sensitise with timer");
     m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, MTI_PROC_IMMEDIATE);
     mti_ScheduleWakeup(m_proc_hdl, m_time_ps);
-    LOG_INFO("Wakeup scheduled on %p for %llu", m_proc_hdl, m_time_ps);
+    LOG_DEBUG("Wakeup scheduled on %p for %llu", m_proc_hdl, m_time_ps);
     m_sensitised = true;
-    m_state = GPI_PRIMED;
+    set_call_state(GPI_PRIMED);
     return 0;
 }
 
@@ -296,16 +287,13 @@ int FliSignalCbHdl::arm_callback(void)
 {
 
     if (NULL == m_proc_hdl) {
-        LOG_INFO("Creating a new process to sensitise to signal %s", mti_GetSignalName(m_sig_hdl));
+        LOG_DEBUG("Creating a new process to sensitise to signal %s", mti_GetSignalName(m_sig_hdl));
         m_proc_hdl = mti_CreateProcess(NULL, handle_fli_callback, (void *)this);
     }
-
-    //fprintf(stderr, "Just armed %p\n", this);
 
     mti_Sensitize(m_proc_hdl, m_sig_hdl, MTI_EVENT);
     m_sensitised = true;
     set_call_state(GPI_PRIMED);
-    //GpiValueCbHdl::m_state = GPI_PRIMED;
     return 0;
 }
 
@@ -313,13 +301,13 @@ int FliSimPhaseCbHdl::arm_callback(void)
 {
 
     if (NULL == m_proc_hdl) {
-        LOG_INFO("Creating a new process to sensitise with priority %d", m_priority);
+        LOG_DEBUG("Creating a new process to sensitise with priority %d", m_priority);
         m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, m_priority);
     }
 
     mti_ScheduleWakeup(m_proc_hdl, 0);
     m_sensitised = true;
-    m_state = GPI_PRIMED;
+    set_call_state(GPI_PRIMED);
     return 0;
 }
 
@@ -335,9 +323,6 @@ FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface *impl,
 
 GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
 {
-
-    LOG_INFO("Creating value change callback for %s", m_name.c_str());
-
     FliSignalCbHdl *cb = NULL;
 
     switch (edge) {
@@ -401,7 +386,7 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void)
             break;
     }
 
-    LOG_INFO("Retrieved \"%s\" for signal %s", &val_buff, m_name.c_str());
+    LOG_DEBUG("Retrieved \"%s\" for signal %s", &val_buff, m_name.c_str());
 
     return &val_buff[0];
 }

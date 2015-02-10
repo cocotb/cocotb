@@ -31,20 +31,6 @@
 #include "../gpi/gpi_priv.h"
 #include "mti.h"
 
-#if 0
-class FliCbHdl : public virtual GpiCbHdl {
-public:
-    FliCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) { }
-    virtual ~FliCbHdl() { }
-
-    virtual int arm_callback(void) = 0;
-    virtual int cleanup_callback(void) = 0;
-
-protected:
-    int register_cb(p_cb_data cb_data);
-};
-#endif
-
 // Callback handles
 
 // In FLI some callbacks require us to register a process
