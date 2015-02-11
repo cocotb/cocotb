@@ -265,7 +265,6 @@ int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
  */
 int FliProcessCbHdl::cleanup_callback(void)
 {
-
     if (m_sensitised)
         mti_Desensitize(m_proc_hdl);
     m_sensitised = false;
@@ -296,8 +295,10 @@ int FliSignalCbHdl::arm_callback(void)
         m_proc_hdl = mti_CreateProcess(NULL, handle_fli_callback, (void *)this);
     }
 
-    mti_Sensitize(m_proc_hdl, m_sig_hdl, MTI_EVENT);
-    m_sensitised = true;
+    if (!m_sensitised) {
+        mti_Sensitize(m_proc_hdl, m_sig_hdl, MTI_EVENT);
+        m_sensitised = true;
+    }
     set_call_state(GPI_PRIMED);
     return 0;
 }
@@ -309,8 +310,10 @@ int FliSimPhaseCbHdl::arm_callback(void)
         m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, m_priority);
     }
 
-    mti_ScheduleWakeup(m_proc_hdl, 0);
-    m_sensitised = true;
+    if (!m_sensitised) {
+        mti_ScheduleWakeup(m_proc_hdl, 0);
+        m_sensitised = true;
+    }
     set_call_state(GPI_PRIMED);
     return 0;
 }
@@ -350,9 +353,6 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
     return (GpiValueCbHdl*)cb;
 }
 
-// TODO: Could cache various settings here which would save some of the calls
-// into FLI
-static char val_buff[1024];
 static const char value_enum[10] = "UX01ZWLH-";
 
 const char* FliSignalObjHdl::get_signal_value_binstr(void)
@@ -362,37 +362,31 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void)
         case MTI_TYPE_ENUM:
         case MTI_TYPE_SCALAR:
         case MTI_TYPE_PHYSICAL:
-            mtiInt32T scalar_val;
-            scalar_val = mti_GetSignalValue(m_fli_hdl);
-            val_buff[0] = value_enum[scalar_val];
-            val_buff[1] = '\0';
+            m_val_buff[0] = value_enum[mti_GetSignalValue(m_fli_hdl)];
             break;
         case MTI_TYPE_ARRAY: {
-            mtiInt32T *array_val;
-            array_val = (mtiInt32T *)mti_GetArraySignalValue(m_fli_hdl, NULL);
-            int num_elems = mti_TickLength(mti_GetSignalType(m_fli_hdl));
-            if (num_elems <= 256) {
-                char *iter = (char*)array_val;
-                for (int i = 0; i < num_elems; i++ ) {
-                    val_buff[i] = value_enum[(int)iter[i]];
-                }
-            } else {
-                for (int i = 0; i < num_elems; i++ ) {
-                    val_buff[i] = value_enum[array_val[i]];
+                mti_GetArraySignalValue(m_fli_hdl, m_mti_buff);
+                if (m_val_len <= 256) {
+                    char *iter = (char*)m_mti_buff;
+                    for (int i = 0; i < m_val_len; i++ ) {
+                        m_val_buff[i] = value_enum[(int)iter[i]];
+                    }
+                } else {
+                    for (int i = 0; i < m_val_len; i++ ) {
+                        m_val_buff[i] = value_enum[m_mti_buff[i]];
+                    }
                 }
             }
-            val_buff[num_elems] = '\0';
-            mti_VsimFree(array_val);
-            } break;
+            break;
         default:
             LOG_CRITICAL("Signal %s type %d not currently supported", 
                 m_name.c_str(), mti_GetTypeKind(mti_GetSignalType(m_fli_hdl)));
             break;
     }
 
-    LOG_DEBUG("Retrieved \"%s\" for signal %s", &val_buff, m_name.c_str());
+    LOG_DEBUG("Retrieved \"%s\" for signal %s", &m_val_buff, m_name.c_str());
 
-    return &val_buff[0];
+    return m_val_buff;
 }
 
 int FliSignalObjHdl::set_signal_value(const int value)
@@ -413,45 +407,73 @@ int FliSignalObjHdl::set_signal_value(const int value)
 int FliSignalObjHdl::set_signal_value(std::string &value)
 {
     int rc;
-    char buff[128];
-    int len = value.copy(buff, value.length());
-    buff[len] = '\0';
+    std::vector<char> writable(value.begin(), value.end());
+    writable.push_back('\0');
 
-    rc = mti_ForceSignal(m_fli_hdl, &buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
+    rc = mti_ForceSignal(m_fli_hdl, &writable[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
     if (!rc) {
         LOG_CRITICAL("Setting signal value failed!\n");
     }
     return rc-1;
 }
 
+int FliSignalObjHdl::initialise(std::string &name)
+{
+    /* Pre allocte buffers on signal type basis */
+    m_type = mti_GetTypeKind(mti_GetSignalType(m_fli_hdl));
+
+    switch (m_type) {
+        case MTI_TYPE_ENUM:
+        case MTI_TYPE_SCALAR:
+        case MTI_TYPE_PHYSICAL:
+            m_val_len = 2;
+            m_val_buff = (char*)malloc(m_val_len);
+            if (!m_val_buff) {
+                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
+            }
+            m_val_buff[1] = '\0';
+            break;
+        case MTI_TYPE_ARRAY:
+            m_val_len = mti_TickLength(mti_GetSignalType(m_fli_hdl));
+            m_val_buff = (char*)malloc(m_val_len);
+            if (!m_val_buff) {
+                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
+            }
+            m_val_buff[m_val_len] = '\0';
+            m_mti_buff = (mtiInt32T*)malloc(sizeof(*m_mti_buff) * m_val_len);
+            if (!m_mti_buff) {
+                LOG_CRITICAL("Unable to alloc mem for signal mti read buffer");
+            }
+            break;
+        default:
+            LOG_CRITICAL("Unable to handle onject type for %s (%d)",
+                         name.c_str(), m_type);
+    }
+
+    GpiObjHdl::initialise(name);
+
+    return 0;
+}
+
 FliTimedCbHdl* FliTimerCache::get_timer(uint64_t time_ps)
 {
-#ifdef USE_CACHE
     FliTimedCbHdl *hdl;
 
     if (free_list.size()) {
-        //LOG_DEBUG("Popping timer from cache list of %d\n", free_list.size()  );
         std::vector<FliTimedCbHdl*>::iterator first = free_list.begin();
         hdl = *first;
         free_list.erase(first);
         hdl->reset_time(time_ps);
     } else {
-        //LOG_DEBUG("Created new timer\n");
         hdl = new FliTimedCbHdl(impl, time_ps);
     }
 
     return hdl;
-#else
-    return new FliTimedCbHdl(impl, time_ps);
-#endif
 }
 
 void FliTimerCache::put_timer(FliTimedCbHdl* hdl)
 {
-#ifdef USE_CACHE
     free_list.push_back(hdl);
-    //LOG_INFO("Adding timer to cache, now at %d\n", free_list.size());
-#endif
 }
 
 GPI_ENTRY_POINT(fli, cocotb_init);

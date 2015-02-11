@@ -74,12 +74,22 @@ public:
                                                                 m_fli_hdl(hdl),
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
-                                                                m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
-    virtual ~FliSignalObjHdl() { }
+                                                                m_either_cb(impl, this, GPI_FALLING | GPI_RISING),
+                                                                m_type(MTI_TYPE_SCALAR),
+                                                                m_mti_buff(NULL),
+                                                                m_val_buff(NULL),
+                                                                m_val_len(0) { }
+    virtual ~FliSignalObjHdl() {
+        if (m_val_len)
+            free(m_val_buff);
+        if (m_mti_buff)
+            free(m_mti_buff);
+    }
 
     const char* get_signal_value_binstr(void);
     int set_signal_value(const int value);
     int set_signal_value(std::string &value);
+    int initialise(std::string &name);
     GpiCbHdl *value_change_cb(unsigned int edge);
 
 protected:
@@ -87,6 +97,12 @@ protected:
     FliSignalCbHdl     m_rising_cb;
     FliSignalCbHdl     m_falling_cb;
     FliSignalCbHdl     m_either_cb;
+
+private:
+    mtiTypeKindT       m_type;
+    mtiInt32T         *m_mti_buff;
+    char              *m_val_buff;
+    int                m_val_len;
 };
 
 
