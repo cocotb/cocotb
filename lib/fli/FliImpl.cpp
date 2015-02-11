@@ -90,6 +90,9 @@ void handle_fli_callback(void *data)
         if (new_state != GPI_PRIMED)
             if (cb_hdl->cleanup_callback())
                 delete cb_hdl;
+    } else {
+        /* Issue #188 seems to appear via FLI as well */
+        cb_hdl->cleanup_callback();
     }
 };
 
@@ -247,10 +250,7 @@ GpiCbHdl *FliImpl::register_nexttime_callback(void)
 
 int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
-    int rc = gpi_hdl->cleanup_callback();
-    // TOOD: Don't delete if it's a re-usable doobery
-//     delete(gpi_hdl);
-    return rc;
+    return gpi_hdl->cleanup_callback();
 }
 
 
@@ -265,11 +265,13 @@ int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
  */
 int FliProcessCbHdl::cleanup_callback(void)
 {
-    if (m_sensitised)
+    if (m_sensitised) {
         mti_Desensitize(m_proc_hdl);
+    }
     m_sensitised = false;
     return 0;
 }
+
 FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface *impl,
                              uint64_t time_ps) : GpiCbHdl(impl),
                                                  FliProcessCbHdl(impl),
@@ -280,11 +282,35 @@ FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface *impl,
 
 int FliTimedCbHdl::arm_callback(void)
 {
-    LOG_DEBUG("Creating a new process to sensitise with timer");
     mti_ScheduleWakeup(m_proc_hdl, m_time_ps);
-    LOG_DEBUG("Wakeup scheduled on %p for %llu", m_proc_hdl, m_time_ps);
     m_sensitised = true;
     set_call_state(GPI_PRIMED);
+    return 0;
+}
+
+int FliTimedCbHdl::cleanup_callback(void)
+{
+    switch (get_call_state()) {
+    case GPI_PRIMED:
+        /* Issue #188: Work around for modelsim that is harmless to othes too,
+           we tag the time as delete, let it fire then do not pass up
+           */
+        LOG_DEBUG("Not removing PRIMED timer %p", m_time_ps);
+        set_call_state(GPI_DELETE);
+        return 0;
+    case GPI_CALL:
+        LOG_DEBUG("Not removing CALL timer yet %p", m_time_ps);
+        set_call_state(GPI_DELETE);
+        return 0;
+    case GPI_DELETE:
+        LOG_DEBUG("Removing Postponed DELETE timer %p", m_time_ps);
+        break;
+    default:
+        break;
+    }
+    FliProcessCbHdl::cleanup_callback();
+    FliImpl* impl = (FliImpl*)m_impl;
+    impl->cache.put_timer(this);
     return 0;
 }
 
@@ -455,14 +481,15 @@ int FliSignalObjHdl::initialise(std::string &name)
     return 0;
 }
 
+#include <unistd.h>
+
 FliTimedCbHdl* FliTimerCache::get_timer(uint64_t time_ps)
 {
     FliTimedCbHdl *hdl;
 
-    if (free_list.size()) {
-        std::vector<FliTimedCbHdl*>::iterator first = free_list.begin();
-        hdl = *first;
-        free_list.erase(first);
+    if (!free_list.empty()) {
+        hdl = free_list.front();
+        free_list.pop();
         hdl->reset_time(time_ps);
     } else {
         hdl = new FliTimedCbHdl(impl, time_ps);
@@ -473,7 +500,7 @@ FliTimedCbHdl* FliTimerCache::get_timer(uint64_t time_ps)
 
 void FliTimerCache::put_timer(FliTimedCbHdl* hdl)
 {
-    free_list.push_back(hdl);
+    free_list.push(hdl);
 }
 
 GPI_ENTRY_POINT(fli, cocotb_init);

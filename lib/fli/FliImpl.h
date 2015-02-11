@@ -31,6 +31,8 @@
 #include "../gpi/gpi_priv.h"
 #include "mti.h"
 
+#include <queue>
+
 // Callback handles
 
 // In FLI some callbacks require us to register a process
@@ -38,11 +40,12 @@
 class FliProcessCbHdl : public virtual GpiCbHdl {
 public:
     FliProcessCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
-                                              m_proc_hdl(NULL) { }
+                                              m_proc_hdl(NULL),
+                                              m_sensitised(false) { }
     virtual ~FliProcessCbHdl() { }
 
     virtual int arm_callback(void) = 0;
-    int cleanup_callback(void);
+    virtual int cleanup_callback(void);
 
 protected:
     mtiProcessIdT       m_proc_hdl;
@@ -172,7 +175,7 @@ public:
     void put_timer(FliTimedCbHdl*);
 
 private:
-    std::vector<FliTimedCbHdl*> free_list;
+    std::queue<FliTimedCbHdl*> free_list;
     FliImpl *impl;
 };
 
@@ -222,11 +225,7 @@ public:
     void reset_time(uint64_t new_time) {
         m_time_ps = new_time;
     }
-    int cleanup_callback(void) {
-        FliImpl* impl = (FliImpl*)m_impl;
-        impl->cache.put_timer(this);
-        return 0;
-    }
+    int cleanup_callback(void);
 private:
     uint64_t m_time_ps;
 };
