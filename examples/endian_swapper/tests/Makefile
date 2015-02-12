@@ -37,9 +37,12 @@ COCOTB=$(PWD)/../../..
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
+PYTHONPATH := $(PWD)/../cosim;$(PYTHONPATH)
 else
 WPWD=$(shell pwd)
+PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
 endif
+export PYTHONPATH
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv
@@ -58,8 +61,6 @@ export TOPLEVEL_LANG
 MODULE=test_endian_swapper
 
 CUSTOM_COMPILE_DEPS = hal
-PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
-export PYTHONPATH
 
 LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
 export LD_LIBRARY_PATH

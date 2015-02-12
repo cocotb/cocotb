@@ -2,19 +2,22 @@
 import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestFailure
+from adder_model import adder_model
 import random
 
 @cocotb.test()
 def adder_basic_test(dut):
     """Test for 5 + 10"""
     yield Timer(2)
-    
-    dut.A = 5
-    dut.B = 10
+    A = 5
+    B = 10
+        
+    dut.A = A
+    dut.B = B
     
     yield Timer(2)
     
-    if int(dut.X) != 15:
+    if int(dut.X) != adder_model(A,B):
         raise TestFailure(
             "Adder result is incorrect: %s != 15" % str(dut.X)) 
     else: # these last two lines are not strictly necessary
@@ -34,7 +37,7 @@ def adder_randomised_test(dut):
         
         yield Timer(2)
         
-        if int(dut.X) != (A + B):
+        if int(dut.X) != adder_model(A,B):
             raise TestFailure(
                 "Randomised test failed with: %s + %s = %s" %
                 (int(dut.A), int(dut.B), int(dut.X)))
