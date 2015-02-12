@@ -86,7 +86,7 @@ EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 
 LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
-OLD_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' | sed 's/\([a-zA-Z]\)\(:\)\//\/\1\//g' | sed 's/;/:/g')
+OLD_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
 
 results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
