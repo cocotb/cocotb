@@ -116,7 +116,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
             }
  
             fprintf(stdout, "     -.--ns ");
-            fprintf(stdout, "%-8s", log_level(level));
+            fprintf(stdout, "%-9s", log_level(level));
             fprintf(stdout, "%-35s", name);
             fprintf(stdout, "%20s:", pathname);
             fprintf(stdout, "%-4ld", lineno);
