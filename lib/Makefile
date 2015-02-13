@@ -74,7 +74,7 @@ COCOTB_LIBS := $(LIB_DIR)/libcocotbutils.$(LIB_EXT) \
 	       $(LIB_DIR)/libgpilog.$(LIB_EXT) \
 	       $(LIB_DIR)/libcocotb.$(LIB_EXT) \
 	       $(LIB_DIR)/libgpi.$(LIB_EXT) \
-	       $(LIB_DIR)/libsim.$(LIB_EXT)
+	       $(LIB_DIR)/libsim.$(LIB_EXT) \
 
 COCOTB_VPI_LIB := $(LIB_DIR)/libvpi.$(LIB_EXT)
 

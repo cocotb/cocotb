@@ -91,7 +91,7 @@ export MODELSIM_BIN_DIR = $(shell which vsim | sed 's|/vsim||')
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
 endif
 
-results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(COCOTB_VPI_LIB) $(COCOTB_FLI_LIB)
 	cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
