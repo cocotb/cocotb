@@ -90,7 +90,7 @@ class SimHandle(object):
 
     def _raise_testerror(self, msg):
         lastframe = sys._getframe(2)
-        if sys.version_info.major >= 3:
+        if sys.version_info[0] >= 3:
             buff = StringIO()
             traceback.print_stack(lastframe, file=buff)
         else:
