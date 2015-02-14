@@ -52,10 +52,11 @@ endif
 
 $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
 	echo "vlib work" > $@
+ifneq ($(VHDL_SOURCES),)    
+	echo "vcom $(VHDL_ARGS) $(VHDL_SOURCES)" >> $@    
+endif
 ifneq ($(VERILOG_SOURCES),)
 	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
-else
-	echo "vcom $(VHDL_ARGS) $(VHDL_SOURCES)" >> $@
 endif
 	echo "vsim $(VSIM_ARGS) $(TOPLEVEL)" >> $@
 ifneq ($(GUI),1)
