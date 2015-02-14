@@ -92,7 +92,7 @@ endif
 export ALDEC_BIN_DIR = $(shell dirname $(shell which vsim))
 
 ifeq ($(ALDEC_BIN_DIR),)
-$(error "Directory containing ModelSim binaries must be included in system path")
+$(error "Directory containing Riviera-Pro binaries must be included in system path")
 endif
 
 ifeq ($(OS),Msys)
