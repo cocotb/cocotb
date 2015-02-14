@@ -54,7 +54,7 @@ $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) |
 	echo "if [file exists work] {vdel -all}" > $@
 	echo "vlib work" > $@
 ifneq ($(VHDL_SOURCES),)    
-	echo "vcom $(VHDL_ARGS) $(VHDL_SOURCES)" >> $@    
+	echo "vcom $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
 endif
 ifneq ($(VERILOG_SOURCES),)
 	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
