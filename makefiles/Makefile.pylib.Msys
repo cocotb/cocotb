@@ -31,7 +31,7 @@
 
 # if not explicitly set, auto-detect python dir from system path
 ifeq ($(PYTHON_DIR),)
-PYTHON_DIR = $(shell which python | sed 's|/python.exe||')
+PYTHON_DIR = $(shell dirname $(shell which python))
 endif
 
 # make sure python dir was set properly

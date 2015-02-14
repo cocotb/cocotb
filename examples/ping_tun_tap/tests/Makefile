@@ -29,7 +29,7 @@
 
 TOPLEVEL = icmp_reply
 
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
 else
 WPWD=$(shell pwd)
