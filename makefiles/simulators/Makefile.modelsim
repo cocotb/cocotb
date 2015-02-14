@@ -64,7 +64,12 @@ ifneq ($(VERILOG_SOURCES),)
 	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
 endif
 	echo "vsim $(VSIM_ARGS) $(TOPLEVEL)" >> $@
-ifneq ($(GUI),1)
+ifeq ($(WAVES),1)
+	echo "log -recursive /*" >> $@
+endif
+ifeq ($(GUI),1)
+	echo "add wave -recursive /*" >> $@
+else
 	echo "run -all" >> $@
 	echo "quit" >> $@
 endif
