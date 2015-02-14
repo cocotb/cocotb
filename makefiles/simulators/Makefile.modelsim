@@ -74,15 +74,15 @@ else
 	echo "quit" >> $@
 endif
 
-ifeq ($(OS),Msys)
-
 # auto-detect modelsim dir from system path
-MODELSIM_BIN_DIR = $(shell dirname $(shell which vsim))
+export MODELSIM_BIN_DIR = $(shell dirname $(shell which vsim))
 
 # make sure modelsim dir was found
 ifeq ($(MODELSIM_BIN_DIR),)
 $(error "Directory containing ModelSim binaries must be included in system path")
 endif
+
+ifeq ($(OS),Msys)
 
 # Windows allows the situation where the libstc++ used at link time as
 # specified by -L can be different to the one that is used at runtime which
@@ -97,23 +97,18 @@ EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 
 LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
-OLD_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
-
-results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(OLD_PYTHONPATH) \
-	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
-
+NEW_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
+INT_LIBS := $(COCOTB_VPI_LIB)
 else
-export MODELSIM_BIN_DIR = $(shell which vsim | sed 's|/vsim||')
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
-
-results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(COCOTB_VPI_LIB) $(COCOTB_FLI_LIB)
-	cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
-	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
-
+NEW_PYTHONPATH := $(PYTHONPATH)
+INT_LIBS := $(COCOTB_VPI_LIB) $(COCOTB_FLI_LIB)
 endif
+
+results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
+	cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) \
+	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
 
 clean::
 	-rm -rf $(SIM_BUILD)

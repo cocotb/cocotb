@@ -34,42 +34,37 @@ $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
 	iverilog -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
-ifeq ($(OS),Msys)
 
-ifeq ($(ICARUS_PATH),)
-$(error "Need to set ICARUS_PATH")
+# auto-detect modelsim dir from system path
+export ICARUS_BIN_DIR = $(shell dirname $(shell which iverilog))
+
+# make sure modelsim dir was found
+ifeq ($(ICARUS_BIN_DIR),)
+$(error "Directory containing Icarus binaries must be included in system path")
 endif
 
+ifeq ($(OS),Msys)
+
 EXTRA_LIBS := -lvpi
-EXTRA_LIBDIRS := -L$(ICARUS_PATH)/lib
+EXTRA_LIBDIRS := -L$(ICARUS_BIN_DIR)/../lib
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 LIB_LOAD := PATH=$(OLD_PATH):$(LIB_DIR)
-OLD_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
-
-results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(OLD_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-        vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
-
-debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(OLD_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-        gdb --args vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+NEW_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
 
 else
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
+NEW_PYTHONPATH := $(PYTHONPAT)
+endif
 
 results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
         vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
 debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
         gdb --args vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
-
-endif
 
 clean::
 	-@rm -rf $(SIM_BUILD)
