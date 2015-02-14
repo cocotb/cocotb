@@ -51,6 +51,7 @@ VSIM_ARGS += -pli libvpi.$(LIB_EXT)
 endif
 
 $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
+	echo "if [file exists work] {vdel -all}" > $@
 	echo "vlib work" > $@
 ifneq ($(VHDL_SOURCES),)    
 	echo "vcom $(VHDL_ARGS) $(VHDL_SOURCES)" >> $@    
