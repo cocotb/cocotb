@@ -17,7 +17,7 @@ VHDL_SOURCES += $(WPWD)/../hdl/mean.vhd
 VCOM_ARGS = -mixedsvvh
 export VCOM_ARGS
 
-GENERICS = "BUS_WIDTH=4"
+GENERICS = "BUS_WIDTH=2"
 export GENERICS
 
 VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
