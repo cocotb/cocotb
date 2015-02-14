@@ -44,6 +44,11 @@ ARCH?=$(shell uname -m)
 export ARCH
 
 OS=$(shell uname)
+ifneq (, $(findstring MINGW, $(OS)))
+OS=Msys
+else ifneq (, $(findstring MSYS, $(OS)))
+OS=Msys
+endif
 export OS
 
 include $(SIM_ROOT)/makefiles/Makefile.paths
@@ -65,7 +70,7 @@ endif
 ifeq ($(OS),Darwin)
 GXX_ARGS	+= -g -DDEBUG -fpic
 GCC_ARGS	:= $(GXX_ARGS)
-else ifeq ($(OS),MINGW32_NT-6.1)
+else ifeq ($(OS),Msys)
 GXX_ARGS 	+= -g -DDEBUG -shared
 GCC_ARGS	:= $(GXX_ARGS)
 LIB_EXT		:= dll
@@ -83,7 +88,7 @@ ifeq ($(OS),Darwin)
 SO_LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
 else ifeq ($(OS),Linux)
 SO_LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
-else ifeq ($(OS),MINGW32_NT-6.1)
+else ifeq ($(OS),Msys)
 SO_LINKER_ARGS :=  -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2 \
 			-Wl,--enable-auto-import -L$(PYTHON_LIBDIR)
 else

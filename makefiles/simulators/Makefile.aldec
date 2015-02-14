@@ -47,7 +47,7 @@ ifeq ($(GPI_IMPL),vpi)
     GPI_ARGS = -pli libvpi
 endif
 ifeq ($(GPI_IMPL),vhpi)
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),Msys)
     VHPI_LIB = $(shell sh -c 'cd $(LIB_DIR) && pwd -W')/libvhpi
 else
     VHPI_LIB = $(LIB_DIR)/libvhpi
@@ -92,7 +92,7 @@ ifeq ($(ALDEC_PATH),)
 $(error "Need to set ALDEC_PATH")
 endif
 
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),Msys)
 
 # Windows allows the situation where the libstc++ used at link time as
 # specified by -L can be different to the one that is used at runtime which
@@ -100,24 +100,30 @@ ifeq ($(OS),MINGW32_NT-6.1)
 # we use the mingw lib used at build time and put this at the start of the path
 # before running
 
-MINGW_BIN_DIR = $(shell which gcc | sed 's|/gcc.exe||')
+MINGW_BIN_DIR = $(shell dirname $(shell which gcc))
 
 EXTRA_LIBS := -laldecpli
 EXTRA_LIBDIRS := -L$(ALDEC_PATH)/bin/
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
-else
+OLD_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
 
+results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_SIM_DEPS)
+	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(OLD_PYTHONPATH) \
+	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
+
+else
 EXTRA_LIBS = -laldecpli
 EXTRA_LIBDIRS = -L$(ALDEC_PATH)/bin/Linux64
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
-endif
 
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
 results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_SIM_DEPS)
 	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
+
+endif
 
 clean::
 	rm -rf $(SIM_BUILD)

@@ -34,11 +34,14 @@ TOPLEVEL_LANG ?= verilog
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
-ifeq ($(OS),MINGW32_NT-6.1)
+ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
+PYTHONPATH := $(WPWD)/../model;$(PYTHONPATH)
 else
 WPWD=$(shell pwd)
+PYTHONPATH := $(WPWD)/../model:$(PYTHONPATH)
 endif
+export PYTHONPATH
 
 VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
 GPI_IMPL := vpi
