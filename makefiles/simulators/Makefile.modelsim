@@ -50,6 +50,10 @@ else
 VSIM_ARGS += -pli libvpi.$(LIB_EXT)
 endif
 
+ifneq ($(GENERICS),)
+VSIM_ARGS += $(foreach gen, $(GENERICS),"-G $(gen)")
+endif
+
 $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
 	echo "if [file exists work] {vdel -all}" > $@
 	echo "vlib work" > $@
