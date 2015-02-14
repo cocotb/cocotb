@@ -114,7 +114,7 @@ else
 EXTRA_LIBS = -laldecpli
 EXTRA_LIBDIRS = -L$(ALDEC_BIN_DIR)/Linux64
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
-NEW_PYTHONPATH := $(PYTHON_PATH)
+NEW_PYTHONPATH := $(PYTHONPATH)
 endif
 
 # Note it's the redirection of the output rather than the 'do' command
