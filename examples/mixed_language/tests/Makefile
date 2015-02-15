@@ -21,13 +21,23 @@ VHDL_SOURCES    = $(WPWD)/../../endian_swapper/hdl/endian_swapper.vhdl
 ifeq ($(TOPLEVEL_LANG),sv)
     VERILOG_SOURCES += $(WPWD)/../hdl/toplevel.sv
     GPI_IMPL=vpi
+ifeq ($(SIM),aldec)
     GPI_EXTRA=vhpi
+endif
+ifeq ($(SIM),modelsim)
+    GPI_EXTRA=fli
+endif
 endif
 
 ifeq ($(TOPLEVEL_LANG),vhdl)
     $(error "VHDL toplevel not yet implemented")
     VHDL_SOURCES += $(WPWD)/../hdl/toplevel.vhdl
+ifeq ($(SIM),aldec)
     GPI_IMPL=vhpi
+endif
+ifeq ($(SIM),modelsim)
+    GPI_IMPL=fli
+endif
     GPI_EXTRA=vpi
 endif
 
