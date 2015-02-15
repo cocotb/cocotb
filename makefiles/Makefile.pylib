@@ -36,6 +36,8 @@ ARCH?=$(NATIVE_ARCH)
 
 include $(SIM_ROOT)/makefiles/Makefile.pylib.$(OS)
 
+export LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(PYTHON_LIBDIR)
+
 #debug::
 #	@echo "Debug from Makefile.pylib"
 #	@echo -e "\tUsing PYTHON_VERSION=$(PYTHON_VERSION)"
