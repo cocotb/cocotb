@@ -11,11 +11,20 @@ What is cocotb?
 
 **Cocotb** requires a simulator to simulate the RTL. Simulators that have been tested and known to work with cocotb:
 
+Linux Platforms
+
 * Icarus Verilog
 * Synopsys VCS
 * Aldec Riviera-PRO
 * Cadence Incisive
 * Mentor Modelsim
+
+Windows Platform
+
+* Icarus Verilog
+* Aldec Riviera-PRO
+* Mentor Modelsim
+
 
 **Cocotb** can be used live in a web-browser using `EDA Playground <http://www.edaplayground.com>`_.
 
