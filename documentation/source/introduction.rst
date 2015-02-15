@@ -9,23 +9,15 @@ What is cocotb?
 
 **Cocotb** is completely free, open source (under the `BSD License <http://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_.28.22Revised_BSD_License.22.2C_.22New_BSD_License.22.2C_or_.22Modified_BSD_License.22.29>`_) and hosted on `GitHub <https://github.com/potentialventures/cocotb>`_.
 
-**Cocotb** requires a simulator to simulate the RTL. Simulators that have been tested and known to work with cocotb:
+**Cocotb** requires a simulator to simulate the RTL. Simulators that have been tested and known to work with Cocotb:
 
-* Icarus Verilog
-* Synopsys VCS
-* Aldec Riviera-PRO
-* Cadence Incisive
-* Mentor Modelsim
+* `Icarus Verilog <http://iverilog.icarus.com/>`_
+* `Aldec <https://www.aldec.com/>`_ Riviera-PRO
+* `Synopsys <http://www.synopsys.com/>`_ VCS
+* `Cadence <http://www.cadence.com/>`_ Incisive
+* `Mentor <http://www.mentor.com/>`_ Modelsim
 
 **Cocotb** can be used live in a web-browser using `EDA Playground <http://www.edaplayground.com>`_.
-
-
-What does Cocotb look like?
-===========================
-
-For some examples of Cocotb in action take a look at the `Examples`_ section.
-
-See the Jenkins pages for the Cocotb regression for a 
 
 
 
