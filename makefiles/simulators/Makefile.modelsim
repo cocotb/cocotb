@@ -54,7 +54,7 @@ endif
 
 $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
 	echo "if [file exists work] {vdel -all}" > $@
-	echo "vlib work" > $@
+	echo "vlib work" >> $@
 ifneq ($(VHDL_SOURCES),)    
 	echo "vcom $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
 endif
