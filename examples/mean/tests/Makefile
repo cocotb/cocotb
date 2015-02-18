@@ -1,5 +1,4 @@
 
-TOPLEVEL := mean_sv
 TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
@@ -11,19 +10,29 @@ else
 WPWD=$(shell pwd)
 endif
 
-VHDL_SOURCES = $(WPWD)/../hdl/mean_pkg.vhd
-VHDL_SOURCES += $(WPWD)/../hdl/mean.vhd
+ifeq ($(TOPLEVEL_LANG),verilog)
+    VHDL_SOURCES = $(WPWD)/../hdl/mean_pkg.vhd
+    VHDL_SOURCES += $(WPWD)/../hdl/mean.vhd
 
-VCOM_ARGS = -mixedsvvh
-export VCOM_ARGS
+    VCOM_ARGS = -mixedsvvh
+    export VCOM_ARGS
+
+    VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
+    TOPLEVEL = mean_sv
+    GPI_IMPL = vpi
+endif
+
+ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES = $(WPWD)/../hdl/mean_pkg.vhd
+    VHDL_SOURCES += $(WPWD)/../hdl/mean.vhd
+    TOPLEVEL = mean
+    GPI_IMPL=vhpi
+endif
+
+export TOPLEVEL_LANG
 
 GENERICS = "BUS_WIDTH=2"
 export GENERICS
-
-VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
-GPI_IMPL := vpi
-
-export TOPLEVEL_LANG
 
 MODULE ?= test_mean
 
