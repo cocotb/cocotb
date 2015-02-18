@@ -55,23 +55,23 @@ endif
 .PHONY : $(SIM_BUILD)/runsim.do
 
 $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
-	echo "if [file exists work] {vdel -all}" > $@
-	echo "vlib work" >> $@
+	@echo "if [file exists work] {vdel -all}" > $@
+	@echo "vlib work" >> $@
 ifneq ($(VHDL_SOURCES),)    
-	echo "vcom $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
+	@echo "vcom $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
 endif
 ifneq ($(VERILOG_SOURCES),)
-	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
+	@echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
 endif
-	echo "vsim $(VSIM_ARGS) $(TOPLEVEL)" >> $@
+	@echo "vsim $(VSIM_ARGS) $(TOPLEVEL)" >> $@
 ifeq ($(WAVES),1)
-	echo "log -recursive /*" >> $@
+	@echo "log -recursive /*" >> $@
 endif
 ifeq ($(GUI),1)
-	echo "add wave -recursive /*" >> $@
+	@echo "add wave -recursive /*" >> $@
 else
-	echo "run -all" >> $@
-	echo "quit" >> $@
+	@echo "run -all" >> $@
+	@echo "quit" >> $@
 endif
 
 # auto-detect modelsim dir from system path
