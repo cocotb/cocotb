@@ -70,8 +70,9 @@ endif
 ifeq ($(GUI),1)
 	@echo "add wave -recursive /*" >> $@
 else
+	@echo "onbreak resume" >> $@
 	@echo "run -all" >> $@
-	@echo "quit" >> $@
+	@echo "quit -f" >> $@
 endif
 
 # auto-detect modelsim dir from system path

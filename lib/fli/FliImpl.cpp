@@ -100,7 +100,7 @@ void handle_fli_callback(void *data)
 
 void FliImpl::sim_end(void)
 {
-    mti_Quit();
+    mti_Break();
 }
 
 /**
