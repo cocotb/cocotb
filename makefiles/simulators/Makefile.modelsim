@@ -99,16 +99,12 @@ OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/
 
 LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
 NEW_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
-INT_LIBS := $(COCOTB_VPI_LIB) $(COCOTB_FLI_LIB)
 else
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
 NEW_PYTHONPATH := $(PYTHONPATH)
-INT_LIBS := $(COCOTB_VPI_LIB) $(COCOTB_FLI_LIB)
 endif
 
-# Depending on the version of modelsim the interfaces that it supports can change
-# Append or remove values to INT_LIBS depenending on your license
-results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
+results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(COCOTB_VPI_LIB) $(COCOTB_FLI_LIB)
 	cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) \
 	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
