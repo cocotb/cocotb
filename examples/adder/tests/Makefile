@@ -43,8 +43,15 @@ PYTHONPATH := $(WPWD)/../model:$(PYTHONPATH)
 endif
 export PYTHONPATH
 
-VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
-GPI_IMPL := vpi
+ifeq ($(TOPLEVEL_LANG),verilog)
+    VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
+    GPI_IMPL=vpi
+endif
+
+ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES = $(WPWD)/../hdl/adder.vhd
+    GPI_IMPL=vhpi
+endif
 
 export TOPLEVEL_LANG
 
