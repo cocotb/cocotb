@@ -43,7 +43,7 @@ VSIM_ARGS += -onfinish exit
 endif
 
 ifeq ($(GPI_IMPL),vhpi)
-VSIM_ARGS += -foreign \"cocotb_init libfli.so\" -trace_foreign 3
+VSIM_ARGS += -foreign \"cocotb_init libfli.so\"
 else
 VSIM_ARGS += -pli libvpi.$(LIB_EXT)
 endif
