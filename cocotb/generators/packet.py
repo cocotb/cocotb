@@ -43,7 +43,7 @@ import logging
 logging.getLogger("scapy").setLevel(logging.ERROR)
 
 from cocotb.decorators import public
-from cocotb.generators.byte import *
+from cocotb.generators.byte import get_bytes, random_data
 
 _default_payload = random_data
 
@@ -54,7 +54,7 @@ def udp_all_sizes(max_size=1500, payload=_default_payload()):
     header = Ether() / IP() / UDP ()
 
     for size in range(0, max_size-len(header)):
-        yield header / _get_payload(size, payload)
+        yield header / get_bytes(size, payload)
 
 @public
 def udp_random_sizes(npackets=100, payload=_default_payload()):
@@ -71,3 +71,4 @@ def ipv4_small_packets(npackets=100, payload=_default_payload()):
     """Small (<100bytes payload) IPV4 packets"""
     for pkt in range(npackets):
         yield Ether() / IP() / get_bytes(random.randint(0, 100), payload)
+

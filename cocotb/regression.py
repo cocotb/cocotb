@@ -99,7 +99,7 @@ class RegressionManager(object):
 
         self._dut = cocotb.handle.SimHandle(simulator.get_root_handle(self._root_name))
         if self._dut is None:
-            raise AttributeError("Can not find Root Handle (%s)" % root_name)
+            raise AttributeError("Can not find Root Handle (%s)" % self._root_name)
 
         # Auto discovery
         for module_name in self._modules:

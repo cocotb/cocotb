@@ -309,10 +309,10 @@ class AXI4Slave(BusDriver):
 
             if __debug__:
                 self.log.debug(
-                    "AWADDR  %d\n" % _awaddr +
-                    "AWLEN   %d\n" % _awlen  +
-                    "AWSIZE  %d\n" % _awsize +
-                    "AWBURST %d\n" % _awburst +
+                    "ARADDR  %d\n" % _araddr +
+                    "ARLEN   %d\n" % _arlen  +
+                    "ARSIZE  %d\n" % _arsize +
+                    "ARBURST %d\n" % _arburst +
                     "BURST_LENGTH %d\n" % burst_length +
                     "Bytes in beat %d\n" % bytes_in_beat)
 
@@ -333,3 +333,4 @@ class AXI4Slave(BusDriver):
                 self.bus.RLAST <= 0
                 if burst_count == 0:
                     break
+

@@ -147,7 +147,7 @@ class Driver(object):
 
         subclasses should override this method to implement the actual send routine
         """
-        raise NotImplemented("Subclasses of Driver should define a _driver_send coroutine")
+        raise NotImplementedError("Subclasses of Driver should define a _driver_send coroutine")
 
 
     @coroutine

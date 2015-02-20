@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 from xml.etree.ElementTree import Element, SubElement
 import xml.etree.ElementTree as ET
 
+import mmap
 from io import StringIO
 
 TRUNCATE_LINES = 100

@@ -72,7 +72,7 @@ _rlock = threading.RLock()
 
 def mem_debug(port):
     import cocotb.memdebug
-    memdebug.start(port)
+    cocotb.memdebug.start(port)
 
 def _initialise_testbench(root_name):
     """
