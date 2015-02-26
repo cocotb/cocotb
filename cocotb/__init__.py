@@ -89,15 +89,6 @@ def _initialise_testbench(root_name):
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-    # Seed the Python random number generator to make this repeatable
-    seed = os.getenv('RANDOM_SEED')
-    if seed is None:
-        seed = int(time.time())
-        log.info("Seeding Python random module with %d" % (seed))
-    else:
-        seed = int(seed)
-        log.info("Seeding Python random module with supplied seed %d" % (seed))
-    random.seed(seed)
 
     exec_path = os.getenv('SIM_ROOT')
     if exec_path is None:
@@ -112,6 +103,22 @@ def _initialise_testbench(root_name):
     # Create the base handle type
 
     process_plusargs()
+
+    # Seed the Python random number generator to make this repeatable
+    seed = os.getenv('RANDOM_SEED')
+
+    if seed is None:
+        if 'ntb_random_seed' in plusargs:
+            seed = eval(plusargs['ntb_random_seed'])
+        elif 'seed' in plusargs:
+            seed = eval(plusargs['seed'])
+        else:
+            seed = int(time.time())
+        log.info("Seeding Python random module with %d" % (seed))
+    else:
+        seed = int(seed)
+        log.info("Seeding Python random module with supplied seed %d" % (seed))
+    random.seed(seed)
 
     module_str = os.getenv('MODULE')
     test_str = os.getenv('TESTCASE')
