@@ -61,6 +61,7 @@ typedef uint32_t *vpiHandle;
 #define vpiReg                 48   /* scalar or vector reg */
 #define vpiRegBit              49   /* bit of vector reg */
 #define vpiParameter           41   /* module parameter */
+#define vpiNetArray 	       114
 #define vpiRegArray            116  /* multidimensional reg */
 #define vpiStructVar           618
 #define vpiInterface           601
