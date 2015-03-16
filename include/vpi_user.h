@@ -68,6 +68,7 @@ typedef uint32_t *vpiHandle;
 #define vpiInterfaceArray      603
 #define vpiModport             606
 #define vpiRefObj              608
+#define vpiPackedArrayVar      623
 #define vpiEnumNet             680  /* SystemVerilog */
 
 #define vpiStop                66  /* execute simulator's $stop */

@@ -84,6 +84,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiNet:
         case vpiNetBit:
         case vpiReg:
+        case vpiRegBit:
         case vpiParameter:
         case vpiRegArray:
         case vpiNetArray:
@@ -96,6 +97,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiModport:
         case vpiInterfaceArray:
         case vpiRefObj:
+        case vpiPackedArrayVar:
             new_obj = new GpiObjHdl(this, new_hdl);
             break;
         default:
