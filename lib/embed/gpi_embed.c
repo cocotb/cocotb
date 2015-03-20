@@ -139,6 +139,13 @@ int embed_sim_init(gpi_sim_info_t *info)
         return -1;
     }
 
+    // Skip any library component of the toplevel
+    char *dot = strchr(dut, '.');
+    if (dot != NULL) {
+        dut += (dot - dut + 1);
+    }
+
+
     PyObject *cocotb_module, *cocotb_init, *cocotb_args, *cocotb_retval;
     PyObject *simlog_obj, *simlog_func;
     PyObject *argv_list, *argc, *arg_dict, *arg_value;
