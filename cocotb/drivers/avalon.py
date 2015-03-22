@@ -170,7 +170,7 @@ class AvalonMemory(BusDriver):
     Emulate a memory, with back-door access
     """
     _signals = ["address"]
-    _optional_signals = ["write", "read", "writedata", "readdatavalid", "readdata"]
+    _optional_signals = ["write", "read", "writedata", "readdatavalid", "readdata", "waitrequest"]
 
     def __init__(self, entity, name, clock, readlatency_min=1, readlatency_max=1, memory=None):
         BusDriver.__init__(self, entity, name, clock)
@@ -204,6 +204,9 @@ class AvalonMemory(BusDriver):
         if hasattr(self.bus, "readdatavalid"):
             self.bus.readdatavalid.setimmediatevalue(0)
 
+        if hasattr(self.bus, "waitrequest"):
+            self.bus.waitrequest.setimmediatevalue(0)
+
     def _pad(self):
         """Pad response queue up to read latency"""
         l = random.randint(self._readlatency_min, self._readlatency_max)
@@ -232,7 +235,7 @@ class AvalonMemory(BusDriver):
                     self.log.debug("sending 0x%x (%s)" % (self._val.integer, self._val.binstr))
                 self.bus.readdata <= self._val
                 self.bus.readdatavalid <= 1
-            else:
+            elif hasattr(self.bus, "readdatavalid"):
                 self.bus.readdatavalid <= 0
 
             yield ReadOnly()
