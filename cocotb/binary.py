@@ -28,24 +28,26 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 from __future__ import print_function
-from math import log,ceil
+from math import log, ceil
 from cocotb.utils import get_python_integer_types
+
 
 def resolve(string):
     for char in BinaryValue._resolve_to_0:
         string = string.replace(char, "0")
     return string
 
+
 class BinaryRepresentation():
-    UNSIGNED         = 0
-    SIGNED_MAGNITUDE = 1
-    TWOS_COMPLEMENT  = 2
+    UNSIGNED         = 0  # noqa
+    SIGNED_MAGNITUDE = 1  # noqa
+    TWOS_COMPLEMENT  = 2  # noqa
 
 
 class BinaryValue(object):
     """Represenatation of values in binary format.
 
-    The underlying value can be set or accessed using three aliasing attributes,
+    The underlying value can be set or accessed using three aliasing attributes
 
         - BinaryValue.integer is an integer
         - BinaryValue.signed_integer is a signed integer
@@ -64,19 +66,20 @@ class BinaryValue(object):
     '*'
 
     """
-    _resolve_to_0    = "xXzZuU"
-    _permitted_chars = "xXzZuU" + "01"
+    _resolve_to_0    = "xXzZuU"  # noqa
+    _permitted_chars = "xXzZuU" + "01"  # noqa
 
-
-    def __init__(self, value=None, bits=None, bigEndian=True, binaryRepresentation=BinaryRepresentation.UNSIGNED):
+    def __init__(self, value=None, bits=None, bigEndian=True,
+                 binaryRepresentation=BinaryRepresentation.UNSIGNED):
         """
         Kwagrs:
             Value (string or int or long): value to assign to the bus
 
-            bits (int): Number of bits to use for the underlying binary representation
+            bits (int): Number of bits to use for the underlying binary
+                        representation
 
-            bigEndian (bool): Interpret the binary as big-endian when converting
-                                to/from a string buffer.
+            bigEndian (bool): Interpret the binary as big-endian when
+                                converting to/from a string buffer.
         """
         self._str = ""
         self._bits = bits
@@ -87,7 +90,7 @@ class BinaryValue(object):
                             BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_to_signed_mag ,
                             BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_to_twos_comp  ,
                             }
-    
+
         self._convert_from = {
                             BinaryRepresentation.UNSIGNED         : self._convert_from_unsigned   ,
                             BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_from_signed_mag ,
@@ -113,15 +116,16 @@ class BinaryValue(object):
             except ValueError:
                 self.buff = value
 
-    def _convert_to_unsigned(self,x):
+    def _convert_to_unsigned(self, x):
         x = bin(x)
-        if x[0]=='-':
-            raise ValueError('Attempt to assigned negative number to unsigned BinaryValue')
+        if x[0] == '-':
+            raise ValueError('Attempt to assigned negative number to unsigned '
+                             'BinaryValue')
         return self._adjust_unsigned(x[2:])
-                
-    def _convert_to_signed_mag(self,x):
+
+    def _convert_to_signed_mag(self, x):
         x = bin(x)
-        if x[0]=='-':
+        if x[0] == '-':
             binstr = self._adjust_signed_mag('1' + x[3:])
         else:
             binstr = self._adjust_signed_mag('0' + x[2:])
@@ -129,39 +133,38 @@ class BinaryValue(object):
             binstr = binstr[::-1]
         return binstr
 
-    def _convert_to_twos_comp(self,x):
+    def _convert_to_twos_comp(self, x):
         if x < 0:
-            ceil_log2 = int(ceil(log(abs(x),2)))
-            binstr = bin(2**(ceil_log2+1)+x)[2:]
+            ceil_log2 = int(ceil(log(abs(x), 2)))
+            binstr = bin(2 ** (ceil_log2 + 1) + x)[2:]
             binstr = self._adjust_twos_comp(binstr)
-            pass
         else:
             binstr = self._adjust_twos_comp('0' + bin(x)[2:])
         if self.big_endian:
             binstr = binstr[::-1]
         return binstr
-    
-    def _convert_from_unsigned(self,x):
+
+    def _convert_from_unsigned(self, x):
         return int(resolve(x), 2)
-    
-    def _convert_from_signed_mag(self,x):
+
+    def _convert_from_signed_mag(self, x):
         rv = int(resolve(self._str[1:]), 2)
         if self._str[0] == '1':
             rv = rv * -1
         return rv
-    
-    def _convert_from_twos_comp(self,x):
-        if x[0]=='1':
+
+    def _convert_from_twos_comp(self, x):
+        if x[0] == '1':
             binstr = x[1:]
             binstr = self._invert(binstr)
-            rv     = int(binstr,2) + 1
+            rv = int(binstr, 2) + 1
             if x[0] == '1':
                 rv = rv * -1
         else:
             rv = int(resolve(x), 2)
         return rv
-    
-    def _invert(self,x):
+
+    def _invert(self, x):
         inverted = ''
         for bit in x:
             if bit == '0':
@@ -171,38 +174,40 @@ class BinaryValue(object):
             else:
                 inverted = inverted + bit
         return inverted
-    
-    def _adjust_unsigned(self,x):
+
+    def _adjust_unsigned(self, x):
         if self._bits is None:
             return x
         l = len(x)
         if l <= self._bits:
             if self.big_endian:
-                rv = x + '0' * (self._bits-l)
+                rv = x + '0' * (self._bits - l)
             else:
-                rv = '0' * (self._bits-l) + x
+                rv = '0' * (self._bits - l) + x
         elif l > self._bits:
-            print("WARNING truncating value to match requested number of bits (%d -> %d)" % (l,self._bits))
+            print("WARNING truncating value to match requested number of bits "
+                  "(%d -> %d)" % (l, self._bits))
             if self.big_endian:
                 rv = x[l - self._bits:]
             else:
                 rv = x[:l - self._bits]
         return rv
 
-    def _adjust_signed_mag(self,x):
+    def _adjust_signed_mag(self, x):
         """Pad/truncate the bit string to the correct length"""
         if self._bits is None:
             return x
         l = len(x)
         if l <= self._bits:
             if self.big_endian:
-                rv = x[:-1] + '0' * (self._bits-1-l)
+                rv = x[:-1] + '0' * (self._bits - 1 - l)
                 rv = rv + x[-1]
             else:
-                rv = '0' * (self._bits-1-l) + x[1:]
+                rv = '0' * (self._bits - 1 - l) + x[1:]
                 rv = x[0] + rv
         elif l > self._bits:
-            print("WARNING truncating value to match requested number of bits (%d -> %d)" % (l,self._bits))
+            print("WARNING truncating value to match requested number of bits "
+                  "(%d -> %d)" % (l, self._bits))
             if self.big_endian:
                 rv = x[l - self._bits:]
             else:
@@ -210,22 +215,23 @@ class BinaryValue(object):
         else:
             rv = x
         return rv
-        
-    def _adjust_twos_comp(self,x):
+
+    def _adjust_twos_comp(self, x):
         if self._bits is None:
             return x
         l = len(x)
         if l <= self._bits:
             if self.big_endian:
-                rv = x +  x[-1] * (self._bits-l)
+                rv = x + x[-1] * (self._bits - l)
             else:
-                rv = x[0] * (self._bits-l) + x
+                rv = x[0] * (self._bits - l) + x
         elif l > self._bits:
-            print("WARNING truncating value to match requested number of bits (%d -> %d)" % (l,self._bits))
+            print("WARNING truncating value to match requested number of bits "
+                  "(%d -> %d)" % (l, self._bits))
             if self.big_endian:
                 rv = x[l - self._bits:]
             else:
-                rv = x[:-(l-self._bits)]
+                rv = x[:-(l - self._bits)]
         else:
             rv = x
         return rv
@@ -242,14 +248,17 @@ class BinaryValue(object):
         if (ival & signbit) == 0:
             return ival
         else:
-            return -1 * (1+(int(~ival) & (signbit - 1)))
+            return -1 * (1 + (int(~ival) & (signbit - 1)))
 
     def set_value(self, integer):
         self._str = self._convert_to[self.binaryRepresentation](integer)
 
-    value = property(get_value, set_value, None, "Integer access to the value *** deprecated ***")
-    integer = property(get_value, set_value, None, "Integer access to the value")
-    signed_integer = property(get_value_signed, set_value, None, "Signed integer access to the value")
+    value = property(get_value, set_value, None,
+                     "Integer access to the value *** deprecated ***")
+    integer = property(get_value, set_value, None,
+                       "Integer access to the value")
+    signed_integer = property(get_value_signed, set_value, None,
+                              "Signed integer access to the value")
 
     def get_buff(self):
         """Attribute self.buff represents the value as a binary string buffer
@@ -274,7 +283,7 @@ class BinaryValue(object):
     def get_hex_buff(self):
         bstr = self.get_buff()
         hstr = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
-        return hstr    
+        return hstr
 
     def set_buff(self, buff):
         self._str = ""
@@ -292,33 +301,38 @@ class BinaryValue(object):
         l = len(self._str)
         if l < self._bits:
             if self.big_endian:
-                self._str = self._str + "0" * (self._bits-l)
+                self._str = self._str + "0" * (self._bits - l)
             else:
-                self._str = "0" * (self._bits-l) + self._str
+                self._str = "0" * (self._bits - l) + self._str
         elif l > self._bits:
-            print("WARNING truncating value to match requested number of bits (%d)" % l)
+            print("WARNING truncating value to match requested number of bits "
+                  " (%d)" % l)
             self._str = self._str[l - self._bits:]
 
-    buff = property(get_buff, set_buff, None, "Access to the value as a buffer")
+    buff = property(get_buff, set_buff, None,
+                    "Access to the value as a buffer")
 
     def get_binstr(self):
-        """Attribute binstr is the binary representation stored as a string of 1s and 0s"""
+        """Attribute binstr is the binary representation stored as a string of
+        1s and 0s"""
         return self._str
 
     def set_binstr(self, string):
         for char in string:
             if char not in BinaryValue._permitted_chars:
-                raise ValueError("Attempting to assign character %s to a %s" % (char, self.__class__.__name__))
+                raise ValueError("Attempting to assign character %s to a %s" %
+                                 (char, self.__class__.__name__))
         self._str = string
         self._adjust()
 
-    binstr = property(get_binstr, set_binstr, None, "Access to the binary string")
+    binstr = property(get_binstr, set_binstr, None,
+                      "Access to the binary string")
 
     def hex(self):
         try:
             return hex(self.get_value())
         except:
-            return hex(int(self.binstr,2))
+            return hex(int(self.binstr, 2))
 
     def __le__(self, other):
         self.assign(other)
@@ -343,7 +357,8 @@ class BinaryValue(object):
 
         """
         for char in self._str:
-            if char == "1": return True
+            if char == "1":
+                return True
         return False
 
     def __cmp__(self, other):
@@ -408,7 +423,7 @@ class BinaryValue(object):
         """Preserves X values"""
         self.binstr = self.binstr[-other:] + self.binstr[:-other]
         return self
-    
+
     def __invert__(self):
         """Preserves X values"""
         self.binstr = self._invert(self.binstr)
@@ -416,79 +431,88 @@ class BinaryValue(object):
 
     def __len__(self):
         return len(self.binstr)
-    
+
     def __getitem__(self, key):
-        ''' BinaryValue uses verilog/vhdl style slices as opposed to python style'''
+        ''' BinaryValue uses verilog/vhdl style slices as opposed to python
+        style'''
         if isinstance(key, slice):
             first, second = key.start, key.stop
             if self.big_endian:
                 if first < 0 or second < 0:
-                    raise IndexError('BinaryValue does not support negative indices')
-                if second > self._bits-1:
+                    raise IndexError('BinaryValue does not support negative '
+                                     'indices')
+                if second > self._bits - 1:
                     raise IndexError('High index greater than number of bits.')
                 if first > second:
-                    raise IndexError('Big Endian indices must be specified low to high')
-                _binstr = self.binstr[first:(second+1)]
-                pass
+                    raise IndexError('Big Endian indices must be specified '
+                                     'low to high')
+                _binstr = self.binstr[first:(second + 1)]
             else:
                 if first < 0 or second < 0:
-                    raise IndexError('BinaryValue does not support negative indices')
-                if first > self._bits-1:
+                    raise IndexError('BinaryValue does not support negative '
+                                     'indices')
+                if first > self._bits - 1:
                     raise IndexError('High index greater than number of bits.')
                 if second > first:
-                    raise IndexError('Litte Endian indices must be specified high to low')
+                    raise IndexError('Litte Endian indices must be specified '
+                                     'high to low')
                 high = self._bits - second
-                low  = self._bits - 1 - first
+                low = self._bits - 1 - first
                 _binstr = self.binstr[low:high]
-                pass
         else:
             index = key
-            if index > self._bits-1:
+            if index > self._bits - 1:
                 raise IndexError('Index greater than number of bits.')
             _binstr = self.binstr[index]
-        rv = BinaryValue(bits=len(_binstr),bigEndian=self.big_endian,binaryRepresentation=self.binaryRepresentation)
+        rv = BinaryValue(bits=len(_binstr), bigEndian=self.big_endian,
+                         binaryRepresentation=self.binaryRepresentation)
         rv.set_binstr(_binstr)
         return rv
-    
+
     def __setitem__(self, key, val):
-        ''' BinaryValue uses verilog/vhdl style slices as opposed to python style'''
-        if not isinstance(val,str):
+        ''' BinaryValue uses verilog/vhdl style slices as opposed to python
+        style'''
+        if not isinstance(val, str):
             raise TypeError('BinaryValue slices only accept string values')
         if isinstance(key, slice):
             first, second = key.start, key.stop
             if self.big_endian:
                 if first < 0 or second < 0:
-                    raise IndexError('BinaryValue does not support negative indices')
-                if second > self._bits-1:
+                    raise IndexError('BinaryValue does not support negative '
+                                     'indices')
+                if second > self._bits - 1:
                     raise IndexError('High index greater than number of bits.')
                 if first > second:
-                    raise IndexError('Big Endian indices must be specified low to high')
-                if len(val) > (second+1-first):
-                    raise ValueError("String length must be equal to slice length")
+                    raise IndexError('Big Endian indices must be specified '
+                                     'low to high')
+                if len(val) > (second + 1 - first):
+                    raise ValueError('String length must be equal to slice '
+                                     'length')
                 slice_1 = self.binstr[:first]
-                slice_2 = self.binstr[second+1:]
+                slice_2 = self.binstr[second + 1:]
                 self.binstr = slice_1 + val + slice_2
-                pass
             else:
                 if first < 0 or second < 0:
-                    raise IndexError('BinaryValue does not support negative indices')
-                if first > self._bits-1:
+                    raise IndexError('BinaryValue does not support negative '
+                                     'indices')
+                if first > self._bits - 1:
                     raise IndexError('High index greater than number of bits.')
                 if second > first:
-                    raise IndexError('Litte Endian indices must be specified high to low')
+                    raise IndexError('Litte Endian indices must be specified '
+                                     'high to low')
                 high = self._bits - second
-                low  = self._bits - 1 - first
+                low = self._bits - 1 - first
                 if len(val) > (high - low):
-                    raise ValueError("String length must be equal to slice length")
-                slice_1 = self.binstr[:low] 
+                    raise ValueError('String length must be equal to slice '
+                                     'length')
+                slice_1 = self.binstr[:low]
                 slice_2 = self.binstr[high:]
                 self.binstr = slice_1 + val + slice_2
-                pass
         else:
             index = key
-            if index > self._bits-1:
+            if index > self._bits - 1:
                 raise IndexError('Index greater than number of bits.')
-            self.binstr = self.binstr[:index] + val + self.binstr[index+1:]
+            self.binstr = self.binstr[:index] + val + self.binstr[index + 1:]
 
 if __name__ == "__main__":
     import doctest

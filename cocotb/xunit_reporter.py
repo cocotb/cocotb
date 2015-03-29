@@ -33,6 +33,7 @@ from io import StringIO
 
 TRUNCATE_LINES = 100
 
+
 # file from  http://stackoverflow.com/questions/136168/get-last-n-lines-of-a-file-with-python-similar-to-tail
 class File(StringIO):
 
@@ -44,11 +45,11 @@ class File(StringIO):
         return lines
 
     def head(self, lines_2find=1):
-        self.seek(0)                            #Rewind file
+        self.seek(0)                            # Rewind file
         return [self.next() for x in range(lines_2find)]
 
     def tail(self, lines_2find=1):
-        self.seek(0, 2)                         #go to end of file
+        self.seek(0, 2)                         # go to end of file
         bytes_in_file = self.tell()
         lines_found, total_bytes_scanned = 0, 0
         while (lines_2find+1 > lines_found and
@@ -67,19 +68,19 @@ class XUnitReporter(object):
     def __init__(self, filename="results.xml"):
         self.results = Element("testsuites", name="results")
         self.filename = filename
-        
+
     def add_testsuite(self, **kwargs):
         self.last_testsuite = SubElement(self.results, "testsuite", **kwargs)
         return self.last_testsuite
 
     def add_testcase(self, testsuite=None, **kwargs):
-        if testsuite == None:
+        if testsuite is None:
             testsuite = self.last_testsuite
         self.last_testcase = SubElement(testsuite, "testcase", **kwargs)
         return self.last_testcase
 
     def update_testsuite(self, testsuite=None, **kwargs):
-        if testsuite == None:
+        if testsuite is None:
             testsuite = self.last_testsuite
         for k in kwargs:
             testsuite.set(k, str(kwargs[k]))
@@ -89,7 +90,7 @@ class XUnitReporter(object):
             self.results.set(k, str(kwargs[k]))
 
     def add_log(self, logfile, testcase=None):
-        if testcase == None:
+        if testcase is None:
             testcase = self.last_testcase
         log = SubElement(testcase, "system-out")
         f = File(logfile, 'r+')
@@ -97,20 +98,21 @@ class XUnitReporter(object):
         if lines > (TRUNCATE_LINES * 2):
             head = f.head(TRUNCATE_LINES)
             tail = f.tail(TRUNCATE_LINES)
-            log.text = "".join(head + list("[...truncated %d lines...]\n" % ( (lines - (TRUNCATE_LINES*2)) )) + tail)
+            log.text = "".join(head + list("[...truncated %d lines...]\n" %
+                               ((lines - (TRUNCATE_LINES*2)))) + tail)
         else:
             log.text = "".join(f.readlines())
 
     def add_failure(self, testcase=None, **kwargs):
-        if testcase == None:
+        if testcase is None:
             testcase = self.last_testcase
         log = SubElement(testcase, "failure", **kwargs)
 
     def add_skipped(self, testcase=None, **kwargs):
-        if testcase == None:
+        if testcase is None:
             testcase = self.last_testcase
         log = SubElement(testcase, "skipped", **kwargs)
-        
+
     def indent(self, elem, level=0):
         i = "\n" + level*"  "
         if len(elem):
@@ -129,4 +131,3 @@ class XUnitReporter(object):
     def write(self):
         self.indent(self.results)
         ET.ElementTree(self.results).write(self.filename, encoding="UTF-8")
-

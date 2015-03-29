@@ -31,6 +31,7 @@ import cocotb
 from cocotb.bus import Bus
 from cocotb.triggers import RisingEdge, ReadOnly
 
+
 class Wavedrom(object):
     """
     Base class for a wavedrom compatible tracer
@@ -54,7 +55,8 @@ class Wavedrom(object):
 
         def _lastval(samples):
             for x in range(len(samples)-1, -1, -1):
-                if samples[x] not in "=.|": return samples[x]
+                if samples[x] not in "=.|":
+                    return samples[x]
             return None
 
         for name, hdl in self._hdls.items():
@@ -62,13 +64,18 @@ class Wavedrom(object):
             valstr = val.binstr.lower()
 
             # Decide what character to use to represent this signal
-            if len(valstr) == 1: char = valstr
-            elif "x" in valstr:  char = "x"
-            elif "u" in valstr:  char = "u"
-            elif "z" in valstr:  char = "z"
+            if len(valstr) == 1:
+                char = valstr
+            elif "x" in valstr:
+                char = "x"
+            elif "u" in valstr:
+                char = "u"
+            elif "z" in valstr:
+                char = "z"
             else:
-                if len(self._data[name]) and self._data[name][-1] == int(val) \
-                            and self._samples[name][-1] in "=.":
+                if (len(self._data[name]) and
+                        self._data[name][-1] == int(val) and
+                        self._samples[name][-1] in "=."):
                     char = "."
                 else:
                     char = "="
@@ -110,7 +117,7 @@ class Wavedrom(object):
 
         if add_clock:
             tracelen = len(traces[-1]["wave"])
-            siglist.insert(0, {"name": "clk", "wave" : "p" + "."*(tracelen-1)})
+            siglist.insert(0, {"name": "clk", "wave": "p" + "."*(tracelen-1)})
 
         return siglist
 
@@ -151,7 +158,8 @@ class trace(object):
         while True:
             yield RisingEdge(self._clock)
             yield ReadOnly()
-            if not self._enabled: continue
+            if not self._enabled:
+                continue
             self._clocks += 1
             for sig in self._signals:
                 sig.sample()
@@ -185,11 +193,10 @@ class trace(object):
         with open(filename, "w") as f:
             f.write(self.dumpj(**kwargs))
 
-
     def dumpj(self, header="", footer=""):
-        trace = {"signal" : []}
+        trace = {"signal": []}
         trace["signal"].append(
-            {"name": "clock", "wave" : "p" + "."*(self._clocks-1)})
+            {"name": "clock", "wave": "p" + "."*(self._clocks-1)})
         for sig in self._signals:
             trace["signal"].extend(sig.get(add_clock=False))
         if header:

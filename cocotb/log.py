@@ -43,18 +43,19 @@ import cocotb.ANSI as ANSI
 from pdb import set_trace
 
 # Column alignment
-_LEVEL_CHARS    = len("CRITICAL")
-_RECORD_CHARS   = 35
-_FILENAME_CHARS = 20
-_LINENO_CHARS   = 4
-_FUNCNAME_CHARS = 31
+_LEVEL_CHARS    = len("CRITICAL")  # noqa
+_RECORD_CHARS   = 35  # noqa
+_FILENAME_CHARS = 20  # noqa
+_LINENO_CHARS   = 4  # noqa
+_FUNCNAME_CHARS = 31  # noqa
+
 
 class SimBaseLog(logging.getLoggerClass()):
     def __init__(self, name):
         hdlr = logging.StreamHandler(sys.stdout)
         want_ansi = os.getenv("COCOTB_ANSI_OUTPUT")
         if want_ansi is None:
-            want_ansi = sys.stdout.isatty() # default to ANSI for TTYs
+            want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
         else:
             want_ansi = want_ansi == '1'
         if want_ansi:
@@ -72,6 +73,7 @@ class SimBaseLog(logging.getLoggerClass()):
 
 """ Need to play with this to get the path of the called back,
     construct our own makeRecord for this """
+
 
 class SimLog(object):
     def __init__(self, name, ident=None):
@@ -151,16 +153,18 @@ class SimLogFormatter(logging.Formatter):
     # Justify and truncate
     @staticmethod
     def ljust(string, chars):
-        if len(string) > chars: return ".." + string[(chars-2)*-1:]
+        if len(string) > chars:
+            return ".." + string[(chars - 2) * -1:]
         return string.ljust(chars)
 
     @staticmethod
     def rjust(string, chars):
-        if len(string) > chars: return ".." + string[(chars-2)*-1:]
+        if len(string) > chars:
+            return ".." + string[(chars - 2) * -1:]
         return string.rjust(chars)
 
     def _format(self, timeh, timel, level, record, msg):
-        simtime = "% 6d.%02dns" % ((timel/1000), (timel%1000)/10)
+        simtime = "% 6d.%02dns" % ((timel / 1000), (timel % 1000) / 10)
         prefix = simtime + ' ' + level + ' ' + \
             self.ljust(record.name, _RECORD_CHARS) + \
             self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
@@ -170,18 +174,18 @@ class SimLogFormatter(logging.Formatter):
         pad = "\n" + " " * (len(prefix))
         return prefix + pad.join(msg.split('\n'))
 
-
     def format(self, record):
         """pretify the log output, annotate with simulation time"""
-        if record.args: msg = record.msg % record.args
-        else:           msg = record.msg
+        if record.args:
+            msg = record.msg % record.args
+        else:
+            msg = record.msg
 
         msg = str(msg)
         level = record.levelname.ljust(_LEVEL_CHARS)
         timeh, timel = simulator.get_sim_time()
 
         return self._format(timeh, timel, level, record, msg)
-
 
 
 class SimColourLogFormatter(SimLogFormatter):
@@ -198,12 +202,14 @@ class SimColourLogFormatter(SimLogFormatter):
     def format(self, record):
         """pretify the log output, annotate with simulation time"""
 
-        if record.args: msg = record.msg % record.args
-        else:           msg = record.msg
+        if record.args:
+            msg = record.msg % record.args
+        else:
+            msg = record.msg
 
         msg = SimColourLogFormatter.loglevel2colour[record.levelno] % msg
-        level = SimColourLogFormatter.loglevel2colour[record.levelno] % \
-                                        record.levelname.ljust(_LEVEL_CHARS)
+        level = (SimColourLogFormatter.loglevel2colour[record.levelno] %
+                 record.levelname.ljust(_LEVEL_CHARS))
 
         timeh, timel = simulator.get_sim_time()
         return self._format(timeh, timel, level, record, msg)

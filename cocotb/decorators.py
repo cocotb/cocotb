@@ -37,21 +37,22 @@ from io import StringIO, BytesIO
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
-from cocotb.result import TestComplete, TestError, TestFailure, TestSuccess, ReturnValue, raise_error
+from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
+                           ReturnValue, raise_error)
 
 
 def public(f):
-  """Use a decorator to avoid retyping function/class names.
+    """Use a decorator to avoid retyping function/class names.
 
-  * Based on an idea by Duncan Booth:
-  http://groups.google.com/group/comp.lang.python/msg/11cbb03e09611b8a
-  * Improved via a suggestion by Dave Angel:
-  http://groups.google.com/group/comp.lang.python/msg/3d400fb22d8a42e1
-  """
-  all = sys.modules[f.__module__].__dict__.setdefault('__all__', [])
-  if f.__name__ not in all:  # Prevent duplicates if run from an IDE.
-      all.append(f.__name__)
-  return f
+    * Based on an idea by Duncan Booth:
+    http://groups.google.com/group/comp.lang.python/msg/11cbb03e09611b8a
+    * Improved via a suggestion by Dave Angel:
+    http://groups.google.com/group/comp.lang.python/msg/3d400fb22d8a42e1
+    """
+    all = sys.modules[f.__module__].__dict__.setdefault('__all__', [])
+    if f.__name__ not in all:  # Prevent duplicates if run from an IDE.
+        all.append(f.__name__)
+    return f
 
 public(public)  # Emulate decorating ourself
 
@@ -59,9 +60,10 @@ public(public)  # Emulate decorating ourself
 @public
 class CoroutineComplete(StopIteration):
     """
-        To ensure that a coroutine has completed before we fire any triggers that
-        are blocked waiting for the coroutine to end, we create a subclass exception
-        that the Scheduler catches and the callbacks are attached here.
+        To ensure that a coroutine has completed before we fire any triggers
+        that are blocked waiting for the coroutine to end, we create a subclass
+        exception that the Scheduler catches and the callbacks are attached
+        here.
     """
     def __init__(self, text="", callback=None):
         StopIteration.__init__(self, text)
@@ -74,9 +76,11 @@ class RunningCoroutine(object):
 
         Provides the following:
 
-            coro.join() creates a Trigger that will fire when this coroutine completes
+            coro.join() creates a Trigger that will fire when this coroutine
+            completes
 
-            coro.kill() will destroy a coroutine instance (and cause any Join triggers to fire
+            coro.kill() will destroy a coroutine instance (and cause any Join
+            triggers to fire
     """
     def __init__(self, inst, parent):
         if hasattr(inst, "__name__"):
@@ -95,8 +99,8 @@ class RunningCoroutine(object):
         self.retval = None
 
         if not hasattr(self._coro, "send"):
-            self.log.error("%s isn't a value coroutine! Did you use the yield keyword?"
-                % self.funcname)
+            self.log.error("%s isn't a value coroutine! Did you use the yield "
+                           "keyword?" % self.funcname)
             raise CoroutineComplete(callback=self._finished_cb)
 
     def __iter__(self):
@@ -136,7 +140,8 @@ class RunningCoroutine(object):
 
     def _finished_cb(self):
         """Called when the coroutine completes.
-            Allows us to mark the coroutine as finished so that boolean testing works.
+            Allows us to mark the coroutine as finished so that boolean testing
+            works.
             Also call any callbacks, usually the result of coroutine.join()"""
         self._finished = True
 
@@ -162,7 +167,6 @@ class RunningTest(RunningCoroutine):
         def handle(self, record):
             self.fn(self.format(record))
 
-
     def __init__(self, inst, parent):
         self.error_messages = []
         RunningCoroutine.__init__(self, inst, parent)
@@ -178,7 +182,8 @@ class RunningTest(RunningCoroutine):
     def send(self, value):
         if not self.started:
             self.error_messages = []
-            self.log.info("Starting test: \"%s\"\nDescription: %s" % (self.funcname, self.__doc__))
+            self.log.info("Starting test: \"%s\"\nDescription: %s" %
+                          (self.funcname, self.__doc__))
             self.start_time = time.time()
             self.started = True
         try:
@@ -189,10 +194,10 @@ class RunningTest(RunningCoroutine):
                 self.log.warning(str(e))
             else:
                 self.log.info(str(e))
-            
-            buff = StringIO();
+
+            buff = StringIO()
             for message in self.error_messages:
-                print(message, file=buff) 
+                print(message, file=buff)
             e.stderr.write(buff.getvalue())
             raise
         except StopIteration:
@@ -238,10 +243,12 @@ class coroutine(object):
             and standalone functions"""
         return self.__class__(self._func.__get__(obj, type))
 
-    def __iter__(self): return self
+    def __iter__(self):
+        return self
 
     def __str__(self):
         return str(self._func.__name__)
+
 
 @public
 class function(object):
@@ -254,7 +261,6 @@ class function(object):
     def __init__(self, func):
         self._func = func
         self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
-
 
     def __call__(self, *args, **kwargs):
 
@@ -275,10 +281,12 @@ class function(object):
             and standalone functions"""
         return self.__class__(self._func.__get__(obj, type))
 
+
 @function
 def unblock_external(bridge):
     yield NullTrigger()
     bridge.set_out()
+
 
 @public
 class test_locker(object):
@@ -292,6 +300,7 @@ class test_locker(object):
 
     def set_out(self):
         self.out_event.set()
+
 
 def external(func):
     """Decorator to apply to an external function to enable calling from cocotb
@@ -311,7 +320,8 @@ def external(func):
             unblock_external(_event)
 
         thread = threading.Thread(group=None, target=execute_external,
-            name=func.__name__ + "thread", args=([func, bridge]), kwargs={})
+                                  name=func.__name__ + "thread",
+                                  args=([func, bridge]), kwargs={})
         thread.start()
 
         yield bridge.out_event.wait()
@@ -320,6 +330,7 @@ def external(func):
             raise ReturnValue(bridge.result)
 
     return wrapped
+
 
 @public
 class test(coroutine):
@@ -340,7 +351,8 @@ class test(coroutine):
         skip: (bool):
             Don't execute this test as part of the regression
     """
-    def __init__(self, timeout=None, expect_fail=False, expect_error=False, skip=False):
+    def __init__(self, timeout=None, expect_fail=False, expect_error=False,
+                 skip=False):
         self.timeout = timeout
         self.expect_fail = expect_fail
         self.expect_error = expect_error

@@ -33,7 +33,7 @@ import logging
 import ctypes
 import traceback
 import sys
-#from StringIO import StringIO
+# from StringIO import StringIO
 
 from io import StringIO, BytesIO
 
@@ -52,6 +52,7 @@ from cocotb.result import TestError
 from cocotb.triggers import _RisingEdge, _FallingEdge
 from cocotb.utils import get_python_integer_types
 
+
 class SimHandle(object):
 
     def __init__(self, handle):
@@ -59,12 +60,13 @@ class SimHandle(object):
             Args:
                 _handle [integer] : vpi/vhpi handle to the simulator object
         """
-        self._handle = handle           # handle used for future simulator transactions
-        self._sub_handles = {}          # Dictionary of SimHandle objects created by getattr
+        self._handle = handle  # handle used for future simulator transactions
+        self._sub_handles = {}  # Dict. of SimHandle objects created by getattr
         self._len = None
 
         self.name = simulator.get_name_string(self._handle)
-        self.fullname = self.name + '(%s)' % simulator.get_type_string(self._handle)
+        self.fullname = '%s(%s)' % (self.name,
+                                    simulator.get_type_string(self._handle))
         self.log = SimLog('cocotb.' + self.name)
         self.log.debug("Created!")
         self._r_edge = _RisingEdge(self)
@@ -84,7 +86,8 @@ class SimHandle(object):
             return self._sub_handles[name]
         new_handle = simulator.get_handle_by_name(self._handle, name)
         if not new_handle:
-            self._raise_testerror("%s contains no object named %s" % (self.name, name))
+            self._raise_testerror("%s contains no object named %s" %
+                                  (self.name, name))
         self._sub_handles[name] = SimHandle(new_handle)
         return self._sub_handles[name]
 
@@ -105,8 +108,9 @@ class SimHandle(object):
 
     def __setattr__(self, name, value):
         """Provide transparent access to signals"""
-        if not name.startswith('_') and not name in ["name", "fullname", "log", "value"] \
-                                                     and self.__hasattr__(name):
+        if (not name.startswith('_') and
+                not name in ["name", "fullname", "log", "value"] and
+                self.__hasattr__(name)):
             getattr(self, name).setcachedvalue(value)
             return
         object.__setattr__(self, name, value)
@@ -132,7 +136,8 @@ class SimHandle(object):
             return self._sub_handles[index]
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
-            self._raise_testerror("%s contains no object at index %d" % (self.name, index))
+            self._raise_testerror("%s contains no object at index %d" %
+                                  (self.name, index))
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
@@ -163,7 +168,8 @@ class SimHandle(object):
 
         Assigning integers less than 32-bits is faster
         """
-        if isinstance(value, get_python_integer_types()) and value < 0x7fffffff:
+        if (isinstance(value, get_python_integer_types()) and
+                value < 0x7fffffff):
             simulator.set_signal_val(self._handle, value)
             return
 
@@ -172,8 +178,10 @@ class SimHandle(object):
         elif isinstance(value, get_python_integer_types()):
             value = BinaryValue(value=value, bits=len(self), bigEndian=False)
         elif not isinstance(value, BinaryValue):
-            self.log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
-            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+            self.log.critical("Unsupported type for value assignment: %s (%s)"
+                              % (type(value), repr(value)))
+            raise TypeError("Unable to set simulator value with type %s" %
+                            (type(value)))
 
         simulator.set_signal_val_str(self._handle, value.binstr)
 
@@ -185,8 +193,10 @@ class SimHandle(object):
         sim time"""
         cocotb.scheduler.save_write(self, value)
 
-    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    value = property(getvalue, setcachedvalue, None, "A reference to the value")
+    # We want to maintain compatability with python 2.5 so we can't use
+    # @property with a setter
+    value = property(getvalue, setcachedvalue, None,
+                     "A reference to the value")
 
     def _get_value_str(self):
         return simulator.get_signal_val(self._handle)
@@ -197,7 +207,6 @@ class SimHandle(object):
                 module.signal <= 2
         """
         self.value = value
-
 
     def __len__(self):
         """Returns the 'length' of the underlying object.
@@ -210,17 +219,16 @@ class SimHandle(object):
             self._len = len(self._get_value_str())
         return self._len
 
-
     def __cmp__(self, other):
 
         # Permits comparison of handles i.e. if clk == dut.clk
         if isinstance(other, SimHandle):
-            if self._handle == other._handle: return 0
+            if self._handle == other._handle:
+                return 0
             return 1
 
         # Use the comparison method of the other object against our value
         return self.value.__cmp__(other)
-
 
     def __iter__(self):
         """Iterates over all known types defined by simulator module"""
@@ -241,5 +249,3 @@ class SimHandle(object):
 
     def __int__(self):
         return int(self.value)
-
-
