@@ -16,7 +16,7 @@ endif
 all: io_module.so _hal.so
 
 io_module.o: io.c io_module.h io.h
-	$(CC) $(GCC_FLAGS) -pthread -fno-strict-aliasing -O2 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
+	$(CC) $(GCC_FLAGS) -fPIC -pthread -fno-strict-aliasing -O2 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
 	-fexceptions --param=ssp-buffer-size=4 -D_GNU_SOURCE \
 	-fwrapv -DNDEBUG -I$(PYTHON_INCLUDEDIR) -c $< -o $@
 
@@ -26,7 +26,7 @@ io_module.so: io_module.o
 _hal.so: ../hal/endian_swapper_hal.c endian_swapper_hal_wrap.c io_module.so
 	$(CC) -g -ldl -shared -fPIC -I$(shell pwd) $(PYTHON_LD_FLAGS) -I$(PYTHON_INCLUDEDIR) -I../hal ../hal/endian_swapper_hal.c endian_swapper_hal_wrap.c io_module.so -o $@
 	if [ $(OS) = Darwin ]; then \
-		install_name_tool -change io_module.so $(PWD)/io_module.so $@; \
+		install_name_tool -change io_module.so $(shell pwd)/io_module.so $@; \
 	fi
 
 endian_swapper_hal_wrap.c: ../hal/endian_swapper_hal.h
