@@ -42,7 +42,7 @@
 extern "C" {
 #endif
 
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__APPLE__)
 #ifndef VPI_DLLISPEC
 #define VPI_DLLISPEC __declspec(dllimport)
 #define VPI_DLL_LOCAL 1
