@@ -30,7 +30,7 @@
 #include <cocotb_utils.h>
 #include <stdio.h>
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 #include <dlfcn.h>
 #else
 #include <windows.h>
@@ -39,7 +39,7 @@
 void* utils_dyn_open(const char* lib_name)
 {
     void *ret = NULL;
-#ifndef __linux__
+#if ! defined(__linux__) && ! defined(__APPLE__)
     SetErrorMode(0);
     ret = LoadLibrary(lib_name);
     if (!ret) {
@@ -60,7 +60,7 @@ void* utils_dyn_open(const char* lib_name)
 void* utils_dyn_sym(void *handle, const char* sym_name)
 {
     void *entry_point;
-#ifndef __linux__
+#if ! defined(__linux__) && ! defined(__APPLE__)
     entry_point = GetProcAddress(handle, sym_name);
     if (!entry_point) {
         printf("Unable to find symbol %s\n", sym_name);
