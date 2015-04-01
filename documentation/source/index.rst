@@ -8,12 +8,13 @@ Contents:
 
    introduction
    quickstart
-   coroutines
    building
+   coroutines
+   triggers
+   library_reference
    endian_swapper
    ping_tun_tap
    hal_cosimulation 
-   library_reference
    roadmap
    simulator_support
 

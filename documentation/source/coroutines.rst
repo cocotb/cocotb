@@ -15,7 +15,7 @@ when it occurs.  For example:
     @cocotb.coroutine
     def wait_10ns():
         cocotb.log.info("About to wait for 10ns")
-        yield TimerNS(10)
+        yield Timer(10000)
         cocotb.log.info("Simulation time has advanced by 10 ns")
 
 Coroutines may also yield other coroutines:
@@ -36,4 +36,19 @@ resume if *any* of them fires:
     @cocotb.coroutine
     def packet_with_timeout(monitor, timeout):
         """Wait for a packet but timeout if nothing arrives"""
-        yield [TimerNS(timeout), monitor.recv()]
+        yield [Timer(timeout), monitor.wait_for_recv()]
+
+
+The trigger that caused execution to resume is passed back to the coroutine,
+allowing them to distinguish which trigger fired:
+
+.. code-block:: python
+    
+    @cocotb.coroutine
+    def packet_with_timeout(monitor, timeout):
+        """Wait for a packet but timeout if nothing arrives"""
+        tout_trigger = Timer(timeout)
+        result = yield [tout_trigger, monitor.wait_for_recv()]
+        if result is tout_trigger:
+            raise TestFailure("Timed out waiting for packet")
+
