@@ -182,7 +182,9 @@ public:
     const char* get_signal_value_binstr(void);
 
     int set_signal_value(const int value);
+    int set_signal_value(const int value, uint64_t inertial_delay);
     int set_signal_value(std::string &value);
+    int set_signal_value(std::string &value, uint64_t inertial_delay);
 
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(unsigned int edge);

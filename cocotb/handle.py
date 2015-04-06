@@ -145,16 +145,19 @@ class SimHandle(object):
         result.binstr = self._get_value_str()
         return result
 
-    def setimmediatevalue(self, value):
+    def setimmediatevalue(self, value, delay=0):
         """
         Set the value of the underlying simulation object to value.
 
         Args:
             value (ctypes.Structure, cocotb.binary.BinaryValue, int)
                 The value to drive onto the simulator object
-
+            delay=0
+                The amount simulator timesteps to delay the assignment
         Raises:
             TypeError
+
+        The simulator implements this with vpi_put_value, vpiInertialDelay (In verilog)
 
         This operation will fail unless the handle refers to a modifiable
         object eg net, signal or variable.
@@ -164,7 +167,7 @@ class SimHandle(object):
         Assigning integers less than 32-bits is faster
         """
         if isinstance(value, get_python_integer_types()) and value < 0x7fffffff:
-            simulator.set_signal_val(self._handle, value)
+            simulator.set_signal_val(self._handle, value, delay)
             return
 
         if isinstance(value, ctypes.Structure):
@@ -175,7 +178,7 @@ class SimHandle(object):
             self.log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
-        simulator.set_signal_val_str(self._handle, value.binstr)
+        simulator.set_signal_val_str(self._handle, value.binstr, delay)
 
     def setcachedvalue(self, value):
         """Intercept the store of a value and hold in cache.
@@ -196,7 +199,13 @@ class SimHandle(object):
             provide an hdl-like shortcut
                 module.signal <= 2
         """
-        self.value = value
+        if isinstance(value, tuple):
+            value, delay = value
+            if delay == 0:
+                self.value = value #Use default semantics for delay of 0. Probably not needed because of issue #205
+            self.setimmediatevalue(value, delay)
+        else:
+            self.value = value
 
 
     def __len__(self):

@@ -554,17 +554,22 @@ static PyObject *set_signal_val(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
     long value;
+    uint64_t inertial_delay=0;
     PyObject *res;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "ll", &hdl, &value)) {
+    if (!PyArg_ParseTuple(args, "ll|K", &hdl, &value, &inertial_delay)) {
         DROP_GIL(gstate);
         return NULL;
     }
 
-    gpi_set_signal_value_int(hdl,value);
+    if (inertial_delay) {
+        gpi_set_signal_value_int_delay(hdl,value,inertial_delay);
+    } else {
+        gpi_set_signal_value_int(hdl,value);
+    }
     res = Py_BuildValue("s", "OK!");
 
     DROP_GIL(gstate);
@@ -577,17 +582,22 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
     const char *binstr;
+    uint64_t inertial_delay=0;
     PyObject *res;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "ls", &hdl, &binstr)) {
+    if (!PyArg_ParseTuple(args, "ls|K", &hdl, &binstr, &inertial_delay)) {
         DROP_GIL(gstate);
         return NULL;
     }
 
-    gpi_set_signal_value_str(hdl,binstr);
+    if (inertial_delay) {
+        gpi_set_signal_value_str_delay(hdl,binstr,inertial_delay);
+    } else {
+        gpi_set_signal_value_str(hdl,binstr);
+    }
     res = Py_BuildValue("s", "OK!");
 
     DROP_GIL(gstate);

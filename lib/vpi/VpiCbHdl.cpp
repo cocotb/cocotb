@@ -139,6 +139,11 @@ const char* VpiSignalObjHdl::get_signal_value_binstr(void)
 // Value related functions
 int VpiSignalObjHdl::set_signal_value(int value)
 {
+	return set_signal_value(value, 0);
+}
+
+int VpiSignalObjHdl::set_signal_value(int value, uint64_t inertial_delay)
+{
     FENTER
     s_vpi_value value_s;
 
@@ -148,8 +153,8 @@ int VpiSignalObjHdl::set_signal_value(int value)
     s_vpi_time vpi_time_s;
 
     vpi_time_s.type = vpiSimTime;
-    vpi_time_s.high = 0;
-    vpi_time_s.low  = 0;
+    vpi_time_s.high = (uint32_t)(inertial_delay >> 32);
+    vpi_time_s.low  = (uint32_t)(inertial_delay);
 
     // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
     vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
@@ -161,6 +166,11 @@ int VpiSignalObjHdl::set_signal_value(int value)
 
 int VpiSignalObjHdl::set_signal_value(std::string &value)
 {
+	return set_signal_value(value, 0);
+}
+
+int VpiSignalObjHdl::set_signal_value(std::string &value, uint64_t inertial_delay)
+{
     FENTER
     s_vpi_value value_s;
 
@@ -170,7 +180,14 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
     value_s.value.str = &writable[0];
     value_s.format = vpiBinStrVal;
 
-    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, NULL, vpiNoDelay);
+    s_vpi_time vpi_time_s;
+
+    vpi_time_s.type = vpiSimTime;
+    vpi_time_s.high = (uint32_t)(inertial_delay >> 32);
+    vpi_time_s.low  = (uint32_t)(inertial_delay);
+
+    // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
     check_vpi_error();
 
     FEXIT

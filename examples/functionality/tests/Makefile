@@ -51,7 +51,7 @@ endif
 
 export TOPLEVEL_LANG
 
-MODULE ?= test_cocotb,test_discovery,test_external,test_regression
+MODULE ?= test_cocotb,test_discovery,test_external,test_regression,test_inertialdelay
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
