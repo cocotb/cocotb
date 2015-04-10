@@ -46,7 +46,7 @@ ifeq ($(GPI_IMPL),vpi)
 endif
 
 ifeq ($(GPI_IMPL),vhpi)
-    GPI_ARGS = -loadvhpi $(LIB_DIR)/libvhpi
+    GPI_ARGS = -loadvhpi $(LIB_DIR)/libvhpi:vhpi_startup_routines_bootstrap
     #EXTRA_ARGS += -cdslib cds.lib
     EXTRA_ARGS += -v93
     EXTRA_ARGS += -top worklib.$(TOPLEVEL)
