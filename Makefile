@@ -42,10 +42,17 @@ clean:
 	-@find . -name "results.xml" | xargs rm -rf
 	$(MAKE) -C examples clean
 
-test: 
+do_tests: 
 	$(MAKE) -k -C examples
+
+# For jenkins we use the exit code to detect compile errors or catestrphic
+# failures and the xml to track test results
+jenkins: do_tests
+	./bin/combine_results.py --squash_rc
+
+# By default want the exit code to indicate the test results
+test: do_tests
 	./bin/combine_results.py
-	./bin/report_results.py combined_results.xml
 
 pycode:
 	@cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
