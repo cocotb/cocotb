@@ -27,9 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
-# Override this variable to use VHPI instead of VPI
-TOPLEVEL_LANG ?= verilog
+# Default to verilog
+GPI_IMPL ?= vpi
 
 WPWD=$(shell sh -c 'pwd -W')
 PWD=$(shell pwd)
@@ -44,19 +43,17 @@ PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
 endif
 export PYTHONPATH
 
-ifeq ($(TOPLEVEL_LANG),verilog)
+ifeq ($(GPI_IMPL),vpi)
     VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv
     TOPLEVEL = endian_swapper_sv
     GPI_IMPL=vpi
 endif
 
-ifeq ($(TOPLEVEL_LANG),vhdl)
+ifeq ($(GPI_IMPL),vhpi)
     VHDL_SOURCES = $(WPWD)/../hdl/endian_swapper.vhdl
     TOPLEVEL = endian_swapper_vhdl
     GPI_IMPL=vhpi
 endif
-
-export TOPLEVEL_LANG
 
 MODULE=test_endian_swapper
 
