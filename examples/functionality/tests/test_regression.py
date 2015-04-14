@@ -6,6 +6,7 @@ from cocotb.triggers import RisingEdge, Timer, ReadOnly
 from cocotb.result import TestFailure
 from cocotb.binary import BinaryValue
 
+
 @cocotb.coroutine
 def send_data(dut):
     dut.stream_in_valid = 1
@@ -45,7 +46,6 @@ def issue_120_scheduling(dut):
     dut.stream_in_valid = 0
 
     yield RisingEdge(dut.clk)
-   
 
 
 @cocotb.test(skip=True)
@@ -57,7 +57,7 @@ def issue_142_overflow_error(dut):
     def _compare(value):
         if int(dut.stream_in_data_wide.value) != int(value):
             raise TestFailure("Expecting 0x%x but got 0x%x on %s" % (
-                int(value), int(dut.stream_in_data_wide.value), 
+                int(value), int(dut.stream_in_data_wide.value),
                 str(dut.stream_in_data_wide)))
 
     # Wider values are transparently converted to BinaryValues
@@ -69,4 +69,3 @@ def issue_142_overflow_error(dut):
         dut.stream_in_data_wide = value
         yield RisingEdge(dut.clk)
         _compare(value)
-

@@ -8,7 +8,7 @@ modification, are permitted provided that the following conditions are met:
     * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd nor the names of its 
+    * Neither the name of Potential Ventures Ltd nor the names of its
       contributors may be used to endorse or promote products derived from this
       software without specific prior written permission.
 
@@ -36,44 +36,45 @@ from cocotb.drivers import Driver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
 
-_XGMII_IDLE     = "\x07"
-_XGMII_START    = "\xFB"
-_XGMII_TERMINATE= "\xFD"
+_XGMII_IDLE      = "\x07"  # noqa
+_XGMII_START     = "\xFB"  # noqa
+_XGMII_TERMINATE = "\xFD"  # noqa
 
 # Preamble is technically supposed to be 7 bytes of 0x55 but it seems that it's
 # permissible for the start byte to replace one of the preamble bytes
 # see http://grouper.ieee.org/groups/802/3/10G_study/email/msg04647.html
 _PREAMBLE_SFD = "\x55\x55\x55\x55\x55\x55\xD5"
 
+
 class _XGMIIBus(object):
     """
     Helper object for abstracting the underlying bus format
-    
+
     Index bytes directly on this object, pass a tuple of (value, ctrl) to
     set a byte.
-    
+
     For example:
-    
+
     >>> xgmii = _XGMIIBus(4)
     >>> xgmii[0] = (_XGMII_IDLE, True) # Control byte
     >>> xgmii[1] = ("\x55", False)     # Data byte
     """
-    
+
     def __init__(self, nbytes, interleaved=True):
         """
         Args:
-            nbytes (int):        The number of bytes transferred per clock cycle
-                                 (usually 8 for SDR, 4 for DDR)
+            nbytes (int):       The number of bytes transferred per clock cycle
+                                (usually 8 for SDR, 4 for DDR)
 
         Kwargs:
-            interleaved (bool):  The arrangement of control bits on the bus.
-            
-                                 If interleaved we have a bus with 9-bits per
-                                 byte, the control bit being the 9th bit of each
-                                 byte.
-                                 
-                                 If not interleaved then we have a byte per data
-                                 byte plus a control bit per byte in the MSBs.
+            interleaved (bool): The arrangement of control bits on the bus.
+
+                                If interleaved we have a bus with 9-bits per
+                                byte, the control bit being the 9th bit of each
+                                byte.
+
+                                If not interleaved then we have a byte per data
+                                byte plus a control bit per byte in the MSBs.
         """
 
         self._value = BinaryValue(bits=nbytes*9, bigEndian=False)
@@ -104,14 +105,13 @@ class _XGMIIBus(object):
 
         self._value.integer = self._integer
 
-
     @property
     def value(self):
         """
         Get the integer representation of this data word suitable for driving
         onto the bus.
-        
-        NB clears the value        
+
+        NB clears the value
         """
         self._value.integer = self._integer
         self._integer = long(0)
@@ -130,14 +130,14 @@ class XGMII(Driver):
         """
         Args:
             signal (SimHandle):         The xgmii data bus
-            
-            clock (SimHandle):          The associated clock (assumed to be 
+
+            clock (SimHandle):          The associated clock (assumed to be
                                         driven by another coroutine)
-        
+
         Kwargs:
             interleaved (bool:          Whether control bits are interleaved
                                         with the data bytes or not.
-        
+
         If interleaved the bus is
             byte0, byte0_control, byte1, byte1_control ....
 
@@ -148,19 +148,21 @@ class XGMII(Driver):
         self.log = signal.log
         self.signal = signal
         self.clock = clock
-        self.bus  = _XGMIIBus(len(signal)/9, interleaved=interleaved)
+        self.bus = _XGMIIBus(len(signal)/9, interleaved=interleaved)
         Driver.__init__(self)
 
     @staticmethod
     def layer1(packet):
         """Take an Ethernet packet (as a string) and format as a layer 1 packet
 
-           Pads to 64-bytes, prepends preamble and appends 4-byte CRC on the end
+           Pads to 64-bytes,
+           prepends preamble and appends 4-byte CRC on the end
         """
         if len(packet) < 60:
             padding = "\x00" * (60 - len(packet))
             packet += padding
-        return _PREAMBLE_SFD + packet + struct.pack("<I", zlib.crc32(packet)&0xFFFFFFFF)
+        return (_PREAMBLE_SFD + packet +
+                struct.pack("<I", zlib.crc32(packet) & 0xFFFFFFFF))
 
     def idle(self):
         """Helper to set bus to IDLE state"""
@@ -172,9 +174,9 @@ class XGMII(Driver):
         """Helper function to terminate from a provided lane index"""
         self.bus[index] = (_XGMII_TERMINATE, True)
 
-        if index < len(self.bus) -1:
+        if index < len(self.bus) - 1:
 
-            for rem in range(index+1, len(self.bus)):
+            for rem in range(index + 1, len(self.bus)):
                 self.bus[rem] = (_XGMII_IDLE, True)
 
     @cocotb.coroutine
@@ -190,11 +192,12 @@ class XGMII(Driver):
         self.log.debug(hexdump(pkt))
 
         clkedge = RisingEdge(self.clock)
-        if sync: yield clkedge
+        if sync:
+            yield clkedge
 
         self.bus[0] = (_XGMII_START, True)
 
-        for i in range(1,len(self.bus)):
+        for i in range(1, len(self.bus)):
             self.bus[i] = (pkt[i-1], False)
 
         pkt = pkt[len(self.bus)-1:]

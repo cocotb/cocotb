@@ -42,7 +42,9 @@ from cocotb.result import TestFailure
 
 # Data generators
 from cocotb.generators.byte import random_data, get_bytes
-from cocotb.generators.bit import wave, intermittent_single_cycles, random_50_percent
+from cocotb.generators.bit import (wave, intermittent_single_cycles,
+                                   random_50_percent)
+
 
 @cocotb.coroutine
 def stream_out_config_setter(dut, stream_out, stream_in):
@@ -55,24 +57,27 @@ def stream_out_config_setter(dut, stream_out, stream_in):
         yield edge
         yield ro
         if dut.byteswapping.value:
-            stream_out.config['firstSymbolInHighOrderBits'] = not \
-             stream_in.config['firstSymbolInHighOrderBits']
+            stream_out.config['firstSymbolInHighOrderBits'] = \
+                not stream_in.config['firstSymbolInHighOrderBits']
         else:
             stream_out.config['firstSymbolInHighOrderBits'] = \
-             stream_in.config['firstSymbolInHighOrderBits']
+                stream_in.config['firstSymbolInHighOrderBits']
+
 
 class EndianSwapperTB(object):
 
     def __init__(self, dut, debug=False):
         self.dut = dut
-        self.stream_in  = AvalonSTDriver(dut, "stream_in", dut.clk)
+        self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
         self.backpressure = BitDriver(self.dut.stream_out_ready, self.dut.clk)
-        self.stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk, 
-                                  config={'firstSymbolInHighOrderBits': True})
+        self.stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk,
+                                          config={'firstSymbolInHighOrderBits':
+                                                  True})
 
         self.csr = AvalonMaster(dut, "csr", dut.clk)
 
-        cocotb.fork(stream_out_config_setter(dut, self.stream_out, self.stream_in))
+        cocotb.fork(stream_out_config_setter(dut, self.stream_out,
+                                             self.stream_in))
 
         # Create a scoreboard on the stream_out bus
         self.pkts_sent = 0
@@ -80,8 +85,10 @@ class EndianSwapperTB(object):
         self.scoreboard = Scoreboard(dut)
         self.scoreboard.add_interface(self.stream_out, self.expected_output)
 
-        # Reconstruct the input transactions from the pins and send them to our 'model'
-        self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk, callback=self.model)
+        # Reconstruct the input transactions from the pins
+        # and send them to our 'model'
+        self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk,
+                                                   callback=self.model)
 
         # Set verbosity on our various interfaces
         level = logging.DEBUG if debug else logging.WARNING
@@ -112,8 +119,10 @@ def clock_gen(signal):
         signal <= 1
         yield Timer(5000)
 
+
 @cocotb.coroutine
-def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backpressure_inserter=None):
+def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
+             backpressure_inserter=None):
 
     cocotb.fork(clock_gen(dut.clk))
     yield RisingEdge(dut.clk)
@@ -156,21 +165,27 @@ def random_packet_sizes(min_size=1, max_size=150, npackets=10):
     for i in range(npackets):
         yield get_bytes(random.randint(min_size, max_size), random_data())
 
+
 @cocotb.coroutine
 def randomly_switch_config(csr):
     """Twiddle the byteswapping config register"""
     while True:
-        yield csr.write(0, random.randint(0,1))
+        yield csr.write(0, random.randint(0, 1))
 
 
 factory = TestFactory(run_test)
-factory.add_option("data_in",                 [random_packet_sizes])
-factory.add_option("config_coroutine",        [None, randomly_switch_config])
-factory.add_option("idle_inserter",           [None, wave, intermittent_single_cycles, random_50_percent])
-factory.add_option("backpressure_inserter",   [None, wave, intermittent_single_cycles, random_50_percent])
+factory.add_option("data_in",
+                   [random_packet_sizes])
+factory.add_option("config_coroutine",
+                   [None, randomly_switch_config])
+factory.add_option("idle_inserter",
+                   [None, wave, intermittent_single_cycles, random_50_percent])
+factory.add_option("backpressure_inserter",
+                   [None, wave, intermittent_single_cycles, random_50_percent])
 factory.generate_tests()
 
 import cocotb.wavedrom
+
 
 @cocotb.test()
 def wavedrom_test(dut):

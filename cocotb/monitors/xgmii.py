@@ -8,7 +8,7 @@ modification, are permitted provided that the following conditions are met:
     * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd nor the names of its 
+    * Neither the name of Potential Ventures Ltd nor the names of its
       contributors may be used to endorse or promote products derived from this
       software without specific prior written permission.
 
@@ -32,7 +32,7 @@ try:
     from scapy.all import Ether
     _have_scapy = True
 except ImportError:
-    _have_scapy = False    
+    _have_scapy = False
 
 import struct
 import zlib
@@ -42,11 +42,12 @@ from cocotb.utils import hexdump
 from cocotb.monitors import Monitor
 from cocotb.triggers import RisingEdge, ReadOnly
 
-_XGMII_IDLE     = "\x07"
-_XGMII_START    = "\xFB"
-_XGMII_TERMINATE= "\xFD"
+_XGMII_IDLE      = "\x07"  # noqa
+_XGMII_START     = "\xFB"  # noqa
+_XGMII_TERMINATE = "\xFD"  # noqa
 
 _PREAMBLE_SFD = "\x55\x55\x55\x55\x55\x55\xD5"
+
 
 class XGMII(Monitor):
     """
@@ -57,18 +58,19 @@ class XGMII(Monitor):
     If interleaved is true then the control bits are adjacent to the bytes
     """
 
-    def __init__(self, signal, clock, interleaved=True, callback=None, event=None):
+    def __init__(self, signal, clock, interleaved=True, callback=None,
+                 event=None):
         """
         Args:
             signal (SimHandle):         The xgmii data bus
-            
-            clock (SimHandle):          The associated clock (assumed to be 
+
+            clock (SimHandle):          The associated clock (assumed to be
                                         driven by another coroutine)
-        
+
         Kwargs:
             interleaved (bool:          Whether control bits are interleaved
                                         with the data bytes or not.
-        
+
         If interleaved the bus is
             byte0, byte0_control, byte1, byte1_control ....
 
@@ -93,20 +95,19 @@ class XGMII(Monitor):
         bytes = []
         ctrls = []
         byte_shift = 8
-        ctrl_base = 8*self.bytes
-        ctrl_inc  = 1
+        ctrl_base = 8 * self.bytes
+        ctrl_inc = 1
         if self.interleaved:
             byte_shift += 1
             ctrl_base = 8
             ctrl_inc = 9
 
         for i in range(self.bytes):
-            bytes.append(chr((value >> (i*byte_shift)) & 0xff))
-            ctrls.append(bool(value & (1<<(ctrl_base))))
+            bytes.append(chr((value >> (i * byte_shift)) & 0xff))
+            ctrls.append(bool(value & (1 << ctrl_base)))
             ctrl_base += ctrl_inc
 
         return ctrls, bytes
-
 
     def _add_payload(self, ctrl, bytes):
         """Take the payload and return true if more to come"""
@@ -114,14 +115,15 @@ class XGMII(Monitor):
             if ctrl[index]:
                 if byte != _XGMII_TERMINATE:
                     self.log.error("Got control character in XGMII payload")
-                    self.log.info("data = :" + " ".join(["%02X" % ord(b) for b in bytes]))
-                    self.log.info("ctrl = :" + " ".join(["%s" % str(c) for c in ctrl]))
+                    self.log.info("data = :" +
+                                  " ".join(["%02X" % ord(b) for b in bytes]))
+                    self.log.info("ctrl = :" +
+                                  " ".join(["%s" % str(c) for c in ctrl]))
                     self._pkt = ""
                 return False
 
             self._pkt += byte
         return True
-
 
     @cocotb.coroutine
     def _monitor_recv(self):
@@ -161,7 +163,8 @@ class XGMII(Monitor):
                     self._pkt = ""
                     continue
 
-                expected_crc = struct.pack("<I", (zlib.crc32(payload)&0xFFFFFFFF))
+                expected_crc = struct.pack("<I",
+                                           (zlib.crc32(payload) & 0xFFFFFFFF))
 
                 if crc32 != expected_crc:
                     self.log.error("Incorrect CRC on received packet")

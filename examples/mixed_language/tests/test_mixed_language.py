@@ -2,6 +2,7 @@ import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestFailure
 
+
 @cocotb.test()
 def mixed_language_test(dut):
     """

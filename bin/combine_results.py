@@ -9,11 +9,13 @@ import os
 import sys
 from xml.etree import cElementTree as ET
 
+
 def find_all(name, path):
     result = []
     for root, dirs, files in os.walk(path):
         if name in files:
             yield os.path.join(root, name)
+
 
 def main(path, output):
     rc = 0
@@ -26,8 +28,9 @@ def main(path, output):
 
             for child in element:
                 if child.tag in ["failure", "error"]:
-                    sys.stderr.write("FAILURE: %s.%s\n" % (
-                         element.attrib["classname"], element.attrib["name"]))
+                    sys.stderr.write("FAILURE: %s.%s\n" %
+                                     (element.attrib["classname"],
+                                      element.attrib["name"]))
                     rc = 1
 
     result = ET.Element("testsuites", name="results")
@@ -43,4 +46,3 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         sys.exit(0)
     sys.exit(rc)
-

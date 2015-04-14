@@ -45,6 +45,7 @@ from cocotb.decorators import external
 test_count = 0
 g_dut = None
 
+
 # Tests relating to calling convention and operation
 
 @cocotb.function
@@ -58,12 +59,14 @@ def decorated_test_read(dut, signal):
 
     raise ReturnValue(test_count)
 
+
 def test_read(dut, signal):
     global test_count
     dut.log.info("Inside test_read")
     while test_count is not 5:
         yield RisingEdge(dut.clk)
         test_count += 1
+
 
 def hal_read(function):
     global g_dut
@@ -72,10 +75,14 @@ def hal_read(function):
     function(g_dut, g_dut.stream_out_ready)
     g_dut.log.info("Cycles seen is %d" % test_count)
 
+
 def create_thread(function):
     """ Create a thread to simulate an external calling entity """
-    new_thread = threading.Thread(group=None, target=hal_read, name="Test_thread", args=([function]), kwargs={})
+    new_thread = threading.Thread(group=None, target=hal_read,
+                                  name="Test_thread", args=([function]),
+                                  kwargs={})
     new_thread.start()
+
 
 @cocotb.coroutine
 def clock_gen(clock):
@@ -89,12 +96,15 @@ def clock_gen(clock):
 
     clock.log.warning("Clock generator finished!")
 
+
 @cocotb.test(expect_fail=False, skip=True)
 def test_callable(dut):
-    """Test ability to call a function that will block but allow other coroutines to continue
+    """Test ability to call a function that will block but allow other
+    coroutines to continue
 
-    Test creates a thread to simulate another context. This thread will then "block" for
-    5 clock cycles. 5 cycles should be seen by the thread
+    Test creates a thread to simulate another context. This thread will then
+    "block" for 5 clock cycles.
+    5 cycles should be seen by the thread
     """
     global g_dut
     global test_count
@@ -108,12 +118,15 @@ def test_callable(dut):
         print("Count was %d" % test_count)
         raise TestFailure
 
+
 @cocotb.test(expect_fail=True, skip=True)
 def test_callable_fail(dut):
-    """Test ability to call a function that will block but allow other coroutines to continue
+    """Test ability to call a function that will block but allow other
+    coroutines to continue
 
-    Test creates a thread to simulate another context. This thread will then "block" for
-    5 clock cycles but not using the function decorator. No cycls should be seen.
+    Test creates a thread to simulate another context. This thread will then
+    "block" for 5 clock cycles but not using the function decorator.
+    No cycls should be seen.
     """
     global g_dut
     global test_count
@@ -126,9 +139,11 @@ def test_callable_fail(dut):
     if test_count is not 5:
         raise TestFailure
 
+
 def test_ext_function(dut):
-    #dut.log.info("Sleeping")
+    # dut.log.info("Sleeping")
     return 2
+
 
 @cocotb.function
 def yield_to_readwrite(dut):
@@ -136,14 +151,17 @@ def yield_to_readwrite(dut):
     dut.log.info("Returning from yield_to_readwrite")
     raise ReturnValue(2)
 
+
 def test_ext_function_access(dut):
     return yield_to_readwrite(dut)
 
+
 def test_ext_function_return(dut):
     value = dut.clk.value.integer
-    #dut.log.info("Sleeping and returning %s" % value)
-    #time.sleep(0.2)
+    # dut.log.info("Sleeping and returning %s" % value)
+    # time.sleep(0.2)
     return value
+
 
 @cocotb.coroutine
 def clock_monitor(dut):
@@ -153,20 +171,25 @@ def clock_monitor(dut):
         yield Timer(1000)
         count += 1
 
+
 @cocotb.test(expect_fail=False)
 def test_ext_call_return(dut):
-    """Test ability to yeild on an external non cocotb coroutine decorated function"""
+    """Test ability to yeild on an external non cocotb coroutine decorated
+    function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     value = yield external(test_ext_function)(dut)
     dut.log.info("Value was %d" % value)
 
+
 @cocotb.test(expect_fail=False)
 def test_ext_call_nreturn(dut):
-    """Test ability to yeild on an external non cocotb coroutine decorated function"""
+    """Test ability to yeild on an external non cocotb coroutine decorated
+    function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield external(test_ext_function)(dut)
+
 
 @cocotb.test(expect_fail=False)
 def test_multiple_externals(dut):
@@ -176,6 +199,7 @@ def test_multiple_externals(dut):
     value = yield external(test_ext_function)(dut)
     dut.log.info("Second one completed")
 
+
 @cocotb.test(expect_fail=False)
 def test_external_from_readonly(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
@@ -184,9 +208,10 @@ def test_external_from_readonly(dut):
     dut.log.info("In readonly")
     value = yield external(test_ext_function_access)(dut)
 
+
 @cocotb.test(expect_fail=True, skip=True)
 def ztest_ext_exit_error(dut):
-    """Test that a premature exit of the sim at it's request still results in the
-    clean close down of the sim world"""
+    """Test that a premature exit of the sim at it's request still results in
+    the clean close down of the sim world"""
     yield external(test_ext_function)(dut)
     yield Timer(1000)
