@@ -83,7 +83,7 @@ class SimHandle(object):
         # python's builtin dir and IPython's dir2 search for these, 
         # raise an AttributeError to avoid incorrect calls to _raise_testerror
         if name in ["__methods__","__members__","trait_names","_getAttributeNames"]:
-            raise AttributeError, name
+            raise AttributeError(name)
         if name in self._sub_handles:
             return self._sub_handles[name]
         new_handle = simulator.get_handle_by_name(self._handle, name)
