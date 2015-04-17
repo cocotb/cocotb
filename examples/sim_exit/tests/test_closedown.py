@@ -37,6 +37,7 @@ import cocotb
 from cocotb.triggers import Timer, Join, RisingEdge
 from cocotb.clock import Clock
 
+
 def test_read(dut):
     global test_count
     dut.log.info("Inside test_read")
@@ -44,13 +45,16 @@ def test_read(dut):
         yield RisingEdge(dut.clk)
         test_count += 1
 
+
 @cocotb.coroutine
 def run_external(dut):
     yield cocotb.external(test_read)(dut)
 
+
 @cocotb.coroutine
 def clock_mon(dut):
     yield RisingEdge(dut.clk)
+
 
 @cocotb.test(expect_fail=True)
 def test_failure_from_system_task(dut):

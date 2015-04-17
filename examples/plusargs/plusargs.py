@@ -36,6 +36,7 @@ from cocotb.triggers import Timer, Edge, Event
 
 import sys
 
+
 @cocotb.test()
 def plusargs_test(dut):
     """Demonstrates plusarg access from Python test"""
@@ -46,4 +47,3 @@ def plusargs_test(dut):
         print("COCOTB:", name, cocotb.plusargs[name])
 
     yield Timer(10000)
-

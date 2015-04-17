@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
     Class defining the standard interface for a monitor within a testbench
 
-    The monitor is responsible for watching the pins of the DUT and recreating the
-    transactions
+    The monitor is responsible for watching the pins of the DUT and recreating
+    the transactions
 """
 
 import math
@@ -54,15 +54,14 @@ class MonitorStatistics(object):
 
 class Monitor(object):
 
-
     def __init__(self, callback=None, event=None):
         """
         Constructor for a monitor instance
 
         callback will be called with each recovered transaction as the argument
 
-        If the callback isn't used, received transactions will be placed on a queue and the
-        event used to notify any consumers.
+        If the callback isn't used, received transactions will be placed on a
+        queue and the event used to notify any consumers.
         """
         self._event = event
         self._wait_event = None
@@ -93,7 +92,8 @@ class Monitor(object):
         return self._recvQ[idx]
 
     def add_callback(self, callback):
-        self.log.debug("Adding callback of function %s to monitor" % (callback.__name__))
+        self.log.debug("Adding callback of function %s to monitor" %
+                       (callback.__name__))
         self._callbacks.append(callback)
 
     @coroutine
@@ -114,11 +114,11 @@ class Monitor(object):
         """
         actual impementation of the receiver
 
-        subclasses should override this method to implement the actual receive routine and
-        call self._recv() with the recovered transaction
+        subclasses should override this method to implement the actual receive
+        routine and call self._recv() with the recovered transaction
         """
-        raise NotImplementedError("Attempt to use base monitor class without providing a _monitor_recv method")
-
+        raise NotImplementedError("Attempt to use base monitor class without "
+                                  "providing a _monitor_recv method")
 
     def _recv(self, transaction):
         """Common handling of a received transaction."""
@@ -149,18 +149,17 @@ class BusMonitor(Monitor):
     _signals = []
     _optional_signals = []
 
-    def __init__(self, entity, name, clock, reset=None, reset_n=None, callback=None, event=None):
+    def __init__(self, entity, name, clock, reset=None, reset_n=None,
+                 callback=None, event=None):
         self.log = SimLog("cocotb.%s.%s" % (entity.name, name))
         self.entity = entity
         self.name = name
         self.clock = clock
-        self.bus = Bus(self.entity, self.name, self._signals, optional_signals=self._optional_signals)
+        self.bus = Bus(self.entity, self.name, self._signals,
+                       optional_signals=self._optional_signals)
         self._reset = reset
         self._reset_n = reset_n
         Monitor.__init__(self, callback=callback, event=event)
-
-
-
 
     @property
     def in_reset(self):

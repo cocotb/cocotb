@@ -43,11 +43,13 @@ def get_bytes(nbytes, generator):
         result += next(generator)
     return result
 
+
 @public
 def random_data():
     """Random bytes"""
     while True:
-        yield chr(random.randint(0,255))
+        yield chr(random.randint(0, 255))
+
 
 @public
 def incrementing_data(increment=1):
@@ -58,8 +60,10 @@ def incrementing_data(increment=1):
         val += increment
         val = val & 0xFF
 
+
 @public
 def repeating_bytes(pattern="\x00"):
     """Repeat a pattern of bytes"""
     while True:
-        for byte in pattern: yield byte
+        for byte in pattern:
+            yield byte

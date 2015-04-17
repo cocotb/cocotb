@@ -9,16 +9,19 @@ from cocotb.triggers import Timer, RisingEdge, ReadOnly, Lock, Event
 from cocotb.bus import Bus
 from cocotb.result import ReturnValue
 from cocotb.drivers import BusDriver
-from cocotb.binary import BinaryValue,BinaryRepresentation
+from cocotb.binary import BinaryValue, BinaryRepresentation
 
 from collections import deque
+
 
 class AD9361(BusDriver):
     '''
     classdocs
     '''
 
-    def __init__(self,dut,rx_channels=1, tx_channels=1, tx_clock_half_period=16276, rx_clock_half_period=16276,loopback_queue_maxlen=16):
+    def __init__(self, dut, rx_channels=1, tx_channels=1,
+                 tx_clock_half_period=16276, rx_clock_half_period=16276,
+                 loopback_queue_maxlen=16):
         '''
         Constructor
         '''
@@ -31,7 +34,7 @@ class AD9361(BusDriver):
         self.lbqq = deque()
         cocotb.fork(self._rx_clock())
         self.got_tx = Event("Got tx event")
-        
+
     @cocotb.coroutine
     def _rx_clock(self):
         t = Timer(self.rx_clock_half_period)
@@ -42,17 +45,22 @@ class AD9361(BusDriver):
             self.dut.rx_clk_in_p <= 0
             self.dut.rx_clk_in_n <= 1
             yield t
-    
-    def send_data(self,i_data,q_data,i_data2=None,q_data2=None,binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT):
+
+    def send_data(self, i_data, q_data, i_data2=None, q_data2=None,
+                  binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT):
         print binaryRepresentation
-        cocotb.fork(self.rx_data_to_ad9361(i_data,q_data,i_data2,q_data2,binaryRepresentation))
-    
+        cocotb.fork(self.rx_data_to_ad9361(i_data, q_data, i_data2, q_data2,
+                    binaryRepresentation))
+
     @cocotb.coroutine
-    def rx_data_to_ad9361(self,i_data,q_data,i_data2=None,q_data2=None,binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT):
-        i_bin_val = BinaryValue(bits=12, bigEndian=False,binaryRepresentation=binaryRepresentation)
-        q_bin_val = BinaryValue(bits=12, bigEndian=False,binaryRepresentation=binaryRepresentation)
+    def rx_data_to_ad9361(self, i_data, q_data, i_data2=None, q_data2=None,
+                          binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT):
+        i_bin_val = BinaryValue(bits=12, bigEndian=False,
+                                binaryRepresentation=binaryRepresentation)
+        q_bin_val = BinaryValue(bits=12, bigEndian=False,
+                                binaryRepresentation=binaryRepresentation)
         index = 0
-        if i_data2==None and q_data2==None:
+        if i_data2 is None and q_data2 is None:
             while True:
                 yield RisingEdge(self.dut.rx_clk_in_p)
                 if self.rx_frame_asserted:
@@ -107,7 +115,7 @@ class AD9361(BusDriver):
                     Q_SEND_HIGH = False
                 else:
                     self.dut.rx_data_in_p <= q_bin_val[11:6]
-                    self.dut.rx_data_in_n <= ~q_bin_val[11:6] 
+                    self.dut.rx_data_in_n <= ~q_bin_val[11:6]
                     Q_SEND_HIGH = True
                     if index < len(i_data):
                         if channel == 1:
@@ -120,29 +128,29 @@ class AD9361(BusDriver):
                             channel = 1
                             index += 1
                     else:
-                        return 
-    
+                        return
+
     @cocotb.coroutine
     def _tx_data_from_ad9361(self):
         i_bin_val = BinaryValue(bits=12, bigEndian=False)
         q_bin_val = BinaryValue(bits=12, bigEndian=False)
         while True:
             yield RisingEdge(self.dut.tx_clk_out_p)
-            if self.dut.tx_frame_out_p.value.integer==1:
+            if self.dut.tx_frame_out_p.value.integer == 1:
                 q_bin_val[11:6] = self.dut.tx_data_out_p.value.get_binstr()
             else:
                 q_bin_val[5:0] = self.dut.tx_data_out_p.value.get_binstr()
             yield RisingEdge(self.dut.tx_clk_out_n)
-            if self.dut.tx_frame_out_p.value.integer==1:
+            if self.dut.tx_frame_out_p.value.integer == 1:
                 i_bin_val[11:6] = self.dut.tx_data_out_p.value.get_binstr()
             else:
                 i_bin_val[5:0] = self.dut.tx_data_out_p.value.get_binstr()
-                #print "i_data",i_bin_val.get_value()
-                #print "q_data",q_bin_val.get_value()
+                # print "i_data",i_bin_val.get_value()
+                # print "q_data",q_bin_val.get_value()
                 self.lbqi.append(i_bin_val)
                 self.lbqq.append(q_bin_val)
-                self.got_tx.set([i_bin_val,q_bin_val])
-    
+                self.got_tx.set([i_bin_val, q_bin_val])
+
     @cocotb.coroutine
     def _ad9361_tx_to_rx_loopback(self):
         cocotb.fork(self._tx_data_from_ad9361())
@@ -177,9 +185,9 @@ class AD9361(BusDriver):
             else:
                 self.dut.rx_data_in_p <= q_bin_val[5:0]
                 self.dut.rx_data_in_n <= ~q_bin_val[5:0]
-    
+
     def ad9361_tx_to_rx_loopback(self):
         cocotb.fork(self._ad9361_tx_to_rx_loopback())
-    
+
     def tx_data_from_ad9361(self):
         cocotb.fork(self._tx_data_from_ad9361())

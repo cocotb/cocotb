@@ -36,12 +36,14 @@ import sys
 import platform
 from subprocess import call
 
+
 def print_make_inc(path):
     makefile = open("/tmp/Makefile.inc", "w")
     makefile.write("export ARCH:=$(shell uname -m)\n")
     makefile.write("export SIM_ROOT:=" + path + "\n")
     makefile.write("export LIB_DIR:=" + path + "/lib/$(ARCH)\n")
     makefile.close()
+
 
 def print_uninstall(path):
     uninstall = open("/tmp/cocotb_uninstall", "w")
@@ -55,11 +57,13 @@ def print_uninstall(path):
 
     uninstall.write(file_contents)
 
+
 def print_files(path):
     print_uninstall(path)
 
     call("install -m 544 /tmp/cocotb_uninstall " + path + "/bin/cocotb_uninstall", shell=True)
     call("rm -rf /tmp/cocotb_uninstall", shell=True)
+
 
 def check_args(args):
     if len(args) is not 1:

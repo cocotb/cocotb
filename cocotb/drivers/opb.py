@@ -36,14 +36,17 @@ from cocotb.triggers import RisingEdge, ReadOnly, Event
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 
-class OPBException(Exception): pass
+
+class OPBException(Exception):
+    pass
 
 
 class OPBMaster(BusDriver):
     """
     On-chip peripheral bus master
     """
-    _signals = ["xferAck", "errAck", "toutSup", "retry", "DBus_out", "select", "RNW", "BE", "ABus", "DBus_in"]
+    _signals = ["xferAck", "errAck", "toutSup", "retry", "DBus_out", "select",
+                "RNW", "BE", "ABus", "DBus_in"]
     _optional_signals = ["seqAddr"]
     _max_cycles = 16
 
@@ -127,4 +130,3 @@ class OPBMaster(BusDriver):
 
         self.bus.select <= 0
         self._release_lock()
-

@@ -50,7 +50,8 @@ def create_tun(name="tun0", ip="192.168.255.1"):
     ifr = struct.pack('16sH', name, IFF_TUN | IFF_NO_PI)
     fcntl.ioctl(tun, TUNSETIFF, ifr)
     fcntl.ioctl(tun, TUNSETOWNER, 1000)
-    subprocess.check_call('ifconfig tun0 %s up pointopoint 192.168.255.2 up' % ip, shell=True)
+    subprocess.check_call('ifconfig tun0 %s up pointopoint 192.168.255.2 up' %
+                          ip, shell=True)
     return tun
 
 
@@ -68,13 +69,12 @@ def tun_tap_example_test(dut):
 
     cocotb.fork(Clock(dut.clk, 5000).start())
 
-    stream_in  = AvalonSTDriver(dut, "stream_in", dut.clk)
+    stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
     stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk)
 
     # Enable verbose logging so we can see what's going on
     stream_in.log.setLevel(logging.DEBUG)
     stream_out.log.setLevel(logging.DEBUG)
-
 
     # Reset the DUT
     dut.log.debug("Resetting DUT")
@@ -85,7 +85,6 @@ def tun_tap_example_test(dut):
     dut.reset_n <= 1
     dut.stream_out_ready <= 1
     dut.log.debug("Out of reset")
-
 
     # Create our interface (destroyed at the end of the test)
     tun = create_tun()
