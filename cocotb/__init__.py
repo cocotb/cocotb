@@ -70,9 +70,11 @@ fork = scheduler.add
 # FIXME is this really required?
 _rlock = threading.RLock()
 
+
 def mem_debug(port):
     import cocotb.memdebug
     cocotb.memdebug.start(port)
+
 
 def _initialise_testbench(root_name):
     """
@@ -89,7 +91,6 @@ def _initialise_testbench(root_name):
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-
     exec_path = os.getenv('SIM_ROOT')
     if exec_path is None:
         exec_path = 'Unknown'
@@ -98,7 +99,8 @@ def _initialise_testbench(root_name):
     if version is None:
         log.info("Unable to determine Cocotb version from %s" % exec_path)
     else:
-        log.info("Running tests with Cocotb v%s from %s" % (version, exec_path))
+        log.info("Running tests with Cocotb v%s from %s" %
+                 (version, exec_path))
 
     # Create the base handle type
 
@@ -138,6 +140,7 @@ def _initialise_testbench(root_name):
     _rlock.release()
     return True
 
+
 def _sim_event(level, message):
     """Function that can be called externally to signal an event"""
     SIM_INFO = 0
@@ -147,11 +150,15 @@ def _sim_event(level, message):
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
-        scheduler.finish_test(TestFailure("Failure from external source: %s" % message))
+        scheduler.finish_test(TestFailure("Failure from external source: %s" %
+                              message))
     elif level is SIM_FAIL:
-        # We simply return here as the simulator will exit so no cleanup is needed
-        scheduler.log.error("Failing test at simulator request before test run completion: %s" % message)
-        scheduler.finish_scheduler(SimFailure("Failing test at simulator request before test run completion %s" % message))
+        # We simply return here as the simulator will exit
+        # so no cleanup is needed
+        msg = ("Failing test at simulator request before test run completion: "
+               "%s" % message)
+        scheduler.log.error(msg)
+        scheduler.finish_scheduler(SimFailure(msg))
     else:
         scheduler.log.error("Unsupported sim event")
 
@@ -171,4 +178,3 @@ def process_plusargs():
                 plusargs[name] = value
             else:
                 plusargs[option[1:]] = True
-

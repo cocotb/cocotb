@@ -42,6 +42,7 @@ from cocotb.result import raise_error
 class TriggerException(Exception):
     pass
 
+
 class Trigger(object):
     """Base class to derive from"""
     def __init__(self):
@@ -57,11 +58,13 @@ class Trigger(object):
         self.primed = False
 
     def __del__(self):
-        """Ensure if a trigger drops out of scope we remove any pending callbacks"""
+        """Ensure if a trigger drops out of scope we remove any pending
+        callbacks"""
         self.unprime()
 
     def __str__(self):
         return self.__class__.__name__
+
 
 class PythonTrigger(Trigger):
     """Python triggers don't use GPI at all
@@ -84,9 +87,9 @@ class GPITrigger(Trigger):
         Trigger.__init__(self)
 
         # Required to ensure documentation can build
-        #if simulator is not None:
+        # if simulator is not None:
         #    self.cbhdl = simulator.create_callback(self)
-        #else:
+        # else:
         self.cbhdl = None
 
     def unprime(self):
@@ -116,13 +119,15 @@ class Timer(GPITrigger):
     def prime(self, callback):
         """Register for a timed callback"""
         if self.cbhdl is None:
-            self.cbhdl = simulator.register_timed_callback(self.time_ps, callback, self)
+            self.cbhdl = simulator.register_timed_callback(self.time_ps,
+                                                           callback, self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%dps)" % self.time_ps
+
 
 class Edge(GPITrigger):
     """
@@ -135,13 +140,18 @@ class Edge(GPITrigger):
     def prime(self, callback):
         """Register notification of a value change via a callback"""
         if self.cbhdl is None:
-            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, 3, self)
+            self.cbhdl = simulator.register_value_change_callback(self.signal.
+                                                                  _handle,
+                                                                  callback,
+                                                                  3,
+                                                                  self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
+
 
 class _ReadOnly(GPITrigger):
     """
@@ -162,8 +172,11 @@ class _ReadOnly(GPITrigger):
         return self.__class__.__name__ + "(readonly)"
 
 _ro = _ReadOnly()
+
+
 def ReadOnly():
     return _ro
+
 
 class _ReadWrite(GPITrigger):
     """
@@ -175,8 +188,8 @@ class _ReadWrite(GPITrigger):
 
     def prime(self, callback):
         if self.cbhdl is None:
-            #import pdb
-            #pdb.set_trace()
+            # import pdb
+            # pdb.set_trace()
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
@@ -186,8 +199,11 @@ class _ReadWrite(GPITrigger):
         return self.__class__.__name__ + "(readwritesync)"
 
 _rw = _ReadWrite()
+
+
 def ReadWrite():
     return _rw
+
 
 class _NextTimeStep(GPITrigger):
     """
@@ -207,26 +223,34 @@ class _NextTimeStep(GPITrigger):
         return self.__class__.__name__ + "(nexttimestep)"
 
 _nxts = _NextTimeStep()
+
+
 def NextTimeStep():
     return _nxts
+
 
 class _RisingOrFallingEdge(Edge):
     def __init__(self, signal, rising):
         Edge.__init__(self, signal)
-        if rising == True:
+        if rising is True:
             self._rising = 1
         else:
             self._rising = 2
 
     def prime(self, callback):
         if self.cbhdl is None:
-            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, callback, self._rising, self)
+            self.cbhdl = simulator.register_value_change_callback(self.signal.
+                                                                  _handle,
+                                                                  callback,
+                                                                  self._rising,
+                                                                  self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal.name
+
 
 class _RisingEdge(_RisingOrFallingEdge):
     """
@@ -235,8 +259,10 @@ class _RisingEdge(_RisingOrFallingEdge):
     def __init__(self, signal):
         _RisingOrFallingEdge.__init__(self, signal, rising=True)
 
+
 def RisingEdge(signal):
     return signal._r_edge
+
 
 class _FallingEdge(_RisingOrFallingEdge):
     """
@@ -245,8 +271,10 @@ class _FallingEdge(_RisingOrFallingEdge):
     def __init__(self, signal):
         _RisingOrFallingEdge.__init__(self, signal, rising=False)
 
+
 def FallingEdge(signal):
     return signal._f_edge
+
 
 class ClockCycles(Edge):
     """
@@ -267,11 +295,17 @@ class ClockCycles(Edge):
                     self._callback(self)
                     return
 
-            self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+            self.cbhdl = simulator.register_value_change_callback(self.signal.
+                                                                  _handle,
+                                                                  _check,
+                                                                  self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
 
-        self.cbhdl = simulator.register_value_change_callback(self.signal._handle, _check, self)
+        self.cbhdl = simulator.register_value_change_callback(self.signal.
+                                                              _handle,
+                                                              _check,
+                                                              self)
         if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
@@ -289,13 +323,17 @@ class Combine(PythonTrigger):
     def __init__(self, *args):
         PythonTrigger.__init__(self)
         self._triggers = args
-        # TODO: check that trigger is an iterable containing only Trigger objects
+        # TODO: check that trigger is an iterable containing
+        # only Trigger objects
         try:
             for trigger in self._triggers:
                 if not isinstance(trigger, Trigger):
-                    raise TriggerException("All combined triggers must be instances of Trigger! Got: %s" % trigger.__class__.__name__)
+                    raise TriggerException("All combined triggers must be "
+                                           "instances of Trigger! Got: %s" %
+                                           trigger.__class__.__name__)
         except Exception:
-            raise TriggerException("%s requires a list of Trigger objects" % self.__class__.__name__)
+            raise TriggerException("%s requires a list of Trigger objects" %
+                                   self.__class__.__name__)
 
     def prime(self, callback):
         self._callback = callback
@@ -336,7 +374,6 @@ class _Event(PythonTrigger):
         self._callback(self)
 
 
-
 class Event(PythonTrigger):
     """
     Event to permit synchronisation between two coroutines
@@ -365,7 +402,8 @@ class Event(PythonTrigger):
             trigger()
 
     def wait(self):
-        """This can be yielded to block this coroutine until another wakes it"""
+        """This can be yielded to block this coroutine
+        until another wakes it"""
         return _Event(self)
 
     def clear(self):
@@ -408,7 +446,7 @@ class Lock(PythonTrigger):
     def __init__(self, name=""):
         PythonTrigger.__init__(self)
         self._pending_unprimed = []
-        self._pending_primed   = []
+        self._pending_primed = []
         self.name = name
         self.locked = False
 
@@ -429,11 +467,11 @@ class Lock(PythonTrigger):
         self._pending_unprimed.append(trig)
         return trig
 
-
     def release(self):
 
         if not self.locked:
-            raise_error(self, "Attempt to release an unacquired Lock %s" % (str(self)))
+            raise_error(self, "Attempt to release an unacquired Lock %s" %
+                        (str(self)))
 
         self.locked = False
 
@@ -446,8 +484,9 @@ class Lock(PythonTrigger):
         trigger()
 
     def __str__(self):
-        return self.__class__.__name__ + "(%s) [%s waiting]" % (
-                self.name, len(self._pending_primed))
+        return "%s(%s) [%s waiting]" % (str(self.__class__.__name__),
+                                        self.name,
+                                        len(self._pending_primed))
 
     def __nonzero__(self):
         """Provide boolean of a Lock"""
@@ -481,9 +520,9 @@ class _Join(PythonTrigger):
     def retval(self):
         return self._coroutine.retval
 
-    #def prime(self, callback):
-        #"""Register our calback for when the coroutine exits"""
-        #Trigger.prime(self)
+    # def prime(self, callback):
+        # """Register our calback for when the coroutine exits"""
+        # Trigger.prime(self)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self._coroutine.__name__
