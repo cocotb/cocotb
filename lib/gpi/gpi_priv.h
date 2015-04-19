@@ -186,8 +186,19 @@ public:
 
 class GpiIterator {
 public:
-	GpiObjHdl *parent;
+    GpiIterator(GpiImplInterface *impl, void *hdl) : m_impl(impl), m_iter_hdl(hdl) { }
+    virtual ~GpiIterator() { }
+
+    GpiObjHdl* next_handle();
+
+private:
+    GpiIterator() { }   // Disable default constructor
+
+public:
+    GpiImplInterface *m_impl;                  // VPI/VHPI/FLI routines
+    void *m_iter_hdl;
 };
+
 
 class GpiImplInterface {
 public:
@@ -204,6 +215,8 @@ public:
     virtual GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
+    virtual GpiIterator *iterate_handle(uint32_t type, GpiObjHdl *obj_hdl) = 0;
+    virtual GpiObjHdl *next_handle(GpiIterator *iter) = 0;
 
     /* Callback related, these may (will) return the same handle*/
     virtual GpiCbHdl *register_timed_callback(uint64_t time_ps) = 0;

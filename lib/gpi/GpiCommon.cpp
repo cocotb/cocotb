@@ -237,25 +237,18 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
 
 gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base)
 {
-#if 0
     GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(base);
     GpiIterator *iter = obj_hdl->m_impl->iterate_handle(type, obj_hdl);
     if (!iter) {
         return NULL;
     }
-    iter->parent = obj_hdl;
     return (gpi_iterator_hdl)iter;
-#endif
-    return NULL;
 }
 
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
 {
-#if 0
     GpiIterator *iter = sim_to_hdl<GpiIterator*>(iterator);
-    return (gpi_sim_hdl)iter->parent->next_handle(iter);
-#endif
-    return NULL;
+    return (gpi_sim_hdl)iter->next_handle();
 }
 
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl)

@@ -202,6 +202,32 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     return NULL;
 }
 
+GpiIterator *VpiImpl::iterate_handle(uint32_t type, GpiObjHdl *obj_hdl)
+{
+    vpiHandle vpi_hdl = obj_hdl->get_handle<vpiHandle>();
+
+    vpiHandle iterator;
+    iterator = vpi_iterate(vpiNet, vpi_hdl);
+
+    GpiIterator *new_iter;
+    new_iter = new GpiIterator(this, iterator);
+    return new_iter;
+}
+
+GpiObjHdl *VpiImpl::next_handle(GpiIterator *iter)
+{
+    vpiHandle obj;
+    GpiObjHdl *new_obj = NULL;
+
+    obj = vpi_scan((vpiHandle)iter->m_iter_hdl);
+
+    if (NULL==obj)
+        return new_obj;
+
+    std::string name = vpi_get_str(vpiFullName, obj);
+    new_obj = create_gpi_obj_from_handle(obj, name);
+    return new_obj;
+}
 
 GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
 {
