@@ -88,6 +88,9 @@ class AvalonMaster(AvalonMM):
         self.busy_event = Event("%s_busy" % name)
         self.busy = False
 
+    def __len__(self):
+        return 2**len(self.bus.address)
+
     @coroutine
     def _acquire_lock(self):
         if self.busy:
