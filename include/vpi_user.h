@@ -70,7 +70,7 @@ typedef uint32_t *vpiHandle;
 #define vpiRefObj              608
 #define vpiPackedArrayVar      623
 #define vpiEnumNet             680  /* SystemVerilog */
-
+#define vpiIntVar              612
 #define vpiStop                66  /* execute simulator's $stop */
 #define vpiFinish              67  /* execute simulator's $finish */
 #define vpiReset               68  /* execute simulator's $reset */
