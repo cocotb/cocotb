@@ -85,6 +85,15 @@ void embed_init_python(void)
 
     /* Swap out and return current thread state and release the GIL */
     gtstate = PyEval_SaveThread();
+
+    /* Before returning we check if the user wants pause the simulator thread
+       such that they can attach */
+    const char *pause = getenv("COCOTB_ATTACH");
+    if (pause) {
+	int sleep_time = atoi(pause);
+        fprintf(stderr, "Waiting for %d seconds - Attach to %d\n", sleep_time, getpid());
+        sleep(sleep_time);
+    }
     FEXIT;
 }
 
