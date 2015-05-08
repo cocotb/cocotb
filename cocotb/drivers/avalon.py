@@ -68,6 +68,9 @@ class AvalonMM(BusDriver):
 
         if hasattr(self.bus, "write"):
             self.bus.write.setimmediatevalue(0)
+            v = self.bus.writedata.value
+            v.binstr = "x" * len(self.bus.writedata)
+            self.bus.writedata <= v
             self._can_write = True
 
         self.bus.address.setimmediatevalue(0)
@@ -167,6 +170,9 @@ class AvalonMaster(AvalonMM):
         # Deassert write
         yield RisingEdge(self.clock)
         self.bus.write <= 0
+        v = self.bus.writedata.value
+        v.binstr = "x" * len(self.bus.writedata)
+        self.bus.writedata <= v
         self._release_lock()
 
 
@@ -293,6 +299,15 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.log.debug("Setting config option %s to %s" %
                            (configoption, str(value)))
 
+        word = BinaryValue(bits=len(self.bus.data),
+                           bigEndian=self.config['firstSymbolInHighOrderBits'])
+        word.binstr = ("x"*len(self.bus.data))
+        self.bus.valid <= 0
+        self.bus.data <= word
+        self.bus.empty <= word
+        self.bus.startofpacket <= word
+        self.bus.endofpacket <= word
+        
     @coroutine
     def _wait_ready(self):
         """Wait for a ready cycle on the bus before continuing
@@ -323,7 +338,7 @@ class AvalonSTPkts(ValidatedBusDriver):
                            bigEndian=self.config['firstSymbolInHighOrderBits'])
 
         # Drive some defaults since we don't know what state we're in
-        self.bus.empty <= 0
+        # self.bus.empty <= 0
         self.bus.startofpacket <= 0
         self.bus.endofpacket <= 0
         self.bus.valid <= 0
@@ -350,7 +365,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.bus.valid <= 1
 
             if firstword:
-                self.bus.empty <= 0
+                #self.bus.empty <= 0
                 self.bus.startofpacket <= 1
                 firstword = False
             else:
@@ -377,6 +392,11 @@ class AvalonSTPkts(ValidatedBusDriver):
         yield clkedge
         self.bus.valid <= 0
         self.bus.endofpacket <= 0
+        word.binstr = ("x"*len(self.bus.data))
+        self.bus.data <= word
+        self.bus.empty <= word
+        self.bus.startofpacket <= word
+        self.bus.endofpacket <= word
 
     @coroutine
     def _send_iterable(self, pkt, sync=True):
