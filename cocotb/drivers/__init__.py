@@ -314,3 +314,29 @@ class ValidatedBusDriver(BusDriver):
 
         self.valid_generator = valid_generator
         self._next_valids()
+
+
+@cocotb.coroutine
+def polled_socket_attachment(driver, sock):
+    """
+    Non-blocking socket attachment that queues any payload received from the
+    socket to be queued for sending into the driver
+    """
+    import socket, errno
+    sock.setblocking(False)
+    driver.log.info("Listening for data from %s" % repr(sock))
+    while True:
+        yield RisingEdge(driver.clock)
+        try:
+            data = sock.recv(4096)
+        except socket.error as e:
+            if e.args[0] in [errno.EAGAIN, errno.EWOULDBLOCK]:
+                continue
+            else:
+                driver.log.error(repr(e))
+                raise
+        if not len(data):
+            driver.log.info("Remote end closed the connection")
+            break
+        driver.append(data)
+
