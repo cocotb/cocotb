@@ -279,7 +279,6 @@ int embed_sim_init(gpi_sim_info_t *info)
     } else {
         PyErr_Print();
         fprintf(stderr,"Cocotb initialisation failed - exiting\n");
-	exit(1);
     }
 
     FEXIT
