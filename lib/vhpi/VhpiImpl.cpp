@@ -127,6 +127,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
             new_obj = new VhpiSignalObjHdl(this, new_hdl);
             break;
         case vhpiForGenerateK:
+        case vhpiIfGenerateK:
         case vhpiCompInstStmtK:
             new_obj = new GpiObjHdl(this, new_hdl);
             break;
