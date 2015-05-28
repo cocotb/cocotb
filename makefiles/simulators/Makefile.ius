@@ -40,9 +40,8 @@ endif
 
 ifeq ($(GPI_IMPL),vpi)
     GPI_ARGS = -loadvpi $(LIB_DIR)/libvpi
-    EXTRA_ARGS += -sv
-    HDL_SOURCES = $(VERILOG_SOURCES)
-    GPI_LIB = $(COCOTB_VPI_LIB)
+    EXTRA_ARGS += -sv -v93
+    HDL_SOURCES = $(VERILOG_SOURCES) $(VHDL_SOURCES)
 endif
 
 ifeq ($(GPI_IMPL),vhpi)
@@ -51,8 +50,9 @@ ifeq ($(GPI_IMPL),vhpi)
     EXTRA_ARGS += -v93
     EXTRA_ARGS += -top worklib.$(TOPLEVEL)
     HDL_SOURCES = $(VHDL_SOURCES)
-    GPI_LIB = $(COCOTB_VHPI_LIB)
 endif
+
+GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
 
 ifndef GPI_ARGS
    $(error "Unable to determine appropriate GPI layer to use")
