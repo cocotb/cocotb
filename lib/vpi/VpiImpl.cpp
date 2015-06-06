@@ -305,7 +305,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
         cb_hdl->run_callback();
 
         gpi_cb_state_e new_state = cb_hdl->get_call_state();
-        
+
         /* We have re-primed in the handler */
         if (new_state != GPI_PRIMED)
             if (cb_hdl->cleanup_callback())

@@ -38,6 +38,11 @@ const char * GpiObjHdl::get_name_str(void)
     return m_name.c_str();
 }
 
+const char * GpiObjHdl::get_fullname_str(void)
+{
+    return m_fullname.c_str();
+}
+
 const char * GpiObjHdl::get_type_str(void)
 {
     return m_type.c_str();
@@ -88,7 +93,9 @@ int GpiHdl::initialise(std::string &name)
 
 int GpiObjHdl::initialise(std::string &name)
 {
+    printf("Name is %s\n", name.c_str());
     m_name = name;
+    m_fullname = "bleh2";
     m_type = "unknown";
     return 0;
 }

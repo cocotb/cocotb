@@ -84,7 +84,8 @@ class SimHandle(object):
             return self._sub_handles[name]
         new_handle = simulator.get_handle_by_name(self._handle, name)
         if not new_handle:
-            self._raise_testerror("%s contains no object named %s" % (self.name, name))
+            #self._raise_testerror("%s contains no object named %s" % (self.name, name))
+            raise AttributeError("%s contains no object named %s" % (self.name, name))
         self._sub_handles[name] = SimHandle(new_handle)
         return self._sub_handles[name]
 
@@ -236,10 +237,22 @@ class SimHandle(object):
                 except StopIteration:
                     break
                 hdl = SimHandle(thing)
-                self._sub_handles[hdl.name] = hdl
+                self._sub_handles[hdl.name.split(".")[-1]] = hdl
                 yield hdl
 
     def __int__(self):
         return int(self.value)
 
+    def _discover_all(self):
+        for thing in self:
+            pass
 
+    def __dir__(self):
+        return self._sub_handles.keys()
+
+    def _getAttributeNames(self):
+        self._discover_all()
+        return dir(self)
+
+    def __repr__(self):
+        return repr(int(self))

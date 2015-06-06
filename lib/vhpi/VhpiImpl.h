@@ -188,6 +188,8 @@ public:
 
     /* Hierachy related */
     GpiObjHdl *get_root_handle(const char *name);
+    GpiIterator *iterate_handle(uint32_t type, GpiObjHdl *obj_hdl);
+    GpiObjHdl *next_handle(GpiIterator *iter);
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time_ps);

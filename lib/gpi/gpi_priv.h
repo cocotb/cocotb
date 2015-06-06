@@ -94,12 +94,14 @@ class GpiObjHdl : public GpiHdl {
 public:
     GpiObjHdl(std::string name) : GpiHdl(NULL, NULL),
                                   m_name(name),
+                                  m_fullname("bleh"),
                                   m_type("unknown") { }
     GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL) { }
     GpiObjHdl(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
     virtual ~GpiObjHdl() { }
 
     virtual const char* get_name_str(void);
+    virtual const char* get_fullname_str(void);
     virtual const char* get_type_str(void);
     const std::string & get_name(void);
 
@@ -108,6 +110,7 @@ public:
 
 protected:
     std::string m_name;
+    std::string m_fullname;
     std::string m_type;
 };
 

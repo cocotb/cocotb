@@ -40,6 +40,13 @@ def discover_module_values(dut):
     if count < 2:
         raise TestFailure("Expected to discover things in the DUT")
 
+@cocotb.test(skip=True)
+def ipython_embed(dut):
+    yield Timer(0)
+    import IPython
+    IPython.embed()
+
+
 @cocotb.test(expect_error=True)
 def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
