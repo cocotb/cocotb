@@ -89,6 +89,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiRegArray:
         case vpiNetArray:
         case vpiEnumNet:
+        case vpiEnumVar:
         case vpiIntVar:
             new_obj = new VpiSignalObjHdl(this, new_hdl);
             break;
