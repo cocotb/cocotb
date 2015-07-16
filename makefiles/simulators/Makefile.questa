@@ -27,9 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# Modelsim is 32-bit only
-ARCH:=i686
-
 ifdef VERILOG_INCLUDE_DIRS
 VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
 endif
