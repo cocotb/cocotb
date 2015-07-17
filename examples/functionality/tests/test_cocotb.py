@@ -26,6 +26,7 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+import logging
 
 """
 A set of tests that demonstrate cocotb functionality
@@ -37,7 +38,7 @@ import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite)
 from cocotb.clock import Clock
-from cocotb.result import ReturnValue, TestFailure, TestError
+from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 
 
 # Tests relating to providing meaningful errors if we forget to use the
@@ -446,3 +447,25 @@ def test_edge_count(dut):
     if edge_count is not edges_seen:
         raise TestFailure("Correct edge count failed saw %d wanted %d" %
                           (edges_seen, edge_count))
+
+class StrCallCounter(object):
+    def __init__(self):
+        self.str_counter = 0
+        
+    def __str__(self):
+        self.str_counter += 1
+        return "__str__ called %d time(s)" % self.str_counter
+
+@cocotb.test()
+def test_logging_with_args(dut):
+    counter = StrCallCounter()
+    dut.log.logger.setLevel(logging.INFO) #To avoid logging debug message, to make next line run without error
+    dut.log.debug("%s", counter)
+    assert counter.str_counter == 0
+    
+    dut.log.info("%s", counter)
+    assert counter.str_counter == 1
+    
+    dut.log.info("No substitution")
+    
+    yield Timer(100) #Make it do something with time

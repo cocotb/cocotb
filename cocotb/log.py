@@ -85,8 +85,7 @@ class SimLog(object):
         else:
             self._log_name = name
 
-    def _makeRecord(self, msg, level):
-
+    def _makeRecord(self, level, msg, args, extra=None):
         if self.logger.isEnabledFor(level):
             frame = inspect.stack()[2]
             info = inspect.getframeinfo(frame[0])
@@ -95,9 +94,10 @@ class SimLog(object):
                                             info.filename,
                                             info.lineno,
                                             msg,
+                                            args,
                                             None,
-                                            None,
-                                            info.function)
+                                            info.function,
+                                            extra)
             self.logger.handle(record)
 
     def _willLog(self, level):
@@ -123,23 +123,23 @@ class SimLog(object):
                                             function)
             self.logger.handle(record)
 
-    def warn(self, msg):
-        self._makeRecord(msg, logging.WARNING)
+    def warn(self, msg, *args, **kwargs):
+        self._makeRecord(logging.WARNING, msg, args, **kwargs)
 
-    def warning(self, msg):
-        self._makeRecord(msg, logging.WARNING)
+    def warning(self, msg, *args, **kwargs):
+        self._makeRecord(logging.WARNING, msg, args, **kwargs)
 
-    def debug(self, msg):
-        self._makeRecord(msg, logging.DEBUG)
+    def debug(self, msg, *args, **kwargs):
+        self._makeRecord(logging.DEBUG, msg, args, **kwargs)
 
-    def error(self, msg):
-        self._makeRecord(msg, logging.ERROR)
+    def error(self, msg, *args, **kwargs):
+        self._makeRecord(logging.ERROR, msg, args, **kwargs)
 
-    def critical(self, msg):
-        self._makeRecord(msg, logging.CRITICAL)
+    def critical(self, msg, *args, **kwargs):
+        self._makeRecord(logging.CRITICAL, msg, args, **kwargs)
 
-    def info(self, msg):
-        self._makeRecord(msg, logging.INFO)
+    def info(self, msg, *args, **kwargs):
+        self._makeRecord(logging.INFO, msg, args, **kwargs)
 
     def __getattr__(self, attribute):
         """Forward any other attribute accesses on to our logger object"""
