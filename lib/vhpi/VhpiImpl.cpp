@@ -73,7 +73,7 @@ const char * VhpiImpl::format_to_string(int format)
     }
 }
 
-const char *VhpiImpl::reason_to_string(int reason) 
+const char *VhpiImpl::reason_to_string(int reason)
 {
     switch (reason) {
     case vhpiCbValueChange:
@@ -144,20 +144,21 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
 GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vhpiHandleT new_hdl;
-    std::vector<char> writable(name.begin(), name.end());
+    std::string fq_name = parent->get_name() + "." + name;
+    std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
     new_hdl = vhpi_handle_by_name(&writable[0], NULL);
 
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to query vhpi_handle_by_name %s", name.c_str());
+        LOG_DEBUG("Unable to query vhpi_handle_by_name %s", fq_name.c_str());
         return NULL;
     }
 
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, fq_name);
     if (new_obj == NULL) {
         vhpi_release_handle(new_hdl);
-        LOG_DEBUG("Unable to fetch object %s", name.c_str());
+        LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
         return NULL;
     }
 
@@ -195,7 +196,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
     vhpiHandleT root;
     vhpiHandleT dut;
     GpiObjHdl *rv;
-    std::string root_name = name;
+    std::string root_name;
 
     root = vhpi_handle(vhpiRootInst, NULL);
     check_vhpi_error();
@@ -227,6 +228,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
         return NULL;
     }
 
+    root_name = found;
     rv = new GpiObjHdl(this, root);
     rv->initialise(root_name);
 
@@ -296,13 +298,13 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data)
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-    if (old_state == GPI_PRIMED) { 
+    if (old_state == GPI_PRIMED) {
 
         cb_hdl->set_call_state(GPI_CALL);
         cb_hdl->run_callback();
 
         gpi_cb_state_e new_state = cb_hdl->get_call_state();
-        
+
         /* We have re-primed in the handler */
         if (new_state != GPI_PRIMED)
             if (cb_hdl->cleanup_callback()) {
