@@ -26,7 +26,6 @@
 ******************************************************************************/
 
 #include <bitset>
-#include <string>
 #include <vector>
 
 #include "FliImpl.h"
@@ -102,10 +101,9 @@ void handle_fli_callback(void *data)
 
 void FliImpl::sim_end(void)
 {
-    char buffer[5];
+    const char *stop = "stop";
 
-    snprintf(buffer, 5, "stop");
-    mti_Cmd(buffer);
+    mti_Cmd(stop);
 }
 
 /**
@@ -401,7 +399,7 @@ static const char value_enum[10] = "UX01ZWLH-";
 
 const char* FliSignalObjHdl::get_signal_value_binstr(void)
 {
-    switch (mti_GetTypeKind(mti_GetSignalType(m_fli_hdl))) {
+    switch (m_fli_type) {
 
         case MTI_TYPE_ENUM:
             m_val_buff[0] = value_enum[mti_GetSignalValue(m_fli_hdl)];
@@ -429,7 +427,7 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void)
             break;
         default:
             LOG_CRITICAL("Signal %s type %d not currently supported",
-                m_name.c_str(), mti_GetTypeKind(mti_GetSignalType(m_fli_hdl)));
+                m_name.c_str(), m_fli_type);
             break;
     }
 
@@ -468,12 +466,10 @@ int FliSignalObjHdl::set_signal_value(std::string &value)
 
 int FliSignalObjHdl::initialise(std::string &name)
 {
-    mtiTypeKindT type;
-
     /* Pre allocte buffers on signal type basis */
-    type = mti_GetTypeKind(mti_GetSignalType(m_fli_hdl));
+    m_fli_type = mti_GetTypeKind(mti_GetSignalType(m_fli_hdl));
 
-    switch (type) {
+    switch (m_fli_type) {
         case MTI_TYPE_ENUM:
             m_val_len = 1;
             m_val_buff = (char*)malloc(m_val_len+1);
@@ -505,7 +501,7 @@ int FliSignalObjHdl::initialise(std::string &name)
             break;
         default:
             LOG_CRITICAL("Unable to handle onject type for %s (%d)",
-                         name.c_str(), type);
+                         name.c_str(), m_fli_type);
     }
 
     GpiObjHdl::initialise(name);
@@ -520,7 +516,7 @@ GpiCbHdl *FliVariableObjHdl::value_change_cb(unsigned int edge)
 
 const char* FliVariableObjHdl::get_signal_value_binstr(void)
 {
-    switch (mti_GetTypeKind(mti_GetVarType(m_fli_hdl))) {
+    switch (m_fli_type) {
 
         case MTI_TYPE_ENUM:
             m_val_buff[0] = value_enum[mti_GetVarValue(m_fli_hdl)];
@@ -548,7 +544,7 @@ const char* FliVariableObjHdl::get_signal_value_binstr(void)
             break;
         default:
             LOG_CRITICAL("Variable %s type %d not currently supported",
-                m_name.c_str(), mti_GetTypeKind(mti_GetVarType(m_fli_hdl)));
+                m_name.c_str(), m_fli_type);
             break;
     }
 
@@ -571,12 +567,10 @@ int FliVariableObjHdl::set_signal_value(std::string &value)
 
 int FliVariableObjHdl::initialise(std::string &name)
 {
-    mtiTypeKindT type;
-
     /* Pre allocte buffers on signal type basis */
-    type = mti_GetTypeKind(mti_GetVarType(m_fli_hdl));
+    m_fli_type = mti_GetTypeKind(mti_GetVarType(m_fli_hdl));
 
-    switch (type) {
+    switch (m_fli_type) {
         case MTI_TYPE_ENUM:
             m_val_len = 1;
             m_val_buff = (char*)malloc(m_val_len+1);
@@ -608,7 +602,7 @@ int FliVariableObjHdl::initialise(std::string &name)
             break;
         default:
             LOG_CRITICAL("Unable to handle onject type for %s (%d)",
-                         name.c_str(), type);
+                         name.c_str(), m_fli_type);
     }
 
     GpiObjHdl::initialise(name);

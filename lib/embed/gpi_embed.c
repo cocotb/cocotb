@@ -90,7 +90,7 @@ void embed_init_python(void)
        such that they can attach */
     const char *pause = getenv("COCOTB_ATTACH");
     if (pause) {
-    int sleep_time = atoi(pause);
+        int sleep_time = atoi(pause);
         fprintf(stderr, "Waiting for %d seconds - Attach to %d\n", sleep_time, getpid());
         sleep(sleep_time);
     }

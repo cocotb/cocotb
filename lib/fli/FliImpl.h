@@ -78,7 +78,7 @@ public:
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
                                                                 m_either_cb(impl, this, GPI_FALLING | GPI_RISING),
-                                                                m_type(MTI_TYPE_SCALAR),
+                                                                m_fli_type(MTI_TYPE_SCALAR),
                                                                 m_mti_buff(NULL),
                                                                 m_val_buff(NULL),
                                                                 m_val_len(0) { }
@@ -102,7 +102,7 @@ protected:
     FliSignalCbHdl     m_either_cb;
 
 private:
-    mtiTypeKindT       m_type;
+    mtiTypeKindT       m_fli_type;
     mtiInt32T         *m_mti_buff;
     char              *m_val_buff;
     int                m_val_len;
@@ -112,7 +112,7 @@ class FliVariableObjHdl : public GpiSignalObjHdl {
 public:
     FliVariableObjHdl(GpiImplInterface *impl, mtiVariableIdT hdl) : GpiSignalObjHdl(impl, hdl),
                                                                     m_fli_hdl(hdl),
-                                                                    m_type(MTI_TYPE_SCALAR),
+                                                                    m_fli_type(MTI_TYPE_SCALAR),
                                                                     m_mti_buff(NULL),
                                                                     m_val_buff(NULL),
                                                                     m_val_len(0) { }
@@ -133,7 +133,7 @@ protected:
     mtiVariableIdT     m_fli_hdl;
 
 private:
-    mtiTypeKindT       m_type;
+    mtiTypeKindT       m_fli_type;
     mtiInt32T         *m_mti_buff;
     char              *m_val_buff;
     int                m_val_len;
