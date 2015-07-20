@@ -115,18 +115,19 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
 GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vpiHandle new_hdl;
-    std::vector<char> writable(name.begin(), name.end());
+    std::string fq_name = parent->get_name() + "." + name;
+    std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
     new_hdl = vpi_handle_by_name(&writable[0], NULL);
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", name.c_str());
+        LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
         return NULL;
     }
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to query fetch object %s", name.c_str());
+        LOG_ERROR("Unable to query fetch object %s", fq_name.c_str());
         return NULL;
     }
     return new_obj;
@@ -137,7 +138,7 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
     vpiHandle vpi_hdl = parent_hdl->get_handle<vpiHandle>();
     vpiHandle new_hdl;
-    
+
     new_hdl = vpi_handle_by_index(vpi_hdl, index);
     if (new_hdl == NULL) {
         LOG_DEBUG("Unable to vpi_get_handle_by_index %d", index);
@@ -159,7 +160,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     vpiHandle root;
     vpiHandle iterator;
     GpiObjHdl *rv;
-    std::string root_name = name;
+    std::string root_name;
 
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
@@ -182,6 +183,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
         check_vpi_error();
     }
 
+    root_name = vpi_get_str(vpiFullName, root);
     rv = new GpiObjHdl(this, root);
     rv->initialise(root_name);
 
@@ -275,13 +277,13 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-    if (old_state == GPI_PRIMED) { 
+    if (old_state == GPI_PRIMED) {
 
         cb_hdl->set_call_state(GPI_CALL);
         cb_hdl->run_callback();
 
         gpi_cb_state_e new_state = cb_hdl->get_call_state();
-        
+
         /* We have re-primed in the handler */
         if (new_state != GPI_PRIMED)
             if (cb_hdl->cleanup_callback())

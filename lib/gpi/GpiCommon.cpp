@@ -188,7 +188,6 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     GpiObjHdl *hdl;
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
     std::string s_name = name;
-    std::string fq_name = base->get_name() + "." + s_name;
 
     LOG_DEBUG("Searching for %s", name);
 
@@ -204,7 +203,7 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
            as the one that we are querying through */
 
         //std::string &to_query = base->is_this_impl(*iter) ? s_name : fq_name;
-        if ((hdl = (*iter)->native_check_create(fq_name, base))) {
+        if ((hdl = (*iter)->native_check_create(s_name, base))) {
             LOG_DEBUG("Found %s via %s", name, (*iter)->get_name_c());
             return (gpi_sim_hdl)hdl;
         }
@@ -318,7 +317,7 @@ gpi_sim_hdl gpi_register_timed_callback(int (*gpi_function)(const void *),
         LOG_ERROR("Failed to register a timed callback");
         return NULL;
     }
-    
+
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
 }
@@ -334,7 +333,7 @@ gpi_sim_hdl gpi_register_readonly_callback(int (*gpi_function)(const void *),
         LOG_ERROR("Failed to register a readonly callback");
         return NULL;
     }
-    
+
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
 }
@@ -347,7 +346,7 @@ gpi_sim_hdl gpi_register_nexttime_callback(int (*gpi_function)(const void *),
         LOG_ERROR("Failed to register a nexttime callback");
         return NULL;
     }
-    
+
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
 }
@@ -363,7 +362,7 @@ gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(const void *),
         LOG_ERROR("Failed to register a readwrite callback");
         return NULL;
     }
-    
+
     gpi_hdl->set_user_data(gpi_function, gpi_cb_data);
     return (gpi_sim_hdl)gpi_hdl;
 }

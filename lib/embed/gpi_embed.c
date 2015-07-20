@@ -90,7 +90,7 @@ void embed_init_python(void)
        such that they can attach */
     const char *pause = getenv("COCOTB_ATTACH");
     if (pause) {
-	int sleep_time = atoi(pause);
+        int sleep_time = atoi(pause);
         fprintf(stderr, "Waiting for %d seconds - Attach to %d\n", sleep_time, getpid());
         sleep(sleep_time);
     }
@@ -143,15 +143,12 @@ int embed_sim_init(gpi_sim_info_t *info)
     // Find the simulation root
     const char *dut = getenv("TOPLEVEL");
 
-    if (dut == NULL) {
-        fprintf(stderr, "Unable to find root instance!\n");
-        return -1;
-    }
-
-    // Skip any library component of the toplevel
-    char *dot = strchr(dut, '.');
-    if (dot != NULL) {
-        dut += (dot - dut + 1);
+    if (dut != NULL) {
+        // Skip any library component of the toplevel
+        char *dot = strchr(dut, '.');
+        if (dot != NULL) {
+            dut += (dot - dut + 1);
+        }
     }
 
 
@@ -270,7 +267,10 @@ int embed_sim_init(gpi_sim_info_t *info)
     }
 
     cocotb_args = PyTuple_New(1);
-    PyTuple_SetItem(cocotb_args, 0, PyString_FromString(dut));        // Note: This function “steals” a reference to o.
+    if (dut == NULL)
+        PyTuple_SetItem(cocotb_args, 0, Py_BuildValue(""));        // Note: This function “steals” a reference to o.
+    else
+        PyTuple_SetItem(cocotb_args, 0, PyString_FromString(dut));        // Note: This function “steals” a reference to o.
     cocotb_retval = PyObject_CallObject(cocotb_init, cocotb_args);
 
     if (cocotb_retval != NULL) {
