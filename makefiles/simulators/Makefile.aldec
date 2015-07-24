@@ -63,8 +63,8 @@ endif
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
 $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
-	echo "alib work" > $@
-	echo "set worklib work" >> $@
+	echo "alib $(RTL_LIBRARY)" > $@
+	echo "set worklib $(RTL_LIBRARY)" >> $@
 ifdef VHDL_SOURCES
 	echo "acom $(ACOM_ARGS) $(VHDL_SOURCES)" >> $@
 endif
