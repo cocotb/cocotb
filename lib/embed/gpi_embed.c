@@ -165,8 +165,8 @@ int embed_sim_init(gpi_sim_info_t *info)
     if (get_module_ref(COCOTB_MODULE, &cocotb_module))
         goto cleanup;
 
-    // Create a logger object
-    simlog_obj = PyObject_GetAttrString(cocotb_module, "log");
+    // Obtain the loggpi logger object
+    simlog_obj = PyObject_GetAttrString(cocotb_module, "loggpi");
 
     if (simlog_obj == NULL) {
         PyErr_Print();
