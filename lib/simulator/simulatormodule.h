@@ -89,7 +89,7 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_root_handle", get_root_handle, METH_VARARGS, "Get the root handle"},
     {"get_name_string", get_name_string, METH_VARARGS, "Get the name of an object as a string"},
     {"get_type_string", get_type_string, METH_VARARGS, "Get the type of an object as a string"},
-    {"get_type", get_type_string, METH_VARARGS, "Get the type of an object, mapped to a GPI enumeration"},
+    {"get_type", get_type, METH_VARARGS, "Get the type of an object, mapped to a GPI enumeration"},
     {"register_timed_callback", register_timed_callback, METH_VARARGS, "Register a timed callback"},
     {"register_value_change_callback", register_value_change_callback, METH_VARARGS, "Register a signal change callback"},
     {"register_readonly_callback", register_readonly_callback, METH_VARARGS, "Register a callback for readonly section"},

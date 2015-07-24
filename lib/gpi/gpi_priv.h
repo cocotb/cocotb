@@ -103,6 +103,8 @@ public:
     virtual const char* get_name_str(void);
     virtual const char* get_fullname_str(void);
     virtual const char* get_type_str(void);
+    virtual int get_type(void);
+
     const std::string & get_name(void);
 
     bool is_native_impl(GpiImplInterface *impl);
@@ -112,6 +114,7 @@ protected:
     std::string m_name;
     std::string m_fullname;
     std::string m_type;
+    int m_type_e;
 };
 
 

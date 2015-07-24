@@ -174,7 +174,7 @@ class ConstantObject(SimHandleBase):
         return int(self._value)
 
 
-class NonConstantObject(SimHandle):
+class NonConstantObject(SimHandleBase):
     def __init__(self, handle):
         """
             Args:
@@ -251,19 +251,14 @@ class NonConstantObject(SimHandle):
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
-
-    def getvalue(self):
+    @property
+    def value(self):
         result = BinaryValue()
         result.binstr = self._get_value_str()
         return result
 
-
-    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    value = property(getvalue, None, None, "A reference to the value")
-
     def _get_value_str(self):
         return simulator.get_signal_val(self._handle)
-
 
     def __len__(self):
         """Returns the 'length' of the underlying object.
@@ -309,7 +304,7 @@ class NonConstantObject(SimHandle):
         return int(self.value)
 
 
-class ModifiableObject(SimHandle):
+class ModifiableObject(SimHandleBase):
     """
     Base class for simulator objects whose values can be modified
     """
@@ -358,6 +353,13 @@ class ModifiableObject(SimHandle):
 
         simulator.set_signal_val_str(self._handle, value.binstr)
 
+    @property
+    def value(self):
+        result = BinaryValue()
+        result.binstr = self._get_value_str()
+        return result
+
+    @value.setter
     def setcachedvalue(self, value):
         """
         Intercept the store of a value and hold in cache.
@@ -367,9 +369,6 @@ class ModifiableObject(SimHandle):
         sim time
         """
         cocotb.scheduler.save_write(self, value)
-
-    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    value = property(getvalue, setcachedvalue, None, "A reference to the value")
 
 
     def __le__(self, value):
@@ -381,9 +380,11 @@ class ModifiableObject(SimHandle):
 
 
 
-def get_simhandle(handle):
+def SimHandle(handle):
     """
     Factory function to create the correct type of SimHandle object
     """
-    pass
-    
+    t = simulator.get_type(handle)
+    print t
+    return None
+

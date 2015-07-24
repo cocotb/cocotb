@@ -48,6 +48,11 @@ const char * GpiObjHdl::get_type_str(void)
     return m_type.c_str();
 }
 
+int GpiObjHdl::get_type(void)
+{
+    return m_type_e;
+}
+
 const std::string & GpiObjHdl::get_name(void)
 {
     return m_name;
