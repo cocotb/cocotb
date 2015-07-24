@@ -35,6 +35,7 @@ else
     CMD := vsimsa
 endif
 
+RTL_LIBRARY ?= work
 ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
 ACOM_ARGS += -dbg
 
@@ -62,8 +63,8 @@ endif
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
 $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
-	echo "alib work" > $@
-	echo "set worklib work" >> $@
+	echo "alib $(RTL_LIBRARY)" > $@
+	echo "set worklib $(RTL_LIBRARY)" >> $@
 ifdef VHDL_SOURCES
 	echo "acom $(ACOM_ARGS) $(VHDL_SOURCES)" >> $@
 endif
@@ -82,10 +83,10 @@ ifeq ($(GUI),1)
 else
 	echo "run -all" >> $@
 	echo "endsim" >> $@
-endif
 ifeq ($(COVERAGE),1)
-	echo "acdb report -db work.acdb -html -o coverage/acdb_report.html" >> $@
-	echo "acdb report -db work.acdb -txt -o coverage/acdb_report.txt" >> $@
+	echo "acdb report -db $(RTL_LIBRARY).acdb -html -o coverage/acdb_report.html" >> $@
+	echo "acdb report -db $(RTL_LIBRARY).acdb -txt -o coverage/acdb_report.txt" >> $@
+endif
 endif
 
 # auto-detect riviera dir from system path

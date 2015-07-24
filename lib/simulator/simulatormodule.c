@@ -439,7 +439,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     if (callback_data_p == NULL) {
         printf("Failed to allocate user data\n");
     }
-    
+
     // Set up the user data (no more python API calls after this!
     // Causes segfault?
     callback_data_p->_saved_thread_state = PyThreadState_Get();//PyThreadState_Get();
@@ -653,7 +653,7 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "s", &name)) {
+    if (!PyArg_ParseTuple(args, "z", &name)) {
         DROP_GIL(gstate);
         return NULL;
     }

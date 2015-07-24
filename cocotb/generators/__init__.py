@@ -32,6 +32,7 @@ import math
 import random
 from cocotb.decorators import public
 
+
 @public
 def repeat(obj, nrepeat=None):
     """Generator to repeatedly yield the same object
@@ -48,6 +49,7 @@ def repeat(obj, nrepeat=None):
     else:
         for i in range(nrepeat):
             yield obj
+
 
 @public
 def combine(generators):
@@ -91,8 +93,9 @@ def sine_wave(amplitude, w, offset=0):
     """
     twoPiF_DIV_sampleRate = math.pi * 2
     while True:
-        for idx in ( i / float(w) for i in range(int(w)) ):
+        for idx in (i / float(w) for i in range(int(w))):
             yield amplitude*math.sin(twoPiF_DIV_sampleRate * idx) + offset
+
 
 def get_generators(module):
     """Return an iterator which yields  all the generators in a module

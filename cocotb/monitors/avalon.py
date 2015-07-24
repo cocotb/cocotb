@@ -37,7 +37,9 @@ from cocotb.monitors import BusMonitor
 from cocotb.triggers import RisingEdge, ReadOnly
 
 
-class AvalonProtocolError(Exception): pass
+class AvalonProtocolError(Exception):
+    pass
+
 
 class AvalonST(BusMonitor):
     """
@@ -53,7 +55,7 @@ class AvalonST(BusMonitor):
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
-        rdonly  = ReadOnly()
+        rdonly = ReadOnly()
 
         # NB could yield on valid here more efficiently?
         while True:
@@ -62,6 +64,7 @@ class AvalonST(BusMonitor):
             if self.bus.valid.value:
                 vec = self.bus.data.value
                 self._recv(vec.buff)
+
 
 class AvalonSTPkts(BusMonitor):
     """
@@ -85,7 +88,8 @@ class AvalonSTPkts(BusMonitor):
 
         for configoption, value in config.items():
             self.config[configoption] = value
-            self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
+            self.log.debug("Setting config option %s to %s" %
+                           (configoption, str(value)))
 
     @coroutine
     def _monitor_recv(self):
@@ -93,7 +97,7 @@ class AvalonSTPkts(BusMonitor):
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
-        rdonly  = ReadOnly()
+        rdonly = ReadOnly()
         pkt = ""
         in_pkt = False
 
@@ -119,7 +123,8 @@ class AvalonSTPkts(BusMonitor):
                     in_pkt = True
 
                 if not in_pkt:
-                    raise AvalonProtocolError("Data transfer outside of packet")
+                    raise AvalonProtocolError("Data transfer outside of "
+                                              "packet")
 
                 vec = self.bus.data.value
                 vec.big_endian = self.config['firstSymbolInHighOrderBits']

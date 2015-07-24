@@ -35,7 +35,8 @@ import logging
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Event, RisingEdge, ReadOnly, Timer, NextTimeStep, Edge
+from cocotb.triggers import (Event, RisingEdge, ReadOnly, Timer, NextTimeStep,
+                             Edge)
 from cocotb.bus import Bus
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
@@ -69,7 +70,7 @@ class BitDriver(object):
 
         # Actual thread
         while True:
-            on,off = next(self._generator)
+            on, off = next(self._generator)
             self._signal <= 1
             for i in range(on):
                 yield edge
@@ -77,19 +78,20 @@ class BitDriver(object):
             for i in range(off):
                 yield edge
 
+
 class Driver(object):
     """
 
     Class defining the standard interface for a driver within a testbench
 
-    The driver is responsible for serialising transactions onto the physical pins
-    of the interface.  This may consume simulation time.
+    The driver is responsible for serialising transactions onto the physical
+    pins of the interface.  This may consume simulation time.
     """
     def __init__(self):
         """
         Constructor for a driver instance
         """
-        #self._busy = Lock()
+        # self._busy = Lock()
         self._pending = Event(name="Driver._pending")
         self._sendQ = []
 
@@ -100,7 +102,6 @@ class Driver(object):
         # Create an independent coroutine which can send stuff
         self._thread = cocotb.scheduler.add(self._send_thread())
 
-
     def kill(self):
         if self._thread:
             self._thread.kill()
@@ -110,9 +111,11 @@ class Driver(object):
         """
         Queue up a transaction to be sent over the bus.
 
-        Mechanisms are provided to permit the caller to know when the transaction is processed
+        Mechanisms are provided to permit the caller to know when the
+        transaction is processed
 
-        callback: optional function to be called when the transaction has been sent
+        callback: optional function to be called when the transaction has been
+        sent
 
         event: event to be set when the tansaction has been sent
         """
@@ -140,15 +143,15 @@ class Driver(object):
         """
         yield self._send(transaction, None, None, sync=sync)
 
-
     def _driver_send(self, transaction, sync=True):
         """
         actual impementation of the send.
 
-        subclasses should override this method to implement the actual send routine
+        subclasses should override this method to implement the actual send
+        routine
         """
-        raise NotImplementedError("Subclasses of Driver should define a _driver_send coroutine")
-
+        raise NotImplementedError("Subclasses of Driver should define a "
+                                  "_driver_send coroutine")
 
     @coroutine
     def _send(self, transaction, callback, event, sync=True):
@@ -160,11 +163,13 @@ class Driver(object):
         yield self._driver_send(transaction, sync=sync)
 
         # Notify the world that this transaction is complete
-        if event:       event.set()
-        if callback:    callback(transaction)
+        if event:
+            event.set()
+        if callback:
+            callback(transaction)
 
         # No longer hogging the bus
-        #self.busy.release()
+        # self.busy.release()
 
     @coroutine
     def _send_thread(self):
@@ -177,11 +182,13 @@ class Driver(object):
 
             synchronised = False
 
-            # Send in all the queued packets, only synchronise on the first send
+            # Send in all the queued packets,
+            # only synchronise on the first send
             while self._sendQ:
                 transaction, callback, event = self._sendQ.pop(0)
                 self.log.debug("Sending queued packet...")
-                yield self._send(transaction, callback, event, sync=not synchronised)
+                yield self._send(transaction, callback, event,
+                                 sync=not synchronised)
                 synchronised = True
 
 
@@ -203,7 +210,8 @@ class BusDriver(Driver):
 
             name (str) : name of this bus. None for nameless bus, e.g.
                          bus-signals in an interface or a modport
-                         (untested on struct/record, but could work here as well)
+                         (untested on struct/record,
+                          but could work here as well)
             clock (SimHandle) : A handle to the clock associated with this bus
         """
         self.log = SimLog("cocotb.%s.%s" % (entity.name, name))
@@ -211,8 +219,8 @@ class BusDriver(Driver):
         self.entity = entity
         self.name = name
         self.clock = clock
-        self.bus = Bus(self.entity, self.name, self._signals, self._optional_signals)
-
+        self.bus = Bus(self.entity, self.name, self._signals,
+                       self._optional_signals)
 
     @coroutine
     def _driver_send(self, transaction, sync=True):
@@ -272,7 +280,6 @@ class ValidatedBusDriver(BusDriver):
         BusDriver.__init__(self, entity, name, clock)
         self.set_valid_generator(valid_generator=valid_generator)
 
-
     def _next_valids(self):
         """
         Optionally insert invalid cycles every N cycles
@@ -287,16 +294,18 @@ class ValidatedBusDriver(BusDriver):
                 try:
                     self.on, self.off = next(self.valid_generator)
                 except StopIteration:
-                    self.on = True  # If the generator runs out stop inserting non-valid cycles
-                    self.log.info("Valid generator exhausted, not inserting non-valid cycles anymore")
+                    # If the generator runs out stop inserting non-valid cycles
+                    self.on = True
+                    self.log.info("Valid generator exhausted, not inserting "
+                                  "non-valid cycles anymore")
                     return
 
-            self.log.debug("Will be on for %d cycles, off for %s" % (self.on, self.off))
+            self.log.debug("Will be on for %d cycles, off for %s" %
+                           (self.on, self.off))
         else:
             # Valid every clock cycle
             self.on, self.off = True, False
             self.log.debug("Not using valid generator")
-
 
     def set_valid_generator(self, valid_generator=None):
         """
@@ -305,3 +314,29 @@ class ValidatedBusDriver(BusDriver):
 
         self.valid_generator = valid_generator
         self._next_valids()
+
+
+@cocotb.coroutine
+def polled_socket_attachment(driver, sock):
+    """
+    Non-blocking socket attachment that queues any payload received from the
+    socket to be queued for sending into the driver
+    """
+    import socket, errno
+    sock.setblocking(False)
+    driver.log.info("Listening for data from %s" % repr(sock))
+    while True:
+        yield RisingEdge(driver.clock)
+        try:
+            data = sock.recv(4096)
+        except socket.error as e:
+            if e.args[0] in [errno.EAGAIN, errno.EWOULDBLOCK]:
+                continue
+            else:
+                driver.log.error(repr(e))
+                raise
+        if not len(data):
+            driver.log.info("Remote end closed the connection")
+            break
+        driver.append(data)
+

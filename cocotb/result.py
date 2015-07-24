@@ -28,8 +28,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 # TODO: Coule use cStringIO?
 import traceback
 import sys
-#from StringIO import StringIO
+# from StringIO import StringIO
 from io import StringIO, BytesIO
+
 
 def raise_error(obj, msg):
     """
@@ -52,6 +53,7 @@ def raise_error(obj, msg):
     exception.stderr.write(buff.getvalue())
     raise exception
 
+
 def create_error(obj, msg):
     """
     As above, but return the exception rather than raise it, simply to avoid
@@ -68,6 +70,7 @@ class ReturnValue(StopIteration):
     def __init__(self, retval):
         self.retval = retval
 
+
 class TestComplete(StopIteration):
     """
         Exceptions are used to pass test results around.
@@ -77,10 +80,18 @@ class TestComplete(StopIteration):
         self.stdout = StringIO()
         self.stderr = StringIO()
 
-class TestError(TestComplete): pass
 
-class TestFailure(TestComplete): pass
+class TestError(TestComplete):
+    pass
 
-class TestSuccess(TestComplete): pass
 
-class SimFailure(TestComplete): pass
+class TestFailure(TestComplete):
+    pass
+
+
+class TestSuccess(TestComplete):
+    pass
+
+
+class SimFailure(TestComplete):
+    pass

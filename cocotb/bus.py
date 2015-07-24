@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
 from cocotb.result import TestError
 
+
 class Bus(object):
     """
         Wraps up a collection of signals
@@ -44,7 +45,7 @@ class Bus(object):
 
         for example a bus named "stream_in" with signals ["valid", "data"]
             dut.stream_in_valid
-            dut.stream_in_data            
+            dut.stream_in_data
 
         TODO:
             Support for struct/record ports where signals are member names
@@ -52,11 +53,13 @@ class Bus(object):
     def __init__(self, entity, name, signals, optional_signals=[]):
         """
         Args:
-            entity (SimHandle):   SimHandle instance to the entity containing the bus
-            name (str):           name of the bus. None for nameless bus, e.g.
-                                  bus-signals in an interface or a modport
-                                  (untested on struct/record, but could work here as well)
-            signals (list):       array of signal names
+            entity (SimHandle): SimHandle instance to the entity containing the
+                                bus
+            name (str):         name of the bus. None for nameless bus, e.g.
+                                bus-signals in an interface or a modport
+                                (untested on struct/record, but could work here
+                                as well)
+            signals (list):     array of signal names
 
         Kwargs:
             optiona_signals (list): array of optional signal names
@@ -86,16 +89,16 @@ class Bus(object):
                 setattr(self, signal, hdl)
                 self._signals[signal] = getattr(self, signal)
             else:
-                self._entity.log.debug("Ignoring optional missing signal %s on bus %s"
-                    % (signal, name))
-
+                self._entity.log.debug("Ignoring optional missing signal "
+                                       "%s on bus %s" % (signal, name))
 
     def drive(self, obj, strict=False):
         """
         Drives values onto the bus.
 
         Args:
-            obj (any type) : object with attribute names that match the bus signals
+            obj (any type) : object with attribute names that match the bus
+                             signals
 
         Kwargs:
             strict (bool)  : Check that all signals are being assigned
@@ -106,9 +109,12 @@ class Bus(object):
         for name, hdl in self._signals.items():
             if not hasattr(obj, name):
                 if strict:
-                    raise AttributeError("Unable to drive onto %s.%s because %s is missing attribute %s" %
-                        (self._entity.name, self._name, obj.__class__.__name__, name))
-                else: continue
+                    msg = ("Unable to drive onto %s.%s because %s is missing "
+                           "attribute %s" % self._entity.name, self._name,
+                           obj.__class__.__name__, name)
+                    raise AttributeError(msg)
+                else:
+                    continue
             val = getattr(obj, name)
             hdl <= val
 

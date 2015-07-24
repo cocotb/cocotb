@@ -30,18 +30,15 @@
 COCOTB?=$(shell pwd)/../
 export COCOTB
 
-SMOKE_TESTS :=  plusargs \
-				sim_exit/tests \
-				functionality/tests \
-				adder/tests \
-				endian_swapper/tests \
+EXAMPLES := adder/tests \
+	    endian_swapper/tests \
 
-.PHONY: $(SMOKE_TESTS)
+.PHONY: $(EXAMPLES)
 
-all: $(SMOKE_TESTS)
+all: $(EXAMPLES)
 
-$(SMOKE_TESTS):
+$(EXAMPLES):
 	@cd $@ && $(MAKE)
 
 clean:
-	$(foreach TEST, $(SMOKE_TESTS), $(MAKE) -C $(TEST) clean;)
+	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) clean;)

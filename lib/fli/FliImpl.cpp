@@ -25,6 +25,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <bitset>
 #include <vector>
 
 #include "FliImpl.h"
@@ -79,7 +80,7 @@ void handle_fli_callback(void *data)
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
-    if (old_state == GPI_PRIMED) { 
+    if (old_state == GPI_PRIMED) {
 
         cb_hdl->set_call_state(GPI_CALL);
 
@@ -100,7 +101,9 @@ void handle_fli_callback(void *data)
 
 void FliImpl::sim_end(void)
 {
-    mti_Quit();
+    const char *stop = "stop";
+
+    mti_Cmd(stop);
 }
 
 /**
@@ -110,18 +113,26 @@ void FliImpl::sim_end(void)
  */
 GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
-    LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent->get_name_str());
-
-
-    GpiObjHdl *new_obj = NULL; 
-    std::vector<char> writable(name.begin(), name.end());
+    GpiObjHdl *new_obj = NULL;
+    std::string fq_name = parent->get_name() + "/" + name;
+    std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
-    mtiSignalIdT sig_hdl;
-    sig_hdl = mti_FindSignal(&writable[0]);
-    if (sig_hdl) {
+    mtiRegionIdT   rgn_hdl;
+    mtiSignalIdT   sig_hdl;
+    mtiVariableIdT var_hdl;
+
+    LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent->get_name_str());
+
+    if ((rgn_hdl = mti_FindRegion(&writable[0])) != NULL) {
+        LOG_DEBUG("Found a region %s -> %p", &writable[0], rgn_hdl);
+        new_obj = new FliRegionObjHdl(this, rgn_hdl);
+    } else if ((sig_hdl = mti_FindSignal(&writable[0])) != NULL) {
         LOG_DEBUG("Found a signal %s -> %p", &writable[0], sig_hdl);
         new_obj = new FliSignalObjHdl(this, sig_hdl);
+    } else if ((var_hdl = mti_FindVar(&writable[0])) != NULL) {
+        LOG_DEBUG("Found a variable %s -> %p", &writable[0], var_hdl);
+        new_obj = new FliVariableObjHdl(this, var_hdl);
     }
 
     if (NULL == new_obj) {
@@ -129,7 +140,7 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         return NULL;
     }
 
-    new_obj->initialise(name);
+    new_obj->initialise(fq_name);
     return new_obj;
 }
 
@@ -176,7 +187,8 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
 {
     mtiRegionIdT root;
     GpiObjHdl *rv;
-    std::string root_name = name;
+    char *rgn_name;
+    std::string root_name;
 
     for (root = mti_GetTopRegion(); root != NULL; root = mti_NextRegion(root)) {
         LOG_DEBUG("Iterating over: %s", mti_GetRegionName(root));
@@ -188,7 +200,12 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
         goto error;
     }
 
-    LOG_DEBUG("Found toplevel: %s, creating handle....", name);
+    rgn_name = mti_GetRegionFullName(root);
+
+    root_name = rgn_name;
+    mti_VsimFree(rgn_name);
+
+    LOG_DEBUG("Found toplevel: %s, creating handle....", root_name.c_str());
 
     rv = new FliRegionObjHdl(this, root);
     rv->initialise(root_name);
@@ -201,11 +218,10 @@ error:
     LOG_CRITICAL("FLI: Couldn't find root handle %s", name);
 
     for (root = mti_GetTopRegion(); root != NULL; root = mti_NextRegion(root)) {
-
-        LOG_CRITICAL("FLI: Toplevel instances: %s != %s...", name, mti_GetRegionName(root));
-
         if (name == NULL)
             break;
+
+        LOG_CRITICAL("FLI: Toplevel instances: %s != %s...", name, mti_GetRegionName(root));
     }
     return NULL;
 }
@@ -259,9 +275,9 @@ int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
  * @brief   Called while unwinding after a GPI callback
  *
  * We keep the process but de-sensitise it
- * 
+ *
  * NB need a way to determine if should leave it sensitised, hmmm...
- * 
+ *
  */
 int FliProcessCbHdl::cleanup_callback(void)
 {
@@ -345,10 +361,10 @@ int FliSimPhaseCbHdl::arm_callback(void)
 }
 
 FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface *impl,
-                	           FliSignalObjHdl *sig_hdl,
-                   	           unsigned int edge) : GpiCbHdl(impl),
-                                		            FliProcessCbHdl(impl),
-                                        	        GpiValueCbHdl(impl, sig_hdl, edge)
+                               FliSignalObjHdl *sig_hdl,
+                               unsigned int edge) : GpiCbHdl(impl),
+                                                    FliProcessCbHdl(impl),
+                                                    GpiValueCbHdl(impl, sig_hdl, edge)
 {
     m_sig_hdl = m_signal->get_handle<mtiSignalIdT>();
 }
@@ -383,12 +399,17 @@ static const char value_enum[10] = "UX01ZWLH-";
 
 const char* FliSignalObjHdl::get_signal_value_binstr(void)
 {
-    switch (mti_GetTypeKind(mti_GetSignalType(m_fli_hdl))) {
+    switch (m_fli_type) {
 
         case MTI_TYPE_ENUM:
-        case MTI_TYPE_SCALAR:
-        case MTI_TYPE_PHYSICAL:
             m_val_buff[0] = value_enum[mti_GetSignalValue(m_fli_hdl)];
+            break;
+        case MTI_TYPE_SCALAR:
+        case MTI_TYPE_PHYSICAL: {
+                std::bitset<32> value((unsigned long)mti_GetSignalValue(m_fli_hdl));
+                std::string bin_str = value.to_string<char,std::string::traits_type, std::string::allocator_type>();
+                snprintf(m_val_buff, m_val_len+1, "%s", bin_str.c_str());
+            }
             break;
         case MTI_TYPE_ARRAY: {
                 mti_GetArraySignalValue(m_fli_hdl, m_mti_buff);
@@ -405,12 +426,12 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void)
             }
             break;
         default:
-            LOG_CRITICAL("Signal %s type %d not currently supported", 
-                m_name.c_str(), mti_GetTypeKind(mti_GetSignalType(m_fli_hdl)));
+            LOG_CRITICAL("Signal %s type %d not currently supported",
+                m_name.c_str(), m_fli_type);
             break;
     }
 
-    LOG_DEBUG("Retrieved \"%s\" for signal %s", &m_val_buff, m_name.c_str());
+    LOG_DEBUG("Retrieved \"%s\" for signal %s", m_val_buff, m_name.c_str());
 
     return m_val_buff;
 }
@@ -446,22 +467,29 @@ int FliSignalObjHdl::set_signal_value(std::string &value)
 int FliSignalObjHdl::initialise(std::string &name)
 {
     /* Pre allocte buffers on signal type basis */
-    m_type = mti_GetTypeKind(mti_GetSignalType(m_fli_hdl));
+    m_fli_type = mti_GetTypeKind(mti_GetSignalType(m_fli_hdl));
 
-    switch (m_type) {
+    switch (m_fli_type) {
         case MTI_TYPE_ENUM:
-        case MTI_TYPE_SCALAR:
-        case MTI_TYPE_PHYSICAL:
-            m_val_len = 2;
-            m_val_buff = (char*)malloc(m_val_len);
+            m_val_len = 1;
+            m_val_buff = (char*)malloc(m_val_len+1);
             if (!m_val_buff) {
                 LOG_CRITICAL("Unable to alloc mem for signal read buffer");
             }
-            m_val_buff[1] = '\0';
+            m_val_buff[m_val_len] = '\0';
+            break;
+        case MTI_TYPE_SCALAR:
+        case MTI_TYPE_PHYSICAL:
+            m_val_len = 32;
+            m_val_buff = (char*)malloc(m_val_len+1);
+            if (!m_val_buff) {
+                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
+            }
+            m_val_buff[m_val_len] = '\0';
             break;
         case MTI_TYPE_ARRAY:
             m_val_len = mti_TickLength(mti_GetSignalType(m_fli_hdl));
-            m_val_buff = (char*)malloc(m_val_len);
+            m_val_buff = (char*)malloc(m_val_len+1);
             if (!m_val_buff) {
                 LOG_CRITICAL("Unable to alloc mem for signal read buffer");
             }
@@ -473,7 +501,108 @@ int FliSignalObjHdl::initialise(std::string &name)
             break;
         default:
             LOG_CRITICAL("Unable to handle onject type for %s (%d)",
-                         name.c_str(), m_type);
+                         name.c_str(), m_fli_type);
+    }
+
+    GpiObjHdl::initialise(name);
+
+    return 0;
+}
+
+GpiCbHdl *FliVariableObjHdl::value_change_cb(unsigned int edge)
+{
+    return NULL;
+}
+
+const char* FliVariableObjHdl::get_signal_value_binstr(void)
+{
+    switch (m_fli_type) {
+
+        case MTI_TYPE_ENUM:
+            m_val_buff[0] = value_enum[mti_GetVarValue(m_fli_hdl)];
+            break;
+        case MTI_TYPE_SCALAR:
+        case MTI_TYPE_PHYSICAL: {
+                std::bitset<32> value((unsigned long)mti_GetVarValue(m_fli_hdl));
+                std::string bin_str = value.to_string<char,std::string::traits_type, std::string::allocator_type>();
+                snprintf(m_val_buff, m_val_len+1, "%s", bin_str.c_str());
+            }
+            break;
+        case MTI_TYPE_ARRAY: {
+                mti_GetArrayVarValue(m_fli_hdl, m_mti_buff);
+                if (m_val_len <= 256) {
+                    char *iter = (char*)m_mti_buff;
+                    for (int i = 0; i < m_val_len; i++ ) {
+                        m_val_buff[i] = value_enum[(int)iter[i]];
+                    }
+                } else {
+                    for (int i = 0; i < m_val_len; i++ ) {
+                        m_val_buff[i] = value_enum[m_mti_buff[i]];
+                    }
+                }
+            }
+            break;
+        default:
+            LOG_CRITICAL("Variable %s type %d not currently supported",
+                m_name.c_str(), m_fli_type);
+            break;
+    }
+
+    LOG_DEBUG("Retrieved \"%s\" for variable %s", m_val_buff, m_name.c_str());
+
+    return m_val_buff;
+}
+
+int FliVariableObjHdl::set_signal_value(const int value)
+{
+    LOG_CRITICAL("Setting variable value not currently supported!\n");
+    return -1;
+}
+
+int FliVariableObjHdl::set_signal_value(std::string &value)
+{
+    LOG_CRITICAL("Setting variable value not currently supported!\n");
+    return -1;
+}
+
+int FliVariableObjHdl::initialise(std::string &name)
+{
+    /* Pre allocte buffers on signal type basis */
+    m_fli_type = mti_GetTypeKind(mti_GetVarType(m_fli_hdl));
+
+    switch (m_fli_type) {
+        case MTI_TYPE_ENUM:
+            m_val_len = 1;
+            m_val_buff = (char*)malloc(m_val_len+1);
+            if (!m_val_buff) {
+                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
+            }
+            m_val_buff[m_val_len] = '\0';
+            break;
+        case MTI_TYPE_SCALAR:
+        case MTI_TYPE_PHYSICAL:
+            m_val_len = 32;
+            m_val_buff = (char*)malloc(m_val_len+1);
+            if (!m_val_buff) {
+                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
+            }
+            m_val_buff[m_val_len] = '\0';
+            break;
+        case MTI_TYPE_ARRAY:
+            m_val_len = mti_TickLength(mti_GetVarType(m_fli_hdl));
+            m_val_buff = (char*)malloc(m_val_len+1);
+            if (!m_val_buff) {
+                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
+            }
+            m_val_buff[m_val_len] = '\0';
+            m_mti_buff = (mtiInt32T*)malloc(sizeof(*m_mti_buff) * m_val_len);
+            if (!m_mti_buff) {
+                LOG_CRITICAL("Unable to alloc mem for signal mti read buffer");
+            }
+            break;
+        default:
+            LOG_CRITICAL("Unable to handle onject type for %s (%d)",
+                         name.c_str(), m_fli_type);
     }
 
     GpiObjHdl::initialise(name);

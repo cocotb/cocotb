@@ -51,6 +51,7 @@ def bit_toggler(gen_on, gen_off):
     while True:
         yield int(abs(next(gen_on))), int(abs(next(gen_off)))
 
+
 @public
 def intermittent_single_cycles(mean=10, sigma=None):
     """Generator to intermittently insert a single cycle pulse
@@ -61,7 +62,7 @@ def intermittent_single_cycles(mean=10, sigma=None):
         sigma (int):    Standard deviation of gaps.  mean/4 if sigma is None
     """
     if sigma is None:
-        sigma = mean/4.0
+        sigma = mean / 4.0
 
     return bit_toggler(gaussian(mean, sigma), repeat(1))
 
@@ -75,9 +76,10 @@ def random_50_percent(mean=10, sigma=None):
         sigma (int):    Standard deviation of gaps.  mean/4 if sigma is None
     """
     if sigma is None:
-        sigma = mean/4.0
+        sigma = mean / 4.0
     for duration in gaussian(mean, sigma):
         yield int(abs(duration)), int(abs(duration))
+
 
 @public
 def wave(on_ampl=30, on_freq=200, off_ampl=10, off_freq=100):
@@ -87,5 +89,5 @@ def wave(on_ampl=30, on_freq=200, off_ampl=10, off_freq=100):
     TODO:
         Adjust args so we just specify a repeat duration and overall throughput
     """
-    return bit_toggler(sine_wave(on_ampl, on_freq), sine_wave(off_ampl, off_freq))
-
+    return bit_toggler(sine_wave(on_ampl, on_freq),
+                       sine_wave(off_ampl, off_freq))

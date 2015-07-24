@@ -63,7 +63,7 @@ public:
 
     virtual ~FliSignalCbHdl() { }
     int arm_callback(void);
-    int cleanup_callback(void) { 
+    int cleanup_callback(void) {
         return FliProcessCbHdl::cleanup_callback();
     }
 
@@ -78,7 +78,7 @@ public:
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
                                                                 m_either_cb(impl, this, GPI_FALLING | GPI_RISING),
-                                                                m_type(MTI_TYPE_SCALAR),
+                                                                m_fli_type(MTI_TYPE_SCALAR),
                                                                 m_mti_buff(NULL),
                                                                 m_val_buff(NULL),
                                                                 m_val_len(0) { }
@@ -102,11 +102,43 @@ protected:
     FliSignalCbHdl     m_either_cb;
 
 private:
-    mtiTypeKindT       m_type;
+    mtiTypeKindT       m_fli_type;
     mtiInt32T         *m_mti_buff;
     char              *m_val_buff;
     int                m_val_len;
 };
+
+class FliVariableObjHdl : public GpiSignalObjHdl {
+public:
+    FliVariableObjHdl(GpiImplInterface *impl, mtiVariableIdT hdl) : GpiSignalObjHdl(impl, hdl),
+                                                                    m_fli_hdl(hdl),
+                                                                    m_fli_type(MTI_TYPE_SCALAR),
+                                                                    m_mti_buff(NULL),
+                                                                    m_val_buff(NULL),
+                                                                    m_val_len(0) { }
+    virtual ~FliVariableObjHdl() {
+        if (m_val_len)
+            free(m_val_buff);
+        if (m_mti_buff)
+            free(m_mti_buff);
+    }
+
+    const char* get_signal_value_binstr(void);
+    int set_signal_value(const int value);
+    int set_signal_value(std::string &value);
+    int initialise(std::string &name);
+    GpiCbHdl *value_change_cb(unsigned int edge);
+
+protected:
+    mtiVariableIdT     m_fli_hdl;
+
+private:
+    mtiTypeKindT       m_fli_type;
+    mtiInt32T         *m_mti_buff;
+    char              *m_val_buff;
+    int                m_val_len;
+};
+
 
 
 // All other callbacks are related to the simulation phasing

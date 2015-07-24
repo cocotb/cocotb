@@ -21,9 +21,7 @@ VHDL_SOURCES    = $(WPWD)/../../endian_swapper/hdl/endian_swapper.vhdl
 ifeq ($(TOPLEVEL_LANG),sv)
     VERILOG_SOURCES += $(WPWD)/../hdl/toplevel.sv
     GPI_IMPL=vpi
-ifeq ($(SIM),aldec)
     GPI_EXTRA=vhpi
-endif
 ifeq ($(SIM),modelsim)
     GPI_EXTRA=fli
 endif
