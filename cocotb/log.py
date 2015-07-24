@@ -49,16 +49,6 @@ _FILENAME_CHARS = 20  # noqa
 _LINENO_CHARS   = 4  # noqa
 _FUNCNAME_CHARS = 31  # noqa
 
-#if "COCOTB_LOG_LEVEL" in os.environ:
-#    _default_log = logging.INFO
-#    level = os.getenv("COCOTB_LOG_LEVEL")
-#    try:
-#        _default_log = getattr(logging, level)
-#    except AttributeError as e:
-#        pass
-#else:
-#    _default_log = logging.INFO
-
 class SimBaseLog(logging.getLoggerClass()):
     def __init__(self, name):
         hdlr = logging.StreamHandler(sys.stdout)
