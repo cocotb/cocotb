@@ -149,6 +149,8 @@ const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
+// Returns on of the types defined above e.g. gpiMemory etc.
+int get_object_type(gpi_sim_hdl gpi_hdl);
 
 
 // Functions for setting the properties of a handle
