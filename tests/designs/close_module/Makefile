@@ -28,11 +28,7 @@
 ###############################################################################
 
 
-TOPLEVEL := sample_module
-TOPLEVEL_LANG ?= verilog
-
-PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+TOPLEVEL = close_module
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
@@ -40,18 +36,15 @@ else
 WPWD=$(shell pwd)
 endif
 
-ifeq ($(TOPLEVEL_LANG),vhdl)
-    VHDL_SOURCES = $(WPWD)/../hdl/sample_module.vhdl
-    TOPLEVEL := $(TOPLEVEL)
-    GPI_IMPL := vhpi
-else
-    VERILOG_SOURCES = $(WPWD)/../hdl/sample_module.v
-    GPI_IMPL := vpi
-endif
+PWD=$(shell pwd)
+COCOTB=$(PWD)/../../..
+VERILOG_SOURCES = $(COCOTB)/tests/designs/close_module/close_module.v
 
-export TOPLEVEL_LANG
-
-MODULE ?= test_cocotb,test_discovery,test_external,test_regression
-
+ifneq ($(SIM),vcs)
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
+else
+all:
+	@echo "Skipping test as system call overrides seqfault VCS"
+endif
+

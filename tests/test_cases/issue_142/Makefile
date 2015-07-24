@@ -1,6 +1,5 @@
 ###############################################################################
-# Copyright (c) 2013 Potential Ventures Ltd
-# Copyright (c) 2013 SolarFlare Communications Inc
+# Copyright (c) 2015 Potential Ventures Ltd
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -11,7 +10,6 @@
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
 #     * Neither the name of Potential Ventures Ltd,
-#       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
@@ -28,19 +26,6 @@
 ###############################################################################
 
 
-TOPLEVEL = tb_top
+include $(COCOTB)/tests/designs/sample_module/Makefile
 
-ifeq ($(OS),Msys)
-PWD=$(shell sh -c 'pwd -W')
-else
-PWD=$(shell pwd)
-endif
-
-VERILOG_SOURCES = $(PWD)/tb_top.v
-MODULE=plusargs
-
-PLUSARGS=+foo=bar +test1 +test2 +options=fubar
-
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
-
+MODULE = issue_142
