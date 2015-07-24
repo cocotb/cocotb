@@ -39,11 +39,12 @@ clean:
 	-@rm -rf $(BUILD_DIR)
 	-@find . -name "obj" | xargs rm -rf
 	-@find . -name "*.pyc" | xargs rm -rf
-	-@find . -name "results.xml" | xargs rm -rf
+	-@find . -name "*results.xml" | xargs rm -rf
 	$(MAKE) -C examples clean
+	$(MAKE) -C tests clean
 
 do_tests: 
-	$(MAKE) -k -C examples
+	$(MAKE) -k -C tests
 
 # For jenkins we use the exit code to detect compile errors or catestrphic
 # failures and the xml to track test results

@@ -28,24 +28,6 @@
 ###############################################################################
 
 
-TOPLEVEL = close_module
+include $(COCOTB)/tests/designs/sample_module/Makefile
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
-
-PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
-VERILOG_SOURCES = $(WPWD)/../hdl/close_module.v
-MODULE=test_closedown
-
-ifneq ($(SIM),vcs)
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
-else
-all:
-	@echo "Skipping test as system call overrides seqfault VCS"
-endif
-
+MODULE = issue_120

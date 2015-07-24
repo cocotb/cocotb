@@ -5,15 +5,15 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-# * Neither the name of Potential Ventures Ltd,
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
 #       SolarFlare Communications Inc nor the
-# names of its contributors may be used to endorse or promote products
-# derived from this software without specific prior written permission.
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -27,18 +27,29 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-COCOTB?=$(shell pwd)/../
-export COCOTB
 
-EXAMPLES := adder/tests \
-	    endian_swapper/tests \
+TOPLEVEL := sample_module
+TOPLEVEL_LANG ?= verilog
 
-.PHONY: $(EXAMPLES)
+PWD=$(shell pwd)
+COCOTB=$(PWD)/../../..
 
-all: $(EXAMPLES)
+ifeq ($(OS),Msys)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
 
-$(EXAMPLES):
-	@cd $@ && $(MAKE)
+ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES = $(COCOTB)/tests/designs/sample_module/sample_module.vhdl
+    TOPLEVEL := $(TOPLEVEL)
+    GPI_IMPL := vhpi
+else
+    VERILOG_SOURCES = $(COCOTB)/tests/designs/sample_module/sample_module.v
+    GPI_IMPL := vpi
+endif
 
-clean:
-	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) clean;)
+export TOPLEVEL_LANG
+
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim
