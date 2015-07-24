@@ -25,11 +25,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# Override this variable to use a VHDL toplevel instead of SystemVerilog
-TOPLEVEL_LANG ?= sv
-
-# At the moment the only simulator supporting mixed language VHPI/VPI is Aldec
-SIM?=aldec
+TOPLEVEL_LANG = vhdl
 
 TOPLEVEL = dec_viterbi
 
@@ -63,6 +59,10 @@ ifeq ($(SIM),modelsim)
     GPI_IMPL=fli
 endif
 
+ifneq ($(SIM),)
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
-
+else
+all:
+	@echo "Skipping test as icarus does not support VHDL"
+endif
