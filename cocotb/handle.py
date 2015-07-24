@@ -33,8 +33,7 @@ import logging
 import ctypes
 import traceback
 import sys
-#from StringIO import StringIO
-
+import warnings
 from io import StringIO, BytesIO
 
 import os
@@ -62,6 +61,16 @@ class SimHandleBase(object):
     We maintain a handle which we can use for GPI calls
     """
 
+    # For backwards compatibility we support a mapping of old member names
+    # which may alias with the simulator hierarchy.  In these cases the
+    # simulator takes priority, only falling back 
+    _compat_mapping = {
+        "log"               :       "_log",
+        "fullname"          :       "_fullname",
+        "name"              :       "_name",
+        "setimmediatevalue" :       "_setimmediatevalue"
+        }
+
     def __init__(self, handle):
         """
         Args:
@@ -79,26 +88,22 @@ class SimHandleBase(object):
     def __hash__(self):
         return self._handle
 
-    def __len__(self):
-        """Returns the 'length' of the underlying object.
-
-        For vectors this is the number of bits.
-
-        TODO: Handle other types (loops, generate etc)
-        """
-        if self._len is None:
-            self._len = len(self._get_value_str())
-        return self._len
-
     def __getattr__(self, name):
-        """ Query the simulator for a object with the specified name
-            and cache the result to build a tree
         """
+        Query the simulator for a object with the specified name
+        and cache the result to build a tree of objects
+        """
+
+        if name == "value":
+            return self._getvalue()
         if name in self._sub_handles:
             return self._sub_handles[name]
         new_handle = simulator.get_handle_by_name(self._handle, name)
         if not new_handle:
-            raise AttributeError("%s contains no object named %s" % (self.name, name))
+            if name in self._compat_mapping:
+                warnings.warn("Use of %s attribute is deprecated" % name)
+                return getattr(self, self._compat_mapping[name])
+            raise AttributeError("%s contains no object named %s" % (self._name, name))
         self._sub_handles[name] = SimHandle(new_handle)
         return self._sub_handles[name]
 
@@ -124,7 +129,7 @@ class SimHandleBase(object):
             return self._sub_handles[index]
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
-            self._raise_testerror("%s contains no object at index %d" % (self.name, index))
+            self._raise_testerror("%s contains no object at index %d" % (self._name, index))
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
@@ -132,12 +137,12 @@ class SimHandleBase(object):
     def __cmp__(self, other):
 
         # Permits comparison of handles i.e. if clk == dut.clk
-        if isinstance(other, SimHandle):
+        if isinstance(other, SimHandleBase):
             if self._handle == other._handle: return 0
             return 1
 
-    def __dir__(self):
-        return self._sub_handles.keys()
+    #def __dir__(self):
+        #return self._sub_handles.keys()
 
     def _discover_all(self):
         for thing in self:
@@ -149,13 +154,39 @@ class SimHandleBase(object):
         return dir(self)
 
     def __repr__(self):
-        return repr(int(self))
+        return self._fullname
 
-class HierarchyObjecct(SimHandleBase):
+    def _raise_testerror(self, msg):
+        lastframe = sys._getframe(2)
+        if sys.version_info[0] >= 3:
+            buff = StringIO()
+            traceback.print_stack(lastframe, file=buff)
+        else:
+            buff_bytes = BytesIO()
+            traceback.print_stack(lastframe, file=buff_bytes)
+            buff = StringIO(buff_bytes.getvalue().decode("UTF8"))
+        self._log.error("%s\n%s" % (msg, buff.getvalue()))
+        exception = TestError(msg)
+        exception.stderr.write(buff.getvalue())
+        buff.close()
+        raise exception
+
+
+class HierarchyObject(SimHandleBase):
     """
     Hierarchy objects don't have values, they are effectively scopes or namespaces
     """
-    pass
+    def __setattr__(self, name, value):
+        """
+        Provide transparent access to signals via the hierarchy
+
+        Slightly hacky version of operator overloading in Python
+        """
+        if not name.startswith('_') and name not in self._compat_mapping \
+                                                     and self.__hasattr__(name):
+            getattr(self, name)._setcachedvalue(value)
+            return
+        object.__setattr__(self, name, value)
 
 
 class ConstantObject(SimHandleBase):
@@ -173,6 +204,9 @@ class ConstantObject(SimHandleBase):
     def __int__(self):
         return int(self._value)
 
+    def __repr__(self):
+        return repr(int(self))
+
 
 class NonConstantObject(SimHandleBase):
     def __init__(self, handle):
@@ -180,14 +214,7 @@ class NonConstantObject(SimHandleBase):
             Args:
                 _handle [integer] : vpi/vhpi handle to the simulator object
         """
-        self._handle = handle           # handle used for future simulator transactions
-        self._sub_handles = {}          # Dictionary of SimHandle objects created by getattr
-        self._len = None
-
-        self.name = simulator.get_name_string(self._handle)
-        self.fullname = self.name + '(%s)' % simulator.get_type_string(self._handle)
-        self.log = SimLog('cocotb.' + self.name)
-        self.log.debug("Created!")
+        SimHandleBase.__init__(self, handle)
         self._r_edge = _RisingEdge(self)
         self._f_edge = _FallingEdge(self)
 
@@ -195,67 +222,24 @@ class NonConstantObject(SimHandleBase):
         return self._handle
 
     def __str__(self):
-        return "%s @0x%x" % (self.name, self._handle)
-
-    def __getattr__(self, name):
-        """ Query the simulator for a object with the specified name
-            and cache the result to build a tree
-        """
-        if name in self._sub_handles:
-            return self._sub_handles[name]
-        new_handle = simulator.get_handle_by_name(self._handle, name)
-        if not new_handle:
-            #self._raise_testerror("%s contains no object named %s" % (self.name, name))
-            raise AttributeError("%s contains no object named %s" % (self.name, name))
-        self._sub_handles[name] = SimHandle(new_handle)
-        return self._sub_handles[name]
-
-    def _raise_testerror(self, msg):
-        lastframe = sys._getframe(2)
-        if sys.version_info[0] >= 3:
-            buff = StringIO()
-            traceback.print_stack(lastframe, file=buff)
-        else:
-            buff_bytes = BytesIO()
-            traceback.print_stack(lastframe, file=buff_bytes)
-            buff = StringIO(buff_bytes.getvalue().decode("UTF8"))
-        self.log.error("%s\n%s" % (msg, buff.getvalue()))
-        exception = TestError(msg)
-        exception.stderr.write(buff.getvalue())
-        buff.close()
-        raise exception
-
-
-    def __hasattr__(self, name):
-        """
-        Since calling hasattr(handle, "something") will print out a
-        backtrace to the log since usually attempting to access a
-        non-existent member is an error we provide a 'peek function
-
-        We still add the found handle to our dictionary to prevent leaking
-        handles.
-        """
-        if name in self._sub_handles:
-            return self._sub_handles[name]
-        new_handle = simulator.get_handle_by_name(self._handle, name)
-        if new_handle:
-            self._sub_handles[name] = SimHandle(new_handle)
-        return new_handle
+        return "%s @0x%x" % (self._name, self._handle)
 
     def __getitem__(self, index):
         if index in self._sub_handles:
             return self._sub_handles[index]
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
-            self._raise_testerror("%s contains no object at index %d" % (self.name, index))
+            self._raise_testerror("%s contains no object at index %d" % (self._name, index))
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
-    @property
-    def value(self):
+    def _getvalue(self):
         result = BinaryValue()
         result.binstr = self._get_value_str()
         return result
+
+    ## We want to maintain compatability with python 2.5 so we can't use @property with a setter
+    #value = property(_getvalue, None, None, "A reference to the value")
 
     def _get_value_str(self):
         return simulator.get_signal_val(self._handle)
@@ -303,25 +287,19 @@ class NonConstantObject(SimHandleBase):
     def __int__(self):
         return int(self.value)
 
+    def __repr__(self):
+        return repr(int(self))
 
-class ModifiableObject(SimHandleBase):
+class ModifiableObject(NonConstantObject):
     """
     Base class for simulator objects whose values can be modified
     """
 
-    def __setattr__(self, name, value):
-        """Provide transparent access to signals"""
-        if not name.startswith('_') and not name in ["name", "fullname", "log", "value"] \
-                                                     and self.__hasattr__(name):
-            getattr(self, name).setcachedvalue(value)
-            return
-        object.__setattr__(self, name, value)
-
     def __setitem__(self, index, value):
         """Provide transparent assignment to bit index"""
-        self.__getitem__(index).setcachedvalue(value)
+        self.__getitem__(index)._setcachedvalue(value)
 
-    def setimmediatevalue(self, value):
+    def _setimmediatevalue(self, value):
         """
         Set the value of the underlying simulation object to value.
 
@@ -348,19 +326,17 @@ class ModifiableObject(SimHandleBase):
         elif isinstance(value, get_python_integer_types()):
             value = BinaryValue(value=value, bits=len(self), bigEndian=False)
         elif not isinstance(value, BinaryValue):
-            self.log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
+            self._log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
         simulator.set_signal_val_str(self._handle, value.binstr)
 
-    @property
-    def value(self):
+    def _getvalue(self):
         result = BinaryValue()
         result.binstr = self._get_value_str()
         return result
 
-    @value.setter
-    def setcachedvalue(self, value):
+    def _setcachedvalue(self, value):
         """
         Intercept the store of a value and hold in cache.
 
@@ -369,6 +345,10 @@ class ModifiableObject(SimHandleBase):
         sim time
         """
         cocotb.scheduler.save_write(self, value)
+
+
+    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
+    value = property(_getvalue, _setcachedvalue, None, "A reference to the value")
 
 
     def __le__(self, value):
@@ -384,7 +364,13 @@ def SimHandle(handle):
     """
     Factory function to create the correct type of SimHandle object
     """
-    t = simulator.get_type(handle)
-    print t
-    return None
 
+    _type2cls = {
+        2:      HierarchyObject,
+        5:      ModifiableObject,
+    }
+
+    t = simulator.get_type(handle)
+    if t not in _type2cls:
+        raise TestError("Couldn't find a matching object for GPI type %d" % t)
+    return _type2cls[t](handle)
