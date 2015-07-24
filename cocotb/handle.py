@@ -52,8 +52,129 @@ from cocotb.result import TestError
 from cocotb.triggers import _RisingEdge, _FallingEdge
 from cocotb.utils import get_python_integer_types
 
-class SimHandle(object):
 
+
+
+class SimHandleBase(object):
+    """
+    Base class for all simulation objects.
+
+    We maintain a handle which we can use for GPI calls
+    """
+
+    def __init__(self, handle):
+        """
+        Args:
+            handle (integer)    : the GPI handle to the simulator object
+        """
+        self._handle = handle
+        self._len = None
+        self._sub_handles = {}  # Dictionary of children
+
+        self._name = simulator.get_name_string(self._handle)
+        self._fullname = self._name + "(%s)" % simulator.get_type_string(self._handle)
+        self._log = SimLog("cocotb.%s" % self._name)
+        self._log.debug("Created")
+
+    def __hash__(self):
+        return self._handle
+
+    def __len__(self):
+        """Returns the 'length' of the underlying object.
+
+        For vectors this is the number of bits.
+
+        TODO: Handle other types (loops, generate etc)
+        """
+        if self._len is None:
+            self._len = len(self._get_value_str())
+        return self._len
+
+    def __getattr__(self, name):
+        """ Query the simulator for a object with the specified name
+            and cache the result to build a tree
+        """
+        if name in self._sub_handles:
+            return self._sub_handles[name]
+        new_handle = simulator.get_handle_by_name(self._handle, name)
+        if not new_handle:
+            raise AttributeError("%s contains no object named %s" % (self.name, name))
+        self._sub_handles[name] = SimHandle(new_handle)
+        return self._sub_handles[name]
+
+    def __hasattr__(self, name):
+        """
+        Since calling hasattr(handle, "something") will print out a
+        backtrace to the log since usually attempting to access a
+        non-existent member is an error we provide a 'peek function
+
+        We still add the found handle to our dictionary to prevent leaking
+        handles.
+        """
+        if name in self._sub_handles:
+            return self._sub_handles[name]
+        new_handle = simulator.get_handle_by_name(self._handle, name)
+        if new_handle:
+            self._sub_handles[name] = SimHandle(new_handle)
+        return new_handle
+
+
+    def __getitem__(self, index):
+        if index in self._sub_handles:
+            return self._sub_handles[index]
+        new_handle = simulator.get_handle_by_index(self._handle, index)
+        if not new_handle:
+            self._raise_testerror("%s contains no object at index %d" % (self.name, index))
+        self._sub_handles[index] = SimHandle(new_handle)
+        return self._sub_handles[index]
+
+
+    def __cmp__(self, other):
+
+        # Permits comparison of handles i.e. if clk == dut.clk
+        if isinstance(other, SimHandle):
+            if self._handle == other._handle: return 0
+            return 1
+
+    def __dir__(self):
+        return self._sub_handles.keys()
+
+    def _discover_all(self):
+        for thing in self:
+            pass
+
+    def _getAttributeNames(self):
+        """Permits IPython tab completion to work"""
+        self._discover_all()
+        return dir(self)
+
+    def __repr__(self):
+        return repr(int(self))
+
+class HierarchyObjecct(SimHandleBase):
+    """
+    Hierarchy objects don't have values, they are effectively scopes or namespaces
+    """
+    pass
+
+
+class ConstantObject(SimHandleBase):
+    """
+    Constant objects have a value that can be read, but not set.
+
+    We can also cache the value since it is elaboration time fixed and won't
+    change within a simulation
+    """
+    def __init__(self, handle, *args, **kwargs):
+        SimHandleBase.__init__(self, handle)
+        self._value = None
+
+
+    def __int__(self):
+        return int(self._value)
+
+
+class NonConstantObject(SimHandle):
     def __init__(self, handle):
         """
             Args:
@@ -104,13 +225,6 @@ class SimHandle(object):
         buff.close()
         raise exception
 
-    def __setattr__(self, name, value):
-        """Provide transparent access to signals"""
-        if not name.startswith('_') and not name in ["name", "fullname", "log", "value"] \
-                                                     and self.__hasattr__(name):
-            getattr(self, name).setcachedvalue(value)
-            return
-        object.__setattr__(self, name, value)
 
     def __hasattr__(self, name):
         """
@@ -137,67 +251,18 @@ class SimHandle(object):
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
-    def __setitem__(self, index, value):
-        """Provide transparent assignment to bit index"""
-        self.__getitem__(index).setcachedvalue(value)
 
     def getvalue(self):
         result = BinaryValue()
         result.binstr = self._get_value_str()
         return result
 
-    def setimmediatevalue(self, value):
-        """
-        Set the value of the underlying simulation object to value.
-
-        Args:
-            value (ctypes.Structure, cocotb.binary.BinaryValue, int)
-                The value to drive onto the simulator object
-
-        Raises:
-            TypeError
-
-        This operation will fail unless the handle refers to a modifiable
-        object eg net, signal or variable.
-
-        We determine the library call to make based on the type of the value
-
-        Assigning integers less than 32-bits is faster
-        """
-        if isinstance(value, get_python_integer_types()) and value < 0x7fffffff:
-            simulator.set_signal_val(self._handle, value)
-            return
-
-        if isinstance(value, ctypes.Structure):
-            value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
-        elif isinstance(value, get_python_integer_types()):
-            value = BinaryValue(value=value, bits=len(self), bigEndian=False)
-        elif not isinstance(value, BinaryValue):
-            self.log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
-            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
-
-        simulator.set_signal_val_str(self._handle, value.binstr)
-
-    def setcachedvalue(self, value):
-        """Intercept the store of a value and hold in cache.
-
-        This operation is to enable all of the scheduled callbacks to completed
-        with the same read data and for the writes to occour on the next
-        sim time"""
-        cocotb.scheduler.save_write(self, value)
 
     # We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    value = property(getvalue, setcachedvalue, None, "A reference to the value")
+    value = property(getvalue, None, None, "A reference to the value")
 
     def _get_value_str(self):
         return simulator.get_signal_val(self._handle)
-
-    def __le__(self, value):
-        """Overload the less than or equal to operator to
-            provide an hdl-like shortcut
-                module.signal <= 2
-        """
-        self.value = value
 
 
     def __len__(self):
@@ -243,16 +308,82 @@ class SimHandle(object):
     def __int__(self):
         return int(self.value)
 
-    def _discover_all(self):
-        for thing in self:
-            pass
 
-    def __dir__(self):
-        return self._sub_handles.keys()
+class ModifiableObject(SimHandle):
+    """
+    Base class for simulator objects whose values can be modified
+    """
 
-    def _getAttributeNames(self):
-        self._discover_all()
-        return dir(self)
+    def __setattr__(self, name, value):
+        """Provide transparent access to signals"""
+        if not name.startswith('_') and not name in ["name", "fullname", "log", "value"] \
+                                                     and self.__hasattr__(name):
+            getattr(self, name).setcachedvalue(value)
+            return
+        object.__setattr__(self, name, value)
 
-    def __repr__(self):
-        return repr(int(self))
+    def __setitem__(self, index, value):
+        """Provide transparent assignment to bit index"""
+        self.__getitem__(index).setcachedvalue(value)
+
+    def setimmediatevalue(self, value):
+        """
+        Set the value of the underlying simulation object to value.
+
+        Args:
+            value (ctypes.Structure, cocotb.binary.BinaryValue, int)
+                The value to drive onto the simulator object
+
+        Raises:
+            TypeError
+
+        This operation will fail unless the handle refers to a modifiable
+        object eg net, signal or variable.
+
+        We determine the library call to make based on the type of the value
+
+        Assigning integers less than 32-bits is faster
+        """
+        if isinstance(value, get_python_integer_types()) and value < 0x7fffffff:
+            simulator.set_signal_val(self._handle, value)
+            return
+
+        if isinstance(value, ctypes.Structure):
+            value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
+        elif isinstance(value, get_python_integer_types()):
+            value = BinaryValue(value=value, bits=len(self), bigEndian=False)
+        elif not isinstance(value, BinaryValue):
+            self.log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
+            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+
+        simulator.set_signal_val_str(self._handle, value.binstr)
+
+    def setcachedvalue(self, value):
+        """
+        Intercept the store of a value and hold in cache.
+
+        This operation is to enable all of the scheduled callbacks to completed
+        with the same read data and for the writes to occour on the next
+        sim time
+        """
+        cocotb.scheduler.save_write(self, value)
+
+    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
+    value = property(getvalue, setcachedvalue, None, "A reference to the value")
+
+
+    def __le__(self, value):
+        """Overload the less than or equal to operator to
+            provide an hdl-like shortcut
+                module.signal <= 2
+        """
+        self.value = value
+
+
+
+def get_simhandle(handle):
+    """
+    Factory function to create the correct type of SimHandle object
+    """
+    pass
+    
