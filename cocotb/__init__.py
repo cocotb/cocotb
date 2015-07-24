@@ -58,13 +58,12 @@ if "SPHINX_BUILD" not in os.environ:
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)
     log = SimLog('cocotb')
-    _default_log = logging.INFO
-    if "COCOTB_LOG_LEVEL" in os.environ:
-        level = os.getenv("COCOTB_LOG_LEVEL")
-        try:
-            _default_log = getattr(logging, level)
-        except AttributeError as e:
-            pass
+    level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
+    try:
+        _default_log = getattr(logging, level)
+    except AttributeError as e:
+        log.error("Unable to set loging level to %s" % level)
+        _default_log = logging.INFO
     log.setLevel(_default_log)
     loggpi = SimLog('cocotb.gpi')
 
