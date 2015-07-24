@@ -210,6 +210,7 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
         }
     }
 
+    LOG_DEBUG("Failed to find a hdl named %s", name);
     return NULL;
 }
 
@@ -220,19 +221,18 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
     GpiObjHdl *hdl = NULL;
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
 
-    LOG_WARN("Trying index");
-
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
-        LOG_WARN("Checking if %d native though impl %s ", index, (*iter)->get_name_c());
+        LOG_DEBUG("Checking if index %d native though impl %s ", index, (*iter)->get_name_c());
         if ((hdl = (*iter)->native_check_create(index, base))) {
-            LOG_WARN("Found %d via %s", index, (*iter)->get_name_c());
-            //hdl = base->get_handle_by_name(s_name);
+            LOG_DEBUG("Found %d via %s", index, (*iter)->get_name_c());
+            return (gpi_sim_hdl)hdl;
         }
     }
 
-    return (gpi_sim_hdl)hdl;
+    LOG_DEBUG("Failed to find a hdl at index %d", index);
+    return NULL;
 }
 
 gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base)

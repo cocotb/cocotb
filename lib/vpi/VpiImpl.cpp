@@ -70,6 +70,42 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vpi_time_s.low;
 }
 
+gpi_objtype_t to_gpi_objtype(int32_t vpitype)
+{
+    switch (vpitype) {
+        case vpiNet:
+        case vpiNetBit:
+        case vpiReg:
+        case vpiRegBit:
+            return GPI_REGISTER;
+
+        case vpiInterfaceArray:
+        case vpiPackedArrayVar:
+        case vpiRegArray:
+        case vpiNetArray:
+            return GPI_ARRAY;
+
+        case vpiEnumNet:
+            return GPI_ENUM;
+
+        case vpiParameter:
+            return GPI_PARAMETER;
+
+
+        case vpiStructVar:
+            return GPI_STRUCTURE;
+
+        case vpiModport:
+        case vpiInterface:
+        case vpiModule:
+            return GPI_MODULE;
+
+        default:
+            return GPI_UNKNOWN;
+    }
+}
+
+
 GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name)
 {
     int32_t type;
@@ -89,7 +125,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiRegArray:
         case vpiNetArray:
         case vpiEnumNet:
-            new_obj = new VpiSignalObjHdl(this, new_hdl);
+            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiStructVar:
         case vpiModule:
@@ -98,7 +134,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiInterfaceArray:
         case vpiRefObj:
         case vpiPackedArrayVar:
-            new_obj = new GpiObjHdl(this, new_hdl);
+            new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         default:
             LOG_WARN("Not able to map type %d to object.", type);
@@ -135,7 +171,7 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
     vpiHandle vpi_hdl = parent_hdl->get_handle<vpiHandle>();
     vpiHandle new_hdl;
-    
+
     new_hdl = vpi_handle_by_index(vpi_hdl, index);
     if (new_hdl == NULL) {
         LOG_DEBUG("Unable to vpi_get_handle_by_index %d", index);
@@ -180,7 +216,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
         check_vpi_error();
     }
 
-    rv = new GpiObjHdl(this, root);
+    rv = new GpiObjHdl(this, root, to_gpi_objtype(vpi_get(vpiType, root)));
     rv->initialise(root_name);
 
     return rv;

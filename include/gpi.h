@@ -124,6 +124,18 @@ void gpi_free_handle(gpi_sim_hdl gpi_hdl);
 // Types that can be passed to the iterator.
 //
 // Note these are strikingly similar to the VPI types...
+typedef enum gpi_objtype_e {
+    GPI_UNKNOWN = 0,
+    GPI_MEMORY = 1,
+    GPI_MODULE = 2,
+    GPI_NET = 3,
+    GPI_PARAMETER = 4,
+    GPI_REGISTER = 5,
+    GPI_ARRAY = 6,
+    GPI_ENUM = 7,
+    GPI_STRUCTURE = 8,
+} gpi_objtype_t;
+
 #define gpiMemory      29
 #define gpiModule      32
 #define gpiNet         36

@@ -98,6 +98,8 @@ public:
                                   m_type("unknown") { }
     GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL) { }
     GpiObjHdl(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
+    GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : GpiHdl(impl, hdl), m_type_e(objtype) { }
+
     virtual ~GpiObjHdl() { }
 
     virtual const char* get_name_str(void);
@@ -125,6 +127,9 @@ protected:
 class GpiSignalObjHdl : public GpiObjHdl {
 public:
     GpiSignalObjHdl(GpiImplInterface *impl, void *hdl) : GpiObjHdl(impl, hdl),
+                                                         m_length(0) { }
+    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : 
+                                                         GpiObjHdl(impl, hdl, objtype),
                                                          m_length(0) { }
     virtual ~GpiSignalObjHdl() { }
     // Provide public access to the implementation (composition vs inheritance)
