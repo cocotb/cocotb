@@ -49,7 +49,6 @@ _FILENAME_CHARS = 20  # noqa
 _LINENO_CHARS   = 4  # noqa
 _FUNCNAME_CHARS = 31  # noqa
 
-
 class SimBaseLog(logging.getLoggerClass()):
     def __init__(self, name):
         hdlr = logging.StreamHandler(sys.stdout)
@@ -69,7 +68,7 @@ class SimBaseLog(logging.getLoggerClass()):
         self.propagate = False
         logging.__init__(name)
         self.addHandler(hdlr)
-        self.setLevel(logging.INFO)
+        self.setLevel(logging.NOTSET)
 
 """ Need to play with this to get the path of the called back,
     construct our own makeRecord for this """
