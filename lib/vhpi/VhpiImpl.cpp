@@ -279,7 +279,15 @@ GpiIterator *VhpiImpl::iterate_handle(uint32_t type, GpiObjHdl *obj_hdl)
     vhpiHandleT vhpi_hdl = obj_hdl->get_handle<vhpiHandleT>();
 
     vhpiHandleT iterator;
-    iterator = vhpi_iterator(vhpiSignals, vhpi_hdl);
+    iterator = vhpi_iterator(vhpiInternalRegions, vhpi_hdl);
+
+    if (NULL==iterator) {
+        LOG_WARN("Attemt to create vhpi_iterator returned NULL");
+    }
+
+    LOG_WARN("Created iterator working from scope %d (%s)", 
+             vhpi_get(vhpiKindP, vhpi_hdl),
+             vhpi_get_str(vhpiKindStrP, vhpi_hdl));
 
     GpiIterator *new_iter;
     new_iter = new GpiIterator(this, iterator);
@@ -293,10 +301,16 @@ GpiObjHdl *VhpiImpl::next_handle(GpiIterator *iter)
 
     obj = vhpi_scan((vhpiHandleT)iter->m_iter_hdl);
 
-    if (NULL==obj)
+    if (NULL==obj) {
+        LOG_WARN("vhpi_scan returned NULL");
         return new_obj;
+    }
 
-    std::string name = vhpi_get_str(vhpiFullNameP, obj);
+    std::string name = vhpi_get_str(vhpiNameP, obj);
+    LOG_WARN("vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(), 
+                                           vhpi_get(vhpiKindP, obj),
+                                           vhpi_get_str(vhpiKindStrP, obj),
+                                           vhpi_get_str(vhpiFullNameP, obj));
     new_obj = create_gpi_obj_from_handle(obj, name);
     return new_obj;
 }
