@@ -154,13 +154,20 @@ public:
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
                                                                 m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
+
+    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl, gpi_objtype_t objtype) :
+                                                                GpiSignalObjHdl(impl, hdl, objtype),
+                                                                m_size(0),
+                                                                m_rising_cb(impl, this, GPI_RISING),
+                                                                m_falling_cb(impl, this, GPI_FALLING),
+                                                                m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
     virtual ~VhpiSignalObjHdl();
 
     const char* get_signal_value_binstr(void);
 
     int set_signal_value(const int value);
     int set_signal_value(std::string &value);
-    
+
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(unsigned int edge);
     int initialise(std::string &name);
