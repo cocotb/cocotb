@@ -36,4 +36,7 @@ def discovery_all(dut):
         thing.log.info("Found something: %s" % thing.fullname)
         for subthing in thing:
             thing.log.info("Found something: %s" % thing.fullname)
-    yield Timer(100)
+
+    thing._log.info("length of dut.inst_acs is %d" % len(dut.gen_acs))
+    item = dut.gen_acs[3]
+    item._log.info("this is item")

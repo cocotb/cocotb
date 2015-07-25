@@ -138,6 +138,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vhpitype)
         case vhpiCompInstStmtK:
         case vhpiEntityDeclK:
         case vhpiRootInstK:
+        case vhpiProcessStmtK:
             return GPI_MODULE;
 
         default:
@@ -167,10 +168,11 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
         case vhpiForGenerateK:
         case vhpiIfGenerateK:
         case vhpiCompInstStmtK:
+//         case vhpiProcessStmtK:
             new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         default:
-            LOG_WARN("Not able to map type %d to object.");
+            LOG_WARN("Not able to map type (%s) %u to object", vhpi_get_str(vhpiKindStrP, new_hdl), type);
             return NULL;
     }
 
@@ -280,6 +282,7 @@ GpiIterator *VhpiImpl::iterate_handle(uint32_t type, GpiObjHdl *obj_hdl)
 
     vhpiHandleT iterator;
     iterator = vhpi_iterator(vhpiInternalRegions, vhpi_hdl);
+    vhpiHandleT root_iterator;
 
     if (NULL==iterator) {
         LOG_WARN("Attemt to create vhpi_iterator returned NULL");
@@ -288,6 +291,15 @@ GpiIterator *VhpiImpl::iterate_handle(uint32_t type, GpiObjHdl *obj_hdl)
     LOG_WARN("Created iterator working from scope %d (%s)", 
              vhpi_get(vhpiKindP, vhpi_hdl),
              vhpi_get_str(vhpiKindStrP, vhpi_hdl));
+
+    // HACK: vhpiRootInstK seems to be a null level of hierarchy, need to skip
+    if (vhpiRootInstK == vhpi_get(vhpiKindP, vhpi_hdl)) {
+        vhpi_hdl = vhpi_scan(iterator);
+        root_iterator = vhpi_iterator(vhpiInternalRegions, vhpi_hdl);
+        iterator = root_iterator;       // FIXME leaky
+        LOG_WARN("Skipped vhpiRootInstK to get to %s", vhpi_get_str(vhpiKindStrP, vhpi_hdl));
+    }
+
 
     GpiIterator *new_iter;
     new_iter = new GpiIterator(this, iterator);

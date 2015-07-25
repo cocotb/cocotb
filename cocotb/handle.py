@@ -203,9 +203,31 @@ class HierarchyObject(SimHandleBase):
                 except StopIteration:
                     print "Simulator raised stopiteration"
                     break
-                print "Got thing %d" % thing
+                name = simulator.get_name_string(thing)
+                print "Got thing %s hdl = %d" % (name, thing)
                 hdl = SimHandle(thing)
-                self._sub_handles[hdl.name.split(".")[-1]] = hdl
+
+                # This is slightly hacky, but we want generate loops to result in a list
+                # These are renamed in VHPI to __X where X is the index
+                import re
+                result = re.match("(?P<name>.*)__(?P<index>\d+)$", name)
+                if result:
+                    print "Detected generate unrolling"
+                    index = int(result.group("index"))
+                    name = result.group("name")
+                    print "index is %d" % int(index)
+
+                    if name not in self._sub_handles:
+                        self._sub_handles[name] = []
+                        print "Created subhandle for %s" % name
+                    if len(self._sub_handles[name]) < index + 1:
+                        delta = index - len(self._sub_handles[name]) + 1
+                        print "extending list by %d" % delta
+                        self._sub_handles[name].extend([None]*delta)
+                    print "length is %d" % (len(self._sub_handles[name]))
+                    self._sub_handles[name][index] = hdl
+                else:
+                    self._sub_handles[hdl.name.split(".")[-1]] = hdl
                 yield hdl
 
 
