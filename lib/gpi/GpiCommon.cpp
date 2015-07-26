@@ -268,7 +268,7 @@ const char *gpi_get_signal_type_str(gpi_sim_hdl sig_hdl)
     return obj_hdl->get_type_str();
 }
 
-int gpi_get_object_type(gpi_sim_hdl sig_hdl)
+gpi_objtype_t gpi_get_object_type(gpi_sim_hdl sig_hdl)
 {
     GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_type();

@@ -73,7 +73,7 @@ private:
 
 class FliSignalObjHdl : public GpiSignalObjHdl {
 public:
-    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : GpiSignalObjHdl(impl, hdl),
+    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : GpiSignalObjHdl(impl, hdl, GPI_UNKNOWN),
                                                                 m_fli_hdl(hdl),
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
@@ -110,7 +110,7 @@ private:
 
 class FliVariableObjHdl : public GpiSignalObjHdl {
 public:
-    FliVariableObjHdl(GpiImplInterface *impl, mtiVariableIdT hdl) : GpiSignalObjHdl(impl, hdl),
+    FliVariableObjHdl(GpiImplInterface *impl, mtiVariableIdT hdl) : GpiSignalObjHdl(impl, hdl, GPI_UNKNOWN),
                                                                     m_fli_hdl(hdl),
                                                                     m_fli_type(MTI_TYPE_SCALAR),
                                                                     m_mti_buff(NULL),
@@ -228,6 +228,8 @@ public:
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
     GpiObjHdl *get_root_handle(const char *name);
+    GpiIterator *iterate_handle(uint32_t type, GpiObjHdl *obj_hdl);
+    GpiObjHdl *next_handle(GpiIterator *iter);
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time_ps);

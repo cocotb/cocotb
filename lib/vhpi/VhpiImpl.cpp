@@ -111,7 +111,7 @@ void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 }
 
 
-gpi_objtype_t to_gpi_objtype(int32_t vhpitype)
+gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
 {
     switch (vhpitype) {
         case vhpiPortDeclK:

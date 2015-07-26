@@ -30,12 +30,12 @@ from cocotb.result import TestError
 
 @cocotb.test()
 def discovery_all(dut):
-    dut.log.info("Trying to discover")
+    dut._log.info("Trying to discover")
     yield Timer(0)
     for thing in dut:
-        thing.log.info("Found something: %s" % thing.fullname)
-        for subthing in thing:
-            thing.log.info("Found something: %s" % thing.fullname)
+        thing._log.info("Found something: %s" % thing._fullname)
+        #for subthing in thing:
+        #    thing._log.info("Found something: %s" % thing._fullname)
 
     thing._log.info("length of dut.inst_acs is %d" % len(dut.gen_acs))
     item = dut.gen_acs[3]

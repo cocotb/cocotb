@@ -94,18 +94,20 @@ class GpiObjHdl : public GpiHdl {
 public:
     GpiObjHdl(std::string name) : GpiHdl(NULL, NULL),
                                   m_name(name),
-                                  m_fullname("bleh"),
-                                  m_type("unknown") { }
-    GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL) { }
-    GpiObjHdl(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
-    GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : GpiHdl(impl, hdl), m_type_e(objtype) { }
+                                  m_fullname("unknown") { }
+    GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
+                                        m_fullname("unknown"),
+                                        m_type(GPI_UNKNOWN) { }
+    GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : GpiHdl(impl, hdl),
+                                                                          m_fullname("unknown"),
+                                                                          m_type(objtype) { }
 
     virtual ~GpiObjHdl() { }
 
     virtual const char* get_name_str(void);
     virtual const char* get_fullname_str(void);
     virtual const char* get_type_str(void);
-    virtual int get_type(void);
+    virtual gpi_objtype_t get_type(void);
 
     const std::string & get_name(void);
 
@@ -115,8 +117,7 @@ public:
 protected:
     std::string m_name;
     std::string m_fullname;
-    std::string m_type;
-    int m_type_e;
+    gpi_objtype_t m_type;
 };
 
 
@@ -126,8 +127,6 @@ protected:
 // value of the signal (which doesn't apply to non signal items in the hierarchy
 class GpiSignalObjHdl : public GpiObjHdl {
 public:
-    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl) : GpiObjHdl(impl, hdl),
-                                                         m_length(0) { }
     GpiSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : 
                                                          GpiObjHdl(impl, hdl, objtype),
                                                          m_length(0) { }

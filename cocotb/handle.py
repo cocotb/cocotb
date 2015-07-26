@@ -391,8 +391,8 @@ def SimHandle(handle):
     """
 
     _type2cls = {
-        2:      HierarchyObject,
-        5:      ModifiableObject,
+        simulator.MODULE:      HierarchyObject,
+        simulator.REG:         ModifiableObject,
     }
 
     t = simulator.get_type(handle)

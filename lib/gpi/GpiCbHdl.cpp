@@ -45,12 +45,33 @@ const char * GpiObjHdl::get_fullname_str(void)
 
 const char * GpiObjHdl::get_type_str(void)
 {
-    return m_type.c_str();
+#define CASE_OPTION(_X) \
+    case _X: \
+        ret = #_X; \
+        break
+
+    const char *ret;
+
+    switch (m_type) {
+        CASE_OPTION(GPI_UNKNOWN);
+        CASE_OPTION(GPI_MEMORY);
+        CASE_OPTION(GPI_MODULE);
+        CASE_OPTION(GPI_NET);
+        CASE_OPTION(GPI_PARAMETER);
+        CASE_OPTION(GPI_REGISTER);
+        CASE_OPTION(GPI_ARRAY);
+        CASE_OPTION(GPI_ENUM);
+        CASE_OPTION(GPI_STRUCTURE);
+        default:
+            ret = "unknown";
+    }
+
+    return ret;
 }
 
-int GpiObjHdl::get_type(void)
+gpi_objtype_e GpiObjHdl::get_type(void)
 {
-    return m_type_e;
+    return m_type;
 }
 
 const std::string & GpiObjHdl::get_name(void)
@@ -101,7 +122,6 @@ int GpiObjHdl::initialise(std::string &name)
     printf("Name is %s\n", name.c_str());
     m_name = name;
     m_fullname = "bleh2";
-    m_type = "unknown";
     return 0;
 }
 

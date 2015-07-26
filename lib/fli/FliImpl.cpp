@@ -610,6 +610,17 @@ int FliVariableObjHdl::initialise(std::string &name)
     return 0;
 }
 
+GpiIterator *FliImpl::iterate_handle(uint32_t type, GpiObjHdl *obj_hdl)
+{
+    return NULL;
+}
+
+GpiObjHdl *FliImpl::next_handle(GpiIterator *iter)
+{
+    return NULL;
+}
+
+
 #include <unistd.h>
 
 FliTimedCbHdl* FliTimerCache::get_timer(uint64_t time_ps)

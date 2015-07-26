@@ -136,13 +136,6 @@ typedef enum gpi_objtype_e {
     GPI_STRUCTURE = 8,
 } gpi_objtype_t;
 
-#define gpiMemory      29
-#define gpiModule      32
-#define gpiNet         36
-#define gpiParameter   41
-#define gpiReg         48
-#define gpiNetArray   114
-
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls
 //
@@ -162,7 +155,7 @@ const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
 // Returns on of the types defined above e.g. gpiMemory etc.
-int gpi_get_object_type(gpi_sim_hdl gpi_hdl);
+gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 
 
 // Functions for setting the properties of a handle
