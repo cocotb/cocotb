@@ -27,11 +27,6 @@
 ******************************************************************************/
 
 #include "gpi_priv.h"
-GpiObjHdl* GpiIterator::next_handle()
-{
-    return m_impl->next_handle(this);
-}
-
 
 const char * GpiObjHdl::get_name_str(void)
 {
