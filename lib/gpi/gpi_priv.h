@@ -194,18 +194,14 @@ public:
     int stop_clock(void) { return 0; }
 };
 
-class GpiIterator {
+class GpiIterator : public GpiHdl {
 public:
-    GpiIterator(GpiImplInterface *impl, void *hdl) : m_impl(impl), m_iter_hdl(hdl) { }
+    GpiIterator(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
     virtual ~GpiIterator() { }
 
-    GpiObjHdl* next_handle();
-
-private:
-    GpiIterator() { }   // Disable default constructor
+    virtual GpiObjHdl* next_handle() { return NULL; }
 
 public:
-    GpiImplInterface *m_impl;                  // VPI/VHPI/FLI routines
     void *m_iter_hdl;
 };
 

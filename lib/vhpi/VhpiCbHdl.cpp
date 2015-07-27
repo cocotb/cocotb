@@ -382,3 +382,104 @@ VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.reason = vhpiCbRepNextTimeStep;
     cb_data.time = &vhpi_time;
 }
+
+static vhpiOneToManyT options[] = {
+    vhpiInternalRegions,
+    vhpiSignals,
+    vhpiMembers
+};
+
+static int options_len = sizeof(options) / sizeof(options[0]);
+
+VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterator(impl, hdl),
+                                                                      iterate_over(options,
+                                                                                   options + options_len)
+{
+    vhpiHandleT iterator;
+
+    /* Find the first mapping type that yields a valid iterator */
+
+    for (curr_type = iterate_over.begin();
+         curr_type != iterate_over.end();
+         curr_type++) {
+        iterator = vhpi_iterator(*curr_type, hdl);
+
+        if (iterator)
+            break;
+
+        LOG_WARN("vhpi_scan vhpiOneToManyT=%d returned NULL", *curr_type);
+    }
+
+    if (NULL == iterator) {
+        LOG_WARN("vhpi_iterate returned NULL for all relationships");
+        return;
+    }
+
+    LOG_WARN("Created iterator working from scope %d (%s)", 
+             vhpi_get(vhpiKindP, hdl),
+             vhpi_get_str(vhpiKindStrP, hdl));
+
+    // HACK: vhpiRootInstK seems to be a null level of hierarchy, need to skip
+    if (vhpiRootInstK == vhpi_get(vhpiKindP, hdl)) {
+        vhpiHandleT root_iterator;
+        hdl = vhpi_scan(iterator);
+        root_iterator = vhpi_iterator(*curr_type, hdl);
+        vhpi_release_handle(iterator);
+        iterator = root_iterator;
+        LOG_WARN("Skipped vhpiRootInstK to get to %s", vhpi_get_str(vhpiKindStrP, hdl));
+    }
+
+    m_iterator = iterator;
+}
+
+VhpiIterator::~VhpiIterator()
+{
+    vhpi_release_handle(m_iterator);
+}
+
+GpiObjHdl *VhpiIterator::next_handle(void)
+{
+    vhpiHandleT obj;
+    GpiObjHdl *new_obj = NULL;
+
+    /* We want the next object in the current mapping.
+     * If the end of mapping is reached then we want to
+     * try then next one until a new object is found
+     */
+
+    do {
+        obj = NULL;
+
+        if (m_iterator) {
+            obj = vhpi_scan(m_iterator);
+
+            if (obj)
+                continue;
+
+            LOG_WARN("End of vhpiOneToManyT=%d iteration", *curr_type);
+        } else {
+            LOG_WARN("No valid vhpiOneToManyT=%d iterator", *curr_type);
+        }
+
+        curr_type++;
+        vhpi_release_handle(m_iterator);
+        m_iterator = vhpi_iterator(*curr_type, get_handle<vhpiHandleT>());
+
+    } while (!obj && (curr_type != iterate_over.end()));
+
+    if (NULL == obj) {
+        LOG_WARN("No more children, all relationships tested");
+        return new_obj;
+    }
+
+    std::string name = vhpi_get_str(vhpiNameP, obj);
+    LOG_WARN("vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
+                                           vhpi_get(vhpiKindP, obj),
+                                           vhpi_get_str(vhpiKindStrP, obj),
+                                           vhpi_get_str(vhpiFullNameP, obj));
+
+    VhpiImpl *vhpi_impl = reinterpret_cast<VhpiImpl*>(m_impl);
+    new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name);
+    return new_obj;
+}
+
