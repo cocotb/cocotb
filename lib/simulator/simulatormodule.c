@@ -466,19 +466,18 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 static PyObject *iterate(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
-    uint32_t type;
     gpi_iterator_hdl result;
     PyObject *res;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "il", &type, &hdl)) {
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
 
-    result = gpi_iterate(type, hdl);
+    result = gpi_iterate(hdl);
 
     res = Py_BuildValue("l", result);
 

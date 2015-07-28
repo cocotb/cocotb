@@ -276,7 +276,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
     return rv;
 }
 
-GpiIterator *VhpiImpl::iterate_handle(uint32_t type, GpiObjHdl *obj_hdl)
+GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl)
 {
     VhpiIterator *new_iter;
     vhpiHandleT vhpi_hdl = obj_hdl->get_handle<vhpiHandleT>();

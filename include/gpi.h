@@ -141,7 +141,7 @@ typedef enum gpi_objtype_e {
 //
 // NB the iterator handle may be NULL if no objects of the requested type are
 // found
-gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base);
+gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base);
 
 // Returns NULL when there are no more objects
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);

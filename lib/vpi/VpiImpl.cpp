@@ -242,7 +242,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     return NULL;
 }
 
-GpiIterator *VpiImpl::iterate_handle(uint32_t type, GpiObjHdl *obj_hdl)
+GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl)
 {
     vpiHandle vpi_hdl = obj_hdl->get_handle<vpiHandle>();
 

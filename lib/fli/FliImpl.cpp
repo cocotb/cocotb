@@ -610,7 +610,7 @@ int FliVariableObjHdl::initialise(std::string &name)
     return 0;
 }
 
-GpiIterator *FliImpl::iterate_handle(uint32_t type, GpiObjHdl *obj_hdl)
+GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl)
 {
     return NULL;
 }
