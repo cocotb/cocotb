@@ -187,7 +187,7 @@ public:
 
 private:
     vhpiHandleT m_iterator;
-    std::vector<vhpiOneToManyT> iterate_over;
+    static std::vector<vhpiOneToManyT> iterate_over;
     std::vector<vhpiOneToManyT>::iterator curr_type;
 };
 

@@ -389,11 +389,11 @@ static vhpiOneToManyT options[] = {
     vhpiMembers
 };
 
-static int options_len = sizeof(options) / sizeof(options[0]);
+std::vector<vhpiOneToManyT> VhpiIterator::iterate_over(options, options + sizeof(options) / sizeof(options[0]));
 
-VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterator(impl, hdl),
-                                                                      iterate_over(options,
-                                                                                   options + options_len)
+VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterator(impl, hdl)
+                                                                      //iterate_over(options,
+                                                                      //             options + options_len)
 {
     vhpiHandleT iterator;
 
