@@ -40,3 +40,16 @@ def discovery_all(dut):
     thing._log.info("length of dut.inst_acs is %d" % len(dut.gen_acs))
     item = dut.gen_acs[3]
     item._log.info("this is item")
+
+@cocotb.coroutine
+def iteration_loop(dut):
+    for thing in dut:
+        thing._log.info("Found something: %s" % thing._fullname)
+        yield Timer(1)
+
+@cocotb.test()
+def dual_iteration(dut):
+    loop_one = cocotb.fork(iteration_loop(dut))
+    loop_two = cocotb.fork(iteration_loop(dut))
+
+    yield [loop_one.join(), loop_two.join()]
