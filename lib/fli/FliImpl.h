@@ -85,11 +85,11 @@ public:
                                                                 m_val_len(0),
                                                                 m_val_str_len(0) { }
     virtual ~FliSignalObjHdl() {
-        if (m_val_len)
+        if (m_val_buff)
             free(m_val_buff);
         if (m_mti_buff)
             free(m_mti_buff);
-        if (m_val_str_len)
+        if (m_val_str_buff)
             free(m_val_str_buff);
     }
 
@@ -123,7 +123,7 @@ public:
                                                                     m_val_buff(NULL),
                                                                     m_val_len(0) { }
     virtual ~FliVariableObjHdl() {
-        if (m_val_len)
+        if (m_val_buff)
             free(m_val_buff);
         if (m_mti_buff)
             free(m_mti_buff);
