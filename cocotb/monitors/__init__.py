@@ -166,7 +166,7 @@ class BusMonitor(Monitor):
         if self._reset_n is not None:
             return not bool(self._reset_n.value.integer)
         if self._reset is not None:
-            return bool(self._reset_n.value.integer)
+            return bool(self._reset.value.integer)
         return False
 
     def __str__(self):
