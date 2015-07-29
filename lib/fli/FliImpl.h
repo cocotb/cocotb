@@ -81,12 +81,16 @@ public:
                                                                 m_fli_type(MTI_TYPE_SCALAR),
                                                                 m_mti_buff(NULL),
                                                                 m_val_buff(NULL),
-                                                                m_val_len(0) { }
+                                                                m_val_str_buff(NULL),
+                                                                m_val_len(0),
+                                                                m_val_str_len(0) { }
     virtual ~FliSignalObjHdl() {
         if (m_val_len)
             free(m_val_buff);
         if (m_mti_buff)
             free(m_mti_buff);
+        if (m_val_str_len)
+            free(m_val_str_buff);
     }
 
     const char* get_signal_value_binstr(void);
@@ -105,7 +109,9 @@ private:
     mtiTypeKindT       m_fli_type;
     mtiInt32T         *m_mti_buff;
     char              *m_val_buff;
+    char              *m_val_str_buff;
     int                m_val_len;
+    int                m_val_str_len;
 };
 
 class FliVariableObjHdl : public GpiSignalObjHdl {
