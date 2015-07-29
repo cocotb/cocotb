@@ -207,6 +207,7 @@ class HierarchyObject(SimHandleBase):
             try:
                 thing = simulator.next(iterator)
             except StopIteration:
+                # Iterator is cleaned up internally in GPI
                 break
             name = simulator.get_name_string(thing)
             hdl = SimHandle(thing)

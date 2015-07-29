@@ -246,8 +246,16 @@ gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base)
 
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
 {
+    gpi_sim_hdl next;
     GpiIterator *iter = sim_to_hdl<GpiIterator*>(iterator);
-    return (gpi_sim_hdl)iter->next_handle();
+    next = (gpi_sim_hdl)iter->next_handle();
+    if (!next) {
+        /* If the iterator returns NULL then it has reached the
+           end, we clear up here before returning
+         */
+        delete iter;
+    }
+    return next;
 }
 
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl)
