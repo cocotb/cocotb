@@ -79,6 +79,7 @@ class SimHandleBase(object):
         self._handle = handle
         self._len = None
         self._sub_handles = {}  # Dictionary of children
+        self._discovered = False
 
         self._name = simulator.get_name_string(self._handle)
         self._fullname = self._name + "(%s)" % simulator.get_type_string(self._handle)
@@ -141,17 +142,6 @@ class SimHandleBase(object):
             if self._handle == other._handle: return 0
             return 1
 
-    #def __dir__(self):
-        #return self._sub_handles.keys()
-
-    def _discover_all(self):
-        for thing in self:
-            pass
-
-    def _getAttributeNames(self):
-        """Permits IPython tab completion to work"""
-        self._discover_all()
-        return dir(self)
 
     def __repr__(self):
         return self._fullname
@@ -189,17 +179,30 @@ class HierarchyObject(SimHandleBase):
         object.__setattr__(self, name, value)
 
     def __iter__(self):
-        """Iterates over all known types defined by simulator module"""
+        """
+        Iterate over all known objects in this layer of hierarchy
+        """
+        if not self._discovered:
+            self._discover_all()
+        for handle in self._sub_handles.items():
+            yield handle
+
+    def _discover_all(self):
+        """
+        When iterating or performing tab completion, we run through ahead of
+        time and discover all possible children, populating the _sub_handle
+        mapping. Hierarchy can't change after elaboration so we only have to
+        do this once.
+        """
+        if self._discovered: return
+
         iterator = simulator.iterate(self._handle)
-        print "iterating..."
         while True:
             try:
                 thing = simulator.next(iterator)
             except StopIteration:
-                print "Simulator raised stopiteration"
                 break
             name = simulator.get_name_string(thing)
-            print "Got thing %s hdl = %d" % (name, thing)
             hdl = SimHandle(thing)
 
             # This is slightly hacky, but we want generate loops to result in a list
@@ -207,24 +210,24 @@ class HierarchyObject(SimHandleBase):
             import re
             result = re.match("(?P<name>.*)__(?P<index>\d+)$", name)
             if result:
-                print "Detected generate unrolling"
                 index = int(result.group("index"))
                 name = result.group("name")
-                print "index is %d" % int(index)
 
                 if name not in self._sub_handles:
                     self._sub_handles[name] = []
-                    print "Created subhandle for %s" % name
                 if len(self._sub_handles[name]) < index + 1:
                     delta = index - len(self._sub_handles[name]) + 1
-                    print "extending list by %d" % delta
                     self._sub_handles[name].extend([None]*delta)
-                print "length is %d" % (len(self._sub_handles[name]))
                 self._sub_handles[name][index] = hdl
             else:
                 self._sub_handles[hdl.name.split(".")[-1]] = hdl
-            yield hdl
 
+        self._discovered = True
+
+    def _getAttributeNames(self):
+        """Permits IPython tab completion to work"""
+        self._discover_all()
+        return dir(self)
 
 class ConstantObject(SimHandleBase):
     """
