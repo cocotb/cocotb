@@ -184,8 +184,14 @@ class HierarchyObject(SimHandleBase):
         """
         if not self._discovered:
             self._discover_all()
-        for handle in self._sub_handles.items():
-            yield handle
+
+        for name, handle in self._sub_handles.items():
+            if isinstance(handle, list):
+                for subhdl in handle:
+                    yield subhdl
+
+            else:
+                yield handle
 
     def _discover_all(self):
         """
@@ -397,3 +403,4 @@ def SimHandle(handle):
     if t not in _type2cls:
         raise TestError("Couldn't find a matching object for GPI type %d" % t)
     return _type2cls[t](handle)
+

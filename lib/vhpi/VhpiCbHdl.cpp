@@ -453,6 +453,12 @@ GpiObjHdl *VhpiIterator::next_handle(void)
         if (m_iterator) {
             obj = vhpi_scan(m_iterator);
 
+            if (vhpiProcessStmtK == vhpi_get(vhpiKindP, obj)) {
+                LOG_WARN("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
+                                             vhpi_get_str(vhpiKindStrP, obj));
+                obj=NULL;
+            }
+
             if (obj)
                 continue;
 
