@@ -147,7 +147,10 @@ class RunningCoroutine(object):
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits"""
-        return self._join
+        if self._finished:
+            return NullTrigger()
+        else:
+            return self._join
 
     def __nonzero__(self):
         """Provide boolean testing
