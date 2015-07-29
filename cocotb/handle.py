@@ -82,7 +82,7 @@ class SimHandle(object):
         """ Query the simulator for a object with the specified name
             and cache the result to build a tree
         """
-        # python's builtin dir and IPython's dir2 search for these, 
+        # python's builtin dir and IPython's dir2 search for these,
         # raise an AttributeError to avoid incorrect calls to _raise_testerror
         if name in ["__methods__","__members__","trait_names","_getAttributeNames"]:
             raise AttributeError(name)
@@ -150,7 +150,7 @@ class SimHandle(object):
         self.__getitem__(index).setcachedvalue(value)
 
     def getvalue(self):
-        result = BinaryValue()
+        result = BinaryValue(bits=len(self))
         result.binstr = self._get_value_str()
         return result
 
