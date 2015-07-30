@@ -144,12 +144,19 @@ int embed_sim_init(gpi_sim_info_t *info)
     const char *dut = getenv("TOPLEVEL");
 
     if (dut != NULL) {
-        // Skip any library component of the toplevel
-        char *dot = strchr(dut, '.');
-        if (dot != NULL) {
-            dut += (dot - dut + 1);
+        if (!strcmp("", dut)) {
+            /* Empty string passed in, treat as NULL */
+            dut = NULL;
+        } else {
+            // Skip any library component of the toplevel
+            char *dot = strchr(dut, '.');
+            if (dot != NULL) {
+                dut += (dot - dut + 1);
+            }
         }
     }
+
+
 
 
     PyObject *cocotb_module, *cocotb_init, *cocotb_args, *cocotb_retval;
