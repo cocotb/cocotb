@@ -159,6 +159,27 @@ int VpiSignalObjHdl::set_signal_value(int value)
     return 0;
 }
 
+int VpiSignalObjHdl::set_signal_value(double value)
+{
+    FENTER
+    s_vpi_value value_s;
+
+    value_s.value.real = value;
+    value_s.format = vpiRealVal;
+
+    s_vpi_time vpi_time_s;
+
+    vpi_time_s.type = vpiSimTime;
+    vpi_time_s.high = 0;
+    vpi_time_s.low  = 0;
+
+    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
+    check_vpi_error();
+
+    FEXIT
+    return 0;
+}
+
 int VpiSignalObjHdl::set_signal_value(std::string &value)
 {
     FENTER

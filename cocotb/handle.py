@@ -159,7 +159,7 @@ class SimHandle(object):
         Set the value of the underlying simulation object to value.
 
         Args:
-            value (ctypes.Structure, cocotb.binary.BinaryValue, int)
+            value (ctypes.Structure, cocotb.binary.BinaryValue, int, double)
                 The value to drive onto the simulator object
 
         Raises:
@@ -175,6 +175,10 @@ class SimHandle(object):
         if (isinstance(value, get_python_integer_types()) and
                 value < 0x7fffffff):
             simulator.set_signal_val(self._handle, value)
+            return
+
+        if isinstance(value, float):
+            simulator.set_signal_val_real(self._handle, value)
             return
 
         if isinstance(value, ctypes.Structure):

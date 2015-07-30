@@ -60,6 +60,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args);
 static PyObject *get_signal_val(PyObject *self, PyObject *args);
 static PyObject *set_signal_val(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_str(PyObject *self, PyObject *args);
+static PyObject *set_signal_val_real(PyObject *self, PyObject *args);
 static PyObject *get_handle_by_name(PyObject *self, PyObject *args);
 static PyObject *get_handle_by_index(PyObject *self, PyObject *args);
 static PyObject *get_root_handle(PyObject *self, PyObject *args);
@@ -83,6 +84,7 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_signal_val",  get_signal_val, METH_VARARGS, "Get the value of a signal as a binary string"},
     {"set_signal_val",  set_signal_val, METH_VARARGS, "Set the value of a signal"},
     {"set_signal_val_str",  set_signal_val_str, METH_VARARGS, "Set the value of a signal using a binary string"},
+    {"set_signal_val_real",  set_signal_val_real, METH_VARARGS, "Set the value of a signal using a double"},
     {"get_handle_by_name",  get_handle_by_name, METH_VARARGS, "Get handle of a named object"},
     {"get_handle_by_index", get_handle_by_index, METH_VARARGS, "Get handle of a object at an index in a parent"},
     {"get_root_handle", get_root_handle, METH_VARARGS, "Get the root handle"},

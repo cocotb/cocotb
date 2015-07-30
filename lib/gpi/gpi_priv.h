@@ -127,6 +127,7 @@ public:
     int m_length;
 
     virtual int set_signal_value(const int value) = 0;
+    virtual int set_signal_value(const double value) = 0;
     virtual int set_signal_value(std::string &value) = 0;
     //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
     // but the explicit ones are probably better

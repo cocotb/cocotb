@@ -288,6 +288,12 @@ void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str)
     obj_hdl->set_signal_value(value);
 }
 
+void gpi_set_signal_value_real(gpi_sim_hdl sig_hdl, double value)
+{
+    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    obj_hdl->set_signal_value(value);
+}
+
 gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),
                                                void *gpi_cb_data,
                                                gpi_sim_hdl sig_hdl,

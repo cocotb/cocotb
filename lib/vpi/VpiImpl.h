@@ -182,6 +182,7 @@ public:
     const char* get_signal_value_binstr(void);
 
     int set_signal_value(const int value);
+    int set_signal_value(const double value);
     int set_signal_value(std::string &value);
 
     /* Value change callback accessor */
