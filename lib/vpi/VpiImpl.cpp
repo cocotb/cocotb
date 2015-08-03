@@ -201,6 +201,10 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
     check_vpi_error();
+    if (!iterator) {
+        LOG_INFO("Nothing visible via VPI");
+        return NULL;
+    }
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
 
