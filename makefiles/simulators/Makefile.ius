@@ -38,6 +38,10 @@ else
     EXTRA_ARGS +=
 endif
 
+# IUS loads vpi regardless of what is asked for, then VHPI if asked to
+# Which does not play nice with out multi language. So we supply vhpi
+# GPI_EXTRA if needed.
+
 ifeq ($(GPI_IMPL),vpi)
     GPI_ARGS = -loadvpi $(LIB_DIR)/libvpi
     EXTRA_ARGS += -sv -v93
@@ -45,23 +49,18 @@ ifeq ($(GPI_IMPL),vpi)
 endif
 
 ifeq ($(GPI_IMPL),vhpi)
-    GPI_ARGS = -loadvhpi $(LIB_DIR)/libvhpi:vhpi_startup_routines_bootstrap
-    #EXTRA_ARGS += -cdslib cds.lib
+    GPI_EXTRA = vhpi
     EXTRA_ARGS += -v93
-    EXTRA_ARGS += -top worklib.$(TOPLEVEL)
+    EXTRA_ARGS += -top $(TOPLEVEL)
+    MAKE_LIB := -makelib $(TOPLEVEL)
     HDL_SOURCES = $(VHDL_SOURCES)
 endif
 
 GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
 
-ifndef GPI_ARGS
-   $(error "Unable to determine appropriate GPI layer to use")
-endif
-
 results.xml: $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(GPI_LIB)
-	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
-	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	irun $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(HDL_SOURCES) $(PLUSARGS)
+	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	irun $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS)
 
 clean::
 	-rm -rf $(SIM_BUILD)
