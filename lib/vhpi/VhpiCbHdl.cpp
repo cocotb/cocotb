@@ -420,21 +420,22 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterato
              vhpi_get_str(vhpiKindStrP, hdl));
 
     // HACK: vhpiRootInstK seems to be a null level of hierarchy, need to skip
-    if (vhpiRootInstK == vhpi_get(vhpiKindP, hdl)) {
-        vhpiHandleT root_iterator;
-        hdl = vhpi_scan(iterator);
-        root_iterator = vhpi_iterator(*curr_type, hdl);
-        vhpi_release_handle(iterator);
-        iterator = root_iterator;
-        LOG_WARN("Skipped vhpiRootInstK to get to %s", vhpi_get_str(vhpiKindStrP, hdl));
-    }
+    //if (vhpiRootInstK == vhpi_get(vhpiKindP, hdl)) {
+    //    vhpiHandleT root_iterator;
+    //    hdl = vhpi_scan(iterator);
+    //    root_iterator = vhpi_iterator(*curr_type, hdl);
+    //    vhpi_release_handle(iterator);
+    //    iterator = root_iterator;
+    //    LOG_WARN("Skipped vhpiRootInstK to get to %s", vhpi_get_str(vhpiKindStrP, hdl));
+    //}
 
     m_iterator = iterator;
 }
 
 VhpiIterator::~VhpiIterator()
 {
-    vhpi_release_handle(m_iterator);
+    if (m_iterator)
+        vhpi_release_handle(m_iterator);
 }
 
 GpiObjHdl *VhpiIterator::next_handle(void)
@@ -463,12 +464,12 @@ GpiObjHdl *VhpiIterator::next_handle(void)
                 continue;
 
             LOG_WARN("End of vhpiOneToManyT=%d iteration", *curr_type);
+            vhpi_release_handle(m_iterator);
         } else {
             LOG_WARN("No valid vhpiOneToManyT=%d iterator", *curr_type);
         }
 
         curr_type++;
-        vhpi_release_handle(m_iterator);
         m_iterator = vhpi_iterator(*curr_type, get_handle<vhpiHandleT>());
 
     } while (!obj && (curr_type != iterate_over.end()));
@@ -478,7 +479,7 @@ GpiObjHdl *VhpiIterator::next_handle(void)
         return new_obj;
     }
 
-    std::string name = vhpi_get_str(vhpiNameP, obj);
+    std::string name = vhpi_get_str(vhpiCaseNameP, obj);
     LOG_WARN("vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
                                            vhpi_get(vhpiKindP, obj),
                                            vhpi_get_str(vhpiKindStrP, obj),

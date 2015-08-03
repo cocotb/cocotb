@@ -165,7 +165,7 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
 
     GpiObjHdl *hdl;
 
-    LOG_DEBUG("Looking for root handle over %d impls", registered_impls.size());
+    LOG_DEBUG("Looking for root handle '%s' over %d impls", name, registered_impls.size());
 
     for (iter = registered_impls.begin();
          iter != registered_impls.end();

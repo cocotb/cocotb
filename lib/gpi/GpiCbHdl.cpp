@@ -114,7 +114,6 @@ int GpiHdl::initialise(std::string &name)
 
 int GpiObjHdl::initialise(std::string &name)
 {
-    printf("Name is %s\n", name.c_str());
     m_name = name;
     m_fullname = "bleh2";
     return 0;

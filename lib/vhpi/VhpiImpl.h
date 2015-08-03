@@ -33,7 +33,7 @@
 #include <vector>
 
 // Should be run after every VHPI call to check error status
-static inline int __check_vhpi_error(const char *func, long line)
+static inline int __check_vhpi_error(const char *file, const char *func, long line)
 {
     int level=0;
 #if VHPI_CHECKING
@@ -60,7 +60,7 @@ static inline int __check_vhpi_error(const char *func, long line)
             break;
     }
 
-    gpi_log("cocotb.gpi", loglevel, __FILE__, func, line,
+    gpi_log("cocotb.gpi", loglevel, file, func, line,
             "VHPI Error level %d: %s\nFILE %s:%d",
             info.severity, info.message, info.file, info.line);
 
@@ -69,7 +69,7 @@ static inline int __check_vhpi_error(const char *func, long line)
 }
 
 #define check_vhpi_error() do { \
-    __check_vhpi_error(__func__, __LINE__); \
+    __check_vhpi_error(__FILE__, __func__, __LINE__); \
 } while (0)
 
 class VhpiCbHdl : public virtual GpiCbHdl {
