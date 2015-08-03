@@ -67,6 +67,11 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
 
             break;
         }
+        case vhpiRawDataVal:
+        case vhpiIntVal:
+           GpiObjHdl::initialise(name);
+           return 0;
+           break;
 
         default: {
             LOG_CRITICAL("Unable to determine property for %s (%d) format object",
@@ -77,17 +82,28 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     /* We also alloc a second value member for use with read string operations */
     m_binvalue.format = vhpiBinStrVal;
     m_binvalue.bufSize = 0;
+    m_binvalue.numElems = 0;
     m_binvalue.value.str = NULL;
 
     int new_size = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
-
-    m_binvalue.bufSize = new_size*sizeof(vhpiCharT) + 1;
-    m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, m_binvalue.bufSize);
-
-    if (!m_value.value.str) {
-        LOG_CRITICAL("Unable to alloc mem for read buffer");
+    if (new_size < 0) {
+        LOG_CRITICAL("Failed to determine size of signal object %s", name.c_str());
+        goto out;
     }
 
+    if (new_size) {
+        m_binvalue.bufSize = new_size*sizeof(vhpiCharT);
+
+        LOG_DEBUG("Going to alloc %d\n", m_binvalue.bufSize);
+        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, sizeof(vhpiCharT));
+
+        if (!m_value.value.str) {
+            LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
+            exit(1);
+        }
+    }
+
+out:
     GpiObjHdl::initialise(name);
 
     return 0;
@@ -266,8 +282,15 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
 
 const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
 {
-    vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
-    check_vhpi_error();
+    int ret = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
+    if (ret) {
+        check_vhpi_error();
+        LOG_ERROR("Size of m_binvalue.value.str was not large enough req=%d have=%d",
+                  ret,
+                  m_binvalue.bufSize);
+    }
+
+    LOG_WARN("Return value was %d passed in was %d:%d\n", ret, m_binvalue.bufSize, m_binvalue.numElems);
 
     return m_binvalue.value.str;
 }
@@ -385,20 +408,17 @@ VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 
 static vhpiOneToManyT options[] = {
     vhpiInternalRegions,
-    vhpiSignals,
+    vhpiSigDecls,
     vhpiMembers
 };
 
 std::vector<vhpiOneToManyT> VhpiIterator::iterate_over(options, options + sizeof(options) / sizeof(options[0]));
 
 VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterator(impl, hdl)
-                                                                      //iterate_over(options,
-                                                                      //             options + options_len)
 {
     vhpiHandleT iterator;
 
     /* Find the first mapping type that yields a valid iterator */
-
     for (curr_type = iterate_over.begin();
          curr_type != iterate_over.end();
          curr_type++) {
@@ -454,8 +474,8 @@ GpiObjHdl *VhpiIterator::next_handle(void)
         if (m_iterator) {
             obj = vhpi_scan(m_iterator);
 
-            if (vhpiProcessStmtK == vhpi_get(vhpiKindP, obj)) {
-                LOG_WARN("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
+            if (obj && (vhpiProcessStmtK == vhpi_get(vhpiKindP, obj))) {
+                LOG_DEBUG("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
                                              vhpi_get_str(vhpiKindStrP, obj));
                 obj=NULL;
             }
@@ -463,27 +483,29 @@ GpiObjHdl *VhpiIterator::next_handle(void)
             if (obj)
                 continue;
 
-            LOG_WARN("End of vhpiOneToManyT=%d iteration", *curr_type);
+            LOG_DEBUG("End of vhpiOneToManyT=%d iteration", *curr_type);
             vhpi_release_handle(m_iterator);
         } else {
-            LOG_WARN("No valid vhpiOneToManyT=%d iterator", *curr_type);
+            LOG_DEBUG("No valid vhpiOneToManyT=%d iterator", *curr_type);
         }
 
         curr_type++;
+        if (curr_type++ == iterate_over.end())
+            break;
         m_iterator = vhpi_iterator(*curr_type, get_handle<vhpiHandleT>());
 
-    } while (!obj && (curr_type != iterate_over.end()));
+    } while (!obj);
 
     if (NULL == obj) {
-        LOG_WARN("No more children, all relationships tested");
+        LOG_DEBUG("No more children, all relationships tested");
         return new_obj;
     }
 
     std::string name = vhpi_get_str(vhpiCaseNameP, obj);
-    LOG_WARN("vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
+    LOG_DEBUG("vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
                                            vhpi_get(vhpiKindP, obj),
                                            vhpi_get_str(vhpiKindStrP, obj),
-                                           vhpi_get_str(vhpiFullNameP, obj));
+                                           vhpi_get_str(vhpiCaseNameP, obj));
 
     VhpiImpl *vhpi_impl = reinterpret_cast<VhpiImpl*>(m_impl);
     new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name);

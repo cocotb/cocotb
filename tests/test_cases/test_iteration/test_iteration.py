@@ -25,7 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestError
+from cocotb.result import TestError, TestFailure
 
 
 @cocotb.test()
@@ -53,3 +53,12 @@ def dual_iteration(dut):
     loop_two = cocotb.fork(iteration_loop(dut))
 
     yield [loop_one.join(), loop_two.join()]
+
+@cocotb.test()
+def get_clock(dut):
+    dut.aclk <= 0
+    yield Timer(1)
+    dut.aclk <= 1
+    yield Timer(1)
+    if dut.aclk.value is not 1:
+        raise TestFailure("dut.aclk is not what we expected")

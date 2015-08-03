@@ -216,6 +216,9 @@ class HierarchyObject(SimHandleBase):
             # These are renamed in VHPI to __X where X is the index
             import re
             result = re.match("(?P<name>.*)__(?P<index>\d+)$", name)
+            if not result:
+                result = re.match("(?P<name>.*)\((?P<index>\d+)", name)
+
             if result:
                 index = int(result.group("index"))
                 name = result.group("name")
@@ -227,7 +230,7 @@ class HierarchyObject(SimHandleBase):
                     self._sub_handles[name].extend([None]*delta)
                 self._sub_handles[name][index] = hdl
             else:
-                self._sub_handles[hdl.name.split(".")[-1]] = hdl
+                self._sub_handles[hdl._name.split(".")[-1]] = hdl
 
         self._discovered = True
 
