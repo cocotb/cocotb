@@ -32,7 +32,7 @@
 #include <vpi_user.h>
 
 // Should be run after every VPI call to check error status
-static inline int __check_vpi_error(const char *func, long line)
+static inline int __check_vpi_error(const char *file, const char *func, long line)
 {
     int level=0;
 #if VPI_CHECKING
@@ -62,7 +62,7 @@ static inline int __check_vpi_error(const char *func, long line)
             loglevel = GPIWarning;
     }
 
-    gpi_log("cocotb.gpi", loglevel, __FILE__, func, line,
+    gpi_log("cocotb.gpi", loglevel, file, func, line,
             "VPI Error %s\nPROD %s\nCODE %s\nFILE %s",
             info.message, info.product, info.code, info.file);
 
@@ -71,7 +71,7 @@ static inline int __check_vpi_error(const char *func, long line)
 }
 
 #define check_vpi_error() do { \
-    __check_vpi_error(__func__, __LINE__); \
+    __check_vpi_error(__FILE__, __func__, __LINE__); \
 } while (0)
 
 class VpiReadwriteCbHdl;
