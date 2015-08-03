@@ -242,7 +242,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
     check_vhpi_error();
 
     if (!root) {
-        LOG_ERROR("VHPI: Attempting to get the root handle failed");
+        LOG_ERROR("VHPI: Attempting to get the vhpiRootInst failed");
         FEXIT
         return NULL;
     }
