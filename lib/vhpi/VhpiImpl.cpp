@@ -26,7 +26,6 @@
 ******************************************************************************/
 
 #include "VhpiImpl.h"
-#include <vector>
 #include <algorithm>
 
 extern "C" {
@@ -191,7 +190,7 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     if (fq_name == ":") {
         fq_name += name;
     } else {
-        fq_name = fq_name + ":" + name;
+        fq_name = fq_name + "." + name;
     }
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');

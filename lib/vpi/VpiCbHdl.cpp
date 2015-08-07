@@ -28,7 +28,6 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
-#include <vector>
 
 extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
 
@@ -314,4 +313,100 @@ VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                                VpiCbHdl(impl)
 {
     cb_data.reason = cbNextSimTime;
+}
+
+static int32_t options[] = {
+    vpiNet,
+    vpiNetBit,
+    vpiReg,
+    vpiRegBit,
+    vpiParameter,
+    vpiRegArray,
+    vpiNetArray,
+    vpiEnumNet,
+    vpiEnumVar,
+    vpiIntVar,
+    vpiStructVar,
+    vpiModule,
+    vpiInterface,
+    vpiModport,
+    vpiInterfaceArray,
+    vpiRefObj,
+    vpiPackedArrayVar,
+};
+
+std::vector<int32_t> VpiIterator::iterate_over(options, options + (sizeof(options) / sizeof(options[0])));
+
+VpiIterator::VpiIterator(GpiImplInterface *impl, vpiHandle hdl) : GpiIterator(impl, hdl),
+                                                                  m_iterator(NULL)
+{
+    vpiHandle iterator;
+
+    for (curr_type = iterate_over.begin();
+         curr_type != iterate_over.end();
+         curr_type++) {
+        iterator = vpi_iterate(*curr_type, hdl);
+
+        if (iterator)
+            break;
+     
+        LOG_WARN("vpi_iterate type=%d returned NULL", *curr_type);
+    }
+
+    if (NULL == iterator) {
+        LOG_WARN("vpi_iterate returned NULL for all types");
+        return;
+    }
+
+    LOG_DEBUG("Created iterator working from type %d",
+              *curr_type,
+              vpi_get_str(vpiFullName, hdl));
+
+    m_iterator = iterator;
+}
+
+VpiIterator::~VpiIterator()
+{
+    if (m_iterator)
+        vpi_free_object(m_iterator);
+}
+
+GpiObjHdl *VpiIterator::next_handle(void)
+{
+    vpiHandle obj;
+    GpiObjHdl *new_obj = NULL;
+
+    do {
+        obj = NULL;
+
+        if (m_iterator) {
+            obj = vpi_scan(m_iterator);
+
+            if (NULL == obj) {
+                /* m_iterator will already be free'd internally here */
+                m_iterator = NULL;
+            } else {
+                continue;
+            }
+
+            LOG_DEBUG("End of type=%d iteration", *curr_type);
+        } else {
+            LOG_DEBUG("No valid type=%d iterator", *curr_type);
+        }
+
+        if (curr_type++ == iterate_over.end())
+            break;
+        m_iterator = vpi_iterate(*curr_type, get_handle<vpiHandle>());
+
+    } while (!obj);
+
+    if (NULL == obj) {
+        LOG_DEBUG("No more children, all relationships tested");
+        return new_obj;
+    }
+
+    std::string name = vpi_get_str(vpiFullName, obj);
+    VpiImpl *vpi_impl = reinterpret_cast<VpiImpl*>(m_impl);
+    new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name);
+    return new_obj;
 }

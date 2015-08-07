@@ -30,6 +30,7 @@
 
 #include "../gpi/gpi_priv.h"
 #include <vpi_user.h>
+#include <vector>
 
 // Should be run after every VPI call to check error status
 static inline int __check_vpi_error(const char *file, const char *func, long line)
@@ -194,6 +195,20 @@ private:
     VpiValueCbHdl m_either_cb;
 };
 
+class VpiIterator : public GpiIterator {
+public:
+    VpiIterator(GpiImplInterface *impl, vpiHandle hdl);
+    
+    virtual ~VpiIterator();
+
+    GpiObjHdl *next_handle(void);
+
+private:
+    vpiHandle m_iterator;
+    static std::vector<int32_t> iterate_over;
+    std::vector<int32_t>::iterator curr_type;
+};
+
 class VpiImpl : public GpiImplInterface {
 public:
     VpiImpl(const std::string& name) : GpiImplInterface(name),
@@ -219,9 +234,9 @@ public:
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
     const char * reason_to_string(int reason);
+    GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name);
 
 private:
-    GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name);
     /* Singleton callbacks */
     VpiReadwriteCbHdl m_read_write;
     VpiNextPhaseCbHdl m_next_phase;

@@ -26,7 +26,6 @@
 ******************************************************************************/
 
 #include "VhpiImpl.h"
-#include <vector>
 
 extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 
@@ -290,8 +289,6 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
                   m_binvalue.bufSize);
     }
 
-    LOG_WARN("Return value was %d passed in was %d:%d\n", ret, m_binvalue.bufSize, m_binvalue.numElems);
-
     return m_binvalue.value.str;
 }
 
@@ -409,12 +406,17 @@ VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 static vhpiOneToManyT options[] = {
     vhpiInternalRegions,
     vhpiSigDecls,
-    vhpiMembers
+    vhpiVarDecls,
+    vhpiPortDecls,
+    vhpiGenericDecls,
+    vhpiCompInstStmts
 };
 
 std::vector<vhpiOneToManyT> VhpiIterator::iterate_over(options, options + sizeof(options) / sizeof(options[0]));
 
-VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterator(impl, hdl)
+VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterator(impl, hdl),
+                                                                      m_iterator(NULL),
+                                                                      m_iter_obj(hdl)
 {
     vhpiHandleT iterator;
 
@@ -427,7 +429,7 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterato
         if (iterator)
             break;
 
-        LOG_WARN("vhpi_scan vhpiOneToManyT=%d returned NULL", *curr_type);
+        LOG_WARN("vhpi_iterate vhpiOneToManyT=%d returned NULL", *curr_type);
     }
 
     if (NULL == iterator) {
@@ -435,19 +437,33 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterato
         return;
     }
 
-    LOG_WARN("Created iterator working from scope %d (%s)", 
+    LOG_DEBUG("Created iterator working from scope %d (%s)", 
              vhpi_get(vhpiKindP, hdl),
              vhpi_get_str(vhpiKindStrP, hdl));
 
-    // HACK: vhpiRootInstK seems to be a null level of hierarchy, need to skip
-    //if (vhpiRootInstK == vhpi_get(vhpiKindP, hdl)) {
-    //    vhpiHandleT root_iterator;
-    //    hdl = vhpi_scan(iterator);
-    //    root_iterator = vhpi_iterator(*curr_type, hdl);
-    //    vhpi_release_handle(iterator);
-    //    iterator = root_iterator;
-    //    LOG_WARN("Skipped vhpiRootInstK to get to %s", vhpi_get_str(vhpiKindStrP, hdl));
-    //}
+    /* On some simulators , Aldec vhpiRootInstK is a null level of hierachy
+     * We check that something is going to come back if not we try the level
+     * down
+     */
+
+    if (vhpiRootInstK == vhpi_get(vhpiKindP, hdl)) {
+        uint32_t children = 0;
+        vhpiHandleT tmp_hdl;
+        for(tmp_hdl = vhpi_scan(iterator); tmp_hdl && (children <= 1); tmp_hdl = vhpi_scan(iterator), children++) { }
+
+        vhpi_release_handle(iterator);        
+        iterator = vhpi_iterator(*curr_type, hdl);
+
+        if (children == 1) {
+            vhpiHandleT root_iterator;
+            tmp_hdl = vhpi_scan(iterator);
+            root_iterator = vhpi_iterator(*curr_type, tmp_hdl);
+            vhpi_release_handle(iterator);
+            iterator = root_iterator;
+            LOG_WARN("Skipped vhpiRootInstK to get to %s", vhpi_get_str(vhpiKindStrP, tmp_hdl));
+            m_iter_obj = tmp_hdl;
+        }
+    }
 
     m_iterator = iterator;
 }
@@ -485,14 +501,14 @@ GpiObjHdl *VhpiIterator::next_handle(void)
 
             LOG_DEBUG("End of vhpiOneToManyT=%d iteration", *curr_type);
             vhpi_release_handle(m_iterator);
+            m_iterator = NULL;
         } else {
             LOG_DEBUG("No valid vhpiOneToManyT=%d iterator", *curr_type);
         }
 
-        curr_type++;
-        if (curr_type++ == iterate_over.end())
+        if (++curr_type == iterate_over.end())
             break;
-        m_iterator = vhpi_iterator(*curr_type, get_handle<vhpiHandleT>());
+        m_iterator = vhpi_iterator(*curr_type, m_iter_obj);
 
     } while (!obj);
 
