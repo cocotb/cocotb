@@ -25,7 +25,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+PWD := $(shell pwd)
+COCOTB := $(PWD)/../../..
 
-include $(COCOTB)/tests/designs/viterbi_decoder_axi4s/Makefile
+include $(COCOTB)/tests/designs/sample_module/Makefile
 
-MODULE = issue_134
+MODULE ?= test_reals
