@@ -136,6 +136,19 @@ const char* VpiSignalObjHdl::get_signal_value_binstr(void)
     return value_p->value.str;
 }
 
+double VpiSignalObjHdl::get_signal_value_real(void)
+{
+    FENTER
+    s_vpi_value value_s = {vpiRealVal};
+    p_vpi_value value_p = &value_s;
+
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), value_p);
+    check_vpi_error();
+
+    return value_p->value.real;
+}
+
+
 // Value related functions
 int VpiSignalObjHdl::set_signal_value(int value)
 {

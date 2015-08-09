@@ -419,12 +419,13 @@ class RealObject(ModifiableObject):
         simulator.set_signal_val_real(self._handle, value)
 
     def _getvalue(self):
-        raise NotImplementedError("Can't retrieve real values... yet")
+        return simulator.get_signal_val_real(self._handle)
 
     # We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    value = property(_getvalue, _setcachedvalue, None, "A reference to the value")
+    value = property(_getvalue, ModifiableObject._setcachedvalue, None, "A reference to the value")
 
-
+    def __float__(self):
+        return self._getvalue()
 
 
 def SimHandle(handle):

@@ -58,6 +58,7 @@ typedef uint32_t *vpiHandle;
 #define vpiModule              32   /* module instance */
 #define vpiNet                 36   /* scalar or vector net */
 #define vpiNetBit              37   /* bit of a vector net */
+#define vpiRealVar             47   /* real variable */
 #define vpiReg                 48   /* scalar or vector reg */
 #define vpiRegBit              49   /* bit of vector reg */
 #define vpiParameter           41   /* module parameter */

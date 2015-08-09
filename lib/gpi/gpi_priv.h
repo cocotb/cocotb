@@ -133,6 +133,7 @@ public:
     virtual ~GpiSignalObjHdl() { }
     // Provide public access to the implementation (composition vs inheritance)
     virtual const char* get_signal_value_binstr(void) = 0;
+    virtual double get_signal_value_real(void) = 0;
 
     int m_length;
 

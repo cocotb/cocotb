@@ -548,6 +548,28 @@ static PyObject *get_signal_val(PyObject *self, PyObject *args)
     return retstr;
 }
 
+static PyObject *get_signal_val_real(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    double result;
+    PyObject *retval;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_signal_value_real(hdl);
+    retval = Py_BuildValue("d", result);
+
+    DROP_GIL(gstate);
+
+    return retval;
+}
+
 
 static PyObject *set_signal_val(PyObject *self, PyObject *args)
 {

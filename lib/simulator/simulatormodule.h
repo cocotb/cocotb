@@ -58,6 +58,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args);
 // Raise an exception on failure
 // Return None if for example get bin_string on enum?
 static PyObject *get_signal_val(PyObject *self, PyObject *args);
+static PyObject *get_signal_val_real(PyObject *self, PyObject *args);
 static PyObject *set_signal_val(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_str(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_real(PyObject *self, PyObject *args);
@@ -83,6 +84,7 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args);
 static PyMethodDef SimulatorMethods[] = {
     {"log_msg",         log_msg, METH_VARARGS, "Log a message"},
     {"get_signal_val",  get_signal_val, METH_VARARGS, "Get the value of a signal as a binary string"},
+    {"get_signal_val_real",  get_signal_val_real, METH_VARARGS, "Get the value of a signal as a double precision float"},
     {"set_signal_val",  set_signal_val, METH_VARARGS, "Set the value of a signal"},
     {"set_signal_val_str",  set_signal_val_str, METH_VARARGS, "Set the value of a signal using a binary string"},
     {"set_signal_val_real",  set_signal_val_real, METH_VARARGS, "Set the value of a signal using a double"},

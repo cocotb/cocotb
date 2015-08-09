@@ -36,7 +36,8 @@ MODULE_ENTRY_POINT(void)
     rc |= PyModule_AddIntConstant(simulator, "REG",           GPI_REGISTER);
     rc |= PyModule_AddIntConstant(simulator, "NETARRAY",      GPI_ARRAY);
     rc |= PyModule_AddIntConstant(simulator, "ENUM",          GPI_ENUM);
-    rc |= PyModule_AddIntConstant(simulator, "ENUM",          GPI_STRUCTURE);
+    rc |= PyModule_AddIntConstant(simulator, "STRUCTURE",     GPI_STRUCTURE);
+    rc |= PyModule_AddIntConstant(simulator, "REAL",          GPI_REAL);
     if (rc != 0)
         fprintf(stderr, "Failed to add module constants!\n");
 }

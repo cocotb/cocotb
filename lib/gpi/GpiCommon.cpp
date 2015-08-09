@@ -264,6 +264,12 @@ const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl)
     return obj_hdl->get_signal_value_binstr();
 }
 
+double gpi_get_signal_value_real(gpi_sim_hdl sig_hdl)
+{
+    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    return obj_hdl->get_signal_value_real();
+}
+
 const char *gpi_get_signal_name_str(gpi_sim_hdl sig_hdl)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
