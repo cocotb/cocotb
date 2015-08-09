@@ -466,19 +466,18 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 static PyObject *iterate(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
-    uint32_t type;
     gpi_iterator_hdl result;
     PyObject *res;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "il", &type, &hdl)) {
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
 
-    result = gpi_iterate(type, hdl);
+    result = gpi_iterate(hdl);
 
     res = Py_BuildValue("l", result);
 
@@ -709,6 +708,28 @@ static PyObject *get_name_string(PyObject *self, PyObject *args)
     DROP_GIL(gstate);
 
     return retstr;
+}
+
+static PyObject *get_type(PyObject *self, PyObject *args)
+{
+    int result;
+    gpi_sim_hdl hdl;
+    PyObject *pyresult;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_object_type((gpi_sim_hdl)hdl);
+    pyresult = Py_BuildValue("i", result);
+
+    DROP_GIL(gstate);
+
+    return pyresult;
 }
 
 

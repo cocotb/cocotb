@@ -27,15 +27,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestError
+from cocotb.result import TestError, TestFailure
 
 
 @cocotb.test()
 def discover_module_values(dut):
     """Discover everything in the dut"""
     yield Timer(0)
+    count = 0
     for thing in dut:
         thing.log.info("Found something: %s" % thing.fullname)
+        count += 1
+    if count < 2:
+        raise TestFailure("Expected to discover things in the DUT")
+
+@cocotb.test(skip=True)
+def ipython_embed(dut):
+    yield Timer(0)
+    import IPython
+    IPython.embed()
+
 
 
 @cocotb.test(expect_error=True)

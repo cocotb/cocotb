@@ -27,6 +27,7 @@
 
 #include "VhpiImpl.h"
 #include <vector>
+#include <algorithm>
 
 extern "C" {
 static VhpiCbHdl *sim_init_cb;
@@ -110,6 +111,46 @@ void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vhpi_time_s.low;
 }
 
+
+gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
+{
+    switch (vhpitype) {
+        case vhpiPortDeclK:
+        case vhpiSigDeclK:
+        case vhpiIndexedNameK:
+        case vhpiVarDeclK:
+        case vhpiVarParamDeclK:
+            return GPI_REGISTER;
+
+        case vhpiArrayTypeDeclK:
+            return GPI_ARRAY;
+
+        case vhpiEnumLiteralK:
+            return GPI_ENUM;
+
+        case vhpiGenericDeclK:
+            return GPI_PARAMETER;
+
+        case vhpiRecordTypeDeclK:
+            return GPI_STRUCTURE;
+
+        case vhpiForGenerateK:
+        case vhpiIfGenerateK:
+        case vhpiCompInstStmtK:
+        case vhpiEntityDeclK:
+        case vhpiRootInstK:
+        case vhpiProcessStmtK:
+        case vhpiSimpleSigAssignStmtK:
+            return GPI_MODULE;
+
+        default:
+            LOG_WARN("Unable to map VHPI type %d onto GPI type", vhpitype);
+            return GPI_UNKNOWN;
+    }
+}
+
+
+
 GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string &name)
 {
     vhpiIntT type;
@@ -124,15 +165,17 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
         case vhpiPortDeclK:
         case vhpiSigDeclK:
         case vhpiIndexedNameK:
-            new_obj = new VhpiSignalObjHdl(this, new_hdl);
+            new_obj = new VhpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vhpiForGenerateK:
         case vhpiIfGenerateK:
         case vhpiCompInstStmtK:
-            new_obj = new GpiObjHdl(this, new_hdl);
+        case vhpiProcessStmtK:
+        case vhpiSimpleSigAssignStmtK:
+            new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         default:
-            LOG_WARN("Not able to map type %d to object.");
+            LOG_WARN("Not able to map type (%s) %u to object", vhpi_get_str(vhpiKindStrP, new_hdl), type);
             return NULL;
     }
 
@@ -144,7 +187,12 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
 GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vhpiHandleT new_hdl;
-    std::string fq_name = parent->get_name() + "." + name;
+    std::string fq_name = parent->get_name();
+    if (fq_name == ":") {
+        fq_name += name;
+    } else {
+        fq_name = fq_name + ":" + name;
+    }
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
@@ -202,7 +250,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
     check_vhpi_error();
 
     if (!root) {
-        LOG_ERROR("VHPI: Attempting to get the root handle failed");
+        LOG_ERROR("VHPI: Attempting to get the vhpiRootInst failed");
         FEXIT
         return NULL;
     }
@@ -211,7 +259,12 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
         dut = vhpi_handle_by_name(name, NULL);
     else
         dut = vhpi_handle(vhpiDesignUnit, root);
+
     check_vhpi_error();
+
+    if (root) {
+        LOG_DEBUG("VHPI: We have found root='%s'", vhpi_get_str(vhpiCaseNameP, root));
+    }
 
     if (!dut) {
         LOG_ERROR("VHPI: Attempting to get the DUT handle failed");
@@ -219,7 +272,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
         return NULL;
     }
 
-    const char *found = vhpi_get_str(vhpiNameP, dut);
+    const char *found = vhpi_get_str(vhpiCaseNameP, dut);
     check_vhpi_error();
 
     if (name != NULL && strcmp(name, found)) {
@@ -229,12 +282,27 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
     }
 
     root_name = found;
-    rv = new GpiObjHdl(this, root);
+    rv = new GpiObjHdl(this, root, to_gpi_objtype(vhpi_get(vhpiKindP, root)));
     rv->initialise(root_name);
 
     FEXIT
     return rv;
 }
+
+GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl)
+{
+    VhpiIterator *new_iter;
+    vhpiHandleT vhpi_hdl = obj_hdl->get_handle<vhpiHandleT>();
+
+    new_iter = new VhpiIterator(this, vhpi_hdl);
+    return new_iter;
+}
+
+GpiObjHdl *VhpiImpl::next_handle(GpiIterator *iter)
+{
+    return iter->next_handle();
+}
+
 
 
 GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time_ps)
