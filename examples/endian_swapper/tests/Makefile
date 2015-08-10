@@ -70,7 +70,7 @@ hal:
 	-cd ../cosim && make
 
 # Stuff below is useful for profiling
-# Need grof2dot from https://code.google.com/p/jrfonseca.gprof2dot/
+# Need grof2dot from https://github.com/jrfonseca/gprof2dot
 test_profile.pstat: sim
 
 callgraph.svg: test_profile.pstat
