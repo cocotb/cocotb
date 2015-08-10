@@ -22,7 +22,7 @@
     make
     
     # View the waveform
-    gtkwave sim_build/waveform.vcd
+    gtkwave waveform.vcd
 
 
 ## Tutorials and examples
