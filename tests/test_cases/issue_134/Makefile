@@ -25,9 +25,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-PWD := $(shell pwd)
-COCOTB := $(PWD)/../../..
-
-include $(COCOTB)/tests/designs/sample_module/Makefile
+include ../../designs/sample_module/Makefile
 
 MODULE ?= test_reals

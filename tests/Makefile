@@ -25,8 +25,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-COCOTB?=$(shell pwd)/../
-export COCOTB
+include ../makefiles/Makefile.inc
 
 REGRESSIONS :=  $(shell ls test_cases/)
 

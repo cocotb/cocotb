@@ -26,6 +26,6 @@
 ###############################################################################
 
 
-include $(COCOTB)/tests/designs/viterbi_decoder_axi4s/Makefile
+include ../../designs/viterbi_decoder_axi4s/Makefile
 #GPI_EXTRA=vhpi
 MODULE = test_iteration
