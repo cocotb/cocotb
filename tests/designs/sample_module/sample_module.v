@@ -57,8 +57,10 @@ always @(stream_in_data)
 always @(stream_out_ready)
     stream_in_ready      = stream_out_ready;
 
+`ifndef __ICARUS__
 always @(stream_in_real)
     stream_out_real      = stream_in_real;
+`endif
 
 initial begin
      $dumpfile("waveform.vcd");
