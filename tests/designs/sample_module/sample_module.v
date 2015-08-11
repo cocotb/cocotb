@@ -34,10 +34,12 @@ module sample_module (
 
     output reg                                  stream_in_ready,
     input                                       stream_in_valid,
+    input real                                  stream_in_real,
     input  [7:0]                                stream_in_data,
     input  [63:0]                               stream_in_data_wide,
 
     input                                       stream_out_ready,
+    output real                                 stream_out_real,
     output reg [7:0]                            stream_out_data_comb,
     output reg [7:0]                            stream_out_data_registered
 );
@@ -51,6 +53,8 @@ always @(stream_in_data)
 always @(stream_out_ready)
     stream_in_ready      = stream_out_ready;
 
+always @(stream_in_real)
+    stream_out_real      = stream_in_real;
 
 initial begin
      $dumpfile("waveform.vcd");

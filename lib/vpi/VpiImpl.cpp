@@ -79,6 +79,9 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiRegBit:
             return GPI_REGISTER;
 
+        case vpiRealVar:
+            return GPI_REAL;
+
         case vpiInterfaceArray:
         case vpiPackedArrayVar:
         case vpiRegArray:
@@ -127,6 +130,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiEnumNet:
         case vpiEnumVar:
         case vpiIntVar:
+        case vpiRealVar:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiStructVar:

@@ -91,6 +91,7 @@ public:
 
     const char* get_signal_value_binstr(void);
     int set_signal_value(const int value);
+    int set_signal_value(const double value) = { return 0; }
     int set_signal_value(std::string &value);
     int initialise(std::string &name);
     GpiCbHdl *value_change_cb(unsigned int edge);

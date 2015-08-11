@@ -134,6 +134,7 @@ typedef enum gpi_objtype_e {
     GPI_ARRAY = 6,
     GPI_ENUM = 7,
     GPI_STRUCTURE = 8,
+    GPI_REAL = 9
 } gpi_objtype_t;
 
 // Functions for iterating over entries of a handle
@@ -151,6 +152,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
 // This is all slightly verbose but it saves having to enumerate various value types
 // We only care about a limited subset of values.
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
+double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
@@ -159,6 +161,7 @@ gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 
 
 // Functions for setting the properties of a handle
+void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value);
 void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
 void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
 

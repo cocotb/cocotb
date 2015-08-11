@@ -56,6 +56,9 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
             break;
         }
 
+        case vhpiRealVal:
+            break;
+
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
             m_size = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
@@ -224,12 +227,41 @@ int VhpiSignalObjHdl::set_signal_value(int value)
             break;
         }
 
+        case vhpiRealVal:
+            LOG_WARN("Attempt to vhpiRealVal signal with integer");
+            return 0;
+
         default: {
             LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
+            return -1;
         }
     }
     vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
     check_vhpi_error();
+    return 0;
+}
+
+int VhpiSignalObjHdl::set_signal_value(double value)
+{
+    switch (m_value.format) {
+        case vhpiRealVal:
+            m_value.value.real = value;
+            break;
+
+        case vhpiEnumVal:
+        case vhpiLogicVal:
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal:
+            LOG_WARN("Attempt to set non vhpiRealVal signal with double");
+            return 0;
+
+        default: {
+            LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
+            return -1;
+        }
+    }
+
+    vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
     return 0;
 }
 
@@ -270,8 +302,14 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
             break;
         }
 
+        case vhpiRealVal:
+            LOG_WARN("Attempt to vhpiRealVal signal with string");
+            return 0;
+
+
         default: {
            LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
+           return -1;
         }
     }
 

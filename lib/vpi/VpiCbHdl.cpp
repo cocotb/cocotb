@@ -136,6 +136,19 @@ const char* VpiSignalObjHdl::get_signal_value_binstr(void)
     return value_p->value.str;
 }
 
+double VpiSignalObjHdl::get_signal_value_real(void)
+{
+    FENTER
+    s_vpi_value value_s = {vpiRealVal};
+    p_vpi_value value_p = &value_s;
+
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), value_p);
+    check_vpi_error();
+
+    return value_p->value.real;
+}
+
+
 // Value related functions
 int VpiSignalObjHdl::set_signal_value(int value)
 {
@@ -152,6 +165,27 @@ int VpiSignalObjHdl::set_signal_value(int value)
     vpi_time_s.low  = 0;
 
     // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
+    check_vpi_error();
+
+    FEXIT
+    return 0;
+}
+
+int VpiSignalObjHdl::set_signal_value(double value)
+{
+    FENTER
+    s_vpi_value value_s;
+
+    value_s.value.real = value;
+    value_s.format = vpiRealVal;
+
+    s_vpi_time vpi_time_s;
+
+    vpi_time_s.type = vpiSimTime;
+    vpi_time_s.high = 0;
+    vpi_time_s.low  = 0;
+
     vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
     check_vpi_error();
 
