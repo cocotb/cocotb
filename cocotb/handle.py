@@ -341,7 +341,7 @@ class ModifiableObject(NonConstantObject):
         Set the value of the underlying simulation object to value.
 
         Args:
-            value (ctypes.Structure, cocotb.binary.BinaryValue, int)
+            value (ctypes.Structure, cocotb.binary.BinaryValue, int, double)
                 The value to drive onto the simulator object
 
         Raises:
@@ -397,6 +397,41 @@ class ModifiableObject(NonConstantObject):
 
 
 
+class RealObject(ModifiableObject):
+    """
+    Specific object handle for Real signals and variables
+    """
+
+    def _setimmediatevalue(self, value):
+        """
+        Set the value of the underlying simulation object to value.
+
+        Args:
+            value (float)
+                The value to drive onto the simulator object
+
+        Raises:
+            TypeError
+
+        This operation will fail unless the handle refers to a modifiable
+        object eg net, signal or variable.
+        """
+        if not isinstance(value, float):
+            self._log.critical("Unsupported type for real value assignment: %s (%s)" % (type(value), repr(value)))
+            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+
+        simulator.set_signal_val_real(self._handle, value)
+
+    def _getvalue(self):
+        return simulator.get_signal_val_real(self._handle)
+
+    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
+    value = property(_getvalue, ModifiableObject._setcachedvalue, None, "A reference to the value")
+
+    def __float__(self):
+        return self._getvalue()
+
+
 def SimHandle(handle):
     """
     Factory function to create the correct type of SimHandle object
@@ -405,6 +440,7 @@ def SimHandle(handle):
     _type2cls = {
         simulator.MODULE:      HierarchyObject,
         simulator.REG:         ModifiableObject,
+        simulator.REAL:        RealObject
     }
 
     t = simulator.get_type(handle)
