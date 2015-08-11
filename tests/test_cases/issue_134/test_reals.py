@@ -9,7 +9,7 @@ from cocotb.result import TestFailure
 from cocotb.binary import BinaryValue
 
 
-@cocotb.test()
+@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
 def assign_double(dut):
     """
     Assign a random floating point value, read it back from the DUT and check

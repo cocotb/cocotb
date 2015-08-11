@@ -34,12 +34,16 @@ module sample_module (
 
     output reg                                  stream_in_ready,
     input                                       stream_in_valid,
+`ifndef __ICARUS__
     input real                                  stream_in_real,
+`endif
     input  [7:0]                                stream_in_data,
     input  [63:0]                               stream_in_data_wide,
 
     input                                       stream_out_ready,
+`ifndef __ICARUS__
     output real                                 stream_out_real,
+`endif
     output reg [7:0]                            stream_out_data_comb,
     output reg [7:0]                            stream_out_data_registered
 );
