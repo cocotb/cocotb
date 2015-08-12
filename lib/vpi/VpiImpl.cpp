@@ -26,7 +26,6 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
-#include <vector>
 
 extern "C" {
 
@@ -89,6 +88,8 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
             return GPI_ARRAY;
 
         case vpiEnumNet:
+        case vpiEnumVar:
+        case vpiIntVar:
             return GPI_ENUM;
 
         case vpiParameter:
@@ -101,6 +102,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiModport:
         case vpiInterface:
         case vpiModule:
+        case vpiRefObj:
             return GPI_MODULE;
 
         default:
@@ -252,29 +254,16 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
 
 GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl)
 {
+    VpiIterator *new_iter;
     vpiHandle vpi_hdl = obj_hdl->get_handle<vpiHandle>();
 
-    vpiHandle iterator;
-    iterator = vpi_iterate(vpiNet, vpi_hdl);
-
-    GpiIterator *new_iter;
-    new_iter = new GpiIterator(this, iterator);
+    new_iter = new VpiIterator(this, vpi_hdl);
     return new_iter;
 }
 
 GpiObjHdl *VpiImpl::next_handle(GpiIterator *iter)
 {
-    vpiHandle obj;
-    GpiObjHdl *new_obj = NULL;
-
-    obj = vpi_scan((vpiHandle)iter->m_iter_hdl);
-
-    if (NULL==obj)
-        return new_obj;
-
-    std::string name = vpi_get_str(vpiFullName, obj);
-    new_obj = create_gpi_obj_from_handle(obj, name);
-    return new_obj;
+    return iter->next_handle();
 }
 
 GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)

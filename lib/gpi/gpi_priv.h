@@ -202,9 +202,6 @@ public:
     virtual ~GpiIterator() { }
 
     virtual GpiObjHdl* next_handle() { return NULL; }
-
-public:
-    void *m_iter_hdl;
 };
 
 

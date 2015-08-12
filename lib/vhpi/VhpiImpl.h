@@ -161,6 +161,7 @@ public:
     const char* get_signal_value_binstr(void);
     double get_signal_value_real(void);
 
+
     int set_signal_value(const int value);
     int set_signal_value(const double value);
     int set_signal_value(std::string &value);
@@ -189,6 +190,7 @@ public:
 
 private:
     vhpiHandleT m_iterator;
+    vhpiHandleT m_iter_obj;
     static std::vector<vhpiOneToManyT> iterate_over;
     std::vector<vhpiOneToManyT>::iterator curr_type;
 };

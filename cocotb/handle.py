@@ -215,7 +215,11 @@ class HierarchyObject(SimHandleBase):
                 # Iterator is cleaned up internally in GPI
                 break
             name = simulator.get_name_string(thing)
-            hdl = SimHandle(thing)
+            try:
+                hdl = SimHandle(thing)
+            except TestError as e:
+                self._log.debug("%s" % e)
+                continue
 
             # This is slightly hacky, but we want generate loops to result in a list
             # These are renamed in VHPI to __X where X is the index

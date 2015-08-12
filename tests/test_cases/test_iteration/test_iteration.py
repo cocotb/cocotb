@@ -60,5 +60,5 @@ def get_clock(dut):
     yield Timer(1)
     dut.aclk <= 1
     yield Timer(1)
-    if dut.aclk.value is not 1:
+    if int(dut.aclk) is not 1:
         raise TestFailure("dut.aclk is not what we expected")

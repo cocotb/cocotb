@@ -30,6 +30,9 @@
 
 TOPLEVEL = tb_top
 
+PWD=$(shell pwd)
+COCOTB=$(PWD)/../../..
+
 ifeq ($(OS),Msys)
 PWD=$(shell sh -c 'pwd -W')
 else
