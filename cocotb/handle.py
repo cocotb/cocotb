@@ -166,17 +166,22 @@ class HierarchyObject(SimHandleBase):
     """
     Hierarchy objects don't have values, they are effectively scopes or namespaces
     """
+
     def __setattr__(self, name, value):
         """
         Provide transparent access to signals via the hierarchy
 
         Slightly hacky version of operator overloading in Python
+
+        Raise an AttributeError if users attempt to create new members which
+        don't exist in the design.
         """
-        if not name.startswith('_') and name not in self._compat_mapping \
-                                                     and self.__hasattr__(name):
-            getattr(self, name)._setcachedvalue(value)
-            return
-        object.__setattr__(self, name, value)
+        if name.startswith("_") or name in self._compat_mapping:
+            return object.__setattr__(self, name, value)
+        if self.__hasattr__(name):
+            return getattr(self, name)._setcachedvalue(value)
+        raise AttributeError("Attempt to access %s which isn't present in %s" %(
+            name, self._name))
 
     def __iter__(self):
         """
