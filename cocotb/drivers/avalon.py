@@ -248,7 +248,8 @@ class AvalonMemory(BusDriver):
                     self.log.debug("sending 0x%x (%s)" %
                                    (self._val.integer, self._val.binstr))
                 self.bus.readdata <= self._val
-                self.bus.readdatavalid <= 1
+                if hasattr(self.bus, "readdatavalid"):
+                    self.bus.readdatavalid <= 1
             elif hasattr(self.bus, "readdatavalid"):
                 self.bus.readdatavalid <= 0
 
