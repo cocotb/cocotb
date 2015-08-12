@@ -159,6 +159,7 @@ public:
     virtual ~VhpiSignalObjHdl();
 
     const char* get_signal_value_binstr(void);
+    double get_signal_value_real(void);
 
     int set_signal_value(const int value);
     int set_signal_value(const double value);

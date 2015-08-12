@@ -333,6 +333,13 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
     return m_binvalue.value.str;
 }
 
+
+double VhpiSignalObjHdl::get_signal_value_real(void)
+{
+    return vhpi_get_real(vhpiRealValP, GpiObjHdl::get_handle<vhpiHandleT>());
+}
+
+
 GpiCbHdl * VhpiSignalObjHdl::value_change_cb(unsigned int edge)
 {
     VhpiValueCbHdl *cb = NULL;
