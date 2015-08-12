@@ -25,6 +25,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+PWD := $(shell pwd)
+COCOTB := $(PWD)/../../..
 
 include $(COCOTB)/tests/designs/viterbi_decoder_axi4s/Makefile
 #GPI_EXTRA=vhpi
