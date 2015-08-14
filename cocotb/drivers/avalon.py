@@ -54,7 +54,7 @@ class AvalonMM(BusDriver):
     """
     _signals = ["address"]
     _optional_signals = ["readdata", "read", "write", "waitrequest",
-                         "writedata", "readdatavalid"]
+                         "writedata", "readdatavalid", "byteenable"]
 
     def __init__(self, entity, name, clock):
         BusDriver.__init__(self, entity, name, clock)
@@ -72,6 +72,9 @@ class AvalonMM(BusDriver):
             v.binstr = "x" * len(self.bus.writedata)
             self.bus.writedata <= v
             self._can_write = True
+
+        if hasattr(self.bus, "byteenable"):
+            self.bus.byteenable.setimmediatevalue(0)
 
         self.bus.address.setimmediatevalue(0)
 
@@ -124,6 +127,8 @@ class AvalonMaster(AvalonMM):
             yield RisingEdge(self.clock)
         self.bus.address <= address
         self.bus.read <= 1
+        if hasattr(self.bus, "byteenable"):
+            self.bus.byteenable <= int("1"*len(self.bus.byteenable), 2)
 
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
@@ -136,6 +141,8 @@ class AvalonMaster(AvalonMM):
 
         # Deassert read
         self.bus.read <= 0
+        if hasattr(self.bus, "byteenable"):
+            self.bus.byteenable <= 0
 
         # Get the data
         yield ReadOnly()
@@ -162,6 +169,8 @@ class AvalonMaster(AvalonMM):
         self.bus.address <= address
         self.bus.writedata <= value
         self.bus.write <= 1
+        if hasattr(self.bus, "byteenable"):
+            self.bus.byteenable <= int("1"*len(self.bus.byteenable), 2)
 
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
@@ -170,6 +179,9 @@ class AvalonMaster(AvalonMM):
         # Deassert write
         yield RisingEdge(self.clock)
         self.bus.write <= 0
+        if hasattr(self.bus, "byteenable"):
+            self.bus.byteenable <= 0
+
         v = self.bus.writedata.value
         v.binstr = "x" * len(self.bus.writedata)
         self.bus.writedata <= v
