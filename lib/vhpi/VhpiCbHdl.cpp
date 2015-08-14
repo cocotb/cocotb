@@ -55,9 +55,10 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
             break;
         }
 
-        case vhpiRealVal:
-            break;
-
+        case vhpiRealVal: {
+            GpiObjHdl::initialise(name);
+            return 0;
+        }
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
             m_size = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
@@ -70,10 +71,10 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
             break;
         }
         case vhpiRawDataVal:
-        case vhpiIntVal:
-           GpiObjHdl::initialise(name);
-           return 0;
-           break;
+        case vhpiIntVal: {
+            GpiObjHdl::initialise(name);
+            return 0;
+        }
 
         default: {
             LOG_CRITICAL("Unable to determine property for %s (%d) format object",
@@ -227,7 +228,7 @@ int VhpiSignalObjHdl::set_signal_value(int value)
         }
 
         case vhpiRealVal:
-            LOG_WARN("Attempt to vhpiRealVal signal with integer");
+            LOG_WARN("Attempt to set vhpiRealVal signal with integer");
             return 0;
 
         default: {
@@ -244,6 +245,8 @@ int VhpiSignalObjHdl::set_signal_value(double value)
 {
     switch (m_value.format) {
         case vhpiRealVal:
+            m_value.numElems = 1;
+            m_value.bufSize = sizeof(value);
             m_value.value.real = value;
             break;
 

@@ -153,25 +153,46 @@ gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
 GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string &name)
 {
     vhpiIntT type;
+    gpi_objtype_t gpi_type;
     GpiObjHdl *new_obj = NULL;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
         LOG_DEBUG("vhpiVerilog returned from vhpi_get(vhpiType, ...)")
         return NULL;
     }
+
+    gpi_type = to_gpi_objtype(type);
+
+    // Sadly VHPI doesn't have a "Real" type returned - we just get
+    // vhpiPortDeclK rather than the signal type.
+    //
+    // We workaround this by querying the format value and overriding the
+    // result of to_gpi_objtype
+    vhpiValueT value;
+    value.format = vhpiObjTypeVal;
+    value.bufSize = 0;
+    value.numElems = 0;
+    value.value.str = NULL;
+
+    vhpi_get_value(new_hdl, &value);
+    if (vhpiRealVal == value.format) {
+        LOG_DEBUG("Detected a REAL type", name.c_str());
+        gpi_type = GPI_REAL;
+    }
+
     /* What sort of isntance is this ?*/
     switch (type) {
         case vhpiPortDeclK:
         case vhpiSigDeclK:
         case vhpiIndexedNameK:
-            new_obj = new VhpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type));
+            new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type);
             break;
         case vhpiForGenerateK:
         case vhpiIfGenerateK:
         case vhpiCompInstStmtK:
         case vhpiProcessStmtK:
         case vhpiSimpleSigAssignStmtK:
-            new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
+            new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
             break;
         default:
             LOG_WARN("Not able to map type (%s) %u to object", vhpi_get_str(vhpiKindStrP, new_hdl), type);
