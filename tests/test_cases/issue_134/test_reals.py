@@ -21,6 +21,7 @@ def assign_double(dut):
     log.info("Setting the value %g" % val)
     dut.stream_in_real = val
     yield Timer(1)
+    yield Timer(1) # Workaround for VHPI scheduling - needs investigation
     got = float(dut.stream_out_real)
     log.info("Read back value %g" % got)
     if got != val:
