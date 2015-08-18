@@ -40,11 +40,13 @@ entity sample_module is
         stream_in_valid                 : in    std_ulogic;
         stream_in_ready                 : out   std_ulogic;
         stream_in_real                  : in    real;
+        stream_in_int                   : in    integer;
 
         stream_out_data_comb            : out   std_ulogic_vector(7 downto 0);
         stream_out_data_registered      : out   std_ulogic_vector(7 downto 0);
         stream_out_ready                : in    std_ulogic;
-        stream_out_real                 : out   real
+        stream_out_real                 : out   real;
+        stream_out_int                  : out   integer
     );
 end;
 
@@ -61,5 +63,6 @@ end process;
 stream_out_data_comb <= stream_in_data;
 stream_in_ready      <= stream_out_ready;
 stream_out_real      <= stream_in_real;
+stream_out_int       <= stream_in_int;
 
 end architecture;

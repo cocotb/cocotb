@@ -526,7 +526,7 @@ static PyObject *next(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *get_signal_val(PyObject *self, PyObject *args)
+static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
     const char *result;
@@ -571,26 +571,26 @@ static PyObject *get_signal_val_real(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *set_signal_val(PyObject *self, PyObject *args)
+static PyObject *get_signal_val_long(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
-    long value;
-    PyObject *res;
+    long result;
+    PyObject *retval;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "ll", &hdl, &value)) {
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
 
-    gpi_set_signal_value_int(hdl,value);
-    res = Py_BuildValue("s", "OK!");
+    result = gpi_get_signal_value_long(hdl);
+    retval = Py_BuildValue("l", result);
 
     DROP_GIL(gstate);
 
-    return res;
+    return retval;
 }
 
 
@@ -631,6 +631,28 @@ static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
     }
 
     gpi_set_signal_value_real(hdl, value);
+    res = Py_BuildValue("s", "OK!");
+
+    DROP_GIL(gstate);
+
+    return res;
+}
+
+static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    long value;
+    PyObject *res;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "ll", &hdl, &value)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    gpi_set_signal_value_long(hdl, value);
     res = Py_BuildValue("s", "OK!");
 
     DROP_GIL(gstate);

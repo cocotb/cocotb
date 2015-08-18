@@ -270,6 +270,12 @@ double gpi_get_signal_value_real(gpi_sim_hdl sig_hdl)
     return obj_hdl->get_signal_value_real();
 }
 
+long gpi_get_signal_value_long(gpi_sim_hdl sig_hdl)
+{
+    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    return obj_hdl->get_signal_value_long();
+}
+
 const char *gpi_get_signal_name_str(gpi_sim_hdl sig_hdl)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
@@ -288,7 +294,7 @@ gpi_objtype_t gpi_get_object_type(gpi_sim_hdl sig_hdl)
     return obj_hdl->get_type();
 }
 
-void gpi_set_signal_value_int(gpi_sim_hdl sig_hdl, int value)
+void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
     obj_hdl->set_signal_value(value);

@@ -301,7 +301,7 @@ class NonConstantObject(SimHandleBase):
     #value = property(_getvalue, None, None, "A reference to the value")
 
     def _get_value_str(self):
-        return simulator.get_signal_val(self._handle)
+        return simulator.get_signal_val_str(self._handle)
 
     def __len__(self):
         """Returns the 'length' of the underlying object.
@@ -360,7 +360,7 @@ class ModifiableObject(NonConstantObject):
         Assigning integers less than 32-bits is faster
         """
         if isinstance(value, get_python_integer_types()) and value < 0x7fffffff:
-            simulator.set_signal_val(self._handle, value)
+            simulator.set_signal_val_long(self._handle, value)
             return
 
         if isinstance(value, ctypes.Structure):
@@ -436,6 +436,40 @@ class RealObject(ModifiableObject):
     def __float__(self):
         return self._getvalue()
 
+class IntegerObject(ModifiableObject):
+    """
+    Specific object handle for Integer and Enum signals and variables
+    """
+
+    def _setimmeadiatevalue(self, value):
+        """
+        Set the value of the underlying simulation object to value.
+
+        Args:
+            value (int)
+                The value to drive onto the simulator object
+
+        Raises:
+            TypeError
+
+        This operation will fail unless the handle refers to a modifiable
+        object eg net, signal or variable.
+        """
+        if not isinstance(value, int):
+            self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
+            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+
+        simulator.set_signal_val_long(self._handle, value)
+
+    def _getvalue(self):
+        return simulator.get_signal_val_long(self._handle)
+
+    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
+    value = property(_getvalue, ModifiableObject._setcachedvalue, None, "A reference to the value")
+
+    def __int__(self):
+        return self._getvalue()
+
 
 def SimHandle(handle):
     """
@@ -445,7 +479,8 @@ def SimHandle(handle):
     _type2cls = {
         simulator.MODULE:      HierarchyObject,
         simulator.REG:         ModifiableObject,
-        simulator.REAL:        RealObject
+        simulator.REAL:        RealObject,
+        simulator.ENUM:        IntegerObject
     }
 
     t = simulator.get_type(handle)

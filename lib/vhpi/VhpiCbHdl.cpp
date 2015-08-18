@@ -36,7 +36,8 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl()
         free(m_value.value.enumvs);
     }
 
-    free(m_binvalue.value.str);
+    if (m_binvalue.value.str)
+        free(m_binvalue.value.str);
 }
 
 int VhpiSignalObjHdl::initialise(std::string &name) {
@@ -44,6 +45,11 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     m_value.format = vhpiObjTypeVal;
     m_value.bufSize = 0;
     m_value.value.str = NULL;
+    /* We also alloc a second value member for use with read string operations */
+    m_binvalue.format = vhpiBinStrVal;
+    m_binvalue.bufSize = 0;
+    m_binvalue.numElems = 0;
+    m_binvalue.value.str = NULL;
 
     vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
     check_vhpi_error();
@@ -59,6 +65,8 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
             GpiObjHdl::initialise(name);
             return 0;
         }
+
+        case vhpiIntVal:
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
             m_size = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
@@ -70,8 +78,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
 
             break;
         }
-        case vhpiRawDataVal:
-        case vhpiIntVal: {
+        case vhpiRawDataVal: {
             GpiObjHdl::initialise(name);
             return 0;
         }
@@ -81,12 +88,6 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
                          ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format), m_value.format);
         }
     }
-
-    /* We also alloc a second value member for use with read string operations */
-    m_binvalue.format = vhpiBinStrVal;
-    m_binvalue.bufSize = 0;
-    m_binvalue.numElems = 0;
-    m_binvalue.value.str = NULL;
 
     int new_size = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
     if (new_size < 0) {
@@ -209,7 +210,7 @@ const vhpiEnumT VhpiSignalObjHdl::chr2vhpi(const char value)
 }
 
 // Value related functions
-int VhpiSignalObjHdl::set_signal_value(int value)
+int VhpiSignalObjHdl::set_signal_value(long value)
 {
     switch (m_value.format) {
         case vhpiEnumVal:
@@ -224,6 +225,11 @@ int VhpiSignalObjHdl::set_signal_value(int value)
             for (i=0; i<m_size; i++)
                 m_value.value.enumvs[m_size-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
 
+            break;
+        }
+
+        case vhpiIntVal: {
+            m_value.value.intg = value;
             break;
         }
 
@@ -336,7 +342,28 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
 
 double VhpiSignalObjHdl::get_signal_value_real(void)
 {
-    return vhpi_get_real(vhpiRealValP, GpiObjHdl::get_handle<vhpiHandleT>());
+    m_value.format = vhpiRealVal;
+    m_value.numElems = 1;
+    m_value.bufSize = sizeof(double);
+
+    int ret = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
+    if (ret) {
+        check_vhpi_error();
+        LOG_ERROR("failed to get real value");
+    }
+    return m_value.value.real;
+}
+
+long VhpiSignalObjHdl::get_signal_value_long(void)
+{
+    vhpiValueT value;
+    value.format = vhpiIntVal;
+    value.numElems = 0;
+
+    if (vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &value))
+        check_vhpi_error();
+
+    return value.value.intg;
 }
 
 

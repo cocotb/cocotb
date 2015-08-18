@@ -27,4 +27,4 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE ?= test_reals
+MODULE ?= test_reals,test_integers

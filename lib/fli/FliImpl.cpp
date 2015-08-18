@@ -436,12 +436,12 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void)
     return m_val_buff;
 }
 
-int FliSignalObjHdl::set_signal_value(const int value)
+int FliSignalObjHdl::set_signal_value(const long value)
 {
     int rc;
     char buff[20];
 
-    snprintf(buff, 20, "16#%016X", value);
+    snprintf(buff, 20, "16#%016X", (int)value);
 
     rc = mti_ForceSignal(m_fli_hdl, &buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
 
@@ -553,7 +553,7 @@ const char* FliVariableObjHdl::get_signal_value_binstr(void)
     return m_val_buff;
 }
 
-int FliVariableObjHdl::set_signal_value(const int value)
+int FliVariableObjHdl::set_signal_value(const long value)
 {
     LOG_CRITICAL("Setting variable value not currently supported!\n");
     return -1;

@@ -90,6 +90,8 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiEnumNet:
         case vpiEnumVar:
         case vpiIntVar:
+        case vpiIntegerVar:
+        case vpiIntegerNet:
             return GPI_ENUM;
 
         case vpiParameter:
@@ -132,6 +134,8 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiEnumNet:
         case vpiEnumVar:
         case vpiIntVar:
+        case vpiIntegerVar:
+        case vpiIntegerNet:
         case vpiRealVar:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;

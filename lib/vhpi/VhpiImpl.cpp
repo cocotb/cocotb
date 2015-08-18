@@ -163,30 +163,35 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
 
     gpi_type = to_gpi_objtype(type);
 
-    // Sadly VHPI doesn't have a "Real" type returned - we just get
-    // vhpiPortDeclK rather than the signal type.
-    //
-    // We workaround this by querying the format value and overriding the
-    // result of to_gpi_objtype
-    vhpiValueT value;
-    value.format = vhpiObjTypeVal;
-    value.bufSize = 0;
-    value.numElems = 0;
-    value.value.str = NULL;
-
-    vhpi_get_value(new_hdl, &value);
-    if (vhpiRealVal == value.format) {
-        LOG_DEBUG("Detected a REAL type", name.c_str());
-        gpi_type = GPI_REAL;
-    }
-
     /* What sort of isntance is this ?*/
     switch (type) {
         case vhpiPortDeclK:
         case vhpiSigDeclK:
-        case vhpiIndexedNameK:
+        case vhpiIndexedNameK: {
+            // Sadly VHPI doesn't have a "Real" type returned - we just get
+            // vhpiPortDeclK rather than the signal type.
+            //
+            // We workaround this by querying the format value and overriding the
+            // result of to_gpi_objtype
+            vhpiValueT value;
+            value.format = vhpiObjTypeVal;
+            value.bufSize = 0;
+            value.numElems = 0;
+            value.value.str = NULL;
+
+            vhpi_get_value(new_hdl, &value);
+            if (vhpiRealVal == value.format) {
+                LOG_DEBUG("Detected a REAL type", name.c_str());
+                gpi_type = GPI_REAL;
+            }
+
+            if (vhpiIntVal == value.format) {
+                LOG_DEBUG("Detected an INT type", name.c_str());
+                gpi_type = GPI_ENUM;
+            }
             new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type);
             break;
+        }
         case vhpiForGenerateK:
         case vhpiIfGenerateK:
         case vhpiCompInstStmtK:

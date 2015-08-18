@@ -160,9 +160,10 @@ public:
 
     const char* get_signal_value_binstr(void);
     double get_signal_value_real(void);
+    long get_signal_value_long(void);
 
 
-    int set_signal_value(const int value);
+    int set_signal_value(const long value);
     int set_signal_value(const double value);
     int set_signal_value(std::string &value);
 

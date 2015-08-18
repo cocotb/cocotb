@@ -134,10 +134,11 @@ public:
     // Provide public access to the implementation (composition vs inheritance)
     virtual const char* get_signal_value_binstr(void) = 0;
     virtual double get_signal_value_real(void) = 0;
+    virtual long get_signal_value_long(void) = 0;
 
     int m_length;
 
-    virtual int set_signal_value(const int value) = 0;
+    virtual int set_signal_value(const long value) = 0;
     virtual int set_signal_value(const double value) = 0;
     virtual int set_signal_value(std::string &value) = 0;
     //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
