@@ -23,9 +23,29 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
+import logging
+
 import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
+
+@cocotb.test()
+def recursive_discovery(dut):
+    """
+    Recursively discover every single object in the design
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(100)
+    def dump_all_the_things(parent):
+        count = 0
+        for thing in parent:
+            count += 1
+            tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+            count += dump_all_the_things(thing)
+        return count
+    total = dump_all_the_things(dut)
+    tlog.info("Found a total of %d things", count)
+
 
 
 @cocotb.test()

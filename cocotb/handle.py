@@ -292,6 +292,12 @@ class NonConstantObject(SimHandleBase):
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
+    def __iter__(self):
+        if len(self) == 1:
+            raise StopIteration
+        for i in range(len(self)):
+            yield self[i]
+
     def _getvalue(self):
         result = BinaryValue()
         result.binstr = self._get_value_str()
