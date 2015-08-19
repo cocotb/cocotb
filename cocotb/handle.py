@@ -324,7 +324,7 @@ class NonConstantObject(SimHandleBase):
     def __cmp__(self, other):
 
         # Permits comparison of handles i.e. if clk == dut.clk
-        if isinstance(other, SimHandle):
+        if isinstance(other, SimHandleBase):
             if self._handle == other._handle: return 0
             return 1
 
