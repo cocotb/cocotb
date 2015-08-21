@@ -20,6 +20,8 @@ VERILOG_SOURCES =   $(SRC_BASE)/verilog/baud_gen.v \
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES += $(SRC_BASE)/top/verilog_toplevel.v
     TOPLEVEL = verilog_toplevel
+    GPI_IMPL=vpi
+    GPI_EXTRA=vhpi
 else
 $(error "Only verilog toplevel supported at the moment")
 endif
