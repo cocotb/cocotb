@@ -44,5 +44,5 @@ def recursive_discovery(dut):
             count += dump_all_the_things(thing)
         return count
     total = dump_all_the_things(dut)
-    tlog.info("Found a total of %d things", count)
+    tlog.info("Found a total of %d things", total)
 
