@@ -454,10 +454,10 @@ int FliSignalObjHdl::set_signal_value(const int value)
 int FliSignalObjHdl::set_signal_value(std::string &value)
 {
     int rc;
-    std::vector<char> writable(value.begin(), value.end());
-    writable.push_back('\0');
 
-    rc = mti_ForceSignal(m_fli_hdl, &writable[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
+    snprintf(m_val_str_buff, m_val_str_len+1, "%d'b%s", m_val_len, value.c_str());
+
+    rc = mti_ForceSignal(m_fli_hdl, &m_val_str_buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
     if (!rc) {
         LOG_CRITICAL("Setting signal value failed!\n");
     }
@@ -471,38 +471,41 @@ int FliSignalObjHdl::initialise(std::string &name)
 
     switch (m_fli_type) {
         case MTI_TYPE_ENUM:
-            m_val_len = 1;
-            m_val_buff = (char*)malloc(m_val_len+1);
-            if (!m_val_buff) {
-                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
-            }
-            m_val_buff[m_val_len] = '\0';
+            m_val_len     = 1;
+            m_val_str_len = 3+m_val_len;
             break;
         case MTI_TYPE_SCALAR:
         case MTI_TYPE_PHYSICAL:
-            m_val_len = 32;
-            m_val_buff = (char*)malloc(m_val_len+1);
-            if (!m_val_buff) {
-                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
-            }
-            m_val_buff[m_val_len] = '\0';
+            m_val_len     = 32;
+            m_val_str_len = 4+m_val_len;
             break;
         case MTI_TYPE_ARRAY:
-            m_val_len = mti_TickLength(mti_GetSignalType(m_fli_hdl));
-            m_val_buff = (char*)malloc(m_val_len+1);
-            if (!m_val_buff) {
-                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
-            }
-            m_val_buff[m_val_len] = '\0';
-            m_mti_buff = (mtiInt32T*)malloc(sizeof(*m_mti_buff) * m_val_len);
+            m_val_len     = mti_TickLength(mti_GetSignalType(m_fli_hdl));
+            m_val_str_len = snprintf(NULL, 0, "%d'b", m_val_len)+m_val_len;
+            m_mti_buff    = (mtiInt32T*)malloc(sizeof(*m_mti_buff) * m_val_len);
             if (!m_mti_buff) {
                 LOG_CRITICAL("Unable to alloc mem for signal mti read buffer");
+                exit(1);
             }
             break;
         default:
             LOG_CRITICAL("Unable to handle onject type for %s (%d)",
                          name.c_str(), m_fli_type);
+            exit(1);
     }
+
+    m_val_buff = (char*)malloc(m_val_len+1);
+    if (!m_val_buff) {
+        LOG_CRITICAL("Unable to alloc mem for signal read buffer");
+        exit(1);
+    }
+    m_val_buff[m_val_len] = '\0';
+    m_val_str_buff = (char*)malloc(m_val_str_len+1);
+    if (!m_val_str_buff) {
+        LOG_CRITICAL("Unable to alloc mem for signal write buffer");
+        exit(1);
+    }
+    m_val_str_buff[m_val_str_len] = '\0';
 
     GpiObjHdl::initialise(name);
 
@@ -573,37 +576,31 @@ int FliVariableObjHdl::initialise(std::string &name)
     switch (m_fli_type) {
         case MTI_TYPE_ENUM:
             m_val_len = 1;
-            m_val_buff = (char*)malloc(m_val_len+1);
-            if (!m_val_buff) {
-                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
-            }
-            m_val_buff[m_val_len] = '\0';
             break;
         case MTI_TYPE_SCALAR:
         case MTI_TYPE_PHYSICAL:
             m_val_len = 32;
-            m_val_buff = (char*)malloc(m_val_len+1);
-            if (!m_val_buff) {
-                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
-            }
-            m_val_buff[m_val_len] = '\0';
             break;
         case MTI_TYPE_ARRAY:
-            m_val_len = mti_TickLength(mti_GetVarType(m_fli_hdl));
-            m_val_buff = (char*)malloc(m_val_len+1);
-            if (!m_val_buff) {
-                LOG_CRITICAL("Unable to alloc mem for signal read buffer");
-            }
-            m_val_buff[m_val_len] = '\0';
+            m_val_len  = mti_TickLength(mti_GetVarType(m_fli_hdl));
             m_mti_buff = (mtiInt32T*)malloc(sizeof(*m_mti_buff) * m_val_len);
             if (!m_mti_buff) {
                 LOG_CRITICAL("Unable to alloc mem for signal mti read buffer");
+                exit(1);
             }
             break;
         default:
             LOG_CRITICAL("Unable to handle onject type for %s (%d)",
                          name.c_str(), m_fli_type);
+            exit(1);
     }
+
+    m_val_buff = (char*)malloc(m_val_len+1);
+    if (!m_val_buff) {
+        LOG_CRITICAL("Unable to alloc mem for signal read buffer");
+        exit(1);
+    }
+    m_val_buff[m_val_len] = '\0';
 
     GpiObjHdl::initialise(name);
 

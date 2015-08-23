@@ -505,7 +505,7 @@ class Scheduler(object):
                    % str(coroutine))
             msg += ("\nGot type: %s repr: %s str: %s" %
                     (type(result), repr(result), str(result)))
-            msg += "\nDid you forget to decorate with @cocotb.cocorutine?"
+            msg += "\nDid you forget to decorate with @cocotb.coroutine?"
             try:
                 raise_error(self, msg)
             except Exception as e:
