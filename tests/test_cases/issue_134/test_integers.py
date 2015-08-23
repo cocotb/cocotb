@@ -9,6 +9,7 @@ from cocotb.result import TestFailure
 from cocotb.binary import BinaryValue
 
 
+@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
 @cocotb.test()
 def test_integer(dut):
     """

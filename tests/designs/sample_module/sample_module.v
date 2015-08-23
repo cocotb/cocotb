@@ -36,31 +36,28 @@ module sample_module (
     input                                       stream_in_valid,
 `ifndef __ICARUS__
     input real                                  stream_in_real,
+    input  integer                              stream_in_int,
 `endif
     input  [7:0]                                stream_in_data,
     input  [63:0]                               stream_in_data_wide,
-    input  integer                              stream_in_int,
 
     input                                       stream_out_ready,
 `ifndef __ICARUS__
     output real                                 stream_out_real,
+    output integer                              stream_out_int,
 `endif
     output reg [7:0]                            stream_out_data_comb,
-    output reg [7:0]                            stream_out_data_registered,
-    output integer                              stream_out_int
+    output reg [7:0]                            stream_out_data_registered
 );
 
 always @(posedge clk)
     stream_out_data_registered <= stream_in_data;
 
-always @(stream_in_int)
-    stream_out_int <= stream_in_int;
-
 always @(stream_in_data)
     stream_out_data_comb = stream_in_data;
 
 always @(stream_in_data)
-    stream_out_int       = stream_in_int;
+    stream_out_data_comb = stream_in_data;
 
 always @(stream_out_ready)
     stream_in_ready      = stream_out_ready;
@@ -68,6 +65,9 @@ always @(stream_out_ready)
 `ifndef __ICARUS__
 always @(stream_in_real)
     stream_out_real      = stream_in_real;
+
+always @(stream_in_int)
+    stream_out_int <= stream_in_int;
 `endif
 
 initial begin
