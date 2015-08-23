@@ -123,6 +123,12 @@ int VpiCbHdl::cleanup_callback(void)
     return 0;
 }
 
+int VpiSignalObjHdl::initialise(std::string &name) {
+    m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
+    LOG_DEBUG("VPI: %s initialised with %d elements", name.c_str(), m_num_elems);
+    return GpiObjHdl::initialise(name);
+}
+
 const char* VpiSignalObjHdl::get_signal_value_binstr(void)
 {
     FENTER
@@ -216,11 +222,6 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
 
     FEXIT
     return 0;
-}
-
-int VpiSignalObjHdl::get_num_elems(void)
-{
-    return 1;
 }
 
 GpiCbHdl * VpiSignalObjHdl::value_change_cb(unsigned int edge)

@@ -63,6 +63,9 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
               m_value.bufSize,
               vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>()));
 
+    // Default - overridden below in certain special cases
+    m_num_elems = m_value.numElems;
+
     switch (m_value.format) {
         case vhpiEnumVal:
         case vhpiLogicVal:
@@ -77,17 +80,30 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
         case vhpiIntVal:
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
-            m_size = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
-            m_value.bufSize = m_size*sizeof(vhpiEnumT);
+            m_num_elems = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
+            m_value.bufSize = m_num_elems*sizeof(vhpiEnumT);
             m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize);
             if (!m_value.value.enumvs) {
                 LOG_CRITICAL("Unable to alloc mem for write buffer");
             }
+            LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
             GpiObjHdl::initialise(name);
 
             return 0;
         }
         case vhpiRawDataVal: {
+            // This is an internal representation - the only way to determine
+            // the size is to iterate over the members and count sub-elements
+            vhpiHandleT result = NULL;
+            vhpiHandleT iterator = vhpi_iterator(vhpiIndexedNames,
+                                                 GpiObjHdl::get_handle<vhpiHandleT>());
+            while (true) {
+                result = vhpi_scan(iterator);
+                if (NULL == result)
+                    break;
+                m_num_elems++;
+            }
+            LOG_DEBUG("Found vhpiRawDataVal with %d elements", m_num_elems);
             GpiObjHdl::initialise(name);
             return 0;
         }
@@ -117,9 +133,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     }
 
 out:
-    GpiObjHdl::initialise(name);
-
-    return 0;
+    return GpiObjHdl::initialise(name);
 }
 
 VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl)
@@ -230,9 +244,9 @@ int VhpiSignalObjHdl::set_signal_value(long value)
 
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
-            unsigned int i;
-            for (i=0; i<m_size; i++)
-                m_value.value.enumvs[m_size-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
+            int i;
+            for (i=0; i<m_num_elems; i++)
+                m_value.value.enumvs[m_num_elems-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
 
             break;
         }
@@ -294,17 +308,17 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
 
-            unsigned int len = value.length();
+            int len = value.length();
 
-            if (len > m_size)  {
+            if (len > m_num_elems)  {
                 LOG_ERROR("VHPI: Attempt to write string longer than signal %d > %d",
-                          len, m_size);
+                          len, m_num_elems);
                 return -1;
             }
 
             std::string::iterator iter;
 
-            unsigned int i = 0;
+            int i = 0;
             for (iter = value.begin();
                  iter != value.end();
                  iter++, i++) {
@@ -312,7 +326,7 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
             }
 
             // Fill bits at the end of the value to 0's
-            for (i = len; i < m_size; i++) {
+            for (i = len; i < m_num_elems; i++) {
                 m_value.value.enumvs[i] = vhpi0;
             }
 
@@ -383,27 +397,6 @@ long VhpiSignalObjHdl::get_signal_value_long(void)
         check_vhpi_error();
 
     return value.value.intg;
-}
-
-int VhpiSignalObjHdl::get_num_elems(void)
-{
-    switch (m_value.format) {
-        case vhpiEnumVal:
-        case vhpiLogicVal:
-            return m_value.bufSize;
-        case vhpiRealVal:
-        case vhpiIntVal:
-        case vhpiRawDataVal:
-            return 1;
-        case vhpiEnumVecVal:
-        case vhpiLogicVecVal:
-            return m_value.numElems;
-            break;
-        default:
-            LOG_ERROR("Not sure %s", 
-                     ((VhpiImpl*)m_impl)->format_to_string(m_value.format));
-            return 0;
-    }
 }
 
 

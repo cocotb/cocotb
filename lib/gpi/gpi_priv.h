@@ -93,6 +93,7 @@ protected:
 class GpiObjHdl : public GpiHdl {
 public:
     GpiObjHdl(std::string name) : GpiHdl(NULL, NULL),
+                                  m_num_elems(0),
                                   m_name(name),
                                   m_fullname("unknown") { }
     GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
@@ -108,7 +109,9 @@ public:
     virtual const char* get_fullname_str(void);
     virtual const char* get_type_str(void);
     virtual gpi_objtype_t get_type(void);
-    virtual int get_num_elems(void);
+    int get_num_elems(void) { 
+        LOG_DEBUG("%s has %d elements", m_name.c_str(), m_num_elems);
+        return m_num_elems; }
 
     const std::string & get_name(void);
 
@@ -116,6 +119,7 @@ public:
     virtual int initialise(std::string &name);
 
 protected:
+    int m_num_elems;
     std::string m_name;
     std::string m_fullname;
     gpi_objtype_t m_type;

@@ -192,10 +192,15 @@ class HierarchyObject(SimHandleBase):
 
         for name, handle in self._sub_handles.items():
             if isinstance(handle, list):
-                for subhdl in handle:
+                self._log.debug("Found index list length %d" % len(handle))
+                for subindex, subhdl in enumerate(handle):
+                    if subhdl is None:
+                        self._log.warning("Index %d doesn't exist in %s.%s", subindex, self._name, name)
+                        continue
+                    self._log.debug("Yielding index %d from %s (%s)" % (subindex, name, type(subhdl)))
                     yield subhdl
-
             else:
+                self._log.debug("Yielding %s (%s)" % (name, handle))
                 yield handle
 
     def _discover_all(self):
@@ -206,7 +211,7 @@ class HierarchyObject(SimHandleBase):
         do this once.
         """
         if self._discovered: return
-
+        self._log.warning("Discovering all on %s", self._name)
         iterator = simulator.iterate(self._handle)
         while True:
             try:
@@ -226,7 +231,7 @@ class HierarchyObject(SimHandleBase):
             import re
             result = re.match("(?P<name>.*)__(?P<index>\d+)$", name)
             if not result:
-                result = re.match("(?P<name>.*)\((?P<index>\d+)", name)
+                result = re.match("(?P<name>.*)\((?P<index>\d+)\)$", name)
 
             if result:
                 index = int(result.group("index"))
@@ -234,11 +239,16 @@ class HierarchyObject(SimHandleBase):
 
                 if name not in self._sub_handles:
                     self._sub_handles[name] = []
+                    self._log.debug("creating new group for %s", name)
                 if len(self._sub_handles[name]) < index + 1:
                     delta = index - len(self._sub_handles[name]) + 1
                     self._sub_handles[name].extend([None]*delta)
                 self._sub_handles[name][index] = hdl
+                self._log.debug("%s.%s[%d] is now %s", self._name, name, index, hdl._name)
+                for something in self._sub_handles[name]:
+                    self._log.debug("%s: %s" % (type(something), something))
             else:
+                self._log.debug("%s didn't match an index pattern", name)
                 self._sub_handles[hdl._name.split(".")[-1]] = hdl
 
         self._discovered = True
@@ -296,9 +306,12 @@ class NonConstantObject(SimHandleBase):
     def __iter__(self):
         if len(self) == 1:
             raise StopIteration
+        self._log.debug("Iterating with length %d" % len(self))
         for i in range(len(self)):
             try:
-                yield self[i]
+                result = self[i]
+                self._log.warning("Yielding %s" % result)
+                yield result
             except:
                 continue
 
@@ -489,6 +502,7 @@ def SimHandle(handle):
     _type2cls = {
         simulator.MODULE:      HierarchyObject,
         simulator.REG:         ModifiableObject,
+        simulator.NETARRAY:    ModifiableObject,
         simulator.REAL:        RealObject,
         simulator.ENUM:        IntegerObject
     }

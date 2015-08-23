@@ -153,7 +153,6 @@ class VhpiSignalObjHdl : public GpiSignalObjHdl {
 public:
     VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl, gpi_objtype_t objtype) :
                                                                 GpiSignalObjHdl(impl, hdl, objtype),
-                                                                m_size(0),
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
                                                                 m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
@@ -172,11 +171,8 @@ public:
     GpiCbHdl *value_change_cb(unsigned int edge);
     int initialise(std::string &name);
 
-    int get_num_elems(void);
-
 private:
     const vhpiEnumT chr2vhpi(const char value);
-    unsigned int m_size;
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
     VhpiValueCbHdl m_rising_cb;

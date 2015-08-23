@@ -82,6 +82,7 @@ typedef uint32_t *vpiHandle;
 #define vpiType                 1   /* type of object */
 #define vpiName                 2   /* local name of object */
 #define vpiFullName             3   /* full hierarchical name */
+#define vpiSize                 4   /* size of gate, net, port, etc. */
 
 #define vpiNoDelay              1
 #define vpiInertialDelay        2
