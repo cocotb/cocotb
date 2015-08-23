@@ -147,6 +147,9 @@ gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base);
 // Returns NULL when there are no more objects
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
 
+// Returns the number of objects in the collection of the handle
+int gpi_get_num_elems(gpi_sim_hdl gpi_sim_hdl);
+
 // Functions for querying the properties of a handle
 // Caller responsible for freeing the returned string.
 // This is all slightly verbose but it saves having to enumerate various value types

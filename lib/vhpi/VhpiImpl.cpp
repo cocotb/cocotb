@@ -67,6 +67,8 @@ const char * VhpiImpl::format_to_string(int format)
         return "vhpiPtrVal";
     case vhpiEnumVecVal:
         return "vhpiEnumVecVal";
+    case vhpiRawDataVal:
+        return "vhpiRawDataVal";
 
     default:
         return "unknown";
@@ -117,6 +119,7 @@ gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
         case vhpiPortDeclK:
         case vhpiSigDeclK:
         case vhpiIndexedNameK:
+        case vhpiSelectedNameK:
         case vhpiVarDeclK:
         case vhpiVarParamDeclK:
             return GPI_REGISTER;
@@ -127,6 +130,7 @@ gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
         case vhpiEnumLiteralK:
             return GPI_ENUM;
 
+        case vhpiConstDeclK:
         case vhpiGenericDeclK:
             return GPI_PARAMETER;
 
@@ -140,6 +144,7 @@ gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
         case vhpiRootInstK:
         case vhpiProcessStmtK:
         case vhpiSimpleSigAssignStmtK:
+        case vhpiCondSigAssignStmtK:
             return GPI_MODULE;
 
         default:
@@ -162,11 +167,15 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
     }
 
     gpi_type = to_gpi_objtype(type);
+    LOG_DEBUG("Creating %s of type %d (%s)", vhpi_get_str(vhpiFullNameP, new_hdl), gpi_type, vhpi_get_str(vhpiKindStrP, new_hdl));
 
     /* What sort of isntance is this ?*/
     switch (type) {
         case vhpiPortDeclK:
         case vhpiSigDeclK:
+        case vhpiConstDeclK:
+        case vhpiGenericDeclK:
+        case vhpiSelectedNameK:
         case vhpiIndexedNameK: {
             // Sadly VHPI doesn't have a "Real" type returned - we just get
             // vhpiPortDeclK rather than the signal type.
@@ -181,14 +190,30 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
 
             vhpi_get_value(new_hdl, &value);
             if (vhpiRealVal == value.format) {
-                LOG_DEBUG("Detected a REAL type", name.c_str());
+                LOG_DEBUG("Detected a REAL type %s", name.c_str());
                 gpi_type = GPI_REAL;
             }
 
             if (vhpiIntVal == value.format) {
-                LOG_DEBUG("Detected an INT type", name.c_str());
+                LOG_DEBUG("Detected an INT type %s", name.c_str());
                 gpi_type = GPI_ENUM;
+
             }
+            if (vhpiRawDataVal == value.format) {
+                LOG_DEBUG("Detected a custom array type %s", name.c_str());
+                gpi_type = GPI_MODULE;
+            }
+
+            if (vhpiIntVecVal == value.format ||
+                vhpiRealVecVal == value.format ||
+                vhpiEnumVecVal == value.format ||
+                vhpiLogicVecVal == value.format ||
+                vhpiPhysVecVal == value.format ||
+                vhpiTimeVecVal == value.format) {
+                LOG_DEBUG("Detected a vector type", name.c_str());
+                gpi_type = GPI_MODULE;
+            }
+
             new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type);
             break;
         }
@@ -197,6 +222,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
         case vhpiCompInstStmtK:
         case vhpiProcessStmtK:
         case vhpiSimpleSigAssignStmtK:
+        case vhpiCondSigAssignStmtK:
             new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
             break;
         default:
@@ -241,13 +267,23 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
     GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
-    vhpiHandleT vpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
+    vhpiHandleT vhpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
     vhpiHandleT new_hdl;
 
-    new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vpi_hdl, index);
+    LOG_DEBUG("Native check create for index %u of parent %s (%s)",
+              index,
+              vhpi_get_str(vhpiNameP, vhpi_hdl),
+              vhpi_get_str(vhpiKindStrP, vhpi_hdl));
+
+    if (vhpiIndexedNameK == vhpi_get(vhpiKindP, vhpi_hdl)) {
+        LOG_DEBUG("Can't index into vhpiIndexedNameK, have to use an iterator?");
+        return NULL;
+    }
+
+    new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vhpi_hdl, index);
 
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to query vhpi_handle_by_index %s", index);
+        LOG_DEBUG("Unable to query vhpi_handle_by_index %u", index);
         return NULL;
     }
 
@@ -255,7 +291,7 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
     if (new_obj == NULL) {
         vhpi_release_handle(new_hdl);
-        LOG_DEBUG("Could not fetch object below entity (%s) at index (%d)",
+        LOG_DEBUG("Could not fetch object below entity (%s) at index (%u)",
                                  parent->get_name_str(), index);
         return NULL;
     }

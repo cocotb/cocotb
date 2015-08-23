@@ -313,6 +313,12 @@ void gpi_set_signal_value_real(gpi_sim_hdl sig_hdl, double value)
     obj_hdl->set_signal_value(value);
 }
 
+int gpi_get_num_elems(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_num_elems();
+}
+
 gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),
                                                void *gpi_cb_data,
                                                gpi_sim_hdl sig_hdl,

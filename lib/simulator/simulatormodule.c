@@ -822,6 +822,27 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
     return pTuple;
 }
 
+static PyObject *get_num_elems(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    PyObject *retstr;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    int elems = gpi_get_num_elems((gpi_sim_hdl)hdl);
+    retstr = Py_BuildValue("i", elems);
+
+    DROP_GIL(gstate);
+
+    return retstr;
+}
+
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
     gpi_sim_end();

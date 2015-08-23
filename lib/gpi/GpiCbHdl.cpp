@@ -74,6 +74,12 @@ const std::string & GpiObjHdl::get_name(void)
     return m_name;
 }
 
+int GpiObjHdl::get_num_elems(void)
+{
+    LOG_WARN("Generic get_num_elems, doubtful this is correct");
+    return 0;
+}
+
 /* Genertic base clss implementations */
 char *GpiHdl::gpi_copy_name(const char *name)
 {

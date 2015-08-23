@@ -286,9 +286,10 @@ class NonConstantObject(SimHandleBase):
     def __getitem__(self, index):
         if index in self._sub_handles:
             return self._sub_handles[index]
+        self._log.info("Calling get handle for %s" % self._name)
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
-            self._raise_testerror("%s contains no object at index %d" % (self._name, index))
+            self._raise_testerror("%s %s contains no object at index %d" % (self._name, simulator.get_type(self._handle), index))
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
@@ -296,7 +297,10 @@ class NonConstantObject(SimHandleBase):
         if len(self) == 1:
             raise StopIteration
         for i in range(len(self)):
-            yield self[i]
+            try:
+                yield self[i]
+            except:
+                continue
 
     def _getvalue(self):
         result = BinaryValue()
@@ -317,7 +321,7 @@ class NonConstantObject(SimHandleBase):
         TODO: Handle other types (loops, generate etc)
         """
         if self._len is None:
-            self._len = len(self._get_value_str())
+            self._len = simulator.get_num_elems(self._handle)
         return self._len
 
 

@@ -108,6 +108,7 @@ public:
     virtual const char* get_fullname_str(void);
     virtual const char* get_type_str(void);
     virtual gpi_objtype_t get_type(void);
+    virtual int get_num_elems(void);
 
     const std::string & get_name(void);
 

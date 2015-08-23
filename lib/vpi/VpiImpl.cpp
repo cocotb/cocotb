@@ -187,14 +187,15 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 
     new_hdl = vpi_handle_by_index(vpi_hdl, index);
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to vpi_get_handle_by_index %d", index);
+        LOG_DEBUG("Unable to vpi_get_handle_by_index %u", index);
         return NULL;
     }
+
     std::string name = vpi_get_str(vpiFullName, new_hdl);
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to fetch object below entity (%s) at index (%d)",
+        LOG_ERROR("Unable to fetch object below entity (%s) at index (%u)",
                                  parent->get_name_str(), index);
         return NULL;
     }

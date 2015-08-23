@@ -31,6 +31,7 @@
 #include "../gpi/gpi_priv.h"
 #include <vhpi_user.h>
 #include <vector>
+#include <map>
 
 // Should be run after every VHPI call to check error status
 static inline int __check_vhpi_error(const char *file, const char *func, long line)
@@ -171,6 +172,8 @@ public:
     GpiCbHdl *value_change_cb(unsigned int edge);
     int initialise(std::string &name);
 
+    int get_num_elems(void);
+
 private:
     const vhpiEnumT chr2vhpi(const char value);
     unsigned int m_size;
@@ -179,6 +182,18 @@ private:
     VhpiValueCbHdl m_rising_cb;
     VhpiValueCbHdl m_falling_cb;
     VhpiValueCbHdl m_either_cb;
+};
+
+class KindMappings {
+public:
+    KindMappings();
+
+public:
+    std::map<vhpiClassKindT, std::vector<vhpiOneToManyT> > options_map;
+    std::vector<vhpiOneToManyT>* get_options(vhpiClassKindT type);
+
+private:
+    void add_to_options(vhpiClassKindT type, vhpiOneToManyT *options);
 };
 
 class VhpiIterator : public GpiIterator {
@@ -192,8 +207,9 @@ public:
 private:
     vhpiHandleT m_iterator;
     vhpiHandleT m_iter_obj;
-    static std::vector<vhpiOneToManyT> iterate_over;
-    std::vector<vhpiOneToManyT>::iterator curr_type;
+    static KindMappings iterate_over;      /* Possible mappings */
+    std::vector<vhpiOneToManyT> *selected; /* Mapping currently in use */
+    std::vector<vhpiOneToManyT>::iterator one2many;
 };
 
 class VhpiImpl : public GpiImplInterface {
