@@ -444,7 +444,7 @@ GpiObjHdl *VpiIterator::next_handle(void)
             break;
         }
 
-        m_iterator = vpi_iterate(*curr_type, hdl);
+        m_iterator = vpi_iterate(*curr_type, obj);
 
     } while (!obj);
 
