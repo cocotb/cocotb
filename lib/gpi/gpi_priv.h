@@ -94,13 +94,22 @@ class GpiObjHdl : public GpiHdl {
 public:
     GpiObjHdl(std::string name) : GpiHdl(NULL, NULL),
                                   m_name(name),
-                                  m_type("unknown") { }
-    GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL) { }
-    GpiObjHdl(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
+                                  m_fullname("unknown") { }
+    GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
+                                        m_fullname("unknown"),
+                                        m_type(GPI_UNKNOWN) { }
+    GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : GpiHdl(impl, hdl),
+                                                                          m_fullname("unknown"),
+                                                                          m_type(objtype) { }
+
     virtual ~GpiObjHdl() { }
 
     virtual const char* get_name_str(void);
+    virtual const char* get_fullname_str(void);
     virtual const char* get_type_str(void);
+    virtual gpi_objtype_t get_type(void);
+    virtual int get_num_elems(void);
+
     const std::string & get_name(void);
 
     bool is_native_impl(GpiImplInterface *impl);
@@ -108,7 +117,8 @@ public:
 
 protected:
     std::string m_name;
-    std::string m_type;
+    std::string m_fullname;
+    gpi_objtype_t m_type;
 };
 
 
@@ -118,15 +128,19 @@ protected:
 // value of the signal (which doesn't apply to non signal items in the hierarchy
 class GpiSignalObjHdl : public GpiObjHdl {
 public:
-    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl) : GpiObjHdl(impl, hdl),
+    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : 
+                                                         GpiObjHdl(impl, hdl, objtype),
                                                          m_length(0) { }
     virtual ~GpiSignalObjHdl() { }
     // Provide public access to the implementation (composition vs inheritance)
     virtual const char* get_signal_value_binstr(void) = 0;
+    virtual double get_signal_value_real(void) = 0;
+    virtual long get_signal_value_long(void) = 0;
 
     int m_length;
 
-    virtual int set_signal_value(const int value) = 0;
+    virtual int set_signal_value(const long value) = 0;
+    virtual int set_signal_value(const double value) = 0;
     virtual int set_signal_value(std::string &value) = 0;
     //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
     // but the explicit ones are probably better
@@ -184,10 +198,14 @@ public:
     int stop_clock(void) { return 0; }
 };
 
-class GpiIterator {
+class GpiIterator : public GpiHdl {
 public:
-	GpiObjHdl *parent;
+    GpiIterator(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
+    virtual ~GpiIterator() { }
+
+    virtual GpiObjHdl* next_handle() { return NULL; }
 };
+
 
 class GpiImplInterface {
 public:
@@ -204,6 +222,8 @@ public:
     virtual GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
+    virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl) = 0;
+    virtual GpiObjHdl *next_handle(GpiIterator *iter) = 0;
 
     /* Callback related, these may (will) return the same handle*/
     virtual GpiCbHdl *register_timed_callback(uint64_t time_ps) = 0;

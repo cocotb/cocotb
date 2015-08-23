@@ -52,17 +52,21 @@ VHDL_SOURCES = $(SRC_BASE)/packages/pkg_helper.vhd \
 	       $(SRC_BASE)/src/recursion.vhd \
 	       $(SRC_BASE)/src/dec_viterbi.vhd \
 
+GPI_IMPL:=
 ifeq ($(SIM),aldec)
     GPI_IMPL=vhpi
 endif
 ifeq ($(SIM),modelsim)
     GPI_IMPL=fli
 endif
+ifeq ($(SIM),ius)
+    GPI_IMPL=vhpi
+endif
 
-ifneq ($(SIM),)
+ifneq ($(GPI_IMPL),)
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
 else
 all:
-	@echo "Skipping test as icarus does not support VHDL"
+	@echo "Skipping test as VHDL not supported on simulator=$(SIM)"
 endif

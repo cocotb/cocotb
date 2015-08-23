@@ -28,7 +28,6 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
-#include <vector>
 
 extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
 
@@ -128,16 +127,37 @@ const char* VpiSignalObjHdl::get_signal_value_binstr(void)
 {
     FENTER
     s_vpi_value value_s = {vpiBinStrVal};
-    p_vpi_value value_p = &value_s;
 
-    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), value_p);
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
 
-    return value_p->value.str;
+    return value_s.value.str;
+}
+
+double VpiSignalObjHdl::get_signal_value_real(void)
+{
+    FENTER
+    s_vpi_value value_s = {vpiRealVal};
+
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
+    check_vpi_error();
+
+    return value_s.value.real;
+}
+
+long VpiSignalObjHdl::get_signal_value_long(void)
+{
+    FENTER
+    s_vpi_value value_s = {vpiIntVal};
+
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
+    check_vpi_error();
+
+    return value_s.value.integer;
 }
 
 // Value related functions
-int VpiSignalObjHdl::set_signal_value(int value)
+int VpiSignalObjHdl::set_signal_value(long value)
 {
     FENTER
     s_vpi_value value_s;
@@ -152,6 +172,27 @@ int VpiSignalObjHdl::set_signal_value(int value)
     vpi_time_s.low  = 0;
 
     // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
+    check_vpi_error();
+
+    FEXIT
+    return 0;
+}
+
+int VpiSignalObjHdl::set_signal_value(double value)
+{
+    FENTER
+    s_vpi_value value_s;
+
+    value_s.value.real = value;
+    value_s.format = vpiRealVal;
+
+    s_vpi_time vpi_time_s;
+
+    vpi_time_s.type = vpiSimTime;
+    vpi_time_s.high = 0;
+    vpi_time_s.low  = 0;
+
     vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
     check_vpi_error();
 
@@ -175,6 +216,11 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
 
     FEXIT
     return 0;
+}
+
+int VpiSignalObjHdl::get_num_elems(void)
+{
+    return 1;
 }
 
 GpiCbHdl * VpiSignalObjHdl::value_change_cb(unsigned int edge)
@@ -314,4 +360,104 @@ VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                                VpiCbHdl(impl)
 {
     cb_data.reason = cbNextSimTime;
+}
+
+static int32_t options[] = {
+    vpiNet,
+    vpiReg,
+    vpiParameter,
+    vpiRegArray,
+    /* Calling any of there below will cause a SEGV, even on their own
+       when run under a mixed language verilog toplevel. On another verilog design
+       only this is not the case
+       */
+    //vpiNetArray, 
+    //vpiModule,
+    //vpiInterface,
+    //vpiInterfaceArray
+};
+
+std::vector<int32_t> VpiIterator::iterate_over(options, options + (sizeof(options) / sizeof(options[0])));
+
+VpiIterator::VpiIterator(GpiImplInterface *impl, vpiHandle hdl) : GpiIterator(impl, hdl),
+                                                                  m_iterator(NULL)
+{
+    vpiHandle iterator;
+
+    for (curr_type = iterate_over.begin();
+         curr_type != iterate_over.end();
+         curr_type++) {
+        iterator = vpi_iterate(*curr_type, hdl);
+
+        if (iterator) {
+            break;
+        }
+     
+        LOG_DEBUG("vpi_iterate type=%d returned NULL", *curr_type);
+    }
+
+    if (NULL == iterator) {
+        LOG_WARN("vpi_iterate returned NULL for all types");
+        return;
+    }
+
+    LOG_DEBUG("Created iterator working from type %d",
+              *curr_type,
+              vpi_get_str(vpiFullName, hdl));
+
+    m_iterator = iterator;
+}
+
+VpiIterator::~VpiIterator()
+{
+    if (m_iterator)
+        vpi_free_object(m_iterator);
+
+    LOG_DEBUG("Deleted VpiIterator");
+}
+
+GpiObjHdl *VpiIterator::next_handle(void)
+{
+    vpiHandle obj;
+    GpiObjHdl *new_obj = NULL;
+
+    do {
+        obj = NULL;
+
+        if (m_iterator) {
+            obj = vpi_scan(m_iterator);
+
+            if (NULL == obj) {
+                /* m_iterator will already be free'd internally here */
+                m_iterator = NULL;
+            } else {
+                break;
+            }
+
+            LOG_DEBUG("End of type=%d iteration", *curr_type);
+        } else {
+            LOG_DEBUG("No valid type=%d iterator", *curr_type);
+        }
+
+        if (++curr_type >= iterate_over.end()) {
+            obj = NULL;
+            break;
+        }
+
+        m_iterator = vpi_iterate(*curr_type, obj);
+
+    } while (!obj);
+
+    if (NULL == obj) {
+        LOG_DEBUG("No more children, all relationships tested");
+        return new_obj;
+    }
+
+    std::string name = vpi_get_str(vpiFullName, obj);
+
+    LOG_DEBUG("vhpi_scan found name:%s", name.c_str());
+
+    VpiImpl *vpi_impl = reinterpret_cast<VpiImpl*>(m_impl);
+    new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name);
+    return new_obj;
 }

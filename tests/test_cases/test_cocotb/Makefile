@@ -27,7 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
-include $(COCOTB)/tests/designs/sample_module/Makefile
+include ../../designs/sample_module/Makefile
 
 MODULE = test_cocotb

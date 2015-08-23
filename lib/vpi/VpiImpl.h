@@ -30,9 +30,10 @@
 
 #include "../gpi/gpi_priv.h"
 #include <vpi_user.h>
+#include <vector>
 
 // Should be run after every VPI call to check error status
-static inline int __check_vpi_error(const char *func, long line)
+static inline int __check_vpi_error(const char *file, const char *func, long line)
 {
     int level=0;
 #if VPI_CHECKING
@@ -62,7 +63,7 @@ static inline int __check_vpi_error(const char *func, long line)
             loglevel = GPIWarning;
     }
 
-    gpi_log("cocotb.gpi", loglevel, __FILE__, func, line,
+    gpi_log("cocotb.gpi", loglevel, file, func, line,
             "VPI Error %s\nPROD %s\nCODE %s\nFILE %s",
             info.message, info.product, info.code, info.file);
 
@@ -71,7 +72,7 @@ static inline int __check_vpi_error(const char *func, long line)
 }
 
 #define check_vpi_error() do { \
-    __check_vpi_error(__func__, __LINE__); \
+    __check_vpi_error(__FILE__, __func__, __LINE__); \
 } while (0)
 
 class VpiReadwriteCbHdl;
@@ -173,16 +174,21 @@ public:
 
 class VpiSignalObjHdl : public GpiSignalObjHdl {
 public:
-    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl) : GpiSignalObjHdl(impl, hdl),
+    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype) : 
+                                                             GpiSignalObjHdl(impl, hdl, objtype),
                                                              m_rising_cb(impl, this, GPI_RISING),
                                                              m_falling_cb(impl, this, GPI_FALLING),
                                                              m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
     virtual ~VpiSignalObjHdl() { }
 
     const char* get_signal_value_binstr(void);
+    double get_signal_value_real(void);
+    long get_signal_value_long(void);
 
-    int set_signal_value(const int value);
+    int set_signal_value(const long value);
+    int set_signal_value(const double value);
     int set_signal_value(std::string &value);
+    int get_num_elems(void);
 
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(unsigned int edge);
@@ -191,6 +197,20 @@ private:
     VpiValueCbHdl m_rising_cb;
     VpiValueCbHdl m_falling_cb;
     VpiValueCbHdl m_either_cb;
+};
+
+class VpiIterator : public GpiIterator {
+public:
+    VpiIterator(GpiImplInterface *impl, vpiHandle hdl);
+    
+    virtual ~VpiIterator();
+
+    GpiObjHdl *next_handle(void);
+
+private:
+    vpiHandle m_iterator;
+    static std::vector<int32_t> iterate_over;
+    std::vector<int32_t>::iterator curr_type;
 };
 
 class VpiImpl : public GpiImplInterface {
@@ -206,6 +226,8 @@ public:
 
     /* Hierachy related */
     GpiObjHdl *get_root_handle(const char *name);
+    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl);
+    GpiObjHdl *next_handle(GpiIterator *iter);
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time_ps);
@@ -216,9 +238,9 @@ public:
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
     const char * reason_to_string(int reason);
+    GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name);
 
 private:
-    GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name);
     /* Singleton callbacks */
     VpiReadwriteCbHdl m_read_write;
     VpiNextPhaseCbHdl m_next_phase;

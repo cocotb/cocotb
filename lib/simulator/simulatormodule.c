@@ -466,19 +466,18 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 static PyObject *iterate(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
-    uint32_t type;
     gpi_iterator_hdl result;
     PyObject *res;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "il", &type, &hdl)) {
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
 
-    result = gpi_iterate(type, hdl);
+    result = gpi_iterate(hdl);
 
     res = Py_BuildValue("l", result);
 
@@ -527,7 +526,7 @@ static PyObject *next(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *get_signal_val(PyObject *self, PyObject *args)
+static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
     const char *result;
@@ -549,27 +548,49 @@ static PyObject *get_signal_val(PyObject *self, PyObject *args)
     return retstr;
 }
 
-
-static PyObject *set_signal_val(PyObject *self, PyObject *args)
+static PyObject *get_signal_val_real(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
-    long value;
-    PyObject *res;
+    double result;
+    PyObject *retval;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "ll", &hdl, &value)) {
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
 
-    gpi_set_signal_value_int(hdl,value);
-    res = Py_BuildValue("s", "OK!");
+    result = gpi_get_signal_value_real(hdl);
+    retval = Py_BuildValue("d", result);
 
     DROP_GIL(gstate);
 
-    return res;
+    return retval;
+}
+
+
+static PyObject *get_signal_val_long(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    long result;
+    PyObject *retval;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_signal_value_long(hdl);
+    retval = Py_BuildValue("l", result);
+
+    DROP_GIL(gstate);
+
+    return retval;
 }
 
 
@@ -595,6 +616,49 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
     return res;
 }
 
+static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    double value;
+    PyObject *res;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "ld", &hdl, &value)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    gpi_set_signal_value_real(hdl, value);
+    res = Py_BuildValue("s", "OK!");
+
+    DROP_GIL(gstate);
+
+    return res;
+}
+
+static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    long value;
+    PyObject *res;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "ll", &hdl, &value)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    gpi_set_signal_value_long(hdl, value);
+    res = Py_BuildValue("s", "OK!");
+
+    DROP_GIL(gstate);
+
+    return res;
+}
 
 static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
 {
@@ -690,6 +754,28 @@ static PyObject *get_name_string(PyObject *self, PyObject *args)
     return retstr;
 }
 
+static PyObject *get_type(PyObject *self, PyObject *args)
+{
+    int result;
+    gpi_sim_hdl hdl;
+    PyObject *pyresult;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_object_type((gpi_sim_hdl)hdl);
+    pyresult = Py_BuildValue("i", result);
+
+    DROP_GIL(gstate);
+
+    return pyresult;
+}
+
 
 static PyObject *get_type_string(PyObject *self, PyObject *args)
 {
@@ -734,6 +820,27 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
     DROP_GIL(gstate);
 
     return pTuple;
+}
+
+static PyObject *get_num_elems(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    PyObject *retstr;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    int elems = gpi_get_num_elems((gpi_sim_hdl)hdl);
+    retstr = Py_BuildValue("i", elems);
+
+    DROP_GIL(gstate);
+
+    return retstr;
 }
 
 static PyObject *stop_simulator(PyObject *self, PyObject *args)

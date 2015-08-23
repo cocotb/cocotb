@@ -23,16 +23,62 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
+import logging
+
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestError
+from cocotb.result import TestError, TestFailure
+
+@cocotb.test()
+def recursive_discovery(dut):
+    """
+    Recursively discover every single object in the design
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(100)
+    def dump_all_the_things(parent):
+        count = 0
+        for thing in parent:
+            count += 1
+            tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+            count += dump_all_the_things(thing)
+        return count
+    total = dump_all_the_things(dut)
+    tlog.info("Found a total of %d things", total)
+
 
 
 @cocotb.test()
 def discovery_all(dut):
-    dut.log.info("Trying to discover")
+    dut._log.info("Trying to discover")
     yield Timer(0)
     for thing in dut:
-        thing.log.info("Found something: %s" % thing.fullname)
+        thing._log.info("Found something: %s" % thing._fullname)
+        #for subthing in thing:
+        #    thing._log.info("Found something: %s" % thing._fullname)
 
-    clk = dut.aclk
+    thing._log.info("length of dut.inst_acs is %d" % len(dut.gen_acs))
+    item = dut.gen_acs[3]
+    item._log.info("this is item")
+
+@cocotb.coroutine
+def iteration_loop(dut):
+    for thing in dut:
+        thing._log.info("Found something: %s" % thing._fullname)
+        yield Timer(1)
+
+@cocotb.test()
+def dual_iteration(dut):
+    loop_one = cocotb.fork(iteration_loop(dut))
+    loop_two = cocotb.fork(iteration_loop(dut))
+
+    yield [loop_one.join(), loop_two.join()]
+
+@cocotb.test()
+def get_clock(dut):
+    dut.aclk <= 0
+    yield Timer(1)
+    dut.aclk <= 1
+    yield Timer(1)
+    if int(dut.aclk) is not 1:
+        raise TestFailure("dut.aclk is not what we expected")

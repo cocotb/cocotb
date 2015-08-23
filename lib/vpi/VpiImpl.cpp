@@ -26,7 +26,6 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
-#include <vector>
 
 extern "C" {
 
@@ -70,6 +69,50 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vpi_time_s.low;
 }
 
+gpi_objtype_t to_gpi_objtype(int32_t vpitype)
+{
+    switch (vpitype) {
+        case vpiNet:
+        case vpiNetBit:
+        case vpiReg:
+        case vpiRegBit:
+            return GPI_REGISTER;
+
+        case vpiRealVar:
+            return GPI_REAL;
+
+        case vpiInterfaceArray:
+        case vpiPackedArrayVar:
+        case vpiRegArray:
+        case vpiNetArray:
+            return GPI_ARRAY;
+
+        case vpiEnumNet:
+        case vpiEnumVar:
+        case vpiIntVar:
+        case vpiIntegerVar:
+        case vpiIntegerNet:
+            return GPI_ENUM;
+
+        case vpiParameter:
+            return GPI_PARAMETER;
+
+
+        case vpiStructVar:
+            return GPI_STRUCTURE;
+
+        case vpiModport:
+        case vpiInterface:
+        case vpiModule:
+        case vpiRefObj:
+            return GPI_MODULE;
+
+        default:
+            return GPI_UNKNOWN;
+    }
+}
+
+
 GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name)
 {
     int32_t type;
@@ -91,7 +134,10 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiEnumNet:
         case vpiEnumVar:
         case vpiIntVar:
-            new_obj = new VpiSignalObjHdl(this, new_hdl);
+        case vpiIntegerVar:
+        case vpiIntegerNet:
+        case vpiRealVar:
+            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiStructVar:
         case vpiModule:
@@ -100,7 +146,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiInterfaceArray:
         case vpiRefObj:
         case vpiPackedArrayVar:
-            new_obj = new GpiObjHdl(this, new_hdl);
+            new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         default:
             LOG_WARN("Not able to map type %d to object.", type);
@@ -141,14 +187,15 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 
     new_hdl = vpi_handle_by_index(vpi_hdl, index);
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to vpi_get_handle_by_index %d", index);
+        LOG_DEBUG("Unable to vpi_get_handle_by_index %u", index);
         return NULL;
     }
+
     std::string name = vpi_get_str(vpiFullName, new_hdl);
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to fetch object below entity (%s) at index (%d)",
+        LOG_ERROR("Unable to fetch object below entity (%s) at index (%u)",
                                  parent->get_name_str(), index);
         return NULL;
     }
@@ -165,6 +212,10 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
     check_vpi_error();
+    if (!iterator) {
+        LOG_INFO("Nothing visible via VPI");
+        return NULL;
+    }
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
 
@@ -184,7 +235,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     }
 
     root_name = vpi_get_str(vpiFullName, root);
-    rv = new GpiObjHdl(this, root);
+    rv = new GpiObjHdl(this, root, to_gpi_objtype(vpi_get(vpiType, root)));
     rv->initialise(root_name);
 
     return rv;
@@ -206,6 +257,19 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     return NULL;
 }
 
+GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl)
+{
+    VpiIterator *new_iter;
+    vpiHandle vpi_hdl = obj_hdl->get_handle<vpiHandle>();
+
+    new_iter = new VpiIterator(this, vpi_hdl);
+    return new_iter;
+}
+
+GpiObjHdl *VpiImpl::next_handle(GpiIterator *iter)
+{
+    return iter->next_handle();
+}
 
 GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
 {

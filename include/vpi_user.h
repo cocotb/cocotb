@@ -55,13 +55,15 @@ extern "C" {
 
 typedef uint32_t *vpiHandle;
 
+#define vpiIntegerVar          25   /* Integer */
 #define vpiModule              32   /* module instance */
 #define vpiNet                 36   /* scalar or vector net */
 #define vpiNetBit              37   /* bit of a vector net */
+#define vpiRealVar             47   /* real variable */
 #define vpiReg                 48   /* scalar or vector reg */
 #define vpiRegBit              49   /* bit of vector reg */
 #define vpiParameter           41   /* module parameter */
-#define vpiNetArray 	       114
+#define vpiNetArray            114
 #define vpiRegArray            116  /* multidimensional reg */
 #define vpiInterface           601
 #define vpiInterfaceArray      603
@@ -69,6 +71,7 @@ typedef uint32_t *vpiHandle;
 #define vpiRefObj              608
 #define vpiPackedArrayVar      623
 #define vpiEnumNet             680  /* SystemVerilog */
+#define vpiIntegerNet          681
 #define vpiIntVar              612
 #define vpiEnumVar             617
 #define vpiStructVar           618

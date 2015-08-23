@@ -30,9 +30,11 @@
 
 #include "../gpi/gpi_priv.h"
 #include <vhpi_user.h>
+#include <vector>
+#include <map>
 
 // Should be run after every VHPI call to check error status
-static inline int __check_vhpi_error(const char *func, long line)
+static inline int __check_vhpi_error(const char *file, const char *func, long line)
 {
     int level=0;
 #if VHPI_CHECKING
@@ -59,7 +61,7 @@ static inline int __check_vhpi_error(const char *func, long line)
             break;
     }
 
-    gpi_log("cocotb.gpi", loglevel, __FILE__, func, line,
+    gpi_log("cocotb.gpi", loglevel, file, func, line,
             "VHPI Error level %d: %s\nFILE %s:%d",
             info.severity, info.message, info.file, info.line);
 
@@ -68,7 +70,7 @@ static inline int __check_vhpi_error(const char *func, long line)
 }
 
 #define check_vhpi_error() do { \
-    __check_vhpi_error(__func__, __LINE__); \
+    __check_vhpi_error(__FILE__, __func__, __LINE__); \
 } while (0)
 
 class VhpiCbHdl : public virtual GpiCbHdl {
@@ -149,7 +151,8 @@ public:
 
 class VhpiSignalObjHdl : public GpiSignalObjHdl {
 public:
-    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl) : GpiSignalObjHdl(impl, hdl),
+    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl, gpi_objtype_t objtype) :
+                                                                GpiSignalObjHdl(impl, hdl, objtype),
                                                                 m_size(0),
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
@@ -157,13 +160,19 @@ public:
     virtual ~VhpiSignalObjHdl();
 
     const char* get_signal_value_binstr(void);
+    double get_signal_value_real(void);
+    long get_signal_value_long(void);
 
-    int set_signal_value(const int value);
+
+    int set_signal_value(const long value);
+    int set_signal_value(const double value);
     int set_signal_value(std::string &value);
-    
+
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(unsigned int edge);
     int initialise(std::string &name);
+
+    int get_num_elems(void);
 
 private:
     const vhpiEnumT chr2vhpi(const char value);
@@ -173,6 +182,34 @@ private:
     VhpiValueCbHdl m_rising_cb;
     VhpiValueCbHdl m_falling_cb;
     VhpiValueCbHdl m_either_cb;
+};
+
+class KindMappings {
+public:
+    KindMappings();
+
+public:
+    std::map<vhpiClassKindT, std::vector<vhpiOneToManyT> > options_map;
+    std::vector<vhpiOneToManyT>* get_options(vhpiClassKindT type);
+
+private:
+    void add_to_options(vhpiClassKindT type, vhpiOneToManyT *options);
+};
+
+class VhpiIterator : public GpiIterator {
+public:
+    VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl);
+
+    virtual ~VhpiIterator();
+
+    GpiObjHdl *next_handle(void);
+
+private:
+    vhpiHandleT m_iterator;
+    vhpiHandleT m_iter_obj;
+    static KindMappings iterate_over;      /* Possible mappings */
+    std::vector<vhpiOneToManyT> *selected; /* Mapping currently in use */
+    std::vector<vhpiOneToManyT>::iterator one2many;
 };
 
 class VhpiImpl : public GpiImplInterface {
@@ -188,6 +225,8 @@ public:
 
     /* Hierachy related */
     GpiObjHdl *get_root_handle(const char *name);
+    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl);
+    GpiObjHdl *next_handle(GpiIterator *iter);
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time_ps);
@@ -201,8 +240,8 @@ public:
     const char * reason_to_string(int reason);
     const char * format_to_string(int format);
 
-private:
     GpiObjHdl *create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string &name);
+private:
     VhpiReadwriteCbHdl m_read_write;
     VhpiNextPhaseCbHdl m_next_phase;
     VhpiReadOnlyCbHdl m_read_only;

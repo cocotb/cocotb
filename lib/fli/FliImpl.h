@@ -73,7 +73,7 @@ private:
 
 class FliSignalObjHdl : public GpiSignalObjHdl {
 public:
-    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : GpiSignalObjHdl(impl, hdl),
+    FliSignalObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) : GpiSignalObjHdl(impl, hdl, GPI_UNKNOWN),
                                                                 m_fli_hdl(hdl),
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
@@ -94,7 +94,11 @@ public:
     }
 
     const char* get_signal_value_binstr(void);
-    int set_signal_value(const int value);
+    double get_signal_value_real(void) { return 0.0; }
+    long get_signal_value_long(void) { return 0; }
+
+    int set_signal_value(const long value);
+    int set_signal_value(const double value) { return 0; }
     int set_signal_value(std::string &value);
     int initialise(std::string &name);
     GpiCbHdl *value_change_cb(unsigned int edge);
@@ -116,7 +120,7 @@ private:
 
 class FliVariableObjHdl : public GpiSignalObjHdl {
 public:
-    FliVariableObjHdl(GpiImplInterface *impl, mtiVariableIdT hdl) : GpiSignalObjHdl(impl, hdl),
+    FliVariableObjHdl(GpiImplInterface *impl, mtiVariableIdT hdl) : GpiSignalObjHdl(impl, hdl, GPI_UNKNOWN),
                                                                     m_fli_hdl(hdl),
                                                                     m_fli_type(MTI_TYPE_SCALAR),
                                                                     m_mti_buff(NULL),
@@ -130,8 +134,12 @@ public:
     }
 
     const char* get_signal_value_binstr(void);
-    int set_signal_value(const int value);
+    double get_signal_value_real(void) { return 0.0; }
+    long get_signal_value_long(void) { return 0; }
+
+    int set_signal_value(const long value);
     int set_signal_value(std::string &value);
+    int set_signal_value(const double value) { return 0; }
     int initialise(std::string &name);
     GpiCbHdl *value_change_cb(unsigned int edge);
 
@@ -234,6 +242,8 @@ public:
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
     GpiObjHdl *get_root_handle(const char *name);
+    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl);
+    GpiObjHdl *next_handle(GpiIterator *iter);
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time_ps);
