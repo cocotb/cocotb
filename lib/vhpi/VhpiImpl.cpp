@@ -211,7 +211,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
                 vhpiPhysVecVal == value.format ||
                 vhpiTimeVecVal == value.format) {
                 LOG_DEBUG("Detected a vector type", name.c_str());
-                gpi_type = GPI_MODULE;
+                gpi_type = GPI_ARRAY;
             }
 
             new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type);

@@ -112,7 +112,6 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
     }
 }
 
-
 GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name)
 {
     int32_t type;
