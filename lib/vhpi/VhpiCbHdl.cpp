@@ -513,8 +513,6 @@ VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 
 KindMappings::KindMappings()
 {
-//    std::vector<vhpiOneToManyT> option(root_options, root_options + sizeof(root_options) / sizeof(root_options[0]));
-
     /* vhpiRootInstK */
     vhpiOneToManyT root_options[] = {
         vhpiInternalRegions,
