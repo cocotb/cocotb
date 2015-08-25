@@ -149,10 +149,9 @@ int VhpiCbHdl::arm_callback(void)
         vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
 
         if (!new_hdl) {
+            check_vhpi_error();
             LOG_CRITICAL("VHPI: Unable to register callback a handle for VHPI type %s(%d)",
                          m_impl->reason_to_string(cb_data.reason), cb_data.reason);
-            check_vhpi_error();
-            ret = -1;
         }
 
         cbState = (vhpiStateT)vhpi_get(vhpiStateP, new_hdl);

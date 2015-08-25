@@ -262,7 +262,6 @@ int embed_sim_init(gpi_sim_info_t *info)
         if (PyErr_Occurred())
             PyErr_Print();
         fprintf(stderr, "Cannot find function \"%s\"\n", "_initialise_testbench");
-        Py_DECREF(cocotb_init);
         goto cleanup;
     }
 
