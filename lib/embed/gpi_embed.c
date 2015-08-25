@@ -90,10 +90,21 @@ void embed_init_python(void)
        such that they can attach */
     const char *pause = getenv("COCOTB_ATTACH");
     if (pause) {
-        int sleep_time = atoi(pause);
-        fprintf(stderr, "Waiting for %d seconds - Attach to %d\n", sleep_time, getpid());
+        long sleep_time = strtol(pause, NULL, 10);
+        if (errno == ERANGE && (sleep_time == LONG_MAX || sleep_time == LONG_MIN)) {
+            fprintf(stderr, "COCOTB_ATTACH only needs to be set to ~30 seconds");
+            goto out;
+        }
+        if ((errno != 0 && sleep_time == 0) ||
+            (sleep_time <= 0)) {
+            fprintf(stderr, "COCOTB_ATTACH must be set to an integer base 10 or omitted");
+            goto out;
+        }
+
+        fprintf(stderr, "Waiting for %lu seconds - Attach to %d\n", sleep_time, getpid());
         sleep(sleep_time);
     }
+out:
     FEXIT;
 }
 
