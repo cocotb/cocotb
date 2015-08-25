@@ -174,7 +174,7 @@ package pkg_components is
 		);
 	end component reorder;
 
-	component recursion is
+	component recursionx is
 		port(
 			clk : in std_logic;
 			rst : in std_logic;
@@ -189,6 +189,6 @@ package pkg_components is
 			m_axis_output_tlast      : out std_logic;
 			m_axis_output_tready     : in  std_logic
 		);
-	end component recursion;
+	end component recursionx;
 
 end package pkg_components;

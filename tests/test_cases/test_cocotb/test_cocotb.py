@@ -191,7 +191,8 @@ def do_test_afterdelay_in_readonly(dut, delay):
              expect_fail=cocotb.SIM_NAME in ["Icarus Verilog",
                                              "Riviera-PRO",
                                              "ModelSim ALTERA STARTER EDITION",
-                                             "ModelSim DE"])
+                                             "ModelSim DE",
+                                             "ncsim(64)"])
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -205,7 +206,8 @@ def test_readwrite_in_readonly(dut):
 
 
 @cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog",
-                                             "Chronologic Simulation VCS Release"])
+                                             "Chronologic Simulation VCS Release"],
+             skip=cocotb.SIM_NAME in ["ncsim(64)"])
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited

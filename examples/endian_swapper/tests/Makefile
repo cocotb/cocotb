@@ -28,7 +28,7 @@
 ###############################################################################
 
 # Default to verilog
-GPI_IMPL ?= vpi
+TOPLEVEL_LANG ?= verilog
 
 WPWD=$(shell sh -c 'pwd -W')
 PWD=$(shell pwd)
@@ -43,13 +43,13 @@ PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
 endif
 export PYTHONPATH
 
-ifeq ($(GPI_IMPL),vpi)
+ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv
     TOPLEVEL = endian_swapper_sv
     GPI_IMPL=vpi
 endif
 
-ifeq ($(GPI_IMPL),vhpi)
+ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES = $(WPWD)/../hdl/endian_swapper.vhdl
     TOPLEVEL = endian_swapper_vhdl
     GPI_IMPL=vhpi

@@ -165,7 +165,7 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
 
     GpiObjHdl *hdl;
 
-    LOG_DEBUG("Looking for root handle over %d impls", registered_impls.size());
+    LOG_DEBUG("Looking for root handle '%s' over %d impls", name, registered_impls.size());
 
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
@@ -209,6 +209,7 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
         }
     }
 
+    LOG_DEBUG("Failed to find a hdl named %s", name);
     return NULL;
 }
 
@@ -219,48 +220,60 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
     GpiObjHdl *hdl = NULL;
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
 
-    LOG_WARN("Trying index");
-
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
-        LOG_WARN("Checking if %d native though impl %s ", index, (*iter)->get_name_c());
+        LOG_DEBUG("Checking if index %d native though impl %s ", index, (*iter)->get_name_c());
         if ((hdl = (*iter)->native_check_create(index, base))) {
-            LOG_WARN("Found %d via %s", index, (*iter)->get_name_c());
-            //hdl = base->get_handle_by_name(s_name);
+            LOG_DEBUG("Found %d via %s", index, (*iter)->get_name_c());
+            return (gpi_sim_hdl)hdl;
         }
     }
 
-    return (gpi_sim_hdl)hdl;
+    LOG_DEBUG("Failed to find a hdl at index %d", index);
+    return NULL;
 }
 
-gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base)
+gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base)
 {
-#if 0
     GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(base);
-    GpiIterator *iter = obj_hdl->m_impl->iterate_handle(type, obj_hdl);
+    GpiIterator *iter = obj_hdl->m_impl->iterate_handle(obj_hdl);
     if (!iter) {
         return NULL;
     }
-    iter->parent = obj_hdl;
     return (gpi_iterator_hdl)iter;
-#endif
-    return NULL;
 }
 
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
 {
-#if 0
+    gpi_sim_hdl next;
     GpiIterator *iter = sim_to_hdl<GpiIterator*>(iterator);
-    return (gpi_sim_hdl)iter->parent->next_handle(iter);
-#endif
-    return NULL;
+    next = (gpi_sim_hdl)iter->next_handle();
+    if (!next) {
+        /* If the iterator returns NULL then it has reached the
+           end, we clear up here before returning
+         */
+        delete iter;
+    }
+    return next;
 }
 
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
     return obj_hdl->get_signal_value_binstr();
+}
+
+double gpi_get_signal_value_real(gpi_sim_hdl sig_hdl)
+{
+    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    return obj_hdl->get_signal_value_real();
+}
+
+long gpi_get_signal_value_long(gpi_sim_hdl sig_hdl)
+{
+    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    return obj_hdl->get_signal_value_long();
 }
 
 const char *gpi_get_signal_name_str(gpi_sim_hdl sig_hdl)
@@ -275,7 +288,13 @@ const char *gpi_get_signal_type_str(gpi_sim_hdl sig_hdl)
     return obj_hdl->get_type_str();
 }
 
-void gpi_set_signal_value_int(gpi_sim_hdl sig_hdl, int value)
+gpi_objtype_t gpi_get_object_type(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_type();
+}
+
+void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
     obj_hdl->set_signal_value(value);
@@ -286,6 +305,18 @@ void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str)
     std::string value = str;
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
     obj_hdl->set_signal_value(value);
+}
+
+void gpi_set_signal_value_real(gpi_sim_hdl sig_hdl, double value)
+{
+    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    obj_hdl->set_signal_value(value);
+}
+
+int gpi_get_num_elems(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_num_elems();
 }
 
 gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),

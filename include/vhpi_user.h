@@ -609,7 +609,13 @@ typedef enum
     vhpiStrValP                 = 1315,
     vhpiToolVersionP            = 1316,
     vhpiUnitNameP               = 1317,
-    vhpiSaveRestartLocationP    = 1318
+    vhpiSaveRestartLocationP    = 1318,
+
+    /* Cadence IUS */
+    vhpiFullVlogNameP = 1500,       /* Full path name (VHDL names are Verilogized) */
+    vhpiFullVHDLNameP = 1501,       /* Full path name (Verilog names are vhdlized) */
+    vhpiFullLSNameP = 1502,         /* Full path name (Upper case) using ':' and '.' separators */
+    vhpiFullLSCaseNameP = 1503      /* Full path name (VHDL case sensitive) */
 
 #ifdef VHPIEXTEND_STR_PROPERTIES
     VHPIEXTEND_STR_PROPERTIES

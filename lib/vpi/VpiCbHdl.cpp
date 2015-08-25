@@ -28,7 +28,6 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
-#include <vector>
 
 extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
 
@@ -124,20 +123,47 @@ int VpiCbHdl::cleanup_callback(void)
     return 0;
 }
 
+int VpiSignalObjHdl::initialise(std::string &name) {
+    m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
+    LOG_DEBUG("VPI: %s initialised with %d elements", name.c_str(), m_num_elems);
+    return GpiObjHdl::initialise(name);
+}
+
 const char* VpiSignalObjHdl::get_signal_value_binstr(void)
 {
     FENTER
     s_vpi_value value_s = {vpiBinStrVal};
-    p_vpi_value value_p = &value_s;
 
-    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), value_p);
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
 
-    return value_p->value.str;
+    return value_s.value.str;
+}
+
+double VpiSignalObjHdl::get_signal_value_real(void)
+{
+    FENTER
+    s_vpi_value value_s = {vpiRealVal};
+
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
+    check_vpi_error();
+
+    return value_s.value.real;
+}
+
+long VpiSignalObjHdl::get_signal_value_long(void)
+{
+    FENTER
+    s_vpi_value value_s = {vpiIntVal};
+
+    vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
+    check_vpi_error();
+
+    return value_s.value.integer;
 }
 
 // Value related functions
-int VpiSignalObjHdl::set_signal_value(int value)
+int VpiSignalObjHdl::set_signal_value(long value)
 {
     FENTER
     s_vpi_value value_s;
@@ -152,6 +178,27 @@ int VpiSignalObjHdl::set_signal_value(int value)
     vpi_time_s.low  = 0;
 
     // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
+    check_vpi_error();
+
+    FEXIT
+    return 0;
+}
+
+int VpiSignalObjHdl::set_signal_value(double value)
+{
+    FENTER
+    s_vpi_value value_s;
+
+    value_s.value.real = value;
+    value_s.format = vpiRealVal;
+
+    s_vpi_time vpi_time_s;
+
+    vpi_time_s.type = vpiSimTime;
+    vpi_time_s.high = 0;
+    vpi_time_s.low  = 0;
+
     vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
     check_vpi_error();
 
@@ -314,4 +361,159 @@ VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                                VpiCbHdl(impl)
 {
     cb_data.reason = cbNextSimTime;
+}
+
+KindMappings::KindMappings()
+{
+    /* vpiModule */
+    int32_t module_options[] = {
+        //vpiModule,  add this back
+        vpiContAssign,
+        vpiDefParam,
+        vpiMemory,
+        vpiModPath,
+        vpiNamedEvent,
+        vpiNet,
+        //vpiParamAssign,Aldec does not support this - SEGV
+        vpiParameter,
+        vpiPort,
+        vpiReg,
+        vpiSpecParam,
+        vpiTchk,
+        vpiAttribute,
+        //vpiModuleArray, Aldec does not support this - SEGV
+        vpiPrimitiveArray,
+        vpiNetArray,
+        vpiRegArray,
+        vpiNamedEventArray,
+        //vpiInterface, Aldec does not support this - SEGV
+        //vpiInterfaceArray, Aldec does not support this - SEGV
+        0
+    };
+    add_to_options(vpiModule, &module_options[0]);
+    /* vpiNet */
+    int32_t net_options[] = {
+        0
+    };
+    add_to_options(vpiNet, &net_options[0]);
+    /* vpiPort */
+    int32_t port_options[] = {
+        vpiAttribute,
+        0
+    };
+    add_to_options(vpiPort, &port_options[0]);
+}
+
+void KindMappings::add_to_options(int32_t type, int32_t *options)
+{
+    std::vector<int32_t> option_vec;
+    int32_t *ptr = options;
+    while (*ptr) {
+        option_vec.push_back(*ptr);
+        ptr++;
+    }
+    options_map[type] = option_vec;
+}
+
+std::vector<int32_t>* KindMappings::get_options(int32_t type)
+{
+    std::map<int32_t, std::vector<int32_t> >::iterator valid = options_map.find(type);
+
+    if (options_map.end() == valid) {
+        LOG_ERROR("VPI: Implementation does not know how to iterate over %d", type);
+        exit(1);
+    } else {
+        return &valid->second;
+    }
+}
+
+KindMappings VpiIterator::iterate_over;
+
+VpiIterator::VpiIterator(GpiImplInterface *impl, vpiHandle hdl) : GpiIterator(impl, hdl),
+                                                                  m_iterator(NULL)
+{
+    vpiHandle iterator;
+
+    selected = iterate_over.get_options(vpi_get(vpiType, hdl));
+
+    for (one2many = selected->begin();
+         one2many != selected->end();
+         one2many++) {
+        iterator = vpi_iterate(*one2many, hdl);
+
+        if (iterator) {
+            break;
+        }
+     
+        LOG_DEBUG("vpi_iterate type=%d returned NULL", *one2many);
+    }
+
+    if (NULL == iterator) {
+        LOG_WARN("vpi_iterate returned NULL for all types");
+        return;
+    }
+
+    LOG_DEBUG("Created iterator working from type %d",
+              *one2many,
+              vpi_get_str(vpiFullName, hdl));
+
+    m_iterator = iterator;
+}
+
+VpiIterator::~VpiIterator()
+{
+    if (m_iterator)
+        vpi_free_object(m_iterator);
+
+    LOG_DEBUG("Deleted VpiIterator");
+}
+
+GpiObjHdl *VpiIterator::next_handle(void)
+{
+    vpiHandle obj;
+    GpiObjHdl *new_obj = NULL;
+
+    do {
+        obj = NULL;
+
+        if (m_iterator) {
+            obj = vpi_scan(m_iterator);
+
+            if (NULL == obj) {
+                /* m_iterator will already be free'd internally here */
+                m_iterator = NULL;
+            } else {
+                break;
+            }
+
+            LOG_DEBUG("End of type=%d iteration", *one2many);
+        } else {
+            LOG_DEBUG("No valid type=%d iterator", *one2many);
+        }
+
+        if (++one2many >= selected->end()) {
+            obj = NULL;
+            break;
+        }
+
+        m_iterator = vpi_iterate(*one2many, get_handle<vpiHandle>());
+
+    } while (!obj);
+
+    if (NULL == obj) {
+        LOG_DEBUG("No more children, all relationships tested");
+        return new_obj;
+    }
+
+    std::string name;
+    if (vpiPort == vpi_get(vpiType, obj))
+        name = vpi_get_str(vpiName, obj);
+    else
+        name = name = vpi_get_str(vpiName, obj);
+
+    LOG_DEBUG("vpi_scan found name:%s", name.c_str());
+
+    VpiImpl *vpi_impl = reinterpret_cast<VpiImpl*>(m_impl);
+    new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name);
+    return new_obj;
 }
