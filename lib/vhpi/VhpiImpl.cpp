@@ -277,7 +277,7 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 
     new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vhpi_hdl, index);
     if (!new_hdl) {
-        /* Support for the above seems poor, so if it die not work
+        /* Support for the above seems poor, so if it did not work
            try an iteration instead */
 
         vhpiHandleT iter = vhpi_iterator(vhpiIndexedNames, vhpi_hdl);
