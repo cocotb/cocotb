@@ -58,7 +58,7 @@ char *GpiHdl::gpi_copy_name(const char *name)
         name = null;
     }
 
-    result = (char *)malloc(len);
+    result = (char *)malloc(len + 1);
     if (result == NULL) {
         LOG_CRITICAL("GPI: Attempting allocate string buffer failed!");
     }
