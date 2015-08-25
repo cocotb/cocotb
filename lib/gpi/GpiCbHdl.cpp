@@ -53,16 +53,14 @@ char *GpiHdl::gpi_copy_name(const char *name)
     if (name)
         len = strlen(name) + 1;
     else {
-        LOG_CRITICAL("GPI: attempt to use NULL from impl");
+        LOG_WARN("GPI: attempt to use NULL from impl");
         len = strlen(null);
         name = null;
     }
 
-    result = (char *)malloc(len);
+    result = (char *)malloc(len + 1);
     if (result == NULL) {
         LOG_CRITICAL("GPI: Attempting allocate string buffer failed!");
-        len = strlen(null);
-        name = null;
     }
 
     snprintf(result, len, "%s", name);

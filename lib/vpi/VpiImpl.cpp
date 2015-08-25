@@ -272,8 +272,9 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
     VpiCbHdl *cb_hdl = (VpiCbHdl*)cb_data->user_data;
 
-    if (!cb_hdl)
+    if (!cb_hdl) {
         LOG_CRITICAL("VPI: Callback data corrupted");
+    }
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
@@ -367,7 +368,7 @@ static int system_function_overload(char *userdata)
 
     // The first argument to fatal is the FinishNum which we discard
     if (args_iter && *userdata == systf_fatal_level) {
-        argh = vpi_scan(args_iter);
+        vpi_scan(args_iter);
     }
 
     if (args_iter) {
