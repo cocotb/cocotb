@@ -1,3 +1,8 @@
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   # via the "travis encrypt" command using the project repo's public key
+   - secure: "YTKZKkNH8t11bZCtR4nMjszifW+QlIAluDAthYq8I4EpuRSKQ1ntVi9MnDs6EQu8CD9LfFOeQ0wymRU71FOf22n54sCVQgbo8OcwHXa/3PUeWi9A/i+BqRZ7iCdeGFJH8rQaCWov6mCyVjjdie52kwWv3jy1ZaTeuUTX54EKFII="
 language: python
 python:
   - "2.7"
@@ -21,3 +26,12 @@ install:
 #  - cd iverilog-master && autoconf && ./configure && make && sudo make install && cd ..
 script:
   - make test
+addons:
+  coverity_scan:
+    project:
+      name: "potentialventures/cocotb"
+      description: "Python Co-simulation library for RTL verification"
+    notification_email: github@potentialventures.com
+    build_command:   "make"
+    branch_pattern: coverity_scan
+

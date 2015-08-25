@@ -74,8 +74,9 @@ int VpiCbHdl::arm_callback(void) {
     int ret = 0;
 
     if (!new_hdl) {
-        LOG_CRITICAL("VPI: Unable to register a callback handle for VPI type %s(%d)",
+        LOG_ERROR("VPI: Unable to register a callback handle for VPI type %s(%d)",
                      m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+        return -1;
 
     } else {
         m_state = GPI_PRIMED;
