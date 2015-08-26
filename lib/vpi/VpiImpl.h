@@ -31,6 +31,7 @@
 #include "../gpi/gpi_priv.h"
 #include <vpi_user.h>
 #include <vector>
+#include <map>
 
 // Should be run after every VPI call to check error status
 static inline int __check_vpi_error(const char *file, const char *func, long line)
@@ -172,6 +173,18 @@ public:
     virtual ~VpiShutdownCbHdl() { }
 };
 
+class KindMappings {
+public:
+    KindMappings();
+
+public:
+    std::map<int32_t, std::vector<int32_t> > options_map;
+    std::vector<int32_t>* get_options(int32_t type);
+
+private:
+    void add_to_options(int32_t type, int32_t *options);
+};
+
 class VpiSignalObjHdl : public GpiSignalObjHdl {
 public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype) : 
@@ -209,8 +222,9 @@ public:
 
 private:
     vpiHandle m_iterator;
-    static std::vector<int32_t> iterate_over;
-    std::vector<int32_t>::iterator curr_type;
+    static KindMappings iterate_over;      /* Possible mappings */
+    std::vector<int32_t> *selected; /* Mapping currently in use */
+    std::vector<int32_t>::iterator one2many;
 };
 
 class VpiImpl : public GpiImplInterface {

@@ -275,12 +275,28 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
               vhpi_get_str(vhpiNameP, vhpi_hdl),
               vhpi_get_str(vhpiKindStrP, vhpi_hdl));
 
-    if (vhpiIndexedNameK == vhpi_get(vhpiKindP, vhpi_hdl)) {
-        LOG_DEBUG("Can't index into vhpiIndexedNameK, have to use an iterator?");
-        return NULL;
-    }
-
     new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vhpi_hdl, index);
+    if (!new_hdl) {
+        /* Support for the above seems poor, so if it did not work
+           try an iteration instead */
+
+        vhpiHandleT iter = vhpi_iterator(vhpiIndexedNames, vhpi_hdl);
+        if (iter) {
+            uint32_t curr_index = 0;
+            while (true) {
+                new_hdl = vhpi_scan(iter);
+                if (!new_hdl) {
+                    break;
+                }
+                if (index == curr_index) {
+                    LOG_DEBUG("Index match %u == %u", curr_index, index);
+                    break;
+                }
+                curr_index++;
+            }
+            vhpi_release_handle(iter);
+        }
+    }
 
     if (new_hdl == NULL) {
         LOG_DEBUG("Unable to query vhpi_handle_by_index %u", index);

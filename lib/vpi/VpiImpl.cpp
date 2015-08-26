@@ -105,6 +105,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiInterface:
         case vpiModule:
         case vpiRefObj:
+        case vpiPort:
             return GPI_MODULE;
 
         default:
@@ -145,6 +146,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiInterfaceArray:
         case vpiRefObj:
         case vpiPackedArrayVar:
+        case vpiPort:
             new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         default:

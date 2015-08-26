@@ -55,16 +55,98 @@ extern "C" {
 
 typedef uint32_t *vpiHandle;
 
-#define vpiIntegerVar          25   /* Integer */
-#define vpiModule              32   /* module instance */
-#define vpiNet                 36   /* scalar or vector net */
-#define vpiNetBit              37   /* bit of a vector net */
-#define vpiRealVar             47   /* real variable */
-#define vpiReg                 48   /* scalar or vector reg */
-#define vpiRegBit              49   /* bit of vector reg */
-#define vpiParameter           41   /* module parameter */
-#define vpiNetArray            114
-#define vpiRegArray            116  /* multidimensional reg */
+/******************************** OBJECT TYPES ********************************/
+
+#define vpiAlways              1   /* always procedure */
+#define vpiAssignStmt          2   /* quasi-continuous assignment */
+#define vpiAssignment          3   /* procedural assignment */
+#define vpiBegin               4   /* block statement */
+#define vpiCase                5   /* case statement */
+#define vpiCaseItem            6   /* case statement item */
+#define vpiConstant            7   /* numerical constant or string literal */
+#define vpiContAssign          8   /* continuous assignment */
+#define vpiDeassign            9   /* deassignment statement */
+#define vpiDefParam           10   /* defparam */
+#define vpiDelayControl       11   /* delay statement (e.g., #10) */
+#define vpiDisable            12   /* named block disable statement */
+#define vpiEventControl       13   /* wait on event, e.g., @e */
+#define vpiEventStmt          14   /* event trigger, e.g., ->e */
+#define vpiFor                15   /* for statement */
+#define vpiForce              16   /* force statement */
+#define vpiForever            17   /* forever statement */
+#define vpiFork               18   /* fork-join block */
+#define vpiFuncCall           19   /* function call */
+#define vpiFunction           20   /* function */
+#define vpiGate               21   /* primitive gate */
+#define vpiIf                 22   /* if statement */
+#define vpiIfElse             23   /* if-else statement */
+#define vpiInitial            24   /* initial procedure */
+#define vpiIntegerVar         25   /* integer variable */
+#define vpiInterModPath       26   /* intermodule wire delay */
+#define vpiIterator           27   /* iterator */
+#define vpiIODecl             28   /* input/output declaration */
+#define vpiMemory             29   /* behavioral memory */
+#define vpiMemoryWord         30   /* single word of memory */
+#define vpiModPath            31   /* module path for path delays */
+#define vpiModule             32   /* module instance */
+#define vpiNamedBegin         33   /* named block statement */
+#define vpiNamedEvent         34   /* event variable */
+#define vpiNamedFork          35   /* named fork-join block */
+#define vpiNet                36   /* scalar or vector net */
+#define vpiNetBit             37   /* bit of vector net */
+#define vpiNullStmt           38   /* a semicolon. Ie. #10 ; */
+#define vpiOperation          39   /* behavioral operation */
+#define vpiParamAssign        40   /* module parameter assignment */
+#define vpiParameter          41   /* module parameter */
+#define vpiPartSelect         42   /* part-select */
+#define vpiPathTerm           43   /* terminal of module path */
+#define vpiPort               44   /* module port */
+#define vpiPortBit            45   /* bit of vector module port */
+#define vpiPrimTerm           46   /* primitive terminal */
+#define vpiRealVar            47   /* real variable */
+#define vpiReg                48   /* scalar or vector reg */
+#define vpiRegBit             49   /* bit of vector reg */
+#define vpiRelease            50   /* release statement */
+#define vpiRepeat             51   /* repeat statement */
+#define vpiRepeatControl      52   /* repeat control in an assign stmt */
+#define vpiSchedEvent         53   /* vpi_put_value() event */
+#define vpiSpecParam          54   /* specparam */
+#define vpiSwitch             55   /* transistor switch */
+#define vpiSysFuncCall        56   /* system function call */
+#define vpiSysTaskCall        57   /* system task call */
+#define vpiTableEntry         58   /* UDP state table entry */
+#define vpiTask               59   /* task */
+#define vpiTaskCall           60   /* task call */
+#define vpiTchk               61   /* timing check */
+#define vpiTchkTerm           62   /* terminal of timing check */
+#define vpiTimeVar            63   /* time variable */
+#define vpiTimeQueue          64   /* simulation event queue */
+#define vpiUdp                65   /* user-defined primitive */
+#define vpiUdpDefn            66   /* UDP definition */
+#define vpiUserSystf          67   /* user-defined system task/function */
+#define vpiVarSelect          68   /* variable array selection */
+#define vpiWait               69   /* wait statement */
+#define vpiWhile              70   /* while statement */
+
+/********************** object types added with 1364-2001 *********************/
+
+#define vpiAttribute         105   /* attribute of an object */
+#define vpiBitSelect         106   /* Bit-select of parameter, var select */
+#define vpiCallback          107   /* callback object */
+#define vpiDelayTerm         108   /* Delay term which is a load or driver */
+#define vpiDelayDevice       109   /* Delay object within a net */
+#define vpiFrame             110   /* reentrant task/func frame */
+#define vpiGateArray         111   /* gate instance array */
+#define vpiModuleArray       112   /* module instance array */
+#define vpiPrimitiveArray    113   /* vpiprimitiveArray type */
+#define vpiNetArray          114   /* multidimensional net */
+#define vpiRange             115   /* range declaration */
+#define vpiRegArray          116   /* multidimensional reg */
+#define vpiSwitchArray       117   /* switch instance array */
+#define vpiUdpArray          118   /* UDP instance array */
+#define vpiContAssignBit     128   /* Bit of a vector continuous assignment */
+#define vpiNamedEventArray   129   /* multidimensional named event */
+
 #define vpiInterface           601
 #define vpiInterfaceArray      603
 #define vpiModport             606
@@ -75,9 +157,14 @@ typedef uint32_t *vpiHandle;
 #define vpiIntVar              612
 #define vpiEnumVar             617
 #define vpiStructVar           618
-#define vpiStop                66  /* execute simulator's $stop */
-#define vpiFinish              67  /* execute simulator's $finish */
-#define vpiReset               68  /* execute simulator's $reset */
+
+
+/********************** object types added with 1364-2005 *********************/
+
+#define vpiIndexedPartSelect 130   /* Indexed part-select object */
+#define vpiGenScopeArray     133   /* array of generated scopes */
+#define vpiGenScope          134   /* A generated scope */
+#define vpiGenVar            135   /* Object used to instantiate gen scopes */
 
 #define vpiType                 1   /* type of object */
 #define vpiName                 2   /* local name of object */
@@ -86,6 +173,27 @@ typedef uint32_t *vpiHandle;
 
 #define vpiNoDelay              1
 #define vpiInertialDelay        2
+
+/* One 2 many relationships */
+#define vpiArgument             89   /* argument to (system) task/function */
+#define vpiBit                  90   /* bit of vector net or port */
+#define vpiDriver               91   /* driver for a net */
+#define vpiInternalScope        92   /* internal scope in module */
+#define vpiLoad                 93   /* load on net or reg */
+#define vpiModDataPathIn        94   /* data terminal of a module path */
+#define vpiModPathIn            95   /* Input terminal of a module path */
+#define vpiModPathOut           96   /* output terminal of a module path */
+#define vpiOperand              97   /* operand of expression */
+#define vpiPortInst             98   /* connected port instance */
+#define vpiProcess              99   /* process in module */
+#define vpiVariables           100   /* variables in module */
+#define vpiUse                 101   /* usage */
+
+#define vpiStop                66  /* execute simulator's $stop */
+#define vpiFinish              67  /* execute simulator's $finish */
+#define vpiReset               68  /* execute simulator's $reset */
+
+
 
 typedef struct t_vpi_time
 {
@@ -216,7 +324,6 @@ typedef struct t_cb_data
 #define cbUnresolvedSystf        24
 
 /* Object Types */
-#define vpiPort                 44
 #define vpiMember               742
 
 /* error severity levels */

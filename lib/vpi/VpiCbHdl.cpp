@@ -363,38 +363,89 @@ VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.reason = cbNextSimTime;
 }
 
-static int32_t options[] = {
-    vpiNet,
-    vpiReg,
-    vpiParameter,
-    vpiRegArray,
-    /* Calling any of there below will cause a SEGV, even on their own
-       when run under a mixed language verilog toplevel. On another verilog design
-       only this is not the case
-       */
-    //vpiNetArray, 
-    //vpiModule,
-    //vpiInterface,
-    //vpiInterfaceArray
-};
+KindMappings::KindMappings()
+{
+    /* vpiModule */
+    int32_t module_options[] = {
+        //vpiModule,  add this back
+        vpiContAssign,
+        vpiDefParam,
+        vpiMemory,
+        vpiModPath,
+        vpiNamedEvent,
+        vpiNet,
+        //vpiParamAssign,Aldec does not support this - SEGV
+        vpiParameter,
+        vpiPort,
+        vpiReg,
+        vpiSpecParam,
+        vpiTchk,
+        vpiAttribute,
+        //vpiModuleArray, Aldec does not support this - SEGV
+        vpiPrimitiveArray,
+        vpiNetArray,
+        vpiRegArray,
+        vpiNamedEventArray,
+        //vpiInterface, Aldec does not support this - SEGV
+        //vpiInterfaceArray, Aldec does not support this - SEGV
+        0
+    };
+    add_to_options(vpiModule, &module_options[0]);
+    /* vpiNet */
+    int32_t net_options[] = {
+        0
+    };
+    add_to_options(vpiNet, &net_options[0]);
+    /* vpiPort */
+    int32_t port_options[] = {
+        vpiAttribute,
+        0
+    };
+    add_to_options(vpiPort, &port_options[0]);
+}
 
-std::vector<int32_t> VpiIterator::iterate_over(options, options + (sizeof(options) / sizeof(options[0])));
+void KindMappings::add_to_options(int32_t type, int32_t *options)
+{
+    std::vector<int32_t> option_vec;
+    int32_t *ptr = options;
+    while (*ptr) {
+        option_vec.push_back(*ptr);
+        ptr++;
+    }
+    options_map[type] = option_vec;
+}
+
+std::vector<int32_t>* KindMappings::get_options(int32_t type)
+{
+    std::map<int32_t, std::vector<int32_t> >::iterator valid = options_map.find(type);
+
+    if (options_map.end() == valid) {
+        LOG_ERROR("VPI: Implementation does not know how to iterate over %d", type);
+        exit(1);
+    } else {
+        return &valid->second;
+    }
+}
+
+KindMappings VpiIterator::iterate_over;
 
 VpiIterator::VpiIterator(GpiImplInterface *impl, vpiHandle hdl) : GpiIterator(impl, hdl),
                                                                   m_iterator(NULL)
 {
     vpiHandle iterator;
 
-    for (curr_type = iterate_over.begin();
-         curr_type != iterate_over.end();
-         curr_type++) {
-        iterator = vpi_iterate(*curr_type, hdl);
+    selected = iterate_over.get_options(vpi_get(vpiType, hdl));
+
+    for (one2many = selected->begin();
+         one2many != selected->end();
+         one2many++) {
+        iterator = vpi_iterate(*one2many, hdl);
 
         if (iterator) {
             break;
         }
      
-        LOG_DEBUG("vpi_iterate type=%d returned NULL", *curr_type);
+        LOG_DEBUG("vpi_iterate type=%d returned NULL", *one2many);
     }
 
     if (NULL == iterator) {
@@ -403,7 +454,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, vpiHandle hdl) : GpiIterator(im
     }
 
     LOG_DEBUG("Created iterator working from type %d",
-              *curr_type,
+              *one2many,
               vpi_get_str(vpiFullName, hdl));
 
     m_iterator = iterator;
@@ -435,17 +486,17 @@ GpiObjHdl *VpiIterator::next_handle(void)
                 break;
             }
 
-            LOG_DEBUG("End of type=%d iteration", *curr_type);
+            LOG_DEBUG("End of type=%d iteration", *one2many);
         } else {
-            LOG_DEBUG("No valid type=%d iterator", *curr_type);
+            LOG_DEBUG("No valid type=%d iterator", *one2many);
         }
 
-        if (++curr_type >= iterate_over.end()) {
+        if (++one2many >= selected->end()) {
             obj = NULL;
             break;
         }
 
-        m_iterator = vpi_iterate(*curr_type, obj);
+        m_iterator = vpi_iterate(*one2many, get_handle<vpiHandle>());
 
     } while (!obj);
 
@@ -454,9 +505,13 @@ GpiObjHdl *VpiIterator::next_handle(void)
         return new_obj;
     }
 
-    std::string name = vpi_get_str(vpiFullName, obj);
+    std::string name;
+    if (vpiPort == vpi_get(vpiType, obj))
+        name = vpi_get_str(vpiName, obj);
+    else
+        name = name = vpi_get_str(vpiName, obj);
 
-    LOG_DEBUG("vhpi_scan found name:%s", name.c_str());
+    LOG_DEBUG("vpi_scan found name:%s", name.c_str());
 
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl*>(m_impl);
     new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name);
