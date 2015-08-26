@@ -149,15 +149,16 @@ int VhpiCbHdl::arm_callback(void)
         vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
 
         if (!new_hdl) {
-            LOG_CRITICAL("VHPI: Unable to register callback a handle for VHPI type %s(%d)",
-                         m_impl->reason_to_string(cb_data.reason), cb_data.reason);
             check_vhpi_error();
-            ret = -1;
+            LOG_ERROR("VHPI: Unable to register callback a handle for VHPI type %s(%d)",
+                         m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+            return -1;
         }
 
         cbState = (vhpiStateT)vhpi_get(vhpiStateP, new_hdl);
         if (vhpiEnable != cbState) {
-            LOG_CRITICAL("VHPI ERROR: Registered callback isn't enabled! Got %d\n", cbState);
+            LOG_ERROR("VHPI ERROR: Registered callback isn't enabled! Got %d\n", cbState);
+            return -1;
         }
 
         m_obj_hdl = new_hdl;

@@ -52,7 +52,6 @@ inline To sim_to_hdl(gpi_sim_hdl input)
     To result = static_cast<To>(input);
     if (!result) {
         LOG_CRITICAL("GPI: Handle passed down is not valid gpi_sim_hdl");
-        exit(1);
     }
 
     return result;
@@ -141,6 +140,8 @@ public:
 class GpiCbHdl : public GpiHdl {
 public:
     GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
+                                       gpi_function(NULL),
+                                       m_cb_data(NULL),
                                        m_state(GPI_FREE) { }
     // Pure virtual functions for derived classes
     virtual int arm_callback(void) = 0;         // Register with siumlator
