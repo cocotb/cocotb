@@ -31,6 +31,10 @@ ifdef VERILOG_INCLUDE_DIRS
 VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
 endif
 
+ifdef EXTRA_ARGS
+VLOG_ARGS += $(EXTRA_ARGS)
+endif
+
 ifeq ($(GUI),1)
 SIM_CMD = vsim -gui
 VSIM_ARGS += -onfinish stop
