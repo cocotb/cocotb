@@ -35,7 +35,7 @@ import random
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep, Event
+from cocotb.triggers import RisingEdge, ReadOnly, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
