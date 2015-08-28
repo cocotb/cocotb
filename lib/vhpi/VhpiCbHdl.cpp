@@ -634,26 +634,27 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterato
              vhpi_get(vhpiKindP, hdl),
              vhpi_get_str(vhpiKindStrP, hdl));
 
-    /* On some simulators , Aldec vhpiRootInstK is a null level of hierachy
+    /* On some simulators (Aldec) vhpiRootInstK is a null level of hierachy
      * We check that something is going to come back if not we try the level
      * down
      */
-
     if (vhpiRootInstK == vhpi_get(vhpiKindP, hdl)) {
         uint32_t children = 0;
         vhpiHandleT tmp_hdl;
-        for(tmp_hdl = vhpi_scan(iterator); tmp_hdl && (children <= 1); tmp_hdl = vhpi_scan(iterator), children++) { }
 
-        vhpi_release_handle(iterator);        
+        for(tmp_hdl = vhpi_scan(iterator); tmp_hdl != NULL; tmp_hdl = vhpi_scan(iterator), children++) { }
+
         iterator = vhpi_iterator(*one2many, hdl);
 
+        // Only a single child, skip a level
         if (children == 1) {
-            vhpiHandleT root_iterator;
             tmp_hdl = vhpi_scan(iterator);
-            root_iterator = vhpi_iterator(*one2many, tmp_hdl);
             vhpi_release_handle(iterator);
-            iterator = root_iterator;
-            LOG_WARN("Skipped vhpiRootInstK to get to %s", vhpi_get_str(vhpiKindStrP, tmp_hdl));
+
+            iterator = vhpi_iterator(*one2many, tmp_hdl);
+            LOG_WARN("Skipped vhpiRootInstK to get to %s (%s)", 
+                     vhpi_get_str(vhpiKindStrP, tmp_hdl),
+                     vhpi_get_str(vhpiFullNameP, tmp_hdl));
             m_iter_obj = tmp_hdl;
         }
     }
@@ -688,11 +689,14 @@ GpiObjHdl *VhpiIterator::next_handle(void)
                 obj=NULL;
             }
 
-            if (obj)
-                continue;
+            if (obj) {
+                LOG_DEBUG("Found an item %s", vhpi_get_str(vhpiFullNameP, obj));
+                break;
+            } else {
+                LOG_DEBUG("vhpi_scan on %d returned NULL", m_iterator);
+            }
 
             LOG_DEBUG("End of vhpiOneToManyT=%d iteration", *one2many);
-            vhpi_release_handle(m_iterator);
             m_iterator = NULL;
         } else {
             LOG_DEBUG("No valid vhpiOneToManyT=%d iterator", *one2many);

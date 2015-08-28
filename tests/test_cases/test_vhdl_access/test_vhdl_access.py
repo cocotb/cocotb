@@ -26,45 +26,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
 
 import cocotb
+from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, IntegerObject, ConstantObject
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 
 
-def recursive_dump(parent, log):
-    """
-    Recursively iterate through every object and log a message
-
-    Returns a count of the total number of objects found
-    """
-    count = 0
-    for thing in parent:
-        count += 1
-        log.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
-        count += recursive_dump(thing, log)
-    return count
 
 
 @cocotb.test()
-def recursive_discovery(dut):
+def check_objects(dut):
     """
-    Recursively discover every single object in the design
-    """
-    tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
-    total = recursive_dump(dut, tlog)
-    tlog.info("Found a total of %d things", total)
-
-
-@cocotb.test()
-def recursive_discovery_boundary(dut):
-    """
-    Currently we can't traverse a language boundary during iteration
-
-    However if we manually delve through the language boundary we
-    should then be able to iterate to discover objects
+    Check the types of objects that are returned
     """
     tlog = logging.getLogger("cocotb.test")
+    fails = 0
     yield Timer(100)
-    total = recursive_dump(dut.i_vhdl, tlog)
-    tlog.info("Found a total of %d things", total)
+
+    def check_instance(obj, objtype):
+        if not isinstance(obj, objtype):
+            tlog.error("Expected %s to be of type %s but got %s" % (
+                obj._fullname, objtype.__name__, obj.__class__.__name__))
+            return 1
+        tlog.info("%s is %s" % (obj._fullname, obj.__class__.__name__))
+        return 0
+
+    # Hierarchy checks
+    fails += check_instance(dut.inst_axi4s_buffer, HierarchyObject)
+    fails += check_instance(dut.gen_branch_distance[0], HierarchyObject)
+    fails += check_instance(dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject)
+    fails += check_instance(dut.gen_acs[0].inbranch_tdata_low, ModifiableObject)
+    fails += check_instance(dut.gen_acs[0].inbranch_tdata_low[0], ModifiableObject)
+
+    fails += check_instance(dut.aclk, ModifiableObject)
+    fails += check_instance(dut.s_axis_input_tdata, ModifiableObject)
+
+    fails += check_instance(dut.current_active, IntegerObject)
+
+    fails += check_instance(dut.inst_axi4s_buffer.DATA_WIDTH, ConstantObject)
+
+    if fails:
+        raise TestFailure("%d objects were not of the expected type" % fails)
+
 
