@@ -100,10 +100,16 @@ class SimHandleBase(object):
         if name in self._sub_handles:
             return self._sub_handles[name]
         new_handle = simulator.get_handle_by_name(self._handle, name)
+
         if not new_handle:
             if name in self._compat_mapping:
                 warnings.warn("Use of %s attribute is deprecated" % name)
                 return getattr(self, self._compat_mapping[name])
+
+            # To find generated indices we have to discover all
+            self._discover_all()
+            if name in self._sub_handles:
+                return self._sub_handles[name]
             raise AttributeError("%s contains no object named %s" % (self._name, name))
         self._sub_handles[name] = SimHandle(new_handle)
         return self._sub_handles[name]

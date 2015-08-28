@@ -52,10 +52,10 @@ def check_objects(dut):
 
     # Hierarchy checks
     fails += check_instance(dut.inst_axi4s_buffer, HierarchyObject)
-    #fails += check_instance(dut.gen_branch_distance[0], HierarchyObject)
-    #fails += check_instance(dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject)
-    #fails += check_instance(dut.gen_acs[0].inbranch_tdata_low, ModifiableObject)
-    #fails += check_instance(dut.gen_acs[0].inbranch_tdata_low[0], ModifiableObject)
+    fails += check_instance(dut.gen_branch_distance[0], HierarchyObject)
+    fails += check_instance(dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject)
+    fails += check_instance(dut.gen_acs[0].inbranch_tdata_low, ModifiableObject)
+    fails += check_instance(dut.gen_acs[0].inbranch_tdata_low[0], ModifiableObject)
 
     fails += check_instance(dut.aclk, ModifiableObject)
     fails += check_instance(dut.s_axis_input_tdata, ModifiableObject)
