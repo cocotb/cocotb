@@ -367,38 +367,75 @@ KindMappings::KindMappings()
 {
     /* vpiModule */
     int32_t module_options[] = {
-        //vpiModule,  add this back
-        vpiContAssign,
-        vpiDefParam,
-        vpiMemory,
-        vpiModPath,
-        vpiNamedEvent,
-        vpiNet,
-        //vpiParamAssign,Aldec does not support this - SEGV
-        vpiParameter,
+        //vpiModule,            // Aldec SEGV on mixed language
+        //vpiModuleArray,       // Aldec SEGV on mixed language
+        vpiInternalScope,
         vpiPort,
+        //vpiIODecl,            // Don't care about these
+        vpiNet,
+        vpiNetArray,
         vpiReg,
-        vpiSpecParam,
+        vpiRegArray,
+        vpiMemory,
+        //vpiVariables          // Aldec SEGV on plain Verilog
+        vpiNamedEvent,
+        vpiNamedEventArray,
+        vpiParameter,
+        //vpiSpecParam,         // Don't care
+        //vpiParamAssign,       // Aldec SEGV on mixed language
+        //vpiDefParam,          // Don't care
+        vpiPrimitive,
+        vpiPrimitiveArray,
+        //vpiContAssign,        // Don't care
+        vpiProcess,             // Don't care
+        vpiModPath,
         vpiTchk,
         vpiAttribute,
-        //vpiModuleArray, Aldec does not support this - SEGV
-        vpiPrimitiveArray,
-        vpiNetArray,
-        vpiRegArray,
-        vpiNamedEventArray,
-        //vpiInterface, Aldec does not support this - SEGV
-        //vpiInterfaceArray, Aldec does not support this - SEGV
+        //vpiInterface,         // Aldec SEGV on mixed language
+        //vpiInterfaceArray,    // Aldec SEGV on mixed language
         0
     };
     add_to_options(vpiModule, &module_options[0]);
+
     /* vpiNet */
     int32_t net_options[] = {
+        //vpiContAssign,        // Driver and load handled separately
+        //vpiPrimTerm,
+        //vpiPathTerm,
+        //vpiTchkTerm,
+        //vpiDriver,
+        //vpiLocalDriver,
+        //vpiLoad,
+        //vpiLocalLoad,
         0
     };
     add_to_options(vpiNet, &net_options[0]);
+
+    /* vpiNetArray */
+    int32_t netarray_options[] = {
+        vpiNet,
+        0
+    };
+    add_to_options(vpiNetArray, &netarray_options[0]);
+
+
+    /* vpiRegArray */
+    int32_t regarray_options[] = {
+        vpiReg,
+        0
+    };
+    add_to_options(vpiRegArray, &regarray_options[0]);
+
+    /* vpiMemory */
+    int32_t memory_options[] = {
+        vpiMemoryWord,
+        0
+    };
+    add_to_options(vpiMemory, &memory_options[0]);
+
     /* vpiPort */
     int32_t port_options[] = {
-        vpiAttribute,
+        vpiBit,
         0
     };
     add_to_options(vpiPort, &port_options[0]);
