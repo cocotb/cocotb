@@ -510,7 +510,8 @@ def SimHandle(handle):
         simulator.REG:         ModifiableObject,
         simulator.NETARRAY:    ModifiableObject,
         simulator.REAL:        RealObject,
-        simulator.ENUM:        IntegerObject
+        simulator.INTEGER:     IntegerObject,
+        simulator.ENUM:        IntegerObject,
     }
 
     t = simulator.get_type(handle)

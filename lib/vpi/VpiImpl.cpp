@@ -89,10 +89,12 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 
         case vpiEnumNet:
         case vpiEnumVar:
+            return GPI_ENUM;
+
         case vpiIntVar:
         case vpiIntegerVar:
         case vpiIntegerNet:
-            return GPI_ENUM;
+            return GPI_INTEGER;
 
         case vpiParameter:
             return GPI_PARAMETER;
