@@ -128,6 +128,9 @@ typedef uint32_t *vpiHandle;
 #define vpiWait               69   /* wait statement */
 #define vpiWhile              70   /* while statement */
 
+
+#define vpiPrimitive         103   /* primitive (gate, switch, UDP) */
+
 /********************** object types added with 1364-2001 *********************/
 
 #define vpiAttribute         105   /* attribute of an object */

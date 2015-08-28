@@ -196,9 +196,14 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string
 
             if (vhpiIntVal == value.format) {
                 LOG_DEBUG("Detected an INT type %s", name.c_str());
-                gpi_type = GPI_ENUM;
-
+                gpi_type = GPI_INTEGER;
             }
+
+            if (vhpiEnumVal == value.format) {
+                LOG_DEBUG("Detected an ENUM type %s", name.c_str());
+                gpi_type = GPI_ENUM;
+            }
+
             if (vhpiRawDataVal == value.format) {
                 LOG_DEBUG("Detected a custom array type %s", name.c_str());
                 gpi_type = GPI_MODULE;

@@ -134,7 +134,8 @@ typedef enum gpi_objtype_e {
     GPI_ARRAY = 6,
     GPI_ENUM = 7,
     GPI_STRUCTURE = 8,
-    GPI_REAL = 9
+    GPI_REAL = 9,
+    GPI_INTEGER = 10
 } gpi_objtype_t;
 
 // Functions for iterating over entries of a handle
