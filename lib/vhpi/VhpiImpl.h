@@ -169,7 +169,7 @@ public:
 
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(unsigned int edge);
-    int initialise(std::string &name);
+    int initialise(std::string &name, std::string &fq_name);
 
 private:
     const vhpiEnumT chr2vhpi(const char value);
@@ -194,7 +194,7 @@ private:
 
 class VhpiIterator : public GpiIterator {
 public:
-    VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl);
+    VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl);
 
     virtual ~VhpiIterator();
 
@@ -236,7 +236,12 @@ public:
     const char * reason_to_string(int reason);
     const char * format_to_string(int format);
 
-    GpiObjHdl *create_gpi_obj_from_handle(vhpiHandleT new_hdl, std::string &name);
+    GpiObjHdl *create_gpi_obj_from_handle(vhpiHandleT new_hdl,
+                                          std::string &name,
+                                          std::string &fq_name);
+
+    bool equal(const GpiObjHdl* lhs, const GpiObjHdl* rhs);
+
 private:
     VhpiReadwriteCbHdl m_read_write;
     VhpiNextPhaseCbHdl m_next_phase;

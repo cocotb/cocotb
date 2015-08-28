@@ -255,6 +255,8 @@ public:
     /* Method to provide strings from operation types */
     const char *reason_to_string(int reason);
 
+    bool equal(GpiObjHdl* lhs, GpiObjHdl* rhs);
+
 private:
     FliReadOnlyCbHdl  m_readonly_cbhdl;
     FliNextPhaseCbHdl m_nexttime_cbhdl;

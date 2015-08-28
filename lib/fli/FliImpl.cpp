@@ -617,6 +617,11 @@ GpiObjHdl *FliImpl::next_handle(GpiIterator *iter)
     return NULL;
 }
 
+bool FliImpl::equal(GpiObjHdl* lhs, GpiObjHdl* rhs)
+{
+    return false;
+}
+
 
 #include <unistd.h>
 

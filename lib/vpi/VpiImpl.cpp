@@ -115,7 +115,9 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
     }
 }
 
-GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name)
+GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
+                                               std::string &name,
+                                               std::string &fq_name)
 {
     int32_t type;
     GpiObjHdl *new_obj = NULL;
@@ -156,7 +158,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
             return NULL;
     }
 
-    new_obj->initialise(name);
+    new_obj->initialise(name, fq_name);
 
     return new_obj;
 }
@@ -173,7 +175,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
         return NULL;
     }
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, fq_name);
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
         LOG_ERROR("Unable to query fetch object %s", fq_name.c_str());
@@ -195,11 +197,12 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     }
 
     std::string name = vpi_get_str(vpiFullName, new_hdl);
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
+    std::string fq_name = parent->get_fullname() + "." + name;
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
         LOG_ERROR("Unable to fetch object below entity (%s) at index (%u)",
-                                 parent->get_name_str(), index);
+                  parent->get_name_str(), index);
         return NULL;
     }
     return new_obj;
@@ -239,7 +242,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
 
     root_name = vpi_get_str(vpiFullName, root);
     rv = new GpiObjHdl(this, root, to_gpi_objtype(vpi_get(vpiType, root)));
-    rv->initialise(root_name);
+    rv->initialise(root_name, root_name);
 
     return rv;
 
@@ -263,9 +266,8 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
 GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl)
 {
     VpiIterator *new_iter;
-    vpiHandle vpi_hdl = obj_hdl->get_handle<vpiHandle>();
 
-    new_iter = new VpiIterator(this, vpi_hdl);
+    new_iter = new VpiIterator(this, obj_hdl);
     return new_iter;
 }
 
@@ -314,6 +316,11 @@ int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
     gpi_hdl->cleanup_callback();
     return 0;
+}
+
+bool VpiImpl::equal(const GpiObjHdl *lhs, const GpiObjHdl *rhs)
+{
+    return false;
 }
 
 // If the Pything world wants things to shut down then unregister

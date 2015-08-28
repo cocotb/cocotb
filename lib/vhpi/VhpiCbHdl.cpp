@@ -40,7 +40,7 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl()
         free(m_binvalue.value.str);
 }
 
-int VhpiSignalObjHdl::initialise(std::string &name) {
+int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     // Determine the type of object, either scalar or vector
     m_value.format = vhpiObjTypeVal;
     m_value.bufSize = 0;
@@ -73,7 +73,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
             break;
 
         case vhpiRealVal: {
-            GpiObjHdl::initialise(name);
+            GpiObjHdl::initialise(name, fq_name);
             return 0;
         }
 
@@ -87,7 +87,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
                 LOG_CRITICAL("Unable to alloc mem for write buffer");
             }
             LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
-            GpiObjHdl::initialise(name);
+            GpiObjHdl::initialise(name, fq_name);
 
             return 0;
         }
@@ -104,7 +104,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
                 m_num_elems++;
             }
             LOG_DEBUG("Found vhpiRawDataVal with %d elements", m_num_elems);
-            GpiObjHdl::initialise(name);
+            GpiObjHdl::initialise(name, fq_name);
             return 0;
         }
 
@@ -133,7 +133,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     }
 
 out:
-    return GpiObjHdl::initialise(name);
+    return GpiObjHdl::initialise(name, fq_name);
 }
 
 VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl)
@@ -600,19 +600,20 @@ std::vector<vhpiOneToManyT>* KindMappings::get_options(vhpiClassKindT type)
 
 KindMappings VhpiIterator::iterate_over;
 
-VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterator(impl, hdl),
-                                                                      m_iterator(NULL),
-                                                                      m_iter_obj(hdl)
+VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(impl, hdl),
+                                                                     m_iterator(NULL),
+                                                                     m_iter_obj(NULL)
 {
     vhpiHandleT iterator;
+    vhpiHandleT vhpi_hdl = m_parent->get_handle<vhpiHandleT>();
 
-    selected = iterate_over.get_options((vhpiClassKindT)vhpi_get(vhpiKindP, hdl));
+    selected = iterate_over.get_options((vhpiClassKindT)vhpi_get(vhpiKindP, vhpi_hdl));
 
     /* Find the first mapping type that yields a valid iterator */
     for (one2many = selected->begin();
          one2many != selected->end();
          one2many++) {
-        iterator = vhpi_iterator(*one2many, hdl);
+        iterator = vhpi_iterator(*one2many, vhpi_hdl);
 
         if (iterator)
             break;
@@ -621,36 +622,40 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, vhpiHandleT hdl) : GpiIterato
     }
 
     if (NULL == iterator) {
-        std::string name = vhpi_get_str(vhpiCaseNameP, hdl);
-        LOG_WARN("vhpi_iterate return NULL for all relationships on %s (%d) kind:%s name:%s", name.c_str(),
-                 vhpi_get(vhpiKindP, hdl),
-                 vhpi_get_str(vhpiKindStrP, hdl),
-                 vhpi_get_str(vhpiCaseNameP, hdl));
+        std::string name = vhpi_get_str(vhpiCaseNameP, vhpi_hdl);
+        LOG_WARN("vhpi_iterate return NULL for all relationships on %s (%d) kind:%s name:%s",
+                 name.c_str(),
+                 vhpi_get(vhpiKindP, vhpi_hdl),
+                 vhpi_get_str(vhpiKindStrP, vhpi_hdl),
+                 vhpi_get_str(vhpiCaseNameP, vhpi_hdl));
         m_iterator = NULL;
         return;
     }
 
     LOG_DEBUG("Created iterator working from scope %d (%s)", 
-             vhpi_get(vhpiKindP, hdl),
-             vhpi_get_str(vhpiKindStrP, hdl));
+             vhpi_get(vhpiKindP, vhpi_hdl),
+             vhpi_get_str(vhpiKindStrP, vhpi_hdl));
 
     /* On some simulators (Aldec) vhpiRootInstK is a null level of hierachy
      * We check that something is going to come back if not we try the level
      * down
      */
-    if (vhpiRootInstK == vhpi_get(vhpiKindP, hdl)) {
+     m_iter_obj = vhpi_hdl;
+
+    if (vhpiRootInstK == vhpi_get(vhpiKindP, vhpi_hdl)) {
         uint32_t children = 0;
         vhpiHandleT tmp_hdl;
 
-        for(tmp_hdl = vhpi_scan(iterator); tmp_hdl != NULL; tmp_hdl = vhpi_scan(iterator), children++) { }
+        for(tmp_hdl = vhpi_scan(iterator);
+            tmp_hdl != NULL;
+            tmp_hdl = vhpi_scan(iterator), children++) { }
 
-        iterator = vhpi_iterator(*one2many, hdl);
+        iterator = vhpi_iterator(*one2many, vhpi_hdl);
 
         // Only a single child, skip a level
         if (children == 1) {
             tmp_hdl = vhpi_scan(iterator);
             vhpi_release_handle(iterator);
-
             iterator = vhpi_iterator(*one2many, tmp_hdl);
             LOG_WARN("Skipped vhpiRootInstK to get to %s (%s)", 
                      vhpi_get_str(vhpiKindStrP, tmp_hdl),
@@ -716,6 +721,7 @@ GpiObjHdl *VhpiIterator::next_handle(void)
     }
 
     std::string name = vhpi_get_str(vhpiCaseNameP, obj);
+    std::string fq_name = m_parent->get_fullname() + "." + name;
 
     LOG_DEBUG("vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
             vhpi_get(vhpiKindP, obj),
@@ -723,7 +729,7 @@ GpiObjHdl *VhpiIterator::next_handle(void)
             vhpi_get_str(vhpiCaseNameP, obj));
 
     VhpiImpl *vhpi_impl = reinterpret_cast<VhpiImpl*>(m_impl);
-    new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name);
+    new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
 
     return new_obj;
 }

@@ -32,10 +32,51 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <vector>
+#include <map>
 
 using namespace std;
 
 static vector<GpiImplInterface*> registered_impls;
+
+#ifdef SINGLETON_HANDLES
+
+class GpiHandleStore {
+public:
+    gpi_sim_hdl check_and_store(GpiObjHdl *hdl) {
+        std::map<std::string, GpiObjHdl*>::iterator it;
+
+        const std::string &name = hdl->get_fullname();
+
+        it = handle_map.find(name);
+        if (it == handle_map.end()) {
+            handle_map[name] = hdl;
+            return hdl;
+        } else {
+            LOG_WARN("Found duplicate %s", name.c_str());
+            delete hdl;
+            return it->second;
+        }
+    }
+
+    uint64_t handle_count(void) {
+        return handle_map.size();
+    }
+
+private:
+    std::map<std::string, GpiObjHdl*> handle_map;
+
+};
+
+static GpiHandleStore unique_handles;
+
+#define CHECK_AND_STORE(_x) unique_handles.check_and_store(_x)
+
+#else
+
+#define CHECK_AND_STORE(_x) _x
+
+#endif
+
 
 int gpi_print_registered_impl(void)
 {
@@ -163,7 +204,7 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
        to find this handle */
     vector<GpiImplInterface*>::iterator iter;
 
-    GpiObjHdl *hdl;
+    GpiObjHdl *hdl = NULL;
 
     LOG_DEBUG("Looking for root handle '%s' over %d impls", name, registered_impls.size());
 
@@ -174,10 +215,14 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
             LOG_DEBUG("Got a Root handle (%s) back from %s",
                 hdl->get_name_str(),
                 (*iter)->get_name_c());
-            return (gpi_sim_hdl)hdl;
+            break;
         }
     }
-    return NULL;
+
+    if (hdl)
+        return CHECK_AND_STORE(hdl);
+    else
+        return hdl;
 }
 
 gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
@@ -185,7 +230,7 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
 
     vector<GpiImplInterface*>::iterator iter;
 
-    GpiObjHdl *hdl;
+    GpiObjHdl *hdl = NULL;
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
     std::string s_name = name;
 
@@ -205,12 +250,16 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
         //std::string &to_query = base->is_this_impl(*iter) ? s_name : fq_name;
         if ((hdl = (*iter)->native_check_create(s_name, base))) {
             LOG_DEBUG("Found %s via %s", name, (*iter)->get_name_c());
-            return (gpi_sim_hdl)hdl;
+            break;
         }
     }
 
     LOG_DEBUG("Failed to find a hdl named %s", name);
-    return NULL;
+
+    if (hdl)
+        return CHECK_AND_STORE(hdl);
+    else
+        return hdl;
 }
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
@@ -226,12 +275,16 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
         LOG_DEBUG("Checking if index %d native though impl %s ", index, (*iter)->get_name_c());
         if ((hdl = (*iter)->native_check_create(index, base))) {
             LOG_DEBUG("Found %d via %s", index, (*iter)->get_name_c());
-            return (gpi_sim_hdl)hdl;
+            break;
         }
     }
 
-    LOG_DEBUG("Failed to find a hdl at index %d", index);
-    return NULL;
+    if (hdl)
+        return CHECK_AND_STORE(hdl);
+    else {
+        LOG_DEBUG("Failed to find a hdl at index %d", index);
+        return hdl;
+    }
 }
 
 gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base)
@@ -246,16 +299,18 @@ gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base)
 
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
 {
-    gpi_sim_hdl next;
+    GpiObjHdl *next;
     GpiIterator *iter = sim_to_hdl<GpiIterator*>(iterator);
-    next = (gpi_sim_hdl)iter->next_handle();
+    next = iter->next_handle();
     if (!next) {
         /* If the iterator returns NULL then it has reached the
            end, we clear up here before returning
          */
         delete iter;
+        return next;
     }
-    return next;
+
+    return CHECK_AND_STORE(next);
 }
 
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl)

@@ -61,13 +61,13 @@ inline To sim_to_hdl(gpi_sim_hdl input)
 /* Base GPI class others are derived from */
 class GpiHdl {
 public:
-    //GpiHdl() : m_impl(NULL) { }
+    GpiHdl(GpiImplInterface *impl) : m_impl(impl), m_obj_hdl(NULL) { }
     GpiHdl(GpiImplInterface *impl, void *hdl) : m_impl(impl), m_obj_hdl(hdl) { }
     virtual ~GpiHdl() { }
     virtual int initialise(std::string &name);                   // Post constructor init
 
 
-    template<typename T> T get_handle(void) {
+    template<typename T> T get_handle(void) const {
         return static_cast<T>(m_obj_hdl);
     }
 
@@ -111,14 +111,16 @@ public:
     virtual const char* get_fullname_str(void);
     virtual const char* get_type_str(void);
     virtual gpi_objtype_t get_type(void);
-    int get_num_elems(void) { 
+    int get_num_elems(void) {
         LOG_DEBUG("%s has %d elements", m_name.c_str(), m_num_elems);
-        return m_num_elems; }
+        return m_num_elems;
+    }
 
     const std::string & get_name(void);
+    const std::string & get_fullname(void);
 
     bool is_native_impl(GpiImplInterface *impl);
-    virtual int initialise(std::string &name);
+    virtual int initialise(std::string &name, std::string &full_name);
 
 protected:
     int m_num_elems;
@@ -206,10 +208,13 @@ public:
 
 class GpiIterator : public GpiHdl {
 public:
-    GpiIterator(GpiImplInterface *impl, void *hdl) : GpiHdl(impl, hdl) { }
+    GpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiHdl(impl),
+                                                          m_parent(hdl) { }
     virtual ~GpiIterator() { }
 
     virtual GpiObjHdl* next_handle() { return NULL; }
+protected:
+    GpiObjHdl *m_parent;
 };
 
 
@@ -240,6 +245,9 @@ public:
 
     /* Method to provide strings from operation types */
     virtual const char * reason_to_string(int reason) = 0;
+
+    /* Test equality of two handles */
+    virtual bool equal(const GpiObjHdl* lhs, const GpiObjHdl* rhs) = 0;
 
 private:
     std::string m_name;
