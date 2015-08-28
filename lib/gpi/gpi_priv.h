@@ -97,9 +97,11 @@ public:
                                   m_name(name),
                                   m_fullname("unknown") { }
     GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
+                                        m_num_elems(0),
                                         m_fullname("unknown"),
                                         m_type(GPI_UNKNOWN) { }
     GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : GpiHdl(impl, hdl),
+                                                                          m_num_elems(0),
                                                                           m_fullname("unknown"),
                                                                           m_type(objtype) { }
 
