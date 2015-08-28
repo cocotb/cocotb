@@ -29,6 +29,21 @@ import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 
+
+def recursive_dump(parent, log):
+    """
+    Recursively iterate through every object and log a message
+
+    Returns a count of the total number of objects found
+    """
+    count = 0
+    for thing in parent:
+        count += 1
+        log.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+        count += recursive_dump(thing, log)
+    return count
+
+
 @cocotb.test()
 def recursive_discovery(dut):
     """
@@ -36,13 +51,20 @@ def recursive_discovery(dut):
     """
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
-    def dump_all_the_things(parent):
-        count = 0
-        for thing in parent:
-            count += 1
-            tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
-            count += dump_all_the_things(thing)
-        return count
-    total = dump_all_the_things(dut)
+    total = recursive_dump(dut, tlog)
+    tlog.info("Found a total of %d things", total)
+
+
+@cocotb.test()
+def recursive_discovery_boundary(dut):
+    """
+    Currently we can't traverse a language boundary during iteration
+
+    However if we manually delve through the language boundary we
+    should then be able to iterate to discover objects
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(100)
+    total = recursive_dump(dut.i_vhdl, tlog)
     tlog.info("Found a total of %d things", total)
 
