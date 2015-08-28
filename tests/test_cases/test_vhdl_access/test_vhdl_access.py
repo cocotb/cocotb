@@ -31,8 +31,6 @@ from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 
 
-
-
 @cocotb.test()
 def check_objects(dut):
     """
@@ -56,15 +54,31 @@ def check_objects(dut):
     fails += check_instance(dut.gen_branch_distance[0].inst_branch_distance, HierarchyObject)
     fails += check_instance(dut.gen_acs[0].inbranch_tdata_low, ModifiableObject)
     fails += check_instance(dut.gen_acs[0].inbranch_tdata_low[0], ModifiableObject)
-
     fails += check_instance(dut.aclk, ModifiableObject)
     fails += check_instance(dut.s_axis_input_tdata, ModifiableObject)
-
     fails += check_instance(dut.current_active, IntegerObject)
-
     fails += check_instance(dut.inst_axi4s_buffer.DATA_WIDTH, ConstantObject)
+    fails += check_instance(dut.inst_ram_ctrl, HierarchyObject)
+    fails += check_instance(dut.inst_ram_ctrl.write_ram_fsm, IntegerObject)
+
+    if dut.inst_axi4s_buffer.DATA_WIDTH != 32:
+        tlog.error("Expected dut.inst_axi4s_buffer.DATA_WIDTH to be 32 but got %d",
+                   dut.inst_axi4s_buffer.DATA_WIDTH)
+        fails += 1
+
+    try:
+        dut.inst_axi4s_buffer.DATA_WIDTH = 42
+        tlog.error("Shouldn't be allowed to set a value on constant object")
+        fails += 1
+    except ValueError as e:
+        pass
+
+    try:
+        dut.inst_axi4s_buffer.DATA_WIDTH <= 42
+        tlog.error("Shouldn't be allowed to set a value on constant object")
+        fails += 1
+    except ValueError as e:
+        pass
 
     if fails:
-        raise TestFailure("%d objects were not of the expected type" % fails)
-
-
+        raise TestFailure("%d Failures during the test" % fails)

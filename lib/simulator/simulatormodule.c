@@ -874,6 +874,25 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     return value;
 }
 
+static void add_module_constants(PyObject* simulator)
+{
+    // Make the GPI constants accessible from the C world
+    int rc = 0;
+    rc |= PyModule_AddIntConstant(simulator, "UNKNOWN",       GPI_UNKNOWN);
+    rc |= PyModule_AddIntConstant(simulator, "MEMORY",        GPI_MEMORY);
+    rc |= PyModule_AddIntConstant(simulator, "MODULE",        GPI_MODULE);
+    rc |= PyModule_AddIntConstant(simulator, "NET",           GPI_NET);
+    rc |= PyModule_AddIntConstant(simulator, "PARAMETER",     GPI_PARAMETER);
+    rc |= PyModule_AddIntConstant(simulator, "REG",           GPI_REGISTER);
+    rc |= PyModule_AddIntConstant(simulator, "NETARRAY",      GPI_ARRAY);
+    rc |= PyModule_AddIntConstant(simulator, "ENUM",          GPI_ENUM);
+    rc |= PyModule_AddIntConstant(simulator, "STRUCTURE",     GPI_STRUCTURE);
+    rc |= PyModule_AddIntConstant(simulator, "REAL",          GPI_REAL);
+    rc |= PyModule_AddIntConstant(simulator, "INTEGER",       GPI_INTEGER);
+    if (rc != 0)
+        fprintf(stderr, "Failed to add module constants!\n");
+}
+
 #if PY_MAJOR_VERSION >= 3
 #include "simulatormodule_python3.c"
 #else
