@@ -54,6 +54,11 @@ def recursive_discovery(dut):
     total = recursive_dump(dut, tlog)
     tlog.info("Found a total of %d things", total)
 
+    if not isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject):
+        tlog.error("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable")
+        tlog.error("but it was %s" % dut.i_verilog.uart1.baud_gen_1.baud_freq.__class__.__name__)
+        raise TestError()
+
 
 @cocotb.test()
 def recursive_discovery_boundary(dut):

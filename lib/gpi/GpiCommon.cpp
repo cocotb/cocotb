@@ -52,7 +52,8 @@ public:
             handle_map[name] = hdl;
             return hdl;
         } else {
-            LOG_WARN("Found duplicate %s", name.c_str());
+            LOG_DEBUG("Found duplicate %s", name.c_str());
+
             delete hdl;
             return it->second;
         }
@@ -254,12 +255,12 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
         }
     }
 
-    LOG_DEBUG("Failed to find a hdl named %s", name);
-
     if (hdl)
         return CHECK_AND_STORE(hdl);
-    else
+    else {
+        LOG_DEBUG("Failed to find a hdl named %s", name);
         return hdl;
+    }
 }
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)

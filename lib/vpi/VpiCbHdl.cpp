@@ -369,7 +369,6 @@ KindMappings::KindMappings()
     int32_t module_options[] = {
         //vpiModule,            // Aldec SEGV on mixed language
         //vpiModuleArray,       // Aldec SEGV on mixed language
-        vpiInternalScope,
         vpiPort,
         //vpiIODecl,            // Don't care about these
         vpiNet,
@@ -391,6 +390,7 @@ KindMappings::KindMappings()
         vpiModPath,
         vpiTchk,
         vpiAttribute,
+        vpiInternalScope,
         //vpiInterface,         // Aldec SEGV on mixed language
         //vpiInterfaceArray,    // Aldec SEGV on mixed language
         0
@@ -407,6 +407,7 @@ KindMappings::KindMappings()
         //vpiLocalDriver,
         //vpiLoad,
         //vpiLocalLoad,
+        vpiNetBit,
         0
     };
     add_to_options(vpiNet, &net_options[0]);
@@ -435,7 +436,7 @@ KindMappings::KindMappings()
 
     /* vpiPort */
     int32_t port_options[] = {
-        vpiBit,
+        vpiPortBit,
         0
     };
     add_to_options(vpiPort, &port_options[0]);
@@ -458,7 +459,7 @@ std::vector<int32_t>* KindMappings::get_options(int32_t type)
 
     if (options_map.end() == valid) {
         LOG_ERROR("VPI: Implementation does not know how to iterate over %d", type);
-        exit(1);
+        return NULL;
     } else {
         return &valid->second;
     }
@@ -472,7 +473,9 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
     vpiHandle iterator;
     vpiHandle vpi_hdl = m_parent->get_handle<vpiHandle>();
 
-    selected = iterate_over.get_options(vpi_get(vpiType, vpi_hdl));
+    if (NULL == (selected = iterate_over.get_options(vpi_get(vpiType, vpi_hdl))))
+        return;
+
 
     for (one2many = selected->begin();
          one2many != selected->end();
@@ -511,6 +514,9 @@ GpiObjHdl *VpiIterator::next_handle(void)
     vpiHandle obj;
     vpiHandle iter_obj = m_parent->get_handle<vpiHandle>();
     GpiObjHdl *new_obj = NULL;
+
+    if (!selected)
+        return NULL;
 
     do {
         obj = NULL;
