@@ -215,11 +215,6 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 gpi_type = GPI_INTEGER;
             }
 
-            if (vhpiEnumVal == value.format) {
-                LOG_DEBUG("Detected an ENUM type %s", fq_name.c_str());
-                gpi_type = GPI_ENUM;
-            }
-
             if (vhpiRawDataVal == value.format) {
                 LOG_DEBUG("Detected a custom array type %s", fq_name.c_str());
                 gpi_type = GPI_MODULE;

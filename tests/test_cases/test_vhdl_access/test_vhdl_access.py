@@ -30,6 +30,16 @@ from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, Integer
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 
+@cocotb.test(expect_fail=True)
+def check_enum_object(dut):
+    """
+    Enumerations currently behave as normal signals
+
+    TODO: Implement an EnumObject class and detect valid string mappings
+    """
+    yield Timer(100)
+    if not isinstance(dut.inst_ram_ctrl.write_ram_fsm, IntegerObject):
+        raise TestFailure("Expected the FSM enum to be an InterObject")
 
 @cocotb.test()
 def check_objects(dut):
@@ -59,7 +69,6 @@ def check_objects(dut):
     fails += check_instance(dut.current_active, IntegerObject)
     fails += check_instance(dut.inst_axi4s_buffer.DATA_WIDTH, ConstantObject)
     fails += check_instance(dut.inst_ram_ctrl, HierarchyObject)
-    fails += check_instance(dut.inst_ram_ctrl.write_ram_fsm, IntegerObject)
 
     if dut.inst_axi4s_buffer.DATA_WIDTH != 32:
         tlog.error("Expected dut.inst_axi4s_buffer.DATA_WIDTH to be 32 but got %d",

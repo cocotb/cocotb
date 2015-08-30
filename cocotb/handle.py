@@ -68,7 +68,6 @@ class SimHandleBase(object):
         "log"               :       "_log",
         "fullname"          :       "_fullname",
         "name"              :       "_name",
-        "setimmediatevalue" :       "_setimmediatevalue"
         }
 
     def __init__(self, handle):
@@ -263,7 +262,21 @@ class HierarchyObject(SimHandleBase):
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
-class ConstantObject(SimHandleBase):
+class NonHierarchyObject(SimHandleBase):
+
+    """
+    Common base class for all non-hierarchy objects
+    """
+
+    def __init__(self, handle):
+        SimHandleBase.__init__(self, handle)
+        for name, attribute in SimHandleBase._compat_mapping.items():
+            setattr(self, name, getattr(self, attribute))
+
+    def __iter__(self):
+        raise StopIteration
+
+class ConstantObject(NonHierarchyObject):
     """
     Constant objects have a value that can be read, but not set.
 
@@ -271,7 +284,7 @@ class ConstantObject(SimHandleBase):
     change within a simulation
     """
     def __init__(self, handle, handle_type):
-        SimHandleBase.__init__(self, handle)
+        NonHierarchyObject.__init__(self, handle)
         if handle_type in [simulator.INTEGER, simulator.ENUM]:
             self._value = simulator.get_signal_val_long(self._handle)
         elif handle_type == simulator.REAL:
@@ -296,13 +309,13 @@ class ConstantObject(SimHandleBase):
     def __le__(self, *args, **kwargs):
         raise ValueError("Not permissible to set values on a constant object")
 
-class NonConstantObject(SimHandleBase):
+class NonConstantObject(NonHierarchyObject):
     def __init__(self, handle):
         """
             Args:
                 _handle [integer] : vpi/vhpi handle to the simulator object
         """
-        SimHandleBase.__init__(self, handle)
+        NonHierarchyObject.__init__(self, handle)
         self._r_edge = _RisingEdge(self)
         self._f_edge = _FallingEdge(self)
 
@@ -368,6 +381,9 @@ class NonConstantObject(SimHandleBase):
         return self.value.__cmp__(other)
 
     def __int__(self):
+        print "Getting value..."
+        val = self.value
+        print "Got %s (%s)" % (type(val), repr(val))
         return int(self.value)
 
     def __repr__(self):
@@ -383,7 +399,7 @@ class ModifiableObject(NonConstantObject):
         """Provide transparent assignment to bit index"""
         self.__getitem__(index)._setcachedvalue(value)
 
-    def _setimmediatevalue(self, value):
+    def setimmediatevalue(self, value):
         """
         Set the value of the underlying simulation object to value.
 
@@ -449,7 +465,7 @@ class RealObject(ModifiableObject):
     Specific object handle for Real signals and variables
     """
 
-    def _setimmediatevalue(self, value):
+    def setimmediatevalue(self, value):
         """
         Set the value of the underlying simulation object to value.
 
