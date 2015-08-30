@@ -89,57 +89,6 @@ class SimHandleBase(object):
     def __hash__(self):
         return self._handle
 
-    def __getattr__(self, name):
-        """
-        Query the simulator for a object with the specified name
-        and cache the result to build a tree of objects
-        """
-
-        if name == "value":
-            return self._getvalue()
-        if name in self._sub_handles:
-            return self._sub_handles[name]
-        new_handle = simulator.get_handle_by_name(self._handle, name)
-
-        if not new_handle:
-            if name in self._compat_mapping:
-                warnings.warn("Use of %s attribute is deprecated" % name)
-                return getattr(self, self._compat_mapping[name])
-
-            # To find generated indices we have to discover all
-            self._discover_all()
-            if name in self._sub_handles:
-                return self._sub_handles[name]
-            raise AttributeError("%s contains no object named %s" % (self._name, name))
-        self._sub_handles[name] = SimHandle(new_handle)
-        return self._sub_handles[name]
-
-    def __hasattr__(self, name):
-        """
-        Since calling hasattr(handle, "something") will print out a
-        backtrace to the log since usually attempting to access a
-        non-existent member is an error we provide a 'peek function
-
-        We still add the found handle to our dictionary to prevent leaking
-        handles.
-        """
-        if name in self._sub_handles:
-            return self._sub_handles[name]
-        new_handle = simulator.get_handle_by_name(self._handle, name)
-        if new_handle:
-            self._sub_handles[name] = SimHandle(new_handle)
-        return new_handle
-
-
-    def __getitem__(self, index):
-        if index in self._sub_handles:
-            return self._sub_handles[index]
-        new_handle = simulator.get_handle_by_index(self._handle, index)
-        if not new_handle:
-            self._raise_testerror("%s contains no object at index %d" % (self._name, index))
-        self._sub_handles[index] = SimHandle(new_handle)
-        return self._sub_handles[index]
-
 
     def __cmp__(self, other):
 
@@ -147,7 +96,6 @@ class SimHandleBase(object):
         if isinstance(other, SimHandleBase):
             if self._handle == other._handle: return 0
             return 1
-
 
     def __repr__(self):
         return self._fullname
@@ -188,6 +136,31 @@ class HierarchyObject(SimHandleBase):
             return getattr(self, name)._setcachedvalue(value)
         raise AttributeError("Attempt to access %s which isn't present in %s" %(
             name, self._name))
+
+    def __getattr__(self, name):
+        """
+        Query the simulator for a object with the specified name
+        and cache the result to build a tree of objects
+        """
+        if name in self._sub_handles:
+            return self._sub_handles[name]
+        # Avoid collision with signals named "value" while maintaining compatability
+        if name == "value":
+            return self._getvalue()
+        new_handle = simulator.get_handle_by_name(self._handle, name)
+
+        if not new_handle:
+            if name in self._compat_mapping:
+                warnings.warn("Use of %s attribute is deprecated" % name)
+                return getattr(self, self._compat_mapping[name])
+
+            # To find generated indices we have to discover all
+            self._discover_all()
+            if name in self._sub_handles:
+                return self._sub_handles[name]
+            raise AttributeError("%s contains no object named %s" % (self._name, name))
+        self._sub_handles[name] = SimHandle(new_handle)
+        return self._sub_handles[name]
 
     def __iter__(self):
         """
@@ -264,6 +237,32 @@ class HierarchyObject(SimHandleBase):
         self._discover_all()
         return dir(self)
 
+    def __hasattr__(self, name):
+        """
+        Since calling hasattr(handle, "something") will print out a
+        backtrace to the log since usually attempting to access a
+        non-existent member is an error we provide a 'peek function
+
+        We still add the found handle to our dictionary to prevent leaking
+        handles.
+        """
+        if name in self._sub_handles:
+            return self._sub_handles[name]
+        new_handle = simulator.get_handle_by_name(self._handle, name)
+        if new_handle:
+            self._sub_handles[name] = SimHandle(new_handle)
+        return new_handle
+
+
+    def __getitem__(self, index):
+        if index in self._sub_handles:
+            return self._sub_handles[index]
+        new_handle = simulator.get_handle_by_index(self._handle, index)
+        if not new_handle:
+            self._raise_testerror("%s contains no object at index %d" % (self._name, index))
+        self._sub_handles[index] = SimHandle(new_handle)
+        return self._sub_handles[index]
+
 class ConstantObject(SimHandleBase):
     """
     Constant objects have a value that can be read, but not set.
@@ -271,10 +270,15 @@ class ConstantObject(SimHandleBase):
     We can also cache the value since it is elaboration time fixed and won't
     change within a simulation
     """
-    def __init__(self, handle, *args, **kwargs):
+    def __init__(self, handle, handle_type):
         SimHandleBase.__init__(self, handle)
-        self._value = None
-
+        if handle_type in [simulator.INTEGER, simulator.ENUM]:
+            self._value = simulator.get_signal_val_long(self._handle)
+        elif handle_type == simulator.REAL:
+            self._value = simulator.get_signal_val_real(self._handle)
+        else:
+            self._value = BinaryValue()
+            self._value.binstr = simulator.get_signal_val_str(self._handle)
 
     def __int__(self):
         return int(self._value)
@@ -282,6 +286,15 @@ class ConstantObject(SimHandleBase):
     def __repr__(self):
         return repr(int(self))
 
+    def __cmp__(self, other):
+        # Use the comparison method of the other object against our value
+        return self._value.__cmp__(other)
+
+    def _setcachedvalue(self, *args, **kwargs):
+        raise ValueError("Not permissible to set values on a constant object")
+
+    def __le__(self, *args, **kwargs):
+        raise ValueError("Not permissible to set values on a constant object")
 
 class NonConstantObject(SimHandleBase):
     def __init__(self, handle):
@@ -354,12 +367,12 @@ class NonConstantObject(SimHandleBase):
         # Use the comparison method of the other object against our value
         return self.value.__cmp__(other)
 
-
     def __int__(self):
         return int(self.value)
 
     def __repr__(self):
         return repr(int(self))
+
 
 class ModifiableObject(NonConstantObject):
     """
@@ -513,6 +526,10 @@ def SimHandle(handle):
         simulator.INTEGER:     IntegerObject,
         simulator.ENUM:        IntegerObject,
     }
+
+    # Special case for constants
+    if simulator.get_const(handle):
+        return ConstantObject(handle, simulator.get_type(handle))
 
     t = simulator.get_type(handle)
     if t not in _type2cls:

@@ -92,25 +92,29 @@ protected:
 // that construct an object derived from GpiSignalObjHdl or GpiObjHdl
 class GpiObjHdl : public GpiHdl {
 public:
-    GpiObjHdl(std::string name) : GpiHdl(NULL, NULL),
-                                  m_num_elems(0),
-                                  m_name(name),
-                                  m_fullname("unknown") { }
     GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
                                         m_num_elems(0),
                                         m_fullname("unknown"),
-                                        m_type(GPI_UNKNOWN) { }
+                                        m_type(GPI_UNKNOWN),
+                                        m_const(false) { }
     GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : GpiHdl(impl, hdl),
                                                                           m_num_elems(0),
                                                                           m_fullname("unknown"),
-                                                                          m_type(objtype) { }
-
+                                                                          m_type(objtype),
+                                                                          m_const(false) { }
+    GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype, bool is_const) :
+                                                                          GpiHdl(impl, hdl),
+                                                                          m_num_elems(0),
+                                                                          m_fullname("unknown"),
+                                                                          m_type(objtype),
+                                                                          m_const(is_const) { }
     virtual ~GpiObjHdl() { }
 
     virtual const char* get_name_str(void);
     virtual const char* get_fullname_str(void);
     virtual const char* get_type_str(void);
-    virtual gpi_objtype_t get_type(void);
+    gpi_objtype_t get_type(void) { return m_type; };
+    bool get_const(void) { return m_const; };
     int get_num_elems(void) {
         LOG_DEBUG("%s has %d elements", m_name.c_str(), m_num_elems);
         return m_num_elems;
@@ -127,6 +131,7 @@ protected:
     std::string m_name;
     std::string m_fullname;
     gpi_objtype_t m_type;
+    bool m_const;
 };
 
 
@@ -136,8 +141,8 @@ protected:
 // value of the signal (which doesn't apply to non signal items in the hierarchy
 class GpiSignalObjHdl : public GpiObjHdl {
 public:
-    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : 
-                                                         GpiObjHdl(impl, hdl, objtype),
+    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype, bool is_const) : 
+                                                         GpiObjHdl(impl, hdl, objtype, is_const),
                                                          m_length(0) { }
     virtual ~GpiSignalObjHdl() { }
     // Provide public access to the implementation (composition vs inheritance)
