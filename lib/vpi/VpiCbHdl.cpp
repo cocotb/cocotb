@@ -465,6 +465,7 @@ std::vector<int32_t>* KindMappings::get_options(int32_t type)
     }
 }
 
+
 KindMappings VpiIterator::iterate_over;
 
 VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(impl, hdl),
@@ -485,7 +486,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
         if (iterator) {
             break;
         }
-     
+
         LOG_DEBUG("vpi_iterate type=%d returned NULL", *one2many);
     }
 
@@ -507,6 +508,32 @@ VpiIterator::~VpiIterator()
         vpi_free_object(m_iterator);
 
     LOG_DEBUG("Deleted VpiIterator");
+}
+
+GpiObjHdl *VpiSingleIterator::next_handle(void)
+{
+    vpiHandle obj;
+    GpiObjHdl *new_obj = NULL;
+
+    if (NULL == m_iterator)
+        return new_obj;
+
+    obj = vpi_scan(m_iterator);
+    if (NULL == obj)
+        return new_obj;
+
+    std::string name;
+    if (vpiPort == vpi_get(vpiType, obj))
+        name = vpi_get_str(vpiName, obj);
+    else
+        name = vpi_get_str(vpiName, obj);
+    std::string fq_name = m_parent->get_fullname() + "." + name;
+
+    LOG_DEBUG("vpi_scan found name:%s", name.c_str());
+
+    VpiImpl *vpi_impl = reinterpret_cast<VpiImpl*>(m_impl);
+    new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
+    return new_obj;
 }
 
 GpiObjHdl *VpiIterator::next_handle(void)

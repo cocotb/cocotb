@@ -265,11 +265,23 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     return NULL;
 }
 
-GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl)
+GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type)
 {
-    VpiIterator *new_iter;
-
-    new_iter = new VpiIterator(this, obj_hdl);
+    GpiIterator *new_iter;
+    switch (type) {
+        case GPI_OBJECTS:
+            new_iter = new VpiIterator(this, obj_hdl);
+            break;
+        case GPI_DRIVERS:
+            new_iter = new VpiSingleIterator(this, obj_hdl, vpiDriver);
+            break;
+        case GPI_LOADS:
+            new_iter = new VpiSingleIterator(this, obj_hdl, vpiLoad);
+            break;
+        default:
+            LOG_WARN("Other iterator types not implemented yet");
+            break;
+    }
     return new_iter;
 }
 

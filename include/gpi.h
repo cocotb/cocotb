@@ -138,12 +138,20 @@ typedef enum gpi_objtype_e {
     GPI_INTEGER = 10
 } gpi_objtype_t;
 
+// When iterating, we can chose to either get child objects, drivers or loads
+typedef enum gpi_iterator_sel_e {
+    GPI_OBJECTS = 1,
+    GPI_DRIVERS = 2,
+    GPI_LOADS = 3,
+} gpi_iterator_sel_t;
+
+
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls
 //
 // NB the iterator handle may be NULL if no objects of the requested type are
 // found
-gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base);
+gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base, gpi_iterator_sel_t type);
 
 // Returns NULL when there are no more objects
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);

@@ -44,6 +44,22 @@ def recursive_dump(parent, log):
     return count
 
 
+@cocotb.test(expect_fail=True)
+def test_drivers(dut):
+    """
+    Try iterating over drivers of a signal.
+
+    Seems that few simulators implement vpiDriver
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(100)
+    for driver in dut.i_verilog.uart1.uart_rx_1.rx_data.drivers():
+        tlog.info("Found %s" % repr(driver))
+        break
+    else:
+        raise TestFailure("No drivers found for dut.i_verilog.uart1.uart_rx_1.rx_data")
+
+
 @cocotb.test()
 def recursive_discovery(dut):
     """
@@ -57,7 +73,7 @@ def recursive_discovery(dut):
     if not isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject):
         tlog.error("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable")
         tlog.error("but it was %s" % dut.i_verilog.uart1.baud_gen_1.baud_freq.__class__.__name__)
-        raise TestError()
+        raise TestFailure()
 
 
 @cocotb.test()
@@ -72,4 +88,6 @@ def recursive_discovery_boundary(dut):
     yield Timer(100)
     total = recursive_dump(dut.i_vhdl, tlog)
     tlog.info("Found a total of %d things", total)
+    if total != 426:
+        raise TestFailure("Expected 426 objects but found %d" % total)
 
