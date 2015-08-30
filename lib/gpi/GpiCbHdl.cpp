@@ -38,6 +38,11 @@ const char * GpiObjHdl::get_fullname_str(void)
     return m_fullname.c_str();
 }
 
+const std::string & GpiObjHdl::get_fullname(void)
+{
+    return m_fullname;
+}
+
 const char * GpiObjHdl::get_type_str(void)
 {
 #define CASE_OPTION(_X) \
@@ -112,10 +117,10 @@ int GpiHdl::initialise(std::string &name)
     return 0;
 }
 
-int GpiObjHdl::initialise(std::string &name)
+int GpiObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     m_name = name;
-    m_fullname = "bleh2";
+    m_fullname = fq_name;
     return 0;
 }
 

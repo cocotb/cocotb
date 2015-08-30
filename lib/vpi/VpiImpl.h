@@ -204,7 +204,7 @@ public:
 
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(unsigned int edge);
-    int initialise(std::string &name);
+    int initialise(std::string &name, std::string &fq_name);
 
 private:
     VpiValueCbHdl m_rising_cb;
@@ -214,7 +214,7 @@ private:
 
 class VpiIterator : public GpiIterator {
 public:
-    VpiIterator(GpiImplInterface *impl, vpiHandle hdl);
+    VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl);
     
     virtual ~VpiIterator();
 
@@ -252,7 +252,11 @@ public:
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
     const char * reason_to_string(int reason);
-    GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name);
+    GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl,
+                                          std::string &name,
+                                          std::string &fq_name);
+
+    bool equal(const GpiObjHdl* lhs, const GpiObjHdl* rhs);
 
 private:
     /* Singleton callbacks */
