@@ -112,6 +112,17 @@ void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vhpi_time_s.low;
 }
 
+// Determine whether a VHPI object type is a constant or not
+bool is_const(vhpiIntT vhpitype)
+{
+    switch (vhpitype) {
+        case vhpiConstDeclK:
+        case vhpiGenericDeclK:
+            return true;
+        default:
+            return false;
+    }
+}
 
 gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
 {
@@ -204,11 +215,6 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 gpi_type = GPI_INTEGER;
             }
 
-            if (vhpiEnumVal == value.format) {
-                LOG_DEBUG("Detected an ENUM type %s", fq_name.c_str());
-                gpi_type = GPI_ENUM;
-            }
-
             if (vhpiRawDataVal == value.format) {
                 LOG_DEBUG("Detected a custom array type %s", fq_name.c_str());
                 gpi_type = GPI_MODULE;
@@ -224,7 +230,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 gpi_type = GPI_ARRAY;
             }
 
-            new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type);
+            new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
             break;
         }
         case vhpiForGenerateK:

@@ -350,6 +350,14 @@ gpi_objtype_t gpi_get_object_type(gpi_sim_hdl sig_hdl)
     return obj_hdl->get_type();
 }
 
+int gpi_is_constant(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    if (obj_hdl->get_const())
+        return 1;
+    return 0;
+}
+
 void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);

@@ -164,6 +164,9 @@ const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 // Returns on of the types defined above e.g. gpiMemory etc.
 gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 
+// Determine whether an object value is constant (parameters / generics etc)
+int gpi_is_constant(gpi_sim_hdl gpi_hdl);
+
 
 // Functions for setting the properties of a handle
 void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value);

@@ -132,7 +132,6 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiNetBit:
         case vpiReg:
         case vpiRegBit:
-        case vpiParameter:
         case vpiRegArray:
         case vpiNetArray:
         case vpiEnumNet:
@@ -141,7 +140,10 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiIntegerVar:
         case vpiIntegerNet:
         case vpiRealVar:
-            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type));
+            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
+            break;
+        case vpiParameter:
+            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), true);
             break;
         case vpiStructVar:
         case vpiModule:

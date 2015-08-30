@@ -264,7 +264,7 @@ class Scheduler(object):
 
             while self._writes:
                 handle, value = self._writes.popitem()
-                handle._setimmediatevalue(value)
+                handle.setimmediatevalue(value)
 
             self._readwrite.unprime()
 

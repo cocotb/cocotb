@@ -68,6 +68,7 @@ static PyObject *get_handle_by_index(PyObject *self, PyObject *args);
 static PyObject *get_root_handle(PyObject *self, PyObject *args);
 static PyObject *get_name_string(PyObject *self, PyObject *args);
 static PyObject *get_type(PyObject *self, PyObject *args);
+static PyObject *get_const(PyObject *self, PyObject *args);
 static PyObject *get_type_string(PyObject *self, PyObject *args);
 static PyObject *get_num_elems(PyObject *self, PyObject *args);
 static PyObject *register_timed_callback(PyObject *self, PyObject *args);
@@ -97,6 +98,7 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_name_string", get_name_string, METH_VARARGS, "Get the name of an object as a string"},
     {"get_type_string", get_type_string, METH_VARARGS, "Get the type of an object as a string"},
     {"get_type", get_type, METH_VARARGS, "Get the type of an object, mapped to a GPI enumeration"},
+    {"get_const", get_const, METH_VARARGS, "Get a flag indicating whether the object is a constant"},
     {"get_num_elems", get_num_elems, METH_VARARGS, "Get the number of elements contained in the handle"},
     {"register_timed_callback", register_timed_callback, METH_VARARGS, "Register a timed callback"},
     {"register_value_change_callback", register_value_change_callback, METH_VARARGS, "Register a signal change callback"},

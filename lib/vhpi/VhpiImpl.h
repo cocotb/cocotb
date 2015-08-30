@@ -151,8 +151,8 @@ public:
 
 class VhpiSignalObjHdl : public GpiSignalObjHdl {
 public:
-    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl, gpi_objtype_t objtype) :
-                                                                GpiSignalObjHdl(impl, hdl, objtype),
+    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl, gpi_objtype_t objtype, bool is_const) :
+                                                                GpiSignalObjHdl(impl, hdl, objtype, is_const),
                                                                 m_rising_cb(impl, this, GPI_RISING),
                                                                 m_falling_cb(impl, this, GPI_FALLING),
                                                                 m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
