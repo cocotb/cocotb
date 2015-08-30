@@ -381,9 +381,7 @@ class NonConstantObject(NonHierarchyObject):
         return self.value.__cmp__(other)
 
     def __int__(self):
-        print "Getting value..."
         val = self.value
-        print "Got %s (%s)" % (type(val), repr(val))
         return int(self.value)
 
     def __repr__(self):
