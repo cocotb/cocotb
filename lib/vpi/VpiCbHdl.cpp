@@ -369,7 +369,6 @@ KindMappings::KindMappings()
     int32_t module_options[] = {
         //vpiModule,            // Aldec SEGV on mixed language
         //vpiModuleArray,       // Aldec SEGV on mixed language
-        vpiPort,
         //vpiIODecl,            // Don't care about these
         vpiNet,
         vpiNetArray,
@@ -390,6 +389,7 @@ KindMappings::KindMappings()
         vpiModPath,
         vpiTchk,
         vpiAttribute,
+        vpiPort,
         vpiInternalScope,
         //vpiInterface,         // Aldec SEGV on mixed language
         //vpiInterfaceArray,    // Aldec SEGV on mixed language
