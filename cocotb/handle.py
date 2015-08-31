@@ -287,15 +287,17 @@ class ConstantObject(NonHierarchyObject):
         NonHierarchyObject.__init__(self, handle)
         if handle_type in [simulator.INTEGER, simulator.ENUM]:
             self._value = simulator.get_signal_val_long(self._handle)
+            return
         elif handle_type == simulator.REAL:
             self._value = simulator.get_signal_val_real(self._handle)
-        else:
-            self._value = BinaryValue()
-            try:
-                self._value.binstr = simulator.get_signal_val_str(self._handle)
-            except:
-                print "*** GOT %s" % simulator.get_signal_val_str(self._handle)
-                self._value = simulator.get_signal_val_str(self._handle)
+            return
+
+        val = simulator.get_signal_val_str(self._handle)
+        self._value = BinaryValue(bits=len(val))
+        try:
+            self._value.binstr = val
+        except:
+            self._value = val
 
     def __int__(self):
         return int(self._value)
@@ -397,7 +399,7 @@ class NonConstantObject(NonHierarchyObject):
 
     def loads(self):
         """
-        An iterator for gathering all drivers for a signal
+        An iterator for gathering all loads on a signal
         """
         iterator = simulator.iterate(self._handle, simulator.LOADS)
         while True:
