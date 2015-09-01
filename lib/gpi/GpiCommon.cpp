@@ -226,7 +226,7 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
         return hdl;
 }
 
-static GpiObjHdl* __gpi_get_handle_by_name(std::string name, GpiObjHdl *parent)
+static GpiObjHdl* __gpi_get_handle_by_name(GpiObjHdl *parent, std::string name)
 {
     vector<GpiImplInterface*>::iterator iter;
 
@@ -262,11 +262,11 @@ static GpiObjHdl* __gpi_get_handle_by_name(std::string name, GpiObjHdl *parent)
     }
 }
 
-gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
+gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
 {
     std::string s_name = name;
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
-    return __gpi_get_handle_by_name(s_name, base);
+    return __gpi_get_handle_by_name(base, s_name);
 }
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
@@ -323,7 +323,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
                 continue;
             case GpiIterator::INVALID:
                 LOG_WARN("Found a name but unable to create via native implementation, trying others");
-                next = __gpi_get_handle_by_name(name, parent);
+                next = __gpi_get_handle_by_name(parent, name);
                 if (next) {
                     return next;
                 }
