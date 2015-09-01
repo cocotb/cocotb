@@ -198,7 +198,7 @@ public:
 
     virtual ~VhpiIterator();
 
-    GpiObjHdl *next_handle(void);
+    int next_handle(std::string &name, GpiObjHdl **hdl);
 
 private:
     vhpiHandleT m_iterator;
@@ -222,7 +222,7 @@ public:
     /* Hierachy related */
     GpiObjHdl *get_root_handle(const char *name);
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type);
-    GpiObjHdl *next_handle(GpiIterator *iter);
+    //GpiObjHdl *next_handle(GpiIterator *iter);
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time_ps);

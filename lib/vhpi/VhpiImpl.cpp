@@ -399,13 +399,6 @@ GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t typ
     return new_iter;
 }
 
-GpiObjHdl *VhpiImpl::next_handle(GpiIterator *iter)
-{
-    return iter->next_handle();
-}
-
-
-
 GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time_ps)
 {
     VhpiTimedCbHdl *hdl = new VhpiTimedCbHdl(this, time_ps);

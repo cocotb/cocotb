@@ -31,10 +31,8 @@ extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 
 VhpiSignalObjHdl::~VhpiSignalObjHdl()
 {
-    if (m_value.format == vhpiEnumVecVal ||
-        m_value.format == vhpiLogicVecVal) {
-        free(m_value.value.enumvs);
-    }
+    if (m_value.value.str)
+        free(m_value.value.str);
 
     if (m_binvalue.value.str)
         free(m_binvalue.value.str);
@@ -82,7 +80,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         case vhpiLogicVecVal: {
             m_num_elems = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
             m_value.bufSize = m_num_elems*sizeof(vhpiEnumT);
-            m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize);
+            m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize + 1);
             if (!m_value.value.enumvs) {
                 LOG_CRITICAL("Unable to alloc mem for write buffer");
             }
@@ -123,8 +121,8 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     }
 
     if (new_size) {
-        m_binvalue.bufSize = new_size*sizeof(vhpiCharT) + 1;
-        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, sizeof(vhpiCharT));
+        m_binvalue.bufSize = new_size*sizeof(vhpiCharT);
+        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize + 1, sizeof(vhpiCharT));
 
         if (!m_value.value.str) {
             LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
@@ -592,7 +590,7 @@ std::vector<vhpiOneToManyT>* KindMappings::get_options(vhpiClassKindT type)
 
     if (options_map.end() == valid) {
         LOG_ERROR("VHPI: Implementation does not know how to iterate over %d", type);
-        exit(1);
+        return NULL;
     } else {
         return &valid->second;
     }
@@ -607,7 +605,8 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
     vhpiHandleT iterator;
     vhpiHandleT vhpi_hdl = m_parent->get_handle<vhpiHandleT>();
 
-    selected = iterate_over.get_options((vhpiClassKindT)vhpi_get(vhpiKindP, vhpi_hdl));
+    if (NULL == (selected = iterate_over.get_options((vhpiClassKindT)vhpi_get(vhpiKindP, vhpi_hdl))))
+        return;
 
     /* Find the first mapping type that yields a valid iterator */
     for (one2many = selected->begin();
@@ -673,10 +672,13 @@ VhpiIterator::~VhpiIterator()
         vhpi_release_handle(m_iterator);
 }
 
-GpiObjHdl *VhpiIterator::next_handle(void)
+int VhpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
 {
     vhpiHandleT obj;
-    GpiObjHdl *new_obj = NULL;
+    GpiObjHdl *new_obj;
+
+    if (!selected)
+        return GpiIterator::END;
 
     /* We want the next object in the current mapping.
      * If the end of mapping is reached then we want to
@@ -698,7 +700,7 @@ GpiObjHdl *VhpiIterator::next_handle(void)
                 LOG_DEBUG("Found an item %s", vhpi_get_str(vhpiFullNameP, obj));
                 break;
             } else {
-                LOG_DEBUG("vhpi_scan on %d returned NULL", m_iterator);
+                LOG_DEBUG("vhpi_scan on %d returned NULL", *one2many);
             }
 
             LOG_DEBUG("End of vhpiOneToManyT=%d iteration", *one2many);
@@ -717,20 +719,31 @@ GpiObjHdl *VhpiIterator::next_handle(void)
 
     if (NULL == obj) {
         LOG_DEBUG("No more children, all relationships tested");
-        return new_obj;
+        return GpiIterator::END;
     }
 
-    std::string name = vhpi_get_str(vhpiCaseNameP, obj);
-    std::string fq_name = m_parent->get_fullname() + "." + name;
+    const char *c_name = vhpi_get_str(vhpiCaseNameP, obj);
+    if (!c_name) {
+        return GpiIterator::VALID_NO_NAME;
+    }
+    name = c_name;
 
     LOG_DEBUG("vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
             vhpi_get(vhpiKindP, obj),
             vhpi_get_str(vhpiKindStrP, obj),
             vhpi_get_str(vhpiCaseNameP, obj));
 
+    /* We try and create a handle internally, if this is not possible we
+       return and GPI will try other implementations with the name
+       */
+    std::string fq_name = m_parent->get_fullname() + "." + name;
     VhpiImpl *vhpi_impl = reinterpret_cast<VhpiImpl*>(m_impl);
     new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
-
-    return new_obj;
+    if (new_obj) {
+        *hdl = new_obj;
+        return GpiIterator::VALID;
+    }
+    else
+        return GpiIterator::INVALID;
 }
 

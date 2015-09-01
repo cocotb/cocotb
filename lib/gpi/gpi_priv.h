@@ -213,11 +213,24 @@ public:
 
 class GpiIterator : public GpiHdl {
 public:
+    enum Status {
+        VALID, VALID_NO_NAME, INVALID, END
+    };
+
     GpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiHdl(impl),
                                                           m_parent(hdl) { }
     virtual ~GpiIterator() { }
 
-    virtual GpiObjHdl* next_handle() { return NULL; }
+    virtual int next_handle(std::string &name, GpiObjHdl **hdl) {
+        name = "";
+        *hdl = NULL;
+        return GpiIterator::END;
+    }
+
+    GpiObjHdl *get_parent(void) {
+        return m_parent;
+    }
+
 protected:
     GpiObjHdl *m_parent;
 };
@@ -239,7 +252,7 @@ public:
     virtual GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
     virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) = 0;
-    virtual GpiObjHdl *next_handle(GpiIterator *iter) = 0;
+//    virtual GpiObjHdl *next_handle(GpiIterator *iter) = 0;
 
     /* Callback related, these may (will) return the same handle*/
     virtual GpiCbHdl *register_timed_callback(uint64_t time_ps) = 0;

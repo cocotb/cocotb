@@ -506,44 +506,52 @@ VpiIterator::~VpiIterator()
 {
     if (m_iterator)
         vpi_free_object(m_iterator);
-
-    LOG_DEBUG("Deleted VpiIterator");
 }
 
-GpiObjHdl *VpiSingleIterator::next_handle(void)
+int VpiSingleIterator::next_handle(std::string &name, GpiObjHdl **hdl)
 {
+    GpiObjHdl *new_obj;
     vpiHandle obj;
-    GpiObjHdl *new_obj = NULL;
 
     if (NULL == m_iterator)
-        return new_obj;
+        return GpiIterator::END;
 
     obj = vpi_scan(m_iterator);
     if (NULL == obj)
-        return new_obj;
+        return GpiIterator::END;
 
-    std::string name;
-    if (vpiPort == vpi_get(vpiType, obj))
-        name = vpi_get_str(vpiName, obj);
-    else
-        name = vpi_get_str(vpiName, obj);
-    std::string fq_name = m_parent->get_fullname() + "." + name;
+    const char *c_name = vpi_get_str(vpiName, obj);
+    if (!c_name) {
+        return GpiIterator::VALID_NO_NAME;
+    }
+    name = c_name;
 
-    LOG_DEBUG("vpi_scan found name:%s", name.c_str());
+    const char *c_fq_name = vpi_get_str(vpiFullName, obj);
+    if (!c_fq_name) {
+        return GpiIterator::VALID_NO_NAME;
+    }
+    std::string fq_name = c_fq_name;
+
+    LOG_DEBUG("vpi_scan found '%s = '%s'", name.c_str(), fq_name.c_str());
 
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl*>(m_impl);
     new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
-    return new_obj;
+    if (new_obj) {
+        *hdl = new_obj;
+        return GpiIterator::VALID;
+    }
+    else
+        return GpiIterator::INVALID;
 }
 
-GpiObjHdl *VpiIterator::next_handle(void)
+int VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
 {
+    GpiObjHdl *new_obj;
     vpiHandle obj;
     vpiHandle iter_obj = m_parent->get_handle<vpiHandle>();
-    GpiObjHdl *new_obj = NULL;
 
     if (!selected)
-        return NULL;
+        return GpiIterator::END;
 
     do {
         obj = NULL;
@@ -574,20 +582,28 @@ GpiObjHdl *VpiIterator::next_handle(void)
 
     if (NULL == obj) {
         LOG_DEBUG("No more children, all relationships tested");
-        return new_obj;
+        return GpiIterator::END;
     }
 
-    std::string name;
-    if (vpiPort == vpi_get(vpiType, obj))
-        name = vpi_get_str(vpiName, obj);
-    else
-        name = name = vpi_get_str(vpiName, obj);
+    const char *c_name = vpi_get_str(vpiName, obj);
+    if (!c_name) {
+        return GpiIterator::VALID_NO_NAME;
+    }
+    name = c_name;
+
+    LOG_DEBUG("vpi_scan found '%s'", name.c_str());
+
+    /* We try and create a handle internally, if this is not possible we
+       return and GPI will try other implementations with the name
+       */
 
     std::string fq_name = m_parent->get_fullname() + "." + name;
-
-    LOG_DEBUG("vpi_scan found name:%s", name.c_str());
-
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl*>(m_impl);
     new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
-    return new_obj;
+    if (new_obj) {
+        *hdl = new_obj;
+        return GpiIterator::VALID;
+    }
+    else
+        return GpiIterator::INVALID;
 }

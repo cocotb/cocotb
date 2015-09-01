@@ -187,7 +187,7 @@ private:
 
 class VpiSignalObjHdl : public GpiSignalObjHdl {
 public:
-    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype, bool is_const) : 
+    VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype, bool is_const) :
                                                              GpiSignalObjHdl(impl, hdl, objtype, is_const),
                                                              m_rising_cb(impl, this, GPI_RISING),
                                                              m_falling_cb(impl, this, GPI_FALLING),
@@ -219,7 +219,7 @@ public:
 
     virtual ~VpiIterator();
 
-    GpiObjHdl *next_handle(void);
+    int next_handle(std::string &name, GpiObjHdl **hdl);
 
 private:
     vpiHandle m_iterator;
@@ -246,7 +246,7 @@ public:
     }
 
     virtual ~VpiSingleIterator() { }
-    GpiObjHdl *next_handle(void);
+    int next_handle(std::string &name, GpiObjHdl **hdl);
 
 protected:
     vpiHandle m_iterator;
