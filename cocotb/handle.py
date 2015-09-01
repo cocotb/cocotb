@@ -189,8 +189,8 @@ class HierarchyObject(SimHandleBase):
         do this once.
         """
         if self._discovered: return
-        self._log.warning("Discovering all on %s", self._name)
-        iterator = simulator.iterate(self._handle)
+        self._log.debug("Discovering all on %s", self._name)
+        iterator = simulator.iterate(self._handle, simulator.OBJECTS)
         while True:
             try:
                 thing = simulator.next(iterator)
@@ -274,7 +274,7 @@ class NonHierarchyObject(SimHandleBase):
             setattr(self, name, getattr(self, attribute))
 
     def __iter__(self):
-        raise StopIteration
+        return iter(())
 
 class ConstantObject(NonHierarchyObject):
     """
@@ -287,17 +287,20 @@ class ConstantObject(NonHierarchyObject):
         NonHierarchyObject.__init__(self, handle)
         if handle_type in [simulator.INTEGER, simulator.ENUM]:
             self._value = simulator.get_signal_val_long(self._handle)
+            return
         elif handle_type == simulator.REAL:
             self._value = simulator.get_signal_val_real(self._handle)
-        else:
-            self._value = BinaryValue()
-            self._value.binstr = simulator.get_signal_val_str(self._handle)
+            return
+
+        val = simulator.get_signal_val_str(self._handle)
+        self._value = BinaryValue(bits=len(val))
+        try:
+            self._value.binstr = val
+        except:
+            self._value = val
 
     def __int__(self):
         return int(self._value)
-
-    def __repr__(self):
-        return repr(int(self))
 
     def __cmp__(self, other):
         # Use the comparison method of the other object against our value
@@ -328,7 +331,6 @@ class NonConstantObject(NonHierarchyObject):
     def __getitem__(self, index):
         if index in self._sub_handles:
             return self._sub_handles[index]
-        self._log.info("Calling get handle for %s" % self._name)
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
             self._raise_testerror("%s %s contains no object at index %d" % (self._name, simulator.get_type(self._handle), index))
@@ -342,7 +344,6 @@ class NonConstantObject(NonHierarchyObject):
         for i in range(len(self)):
             try:
                 result = self[i]
-                self._log.warning("Yielding %s" % result)
                 yield result
             except:
                 continue
@@ -386,6 +387,23 @@ class NonConstantObject(NonHierarchyObject):
 
     def __repr__(self):
         return repr(int(self))
+
+
+    def drivers(self):
+        """
+        An iterator for gathering all drivers for a signal
+        """
+        iterator = simulator.iterate(self._handle, simulator.DRIVERS)
+        while True:
+            yield SimHandle(simulator.next(iterator))
+
+    def loads(self):
+        """
+        An iterator for gathering all loads on a signal
+        """
+        iterator = simulator.iterate(self._handle, simulator.LOADS)
+        while True:
+            yield SimHandle(simulator.next(iterator))
 
 
 class ModifiableObject(NonConstantObject):
@@ -527,11 +545,12 @@ class IntegerObject(ModifiableObject):
         return self._getvalue()
 
 
+_handle2obj = {}
+
 def SimHandle(handle):
     """
     Factory function to create the correct type of SimHandle object
     """
-
     _type2cls = {
         simulator.MODULE:      HierarchyObject,
         simulator.REG:         ModifiableObject,
@@ -541,12 +560,23 @@ def SimHandle(handle):
         simulator.ENUM:        IntegerObject,
     }
 
+    # Enforce singletons since it's possible to retrieve handles avoiding
+    # the hierarchy by getting driver/load information
+    global _handle2obj
+    try:
+        return _handle2obj[handle]
+    except KeyError:
+        pass
+
     # Special case for constants
     if simulator.get_const(handle):
-        return ConstantObject(handle, simulator.get_type(handle))
+        obj = ConstantObject(handle, simulator.get_type(handle))
+        _handle2obj[handle] = obj
+        return obj
 
     t = simulator.get_type(handle)
     if t not in _type2cls:
         raise TestError("Couldn't find a matching object for GPI type %d" % t)
-    return _type2cls[t](handle)
-
+    obj = _type2cls[t](handle)
+    _handle2obj[handle] = obj
+    return obj

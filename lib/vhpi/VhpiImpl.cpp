@@ -384,11 +384,18 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
     return rv;
 }
 
-GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl)
+GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type)
 {
-    VhpiIterator *new_iter;
+    GpiIterator *new_iter;
 
-    new_iter = new VhpiIterator(this, obj_hdl);
+    switch (type) {
+        case GPI_OBJECTS:
+            new_iter = new VhpiIterator(this, obj_hdl);
+            break;
+        default:
+            LOG_WARN("Other iterator types not implemented yet");
+            break;
+    }
     return new_iter;
 }
 

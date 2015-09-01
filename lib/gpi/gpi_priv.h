@@ -238,7 +238,7 @@ public:
     virtual GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
-    virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl) = 0;
+    virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) = 0;
     virtual GpiObjHdl *next_handle(GpiIterator *iter) = 0;
 
     /* Callback related, these may (will) return the same handle*/

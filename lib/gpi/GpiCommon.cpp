@@ -288,10 +288,10 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
     }
 }
 
-gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base)
+gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base, gpi_iterator_sel_t type)
 {
     GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(base);
-    GpiIterator *iter = obj_hdl->m_impl->iterate_handle(obj_hdl);
+    GpiIterator *iter = obj_hdl->m_impl->iterate_handle(obj_hdl, type);
     if (!iter) {
         return NULL;
     }

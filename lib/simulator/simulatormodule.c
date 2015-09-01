@@ -466,18 +466,19 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 static PyObject *iterate(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
+    int type;
     gpi_iterator_hdl result;
     PyObject *res;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "li", &hdl, &type)) {
         DROP_GIL(gstate);
         return NULL;
     }
 
-    result = gpi_iterate(hdl);
+    result = gpi_iterate(hdl, (gpi_iterator_sel_t)type);
 
     res = Py_BuildValue("l", result);
 
@@ -910,6 +911,10 @@ static void add_module_constants(PyObject* simulator)
     rc |= PyModule_AddIntConstant(simulator, "STRUCTURE",     GPI_STRUCTURE);
     rc |= PyModule_AddIntConstant(simulator, "REAL",          GPI_REAL);
     rc |= PyModule_AddIntConstant(simulator, "INTEGER",       GPI_INTEGER);
+    rc |= PyModule_AddIntConstant(simulator, "OBJECTS",       GPI_OBJECTS);
+    rc |= PyModule_AddIntConstant(simulator, "DRIVERS",       GPI_DRIVERS);
+    rc |= PyModule_AddIntConstant(simulator, "LOADS",         GPI_LOADS);
+
     if (rc != 0)
         fprintf(stderr, "Failed to add module constants!\n");
 }

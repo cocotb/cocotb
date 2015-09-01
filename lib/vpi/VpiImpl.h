@@ -212,10 +212,11 @@ private:
     VpiValueCbHdl m_either_cb;
 };
 
+
 class VpiIterator : public GpiIterator {
 public:
     VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl);
-    
+
     virtual ~VpiIterator();
 
     GpiObjHdl *next_handle(void);
@@ -226,6 +227,31 @@ private:
     std::vector<int32_t> *selected; /* Mapping currently in use */
     std::vector<int32_t>::iterator one2many;
 };
+
+// Base class for simple iterator that only iterates over a single type
+class VpiSingleIterator : public GpiIterator {
+public:
+    VpiSingleIterator(GpiImplInterface *impl,
+                      GpiObjHdl *hdl,
+                      int32_t vpitype) : GpiIterator(impl, hdl),
+                                         m_iterator(NULL)
+
+    {
+        vpiHandle vpi_hdl = m_parent->get_handle<vpiHandle>();
+        m_iterator = vpi_iterate(vpitype, vpi_hdl);
+        if (NULL == m_iterator) {
+            LOG_WARN("vpi_iterate returned NULL for %d", vpitype);
+            return;
+        }
+    }
+
+    virtual ~VpiSingleIterator() { }
+    GpiObjHdl *next_handle(void);
+
+protected:
+    vpiHandle m_iterator;
+};
+
 
 class VpiImpl : public GpiImplInterface {
 public:
@@ -240,7 +266,7 @@ public:
 
     /* Hierachy related */
     GpiObjHdl *get_root_handle(const char *name);
-    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl);
+    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type);
     GpiObjHdl *next_handle(GpiIterator *iter);
 
     /* Callback related, these may (will) return the same handle*/
