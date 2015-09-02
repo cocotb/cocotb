@@ -327,15 +327,15 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
                 LOG_DEBUG("Create a valid handle");
                 return CHECK_AND_STORE(next);
             case GpiIterator::VALID_NO_NAME:
-                LOG_WARN("Unable to fully setup handle, skipping");
+                LOG_DEBUG("Unable to fully setup handle, skipping");
                 continue;
             case GpiIterator::INVALID:
-                LOG_WARN("Found a name but unable to create via native implementation, trying others");
+                LOG_DEBUG("Found a name but unable to create via native implementation, trying others");
                 next = __gpi_get_handle_by_name(parent, name, iter->m_impl);
                 if (next) {
                     return next;
                 }
-                LOG_WARN("Still no joy so skipping");
+                LOG_WARN("Unable to create %s via any registered implementation", name.c_str());
                 continue;
             case GpiIterator::END:
                 LOG_DEBUG("Reached end of iterator");
