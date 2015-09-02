@@ -46,7 +46,7 @@ def recursive_discovery(dut):
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
     if total != 258:
-        raise TestFailure("Expected 32290 objects but found %d" % total)
+        raise TestFailure("Expected 258 objects but found %d" % total)
 
 @cocotb.coroutine
 def iteration_loop(dut):

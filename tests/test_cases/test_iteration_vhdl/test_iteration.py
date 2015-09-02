@@ -84,3 +84,21 @@ def get_clock(dut):
     yield Timer(1)
     if int(dut.aclk) is not 1:
         raise TestFailure("dut.aclk is not what we expected (got %d)" % int(dut.aclk))
+
+@cocotb.test()
+def test_n_dimension_array(dut):
+    tlog = logging.getLogger("cocotb.test")
+    inner_count = 0
+    outer_count = 0
+    yield Timer(0)
+    config = dut.inst_ram_ctrl.config
+    # This signal is a 2 x 7 vhpiEnumVecVal
+    for thing in config:
+        for sub_thing in thing:
+            tlog.info("Found %s", subthing,_name)
+            inner_count += 1
+        outer_count += 1
+
+    if inner_count != 14 and outer_count != 2:
+        raise TestFailure("dut.inst_ram_ctrl.config should have a total of 14 elems over 2 loops")
+
