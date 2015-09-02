@@ -259,7 +259,7 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     if (search_name == ":") {
         search_name += name;
     } else {
-        search_name = search_name + ":" + name;
+        search_name = search_name + "." + name;
     }
     std::vector<char> writable(search_name.begin(), search_name.end());
     writable.push_back('\0');
