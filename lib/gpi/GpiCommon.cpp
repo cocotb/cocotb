@@ -226,7 +226,9 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
         return hdl;
 }
 
-static GpiObjHdl* __gpi_get_handle_by_name(GpiObjHdl *parent, std::string name)
+static GpiObjHdl* __gpi_get_handle_by_name(GpiObjHdl *parent,
+                                           std::string name,
+                                           GpiImplInterface *skip_impl)
 {
     vector<GpiImplInterface*>::iterator iter;
 
@@ -237,6 +239,12 @@ static GpiObjHdl* __gpi_get_handle_by_name(GpiObjHdl *parent, std::string name)
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
+
+        if (skip_impl && (skip_impl == (*iter))) {
+            LOG_DEBUG("Skipping %s impl", (*iter)->get_name_c());
+            continue;
+        }
+
         LOG_DEBUG("Checking if %s native though impl %s",
                   name.c_str(),
                   (*iter)->get_name_c());
@@ -266,7 +274,7 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
 {
     std::string s_name = name;
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
-    return __gpi_get_handle_by_name(base, s_name);
+    return __gpi_get_handle_by_name(base, s_name, NULL);
 }
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
@@ -323,7 +331,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
                 continue;
             case GpiIterator::INVALID:
                 LOG_WARN("Found a name but unable to create via native implementation, trying others");
-                next = __gpi_get_handle_by_name(parent, name);
+                next = __gpi_get_handle_by_name(parent, name, iter->m_impl);
                 if (next) {
                     return next;
                 }
