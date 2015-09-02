@@ -85,8 +85,10 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
                 LOG_CRITICAL("Unable to alloc mem for write buffer");
             }
             LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
-            GpiObjHdl::initialise(name, fq_name);
 
+            VhpiIterator test_iter(this->m_impl, this);
+
+            GpiObjHdl::initialise(name, fq_name);
             return 0;
         }
         case vhpiRawDataVal: {

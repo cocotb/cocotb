@@ -45,8 +45,8 @@ def recursive_discovery(dut):
         return count
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
-    if total != 32290:
-        raise TestFailure("Expected 32290 objects but found %d" % total)
+    if total != 32306:
+        raise TestFailure("Expected 32306 objects but found %d" % total)
 
 
 @cocotb.test()
@@ -95,7 +95,7 @@ def test_n_dimension_array(dut):
     # This signal is a 2 x 7 vhpiEnumVecVal
     for thing in config:
         for sub_thing in thing:
-            tlog.info("Found %s", subthing,_name)
+            tlog.info("Found %s", sub_thing._name)
             inner_count += 1
         outer_count += 1
 

@@ -226,8 +226,19 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 vhpiLogicVecVal == value.format ||
                 vhpiPhysVecVal == value.format ||
                 vhpiTimeVecVal == value.format) {
-                LOG_DEBUG("Detected a vector type", fq_name.c_str());
-                gpi_type = GPI_ARRAY;
+                /* This may well be an n dimensional vector if it is
+                   then we create a non signal object 
+                 */
+                int num_elems = vhpi_get(vhpiSizeP, new_hdl);
+                if (value.numElems == num_elems) {
+                    LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
+                    gpi_type = GPI_ARRAY;
+                } else {
+                    LOG_DEBUG("Detected an n dimension vector type", fq_name.c_str());
+                    gpi_type = GPI_MODULE;
+                    new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
+                    break;
+                }
             }
 
             new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
