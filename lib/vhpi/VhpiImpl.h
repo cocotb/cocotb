@@ -240,8 +240,6 @@ public:
                                           std::string &name,
                                           std::string &fq_name);
 
-    bool equal(const GpiObjHdl* lhs, const GpiObjHdl* rhs);
-
 private:
     VhpiReadwriteCbHdl m_read_write;
     VhpiNextPhaseCbHdl m_next_phase;

@@ -263,9 +263,6 @@ public:
     /* Method to provide strings from operation types */
     virtual const char * reason_to_string(int reason) = 0;
 
-    /* Test equality of two handles */
-    virtual bool equal(const GpiObjHdl* lhs, const GpiObjHdl* rhs) = 0;
-
 private:
     std::string m_name;
 };

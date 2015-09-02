@@ -327,11 +327,6 @@ int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
     return 0;
 }
 
-bool VpiImpl::equal(const GpiObjHdl *lhs, const GpiObjHdl *rhs)
-{
-    return false;
-}
-
 // If the Pything world wants things to shut down then unregister
 // the callback for end of sim
 void VpiImpl::sim_end(void)

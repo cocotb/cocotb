@@ -282,8 +282,6 @@ public:
                                           std::string &name,
                                           std::string &fq_name);
 
-    bool equal(const GpiObjHdl* lhs, const GpiObjHdl* rhs);
-
 private:
     /* Singleton callbacks */
     VpiReadwriteCbHdl m_read_write;

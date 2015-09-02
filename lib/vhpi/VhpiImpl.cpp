@@ -442,13 +442,6 @@ int VhpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
     return 0;
 }
 
-bool VhpiImpl::equal(const GpiObjHdl *lhs, const GpiObjHdl *rhs)
-{
-    vhpiHandleT lhs_handle = lhs->get_handle<vhpiHandleT>();
-    vhpiHandleT rhs_handle = rhs->get_handle<vhpiHandleT>();
-    return vhpi_compare_handles(lhs_handle, rhs_handle);
-}
-
 void VhpiImpl::sim_end(void)
 {
     sim_finish_cb->set_call_state(GPI_DELETE);
