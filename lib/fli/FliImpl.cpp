@@ -75,8 +75,9 @@ void handle_fli_callback(void *data)
 
     FliProcessCbHdl *cb_hdl = (FliProcessCbHdl*)data;
 
-    if (!cb_hdl)
+    if (!cb_hdl) {
         LOG_CRITICAL("FLI: Callback data corrupted");
+    }
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
 
@@ -485,25 +486,21 @@ int FliSignalObjHdl::initialise(std::string &name)
             m_mti_buff    = (mtiInt32T*)malloc(sizeof(*m_mti_buff) * m_val_len);
             if (!m_mti_buff) {
                 LOG_CRITICAL("Unable to alloc mem for signal mti read buffer");
-                exit(1);
             }
             break;
         default:
             LOG_CRITICAL("Unable to handle onject type for %s (%d)",
                          name.c_str(), m_fli_type);
-            exit(1);
     }
 
     m_val_buff = (char*)malloc(m_val_len+1);
     if (!m_val_buff) {
         LOG_CRITICAL("Unable to alloc mem for signal read buffer");
-        exit(1);
     }
     m_val_buff[m_val_len] = '\0';
     m_val_str_buff = (char*)malloc(m_val_str_len+1);
     if (!m_val_str_buff) {
         LOG_CRITICAL("Unable to alloc mem for signal write buffer");
-        exit(1);
     }
     m_val_str_buff[m_val_str_len] = '\0';
 
@@ -558,13 +555,13 @@ const char* FliVariableObjHdl::get_signal_value_binstr(void)
 
 int FliVariableObjHdl::set_signal_value(const int value)
 {
-    LOG_CRITICAL("Setting variable value not currently supported!\n");
+    LOG_ERROR("Setting variable value not currently supported!\n");
     return -1;
 }
 
 int FliVariableObjHdl::set_signal_value(std::string &value)
 {
-    LOG_CRITICAL("Setting variable value not currently supported!\n");
+    LOG_ERROR("Setting variable value not currently supported!\n");
     return -1;
 }
 
@@ -586,19 +583,16 @@ int FliVariableObjHdl::initialise(std::string &name)
             m_mti_buff = (mtiInt32T*)malloc(sizeof(*m_mti_buff) * m_val_len);
             if (!m_mti_buff) {
                 LOG_CRITICAL("Unable to alloc mem for signal mti read buffer");
-                exit(1);
             }
             break;
         default:
             LOG_CRITICAL("Unable to handle onject type for %s (%d)",
                          name.c_str(), m_fli_type);
-            exit(1);
     }
 
     m_val_buff = (char*)malloc(m_val_len+1);
     if (!m_val_buff) {
         LOG_CRITICAL("Unable to alloc mem for signal read buffer");
-        exit(1);
     }
     m_val_buff[m_val_len] = '\0';
 
