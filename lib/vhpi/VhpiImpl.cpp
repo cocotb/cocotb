@@ -226,8 +226,19 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 vhpiLogicVecVal == value.format ||
                 vhpiPhysVecVal == value.format ||
                 vhpiTimeVecVal == value.format) {
-                LOG_DEBUG("Detected a vector type", fq_name.c_str());
-                gpi_type = GPI_ARRAY;
+                /* This may well be an n dimensional vector if it is
+                   then we create a non signal object 
+                 */
+                int num_elems = vhpi_get(vhpiSizeP, new_hdl);
+                if (value.numElems == num_elems) {
+                    LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
+                    gpi_type = GPI_ARRAY;
+                } else {
+                    LOG_DEBUG("Detected an n dimension vector type", fq_name.c_str());
+                    gpi_type = GPI_MODULE;
+                    new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
+                    break;
+                }
             }
 
             new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
@@ -255,22 +266,23 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
 GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vhpiHandleT new_hdl;
-    std::string fq_name = parent->get_fullname();
-    if (fq_name == ":") {
-        fq_name += name;
+    std::string search_name = parent->get_name();
+    if (search_name == ":") {
+        search_name += name;
     } else {
-        fq_name = fq_name + "." + name;
+        search_name = search_name + "." + name;
     }
-    std::vector<char> writable(fq_name.begin(), fq_name.end());
+    std::vector<char> writable(search_name.begin(), search_name.end());
     writable.push_back('\0');
 
     new_hdl = vhpi_handle_by_name(&writable[0], NULL);
 
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to query vhpi_handle_by_name %s", fq_name.c_str());
+        LOG_DEBUG("Unable to query vhpi_handle_by_name %s", search_name.c_str());
         return NULL;
     }
 
+    std::string fq_name = parent->get_fullname() + "." + name;
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vhpi_release_handle(new_hdl);
@@ -399,13 +411,6 @@ GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t typ
     return new_iter;
 }
 
-GpiObjHdl *VhpiImpl::next_handle(GpiIterator *iter)
-{
-    return iter->next_handle();
-}
-
-
-
 GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time_ps)
 {
     VhpiTimedCbHdl *hdl = new VhpiTimedCbHdl(this, time_ps);
@@ -446,13 +451,6 @@ int VhpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
     gpi_hdl->cleanup_callback();
     return 0;
-}
-
-bool VhpiImpl::equal(const GpiObjHdl *lhs, const GpiObjHdl *rhs)
-{
-    vhpiHandleT lhs_handle = lhs->get_handle<vhpiHandleT>();
-    vhpiHandleT rhs_handle = rhs->get_handle<vhpiHandleT>();
-    return vhpi_compare_handles(lhs_handle, rhs_handle);
 }
 
 void VhpiImpl::sim_end(void)

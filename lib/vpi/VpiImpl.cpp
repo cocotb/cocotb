@@ -168,7 +168,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
 GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vpiHandle new_hdl;
-    std::string fq_name = parent->get_name() + "." + name;
+    std::string fq_name = parent->get_fullname() + "." + name;
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
@@ -180,7 +180,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to query fetch object %s", fq_name.c_str());
+        LOG_ERROR("Unable to fetch object %s", fq_name.c_str());
         return NULL;
     }
     return new_obj;
@@ -285,11 +285,6 @@ GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type
     return new_iter;
 }
 
-GpiObjHdl *VpiImpl::next_handle(GpiIterator *iter)
-{
-    return iter->next_handle();
-}
-
 GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
 {
     VpiTimedCbHdl *hdl = new VpiTimedCbHdl(this, time_ps);
@@ -330,11 +325,6 @@ int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
     gpi_hdl->cleanup_callback();
     return 0;
-}
-
-bool VpiImpl::equal(const GpiObjHdl *lhs, const GpiObjHdl *rhs)
-{
-    return false;
 }
 
 // If the Pything world wants things to shut down then unregister

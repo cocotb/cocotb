@@ -45,22 +45,8 @@ def recursive_discovery(dut):
         return count
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
-    if total != 32290:
-        raise TestFailure("Expected 32290 objects but found %d" % total)
-
-
-@cocotb.test()
-def discovery_all(dut):
-    dut._log.info("Trying to discover")
-    yield Timer(0)
-    for thing in dut:
-        thing._log.info("Found something: %s" % thing._fullname)
-        #for subthing in thing:
-        #    thing._log.info("Found something: %s" % thing._fullname)
-
-    thing._log.info("length of dut.inst_acs is %d" % len(dut.gen_acs))
-    item = dut.gen_acs[3]
-    item._log.info("this is item")
+    if total != 258:
+        raise TestFailure("Expected 258 objects but found %d" % total)
 
 @cocotb.coroutine
 def iteration_loop(dut):
@@ -75,12 +61,3 @@ def dual_iteration(dut):
 
     yield [loop_one.join(), loop_two.join()]
 
-@cocotb.test()
-def get_clock(dut):
-    dut.log.info("dut.aclk is %s" % dut.aclk.__class__.__name__)
-    dut.aclk <= 0
-    yield Timer(1)
-    dut.aclk <= 1
-    yield Timer(1)
-    if int(dut.aclk) is not 1:
-        raise TestFailure("dut.aclk is not what we expected (got %d)" % int(dut.aclk))
