@@ -553,6 +553,7 @@ def SimHandle(handle):
     """
     _type2cls = {
         simulator.MODULE:      HierarchyObject,
+        simulator.STRUCTURE:   HierarchyObject,
         simulator.REG:         ModifiableObject,
         simulator.NETARRAY:    ModifiableObject,
         simulator.REAL:        RealObject,
