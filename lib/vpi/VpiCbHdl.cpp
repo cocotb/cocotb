@@ -43,6 +43,7 @@ VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl)
     cb_data.obj       = NULL;
     cb_data.time      = &vpi_time;
     cb_data.value     = NULL;
+    cb_data.index     = 0;
     cb_data.user_data = (char*)this;
 }
 
@@ -72,10 +73,10 @@ int VpiCbHdl::arm_callback(void) {
     int ret = 0;
 
     if (!new_hdl) {
-        LOG_CRITICAL("VPI: Unable to register a callback handle for VPI type %s(%d)",
+        LOG_ERROR("VPI: Unable to register a callback handle for VPI type %s(%d)",
                      m_impl->reason_to_string(cb_data.reason), cb_data.reason);
-        
-        ret = -1;
+        return -1;
+
     } else {
         m_state = GPI_PRIMED;
     }
@@ -97,12 +98,10 @@ int VpiCbHdl::cleanup_callback(void)
     if (m_state == GPI_PRIMED) {
         if (!m_obj_hdl) {
             LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
-            exit(1);
         }
 
         if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
             LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
-            exit(1);
         }
 
         check_vpi_error();
@@ -111,7 +110,6 @@ int VpiCbHdl::cleanup_callback(void)
         /* This is disabled for now, causes a small leak going to put back in */
         if (!(vpi_free_object(get_handle<vpiHandle>()))) {
             LOG_CRITICAL("VPI: unbale to free handle : ABORTING");
-            exit(1);
         }
 #endif
     }
@@ -273,7 +271,6 @@ int VpiValueCbHdl::cleanup_callback(void)
      * not wanted */
     if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
         LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
-        exit(1);
     }
 
     m_obj_hdl = NULL;
