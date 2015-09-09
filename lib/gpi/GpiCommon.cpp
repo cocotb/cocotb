@@ -42,7 +42,7 @@ static vector<GpiImplInterface*> registered_impls;
 
 class GpiHandleStore {
 public:
-    gpi_sim_hdl check_and_store(GpiObjHdl *hdl) {
+    GpiObjHdl * check_and_store(GpiObjHdl *hdl) {
         std::map<std::string, GpiObjHdl*>::iterator it;
 
         const std::string &name = hdl->get_fullname();
@@ -226,21 +226,28 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
         return hdl;
 }
 
-gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
+static GpiObjHdl* __gpi_get_handle_by_name(GpiObjHdl *parent,
+                                           std::string name,
+                                           GpiImplInterface *skip_impl)
 {
-
     vector<GpiImplInterface*>::iterator iter;
 
     GpiObjHdl *hdl = NULL;
-    GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
-    std::string s_name = name;
 
-    LOG_DEBUG("Searching for %s", name);
+    LOG_DEBUG("Searching for %s", name.c_str());
 
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
-        LOG_DEBUG("Checking if %s native though impl %s ", name, (*iter)->get_name_c());
+
+        if (skip_impl && (skip_impl == (*iter))) {
+            LOG_DEBUG("Skipping %s impl", (*iter)->get_name_c());
+            continue;
+        }
+
+        LOG_DEBUG("Checking if %s native though impl %s",
+                  name.c_str(),
+                  (*iter)->get_name_c());
 
         /* If the current interface is not the same as the one that we
            are going to query then append the name we are looking for to
@@ -249,8 +256,8 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
            as the one that we are querying through */
 
         //std::string &to_query = base->is_this_impl(*iter) ? s_name : fq_name;
-        if ((hdl = (*iter)->native_check_create(s_name, base))) {
-            LOG_DEBUG("Found %s via %s", name, (*iter)->get_name_c());
+        if ((hdl = (*iter)->native_check_create(name, parent))) {
+            LOG_DEBUG("Found %s via %s", name.c_str(), (*iter)->get_name_c());
             break;
         }
     }
@@ -258,9 +265,16 @@ gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent)
     if (hdl)
         return CHECK_AND_STORE(hdl);
     else {
-        LOG_DEBUG("Failed to find a hdl named %s", name);
+        LOG_DEBUG("Failed to find a hdl named %s", name.c_str());
         return hdl;
     }
+}
+
+gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
+{
+    std::string s_name = name;
+    GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
+    return __gpi_get_handle_by_name(base, s_name, NULL);
 }
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
@@ -300,18 +314,35 @@ gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base, gpi_iterator_sel_t type)
 
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
 {
-    GpiObjHdl *next;
+    std::string name;
     GpiIterator *iter = sim_to_hdl<GpiIterator*>(iterator);
-    next = iter->next_handle();
-    if (!next) {
-        /* If the iterator returns NULL then it has reached the
-           end, we clear up here before returning
-         */
-        delete iter;
-        return next;
-    }
+    GpiObjHdl *parent = iter->get_parent();
 
-    return CHECK_AND_STORE(next);
+    while (true) {
+        GpiObjHdl *next = NULL;
+        int ret = iter->next_handle(name, &next);
+
+        switch (ret) {
+            case GpiIterator::VALID:
+                LOG_DEBUG("Create a valid handle");
+                return CHECK_AND_STORE(next);
+            case GpiIterator::VALID_NO_NAME:
+                LOG_DEBUG("Unable to fully setup handle, skipping");
+                continue;
+            case GpiIterator::INVALID:
+                LOG_DEBUG("Found a name but unable to create via native implementation, trying others");
+                next = __gpi_get_handle_by_name(parent, name, iter->m_impl);
+                if (next) {
+                    return next;
+                }
+                LOG_WARN("Unable to create %s via any registered implementation", name.c_str());
+                continue;
+            case GpiIterator::END:
+                LOG_DEBUG("Reached end of iterator");
+                delete iter;
+                return NULL;
+        }
+    }
 }
 
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl)

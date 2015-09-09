@@ -676,7 +676,7 @@ static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    result = gpi_get_handle_by_name(name, (gpi_sim_hdl)hdl);
+    result = gpi_get_handle_by_name((gpi_sim_hdl)hdl, name);
 
     res = Py_BuildValue("l", result);
 
