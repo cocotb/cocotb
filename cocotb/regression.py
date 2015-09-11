@@ -101,8 +101,10 @@ class RegressionManager(object):
             self._cov = coverage.coverage(branch=True, omit=["*cocotb*"])
             self._cov.start()
 
-        self._dut = cocotb.handle.SimHandle(simulator.get_root_handle(
-                                            self._root_name))
+        handle = simulator.get_root_handle(self._root_name)
+
+        self._dut = cocotb.handle.SimHandle(handle) if handle else None
+
         if self._dut is None:
             raise AttributeError("Can not find Root Handle (%s)" %
                                  self._root_name)

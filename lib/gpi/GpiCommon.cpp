@@ -177,6 +177,7 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
             return (gpi_sim_hdl)hdl;
         }
     }
+    LOG_DEBUG("No root handle found");
     return NULL;
 }
 
