@@ -109,7 +109,13 @@ class RegressionManager(object):
 
         # Auto discovery
         for module_name in self._modules:
-            module = _my_import(module_name)
+            try:
+                module = _my_import(module_name)
+            except ImportError:
+                self.log.critical("Failed to import module %s", module_name)
+                self.log.info("MODULE variable was \"%s\"",
+                                                    ",".join(self._modules))
+                raise
 
             if self._functions:
 
