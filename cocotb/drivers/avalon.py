@@ -35,7 +35,7 @@ import random
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep, Event
+from cocotb.triggers import RisingEdge, ReadOnly, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -139,15 +139,17 @@ class AvalonMaster(AvalonMM):
         # should take a dictionary of Avalon properties.
         yield RisingEdge(self.clock)
 
+        # Get the data
+        yield ReadOnly()
+        data = self.bus.readdata.value
+
+        yield RisingEdge(self.clock)
+
         # Deassert read
         self.bus.read <= 0
         if hasattr(self.bus, "byteenable"):
             self.bus.byteenable <= 0
 
-        # Get the data
-        yield ReadOnly()
-        data = self.bus.readdata.value
-        yield NextTimeStep()
         self._release_lock()
         raise ReturnValue(data)
 
