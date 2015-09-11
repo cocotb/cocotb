@@ -658,6 +658,11 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args)
     }
 
     result = gpi_get_root_handle(name);
+    if (NULL == result) {
+       DROP_GIL(gstate);
+       Py_RETURN_NONE;
+    }
+
 
     value = Py_BuildValue("l", result);
 
