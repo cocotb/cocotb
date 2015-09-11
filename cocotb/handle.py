@@ -51,6 +51,8 @@ from cocotb.result import TestError
 from cocotb.triggers import _RisingEdge, _FallingEdge
 from cocotb.utils import get_python_integer_types
 
+# Only issue a warning for each deprecated attribute access
+_deprecation_warned = {}
 
 
 
@@ -150,7 +152,9 @@ class HierarchyObject(SimHandleBase):
 
         if not new_handle:
             if name in self._compat_mapping:
-                warnings.warn("Use of %s attribute is deprecated" % name)
+                if name not in _deprecation_warned:
+                    warnings.warn("Use of %s attribute is deprecated" % name)
+                    _deprecation_warned[name] = True
                 return getattr(self, self._compat_mapping[name])
 
             # To find generated indices we have to discover all
