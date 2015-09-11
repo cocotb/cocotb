@@ -145,9 +145,7 @@ class HierarchyObject(SimHandleBase):
         """
         if name in self._sub_handles:
             return self._sub_handles[name]
-        # Avoid collision with signals named "value" while maintaining compatability
-        if name == "value":
-            return self._getvalue()
+
         new_handle = simulator.get_handle_by_name(self._handle, name)
 
         if not new_handle:
