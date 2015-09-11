@@ -62,14 +62,14 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
             m_value.bufSize = m_size*sizeof(vhpiEnumT); 
             m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize);
             if (!m_value.value.enumvs) {
-                LOG_CRITICAL("Unable to alloc mem for write buffer");
+                LOG_CRITICAL("Unable to alloc mem for write buffer: ABORTING");
             }
 
             break;
         }
 
         default: {
-            LOG_CRITICAL("Unable to determine property for %s (%d) format object",
+            LOG_ERROR("Unable to determine property for %s (%d) format object",
                          ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format), m_value.format);
         }
     }
@@ -85,7 +85,7 @@ int VhpiSignalObjHdl::initialise(std::string &name) {
     m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, m_binvalue.bufSize);
 
     if (!m_value.value.str) {
-        LOG_CRITICAL("Unable to alloc mem for read buffer");
+        LOG_CRITICAL("Unable to alloc mem for read buffer: ABORTING");
     }
 
     GpiObjHdl::initialise(name);
@@ -210,7 +210,7 @@ int VhpiSignalObjHdl::set_signal_value(int value)
         }
 
         default: {
-            LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
+            LOG_CRITICAL("VHPI type of object has changed at runtime: ABORTING");
         }
     }
     vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
@@ -256,7 +256,7 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
         }
 
         default: {
-           LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
+           LOG_CRITICAL("VHPI type of object has changed at runtime: ABORTING");
         }
     }
 
