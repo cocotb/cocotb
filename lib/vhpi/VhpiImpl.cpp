@@ -230,7 +230,13 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                    then we create a non signal object 
                  */
                 int num_elems = vhpi_get(vhpiSizeP, new_hdl);
-                if (value.numElems == num_elems) {
+
+                /* More differences between simulators.
+                   Aldec sets value.numElems regardless
+                   IUS does not set for a single dimension.
+                 */
+
+                if (!value.numElems || (value.numElems == num_elems)) {
                     LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
                     gpi_type = GPI_ARRAY;
                 } else {
@@ -269,23 +275,22 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
 GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vhpiHandleT new_hdl;
-    std::string search_name = parent->get_name();
-    if (search_name == ":") {
-        search_name += name;
+    std::string fq_name = parent->get_fullname();
+    if (fq_name == ":") {
+        fq_name += name;
     } else {
-        search_name = search_name + "." + name;
+        fq_name += "." + name;
     }
-    std::vector<char> writable(search_name.begin(), search_name.end());
+    std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
     new_hdl = vhpi_handle_by_name(&writable[0], NULL);
 
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to query vhpi_handle_by_name %s", search_name.c_str());
+        LOG_DEBUG("Unable to query vhpi_handle_by_name %s", fq_name.c_str());
         return NULL;
     }
 
-    std::string fq_name = parent->get_fullname() + "." + name;
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vhpi_release_handle(new_hdl);
@@ -336,7 +341,12 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     }
 
     std::string name = vhpi_get_str(vhpiNameP, new_hdl);
-    std::string fq_name = parent->get_fullname() + "." + name;
+    std::string fq_name = parent->get_fullname();
+    if (fq_name == ":") {
+        fq_name += name;
+    } else {
+        fq_name += "." + name;
+    }
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vhpi_release_handle(new_hdl);
