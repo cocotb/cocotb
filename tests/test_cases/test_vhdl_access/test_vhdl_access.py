@@ -91,3 +91,22 @@ def check_objects(dut):
 
     if fails:
         raise TestFailure("%d Failures during the test" % fails)
+
+@cocotb.test()
+def port_not_hierarchy(dut):
+    """
+    Test for issue raised by Luke - iteration causes a toplevel port type to
+    change from from ModifiableObject to HierarchyObject
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(100)
+    if not isinstance(dut.aclk, ModifiableObject):
+        tlog.error("dut.aclk should be ModifiableObject but got %s", dut.aclk.__class__.__name__)
+    else:
+        tlog.info("dut.aclk is ModifiableObject")
+    for _ in dut:
+        pass
+    if not isinstance(dut.aclk, ModifiableObject):
+        tlog.error("dut.aclk should be ModifiableObject but got %s", dut.aclk.__class__.__name__)
+    else:
+        tlog.info("dut.aclk is ModifiableObject")
