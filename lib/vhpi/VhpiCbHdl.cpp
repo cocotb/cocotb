@@ -32,7 +32,7 @@ extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 VhpiSignalObjHdl::~VhpiSignalObjHdl()
 {
     switch (m_value.format) {
-        case vhpiIntVal:
+        case vhpiIntVecVal:
         case vhpiEnumVecVal:
         case vhpiLogicVecVal:
             free(m_value.value.enumvs);
@@ -71,17 +71,15 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     m_num_elems = m_value.numElems;
 
     switch (m_value.format) {
+        case vhpiIntVal:
         case vhpiEnumVal:
         case vhpiLogicVal:
-            //m_value.value.enumv = vhpi0;
-            break;
-
         case vhpiRealVal: {
             GpiObjHdl::initialise(name, fq_name);
             return 0;
         }
 
-        case vhpiIntVal:
+        case vhpiIntVecVal:
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
             m_num_elems = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
@@ -95,7 +93,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
             VhpiIterator test_iter(this->m_impl, this);
 
             GpiObjHdl::initialise(name, fq_name);
-            return 0;
+            break;
         }
         case vhpiRawDataVal: {
             // This is an internal representation - the only way to determine
@@ -122,10 +120,10 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 
     int new_size = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
     if (new_size < 0) {
-        LOG_CRITICAL("Failed to determine size of signal object %s of type %s",
+        LOG_WARN("Failed to determine size of signal object %s of type %s",
                      name.c_str(),
                      ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
-        goto out;
+        return -1;
     }
 
     if (new_size) {
@@ -137,7 +135,6 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         }
     }
 
-out:
     return GpiObjHdl::initialise(name, fq_name);
 }
 
@@ -286,9 +283,11 @@ int VhpiSignalObjHdl::set_signal_value(double value)
             break;
 
         case vhpiEnumVal:
-        case vhpiLogicVal:
         case vhpiEnumVecVal:
+        case vhpiLogicVal:
         case vhpiLogicVecVal:
+        case vhpiIntVal:
+        case vhpiIntVecVal:
             LOG_WARN("Attempt to set non vhpiRealVal signal with double");
             return 0;
 
@@ -317,8 +316,8 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
             int len = value.length();
 
             if (len > m_num_elems)  {
-                LOG_ERROR("VHPI: Attempt to write string longer than signal %d > %d",
-                          len, m_num_elems);
+                LOG_ERROR("VHPI: Attempt to write string longer than (%s) signal %d > %d",
+                          m_name.c_str(), len, m_num_elems);
                 return -1;
             }
 
@@ -579,6 +578,16 @@ KindMappings::KindMappings()
         (vhpiOneToManyT)0,
     };
     add_to_options(vhpiIfGenerateK, &ifgen_options[0]);
+
+    /* vhpiConstDeclK */
+    vhpiOneToManyT const_options[] = {
+        vhpiAttrSpecs,
+        vhpiIndexedNames,
+        vhpiSelectedNames,
+        (vhpiOneToManyT)0,
+    };
+    add_to_options(vhpiConstDeclK, &const_options[0]);
+
 }
 
 void KindMappings::add_to_options(vhpiClassKindT type, vhpiOneToManyT *options)

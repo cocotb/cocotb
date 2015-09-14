@@ -258,7 +258,10 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             return NULL;
     }
 
-    new_obj->initialise(name, fq_name);
+    if (new_obj->initialise(name, fq_name)) {
+        delete new_obj;
+        new_obj = NULL;
+    }
 
     return new_obj;
 }
