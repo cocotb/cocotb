@@ -31,8 +31,14 @@ extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 
 VhpiSignalObjHdl::~VhpiSignalObjHdl()
 {
-    if (m_value.value.str)
-        free(m_value.value.str);
+    switch (m_value.format) {
+        case vhpiIntVal:
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal:
+            free(m_value.value.enumvs);
+        default:
+            break;
+    }
 
     if (m_binvalue.value.str)
         free(m_binvalue.value.str);
@@ -67,7 +73,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     switch (m_value.format) {
         case vhpiEnumVal:
         case vhpiLogicVal:
-            m_value.value.enumv = vhpi0;
+            //m_value.value.enumv = vhpi0;
             break;
 
         case vhpiRealVal: {
@@ -126,9 +132,8 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         m_binvalue.bufSize = new_size*sizeof(vhpiCharT);
         m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize + 1, sizeof(vhpiCharT));
 
-        if (!m_value.value.str) {
+        if (!m_binvalue.value.str) {
             LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
-            exit(1);
         }
     }
 
