@@ -29,7 +29,12 @@
 
 # Common Makefile for Cadence Incisive
 
-EXTRA_ARGS += -64bit
+# Disable 64 bit. There are too many issues with access to values on IUS.
+# hope to enable again when these have been resolved.
+
+ARCH=i686
+#EXTRA_ARGS += -64bit
+
 EXTRA_ARGS += -nclibdirname $(SIM_BUILD)
 
 ifeq ($(GUI),1)
