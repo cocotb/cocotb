@@ -34,6 +34,9 @@
 
 ARCH=i686
 #EXTRA_ARGS += -64bit
+ifeq ($(shell ncbits),64)
+$(error "The 64bit version of IUS is on your PATH, please use the 32bit version for now")
+endif
 
 EXTRA_ARGS += -nclibdirname $(SIM_BUILD)
 
