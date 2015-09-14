@@ -31,8 +31,14 @@ extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 
 VhpiSignalObjHdl::~VhpiSignalObjHdl()
 {
-    if (m_value.value.str)
-        free(m_value.value.str);
+    switch (m_value.format) {
+        case vhpiIntVecVal:
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal:
+            free(m_value.value.enumvs);
+        default:
+            break;
+    }
 
     if (m_binvalue.value.str)
         free(m_binvalue.value.str);
@@ -65,17 +71,15 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     m_num_elems = m_value.numElems;
 
     switch (m_value.format) {
+        case vhpiIntVal:
         case vhpiEnumVal:
         case vhpiLogicVal:
-            m_value.value.enumv = vhpi0;
-            break;
-
         case vhpiRealVal: {
             GpiObjHdl::initialise(name, fq_name);
-            return 0;
+            break;
         }
 
-        case vhpiIntVal:
+        case vhpiIntVecVal:
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
             m_num_elems = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
@@ -89,7 +93,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
             VhpiIterator test_iter(this->m_impl, this);
 
             GpiObjHdl::initialise(name, fq_name);
-            return 0;
+            break;
         }
         case vhpiRawDataVal: {
             // This is an internal representation - the only way to determine
@@ -116,23 +120,20 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 
     int new_size = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
     if (new_size < 0) {
-        LOG_CRITICAL("Failed to determine size of signal object %s of type %s",
-                     name.c_str(),
-                     ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
-        goto out;
+        LOG_WARN("Failed to determine size for vhpiBinStrVal of signal object %s of type %s, falling back",
+                 name.c_str(),
+                 ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
     }
 
     if (new_size) {
         m_binvalue.bufSize = new_size*sizeof(vhpiCharT);
         m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize + 1, sizeof(vhpiCharT));
 
-        if (!m_value.value.str) {
+        if (!m_binvalue.value.str) {
             LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
-            exit(1);
         }
     }
 
-out:
     return GpiObjHdl::initialise(name, fq_name);
 }
 
@@ -281,9 +282,11 @@ int VhpiSignalObjHdl::set_signal_value(double value)
             break;
 
         case vhpiEnumVal:
-        case vhpiLogicVal:
         case vhpiEnumVecVal:
+        case vhpiLogicVal:
         case vhpiLogicVecVal:
+        case vhpiIntVal:
+        case vhpiIntVecVal:
             LOG_WARN("Attempt to set non vhpiRealVal signal with double");
             return 0;
 
@@ -312,16 +315,15 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
             int len = value.length();
 
             if (len > m_num_elems)  {
-                LOG_ERROR("VHPI: Attempt to write string longer than signal %d > %d",
-                          len, m_num_elems);
-                return -1;
+                LOG_DEBUG("VHPI: Attempt to write string longer than (%s) signal %d > %d",
+                          m_name.c_str(), len, m_num_elems);
             }
 
             std::string::iterator iter;
 
             int i = 0;
             for (iter = value.begin();
-                 iter != value.end();
+                 (iter != value.end()) && (i < m_num_elems);
                  iter++, i++) {
                 m_value.value.enumvs[i] = chr2vhpi(*iter);
             }
@@ -353,12 +355,12 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
 const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
 {
     switch (m_value.format) {
-        case vhpiEnumVecVal:
-        case vhpiLogicVecVal:
-            LOG_DEBUG("get_signal_value_binstr not supported for %s",
+        case vhpiRealVal:
+            LOG_INFO("get_signal_value_binstr not supported for %s",
                       ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
             return "";
         default: {
+            /* Some simulators do not support BinaryValues so we fake up here for them */
             int ret = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
             if (ret) {
                 check_vhpi_error();
@@ -380,8 +382,7 @@ double VhpiSignalObjHdl::get_signal_value_real(void)
     m_value.numElems = 1;
     m_value.bufSize = sizeof(double);
 
-    int ret = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
-    if (ret) {
+    if (vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value)) {
         check_vhpi_error();
         LOG_ERROR("failed to get real value");
     }
@@ -394,8 +395,10 @@ long VhpiSignalObjHdl::get_signal_value_long(void)
     value.format = vhpiIntVal;
     value.numElems = 0;
 
-    if (vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &value))
+    if (vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &value)) {
         check_vhpi_error();
+        LOG_ERROR("failed to get long value");
+    }
 
     return value.value.intg;
 }
@@ -574,6 +577,16 @@ KindMappings::KindMappings()
         (vhpiOneToManyT)0,
     };
     add_to_options(vhpiIfGenerateK, &ifgen_options[0]);
+
+    /* vhpiConstDeclK */
+    vhpiOneToManyT const_options[] = {
+        vhpiAttrSpecs,
+        vhpiIndexedNames,
+        vhpiSelectedNames,
+        (vhpiOneToManyT)0,
+    };
+    add_to_options(vhpiConstDeclK, &const_options[0]);
+
 }
 
 void KindMappings::add_to_options(vhpiClassKindT type, vhpiOneToManyT *options)
@@ -739,7 +752,12 @@ int VhpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
     /* We try and create a handle internally, if this is not possible we
        return and GPI will try other implementations with the name
        */
-    std::string fq_name = m_parent->get_fullname() + "." + name;
+    std::string fq_name = m_parent->get_fullname();
+    if (fq_name == ":") {
+        fq_name += name;
+    } else {
+        fq_name += "." + name;
+    }
     VhpiImpl *vhpi_impl = reinterpret_cast<VhpiImpl*>(m_impl);
     new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {

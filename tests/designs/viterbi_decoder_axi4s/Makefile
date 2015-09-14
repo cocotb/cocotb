@@ -30,7 +30,7 @@ TOPLEVEL_LANG = vhdl
 TOPLEVEL = dec_viterbi
 
 PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 SRC_BASE = $(COCOTB)/tests/designs/viterbi_decoder_axi4s
 

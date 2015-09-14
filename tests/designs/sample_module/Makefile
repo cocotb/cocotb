@@ -32,7 +32,7 @@ TOPLEVEL := sample_module
 TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
