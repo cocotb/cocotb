@@ -168,7 +168,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
                */
             const char *type_name = vpi_get_str(vpiType, new_hdl);
             std::string unknown = "vpiUnknown";
-            if (unknown != type_name) {
+            if (type_name && (unknown != type_name)) {
                 LOG_WARN("VPI: Not able to map type %s(%d) to object.", type_name, type);
             } else {
                 LOG_DEBUG("VPI: Simulator does not know this type (%d) via VPI", type);
