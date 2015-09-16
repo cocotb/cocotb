@@ -108,6 +108,9 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiModule:
         case vpiRefObj:
         case vpiPort:
+        case vpiAlways:
+        case vpiFunction:
+        case vpiInitial:
             return GPI_MODULE;
 
         default:
@@ -153,14 +156,30 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiRefObj:
         case vpiPackedArrayVar:
         case vpiPort:
+        case vpiAlways:
+        case vpiFunction:
+        case vpiInitial:
             new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         default:
-            LOG_WARN("Not able to map type %d to object.", type);
+            /* We should only print a warning here if the type is really verilog,
+               It could be vhdl as some simulators allow qurying of both languages
+               via the same handle
+               */
+            const char *type_name = vpi_get_str(vpiType, new_hdl);
+            std::string unknown = "vpiUnknown";
+            if (unknown != type_name) {
+                LOG_WARN("VPI: Not able to map type %s(%d) to object.", type_name, type);
+            } else {
+                LOG_DEBUG("VPI: Simulator does not know this type (%d) via VPI", type);
+            }
             return NULL;
     }
 
     new_obj->initialise(name, fq_name);
+
+    LOG_DEBUG("VPI: Created object with type was %s(%d)",
+              vpi_get_str(vpiType, new_hdl), type);
 
     return new_obj;
 }
