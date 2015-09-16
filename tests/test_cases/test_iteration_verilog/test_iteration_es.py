@@ -34,6 +34,15 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
+    if cocotb.SIM_NAME in ["ModelSim ALTERA STARTER EDITION",
+                           "ModelSim DE"
+                           "ncsim(64)",
+                           "ncsim"]:
+        # vpiAlways does not show up in IUS
+        pass_total = 259
+    else:
+        pass_total = 265
+
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
     def dump_all_the_things(parent):
@@ -45,8 +54,8 @@ def recursive_discovery(dut):
         return count
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
-    if total != 258:
-        raise TestFailure("Expected 258 objects but found %d" % total)
+    if total != pass_total:
+        raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
 
 @cocotb.coroutine
 def iteration_loop(dut):
