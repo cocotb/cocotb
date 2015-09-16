@@ -83,7 +83,8 @@ class SimHandleBase(object):
         self._discovered = False
 
         self._name = simulator.get_name_string(self._handle)
-        self._fullname = self._name + "(%s)" % simulator.get_type_string(self._handle)
+        self._type = simulator.get_type_string(self._handle)
+        self._fullname = self._name + "(%s)" % self._type
         self._log = SimLog("cocotb.%s" % self._name)
         self._log.debug("Created")
 

@@ -26,47 +26,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
 
 import cocotb
+from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, IntegerObject, ConstantObject
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 
 @cocotb.test()
-def recursive_discovery(dut):
+def port_not_hierarchy(dut):
     """
-    Recursively discover every single object in the design
+    Test for issue raised by Luke - iteration causes a toplevel port type to
+    change from from ModifiableObject to HierarchyObject
     """
-    if cocotb.SIM_NAME in ["ModelSim ALTERA STARTER EDITION",
-                           "ModelSim DE"
-                           "ncsim(64)",
-                           "ncsim"]:
-        # vpiAlways does not show up in IUS
-        pass_total = 259
-    else:
-        pass_total = 265
-
+    fails = 0
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
-    def dump_all_the_things(parent):
-        count = 0
-        for thing in parent:
-            count += 1
-            tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
-            count += dump_all_the_things(thing)
-        return count
-    total = dump_all_the_things(dut)
-    tlog.info("Found a total of %d things", total)
-    if total != pass_total:
-        raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
 
-@cocotb.coroutine
-def iteration_loop(dut):
-    for thing in dut:
-        thing._log.info("Found something: %s" % thing._fullname)
-        yield Timer(1)
+    def check_instance(obj, objtype):
+        if not isinstance(obj, objtype):
+            tlog.error("Expected %s to be of type %s but got %s" % (
+                obj._fullname, objtype.__name__, obj.__class__.__name__))
+            return 1
+        tlog.info("%s is %s" % (obj._fullname, obj.__class__.__name__))
+        return 0
 
-@cocotb.test()
-def dual_iteration(dut):
-    loop_one = cocotb.fork(iteration_loop(dut))
-    loop_two = cocotb.fork(iteration_loop(dut))
+    fails += check_instance(dut.clk, ModifiableObject)
+    fails += check_instance(dut.i_verilog, HierarchyObject)
+    fails += check_instance(dut.i_verilog.clock, ModifiableObject)
+    fails += check_instance(dut.i_verilog.tx_data, ModifiableObject)
 
-    yield [loop_one.join(), loop_two.join()]
+    for _ in dut:
+        pass
 
+    for _ in dut.i_verilog:
+        pass
+
+    fails += check_instance(dut.clk, ModifiableObject)
+    fails += check_instance(dut.i_verilog, HierarchyObject)
+    fails += check_instance(dut.i_verilog.clock, ModifiableObject)
+    fails += check_instance(dut.i_verilog.tx_data, ModifiableObject)
+
+    if fails:
+        raise TestFailure("%d Failures during the test" % fails)

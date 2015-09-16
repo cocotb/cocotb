@@ -455,7 +455,6 @@ std::vector<int32_t>* KindMappings::get_options(int32_t type)
     std::map<int32_t, std::vector<int32_t> >::iterator valid = options_map.find(type);
 
     if (options_map.end() == valid) {
-        LOG_ERROR("VPI: Implementation does not know how to iterate over %d", type);
         return NULL;
     } else {
         return &valid->second;
@@ -471,8 +470,12 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
     vpiHandle iterator;
     vpiHandle vpi_hdl = m_parent->get_handle<vpiHandle>();
 
-    if (NULL == (selected = iterate_over.get_options(vpi_get(vpiType, vpi_hdl))))
+    int type = vpi_get(vpiType, vpi_hdl);
+    if (NULL == (selected = iterate_over.get_options(type))) {
+        LOG_ERROR("VPI: Implementation does not know how to iterate over %s(%d)",
+                  vpi_get_str(vpiType, vpi_hdl), type);
         return;
+    }
 
 
     for (one2many = selected->begin();
