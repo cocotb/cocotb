@@ -56,6 +56,7 @@ class AvalonMM(BusDriver):
     _optional_signals = ["readdata", "read", "write", "waitrequest",
                          "writedata", "readdatavalid", "byteenable"]
 
+
     def __init__(self, entity, name, clock):
         BusDriver.__init__(self, entity, name, clock)
         self._can_read = False
@@ -196,12 +197,18 @@ class AvalonMemory(BusDriver):
     """
     _signals = ["address"]
     _optional_signals = ["write", "read", "writedata", "readdatavalid",
-                         "readdata", "waitrequest"]
+                         "readdata", "waitrequest", "burstcount", "byteenable"]
+    _avalon_properties = {
+            "burstCountUnits": "symbols", # symbols or words
+            "addressUnits": "symbols",    # symbols or words
+            }
 
     def __init__(self, entity, name, clock, readlatency_min=1,
-                 readlatency_max=1, memory=None):
+                 readlatency_max=1, memory=None, avl_properties={}):
         BusDriver.__init__(self, entity, name, clock)
 
+        if avl_properties != {}:
+            self._avalon_properties = avl_properties
         self._readable = False
         self._writeable = False
 
