@@ -58,9 +58,19 @@ def test_function_reentrant_clock(dut):
 def test_burst_read(dut):
     """ Testing burst read """
     # Launch clock
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+    dut.reset = 1
+    clk_gen = cocotb.fork(Clock(dut.clk, 10).start())
 
     memdict = {}
     avl32 = AvalonMemory(dut, "master", dut.clk)
+    yield Timer(10)
+    dut.reset = 0
+    dut.control_read_base = 0
+    dut.control_read_length = 32
+    dut.control_fixed_location = 0
+    dut.control_go = 0
+    dut.master_waitrequest = 0
     yield Timer(100)
+    dut.control_go = 1
+    yield Timer(1000)
 
