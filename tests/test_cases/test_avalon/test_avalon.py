@@ -35,13 +35,12 @@ Also used a regression test of cocotb capabilities
 """
 
 import cocotb
+from cocotb.drivers.avalon import AvalonMemory
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 
-# Tests relating to providing meaningful errors if we forget to use the
-# yield keyword correctly to turn a function into a coroutine
 
 @cocotb.test(expect_fail=False)
 def test_function_reentrant_clock(dut):
@@ -54,4 +53,14 @@ def test_function_reentrant_clock(dut):
         clock <= 1
         yield timer
 
+
+@cocotb.test(expect_fail=False)
+def test_burst_read(dut):
+    """ Testing burst read """
+    # Launch clock
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    memdict = {}
+    avl32 = AvalonMemory(dut, "master", dut.clk)
+    yield Timer(100)
 
