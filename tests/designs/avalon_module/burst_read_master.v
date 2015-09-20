@@ -30,6 +30,8 @@
 
 */
 
+`timescale 1 ps / 1 ps
+
 // altera message_off 10230
 
 `define FIFODEPTH_LOG2_DEF 5
@@ -141,26 +143,25 @@ module burst_read_master (
 
     // control inputs and outputs
     control_fixed_location,
-        control_read_base,
-        control_read_length,
-        control_go,
-        control_done,
-        control_early_done,
+    control_read_base,
+    control_read_length,
+    control_go,
+    control_done,
+    control_early_done,
 
-        // user logic inputs and outputs
-        user_read_buffer,
-            user_buffer_data,
-            user_data_available,
+    // user logic inputs and outputs
+    user_read_buffer,
+    user_buffer_data,
+    user_data_available,
 
-            // master inputs and outputs
-            master_address,
-                master_read,
-                master_byteenable,
-                master_readdata,
-                master_readdatavalid,
-                master_burstcount,
-                master_waitrequest
-            );
+    // master inputs and outputs
+    master_address,
+    master_read,
+    master_byteenable,
+    master_readdata,
+    master_readdatavalid,
+    master_burstcount,
+    master_waitrequest);
 
             parameter DATAWIDTH = 32;
             parameter MAXBURSTCOUNT = 4;
@@ -371,5 +372,11 @@ module burst_read_master (
     defparam the_master_to_user_fifo.add_ram_output_register = "OFF";
     defparam the_master_to_user_fifo.underflow_checking = "OFF";
     defparam the_master_to_user_fifo.overflow_checking = "OFF";
+
+initial begin
+     $dumpfile("waveform.vcd");
+     $dumpvars(0, burst_read_master);
+end
+
 
 endmodule
