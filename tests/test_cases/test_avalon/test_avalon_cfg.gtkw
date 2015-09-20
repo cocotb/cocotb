@@ -1,0 +1,45 @@
+[*]
+[*] GTKWave Analyzer v3.3.62 (w)1999-2014 BSI
+[*] Sun Sep 20 18:17:02 2015
+[*]
+[dumpfile] "/opt/cocotb/tests/test_cases/test_avalon/waveform.vcd"
+[dumpfile_mtime] "Sun Sep 20 18:16:16 2015"
+[dumpfile_size] 4340
+[savefile] "/opt/cocotb/tests/test_cases/test_avalon/test_avalon_cfg.gtkw"
+[timestart] 0
+[size] 1366 702
+[pos] -1 -1
+*-9.602564 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 289
+[signals_width] 214
+[sst_expanded] 1
+[sst_vpaned_height] 179
+@28
+burst_read_master.clk
+@22
+burst_read_master.address[31:0]
+@28
+burst_read_master.burst_count[2:0]
+@200
+-drive
+@28
+burst_read_master.control_go
+@22
+burst_read_master.control_read_base[31:0]
+@200
+-AVALON
+@22
+burst_read_master.master_address[31:0]
+@28
+burst_read_master.master_burstcount[2:0]
+@22
+burst_read_master.master_byteenable[3:0]
+@29
+burst_read_master.master_read
+@22
+burst_read_master.master_readdata[31:0]
+@28
+burst_read_master.master_readdatavalid
+burst_read_master.master_waitrequest
+[pattern_trace] 1
+[pattern_trace] 0

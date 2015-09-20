@@ -163,50 +163,49 @@ module burst_read_master (
     master_burstcount,
     master_waitrequest);
 
-            parameter DATAWIDTH = 32;
-            parameter MAXBURSTCOUNT = 4;
-            parameter BURSTCOUNTWIDTH = 3;
-            parameter BYTEENABLEWIDTH = 4;
-            parameter ADDRESSWIDTH = 32;
-            parameter FIFODEPTH = 32;
-            parameter FIFODEPTH_LOG2 = `FIFODEPTH_LOG2_DEF;
-            parameter FIFOUSEMEMORY = 1;  // set to 0 to use LEs instead
+    parameter DATAWIDTH = 32;
+    parameter MAXBURSTCOUNT = 4;
+    parameter BURSTCOUNTWIDTH = 3;
+    parameter BYTEENABLEWIDTH = 4;
+    parameter ADDRESSWIDTH = 32;
+    parameter FIFODEPTH = 32;
+    parameter FIFODEPTH_LOG2 = `FIFODEPTH_LOG2_DEF;
+    parameter FIFOUSEMEMORY = 1;  // set to 0 to use LEs instead
 
-            input clk;
-            input reset;
+    input clk;
+    input reset;
 
+    // control inputs and outputs
+    input control_fixed_location;
+    input [ADDRESSWIDTH-1:0] control_read_base;
+    input [ADDRESSWIDTH-1:0] control_read_length;
+    input control_go;
+    output wire control_done;
+    // don't use this unless you know what you are doing,
+    // it's going to fire when the last read is posted,
+    // not when the last data returns!
+    output wire control_early_done;
 
-            // control inputs and outputs
-            input control_fixed_location;
-            input [ADDRESSWIDTH-1:0] control_read_base;
-            input [ADDRESSWIDTH-1:0] control_read_length;
-            input control_go;
-            output wire control_done;
-            // don't use this unless you know what you are doing,
-            // it's going to fire when the last read is posted,
-            // not when the last data returns!
-            output wire control_early_done;
+    // user logic inputs and outputs
+    input user_read_buffer;
+    output wire [DATAWIDTH-1:0] user_buffer_data;
+    output wire user_data_available;
 
-            // user logic inputs and outputs
-            input user_read_buffer;
-            output wire [DATAWIDTH-1:0] user_buffer_data;
-            output wire user_data_available;
+    // master inputs and outputs
+    input master_waitrequest;
+    input master_readdatavalid;
+    input [DATAWIDTH-1:0] master_readdata;
+    output wire [ADDRESSWIDTH-1:0] master_address;
+    output wire master_read;
+    output wire [BYTEENABLEWIDTH-1:0] master_byteenable;
+    output wire [BURSTCOUNTWIDTH-1:0] master_burstcount;
 
-            // master inputs and outputs
-            input master_waitrequest;
-            input master_readdatavalid;
-            input [DATAWIDTH-1:0] master_readdata;
-            output wire [ADDRESSWIDTH-1:0] master_address;
-            output wire master_read;
-            output wire [BYTEENABLEWIDTH-1:0] master_byteenable;
-            output wire [BURSTCOUNTWIDTH-1:0] master_burstcount;
-
-            // internal control signals
-            reg control_fixed_location_d1;
-            wire fifo_empty;
-            reg [ADDRESSWIDTH-1:0] address;
-            reg [ADDRESSWIDTH-1:0] length;
-            reg [FIFODEPTH_LOG2-1:0] reads_pending;
+    // internal control signals
+    reg control_fixed_location_d1;
+    wire fifo_empty;
+    reg [ADDRESSWIDTH-1:0] address;
+    reg [ADDRESSWIDTH-1:0] length;
+    reg [FIFODEPTH_LOG2-1:0] reads_pending;
     wire increment_address;
     wire [BURSTCOUNTWIDTH-1:0] burst_count;
     wire [BURSTCOUNTWIDTH-1:0] first_short_burst_count;
