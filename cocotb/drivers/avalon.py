@@ -208,6 +208,9 @@ class AvalonMemory(BusDriver):
         BusDriver.__init__(self, entity, name, clock)
 
         if avl_properties != {}:
+            for key, value in self._avalon_properties.items():
+                self._avalon_properties[key] = avl_properties.get(key, value)
+
             self._avalon_properties = avl_properties
         self._readable = False
         self._writeable = False
