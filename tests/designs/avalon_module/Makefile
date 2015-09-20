@@ -28,7 +28,7 @@
 ###############################################################################
 
 
-TOPLEVEL := avalon_module
+TOPLEVEL := burst_read_master
 TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
@@ -40,7 +40,7 @@ else
 WPWD=$(shell pwd)
 endif
 
-VERILOG_SOURCES = $(COCOTB)/tests/designs/avalon_module/avalon_module.v
+VERILOG_SOURCES = $(COCOTB)/tests/designs/avalon_module/burst_read_master.v
 GPI_IMPL := vpi
 
 export TOPLEVEL_LANG
