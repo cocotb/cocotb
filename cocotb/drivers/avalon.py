@@ -201,6 +201,7 @@ class AvalonMemory(BusDriver):
     _avalon_properties = {
             "burstCountUnits": "symbols", # symbols or words
             "addressUnits": "symbols",    # symbols or words
+            "readLatency": 1,    # number of cycles
             }
 
     def __init__(self, entity, name, clock, readlatency_min=1,
@@ -211,10 +212,9 @@ class AvalonMemory(BusDriver):
             for key, value in self._avalon_properties.items():
                 self._avalon_properties[key] = avl_properties.get(key, value)
 
-            self._avalon_properties = avl_properties
-
         if self._avalon_properties["burstCountUnits"] != "symbols":
             self.log.error("Only symbols burstCountUnits is supported")
+
         if self._avalon_properties["addressUnits"] != "symbols":
             self.log.error("Only symbols addressUnits is supported")
 
@@ -337,12 +337,10 @@ class AvalonMemory(BusDriver):
                     self.bus.waitrequest <= 0
 
                     # wait for read data
-                    # TODO: configure readdatawait with avalon properties
-                    yield edge
-                    yield edge
+                    for i in range(self._avalon_properties["readLatency"]):
+                        yield edge
 
                     for count in range(burstcount):
-                        self.log.warning("read value " + str(count))
                         if (addr + count) not in self._mem:
                             self.log.warning("Attempt to read from uninitialised "
                                              "address 0x%x" % (addr + count) )
