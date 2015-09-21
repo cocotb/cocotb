@@ -33,7 +33,6 @@
 # hope to enable again when these have been resolved.
 
 ARCH?=i686
-#EXTRA_ARGS += -64bit
 ifeq ($(shell ncbits),64)
 $(error "The 64bit version of IUS is on your PATH, please use the 32bit version for now")
 endif
@@ -74,4 +73,7 @@ results.xml: $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEP
 	irun $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS)
 
 clean::
-	-rm -rf $(SIM_BUILD)
+	@rm -rf $(SIM_BUILD)
+	@rm -rf irun.*
+	@rm -rf ncsim.*
+	@rm -rf gdb_cmd_ncsim
