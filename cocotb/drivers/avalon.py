@@ -56,6 +56,7 @@ class AvalonMM(BusDriver):
     _optional_signals = ["readdata", "read", "write", "waitrequest",
                          "writedata", "readdatavalid", "byteenable"]
 
+
     def __init__(self, entity, name, clock):
         BusDriver.__init__(self, entity, name, clock)
         self._can_read = False
@@ -196,22 +197,49 @@ class AvalonMemory(BusDriver):
     """
     _signals = ["address"]
     _optional_signals = ["write", "read", "writedata", "readdatavalid",
-                         "readdata", "waitrequest"]
+                         "readdata", "waitrequest", "burstcount", "byteenable"]
+    _avalon_properties = {
+            "burstCountUnits": "symbols", # symbols or words
+            "addressUnits": "symbols",    # symbols or words
+            "readLatency": 1,    # number of cycles
+            }
 
     def __init__(self, entity, name, clock, readlatency_min=1,
-                 readlatency_max=1, memory=None):
+                 readlatency_max=1, memory=None, avl_properties={}):
         BusDriver.__init__(self, entity, name, clock)
 
+        if avl_properties != {}:
+            for key, value in self._avalon_properties.items():
+                self._avalon_properties[key] = avl_properties.get(key, value)
+
+        if self._avalon_properties["burstCountUnits"] != "symbols":
+            self.log.error("Only symbols burstCountUnits is supported")
+
+        if self._avalon_properties["addressUnits"] != "symbols":
+            self.log.error("Only symbols addressUnits is supported")
+
+        self._burstread = False
+        self._burstwrite = False
         self._readable = False
         self._writeable = False
+        self._width = None
 
         if hasattr(self.bus, "readdata"):
             self._width = len(self.bus.readdata)
             self._readable = True
 
         if hasattr(self.bus, "writedata"):
-            self._width = len(self.bus.writedata)
+            width = len(self.bus.writedata)
+            if (self._width is not None) and self._width != width:
+                self.log.error("readdata and writedata bus" +
+                               " are not the same size")
+            self._width = width
             self._writeable = True
+
+        if hasattr(self.bus, "burstcount"):
+            if hasattr(self.bus, "readdatavalid"):
+                self._burstread = True
+            self._burstwrite = True
 
         if not self._readable and not self._writeable:
             raise TestError("Attempt to instantiate useless memory")
@@ -234,11 +262,33 @@ class AvalonMemory(BusDriver):
         if hasattr(self.bus, "waitrequest"):
             self.bus.waitrequest.setimmediatevalue(0)
 
+        if hasattr(self.bus, "readdatavalid"):
+            self.bus.readdatavalid.setimmediatevalue(0)
+
     def _pad(self):
         """Pad response queue up to read latency"""
         l = random.randint(self._readlatency_min, self._readlatency_max)
         while len(self._responses) < l:
             self._responses.append(None)
+
+    def _do_response(self):
+        if self._responses:
+            resp = self._responses.pop(0)
+        else:
+            resp = None
+
+        if resp is not None:
+            if resp is True:
+                self._val.binstr = "x" * self._width
+            else:
+                self._val.integer = resp
+                self.log.debug("sending 0x%x (%s)" %
+                               (self._val.integer, self._val.binstr))
+            self.bus.readdata <= self._val
+            if hasattr(self.bus, "readdatavalid"):
+                self.bus.readdatavalid <= 1
+        elif hasattr(self.bus, "readdatavalid"):
+            self.bus.readdatavalid <= 0
 
     @coroutine
     def _respond(self):
@@ -248,38 +298,63 @@ class AvalonMemory(BusDriver):
         edge = RisingEdge(self.clock)
         while True:
             yield edge
-
-            if self._responses:
-                resp = self._responses.pop(0)
-            else:
-                resp = None
-
-            if resp is not None:
-                if resp is True:
-                    self._val.binstr = "x" * self._width
-                else:
-                    self._val.integer = resp
-                    self.log.debug("sending 0x%x (%s)" %
-                                   (self._val.integer, self._val.binstr))
-                self.bus.readdata <= self._val
-                if hasattr(self.bus, "readdatavalid"):
-                    self.bus.readdatavalid <= 1
-            elif hasattr(self.bus, "readdatavalid"):
-                self.bus.readdatavalid <= 0
+            self._do_response()
 
             yield ReadOnly()
 
             if self._readable and self.bus.read.value:
-                self._pad()
-                addr = self.bus.address.value.integer
-                if addr not in self._mem:
-                    self.log.warning("Attempt to read from uninitialised "
-                                     "address 0x%x" % addr)
-                    self._responses.append(True)
+                if not self._burstread:
+                    self._pad()
+                    addr = self.bus.address.value.integer
+                    if addr not in self._mem:
+                        self.log.warning("Attempt to read from uninitialised "
+                                         "address 0x%x" % addr)
+                        self._responses.append(True)
+                    else:
+                        self.log.debug("Read from address 0x%x returning 0x%x" %
+                                       (addr, self._mem[addr]))
+                        self._responses.append(self._mem[addr])
                 else:
-                    self.log.debug("Read from address 0x%x returning 0x%x" %
-                                   (addr, self._mem[addr]))
-                    self._responses.append(self._mem[addr])
+                    addr = self.bus.address.value.integer
+                    if addr % (self._width/8) != 0:
+                        self.log.error("Address must be aligned to data width")
+                    addr = addr / (self._width/8)
+                    burstcount = self.bus.burstcount.value.integer
+                    byteenable = self.bus.byteenable.value
+                    if byteenable != int("1"*len(self.bus.byteenable), 2):
+                        self.log.error("Only full word access is supported " +
+                                       "for burst read (byteenable must be " +
+                                       "0b" + "1" * len(self.bus.byteenable) +
+                                       ")")
+                    if burstcount == 0:
+                        self.log.error("Burstcount must be 1 at least")
+
+                    # toggle waitrequest
+                    # TODO: configure waitrequest time with avalon properties
+                    self.bus.waitrequest <= 1
+                    yield edge
+                    yield edge
+                    self.bus.waitrequest <= 0
+
+                    # wait for read data
+                    for i in range(self._avalon_properties["readLatency"]):
+                        yield edge
+
+                    for count in range(burstcount):
+                        if (addr + count) not in self._mem:
+                            self.log.warning("Attempt to read from uninitialised "
+                                             "address 0x%x" % (addr + count) )
+                            self._responses.append(True)
+                        else:
+                            value = 0
+                            for i in range(self._width/8):
+                                value +=\
+                                    self._mem[(addr + count)*(self._width/8) + i] << i*8
+                            self.log.debug("Read from address 0x%x returning 0x%x" %
+                                           (addr*(self._width/8), value))
+                            self._responses.append(value)
+                        yield edge
+                        self._do_response()
 
             if self._writeable and self.bus.write.value:
                 addr = self.bus.address.value.integer
@@ -322,7 +397,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.empty <= word
         self.bus.startofpacket <= word
         self.bus.endofpacket <= word
-        
+
     @coroutine
     def _wait_ready(self):
         """Wait for a ready cycle on the bus before continuing
