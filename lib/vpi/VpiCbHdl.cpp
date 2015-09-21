@@ -495,7 +495,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
         return;
     }
 
-    LOG_DEBUG("Created iterator working from type %d",
+    LOG_DEBUG("Created iterator working from type %d %s",
               *one2many,
               vpi_get_str(vpiFullName, vpi_hdl));
 
@@ -591,13 +591,13 @@ int VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
     }
     name = c_name;
 
-    LOG_DEBUG("vpi_scan found '%s'", name.c_str());
-
     /* We try and create a handle internally, if this is not possible we
        return and GPI will try other implementations with the name
        */
 
     std::string fq_name = m_parent->get_fullname() + "." + name;
+
+    LOG_DEBUG("vpi_scan found '%s'", fq_name.c_str());
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl*>(m_impl);
     new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {
