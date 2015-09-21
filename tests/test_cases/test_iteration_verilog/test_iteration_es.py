@@ -35,7 +35,7 @@ def recursive_discovery(dut):
     Recursively discover every single object in the design
     """
     if cocotb.SIM_NAME in ["ModelSim ALTERA STARTER EDITION",
-                           "ModelSim DE"
+                           "ModelSim DE",
                            "ncsim(64)",
                            "ncsim"]:
         # vpiAlways does not show up in IUS
