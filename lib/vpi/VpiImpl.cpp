@@ -217,7 +217,7 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         return NULL;
     }
 
-    std::string name = vpi_get_str(vpiFullName, new_hdl);
+    std::string name = vpi_get_str(vpiName, new_hdl);
     std::string fq_name = parent->get_fullname() + "." + name;
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
