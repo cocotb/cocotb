@@ -28,6 +28,9 @@
     The signal 'user_data_available' is asserted whenever data is available from the
     exposed FIFO.
 
+    Update by FabienM <fabien.marteau@armadeus.com>
+        - adding scfifo verilog model description
+
 */
 
 `timescale 1 ps / 1 ps
@@ -53,8 +56,6 @@ localparam use_eab = "ON";
 localparam add_ram_output_register = "OFF";
 localparam underflow_checking = "OFF";
 localparam overflow_checking = "OFF";
-
-// BEGIN PASTE
 
 assign q = buf_out;
 assign empty = buf_empty;
@@ -133,8 +134,6 @@ begin
     end
 
 end
-// END PASTE
-
 endmodule
 
 module burst_read_master (
@@ -142,9 +141,9 @@ module burst_read_master (
     reset,
 
     // control inputs and outputs
-    control_fixed_location,
-    control_read_base,
-    control_read_length,
+    control_fixed_location,  // When set the master address will not increment
+    control_read_base,       // Word aligned byte address
+    control_read_length,     // Number of bytes to transfer
     control_go,
     control_done,
     control_early_done,
@@ -163,11 +162,14 @@ module burst_read_master (
     master_burstcount,
     master_waitrequest);
 
+
+    parameter MAXBURSTCOUNT = 16;  // in word
+    parameter BURSTCOUNTWIDTH = 5;
+
     parameter DATAWIDTH = 32;
-    parameter MAXBURSTCOUNT = 4;
-    parameter BURSTCOUNTWIDTH = 3;
     parameter BYTEENABLEWIDTH = 4;
     parameter ADDRESSWIDTH = 32;
+
     parameter FIFODEPTH = 32;
     parameter FIFODEPTH_LOG2 = `FIFODEPTH_LOG2_DEF;
     parameter FIFOUSEMEMORY = 1;  // set to 0 to use LEs instead
@@ -217,8 +219,6 @@ module burst_read_master (
     wire too_many_reads_pending;
     wire [FIFODEPTH_LOG2-1:0] fifo_used;
 
-
-
     // registering the control_fixed_location bit
     always @ (posedge clk or posedge reset)
     begin
@@ -234,8 +234,6 @@ module burst_read_master (
             end
         end
     end
-
-
 
     // master address logic
     always @ (posedge clk or posedge reset)
@@ -259,8 +257,6 @@ module burst_read_master (
         end
     end
 
-
-
     // master length logic
     always @ (posedge clk or posedge reset)
     begin
@@ -283,8 +279,6 @@ module burst_read_master (
         end
     end
 
-
-
     // controlled signals going to the master/control ports
     assign master_address = address;
     // all ones, always performing word size accesses
@@ -293,75 +287,77 @@ module burst_read_master (
     // need to make sure that the reads have returned before firing the done bit
     assign control_done = (length == 0) & (reads_pending == 0);
     // advanced feature, you should use 'control_done' if you need all
-        // the reads to return first
-        assign control_early_done = (length == 0);
-        assign master_read = (too_many_reads_pending == 0) & (length != 0);
-        assign burst_boundary_word_address = ((address / BYTEENABLEWIDTH) & (MAXBURSTCOUNT - 1));
-        assign first_short_burst_enable = (burst_boundary_word_address != 0);
-        assign final_short_burst_enable = (length < (MAXBURSTCOUNT * BYTEENABLEWIDTH));
+    // the reads to return first
+    assign control_early_done = (length == 0);
 
-        // if the burst boundary isn't a multiple of 2 then must post a burst of
-            // 1 to get to a multiple of 2 for the next burst
-            assign first_short_burst_count = ((burst_boundary_word_address & 1'b1) == 1'b1)? 1 :
-                (((MAXBURSTCOUNT - burst_boundary_word_address) < (length / BYTEENABLEWIDTH))?
-                (MAXBURSTCOUNT - burst_boundary_word_address) : (length / BYTEENABLEWIDTH));
-            assign final_short_burst_count = (length / BYTEENABLEWIDTH);
+    assign master_read = (too_many_reads_pending == 0) & (length != 0);
+    assign burst_boundary_word_address = ((address / BYTEENABLEWIDTH) & (MAXBURSTCOUNT - 1));
+    assign first_short_burst_enable = (burst_boundary_word_address != 0);
+    assign final_short_burst_enable = (length < (MAXBURSTCOUNT * BYTEENABLEWIDTH));
 
-            // this will get the transfer back on a burst boundary,
-            assign burst_count = (first_short_burst_enable == 1)? first_short_burst_count :
-            (final_short_burst_enable == 1)? final_short_burst_count : MAXBURSTCOUNT;
-        assign increment_address =
-            (too_many_reads_pending == 0) & (master_waitrequest == 0) & (length != 0);
-        // make sure there are fewer reads posted than room in the FIFO
-        assign too_many_reads_pending = (reads_pending + fifo_used) >= (FIFODEPTH - MAXBURSTCOUNT - 4);
+    // if the burst boundary isn't a multiple of 2 then must post a burst of
+    // 1 to get to a multiple of 2 for the next burst
+    assign first_short_burst_count = ((burst_boundary_word_address & 1'b1) == 1'b1)? 1 :
+        (((MAXBURSTCOUNT - burst_boundary_word_address) < (length / BYTEENABLEWIDTH))?
+        (MAXBURSTCOUNT - burst_boundary_word_address) : (length / BYTEENABLEWIDTH));
+    assign final_short_burst_count = (length / BYTEENABLEWIDTH);
 
+    // this will get the transfer back on a burst boundary,
+    assign burst_count = (first_short_burst_enable == 1)? first_short_burst_count :
+        (final_short_burst_enable == 1)? final_short_burst_count : MAXBURSTCOUNT;
+    assign increment_address =
+        (too_many_reads_pending == 0) & (master_waitrequest == 0) & (length != 0);
+    // make sure there are fewer reads posted than room in the FIFO
+    assign too_many_reads_pending = (reads_pending + fifo_used) >= (FIFODEPTH - MAXBURSTCOUNT - 4);
 
-        // tracking FIFO
-        always @ (posedge clk or posedge reset)
+    // tracking FIFO
+    always @ (posedge clk or posedge reset)
+    begin
+        if (reset == 1)
         begin
-            if (reset == 1)
+            reads_pending <= 0;
+        end
+        else
+        begin
+            if(increment_address == 1)
             begin
-                reads_pending <= 0;
-            end
-            else
-            begin
-                if(increment_address == 1)
+                if(master_readdatavalid == 0)
                 begin
-                    if(master_readdatavalid == 0)
-                    begin
-                        reads_pending <= reads_pending + burst_count;
-                    end
-                    else
-                    begin
-                        // a burst read was posted, but a word returned
-                        reads_pending <= reads_pending + burst_count - 1;
-                    end
+                    reads_pending <= reads_pending + burst_count;
                 end
                 else
                 begin
-                    if(master_readdatavalid == 0)
-                    begin
-                        reads_pending <= reads_pending;  // burst read was not posted and no read returned
-                    end
-                    else
-                    begin
-                        reads_pending <= reads_pending - 1;  // burst read was not posted but a word returned
-                    end
+                    // a burst read was posted, but a word returned
+                    reads_pending <= reads_pending + burst_count - 1;
+                end
+            end
+            else
+            begin
+                if(master_readdatavalid == 0)
+                begin
+                    // burst read was not posted and no read returned
+                    reads_pending <= reads_pending;
+                end
+                else
+                begin
+                    // burst read was not posted but a word returned
+                    reads_pending <= reads_pending - 1;
                 end
             end
         end
+    end
 
 
-        // read data feeding user logic
-        assign user_data_available = !fifo_empty;
-        scfifo the_master_to_user_fifo (
-            .aclr (reset),
-            .clock (clk),
-            .data (master_readdata),
-            .empty (fifo_empty),
-            .q (user_buffer_data),
-            .rdreq (user_read_buffer),
-            .usedw (fifo_used),
+    // read data feeding user logic
+    assign user_data_available = !fifo_empty;
+    scfifo the_master_to_user_fifo (
+        .aclr (reset),
+        .clock (clk),
+        .data (master_readdata),
+        .empty (fifo_empty),
+        .q (user_buffer_data),
+        .rdreq (user_read_buffer),
+        .usedw (fifo_used),
         .wrreq (master_readdatavalid)
     );
     defparam the_master_to_user_fifo.lpm_width = DATAWIDTH;
