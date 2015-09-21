@@ -47,7 +47,7 @@ public:
 
         const std::string &name = hdl->get_fullname();
 
-        LOG_DEBUG("Checking %s exits", name.c_str());
+        LOG_DEBUG("Checking %s exists", name.c_str());
 
         it = handle_map.find(name);
         if (it == handle_map.end()) {
