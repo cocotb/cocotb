@@ -37,7 +37,7 @@ ifeq ($(shell ncbits),64)
 $(error "The 64bit version of IUS is on your PATH, please use the 32bit version for now")
 endif
 
-EXTRA_ARGS += -nclibdirname $(SIM_BUILD)
+EXTRA_ARGS += -nclibdirname $(SIM_BUILD) -plinowarn
 
 ifeq ($(GUI),1)
     EXTRA_ARGS += -gui
