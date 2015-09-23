@@ -17,7 +17,7 @@ Design
 
 We have a relatively simplistic RTL block called the endian_swapper.  The DUT has three interfaces, all conforming to the Avalon standard:
 
-.. image:: diagrams/svg/endian_swapper_design.svg
+.. image:: diagrams/svg/endian_swapper_design.*
 
 The DUT will swap the endianness of packets on the Avalon-ST bus if a configuration bit is set.  For every packet arriving on the "stream_in" interface the entire packet will be endian swapped if the configuration bit is set, otherwise the entire packet will pass through unmodified.
 
@@ -46,7 +46,7 @@ To begin with we create a class to encapsulate all the common code for the testb
 
 With the above code we have created a testbench with the following structure:
 
-.. image:: diagrams/svg/endian_swapper_testbench.svg
+.. image:: diagrams/svg/endian_swapper_testbench.*
 
 If we inspect this line-by-line:
 

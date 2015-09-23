@@ -60,7 +60,7 @@ coroutine (by running the function in a separate thread).  The
 to be called by a normal thread.  The call sequence looks like this:
 
 
-.. image:: diagrams/svg/hal_cosimulation.svg
+.. image:: diagrams/svg/hal_cosimulation.*
 
 
 Implementation
