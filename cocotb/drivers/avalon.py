@@ -317,7 +317,9 @@ class AvalonMemory(BusDriver):
                 else:
                     addr = self.bus.address.value.integer
                     if addr % (self._width/8) != 0:
-                        self.log.error("Address must be aligned to data width")
+                        self.log.error("Address must be aligned to data width" +
+                                       "(addr = " + hex(addr) +
+                                       ", width = " + str(self._width))
                     addr = addr / (self._width/8)
                     burstcount = self.bus.burstcount.value.integer
                     byteenable = self.bus.byteenable.value
