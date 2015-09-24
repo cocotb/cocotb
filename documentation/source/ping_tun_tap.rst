@@ -31,7 +31,7 @@ Linux has a `TUN/TAP`_ virtual network device which we can use for this
 purpose, allowing `ping`_ to run unmodified and unaware that it is
 communicating with our simulation rather than a remote network endpoint.
 
-.. image:: diagrams/svg/ping_tun_tap.svg
+.. image:: diagrams/svg/ping_tun_tap.*
 
 
 Implementation
