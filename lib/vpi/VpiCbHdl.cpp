@@ -162,11 +162,6 @@ long VpiSignalObjHdl::get_signal_value_long(void)
 int VpiSignalObjHdl::set_signal_value(long value)
 {
     FENTER
-
-    LOG_WARN("Writing %ld to %s",
-         value,
-         m_name.c_str());
-
     s_vpi_value value_s;
 
     value_s.value.integer = value;
@@ -511,7 +506,9 @@ VpiIterator::~VpiIterator()
         vpi_free_object(m_iterator);
 }
 
-int VpiSingleIterator::next_handle(std::string &name, GpiObjHdl **hdl)
+GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
+                                                   GpiObjHdl **hdl,
+                                                   void **raw_hdl)
 {
     GpiObjHdl *new_obj;
     vpiHandle obj;
@@ -525,15 +522,18 @@ int VpiSingleIterator::next_handle(std::string &name, GpiObjHdl **hdl)
 
     const char *c_name = vpi_get_str(vpiName, obj);
     if (!c_name) {
-        return GpiIterator::VALID_NO_NAME;
-    }
-    name = c_name;
+        int type = vpi_get(vpiType, obj);
+        LOG_WARN("Unable to get the name for this object of type %d", type);
 
-    const char *c_fq_name = vpi_get_str(vpiFullName, obj);
-    if (!c_fq_name) {
-        return GpiIterator::VALID_NO_NAME;
+        if (type >= 1000) {
+            *raw_hdl = (void*)obj;
+            return GpiIterator::NOT_NATIVE_NO_NAME;
+        }
+
+        return GpiIterator::NATIVE_NO_NAME;
     }
-    std::string fq_name = c_fq_name;
+
+    std::string fq_name = c_name;
 
     LOG_DEBUG("vpi_scan found '%s = '%s'", name.c_str(), fq_name.c_str());
 
@@ -541,13 +541,13 @@ int VpiSingleIterator::next_handle(std::string &name, GpiObjHdl **hdl)
     new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {
         *hdl = new_obj;
-        return GpiIterator::VALID;
+        return GpiIterator::NATIVE;
     }
     else
-        return GpiIterator::INVALID;
+        return GpiIterator::NOT_NATIVE;
 }
 
-int VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
+GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl)
 {
     GpiObjHdl *new_obj;
     vpiHandle obj;
@@ -588,9 +588,24 @@ int VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
         return GpiIterator::END;
     }
 
+    /* Simulators vary here. Some will allow the name to be accessed
+       across boundary. We can simply return this up and allow
+       the object to be created. Others do not. In this case
+       we see if the object is in out type range and if not
+       return the raw_hdl up */
+
     const char *c_name = vpi_get_str(vpiName, obj);
     if (!c_name) {
-        return GpiIterator::VALID_NO_NAME;
+        /* This may be another type */
+        int type = vpi_get(vpiType, obj);
+        LOG_WARN("Unable to get the name for this object of type %d", type);
+
+        if (type >= 1000) {
+            *raw_hdl = (void*)obj;
+            return GpiIterator::NOT_NATIVE_NO_NAME;
+        }
+
+        return GpiIterator::NATIVE_NO_NAME;
     }
     name = c_name;
 
@@ -605,8 +620,8 @@ int VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
     new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {
         *hdl = new_obj;
-        return GpiIterator::VALID;
+        return GpiIterator::NATIVE;
     }
     else
-        return GpiIterator::INVALID;
+        return GpiIterator::NOT_NATIVE;
 }

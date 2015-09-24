@@ -272,6 +272,37 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     return new_obj;
 }
 
+GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
+{
+    LOG_DEBUG("Trying to convert raw to VHPI handle");
+
+    vhpiHandleT new_hdl = (vhpiHandleT)raw_hdl;
+
+    std::string fq_name = parent->get_fullname();
+    const char *c_name = vhpi_get_str(vhpiNameP, new_hdl);
+    if (!c_name) {
+        LOG_DEBUG("Unable to query name of passed in handle");
+        return NULL;
+    }
+
+    std::string name = c_name;
+
+    if (fq_name == ":") {
+        fq_name += name;
+    } else {
+        fq_name += "." + name;
+    }
+
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+    if (new_obj == NULL) {
+        vhpi_release_handle(new_hdl);
+        LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
+        return NULL;
+    }
+
+    return new_obj;
+}
+
 GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vhpiHandleT new_hdl;

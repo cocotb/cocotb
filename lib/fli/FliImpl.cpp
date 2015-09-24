@@ -107,6 +107,13 @@ void FliImpl::sim_end(void)
     mti_Cmd(stop);
 }
 
+GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
+{
+    LOG_WARN("%s implementation can not create from raw handle",
+             m_name.c_str());
+    return NULL;
+}
+
 /**
  * @name    Native Check Create
  * @brief   Determine whether a simulation object is native to FLI and create

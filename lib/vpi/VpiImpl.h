@@ -219,7 +219,7 @@ public:
 
     virtual ~VpiIterator();
 
-    int next_handle(std::string &name, GpiObjHdl **hdl);
+    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl);
 
 private:
     vpiHandle m_iterator;
@@ -246,7 +246,7 @@ public:
     }
 
     virtual ~VpiSingleIterator() { }
-    int next_handle(std::string &name, GpiObjHdl **hdl);
+    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl);
 
 protected:
     vpiHandle m_iterator;
@@ -277,6 +277,7 @@ public:
     int deregister_callback(GpiCbHdl *obj_hdl);
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *parent);
     const char * reason_to_string(int reason);
     GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl,
                                           std::string &name,

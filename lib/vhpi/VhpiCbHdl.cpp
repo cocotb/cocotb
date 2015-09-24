@@ -629,7 +629,7 @@ std::vector<vhpiOneToManyT>* KindMappings::get_options(vhpiClassKindT type)
     std::map<vhpiClassKindT, std::vector<vhpiOneToManyT> >::iterator valid = options_map.find(type);
 
     if (options_map.end() == valid) {
-        LOG_ERROR("VHPI: Implementation does not know how to iterate over %d", type);
+        LOG_WARN("VHPI: Implementation does not know how to iterate over %d", type);
         return NULL;
     } else {
         return &valid->second;
@@ -712,7 +712,9 @@ VhpiIterator::~VhpiIterator()
         vhpi_release_handle(m_iterator);
 }
 
-int VhpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
+GpiIterator::Status VhpiIterator::next_handle(std::string &name,
+                                              GpiObjHdl **hdl,
+                                              void **raw_hdl)
 {
     vhpiHandleT obj;
     GpiObjHdl *new_obj;
@@ -764,7 +766,15 @@ int VhpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
 
     const char *c_name = vhpi_get_str(vhpiCaseNameP, obj);
     if (!c_name) {
-        return GpiIterator::VALID_NO_NAME;
+        int type = vhpi_get(vhpiKindP, obj);
+        LOG_WARN("Unable to get the name for this object of type %d", type);
+
+        if (type < 1000) {
+            *raw_hdl = (void*)obj;
+            return GpiIterator::NOT_NATIVE_NO_NAME;
+        }
+
+        return GpiIterator::NATIVE_NO_NAME;
     }
     name = c_name;
 
@@ -786,9 +796,9 @@ int VhpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
     new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {
         *hdl = new_obj;
-        return GpiIterator::VALID;
+        return GpiIterator::NATIVE;
     }
     else
-        return GpiIterator::INVALID;
+        return GpiIterator::NOT_NATIVE;
 }
 

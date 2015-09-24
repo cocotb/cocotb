@@ -241,6 +241,7 @@ public:
     /* Hierachy related */
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *paret);
     GpiObjHdl *get_root_handle(const char *name);
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type);
 
