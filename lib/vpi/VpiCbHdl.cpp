@@ -68,13 +68,11 @@ int VpiCbHdl::arm_callback(void) {
     }
 
     vpiHandle new_hdl = vpi_register_cb(&cb_data);
-    check_vpi_error();
-    
-    int ret = 0;
 
     if (!new_hdl) {
         LOG_ERROR("VPI: Unable to register a callback handle for VPI type %s(%d)",
-                     m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+                  m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+        check_vpi_error();
         return -1;
 
     } else {
@@ -83,7 +81,7 @@ int VpiCbHdl::arm_callback(void) {
     
     m_obj_hdl = new_hdl;
 
-    return ret;
+    return 0;
 }
 
 int VpiCbHdl::cleanup_callback(void)
@@ -164,6 +162,11 @@ long VpiSignalObjHdl::get_signal_value_long(void)
 int VpiSignalObjHdl::set_signal_value(long value)
 {
     FENTER
+
+    LOG_WARN("Writing %ld to %s",
+         value,
+         m_name.c_str());
+
     s_vpi_value value_s;
 
     value_s.value.integer = value;
