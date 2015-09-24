@@ -712,6 +712,8 @@ VhpiIterator::~VhpiIterator()
         vhpi_release_handle(m_iterator);
 }
 
+#define VHPI_TYPE_MIN (1000)
+
 GpiIterator::Status VhpiIterator::next_handle(std::string &name,
                                               GpiObjHdl **hdl,
                                               void **raw_hdl)
@@ -769,7 +771,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
         int type = vhpi_get(vhpiKindP, obj);
         LOG_WARN("Unable to get the name for this object of type %d", type);
 
-        if (type < 1000) {
+        if (type < VHPI_TYPE_MIN) {
             *raw_hdl = (void*)obj;
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
