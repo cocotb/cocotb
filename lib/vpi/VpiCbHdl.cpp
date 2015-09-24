@@ -475,7 +475,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
 
     int type = vpi_get(vpiType, vpi_hdl);
     if (NULL == (selected = iterate_over.get_options(type))) {
-        LOG_ERROR("VPI: Implementation does not know how to iterate over %s(%d)",
+        LOG_WARN("VPI: Implementation does not know how to iterate over %s(%d)",
                   vpi_get_str(vpiType, vpi_hdl), type);
         return;
     }
