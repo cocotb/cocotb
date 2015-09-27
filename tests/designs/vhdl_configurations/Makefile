@@ -2,7 +2,7 @@ TOPLEVEL = testbench
 
 VHDL_SOURCES = $(COCOTB)/tests/designs/vhdl_configurations/dut.vhd
 ifeq ($(TOPLEVEL_LANG),vhdl)
-    VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/testbench.vhd
+   	VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/testbench.vhd
     GPI_IMPL := vhpi
 endif
 VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/configurations.vhd
@@ -12,6 +12,11 @@ ifeq ($(TOPLEVEL_LANG),verilog)
     GPI_IMPL := vpi
 endif
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+ifneq ($(SIM),)
+	include $(COCOTB)/makefiles/Makefile.inc
+	include $(COCOTB)/makefiles/Makefile.sim
+else
+all:
+	@echo "Skipping test as VHDL not supported on Icarus"
+endif
 
