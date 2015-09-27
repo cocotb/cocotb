@@ -272,6 +272,37 @@ static GpiObjHdl* __gpi_get_handle_by_name(GpiObjHdl *parent,
     }
 }
 
+static GpiObjHdl* __gpi_get_handle_by_raw(GpiObjHdl *parent,
+                                          void *raw_hdl,
+                                          GpiImplInterface *skip_impl)
+{
+    vector<GpiImplInterface*>::iterator iter;
+
+    GpiObjHdl *hdl = NULL;
+
+    for (iter = registered_impls.begin();
+         iter != registered_impls.end();
+         iter++) {
+
+        if (skip_impl && (skip_impl == (*iter))) {
+            LOG_DEBUG("Skipping %s impl", (*iter)->get_name_c());
+            continue;
+        }
+
+        if ((hdl = (*iter)->native_check_create(raw_hdl, parent))) {
+            LOG_DEBUG("Found %s via %s", hdl->get_name_str(), (*iter)->get_name_c());
+            break;
+        }
+    }
+
+    if (hdl)
+        return CHECK_AND_STORE(hdl);
+    else {
+        LOG_DEBUG("Failed to convert a raw handle to valid object");
+        return hdl;
+    }
+}
+
 gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
 {
     std::string s_name = name;
@@ -322,22 +353,30 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
 
     while (true) {
         GpiObjHdl *next = NULL;
-        int ret = iter->next_handle(name, &next);
+        void *raw_hdl = NULL;
+        GpiIterator::Status ret = iter->next_handle(name, &next, &raw_hdl);
 
         switch (ret) {
-            case GpiIterator::VALID:
-                LOG_DEBUG("Create a valid handle");
+            case GpiIterator::NATIVE:
+                LOG_DEBUG("Create a native handle");
                 return CHECK_AND_STORE(next);
-            case GpiIterator::VALID_NO_NAME:
+            case GpiIterator::NATIVE_NO_NAME:
                 LOG_DEBUG("Unable to fully setup handle, skipping");
                 continue;
-            case GpiIterator::INVALID:
+            case GpiIterator::NOT_NATIVE:
                 LOG_DEBUG("Found a name but unable to create via native implementation, trying others");
                 next = __gpi_get_handle_by_name(parent, name, iter->m_impl);
                 if (next) {
                     return next;
                 }
                 LOG_WARN("Unable to create %s via any registered implementation", name.c_str());
+                continue;
+            case GpiIterator::NOT_NATIVE_NO_NAME:
+                LOG_DEBUG("Found an object but not accesbile via %s, trying others", iter->m_impl->get_name_c());
+                next = __gpi_get_handle_by_raw(parent, raw_hdl, iter->m_impl);
+                if (next) {
+                    return next;
+                }
                 continue;
             case GpiIterator::END:
                 LOG_DEBUG("Reached end of iterator");

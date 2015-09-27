@@ -185,7 +185,7 @@ int VhpiCbHdl::arm_callback(void)
         if (vhpiDisable == cbState) {
             if (vhpi_enable_cb(get_handle<vhpiHandleT>())) {
                 check_vhpi_error();
-                ret = -1;
+                goto error;
             }
          }
     } else {
@@ -196,13 +196,13 @@ int VhpiCbHdl::arm_callback(void)
             check_vhpi_error();
             LOG_ERROR("VHPI: Unable to register callback a handle for VHPI type %s(%d)",
                          m_impl->reason_to_string(cb_data.reason), cb_data.reason);
-            return -1;
+            goto error;
         }
 
         cbState = (vhpiStateT)vhpi_get(vhpiStateP, new_hdl);
         if (vhpiEnable != cbState) {
             LOG_ERROR("VHPI ERROR: Registered callback isn't enabled! Got %d\n", cbState);
-            return -1;
+            goto error;
         }
 
         m_obj_hdl = new_hdl;
@@ -210,6 +210,10 @@ int VhpiCbHdl::arm_callback(void)
     m_state = GPI_PRIMED;
 
     return ret;
+
+error:
+    m_state = GPI_FREE;
+    return -1;
 }
 
 // Value related functions
@@ -250,6 +254,10 @@ int VhpiSignalObjHdl::set_signal_value(long value)
             for (i=0; i<m_num_elems; i++)
                 m_value.value.enumvs[m_num_elems-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
 
+            // Since we may not get the numElems correctly from the sim and have to infer it
+            // we also need to set it here as well each time.
+
+            m_value.numElems = m_num_elems;
             break;
         }
 
@@ -267,8 +275,11 @@ int VhpiSignalObjHdl::set_signal_value(long value)
             return -1;
         }
     }
-    vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
-    check_vhpi_error();
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDeposit)) {
+        check_vhpi_error();
+        return -1;
+    }
+
     return 0;
 }
 
@@ -296,7 +307,11 @@ int VhpiSignalObjHdl::set_signal_value(double value)
         }
     }
 
-    vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDeposit)) {
+        check_vhpi_error();
+        return -1;
+    }
+
     return 0;
 }
 
@@ -314,9 +329,15 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
 
             int len = value.length();
 
-            if (len > m_num_elems)  {
+            // Since we may not get the numElems correctly from the sim and have to infer it
+            // we also need to set it here as well each time.
+
+            m_value.numElems = len;
+
+            if (len > m_num_elems) {
                 LOG_DEBUG("VHPI: Attempt to write string longer than (%s) signal %d > %d",
                           m_name.c_str(), len, m_num_elems);
+                m_value.numElems = m_num_elems;
             }
 
             std::string::iterator iter;
@@ -347,8 +368,11 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
         }
     }
 
-    vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiForcePropagate);
-    check_vhpi_error();
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDeposit)) {
+        check_vhpi_error();
+        return -1;
+    }
+
     return 0;
 }
 
@@ -605,7 +629,7 @@ std::vector<vhpiOneToManyT>* KindMappings::get_options(vhpiClassKindT type)
     std::map<vhpiClassKindT, std::vector<vhpiOneToManyT> >::iterator valid = options_map.find(type);
 
     if (options_map.end() == valid) {
-        LOG_ERROR("VHPI: Implementation does not know how to iterate over %d", type);
+        LOG_WARN("VHPI: Implementation does not know how to iterate over %d", type);
         return NULL;
     } else {
         return &valid->second;
@@ -688,7 +712,11 @@ VhpiIterator::~VhpiIterator()
         vhpi_release_handle(m_iterator);
 }
 
-int VhpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
+#define VHPI_TYPE_MIN (1000)
+
+GpiIterator::Status VhpiIterator::next_handle(std::string &name,
+                                              GpiObjHdl **hdl,
+                                              void **raw_hdl)
 {
     vhpiHandleT obj;
     GpiObjHdl *new_obj;
@@ -740,7 +768,15 @@ int VhpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
 
     const char *c_name = vhpi_get_str(vhpiCaseNameP, obj);
     if (!c_name) {
-        return GpiIterator::VALID_NO_NAME;
+        int type = vhpi_get(vhpiKindP, obj);
+        LOG_WARN("Unable to get the name for this object of type %d", type);
+
+        if (type < VHPI_TYPE_MIN) {
+            *raw_hdl = (void*)obj;
+            return GpiIterator::NOT_NATIVE_NO_NAME;
+        }
+
+        return GpiIterator::NATIVE_NO_NAME;
     }
     name = c_name;
 
@@ -762,9 +798,9 @@ int VhpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
     new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {
         *hdl = new_obj;
-        return GpiIterator::VALID;
+        return GpiIterator::NATIVE;
     }
     else
-        return GpiIterator::INVALID;
+        return GpiIterator::NOT_NATIVE;
 }
 

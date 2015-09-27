@@ -65,10 +65,22 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
+    if cocotb.SIM_NAME in ["ncsim(64)",
+                           "ncsim"]:
+        # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS
+        # But vhpiSimpleSigAssignStmtK objects do, and ther are 2. 
+        pass_total = 883
+    else:
+        pass_total = 916
+
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
     total = recursive_dump(dut, tlog)
-    tlog.info("Found a total of %d things", total)
+
+    if pass_total != total:
+        raise TestFailure("Expected %d but found %d" % (pass_total, total))
+    else:
+        tlog.info("Found a total of %d things", total)
 
     if not isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject):
         tlog.error("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable")
@@ -84,10 +96,17 @@ def recursive_discovery_boundary(dut):
     However if we manually delve through the language boundary we
     should then be able to iterate to discover objects
     """
+    if cocotb.SIM_NAME in ["ncsim(64)",
+                           "ncsim"]:
+        # # But vhpiSimpleSigAssignStmtK objects only show up on IUS, and ther are 2
+        pass_total = 428
+    else:
+        pass_total = 426
+
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
     total = recursive_dump(dut.i_vhdl, tlog)
     tlog.info("Found a total of %d things", total)
-    if total != 426:
-        raise TestFailure("Expected 426 objects but found %d" % total)
+    if total != pass_total:
+        raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
 

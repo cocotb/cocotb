@@ -215,14 +215,18 @@ public:
 class GpiIterator : public GpiHdl {
 public:
     enum Status {
-        VALID, VALID_NO_NAME, INVALID, END
+        NATIVE,             // Fully resolved object was created
+        NATIVE_NO_NAME,     // Native object was found but unable to fully create
+        NOT_NATIVE,         // Mon native object was found but we did get a name
+        NOT_NATIVE_NO_NAME, // Mon native object was found without a name
+        END
     };
 
     GpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiHdl(impl),
                                                           m_parent(hdl) { }
     virtual ~GpiIterator() { }
 
-    virtual int next_handle(std::string &name, GpiObjHdl **hdl) {
+    virtual Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl) {
         name = "";
         *hdl = NULL;
         return GpiIterator::END;
@@ -251,6 +255,7 @@ public:
     /* Hierachy related */
     virtual GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent) = 0;
+    virtual GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
     virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) = 0;
 

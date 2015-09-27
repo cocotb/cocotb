@@ -34,7 +34,7 @@ ifeq ($(SIM),ius)
 endif
 
 else
-	$(error "Only verilog toplevel supported at the moment")
+$(error "Only verilog toplevel supported at the moment")
 endif
 
 ifneq ($(GPI_EXTRA),)

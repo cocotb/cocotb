@@ -68,13 +68,11 @@ int VpiCbHdl::arm_callback(void) {
     }
 
     vpiHandle new_hdl = vpi_register_cb(&cb_data);
-    check_vpi_error();
-    
-    int ret = 0;
 
     if (!new_hdl) {
         LOG_ERROR("VPI: Unable to register a callback handle for VPI type %s(%d)",
-                     m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+                  m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+        check_vpi_error();
         return -1;
 
     } else {
@@ -83,7 +81,7 @@ int VpiCbHdl::arm_callback(void) {
     
     m_obj_hdl = new_hdl;
 
-    return ret;
+    return 0;
 }
 
 int VpiCbHdl::cleanup_callback(void)
@@ -472,7 +470,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
 
     int type = vpi_get(vpiType, vpi_hdl);
     if (NULL == (selected = iterate_over.get_options(type))) {
-        LOG_ERROR("VPI: Implementation does not know how to iterate over %s(%d)",
+        LOG_WARN("VPI: Implementation does not know how to iterate over %s(%d)",
                   vpi_get_str(vpiType, vpi_hdl), type);
         return;
     }
@@ -508,7 +506,9 @@ VpiIterator::~VpiIterator()
         vpi_free_object(m_iterator);
 }
 
-int VpiSingleIterator::next_handle(std::string &name, GpiObjHdl **hdl)
+GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
+                                                   GpiObjHdl **hdl,
+                                                   void **raw_hdl)
 {
     GpiObjHdl *new_obj;
     vpiHandle obj;
@@ -522,15 +522,18 @@ int VpiSingleIterator::next_handle(std::string &name, GpiObjHdl **hdl)
 
     const char *c_name = vpi_get_str(vpiName, obj);
     if (!c_name) {
-        return GpiIterator::VALID_NO_NAME;
-    }
-    name = c_name;
+        int type = vpi_get(vpiType, obj);
+        LOG_WARN("Unable to get the name for this object of type %d", type);
 
-    const char *c_fq_name = vpi_get_str(vpiFullName, obj);
-    if (!c_fq_name) {
-        return GpiIterator::VALID_NO_NAME;
+        if (type >= 1000) {
+            *raw_hdl = (void*)obj;
+            return GpiIterator::NOT_NATIVE_NO_NAME;
+        }
+
+        return GpiIterator::NATIVE_NO_NAME;
     }
-    std::string fq_name = c_fq_name;
+
+    std::string fq_name = c_name;
 
     LOG_DEBUG("vpi_scan found '%s = '%s'", name.c_str(), fq_name.c_str());
 
@@ -538,13 +541,15 @@ int VpiSingleIterator::next_handle(std::string &name, GpiObjHdl **hdl)
     new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {
         *hdl = new_obj;
-        return GpiIterator::VALID;
+        return GpiIterator::NATIVE;
     }
     else
-        return GpiIterator::INVALID;
+        return GpiIterator::NOT_NATIVE;
 }
 
-int VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
+#define VPI_TYPE_MAX (1000)
+
+GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl)
 {
     GpiObjHdl *new_obj;
     vpiHandle obj;
@@ -585,9 +590,24 @@ int VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
         return GpiIterator::END;
     }
 
+    /* Simulators vary here. Some will allow the name to be accessed
+       across boundary. We can simply return this up and allow
+       the object to be created. Others do not. In this case
+       we see if the object is in out type range and if not
+       return the raw_hdl up */
+
     const char *c_name = vpi_get_str(vpiName, obj);
     if (!c_name) {
-        return GpiIterator::VALID_NO_NAME;
+        /* This may be another type */
+        int type = vpi_get(vpiType, obj);
+        LOG_WARN("Unable to get the name for this object of type %d", type);
+
+        if (type >= VPI_TYPE_MAX) {
+            *raw_hdl = (void*)obj;
+            return GpiIterator::NOT_NATIVE_NO_NAME;
+        }
+
+        return GpiIterator::NATIVE_NO_NAME;
     }
     name = c_name;
 
@@ -602,8 +622,8 @@ int VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl)
     new_obj = vpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {
         *hdl = new_obj;
-        return GpiIterator::VALID;
+        return GpiIterator::NATIVE;
     }
     else
-        return GpiIterator::INVALID;
+        return GpiIterator::NOT_NATIVE;
 }
