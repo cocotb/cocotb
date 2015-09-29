@@ -54,7 +54,8 @@ class AvalonMM(BusDriver):
     """
     _signals = ["address"]
     _optional_signals = ["readdata", "read", "write", "waitrequest",
-                         "writedata", "readdatavalid", "byteenable"]
+                         "writedata", "readdatavalid", "byteenable",
+                         "cs"]
 
 
     def __init__(self, entity, name, clock):
@@ -76,6 +77,9 @@ class AvalonMM(BusDriver):
 
         if hasattr(self.bus, "byteenable"):
             self.bus.byteenable.setimmediatevalue(0)
+
+        if hasattr(self.bus, "cs"):
+            self.bus.cs.setimmediatevalue(0)
 
         self.bus.address.setimmediatevalue(0)
 
@@ -130,6 +134,8 @@ class AvalonMaster(AvalonMM):
         self.bus.read <= 1
         if hasattr(self.bus, "byteenable"):
             self.bus.byteenable <= int("1"*len(self.bus.byteenable), 2)
+        if hasattr(self.bus, "cs"):
+            self.bus.cs <= 1
 
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
@@ -150,6 +156,8 @@ class AvalonMaster(AvalonMM):
         self.bus.read <= 0
         if hasattr(self.bus, "byteenable"):
             self.bus.byteenable <= 0
+        if hasattr(self.bus, "cs"):
+            self.bus.cs <= 0
 
         self._release_lock()
         raise ReturnValue(data)
@@ -174,6 +182,8 @@ class AvalonMaster(AvalonMM):
         self.bus.write <= 1
         if hasattr(self.bus, "byteenable"):
             self.bus.byteenable <= int("1"*len(self.bus.byteenable), 2)
+        if hasattr(self.bus, "cs"):
+            self.bus.cs <= 1
 
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
@@ -184,6 +194,8 @@ class AvalonMaster(AvalonMM):
         self.bus.write <= 0
         if hasattr(self.bus, "byteenable"):
             self.bus.byteenable <= 0
+        if hasattr(self.bus, "cs"):
+            self.bus.cs <= 0
 
         v = self.bus.writedata.value
         v.binstr = "x" * len(self.bus.writedata)
@@ -296,6 +308,7 @@ class AvalonMemory(BusDriver):
         Coroutine to response to the actual requests
         """
         edge = RisingEdge(self.clock)
+        dataByteSize = self._width/8
         while True:
             yield edge
             self._do_response()
@@ -316,9 +329,11 @@ class AvalonMemory(BusDriver):
                         self._responses.append(self._mem[addr])
                 else:
                     addr = self.bus.address.value.integer
-                    if addr % (self._width/8) != 0:
-                        self.log.error("Address must be aligned to data width")
-                    addr = addr / (self._width/8)
+                    if addr % dataByteSize != 0:
+                        self.log.error("Address must be aligned to data width" +
+                                       "(addr = " + hex(addr) +
+                                       ", width = " + str(self._width))
+                    addr = addr / dataByteSize
                     burstcount = self.bus.burstcount.value.integer
                     byteenable = self.bus.byteenable.value
                     if byteenable != int("1"*len(self.bus.byteenable), 2):
@@ -341,17 +356,19 @@ class AvalonMemory(BusDriver):
                         yield edge
 
                     for count in range(burstcount):
-                        if (addr + count) not in self._mem:
-                            self.log.warning("Attempt to read from uninitialised "
-                                             "address 0x%x" % (addr + count) )
+                        if (addr + count)*dataByteSize not in self._mem:
+                            self.log.warning(
+                                   "Attempt to burst read from uninitialised " +
+                                   "address 0x%x (addr 0x%x count 0x%x)" %
+                                    ((addr + count)*dataByteSize, addr, count) )
                             self._responses.append(True)
                         else:
                             value = 0
-                            for i in range(self._width/8):
+                            for i in range(dataByteSize):
                                 value +=\
-                                    self._mem[(addr + count)*(self._width/8) + i] << i*8
+                                    self._mem[(addr + count)*dataByteSize + i] << i*8
                             self.log.debug("Read from address 0x%x returning 0x%x" %
-                                           (addr*(self._width/8), value))
+                                           (addr*dataByteSize, value))
                             self._responses.append(value)
                         yield edge
                         self._do_response()
