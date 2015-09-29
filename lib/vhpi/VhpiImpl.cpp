@@ -391,52 +391,73 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 
 GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
 {
-    FENTER
-    vhpiHandleT root;
-    vhpiHandleT dut;
-    GpiObjHdl *rv;
+    vhpiHandleT root = NULL;
+    vhpiHandleT arch = NULL;
+    vhpiHandleT dut = NULL;
+    GpiObjHdl *rv = NULL;
     std::string root_name;
+    const char *found;
 
     root = vhpi_handle(vhpiRootInst, NULL);
     check_vhpi_error();
 
     if (!root) {
         LOG_ERROR("VHPI: Attempting to get the vhpiRootInst failed");
-        FEXIT
         return NULL;
+    } else {
+        LOG_DEBUG("VHPI: We have found root='%s'", vhpi_get_str(vhpiCaseNameP, root));
     }
 
-    if (name)
-        dut = vhpi_handle_by_name(name, NULL);
-    else
-        dut = vhpi_handle(vhpiDesignUnit, root);
+    if (name) {
+        if (NULL == (dut = vhpi_handle_by_name(name, NULL))) {
+            LOG_DEBUG("VHPI: Unable to query by name");
+            check_vhpi_error();
+        }
+    }
 
-    check_vhpi_error();
+    if (!dut) {
+        if (NULL == (arch = vhpi_handle(vhpiDesignUnit, root))) {
+            LOG_DEBUG("VHPI: Unable to get vhpiDesignUnit via root");
+            check_vhpi_error();
+            return NULL;
+        }
 
-    if (root) {
-        LOG_DEBUG("VHPI: We have found root='%s'", vhpi_get_str(vhpiCaseNameP, root));
+        if (NULL == (dut = vhpi_handle(vhpiPrimaryUnit, arch))) {
+            LOG_DEBUG("VHPI: Unable to get vhpiPrimaryUnit via arch");
+            check_vhpi_error();
+            return NULL;
+        }
+
+        /* if this matches the name then it is what we want, but we
+           use the handle two levels up as the dut as do not want an
+           object of type vhpiEntityDeclK as the dut */
+
+        found = vhpi_get_str(vhpiCaseNameP, dut);
+        dut = root;
+
+    } else {
+        found = vhpi_get_str(vhpiCaseNameP, dut);
     }
 
     if (!dut) {
         LOG_ERROR("VHPI: Attempting to get the DUT handle failed");
-        FEXIT
         return NULL;
     }
 
-    const char *found = vhpi_get_str(vhpiCaseNameP, dut);
-    check_vhpi_error();
+    if (!found) {
+        LOG_ERROR("VHPI: Unable to query name for DUT handle");
+        return NULL;
+    }
 
     if (name != NULL && strcmp(name, found)) {
-        LOG_WARN("VHPI: Root '%s' doesn't match requested toplevel %s", found, name);
-        FEXIT
+        LOG_WARN("VHPI: DUT '%s' doesn't match requested toplevel %s", found, name);
         return NULL;
     }
 
     root_name = found;
-    rv = new GpiObjHdl(this, root, to_gpi_objtype(vhpi_get(vhpiKindP, root)));
+    rv = new GpiObjHdl(this, dut, to_gpi_objtype(vhpi_get(vhpiKindP, dut)));
     rv->initialise(root_name, root_name);
 
-    FEXIT
     return rv;
 }
 

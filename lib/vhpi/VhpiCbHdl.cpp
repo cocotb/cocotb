@@ -679,30 +679,7 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
      * We check that something is going to come back if not we try the level
      * down
      */
-     m_iter_obj = vhpi_hdl;
-
-    if (vhpiRootInstK == vhpi_get(vhpiKindP, vhpi_hdl)) {
-        uint32_t children = 0;
-        vhpiHandleT tmp_hdl;
-
-        for(tmp_hdl = vhpi_scan(iterator);
-            tmp_hdl != NULL;
-            tmp_hdl = vhpi_scan(iterator), children++) { }
-
-        iterator = vhpi_iterator(*one2many, vhpi_hdl);
-
-        // Only a single child, skip a level
-        if (children == 1) {
-            tmp_hdl = vhpi_scan(iterator);
-            vhpi_release_handle(iterator);
-            iterator = vhpi_iterator(*one2many, tmp_hdl);
-            LOG_WARN("Skipped vhpiRootInstK to get to %s (%s)", 
-                     vhpi_get_str(vhpiKindStrP, tmp_hdl),
-                     vhpi_get_str(vhpiFullNameP, tmp_hdl));
-            m_iter_obj = tmp_hdl;
-        }
-    }
-
+    m_iter_obj = vhpi_hdl;
     m_iterator = iterator;
 }
 

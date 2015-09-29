@@ -26,10 +26,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import cocotb
 from cocotb.triggers import Timer
 
+def sub_iterate(unit):
+    for thing in unit:
+        thing._log.info("Found %s.%s %s" % (unit._name, thing._name, type(thing)))
+        sub_iterate(thing)
+
 @cocotb.test()
 def iterate(dut):
     yield Timer(100)
-    for thing in dut:
-        thing._log.info("Found %s" % type(thing))
+    sub_iterate(dut)
     yield Timer(100)
 
