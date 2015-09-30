@@ -555,11 +555,10 @@ void gpi_deregister_callback(gpi_sim_hdl hdl)
     cb_hdl->m_impl->deregister_callback(cb_hdl);
 }
 
-GpiImplInterface::~GpiImplInterface() { }
-GpiImplInterface::GpiImplInterface(const std::string& name) : m_name(name) { }
 const char* GpiImplInterface::get_name_c(void) {
     return m_name.c_str();
 }
+
 const string& GpiImplInterface::get_name_s(void) {
     return m_name;
 }

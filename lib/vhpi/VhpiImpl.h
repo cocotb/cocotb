@@ -180,18 +180,6 @@ private:
     VhpiValueCbHdl m_either_cb;
 };
 
-class KindMappings {
-public:
-    KindMappings();
-
-public:
-    std::map<vhpiClassKindT, std::vector<vhpiOneToManyT> > options_map;
-    std::vector<vhpiOneToManyT>* get_options(vhpiClassKindT type);
-
-private:
-    void add_to_options(vhpiClassKindT type, vhpiOneToManyT *options);
-};
-
 class VhpiIterator : public GpiIterator {
 public:
     VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl);
@@ -203,7 +191,7 @@ public:
 private:
     vhpiHandleT m_iterator;
     vhpiHandleT m_iter_obj;
-    static KindMappings iterate_over;      /* Possible mappings */
+    static GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> iterate_over;      /* Possible mappings */
     std::vector<vhpiOneToManyT> *selected; /* Mapping currently in use */
     std::vector<vhpiOneToManyT>::iterator one2many;
 };
