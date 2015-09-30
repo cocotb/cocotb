@@ -696,6 +696,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
                 LOG_DEBUG("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
                                              vhpi_get_str(vhpiKindStrP, obj));
                 obj=NULL;
+                continue;
             }
 
             if (obj) {
