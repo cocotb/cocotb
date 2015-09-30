@@ -622,8 +622,10 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
     vhpiHandleT iterator;
     vhpiHandleT vhpi_hdl = m_parent->get_handle<vhpiHandleT>();
 
-    if (NULL == (selected = iterate_over.get_options((vhpiClassKindT)vhpi_get(vhpiKindP, vhpi_hdl)))) {
-        LOG_WARN("VHPI: Implementation does not know how to iterate over %d", type);
+    vhpiClassKindT type = (vhpiClassKindT)vhpi_get(vhpiKindP, vhpi_hdl);
+    if (NULL == (selected = iterate_over.get_options(type))) {
+        LOG_WARN("VHPI: Implementation does not know how to iterate over %s(%d)",
+                 vhpi_get_str(vhpiKindStrP, vhpi_hdl), type);
         return;
     }
 
