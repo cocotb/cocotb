@@ -75,7 +75,6 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         case vhpiEnumVal:
         case vhpiLogicVal:
         case vhpiRealVal: {
-            GpiObjHdl::initialise(name, fq_name);
             break;
         }
 
@@ -89,10 +88,6 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
                 LOG_CRITICAL("Unable to alloc mem for write buffer");
             }
             LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
-
-            VhpiIterator test_iter(this->m_impl, this);
-
-            GpiObjHdl::initialise(name, fq_name);
             break;
         }
         case vhpiRawDataVal: {
@@ -108,8 +103,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
                 m_num_elems++;
             }
             LOG_DEBUG("Found vhpiRawDataVal with %d elements", m_num_elems);
-            GpiObjHdl::initialise(name, fq_name);
-            return 0;
+            goto gpi_init;
         }
 
         default: {
@@ -118,22 +112,16 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         }
     }
 
-    int new_size = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
-    if (new_size < 0) {
-        LOG_WARN("Failed to determine size for vhpiBinStrVal of signal object %s of type %s, falling back",
-                 name.c_str(),
-                 ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
-    }
-
-    if (new_size) {
-        m_binvalue.bufSize = new_size*sizeof(vhpiCharT);
-        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize + 1, sizeof(vhpiCharT));
+    if (m_num_elems) {
+        m_binvalue.bufSize = m_num_elems*sizeof(vhpiCharT) + 1;
+        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, sizeof(vhpiCharT));
 
         if (!m_binvalue.value.str) {
             LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
         }
     }
 
+gpi_init:
     return GpiObjHdl::initialise(name, fq_name);
 }
 
@@ -187,7 +175,7 @@ int VhpiCbHdl::arm_callback(void)
                 check_vhpi_error();
                 goto error;
             }
-         }
+        }
     } else {
 
         vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
