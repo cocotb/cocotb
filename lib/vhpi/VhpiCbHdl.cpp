@@ -75,7 +75,6 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         case vhpiEnumVal:
         case vhpiLogicVal:
         case vhpiRealVal: {
-            GpiObjHdl::initialise(name, fq_name);
             break;
         }
 
@@ -89,10 +88,6 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
                 LOG_CRITICAL("Unable to alloc mem for write buffer");
             }
             LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
-
-            VhpiIterator test_iter(this->m_impl, this);
-
-            GpiObjHdl::initialise(name, fq_name);
             break;
         }
         case vhpiRawDataVal: {
@@ -108,8 +103,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
                 m_num_elems++;
             }
             LOG_DEBUG("Found vhpiRawDataVal with %d elements", m_num_elems);
-            GpiObjHdl::initialise(name, fq_name);
-            return 0;
+            goto gpi_init;
         }
 
         default: {
@@ -118,22 +112,16 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         }
     }
 
-    int new_size = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
-    if (new_size < 0) {
-        LOG_WARN("Failed to determine size for vhpiBinStrVal of signal object %s of type %s, falling back",
-                 name.c_str(),
-                 ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
-    }
-
-    if (new_size) {
-        m_binvalue.bufSize = new_size*sizeof(vhpiCharT);
-        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize + 1, sizeof(vhpiCharT));
+    if (m_num_elems) {
+        m_binvalue.bufSize = m_num_elems*sizeof(vhpiCharT) + 1;
+        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, sizeof(vhpiCharT));
 
         if (!m_binvalue.value.str) {
             LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
         }
     }
 
+gpi_init:
     return GpiObjHdl::initialise(name, fq_name);
 }
 
@@ -187,7 +175,7 @@ int VhpiCbHdl::arm_callback(void)
                 check_vhpi_error();
                 goto error;
             }
-         }
+        }
     } else {
 
         vhpiHandleT new_hdl = vhpi_register_cb(&cb_data, vhpiReturnCb);
@@ -539,7 +527,7 @@ VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.time = &vhpi_time;
 }
 
-KindMappings::KindMappings()
+void vhpi_mappings(GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> &map)
 {
     /* vhpiRootInstK */
     vhpiOneToManyT root_options[] = {
@@ -553,7 +541,7 @@ KindMappings::KindMappings()
         vhpiBlockStmts,
         (vhpiOneToManyT)0,
     };
-    add_to_options(vhpiRootInstK, &root_options[0]);
+    map.add_to_options(vhpiRootInstK, &root_options[0]);
 
     /* vhpiSigDeclK */
     vhpiOneToManyT sig_options[] = {
@@ -561,15 +549,15 @@ KindMappings::KindMappings()
         vhpiSelectedNames,
         (vhpiOneToManyT)0,
     };
-    add_to_options(vhpiGenericDeclK, &sig_options[0]);
-    add_to_options(vhpiSigDeclK, &sig_options[0]);
+    map.add_to_options(vhpiGenericDeclK, &sig_options[0]);
+    map.add_to_options(vhpiSigDeclK, &sig_options[0]);
 
     /* vhpiIndexedNameK */
-    add_to_options(vhpiSelectedNameK, &sig_options[0]);
-    add_to_options(vhpiIndexedNameK, &sig_options[0]);
+    map.add_to_options(vhpiSelectedNameK, &sig_options[0]);
+    map.add_to_options(vhpiIndexedNameK, &sig_options[0]);
 
     /* vhpiCompInstStmtK */
-    add_to_options(vhpiCompInstStmtK, &root_options[0]);
+    map.add_to_options(vhpiCompInstStmtK, &root_options[0]);
 
     /* vhpiSimpleSigAssignStmtK */
     vhpiOneToManyT simplesig_options[] = {
@@ -579,11 +567,11 @@ KindMappings::KindMappings()
         vhpiStmts,
         (vhpiOneToManyT)0,
     };
-    add_to_options(vhpiCondSigAssignStmtK, &simplesig_options[0]);
-    add_to_options(vhpiSimpleSigAssignStmtK, &simplesig_options[0]);
+    map.add_to_options(vhpiCondSigAssignStmtK, &simplesig_options[0]);
+    map.add_to_options(vhpiSimpleSigAssignStmtK, &simplesig_options[0]);
 
     /* vhpiPortDeclK */
-    add_to_options(vhpiPortDeclK, &sig_options[0]);
+    map.add_to_options(vhpiPortDeclK, &sig_options[0]);
 
     /* vhpiForGenerateK */
     vhpiOneToManyT gen_options[] = {
@@ -591,7 +579,7 @@ KindMappings::KindMappings()
         vhpiCompInstStmts,  
         (vhpiOneToManyT)0,
     };
-    add_to_options(vhpiForGenerateK, &gen_options[0]);
+    map.add_to_options(vhpiForGenerateK, &gen_options[0]);
 
     /* vhpiIfGenerateK */
     vhpiOneToManyT ifgen_options[] = {
@@ -600,7 +588,7 @@ KindMappings::KindMappings()
         vhpiCompInstStmts,
         (vhpiOneToManyT)0,
     };
-    add_to_options(vhpiIfGenerateK, &ifgen_options[0]);
+    map.add_to_options(vhpiIfGenerateK, &ifgen_options[0]);
 
     /* vhpiConstDeclK */
     vhpiOneToManyT const_options[] = {
@@ -609,34 +597,11 @@ KindMappings::KindMappings()
         vhpiSelectedNames,
         (vhpiOneToManyT)0,
     };
-    add_to_options(vhpiConstDeclK, &const_options[0]);
+    map.add_to_options(vhpiConstDeclK, &const_options[0]);
 
 }
 
-void KindMappings::add_to_options(vhpiClassKindT type, vhpiOneToManyT *options)
-{
-    std::vector<vhpiOneToManyT> option_vec;
-    vhpiOneToManyT *ptr = options;
-    while (*ptr) {
-        option_vec.push_back(*ptr);
-        ptr++;
-    }
-    options_map[type] = option_vec;
-}
-
-std::vector<vhpiOneToManyT>* KindMappings::get_options(vhpiClassKindT type)
-{
-    std::map<vhpiClassKindT, std::vector<vhpiOneToManyT> >::iterator valid = options_map.find(type);
-
-    if (options_map.end() == valid) {
-        LOG_WARN("VHPI: Implementation does not know how to iterate over %d", type);
-        return NULL;
-    } else {
-        return &valid->second;
-    }
-}
-
-KindMappings VhpiIterator::iterate_over;
+GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> VhpiIterator::iterate_over(vhpi_mappings);
 
 VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(impl, hdl),
                                                                      m_iterator(NULL),
@@ -645,8 +610,12 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
     vhpiHandleT iterator;
     vhpiHandleT vhpi_hdl = m_parent->get_handle<vhpiHandleT>();
 
-    if (NULL == (selected = iterate_over.get_options((vhpiClassKindT)vhpi_get(vhpiKindP, vhpi_hdl))))
+    vhpiClassKindT type = (vhpiClassKindT)vhpi_get(vhpiKindP, vhpi_hdl);
+    if (NULL == (selected = iterate_over.get_options(type))) {
+        LOG_WARN("VHPI: Implementation does not know how to iterate over %s(%d)",
+                 vhpi_get_str(vhpiKindStrP, vhpi_hdl), type);
         return;
+    }
 
     /* Find the first mapping type that yields a valid iterator */
     for (one2many = selected->begin();
@@ -715,6 +684,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
                 LOG_DEBUG("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
                                              vhpi_get_str(vhpiKindStrP, obj));
                 obj=NULL;
+                continue;
             }
 
             if (obj) {

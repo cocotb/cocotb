@@ -114,6 +114,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
             return GPI_MODULE;
 
         default:
+            LOG_DEBUG("Unable to map VPI type %d onto GPI type", vpitype);
             return GPI_UNKNOWN;
     }
 }
@@ -169,7 +170,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             const char *type_name = vpi_get_str(vpiType, new_hdl);
             std::string unknown = "vpiUnknown";
             if (type_name && (unknown != type_name)) {
-                LOG_WARN("VPI: Not able to map type %s(%d) to object.", type_name, type);
+                LOG_DEBUG("VPI: Not able to map type %s(%d) to object.", type_name, type);
             } else {
                 LOG_DEBUG("VPI: Simulator does not know this type (%d) via VPI", type);
             }
@@ -202,7 +203,7 @@ GpiObjHdl* VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to fetch object %s", fq_name.c_str());
+        LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
         return NULL;
     }
     return new_obj;
@@ -223,7 +224,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to fetch object %s", fq_name.c_str());
+        LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
         return NULL;
     }
     return new_obj;
@@ -246,7 +247,7 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to fetch object below entity (%s) at index (%u)",
+        LOG_DEBUG("Unable to fetch object below entity (%s) at index (%u)",
                   parent->get_name_str(), index);
         return NULL;
     }

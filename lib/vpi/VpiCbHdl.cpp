@@ -358,7 +358,7 @@ VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.reason = cbNextSimTime;
 }
 
-KindMappings::KindMappings()
+void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
 {
     /* vpiModule */
     int32_t module_options[] = {
@@ -390,7 +390,7 @@ KindMappings::KindMappings()
         //vpiInterfaceArray,    // Aldec SEGV on mixed language
         0
     };
-    add_to_options(vpiModule, &module_options[0]);
+    map.add_to_options(vpiModule, &module_options[0]);
 
     /* vpiNet */
     int32_t net_options[] = {
@@ -405,14 +405,14 @@ KindMappings::KindMappings()
         vpiNetBit,
         0
     };
-    add_to_options(vpiNet, &net_options[0]);
+    map.add_to_options(vpiNet, &net_options[0]);
 
     /* vpiNetArray */
     int32_t netarray_options[] = {
         vpiNet,
         0
     };
-    add_to_options(vpiNetArray, &netarray_options[0]);
+    map.add_to_options(vpiNetArray, &netarray_options[0]);
 
 
     /* vpiRegArray */
@@ -420,47 +420,24 @@ KindMappings::KindMappings()
         vpiReg,
         0
     };
-    add_to_options(vpiRegArray, &regarray_options[0]);
+    map.add_to_options(vpiRegArray, &regarray_options[0]);
 
     /* vpiMemory */
     int32_t memory_options[] = {
         vpiMemoryWord,
         0
     };
-    add_to_options(vpiMemory, &memory_options[0]);
+    map.add_to_options(vpiMemory, &memory_options[0]);
 
     /* vpiPort */
     int32_t port_options[] = {
         vpiPortBit,
         0
     };
-    add_to_options(vpiPort, &port_options[0]);
+    map.add_to_options(vpiPort, &port_options[0]);
 }
 
-void KindMappings::add_to_options(int32_t type, int32_t *options)
-{
-    std::vector<int32_t> option_vec;
-    int32_t *ptr = options;
-    while (*ptr) {
-        option_vec.push_back(*ptr);
-        ptr++;
-    }
-    options_map[type] = option_vec;
-}
-
-std::vector<int32_t>* KindMappings::get_options(int32_t type)
-{
-    std::map<int32_t, std::vector<int32_t> >::iterator valid = options_map.find(type);
-
-    if (options_map.end() == valid) {
-        return NULL;
-    } else {
-        return &valid->second;
-    }
-}
-
-
-KindMappings VpiIterator::iterate_over;
+GpiIteratorMapping<int32_t, int32_t> VpiIterator::iterate_over(vpi_mappings);
 
 VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(impl, hdl),
                                                                    m_iterator(NULL)
@@ -506,6 +483,8 @@ VpiIterator::~VpiIterator()
         vpi_free_object(m_iterator);
 }
 
+#define VPI_TYPE_MAX (1000)
+
 GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
                                                    GpiObjHdl **hdl,
                                                    void **raw_hdl)
@@ -523,12 +502,13 @@ GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
     const char *c_name = vpi_get_str(vpiName, obj);
     if (!c_name) {
         int type = vpi_get(vpiType, obj);
-        LOG_WARN("Unable to get the name for this object of type %d", type);
 
-        if (type >= 1000) {
+        if (type >= VPI_TYPE_MAX) {
             *raw_hdl = (void*)obj;
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
+
+        LOG_DEBUG("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }
@@ -546,8 +526,6 @@ GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
     else
         return GpiIterator::NOT_NATIVE;
 }
-
-#define VPI_TYPE_MAX (1000)
 
 GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl)
 {
@@ -600,12 +578,13 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     if (!c_name) {
         /* This may be another type */
         int type = vpi_get(vpiType, obj);
-        LOG_WARN("Unable to get the name for this object of type %d", type);
 
         if (type >= VPI_TYPE_MAX) {
             *raw_hdl = (void*)obj;
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
+
+        LOG_DEBUG("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }

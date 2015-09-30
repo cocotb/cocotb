@@ -173,18 +173,6 @@ public:
     virtual ~VpiShutdownCbHdl() { }
 };
 
-class KindMappings {
-public:
-    KindMappings();
-
-public:
-    std::map<int32_t, std::vector<int32_t> > options_map;
-    std::vector<int32_t>* get_options(int32_t type);
-
-private:
-    void add_to_options(int32_t type, int32_t *options);
-};
-
 class VpiSignalObjHdl : public GpiSignalObjHdl {
 public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype, bool is_const) :
@@ -223,7 +211,7 @@ public:
 
 private:
     vpiHandle m_iterator;
-    static KindMappings iterate_over;      /* Possible mappings */
+    static GpiIteratorMapping<int32_t, int32_t> iterate_over;      /* Possible mappings */
     std::vector<int32_t> *selected; /* Mapping currently in use */
     std::vector<int32_t>::iterator one2many;
 };
