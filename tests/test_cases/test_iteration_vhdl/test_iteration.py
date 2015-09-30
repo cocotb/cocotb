@@ -58,7 +58,7 @@ def discovery_all(dut):
         #for subthing in thing:
         #    thing._log.info("Found something: %s" % thing._fullname)
 
-    thing._log.info("length of dut.inst_acs is %d" % len(dut.gen_acs))
+    dut._log.info("length of dut.inst_acs is %d" % len(dut.gen_acs))
     item = dut.gen_acs[3]
     item._log.info("this is item")
 
