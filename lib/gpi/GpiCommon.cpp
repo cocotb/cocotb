@@ -266,10 +266,8 @@ static GpiObjHdl* __gpi_get_handle_by_name(GpiObjHdl *parent,
 
     if (hdl)
         return CHECK_AND_STORE(hdl);
-    else {
-        LOG_DEBUG("Failed to find a hdl named %s", name.c_str());
+    else
         return hdl;
-    }
 }
 
 static GpiObjHdl* __gpi_get_handle_by_raw(GpiObjHdl *parent,
@@ -298,7 +296,7 @@ static GpiObjHdl* __gpi_get_handle_by_raw(GpiObjHdl *parent,
     if (hdl)
         return CHECK_AND_STORE(hdl);
     else {
-        LOG_DEBUG("Failed to convert a raw handle to valid object");
+        LOG_WARN("Failed to convert a raw handle to valid object via any registered implementation");
         return hdl;
     }
 }
@@ -307,7 +305,12 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
 {
     std::string s_name = name;
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
-    return __gpi_get_handle_by_name(base, s_name, NULL);
+    GpiObjHdl *hdl = __gpi_get_handle_by_name(base, s_name, NULL);
+    if (!hdl) {
+        LOG_WARN("Failed to find a hdl named %s via any registered implementation",
+                 name);
+    }
+    return hdl;
 }
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
@@ -330,7 +333,7 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
     if (hdl)
         return CHECK_AND_STORE(hdl);
     else {
-        LOG_DEBUG("Failed to find a hdl at index %d", index);
+        LOG_WARN("Failed to find a hdl at index %d via any registered implementation", index);
         return hdl;
     }
 }

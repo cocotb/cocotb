@@ -483,6 +483,8 @@ VpiIterator::~VpiIterator()
         vpi_free_object(m_iterator);
 }
 
+#define VPI_TYPE_MAX (1000)
+
 GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
                                                    GpiObjHdl **hdl,
                                                    void **raw_hdl)
@@ -500,12 +502,13 @@ GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
     const char *c_name = vpi_get_str(vpiName, obj);
     if (!c_name) {
         int type = vpi_get(vpiType, obj);
-        LOG_WARN("Unable to get the name for this object of type %d", type);
 
-        if (type >= 1000) {
+        if (type >= VPI_TYPE_MAX) {
             *raw_hdl = (void*)obj;
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
+
+        LOG_WARN("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }
@@ -523,8 +526,6 @@ GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
     else
         return GpiIterator::NOT_NATIVE;
 }
-
-#define VPI_TYPE_MAX (1000)
 
 GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl)
 {
@@ -577,12 +578,13 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     if (!c_name) {
         /* This may be another type */
         int type = vpi_get(vpiType, obj);
-        LOG_WARN("Unable to get the name for this object of type %d", type);
 
         if (type >= VPI_TYPE_MAX) {
             *raw_hdl = (void*)obj;
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
+
+        LOG_WARN("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }

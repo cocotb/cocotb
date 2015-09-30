@@ -159,7 +159,7 @@ gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
             return GPI_MODULE;
 
         default:
-            LOG_WARN("Unable to map VHPI type %d onto GPI type", vhpitype);
+            LOG_DEBUG("Unable to map VHPI type %d onto GPI type", vhpitype);
             return GPI_UNKNOWN;
     }
 }
@@ -259,7 +259,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
             break;
         default:
-            LOG_WARN("Not able to map type (%s) %u to object",
+            LOG_DEBUG("Not able to map type (%s) %u to object",
                      vhpi_get_str(vhpiKindStrP, new_hdl), type);
             return NULL;
     }
