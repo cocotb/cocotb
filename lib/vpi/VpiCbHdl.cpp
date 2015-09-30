@@ -508,7 +508,7 @@ GpiIterator::Status VpiSingleIterator::next_handle(std::string &name,
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
 
-        LOG_WARN("Unable to get the name for this object of type %d", type);
+        LOG_DEBUG("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }
@@ -584,7 +584,7 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
 
-        LOG_WARN("Unable to get the name for this object of type %d", type);
+        LOG_DEBUG("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }
