@@ -26,9 +26,21 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import cocotb
+import logging
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
+from cocotb.handle import IntegerObject
 
+
+@cocotb.test()
+def recursive_discover(dut):
+    """Discover absolutely everything in the dut"""
+    yield Timer(0)
+    def _discover(obj):
+        for thing in obj:
+            dut._log.info("Found %s (%s)", thing._name, type(thing))
+            _discover(thing)
+    _discover(dut)
 
 @cocotb.test()
 def discover_module_values(dut):
@@ -117,6 +129,29 @@ def access_single_bit_erroneous(dut):
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
+
+@cocotb.test()
+def access_integer(dut):
+    """Integer should show as an IntegerObject"""
+    bitfail = False
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(10)
+    test_int = dut.stream_in_int
+    if not isinstance(test_int, IntegerObject):
+        raise TestFailure("dut.stream_in_int is not an integer")
+
+    try:
+        bit = test_int[3]
+    except TestError as e:
+        tlog.info("Access to bit is an error as expected")
+        bitFail = True
+
+    if not bitFail:
+        raise TestFailure("Access into an integer should be invalid")
+
+    length = len(test_int)
+    if length is not 1:
+        raise TestFailure("Length should be 1 not %d" % length)
 
 
 @cocotb.test(skip=True)
