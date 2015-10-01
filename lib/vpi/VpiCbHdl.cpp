@@ -120,7 +120,14 @@ int VpiCbHdl::cleanup_callback(void)
 }
 
 int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
-    m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
+    int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
+    if ((vpiIntVar == type) ||
+        (vpiIntegerVar == type) ||
+        (vpiIntegerNet == type )) {
+        m_num_elems = 1;
+    } else {
+        m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
+    }
     LOG_DEBUG("VPI: %s initialised with %d elements", name.c_str(), m_num_elems);
     return GpiObjHdl::initialise(name, fq_name);
 }
