@@ -166,7 +166,11 @@ extern "C" {
                                         [Small]Enum,Logic,Int,Real,[Small]Phys,Time,Ptr,
                                         [Small]EnumVec,LogicVec,IntVect,RealVec,[Small]PhysVec,TimeVec,
                                         PtrVec,ObjType,RawData]Val */
+#ifndef IUS
         size_t bufSize;  /* the size in bytes of the value buffer; this is set by the user */
+#else
+        int32_t bufSize;  /* IUS defines this as 32-bits, even when running in 64-bit mode */
+#endif
         int32_t numElems;
         /* different meanings depending on the format:
             vhpiStrVal, vhpi{Bin...}StrVal: size of string
