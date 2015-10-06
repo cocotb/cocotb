@@ -69,7 +69,8 @@ def recursive_discovery(dut):
                            "ncsim"]:
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS
         # But vhpiSimpleSigAssignStmtK objects do, and ther are 2. 
-        pass_total = 883
+        # Process statements and all sub handles also show up.
+        pass_total = 959
     else:
         pass_total = 916
 
@@ -91,15 +92,12 @@ def recursive_discovery(dut):
 @cocotb.test()
 def recursive_discovery_boundary(dut):
     """
-    Currently we can't traverse a language boundary during iteration
-
-    However if we manually delve through the language boundary we
-    should then be able to iterate to discover objects
+    Iteration though the boundary works but this just double checks
     """
     if cocotb.SIM_NAME in ["ncsim(64)",
                            "ncsim"]:
         # # But vhpiSimpleSigAssignStmtK objects only show up on IUS, and ther are 2
-        pass_total = 428
+        pass_total = 504
     else:
         pass_total = 426
 
