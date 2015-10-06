@@ -29,12 +29,8 @@
 
 # Common Makefile for Cadence Incisive
 
-# Disable 64 bit. There are too many issues with access to values on IUS.
-# hope to enable again when these have been resolved.
-
-ARCH?=i686
-ifeq ($(shell ncbits),64)
-$(error "The 64bit version of IUS is on your PATH, please use the 32bit version for now")
+ifneq ($(ARCH),i686)
+EXTRA_ARGS += -64
 endif
 
 EXTRA_ARGS += -nclibdirname $(SIM_BUILD) -plinowarn

@@ -41,7 +41,7 @@ WPWD=$(shell pwd)
 endif
 
 ifeq ($(TOPLEVEL_LANG),vhdl)
-    VHDL_SOURCES = $(COCOTB)/tests/designs/sample_module/sample_module.vhdl
+    VHDL_SOURCES =  $(COCOTB)/tests/designs/sample_module/sample_module_1.vhdl $(COCOTB)/tests/designs/sample_module/sample_module.vhdl
     TOPLEVEL := $(TOPLEVEL)
     GPI_IMPL := vhpi
 else

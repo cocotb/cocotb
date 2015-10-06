@@ -28,4 +28,8 @@
 
 include ../../designs/sample_module/Makefile
 
+ifeq ($(TOPLEVEL_LANG), vhdl)
+MODULE = test_discovery,test_vhdl_indexed_name
+else
 MODULE = test_discovery
+endif

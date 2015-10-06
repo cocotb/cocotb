@@ -34,6 +34,15 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
+    if cocotb.SIM_NAME in ["ncsim(64)",
+                           "ncsim"]:
+    # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS
+    # But vhpiSimpleSigAssignStmtK objects do, and ther are 2. 
+    # Process statements and all sub handles also show up.
+        pass_total = 35841
+    else:
+        pass_total = 32306
+
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
     def dump_all_the_things(parent):
@@ -45,8 +54,8 @@ def recursive_discovery(dut):
         return count
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
-    if total != 32306:
-        raise TestFailure("Expected 32306 objects but found %d" % total)
+    if total != pass_total:
+        raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
 
 
 @cocotb.test()
