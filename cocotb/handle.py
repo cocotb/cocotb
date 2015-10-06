@@ -80,6 +80,7 @@ class SimHandleBase(object):
         self._handle = handle
         self._len = None
         self._sub_handles = {}  # Dictionary of children
+        self._invalid_sub_handles = {} # Dictionary of invalid queries
         self._discovered = False
 
         self._name = simulator.get_name_string(self._handle)
@@ -147,15 +148,15 @@ class HierarchyObject(SimHandleBase):
         if name in self._sub_handles:
             return self._sub_handles[name]
 
+        if name in self._compat_mapping:
+            if name not in _deprecation_warned:
+                warnings.warn("Use of %s attribute is deprecated" % name)
+                _deprecation_warned[name] = True
+            return getattr(self, self._compat_mapping[name])
+
         new_handle = simulator.get_handle_by_name(self._handle, name)
 
         if not new_handle:
-            if name in self._compat_mapping:
-                if name not in _deprecation_warned:
-                    warnings.warn("Use of %s attribute is deprecated" % name)
-                    _deprecation_warned[name] = True
-                return getattr(self, self._compat_mapping[name])
-
             # To find generated indices we have to discover all
             self._discover_all()
             if name in self._sub_handles:
@@ -250,9 +251,15 @@ class HierarchyObject(SimHandleBase):
         """
         if name in self._sub_handles:
             return self._sub_handles[name]
+
+        if name in self._invalid_sub_handles:
+            return None
+
         new_handle = simulator.get_handle_by_name(self._handle, name)
         if new_handle:
             self._sub_handles[name] = SimHandle(new_handle)
+        else:
+            self._invalid_sub_handles[name] = None
         return new_handle
 
 
