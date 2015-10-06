@@ -173,6 +173,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     vhpiIntT type;
     gpi_objtype_t gpi_type;
     GpiObjHdl *new_obj = NULL;
+    bool modifiable = true;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
         LOG_DEBUG("vhpiVerilog returned from vhpi_get(vhpiType, ...)")
@@ -204,65 +205,89 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             value.numElems = 0;
             value.value.str = NULL;
 
+            /* It is possible that the simulator will fail the next call.
+               IUS Cannot use method vhpi_get_value on non-locally-static
+               object of kind vhpiIndexedNameK for example. To detect this
+               we check that the format has changed from vhpiObjTypeVal. If
+               not then we create a simple Obj handle
+               */
+
             vhpi_get_value(new_hdl, &value);
-            if (vhpiRealVal == value.format) {
-                LOG_DEBUG("Detected a REAL type %s", fq_name.c_str());
-                gpi_type = GPI_REAL;
-            }
-
-            if (vhpiIntVal == value.format) {
-                LOG_DEBUG("Detected an INT type %s", fq_name.c_str());
-                gpi_type = GPI_INTEGER;
-            }
-
-            if (vhpiRawDataVal == value.format) {
-                LOG_DEBUG("Detected a custom array type %s", fq_name.c_str());
-                gpi_type = GPI_MODULE;
-            }
-
-            if (vhpiIntVecVal == value.format ||
-                vhpiRealVecVal == value.format ||
-                vhpiEnumVecVal == value.format ||
-                vhpiLogicVecVal == value.format ||
-                vhpiPhysVecVal == value.format ||
-                vhpiTimeVecVal == value.format) {
-                /* This may well be an n dimensional vector if it is
-                   then we create a non signal object 
-                 */
-                int num_elems = vhpi_get(vhpiSizeP, new_hdl);
-
-                /* More differences between simulators.
-                   Aldec sets value.numElems regardless
-                   IUS does not set for a single dimension.
-                 */
-
-                if (!value.numElems || (value.numElems == num_elems)) {
-                    LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
-                    gpi_type = GPI_ARRAY;
-                } else {
-                    LOG_DEBUG("Detected an n dimension vector type", fq_name.c_str());
-                    gpi_type = GPI_MODULE;
-                    new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
+            switch (value.format) {
+                case vhpiObjTypeVal: {
+                    LOG_DEBUG("Forcing %s to GpiObjHdl as format unavailable", fq_name.c_str());
+                    modifiable = false;
                     break;
                 }
-            }
 
-            new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
+                case vhpiRealVal: {
+                    LOG_DEBUG("Detected a REAL type %s", fq_name.c_str());
+                    gpi_type = GPI_REAL;
+                    break;
+                }
+
+                case vhpiIntVal: {
+                    LOG_DEBUG("Detected an INT type %s", fq_name.c_str());
+                    gpi_type = GPI_INTEGER;
+                    break;
+                }
+
+                case vhpiRawDataVal: {
+                    LOG_DEBUG("Detected a custom array type %s", fq_name.c_str());
+                    gpi_type = GPI_MODULE;
+                    break;
+                }
+
+                case vhpiIntVecVal:
+                case vhpiRealVecVal:
+                case vhpiEnumVecVal:
+                case vhpiLogicVecVal:
+                case vhpiPhysVecVal:
+                case vhpiTimeVecVal: {
+                    /* This may well be an n dimensional vector if it is
+                       then we create a non signal object 
+                     */
+                    int num_elems = vhpi_get(vhpiSizeP, new_hdl);
+
+                    /* More differences between simulators.
+                       Aldec sets value.numElems regardless
+                       IUS does not set for a single dimension.
+                     */
+
+                    if (!value.numElems || (value.numElems == num_elems)) {
+                        LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
+                        gpi_type = GPI_ARRAY;
+                    } else {
+                        LOG_DEBUG("Detected an n dimension vector type", fq_name.c_str());
+                        gpi_type = GPI_MODULE;
+                        modifiable = false;
+                        break;
+                    }
+                }
+                default:
+                    break;
+            }
             break;
         }
+
         case vhpiForGenerateK:
         case vhpiIfGenerateK:
         case vhpiCompInstStmtK:
         case vhpiProcessStmtK:
         case vhpiSimpleSigAssignStmtK:
         case vhpiCondSigAssignStmtK:
-            new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
+            modifiable = false;
             break;
         default:
             LOG_DEBUG("Not able to map type (%s) %u to object",
                      vhpi_get_str(vhpiKindStrP, new_hdl), type);
             return NULL;
     }
+
+    if (modifiable)
+        new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
+    else
+        new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
 
     if (new_obj->initialise(name, fq_name)) {
         delete new_obj;
@@ -463,7 +488,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
 
 GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type)
 {
-    GpiIterator *new_iter;
+    GpiIterator *new_iter = NULL;
 
     switch (type) {
         case GPI_OBJECTS:
