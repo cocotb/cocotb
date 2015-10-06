@@ -26,6 +26,9 @@
 -- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -------------------------------------------------------------------------------
 
+
+
+
 library ieee;
 
 use ieee.std_logic_1164.all;
@@ -53,6 +56,18 @@ end;
 
 architecture impl of sample_module is
 
+  component sample_module_1 is
+  generic (
+    EXAMPLE_WIDTH       : integer
+    );
+    port (
+        clk                             : in    std_ulogic;
+        stream_in_data                  : in    std_ulogic_vector(EXAMPLE_WIDTH downto 0);
+        stream_out_data_registered      : buffer   std_ulogic_vector(EXAMPLE_WIDTH downto 0);
+        stream_out_data_valid           : out   std_ulogic
+    );
+end component sample_module_1;
+
 function afunc(value : std_ulogic_vector) return std_ulogic_vector is
     variable i: integer;
     variable rv: std_ulogic_vector(7 downto 0);
@@ -78,4 +93,16 @@ stream_in_ready      <= stream_out_ready;
 stream_out_real      <= stream_in_real;
 stream_out_int       <= stream_in_int;
 
+isample_module1 : component sample_module_1
+      generic map (
+      	EXAMPLE_WIDTH	=> 7
+        )
+  port map (
+  clk => clk,
+  stream_in_data => stream_in_data,
+  stream_out_data_registered => open,
+  stream_out_data_valid => open
+  );
+
+   
 end architecture;
