@@ -29,12 +29,8 @@
 
 # Common Makefile for Cadence Incisive
 
-# Disable 64 bit. There are too many issues with access to values on IUS.
-# hope to enable again when these have been resolved.
-
-ARCH?=i686
-ifeq ($(shell ncbits),64)
-$(error "The 64bit version of IUS is on your PATH, please use the 32bit version for now")
+ifneq ($(ARCH),i686)
+EXTRA_ARGS += -64
 endif
 
 EXTRA_ARGS += -nclibdirname $(SIM_BUILD) -plinowarn
@@ -69,7 +65,7 @@ GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
 results.xml: $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(GPI_LIB)
 	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	irun -64 $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS)
+	irun $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS)
 
 clean::
 	@rm -rf $(SIM_BUILD)
