@@ -56,6 +56,8 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     m_binvalue.numElems = 0;
     m_binvalue.value.str = NULL;
 
+    vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
+
     vhpi_get_value(get_handle<vhpiHandleT>(), &m_value);
     check_vhpi_error();
 
@@ -65,7 +67,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
               m_value.format,
               m_value.numElems,
               m_value.bufSize,
-              vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>()));
+              vhpi_get(vhpiSizeP, handle));
 
     // Default - overridden below in certain special cases
     m_num_elems = m_value.numElems;
@@ -74,17 +76,30 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         case vhpiIntVal:
         case vhpiEnumVal:
         case vhpiLogicVal:
-        case vhpiRealVal: {
+        case vhpiRealVal:
+        case vhpiCharVal: {
             break;
         }
 
         case vhpiIntVecVal:
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
-            m_num_elems = vhpi_get(vhpiSizeP, GpiObjHdl::get_handle<vhpiHandleT>());
+            m_num_elems = vhpi_get(vhpiSizeP, handle);
             m_value.bufSize = m_num_elems*sizeof(vhpiEnumT);
             m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize + 1);
             if (!m_value.value.enumvs) {
+                LOG_CRITICAL("Unable to alloc mem for write buffer");
+            }
+            LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
+            break;
+        }
+
+        case vhpiStrVal: {
+            m_num_elems = vhpi_get(vhpiSizeP, handle);
+            m_value.bufSize = (m_num_elems)*sizeof(vhpiCharT) + 1;
+            m_value.value.str = (vhpiCharT *)malloc(m_value.bufSize);
+            m_value.numElems = m_num_elems;
+            if (!m_value.value.str) {
                 LOG_CRITICAL("Unable to alloc mem for write buffer");
             }
             LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
@@ -95,7 +110,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
             // the size is to iterate over the members and count sub-elements
             vhpiHandleT result = NULL;
             vhpiHandleT iterator = vhpi_iterator(vhpiIndexedNames,
-                                                 GpiObjHdl::get_handle<vhpiHandleT>());
+                                                 handle);
             while (true) {
                 result = vhpi_scan(iterator);
                 if (NULL == result)
@@ -254,6 +269,11 @@ int VhpiSignalObjHdl::set_signal_value(long value)
             break;
         }
 
+        case vhpiCharVal: {
+            m_value.value.ch = value;
+            break;
+        }
+
         case vhpiRealVal:
             LOG_WARN("Attempt to set vhpiRealVal signal with integer");
             return 0;
@@ -263,7 +283,7 @@ int VhpiSignalObjHdl::set_signal_value(long value)
             return -1;
         }
     }
-    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDeposit)) {
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
         check_vhpi_error();
         return -1;
     }
@@ -295,7 +315,7 @@ int VhpiSignalObjHdl::set_signal_value(double value)
         }
     }
 
-    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDeposit)) {
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
         check_vhpi_error();
         return -1;
     }
@@ -345,10 +365,18 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
             break;
         }
 
-        case vhpiRealVal:
+        case vhpiRealVal: {
             LOG_WARN("Attempt to vhpiRealVal signal with string");
             return 0;
+        }
 
+        case vhpiStrVal: {
+            std::vector<char> writable(value.begin(), value.end());
+            writable.push_back('\0');
+            strncpy(m_value.value.str, &writable[0], m_value.numElems);
+            m_value.value.str[m_value.numElems] = '\0';
+            break;
+        }
 
         default: {
            LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
@@ -356,7 +384,7 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
         }
     }
 
-    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDeposit)) {
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
         check_vhpi_error();
         return -1;
     }
@@ -387,6 +415,27 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
     }
 }
 
+const char* VhpiSignalObjHdl::get_signal_value_str(void)
+{
+    switch (m_value.format) {
+        case vhpiStrVal: {
+            int ret = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
+            if (ret) {
+                check_vhpi_error();
+                LOG_ERROR("Size of m_value.value.str was not large enough req=%d have=%d for type %s",
+                          ret,
+                          m_value.bufSize,
+                          ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
+            }
+            break;
+        }
+        default: {
+            LOG_ERROR("Reading strings not valid for this handle");
+            return "";
+        }
+    }
+    return m_value.value.str;
+}
 
 double VhpiSignalObjHdl::get_signal_value_real(void)
 {

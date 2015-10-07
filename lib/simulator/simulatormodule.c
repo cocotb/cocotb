@@ -526,7 +526,7 @@ static PyObject *next(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
+static PyObject *get_signal_val_binstr(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
     const char *result;
@@ -541,6 +541,28 @@ static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
     }
 
     result = gpi_get_signal_value_binstr(hdl);
+    retstr = Py_BuildValue("s", result);
+
+    DROP_GIL(gstate);
+
+    return retstr;
+}
+
+static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    const char *result;
+    PyObject *retstr;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_signal_value_str(hdl);
     retstr = Py_BuildValue("s", result);
 
     DROP_GIL(gstate);
@@ -910,6 +932,7 @@ static void add_module_constants(PyObject* simulator)
     rc |= PyModule_AddIntConstant(simulator, "STRUCTURE",     GPI_STRUCTURE);
     rc |= PyModule_AddIntConstant(simulator, "REAL",          GPI_REAL);
     rc |= PyModule_AddIntConstant(simulator, "INTEGER",       GPI_INTEGER);
+    rc |= PyModule_AddIntConstant(simulator, "STRING",        GPI_STRING);
     rc |= PyModule_AddIntConstant(simulator, "OBJECTS",       GPI_OBJECTS);
     rc |= PyModule_AddIntConstant(simulator, "DRIVERS",       GPI_DRIVERS);
     rc |= PyModule_AddIntConstant(simulator, "LOADS",         GPI_LOADS);

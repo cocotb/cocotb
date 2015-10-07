@@ -113,6 +113,9 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiInitial:
             return GPI_MODULE;
 
+        case vpiStringVal:
+            return GPI_STRING;
+
         default:
             LOG_DEBUG("Unable to map VPI type %d onto GPI type", vpitype);
             return GPI_UNKNOWN;

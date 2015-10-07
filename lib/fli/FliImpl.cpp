@@ -110,7 +110,7 @@ void FliImpl::sim_end(void)
 GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 {
     LOG_WARN("%s implementation can not create from raw handle",
-             m_name.c_str());
+             get_name_c());
     return NULL;
 }
 
@@ -444,6 +444,12 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void)
     return m_val_buff;
 }
 
+const char* FliSignalObjHdl::get_signal_value_str(void)
+{
+    LOG_ERROR("Getting signal value as str not currently supported");
+    return NULL;
+}
+
 double FliSignalObjHdl::get_signal_value_real(void)
 {
     LOG_ERROR("Getting signal value as double not currently supported!");
@@ -576,6 +582,12 @@ const char* FliVariableObjHdl::get_signal_value_binstr(void)
     LOG_DEBUG("Retrieved \"%s\" for variable %s", m_val_buff, m_name.c_str());
 
     return m_val_buff;
+}
+
+const char* FliVariableObjHdl::get_signal_value_str(void)
+{
+    LOG_ERROR("Getting signal value as str not currently supported");
+    return "";
 }
 
 double FliVariableObjHdl::get_signal_value_real(void)

@@ -93,12 +93,15 @@ class SimHandleBase(object):
         return self._handle
 
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
 
         # Permits comparison of handles i.e. if clk == dut.clk
         if isinstance(other, SimHandleBase):
             if self._handle == other._handle: return 0
             return 1
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __repr__(self):
         return self._fullname
@@ -283,6 +286,9 @@ class NonHierarchyObject(SimHandleBase):
         for name, attribute in SimHandleBase._compat_mapping.items():
             setattr(self, name, getattr(self, attribute))
 
+    def __str__(self):
+        return "%s @0x%x" % (self._name, self._handle)
+
     def __iter__(self):
         return iter(())
 
@@ -297,24 +303,32 @@ class ConstantObject(NonHierarchyObject):
         NonHierarchyObject.__init__(self, handle)
         if handle_type in [simulator.INTEGER, simulator.ENUM]:
             self._value = simulator.get_signal_val_long(self._handle)
-            return
         elif handle_type == simulator.REAL:
             self._value = simulator.get_signal_val_real(self._handle)
-            return
-
-        val = simulator.get_signal_val_str(self._handle)
-        self._value = BinaryValue(bits=len(val))
-        try:
-            self._value.binstr = val
-        except:
-            self._value = val
+        elif handle_type == simulator.STRING:
+            self._value = simulator.get_signal_val_str(self._handle)
+        else:
+            val = simulator.get_signal_val_binstr(self._handle)
+            self._value = BinaryValue(bits=len(val))
+            try:
+                self._value.binstr = val
+            except:
+                self._value = val
 
     def __int__(self):
         return int(self._value)
 
-    def __cmp__(self, other):
-        # Use the comparison method of the other object against our value
-        return self._value.__cmp__(other)
+    def __eq__(self, other):
+        return self._value.__eq__(other)
+
+    def __ne__(self, other):
+        if isinstance(self._value, str):
+            return self._value.__ne__(other)
+        else:
+            return  self._value != other
+
+    def __repr__(self):
+        return str(self._value)
 
     def _setcachedvalue(self, *args, **kwargs):
         raise ValueError("Not permissible to set values on a constant object")
@@ -334,9 +348,6 @@ class NonConstantObject(NonHierarchyObject):
 
     def __hash__(self):
         return self._handle
-
-    def __str__(self):
-        return "%s @0x%x" % (self._name, self._handle)
 
     def __getitem__(self, index):
         if index in self._sub_handles:
@@ -367,7 +378,7 @@ class NonConstantObject(NonHierarchyObject):
     #value = property(_getvalue, None, None, "A reference to the value")
 
     def _get_value_str(self):
-        return simulator.get_signal_val_str(self._handle)
+        return simulator.get_signal_val_binstr(self._handle)
 
     def __len__(self):
         """Returns the 'length' of the underlying object.
@@ -380,16 +391,16 @@ class NonConstantObject(NonHierarchyObject):
             self._len = simulator.get_num_elems(self._handle)
         return self._len
 
-
-    def __cmp__(self, other):
-
-        # Permits comparison of handles i.e. if clk == dut.clk
+    def __eq__(self, other):
         if isinstance(other, SimHandleBase):
             if self._handle == other._handle: return 0
             return 1
 
         # Use the comparison method of the other object against our value
-        return self.value.__cmp__(other)
+        return self.value.__eq__(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __int__(self):
         val = self.value
@@ -525,7 +536,7 @@ class IntegerObject(ModifiableObject):
     Specific object handle for Integer and Enum signals and variables
     """
 
-    def _setimmeadiatevalue(self, value):
+    def setimmediatevalue(self, value):
         """
         Set the value of the underlying simulation object to value.
 
@@ -554,6 +565,39 @@ class IntegerObject(ModifiableObject):
     def __int__(self):
         return self._getvalue()
 
+class StringObject(ModifiableObject):
+    """
+    Specific object handle for String variables
+    """
+
+    def setimmediatevalue(self, value):
+        """
+        Set the value of the underlying simulation object to value.
+
+        Args:
+            value (string)
+                The value to drive onto the simulator object
+
+        Raises:
+            TypeError
+
+        This operation will fail unless the handle refers to a modifiable
+        object eg net, signal or variable.
+        """
+        if not isinstance(value, str):
+            self._log.critical("Unsupported type for string value assignment: %s (%s)" % (type(value), repr(value)))
+            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+
+        simulator.set_signal_val_str(self._handle, value)
+
+    def _getvalue(self):
+        return simulator.get_signal_val_str(self._handle)
+
+    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
+    value = property(_getvalue, ModifiableObject._setcachedvalue, None, "A reference to the value")
+
+    def __repr__(self):
+        return repr(self._getvalue())
 
 _handle2obj = {}
 
@@ -569,6 +613,7 @@ def SimHandle(handle):
         simulator.REAL:        RealObject,
         simulator.INTEGER:     IntegerObject,
         simulator.ENUM:        IntegerObject,
+        simulator.STRING:      StringObject,
     }
 
     # Enforce singletons since it's possible to retrieve handles avoiding

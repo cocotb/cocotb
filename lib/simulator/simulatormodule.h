@@ -60,6 +60,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args);
 static PyObject *get_signal_val_long(PyObject *self, PyObject *args);
 static PyObject *get_signal_val_real(PyObject *self, PyObject *args);
 static PyObject *get_signal_val_str(PyObject *self, PyObject *args);
+static PyObject *get_signal_val_binstr(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_long(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_real(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_str(PyObject *self, PyObject *args);
@@ -87,7 +88,8 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args);
 static PyMethodDef SimulatorMethods[] = {
     {"log_msg",         log_msg, METH_VARARGS, "Log a message"},
     {"get_signal_val_long", get_signal_val_long, METH_VARARGS, "Get the value of a signal as a long"},
-    {"get_signal_val_str", get_signal_val_str, METH_VARARGS, "Get the value of a signal as a binary string"},
+    {"get_signal_val_str", get_signal_val_str, METH_VARARGS, "Get the value of a signal as an ascii string"},
+    {"get_signal_val_binstr", get_signal_val_binstr, METH_VARARGS, "Get the value of a signal as a binary string"},
     {"get_signal_val_real", get_signal_val_real, METH_VARARGS, "Get the value of a signal as a double precision float"},
     {"set_signal_val_long", set_signal_val_long, METH_VARARGS, "Set the value of a signal using a long"},
     {"set_signal_val_str", set_signal_val_str, METH_VARARGS, "Set the value of a signal using a binary string"},
