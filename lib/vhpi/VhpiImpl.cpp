@@ -226,7 +226,8 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                     break;
                 }
 
-                case vhpiIntVal: {
+                case vhpiIntVal:
+                case vhpiCharVal: {
                     LOG_DEBUG("Detected an INT type %s", fq_name.c_str());
                     gpi_type = GPI_INTEGER;
                     break;
@@ -235,6 +236,12 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 case vhpiRawDataVal: {
                     LOG_DEBUG("Detected a custom array type %s", fq_name.c_str());
                     gpi_type = GPI_MODULE;
+                    break;
+                }
+
+                case vhpiStrVal: {
+                    LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
+                    gpi_type = GPI_STRING;
                     break;
                 }
 

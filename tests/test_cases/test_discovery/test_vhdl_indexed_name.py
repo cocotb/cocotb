@@ -46,5 +46,3 @@ def index_name_iter(dut):
 
     dut._log.info("Number of objects in non local vhpiIndexedNameK is %d" % total_count)
 
-    dut._log.info("Value of EXAMPLE_WIDTH is %d" % dut.isample_module1.EXAMPLE_WIDTH)
-

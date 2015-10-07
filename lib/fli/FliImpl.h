@@ -94,6 +94,7 @@ public:
     }
 
     const char* get_signal_value_binstr(void);
+    const char* get_signal_value_str(void);
     double get_signal_value_real(void);
     long get_signal_value_long(void);
 
@@ -134,6 +135,7 @@ public:
     }
 
     const char* get_signal_value_binstr(void);
+    const char* get_signal_value_str(void);
     double get_signal_value_real(void);
     long get_signal_value_long(void);
 

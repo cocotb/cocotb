@@ -135,7 +135,8 @@ typedef enum gpi_objtype_e {
     GPI_ENUM = 7,
     GPI_STRUCTURE = 8,
     GPI_REAL = 9,
-    GPI_INTEGER = 10
+    GPI_INTEGER = 10,
+    GPI_STRING = 11,
 } gpi_objtype_t;
 
 // When iterating, we can chose to either get child objects, drivers or loads
@@ -164,6 +165,7 @@ int gpi_get_num_elems(gpi_sim_hdl gpi_sim_hdl);
 // This is all slightly verbose but it saves having to enumerate various value types
 // We only care about a limited subset of values.
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
+const char *gpi_get_signal_value_str(gpi_sim_hdl gpi_hdl);
 double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
 long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);

@@ -29,7 +29,7 @@ import cocotb
 import logging
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
-from cocotb.handle import IntegerObject
+from cocotb.handle import IntegerObject, ConstantObject
 
 
 @cocotb.test()
@@ -152,6 +152,92 @@ def access_integer(dut):
     length = len(test_int)
     if length is not 1:
         raise TestFailure("Length should be 1 not %d" % length)
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_constant_integer(dut):
+    """
+    Access a constant integer
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(10)
+    constant_integer = dut.isample_module1.EXAMPLE_WIDTH
+    tlog.info("Value of EXAMPLE_WIDTH is %d" % constant_integer)
+    if not isinstance(constant_integer, ConstantObject):
+        raise TestFailure("EXAMPLE_WIDTH was not constant")
+    if constant_integer != 7:
+        raise TestFailure("EXAMPLE_WIDTH was not 7")
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_string(dut):
+    """
+    Access to a string, both constant and signal
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(10)
+    constant_string = dut.isample_module1.EXAMPLE_STRING;
+    tlog.info("%s is %s" % (constant_string, repr(constant_string)))
+    if not isinstance(constant_string, ConstantObject):
+        raise TestFailure("EXAMPLE_STRING was not constant")
+    if constant_string != "TESTING":
+        raise TestFailure("EXAMPLE_STRING was not == \'TESTING\'")
+
+    tlog.info("Test writing under size")
+
+    test_string = "cocotb"
+    dut.stream_in_string <= test_string
+
+    varible_string = dut.stream_out_string
+    if varible_string != '':
+        raise TestFailure("%s not \'\'" % varible_string)
+
+    yield Timer(10)
+
+    if varible_string != test_string:
+        raise TestFailure("%s %s != '%s'" % (varible_string, repr(varible_string), test_string))
+
+    test_string = "longer_than_the_array"
+    tlog.info("Test writing over size with '%s'" % test_string)
+
+    dut.stream_in_string <= test_string
+    varible_string = dut.stream_out_string
+
+    yield Timer(10)
+
+    test_string = test_string[:len(varible_string)]
+
+    if varible_string != test_string:
+        raise TestFailure("%s %s != '%s'" % (varible_string, repr(varible_string), test_string))
+
+    tlog.info("Test read access to a string character")
+
+    yield Timer(10)
+
+    idx = 3
+
+    result_slice = varible_string[idx]
+    if chr(result_slice) != test_string[idx]:
+        raise TestFailure("Single character did not match '%c' != '%c'" %
+                          (result_slice, test_string[idx]))
+
+    tlog.info("Test write access to a string character")
+
+    yield Timer(10)
+
+    for i in varible_string:
+        lower = chr(i)
+        upper = lower.upper()
+        i <= ord(upper)
+
+    yield Timer(10)
+
+    test_string = test_string.upper()
+
+    result = repr(varible_string);
+    tlog.info("After setting bytes of string value is %s" % result)
+    if varible_string != test_string:
+        raise TestFailure("%s %s != '%s'" % (varible_string, result, test_string))
+
+
 
 
 @cocotb.test(skip=True)
