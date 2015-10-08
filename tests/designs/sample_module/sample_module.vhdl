@@ -61,6 +61,7 @@ architecture impl of sample_module is
   component sample_module_1 is
   generic (
     EXAMPLE_STRING      : string;
+    EXAMPLE_BOOL        : boolean;
     EXAMPLE_WIDTH       : integer
     );
     port (
@@ -99,7 +100,8 @@ stream_out_string    <= stream_in_string;
 
 isample_module1 : component sample_module_1
       generic map (
-      	EXAMPLE_STRING	=> "TESTING",
+        EXAMPLE_STRING  => "TESTING",
+        EXAMPLE_BOOL => true,
       	EXAMPLE_WIDTH	=> 7
         )
   port map (
