@@ -94,6 +94,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
             new_obj = new VpiSignalObjHdl(this, new_hdl);
             break;
         case vpiStructVar:
+        case vpiStructNet:
         case vpiModule:
         case vpiInterface:
         case vpiModport:

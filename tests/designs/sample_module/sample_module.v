@@ -29,6 +29,12 @@
 
 `timescale 1 ps / 1 ps
 
+typedef struct
+{
+    logic a_in;
+    logic b_out;
+} test_if;
+
 module sample_module (
     input                                       clk,
 
@@ -39,7 +45,8 @@ module sample_module (
 
     input                                       stream_out_ready,
     output reg [7:0]                            stream_out_data_comb,
-    output reg [7:0]                            stream_out_data_registered
+    output reg [7:0]                            stream_out_data_registered,
+    inout  test_if                              inout_if
 );
 
 always @(posedge clk)
