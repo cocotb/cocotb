@@ -174,6 +174,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     gpi_objtype_t gpi_type;
     GpiObjHdl *new_obj = NULL;
     bool modifiable = true;
+    bool logic = false;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
         LOG_DEBUG("vhpiVerilog returned from vhpi_get(vhpiType, ...)")
@@ -213,6 +214,30 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                */
 
             vhpi_get_value(new_hdl, &value);
+
+            /* We need to delve further here to detemine how to later set
+               the values of an object */
+            if (value.format == vhpiEnumVal ||
+                value.format == vhpiEnumVecVal) {
+                vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, new_hdl);
+                vhpiIntT base_type = vhpi_get(vhpiKindP, base_hdl);
+                const char *base_name = vhpi_get_str(vhpiKindStrP, base_hdl);
+                int num_literals = vhpi_get(vhpiNumLiteralsP, base_hdl);
+                vhpi_release_handle(base_hdl);
+                /* If it is an Enum format then it's logic unless it's boolean */
+                logic = true;
+                if (vhpiEnumTypeDeclK == base_type) {
+                    LOG_WARN("Base handle of type %s options %d", base_name, num_literals);
+                    if (num_literals > 2) {
+                        LOG_DEBUG("This is probably a std_logic type");
+                    } else {
+                        LOG_DEBUG("This is probably a boolean");
+                        gpi_type = GPI_INTEGER;
+                    }
+                    break;
+                }
+            }
+
             switch (value.format) {
                 case vhpiObjTypeVal: {
                     LOG_DEBUG("Forcing %s to GpiObjHdl as format unavailable", fq_name.c_str());
@@ -291,8 +316,12 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             return NULL;
     }
 
-    if (modifiable)
-        new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
+    if (modifiable) {
+        if (logic)
+            new_obj = new VhpiLogicSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
+        else
+            new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
+    }
     else
         new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
 

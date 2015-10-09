@@ -550,7 +550,9 @@ class IntegerObject(ModifiableObject):
         This operation will fail unless the handle refers to a modifiable
         object eg net, signal or variable.
         """
-        if not isinstance(value, int):
+        if isinstance(value, BinaryValue):
+            value = int(value)
+        elif not isinstance(value, int):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 

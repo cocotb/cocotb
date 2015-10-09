@@ -242,12 +242,13 @@ const vhpiEnumT VhpiSignalObjHdl::chr2vhpi(const char value)
 }
 
 // Value related functions
-int VhpiSignalObjHdl::set_signal_value(long value)
+int VhpiLogicSignalObjHdl::set_signal_value(long value)
 {
     switch (m_value.format) {
         case vhpiEnumVal:
         case vhpiLogicVal: {
             m_value.value.enumv = value ? vhpi1 : vhpi0;
+            LOG_WARN("Trying to write to %s with Logic %ld as %d", m_name.c_str(), value, m_value.value.enumv);
             break;
         }
 
@@ -257,10 +258,103 @@ int VhpiSignalObjHdl::set_signal_value(long value)
             for (i=0; i<m_num_elems; i++)
                 m_value.value.enumvs[m_num_elems-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
 
+            m_value.numElems = m_num_elems;
+            LOG_WARN("Trying to write to %s with Logic vector %ld", m_name.c_str(), value);
+            break;
+        }
+
+        default: {
+            LOG_ERROR("VHPI: Unable to set a std_logic signal with a raw value");
+            return -1;
+        }
+    }
+
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
+        check_vhpi_error();
+        return -1;
+    }
+
+    return 0;
+}
+
+int VhpiLogicSignalObjHdl::set_signal_value(std::string &value)
+{
+    switch (m_value.format) {
+        case vhpiEnumVal:
+        case vhpiLogicVal: {
+            m_value.value.enumv = chr2vhpi(value.c_str()[0]);
+            break;
+        }
+
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal: {
+            int len = value.length();
+
+            // Since we may not get the numElems correctly from the sim and have to infer it
+            // we also need to set it here as well each time.
+
+            m_value.numElems = len;
+
+            if (len > m_num_elems) {
+                LOG_DEBUG("VHPI: Attempt to write string longer than (%s) signal %d > %d",
+                          m_name.c_str(), len, m_num_elems);
+                m_value.numElems = m_num_elems;
+            }
+
+            std::string::iterator iter;
+
+            int i = 0;
+            for (iter = value.begin();
+                 (iter != value.end()) && (i < m_num_elems);
+                 iter++, i++) {
+                m_value.value.enumvs[i] = chr2vhpi(*iter);
+            }
+
+            // Fill bits at the end of the value to 0's
+            for (i = len; i < m_num_elems; i++) {
+                m_value.value.enumvs[i] = vhpi0;
+            }
+
+            break;
+        }
+
+        default: {
+           LOG_ERROR("VHPI: Unable to set a std_logic signal with a raw value");
+           return -1;
+        }
+    }
+
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
+        check_vhpi_error();
+        return -1;
+    }
+
+    return 0;
+}
+
+
+// Value related functions
+int VhpiSignalObjHdl::set_signal_value(long value)
+{
+    switch (m_value.format) {
+        case vhpiEnumVecVal:
+        case vhpiLogicVecVal: {
+            int i;
+            for (i=0; i<m_num_elems; i++)
+                m_value.value.enumvs[m_num_elems-i-1] = value&(1<<i);
+
             // Since we may not get the numElems correctly from the sim and have to infer it
             // we also need to set it here as well each time.
 
             m_value.numElems = m_num_elems;
+            LOG_WARN("Trying to write to %s with Enum vector %ld", m_name.c_str(), value);
+            break;
+        }
+
+        case vhpiLogicVal:
+        case vhpiEnumVal: {
+            LOG_WARN("Trying to write to %s with Enum %ld", m_name.c_str(), value);
+            m_value.value.enumv = value;
             break;
         }
 
@@ -274,12 +368,9 @@ int VhpiSignalObjHdl::set_signal_value(long value)
             break;
         }
 
-        case vhpiRealVal:
-            LOG_WARN("Attempt to set vhpiRealVal signal with integer");
-            return 0;
-
         default: {
-            LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
+            LOG_ERROR("VHPI: Unable to handle this format type %s",
+                      ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
             return -1;
         }
     }
@@ -300,19 +391,12 @@ int VhpiSignalObjHdl::set_signal_value(double value)
             m_value.value.real = value;
             break;
 
-        case vhpiEnumVal:
-        case vhpiEnumVecVal:
-        case vhpiLogicVal:
-        case vhpiLogicVecVal:
-        case vhpiIntVal:
-        case vhpiIntVecVal:
-            LOG_WARN("Attempt to set non vhpiRealVal signal with double");
-            return 0;
-
         default: {
-            LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
+            LOG_ERROR("VHPI: Unable to set a Real handle this format type %s",
+                      ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
             return -1;
         }
+
     }
 
     if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
@@ -365,11 +449,6 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
             break;
         }
 
-        case vhpiRealVal: {
-            LOG_WARN("Attempt to vhpiRealVal signal with string");
-            return 0;
-        }
-
         case vhpiStrVal: {
             std::vector<char> writable(value.begin(), value.end());
             writable.push_back('\0');
@@ -379,8 +458,9 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
         }
 
         default: {
-           LOG_CRITICAL("VHPI type of object has changed at runtime, big fail");
-           return -1;
+            LOG_ERROR("VHPI: Unable to handle this format type %s",
+                      ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
+            return -1;
         }
     }
 

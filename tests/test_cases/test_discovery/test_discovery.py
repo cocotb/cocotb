@@ -72,12 +72,16 @@ def discover_value_not_in_dut(dut):
 @cocotb.test()
 def access_signal(dut):
     """Access a signal using the assignment mechanism"""
+    tlog = logging.getLogger("cocotb.test")
+    signal = dut.stream_in_data
+
+    tlog.info("Signal is %s" % type(signal))
     dut.stream_in_data.setimmediatevalue(1)
     yield Timer(10)
     if dut.stream_in_data.value.integer != 1:
         raise TestError("%s.%s != %d" %
                         (str(dut.stream_in_data),
-                         dut.stream_in_data.value.integer), 1)
+                         dut.stream_in_data.value.integer, 1))
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
@@ -130,7 +134,8 @@ def access_single_bit_erroneous(dut):
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
+@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
+             expect_fail=cocotb.SIM_NAME in ["Riviera-PRO"])
 def access_integer(dut):
     """Integer should show as an IntegerObject"""
     bitfail = False
@@ -152,6 +157,14 @@ def access_integer(dut):
     length = len(test_int)
     if length is not 1:
         raise TestFailure("Length should be 1 not %d" % length)
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_ulogic(dut):
+    """Access a std_ulogic as enum"""
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(10)
+    constant_integer = dut.stream_in_valid
+    
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def access_constant_integer(dut):
@@ -237,7 +250,58 @@ def access_string(dut):
     if varible_string != test_string:
         raise TestFailure("%s %s != '%s'" % (varible_string, result, test_string))
 
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_constant_boolean(dut):
+    """Test access to a constant boolean"""
+    tlog = logging.getLogger("cocotb.test")
 
+    yield Timer(10)
+    constant_boolean = dut.isample_module1.EXAMPLE_BOOL
+    if not isinstance(constant_boolean, ConstantObject):
+        raise TestFailure("dut.stream_in_int.EXAMPLE_BOOL is not a ConstantObject")
+
+    tlog.info("Value of %s is %d" % (constant_boolean, constant_boolean))
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_boolean(dut):
+    """Test access to a boolean"""
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(10)
+    boolean = dut.stream_in_bool
+
+    return
+
+    #if not isinstance(boolean, IntegerObject):
+    #    raise TestFailure("dut.stream_in_boolean is not a IntegerObject is %s" % type(boolean))
+
+    try:
+        bit = boolean[3]
+    except TestError as e:
+        tlog.info("Access to bit is an error as expected")
+        bitFail = True
+
+    if not bitFail:
+        raise TestFailure("Access into an integer should be invalid")
+
+    length = len(boolean)
+    if length is not 1:
+        raise TestFailure("Length should be 1 not %d" % length)
+
+    tlog.info("Value of %s is %d" % (boolean, boolean))
+
+    curr_val = int(boolean)
+    output_bool = dut.stream_out_bool
+
+    tlog.info("Before  %d After = %d" % (curr_val, (not curr_val)))
+
+    boolean.setimmediatevalue(not curr_val)
+
+    yield Timer(1)
+
+    tlog.info("Value of %s is now %d" % (output_bool, output_bool))
+    if (int(curr_val) == int(output_bool)):
+        raise TestFailure("Value did not propogate")
 
 
 @cocotb.test(skip=True)
