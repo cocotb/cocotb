@@ -47,7 +47,9 @@ module sample_module (
     output integer                              stream_out_int,
 `endif
     output reg [7:0]                            stream_out_data_comb,
-    output reg [7:0]                            stream_out_data_registered
+    output reg [7:0]                            stream_out_data_registered,
+
+    output                                      and_output
 );
 
 always @(posedge clk)
@@ -69,6 +71,8 @@ always @(stream_in_real)
 always @(stream_in_int)
     stream_out_int <= stream_in_int;
 `endif
+
+and test_and_gate(and_output, stream_in_ready, stream_in_valid);
 
 initial begin
      $dumpfile("waveform.vcd");

@@ -29,7 +29,7 @@ import cocotb
 import logging
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
-from cocotb.handle import IntegerObject, ConstantObject
+from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject
 
 
 @cocotb.test()
@@ -313,3 +313,14 @@ def skip_a_test(dut):
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["VHDL"])
+def access_gate(dut):
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(10)
+
+    gate = dut.test_and_gate
+
+    if not isinstance(gate, HierarchyObject):
+        raise TestFailure("Gate should be HierarchyObject")

@@ -452,6 +452,14 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
         0
     };
     map.add_to_options(vpiPort, &port_options[0]);
+
+    int32_t gate_options[] = {
+        vpiPrimTerm,
+        vpiTableEntry,
+        vpiUdpDefn,
+        0
+    };
+    map.add_to_options(vpiGate, &gate_options[0]);
 }
 
 GpiIteratorMapping<int32_t, int32_t> VpiIterator::iterate_over(vpi_mappings);
@@ -484,6 +492,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
 
     if (NULL == iterator) {
         LOG_WARN("vpi_iterate returned NULL for all types");
+        selected = NULL;
         return;
     }
 
@@ -601,6 +610,7 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
 
+        LOG_WARN("Did not get name so try Fullname %s", vpi_get_str(vpiFullName, obj));
         LOG_DEBUG("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;

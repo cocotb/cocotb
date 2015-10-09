@@ -111,6 +111,8 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiAlways:
         case vpiFunction:
         case vpiInitial:
+        case vpiGate:
+        case vpiPrimTerm:
             return GPI_MODULE;
 
         case vpiStringVal:
@@ -163,6 +165,8 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiAlways:
         case vpiFunction:
         case vpiInitial:
+        case vpiGate:
+        case vpiPrimTerm:
             new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         default:

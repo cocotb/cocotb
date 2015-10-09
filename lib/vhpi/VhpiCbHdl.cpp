@@ -760,7 +760,7 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
                  vhpi_get(vhpiKindP, vhpi_hdl),
                  vhpi_get_str(vhpiKindStrP, vhpi_hdl),
                  vhpi_get_str(vhpiCaseNameP, vhpi_hdl));
-        m_iterator = NULL;
+        selected = NULL;
         return;
     }
 
