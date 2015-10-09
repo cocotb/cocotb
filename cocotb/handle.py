@@ -230,8 +230,8 @@ class HierarchyObject(SimHandleBase):
                     self._sub_handles[name].extend([None]*delta)
                 self._sub_handles[name][index] = hdl
                 self._log.debug("%s.%s[%d] is now %s", self._name, name, index, hdl._name)
-                for something in self._sub_handles[name]:
-                    self._log.debug("%s: %s" % (type(something), something))
+                #for something in self._sub_handles[name]:
+                #    self._log.debug("%s: %s" % (type(something), something))
             else:
                 self._log.debug("%s didn't match an index pattern", name)
                 self._sub_handles[hdl._name.split(".")[-1]] = hdl
