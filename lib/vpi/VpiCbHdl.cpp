@@ -408,6 +408,7 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
         0
     };
     map.add_to_options(vpiModule, &module_options[0]);
+    map.add_to_options(vpiGenScope, &module_options[0]);
 
     /* vpiNet */
     int32_t net_options[] = {
@@ -610,7 +611,6 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
 
-        LOG_WARN("Did not get name so try Fullname %s", vpi_get_str(vpiFullName, obj));
         LOG_DEBUG("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;

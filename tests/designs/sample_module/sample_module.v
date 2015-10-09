@@ -82,4 +82,16 @@ initial begin
 //     #500000 $fail_test("Test timed out, failing...");
 end
 
+reg[3:0] temp;
+parameter NUM_OF_MODULES = 4;
+genvar idx;
+generate
+for (idx = 0; idx < NUM_OF_MODULES; idx=idx+1) begin
+    always @(posedge clk) begin
+        temp[idx] <= 1'b0;
+    end
+end
+endgenerate
+
 endmodule
+

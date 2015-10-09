@@ -324,3 +324,4 @@ def access_gate(dut):
 
     if not isinstance(gate, HierarchyObject):
         raise TestFailure("Gate should be HierarchyObject")
+

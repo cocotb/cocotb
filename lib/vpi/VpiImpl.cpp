@@ -85,6 +85,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiPackedArrayVar:
         case vpiRegArray:
         case vpiNetArray:
+        case vpiGenScopeArray:
             return GPI_ARRAY;
 
         case vpiEnumNet:
@@ -113,6 +114,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiInitial:
         case vpiGate:
         case vpiPrimTerm:
+        case vpiGenScope:
             return GPI_MODULE;
 
         case vpiStringVal:
@@ -167,6 +169,8 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiInitial:
         case vpiGate:
         case vpiPrimTerm:
+        case vpiGenScope:
+        case vpiGenScopeArray:
             new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         default:
