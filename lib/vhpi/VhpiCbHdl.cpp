@@ -248,7 +248,6 @@ int VhpiLogicSignalObjHdl::set_signal_value(long value)
         case vhpiEnumVal:
         case vhpiLogicVal: {
             m_value.value.enumv = value ? vhpi1 : vhpi0;
-            LOG_WARN("Trying to write to %s with Logic %ld as %d", m_name.c_str(), value, m_value.value.enumv);
             break;
         }
 
@@ -259,7 +258,6 @@ int VhpiLogicSignalObjHdl::set_signal_value(long value)
                 m_value.value.enumvs[m_num_elems-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
 
             m_value.numElems = m_num_elems;
-            LOG_WARN("Trying to write to %s with Logic vector %ld", m_name.c_str(), value);
             break;
         }
 
@@ -332,7 +330,6 @@ int VhpiLogicSignalObjHdl::set_signal_value(std::string &value)
     return 0;
 }
 
-
 // Value related functions
 int VhpiSignalObjHdl::set_signal_value(long value)
 {
@@ -347,13 +344,11 @@ int VhpiSignalObjHdl::set_signal_value(long value)
             // we also need to set it here as well each time.
 
             m_value.numElems = m_num_elems;
-            LOG_WARN("Trying to write to %s with Enum vector %ld", m_name.c_str(), value);
             break;
         }
 
         case vhpiLogicVal:
         case vhpiEnumVal: {
-            LOG_WARN("Trying to write to %s with Enum %ld", m_name.c_str(), value);
             m_value.value.enumv = value;
             break;
         }

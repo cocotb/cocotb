@@ -614,7 +614,7 @@ def SimHandle(handle):
         simulator.NETARRAY:    ModifiableObject,
         simulator.REAL:        RealObject,
         simulator.INTEGER:     IntegerObject,
-        simulator.ENUM:        IntegerObject,
+        simulator.ENUM:        ModifiableObject,
         simulator.STRING:      StringObject,
     }
 

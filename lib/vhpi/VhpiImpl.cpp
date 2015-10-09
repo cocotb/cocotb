@@ -139,6 +139,7 @@ gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
             return GPI_ARRAY;
 
         case vhpiEnumLiteralK:
+        case vhpiEnumTypeDeclK:
             return GPI_ENUM;
 
         case vhpiConstDeclK:
@@ -173,132 +174,118 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     vhpiIntT type;
     gpi_objtype_t gpi_type;
     GpiObjHdl *new_obj = NULL;
-    bool modifiable = true;
-    bool logic = false;
+    bool modifiable;
+    bool logic;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
         LOG_DEBUG("vhpiVerilog returned from vhpi_get(vhpiType, ...)")
         return NULL;
     }
 
-    gpi_type = to_gpi_objtype(type);
-    LOG_DEBUG("Creating %s of type %d (%s)",
-              vhpi_get_str(vhpiFullNameP, new_hdl),
-              gpi_type,
-              vhpi_get_str(vhpiKindStrP, new_hdl));
+    /* We need to delve further here to detemine how to later set
+       the values of an object */
+    vhpiHandleT query_hdl;
+    vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, new_hdl);
 
-    /* What sort of isntance is this ?*/
-    switch (type) {
-        case vhpiPortDeclK:
-        case vhpiSigDeclK:
-        case vhpiConstDeclK:
-        case vhpiGenericDeclK:
+    if (!base_hdl)
+        query_hdl = new_hdl;
+    else
+        query_hdl = base_hdl;
+
+    vhpiIntT base_type = vhpi_get(vhpiKindP, query_hdl);
+    vhpiIntT is_static = vhpi_get(vhpiStaticnessP, query_hdl);
+
+    gpi_type = to_gpi_objtype(base_type);
+    LOG_DEBUG("Creating %s of type %d (%s)",
+              vhpi_get_str(vhpiFullNameP, query_hdl),
+              gpi_type,
+              vhpi_get_str(vhpiKindStrP, query_hdl));
+
+    /* Non locally static objects are not accessible for read/write
+       so we create this as a GpiObjType
+    */
+    if (is_static == vhpiGloballyStatic) {
+        modifiable = false;
+        logic = false;
+        goto create;
+    } else {
+        modifiable = true;
+        logic = false;
+    }
+
+    switch (base_type) {
+        case vhpiIndexedNameK:
         case vhpiSelectedNameK:
-        case vhpiIndexedNameK: {
-            // Sadly VHPI doesn't have a "Real" type returned - we just get
-            // vhpiPortDeclK rather than the signal type.
-            //
-            // We workaround this by querying the format value and overriding the
-            // result of to_gpi_objtype
+        case vhpiArrayTypeDeclK: {
+            /* This may well be an n dimensional array if it is
+               then we create a non signal object we also need to
+               look at the format of the array 
+             */
             vhpiValueT value;
             value.format = vhpiObjTypeVal;
             value.bufSize = 0;
             value.numElems = 0;
             value.value.str = NULL;
-
-            /* It is possible that the simulator will fail the next call.
-               IUS Cannot use method vhpi_get_value on non-locally-static
-               object of kind vhpiIndexedNameK for example. To detect this
-               we check that the format has changed from vhpiObjTypeVal. If
-               not then we create a simple Obj handle
-               */
-
             vhpi_get_value(new_hdl, &value);
+            int num_elems = vhpi_get(vhpiSizeP, new_hdl);
 
-            /* We need to delve further here to detemine how to later set
-               the values of an object */
-            if (value.format == vhpiEnumVal ||
-                value.format == vhpiEnumVecVal) {
-                vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, new_hdl);
-                vhpiIntT base_type = vhpi_get(vhpiKindP, base_hdl);
-                const char *base_name = vhpi_get_str(vhpiKindStrP, base_hdl);
-                int num_literals = vhpi_get(vhpiNumLiteralsP, base_hdl);
-                vhpi_release_handle(base_hdl);
-                /* If it is an Enum format then it's logic unless it's boolean */
+            if (vhpiStrVal == value.format) {
+                LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
+                gpi_type = GPI_STRING;
+                break;
+            }
+
+            if (vhpiCharVal == value.format) {
+                LOG_DEBUG("Detected an CHAR type %s", fq_name.c_str());
+                gpi_type = GPI_INTEGER;
+                break;
+            }
+
+            if (vhpiRawDataVal == value.format) {
+                LOG_DEBUG("Detected a RAW type %s", fq_name.c_str());
+                gpi_type = GPI_MODULE;
+                break;
+            }
+
+            /* More differences between simulators.
+               Aldec sets value.numElems regardless
+               IUS does not set for a single dimension.
+             */
+
+            if (!value.numElems || (value.numElems == num_elems)) {
+                LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
+                gpi_type = GPI_ARRAY;
+                /* Do not break as want to go into vhpiEnumTypeDeclK */
+            } else {
+                LOG_DEBUG("Detected an n dimension vector type", fq_name.c_str());
+                gpi_type = GPI_MODULE;
+                modifiable = false;
+                break;
+            }
+        }
+
+        case vhpiEnumTypeDeclK: {
+            int num_literals = vhpi_get(vhpiNumLiteralsP, query_hdl);
+            if (num_literals == 2) {
+                logic = false;
+                gpi_type = GPI_INTEGER;
+                LOG_DEBUG("Detected boolean %s", fq_name.c_str());
+            } else {
                 logic = true;
-                if (vhpiEnumTypeDeclK == base_type) {
-                    LOG_WARN("Base handle of type %s options %d", base_name, num_literals);
-                    if (num_literals > 2) {
-                        LOG_DEBUG("This is probably a std_logic type");
-                    } else {
-                        LOG_DEBUG("This is probably a boolean");
-                        gpi_type = GPI_INTEGER;
-                    }
-                    break;
-                }
+                LOG_DEBUG("Detected std_logic %s", fq_name.c_str());
             }
+            break;
+        }
 
-            switch (value.format) {
-                case vhpiObjTypeVal: {
-                    LOG_DEBUG("Forcing %s to GpiObjHdl as format unavailable", fq_name.c_str());
-                    modifiable = false;
-                    break;
-                }
+        case vhpiIntTypeDeclK: {
+            LOG_DEBUG("Detected an INT type %s", fq_name.c_str());
+            gpi_type = GPI_INTEGER;
+            break;
+        }
 
-                case vhpiRealVal: {
-                    LOG_DEBUG("Detected a REAL type %s", fq_name.c_str());
-                    gpi_type = GPI_REAL;
-                    break;
-                }
-
-                case vhpiIntVal:
-                case vhpiCharVal: {
-                    LOG_DEBUG("Detected an INT type %s", fq_name.c_str());
-                    gpi_type = GPI_INTEGER;
-                    break;
-                }
-
-                case vhpiRawDataVal: {
-                    LOG_DEBUG("Detected a custom array type %s", fq_name.c_str());
-                    gpi_type = GPI_MODULE;
-                    break;
-                }
-
-                case vhpiStrVal: {
-                    LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
-                    gpi_type = GPI_STRING;
-                    break;
-                }
-
-                case vhpiIntVecVal:
-                case vhpiRealVecVal:
-                case vhpiEnumVecVal:
-                case vhpiLogicVecVal:
-                case vhpiPhysVecVal:
-                case vhpiTimeVecVal: {
-                    /* This may well be an n dimensional vector if it is
-                       then we create a non signal object 
-                     */
-                    int num_elems = vhpi_get(vhpiSizeP, new_hdl);
-
-                    /* More differences between simulators.
-                       Aldec sets value.numElems regardless
-                       IUS does not set for a single dimension.
-                     */
-
-                    if (!value.numElems || (value.numElems == num_elems)) {
-                        LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
-                        gpi_type = GPI_ARRAY;
-                    } else {
-                        LOG_DEBUG("Detected an n dimension vector type", fq_name.c_str());
-                        gpi_type = GPI_MODULE;
-                        modifiable = false;
-                        break;
-                    }
-                }
-                default:
-                    break;
-            }
+        case vhpiFloatTypeDeclK: {
+            LOG_DEBUG("Detected a REAL type %s", fq_name.c_str());
+            gpi_type = GPI_REAL;
             break;
         }
 
@@ -308,14 +295,19 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         case vhpiProcessStmtK:
         case vhpiSimpleSigAssignStmtK:
         case vhpiCondSigAssignStmtK:
+        case vhpiRecordTypeDeclK:
             modifiable = false;
             break;
-        default:
-            LOG_DEBUG("Not able to map type (%s) %u to object",
-                     vhpi_get_str(vhpiKindStrP, new_hdl), type);
-            return NULL;
+
+        default: {
+            LOG_ERROR("Not able to map type (%s) %u to object",
+                      vhpi_get_str(vhpiKindStrP, query_hdl), type);
+            new_obj = NULL;
+            goto out;
+        }
     }
 
+create:
     if (modifiable) {
         if (logic)
             new_obj = new VhpiLogicSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
@@ -329,6 +321,10 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         delete new_obj;
         new_obj = NULL;
     }
+
+out:
+    if (base_hdl)
+        vhpi_release_handle(base_hdl);
 
     return new_obj;
 }
