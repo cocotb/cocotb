@@ -6,6 +6,7 @@ use ieee.numeric_std.all;
 entity sample_module_1 is
   generic (
     EXAMPLE_STRING      : string;
+    EXAMPLE_BOOL        : boolean;
     EXAMPLE_WIDTH       : integer
     );
     port (

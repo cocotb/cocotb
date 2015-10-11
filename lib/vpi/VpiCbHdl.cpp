@@ -408,6 +408,7 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
         0
     };
     map.add_to_options(vpiModule, &module_options[0]);
+    map.add_to_options(vpiGenScope, &module_options[0]);
 
     /* vpiNet */
     int32_t net_options[] = {
@@ -452,6 +453,14 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
         0
     };
     map.add_to_options(vpiPort, &port_options[0]);
+
+    int32_t gate_options[] = {
+        vpiPrimTerm,
+        vpiTableEntry,
+        vpiUdpDefn,
+        0
+    };
+    map.add_to_options(vpiGate, &gate_options[0]);
 }
 
 GpiIteratorMapping<int32_t, int32_t> VpiIterator::iterate_over(vpi_mappings);
@@ -484,6 +493,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
 
     if (NULL == iterator) {
         LOG_WARN("vpi_iterate returned NULL for all types");
+        selected = NULL;
         return;
     }
 

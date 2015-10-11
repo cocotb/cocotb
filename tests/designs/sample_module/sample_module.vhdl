@@ -46,13 +46,15 @@ entity sample_module is
         stream_in_real                  : in    real;
         stream_in_int                   : in    integer;
         stream_in_string                : in    string(1 to 8);
+        stream_in_bool                  : in    boolean;
 
         stream_out_data_comb            : out   std_ulogic_vector(7 downto 0);
         stream_out_data_registered      : out   std_ulogic_vector(7 downto 0);
         stream_out_ready                : in    std_ulogic;
         stream_out_real                 : out   real;
         stream_out_int                  : out   integer;
-        stream_out_string               : out   string(1 to 8)
+        stream_out_string               : out   string(1 to 8);
+        stream_out_bool                 : out   boolean
     );
 end;
 
@@ -61,6 +63,7 @@ architecture impl of sample_module is
   component sample_module_1 is
   generic (
     EXAMPLE_STRING      : string;
+    EXAMPLE_BOOL        : boolean;
     EXAMPLE_WIDTH       : integer
     );
     port (
@@ -96,10 +99,12 @@ stream_in_ready      <= stream_out_ready;
 stream_out_real      <= stream_in_real;
 stream_out_int       <= stream_in_int;
 stream_out_string    <= stream_in_string;
+stream_out_bool      <= stream_in_bool;
 
 isample_module1 : component sample_module_1
       generic map (
-      	EXAMPLE_STRING	=> "TESTING",
+        EXAMPLE_STRING  => "TESTING",
+        EXAMPLE_BOOL => true,
       	EXAMPLE_WIDTH	=> 7
         )
   port map (

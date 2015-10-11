@@ -151,11 +151,13 @@ public:
 
 class VhpiSignalObjHdl : public GpiSignalObjHdl {
 public:
-    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl, gpi_objtype_t objtype, bool is_const) :
-                                                                GpiSignalObjHdl(impl, hdl, objtype, is_const),
-                                                                m_rising_cb(impl, this, GPI_RISING),
-                                                                m_falling_cb(impl, this, GPI_FALLING),
-                                                                m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
+    VhpiSignalObjHdl(GpiImplInterface *impl,
+                     vhpiHandleT hdl,
+                     gpi_objtype_t objtype,
+                     bool is_const) : GpiSignalObjHdl(impl, hdl, objtype, is_const),
+                                      m_rising_cb(impl, this, GPI_RISING),
+                                      m_falling_cb(impl, this, GPI_FALLING),
+                                      m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
     virtual ~VhpiSignalObjHdl();
 
     const char* get_signal_value_binstr(void);
@@ -172,13 +174,26 @@ public:
     GpiCbHdl *value_change_cb(unsigned int edge);
     int initialise(std::string &name, std::string &fq_name);
 
-private:
+protected:
     const vhpiEnumT chr2vhpi(const char value);
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
     VhpiValueCbHdl m_rising_cb;
     VhpiValueCbHdl m_falling_cb;
     VhpiValueCbHdl m_either_cb;
+};
+
+class VhpiLogicSignalObjHdl : public VhpiSignalObjHdl {
+public:
+    VhpiLogicSignalObjHdl(GpiImplInterface *impl,
+                         vhpiHandleT hdl,
+                         gpi_objtype_t objtype,
+                         bool is_const) : VhpiSignalObjHdl(impl, hdl, objtype, is_const) { }
+
+    virtual ~VhpiLogicSignalObjHdl() { }
+
+    int set_signal_value(const long value);
+    int set_signal_value(std::string &value);
 };
 
 class VhpiIterator : public GpiIterator {

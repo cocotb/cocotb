@@ -85,6 +85,8 @@ static PyObject *next(PyObject *self, PyObject *args);
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
 static PyObject *deregister_callback(PyObject *self, PyObject *args);
 
+static PyObject *log_level(PyObject *self, PyObject *args);
+
 static PyMethodDef SimulatorMethods[] = {
     {"log_msg",         log_msg, METH_VARARGS, "Log a message"},
     {"get_signal_val_long", get_signal_val_long, METH_VARARGS, "Get the value of a signal as a long"},
@@ -110,6 +112,7 @@ static PyMethodDef SimulatorMethods[] = {
     {"stop_simulator", stop_simulator, METH_VARARGS, "Instruct the attached simulator to stop"},
     {"iterate", iterate, METH_VARARGS, "Get an iterator handle to loop over all members in an object"},
     {"next", next, METH_VARARGS, "Get the next object from the iterator"},
+    {"log_level", log_level, METH_VARARGS, "Set the log level for GPI"},
 
     // FIXME METH_NOARGS => initialization from incompatible pointer type
     {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as a float"},

@@ -917,6 +917,26 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     return value;
 }
 
+static PyObject *log_level(PyObject *self, PyObject *args)
+{
+    enum gpi_log_levels new_level;
+    PyObject *py_level;
+    PyGILState_STATE gstate;
+    PyObject *value;
+    gstate = TAKE_GIL();
+
+    py_level = PyTuple_GetItem(args, 0);
+    new_level = (enum gpi_log_levels)PyLong_AsUnsignedLong(py_level);
+
+    set_log_level(new_level);
+
+    value = Py_BuildValue("s", "OK!");
+
+    DROP_GIL(gstate);
+
+    return value;
+}
+
 static void add_module_constants(PyObject* simulator)
 {
     // Make the GPI constants accessible from the C world

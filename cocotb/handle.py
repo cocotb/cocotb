@@ -230,8 +230,8 @@ class HierarchyObject(SimHandleBase):
                     self._sub_handles[name].extend([None]*delta)
                 self._sub_handles[name][index] = hdl
                 self._log.debug("%s.%s[%d] is now %s", self._name, name, index, hdl._name)
-                for something in self._sub_handles[name]:
-                    self._log.debug("%s: %s" % (type(something), something))
+                #for something in self._sub_handles[name]:
+                #    self._log.debug("%s: %s" % (type(something), something))
             else:
                 self._log.debug("%s didn't match an index pattern", name)
                 self._sub_handles[hdl._name.split(".")[-1]] = hdl
@@ -550,7 +550,9 @@ class IntegerObject(ModifiableObject):
         This operation will fail unless the handle refers to a modifiable
         object eg net, signal or variable.
         """
-        if not isinstance(value, int):
+        if isinstance(value, BinaryValue):
+            value = int(value)
+        elif not isinstance(value, int):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
@@ -612,7 +614,7 @@ def SimHandle(handle):
         simulator.NETARRAY:    ModifiableObject,
         simulator.REAL:        RealObject,
         simulator.INTEGER:     IntegerObject,
-        simulator.ENUM:        IntegerObject,
+        simulator.ENUM:        ModifiableObject,
         simulator.STRING:      StringObject,
     }
 
