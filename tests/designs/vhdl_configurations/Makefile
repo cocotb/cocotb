@@ -18,5 +18,6 @@ ifneq ($(SIM),)
 else
 all:
 	@echo "Skipping test as VHDL not supported on Icarus"
+clean::
 endif
 

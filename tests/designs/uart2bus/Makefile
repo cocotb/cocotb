@@ -43,5 +43,6 @@ ifneq ($(GPI_EXTRA),)
 else
 all:
 	@echo "Skipping test as VHDL not supported on simulator=$(SIM)"
+clean::
 endif
 

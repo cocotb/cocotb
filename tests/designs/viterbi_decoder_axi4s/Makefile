@@ -69,4 +69,5 @@ include $(COCOTB)/makefiles/Makefile.sim
 else
 all:
 	@echo "Skipping test as VHDL not supported on simulator=$(SIM)"
+clean::
 endif
