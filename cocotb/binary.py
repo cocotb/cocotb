@@ -361,6 +361,16 @@ class BinaryValue(object):
                 return True
         return False
 
+    def __eq__(self, other):
+        if isinstance(other, BinaryValue):
+            other = other.value
+        return self.value == other
+
+    def __ne__(self, other):
+        if isinstance(other, BinaryValue):
+            other = other.value
+        return self.value != other
+
     def __cmp__(self, other):
         """Comparison against other values"""
         if isinstance(other, BinaryValue):
