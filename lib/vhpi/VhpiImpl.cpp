@@ -248,23 +248,27 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             } else {
                 /* It not a standard type then we lastly try and use the format,
                    we do this on the handle we where given on a sub type */
+
                 vhpiValueT value;
                 value.format = vhpiObjTypeVal;
                 value.bufSize = 0;
                 value.numElems = 0;
                 value.value.str = NULL;
-                vhpi_get_value(new_hdl, &value);
                 int num_elems = vhpi_get(vhpiSizeP, new_hdl);
+                vhpi_get_value(new_hdl, &value);
 
                 if (vhpiStrVal == value.format) {
                     LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
                     gpi_type = GPI_STRING;
+                    break;
                 } else if (vhpiRawDataVal == value.format) {
-                    LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
+                    LOG_DEBUG("Detected a RAW type %s", fq_name.c_str());
                     gpi_type = GPI_MODULE;
+                    break;
                 } else if (vhpiCharVal == value.format) {
                     LOG_DEBUG("Detected an CHAR type %s", fq_name.c_str());
                     gpi_type = GPI_INTEGER;
+                    break;
                 }
 
                 if (!value.numElems || (value.numElems == num_elems)) {

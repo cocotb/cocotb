@@ -70,7 +70,7 @@ def recursive_discovery(dut):
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS
         # But vhpiSimpleSigAssignStmtK objects do, and ther are 2. 
         # Process statements and all sub handles also show up.
-        pass_total = 959
+        pass_total = 985
     else:
         pass_total = 916
 
@@ -97,7 +97,7 @@ def recursive_discovery_boundary(dut):
     if cocotb.SIM_NAME in ["ncsim(64)",
                            "ncsim"]:
         # # But vhpiSimpleSigAssignStmtK objects only show up on IUS, and ther are 2
-        pass_total = 504
+        pass_total = 530
     else:
         pass_total = 426
 
