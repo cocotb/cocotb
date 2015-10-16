@@ -16,8 +16,8 @@ def is_sequence(arg):
 class WBAux():
     """Wishbone Auxiliary Wrapper Class, wrap meta informations on bus transaction (internal only)
     """
-    adr   = 0
-    datwr = None     
+    adr         = 0
+    datwr       = None     
     sel         = 0xf
     waitStall   = 0
     waitIdle    = 0
@@ -52,14 +52,14 @@ class WBOp():
 class WBRes():
     """Wishbone Result Wrapper Class. What's happend on the bus plus meta information on timing
     """
-    adr   = 0
-    sel   = 0xf
-    datwr = None    
-    datrd = None
-    ack = False
-    waitstall = 0
-    waitack = 0
-    waitidle = 0
+    adr         = 0
+    sel         = 0xf
+    datwr       = None    
+    datrd       = None
+    ack         = False
+    waitstall   = 0
+    waitack     = 0
+    waitidle    = 0
     
     def __init__(self, ack, sel, adr, datrd, datwr, waitIdle, waitStall, waitAck):
         self.ack        = ack
@@ -95,16 +95,15 @@ class Wishbone(BusDriver):
         v.binstr = "1" * len(self.bus.sel)
         self.bus.sel <= v
     
-    def send_cycle(self, ops):
-        pass
+
 
 class WishboneMaster(Wishbone):
     """Wishbone master
     """
-    _acked_ops          = 0  # ack cntr. comp with opbuf len. wait for equality before releasing lock
-    _res_buf            = [] # save readdata/ack/err
-    _aux_buf            = [] # save read/write order
-    _op_cnt             = 0 # number of ops we've been issued
+    _acked_ops          = 0     # ack cntr. comp with opbuf len. wait for equality before releasing lock
+    _res_buf            = []    # save readdata/ack/err
+    _aux_buf            = []    # save read/write order
+    _op_cnt             = 0     # number of ops we've been issued
     _clk_cycle_count    = 0
     _timeout            = None
 
@@ -118,6 +117,7 @@ class WishboneMaster(Wishbone):
         self.busy_event = Event("%s_busy" % name)
         self.busy = False
         self._timeout = timeout
+
         
     @coroutine 
     def _clk_cycle_counter(self):
@@ -129,6 +129,7 @@ class WishboneMaster(Wishbone):
         while self.busy:
             yield clkedge
             self._clk_cycle_count += 1    
+
   
     @coroutine
     def _open_cycle(self):
@@ -145,6 +146,7 @@ class WishboneMaster(Wishbone):
         self._res_buf   = [] 
         self._aux_buf   = []
         self.log.debug("Opening cycle, %u Ops" % self._op_cnt)
+
         
     @coroutine    
     def _close_cycle(self):
@@ -175,7 +177,7 @@ class WishboneMaster(Wishbone):
     
     @coroutine
     def _wait_stall(self):
-        """Wait for stall to be low before continuing
+        """Wait for stall to be low before continuing (Pipelined Wishbone)
         """
         clkedge = RisingEdge(self.clock)
         count = 0
@@ -193,7 +195,7 @@ class WishboneMaster(Wishbone):
     
     @coroutine
     def _wait_ack(self):
-        """Wait for ACK on the bus before continuing
+        """Wait for ACK on the bus before continuing (Non pipelined Wishbone)
         """
         #wait for acknownledgement before continuing - Classic Wishbone without pipelining
         clkedge = RisingEdge(self.clock)
@@ -327,7 +329,7 @@ class WishboneMaster(Wishbone):
                 
             raise ReturnValue(result)
         else:
-            self.log.error("Expecting a list")
+            raise TestFailure("Sorry, argument must be a list of WBOp (Wishbone Operation) objects!")
             raise ReturnValue(None)    
     
  

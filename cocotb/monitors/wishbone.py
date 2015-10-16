@@ -1,10 +1,10 @@
 
 import cocotb
-from cocotb.decorators import coroutine
-from cocotb.monitors import BusMonitor
-from cocotb.triggers import RisingEdge
-from cocotb.result import TestFailure
-from cocotb.decorators import public  
+from cocotb.decorators  import coroutine
+from cocotb.monitors    import BusMonitor
+from cocotb.triggers    import RisingEdge
+from cocotb.result      import TestFailure
+from cocotb.decorators  import public  
 import Queue
 
 
@@ -68,15 +68,11 @@ class Wishbone(BusMonitor):
         if hasattr(self.bus, "err"):        
             self.bus.err.setimmediatevalue(0)
         if hasattr(self.bus, "stall"): 
-            self.bus.stall.setimmediatevalue(0) 
+            self.bus.stall.setimmediatevalue(0)
+        if hasattr(self.bus, "rty"):        
+            self.bus.rty.setimmediatevalue(0)    
     
-    @coroutine
-    def _respond(self):
-        pass
-    
-    @coroutine
-    def receive_cycle(self, arg):
-        pass
+
             
 
 class WishboneSlave(Wishbone):
@@ -102,7 +98,7 @@ class WishboneSlave(Wishbone):
         while True:        
             yield int(0), int(1)      
     
-    def defaultGen():
+    def defaultGen0():
         while True:        
             yield int(0)
             
@@ -115,10 +111,10 @@ class WishboneSlave(Wishbone):
     _res_buf        = [] # save readdata/ack/err/rty
     _clk_cycle_count = 0
     _cycle = False
-    _datGen         = defaultGen()
+    _datGen         = defaultGen0()
     _ackGen         = defaultGen1()
-    _stallWaitGen   = defaultGen()
-    _waitAckGen   = defaultGen()
+    _stallWaitGen   = defaultGen0()
+    _waitAckGen     = defaultGen0()
     _lastTime       = 0
     _stallCount     = 0
     
@@ -214,11 +210,11 @@ class WishboneSlave(Wishbone):
 
     def _respond(self):
         valid =  bool(self.bus.cyc.getvalue()) and bool(self.bus.stb.getvalue())
+        #if there is a stall signal, take it into account        
         if hasattr(self.bus, "stall"):
                 valid = valid and not bool(self.bus.stall.getvalue())
         
         if valid:
-            #if there is a stall signal, take it into account
             #wait before replying ?    
             waitAck = self._waitAckGen.next()
             #Response: rddata/don't care        
@@ -240,9 +236,8 @@ class WishboneSlave(Wishbone):
             #TODO: subtract our own stalltime or, if we're not pipelined, time since last ack    
             idleTime = self._clk_cycle_count - self._lastTime -1    
             res =  WBRes(ack=reply, sel=self.bus.sel.getvalue(), adr=self.bus.adr.getvalue(), datrd=rd, datwr=wr, waitIdle=idleTime, waitStall=self._stallCount, waitAck=waitAck)               
-            #print "#ADR: 0x%08x,0x%x DWR: %s DRD: %s REP: %s IDL: %3u STL: %3u RWA: %3u" % (res.adr, res.sel, res.datwr, res.datrd, replyTypes[res.ack], res.waitIdle, res.waitStall, res.waitAck)       
             
-           #add whats going to happen to the result buffer
+            #add whats going to happen to the result buffer
             self._res_buf.append(res)
             #add it to the reply queue for assignment. we need to process ops every cycle, so we can't do the <waitreply> delay here
             self._reply_Q.put(res)
@@ -253,7 +248,6 @@ class WishboneSlave(Wishbone):
     @coroutine
     def _monitor_recv(self):
         clkedge = RisingEdge(self.clock)
-  
         #respong and notify the callback function  
         while True:
             if int(self._cycle) < int(self.bus.cyc.getvalue()):
@@ -267,3 +261,4 @@ class WishboneSlave(Wishbone):
                 
             self._cycle = self.bus.cyc.getvalue()
             yield clkedge
+            
