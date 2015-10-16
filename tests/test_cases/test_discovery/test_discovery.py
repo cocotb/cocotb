@@ -197,7 +197,7 @@ def access_string(dut):
     tlog.info("Test writing under size")
 
     test_string = "cocotb"
-    dut.stream_in_string <= test_string
+    dut.stream_in_string.setimmediatevalue(test_string)
 
     varible_string = dut.stream_out_string
     if varible_string != '':
@@ -211,7 +211,7 @@ def access_string(dut):
     test_string = "longer_than_the_array"
     tlog.info("Test writing over size with '%s'" % test_string)
 
-    dut.stream_in_string <= test_string
+    dut.stream_in_string.setimmediatevalue(test_string)
     varible_string = dut.stream_out_string
 
     yield Timer(10)
@@ -239,7 +239,7 @@ def access_string(dut):
     for i in varible_string:
         lower = chr(i)
         upper = lower.upper()
-        i <= ord(upper)
+        i.setimmediatevalue(ord(upper))
 
     yield Timer(10)
 

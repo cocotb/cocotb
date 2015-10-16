@@ -58,8 +58,13 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
 
-    vhpi_get_value(get_handle<vhpiHandleT>(), &m_value);
-    check_vhpi_error();
+    if (0 > vhpi_get_value(get_handle<vhpiHandleT>(), &m_value)) {
+        if (vhpiSliceNameK == vhpi_get(vhpiKindP, handle)) {
+            m_value.format = vhpiEnumVecVal;
+        } else {
+            LOG_WARN("vhpi_get_value failed and not a vhpiSliceNameK");
+        }
+    }
 
     LOG_DEBUG("Found %s of format type %s (%d) format object with %d elems buffsize %d size %d",
               name.c_str(),
@@ -693,6 +698,7 @@ void vhpi_mappings(GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> &map)
     };
     map.add_to_options(vhpiCondSigAssignStmtK, &simplesig_options[0]);
     map.add_to_options(vhpiSimpleSigAssignStmtK, &simplesig_options[0]);
+    map.add_to_options(vhpiSelectSigAssignStmtK, &simplesig_options[0]);
 
     /* vhpiPortDeclK */
     map.add_to_options(vhpiPortDeclK, &sig_options[0]);
@@ -806,7 +812,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
 
             if (obj && (vhpiProcessStmtK == vhpi_get(vhpiKindP, obj))) {
                 LOG_DEBUG("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
-                                             vhpi_get_str(vhpiKindStrP, obj));
+                                              vhpi_get_str(vhpiKindStrP, obj));
                 obj=NULL;
                 continue;
             }
