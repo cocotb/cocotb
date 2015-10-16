@@ -846,12 +846,13 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
     const char *c_name = vhpi_get_str(vhpiCaseNameP, obj);
     if (!c_name) {
         int type = vhpi_get(vhpiKindP, obj);
-        LOG_WARN("Unable to get the name for this object of type %d", type);
 
         if (type < VHPI_TYPE_MIN) {
             *raw_hdl = (void*)obj;
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
+
+        LOG_DEBUG("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }
