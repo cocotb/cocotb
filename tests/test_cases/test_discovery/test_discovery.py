@@ -314,7 +314,7 @@ def skip_a_test(dut):
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
 
-@cocotb.test(skip=cocotb.LANGUAGE in ["VHDL"],
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
              expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
 def access_gate(dut):
     tlog = logging.getLogger("cocotb.test")
