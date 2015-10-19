@@ -9,40 +9,27 @@ from cocotb.decorators import public
 
 
 def is_sequence(arg):
-        return (not hasattr(arg, "strip") and
-        hasattr(arg, "__getitem__") or
-        hasattr(arg, "__iter__"))
+    return (not hasattr(arg, "strip") and
+    hasattr(arg, "__getitem__") or
+    hasattr(arg, "__iter__"))
 
 class WBAux():
     """Wishbone Auxiliary Wrapper Class, wrap meta informations on bus transaction (internal only)
     """
-    adr         = 0
-    datwr       = None     
-    sel         = 0xf
-    waitStall   = 0
-    waitIdle    = 0
-    ts          = 0
-    
-    def __init__(self, sel, adr, datwr, waitStall, waitIdle, tsStb):
+    def __init__(self, sel=0xf, adr=0, datwr=None, waitStall=0, waitIdle=0, tsStb=0):
+        self.sel        = sel        
         self.adr        = adr
         self.datwr      = datwr        
-        self.sel        = sel
+        self.waitIdle   = waitIdle
         self.waitStall  = waitStall
         self.ts         = tsStb
-        self.waitIdle   = waitIdle
+        
 
 @public
 class WBOp():
     """Wishbone Operations Wrapper Class, an attempt to wrap em tidy
     """
-    adr     = 0
-    sel     = 0xf     
-    dat     = 0
-    idle    = 0
-    
-        
-    
-    def __init__(self, adr, dat=None, idle=0, sel=0xf):
+    def __init__(self, adr=0, dat=None, idle=0, sel=0xf):
         self.adr    = adr        
         self.dat    = dat
         self.sel    = sel
@@ -52,16 +39,8 @@ class WBOp():
 class WBRes():
     """Wishbone Result Wrapper Class. What's happend on the bus plus meta information on timing
     """
-    adr         = 0
-    sel         = 0xf
-    datwr       = None    
-    datrd       = None
-    ack         = False
-    waitstall   = 0
-    waitack     = 0
-    waitidle    = 0
-    
-    def __init__(self, ack, sel, adr, datrd, datwr, waitIdle, waitStall, waitAck):
+   
+    def __init__(self, ack=0, sel=0xf, adr=0, datrd=None, datwr=None, waitIdle=0, waitStall=0, waitAck=0):
         self.ack        = ack
         self.sel        = sel
         self.adr        = adr
@@ -75,8 +54,6 @@ class WBRes():
 class Wishbone(BusDriver):
     """Wishbone
     """
-    _width = 32
-    
     _signals = ["cyc", "stb", "we", "sel", "adr", "datwr", "datrd", "ack"]
     _optional_signals = ["err", "stall", "rty"]
 
@@ -100,24 +77,21 @@ class Wishbone(BusDriver):
 class WishboneMaster(Wishbone):
     """Wishbone master
     """
-    _acked_ops          = 0     # ack cntr. comp with opbuf len. wait for equality before releasing lock
-    _res_buf            = []    # save readdata/ack/err
-    _aux_buf            = []    # save read/write order
-    _op_cnt             = 0     # number of ops we've been issued
-    _clk_cycle_count    = 0
-    _timeout            = None
-
-    
     def __init__(self, entity, name, clock, timeout=None, width=32):
-        Wishbone.__init__(self, entity, name, clock, width)
         sTo = ", no cycle timeout"        
         if not (timeout is None):
             sTo = ", cycle timeout is %u clockcycles" % timeout
+        self.busy_event         = Event("%s_busy" % name)
+        self._timeout           = timeout
+        self.busy               = False
+        self._acked_ops         = 0
+        self._res_buf           = []
+        self._aux_buf           = []
+        self._op_cnt            = 0
+        self._clk_cycle_count   = 0        
+        Wishbone.__init__(self, entity, name, clock, width)    
         self.log.info("Wishbone Master created%s" % sTo)
-        self.busy_event = Event("%s_busy" % name)
-        self.busy = False
-        self._timeout = timeout
-
+            
         
     @coroutine 
     def _clk_cycle_counter(self):
@@ -253,7 +227,7 @@ class WishboneMaster(Wishbone):
         clkedge = RisingEdge(self.clock)
         if self.busy:
             # insert requested idle cycles            
-            if idle != None:
+            if idle is not None:
                 idlecnt = idle
                 while idlecnt > 0:
                     idlecnt -= 1
@@ -275,7 +249,7 @@ class WishboneMaster(Wishbone):
             # non pipelined wishbone
             yield self._wait_ack()
         else:
-           self.log.error("Cannot drive the Wishbone bus outside a cycle!")
+            self.log.error("Cannot drive the Wishbone bus outside a cycle!")
 
 
   
@@ -295,7 +269,6 @@ class WishboneMaster(Wishbone):
             if len(arg) < 1:
                 self.log.error("List contains no operations to carry out")
             else:
-         
                 self._op_cnt = len(arg)
                 firstword = True
                 for op in arg:
@@ -306,7 +279,7 @@ class WishboneMaster(Wishbone):
                         result = []
                         yield self._open_cycle()
                         
-                    if op.dat != None:
+                    if op.dat is not None:
                         we  = 1
                         dat = op.dat
                     else:
@@ -324,7 +297,7 @@ class WishboneMaster(Wishbone):
                     res.adr         = aux.adr
                     res.waitIdle    = aux.waitIdle
                     res.waitStall   = aux.waitStall
-                    res.waitack    -= aux.ts
+                    res.waitAck    -= aux.ts
                     result.append(res)
                 
             raise ReturnValue(result)

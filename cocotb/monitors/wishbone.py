@@ -11,14 +11,7 @@ import Queue
 class WBAux():
     """Wishbone Auxiliary Wrapper Class, wrap meta informations on bus transaction (internal only)
     """
-    adr   = 0
-    datwr = None     
-    sel         = 0xf
-    waitStall   = 0
-    waitIdle    = 0
-    ts          = 0
-    
-    def __init__(self, sel, adr, datwr, waitStall, waitIdle, tsStb):
+    def __init__(self, sel=0xf, adr=0, datwr=None, waitStall=0, waitIdle=0, tsStb=0):
         self.adr        = adr
         self.datwr      = datwr        
         self.sel        = sel
@@ -30,16 +23,7 @@ class WBAux():
 class WBRes():
     """Wishbone Result Wrapper Class. What's happend on the bus plus meta information on timing
     """
-    adr   = 0
-    sel   = 0xf
-    datwr = None    
-    datrd = None
-    ack = False
-    waitstall = 0
-    waitack = 0
-    waitidle = 0
-    
-    def __init__(self, ack, sel, adr, datrd, datwr, waitIdle, waitStall, waitAck):
+    def __init__(self, ack=0, sel=0xf, adr=0, datrd=None, datwr=None, waitIdle=0, waitStall=0, waitAck=0):
         self.ack        = ack
         self.sel        = sel
         self.adr        = adr
@@ -53,7 +37,6 @@ class WBRes():
 class Wishbone(BusMonitor):
     """Wishbone
     """
-    _width = 32
     
     _signals = ["cyc", "stb", "we", "sel", "adr", "datwr", "datrd", "ack"]
     _optional_signals = ["err", "stall", "rty"]
@@ -82,7 +65,7 @@ class WishboneSlave(Wishbone):
     def bitSeqGen(self, tupleGen):
         while True: 
             [highCnt, lowCnt] = tupleGen.next()
-                #make sure there's something in here            
+            #make sure there's at least one low cycle in here            
             if lowCnt < 1:
                 lowCnt = 1
             bits=[]
@@ -94,52 +77,54 @@ class WishboneSlave(Wishbone):
                 yield bit
     
     
-    def defaultTupleGen():
+    def defaultTupleGen(self):
         while True:        
             yield int(0), int(1)      
     
-    def defaultGen0():
+    def defaultGen0(self):
         while True:        
             yield int(0)
             
-    def defaultGen1():
+    def defaultGen1(self):
         while True:        
             yield int(1)          
     
-    _acked_ops      = 0  # ack cntr. wait for equality with number of Ops before releasing lock
-    _reply_Q        = Queue.Queue() # save datwr, sel, idle
-    _res_buf        = [] # save readdata/ack/err/rty
-    _clk_cycle_count = 0
-    _cycle = False
-    _datGen         = defaultGen0()
-    _ackGen         = defaultGen1()
-    _stallWaitGen   = defaultGen0()
-    _waitAckGen     = defaultGen0()
-    _lastTime       = 0
-    _stallCount     = 0
     
-
     def __init__(self, *args, **kwargs):
         datGen = kwargs.pop('datgen', None)
         ackGen = kwargs.pop('ackgen', None)
-        waitAckGen = kwargs.pop('replywaitgen', None)
-        stallWaitGen = kwargs.pop('stallwaitgen', None)
+        waitAckGen = kwargs.pop('waitreplygen', None)
+        waitStallGen = kwargs.pop('waitstallgen', None)
+        #init instance variables    
+        self._acked_ops      = 0  # ack cntr. wait for equality with number of Ops before releasing lock
+        self._reply_Q        = Queue.Queue() # save datwr, sel, idle
+        self._res_buf        = [] # save readdata/ack/err/rty
+        self._clk_cycle_count = 0
+        self._cycle          = False
+        self._lastTime       = 0
+        self._stallCount     = 0        
+
+        #init instance generators
+        self._datGen            = self.defaultGen0()
+        if datGen is not None:
+            self._datGen        = datGen
+        self._ackGen            = self.defaultGen1()        
+        if ackGen is not None:
+            self._ackGen        = ackGen    
+        self._waitAckGen        = self.defaultGen0()
+        if waitAckGen is not None:
+            self._waitAckGen    = waitAckGen 
+        self._waitStallGen      = self.defaultTupleGen()
+        if waitStallGen is not None:
+            self._waitStallGen  = self.bitSeqGen(waitStallGen)
+            
         Wishbone.__init__(self, *args, **kwargs)
         cocotb.fork(self._stall())
         cocotb.fork(self._clk_cycle_counter())
         cocotb.fork(self._ack())
         self.log.info("Wishbone Slave created")
         
-        if waitAckGen != None:
-            self._waitAckGen  = waitAckGen 
-        if stallWaitGen != None:
-            self._stallWaitGen  = self.bitSeqGen(stallWaitGen)
-        if ackGen != None:
-            self._ackGen        = ackGen
-        if datGen != None:
-            self._datGen        = datGen
-        
-    
+       
     @coroutine 
     def _clk_cycle_counter(self):
         """
@@ -160,7 +145,7 @@ class WishboneSlave(Wishbone):
         # if stall drops, keep the value for one more clock cycle
         while True:
             if hasattr(self.bus, "stall"):
-                tmpStall = self._stallWaitGen.next()
+                tmpStall = self._waitStallGen.next()
                 self.bus.stall <= tmpStall
                 if bool(tmpStall):                                
                     self._stallCount += 1                    
@@ -188,7 +173,7 @@ class WishboneSlave(Wishbone):
                 rep = self._reply_Q.get_nowait()
                 
                 #wait <waitAck> clock cycles before replying
-                if rep.waitAck != None:
+                if rep.waitAck is not None:
                     waitcnt = rep.waitAck
                     while waitcnt > 0:
                         waitcnt -= 1
@@ -212,7 +197,7 @@ class WishboneSlave(Wishbone):
         valid =  bool(self.bus.cyc.getvalue()) and bool(self.bus.stb.getvalue())
         #if there is a stall signal, take it into account        
         if hasattr(self.bus, "stall"):
-                valid = valid and not bool(self.bus.stall.getvalue())
+            valid = valid and not bool(self.bus.stall.getvalue())
         
         if valid:
             #wait before replying ?    
@@ -235,7 +220,8 @@ class WishboneSlave(Wishbone):
             #get the time the master idled since the last operation
             #TODO: subtract our own stalltime or, if we're not pipelined, time since last ack    
             idleTime = self._clk_cycle_count - self._lastTime -1    
-            res =  WBRes(ack=reply, sel=self.bus.sel.getvalue(), adr=self.bus.adr.getvalue(), datrd=rd, datwr=wr, waitIdle=idleTime, waitStall=self._stallCount, waitAck=waitAck)               
+            res =  WBRes(ack=reply, sel=self.bus.sel.getvalue(), adr=self.bus.adr.getvalue(), 
+                         datrd=rd, datwr=wr, waitIdle=idleTime, waitStall=self._stallCount, waitAck=waitAck)               
             
             #add whats going to happen to the result buffer
             self._res_buf.append(res)
