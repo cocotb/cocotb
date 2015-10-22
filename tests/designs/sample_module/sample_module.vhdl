@@ -75,6 +75,8 @@ architecture impl of sample_module is
     );
 end component sample_module_1;
 
+  type lutType is array (0 to 3, 0 to 6) of signed(10 downto 0);
+
 function afunc(value : std_ulogic_vector) return std_ulogic_vector is
     variable i: integer;
     variable rv: std_ulogic_vector(7 downto 0);
@@ -86,6 +88,10 @@ begin
     end loop;
     return rv;
 end afunc;
+
+  signal cosLut0, sinLut0 : lutType;
+  signal cosLut1, sinLut1 : lutType;
+  signal cosLut,  sinLut  : lutType;
 
 begin
 
