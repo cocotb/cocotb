@@ -62,7 +62,8 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         if (vhpiSliceNameK == vhpi_get(vhpiKindP, handle)) {
             m_value.format = vhpiEnumVecVal;
         } else {
-            LOG_WARN("vhpi_get_value failed and not a vhpiSliceNameK");
+            LOG_DEBUG("vhpi_get_value failed and not a vhpiSliceNameK setting to vhpiRawDataVal");
+            m_value.format = vhpiRawDataVal;
         }
     }
 
@@ -113,6 +114,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         case vhpiRawDataVal: {
             // This is an internal representation - the only way to determine
             // the size is to iterate over the members and count sub-elements
+            m_num_elems = 0;
             vhpiHandleT result = NULL;
             vhpiHandleT iterator = vhpi_iterator(vhpiIndexedNames,
                                                  handle);

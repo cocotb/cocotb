@@ -261,7 +261,8 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                     LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
                     gpi_type = GPI_STRING;
                     break;
-                } else if (vhpiRawDataVal == value.format) {
+                } else if (vhpiRawDataVal == value.format ||
+                           vhpiObjTypeVal == value.format) {
                     LOG_DEBUG("Detected a RAW type %s", fq_name.c_str());
                     gpi_type = GPI_MODULE;
                     break;
