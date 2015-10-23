@@ -125,5 +125,5 @@ results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_
 	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
 
 clean::
-	rm -rf $(SIM_BUILD)
+	@rm -rf $(SIM_BUILD)
 
