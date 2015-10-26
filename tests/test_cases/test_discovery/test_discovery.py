@@ -197,7 +197,7 @@ def access_string(dut):
     tlog.info("Test writing under size")
 
     test_string = "cocotb"
-    dut.stream_in_string <= test_string
+    dut.stream_in_string.setimmediatevalue(test_string)
 
     varible_string = dut.stream_out_string
     if varible_string != '':
@@ -211,7 +211,7 @@ def access_string(dut):
     test_string = "longer_than_the_array"
     tlog.info("Test writing over size with '%s'" % test_string)
 
-    dut.stream_in_string <= test_string
+    dut.stream_in_string.setimmediatevalue(test_string)
     varible_string = dut.stream_out_string
 
     yield Timer(10)
@@ -239,7 +239,7 @@ def access_string(dut):
     for i in varible_string:
         lower = chr(i)
         upper = lower.upper()
-        i <= ord(upper)
+        i.setimmediatevalue(ord(upper))
 
     yield Timer(10)
 
@@ -314,9 +314,12 @@ def skip_a_test(dut):
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
 
-@cocotb.test(skip=cocotb.LANGUAGE in ["VHDL"],
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
              expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
 def access_gate(dut):
+    """
+    Test access to a gate Object
+    """
     tlog = logging.getLogger("cocotb.test")
 
     yield Timer(10)
@@ -326,3 +329,36 @@ def access_gate(dut):
     if not isinstance(gate, HierarchyObject):
         raise TestFailure("Gate should be HierarchyObject")
 
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def custom_type(dut):
+    """
+    Test iteration over a custom type
+    """
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(10)
+
+    new_type = dut.cosLut
+    tlog.info("cosLut object %s %s" % (new_type, type(new_type)))
+
+    expected_top = 28
+    count = 0
+
+    def _discover(obj):
+        iter_count = 0
+        for elem in obj:
+            iter_count += 1
+            iter_count += _discover(elem)
+        return iter_count
+
+    expected_sub = 11
+
+    for sub in new_type:
+        tlog.info("Sub object %s %s" % (sub, type(sub)))
+        sub_count = _discover(sub)
+        if sub_count != expected_sub:
+            raise TestFailure("Expected %d found %d under %s" % (expected_sub, sub_count, sub))
+        count += 1
+
+    if expected_top != count:
+        raise TestFailure("Expected %d found %d for cosLut" % (expected_top, count))

@@ -133,6 +133,7 @@ gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
         case vhpiSelectedNameK:
         case vhpiVarDeclK:
         case vhpiVarParamDeclK:
+        case vhpiSliceNameK:
             return GPI_REGISTER;
 
         case vhpiArrayTypeDeclK:
@@ -157,6 +158,7 @@ gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
         case vhpiProcessStmtK:
         case vhpiSimpleSigAssignStmtK:
         case vhpiCondSigAssignStmtK:
+        case vhpiSelectSigAssignStmtK:
             return GPI_MODULE;
 
         default:
@@ -187,17 +189,14 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     vhpiHandleT query_hdl;
     vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, new_hdl);
 
-    if (!base_hdl)
-        query_hdl = new_hdl;
-    else
-        query_hdl = base_hdl;
+    query_hdl = base_hdl ? base_hdl : new_hdl;
 
     vhpiIntT base_type = vhpi_get(vhpiKindP, query_hdl);
     vhpiIntT is_static = vhpi_get(vhpiStaticnessP, query_hdl);
 
     gpi_type = to_gpi_objtype(base_type);
     LOG_DEBUG("Creating %s of type %d (%s)",
-              vhpi_get_str(vhpiFullNameP, query_hdl),
+              vhpi_get_str(vhpiFullNameP, new_hdl),
               gpi_type,
               vhpi_get_str(vhpiKindStrP, query_hdl));
 
@@ -214,66 +213,75 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     }
 
     switch (base_type) {
+        case vhpiSliceNameK:
         case vhpiIndexedNameK:
-        case vhpiSelectedNameK:
-        case vhpiArrayTypeDeclK: {
-            /* This may well be an n dimensional array if it is
-               then we create a non signal object we also need to
-               look at the format of the array 
-             */
-            vhpiValueT value;
-            value.format = vhpiObjTypeVal;
-            value.bufSize = 0;
-            value.numElems = 0;
-            value.value.str = NULL;
-            vhpi_get_value(new_hdl, &value);
-            int num_elems = vhpi_get(vhpiSizeP, new_hdl);
+        case vhpiSelectedNameK: {
+            vhpiHandleT sub_type = vhpi_handle(vhpiSubtype, new_hdl);
+            if (base_hdl)
+                vhpi_release_handle(base_hdl);
 
-            if (vhpiStrVal == value.format) {
+            base_hdl = vhpi_handle(vhpiBaseType, sub_type);
+            query_hdl = base_hdl;
+            /* Drop though */
+        }
+        case vhpiArrayTypeDeclK:
+        case vhpiEnumTypeDeclK: {
+            const char *type = vhpi_get_str(vhpiNameP, query_hdl);
+            if (0 == strcmp(type, "STD_ULOGIC") ||
+                0 == strcmp(type, "STD_LOGIC") ||
+                0 == strncmp(type, "STD_ULOGIC_VECTOR", sizeof("STD_ULOGIC_VECTOR")-1) ||
+                0 == strncmp(type, "STD_LOGIC_VECTOR", sizeof("STD_LOGIC_VECTOR")-1)) {
+                LOG_DEBUG("Detected std_logic %s", fq_name.c_str());
+                logic = true;
+            } else if (0 == strcmp(type, "BOOLEAN") ||
+                       0 == strcmp(type, "boolean") ||
+                       0 == strcmp(type, "UNSIGNED")) {
+                LOG_DEBUG("Detected boolean/integer %s", fq_name.c_str());
+                gpi_type = GPI_INTEGER;
+            } else if (0 == strncmp(type, "STRING", sizeof("STRING")-1)) {
                 LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
                 gpi_type = GPI_STRING;
-                break;
-            }
-
-            if (vhpiCharVal == value.format) {
+            } else if (0 == strcmp(type, "CHARACTER") ||
+                       0 == strcmp(type, "character")) {
                 LOG_DEBUG("Detected an CHAR type %s", fq_name.c_str());
                 gpi_type = GPI_INTEGER;
-                break;
-            }
-
-            if (vhpiRawDataVal == value.format) {
-                LOG_DEBUG("Detected a RAW type %s", fq_name.c_str());
-                gpi_type = GPI_MODULE;
-                break;
-            }
-
-            /* More differences between simulators.
-               Aldec sets value.numElems regardless
-               IUS does not set for a single dimension.
-             */
-
-            if (!value.numElems || (value.numElems == num_elems)) {
-                LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
-                gpi_type = GPI_ARRAY;
-                /* Do not break as want to go into vhpiEnumTypeDeclK */
             } else {
-                LOG_DEBUG("Detected an n dimension vector type", fq_name.c_str());
-                gpi_type = GPI_MODULE;
-                modifiable = false;
-                break;
-            }
-        }
+                /* It not a standard type then we lastly try and use the format,
+                   we do this on the handle we where given on a sub type */
 
-        case vhpiEnumTypeDeclK: {
-            int num_literals = vhpi_get(vhpiNumLiteralsP, query_hdl);
-            if (num_literals == 2) {
-                logic = false;
-                gpi_type = GPI_INTEGER;
-                LOG_DEBUG("Detected boolean %s", fq_name.c_str());
-            } else {
-                logic = true;
-                LOG_DEBUG("Detected std_logic %s", fq_name.c_str());
+                vhpiValueT value;
+                value.format = vhpiObjTypeVal;
+                value.bufSize = 0;
+                value.numElems = 0;
+                value.value.str = NULL;
+                int num_elems = vhpi_get(vhpiSizeP, new_hdl);
+                vhpi_get_value(new_hdl, &value);
+
+                if (vhpiStrVal == value.format) {
+                    LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
+                    gpi_type = GPI_STRING;
+                    break;
+                } else if (vhpiRawDataVal == value.format ||
+                           vhpiObjTypeVal == value.format) {
+                    LOG_DEBUG("Detected a RAW type %s", fq_name.c_str());
+                    gpi_type = GPI_MODULE;
+                    break;
+                } else if (vhpiCharVal == value.format) {
+                    LOG_DEBUG("Detected an CHAR type %s", fq_name.c_str());
+                    gpi_type = GPI_INTEGER;
+                    break;
+                }
+
+                if (!value.numElems || (value.numElems == num_elems)) {
+                    LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
+                    gpi_type = GPI_ARRAY;
+                } else {
+                    LOG_DEBUG("Detected an n dimension valueector type", fq_name.c_str());
+                    gpi_type = GPI_MODULE;
+                    modifiable = false;
+                }
             }
+
             break;
         }
 
@@ -296,6 +304,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         case vhpiSimpleSigAssignStmtK:
         case vhpiCondSigAssignStmtK:
         case vhpiRecordTypeDeclK:
+        case vhpiSelectSigAssignStmtK:
             modifiable = false;
             break;
 

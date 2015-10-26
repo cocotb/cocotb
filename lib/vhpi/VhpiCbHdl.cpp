@@ -58,8 +58,14 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
 
-    vhpi_get_value(get_handle<vhpiHandleT>(), &m_value);
-    check_vhpi_error();
+    if (0 > vhpi_get_value(get_handle<vhpiHandleT>(), &m_value)) {
+        if (vhpiSliceNameK == vhpi_get(vhpiKindP, handle)) {
+            m_value.format = vhpiEnumVecVal;
+        } else {
+            LOG_DEBUG("vhpi_get_value failed and not a vhpiSliceNameK setting to vhpiRawDataVal");
+            m_value.format = vhpiRawDataVal;
+        }
+    }
 
     LOG_DEBUG("Found %s of format type %s (%d) format object with %d elems buffsize %d size %d",
               name.c_str(),
@@ -108,6 +114,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         case vhpiRawDataVal: {
             // This is an internal representation - the only way to determine
             // the size is to iterate over the members and count sub-elements
+            m_num_elems = 0;
             vhpiHandleT result = NULL;
             vhpiHandleT iterator = vhpi_iterator(vhpiIndexedNames,
                                                  handle);
@@ -693,6 +700,7 @@ void vhpi_mappings(GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> &map)
     };
     map.add_to_options(vhpiCondSigAssignStmtK, &simplesig_options[0]);
     map.add_to_options(vhpiSimpleSigAssignStmtK, &simplesig_options[0]);
+    map.add_to_options(vhpiSelectSigAssignStmtK, &simplesig_options[0]);
 
     /* vhpiPortDeclK */
     map.add_to_options(vhpiPortDeclK, &sig_options[0]);
@@ -806,7 +814,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
 
             if (obj && (vhpiProcessStmtK == vhpi_get(vhpiKindP, obj))) {
                 LOG_DEBUG("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
-                                             vhpi_get_str(vhpiKindStrP, obj));
+                                              vhpi_get_str(vhpiKindStrP, obj));
                 obj=NULL;
                 continue;
             }
@@ -840,12 +848,13 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
     const char *c_name = vhpi_get_str(vhpiCaseNameP, obj);
     if (!c_name) {
         int type = vhpi_get(vhpiKindP, obj);
-        LOG_WARN("Unable to get the name for this object of type %d", type);
 
         if (type < VHPI_TYPE_MIN) {
             *raw_hdl = (void*)obj;
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
+
+        LOG_DEBUG("Unable to get the name for this object of type %d", type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }

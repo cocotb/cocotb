@@ -50,6 +50,7 @@ entity sample_module is
 
         stream_out_data_comb            : out   std_ulogic_vector(7 downto 0);
         stream_out_data_registered      : out   std_ulogic_vector(7 downto 0);
+        stream_out_data_wide            : out   std_ulogic_vector(63 downto 0);
         stream_out_ready                : in    std_ulogic;
         stream_out_real                 : out   real;
         stream_out_int                  : out   integer;
@@ -74,6 +75,8 @@ architecture impl of sample_module is
     );
 end component sample_module_1;
 
+  type lutType is array (0 to 3, 0 to 6) of signed(10 downto 0);
+
 function afunc(value : std_ulogic_vector) return std_ulogic_vector is
     variable i: integer;
     variable rv: std_ulogic_vector(7 downto 0);
@@ -85,6 +88,10 @@ begin
     end loop;
     return rv;
 end afunc;
+
+  signal cosLut0, sinLut0 : lutType;
+  signal cosLut1, sinLut1 : lutType;
+  signal cosLut,  sinLut  : lutType;
 
 begin
 
@@ -100,6 +107,7 @@ stream_out_real      <= stream_in_real;
 stream_out_int       <= stream_in_int;
 stream_out_string    <= stream_in_string;
 stream_out_bool      <= stream_in_bool;
+stream_out_data_wide(3 downto 2) <= stream_in_data_wide(3 downto 2);
 
 isample_module1 : component sample_module_1
       generic map (
