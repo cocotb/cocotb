@@ -305,13 +305,13 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
 
   error:
 
-    LOG_CRITICAL("VPI: Couldn't find root handle %s", name);
+    LOG_ERROR("VPI: Couldn't find root handle %s", name);
 
     iterator = vpi_iterate(vpiModule, NULL);
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
 
-        LOG_CRITICAL("VPI: Toplevel instances: %s != %s...", name, vpi_get_str(vpiFullName, root));
+        LOG_ERROR("VPI: Toplevel instances: %s != %s...", name, vpi_get_str(vpiFullName, root));
 
         if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
             break;
@@ -406,7 +406,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     VpiCbHdl *cb_hdl = (VpiCbHdl*)cb_data->user_data;
 
     if (!cb_hdl) {
-        LOG_CRITICAL("VPI: Callback data corrupted");
+        LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
     }
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();

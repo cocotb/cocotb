@@ -62,7 +62,7 @@ Overview
 A typical cocotb testbench requires no additional RTL code. The Design Under Test (DUT) is instantiated as the toplevel in the simulator without any wrapper code. Cocotb drives stimulus onto the inputs to the DUT (or further down the hierarchy) and monitors the outputs directly from Python.
 
 
-.. image:: diagrams/svg/cocotb_overview.svg
+.. image:: diagrams/svg/cocotb_overview.*
 
 A test is simply a Python function.  At any given time either the simulator is advancing time or the Python code is executing.  The **yield** keyword is used to indicate when to pass control of execution back to the simulator.  A test can spawn multiple coroutines, allowing for independent flows of execution.
 

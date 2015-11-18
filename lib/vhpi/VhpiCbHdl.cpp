@@ -94,7 +94,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
             m_value.bufSize = m_num_elems*sizeof(vhpiEnumT);
             m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize + 1);
             if (!m_value.value.enumvs) {
-                LOG_CRITICAL("Unable to alloc mem for write buffer");
+                LOG_CRITICAL("Unable to alloc mem for write buffer: ABORTING");
             }
             LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
             break;
@@ -129,7 +129,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         }
 
         default: {
-            LOG_CRITICAL("Unable to determine property for %s (%d) format object",
+            LOG_ERROR("Unable to determine property for %s (%d) format object",
                          ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format), m_value.format);
         }
     }

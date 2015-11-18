@@ -224,8 +224,10 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
 
     if (hdl)
         return CHECK_AND_STORE(hdl);
-    else
+    else {
+        LOG_ERROR("No root handle found");
         return hdl;
+    }
 }
 
 static GpiObjHdl* __gpi_get_handle_by_name(GpiObjHdl *parent,

@@ -1,5 +1,6 @@
 ###############################################################################
-# Copyright (c) 2014 Potential Ventures Ltd
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,18 +27,40 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-.PHONY: analyse
+ifneq ($(SIM),)
+all:
+	@echo "Skipping issue_253 only runs on icarus"
+else
 
-GHDL=ghdl
+include $(COCOTB)/tests/designs/sample_module/Makefile
 
-# Compilation phase
-analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && $(GHDL) -a $(VHDL_SOURCES) && $(GHDL) -e $(TOPLEVEL)
+MODULE = issue_253
 
-results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	$(GHDL) -r --workdir=$(SIM_BUILD) $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT)
+# Redefine the Icarus rule for results.xml to not specify TOPLEVEL, test should still pass
+
+all: empty_top_level no_top_level notset_top_level
+
+results.xml:
+	@echo "Skipping"
+
+notset_top_level: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	TESTCASE=issue_253_notset TOPLEVEL= \
+	vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+	mkdir -p $@_result && mv results.xml $@_result/
+
+empty_top_level: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	TESTCASE=issue_253_empty TOPLEVEL="" \
+	vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+	mkdir -p $@_result && mv results.xml $@_result/
+
+no_top_level: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	TESTCASE=issue_253_none \
+	vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+	mkdir -p $@_result && mv results.xml $@_result/
 
 clean::
-	-@rm -rf $(SIM_BUILD)
+	@rm -rf empty_top_level_result no_top_level_result notset_top_level_result 
+endif

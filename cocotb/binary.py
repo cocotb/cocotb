@@ -262,8 +262,10 @@ class BinaryValue(object):
 
     def get_buff(self):
         """Attribute self.buff represents the value as a binary string buffer
-            e.g. vector "0000000100011111".buff == "\x01\x1F"
-            TODO: Doctest this!
+
+        >>> "0100000100101111".buff == "\x41\x2F"
+        True
+
         """
         bits = resolve(self._str)
         if len(bits) % 8:

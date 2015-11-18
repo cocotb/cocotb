@@ -1,5 +1,6 @@
 ###############################################################################
-# Copyright (c) 2014 Potential Ventures Ltd
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,18 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-.PHONY: analyse
 
-GHDL=ghdl
+include $(COCOTB)/tests/designs/avalon_module/Makefile
 
-# Compilation phase
-analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && $(GHDL) -a $(VHDL_SOURCES) && $(GHDL) -e $(TOPLEVEL)
-
-results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	$(GHDL) -r --workdir=$(SIM_BUILD) $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT)
-
-clean::
-	-@rm -rf $(SIM_BUILD)
+MODULE = test_avalon
