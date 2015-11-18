@@ -107,6 +107,13 @@ void FliImpl::sim_end(void)
     mti_Cmd(stop);
 }
 
+GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
+{
+    LOG_WARN("%s implementation can not create from raw handle",
+             get_name_c());
+    return NULL;
+}
+
 /**
  * @name    Native Check Create
  * @brief   Determine whether a simulation object is native to FLI and create
@@ -141,7 +148,7 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         return NULL;
     }
 
-    new_obj->initialise(fq_name);
+    new_obj->initialise(name, fq_name);
     return new_obj;
 }
 
@@ -209,7 +216,7 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
     LOG_DEBUG("Found toplevel: %s, creating handle....", root_name.c_str());
 
     rv = new FliRegionObjHdl(this, root);
-    rv->initialise(root_name);
+    rv->initialise(root_name, root_name);
 
     LOG_DEBUG("Returning root handle %p", rv);
     return rv;
@@ -437,12 +444,30 @@ const char* FliSignalObjHdl::get_signal_value_binstr(void)
     return m_val_buff;
 }
 
-int FliSignalObjHdl::set_signal_value(const int value)
+const char* FliSignalObjHdl::get_signal_value_str(void)
+{
+    LOG_ERROR("Getting signal value as str not currently supported");
+    return NULL;
+}
+
+double FliSignalObjHdl::get_signal_value_real(void)
+{
+    LOG_ERROR("Getting signal value as double not currently supported!");
+    return -1;
+}
+
+long FliSignalObjHdl::get_signal_value_long(void)
+{
+    LOG_ERROR("Getting signal value as long not currently supported!");
+    return -1;
+}
+
+int FliSignalObjHdl::set_signal_value(const long value)
 {
     int rc;
     char buff[20];
 
-    snprintf(buff, 20, "16#%016X", value);
+    snprintf(buff, 20, "16#%016X", (int)value);
 
     rc = mti_ForceSignal(m_fli_hdl, &buff[0], 0, MTI_FORCE_DEPOSIT, -1, -1);
 
@@ -465,7 +490,13 @@ int FliSignalObjHdl::set_signal_value(std::string &value)
     return rc-1;
 }
 
-int FliSignalObjHdl::initialise(std::string &name)
+int FliSignalObjHdl::set_signal_value(const double value)
+{
+    LOG_ERROR("Setting Signal via double not supported!");
+    return -1;
+}
+
+int FliSignalObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     /* Pre allocte buffers on signal type basis */
     m_fli_type = mti_GetTypeKind(mti_GetSignalType(m_fli_hdl));
@@ -504,7 +535,7 @@ int FliSignalObjHdl::initialise(std::string &name)
     }
     m_val_str_buff[m_val_str_len] = '\0';
 
-    GpiObjHdl::initialise(name);
+    GpiObjHdl::initialise(name, fq_name);
 
     return 0;
 }
@@ -553,19 +584,43 @@ const char* FliVariableObjHdl::get_signal_value_binstr(void)
     return m_val_buff;
 }
 
-int FliVariableObjHdl::set_signal_value(const int value)
+const char* FliVariableObjHdl::get_signal_value_str(void)
 {
-    LOG_ERROR("Setting variable value not currently supported!\n");
+    LOG_ERROR("Getting signal value as str not currently supported");
+    return "";
+}
+
+double FliVariableObjHdl::get_signal_value_real(void)
+{
+    LOG_ERROR("Getting variable value as double not currently supported!");
+    return -1;
+}
+
+long FliVariableObjHdl::get_signal_value_long(void)
+{
+    LOG_ERROR("Getting variable value as long not currently supported!");
+    return -1;
+}
+
+int FliVariableObjHdl::set_signal_value(const long value)
+{
+    LOG_ERROR("Setting variable value not currently supported!");
     return -1;
 }
 
 int FliVariableObjHdl::set_signal_value(std::string &value)
 {
-    LOG_ERROR("Setting variable value not currently supported!\n");
+    LOG_ERROR("Setting variable value not currently supported!");
     return -1;
 }
 
-int FliVariableObjHdl::initialise(std::string &name)
+int FliVariableObjHdl::set_signal_value(const double value)
+{
+    LOG_ERROR("Setting variable value not currently supported");
+    return -1;
+}
+
+int FliVariableObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     /* Pre allocte buffers on signal type basis */
     m_fli_type = mti_GetTypeKind(mti_GetVarType(m_fli_hdl));
@@ -596,9 +651,17 @@ int FliVariableObjHdl::initialise(std::string &name)
     }
     m_val_buff[m_val_len] = '\0';
 
-    GpiObjHdl::initialise(name);
+    GpiObjHdl::initialise(name, fq_name);
 
     return 0;
+}
+
+GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type)
+{
+    /* This function should return a class derived from GpiIterator and follows it's
+       interface. Specifically it's new_handle(std::string, std::string) method and
+       return values. Using VpiIterator as an example */
+    return NULL;
 }
 
 #include <unistd.h>

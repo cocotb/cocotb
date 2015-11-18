@@ -117,42 +117,70 @@ void gpi_get_sim_time(uint32_t *high, uint32_t *low);
 // Returns a handle to the root simulation object,
 // Should be freed with gpi_free_handle
 gpi_sim_hdl gpi_get_root_handle(const char *name);
-gpi_sim_hdl gpi_get_handle_by_name(const char *name, gpi_sim_hdl parent);
+gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name);
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index);
 void gpi_free_handle(gpi_sim_hdl gpi_hdl);
 
 // Types that can be passed to the iterator.
 //
 // Note these are strikingly similar to the VPI types...
-#define gpiMemory      29
-#define gpiModule      32
-#define gpiNet         36
-#define gpiParameter   41
-#define gpiReg         48
-#define gpiNetArray   114
+typedef enum gpi_objtype_e {
+    GPI_UNKNOWN = 0,
+    GPI_MEMORY = 1,
+    GPI_MODULE = 2,
+    GPI_NET = 3,
+    GPI_PARAMETER = 4,
+    GPI_REGISTER = 5,
+    GPI_ARRAY = 6,
+    GPI_ENUM = 7,
+    GPI_STRUCTURE = 8,
+    GPI_REAL = 9,
+    GPI_INTEGER = 10,
+    GPI_STRING = 11,
+} gpi_objtype_t;
+
+// When iterating, we can chose to either get child objects, drivers or loads
+typedef enum gpi_iterator_sel_e {
+    GPI_OBJECTS = 1,
+    GPI_DRIVERS = 2,
+    GPI_LOADS = 3,
+} gpi_iterator_sel_t;
+
 
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls
 //
 // NB the iterator handle may be NULL if no objects of the requested type are
 // found
-gpi_iterator_hdl gpi_iterate(uint32_t type, gpi_sim_hdl base);
+gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base, gpi_iterator_sel_t type);
 
 // Returns NULL when there are no more objects
 gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
+
+// Returns the number of objects in the collection of the handle
+int gpi_get_num_elems(gpi_sim_hdl gpi_sim_hdl);
 
 // Functions for querying the properties of a handle
 // Caller responsible for freeing the returned string.
 // This is all slightly verbose but it saves having to enumerate various value types
 // We only care about a limited subset of values.
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
+const char *gpi_get_signal_value_str(gpi_sim_hdl gpi_hdl);
+double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
+long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
+// Returns on of the types defined above e.g. gpiMemory etc.
+gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
+
+// Determine whether an object value is constant (parameters / generics etc)
+int gpi_is_constant(gpi_sim_hdl gpi_hdl);
 
 
 // Functions for setting the properties of a handle
-void gpi_set_signal_value_int(gpi_sim_hdl gpi_hdl, int value);
+void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value);
+void gpi_set_signal_value_long(gpi_sim_hdl gpi_hdl, long value);
 void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
 
 typedef enum gpi_edge {

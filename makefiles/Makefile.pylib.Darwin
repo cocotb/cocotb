@@ -29,8 +29,6 @@
 
 # All common pyhon related rules
 
-PYTHON_PREFIX = $(shell python-config --prefix)
-
 NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
 

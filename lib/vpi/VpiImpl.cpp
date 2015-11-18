@@ -26,7 +26,6 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
-#include <vector>
 
 extern "C" {
 
@@ -70,7 +69,66 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vpi_time_s.low;
 }
 
-GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name)
+gpi_objtype_t to_gpi_objtype(int32_t vpitype)
+{
+    switch (vpitype) {
+        case vpiNet:
+        case vpiNetBit:
+        case vpiReg:
+        case vpiRegBit:
+            return GPI_REGISTER;
+
+        case vpiRealVar:
+            return GPI_REAL;
+
+        case vpiInterfaceArray:
+        case vpiPackedArrayVar:
+        case vpiRegArray:
+        case vpiNetArray:
+        case vpiGenScopeArray:
+            return GPI_ARRAY;
+
+        case vpiEnumNet:
+        case vpiEnumVar:
+            return GPI_ENUM;
+
+        case vpiIntVar:
+        case vpiIntegerVar:
+        case vpiIntegerNet:
+            return GPI_INTEGER;
+
+        case vpiParameter:
+            return GPI_PARAMETER;
+
+
+        case vpiStructVar:
+            return GPI_STRUCTURE;
+
+        case vpiModport:
+        case vpiInterface:
+        case vpiModule:
+        case vpiRefObj:
+        case vpiPort:
+        case vpiAlways:
+        case vpiFunction:
+        case vpiInitial:
+        case vpiGate:
+        case vpiPrimTerm:
+        case vpiGenScope:
+            return GPI_MODULE;
+
+        case vpiStringVal:
+            return GPI_STRING;
+
+        default:
+            LOG_DEBUG("Unable to map VPI type %d onto GPI type", vpitype);
+            return GPI_UNKNOWN;
+    }
+}
+
+GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
+                                               std::string &name,
+                                               std::string &fq_name)
 {
     int32_t type;
     GpiObjHdl *new_obj = NULL;
@@ -85,13 +143,18 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiNetBit:
         case vpiReg:
         case vpiRegBit:
-        case vpiParameter:
         case vpiRegArray:
         case vpiNetArray:
         case vpiEnumNet:
         case vpiEnumVar:
         case vpiIntVar:
-            new_obj = new VpiSignalObjHdl(this, new_hdl);
+        case vpiIntegerVar:
+        case vpiIntegerNet:
+        case vpiRealVar:
+            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
+            break;
+        case vpiParameter:
+            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), true);
             break;
         case vpiStructVar:
         case vpiStructNet:
@@ -101,22 +164,67 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiInterfaceArray:
         case vpiRefObj:
         case vpiPackedArrayVar:
-            new_obj = new GpiObjHdl(this, new_hdl);
+        case vpiPort:
+        case vpiAlways:
+        case vpiFunction:
+        case vpiInitial:
+        case vpiGate:
+        case vpiPrimTerm:
+        case vpiGenScope:
+        case vpiGenScopeArray:
+            new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         default:
-            LOG_WARN("Not able to map type %d to object.", type);
+            /* We should only print a warning here if the type is really verilog,
+               It could be vhdl as some simulators allow qurying of both languages
+               via the same handle
+               */
+            const char *type_name = vpi_get_str(vpiType, new_hdl);
+            std::string unknown = "vpiUnknown";
+            if (type_name && (unknown != type_name)) {
+                LOG_DEBUG("VPI: Not able to map type %s(%d) to object.", type_name, type);
+            } else {
+                LOG_DEBUG("VPI: Simulator does not know this type (%d) via VPI", type);
+            }
             return NULL;
     }
 
-    new_obj->initialise(name);
+    new_obj->initialise(name, fq_name);
 
+    LOG_DEBUG("VPI: Created object with type was %s(%d)",
+              vpi_get_str(vpiType, new_hdl), type);
+
+    return new_obj;
+}
+
+GpiObjHdl* VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
+{
+    LOG_DEBUG("Trying to convert raw to VPI handle");
+
+    vpiHandle new_hdl = (vpiHandle)raw_hdl;
+
+    const char *c_name = vpi_get_str(vpiName, new_hdl);
+    if (!c_name) {
+        LOG_DEBUG("Unable to query name of passed in handle");
+        return NULL;
+    }
+
+    std::string name = c_name;
+    std::string fq_name = parent->get_fullname() + "." + name;
+
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+    if (new_obj == NULL) {
+        vpi_free_object(new_hdl);
+        LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
+        return NULL;
+    }
     return new_obj;
 }
 
 GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vpiHandle new_hdl;
-    std::string fq_name = parent->get_name() + "." + name;
+    std::string fq_name = parent->get_fullname() + "." + name;
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
@@ -125,10 +233,10 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
         return NULL;
     }
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, fq_name);
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to query fetch object %s", fq_name.c_str());
+        LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
         return NULL;
     }
     return new_obj;
@@ -142,15 +250,17 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 
     new_hdl = vpi_handle_by_index(vpi_hdl, index);
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to vpi_get_handle_by_index %d", index);
+        LOG_DEBUG("Unable to vpi_get_handle_by_index %u", index);
         return NULL;
     }
-    std::string name = vpi_get_str(vpiFullName, new_hdl);
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
+
+    std::string name = vpi_get_str(vpiName, new_hdl);
+    std::string fq_name = parent->get_fullname() + "." + name;
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to fetch object below entity (%s) at index (%d)",
-                                 parent->get_name_str(), index);
+        LOG_DEBUG("Unable to fetch object below entity (%s) at index (%u)",
+                  parent->get_name_str(), index);
         return NULL;
     }
     return new_obj;
@@ -166,6 +276,10 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
     check_vpi_error();
+    if (!iterator) {
+        LOG_INFO("Nothing visible via VPI");
+        return NULL;
+    }
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
 
@@ -185,8 +299,8 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     }
 
     root_name = vpi_get_str(vpiFullName, root);
-    rv = new GpiObjHdl(this, root);
-    rv->initialise(root_name);
+    rv = new GpiObjHdl(this, root, to_gpi_objtype(vpi_get(vpiType, root)));
+    rv->initialise(root_name, root_name);
 
     return rv;
 
@@ -207,6 +321,25 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     return NULL;
 }
 
+GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type)
+{
+    GpiIterator *new_iter;
+    switch (type) {
+        case GPI_OBJECTS:
+            new_iter = new VpiIterator(this, obj_hdl);
+            break;
+        case GPI_DRIVERS:
+            new_iter = new VpiSingleIterator(this, obj_hdl, vpiDriver);
+            break;
+        case GPI_LOADS:
+            new_iter = new VpiSingleIterator(this, obj_hdl, vpiLoad);
+            break;
+        default:
+            LOG_WARN("Other iterator types not implemented yet");
+            break;
+    }
+    return new_iter;
+}
 
 GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
 {

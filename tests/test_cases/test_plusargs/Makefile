@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(COCOTB)/tests/designs/plusargs_module/Makefile
+include ../../designs/plusargs_module/Makefile
 
 PLUSARGS=+foo=bar +test1 +test2 +options=fubar
 
