@@ -101,15 +101,23 @@ class RegressionManager(object):
             self._cov = coverage.coverage(branch=True, omit=["*cocotb*"])
             self._cov.start()
 
-        self._dut = cocotb.handle.SimHandle(simulator.get_root_handle(
-                                            self._root_name))
+        handle = simulator.get_root_handle(self._root_name)
+
+        self._dut = cocotb.handle.SimHandle(handle) if handle else None
+
         if self._dut is None:
             raise AttributeError("Can not find Root Handle (%s)" %
                                  self._root_name)
 
         # Auto discovery
         for module_name in self._modules:
-            module = _my_import(module_name)
+            try:
+                module = _my_import(module_name)
+            except ImportError:
+                self.log.critical("Failed to import module %s", module_name)
+                self.log.info("MODULE variable was \"%s\"",
+                                                    ",".join(self._modules))
+                raise
 
             if self._functions:
 

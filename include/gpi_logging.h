@@ -41,7 +41,7 @@
 EXTERN_C_START
 
 enum gpi_log_levels {
-    GPIDebug= 10,
+    GPIDebug = 10,
     GPIInfo = 20,
     GPIWarning = 30,
     GPIError = 40,
@@ -69,6 +69,7 @@ enum gpi_log_levels {
 void set_log_handler(void *handler);
 void set_make_record(void *makerecord);
 void set_log_filter(void *filter);
+void set_log_level(enum gpi_log_levels new_level);
 
 void gpi_log(const char *name, long level, const char *pathname, const char *funcname, long lineno, const char *msg, ...);
 

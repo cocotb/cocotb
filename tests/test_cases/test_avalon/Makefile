@@ -1,5 +1,6 @@
 ###############################################################################
-# Copyright (c) 2015 Potential Ventures Ltd
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -10,6 +11,7 @@
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
 #     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
@@ -26,6 +28,6 @@
 ###############################################################################
 
 
-include $(COCOTB)/tests/designs/viterbi_decoder_axi4s/Makefile
+include ../../designs/avalon_module/Makefile
 
-MODULE = test_iteration
+MODULE = test_avalon

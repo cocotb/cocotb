@@ -23,16 +23,46 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
-import cocotb
-from cocotb.triggers import Timer
-from cocotb.result import TestError
+import logging
 
+import cocotb
+from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, IntegerObject, ConstantObject
+from cocotb.triggers import Timer
+from cocotb.result import TestError, TestFailure
 
 @cocotb.test()
-def discovery_all(dut):
-    dut.log.info("Trying to discover")
-    yield Timer(0)
-    for thing in dut:
-        thing.log.info("Found something: %s" % thing.fullname)
+def port_not_hierarchy(dut):
+    """
+    Test for issue raised by Luke - iteration causes a toplevel port type to
+    change from from ModifiableObject to HierarchyObject
+    """
+    fails = 0
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(100)
 
-    clk = dut.aclk
+    def check_instance(obj, objtype):
+        if not isinstance(obj, objtype):
+            tlog.error("Expected %s to be of type %s but got %s" % (
+                obj._fullname, objtype.__name__, obj.__class__.__name__))
+            return 1
+        tlog.info("%s is %s" % (obj._fullname, obj.__class__.__name__))
+        return 0
+
+    fails += check_instance(dut.clk, ModifiableObject)
+    fails += check_instance(dut.i_verilog, HierarchyObject)
+    fails += check_instance(dut.i_verilog.clock, ModifiableObject)
+    fails += check_instance(dut.i_verilog.tx_data, ModifiableObject)
+
+    for _ in dut:
+        pass
+
+    for _ in dut.i_verilog:
+        pass
+
+    fails += check_instance(dut.clk, ModifiableObject)
+    fails += check_instance(dut.i_verilog, HierarchyObject)
+    fails += check_instance(dut.i_verilog.clock, ModifiableObject)
+    fails += check_instance(dut.i_verilog.tx_data, ModifiableObject)
+
+    if fails:
+        raise TestFailure("%d Failures during the test" % fails)

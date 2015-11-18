@@ -262,8 +262,10 @@ class BinaryValue(object):
 
     def get_buff(self):
         """Attribute self.buff represents the value as a binary string buffer
-            e.g. vector "0000000100011111".buff == "\x01\x1F"
-            TODO: Doctest this!
+
+        >>> "0100000100101111".buff == "\x41\x2F"
+        True
+
         """
         bits = resolve(self._str)
         if len(bits) % 8:
@@ -360,6 +362,16 @@ class BinaryValue(object):
             if char == "1":
                 return True
         return False
+
+    def __eq__(self, other):
+        if isinstance(other, BinaryValue):
+            other = other.value
+        return self.value == other
+
+    def __ne__(self, other):
+        if isinstance(other, BinaryValue):
+            other = other.value
+        return self.value != other
 
     def __cmp__(self, other):
         """Comparison against other values"""

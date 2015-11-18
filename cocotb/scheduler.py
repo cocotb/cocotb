@@ -469,6 +469,7 @@ class Scheduler(object):
         except TestComplete as test_result:
             # Tag that close down is needed, save the test_result
             # for later use in cleanup handler
+            self.log.debug("TestComplete received: %s" % test_result.__class__.__name__)
             self.finish_test(test_result)
             return
 
