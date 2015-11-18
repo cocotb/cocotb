@@ -29,11 +29,13 @@
 
 `timescale 1 ps / 1 ps
 
-typedef struct
+`ifndef __ICARUS__
+typedef struct packed
 {
     logic a_in;
     logic b_out;
 } test_if;
+`endif
 
 module sample_module (
     input                                       clk,
@@ -43,19 +45,16 @@ module sample_module (
 `ifndef __ICARUS__
     input real                                  stream_in_real,
     input  integer                              stream_in_int,
+    output real                                 stream_out_real,
+    output integer                              stream_out_int,
+    input  test_if                              inout_if,
 `endif
     input  [7:0]                                stream_in_data,
     input  [63:0]                               stream_in_data_wide,
 
     input                                       stream_out_ready,
-`ifndef __ICARUS__
-    output real                                 stream_out_real,
-    output integer                              stream_out_int,
-`endif
     output reg [7:0]                            stream_out_data_comb,
     output reg [7:0]                            stream_out_data_registered,
-
-    inout  test_if                              inout_if,
 
     output                                      and_output
 
@@ -79,6 +78,8 @@ always @(stream_in_real)
 
 always @(stream_in_int)
     stream_out_int <= stream_in_int;
+
+test_if struct_var;
 `endif
 
 and test_and_gate(and_output, stream_in_ready, stream_in_valid);

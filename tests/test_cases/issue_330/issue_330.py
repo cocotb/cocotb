@@ -7,7 +7,9 @@ from cocotb.triggers import RisingEdge, Timer, ReadOnly
 from cocotb.result import TestFailure
 from cocotb.binary import BinaryValue
 
-@cocotb.test()
+@cocotb.test(skip=cocotb.SIM_NAME in ["Icarus Verilog"],
+             expect_error=cocotb.SIM_NAME in ["ModelSim ALTERA STARTER EDITION",
+                                             "ModelSim DE"])
 def issue_330_direct(dut):
     """
     Access a structure
@@ -20,7 +22,9 @@ def issue_330_direct(dut):
 
     tlog.info("Value of inout_if => a_in = %d ; b_oout = %d" % (structure.a_in, structure.b_out))
 
-@cocotb.test()
+@cocotb.test(skip=cocotb.SIM_NAME in ["Icarus Verilog"],
+             expect_fail=cocotb.SIM_NAME in ["ModelSim ALTERA STARTER EDITION",
+                                             "ModelSim DE"])
 def issue_330_iteration(dut):
     """
     Access a structure via issue_330_iteration

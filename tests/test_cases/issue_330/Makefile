@@ -28,6 +28,6 @@
 ###############################################################################
 
 
-include ../..//designs/sample_module/Makefile
+include ../../designs/sample_module/Makefile
 
 MODULE = issue_330

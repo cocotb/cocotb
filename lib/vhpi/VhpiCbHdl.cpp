@@ -762,12 +762,10 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
     }
 
     if (NULL == iterator) {
-        std::string name = vhpi_get_str(vhpiCaseNameP, vhpi_hdl);
-        LOG_WARN("vhpi_iterate return NULL for all relationships on %s (%d) kind:%s name:%s",
-                 name.c_str(),
-                 vhpi_get(vhpiKindP, vhpi_hdl),
-                 vhpi_get_str(vhpiKindStrP, vhpi_hdl),
-                 vhpi_get_str(vhpiCaseNameP, vhpi_hdl));
+        LOG_DEBUG("vhpi_iterate return NULL for all relationships on %s (%d) kind:%s",
+                  vhpi_get_str(vhpiCaseNameP, vhpi_hdl),
+                  type,
+                  vhpi_get_str(vhpiKindStrP, vhpi_hdl));
         selected = NULL;
         return;
     }
