@@ -29,10 +29,12 @@
 
 #include <Python.h>
 #include "../compat/python3_compat.h"
+#include <gpi_logging.h>
 
 // Used to log using the standard python mechanism
 static PyObject *pLogHandler;
 static PyObject *pLogFilter;
+static enum gpi_log_levels local_level = GPIInfo;
 
 void set_log_handler(void *handler)
 {
@@ -44,6 +46,11 @@ void set_log_filter(void *filter)
 {
     pLogFilter = (PyObject *)filter;
     Py_INCREF(pLogFilter);
+}
+
+void set_log_level(enum gpi_log_levels new_level)
+{
+    local_level = new_level;
 }
 
 // Decode the level into a string matching the Python interpretation
@@ -106,7 +113,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     int n;
 
     if (!pLogHandler) {
-        if (level >= 20) {
+        if (level >= GPIInfo) {
             va_start(ap, msg);
             n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
             va_end(ap);
@@ -126,6 +133,9 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
         }
         return;
     }
+
+    if (level < local_level)
+        return;
 
     // Ignore truncation
     // calling args is level, filename, lineno, msg, function

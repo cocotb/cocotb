@@ -1,0 +1,7 @@
+UART to bus design from [OpenCores](http://opencores.org/project,uart2bus)
+
+BSD Licensed.
+
+Contains a VHDL and Verilog implementation, suitable for testing mixed
+language simulations.
+

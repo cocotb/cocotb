@@ -32,7 +32,7 @@ all:
 	@echo "Skipping issue_253 only runs on icarus"
 else
 
-include $(COCOTB)/tests/designs/sample_module/Makefile
+include ../../designs/sample_module/Makefile
 
 MODULE = issue_253
 

@@ -21,7 +21,7 @@ library dec_viterbi;
 use dec_viterbi.pkg_param.all;
 use dec_viterbi.pkg_param_derived.all;
 
-entity recursion is
+entity recursionx is
 	port(
 	clk : in std_logic;
 	rst : in std_logic;
@@ -42,9 +42,9 @@ entity recursion is
 	m_axis_output_tlast  : out std_logic;
 	m_axis_output_tready : in  std_logic
 	);
-end entity recursion;
+end entity recursionx;
 
-architecture rtl of recursion is
+architecture rtl of recursionx is
 	signal recursion_sreg : unsigned(ENCODER_MEMORY_DEPTH downto 0);
 	signal s_axis_input_tready_int  : std_logic;
 	signal m_axis_output_tvalid_int : std_logic;

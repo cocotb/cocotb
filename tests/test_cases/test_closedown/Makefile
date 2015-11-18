@@ -25,6 +25,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(COCOTB)/tests/designs/close_module/Makefile
+include ../../designs/close_module/Makefile
 
 MODULE=test_closedown

@@ -26,16 +26,39 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import cocotb
+import logging
 from cocotb.triggers import Timer
-from cocotb.result import TestError
+from cocotb.result import TestError, TestFailure
+from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject
 
+
+@cocotb.test()
+def recursive_discover(dut):
+    """Discover absolutely everything in the dut"""
+    yield Timer(0)
+    def _discover(obj):
+        for thing in obj:
+            dut._log.info("Found %s (%s)", thing._name, type(thing))
+            _discover(thing)
+    _discover(dut)
 
 @cocotb.test()
 def discover_module_values(dut):
     """Discover everything in the dut"""
     yield Timer(0)
+    count = 0
     for thing in dut:
         thing.log.info("Found something: %s" % thing.fullname)
+        count += 1
+    if count < 2:
+        raise TestFailure("Expected to discover things in the DUT")
+
+@cocotb.test(skip=True)
+def ipython_embed(dut):
+    yield Timer(0)
+    import IPython
+    IPython.embed()
+
 
 
 @cocotb.test(expect_error=True)
@@ -49,12 +72,16 @@ def discover_value_not_in_dut(dut):
 @cocotb.test()
 def access_signal(dut):
     """Access a signal using the assignment mechanism"""
+    tlog = logging.getLogger("cocotb.test")
+    signal = dut.stream_in_data
+
+    tlog.info("Signal is %s" % type(signal))
     dut.stream_in_data.setimmediatevalue(1)
     yield Timer(10)
     if dut.stream_in_data.value.integer != 1:
         raise TestError("%s.%s != %d" %
                         (str(dut.stream_in_data),
-                         dut.stream_in_data.value.integer), 1)
+                         dut.stream_in_data.value.integer, 1))
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
@@ -107,6 +134,175 @@ def access_single_bit_erroneous(dut):
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
 
+@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
+             expect_fail=cocotb.SIM_NAME in ["Riviera-PRO"])
+def access_integer(dut):
+    """Integer should show as an IntegerObject"""
+    bitfail = False
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(10)
+    test_int = dut.stream_in_int
+    if not isinstance(test_int, IntegerObject):
+        raise TestFailure("dut.stream_in_int is not an integer")
+
+    try:
+        bit = test_int[3]
+    except TestError as e:
+        tlog.info("Access to bit is an error as expected")
+        bitFail = True
+
+    if not bitFail:
+        raise TestFailure("Access into an integer should be invalid")
+
+    length = len(test_int)
+    if length is not 1:
+        raise TestFailure("Length should be 1 not %d" % length)
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_ulogic(dut):
+    """Access a std_ulogic as enum"""
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(10)
+    constant_integer = dut.stream_in_valid
+    
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_constant_integer(dut):
+    """
+    Access a constant integer
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(10)
+    constant_integer = dut.isample_module1.EXAMPLE_WIDTH
+    tlog.info("Value of EXAMPLE_WIDTH is %d" % constant_integer)
+    if not isinstance(constant_integer, ConstantObject):
+        raise TestFailure("EXAMPLE_WIDTH was not constant")
+    if constant_integer != 7:
+        raise TestFailure("EXAMPLE_WIDTH was not 7")
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_string(dut):
+    """
+    Access to a string, both constant and signal
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(10)
+    constant_string = dut.isample_module1.EXAMPLE_STRING;
+    tlog.info("%s is %s" % (constant_string, repr(constant_string)))
+    if not isinstance(constant_string, ConstantObject):
+        raise TestFailure("EXAMPLE_STRING was not constant")
+    if constant_string != "TESTING":
+        raise TestFailure("EXAMPLE_STRING was not == \'TESTING\'")
+
+    tlog.info("Test writing under size")
+
+    test_string = "cocotb"
+    dut.stream_in_string.setimmediatevalue(test_string)
+
+    varible_string = dut.stream_out_string
+    if varible_string != '':
+        raise TestFailure("%s not \'\'" % varible_string)
+
+    yield Timer(10)
+
+    if varible_string != test_string:
+        raise TestFailure("%s %s != '%s'" % (varible_string, repr(varible_string), test_string))
+
+    test_string = "longer_than_the_array"
+    tlog.info("Test writing over size with '%s'" % test_string)
+
+    dut.stream_in_string.setimmediatevalue(test_string)
+    varible_string = dut.stream_out_string
+
+    yield Timer(10)
+
+    test_string = test_string[:len(varible_string)]
+
+    if varible_string != test_string:
+        raise TestFailure("%s %s != '%s'" % (varible_string, repr(varible_string), test_string))
+
+    tlog.info("Test read access to a string character")
+
+    yield Timer(10)
+
+    idx = 3
+
+    result_slice = varible_string[idx]
+    if chr(result_slice) != test_string[idx]:
+        raise TestFailure("Single character did not match '%c' != '%c'" %
+                          (result_slice, test_string[idx]))
+
+    tlog.info("Test write access to a string character")
+
+    yield Timer(10)
+
+    for i in varible_string:
+        lower = chr(i)
+        upper = lower.upper()
+        i.setimmediatevalue(ord(upper))
+
+    yield Timer(10)
+
+    test_string = test_string.upper()
+
+    result = repr(varible_string);
+    tlog.info("After setting bytes of string value is %s" % result)
+    if varible_string != test_string:
+        raise TestFailure("%s %s != '%s'" % (varible_string, result, test_string))
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_constant_boolean(dut):
+    """Test access to a constant boolean"""
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(10)
+    constant_boolean = dut.isample_module1.EXAMPLE_BOOL
+    if not isinstance(constant_boolean, ConstantObject):
+        raise TestFailure("dut.stream_in_int.EXAMPLE_BOOL is not a ConstantObject")
+
+    tlog.info("Value of %s is %d" % (constant_boolean, constant_boolean))
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def access_boolean(dut):
+    """Test access to a boolean"""
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(10)
+    boolean = dut.stream_in_bool
+
+    return
+
+    #if not isinstance(boolean, IntegerObject):
+    #    raise TestFailure("dut.stream_in_boolean is not a IntegerObject is %s" % type(boolean))
+
+    try:
+        bit = boolean[3]
+    except TestError as e:
+        tlog.info("Access to bit is an error as expected")
+        bitFail = True
+
+    if not bitFail:
+        raise TestFailure("Access into an integer should be invalid")
+
+    length = len(boolean)
+    if length is not 1:
+        raise TestFailure("Length should be 1 not %d" % length)
+
+    tlog.info("Value of %s is %d" % (boolean, boolean))
+
+    curr_val = int(boolean)
+    output_bool = dut.stream_out_bool
+
+    tlog.info("Before  %d After = %d" % (curr_val, (not curr_val)))
+
+    boolean.setimmediatevalue(not curr_val)
+
+    yield Timer(1)
+
+    tlog.info("Value of %s is now %d" % (output_bool, output_bool))
+    if (int(curr_val) == int(output_bool)):
+        raise TestFailure("Value did not propogate")
+
 
 @cocotb.test(skip=True)
 def skip_a_test(dut):
@@ -117,3 +313,52 @@ def skip_a_test(dut):
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
+             expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
+def access_gate(dut):
+    """
+    Test access to a gate Object
+    """
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(10)
+
+    gate = dut.test_and_gate
+
+    if not isinstance(gate, HierarchyObject):
+        raise TestFailure("Gate should be HierarchyObject")
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+def custom_type(dut):
+    """
+    Test iteration over a custom type
+    """
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(10)
+
+    new_type = dut.cosLut
+    tlog.info("cosLut object %s %s" % (new_type, type(new_type)))
+
+    expected_top = 28
+    count = 0
+
+    def _discover(obj):
+        iter_count = 0
+        for elem in obj:
+            iter_count += 1
+            iter_count += _discover(elem)
+        return iter_count
+
+    expected_sub = 11
+
+    for sub in new_type:
+        tlog.info("Sub object %s %s" % (sub, type(sub)))
+        sub_count = _discover(sub)
+        if sub_count != expected_sub:
+            raise TestFailure("Expected %d found %d under %s" % (expected_sub, sub_count, sub))
+        count += 1
+
+    if expected_top != count:
+        raise TestFailure("Expected %d found %d for cosLut" % (expected_top, count))

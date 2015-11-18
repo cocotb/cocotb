@@ -25,7 +25,21 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+PWD := $(shell pwd)
+COCOTB := $(PWD)/../../..
 
-include $(COCOTB)/tests/designs/viterbi_decoder_axi4s/Makefile
+TOPLEVEL_LANG = verilog
 
-MODULE = test_iteration
+VERILOG_SOURCES = $(COCOTB)/examples/endian_swapper/hdl/endian_swapper.sv
+TOPLEVEL = endian_swapper_sv
+
+MODULE = test_iteration_es
+
+ifeq ($(SIM),)
+all:
+	@echo "Skipping test as ICAURS does not support enough VPI calls"
+clean::
+else
+	include $(COCOTB)/makefiles/Makefile.inc
+	include $(COCOTB)/makefiles/Makefile.sim
+endif

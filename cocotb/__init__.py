@@ -55,6 +55,7 @@ from cocotb.decorators import test, coroutine, function, external
 # GPI logging instance
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" not in os.environ:
+    import simulator
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)
     log = SimLog('cocotb')
@@ -66,6 +67,8 @@ if "SPHINX_BUILD" not in os.environ:
         _default_log = logging.INFO
     log.setLevel(_default_log)
     loggpi = SimLog('cocotb.gpi')
+    # Notify GPI of log level
+    simulator.log_level(_default_log)
 
 
 scheduler = Scheduler()
