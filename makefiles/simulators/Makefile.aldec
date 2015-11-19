@@ -90,7 +90,7 @@ endif
 endif
 
 # auto-detect riviera dir from system path
-export ALDEC_BIN_DIR = $(shell dirname $(shell which vsim))
+export ALDEC_BIN_DIR = $(shell dirname $(shell which riviera))
 
 ifeq ($(ALDEC_BIN_DIR),)
 $(error "Directory containing Riviera-Pro binaries must be included in system path")
