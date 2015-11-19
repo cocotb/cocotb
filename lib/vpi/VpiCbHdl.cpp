@@ -410,6 +410,23 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
     map.add_to_options(vpiModule, &module_options[0]);
     map.add_to_options(vpiGenScope, &module_options[0]);
 
+    int32_t struct_options[] = {
+        vpiNet,
+#ifndef IUS
+        vpiNetArray,
+#endif
+        vpiReg,
+        vpiRegArray,
+        vpiMemory,
+        vpiParameter,
+        vpiPrimitive,
+        vpiPrimitiveArray,
+        vpiAttribute,
+        0
+    };
+    map.add_to_options(vpiStructVar, &struct_options[0]);
+    map.add_to_options(vpiStructNet, &struct_options[0]);
+
     /* vpiNet */
     int32_t net_options[] = {
         //vpiContAssign,        // Driver and load handled separately
@@ -431,7 +448,6 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
         0
     };
     map.add_to_options(vpiNetArray, &netarray_options[0]);
-
 
     /* vpiRegArray */
     int32_t regarray_options[] = {
@@ -492,7 +508,10 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
     }
 
     if (NULL == iterator) {
-        LOG_WARN("vpi_iterate returned NULL for all types");
+        LOG_DEBUG("vpi_iterate return NULL for all relationships on %s (%d) type:%s",
+                  vpi_get_str(vpiName, vpi_hdl),
+                  type,
+                  vpi_get_str(vpiType, vpi_hdl));
         selected = NULL;
         return;
     }

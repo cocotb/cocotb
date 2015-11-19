@@ -102,6 +102,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 
 
         case vpiStructVar:
+        case vpiStructNet:
             return GPI_STRUCTURE;
 
         case vpiModport:
@@ -157,6 +158,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), true);
             break;
         case vpiStructVar:
+        case vpiStructNet:
         case vpiModule:
         case vpiInterface:
         case vpiModport:
