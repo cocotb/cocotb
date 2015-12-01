@@ -309,7 +309,7 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
     GpiObjHdl *hdl = __gpi_get_handle_by_name(base, s_name, NULL);
     if (!hdl) {
-        LOG_WARN("Failed to find a hdl named %s via any registered implementation",
+        LOG_DEBUG("Failed to find a hdl named %s via any registered implementation",
                  name);
     }
     return hdl;
