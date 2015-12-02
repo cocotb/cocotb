@@ -252,6 +252,7 @@ class AvalonMemory(BusDriver):
             if hasattr(self.bus, "readdatavalid"):
                 self._burstread = True
             self._burstwrite = True
+            self.bus.waitrequest <= 1
 
         if not self._readable and not self._writeable:
             raise TestError("Attempt to instantiate useless memory")
@@ -365,8 +366,8 @@ class AvalonMemory(BusDriver):
                         else:
                             value = 0
                             for i in range(dataByteSize):
-                                value +=\
-                                    self._mem[(addr + count)*dataByteSize + i] << i*8
+                                rvalue = self._mem[(addr + count)*dataByteSize + i]
+                                value += rvalue << i*8
                             self.log.debug("Read from address 0x%x returning 0x%x" %
                                            (addr*dataByteSize, value))
                             self._responses.append(value)
@@ -374,10 +375,47 @@ class AvalonMemory(BusDriver):
                         self._do_response()
 
             if self._writeable and self.bus.write.value:
-                addr = self.bus.address.value.integer
-                data = self.bus.writedata.value.integer
-                self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
-                self._mem[addr] = data
+                if not self._burstwrite:
+                    addr = self.bus.address.value.integer
+                    data = self.bus.writedata.value.integer
+                    self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
+                    self._mem[addr] = data
+                else:
+                    # toggle waitrequest
+                    yield edge
+                    self.bus.waitrequest <= 0
+                    # TODO: configure waitrequest time with avalon properties
+                    yield edge
+                    addr = self.bus.address.value.integer
+                    if addr % dataByteSize != 0:
+                        self.log.error("Address must be aligned to data width" +
+                                       "(addr = " + hex(addr) +
+                                       ", width = " + str(self._width))
+
+                    byteenable = self.bus.byteenable.value
+                    if byteenable != int("1"*len(self.bus.byteenable), 2):
+                        self.log.error("Only full word access is supported " +
+                                       "for burst write (byteenable must be " +
+                                       "0b" + "1" * len(self.bus.byteenable) +
+                                       ")")
+
+                    burstcount = self.bus.burstcount.value.integer
+                    if burstcount == 0:
+                        self.log.error("Write burstcount must be 1 at least")
+
+                    count = 0
+                    for count in range(burstcount):
+                        while self.bus.write.value == 0:
+                            yield edge
+                        # TODO: adding random waitrequest
+                        # self._mem is aligned on 8 bits words
+                        for i in range(dataByteSize):
+                            data = self.bus.writedata.value.integer
+                            self._mem[addr + count*dataByteSize + i] =\
+                                    (data >> (i*8)) & 0xff
+                        yield edge
+                    self.bus.waitrequest <= 1
+                    yield edge
 
 
 class AvalonST(ValidatedBusDriver):
