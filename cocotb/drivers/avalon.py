@@ -423,12 +423,12 @@ class AvalonMemory(BusDriver):
                                     yield edge
                             self.bus.waitrequest <= 0
 
-                        yield edge
                         # self._mem is aligned on 8 bits words
                         for i in range(dataByteSize):
                             data = self.bus.writedata.value.integer
                             self._mem[addr + count*dataByteSize + i] =\
                                     (data >> (i*8)) & 0xff
+                        yield edge
                     if self._avalon_properties.get("WriteBurstWaitReq", True):
                         self.bus.waitrequest <= 1
 
