@@ -387,7 +387,15 @@ class AvalonMemory(BusDriver):
                     self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
                     self._mem[addr] = data
                 else:
-                    # TODO: configure waitrequest time with avalon properties
+                    # maintain waitrequest high randomly
+                    if self._avalon_properties.get("WriteBurstWaitReq", True):
+                        self.bus.waitrequest <= 0
+                        if random.choice([True, False]):
+                            self.bus.waitrequest <= 1
+                            yield edge
+                            self.bus.waitrequest <= 0
+                            yield edge
+
                     addr = self.bus.address.value.integer
                     if addr % dataByteSize != 0:
                         self.log.error("Address must be aligned to data width" +
@@ -405,11 +413,6 @@ class AvalonMemory(BusDriver):
                     if burstcount == 0:
                         self.log.error("Write burstcount must be 1 at least")
 
-                    if self._avalon_properties.get("WriteBurstWaitReq", True):
-                        self.bus.waitrequest <= 0
-                        if random.choice([True, False]):
-                            yield edge
-
 
                     count = 0
                     for count in range(burstcount):
@@ -426,8 +429,10 @@ class AvalonMemory(BusDriver):
                         # self._mem is aligned on 8 bits words
                         for i in range(dataByteSize):
                             data = self.bus.writedata.value.integer
-                            self._mem[addr + count*dataByteSize + i] =\
-                                    (data >> (i*8)) & 0xff
+                            addrtmp = addr + count*dataByteSize + i
+                            datatmp = (data >> (i*8)) & 0xff
+                            self.log.warning("writing %02X [%016X] @ %08X"%(datatmp, data,  addrtmp))
+                            self._mem[addrtmp] = datatmp
                         yield edge
                     if self._avalon_properties.get("WriteBurstWaitReq", True):
                         self.bus.waitrequest <= 1
