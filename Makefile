@@ -68,6 +68,7 @@ src_install:
 common_install:
 	@cp -R makefiles $(FULL_INSTALL_DIR)/
 	@cp version $(FULL_INSTALL_DIR)/
+	@cp makefiles/Makefile.install $(FULL_INSTALL_DIR)/Makefile
 
 create_files:
 	bin/create_files.py $(FULL_INSTALL_DIR)

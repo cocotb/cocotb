@@ -1,0 +1,22 @@
+USER_LIB := .
+
+all : build_libs
+
+export MODELSIM_BIN_DIR = $(shell dirname $(shell which vsim))
+
+ifneq ($(MODELSIM_BIN_DIR),)
+FLI_TARGET := COCOTB_FLI_LIB
+else
+FLI_TARGET := $()
+endif
+
+include makefiles/Makefile.inc
+
+include lib/Makefile
+
+.PHONY: build_libs
+build_libs : $(COCOTB_LIBS) $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB) $($(FLI_TARGET))
+
+clean::
+	-rm -rf build
+
