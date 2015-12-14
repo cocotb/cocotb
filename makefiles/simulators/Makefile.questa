@@ -27,6 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+RTL_LIBRARY ?= work
+
 ifdef VERILOG_INCLUDE_DIRS
 VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
 endif
@@ -54,15 +56,15 @@ VSIM_ARGS += $(foreach gen, $(GENERICS),"-G $(gen)")
 endif
 
 $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
-	echo "if [file exists work] {vdel -all}" > $@
-	echo "vlib work" > $@
+	echo "if [file exists $(RTL_LIBRARY)] {vdel -all}" > $@
+	echo "vlib $(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)    
-	echo "vcom $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
+	echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
 endif
 ifneq ($(VERILOG_SOURCES),)
-	echo "vlog -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
+	echo "vlog -work $(RTL_LIBRARY) -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
 endif
-	echo "vsim $(VSIM_ARGS) $(TOPLEVEL)" >> $@
+	echo "vsim $(VSIM_ARGS) $(RTL_LIBRARY).$(TOPLEVEL)" >> $@
 ifeq ($(WAVES),1)
 	echo "log -recursive /*" >> $@
 endif
