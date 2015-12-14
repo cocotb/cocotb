@@ -57,16 +57,16 @@ localparam add_ram_output_register = "OFF";
 localparam underflow_checking = "OFF";
 localparam overflow_checking = "OFF";
 
-assign q = buf_out;
-assign empty = buf_empty;
-assign usedw = fifo_counter;
-
 reg[lpm_width-1:0]    buf_out;
 reg                   buf_empty, buf_full;
 reg[lpm_numwords :0]  fifo_counter;
 // pointer to read and write addresses
 reg[`FIFODEPTH_LOG2_DEF-1:0]  rd_ptr, wr_ptr;
 reg[lpm_width:0]      buf_mem[lpm_numwords-1 : 0];
+
+assign q = buf_out;
+assign empty = buf_empty;
+assign usedw = fifo_counter;
 
 always @(fifo_counter)
 begin
