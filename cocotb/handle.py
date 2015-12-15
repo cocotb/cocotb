@@ -48,7 +48,7 @@ import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
-from cocotb.triggers import _RisingEdge, _FallingEdge
+from cocotb.triggers import _RisingEdge, _FallingEdge, _Edge
 from cocotb.utils import get_python_integer_types
 
 # Only issue a warning for each deprecated attribute access
@@ -345,6 +345,7 @@ class NonConstantObject(NonHierarchyObject):
         NonHierarchyObject.__init__(self, handle)
         self._r_edge = _RisingEdge(self)
         self._f_edge = _FallingEdge(self)
+        self._e_edge = _Edge(self)
 
     def __hash__(self):
         return self._handle
