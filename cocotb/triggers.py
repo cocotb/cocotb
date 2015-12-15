@@ -128,31 +128,6 @@ class Timer(GPITrigger):
     def __str__(self):
         return self.__class__.__name__ + "(%dps)" % self.time_ps
 
-
-class Edge(GPITrigger):
-    """
-    Execution will resume when an edge occurs on the provided signal
-    """
-    def __init__(self, signal):
-        GPITrigger.__init__(self)
-        self.signal = signal
-
-    def prime(self, callback):
-        """Register notification of a value change via a callback"""
-        if self.cbhdl is None:
-            self.cbhdl = simulator.register_value_change_callback(self.signal.
-                                                                  _handle,
-                                                                  callback,
-                                                                  3,
-                                                                  self)
-            if self.cbhdl is None:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
-
-    def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.signal.name
-
-
 class _ReadOnly(GPITrigger):
     """
     Execution will resume when the readonly portion of the sim cycles is
@@ -229,9 +204,36 @@ def NextTimeStep():
     return _nxts
 
 
-class _RisingOrFallingEdge(Edge):
+class _Edge(GPITrigger):
+    """
+    Execution will resume when an edge occurs on the provided signal
+    """
+    def __init__(self, signal):
+        GPITrigger.__init__(self)
+        self.signal = signal
+
+    def prime(self, callback):
+        """Register notification of a value change via a callback"""
+        if self.cbhdl is None:
+            self.cbhdl = simulator.register_value_change_callback(self.signal.
+                                                                  _handle,
+                                                                  callback,
+                                                                  3,
+                                                                  self)
+            if self.cbhdl is None:
+                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+        Trigger.prime(self)
+
+    def __str__(self):
+        return self.__class__.__name__ + "(%s)" % self.signal.name
+
+def Edge(signal):
+    return signal._e_edge
+
+
+class _RisingOrFallingEdge(_Edge):
     def __init__(self, signal, rising):
-        Edge.__init__(self, signal)
+        _Edge.__init__(self, signal)
         if rising is True:
             self._rising = 1
         else:
@@ -276,7 +278,7 @@ def FallingEdge(signal):
     return signal._f_edge
 
 
-class ClockCycles(Edge):
+class ClockCycles(_Edge):
     """
     Execution will resume after N rising edges
     """
