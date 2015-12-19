@@ -10,6 +10,8 @@ python:
 before_install:
   - sudo add-apt-repository -y ppa:team-electronics/ppa
   - sudo apt-get update -qq
+  # Attempt to work-around for travis-ci issue #5301
+  - unset PYTHON_CFLAGS
 install:
   - sudo apt-get install -qq iverilog-daily
   - pip install coverage
