@@ -7,26 +7,17 @@ python:
   - "2.7"
   - "3.4"
 before_install:
-  # Attempt workaround for travis-ci/travis-ci/#5326
+  # workaround for travis-ci/travis-ci/#5326
   - export PATH=$(echo $PATH | tr ':' "\n" | sed '/\/opt\/python/d' | tr "\n" ":" | sed "s|::|:|g")
   - sudo add-apt-repository -y ppa:team-electronics/ppa
   - sudo apt-get update -qq
-  # Attempt to work-around for travis-ci issue #5301
-  - unset PYTHON_CFLAGS
 install:
   - sudo apt-get install -qq iverilog-daily
   - pip install coverage
   - pip install xunitparser
   - if [ $( python -c "from __future__ import print_function; import sys; print(sys.version_info.major)") -eq 3 ]; then ln -s /opt/python/3.4.2/bin/python3.4-config /home/travis/virtualenv/python3.4/bin/python-config; fi
   - if [ $( python -c "from __future__ import print_function; import sys; print(sys.version_info.major)") -eq 3 ]; then export LD_LIBRARY_PATH=/opt/python/3.4.2/lib:$LD_LIBRARY_PATH; fi
-  - which python-config
-  - python-config --ldflags
   - export PYTHONPATH=$PYTHONPATH:$(python -c "from __future__ import print_function; from distutils.sysconfig import get_python_lib; print(get_python_lib())") 
-  - echo $PYTHONPATH
-  - echo $LD_LIBRARY_PATH
-  - which python
-  - python --version
-  - find /home/travis/virtualenv/python2.7.9/ -name "*config*"
 script:
   - make test
 addons:
