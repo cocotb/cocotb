@@ -7,6 +7,8 @@ python:
   - "2.7"
   - "3.4"
 before_install:
+  # Attempt workaround for travis-ci/travis-ci/#5326
+  - export PATH=$(echo $PATH | tr ':' "\n" | sed '/\/opt\/python/d' | tr "\n" ":" | sed "s|::|:|g")
   - sudo add-apt-repository -y ppa:team-electronics/ppa
   - sudo apt-get update -qq
 install:
