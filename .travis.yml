@@ -22,6 +22,7 @@ install:
   - echo $LD_LIBRARY_PATH
   - which python
   - python --version
+  - find /home/travis/virtualenv/python2.7.9/ -name "*config*"
 script:
   - make test
 addons:
