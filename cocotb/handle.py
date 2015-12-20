@@ -138,7 +138,7 @@ class HierarchyObject(SimHandleBase):
         """
         if name.startswith("_") or name in self._compat_mapping:
             return object.__setattr__(self, name, value)
-        if self.__hasattr__(name):
+        if self.__hasattr__(name) is not None:
             return getattr(self, name)._setcachedvalue(value)
         raise AttributeError("Attempt to access %s which isn't present in %s" %(
             name, self._name))
