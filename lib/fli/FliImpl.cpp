@@ -100,11 +100,89 @@ void handle_fli_callback(void *data)
 
 } // extern "C"
 
+
 void FliImpl::sim_end(void)
 {
     const char *stop = "stop";
 
     mti_Cmd(stop);
+}
+
+GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
+{
+    GpiObjHdl *new_obj = NULL;
+
+    std::vector<char> writable(fq_name.begin(), fq_name.end());
+    writable.push_back('\0');
+
+    mtiRegionIdT   rgn_hdl;
+    mtiSignalIdT   sig_hdl;
+    mtiVariableIdT var_hdl;
+
+    if ((rgn_hdl = mti_FindRegion(&writable[0])) != NULL) {
+        LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), rgn_hdl);
+        new_obj = new GpiObjHdl(this, rgn_hdl, GPI_MODULE);
+    } else if ((sig_hdl = mti_FindSignal(&writable[0])) != NULL) {
+        LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), sig_hdl);
+
+        gpi_objtype_t objtype;
+        mtiTypeKindT typeKind = mti_GetTypeKind(mti_GetSignalType(sig_hdl));
+
+        switch (typeKind) {
+            case MTI_TYPE_ENUM:
+                objtype = GPI_REGISTER;  // Assumes std_logic
+                break;
+            case MTI_TYPE_SCALAR:
+            case MTI_TYPE_PHYSICAL:
+                objtype = GPI_INTEGER;
+                break;
+            case MTI_TYPE_ARRAY:
+                objtype = GPI_REGISTER;  // Assumes std_logic_vector
+                break;
+            default:
+                LOG_ERROR("Unable to handle object type for %s (%d)",
+                             name.c_str(), typeKind);
+        }
+
+        new_obj = new FliSignalObjHdl(this, sig_hdl, objtype);
+
+    } else if ((var_hdl = mti_FindVar(&writable[0])) != NULL) {
+        LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), var_hdl);
+
+        gpi_objtype_t objtype;
+        int varKind = mti_GetVarKind(var_hdl);
+        mtiTypeKindT typeKind = mti_GetTypeKind(mti_GetVarType(var_hdl));
+
+        switch (typeKind) {
+            case MTI_TYPE_ENUM:
+                objtype = GPI_REGISTER;  // Assumes std_logic
+                break;
+            case MTI_TYPE_SCALAR:
+            case MTI_TYPE_PHYSICAL:
+                objtype = GPI_INTEGER;
+                break;
+            case MTI_TYPE_ARRAY:
+                objtype = GPI_REGISTER;  // Assumes std_logic_vector
+                break;
+            default:
+                LOG_ERROR("Unable to handle object type for %s (%d)",
+                             name.c_str(), typeKind);
+        }
+
+        new_obj = new FliVariableObjHdl(this, var_hdl, objtype, (varKind != accVariable));
+    }
+    else {
+        LOG_DEBUG("Unable to query %s", fq_name.c_str());
+        return NULL;
+    }
+
+    if (NULL == new_obj) {
+        LOG_DEBUG("Didn't find anything named %s", &writable[0]);
+        return NULL;
+    }
+
+    new_obj->initialise(name,fq_name);
+    return new_obj;
 }
 
 GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
@@ -121,35 +199,19 @@ GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
  */
 GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
-    GpiObjHdl *new_obj = NULL;
-    std::string fq_name = parent->get_name() + "/" + name;
+    std::string fq_name = parent->get_fullname();
+    if (fq_name == "/") {
+        fq_name += name;
+    } else {
+        fq_name += "/" + name;
+    }
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
-    mtiRegionIdT   rgn_hdl;
-    mtiSignalIdT   sig_hdl;
-    mtiVariableIdT var_hdl;
 
     LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent->get_name_str());
 
-    if ((rgn_hdl = mti_FindRegion(&writable[0])) != NULL) {
-        LOG_DEBUG("Found a region %s -> %p", &writable[0], rgn_hdl);
-        new_obj = new FliRegionObjHdl(this, rgn_hdl);
-    } else if ((sig_hdl = mti_FindSignal(&writable[0])) != NULL) {
-        LOG_DEBUG("Found a signal %s -> %p", &writable[0], sig_hdl);
-        new_obj = new FliSignalObjHdl(this, sig_hdl);
-    } else if ((var_hdl = mti_FindVar(&writable[0])) != NULL) {
-        LOG_DEBUG("Found a variable %s -> %p", &writable[0], var_hdl);
-        new_obj = new FliVariableObjHdl(this, var_hdl);
-    }
-
-    if (NULL == new_obj) {
-        LOG_DEBUG("Didn't find anything named %s", &writable[0]);
-        return NULL;
-    }
-
-    new_obj->initialise(name, fq_name);
-    return new_obj;
+    return create_gpi_obj(name, fq_name);
 }
 
 /**
@@ -159,7 +221,18 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
  */
 GpiObjHdl*  FliImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
-    return NULL;
+    char buff[15];
+    snprintf(buff, 15, "(%u)", index);
+    std::string idx = buff;
+    std::string name = parent->get_name() + idx;
+    std::string fq_name = parent->get_fullname() + idx;
+    std::vector<char> writable(fq_name.begin(), fq_name.end());
+    writable.push_back('\0');
+
+
+    LOG_DEBUG("Looking for index %u from %s", index, parent->get_name_str());
+
+    return create_gpi_obj(name, fq_name);
 }
 
 const char *FliImpl::reason_to_string(int reason)
@@ -194,9 +267,10 @@ void FliImpl::get_sim_time(uint32_t *high, uint32_t *low)
 GpiObjHdl *FliImpl::get_root_handle(const char *name)
 {
     mtiRegionIdT root;
-    GpiObjHdl *rv;
     char *rgn_name;
+    char *rgn_fullname;
     std::string root_name;
+    std::string root_fullname;
 
     for (root = mti_GetTopRegion(); root != NULL; root = mti_NextRegion(root)) {
         LOG_DEBUG("Iterating over: %s", mti_GetRegionName(root));
@@ -208,18 +282,16 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
         goto error;
     }
 
-    rgn_name = mti_GetRegionFullName(root);
+    rgn_name     = mti_GetRegionName(root);
+    rgn_fullname = mti_GetRegionFullName(root);
 
-    root_name = rgn_name;
-    mti_VsimFree(rgn_name);
+    root_name     = rgn_name;
+    root_fullname = rgn_fullname;
+    mti_VsimFree(rgn_fullname);
 
     LOG_DEBUG("Found toplevel: %s, creating handle....", root_name.c_str());
 
-    rv = new FliRegionObjHdl(this, root);
-    rv->initialise(root_name, root_name);
-
-    LOG_DEBUG("Returning root handle %p", rv);
-    return rv;
+    return create_gpi_obj(root_name, root_fullname);
 
 error:
 
@@ -407,6 +479,8 @@ static const char value_enum[10] = "UX01ZWLH-";
 
 const char* FliSignalObjHdl::get_signal_value_binstr(void)
 {
+    mtiSignalIdT m_fli_hdl = get_handle<mtiSignalIdT>();
+
     switch (m_fli_type) {
 
         case MTI_TYPE_ENUM:
@@ -466,6 +540,8 @@ int FliSignalObjHdl::set_signal_value(const long value)
 {
     int rc;
     char buff[20];
+    mtiSignalIdT m_fli_hdl = get_handle<mtiSignalIdT>();
+
 
     snprintf(buff, 20, "16#%016X", (int)value);
 
@@ -480,6 +556,8 @@ int FliSignalObjHdl::set_signal_value(const long value)
 int FliSignalObjHdl::set_signal_value(std::string &value)
 {
     int rc;
+    mtiSignalIdT m_fli_hdl = get_handle<mtiSignalIdT>();
+
 
     snprintf(m_val_str_buff, m_val_str_len+1, "%d'b%s", m_val_len, value.c_str());
 
@@ -498,6 +576,8 @@ int FliSignalObjHdl::set_signal_value(const double value)
 
 int FliSignalObjHdl::initialise(std::string &name, std::string &fq_name)
 {
+    mtiSignalIdT m_fli_hdl = get_handle<mtiSignalIdT>();
+
     /* Pre allocte buffers on signal type basis */
     m_fli_type = mti_GetTypeKind(mti_GetSignalType(m_fli_hdl));
 
@@ -547,6 +627,8 @@ GpiCbHdl *FliVariableObjHdl::value_change_cb(unsigned int edge)
 
 const char* FliVariableObjHdl::get_signal_value_binstr(void)
 {
+    mtiVariableIdT m_fli_hdl = get_handle<mtiVariableIdT>();
+
     switch (m_fli_type) {
 
         case MTI_TYPE_ENUM:
@@ -622,6 +704,8 @@ int FliVariableObjHdl::set_signal_value(const double value)
 
 int FliVariableObjHdl::initialise(std::string &name, std::string &fq_name)
 {
+    mtiVariableIdT m_fli_hdl = get_handle<mtiVariableIdT>();
+
     /* Pre allocte buffers on signal type basis */
     m_fli_type = mti_GetTypeKind(mti_GetVarType(m_fli_hdl));
 
