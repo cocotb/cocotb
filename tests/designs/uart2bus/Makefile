@@ -29,6 +29,9 @@ endif
 ifeq ($(SIM),modelsim)
     GPI_EXTRA=fli
 endif
+ifeq ($(SIM),questa)
+    GPI_EXTRA=fli
+endif
 ifeq ($(SIM),ius)
     GPI_EXTRA=vhpi
 endif
