@@ -143,7 +143,7 @@ GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
                              name.c_str(), typeKind);
         }
 
-        new_obj = new FliSignalObjHdl(this, sig_hdl, objtype);
+        new_obj = new FliValueObjHdl(this, sig_hdl, objtype, false, false);
 
     } else if ((var_hdl = mti_FindVar(&writable[0])) != NULL) {
         LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), var_hdl);
@@ -168,7 +168,7 @@ GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
                              name.c_str(), typeKind);
         }
 
-        new_obj = new FliVariableObjHdl(this, var_hdl, objtype, (varKind != accVariable));
+        new_obj = new FliValueObjHdl(this, var_hdl, objtype, (varKind != accVariable), true);
     }
     else {
         LOG_DEBUG("Unable to query %s", fq_name.c_str());
