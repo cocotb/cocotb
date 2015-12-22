@@ -33,6 +33,13 @@
 
 #include <queue>
 
+extern "C" {
+void fli_elab_cb(void *nothing);
+void cocotb_init(void);
+void handle_fli_callback(void *data);
+}
+
+
 // Callback handles
 
 // In FLI some callbacks require us to register a process
