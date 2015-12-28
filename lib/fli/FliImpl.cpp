@@ -107,6 +107,59 @@ void FliImpl::sim_end(void)
     mti_Cmd(stop);
 }
 
+bool FliImpl::isValueConst(int kind)
+{
+    return (kind == accGeneric || kind == accVHDLConstant);
+}
+
+bool FliImpl::isValueLogic(mtiTypeIdT type)
+{
+    mtiInt32T numEnums = mti_TickLength(type);
+    if (numEnums == 2) {
+        char **enum_values = mti_GetEnumValues(type);
+        std::string str0 = enum_values[0];
+        std::string str1  = enum_values[1];
+
+        if (str0.compare("'0'") == 0 && str1.compare("'1'") == 0) {
+            return true;
+        }
+    } else if (numEnums == 9) {
+        const char enums[9][4] = {"'U'","'X'","'0'","'1'","'Z'","'W'","'L'","'H'","'-'"};
+        char **enum_values = mti_GetEnumValues(type);
+
+        for (int i = 0; i < 9; i++) {
+            std::string str = enum_values[i];
+            if (str.compare(enums[i]) != 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool FliImpl::isValueChar(mtiTypeIdT type)
+{
+    return (mti_TickLength(type) == 256);
+}
+
+bool FliImpl::isValueBoolean(mtiTypeIdT type)
+{
+    if (mti_TickLength(type) == 2) {
+        char **enum_values = mti_GetEnumValues(type);
+        std::string strFalse = enum_values[0];
+        std::string strTrue  = enum_values[1];
+
+        if (strFalse.compare("false") == 0 && strTrue.compare("true") == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
 {
     GpiObjHdl *new_obj = NULL;
@@ -114,65 +167,77 @@ GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
-    mtiRegionIdT   rgn_hdl;
-    mtiSignalIdT   sig_hdl;
-    mtiVariableIdT var_hdl;
+    void * hdl;
 
-    if ((rgn_hdl = mti_FindRegion(&writable[0])) != NULL) {
-        LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), rgn_hdl);
-        new_obj = new GpiObjHdl(this, rgn_hdl, GPI_MODULE);
-    } else if ((sig_hdl = mti_FindSignal(&writable[0])) != NULL) {
-        LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), sig_hdl);
+    if ((hdl = mti_FindRegion(&writable[0])) != NULL) {
+        LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
+        new_obj = new GpiObjHdl(this, hdl, GPI_MODULE);
+    } else {
+        bool is_var;
+        bool is_const;
+        mtiTypeIdT valType;
+        mtiTypeKindT typeKind;
 
-        gpi_objtype_t objtype;
-        mtiTypeKindT typeKind = mti_GetTypeKind(mti_GetSignalType(sig_hdl));
+        if ((hdl = mti_FindSignal(&writable[0])) != NULL) {
+            LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), hdl);
+            is_var   = false;
+            is_const = false;
+            valType  = mti_GetSignalType(static_cast<mtiSignalIdT>(hdl));
+        } else if ((hdl = mti_FindVar(&writable[0])) != NULL) {
+            LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), hdl);
+            is_var   = true;
+            is_const = isValueConst(mti_GetVarKind(static_cast<mtiVariableIdT>(hdl)));
+            valType  = mti_GetVarType(static_cast<mtiVariableIdT>(hdl));
+        } else {
+            LOG_DEBUG("Didn't find anything named %s", &writable[0]);
+            return NULL;
+        }
+
+        typeKind = mti_GetTypeKind(valType);
 
         switch (typeKind) {
             case MTI_TYPE_ENUM:
-                objtype = GPI_REGISTER;  // Assumes std_logic
+                if (isValueLogic(valType)) {
+                    new_obj = new FliLogicObjHdl(this, hdl, GPI_ENUM, is_const, is_var, valType, typeKind);
+                } else if (isValueBoolean(valType) || isValueChar(valType)) {
+                    new_obj = new FliIntObjHdl(this, hdl, GPI_INTEGER, is_const, is_var, valType, typeKind);
+                } else {
+                    new_obj = new FliEnumObjHdl(this, hdl, GPI_ENUM, is_const, is_var, valType, typeKind);
+                }
                 break;
             case MTI_TYPE_SCALAR:
             case MTI_TYPE_PHYSICAL:
-                objtype = GPI_INTEGER;
+                new_obj = new FliIntObjHdl(this, hdl, GPI_INTEGER, is_const, is_var, valType, typeKind);
                 break;
-            case MTI_TYPE_ARRAY:
-                objtype = GPI_REGISTER;  // Assumes std_logic_vector
+            case MTI_TYPE_REAL:
+                new_obj = new FliRealObjHdl(this, hdl, GPI_REAL, is_const, is_var, valType, typeKind);
                 break;
-            default:
-                LOG_ERROR("Unable to handle object type for %s (%d)",
-                             name.c_str(), typeKind);
-        }
+            case MTI_TYPE_ARRAY: {
+                    mtiTypeIdT   elemType     = mti_GetArrayElementType(valType);
+                    mtiTypeKindT elemTypeKind = mti_GetTypeKind(elemType);
 
-        new_obj = new FliValueObjHdl(this, sig_hdl, objtype, false, false);
-
-    } else if ((var_hdl = mti_FindVar(&writable[0])) != NULL) {
-        LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), var_hdl);
-
-        gpi_objtype_t objtype;
-        int varKind = mti_GetVarKind(var_hdl);
-        mtiTypeKindT typeKind = mti_GetTypeKind(mti_GetVarType(var_hdl));
-
-        switch (typeKind) {
-            case MTI_TYPE_ENUM:
-                objtype = GPI_REGISTER;  // Assumes std_logic
+                    switch (elemTypeKind) {
+                        case MTI_TYPE_ENUM:
+                            if (isValueLogic(elemType)) {
+                                new_obj = new FliLogicObjHdl(this, hdl, GPI_ARRAY, is_const, is_var, valType, typeKind); // std_logic_vector
+                            } else if (isValueChar(elemType)) {
+                                new_obj = new FliStringObjHdl(this, hdl, GPI_STRING, is_const, is_var, valType, typeKind);
+                            } else {
+                                new_obj = new GpiObjHdl(this, hdl, GPI_MODULE); // array of enums
+                            }
+                            break;
+                        default:
+                            new_obj = new GpiObjHdl(this, hdl, GPI_MODULE);// array of (array, Integer, Real, Record, etc.) 
+                    }
+                }
                 break;
-            case MTI_TYPE_SCALAR:
-            case MTI_TYPE_PHYSICAL:
-                objtype = GPI_INTEGER;
-                break;
-            case MTI_TYPE_ARRAY:
-                objtype = GPI_REGISTER;  // Assumes std_logic_vector
+            case MTI_TYPE_RECORD:
+                new_obj = new GpiObjHdl(this, hdl, GPI_STRUCTURE);
                 break;
             default:
-                LOG_ERROR("Unable to handle object type for %s (%d)",
-                             name.c_str(), typeKind);
+                LOG_ERROR("Unable to handle object type for %s (%d)", name.c_str(), typeKind);
+                return NULL;
         }
-
-        new_obj = new FliValueObjHdl(this, var_hdl, objtype, (varKind != accVariable), true);
-    }
-    else {
-        LOG_DEBUG("Unable to query %s", fq_name.c_str());
-        return NULL;
     }
 
     if (NULL == new_obj) {
@@ -180,7 +245,11 @@ GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
         return NULL;
     }
 
-    new_obj->initialise(name,fq_name);
+    if (new_obj->initialise(name,fq_name) < 0) {
+        LOG_ERROR("Failed to initialise the handle %s", name.c_str());
+        return NULL;
+    }
+
     return new_obj;
 }
 
@@ -199,15 +268,18 @@ GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     std::string fq_name = parent->get_fullname();
+
     if (fq_name == "/") {
         fq_name += name;
-    } else {
+    } else if (parent->get_type() == GPI_MODULE) {
         fq_name += "/" + name;
+    } else if (parent->get_type() == GPI_STRUCTURE) {
+        fq_name += "." + name;
+    } else {
+        LOG_ERROR("FLI: Parent of type %d must be of type GPI_MODULE or GPI_STRUCTURE to have a child.", parent->get_type());
+        return NULL;
     }
-    std::vector<char> writable(fq_name.begin(), fq_name.end());
-    writable.push_back('\0');
-
-
+ 
     LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent->get_name_str());
 
     return create_gpi_obj(name, fq_name);
@@ -220,18 +292,20 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
  */
 GpiObjHdl*  FliImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
-    char buff[15];
-    snprintf(buff, 15, "(%u)", index);
-    std::string idx = buff;
-    std::string name = parent->get_name() + idx;
-    std::string fq_name = parent->get_fullname() + idx;
-    std::vector<char> writable(fq_name.begin(), fq_name.end());
-    writable.push_back('\0');
+    if (parent->get_type() == GPI_MODULE or parent->get_type() == GPI_ARRAY) {
+        char buff[15];
+        snprintf(buff, 15, "(%u)", index);
+        std::string idx = buff;
+        std::string name = parent->get_name() + idx;
+        std::string fq_name = parent->get_fullname() + idx;
 
+        LOG_DEBUG("Looking for index %u from %s", index, parent->get_name_str());
 
-    LOG_DEBUG("Looking for index %u from %s", index, parent->get_name_str());
-
-    return create_gpi_obj(name, fq_name);
+        return create_gpi_obj(name, fq_name);
+    } else {
+        LOG_ERROR("FLI: Parent of type %d must be of type GPI_MODULE or GPI_ARRAY to have an index.", parent->get_type());
+        return NULL;
+    }
 }
 
 const char *FliImpl::reason_to_string(int reason)
