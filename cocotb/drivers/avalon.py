@@ -409,7 +409,6 @@ class AvalonMemory(BusDriver):
                     # wait for read data
                     for i in range(self._avalon_properties["readLatency"]):
                         yield edge
-
                     for count in range(burstcount):
                         if (addr + count)*self.dataByteSize not in self._mem:
                             self.log.warning(
@@ -423,7 +422,7 @@ class AvalonMemory(BusDriver):
                                 rvalue = self._mem[(addr + count)*self.dataByteSize + i]
                                 value += rvalue << i*8
                             self.log.debug("Read from address 0x%x returning 0x%x" %
-                                           (addr*self.dataByteSize, value))
+                                           ((addr + count)*self.dataByteSize, value))
                             self._responses.append(value)
                         yield edge
                         self._do_response()
