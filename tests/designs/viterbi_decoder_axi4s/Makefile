@@ -57,10 +57,10 @@ ifeq ($(SIM),aldec)
     GPI_IMPL=vhpi
 endif
 ifeq ($(SIM),modelsim)
-    GPI_IMPL=fli
+    GPI_IMPL=vhpi
 endif
 ifeq ($(SIM),questa)
-    GPI_IMPL=fli
+    GPI_IMPL=vhpi
 endif
 ifeq ($(SIM),ius)
     GPI_IMPL=vhpi
