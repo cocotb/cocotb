@@ -346,6 +346,38 @@ private:
     FliImpl *impl;
 };
 
+class FliIterator : public GpiIterator {
+public:
+    enum OneToMany {
+        OTM_END = 0,
+        OTM_CONSTANTS,  // include Generics
+        OTM_SIGNALS,
+        OTM_REGIONS,
+        OTM_SIGNAL_SUB_ELEMENTS,
+        OTM_VARIABLE_SUB_ELEMENTS
+    };
+
+    FliIterator(GpiImplInterface *impl, GpiObjHdl *hdl);
+
+    virtual ~FliIterator() { };
+
+    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl);
+
+private:
+    void populate_handle_list(OneToMany childType);
+
+private:
+    static GpiIteratorMapping<int, OneToMany> iterate_over;      /* Possible mappings */
+    std::vector<OneToMany> *selected;                            /* Mapping currently in use */
+    std::vector<OneToMany>::iterator one2many;
+
+    std::vector<void *> m_vars;
+    std::vector<void *> m_sigs;
+    std::vector<void *> m_regs;
+    std::vector<void *> *m_currentHandles;
+    std::vector<void *>::iterator m_iterator;
+};
+
 class FliImpl : public GpiImplInterface {
 public:
     FliImpl(const std::string& name) : GpiImplInterface(name),
@@ -376,13 +408,15 @@ public:
     const char *reason_to_string(int reason);
 
     /* Method to provide strings from operation types */
-    GpiObjHdl *create_gpi_obj(std::string &name, std::string &fq_name);
+    GpiObjHdl *create_gpi_obj_from_handle(void *hdl, std::string &name, std::string &fq_name);
 
 private:
     bool isValueConst(int kind);
     bool isValueLogic(mtiTypeIdT type);
     bool isValueChar(mtiTypeIdT type);
     bool isValueBoolean(mtiTypeIdT type);
+    bool isTypeValue(int type);
+    bool isTypeSignal(int type, int full_type);
 
 public:
     FliTimerCache cache;

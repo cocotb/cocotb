@@ -160,16 +160,30 @@ bool FliImpl::isValueBoolean(mtiTypeIdT type)
     return false;
 }
 
-GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
+bool FliImpl::isTypeValue(int type)
+{
+    return (type == accAlias || type == accVHDLConstant || type == accGeneric
+               || type == accVariable || type == accSignal);
+}
+
+bool FliImpl::isTypeSignal(int type, int full_type)
+{
+    return (type == accSignal || full_type == accAliasSignal);
+}
+
+GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std::string &fq_name)
 {
     GpiObjHdl *new_obj = NULL;
 
-    std::vector<char> writable(fq_name.begin(), fq_name.end());
-    writable.push_back('\0');
+    PLI_INT32 accType     = acc_fetch_type(hdl);
+    PLI_INT32 accFullType = acc_fetch_fulltype(hdl);
 
-    void * hdl;
+    if (!VS_TYPE_IS_VHDL(accFullType)) {
+        LOG_DEBUG("Handle is not a VHDL type.");
+        return NULL;
+    }
 
-    if ((hdl = mti_FindRegion(&writable[0])) != NULL) {
+    if (!isTypeValue(accType)) {
         LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
         new_obj = new GpiObjHdl(this, hdl, GPI_MODULE);
     } else {
@@ -178,19 +192,16 @@ GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
         mtiTypeIdT valType;
         mtiTypeKindT typeKind;
 
-        if ((hdl = mti_FindSignal(&writable[0])) != NULL) {
+        if (isTypeSignal(accType, accFullType)) {
             LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), hdl);
             is_var   = false;
             is_const = false;
             valType  = mti_GetSignalType(static_cast<mtiSignalIdT>(hdl));
-        } else if ((hdl = mti_FindVar(&writable[0])) != NULL) {
+        } else {
             LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), hdl);
             is_var   = true;
             is_const = isValueConst(mti_GetVarKind(static_cast<mtiVariableIdT>(hdl)));
             valType  = mti_GetVarType(static_cast<mtiVariableIdT>(hdl));
-        } else {
-            LOG_DEBUG("Didn't find anything named %s", &writable[0]);
-            return NULL;
         }
 
         typeKind = mti_GetTypeKind(valType);
@@ -241,7 +252,7 @@ GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
     }
 
     if (NULL == new_obj) {
-        LOG_DEBUG("Didn't find anything named %s", &writable[0]);
+        LOG_DEBUG("Didn't find anything named %s", fq_name.c_str());
         return NULL;
     }
 
@@ -255,9 +266,20 @@ GpiObjHdl *FliImpl::create_gpi_obj(std::string &name, std::string &fq_name)
 
 GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 {
-    LOG_WARN("%s implementation can not create from raw handle",
-             get_name_c());
-    return NULL;
+    LOG_DEBUG("Trying to convert a raw handle to an FLI Handle.");
+
+    const char * c_name     = acc_fetch_name(raw_hdl);
+    const char * c_fullname = acc_fetch_fullname(raw_hdl);
+
+    if (!c_name) {
+        LOG_DEBUG("Unable to query the name of the raw handle.");
+        return NULL;
+    }
+
+    std::string name    = c_name;
+    std::string fq_name = c_fullname;
+
+    return create_gpi_obj_from_handle(raw_hdl, name, fq_name);
 }
 
 /**
@@ -279,10 +301,26 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         LOG_ERROR("FLI: Parent of type %d must be of type GPI_MODULE or GPI_STRUCTURE to have a child.", parent->get_type());
         return NULL;
     }
- 
+
     LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent->get_name_str());
 
-    return create_gpi_obj(name, fq_name);
+    std::vector<char> writable(fq_name.begin(), fq_name.end());
+    writable.push_back('\0');
+
+    HANDLE hdl;
+
+    if ((hdl = mti_FindRegion(&writable[0])) != NULL) {
+        LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
+    } else if ((hdl = mti_FindSignal(&writable[0])) != NULL) {
+        LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), hdl);
+    } else if ((hdl = mti_FindVar(&writable[0])) != NULL) {
+        LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), hdl);
+    } else {
+        LOG_DEBUG("Didn't find anything named %s", &writable[0]);
+        return NULL;
+    }
+
+    return create_gpi_obj_from_handle(hdl, name, fq_name);
 }
 
 /**
@@ -301,7 +339,23 @@ GpiObjHdl*  FliImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 
         LOG_DEBUG("Looking for index %u from %s", index, parent->get_name_str());
 
-        return create_gpi_obj(name, fq_name);
+        std::vector<char> writable(fq_name.begin(), fq_name.end());
+        writable.push_back('\0');
+
+        HANDLE hdl;
+
+        if ((hdl = mti_FindRegion(&writable[0])) != NULL) {
+            LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
+        } else if ((hdl = mti_FindSignal(&writable[0])) != NULL) {
+            LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), hdl);
+        } else if ((hdl = mti_FindVar(&writable[0])) != NULL) {
+            LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), hdl);
+        } else {
+            LOG_DEBUG("Didn't find anything named %s", &writable[0]);
+            return NULL;
+        }
+
+        return create_gpi_obj_from_handle(hdl, name, fq_name);
     } else {
         LOG_ERROR("FLI: Parent of type %d must be of type GPI_MODULE or GPI_ARRAY to have an index.", parent->get_type());
         return NULL;
@@ -364,7 +418,7 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
 
     LOG_DEBUG("Found toplevel: %s, creating handle....", root_name.c_str());
 
-    return create_gpi_obj(root_name, root_fullname);
+    return create_gpi_obj_from_handle(root, root_name, root_fullname);
 
 error:
 
@@ -425,10 +479,304 @@ int FliImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 
 GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type)
 {
-    /* This function should return a class derived from GpiIterator and follows it's
-       interface. Specifically it's new_handle(std::string, std::string) method and
-       return values. Using VpiIterator as an example */
-    return NULL;
+    GpiIterator *new_iter = NULL;
+
+    switch (type) {
+        case GPI_OBJECTS:
+            new_iter = new FliIterator(this, obj_hdl);
+            break;
+        default:
+            LOG_WARN("Other iterator types not implemented yet");
+            break;
+    }
+
+    return new_iter;
+}
+
+void fli_mappings(GpiIteratorMapping<int, FliIterator::OneToMany> &map)
+{
+    FliIterator::OneToMany region_options[] = {
+        FliIterator::OTM_CONSTANTS,
+        FliIterator::OTM_SIGNALS,
+        FliIterator::OTM_REGIONS,
+        FliIterator::OTM_END,
+    };
+    map.add_to_options(accArchitecture, &region_options[0]);
+    map.add_to_options(accEntityVitalLevel0, &region_options[0]);
+    map.add_to_options(accArchVitalLevel0, &region_options[0]);
+    map.add_to_options(accArchVitalLevel1, &region_options[0]);
+    map.add_to_options(accBlock, &region_options[0]);
+    map.add_to_options(accCompInst, &region_options[0]);
+    map.add_to_options(accDirectInst, &region_options[0]);
+    map.add_to_options(accinlinedBlock, &region_options[0]);
+    map.add_to_options(accinlinedinnerBlock, &region_options[0]);
+    map.add_to_options(accGenerate, &region_options[0]);
+    map.add_to_options(accIfGenerate, &region_options[0]);
+    map.add_to_options(accElsifGenerate, &region_options[0]);
+    map.add_to_options(accElseGenerate, &region_options[0]);
+    map.add_to_options(accForGenerate, &region_options[0]);
+    map.add_to_options(accCaseGenerate, &region_options[0]);
+    map.add_to_options(accCaseOTHERSGenerate, &region_options[0]);
+    map.add_to_options(accConfiguration, &region_options[0]);
+
+    FliIterator::OneToMany signal_options[] = {
+        FliIterator::OTM_SIGNAL_SUB_ELEMENTS,
+        FliIterator::OTM_END,
+    };
+    map.add_to_options(accSignal, &signal_options[0]);
+    map.add_to_options(accSignalBit, &signal_options[0]);
+    map.add_to_options(accSignalSubComposite, &signal_options[0]);
+    map.add_to_options(accAliasSignal, &signal_options[0]);
+
+    FliIterator::OneToMany variable_options[] = {
+        FliIterator::OTM_VARIABLE_SUB_ELEMENTS,
+        FliIterator::OTM_END,
+    };
+    map.add_to_options(accVariable, &variable_options[0]);
+    map.add_to_options(accGeneric, &variable_options[0]);
+    map.add_to_options(accGenericConstant, &variable_options[0]);
+    map.add_to_options(accAliasConstant, &variable_options[0]);
+    map.add_to_options(accAliasGeneric, &variable_options[0]);
+    map.add_to_options(accAliasVariable, &variable_options[0]);
+    map.add_to_options(accVHDLConstant, &variable_options[0]);
+}
+
+GpiIteratorMapping<int, FliIterator::OneToMany> FliIterator::iterate_over(fli_mappings);
+
+FliIterator::FliIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(impl, hdl),
+                                                                   m_vars(),
+                                                                   m_sigs(),
+                                                                   m_regs(),
+                                                                   m_currentHandles(NULL)
+{
+    HANDLE fli_hdl = m_parent->get_handle<HANDLE>();
+
+    int type = acc_fetch_fulltype(fli_hdl);
+
+    LOG_DEBUG("fli_iterator::Create iterator for %s of type %s", m_parent->get_fullname().c_str(), acc_fetch_type_str(type));
+
+    if (NULL == (selected = iterate_over.get_options(type))) {
+        LOG_WARN("FLI: Implementation does not know how to iterate over %s(%d)",
+                 acc_fetch_type_str(type), type);
+        return;
+    }
+
+    /* Find the first mapping type that yields a valid iterator */
+    for (one2many = selected->begin(); one2many != selected->end(); one2many++) {
+        populate_handle_list(*one2many);
+
+        switch (*one2many) {
+            case FliIterator::OTM_CONSTANTS:
+            case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
+                m_currentHandles = &m_vars;
+                m_iterator = m_vars.begin();
+                break;
+            case FliIterator::OTM_SIGNALS:
+            case FliIterator::OTM_SIGNAL_SUB_ELEMENTS:
+                m_currentHandles = &m_sigs;
+                m_iterator = m_sigs.begin();
+                break;
+            case FliIterator::OTM_REGIONS:
+                m_currentHandles = &m_regs;
+                m_iterator = m_regs.begin();
+                break;
+            default:
+                LOG_WARN("Unhandled OneToMany Type (%d)", *one2many);
+        }
+
+        if (m_iterator != m_currentHandles->end())
+            break;
+
+        LOG_DEBUG("fli_iterator OneToMany=%d returned NULL", *one2many);
+    }
+
+    if (m_iterator == m_currentHandles->end()) {
+        LOG_DEBUG("fli_iterator return NULL for all relationships on %s (%d) kind:%s", 
+                  m_parent->get_name_str(), type, acc_fetch_type_str(type));
+        selected = NULL;
+        return;
+    }
+
+    LOG_DEBUG("Created iterator working from scope %d", 
+              *one2many);
+}
+
+GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl)
+{
+    HANDLE obj;
+    GpiObjHdl *new_obj;
+
+    if (!selected)
+        return GpiIterator::END;
+
+    /* We want the next object in the current mapping.
+     * If the end of mapping is reached then we want to
+     * try next one until a new object is found
+     */
+    do {
+        obj = NULL;
+
+        if (m_iterator != m_currentHandles->end()) {
+            obj = *m_iterator++;
+            break;
+        } else {
+            LOG_DEBUG("No more valid handles in the current OneToMany=%d iterator", *one2many);
+        }
+
+        if (++one2many >= selected->end()) {
+            obj = NULL;
+            break;
+        }
+
+        populate_handle_list(*one2many);
+
+        switch (*one2many) {
+            case FliIterator::OTM_CONSTANTS:
+            case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
+                m_currentHandles = &m_vars;
+                m_iterator = m_vars.begin();
+                break;
+            case FliIterator::OTM_SIGNALS:
+            case FliIterator::OTM_SIGNAL_SUB_ELEMENTS:
+                m_currentHandles = &m_sigs;
+                m_iterator = m_sigs.begin();
+                break;
+            case FliIterator::OTM_REGIONS:
+                m_currentHandles = &m_regs;
+                m_iterator = m_regs.begin();
+                break;
+            default:
+                LOG_WARN("Unhandled OneToMany Type (%d)", *one2many);
+        }
+    } while (!obj);
+
+    if (NULL == obj) {
+        LOG_DEBUG("No more children, all relationships tested");
+        return GpiIterator::END;
+    }
+
+    const char *c_name;
+    switch (*one2many) {
+        case FliIterator::OTM_CONSTANTS:
+        case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
+            c_name = mti_GetVarName(static_cast<mtiVariableIdT>(obj));
+            break;
+        case FliIterator::OTM_SIGNALS:
+            c_name = mti_GetSignalName(static_cast<mtiSignalIdT>(obj));
+            break;
+        case FliIterator::OTM_SIGNAL_SUB_ELEMENTS:
+            c_name = mti_GetSignalNameIndirect(static_cast<mtiSignalIdT>(obj), NULL, 0);
+            break;
+        case FliIterator::OTM_REGIONS:
+            c_name = mti_GetRegionName(static_cast<mtiRegionIdT>(obj));
+            break;
+        default:
+            LOG_WARN("Unhandled OneToMany Type (%d)", *one2many);
+    }
+
+    if (!c_name) {
+        int accFullType = acc_fetch_fulltype(obj);
+
+        if (!VS_TYPE_IS_VHDL(accFullType)) {
+            *raw_hdl = (void *)obj;
+            return GpiIterator::NOT_NATIVE_NO_NAME;
+        }
+
+        return GpiIterator::NATIVE_NO_NAME;
+    }
+
+    name = c_name;
+
+    if (*one2many == FliIterator::OTM_SIGNAL_SUB_ELEMENTS) {
+        mti_VsimFree((void *)c_name);
+    }
+
+    std::string fq_name = m_parent->get_fullname();
+    if (fq_name == "/") {
+        fq_name += name;
+    } else if (m_parent->get_type() == GPI_STRUCTURE) {
+        fq_name += "." + name;
+    } else {
+        fq_name += "/" + name;
+    }
+
+    FliImpl *fli_impl = reinterpret_cast<FliImpl *>(m_impl);
+    new_obj = fli_impl->create_gpi_obj_from_handle(obj, name, fq_name);
+    if (new_obj) {
+        *hdl = new_obj;
+        return GpiIterator::NATIVE;
+    } else {
+        return GpiIterator::NOT_NATIVE;
+    }
+}
+
+void FliIterator::populate_handle_list(FliIterator::OneToMany childType)
+{
+    switch (childType) {
+        case FliIterator::OTM_CONSTANTS: {
+                mtiRegionIdT parent = m_parent->get_handle<mtiRegionIdT>();
+                mtiVariableIdT id;
+
+                for (id = mti_FirstVarByRegion(parent); id; id = mti_NextVar()) {
+                    if (id) {
+                        m_vars.push_back(id);
+                    }
+                }
+            }
+            break;
+        case FliIterator::OTM_SIGNALS: {
+                mtiRegionIdT parent = m_parent->get_handle<mtiRegionIdT>();
+                mtiSignalIdT id;
+
+                for (id = mti_FirstSignal(parent); id; id = mti_NextSignal()) {
+                    if (id) {
+                        m_sigs.push_back(id);
+                    }
+                }
+            }
+            break;
+        case FliIterator::OTM_REGIONS: {
+                mtiRegionIdT parent = m_parent->get_handle<mtiRegionIdT>();
+                mtiRegionIdT id;
+
+                for (id = mti_FirstLowerRegion(parent); id; id = mti_NextRegion(id)) {
+                    if (id) {
+                        m_regs.push_back(id);
+                    }
+                }
+            }
+            break;
+        case FliIterator::OTM_SIGNAL_SUB_ELEMENTS:
+            if (m_parent->get_type() == GPI_MODULE || m_parent->get_type() == GPI_STRUCTURE) {
+                mtiSignalIdT parent = m_parent->get_handle<mtiSignalIdT>();
+
+                mtiTypeIdT type = mti_GetSignalType(parent);
+                mtiSignalIdT *ids = mti_GetSignalSubelements(parent,0);
+
+                for (int i = 0; i < mti_TickLength(type); i++) {
+                    m_sigs.push_back(ids[i]);
+                }
+
+                mti_VsimFree(ids);
+            }
+            break;
+        case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
+            if (m_parent->get_type() == GPI_MODULE || m_parent->get_type() == GPI_STRUCTURE) {
+                mtiVariableIdT parent = m_parent->get_handle<mtiVariableIdT>();
+
+                mtiTypeIdT type = mti_GetVarType(parent);
+                mtiVariableIdT *ids = mti_GetVarSubelements(parent,0);
+
+                for (int i = 0; i < mti_TickLength(type); i++) {
+                    m_vars.push_back(ids[i]);
+                }
+
+                mti_VsimFree(ids);
+            }
+            break;
+        default:
+            LOG_WARN("Unhandled OneToMany Type (%d)", childType);
+    }
 }
 
 
