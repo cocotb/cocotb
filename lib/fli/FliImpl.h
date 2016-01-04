@@ -179,14 +179,11 @@ public:
                        FliSignalObjHdl(impl, hdl, objtype, is_const, is_var),
                        m_fli_type(typeKind),
                        m_val_type(valType),
-                       m_mti_buff(NULL),
                        m_val_buff(NULL) { }
 
     virtual ~FliValueObjHdl() {
         if (m_val_buff)
             free(m_val_buff);
-        if (m_mti_buff)
-            free(m_mti_buff);
     }
 
     virtual const char* get_signal_value_binstr(void);
@@ -203,7 +200,6 @@ public:
 protected:
     mtiTypeKindT       m_fli_type;
     mtiTypeIdT         m_val_type;
-    mtiInt32T         *m_mti_buff;
     char              *m_val_buff;
 };
 
@@ -251,11 +247,15 @@ public:
                                       valType,
                                       typeKind),
                        m_ascending(false),
+                       m_mti_buff(NULL),
                        m_value_enum(NULL),
                        m_num_enum(0),
                        m_enum_map() { }
 
-    virtual ~FliLogicObjHdl() { }
+    virtual ~FliLogicObjHdl() {
+        if (m_mti_buff)
+            free(m_mti_buff);
+    }
 
     const char* get_signal_value_binstr(void);
 
@@ -267,6 +267,7 @@ public:
 
 private:
     bool                       m_ascending;
+    char                      *m_mti_buff;
     char                     **m_value_enum;    // Do Not Free
     mtiInt32T                  m_num_enum;
     std::map<char,mtiInt32T>   m_enum_map;
@@ -302,15 +303,22 @@ public:
                   bool is_var,
                   mtiTypeIdT valType,
                   mtiTypeKindT typeKind) :
-                      FliValueObjHdl(impl, hdl, objtype, is_const, is_var, valType, typeKind) { }
+                      FliValueObjHdl(impl, hdl, objtype, is_const, is_var, valType, typeKind),
+                      m_mti_buff(NULL) { }
 
-    virtual ~FliRealObjHdl() { }
+    virtual ~FliRealObjHdl() {
+        if (m_mti_buff)
+            free(m_mti_buff);
+    }
 
     double get_signal_value_real(void);
 
     int set_signal_value(const double value);
 
     int initialise(std::string &name, std::string &fq_name);
+
+private:
+    double *m_mti_buff;
 };
 
 class FliStringObjHdl : public FliValueObjHdl {
@@ -322,15 +330,22 @@ public:
                   bool is_var,
                   mtiTypeIdT valType,
                   mtiTypeKindT typeKind) :
-                      FliValueObjHdl(impl, hdl, objtype, is_const, is_var, valType, typeKind) { }
+                      FliValueObjHdl(impl, hdl, objtype, is_const, is_var, valType, typeKind),
+                      m_mti_buff(NULL) { }
 
-    virtual ~FliStringObjHdl() { }
+    virtual ~FliStringObjHdl() {
+        if (m_mti_buff)
+            free(m_mti_buff);
+    }
 
     const char* get_signal_value_str(void);
 
     int set_signal_value(std::string &value);
 
     int initialise(std::string &name, std::string &fq_name);
+
+private:
+    char *m_mti_buff;
 };
 
 class FliTimerCache {

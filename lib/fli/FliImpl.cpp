@@ -142,7 +142,8 @@ bool FliImpl::isValueLogic(mtiTypeIdT type)
 
 bool FliImpl::isValueChar(mtiTypeIdT type)
 {
-    return (mti_TickLength(type) == 256);
+    const int NUM_ENUMS_IN_CHAR_TYPE = 256;
+    return (mti_TickLength(type) == NUM_ENUMS_IN_CHAR_TYPE);
 }
 
 bool FliImpl::isValueBoolean(mtiTypeIdT type)
@@ -152,7 +153,7 @@ bool FliImpl::isValueBoolean(mtiTypeIdT type)
         std::string strFalse = enum_values[0];
         std::string strTrue  = enum_values[1];
 
-        if (strFalse.compare("false") == 0 && strTrue.compare("true") == 0) {
+        if (strFalse.compare("FALSE") == 0 && strTrue.compare("TRUE") == 0) {
             return true;
         }
     }
@@ -258,6 +259,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
 
     if (new_obj->initialise(name,fq_name) < 0) {
         LOG_ERROR("Failed to initialise the handle %s", name.c_str());
+        delete new_obj;
         return NULL;
     }
 
