@@ -81,7 +81,9 @@ class AvalonMM(BusDriver):
         if hasattr(self.bus, "cs"):
             self.bus.cs.setimmediatevalue(0)
 
-        self.bus.address.setimmediatevalue(0)
+        v = self.bus.address.value
+        v.binstr = "x" * len(self.bus.address)
+        self.bus.address.setimmediatevalue(v)
 
     def read(self, address):
         pass
@@ -140,16 +142,6 @@ class AvalonMaster(AvalonMM):
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
             yield self._wait_for_nsignal(self.bus.waitrequest)
-
-        # Assume readLatency = 1
-        # FIXME need to configure this,
-        # should take a dictionary of Avalon properties.
-        yield RisingEdge(self.clock)
-
-        # Get the data
-        yield ReadOnly()
-        data = self.bus.readdata.value
-
         yield RisingEdge(self.clock)
 
         # Deassert read
@@ -158,6 +150,24 @@ class AvalonMaster(AvalonMM):
             self.bus.byteenable <= 0
         if hasattr(self.bus, "cs"):
             self.bus.cs <= 0
+        v = self.bus.address.value
+        v.binstr = "x" * len(self.bus.address)
+        self.bus.address <= v
+
+        if hasattr(self.bus, "readdatavalid"):
+            while True:
+                yield ReadOnly()
+                if int(self.bus.readdatavalid):
+                    break
+                yield RisingEdge(self.clock)
+        else:
+            # Assume readLatency = 1 if no readdatavalid
+            # FIXME need to configure this,
+            # should take a dictionary of Avalon properties.
+            yield ReadOnly()
+
+        # Get the data
+        data = self.bus.readdata.value
 
         self._release_lock()
         raise ReturnValue(data)
@@ -196,6 +206,9 @@ class AvalonMaster(AvalonMM):
             self.bus.byteenable <= 0
         if hasattr(self.bus, "cs"):
             self.bus.cs <= 0
+        v = self.bus.address.value
+        v.binstr = "x" * len(self.bus.address)
+        self.bus.address <= v
 
         v = self.bus.writedata.value
         v.binstr = "x" * len(self.bus.writedata)

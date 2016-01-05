@@ -48,7 +48,7 @@ import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
-from cocotb.triggers import _RisingEdge, _FallingEdge
+from cocotb.triggers import _RisingEdge, _FallingEdge, _Edge
 from cocotb.utils import get_python_integer_types
 
 # Only issue a warning for each deprecated attribute access
@@ -138,7 +138,7 @@ class HierarchyObject(SimHandleBase):
         """
         if name.startswith("_") or name in self._compat_mapping:
             return object.__setattr__(self, name, value)
-        if self.__hasattr__(name):
+        if self.__hasattr__(name) is not None:
             return getattr(self, name)._setcachedvalue(value)
         raise AttributeError("Attempt to access %s which isn't present in %s" %(
             name, self._name))
@@ -345,6 +345,7 @@ class NonConstantObject(NonHierarchyObject):
         NonHierarchyObject.__init__(self, handle)
         self._r_edge = _RisingEdge(self)
         self._f_edge = _FallingEdge(self)
+        self._e_edge = _Edge(self)
 
     def __hash__(self):
         return self._handle
