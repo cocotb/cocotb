@@ -27,10 +27,10 @@ ifeq ($(SIM),aldec)
     GPI_EXTRA=vhpi
 endif
 ifeq ($(SIM),modelsim)
-    GPI_EXTRA=fli
+    GPI_EXTRA=vhpi
 endif
 ifeq ($(SIM),questa)
-    GPI_EXTRA=fli
+    GPI_EXTRA=vhpi
 endif
 ifeq ($(SIM),ius)
     GPI_EXTRA=vhpi

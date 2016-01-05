@@ -62,6 +62,9 @@ const char * GpiObjHdl::get_type_str(void)
         CASE_OPTION(GPI_ARRAY);
         CASE_OPTION(GPI_ENUM);
         CASE_OPTION(GPI_STRUCTURE);
+        CASE_OPTION(GPI_REAL);
+        CASE_OPTION(GPI_INTEGER);
+        CASE_OPTION(GPI_STRING);
         default:
             ret = "unknown";
     }
