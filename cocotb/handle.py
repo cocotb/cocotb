@@ -65,7 +65,7 @@ class SimHandleBase(object):
 
     # For backwards compatibility we support a mapping of old member names
     # which may alias with the simulator hierarchy.  In these cases the
-    # simulator takes priority, only falling back 
+    # simulator takes priority, only falling back
     _compat_mapping = {
         "log"               :       "_log",
         "fullname"          :       "_fullname",
@@ -92,6 +92,14 @@ class SimHandleBase(object):
     def __hash__(self):
         return self._handle
 
+    def __len__(self):
+        """Returns the 'length' of the underlying object.
+
+        For vectors this is the number of bits.
+        """
+        if self._len is None:
+            self._len = simulator.get_num_elems(self._handle)
+        return self._len
 
     def __eq__(self, other):
 
@@ -380,17 +388,6 @@ class NonConstantObject(NonHierarchyObject):
 
     def _get_value_str(self):
         return simulator.get_signal_val_binstr(self._handle)
-
-    def __len__(self):
-        """Returns the 'length' of the underlying object.
-
-        For vectors this is the number of bits.
-
-        TODO: Handle other types (loops, generate etc)
-        """
-        if self._len is None:
-            self._len = simulator.get_num_elems(self._handle)
-        return self._len
 
     def __eq__(self, other):
         if isinstance(other, SimHandleBase):
