@@ -657,7 +657,7 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
         return GpiIterator::END;
     }
 
-    const char *c_name;
+    char *c_name;
     switch (*one2many) {
         case FliIterator::OTM_CONSTANTS:
         case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
@@ -690,7 +690,7 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     name = c_name;
 
     if (*one2many == FliIterator::OTM_SIGNAL_SUB_ELEMENTS) {
-        mti_VsimFree((void *)c_name);
+        mti_VsimFree(c_name);
     }
 
     std::string fq_name = m_parent->get_fullname();
