@@ -27,8 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# Modelsim is 32-bit only
-ARCH:=i686
+# Modelsim is (no longer) 32-bit only
+#ARCH:=i686
 
 # Everything else is identical to Quest
 include $(SIM_ROOT)/makefiles/simulators/Makefile.questa
