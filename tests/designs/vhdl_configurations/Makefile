@@ -2,6 +2,8 @@ TOPLEVEL_LANG ?= verilog
 
 TOPLEVEL = testbench
 
+PWD=$(shell pwd)
+COCOTB?=$(PWD)/../../..
 VHDL_SOURCES = $(COCOTB)/tests/designs/vhdl_configurations/dut.vhd
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(COCOTB)/tests/designs/vhdl_configurations/testbench.sv

@@ -8,7 +8,8 @@ clean::
 
 else
 
-
+PWD=$(shell pwd)
+COCOTB?=$(PWD)/../../..
 SRC_BASE = $(COCOTB)/tests/designs/uart2bus
 
 VHDL_SOURCES =      $(SRC_BASE)/vhdl/uart2BusTop_pkg.vhd \
