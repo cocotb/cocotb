@@ -45,19 +45,27 @@ endif
 # Which does not play nice with out multi language. So we supply vhpi
 # GPI_EXTRA if needed.
 
-ifeq ($(GPI_IMPL),vpi)
+GPI_EXTRA:=
+ifeq ($(TOPLEVEL_LANG),verilog)
     GPI_ARGS = -loadvpi $(LIB_DIR)/libvpi
     EXTRA_ARGS += -sv -v93
-    HDL_SOURCES = $(VERILOG_SOURCES) $(VHDL_SOURCES)
+    HDL_SOURCES = $(VERILOG_SOURCES)
     ROOT_LEVEL = $(TOPLEVEL)
+ifneq ($(VHDL_SOURCES),)
+    HDL_SOURCES += $(VHDL_SOURCES)
+    GPI_EXTRA = vhpi 
 endif
-
-ifeq ($(GPI_IMPL),vhpi)
+else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_EXTRA = vhpi
     EXTRA_ARGS += -v93
     EXTRA_ARGS += -top $(TOPLEVEL)
     MAKE_LIB = -makelib $(TOPLEVEL)
     HDL_SOURCES = $(VHDL_SOURCES)
+ifneq ($(VHDL_SOURCES),)
+    HDL_SOURCES += $(VERILOG_SOURCES)
+endif
+else
+   $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
 GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
@@ -65,6 +73,7 @@ GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
 results.xml: $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(GPI_LIB)
 	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	irun $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS)
 
 clean::

@@ -25,8 +25,5 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-PWD := $(shell pwd)
-COCOTB := $(PWD)/../../..
-
 include ../../designs/uart2bus/Makefile
 MODULE = test_iteration

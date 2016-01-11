@@ -57,7 +57,6 @@ include $(SIM_ROOT)/makefiles/Makefile.pylib
 export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
 export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
-export GPI_EXTRA
 
 LIB_EXT     := so
 PY_EXT	    := so

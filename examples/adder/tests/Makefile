@@ -27,9 +27,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
-TOPLEVEL := adder
 TOPLEVEL_LANG ?= verilog
+
+ifneq ($(TOPLEVEL_LANG),verilog)
+
+all:
+	@echo "Skipping example due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
+clean::
+
+else
 
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
@@ -41,14 +47,13 @@ else
 WPWD=$(shell pwd)
 PYTHONPATH := $(WPWD)/../model:$(PYTHONPATH)
 endif
-export PYTHONPATH
 
 VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
-GPI_IMPL := vpi
 
-export TOPLEVEL_LANG
-
-MODULE ?= test_adder
+TOPLEVEL := adder
+MODULE   := test_adder
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
+
+endif

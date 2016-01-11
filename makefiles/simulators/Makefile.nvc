@@ -1,5 +1,13 @@
 # -*- mode: makefile-gmake -*-
 
+ifneq ($(VERILOG_SOURCES),)
+
+results.xml:
+	@echo "Skipping simulation as Verilog is not supported on simulator=$(SIM)"
+clean::
+
+else
+
 RTL_LIBRARY ?= work
 
 .PHONY: analyse
@@ -13,9 +21,10 @@ results.xml: analyse $(COCOTB_LIBS) $(COCOTB_VHPI_LIB)
 		nvc --work=$(RTL_LIBRARY) -e $(TOPLEVEL)
 	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 		LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-		TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+		TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 		LD_LIBRARY_PATH=$(LIB_DIR) \
 		nvc --work=$(RTL_LIBRARY) -r --load $(COCOTB_VHPI_LIB) $(TOPLEVEL)
 
 clean::
 	-@rm -rf $(SIM_BUILD)
+endif
