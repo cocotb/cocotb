@@ -25,9 +25,5 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-PWD := $(shell pwd)
-COCOTB := $(PWD)/../../..
-TOPLEVEL_LANG?=vhdl
-
 include ../../designs/vhdl_configurations/Makefile
 MODULE = test_configurations

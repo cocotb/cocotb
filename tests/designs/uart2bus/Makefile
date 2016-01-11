@@ -1,6 +1,15 @@
-SRC_BASE = $(COCOTB)/tests/designs/uart2bus
-
 TOPLEVEL_LANG ?= verilog
+
+ifneq ($(TOPLEVEL_LANG),verilog)
+
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
+clean::
+
+else
+
+
+SRC_BASE = $(COCOTB)/tests/designs/uart2bus
 
 VHDL_SOURCES =      $(SRC_BASE)/vhdl/uart2BusTop_pkg.vhd \
                     $(SRC_BASE)/vhdl/baudGen.vhd \
@@ -17,35 +26,10 @@ VERILOG_SOURCES =   $(SRC_BASE)/verilog/baud_gen.v \
                     $(SRC_BASE)/verilog/uart_top.v \
                     $(SRC_BASE)/verilog/uart2bus_top.v
 
-GPI_EXTRA:=
-ifeq ($(TOPLEVEL_LANG),verilog)
-    VERILOG_SOURCES += $(SRC_BASE)/top/verilog_toplevel.v
-    TOPLEVEL = verilog_toplevel
-    GPI_IMPL=vpi
+VERILOG_SOURCES += $(SRC_BASE)/top/verilog_toplevel.v
+TOPLEVEL = verilog_toplevel
 
-ifeq ($(SIM),aldec)
-    GPI_EXTRA=vhpi
-endif
-ifeq ($(SIM),modelsim)
-    GPI_EXTRA=vhpi
-endif
-ifeq ($(SIM),questa)
-    GPI_EXTRA=vhpi
-endif
-ifeq ($(SIM),ius)
-    GPI_EXTRA=vhpi
-endif
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim
 
-else
-$(error "Only verilog toplevel supported at the moment")
 endif
-
-ifneq ($(GPI_EXTRA),)
-	include $(COCOTB)/makefiles/Makefile.inc
-	include $(COCOTB)/makefiles/Makefile.sim
-else
-all:
-	@echo "Skipping test as VHDL not supported on simulator=$(SIM)"
-clean::
-endif
-

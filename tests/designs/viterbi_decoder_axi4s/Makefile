@@ -25,7 +25,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-TOPLEVEL_LANG = vhdl
+TOPLEVEL_LANG ?= vhdl
+
+ifneq ($(TOPLEVEL_LANG),vhdl)
+
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being vhdl"
+clean::
+
+else
 
 TOPLEVEL = dec_viterbi
 
@@ -52,25 +60,7 @@ VHDL_SOURCES = $(SRC_BASE)/packages/pkg_helper.vhd \
 	       $(SRC_BASE)/src/recursion.vhd \
 	       $(SRC_BASE)/src/dec_viterbi.vhd \
 
-GPI_IMPL:=
-ifeq ($(SIM),aldec)
-    GPI_IMPL=vhpi
-endif
-ifeq ($(SIM),modelsim)
-    GPI_IMPL=vhpi
-endif
-ifeq ($(SIM),questa)
-    GPI_IMPL=vhpi
-endif
-ifeq ($(SIM),ius)
-    GPI_IMPL=vhpi
-endif
-
-ifneq ($(GPI_IMPL),)
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
-else
-all:
-	@echo "Skipping test as VHDL not supported on simulator=$(SIM)"
-clean::
+
 endif

@@ -27,6 +27,14 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+ifneq ($(VHDL_SOURCES),)
+
+results.xml:
+	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
+clean::
+
+else
+
 ifeq ($(ARCH),x86_64)
 EXTRA_ARGS += -full64
 endif
@@ -48,6 +56,7 @@ $(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(COCOTB
 # Execution phase
 results.xml: $(SIM_BUILD)/simv $(PYTHON_FILES) $(CUSTOM_SIM_DEPS)
 	-PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+		TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $(SIM_BUILD)/simv +define+COCOTB_SIM=1 $(SIM_ARGS) $(EXTRA_ARGS)
 
 
@@ -58,4 +67,4 @@ clean::
 	-@rm -rf cm.log
 	-@rm -rf results.xml
 	-@rm -rf ucli.key
-
+endif

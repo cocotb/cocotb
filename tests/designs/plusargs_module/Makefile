@@ -27,6 +27,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+TOPLEVEL_LANG ?= verilog
+
+ifneq ($(TOPLEVEL_LANG),verilog)
+
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
+clean::
+
+else
 
 TOPLEVEL = tb_top
 
@@ -44,3 +53,4 @@ VERILOG_SOURCES = $(COCOTB)/tests/designs/plusargs_module/tb_top.v
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
 
+endif

@@ -29,13 +29,6 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
-# Default to VPI layer for now, override this for VHPI
-GPI_IMPL ?= vpi
-
-ifndef GPI_IMPL
-   $(error "Unable to determine appropriate GPI layer to use")
-endif
-
 
 # FIXME it's a bit nasty to have the source files listed here as dependencies
 # but better than re-building the libraries every time.
