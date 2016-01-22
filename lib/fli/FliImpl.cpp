@@ -376,10 +376,11 @@ const char *FliImpl::reason_to_string(int reason)
  *
  * NB units depend on the simulation configuration
  */
-void FliImpl::get_sim_time(uint32_t *high, uint32_t *low)
+void FliImpl::get_sim_time(uint32_t *high, uint32_t *low, int32_t *precision)
 {
     *high = mti_NowUpper();
     *low = mti_Now();
+    *precision = 0;
 }
 
 /**

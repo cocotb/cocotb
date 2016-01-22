@@ -403,7 +403,7 @@ public:
 
      /* Sim related */
     void sim_end(void);
-    void get_sim_time(uint32_t *high, uint32_t *low);
+    void get_sim_time(uint32_t *high, uint32_t *low, int32_t *precision);
 
     /* Hierachy related */
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
