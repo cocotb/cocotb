@@ -514,11 +514,19 @@ void fli_mappings(GpiIteratorMapping<int, FliIterator::OneToMany> &map)
     map.add_to_options(accinlinedinnerBlock, &region_options[0]);
     map.add_to_options(accGenerate, &region_options[0]);
     map.add_to_options(accIfGenerate, &region_options[0]);
+#ifdef accElsifGenerate
     map.add_to_options(accElsifGenerate, &region_options[0]);
+#endif
+#ifdef accElseGenerate
     map.add_to_options(accElseGenerate, &region_options[0]);
-    map.add_to_options(accForGenerate, &region_options[0]);
+#endif
+#ifdef accCaseGenerate
     map.add_to_options(accCaseGenerate, &region_options[0]);
+#endif
+#ifdef accCaseOTHERSGenerate
     map.add_to_options(accCaseOTHERSGenerate, &region_options[0]);
+#endif
+    map.add_to_options(accForGenerate, &region_options[0]);
     map.add_to_options(accConfiguration, &region_options[0]);
 
     FliIterator::OneToMany signal_options[] = {
@@ -657,7 +665,7 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
         return GpiIterator::END;
     }
 
-    const char *c_name;
+    char *c_name;
     switch (*one2many) {
         case FliIterator::OTM_CONSTANTS:
         case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
@@ -690,7 +698,7 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     name = c_name;
 
     if (*one2many == FliIterator::OTM_SIGNAL_SUB_ELEMENTS) {
-        mti_VsimFree((void *)c_name);
+        mti_VsimFree(c_name);
     }
 
     std::string fq_name = m_parent->get_fullname();
