@@ -43,13 +43,7 @@ TOPLEVEL = endian_swapper_sv
 
 MODULE = test_iteration_es
 
-ifeq ($(SIM),)
-all:
-	@echo "Skipping test as ICAURS does not support enough VPI calls"
-clean::
-else
-	include $(COCOTB)/makefiles/Makefile.inc
-	include $(COCOTB)/makefiles/Makefile.sim
-endif
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim
 
 endif
