@@ -290,6 +290,8 @@ typedef struct t_vpi_value
 
 #define vpiUnknown            3
 
+#define vpiTimePrecision         12   /* module time precision */
+
 /* normal callback structure */
 typedef struct t_cb_data
 {
