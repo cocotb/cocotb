@@ -25,21 +25,25 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+TOPLEVEL_LANG ?= verilog
+
+ifneq ($(TOPLEVEL_LANG),verilog)
+
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
+clean::
+
+else
+
 PWD := $(shell pwd)
 COCOTB := $(PWD)/../../..
-
-TOPLEVEL_LANG = verilog
 
 VERILOG_SOURCES = $(COCOTB)/examples/endian_swapper/hdl/endian_swapper.sv
 TOPLEVEL = endian_swapper_sv
 
 MODULE = test_iteration_es
 
-ifeq ($(SIM),)
-all:
-	@echo "Skipping test as ICAURS does not support enough VPI calls"
-clean::
-else
-	include $(COCOTB)/makefiles/Makefile.inc
-	include $(COCOTB)/makefiles/Makefile.sim
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim
+
 endif

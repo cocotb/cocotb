@@ -44,20 +44,29 @@ ifeq ($(COVERAGE),1)
     ALOG_ARGS += -coverage sb
 endif
 
-ifeq ($(GPI_IMPL),vpi)
+GPI_EXTRA:=
+ifeq ($(TOPLEVEL_LANG),verilog)
+
     GPI_ARGS = -pli libvpi
+ifneq ($(VHDL_SOURCES),)
+    GPI_EXTRA = vhpi
 endif
-ifeq ($(GPI_IMPL),vhpi)
+
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+
 ifeq ($(OS),Msys)
     VHPI_LIB = $(shell sh -c 'cd $(LIB_DIR) && pwd -W')/libvhpi
 else
     VHPI_LIB = $(LIB_DIR)/libvhpi
 endif
+
     GPI_ARGS = -loadvhpi $(VHPI_LIB):vhpi_startup_routines_bootstrap
+ifneq ($(VERILOG_SOURCES),)
+    GPI_EXTRA = vpi 
 endif
 
-ifndef GPI_ARGS
-   $(error "Unable to determine appropriate GPI layer to use as main entry point")
+else
+   $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
 
@@ -65,10 +74,10 @@ endif
 $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
 	echo "alib $(RTL_LIBRARY)" > $@
 	echo "set worklib $(RTL_LIBRARY)" >> $@
-ifdef VHDL_SOURCES
+ifneq ($(VHDL_SOURCES),)
 	echo "acom $(ACOM_ARGS) $(VHDL_SOURCES)" >> $@
 endif
-ifdef VERILOG_SOURCES
+ifneq ($(VERILOG_SOURCES),)
 	echo "alog $(ALOG_ARGS) $(VERILOG_SOURCES)" >> $@
 endif
 ifdef SCRIPT_FILE
@@ -121,7 +130,7 @@ endif
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
 results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_SIM_DEPS)
-	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) \
+	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) $(CMD) -do runsim.tcl | tee sim.log
 
 clean::

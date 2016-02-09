@@ -41,18 +41,15 @@ else
 WPWD=$(shell pwd)
 PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
 endif
-export PYTHONPATH
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv
     TOPLEVEL = endian_swapper_sv
-    GPI_IMPL=vpi
-endif
-
-ifeq ($(TOPLEVEL_LANG),vhdl)
+else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES = $(WPWD)/../hdl/endian_swapper.vhdl
     TOPLEVEL = endian_swapper_vhdl
-    GPI_IMPL=vhpi
+else
+    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
 MODULE=test_endian_swapper
@@ -60,7 +57,6 @@ MODULE=test_endian_swapper
 CUSTOM_COMPILE_DEPS = hal
 
 LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
-export LD_LIBRARY_PATH
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim

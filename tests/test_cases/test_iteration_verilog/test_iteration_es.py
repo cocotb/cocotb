@@ -29,7 +29,7 @@ import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 
-@cocotb.test()
+@cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog"])
 def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
