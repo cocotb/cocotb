@@ -555,7 +555,7 @@ class IntegerObject(ModifiableObject):
         """
         if isinstance(value, BinaryValue):
             value = int(value)
-        elif not isinstance(value, int):
+        elif not isinstance(value, get_python_integer_types()):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
