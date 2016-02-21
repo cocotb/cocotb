@@ -172,13 +172,11 @@ bool FliImpl::isTypeSignal(int type, int full_type)
     return (type == accSignal || full_type == accAliasSignal);
 }
 
-GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std::string &fq_name)
+GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std::string &fq_name, int accType, int accFullType)
 {
     GpiObjHdl *new_obj = NULL;
 
-    PLI_INT32 accType     = acc_fetch_type(hdl);
-    PLI_INT32 accFullType = acc_fetch_fulltype(hdl);
-
+    LOG_DEBUG("Attepmting to create GPI object from handle (Type=%d, FullType=%d).", accType, accFullType);
     if (!VS_TYPE_IS_VHDL(accFullType)) {
         LOG_DEBUG("Handle is not a VHDL type.");
         return NULL;
@@ -186,7 +184,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
 
     if (!isTypeValue(accType)) {
         LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
-        new_obj = new GpiObjHdl(this, hdl, GPI_MODULE);
+        new_obj = new FliObjHdl(this, hdl, GPI_MODULE, accType, accFullType);
     } else {
         bool is_var;
         bool is_const;
@@ -201,7 +199,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
         } else {
             LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), hdl);
             is_var   = true;
-            is_const = isValueConst(mti_GetVarKind(static_cast<mtiVariableIdT>(hdl)));
+            is_const = isValueConst(accFullType);
             valType  = mti_GetVarType(static_cast<mtiVariableIdT>(hdl));
         }
 
@@ -210,19 +208,19 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
         switch (typeKind) {
             case MTI_TYPE_ENUM:
                 if (isValueLogic(valType)) {
-                    new_obj = new FliLogicObjHdl(this, hdl, GPI_ENUM, is_const, is_var, valType, typeKind);
+                    new_obj = new FliLogicObjHdl(this, hdl, GPI_ENUM, is_const, accType, accFullType, is_var, valType, typeKind);
                 } else if (isValueBoolean(valType) || isValueChar(valType)) {
-                    new_obj = new FliIntObjHdl(this, hdl, GPI_INTEGER, is_const, is_var, valType, typeKind);
+                    new_obj = new FliIntObjHdl(this, hdl, GPI_INTEGER, is_const, accType, accFullType, is_var, valType, typeKind);
                 } else {
-                    new_obj = new FliEnumObjHdl(this, hdl, GPI_ENUM, is_const, is_var, valType, typeKind);
+                    new_obj = new FliEnumObjHdl(this, hdl, GPI_ENUM, is_const, accType, accFullType, is_var, valType, typeKind);
                 }
                 break;
             case MTI_TYPE_SCALAR:
             case MTI_TYPE_PHYSICAL:
-                new_obj = new FliIntObjHdl(this, hdl, GPI_INTEGER, is_const, is_var, valType, typeKind);
+                new_obj = new FliIntObjHdl(this, hdl, GPI_INTEGER, is_const, accType, accFullType, is_var, valType, typeKind);
                 break;
             case MTI_TYPE_REAL:
-                new_obj = new FliRealObjHdl(this, hdl, GPI_REAL, is_const, is_var, valType, typeKind);
+                new_obj = new FliRealObjHdl(this, hdl, GPI_REAL, is_const, accType, accFullType, is_var, valType, typeKind);
                 break;
             case MTI_TYPE_ARRAY: {
                     mtiTypeIdT   elemType     = mti_GetArrayElementType(valType);
@@ -231,20 +229,20 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
                     switch (elemTypeKind) {
                         case MTI_TYPE_ENUM:
                             if (isValueLogic(elemType)) {
-                                new_obj = new FliLogicObjHdl(this, hdl, GPI_ARRAY, is_const, is_var, valType, typeKind); // std_logic_vector
+                                new_obj = new FliLogicObjHdl(this, hdl, GPI_ARRAY, is_const, accType, accFullType, is_var, valType, typeKind); // std_logic_vector
                             } else if (isValueChar(elemType)) {
-                                new_obj = new FliStringObjHdl(this, hdl, GPI_STRING, is_const, is_var, valType, typeKind);
+                                new_obj = new FliStringObjHdl(this, hdl, GPI_STRING, is_const, accType, accFullType, is_var, valType, typeKind);
                             } else {
-                                new_obj = new GpiObjHdl(this, hdl, GPI_MODULE); // array of enums
+                                new_obj = new FliObjHdl(this, hdl, GPI_MODULE, accType, accFullType); // array of enums
                             }
                             break;
                         default:
-                            new_obj = new GpiObjHdl(this, hdl, GPI_MODULE);// array of (array, Integer, Real, Record, etc.) 
+                            new_obj = new FliObjHdl(this, hdl, GPI_MODULE, accType, accFullType);// array of (array, Integer, Real, Record, etc.) 
                     }
                 }
                 break;
             case MTI_TYPE_RECORD:
-                new_obj = new GpiObjHdl(this, hdl, GPI_STRUCTURE);
+                new_obj = new FliObjHdl(this, hdl, GPI_STRUCTURE, accType, accFullType);
                 break;
             default:
                 LOG_ERROR("Unable to handle object type for %s (%d)", name.c_str(), typeKind);
@@ -281,7 +279,10 @@ GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
     std::string name    = c_name;
     std::string fq_name = c_fullname;
 
-    return create_gpi_obj_from_handle(raw_hdl, name, fq_name);
+    PLI_INT32 accType     = acc_fetch_type(raw_hdl);
+    PLI_INT32 accFullType = acc_fetch_fulltype(raw_hdl);
+
+    return create_gpi_obj_from_handle(raw_hdl, name, fq_name, accType, accFullType);
 }
 
 /**
@@ -310,19 +311,46 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     writable.push_back('\0');
 
     HANDLE hdl;
+    PLI_INT32 accType;
+    PLI_INT32 accFullType;
 
     if ((hdl = mti_FindRegion(&writable[0])) != NULL) {
+        accType     = acc_fetch_type(hdl);
+        accFullType = acc_fetch_fulltype(hdl);
         LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
+        LOG_DEBUG("        Type: %d", accType);
+        LOG_DEBUG("   Full Type: %d", accFullType);
     } else if ((hdl = mti_FindSignal(&writable[0])) != NULL) {
+        accType     = acc_fetch_type(hdl);
+        accFullType = acc_fetch_fulltype(hdl);
         LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), hdl);
+        LOG_DEBUG("        Type: %d", accType);
+        LOG_DEBUG("   Full Type: %d", accFullType);
     } else if ((hdl = mti_FindVar(&writable[0])) != NULL) {
+        accFullType = accType = mti_GetVarKind(static_cast<mtiVariableIdT>(hdl));
         LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), hdl);
+        LOG_DEBUG("        Type: %d", accType);
+        LOG_DEBUG("   Full Type: %d", accFullType);
     } else {
         LOG_DEBUG("Didn't find anything named %s", &writable[0]);
         return NULL;
     }
 
-    return create_gpi_obj_from_handle(hdl, name, fq_name);
+    /* Added to behave like vhpi interface.  Handle.py will does not support a handle to a 
+     * "for generate" loop that doesn't contain an index.
+     *
+     * VHDL (in dut):
+     *    a_loop : for i in 0 to 9 generate
+     *       ...
+     *    end generate a_loop;
+     *
+     * FLI will return a vaild handle to "/dut/a_loop" as well as /dut/a_loop(0)
+     */
+    if (accFullType == accForGenerate) {
+        return NULL;
+    }
+
+    return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
 }
 
 /**
@@ -345,19 +373,32 @@ GpiObjHdl*  FliImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         writable.push_back('\0');
 
         HANDLE hdl;
+        PLI_INT32 accType;
+        PLI_INT32 accFullType;
 
         if ((hdl = mti_FindRegion(&writable[0])) != NULL) {
+            accType     = acc_fetch_type(hdl);
+            accFullType = acc_fetch_fulltype(hdl);
             LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
+            LOG_DEBUG("        Type: %d", accType);
+            LOG_DEBUG("   Full Type: %d", accFullType);
         } else if ((hdl = mti_FindSignal(&writable[0])) != NULL) {
+            accType     = acc_fetch_type(hdl);
+            accFullType = acc_fetch_fulltype(hdl);
             LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), hdl);
+            LOG_DEBUG("        Type: %d", accType);
+            LOG_DEBUG("   Full Type: %d", accFullType);
         } else if ((hdl = mti_FindVar(&writable[0])) != NULL) {
+            accFullType = accType = mti_GetVarKind(static_cast<mtiVariableIdT>(hdl));
             LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), hdl);
+            LOG_DEBUG("        Type: %d", accType);
+            LOG_DEBUG("   Full Type: %d", accFullType);
         } else {
             LOG_DEBUG("Didn't find anything named %s", &writable[0]);
             return NULL;
         }
 
-        return create_gpi_obj_from_handle(hdl, name, fq_name);
+        return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
     } else {
         LOG_ERROR("FLI: Parent of type %d must be of type GPI_MODULE or GPI_ARRAY to have an index.", parent->get_type());
         return NULL;
@@ -400,6 +441,8 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
     char *rgn_fullname;
     std::string root_name;
     std::string root_fullname;
+    PLI_INT32 accType;
+    PLI_INT32 accFullType;
 
     for (root = mti_GetTopRegion(); root != NULL; root = mti_NextRegion(root)) {
         LOG_DEBUG("Iterating over: %s", mti_GetRegionName(root));
@@ -420,7 +463,10 @@ GpiObjHdl *FliImpl::get_root_handle(const char *name)
 
     LOG_DEBUG("Found toplevel: %s, creating handle....", root_name.c_str());
 
-    return create_gpi_obj_from_handle(root, root_name, root_fullname);
+    accType     = acc_fetch_type(root);
+    accFullType = acc_fetch_fulltype(root);
+
+    return create_gpi_obj_from_handle(root, root_name, root_fullname, accType, accFullType);
 
 error:
 
@@ -559,11 +605,17 @@ FliIterator::FliIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
                                                                    m_regs(),
                                                                    m_currentHandles(NULL)
 {
-    HANDLE fli_hdl = m_parent->get_handle<HANDLE>();
+    int type;
 
-    int type = acc_fetch_fulltype(fli_hdl);
+    if (m_parent->get_type() == GPI_MODULE or m_parent->get_type() == GPI_STRUCTURE) {
+        FliObjHdl *fli_obj = static_cast<FliObjHdl *>(m_parent);
+        type = fli_obj->get_acc_full_type();
+    } else {
+        FliSignalObjHdl *fli_obj = static_cast<FliSignalObjHdl *>(m_parent);
+        type = fli_obj->get_acc_full_type();
+    }
 
-    LOG_DEBUG("fli_iterator::Create iterator for %s of type %s", m_parent->get_fullname().c_str(), acc_fetch_type_str(type));
+    LOG_DEBUG("fli_iterator::Create iterator for %s of type %d:%s", m_parent->get_fullname().c_str(), type, acc_fetch_type_str(type));
 
     if (NULL == (selected = iterate_over.get_options(type))) {
         LOG_WARN("FLI: Implementation does not know how to iterate over %s(%d)",
@@ -666,19 +718,28 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     }
 
     char *c_name;
+    PLI_INT32 accType;
+    PLI_INT32 accFullType;
     switch (*one2many) {
         case FliIterator::OTM_CONSTANTS:
         case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
             c_name = mti_GetVarName(static_cast<mtiVariableIdT>(obj));
+            accFullType = accType = mti_GetVarKind(static_cast<mtiVariableIdT>(obj));
             break;
         case FliIterator::OTM_SIGNALS:
             c_name = mti_GetSignalName(static_cast<mtiSignalIdT>(obj));
+            accType     = acc_fetch_type(obj);
+            accFullType = acc_fetch_fulltype(obj);
             break;
         case FliIterator::OTM_SIGNAL_SUB_ELEMENTS:
             c_name = mti_GetSignalNameIndirect(static_cast<mtiSignalIdT>(obj), NULL, 0);
+            accType     = acc_fetch_type(obj);
+            accFullType = acc_fetch_fulltype(obj);
             break;
         case FliIterator::OTM_REGIONS:
             c_name = mti_GetRegionName(static_cast<mtiRegionIdT>(obj));
+            accType     = acc_fetch_type(obj);
+            accFullType = acc_fetch_fulltype(obj);
             break;
         default:
             LOG_WARN("Unhandled OneToMany Type (%d)", *one2many);
@@ -710,8 +771,8 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
         fq_name += "/" + name;
     }
 
-    FliImpl *fli_impl = reinterpret_cast<FliImpl *>(m_impl);
-    new_obj = fli_impl->create_gpi_obj_from_handle(obj, name, fq_name);
+    FliImpl *fli_impl = static_cast<FliImpl *>(m_impl);
+    new_obj = fli_impl->create_gpi_obj_from_handle(obj, name, fq_name, accType, accFullType);
     if (new_obj) {
         *hdl = new_obj;
         return GpiIterator::NATIVE;

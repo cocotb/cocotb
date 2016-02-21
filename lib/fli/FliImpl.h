@@ -141,6 +141,38 @@ private:
 
 
 // Object Handles
+class FliObjHdl : public GpiObjHdl {
+public:
+    FliObjHdl(GpiImplInterface *impl,
+              void *hdl,
+              gpi_objtype_t objtype,
+              int acc_type,
+              int acc_full_type) :
+                  GpiObjHdl(impl, hdl, objtype, false),
+                  m_acc_type(acc_type),
+                  m_acc_full_type(acc_full_type) { }
+
+    FliObjHdl(GpiImplInterface *impl,
+              void *hdl,
+              gpi_objtype_t objtype,
+              int acc_type,
+              int acc_full_type,
+              bool is_const) :
+                  GpiObjHdl(impl, hdl, objtype, is_const),
+                  m_acc_type(acc_type),
+                  m_acc_full_type(acc_full_type) { }
+
+    virtual ~FliObjHdl() { }
+
+    virtual int initialise(std::string &name, std::string &fq_name);
+
+    int get_acc_type(void) { return m_acc_type; }
+    int get_acc_full_type(void) { return m_acc_full_type; }
+
+protected:
+    int m_acc_type;
+    int m_acc_full_type;
+};
 
 class FliSignalObjHdl : public GpiSignalObjHdl {
 public:
@@ -148,8 +180,12 @@ public:
                     void *hdl,
                     gpi_objtype_t objtype,
                     bool is_const,
+                    int acc_type,
+                    int acc_full_type,
                     bool is_var) :
                         GpiSignalObjHdl(impl, hdl, objtype, is_const),
+                        m_acc_type(acc_type),
+                        m_acc_full_type(acc_full_type),
                         m_is_var(is_var),
                         m_rising_cb(impl, this, GPI_RISING),
                         m_falling_cb(impl, this, GPI_FALLING),
@@ -160,7 +196,12 @@ public:
     virtual GpiCbHdl *value_change_cb(unsigned int edge);
     virtual int initialise(std::string &name, std::string &fq_name);
 
+    int get_acc_type(void) { return m_acc_type; }
+    int get_acc_full_type(void) { return m_acc_full_type; }
+
 protected:
+    int                m_acc_type;
+    int                m_acc_full_type;
     bool               m_is_var;
     FliSignalCbHdl     m_rising_cb;
     FliSignalCbHdl     m_falling_cb;
@@ -173,10 +214,12 @@ public:
                    void *hdl,
                    gpi_objtype_t objtype,
                    bool is_const,
+                   int acc_type,
+                   int acc_full_type,
                    bool is_var,
                    mtiTypeIdT valType,
                    mtiTypeKindT typeKind) :
-                       FliSignalObjHdl(impl, hdl, objtype, is_const, is_var),
+                       FliSignalObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var),
                        m_fli_type(typeKind),
                        m_val_type(valType),
                        m_val_buff(NULL) { }
@@ -209,10 +252,12 @@ public:
                   void *hdl,
                   gpi_objtype_t objtype,
                   bool is_const,
+                  int acc_type,
+                  int acc_full_type,
                   bool is_var,
                   mtiTypeIdT valType,
                   mtiTypeKindT typeKind) :
-                      FliValueObjHdl(impl, hdl, objtype, is_const, is_var, valType, typeKind),
+                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind),
                       m_value_enum(NULL),
                       m_num_enum(0) { }
 
@@ -236,6 +281,8 @@ public:
                    void *hdl,
                    gpi_objtype_t objtype,
                    bool is_const,
+                   int acc_type,
+                   int acc_full_type,
                    bool is_var, 
                    mtiTypeIdT valType,
                    mtiTypeKindT typeKind) :
@@ -243,6 +290,8 @@ public:
                                       hdl,
                                       objtype,
                                       is_const,
+                                      acc_type,
+                                      acc_full_type,
                                       is_var,
                                       valType,
                                       typeKind),
@@ -279,10 +328,12 @@ public:
                  void *hdl,
                  gpi_objtype_t objtype,
                  bool is_const,
+                 int acc_type,
+                 int acc_full_type,
                  bool is_var,
                  mtiTypeIdT valType,
                  mtiTypeKindT typeKind) :
-                     FliValueObjHdl(impl, hdl, objtype, is_const, is_var, valType, typeKind) { }
+                     FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind) { }
 
     virtual ~FliIntObjHdl() { }
 
@@ -300,10 +351,12 @@ public:
                   void *hdl,
                   gpi_objtype_t objtype,
                   bool is_const,
+                  int acc_type,
+                  int acc_full_type,
                   bool is_var,
                   mtiTypeIdT valType,
                   mtiTypeKindT typeKind) :
-                      FliValueObjHdl(impl, hdl, objtype, is_const, is_var, valType, typeKind),
+                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind),
                       m_mti_buff(NULL) { }
 
     virtual ~FliRealObjHdl() {
@@ -327,10 +380,12 @@ public:
                   void *hdl,
                   gpi_objtype_t objtype,
                   bool is_const,
+                  int acc_type,
+                  int acc_full_type,
                   bool is_var,
                   mtiTypeIdT valType,
                   mtiTypeKindT typeKind) :
-                      FliValueObjHdl(impl, hdl, objtype, is_const, is_var, valType, typeKind),
+                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind),
                       m_mti_buff(NULL) { }
 
     virtual ~FliStringObjHdl() {
@@ -423,7 +478,7 @@ public:
     const char *reason_to_string(int reason);
 
     /* Method to provide strings from operation types */
-    GpiObjHdl *create_gpi_obj_from_handle(void *hdl, std::string &name, std::string &fq_name);
+    GpiObjHdl *create_gpi_obj_from_handle(void *hdl, std::string &name, std::string &fq_name, int accType, int accFullType);
 
 private:
     bool isValueConst(int kind);
