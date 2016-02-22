@@ -25,6 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <cstddef>
+#include <string>
 #include <vector>
 
 #include "FliImpl.h"
@@ -765,8 +767,22 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     std::string fq_name = m_parent->get_fullname();
     if (fq_name == "/") {
         fq_name += name;
-    } else if (m_parent->get_type() == GPI_STRUCTURE) {
-        fq_name += "." + name;
+    } else if (*one2many == FliIterator::OTM_SIGNAL_SUB_ELEMENTS ||
+               *one2many == FliIterator::OTM_VARIABLE_SUB_ELEMENTS) {
+        std::size_t found;
+
+        if (m_parent->get_type() == GPI_STRUCTURE) {
+            found = name.find_last_of(".");
+        } else {
+            found = name.find_last_of("(");
+        }
+
+        if (found != std::string::npos) {
+            fq_name += name.substr(found);
+        } else {
+            LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
+            fq_name += "/" + name;
+        }
     } else {
         fq_name += "/" + name;
     }
