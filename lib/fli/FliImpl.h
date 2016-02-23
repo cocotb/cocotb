@@ -35,7 +35,6 @@
 #include <map>
 
 extern "C" {
-void fli_elab_cb(void *nothing);
 void cocotb_init(void);
 void handle_fli_callback(void *data);
 }
@@ -117,12 +116,24 @@ public:
     virtual ~FliReadOnlyCbHdl() { }
 };
 
-class FliShutdownCbHdl : public GpiCbHdl {
+class FliStartupCbHdl : public FliProcessCbHdl {
 public:
-    FliShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl) { }
-    int run_callback(void);
+    FliStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                              FliProcessCbHdl(impl) { }
+    virtual ~FliStartupCbHdl() { }
+
     int arm_callback(void);
+    int run_callback(void);
+};
+
+class FliShutdownCbHdl : public FliProcessCbHdl {
+public:
+    FliShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
+                                               FliProcessCbHdl(impl) { }
     virtual ~FliShutdownCbHdl() { }
+
+    int arm_callback(void);
+    int run_callback(void);
 };
 
 class FliTimedCbHdl : public FliProcessCbHdl {

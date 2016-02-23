@@ -35,78 +35,19 @@
 #include "acc_user.h"
 
 extern "C" {
-
-static FliImpl *fli_table;
-
-void fli_elab_cb(void *nothing)
-{
-    LOG_INFO("fli_elab_cb called\n");
-
-    fli_table = new FliImpl("FLI");
-    gpi_register_impl(fli_table);
-    gpi_load_extra_libs();
-
-    // Elaboration has already happened so jump straight in!
-    gpi_sim_info_t sim_info;
-
-    char *version = mti_GetProductVersion();      // Returned pointer must not be freed
-
-    // copy in sim_info.product
-    // FIXME split product and version from returned string?
-    sim_info.argc = 0;
-    sim_info.argv = NULL;
-    sim_info.product = version;
-    sim_info.version = version;
-
-    gpi_embed_init(&sim_info);
+static FliProcessCbHdl *sim_init_cb;
+static FliProcessCbHdl *sim_finish_cb;
+static FliImpl         *fli_table;
 }
-
-void cocotb_init(void)
-{
-    LOG_INFO("cocotb_init called\n");
-    mti_AddLoadDoneCB(fli_elab_cb, NULL);
-}
-
-
-
-// Main re-entry point for callbacks from simulator
-void handle_fli_callback(void *data)
-{
-    fflush(stderr);
-
-    FliProcessCbHdl *cb_hdl = (FliProcessCbHdl*)data;
-
-    if (!cb_hdl) {
-        LOG_CRITICAL("FLI: Callback data corrupted: ABORTING");
-    }
-
-    gpi_cb_state_e old_state = cb_hdl->get_call_state();
-
-    if (old_state == GPI_PRIMED) {
-
-        cb_hdl->set_call_state(GPI_CALL);
-
-        cb_hdl->run_callback();
-        gpi_cb_state_e new_state = cb_hdl->get_call_state();
-
-        /* We have re-primed in the handler */
-        if (new_state != GPI_PRIMED)
-            if (cb_hdl->cleanup_callback())
-                delete cb_hdl;
-    } else {
-        /* Issue #188 seems to appear via FLI as well */
-        cb_hdl->cleanup_callback();
-    }
-};
-
-} // extern "C"
-
 
 void FliImpl::sim_end(void)
 {
     const char *stop = "stop";
+    if (GPI_DELETE != sim_finish_cb->get_call_state()) {
+        sim_finish_cb->set_call_state(GPI_DELETE);
+        mti_Cmd(stop);
+    }
 
-    mti_Cmd(stop);
 }
 
 bool FliImpl::isValueConst(int kind)
@@ -915,5 +856,71 @@ void FliTimerCache::put_timer(FliTimedCbHdl* hdl)
     free_list.push(hdl);
 }
 
-GPI_ENTRY_POINT(fli, cocotb_init);
+extern "C" {
+
+// Main re-entry point for callbacks from simulator
+void handle_fli_callback(void *data)
+{
+    fflush(stderr);
+
+    FliProcessCbHdl *cb_hdl = (FliProcessCbHdl*)data;
+
+    if (!cb_hdl) {
+        LOG_CRITICAL("FLI: Callback data corrupted: ABORTING");
+    }
+
+    gpi_cb_state_e old_state = cb_hdl->get_call_state();
+
+    if (old_state == GPI_PRIMED) {
+
+        cb_hdl->set_call_state(GPI_CALL);
+
+        cb_hdl->run_callback();
+        gpi_cb_state_e new_state = cb_hdl->get_call_state();
+
+        /* We have re-primed in the handler */
+        if (new_state != GPI_PRIMED)
+            if (cb_hdl->cleanup_callback())
+                delete cb_hdl;
+    } else {
+        /* Issue #188 seems to appear via FLI as well */
+        cb_hdl->cleanup_callback();
+    }
+};
+
+static void register_initial_callback(void)
+{
+    FENTER
+    sim_init_cb = new FliStartupCbHdl(fli_table);
+    sim_init_cb->arm_callback();
+    FEXIT
+}
+
+static void register_final_callback(void)
+{
+    FENTER
+    sim_finish_cb = new FliShutdownCbHdl(fli_table);
+    sim_finish_cb->arm_callback();
+    FEXIT
+}
+
+static void register_embed(void)
+{
+    fli_table = new FliImpl("FLI");
+    gpi_register_impl(fli_table);
+    gpi_load_extra_libs();
+}
+
+
+void cocotb_init(void)
+{
+    LOG_INFO("cocotb_init called\n");
+    register_embed();
+    register_initial_callback();
+    register_final_callback();
+}
+
+} // extern "C"
+
+GPI_ENTRY_POINT(fli, register_embed);
 
