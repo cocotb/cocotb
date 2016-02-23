@@ -34,10 +34,8 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME in ["ModelSim ALTERA STARTER EDITION",
-                           "ModelSim DE",
-                           "ncsim(64)",
-                           "ncsim"]:
+    if cocotb.SIM_NAME.lower().startswith(("modelsim",
+                                           "ncsim")):
         # vpiAlways does not show up in IUS
         pass_total = 259
     else:
