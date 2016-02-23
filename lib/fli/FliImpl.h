@@ -198,6 +198,7 @@ public:
 
     int get_acc_type(void) { return m_acc_type; }
     int get_acc_full_type(void) { return m_acc_full_type; }
+    bool is_var(void) { return m_is_var; }
 
 protected:
     int                m_acc_type;
@@ -239,6 +240,9 @@ public:
     virtual int set_signal_value(std::string &value);
 
     virtual int initialise(std::string &name, std::string &fq_name);
+
+    mtiTypeKindT get_fli_typekind(void) { return m_fli_type; }
+    mtiTypeIdT   get_fli_typeid(void) { return m_val_type; }
 
 protected:
     mtiTypeKindT       m_fli_type;

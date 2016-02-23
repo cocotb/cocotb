@@ -362,9 +362,37 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
  */
 GpiObjHdl*  FliImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
-    if (parent->get_type() == GPI_MODULE or parent->get_type() == GPI_ARRAY) {
+    if (parent->get_type() == GPI_MODULE || parent->get_type() == GPI_ARRAY || parent->get_type() == GPI_STRING) {
         char buff[15];
-        snprintf(buff, 15, "(%u)", index);
+        int type;
+
+        if (parent->get_type() == GPI_MODULE) {
+            FliObjHdl *fli_obj = static_cast<FliObjHdl *>(parent);
+            type = fli_obj->get_acc_full_type();
+        } else {
+            FliSignalObjHdl *fli_obj = static_cast<FliSignalObjHdl *>(parent);
+            type = fli_obj->get_acc_full_type();
+        }
+
+        /* To behave like the current VHPI interface, index needs to be properly translated.
+         * Index of 0 needs to map to "signal'left" and Index of "length-1" mapping to "signal'right"
+         */
+        if (!isTypeValue(type)) {
+            /* This case would be for indexing into a generate loop.  The way that is currently
+             * handled, this code should never be executed.
+             */
+            snprintf(buff, 15, "(%u)", index);
+        } else {
+            FliValueObjHdl *fli_obj = static_cast<FliValueObjHdl *>(parent);
+            mtiTypeIdT typeId = fli_obj->get_fli_typeid();
+
+            if (mti_TickDir(typeId) < 0) {
+                snprintf(buff, 15, "(%u)", mti_TickLeft(typeId) - index);
+            } else {
+                snprintf(buff, 15, "(%u)", mti_TickLeft(typeId) + index);
+            }
+        }
+
         std::string idx = buff;
         std::string name = parent->get_name() + idx;
         std::string fq_name = parent->get_fullname() + idx;
