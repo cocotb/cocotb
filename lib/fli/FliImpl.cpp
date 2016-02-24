@@ -176,11 +176,11 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
                             } else if (isValueChar(elemType)) {
                                 new_obj = new FliStringObjHdl(this, hdl, GPI_STRING, is_const, accType, accFullType, is_var, valType, typeKind);
                             } else {
-                                new_obj = new FliObjHdl(this, hdl, GPI_MODULE, accType, accFullType); // array of enums
+                                new_obj = new FliValueObjHdl(this, hdl, GPI_MODULE, is_const, accType, accFullType, is_var, valType, typeKind); // array of enums
                             }
                             break;
                         default:
-                            new_obj = new FliObjHdl(this, hdl, GPI_MODULE, accType, accFullType);// array of (array, Integer, Real, Record, etc.) 
+                            new_obj = new FliValueObjHdl(this, hdl, GPI_MODULE, is_const, accType, accFullType, is_var, valType, typeKind);// array of (array, Integer, Real, Record, etc.) 
                     }
                 }
                 break;
@@ -307,12 +307,14 @@ GpiObjHdl*  FliImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         char buff[15];
         int type;
 
+        LOG_DEBUG("Looking for index %u from %s", index, parent->get_name_str());
+
         if (parent->get_type() == GPI_MODULE) {
             FliObjHdl *fli_obj = static_cast<FliObjHdl *>(parent);
-            type = fli_obj->get_acc_full_type();
+            type = fli_obj->get_acc_type();
         } else {
             FliSignalObjHdl *fli_obj = static_cast<FliSignalObjHdl *>(parent);
-            type = fli_obj->get_acc_full_type();
+            type = fli_obj->get_acc_type();
         }
 
         /* To behave like the current VHPI interface, index needs to be properly translated.
@@ -337,8 +339,6 @@ GpiObjHdl*  FliImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         std::string idx = buff;
         std::string name = parent->get_name() + idx;
         std::string fq_name = parent->get_fullname() + idx;
-
-        LOG_DEBUG("Looking for index %u from %s", index, parent->get_name_str());
 
         std::vector<char> writable(fq_name.begin(), fq_name.end());
         writable.push_back('\0');
