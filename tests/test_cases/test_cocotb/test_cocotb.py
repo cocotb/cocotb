@@ -40,6 +40,7 @@ from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 
+from cocotb.binary import BinaryValue
 
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
@@ -468,5 +469,48 @@ def test_logging_with_args(dut):
     assert counter.str_counter == 1
 
     dut.log.info("No substitution")
+
+    yield Timer(100) #Make it do something with time
+
+@cocotb.test()
+def test_binary_value(dut):
+    """
+    Test out the cocotb supplied BinaryValue class for manipulating
+    values in a style familiar to rtl coders.
+    """
+    
+    vec = BinaryValue(value=0,bits=16)
+    dut.log.info("Checking default endianess is Big Endian.")
+    if not vec.big_endian:
+        raise TestFailure("The default endianess is Little Endian - was expecting Big Endian.")
+    if vec.integer != 0:
+        raise TestFailure("Expecting our BinaryValue object to have the value 0.")
+
+    dut.log.info("Checking single index assignment works as expected on a Little Endian BinaryValue.")
+    vec = BinaryValue(value=0,bits=16,bigEndian=False)
+    if vec.big_endian:
+        raise TestFailure("Our BinaryValue object is reporting it is Big Endian - was expecting Little Endian.")
+    for x in range(vec._bits):
+        vec[x] = '1'
+        dut.log.info("Trying vec[%s] = 1" % x)
+        expected_value = 2**(x+1) - 1
+        if vec.integer != expected_value:
+            raise TestFailure("Failed on assignment to vec[%s] - expecting %s - got %s" % (x,expected_value,vec.integer))
+        if vec[x] != 1:
+            raise TestFailure("Failed on index compare on vec[%s] - expecting 1 - got %s" % (x,vec[x]))
+        dut.log.info("vec = 'b%s" % vec.binstr)
+
+    dut.log.info("Checking slice assignment works as expected on a Little Endian BinaryValue.")
+    if vec.integer != 65535:
+        raise TestFailure("Expecting our BinaryValue object to be 65535 after the end of the previous test.")
+    vec[7:0] = '00110101'
+    if vec.binstr != '1111111100110101':
+        raise TestFailure("Set lower 8-bits to 00110101 but readback %s" % vec.binstr)
+    if vec[7:0].binstr != '00110101':
+        raise TestFailure("Set lower 8-bits to 00110101 but readback %s from vec[7:0]" % vec[7:0].binstr)
+
+    dut.log.info("vec[7:0] = 'b%s" % vec[7:0].binstr)
+    dut.log.info("vec[15:8] = 'b%s" % vec[15:8].binstr)
+    dut.log.info("vec = 'b%s" % vec.binstr)
 
     yield Timer(100) #Make it do something with time
