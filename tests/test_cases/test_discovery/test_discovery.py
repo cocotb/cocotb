@@ -164,7 +164,7 @@ def access_ulogic(dut):
     tlog = logging.getLogger("cocotb.test")
     yield Timer(10)
     constant_integer = dut.stream_in_valid
-    
+
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def access_constant_integer(dut):
@@ -315,7 +315,7 @@ def skip_a_test(dut):
     yield Timer(10)
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
-             expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
+             expect_error=cocotb.SIM_NAME.lower().startswith(("icarus")))
 def access_gate(dut):
     """
     Test access to a gate Object
@@ -341,7 +341,15 @@ def custom_type(dut):
     new_type = dut.cosLut
     tlog.info("cosLut object %s %s" % (new_type, type(new_type)))
 
-    expected_top = 28
+    # FLI only iterates over one dimension at a time, where vhpi will
+    # iterate over two dimensions at the same time
+    if cocotb.SIM_NAME.lower().startswith(("modelsim")):
+        expected_sub = 84
+        expected_top = 4
+    else:
+        expected_sub = 11
+        expected_top = 28
+
     count = 0
 
     def _discover(obj):
@@ -350,8 +358,6 @@ def custom_type(dut):
             iter_count += 1
             iter_count += _discover(elem)
         return iter_count
-
-    expected_sub = 11
 
     for sub in new_type:
         tlog.info("Sub object %s %s" % (sub, type(sub)))

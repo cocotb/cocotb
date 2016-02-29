@@ -61,7 +61,7 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     EXTRA_ARGS += -top $(TOPLEVEL)
     MAKE_LIB = -makelib $(TOPLEVEL)
     HDL_SOURCES = $(VHDL_SOURCES)
-ifneq ($(VHDL_SOURCES),)
+ifneq ($(VERILOG_SOURCES),)
     HDL_SOURCES += $(VERILOG_SOURCES)
 endif
 else

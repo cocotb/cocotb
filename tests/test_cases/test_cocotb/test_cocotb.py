@@ -188,12 +188,10 @@ def do_test_afterdelay_in_readonly(dut, delay):
 
 
 @cocotb.test(expect_error=True,
-             expect_fail=cocotb.SIM_NAME in ["Icarus Verilog",
-                                             "Riviera-PRO",
-                                             "ModelSim ALTERA STARTER EDITION",
-                                             "ModelSim DE",
-                                             "ncsim(64)",
-                                             "ncsim"])
+             expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
+                                                             "riviera",
+                                                             "modelsim",
+                                                             "ncsim")))
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -206,10 +204,9 @@ def test_readwrite_in_readonly(dut):
         raise TestFailure
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog",
-                                             "Chronologic Simulation VCS Release"],
-             skip=cocotb.SIM_NAME in ["ncsim(64)",
-                                      "ncsim"])
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
+                                                             "chronologic simulation vcs")),
+             skip=cocotb.SIM_NAME.lower().startswith(("ncsim")))
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -455,7 +452,7 @@ def test_edge_count(dut):
 class StrCallCounter(object):
     def __init__(self):
         self.str_counter = 0
-        
+
     def __str__(self):
         self.str_counter += 1
         return "__str__ called %d time(s)" % self.str_counter
@@ -466,10 +463,10 @@ def test_logging_with_args(dut):
     dut.log.logger.setLevel(logging.INFO) #To avoid logging debug message, to make next line run without error
     dut.log.debug("%s", counter)
     assert counter.str_counter == 0
-    
+
     dut.log.info("%s", counter)
     assert counter.str_counter == 1
-    
+
     dut.log.info("No substitution")
-    
+
     yield Timer(100) #Make it do something with time

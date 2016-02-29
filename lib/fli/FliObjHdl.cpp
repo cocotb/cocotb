@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "FliImpl.h"
+#include "acc_vhdl.h"
 
 GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
 {
@@ -58,6 +59,46 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
 
     return (GpiCbHdl *)cb;
 }
+
+int FliObjHdl::initialise(std::string &name, std::string &fq_name)
+{
+    bool is_signal = (get_acc_type() == accSignal || get_acc_full_type() == accAliasSignal);
+    bool is_value  = (is_signal                     || get_acc_type() == accAlias        || 
+                      get_acc_type() == accVariable || get_acc_type() == accVHDLConstant ||
+                      get_acc_type() == accGeneric);
+
+    switch (get_type()) {
+        case GPI_STRUCTURE: {
+                mtiTypeIdT recType; 
+                if (is_signal) {
+                    recType = mti_GetSignalType(get_handle<mtiSignalIdT>());
+                } else {
+                    recType = mti_GetVarType(get_handle<mtiVariableIdT>());
+                }
+                m_num_elems = mti_GetNumRecordElements(recType);
+            }
+            break;
+        case GPI_MODULE:
+            if (!is_value) {
+                m_num_elems = 1;
+            } else {
+                mtiTypeIdT arrayType; 
+                if (is_signal) {
+                    arrayType = mti_GetSignalType(get_handle<mtiSignalIdT>());
+                } else {
+                    arrayType = mti_GetVarType(get_handle<mtiVariableIdT>());
+                }
+                m_num_elems = mti_TickLength(arrayType);
+            }
+            break;
+        default:
+            LOG_CRITICAL("Invalid object type for FliObjHdl. (%s (%s))", name.c_str(), get_type_str());
+            return -1;
+    }
+ 
+    return GpiObjHdl::initialise(name, fq_name);
+}
+
 
 int FliSignalObjHdl::initialise(std::string &name, std::string &fq_name)
 {
