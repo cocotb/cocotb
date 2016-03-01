@@ -65,7 +65,8 @@ class SimHandleBase(object):
 
     # For backwards compatibility we support a mapping of old member names
     # which may alias with the simulator hierarchy.  In these cases the
-    # simulator takes priority, only falling back
+    # simulator result takes priority, only falling back to the python member
+    # if there is no colliding object in the elaborated design.
     _compat_mapping = {
         "log"               :       "_log",
         "fullname"          :       "_fullname",
@@ -225,6 +226,10 @@ class HierarchyObject(SimHandleBase):
             result = re.match("(?P<name>.*)__(?P<index>\d+)$", name)
             if not result:
                 result = re.match("(?P<name>.*)\((?P<index>\d+)\)$", name)
+
+            # Modelsim VPI returns names in standard form name[index]
+            if not result:
+                result = re.match("(?P<name>.*)\[(?P<index>\d+)\]$", name)
 
             if result:
                 index = int(result.group("index"))
@@ -550,7 +555,7 @@ class IntegerObject(ModifiableObject):
         """
         if isinstance(value, BinaryValue):
             value = int(value)
-        elif not isinstance(value, int):
+        elif not isinstance(value, get_python_integer_types()):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 

@@ -65,12 +65,13 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME in ["ncsim(64)",
-                           "ncsim"]:
+    if cocotb.SIM_NAME.lower().startswith(("ncsim")):
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS
-        # But vhpiSimpleSigAssignStmtK objects do, and ther are 2. 
+        # But vhpiSimpleSigAssignStmtK objects do, and ther are 2.
         # Process statements and all sub handles also show up.
         pass_total = 985
+    elif cocotb.SIM_NAME.lower().startswith(("modelsim")):
+        pass_total = 933
     else:
         pass_total = 916
 
@@ -94,10 +95,11 @@ def recursive_discovery_boundary(dut):
     """
     Iteration though the boundary works but this just double checks
     """
-    if cocotb.SIM_NAME in ["ncsim(64)",
-                           "ncsim"]:
+    if cocotb.SIM_NAME.lower().startswith(("ncsim")):
         # # But vhpiSimpleSigAssignStmtK objects only show up on IUS, and ther are 2
         pass_total = 530
+    elif cocotb.SIM_NAME.lower().startswith(("modelsim")):
+        pass_total = 478
     else:
         pass_total = 426
 
