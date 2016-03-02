@@ -343,6 +343,10 @@ class ConstantObject(NonHierarchyObject):
     def __repr__(self):
         return str(self._value)
 
+    @property
+    def value(self):
+        return self._value
+
     def _setcachedvalue(self, *args, **kwargs):
         raise ValueError("Not permissible to set values on a constant object")
 
