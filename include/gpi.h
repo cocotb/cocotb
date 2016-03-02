@@ -109,8 +109,9 @@ typedef void * gpi_iterator_hdl;
 void gpi_sim_end(void);
 
 
-// Returns simulation time as a float. Units are default sim units
-void gpi_get_sim_time(uint32_t *high, uint32_t *low, int32_t *precision);
+// Returns simulation time as two uints. Units are default sim units
+void gpi_get_sim_time(uint32_t *high, uint32_t *low);
+void gpi_get_sim_precision(int32_t *precision);
 
 
 // Functions for extracting a gpi_sim_hdl to an object

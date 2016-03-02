@@ -848,28 +848,41 @@ static PyObject *get_type_string(PyObject *self, PyObject *args)
 }
 
 
-// Returns a high, low, precision tuple of simulator time
+// Returns a high, low, tuple of simulator time
 // Note we can never log from this function since the logging mechanism calls this to annotate
 // log messages with the current simulation time
 static PyObject *get_sim_time(PyObject *self, PyObject *args)
 {
-
     uint32_t high, low;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    gpi_get_sim_time(&high, &low);
+
+    PyObject *pTuple = PyTuple_New(2);
+    PyTuple_SetItem(pTuple, 0, PyLong_FromUnsignedLong(high));       // Note: This function “steals” a reference to o.
+    PyTuple_SetItem(pTuple, 1, PyLong_FromUnsignedLong(low));       // Note: This function “steals” a reference to o.
+
+    DROP_GIL(gstate);
+
+    return pTuple;
+}
+
+static PyObject *get_precision(PyObject *self, PyObject *args)
+{
     int32_t precision;
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    gpi_get_sim_time(&high, &low, &precision);
+    gpi_get_sim_precision(&precision);
 
-    PyObject *pTuple = PyTuple_New(3);
-    PyTuple_SetItem(pTuple, 0, PyLong_FromUnsignedLong(high));       // Note: This function “steals” a reference to o.
-    PyTuple_SetItem(pTuple, 1, PyLong_FromUnsignedLong(low));       // Note: This function “steals” a reference to o.
-    PyTuple_SetItem(pTuple, 2, PyLong_FromLong(precision));       // Note: This function “steals” a reference to o.
-
+    PyObject *retint = Py_BuildValue("i", precision);
+    
     DROP_GIL(gstate);
 
-    return pTuple;
+    return retint;
 }
 
 static PyObject *get_num_elems(PyObject *self, PyObject *args)

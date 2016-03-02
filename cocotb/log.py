@@ -148,6 +148,8 @@ class SimLog(object):
 class SimLogFormatter(logging.Formatter):
 
     """Log formatter to provide consistent log message handling."""
+    def __init__(self):
+        self._precision = simulator.get_precision()
 
     # Justify and truncate
     @staticmethod
@@ -162,8 +164,8 @@ class SimLogFormatter(logging.Formatter):
             return ".." + string[(chars - 2) * -1:]
         return string.rjust(chars)
 
-    def _format(self, timeh, timel, precision, level, record, msg):
-        time_ns = (timeh << 32 | timel) * (10.0**precision) / 1e-9
+    def _format(self, timeh, timel, level, record, msg):
+        time_ns = (timeh << 32 | timel) * (10.0**self._precision) / 1e-9
         simtime = "%6.2fns" % (time_ns)
         prefix = simtime + ' ' + level + ' ' + \
             self.ljust(record.name, _RECORD_CHARS) + \
@@ -183,9 +185,9 @@ class SimLogFormatter(logging.Formatter):
 
         msg = str(msg)
         level = record.levelname.ljust(_LEVEL_CHARS)
-        timeh, timel, precision = simulator.get_sim_time()
+        timeh, timel = simulator.get_sim_time()
 
-        return self._format(timeh, timel, precision, level, record, msg)
+        return self._format(timeh, timel, level, record, msg)
 
 
 class SimColourLogFormatter(SimLogFormatter):
@@ -211,5 +213,5 @@ class SimColourLogFormatter(SimLogFormatter):
         level = (SimColourLogFormatter.loglevel2colour[record.levelno] %
                  record.levelname.ljust(_LEVEL_CHARS))
 
-        timeh, timel, precision = simulator.get_sim_time()
-        return self._format(timeh, timel, precision, level, record, msg)
+        timeh, timel = simulator.get_sim_time()
+        return self._format(timeh, timel, level, record, msg)

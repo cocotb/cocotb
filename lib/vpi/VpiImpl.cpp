@@ -59,7 +59,7 @@ const char *VpiImpl::reason_to_string(int reason)
     }
 }
 
-void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low, int32_t *precision)
+void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 {
     s_vpi_time vpi_time_s;
     vpi_time_s.type = vpiSimTime;       //vpiSimTime;
@@ -67,7 +67,12 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low, int32_t *precision)
     check_vpi_error();
     *high = vpi_time_s.high;
     *low = vpi_time_s.low;
+}
+
+void VpiImpl::get_sim_precision(int32_t *precision)
+{
     *precision = vpi_get(vpiTimePrecision, NULL);
+    check_vpi_error();
 }
 
 gpi_objtype_t to_gpi_objtype(int32_t vpitype)
