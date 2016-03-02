@@ -475,7 +475,6 @@ class BinaryValue(object):
             index = key
             if index > self._bits - 1:
                 raise IndexError('Index greater than number of bits.')
-            _binstr = self.binstr[index]
             if self.big_endian:
                 _binstr = self.binstr[index]
             else:
