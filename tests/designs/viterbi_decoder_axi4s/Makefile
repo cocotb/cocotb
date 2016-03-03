@@ -37,8 +37,13 @@ else
 
 TOPLEVEL = dec_viterbi
 
-PWD=$(shell pwd)
-COCOTB?=$(PWD)/../../..
+ifeq ($(OS),Msys)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
+
+COCOTB?=$(WPWD)/../../..
 
 SRC_BASE = $(COCOTB)/tests/designs/viterbi_decoder_axi4s
 

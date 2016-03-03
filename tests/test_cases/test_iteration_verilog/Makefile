@@ -35,8 +35,13 @@ clean::
 
 else
 
-PWD := $(shell pwd)
-COCOTB := $(PWD)/../../..
+ifeq ($(OS),Msys)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
+
+COCOTB?=$(WPWD)/../../..
 
 VERILOG_SOURCES = $(COCOTB)/examples/endian_swapper/hdl/endian_swapper.sv
 TOPLEVEL = endian_swapper_sv

@@ -45,8 +45,8 @@ else
 WPWD=$(shell pwd)
 endif
 
-PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+COCOTB?=$(WPWD)/../../..
+
 VERILOG_SOURCES = $(COCOTB)/tests/designs/close_module/close_module.v
 
 ifneq ($(SIM),vcs)
