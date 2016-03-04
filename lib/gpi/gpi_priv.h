@@ -288,6 +288,7 @@ public:
     /* Sim related */
     virtual void sim_end(void) = 0;
     virtual void get_sim_time(uint32_t *high, uint32_t *low) = 0;
+    virtual void get_sim_precision(int32_t *precision) = 0;
 
     /* Hierachy related */
     virtual GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) = 0;

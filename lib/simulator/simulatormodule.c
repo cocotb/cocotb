@@ -848,12 +848,11 @@ static PyObject *get_type_string(PyObject *self, PyObject *args)
 }
 
 
-// Returns a high, low tuple of simulator time
+// Returns a high, low, tuple of simulator time
 // Note we can never log from this function since the logging mechanism calls this to annotate
 // log messages with the current simulation time
 static PyObject *get_sim_time(PyObject *self, PyObject *args)
 {
-
     uint32_t high, low;
 
     PyGILState_STATE gstate;
@@ -868,6 +867,22 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
     DROP_GIL(gstate);
 
     return pTuple;
+}
+
+static PyObject *get_precision(PyObject *self, PyObject *args)
+{
+    int32_t precision;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    gpi_get_sim_precision(&precision);
+
+    PyObject *retint = Py_BuildValue("i", precision);
+    
+    DROP_GIL(gstate);
+
+    return retint;
 }
 
 static PyObject *get_num_elems(PyObject *self, PyObject *args)
