@@ -396,7 +396,7 @@ void FliImpl::get_sim_time(uint32_t *high, uint32_t *low)
 
 void FliImpl::get_sim_precision(int32_t *precision)
 {
-    *precision = 0;
+    *precision = mti_getResolutionLimit();;
 }
 
 /**
