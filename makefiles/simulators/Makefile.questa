@@ -73,7 +73,7 @@ ifneq ($(VHDL_SOURCES),)
 	echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
 endif
 ifneq ($(VERILOG_SOURCES),)
-	echo "vlog -work $(RTL_LIBRARY) -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
+	echo "vlog -work $(RTL_LIBRARY) +define+COCOTB_SIM -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(VERILOG_SOURCES)" >> $@
 endif
 	echo "vsim $(VSIM_ARGS) $(RTL_LIBRARY).$(TOPLEVEL)" >> $@
 ifeq ($(WAVES),1)
