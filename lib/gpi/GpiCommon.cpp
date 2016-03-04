@@ -196,9 +196,9 @@ void gpi_load_extra_libs(void)
     gpi_print_registered_impl();
 }
 
-void gpi_get_sim_time(uint32_t *high, uint32_t *low)
+void gpi_get_sim_time(uint32_t *high, uint32_t *low, int32_t *precision)
 {
-    registered_impls[0]->get_sim_time(high, low);
+    registered_impls[0]->get_sim_time(high, low, precision);
 }
 
 gpi_sim_hdl gpi_get_root_handle(const char *name)

@@ -103,13 +103,14 @@ const char *VhpiImpl::reason_to_string(int reason)
     }
 }
 
-void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
+void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low, int32_t *precision)
 {
     vhpiTimeT vhpi_time_s;
     vhpi_get_time(&vhpi_time_s, NULL);
     check_vhpi_error();
     *high = vhpi_time_s.high;
     *low = vhpi_time_s.low;
+    *precision = 0;
 }
 
 // Determine whether a VHPI object type is a constant or not
