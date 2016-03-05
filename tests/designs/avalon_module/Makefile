@@ -1,5 +1,6 @@
 ###############################################################################
-# Copyright (c) 2015 Potential Ventures Ltd
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -10,6 +11,7 @@
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
 #     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
@@ -25,7 +27,30 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+TOPLEVEL_LANG ?= verilog
 
-include $(COCOTB)/tests/designs/viterbi_decoder_axi4s/Makefile
+ifneq ($(TOPLEVEL_LANG),verilog)
 
-MODULE = test_iteration
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
+clean::
+
+else
+
+TOPLEVEL := burst_read_master
+
+PWD=$(shell pwd)
+COCOTB=$(PWD)/../../..
+
+ifeq ($(OS),Msys)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
+
+VERILOG_SOURCES = $(COCOTB)/tests/designs/avalon_module/burst_read_master.v
+
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim
+
+endif

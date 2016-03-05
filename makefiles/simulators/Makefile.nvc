@@ -1,17 +1,30 @@
-# -*- mode: makefile -*-
+# -*- mode: makefile-gmake -*-
+
+ifneq ($(VERILOG_SOURCES),)
+
+results.xml:
+	@echo "Skipping simulation as Verilog is not supported on simulator=$(SIM)"
+clean::
+
+else
+
+RTL_LIBRARY ?= work
 
 .PHONY: analyse
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && nvc -a $(VHDL_SOURCES)
+	cd $(SIM_BUILD) && nvc --work=$(RTL_LIBRARY) -a $(VHDL_SOURCES)
 
-results.xml: analyse $(COCOTB_LIBS) $(COCOTB_LIB_VPI)
-	cd $(SIM_BUILD) && LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) nvc -e $(TOPLEVEL)
-	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	LD_LIBRARY_PATH=$(LIB_DIR) \
-	nvc -r --load $(LIB_DIR)/libvhpi.so $(TOPLEVEL)
+results.xml: analyse $(COCOTB_LIBS) $(COCOTB_VHPI_LIB)
+	cd $(SIM_BUILD) && LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) \
+		nvc --work=$(RTL_LIBRARY) -e $(TOPLEVEL)
+	cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
+		LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
+		TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+		LD_LIBRARY_PATH=$(LIB_DIR) \
+		nvc --work=$(RTL_LIBRARY) -r --load $(COCOTB_VHPI_LIB) $(TOPLEVEL)
 
 clean::
 	-@rm -rf $(SIM_BUILD)
+endif

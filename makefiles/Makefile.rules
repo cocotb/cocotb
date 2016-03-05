@@ -37,6 +37,11 @@
 $(LIB_NAME)_OBJS:= $(patsubst %.c,$(LIB_OBJ_DIR)/%.o,$(filter %.c,$(SRCS)))
 $(LIB_NAME)_OBJS+= $(patsubst %.cpp,$(LIB_OBJ_DIR)/%.o,$(filter %.cpp,$(SRCS)))
 
+ifeq ($(SIM),ius)
+GCC_ARGS+= -DIUS
+GXX_ARGS+= -DIUS
+endif
+
 $(LIB_OBJ_DIR)/%.o: %.c
 	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
 

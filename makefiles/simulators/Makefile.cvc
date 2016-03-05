@@ -25,6 +25,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+ifneq ($(VHDL_SOURCES),)
+
+results.xml:
+	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
+debug: results.xml
+clean::
+
+else
+
 #only interpreted mode works for the moment
 CVC_ITERP ?= 1
 
@@ -35,7 +44,7 @@ endif
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-	TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         cvc64 $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=libvpi:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
@@ -44,7 +53,7 @@ ifeq ($(CVC_ITERP),1)
 else
     results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 endif
 
@@ -52,16 +61,16 @@ endif
 ifeq ($(CVC_ITERP),1)
     debug:  $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         gdb --args cvc64 $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=libvpi:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 else
     debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         gdb --args $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 endif
 
 
 clean::
 	-@rm -rf $(SIM_BUILD)
-
+endif

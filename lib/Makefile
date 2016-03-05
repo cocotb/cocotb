@@ -29,13 +29,6 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
-# Default to VPI layer for now, override this for VHPI
-GPI_IMPL ?= vpi
-
-ifndef GPI_IMPL
-   $(error "Unable to determine appropriate GPI layer to use")
-endif
-
 
 # FIXME it's a bit nasty to have the source files listed here as dependencies
 # but better than re-building the libraries every time.
@@ -61,7 +54,7 @@ $(LIB_DIR)/libvhpi.$(LIB_EXT): $(SIM_ROOT)/lib/vhpi/VhpiImpl.cpp $(SIM_ROOT)/lib
 $(LIB_DIR)/libgpi.$(LIB_EXT): $(SIM_ROOT)/lib/gpi/GpiCommon.cpp $(SIM_ROOT)/lib/gpi/GpiCbHdl.cpp | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/gpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
 
-$(LIB_DIR)/libfli.$(LIB_EXT): $(SIM_ROOT)/lib/fli/FliImpl.cpp | $(LIB_DIR)
+$(LIB_DIR)/libfli.$(LIB_EXT): $(SIM_ROOT)/lib/fli/FliImpl.cpp $(SIM_ROOT)/lib/fli/FliCbHdl.cpp $(SIM_ROOT)/lib/fli/FliObjHdl.cpp | $(LIB_DIR)
 	make -C $(SIM_ROOT)/lib/fli EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
 
 $(LIB_DIR)/libsim.$(LIB_EXT): $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)

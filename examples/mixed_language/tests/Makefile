@@ -1,5 +1,5 @@
 # Override this variable to use a VHDL toplevel instead of SystemVerilog
-TOPLEVEL_LANG ?= sv
+TOPLEVEL_LANG ?= verilog
 
 # At the moment the only simulator supporting mixed language VHPI/VPI is Aldec
 SIM?=aldec
@@ -18,25 +18,13 @@ endif
 VERILOG_SOURCES = $(WPWD)/../../endian_swapper/hdl/endian_swapper.sv
 VHDL_SOURCES    = $(WPWD)/../../endian_swapper/hdl/endian_swapper.vhdl
 
-ifeq ($(TOPLEVEL_LANG),sv)
+ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES += $(WPWD)/../hdl/toplevel.sv
-    GPI_IMPL=vpi
-    GPI_EXTRA=vhpi
-ifeq ($(SIM),modelsim)
-    GPI_EXTRA=fli
-endif
-endif
-
-ifeq ($(TOPLEVEL_LANG),vhdl)
+else ifeq ($(TOPLEVEL_LANG),vhdl)
     $(error "VHDL toplevel not yet implemented")
     VHDL_SOURCES += $(WPWD)/../hdl/toplevel.vhdl
-ifeq ($(SIM),aldec)
-    GPI_IMPL=vhpi
-endif
-ifeq ($(SIM),modelsim)
-    GPI_IMPL=fli
-endif
-    GPI_EXTRA=vpi
+else
+    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
 

@@ -318,7 +318,7 @@ begin
 		signal reorder_recursion_tlast  : std_logic;
 		signal recursion_tready         : std_logic;
 	begin
-		inst_recursion : recursion
+		inst_recursion : recursionx
 		port map(
 			clk => clk,
 			rst => rst,

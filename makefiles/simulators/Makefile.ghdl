@@ -26,17 +26,27 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+ifneq ($(VERILOG_SOURCES),)
+
+results.xml:
+	@echo "Skipping simulation as Verilog is not supported on simulator=$(SIM)"
+clean::
+
+else
+
 .PHONY: analyse
+
+GHDL=ghdl
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && ghdl -a $(VHDL_SOURCES)
+	cd $(SIM_BUILD) && $(GHDL) -a $(VHDL_SOURCES) && $(GHDL) -e $(TOPLEVEL)
 
-results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_LIB_VPI)
-	cd $(SIM_BUILD) && LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) ghdl -e -Wl,-L$(LIB_DIR) -Wl,-lvpi $(TOPLEVEL)
+results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-	./$(SIM_BUILD)/$(TOPLEVEL)
+        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	$(GHDL) -r --workdir=$(SIM_BUILD) $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT)
 
 clean::
 	-@rm -rf $(SIM_BUILD)
+endif

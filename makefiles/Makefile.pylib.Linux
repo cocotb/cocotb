@@ -27,20 +27,26 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# All common pyhon related rules
+# All common python related rules
 
-PYTHON_PREFIX = $(shell python-config --prefix)
+ifneq ($(COCOTB_PYTHON_DEBUG),)
+DBG_PYTHON_VERSION=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
+PYTHON_BIN=python$(DBG_PYTHON_VERSION)-dbg
+DYN_SUFFIX="_d"
+else
+PYTHON_BIN=python
+endif
 
 NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
 
 # We might work with other Python versions
-PYTHON_MAJOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info.major)")
-PYTHON_MINOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info.minor)")
-PYTHON_VERSION?=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
+PYTHON_MAJOR_VERSION?=$(shell $(PYTHON_BIN) -c "from __future__ import print_function; import sys; print(sys.version_info.major)")
+PYTHON_MINOR_VERSION?=$(shell $(PYTHON_BIN) -c "from __future__ import print_function; import sys; print(sys.version_info.minor)")
+PYTHON_VERSION?=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
 
-PYTHON_LIBDIR:=$(shell python -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
-PYTHON_DYNLIBDIR:=$(shell python -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("DESTSHARED"))')
+PYTHON_LIBDIR:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("DESTSHARED"))')
 
 # Nasty hack but there's no way in Python properly get the directories for 32-bit Python on a 64-bit system
 # TODO: Under OSX we can use "export VERSIONER_PYTHON_PREFER_32_BIT=yes", no Linux equivalent though
@@ -52,7 +58,7 @@ endif
 # Since we don't know which modules we might need or whether the simulator
 # we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
 # is we simply link against all dynamic libraries in the Python installation
-PYLIBS = $(shell python-config --libs)
+PYLIBS = $(shell $(PYTHON_BIN)-config --libs)
 
-PYTHON_INCLUDEDIR := $(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
-PYTHON_DYN_LIB = libpython$(PYTHON_VERSION).so
+PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
+PYTHON_DYN_LIB = libpython$(PYTHON_VERSION)$(DYN_SUFFIX).so
