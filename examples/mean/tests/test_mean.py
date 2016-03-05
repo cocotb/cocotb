@@ -5,9 +5,14 @@ import cocotb
 from cocotb.triggers import Timer, RisingEdge, ReadOnly
 from cocotb.result import TestFailure
 from cocotb.monitors import BusMonitor
+from cocotb.drivers import BusDriver
 from cocotb.scoreboard import Scoreboard
+from cocotb.crv import Randomized
+
+import cocotb.coverage
 
 import random
+import itertools
 
 clock_period = 100
 
@@ -26,8 +31,69 @@ class StreamBusMonitor(BusMonitor):
             yield RisingEdge(self.clock)
             yield ReadOnly()
             if self.bus.valid.value:
+                print (self.bus.data.value)
                 self._recv(int(self.bus.data.value))
+                
+class StreamTransaction(Randomized):
+    """
+    randomized transaction
+    """
+    def __init__(self, bus_width, data_width):
+        Randomized.__init__(self)
+        self.bus_width = bus_width
+        self.data_width = data_width
+        self.data = ()
+                
+        list_data = range(0, 2**data_width)
+                
+        combinations = list(itertools.product(list_data, repeat=bus_width))
+        
+        self.addRand("data", combinations) 
+            
+    def mean_value(self):
+        return sum(self.data) // self.bus_width
+        
+                
+class StreamBusDriver(BusDriver):
+    """
+    streaming bus monitor
+    """
+    _signals = ["valid", "data"]
+    
+    def __init__(self, entity, name, clock):
+        BusDriver.__init__(self, entity, name, clock)
 
+
+    @cocotb.coroutine
+    def send(self, transaction):
+                                
+        i = 0
+        for x in transaction.data:
+            self.bus.data[i] = x
+            i = i + 1
+        self.bus.valid <= 1
+       
+        yield RisingEdge(self.clock)
+        self.bus.valid <= 1
+        
+        @cocotb.coverage.CoverPoint("top.data1", 
+            f = lambda transaction : transaction.data[0], 
+            bins = range(0, 2**transaction.data_width)
+            )
+        @cocotb.coverage.CoverPoint("top.dataN", 
+            f = lambda transaction : transaction.data[transaction.bus_width-1], 
+            bins = range(0, 2**transaction.data_width)
+        )
+        def sample_coverage(transaction):
+            """
+            We need this sampling function inside the class function, as
+            self needs to exist (required for bins creation). If not needed,
+            just "send" could be decorated.
+            """
+            pass
+            
+        sample_coverage(transaction)
+        
 
 @cocotb.coroutine
 def clock_gen(signal, period=10000):
@@ -124,3 +190,44 @@ def mean_randomised_test(dut):
         exp_out.append(nums_mean)
         yield RisingEdge(dut.clk)
         dut.i_valid <= 0
+        
+@cocotb.test()
+def mean_mdv_test(dut):
+    """ Test using functional coverage measurements and 
+        Constrained-Random mechanisms. Generates random transactions
+        until coverage defined in Driver reaches 90% """
+
+
+    dut_out = StreamBusMonitor(dut, "o", dut.clk)
+    dut_in = StreamBusDriver(dut, "i", dut.clk)
+
+    exp_out = []
+    scoreboard = Scoreboard(dut)
+    scoreboard.add_interface(dut_out, exp_out)
+
+    data_width = int(dut.DATA_WIDTH.value)
+    bus_width = int(dut.BUS_WIDTH.value)
+    dut.log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
+                 (data_width, bus_width))
+
+    cocotb.fork(clock_gen(dut.clk, period=clock_period))
+
+    dut.rst <= 1
+    for i in range(bus_width):
+        dut.i_data[i] = 0
+    dut.i_valid <= 0
+    yield RisingEdge(dut.clk)
+    yield RisingEdge(dut.clk)
+    dut.rst <= 0
+    
+    coverage = 0
+    while coverage < 90:
+        xaction = StreamTransaction(bus_width, data_width)
+        xaction.randomize()
+        print (xaction.data)
+        yield dut_in.send(xaction)
+        exp_out.append(xaction.mean_value())
+        coverage = cocotb.coverage.coverage_db["top"].coverage*100/cocotb.coverage.coverage_db["top"].size
+        
+
+
