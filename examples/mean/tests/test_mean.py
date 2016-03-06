@@ -31,7 +31,7 @@ class StreamBusMonitor(BusMonitor):
             yield RisingEdge(self.clock)
             yield ReadOnly()
             if self.bus.valid.value:
-                print (self.bus.data.value)
+                print (int(self.bus.data.value))
                 self._recv(int(self.bus.data.value))
                 
 class StreamTransaction(Randomized):
@@ -69,6 +69,7 @@ class StreamBusDriver(BusDriver):
                                 
         i = 0
         for x in transaction.data:
+            print ("send %d", x)
             self.bus.data[i] = x
             i = i + 1
         self.bus.valid <= 1
@@ -76,6 +77,8 @@ class StreamBusDriver(BusDriver):
         yield RisingEdge(self.clock)
         self.bus.valid <= 1
         
+        #functional coverage - check if all possible data values were
+        #sampled at first and last input
         @cocotb.coverage.CoverPoint("top.data1", 
             f = lambda transaction : transaction.data[0], 
             bins = range(0, 2**transaction.data_width)
@@ -87,8 +90,8 @@ class StreamBusDriver(BusDriver):
         def sample_coverage(transaction):
             """
             We need this sampling function inside the class function, as
-            self needs to exist (required for bins creation). If not needed,
-            just "send" could be decorated.
+            transaction object needs to exist (required for bins creation). 
+            If not needed, just "send" could be decorated.
             """
             pass
             
@@ -182,6 +185,7 @@ def mean_randomised_test(dut):
         nums = []
         for i in range(bus_width):
             x = random.randint(0, 2**data_width - 1)
+            print ("send %d", x)
             dut.i_data[i] = x
             nums.append(x)
         dut.i_valid <= 1
@@ -195,7 +199,7 @@ def mean_randomised_test(dut):
 def mean_mdv_test(dut):
     """ Test using functional coverage measurements and 
         Constrained-Random mechanisms. Generates random transactions
-        until coverage defined in Driver reaches 90% """
+        until coverage defined in Driver reaches 99% """
 
 
     dut_out = StreamBusMonitor(dut, "o", dut.clk)
@@ -220,11 +224,30 @@ def mean_mdv_test(dut):
     yield RisingEdge(dut.clk)
     dut.rst <= 0
     
+    coverage1_hits = []
+    coverageN_hits = []
+    
+    #define a constraint function, which prevents from picking already covered data
+    def data_constraint(data):
+        return (not data[0] in coverage1_hits) & (not data[bus_width-1] in coverageN_hits)
+    
     coverage = 0
-    while coverage < 90:
-        xaction = StreamTransaction(bus_width, data_width)
-        xaction.randomize()
-        print (xaction.data)
+    xaction = StreamTransaction(bus_width, data_width)
+    while coverage < 99:
+        
+        #randomize without constraint
+        #xaction.randomize() 
+        
+        #randomize with constraint
+        if not "top.data1" in cocotb.coverage.coverage_db:
+            xaction.randomize()
+        else:
+            coverage1_new_bins = cocotb.coverage.coverage_db["top.data1"].new_hits
+            coverageN_new_bins = cocotb.coverage.coverage_db["top.dataN"].new_hits
+            coverage1_hits.extend(coverage1_new_bins)
+            coverageN_hits.extend(coverageN_new_bins)
+            xaction.randomize_with(data_constraint)
+            
         yield dut_in.send(xaction)
         exp_out.append(xaction.mean_value())
         coverage = cocotb.coverage.coverage_db["top"].coverage*100/cocotb.coverage.coverage_db["top"].size
