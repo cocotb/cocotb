@@ -31,7 +31,6 @@ class StreamBusMonitor(BusMonitor):
             yield RisingEdge(self.clock)
             yield ReadOnly()
             if self.bus.valid.value:
-                print (int(self.bus.data.value))
                 self._recv(int(self.bus.data.value))
                 
 class StreamTransaction(Randomized):
@@ -69,7 +68,6 @@ class StreamBusDriver(BusDriver):
                                 
         i = 0
         for x in transaction.data:
-            print ("send %d", x)
             self.bus.data[i] = x
             i = i + 1
         self.bus.valid <= 1
@@ -185,7 +183,6 @@ def mean_randomised_test(dut):
         nums = []
         for i in range(bus_width):
             x = random.randint(0, 2**data_width - 1)
-            print ("send %d", x)
             dut.i_data[i] = x
             nums.append(x)
         dut.i_valid <= 1
@@ -251,6 +248,7 @@ def mean_mdv_test(dut):
         yield dut_in.send(xaction)
         exp_out.append(xaction.mean_value())
         coverage = cocotb.coverage.coverage_db["top"].coverage*100/cocotb.coverage.coverage_db["top"].size
+        dut.log.info("Current Coverage = %d %%", coverage)
         
 
 

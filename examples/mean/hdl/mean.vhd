@@ -23,8 +23,8 @@ end mean;
 
 architecture RTL of mean is
 
-  signal s_sum : unsigned(DATA_WIDTH + clog2(BUS_WIDTH-1)-1 downto 0) := (others => '0');  -- introduce bug
---  signal s_sum : unsigned(DATA_WIDTH + clog2(BUS_WIDTH)-1 downto 0) := (others => '0');
+  --signal s_sum : unsigned(DATA_WIDTH + clog2(BUS_WIDTH-1)-1 downto 0) := (others => '0');  -- introduce bug
+  signal s_sum : unsigned(DATA_WIDTH + clog2(BUS_WIDTH)-1 downto 0) := (others => '0');
   signal s_valid : std_logic := '0';
   
 begin
