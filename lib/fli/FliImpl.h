@@ -152,7 +152,25 @@ private:
 
 
 // Object Handles
-class FliObjHdl : public GpiObjHdl {
+class FliObj {
+public:
+    FliObj(int acc_type,
+           int acc_full_type) :
+               m_acc_type(acc_type),
+               m_acc_full_type(acc_full_type) { }
+
+    virtual ~FliObj() { }
+
+    int get_acc_type(void) { return m_acc_type; }
+    int get_acc_full_type(void) { return m_acc_full_type; }
+
+
+protected:
+    int m_acc_type;
+    int m_acc_full_type;
+};
+
+class FliObjHdl : public GpiObjHdl, public FliObj {
 public:
     FliObjHdl(GpiImplInterface *impl,
               void *hdl,
@@ -160,8 +178,7 @@ public:
               int acc_type,
               int acc_full_type) :
                   GpiObjHdl(impl, hdl, objtype, false),
-                  m_acc_type(acc_type),
-                  m_acc_full_type(acc_full_type) { }
+                  FliObj(acc_type, acc_full_type) { }
 
     FliObjHdl(GpiImplInterface *impl,
               void *hdl,
@@ -170,22 +187,14 @@ public:
               int acc_full_type,
               bool is_const) :
                   GpiObjHdl(impl, hdl, objtype, is_const),
-                  m_acc_type(acc_type),
-                  m_acc_full_type(acc_full_type) { }
+                  FliObj(acc_type, acc_full_type) { }
 
     virtual ~FliObjHdl() { }
 
     virtual int initialise(std::string &name, std::string &fq_name);
-
-    int get_acc_type(void) { return m_acc_type; }
-    int get_acc_full_type(void) { return m_acc_full_type; }
-
-protected:
-    int m_acc_type;
-    int m_acc_full_type;
 };
 
-class FliSignalObjHdl : public GpiSignalObjHdl {
+class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
 public:
     FliSignalObjHdl(GpiImplInterface *impl,
                     void *hdl,
@@ -195,8 +204,7 @@ public:
                     int acc_full_type,
                     bool is_var) :
                         GpiSignalObjHdl(impl, hdl, objtype, is_const),
-                        m_acc_type(acc_type),
-                        m_acc_full_type(acc_full_type),
+                        FliObj(acc_type, acc_full_type),
                         m_is_var(is_var),
                         m_rising_cb(impl, this, GPI_RISING),
                         m_falling_cb(impl, this, GPI_FALLING),
@@ -207,13 +215,9 @@ public:
     virtual GpiCbHdl *value_change_cb(unsigned int edge);
     virtual int initialise(std::string &name, std::string &fq_name);
 
-    int get_acc_type(void) { return m_acc_type; }
-    int get_acc_full_type(void) { return m_acc_full_type; }
     bool is_var(void) { return m_is_var; }
 
 protected:
-    int                m_acc_type;
-    int                m_acc_full_type;
     bool               m_is_var;
     FliSignalCbHdl     m_rising_cb;
     FliSignalCbHdl     m_falling_cb;

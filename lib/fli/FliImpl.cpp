@@ -580,15 +580,8 @@ FliIterator::FliIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
                                                                    m_regs(),
                                                                    m_currentHandles(NULL)
 {
-    int type;
-
-    if (m_parent->get_type() == GPI_MODULE or m_parent->get_type() == GPI_STRUCTURE) {
-        FliObjHdl *fli_obj = static_cast<FliObjHdl *>(m_parent);
-        type = fli_obj->get_acc_full_type();
-    } else {
-        FliSignalObjHdl *fli_obj = static_cast<FliSignalObjHdl *>(m_parent);
-        type = fli_obj->get_acc_full_type();
-    }
+    FliObj *fli_obj = dynamic_cast<FliObj *>(m_parent);
+    int     type    = fli_obj->get_acc_full_type();
 
     LOG_DEBUG("fli_iterator::Create iterator for %s of type %d:%s", m_parent->get_fullname().c_str(), type, acc_fetch_type_str(type));
 
@@ -760,7 +753,7 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
         fq_name += "/" + name;
     }
 
-    FliImpl *fli_impl = static_cast<FliImpl *>(m_impl);
+    FliImpl *fli_impl = reinterpret_cast<FliImpl *>(m_impl);
     new_obj = fli_impl->create_gpi_obj_from_handle(obj, name, fq_name, accType, accFullType);
     if (new_obj) {
         *hdl = new_obj;
