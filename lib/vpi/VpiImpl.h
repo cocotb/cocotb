@@ -29,7 +29,7 @@
 #define COCOTB_VPI_IMPL_H_ 
 
 #include "../gpi/gpi_priv.h"
-#include <vpi_user.h>
+#include <sv_vpi_user.h>
 #include <vector>
 #include <map>
 
