@@ -91,6 +91,9 @@ int FliObjHdl::initialise(std::string &name, std::string &fq_name)
                 m_num_elems = mti_TickLength(arrayType);
             }
             break;
+        case GPI_GENARRAY:
+            m_num_elems = 1; //Unable to determine length of this pseudo-region
+            break;
         default:
             LOG_CRITICAL("Invalid object type for FliObjHdl. (%s (%s))", name.c_str(), get_type_str());
             return -1;

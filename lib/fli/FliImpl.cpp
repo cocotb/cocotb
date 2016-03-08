@@ -125,8 +125,17 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
     }
 
     if (!isTypeValue(accType)) {
-        LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
-        new_obj = new FliObjHdl(this, hdl, GPI_MODULE, accType, accFullType);
+        /* Need a Pseudo-region to handle generate loops in a consistent manner across interfaces
+         * and across the different methods of accessing data.
+         */
+        std::string rgn_name = mti_GetRegionName(static_cast<mtiRegionIdT>(hdl));
+        if (name != rgn_name) {
+            LOG_DEBUG("Found pseudo-region %s -> %p", fq_name.c_str(), hdl);
+            new_obj = new FliObjHdl(this, hdl, GPI_GENARRAY, accType, accFullType);
+        } else {
+            LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
+            new_obj = new FliObjHdl(this, hdl, GPI_MODULE, accType, accFullType);
+        }
     } else {
         bool is_var;
         bool is_const;
@@ -274,22 +283,33 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         LOG_DEBUG("        Type: %d", accType);
         LOG_DEBUG("   Full Type: %d", accFullType);
     } else {
+        mtiRegionIdT rgn;
+
+        /* If not found, check to see if the name of a generate loop and create a pseudo-region */
+        for (rgn = mti_FirstLowerRegion(parent->get_handle<mtiRegionIdT>()); rgn != NULL; rgn = mti_NextRegion(rgn)) {
+            if (acc_fetch_fulltype(hdl) == accForGenerate) {
+                std::string rgn_name = mti_GetRegionName(static_cast<mtiRegionIdT>(rgn));
+                if (rgn_name.compare(0,name.length(),name) == 0) {
+                    FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
+                    return create_gpi_obj_from_handle(parent->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
+                }
+            }
+        }
+
         LOG_DEBUG("Didn't find anything named %s", &writable[0]);
         return NULL;
     }
 
-    /* Added to behave like vhpi interface.  Handle.py will does not support a handle to a 
-     * "for generate" loop that doesn't contain an index.
+    /* Generate Loops have inconsistent behavior across fli.  A "name"
+     * without an index, i.e. dut.loop vs dut.loop(0), will attempt to map
+     * to index 0, if index 0 exists.  If it doesn't then it won't find anything.
      *
-     * VHDL (in dut):
-     *    a_loop : for i in 0 to 9 generate
-     *       ...
-     *    end generate a_loop;
-     *
-     * FLI will return a vaild handle to "/dut/a_loop" as well as /dut/a_loop(0)
+     * If this unique case is hit, we need to create the Pseudo-region, with the handle
+     * being equivalent to the parent handle.
      */
     if (accFullType == accForGenerate) {
-        return NULL;
+        FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
+        return create_gpi_obj_from_handle(parent->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
     }
 
     return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
@@ -302,30 +322,21 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
  */
 GpiObjHdl*  FliImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 {
-    if (parent->get_type() == GPI_MODULE || parent->get_type() == GPI_ARRAY || parent->get_type() == GPI_STRING) {
+    gpi_objtype_t obj_type = parent->get_type();
+    if (obj_type == GPI_MODULE || obj_type == GPI_GENARRAY || obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+        FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
+        int type = fli_obj->get_acc_type();
         char buff[15];
-        int type;
 
         LOG_DEBUG("Looking for index %u from %s", index, parent->get_name_str());
-
-        if (parent->get_type() == GPI_MODULE) {
-            FliObjHdl *fli_obj = static_cast<FliObjHdl *>(parent);
-            type = fli_obj->get_acc_type();
-        } else {
-            FliSignalObjHdl *fli_obj = static_cast<FliSignalObjHdl *>(parent);
-            type = fli_obj->get_acc_type();
-        }
 
         /* To behave like the current VHPI interface, index needs to be properly translated.
          * Index of 0 needs to map to "signal'left" and Index of "length-1" mapping to "signal'right"
          */
         if (!isTypeValue(type)) {
-            /* This case would be for indexing into a generate loop.  The way that is currently
-             * handled, this code should never be executed.
-             */
             snprintf(buff, 15, "(%u)", index);
         } else {
-            FliValueObjHdl *fli_obj = static_cast<FliValueObjHdl *>(parent);
+            FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent);
             mtiTypeIdT typeId = fli_obj->get_fli_typeid();
 
             if (mti_TickDir(typeId) < 0) {
@@ -370,7 +381,7 @@ GpiObjHdl*  FliImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 
         return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
     } else {
-        LOG_ERROR("FLI: Parent of type %d must be of type GPI_MODULE or GPI_ARRAY to have an index.", parent->get_type());
+        LOG_ERROR("FLI: Parent of type %d must be of type GPI_MODULE, GPI_GENARRAY, GPI_STRING or GPI_ARRAY to have an index.", parent->get_type());
         return NULL;
     }
 }
@@ -593,6 +604,12 @@ FliIterator::FliIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
 
     /* Find the first mapping type that yields a valid iterator */
     for (one2many = selected->begin(); one2many != selected->end(); one2many++) {
+        /* GPI_GENARRAY are pseudo-regions and all that should be searched for are the sub-regions */
+        if (m_parent->get_type() == GPI_GENARRAY && *one2many != FliIterator::OTM_REGIONS) {
+            LOG_DEBUG("fli_iterator OneToMany=%d skipped for GPI_GENARRAY type", *one2many);
+            continue;
+        }
+
         populate_handle_list(*one2many);
 
         switch (*one2many) {
@@ -639,6 +656,9 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     if (!selected)
         return GpiIterator::END;
 
+    gpi_objtype_t obj_type  = m_parent->get_type();
+    std::string parent_name = m_parent->get_name();
+
     /* We want the next object in the current mapping.
      * If the end of mapping is reached then we want to
      * try next one until a new object is found
@@ -648,6 +668,23 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
 
         if (m_iterator != m_currentHandles->end()) {
             obj = *m_iterator++;
+
+            /* For GPI_GENARRAY, only allow the generate statements through that match the name
+             * of the generate block.
+             */
+            if (obj_type == GPI_GENARRAY) {
+                if (acc_fetch_fulltype(obj) == accForGenerate) {
+                    std::string rgn_name = mti_GetRegionName(static_cast<mtiRegionIdT>(obj));
+                    if (rgn_name.compare(0,parent_name.length(),parent_name) != 0) {
+                        obj = NULL;
+                        continue;
+                    }
+                } else {
+                    obj = NULL;
+                    continue;
+                }
+            }
+
             break;
         } else {
             LOG_DEBUG("No more valid handles in the current OneToMany=%d iterator", *one2many);
@@ -656,6 +693,12 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
         if (++one2many >= selected->end()) {
             obj = NULL;
             break;
+        }
+
+        /* GPI_GENARRAY are pseudo-regions and all that should be searched for are the sub-regions */
+        if (obj_type == GPI_GENARRAY && *one2many != FliIterator::OTM_REGIONS) {
+            LOG_DEBUG("fli_iterator OneToMany=%d skipped for GPI_GENARRAY type", *one2many);
+            continue;
         }
 
         populate_handle_list(*one2many);
@@ -686,8 +729,8 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     }
 
     char *c_name;
-    PLI_INT32 accType;
-    PLI_INT32 accFullType;
+    PLI_INT32 accType = 0;
+    PLI_INT32 accFullType = 0;
     switch (*one2many) {
         case FliIterator::OTM_CONSTANTS:
         case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
@@ -714,8 +757,6 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     }
 
     if (!c_name) {
-        int accFullType = acc_fetch_fulltype(obj);
-
         if (!VS_TYPE_IS_VHDL(accFullType)) {
             *raw_hdl = (void *)obj;
             return GpiIterator::NOT_NATIVE_NO_NAME;
@@ -724,7 +765,31 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
         return GpiIterator::NATIVE_NO_NAME;
     }
 
-    name = c_name;
+    /*
+     * If the parent is not a generate loop, then watch for generate handles and create
+     * the pseudo-region.
+     *
+     * NOTE: Taking advantage of the "caching" to only create one pseudo-region object.
+     *       Otherwise a list would be required and checked while iterating
+     */
+    if (*one2many == FliIterator::OTM_REGIONS && obj_type != GPI_GENARRAY && accFullType == accForGenerate) {
+        std::string idx_str = c_name;
+        std::size_t found = idx_str.find_last_of("(");
+
+        if (found != std::string::npos && found != 0) {
+            FliObj *fli_obj = dynamic_cast<FliObj *>(m_parent);
+
+            name        = idx_str.substr(0,found);
+            obj         = m_parent->get_handle<HANDLE>();
+            accType     = fli_obj->get_acc_type();
+            accFullType = fli_obj->get_acc_full_type();
+        } else {
+            LOG_WARN("Unhandled Generate Loop Format - %s", name.c_str());
+            name = c_name;
+        }
+    } else {
+        name = c_name;
+    }
 
     if (*one2many == FliIterator::OTM_SIGNAL_SUB_ELEMENTS) {
         mti_VsimFree(c_name);
@@ -734,10 +799,11 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     if (fq_name == "/") {
         fq_name += name;
     } else if (*one2many == FliIterator::OTM_SIGNAL_SUB_ELEMENTS ||
-               *one2many == FliIterator::OTM_VARIABLE_SUB_ELEMENTS) {
+               *one2many == FliIterator::OTM_VARIABLE_SUB_ELEMENTS ||
+                obj_type == GPI_GENARRAY) {
         std::size_t found;
 
-        if (m_parent->get_type() == GPI_STRUCTURE) {
+        if (obj_type == GPI_STRUCTURE) {
             found = name.find_last_of(".");
         } else {
             found = name.find_last_of("(");
