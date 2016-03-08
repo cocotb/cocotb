@@ -288,6 +288,67 @@ class HierarchyObject(SimHandleBase):
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
+class HierarchyArrayObject(HierarchyObject):
+    """
+    Hierarchy Array objects don't have values, they are effectively scopes or namespaces
+    """
+
+    def _discover_all(self):
+        """
+        When iterating or performing tab completion, we run through ahead of
+        time and discover all possible children, populating the _sub_handle
+        mapping. Hierarchy can't change after elaboration so we only have to
+        do this once.
+        """
+        if self._discovered: return
+        self._log.debug("Discovering all on %s", self._name)
+        iterator = simulator.iterate(self._handle, simulator.OBJECTS)
+        while True:
+            try:
+                thing = simulator.next(iterator)
+            except StopIteration:
+                # Iterator is cleaned up internally in GPI
+                break
+            name = simulator.get_name_string(thing)
+            try:
+                hdl = SimHandle(thing)
+            except TestError as e:
+                self._log.debug("%s" % e)
+                continue
+
+            # This is slightly hacky, but we need to extract the index from the name
+            #
+            # FLI and VHPI(IUS):  _name(X) where X is the index
+            # VHPI(ALDEC):        _name__X where X is the index
+            # VPI:                _name[X] where X is the index
+            import re
+            result = re.match("{}__(?P<index>\d+)$".format(self._name), name)
+            if not result:
+                result = re.match("{}\((?P<index>\d+)\)$".format(self._name), name)
+            if not result:
+                result = re.match("{}\[(?P<index>\d+)\]$".format(self._name), name)
+
+            if result:
+                index = int(result.group("index"))
+
+                self._sub_handles[index] = hdl
+                self._log.debug("Added %s[%d] to the cache", self._name, index)
+            else:
+                self._log.error("Dropping invalid Hierarchy Array handle >%s<", name)
+
+        self._discovered = True
+
+    def __len__(self):
+        """Returns the 'length' of the generate block."""
+        if self._len is None:
+            if not self._discovered:
+                self._discover_all()
+
+            self._len = len(self._sub_handles)
+        return self._len
+
+
+
 class NonHierarchyObject(SimHandleBase):
 
     """
@@ -623,6 +684,7 @@ def SimHandle(handle):
         simulator.INTEGER:     IntegerObject,
         simulator.ENUM:        ModifiableObject,
         simulator.STRING:      StringObject,
+        simulator.GENARRAY:    HierarchyArrayObject,
     }
 
     # Enforce singletons since it's possible to retrieve handles avoiding

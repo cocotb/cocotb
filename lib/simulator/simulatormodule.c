@@ -973,6 +973,7 @@ static void add_module_constants(PyObject* simulator)
     rc |= PyModule_AddIntConstant(simulator, "REAL",          GPI_REAL);
     rc |= PyModule_AddIntConstant(simulator, "INTEGER",       GPI_INTEGER);
     rc |= PyModule_AddIntConstant(simulator, "STRING",        GPI_STRING);
+    rc |= PyModule_AddIntConstant(simulator, "GENARRAY",      GPI_GENARRAY);
     rc |= PyModule_AddIntConstant(simulator, "OBJECTS",       GPI_OBJECTS);
     rc |= PyModule_AddIntConstant(simulator, "DRIVERS",       GPI_DRIVERS);
     rc |= PyModule_AddIntConstant(simulator, "LOADS",         GPI_LOADS);
