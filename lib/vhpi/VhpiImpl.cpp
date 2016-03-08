@@ -206,7 +206,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
 
     gpi_type = to_gpi_objtype(base_type);
     LOG_DEBUG("Creating %s of type %d (%s)",
-              vhpi_get_str(vhpiFullNameP, new_hdl),
+              vhpi_get_str(vhpiFullCaseNameP, new_hdl),
               gpi_type,
               vhpi_get_str(vhpiKindStrP, query_hdl));
 
@@ -307,16 +307,41 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             break;
         }
 
-        case vhpiForGenerateK:
-        case vhpiIfGenerateK:
-        case vhpiCompInstStmtK:
         case vhpiProcessStmtK:
         case vhpiSimpleSigAssignStmtK:
         case vhpiCondSigAssignStmtK:
         case vhpiRecordTypeDeclK:
-        case vhpiSelectSigAssignStmtK:
+        case vhpiSelectSigAssignStmtK: {
             modifiable = false;
             break;
+        }
+
+        case vhpiRootInstK:
+        case vhpiIfGenerateK:
+        case vhpiForGenerateK:
+        case vhpiCompInstStmtK: {
+            std::string hdl_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
+
+            if (base_type == vhpiRootInstK && hdl_name != name) {
+                vhpiHandleT arch = vhpi_handle(vhpiDesignUnit, new_hdl);
+
+                if (NULL != arch) {
+                    vhpiHandleT prim = vhpi_handle(vhpiPrimaryUnit, arch);
+
+                    if (NULL != prim) {
+                        hdl_name = vhpi_get_str(vhpiCaseNameP, prim);
+                    }
+                }
+            }
+
+            modifiable = false;
+
+            if (name != hdl_name) {
+                LOG_DEBUG("Found pseudo-region %s", fq_name.c_str());
+                gpi_type = GPI_GENARRAY;
+            }
+            break;
+        }
 
         default: {
             LOG_ERROR("Not able to map type (%s) %u to object",
@@ -355,7 +380,7 @@ GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
     vhpiHandleT new_hdl = (vhpiHandleT)raw_hdl;
 
     std::string fq_name = parent->get_fullname();
-    const char *c_name = vhpi_get_str(vhpiNameP, new_hdl);
+    const char *c_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
     if (!c_name) {
         LOG_DEBUG("Unable to query name of passed in handle");
         return NULL;
@@ -394,8 +419,39 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     new_hdl = vhpi_handle_by_name(&writable[0], NULL);
 
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to query vhpi_handle_by_name %s", fq_name.c_str());
-        return NULL;
+        /* If not found, check to see if the name of a generate loop */
+        vhpiHandleT iter = vhpi_iterator(vhpiInternalRegions, parent->get_handle<vhpiHandleT>());
+
+        if (iter != NULL) {
+            vhpiHandleT rgn;
+            for (rgn = vhpi_scan(iter); rgn != NULL; rgn = vhpi_scan(iter)) {
+                if (vhpi_get(vhpiKindP, rgn) == vhpiForGenerateK) {
+                    std::string rgn_name = vhpi_get_str(vhpiCaseNameP, rgn);
+                    if (rgn_name.compare(0,name.length(),name) == 0) {
+                        new_hdl = parent->get_handle<vhpiHandleT>();
+                        vhpi_release_handle(iter);
+                        break;
+                    }
+                }
+            }
+        }
+        if (new_hdl == NULL) {
+            LOG_DEBUG("Unable to query vhpi_handle_by_name %s", fq_name.c_str());
+            return NULL;
+        }
+    }
+
+    /* Generate Loops have inconsistent behavior across vhpi.  A "name"
+     * without an index, i.e. dut.loop vs dut.loop(0), may or may not map to 
+     * to the start index.  If it doesn't then it won't find anything.
+     *
+     * If this unique case is hit, we need to create the Pseudo-region, with the handle
+     * being equivalent to the parent handle.
+     */
+    if (vhpi_get(vhpiKindP, new_hdl) == vhpiForGenerateK) {
+        vhpi_release_handle(new_hdl);
+
+        new_hdl = parent->get_handle<vhpiHandleT>();
     }
 
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
@@ -414,31 +470,48 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     vhpiHandleT vhpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
     vhpiHandleT new_hdl;
 
-    LOG_DEBUG("Native check create for index %u of parent %s (%s)",
-              index,
-              vhpi_get_str(vhpiNameP, vhpi_hdl),
-              vhpi_get_str(vhpiKindStrP, vhpi_hdl));
+    if (parent_hdl->get_type() == GPI_GENARRAY) {
+        char buff[11]; // needs to be large enough to hold 2^32-1 in string form (10 + '\0')
 
-    new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vhpi_hdl, index);
-    if (!new_hdl) {
-        /* Support for the above seems poor, so if it did not work
-           try an iteration instead */
+        snprintf(buff, 11, "%u", index);
 
-        vhpiHandleT iter = vhpi_iterator(vhpiIndexedNames, vhpi_hdl);
-        if (iter) {
-            uint32_t curr_index = 0;
-            while (true) {
-                new_hdl = vhpi_scan(iter);
-                if (!new_hdl) {
-                    break;
+        LOG_DEBUG("Native check create for index %u of parent %s (pseudo-region)",
+                  index,
+                  parent_hdl->get_name_str());
+
+        std::string idx      = buff;
+        std::string hdl_name = parent_hdl->get_fullname() + GEN_IDX_SEP_LHS + idx + GEN_IDX_SEP_RHS;
+        std::vector<char> writable(hdl_name.begin(), hdl_name.end());
+        writable.push_back('\0');
+
+        new_hdl = vhpi_handle_by_name(&writable[0], NULL);
+    } else {
+        LOG_DEBUG("Native check create for index %u of parent %s (%s)",
+                  index,
+                  vhpi_get_str(vhpiCaseNameP, vhpi_hdl),
+                  vhpi_get_str(vhpiKindStrP, vhpi_hdl));
+
+        new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vhpi_hdl, index);
+        if (!new_hdl) {
+            /* Support for the above seems poor, so if it did not work
+               try an iteration instead */
+
+            vhpiHandleT iter = vhpi_iterator(vhpiIndexedNames, vhpi_hdl);
+            if (iter) {
+                uint32_t curr_index = 0;
+                while (true) {
+                    new_hdl = vhpi_scan(iter);
+                    if (!new_hdl) {
+                        break;
+                    }
+                    if (index == curr_index) {
+                        LOG_DEBUG("Index match %u == %u", curr_index, index);
+                        break;
+                    }
+                    curr_index++;
                 }
-                if (index == curr_index) {
-                    LOG_DEBUG("Index match %u == %u", curr_index, index);
-                    break;
-                }
-                curr_index++;
+                vhpi_release_handle(iter);
             }
-            vhpi_release_handle(iter);
         }
     }
 
@@ -447,7 +520,7 @@ GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         return NULL;
     }
 
-    std::string name = vhpi_get_str(vhpiNameP, new_hdl);
+    std::string name = vhpi_get_str(vhpiCaseNameP, new_hdl);
     std::string fq_name = parent->get_fullname();
     if (fq_name == ":") {
         fq_name += name;
@@ -470,7 +543,6 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
     vhpiHandleT root = NULL;
     vhpiHandleT arch = NULL;
     vhpiHandleT dut = NULL;
-    GpiObjHdl *rv = NULL;
     std::string root_name;
     const char *found;
 
@@ -531,10 +603,9 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
     }
 
     root_name = found;
-    rv = new GpiObjHdl(this, dut, to_gpi_objtype(vhpi_get(vhpiKindP, dut)));
-    rv->initialise(root_name, root_name);
 
-    return rv;
+    return create_gpi_obj_from_handle(dut, root_name, root_name);
+
 }
 
 GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type)

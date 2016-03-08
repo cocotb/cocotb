@@ -572,7 +572,7 @@ int VhpiStartupCbHdl::run_callback(void) {
     gpi_sim_info_t sim_info;
     sim_info.argc = 0;
     sim_info.argv = NULL;
-    sim_info.product = gpi_copy_name(vhpi_get_str(vhpiNameP, NULL));
+    sim_info.product = gpi_copy_name(vhpi_get_str(vhpiCaseNameP, NULL));
     sim_info.version = gpi_copy_name(vhpi_get_str(vhpiToolVersionP, NULL));
     gpi_embed_init(&sim_info);
 
@@ -732,6 +732,13 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
     for (one2many = selected->begin();
          one2many != selected->end();
          one2many++) {
+
+        /* GPI_GENARRAY are pseudo-regions and all that should be searched for are the sub-regions */
+        if (m_parent->get_type() == GPI_GENARRAY && *one2many != vhpiInternalRegions) {
+            LOG_DEBUG("vhpi_iterator vhpiOneToManyT=%d skipped for GPI_GENARRAY type", *one2many);
+            continue;
+        }
+
         iterator = vhpi_iterator(*one2many, vhpi_hdl);
 
         if (iterator)
@@ -779,6 +786,9 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
     if (!selected)
         return GpiIterator::END;
 
+    gpi_objtype_t obj_type  = m_parent->get_type();
+    std::string parent_name = m_parent->get_name();
+
     /* We want the next object in the current mapping.
      * If the end of mapping is reached then we want to
      * try then next one until a new object is found
@@ -789,14 +799,30 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
         if (m_iterator) {
             obj = vhpi_scan(m_iterator);
 
-            if (obj && (vhpiProcessStmtK == vhpi_get(vhpiKindP, obj))) {
+            /* For GPI_GENARRAY, only allow the generate statements through that match the name
+             * of the generate block.
+             */
+            if (obj != NULL && obj_type == GPI_GENARRAY) {
+                if (vhpi_get(vhpiKindP, obj) == vhpiForGenerateK) {
+                    std::string rgn_name = vhpi_get_str(vhpiCaseNameP, obj);
+                    if (rgn_name.compare(0,parent_name.length(),parent_name) != 0) {
+                        obj = NULL;
+                        continue;
+                    }
+                } else {
+                    obj = NULL;
+                    continue;
+                }
+            }
+
+            if (obj != NULL && (vhpiProcessStmtK == vhpi_get(vhpiKindP, obj))) {
                 LOG_DEBUG("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
                                               vhpi_get_str(vhpiKindStrP, obj));
                 obj=NULL;
                 continue;
             }
 
-            if (obj) {
+            if (obj != NULL) {
                 LOG_DEBUG("Found an item %s", vhpi_get_str(vhpiFullNameP, obj));
                 break;
             } else {
@@ -813,6 +839,13 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
             obj = NULL;
             break;
         }
+
+        /* GPI_GENARRAY are pseudo-regions and all that should be searched for are the sub-regions */
+        if (obj_type == GPI_GENARRAY && *one2many != vhpiInternalRegions) {
+            LOG_DEBUG("vhpi_iterator vhpiOneToManyT=%d skipped for GPI_GENARRAY type", *one2many);
+            continue;
+        }
+
         m_iterator = vhpi_iterator(*one2many, m_iter_obj);
 
     } while (!obj);
@@ -835,7 +868,28 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
 
         return GpiIterator::NATIVE_NO_NAME;
     }
-    name = c_name;
+
+    /*
+     * If the parent is not a generate loop, then watch for generate handles and create
+     * the pseudo-region.
+     *
+     * NOTE: Taking advantage of the "caching" to only create one pseudo-region object.
+     *       Otherwise a list would be required and checked while iterating
+     */
+    if (*one2many == vhpiInternalRegions && obj_type != GPI_GENARRAY && vhpi_get(vhpiKindP, obj) == vhpiForGenerateK) {
+        std::string idx_str = c_name;
+        std::size_t found = idx_str.rfind(GEN_IDX_SEP_LHS);
+
+        if (found != std::string::npos && found != 0) {
+            name        = idx_str.substr(0,found);
+            obj         = m_parent->get_handle<vhpiHandleT>();
+        } else {
+            LOG_WARN("Unhandled Generate Loop Format - %s", name.c_str());
+            name = c_name;
+        }
+    } else {
+        name = c_name;
+    }
 
     LOG_DEBUG("vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
             vhpi_get(vhpiKindP, obj),
@@ -848,6 +902,16 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
     std::string fq_name = m_parent->get_fullname();
     if (fq_name == ":") {
         fq_name += name;
+    } else if (obj_type == GPI_GENARRAY) {
+        std::size_t found = name.rfind(GEN_IDX_SEP_LHS);
+        
+        if (found != std::string::npos) {
+            fq_name += name.substr(found);
+        } else {
+            LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
+            fq_name += "." + name;
+        }
+
     } else {
         fq_name += "." + name;
     }

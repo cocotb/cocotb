@@ -33,6 +33,15 @@
 #include <vector>
 #include <map>
 
+// Define Index separator
+#ifdef IUS
+#define GEN_IDX_SEP_LHS "("
+#define GEN_IDX_SEP_RHS ")"
+#else
+#define GEN_IDX_SEP_LHS "__"
+#define GEN_IDX_SEP_RHS ""
+#endif
+
 // Should be run after every VHPI call to check error status
 static inline int __check_vhpi_error(const char *file, const char *func, long line)
 {
