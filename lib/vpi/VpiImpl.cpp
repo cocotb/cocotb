@@ -177,9 +177,17 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiGate:
         case vpiPrimTerm:
         case vpiGenScope:
-        case vpiGenScopeArray:
-            new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
+        case vpiGenScopeArray: {
+            std::string hdl_name = vpi_get_str(vpiName, new_hdl);
+
+            if (hdl_name != name) {
+                LOG_DEBUG("Found pseudo-region %s", fq_name.c_str());
+                new_obj = new GpiObjHdl(this, new_hdl, GPI_GENARRAY);
+            } else {
+                new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
+            }
             break;
+        }
         default:
             /* We should only print a warning here if the type is really verilog,
                It could be vhdl as some simulators allow qurying of both languages
@@ -235,10 +243,45 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     writable.push_back('\0');
 
     new_hdl = vpi_handle_by_name(&writable[0], NULL);
+
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
-        return NULL;
+        /* If not found, check to see if the name of a generate loop */
+        vpiHandle iter = vpi_iterate(vpiInternalScope, parent->get_handle<vpiHandle>());
+
+        if (iter != NULL) {
+            vpiHandle rgn;
+            for (rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
+                if (vpi_get(vpiType, rgn) == vpiGenScope) {
+                    std::string rgn_name = vpi_get_str(vpiName, rgn);
+                    if (rgn_name.compare(0,name.length(),name) == 0) {
+                        new_hdl = parent->get_handle<vpiHandle>();
+                        vpi_free_object(iter);
+                        break;
+                    }
+                }
+            }
+        }
+        if (new_hdl == NULL) {
+            LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
+            return NULL;
+        }
     }
+
+    /* Generate Loops have inconsistent behavior across vpi tools.  A "name"
+     * without an index, i.e. dut.loop vs dut.loop[0], will find a handl to vpiGenScopeArray, 
+     * but not all tools support iterating over the vpiGenScopeArray.  We don't want to create
+     * a GpiObjHdl to this type of vpiHandle.
+     *
+     * If this unique case is hit, we need to create the Pseudo-region, with the handle
+     * being equivalent to the parent handle.
+     */
+    if (vpi_get(vpiType, new_hdl) == vpiGenScopeArray) {
+        vpi_free_object(new_hdl);
+
+        new_hdl = parent->get_handle<vpiHandle>();
+    }
+
+
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
@@ -254,7 +297,25 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
     vpiHandle vpi_hdl = parent_hdl->get_handle<vpiHandle>();
     vpiHandle new_hdl;
 
-    new_hdl = vpi_handle_by_index(vpi_hdl, index);
+    if (parent_hdl->get_type() == GPI_GENARRAY) {
+        char buff[13]; // needs to be large enough to hold 2^32-1 in string form ('['+10+']'+'\0')
+
+        snprintf(buff, 13, "[%u]", index);
+
+        LOG_DEBUG("Native check create for index %u of parent %s (pseudo-region)",
+                  index,
+                  parent_hdl->get_name_str());
+
+        std::string idx      = buff;
+        std::string hdl_name = parent_hdl->get_fullname() + idx;
+        std::vector<char> writable(hdl_name.begin(), hdl_name.end());
+        writable.push_back('\0');
+
+        new_hdl = vpi_handle_by_name(&writable[0], NULL);
+    } else {
+        new_hdl = vpi_handle_by_index(vpi_hdl, index);
+    }
+
     if (new_hdl == NULL) {
         LOG_DEBUG("Unable to vpi_get_handle_by_index %s[%u]", vpi_get_str(vpiName, vpi_hdl), index);
         return NULL;

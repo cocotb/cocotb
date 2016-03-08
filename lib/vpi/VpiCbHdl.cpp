@@ -498,6 +498,13 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
     for (one2many = selected->begin();
          one2many != selected->end();
          one2many++) {
+
+        /* GPI_GENARRAY are pseudo-regions and all that should be searched for are the sub-regions */
+        if (m_parent->get_type() == GPI_GENARRAY && *one2many != vpiInternalScope) {
+            LOG_DEBUG("vpi_iterator vpiOneToManyT=%d skipped for GPI_GENARRAY type", *one2many);
+            continue;
+        }
+
         iterator = vpi_iterate(*one2many, vpi_hdl);
 
         if (iterator) {
@@ -582,11 +589,30 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     if (!selected)
         return GpiIterator::END;
 
+    gpi_objtype_t obj_type  = m_parent->get_type();
+    std::string parent_name = m_parent->get_name();
+
     do {
         obj = NULL;
 
         if (m_iterator) {
             obj = vpi_scan(m_iterator);
+
+            /* For GPI_GENARRAY, only allow the generate statements through that match the name
+             * of the generate block.
+             */
+            if (obj != NULL && obj_type == GPI_GENARRAY) {
+                if (vpi_get(vpiType, obj) == vpiGenScope) {
+                    std::string rgn_name = vpi_get_str(vpiName, obj);
+                    if (rgn_name.compare(0,parent_name.length(),parent_name) != 0) {
+                        obj = NULL;
+                        continue;
+                    }
+                } else {
+                    obj = NULL;
+                    continue;
+                }
+            }
 
             if (NULL == obj) {
                 /* m_iterator will already be free'd internally here */
@@ -603,6 +629,12 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
         if (++one2many >= selected->end()) {
             obj = NULL;
             break;
+        }
+
+        /* GPI_GENARRAY are pseudo-regions and all that should be searched for are the sub-regions */
+        if (obj_type == GPI_GENARRAY && *one2many != vpiInternalScope) {
+            LOG_DEBUG("vpi_iterator vpiOneToManyT=%d skipped for GPI_GENARRAY type", *one2many);
+            continue;
         }
 
         m_iterator = vpi_iterate(*one2many, iter_obj);
@@ -634,13 +666,47 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
 
         return GpiIterator::NATIVE_NO_NAME;
     }
-    name = c_name;
+
+    /*
+     * If the parent is not a generate loop, then watch for generate handles and create
+     * the pseudo-region.
+     *
+     * NOTE: Taking advantage of the "caching" to only create one pseudo-region object.
+     *       Otherwise a list would be required and checked while iterating
+     */
+    if (*one2many == vpiInternalScope && obj_type != GPI_GENARRAY && vpi_get(vpiType, obj) == vpiGenScope) {
+        std::string idx_str = c_name;
+        std::size_t found = idx_str.rfind("[");
+
+        if (found != std::string::npos && found != 0) {
+            name        = idx_str.substr(0,found);
+            obj         = m_parent->get_handle<vpiHandle>();
+        } else {
+            LOG_WARN("Unhandled Generate Loop Format - %s", name.c_str());
+            name = c_name;
+        }
+    } else {
+        name = c_name;
+    }
 
     /* We try and create a handle internally, if this is not possible we
        return and GPI will try other implementations with the name
        */
 
-    std::string fq_name = m_parent->get_fullname() + "." + name;
+    std::string fq_name = m_parent->get_fullname();
+
+    if (obj_type == GPI_GENARRAY) {
+        std::size_t found = name.rfind("[");
+        
+        if (found != std::string::npos) {
+            fq_name += name.substr(found);
+        } else {
+            LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
+            fq_name += "." + name;
+        }
+    } else {
+        fq_name += "." + name;
+    }
 
     LOG_DEBUG("vpi_scan found '%s'", fq_name.c_str());
     VpiImpl *vpi_impl = reinterpret_cast<VpiImpl*>(m_impl);
