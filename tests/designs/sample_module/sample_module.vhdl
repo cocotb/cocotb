@@ -34,6 +34,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library work;
+use work.sample_module_pack.all;
+
 entity sample_module is
     port (
         clk                             : in    std_ulogic;
@@ -47,6 +50,8 @@ entity sample_module is
         stream_in_int                   : in    integer;
         stream_in_string                : in    string(1 to 8);
         stream_in_bool                  : in    boolean;
+
+        inout_if                        : in    test_if;
 
         stream_out_data_comb            : out   std_ulogic_vector(7 downto 0);
         stream_out_data_registered      : out   std_ulogic_vector(7 downto 0);

@@ -30,7 +30,7 @@ from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, Integer
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 
-@cocotb.test(expect_fail=True)
+@cocotb.test()
 def check_enum_object(dut):
     """
     Enumerations currently behave as normal signals
@@ -38,8 +38,8 @@ def check_enum_object(dut):
     TODO: Implement an EnumObject class and detect valid string mappings
     """
     yield Timer(100)
-    if not isinstance(dut.inst_ram_ctrl.write_ram_fsm, IntegerObject):
-        raise TestFailure("Expected the FSM enum to be an InterObject")
+    if not isinstance(dut.inst_ram_ctrl.write_ram_fsm, ModifiableObject):
+        raise TestFailure("Expected the FSM enum to be an ModifiableObject")
 
 @cocotb.test()
 def check_objects(dut):

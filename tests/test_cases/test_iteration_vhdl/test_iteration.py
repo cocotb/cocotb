@@ -34,12 +34,16 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME in ["ncsim(64)",
-                           "ncsim"]:
+    if cocotb.SIM_NAME.lower().startswith("ncsim"):
     # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS
-    # But vhpiSimpleSigAssignStmtK objects do, and ther are 2. 
+    # But vhpiSimpleSigAssignStmtK objects do, and ther are 2.
     # Process statements and all sub handles also show up.
         pass_total = 35841
+    elif cocotb.SIM_NAME.lower().startswith("modelsim"):
+        # FLI only finds regions, signal, generics, constants, varibles and ports.
+        # It does not report any procedures
+        # Ports behave identically to signals, which seems to differ from the vhpi implementation
+        pass_total = 34562
     else:
         pass_total = 32306
 
@@ -108,6 +112,6 @@ def test_n_dimension_array(dut):
             inner_count += 1
         outer_count += 1
 
-    if inner_count != 14 and outer_count != 2:
+    if inner_count != 14 or outer_count != 2:
         raise TestFailure("dut.inst_ram_ctrl.config should have a total of 14 elems over 2 loops")
 

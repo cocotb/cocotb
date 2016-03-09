@@ -126,3 +126,64 @@ FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface *impl,
     m_sig_hdl = m_signal->get_handle<mtiSignalIdT>();
 }
 
+int FliStartupCbHdl::arm_callback(void)
+{
+    mti_AddLoadDoneCB(handle_fli_callback,(void *)this);
+    set_call_state(GPI_PRIMED);
+
+    return 0;
+}
+
+int FliStartupCbHdl::run_callback(void)
+{
+    gpi_sim_info_t sim_info;
+
+    char *c_info       = mti_GetProductVersion();      // Returned pointer must not be freed
+    std::string info   = c_info;
+    std::string search = " Version ";
+    std::size_t found  = info.find(search);
+
+    std::string product_str = c_info;
+    std::string version_str = c_info;
+
+    if (found != std::string::npos) {
+        product_str = info.substr(0,found);
+        version_str = info.substr(found+search.length());
+
+        LOG_DEBUG("Found Version string at %d", found);
+        LOG_DEBUG("   product: %s", product_str.c_str());
+        LOG_DEBUG("   version: %s", version_str.c_str());
+    }
+
+    std::vector<char> product(product_str.begin(), product_str.end());
+    std::vector<char> version(version_str.begin(), version_str.end());
+    product.push_back('\0');
+    version.push_back('\0');
+
+
+    // copy in sim_info.product
+    sim_info.argc = 0;
+    sim_info.argv = NULL;
+    sim_info.product = &product[0];
+    sim_info.version = &version[0];
+
+    gpi_embed_init(&sim_info);
+
+    return 0;
+}
+
+int FliShutdownCbHdl::arm_callback(void)
+{
+    mti_AddQuitCB(handle_fli_callback,(void *)this);
+    set_call_state(GPI_PRIMED);
+
+    return 0;
+}
+
+int FliShutdownCbHdl::run_callback(void)
+{
+    gpi_embed_end();
+
+    return 0;
+}
+

@@ -251,7 +251,7 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
 
     new_hdl = vpi_handle_by_index(vpi_hdl, index);
     if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to vpi_get_handle_by_index %u", index);
+        LOG_DEBUG("Unable to vpi_get_handle_by_index %s[%u]", vpi_get_str(vpiName, vpi_hdl), index);
         return NULL;
     }
 

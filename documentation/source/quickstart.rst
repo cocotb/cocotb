@@ -34,7 +34,7 @@ Redhat based installation
 
 .. code-block:: bash
 
-    $> sudo yum install gcc gcc-c++ libstdc++-devel python-devel
+    $> sudo yum install gcc gcc-c++ libstdc++-devel swig python-devel
 
 This will allow building of the Cocotb libs for use with a 64 bit native simulator. If a 32 bit simulator is being used then additional steps to install 32bit development libraries and python are needed. 
 
