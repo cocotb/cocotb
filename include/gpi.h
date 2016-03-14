@@ -119,7 +119,7 @@ void gpi_get_sim_precision(int32_t *precision);
 // Should be freed with gpi_free_handle
 gpi_sim_hdl gpi_get_root_handle(const char *name);
 gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name);
-gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index);
+gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index);
 void gpi_free_handle(gpi_sim_hdl gpi_hdl);
 
 // Types that can be passed to the iterator.
@@ -162,6 +162,12 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
 // Returns the number of objects in the collection of the handle
 int gpi_get_num_elems(gpi_sim_hdl gpi_sim_hdl);
 
+// Returns the left side of the range constraint
+int gpi_get_range_left(gpi_sim_hdl gpi_sim_hdl);
+
+// Returns the right side of the range constraint
+int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
+
 // Functions for querying the properties of a handle
 // Caller responsible for freeing the returned string.
 // This is all slightly verbose but it saves having to enumerate various value types
@@ -179,6 +185,8 @@ gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 // Determine whether an object value is constant (parameters / generics etc)
 int gpi_is_constant(gpi_sim_hdl gpi_hdl);
 
+// Determine whether an object is indexable
+int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 
 // Functions for setting the properties of a handle
 void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value);

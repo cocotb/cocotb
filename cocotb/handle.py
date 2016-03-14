@@ -220,34 +220,7 @@ class HierarchyObject(SimHandleBase):
                 self._log.debug("%s" % e)
                 continue
 
-            # This is slightly hacky, but we want generate loops to result in a list
-            # These are renamed in VHPI to __X where X is the index
-            import re
-            result = re.match("(?P<name>.*)__(?P<index>\d+)$", name)
-            if not result:
-                result = re.match("(?P<name>.*)\((?P<index>\d+)\)$", name)
-
-            # Modelsim VPI returns names in standard form name[index]
-            if not result:
-                result = re.match("(?P<name>.*)\[(?P<index>\d+)\]$", name)
-
-            if result:
-                index = int(result.group("index"))
-                name = result.group("name")
-
-                if name not in self._sub_handles:
-                    self._sub_handles[name] = []
-                    self._log.debug("creating new group for %s", name)
-                if len(self._sub_handles[name]) < index + 1:
-                    delta = index - len(self._sub_handles[name]) + 1
-                    self._sub_handles[name].extend([None]*delta)
-                self._sub_handles[name][index] = hdl
-                self._log.debug("%s.%s[%d] is now %s", self._name, name, index, hdl._name)
-                #for something in self._sub_handles[name]:
-                #    self._log.debug("%s: %s" % (type(something), something))
-            else:
-                self._log.debug("%s didn't match an index pattern", name)
-                self._sub_handles[hdl._name.split(".")[-1]] = hdl
+            self._sub_handles[hdl._name.split(".")[-1]] = hdl
 
         self._discovered = True
 
@@ -278,15 +251,6 @@ class HierarchyObject(SimHandleBase):
             self._invalid_sub_handles[name] = None
         return new_handle
 
-
-    def __getitem__(self, index):
-        if index in self._sub_handles:
-            return self._sub_handles[index]
-        new_handle = simulator.get_handle_by_index(self._handle, index)
-        if not new_handle:
-            self._raise_testerror("%s contains no object at index %d" % (self._name, index))
-        self._sub_handles[index] = SimHandle(new_handle)
-        return self._sub_handles[index]
 
 class HierarchyArrayObject(HierarchyObject):
     """
@@ -347,6 +311,14 @@ class HierarchyArrayObject(HierarchyObject):
             self._len = len(self._sub_handles)
         return self._len
 
+    def __getitem__(self, index):
+        if index in self._sub_handles:
+            return self._sub_handles[index]
+        new_handle = simulator.get_handle_by_index(self._handle, index)
+        if not new_handle:
+            self._raise_testerror("%s contains no object at index %d" % (self._name, index))
+        self._sub_handles[index] = SimHandle(new_handle)
+        return self._sub_handles[index]
 
 
 class NonHierarchyObject(SimHandleBase):
@@ -414,39 +386,60 @@ class ConstantObject(NonHierarchyObject):
     def __le__(self, *args, **kwargs):
         raise ValueError("Not permissible to set values on a constant object")
 
-class NonConstantObject(NonHierarchyObject):
+class NonHierarchyIndexableObject(NonHierarchyObject):
     def __init__(self, handle):
         """
             Args:
                 _handle [integer] : vpi/vhpi handle to the simulator object
         """
         NonHierarchyObject.__init__(self, handle)
-        self._r_edge = _RisingEdge(self)
-        self._f_edge = _FallingEdge(self)
-        self._e_edge = _Edge(self)
-
-    def __hash__(self):
-        return self._handle
+        self._range_left  = simulator.get_range_left(self._handle)
+        self._range_right = simulator.get_range_right(self._handle)
+        self._indexable   = simulator.get_indexable(self._handle)
 
     def __getitem__(self, index):
+        if not self._indexable:
+            self._raise_testerror("%s %s is not indexable.  Unable to get object at index %d" % (self._name, simulator.get_type_string(self._handle), index))
         if index in self._sub_handles:
             return self._sub_handles[index]
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
-            self._raise_testerror("%s %s contains no object at index %d" % (self._name, simulator.get_type(self._handle), index))
+            self._raise_testerror("%s %s contains no object at index %d" % (self._name, simulator.get_type_string(self._handle), index))
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
     def __iter__(self):
-        if len(self) == 1:
+        if not self._indexable:
             raise StopIteration
-        self._log.debug("Iterating with length %d" % len(self))
-        for i in range(len(self)):
+        self._log.debug("Iterating with range [%d:%d]" % (self._range_left, self._range_right))
+        for i in self._range(self._range_left, self._range_right):
             try:
                 result = self[i]
                 yield result
             except:
                 continue
+
+    def _range(self, left, right):
+        if left > right:
+            while left >= right:
+                yield left
+                left = left - 1
+        else:
+            while left <= right:
+                yield left
+                left = left + 1
+
+
+class NonConstantObject(NonHierarchyIndexableObject):
+    def __init__(self, handle):
+        """
+            Args:
+                _handle [integer] : vpi/vhpi handle to the simulator object
+        """
+        NonHierarchyIndexableObject.__init__(self, handle)
+        self._r_edge = _RisingEdge(self)
+        self._f_edge = _FallingEdge(self)
+        self._e_edge = _Edge(self)
 
     def _getvalue(self):
         result = BinaryValue()
@@ -679,7 +672,7 @@ def SimHandle(handle):
         simulator.MODULE:      HierarchyObject,
         simulator.STRUCTURE:   HierarchyObject,
         simulator.REG:         ModifiableObject,
-        simulator.NETARRAY:    ModifiableObject,
+        simulator.NETARRAY:    NonHierarchyIndexableObject,
         simulator.REAL:        RealObject,
         simulator.INTEGER:     IntegerObject,
         simulator.ENUM:        ModifiableObject,
@@ -695,13 +688,17 @@ def SimHandle(handle):
     except KeyError:
         pass
 
+    t = simulator.get_type(handle)
+
     # Special case for constants
-    if simulator.get_const(handle):
-        obj = ConstantObject(handle, simulator.get_type(handle))
+    if simulator.get_const(handle) and not t in [simulator.MODULE,
+                                                 simulator.STRUCTURE,
+                                                 simulator.NETARRAY,
+                                                 simulator.GENARRAY]:
+        obj = ConstantObject(handle, t)
         _handle2obj[handle] = obj
         return obj
 
-    t = simulator.get_type(handle)
     if t not in _type2cls:
         raise TestError("Couldn't find a matching object for GPI type %d" % t)
     obj = _type2cls[t](handle)

@@ -330,7 +330,7 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
     return hdl;
 }
 
-gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
+gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index)
 {
     vector<GpiImplInterface*>::iterator iter;
 
@@ -456,6 +456,14 @@ int gpi_is_constant(gpi_sim_hdl sig_hdl)
     return 0;
 }
 
+int gpi_is_indexable(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    if (obj_hdl->get_indexable())
+        return 1;
+    return 0;
+}
+
 void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
@@ -479,6 +487,18 @@ int gpi_get_num_elems(gpi_sim_hdl sig_hdl)
 {
     GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_num_elems();
+}
+
+int gpi_get_range_left(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_range_left();
+}
+
+int gpi_get_range_right(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_range_right();
 }
 
 gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),

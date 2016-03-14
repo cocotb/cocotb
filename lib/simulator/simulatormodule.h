@@ -70,8 +70,11 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args);
 static PyObject *get_name_string(PyObject *self, PyObject *args);
 static PyObject *get_type(PyObject *self, PyObject *args);
 static PyObject *get_const(PyObject *self, PyObject *args);
+static PyObject *get_indexable(PyObject *self, PyObject *args);
 static PyObject *get_type_string(PyObject *self, PyObject *args);
 static PyObject *get_num_elems(PyObject *self, PyObject *args);
+static PyObject *get_range_left(PyObject *self, PyObject *args);
+static PyObject *get_range_right(PyObject *self, PyObject *args);
 static PyObject *register_timed_callback(PyObject *self, PyObject *args);
 static PyObject *register_value_change_callback(PyObject *self, PyObject *args);
 static PyObject *register_readonly_callback(PyObject *self, PyObject *args);
@@ -104,7 +107,10 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_type_string", get_type_string, METH_VARARGS, "Get the type of an object as a string"},
     {"get_type", get_type, METH_VARARGS, "Get the type of an object, mapped to a GPI enumeration"},
     {"get_const", get_const, METH_VARARGS, "Get a flag indicating whether the object is a constant"},
+    {"get_indexable", get_indexable, METH_VARARGS, "Get a flag indicating whether the object is indexable"},
     {"get_num_elems", get_num_elems, METH_VARARGS, "Get the number of elements contained in the handle"},
+    {"get_range_left", get_range_left, METH_VARARGS, "Get the left-side range of elements contained in the handle"},
+    {"get_range_right", get_range_right, METH_VARARGS, "Get the right-side range of elements contained in the handle"},
     {"register_timed_callback", register_timed_callback, METH_VARARGS, "Register a timed callback"},
     {"register_value_change_callback", register_value_change_callback, METH_VARARGS, "Register a signal change callback"},
     {"register_readonly_callback", register_readonly_callback, METH_VARARGS, "Register a callback for readonly section"},

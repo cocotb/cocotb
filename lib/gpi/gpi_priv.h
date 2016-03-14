@@ -95,17 +95,26 @@ class GpiObjHdl : public GpiHdl {
 public:
     GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
                                         m_num_elems(0),
+                                        m_indexable(false),
+                                        m_range_left(-1),
+                                        m_range_right(-1),
                                         m_fullname("unknown"),
                                         m_type(GPI_UNKNOWN),
                                         m_const(false) { }
     GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : GpiHdl(impl, hdl),
                                                                           m_num_elems(0),
+                                                                          m_indexable(false),
+                                                                          m_range_left(-1),
+                                                                          m_range_right(-1),
                                                                           m_fullname("unknown"),
                                                                           m_type(objtype),
                                                                           m_const(false) { }
     GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype, bool is_const) :
                                                                           GpiHdl(impl, hdl),
                                                                           m_num_elems(0),
+                                                                          m_indexable(false),
+                                                                          m_range_left(-1),
+                                                                          m_range_right(-1),
                                                                           m_fullname("unknown"),
                                                                           m_type(objtype),
                                                                           m_const(is_const) { }
@@ -120,6 +129,9 @@ public:
         LOG_DEBUG("%s has %d elements", m_name.c_str(), m_num_elems);
         return m_num_elems;
     }
+    int get_range_left(void) { return m_range_left; }
+    int get_range_right(void) { return m_range_right; }
+    int get_indexable(void) { return m_indexable; }
 
     const std::string & get_name(void);
     const std::string & get_fullname(void);
@@ -128,11 +140,14 @@ public:
     virtual int initialise(std::string &name, std::string &full_name);
 
 protected:
-    int m_num_elems;
-    std::string m_name;
-    std::string m_fullname;
+    int           m_num_elems;
+    bool          m_indexable;
+    int           m_range_left;
+    int           m_range_right;
+    std::string   m_name;
+    std::string   m_fullname;
     gpi_objtype_t m_type;
-    bool m_const;
+    bool          m_const;
 };
 
 
@@ -292,7 +307,7 @@ public:
 
     /* Hierachy related */
     virtual GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) = 0;
-    virtual GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent) = 0;
+    virtual GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
     virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) = 0;
