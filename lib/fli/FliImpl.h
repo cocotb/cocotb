@@ -238,11 +238,14 @@ public:
                        FliSignalObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var),
                        m_fli_type(typeKind),
                        m_val_type(valType),
-                       m_val_buff(NULL) { }
+                       m_val_buff(NULL),
+                       m_sub_hdls(NULL) { }
 
     virtual ~FliValueObjHdl() {
-        if (m_val_buff)
+        if (m_val_buff != NULL)
             free(m_val_buff);
+        if (m_sub_hdls != NULL)
+            mti_VsimFree(m_sub_hdls);
     }
 
     virtual const char* get_signal_value_binstr(void);
@@ -254,6 +257,8 @@ public:
     virtual int set_signal_value(const double value);
     virtual int set_signal_value(std::string &value);
 
+    virtual void *get_sub_hdl(int index);
+
     virtual int initialise(std::string &name, std::string &fq_name);
 
     mtiTypeKindT get_fli_typekind(void) { return m_fli_type; }
@@ -263,6 +268,7 @@ protected:
     mtiTypeKindT       m_fli_type;
     mtiTypeIdT         m_val_type;
     char              *m_val_buff;
+    void             **m_sub_hdls;
 };
 
 class FliEnumObjHdl : public FliValueObjHdl {
@@ -314,14 +320,13 @@ public:
                                       is_var,
                                       valType,
                                       typeKind),
-                       m_ascending(false),
                        m_mti_buff(NULL),
                        m_value_enum(NULL),
                        m_num_enum(0),
                        m_enum_map() { }
 
     virtual ~FliLogicObjHdl() {
-        if (m_mti_buff)
+        if (m_mti_buff != NULL)
             free(m_mti_buff);
     }
 
@@ -334,7 +339,6 @@ public:
 
 
 private:
-    bool                       m_ascending;
     char                      *m_mti_buff;
     char                     **m_value_enum;    // Do Not Free
     mtiInt32T                  m_num_enum;
@@ -379,7 +383,7 @@ public:
                       m_mti_buff(NULL) { }
 
     virtual ~FliRealObjHdl() {
-        if (m_mti_buff)
+        if (m_mti_buff != NULL)
             free(m_mti_buff);
     }
 
@@ -408,7 +412,7 @@ public:
                       m_mti_buff(NULL) { }
 
     virtual ~FliStringObjHdl() {
-        if (m_mti_buff)
+        if (m_mti_buff != NULL)
             free(m_mti_buff);
     }
 
@@ -482,7 +486,7 @@ public:
 
     /* Hierachy related */
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
-    GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *paret);
     GpiObjHdl *get_root_handle(const char *name);
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type);

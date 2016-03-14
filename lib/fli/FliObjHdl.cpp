@@ -63,36 +63,22 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
 int FliObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     bool is_signal = (get_acc_type() == accSignal || get_acc_full_type() == accAliasSignal);
-    bool is_value  = (is_signal                     || get_acc_type() == accAlias        || 
-                      get_acc_type() == accVariable || get_acc_type() == accVHDLConstant ||
-                      get_acc_type() == accGeneric);
+    mtiTypeIdT typeId; 
 
     switch (get_type()) {
-        case GPI_STRUCTURE: {
-                mtiTypeIdT recType; 
-                if (is_signal) {
-                    recType = mti_GetSignalType(get_handle<mtiSignalIdT>());
-                } else {
-                    recType = mti_GetVarType(get_handle<mtiVariableIdT>());
-                }
-                m_num_elems = mti_GetNumRecordElements(recType);
-            }
-            break;
-        case GPI_MODULE:
-            if (!is_value) {
-                m_num_elems = 1;
+        case GPI_STRUCTURE:
+            if (is_signal) {
+                typeId = mti_GetSignalType(get_handle<mtiSignalIdT>());
             } else {
-                mtiTypeIdT arrayType; 
-                if (is_signal) {
-                    arrayType = mti_GetSignalType(get_handle<mtiSignalIdT>());
-                } else {
-                    arrayType = mti_GetVarType(get_handle<mtiVariableIdT>());
-                }
-                m_num_elems = mti_TickLength(arrayType);
+                typeId = mti_GetVarType(get_handle<mtiVariableIdT>());
             }
+
+            m_num_elems = mti_GetNumRecordElements(typeId);
             break;
         case GPI_GENARRAY:
-            m_num_elems = 1; //Unable to determine length of this pseudo-region
+            m_indexable = true;
+        case GPI_MODULE:
+            m_num_elems = 1;
             break;
         default:
             LOG_CRITICAL("Invalid object type for FliObjHdl. (%s (%s))", name.c_str(), get_type_str());
@@ -110,6 +96,13 @@ int FliSignalObjHdl::initialise(std::string &name, std::string &fq_name)
 
 int FliValueObjHdl::initialise(std::string &name, std::string &fq_name)
 {
+    if (get_type() == GPI_ARRAY) {
+        m_range_left  = mti_TickLeft(m_val_type);
+        m_range_right = mti_TickRight(m_val_type);
+        m_num_elems   = mti_TickLength(m_val_type);
+        m_indexable   = true;
+    }
+
     return FliSignalObjHdl::initialise(name, fq_name);
 }
 
@@ -153,6 +146,33 @@ int FliValueObjHdl::set_signal_value(const double value)
 {
     LOG_ERROR("Setting signal/variable value via double not supported for %s of type %d", m_fullname.c_str(), m_type);
     return -1;
+}
+
+void *FliValueObjHdl::get_sub_hdl(int index) {
+    if (m_sub_hdls == NULL) {
+        if (is_var()) {
+            m_sub_hdls = (void **)mti_GetVarSubelements(get_handle<mtiVariableIdT>(), NULL);
+        } else {
+            m_sub_hdls = (void **)mti_GetSignalSubelements(get_handle<mtiSignalIdT>(), NULL);
+        }
+    }
+
+    int idx;
+
+    if (m_range_left > m_range_right) {
+        idx = m_range_left - index;
+
+        if (idx < 0 || idx > (m_range_left-m_range_right)) {
+            return NULL;
+        }
+    } else {
+        idx = index - m_range_left;
+
+        if (idx < 0 || idx > (m_range_right-m_range_left)) {
+            return NULL;
+        }
+    }
+    return m_sub_hdls[idx];
 }
 
 int FliEnumObjHdl::initialise(std::string &name, std::string &fq_name)
@@ -209,10 +229,13 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
         case MTI_TYPE_ARRAY: {
                 mtiTypeIdT elemType = mti_GetArrayElementType(m_val_type);
 
-                m_ascending   = (mti_TickDir(m_val_type) == 1);
+                m_range_left  = mti_TickLeft(m_val_type);
+                m_range_right = mti_TickRight(m_val_type);
+                m_num_elems   = mti_TickLength(m_val_type);
+                m_indexable   = true;
+
                 m_value_enum  = mti_GetEnumValues(elemType);
                 m_num_enum    = mti_TickLength(elemType);
-                m_num_elems   = mti_TickLength(m_val_type);
 
                 m_mti_buff    = (char*)malloc(sizeof(*m_mti_buff) * m_num_elems);
                 if (!m_mti_buff) {
@@ -434,7 +457,10 @@ int FliRealObjHdl::set_signal_value(const double value)
 
 int FliStringObjHdl::initialise(std::string &name, std::string &fq_name)
 {
+    m_range_left  = mti_TickLeft(m_val_type);
+    m_range_right = mti_TickRight(m_val_type);
     m_num_elems   = mti_TickLength(m_val_type);
+    m_indexable   = true;
 
     m_mti_buff    = (char*)malloc(sizeof(char) * m_num_elems);
     if (!m_mti_buff) {
