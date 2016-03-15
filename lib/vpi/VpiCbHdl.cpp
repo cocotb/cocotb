@@ -119,6 +119,91 @@ int VpiCbHdl::cleanup_callback(void)
     return 0;
 }
 
+int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
+    vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
+
+    m_indexable   = true;
+
+    int range_idx = 0;
+
+    /* Need to determine if this is a pseudo-handle to be able to select the correct range */
+    std::string hdl_name = vpi_get_str(vpiName, hdl);
+
+    /* Removing the hdl_name from the name will leave the psuedo-indices */
+    if (hdl_name.length() < name.length()) {
+        std::string idx_str = name.substr(hdl_name.length());
+
+        while (idx_str.length() > 0) {
+            std::size_t found = idx_str.find_first_of("]");
+
+            if (found != std::string::npos) {
+                ++range_idx;
+                idx_str = idx_str.substr(found+1);
+            } else {
+                break;
+            }
+        }
+    }
+
+    /* After determining the range_idx, get the range and set the limits */
+    vpiHandle iter = vpi_iterate(vpiRange, hdl);
+
+    s_vpi_value val;
+    val.format = vpiIntVal;
+
+    if (iter != NULL) {
+        vpiHandle rangeHdl;
+        int idx = 0;
+
+        while ((rangeHdl = vpi_scan(iter)) != NULL) {
+            if (idx == range_idx) {
+                break;
+            }
+            ++idx;
+        }
+
+        if (rangeHdl == NULL) {
+            LOG_CRITICAL("Unable to get Range for indexable object");
+        } else {
+            vpi_free_object(iter); // Need to free iterator since exited early
+
+            vpi_get_value(vpi_handle(vpiLeftRange,rangeHdl),&val);
+            check_vpi_error();
+            m_range_left = val.value.integer;
+
+            vpi_get_value(vpi_handle(vpiRightRange,rangeHdl),&val);
+            check_vpi_error();
+            m_range_right = val.value.integer;
+        }
+    } else if (range_idx == 0) {
+        vpi_get_value(vpi_handle(vpiLeftRange,hdl),&val);
+        check_vpi_error();
+        m_range_left = val.value.integer;
+
+        vpi_get_value(vpi_handle(vpiRightRange,hdl),&val);
+        check_vpi_error();
+        m_range_right = val.value.integer;
+    } else {
+        LOG_CRITICAL("Unable to get Range for indexable object");
+    }
+
+    /* vpiSize will return a size that is incorrect for multi-dimensional arrays so use the range
+     * to calculate the m_num_elems.
+     *
+     *    For example:
+     *       wire [7:0] sig_t4 [0:3][7:4]
+     *
+     *    The size of "sig_t4" will be reported as 16 through the vpi interface.
+     */
+    if (m_range_left > m_range_right) {
+        m_num_elems = m_range_left - m_range_right + 1;
+    } else {
+        m_num_elems = m_range_right - m_range_left + 1;
+    }
+
+    return GpiObjHdl::initialise(name, fq_name);
+}
+
 int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
     if ((vpiIntVar == type) ||
@@ -127,6 +212,55 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         m_num_elems = 1;
     } else {
         m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
+
+        if (GpiObjHdl::get_type() == GPI_STRING) {
+            m_indexable   = false; // Don't want to iterate over indices
+            m_range_left  = 0;
+            m_range_right = m_num_elems-1;
+        } else if (GpiObjHdl::get_type() == GPI_REGISTER) {
+            vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
+
+            m_indexable   = vpi_get(vpiVector, hdl);
+
+            if (m_indexable) {
+                s_vpi_value val;
+                vpiHandle iter;
+
+                val.format = vpiIntVal;
+
+                iter = vpi_iterate(vpiRange, hdl);
+
+                /* Only ever need the first "range" */
+                if (iter != NULL) {
+                    vpiHandle rangeHdl = vpi_scan(iter);
+
+                    vpi_free_object(iter);
+
+                    if (rangeHdl != NULL) {
+                        vpi_get_value(vpi_handle(vpiLeftRange,rangeHdl),&val);
+                        check_vpi_error();
+                        m_range_left = val.value.integer;
+
+                        vpi_get_value(vpi_handle(vpiRightRange,rangeHdl),&val);
+                        check_vpi_error();
+                        m_range_right = val.value.integer;
+                    } else {
+                        LOG_CRITICAL("Unable to get Range for indexable object");
+                    }
+                }
+                else {
+                    vpi_get_value(vpi_handle(vpiLeftRange,hdl),&val);
+                    check_vpi_error();
+                    m_range_left = val.value.integer;
+
+                    vpi_get_value(vpi_handle(vpiRightRange,hdl),&val);
+                    check_vpi_error();
+                    m_range_right = val.value.integer;
+                }
+
+                LOG_DEBUG("VPI: Indexable Object initialised with range [%d:%d] and length >%d<", m_range_left, m_range_right, m_num_elems);
+            }
+        }
     }
     LOG_DEBUG("VPI: %s initialised with %d elements", name.c_str(), m_num_elems);
     return GpiObjHdl::initialise(name, fq_name);
@@ -387,6 +521,10 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
         vpiReg,
         vpiRegArray,
         vpiMemory,
+        vpiIntegerVar,
+        vpiRealVar,
+        vpiStructVar,
+        vpiStructNet,
         //vpiVariables          // Aldec SEGV on plain Verilog
         vpiNamedEvent,
         vpiNamedEventArray,
@@ -422,6 +560,7 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
         vpiPrimitive,
         vpiPrimitiveArray,
         vpiAttribute,
+        vpiMember,
         0
     };
     map.add_to_options(vpiStructVar, &struct_options[0]);

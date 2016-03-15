@@ -149,8 +149,6 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiNetBit:
         case vpiReg:
         case vpiRegBit:
-        case vpiRegArray:
-        case vpiNetArray:
         case vpiEnumNet:
         case vpiEnumVar:
         case vpiIntVar:
@@ -162,14 +160,18 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiParameter:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), true);
             break;
+        case vpiRegArray:
+        case vpiNetArray:
+        case vpiInterfaceArray:
+        case vpiPackedArrayVar:
+            new_obj = new VpiArrayObjHdl(this, new_hdl, to_gpi_objtype(type));
+            break;
         case vpiStructVar:
         case vpiStructNet:
         case vpiModule:
         case vpiInterface:
         case vpiModport:
-        case vpiInterfaceArray:
         case vpiRefObj:
-        case vpiPackedArrayVar:
         case vpiPort:
         case vpiAlways:
         case vpiFunction:
@@ -291,18 +293,20 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     return new_obj;
 }
 
-GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
+GpiObjHdl* VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 {
     GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
     vpiHandle vpi_hdl = parent_hdl->get_handle<vpiHandle>();
-    vpiHandle new_hdl;
+    vpiHandle new_hdl = NULL;
 
-    if (parent_hdl->get_type() == GPI_GENARRAY) {
-        char buff[13]; // needs to be large enough to hold 2^32-1 in string form ('['+10+']'+'\0')
+    char buff[14]; // needs to be large enough to hold -2^31 to 2^31-1 in string form ('['+'-'10+']'+'\0')
 
-        snprintf(buff, 13, "[%u]", index);
+    gpi_objtype_t obj_type = parent_hdl->get_type();
 
-        LOG_DEBUG("Native check create for index %u of parent %s (pseudo-region)",
+    if (obj_type == GPI_GENARRAY) {
+        snprintf(buff, 14, "[%d]", index);
+
+        LOG_DEBUG("Native check create for index %d of parent %s (pseudo-region)",
                   index,
                   parent_hdl->get_name_str());
 
@@ -312,22 +316,97 @@ GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
         writable.push_back('\0');
 
         new_hdl = vpi_handle_by_name(&writable[0], NULL);
-    } else {
+    } else if (obj_type == GPI_REGISTER || obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
         new_hdl = vpi_handle_by_index(vpi_hdl, index);
-    }
 
-    if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to vpi_get_handle_by_index %s[%u]", vpi_get_str(vpiName, vpi_hdl), index);
+        /* vpi_handle_by_index() doesn't work for all simulators when dealing with a two-dimensional array.
+         *    For example:
+         *       wire [7:0] sig_t4 [0:1][0:2];
+         *
+         *    Assume vpi_hdl is for "sig_t4":
+         *       vpi_handl_by_index(vpi_hdl, 0);   // Returns a handle to sig_t4[0] for IUS, but NULL on Questa
+         *
+         *    Questa only works when both indicies are provided, i.e. will need a pseudo-handle to behave like the first index.
+         */
+        if (new_hdl == NULL) {
+            int left       = parent_hdl->get_range_left();
+            int right      = parent_hdl->get_range_right();
+            bool ascending = (left < right);
+
+            LOG_DEBUG("Unable to find handle through vpi_handle_by_index(), attempting second method");
+
+            if (( ascending && (index < left || index > right)) ||
+                (!ascending && (index > left || index < right))) {
+                LOG_ERROR("Invalid Index - Index %d is not in the range of [%d:%d]", index, left, right);
+                return NULL;
+            }
+
+            /* Get the number of constraints to determine if the index will result in a pseudo-handle or should be found */
+            vpiHandle p_hdl = parent_hdl->get_handle<vpiHandle>();
+            vpiHandle it         = vpi_iterate(vpiRange, p_hdl);
+            int constraint_cnt   = 0;
+            if (it != NULL) {
+                while (vpi_scan(it) != NULL) {
+                    ++constraint_cnt;
+                }
+            } else {
+                constraint_cnt = 1;
+            }
+
+            std::string act_hdl_name = vpi_get_str(vpiName, p_hdl);
+
+            /* Removing the act_hdl_name from the parent->get_name() will leave the psuedo-indices */
+            if (act_hdl_name.length() < parent_hdl->get_name().length()) {
+                std::string idx_str = parent_hdl->get_name().substr(act_hdl_name.length());
+
+                while (idx_str.length() > 0) {
+                    std::size_t found = idx_str.find_first_of("]");
+
+                    if (found != std::string::npos) {
+                        --constraint_cnt;
+                        idx_str = idx_str.substr(found+1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            snprintf(buff, 14, "[%d]", index);
+
+            std::string idx = buff;
+            std::string hdl_name = parent_hdl->get_fullname() + idx;
+
+            std::vector<char> writable(hdl_name.begin(), hdl_name.end());
+            writable.push_back('\0');
+
+            new_hdl = vpi_handle_by_name(&writable[0], NULL);
+
+            /* Create a pseudo-handle if not the last index into a multi-dimensional array */
+            if (new_hdl == NULL && constraint_cnt > 1) {
+                new_hdl = p_hdl;
+            }
+        }
+    } else {
+        LOG_ERROR("VPI: Parent of type %s must be of type GPI_GENARRAY, GPI_REGISTER, GPI_ARRAY, or GPI_STRING to have an index.", parent_hdl->get_type_str());
         return NULL;
     }
 
-    std::string name = vpi_get_str(vpiName, new_hdl);
-    std::string fq_name = parent->get_fullname() + "." + name;
+
+    if (new_hdl == NULL) {
+        LOG_DEBUG("Unable to vpi_get_handle_by_index %s[%d]", parent_hdl->get_name_str(), index);
+        return NULL;
+    }
+
+    snprintf(buff, 14, "[%d]", index);
+
+    std::string idx = buff;
+    std::string name = parent_hdl->get_name()+idx;
+    std::string fq_name = parent_hdl->get_fullname()+idx;
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_DEBUG("Unable to fetch object below entity (%s) at index (%u)",
-                  parent->get_name_str(), index);
+        LOG_DEBUG("Unable to fetch object below entity (%s) at index (%d)",
+                  parent_hdl->get_name_str(), index);
         return NULL;
     }
     return new_obj;
