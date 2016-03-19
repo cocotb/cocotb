@@ -34,18 +34,32 @@ clean::
 
 else
 
-.PHONY: analyse
+CMD_BIN := ghdl
 
-GHDL=ghdl
+ifdef GHDL_BIN_DIR
+    CMD := $(shell which $(GHDL_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error "Unable to locate command >$(CMD_BIN)<")
+else
+	GHDL_BIN_DIR := $(shell dirname $(CMD))
+    export GHDL_BIN_DIR
+endif
+
+.PHONY: analyse
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && $(GHDL) -a $(VHDL_SOURCES) && $(GHDL) -e $(TOPLEVEL)
+	cd $(SIM_BUILD) && $(CMD) -a $(VHDL_SOURCES) && $(GHDL) -e $(TOPLEVEL)
 
 results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(GHDL) -r --workdir=$(SIM_BUILD) $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT)
+	$(CMD) -r --workdir=$(SIM_BUILD) $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

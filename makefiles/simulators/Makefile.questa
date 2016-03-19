@@ -27,6 +27,22 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+CMD_BIN := vsim
+
+ifdef MODELSIM_BIN_DIR
+    CMD := $(shell which $(MODELSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error "Unable to locate command >$(CMD_BIN)<")
+else
+	MODELSIM_BIN_DIR := $(shell dirname $(CMD))
+    export MODELSIM_BIN_DIR
+endif
+
 RTL_LIBRARY ?= work
 
 ifdef VERILOG_INCLUDE_DIRS
@@ -38,10 +54,10 @@ VLOG_ARGS += $(EXTRA_ARGS)
 endif
 
 ifeq ($(GUI),1)
-SIM_CMD = vsim -gui
+CMD += -gui
 VSIM_ARGS += -onfinish stop
 else
-SIM_CMD = vsim -c
+CMD += -c
 VSIM_ARGS += -onfinish exit
 endif
 
@@ -87,14 +103,6 @@ else
 	echo "quit" >> $@
 endif
 
-# auto-detect modelsim dir from system path
-export MODELSIM_BIN_DIR = $(shell dirname $(shell which vsim))
-
-# make sure modelsim dir was found
-ifeq ($(MODELSIM_BIN_DIR),)
-$(error "Directory containing ModelSim binaries must be included in system path")
-endif
-
 ifeq ($(OS),Msys)
 
 # Windows allows the situation where the libstc++ used at link time as
@@ -123,7 +131,7 @@ endif
 results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
 	cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) \
-	$(SIM_CMD) -do runsim.do 2>&1 | tee sim.log
+	$(CMD) -do runsim.do 2>&1 | tee sim.log
 
 clean::
 	-rm -rf $(SIM_BUILD)
