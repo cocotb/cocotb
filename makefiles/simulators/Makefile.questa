@@ -66,7 +66,7 @@ ifneq ($(GENERICS),)
 VSIM_ARGS += $(foreach gen, $(GENERICS),"-G $(gen)")
 endif
 
-$(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
+$(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) $(SIM_BUILD)
 	echo "if [file exists $(RTL_LIBRARY)] {vdel -lib $(RTL_LIBRARY) -all}" > $@
 	echo "vlib $(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)    
@@ -82,6 +82,7 @@ endif
 ifeq ($(GUI),1)
 	echo "add wave -recursive /*" >> $@
 else
+	echo "onbreak resume" >> $@
 	echo "run -all" >> $@
 	echo "quit" >> $@
 endif
@@ -110,7 +111,7 @@ OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/
 
 LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
 NEW_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
-INT_LIBS := $(COCOTB_VPI_LIB)
+INT_LIBS := $(COCOTB_VPI_LIB) $(COCOTB_FLI_LIB)
 else
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
 NEW_PYTHONPATH := $(PYTHONPATH)

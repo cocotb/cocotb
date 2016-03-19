@@ -1,7 +1,12 @@
 // Adder DUT
-module adder (input [3:0] A,
-              input [3:0] B,
-              output reg [4:0] X);
+module adder #(
+    parameter   DATA_WIDTH = 4
+) (
+    input      [DATA_WIDTH-1:0] A,
+    input      [DATA_WIDTH-1:0] B,
+    output reg [DATA_WIDTH:0] X
+    );
+    
   always @(A or B) begin
     X = A + B;
   end

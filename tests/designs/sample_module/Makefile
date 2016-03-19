@@ -31,14 +31,13 @@ TOPLEVEL_LANG ?= verilog
 
 TOPLEVEL := sample_module
 
-PWD=$(shell pwd)
-COCOTB?=$(PWD)/../../..
-
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
 else
 WPWD=$(shell pwd)
 endif
+
+COCOTB?=$(WPWD)/../../..
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(COCOTB)/tests/designs/sample_module/sample_module.v

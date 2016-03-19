@@ -39,14 +39,13 @@ else
 
 TOPLEVEL := burst_read_master
 
-PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
-
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
 else
 WPWD=$(shell pwd)
 endif
+
+COCOTB?=$(WPWD)/../../..
 
 VERILOG_SOURCES = $(COCOTB)/tests/designs/avalon_module/burst_read_master.v
 
