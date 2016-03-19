@@ -393,6 +393,11 @@ void FliImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = mti_Now();
 }
 
+void FliImpl::get_sim_precision(int32_t *precision)
+{
+    *precision = mti_GetResolutionLimit();
+}
+
 /**
  * @name    Find the root handle
  * @brief   Find the root handle using an optional name

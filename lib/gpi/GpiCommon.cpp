@@ -201,6 +201,21 @@ void gpi_get_sim_time(uint32_t *high, uint32_t *low)
     registered_impls[0]->get_sim_time(high, low);
 }
 
+void gpi_get_sim_precision(int32_t *precision)
+{
+    /* We clamp to sensible values here, 1e-15 min and 1e3 max */
+    int32_t val;
+    registered_impls[0]->get_sim_precision(&val);
+    if (val > 2 )
+        val = 2;
+
+    if (val < -15)
+        val = -15;
+
+    *precision = val;
+
+}
+
 gpi_sim_hdl gpi_get_root_handle(const char *name)
 {
     /* May need to look over all the implementations that are registered

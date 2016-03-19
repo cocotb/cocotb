@@ -69,6 +69,11 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vpi_time_s.low;
 }
 
+void VpiImpl::get_sim_precision(int32_t *precision)
+{
+    *precision = vpi_get(vpiTimePrecision, NULL);
+}
+
 gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 {
     switch (vpitype) {

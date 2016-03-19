@@ -83,6 +83,7 @@ static PyObject *iterate(PyObject *self, PyObject *args);
 static PyObject *next(PyObject *self, PyObject *args);
 
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
+static PyObject *get_precision(PyObject *self, PyObject *args);
 static PyObject *deregister_callback(PyObject *self, PyObject *args);
 
 static PyObject *log_level(PyObject *self, PyObject *args);
@@ -115,7 +116,8 @@ static PyMethodDef SimulatorMethods[] = {
     {"log_level", log_level, METH_VARARGS, "Set the log level for GPI"},
 
     // FIXME METH_NOARGS => initialization from incompatible pointer type
-    {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as a float"},
+    {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as an int tuple"},
+    {"get_precision", get_precision, METH_VARARGS, "Get the precision of the simualator"},
     {"deregister_callback", deregister_callback, METH_VARARGS, "Deregister a callback"},
     
     {"error_out", (PyCFunction)error_out, METH_NOARGS, NULL},
