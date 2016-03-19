@@ -42,10 +42,9 @@ static FliImpl         *fli_table;
 
 void FliImpl::sim_end(void)
 {
-    const char *stop = "stop";
     if (GPI_DELETE != sim_finish_cb->get_call_state()) {
         sim_finish_cb->set_call_state(GPI_DELETE);
-        mti_Cmd(stop);
+        mti_Break();
     }
 
 }

@@ -82,6 +82,7 @@ endif
 ifeq ($(GUI),1)
 	echo "add wave -recursive /*" >> $@
 else
+	echo "onbreak resume" >> $@
 	echo "run -all" >> $@
 	echo "quit" >> $@
 endif
