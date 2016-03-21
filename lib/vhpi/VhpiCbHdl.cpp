@@ -262,7 +262,7 @@ int VhpiLogicSignalObjHdl::set_signal_value(long value)
         case vhpiLogicVecVal: {
             int i;
             for (i=0; i<m_num_elems; i++)
-                m_value.value.enumvs[m_num_elems-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
+                m_value.value.enumvs[m_num_elems-i-1] = value&(1L<<i) ? vhpi1 : vhpi0;
 
             m_value.numElems = m_num_elems;
             break;
@@ -293,18 +293,13 @@ int VhpiLogicSignalObjHdl::set_signal_value(std::string &value)
 
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
-            int len = value.length();
 
-            // Since we may not get the numElems correctly from the sim and have to infer it
-            // we also need to set it here as well each time.
-
-            m_value.numElems = len;
-
-            if (len > m_num_elems) {
-                LOG_DEBUG("VHPI: Attempt to write string longer than (%s) signal %d > %d",
-                          m_name.c_str(), len, m_num_elems);
-                m_value.numElems = m_num_elems;
+            if ((int)value.length() != m_num_elems) {
+                LOG_ERROR("VHPI: Unable to set logic vector due to the string having incorrect length.  Length of %d needs to be %d", value.length(), m_num_elems);
+                return -1;
             }
+
+            m_value.numElems = m_num_elems;
 
             std::string::iterator iter;
 
@@ -313,11 +308,6 @@ int VhpiLogicSignalObjHdl::set_signal_value(std::string &value)
                  (iter != value.end()) && (i < m_num_elems);
                  iter++, i++) {
                 m_value.value.enumvs[i] = chr2vhpi(*iter);
-            }
-
-            // Fill bits at the end of the value to 0's
-            for (i = len; i < m_num_elems; i++) {
-                m_value.value.enumvs[i] = vhpi0;
             }
 
             break;
@@ -345,7 +335,7 @@ int VhpiSignalObjHdl::set_signal_value(long value)
         case vhpiLogicVecVal: {
             int i;
             for (i=0; i<m_num_elems; i++)
-                m_value.value.enumvs[m_num_elems-i-1] = value&(1<<i);
+                m_value.value.enumvs[m_num_elems-i-1] = value&(1L<<i);
 
             // Since we may not get the numElems correctly from the sim and have to infer it
             // we also need to set it here as well each time.
@@ -421,18 +411,12 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
 
-            int len = value.length();
-
-            // Since we may not get the numElems correctly from the sim and have to infer it
-            // we also need to set it here as well each time.
-
-            m_value.numElems = len;
-
-            if (len > m_num_elems) {
-                LOG_DEBUG("VHPI: Attempt to write string longer than (%s) signal %d > %d",
-                          m_name.c_str(), len, m_num_elems);
-                m_value.numElems = m_num_elems;
+            if ((int)value.length() != m_num_elems) {
+                LOG_ERROR("VHPI: Unable to set logic vector due to the string having incorrect length.  Length of %d needs to be %d", value.length(), m_num_elems);
+                return -1;
             }
+
+            m_value.numElems = m_num_elems;
 
             std::string::iterator iter;
 
@@ -441,11 +425,6 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
                  (iter != value.end()) && (i < m_num_elems);
                  iter++, i++) {
                 m_value.value.enumvs[i] = chr2vhpi(*iter);
-            }
-
-            // Fill bits at the end of the value to 0's
-            for (i = len; i < m_num_elems; i++) {
-                m_value.value.enumvs[i] = vhpi0;
             }
 
             break;

@@ -20,7 +20,7 @@ def issue_142_overflow_error(dut):
                 str(dut.stream_in_data_wide)))
 
     # Wider values are transparently converted to BinaryValues
-    for value in [0, 0x7FFFFFFF, 0x7FFFFFFFFFFF, BinaryValue(0x7FFFFFFFFFFFFF)]:
+    for value in [0, 0x7FFFFFFF, 0x7FFFFFFFFFFF, BinaryValue(0x7FFFFFFFFFFFFF,len(dut.stream_in_data_wide),bigEndian=False)]:
 
         dut.stream_in_data_wide <= value
         yield RisingEdge(dut.clk)

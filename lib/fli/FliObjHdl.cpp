@@ -279,41 +279,12 @@ int FliLogicObjHdl::set_signal_value(const long value)
             mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
         }
     } else {
-        int valLen = sizeof(value) * 8;
-        mtiInt32T enumVal;
-        int numPad;
-        int idx;
-
-        numPad       = valLen < m_num_elems ? m_num_elems-valLen : 0;
-        valLen       = valLen > m_num_elems ? m_num_elems : valLen;
-
         LOG_DEBUG("set_signal_value(long)::0x%016x", value);
+        for (int i = 0, idx = m_num_elems-1; i < m_num_elems; i++, idx--) {
+            mtiInt32T enumVal = value&(1L<<i) ? m_enum_map['1'] : m_enum_map['0'];
 
-        // Pad MSB for descending vector
-        for (idx = 0; idx < numPad && !m_ascending; idx++) {
-            m_mti_buff[idx] = (char)m_enum_map['0']; 
+            m_mti_buff[idx] = (char)enumVal; 
         }
-
-        if (m_ascending) {
-            for (int i = 0; i < valLen; i++) {
-                enumVal = value&(1L<<i) ? m_enum_map['1'] : m_enum_map['0'];
-
-                m_mti_buff[i] = (char)enumVal; 
-            }
-        } else {
-            int len = valLen + numPad;
-            for (int i = 0; i < valLen; i++, idx++) {
-                enumVal = value&(1L<<i) ? m_enum_map['1'] : m_enum_map['0'];
-
-                m_mti_buff[len - idx - 1] = (char)enumVal; 
-            }
-        }
-
-        // Pad MSB for ascending vector
-        for (idx = valLen; idx < (numPad+valLen) && m_ascending; idx++) {
-            m_mti_buff[idx] = (char)m_enum_map['0']; 
-        }
-
 
         if (m_is_var) {
             mti_SetVarValue(get_handle<mtiVariableIdT>(), (long)m_mti_buff);
@@ -336,35 +307,21 @@ int FliLogicObjHdl::set_signal_value(std::string &value)
             mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
         }
     } else {
-        int len = value.length();
-        int numPad;
-
-        numPad = len < m_num_elems ? m_num_elems-len : 0;
+        
+        if ((int)value.length() != m_num_elems) {
+            LOG_ERROR("FLI: Unable to set logic vector due to the string having incorrect length.  Length of %d needs to be %d", value.length(), m_num_elems);
+            return -1;
+        }
 
         LOG_DEBUG("set_signal_value(string)::%s", value.c_str());
-
-        if (len > m_num_elems) {
-            LOG_DEBUG("FLI: Attempt to write sting longer than (%s) signal %d > %d", m_name.c_str(), len, m_num_elems);
-            len = m_num_elems;
-        }
 
         mtiInt32T enumVal;
         std::string::iterator valIter;
         int i = 0;
 
-        // Pad MSB for descending vector
-        for (i = 0; i < numPad && !m_ascending; i++) {
-            m_mti_buff[i] = (char)m_enum_map['0']; 
-        }
-
         for (valIter = value.begin(); (valIter != value.end()) && (i < m_num_elems); valIter++, i++) {
             enumVal = m_enum_map[*valIter];
             m_mti_buff[i] = (char)enumVal; 
-        }
-
-        // Fill bits a the end of the value to 0's
-        for (i = len; i < m_num_elems && m_ascending; i++) {
-            m_mti_buff[i] = (char)m_enum_map['0']; 
         }
 
         if (m_is_var) {
