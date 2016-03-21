@@ -134,8 +134,8 @@ def access_single_bit_erroneous(dut):
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
-             expect_fail=cocotb.SIM_NAME in ["Riviera-PRO"])
+@cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("Icarus Verilog")),
+             expect_fail=cocotb.SIM_NAME.lower().startswith(("riviera")) and cocotb.LANGUAGE in ["verilog"])
 def access_integer(dut):
     """Integer should show as an IntegerObject"""
     bitfail = False
@@ -228,7 +228,9 @@ def access_string(dut):
     idx = 3
 
     result_slice = varible_string[idx]
-    if chr(result_slice) != test_string[idx]:
+
+    # String is defined as string(1 to 8) so idx=3 will access the 3rd character
+    if chr(result_slice) != test_string[idx-1]:
         raise TestFailure("Single character did not match '%c' != '%c'" %
                           (result_slice, test_string[idx]))
 
@@ -341,14 +343,8 @@ def custom_type(dut):
     new_type = dut.cosLut
     tlog.info("cosLut object %s %s" % (new_type, type(new_type)))
 
-    # FLI only iterates over one dimension at a time, where vhpi will
-    # iterate over two dimensions at the same time
-    if cocotb.SIM_NAME.lower().startswith(("modelsim")):
-        expected_sub = 84
-        expected_top = 4
-    else:
-        expected_sub = 11
-        expected_top = 28
+    expected_sub = 84
+    expected_top = 4
 
     count = 0
 

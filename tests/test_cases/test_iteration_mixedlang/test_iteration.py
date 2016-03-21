@@ -67,13 +67,11 @@ def recursive_discovery(dut):
     """
     if cocotb.SIM_NAME.lower().startswith(("ncsim")):
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS
-        # But vhpiSimpleSigAssignStmtK objects do, and ther are 2.
-        # Process statements and all sub handles also show up.
-        pass_total = 985
+        pass_total = 917
     elif cocotb.SIM_NAME.lower().startswith(("modelsim")):
         pass_total = 933
     else:
-        pass_total = 916
+        pass_total = 966
 
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
@@ -96,12 +94,9 @@ def recursive_discovery_boundary(dut):
     Iteration though the boundary works but this just double checks
     """
     if cocotb.SIM_NAME.lower().startswith(("ncsim")):
-        # # But vhpiSimpleSigAssignStmtK objects only show up on IUS, and ther are 2
-        pass_total = 530
-    elif cocotb.SIM_NAME.lower().startswith(("modelsim")):
-        pass_total = 478
+        pass_total = 462
     else:
-        pass_total = 426
+        pass_total = 478
 
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
