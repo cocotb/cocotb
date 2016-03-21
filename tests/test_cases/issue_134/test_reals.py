@@ -15,7 +15,7 @@ def assign_double(dut):
     Assign a random floating point value, read it back from the DUT and check
     it matches what we assigned
     """
-    val = random.uniform(sys.float_info.min, sys.float_info.max)
+    val = random.uniform(-1e307, 1e307)
     log = logging.getLogger("cocotb.test")
     yield Timer(1)
     log.info("Setting the value %g" % val)
