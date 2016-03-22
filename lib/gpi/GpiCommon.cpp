@@ -334,18 +334,18 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
 {
     vector<GpiImplInterface*>::iterator iter;
 
-    GpiObjHdl *hdl = NULL;
-    GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
+    GpiObjHdl *hdl         = NULL;
+    GpiObjHdl *base        = sim_to_hdl<GpiObjHdl*>(parent);
+    GpiImplInterface *intf = base->m_impl;
 
-    for (iter = registered_impls.begin();
-         iter != registered_impls.end();
-         iter++) {
-        LOG_DEBUG("Checking if index %d native though impl %s ", index, (*iter)->get_name_c());
-        if ((hdl = (*iter)->native_check_create(index, base))) {
-            LOG_DEBUG("Found %d via %s", index, (*iter)->get_name_c());
-            break;
-        }
-    }
+    /* Shouldn't need to iterate over interfaces because indexing into a handle shouldn't 
+     * cross the interface boundaries.
+     *
+     * NOTE: IUS's VPI interface returned valid VHDL handles, but then couldn't
+     *       use the handle properly.
+     */
+    LOG_DEBUG("Checking if index %d native though impl %s ", index, intf->get_name_c());
+    hdl = intf->native_check_create(index, base);
 
     if (hdl)
         return CHECK_AND_STORE(hdl);
