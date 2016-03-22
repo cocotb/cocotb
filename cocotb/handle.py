@@ -393,12 +393,10 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
                 _handle [integer] : vpi/vhpi handle to the simulator object
         """
         NonHierarchyObject.__init__(self, handle)
-        self._range_left  = simulator.get_range_left(self._handle)
-        self._range_right = simulator.get_range_right(self._handle)
-        self._indexable   = simulator.get_indexable(self._handle)
+        self._range = simulator.get_range(self._handle)
 
     def __getitem__(self, index):
-        if not self._indexable:
+        if self._range is None:
             self._raise_testerror("%s %s is not indexable.  Unable to get object at index %d" % (self._name, simulator.get_type_string(self._handle), index))
         if index in self._sub_handles:
             return self._sub_handles[index]
@@ -409,17 +407,17 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         return self._sub_handles[index]
 
     def __iter__(self):
-        if not self._indexable:
+        if self._range is None:
             raise StopIteration
-        self._log.debug("Iterating with range [%d:%d]" % (self._range_left, self._range_right))
-        for i in self._range(self._range_left, self._range_right):
+        self._log.debug("Iterating with range [%d:%d]" % (self._range[0], self._range[1]))
+        for i in self._range_iter(self._range[0], self._range[1]):
             try:
                 result = self[i]
                 yield result
             except:
                 continue
 
-    def _range(self, left, right):
+    def _range_iter(self, left, right):
         if left > right:
             while left >= right:
                 yield left

@@ -825,28 +825,6 @@ static PyObject *get_const(PyObject *self, PyObject *args)
     return pyresult;
 }
 
-static PyObject *get_indexable(PyObject *self, PyObject *args)
-{
-    int result;
-    gpi_sim_hdl hdl;
-    PyObject *pyresult;
-
-    PyGILState_STATE gstate;
-    gstate = TAKE_GIL();
-
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
-        DROP_GIL(gstate);
-        return NULL;
-    }
-
-    result = gpi_is_indexable((gpi_sim_hdl)hdl);
-    pyresult = Py_BuildValue("i", result);
-
-    DROP_GIL(gstate);
-
-    return pyresult;
-}
-
 static PyObject *get_type_string(PyObject *self, PyObject *args)
 {
     const char *result;
@@ -928,7 +906,7 @@ static PyObject *get_num_elems(PyObject *self, PyObject *args)
     return retstr;
 }
 
-static PyObject *get_range_left(PyObject *self, PyObject *args)
+static PyObject *get_range(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
     PyObject *retstr;
@@ -941,29 +919,14 @@ static PyObject *get_range_left(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    int rng_left = gpi_get_range_left((gpi_sim_hdl)hdl);
-    retstr = Py_BuildValue("i", rng_left);
-
-    DROP_GIL(gstate);
-
-    return retstr;
-}
-
-static PyObject *get_range_right(PyObject *self, PyObject *args)
-{
-    gpi_sim_hdl hdl;
-    PyObject *retstr;
-
-    PyGILState_STATE gstate;
-    gstate = TAKE_GIL();
-
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
-        DROP_GIL(gstate);
-        return NULL;
-    }
-
+    int indexable = gpi_is_indexable((gpi_sim_hdl)hdl);
+    int rng_left  = gpi_get_range_left((gpi_sim_hdl)hdl);
     int rng_right = gpi_get_range_right((gpi_sim_hdl)hdl);
-    retstr = Py_BuildValue("i", rng_right);
+
+    if (indexable)
+        retstr = Py_BuildValue("(i,i)", rng_left,rng_right);
+    else
+        retstr = Py_BuildValue("");
 
     DROP_GIL(gstate);
 
