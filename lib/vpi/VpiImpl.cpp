@@ -35,29 +35,26 @@ static VpiImpl *vpi_table;
 
 }
 
+#define CASE_STR(_X) \
+    case _X: return #_X
+
 const char *VpiImpl::reason_to_string(int reason)
 {
     switch (reason) {
-    case cbValueChange:
-        return "cbValueChange";
-    case cbAtStartOfSimTime:
-        return "cbAtStartOfSimTime";
-    case cbReadWriteSynch:
-        return "cbReadWriteSynch";
-    case cbReadOnlySynch:
-        return "cbReadOnlySynch";
-    case cbNextSimTime:
-        return "cbNextSimTime";
-    case cbAfterDelay:
-        return "cbAfterDelay";
-    case cbStartOfSimulation:
-        return "cbStartOfSimulation";
-    case cbEndOfSimulation:
-        return "cbEndOfSimulation";
-    default:
-        return "unknown";
+        CASE_STR(cbValueChange);
+        CASE_STR(cbAtStartOfSimTime);
+        CASE_STR(cbReadWriteSynch);
+        CASE_STR(cbReadOnlySynch);
+        CASE_STR(cbNextSimTime);
+        CASE_STR(cbAfterDelay);
+        CASE_STR(cbStartOfSimulation);
+        CASE_STR(cbEndOfSimulation);
+
+        default: return "unknown";
     }
 }
+
+#undef CASE_STR
 
 void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 {
@@ -123,7 +120,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiGenScope:
             return GPI_MODULE;
 
-        case vpiStringVal:
+        case vpiStringVar:
             return GPI_STRING;
 
         default:
@@ -215,6 +212,8 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
 
 GpiObjHdl* VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 {
+    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
+
     LOG_DEBUG("Trying to convert raw to VPI handle");
 
     vpiHandle new_hdl = (vpiHandle)raw_hdl;
@@ -226,7 +225,7 @@ GpiObjHdl* VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
     }
 
     std::string name = c_name;
-    std::string fq_name = parent->get_fullname() + "." + name;
+    std::string fq_name = parent_hdl->get_fullname() + "." + name;
 
     GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
@@ -239,38 +238,23 @@ GpiObjHdl* VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 
 GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
+    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
+
     vpiHandle new_hdl;
-    std::string fq_name = parent->get_fullname() + "." + name;
+    std::string fq_name = parent_hdl->get_fullname() + "." + name;
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
     new_hdl = vpi_handle_by_name(&writable[0], NULL);
 
+    /* No need to iterate to look for generate loops as the tools will at least find vpiGenScopeArray */
     if (new_hdl == NULL) {
-        /* If not found, check to see if the name of a generate loop */
-        vpiHandle iter = vpi_iterate(vpiInternalScope, parent->get_handle<vpiHandle>());
-
-        if (iter != NULL) {
-            vpiHandle rgn;
-            for (rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
-                if (vpi_get(vpiType, rgn) == vpiGenScope) {
-                    std::string rgn_name = vpi_get_str(vpiName, rgn);
-                    if (rgn_name.compare(0,name.length(),name) == 0) {
-                        new_hdl = parent->get_handle<vpiHandle>();
-                        vpi_free_object(iter);
-                        break;
-                    }
-                }
-            }
-        }
-        if (new_hdl == NULL) {
-            LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
-            return NULL;
-        }
+        LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
+        return NULL;
     }
 
     /* Generate Loops have inconsistent behavior across vpi tools.  A "name"
-     * without an index, i.e. dut.loop vs dut.loop[0], will find a handl to vpiGenScopeArray, 
+     * without an index, i.e. dut.loop vs dut.loop[0], will find a handle to vpiGenScopeArray, 
      * but not all tools support iterating over the vpiGenScopeArray.  We don't want to create
      * a GpiObjHdl to this type of vpiHandle.
      *
@@ -280,7 +264,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     if (vpi_get(vpiType, new_hdl) == vpiGenScopeArray) {
         vpi_free_object(new_hdl);
 
-        new_hdl = parent->get_handle<vpiHandle>();
+        new_hdl = parent_hdl->get_handle<vpiHandle>();
     }
 
 

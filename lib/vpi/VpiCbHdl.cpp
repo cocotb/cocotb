@@ -821,7 +821,6 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
             name        = idx_str.substr(0,found);
             obj         = m_parent->get_handle<vpiHandle>();
         } else {
-            LOG_WARN("Unhandled Generate Loop Format - %s", name.c_str());
             name = c_name;
         }
     } else {
