@@ -162,8 +162,7 @@ class VhpiArrayObjHdl : public GpiObjHdl {
 public:
     VhpiArrayObjHdl(GpiImplInterface *impl,
                     vhpiHandleT hdl,
-                    gpi_objtype_t objtype,
-                    bool is_const) : GpiObjHdl(impl, hdl, objtype, is_const) { }
+                    gpi_objtype_t objtype) : GpiObjHdl(impl, hdl, objtype) { }
     virtual ~VhpiArrayObjHdl() { }
 
     int initialise(std::string &name, std::string &fq_name);
@@ -265,8 +264,7 @@ public:
 
     GpiObjHdl *create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                                           std::string &name,
-                                          std::string &fq_name,
-                                          bool parentConst);
+                                          std::string &fq_name);
 
 private:
     VhpiReadwriteCbHdl m_read_write;

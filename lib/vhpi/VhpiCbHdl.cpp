@@ -1073,7 +1073,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
         fq_name += "." + name;
     }
     VhpiImpl *vhpi_impl = reinterpret_cast<VhpiImpl*>(m_impl);
-    new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name, m_parent->get_const());
+    new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
     if (new_obj) {
         *hdl = new_obj;
         return GpiIterator::NATIVE;
