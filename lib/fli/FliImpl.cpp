@@ -193,7 +193,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
                 }
                 break;
             case MTI_TYPE_RECORD:
-                new_obj = new FliObjHdl(this, hdl, GPI_STRUCTURE, accType, accFullType);
+                new_obj = new FliValueObjHdl(this, hdl, GPI_STRUCTURE, false, accType, accFullType, is_var, valType, typeKind);
                 break;
             default:
                 LOG_ERROR("Unable to handle object type for %s (%d)", name.c_str(), typeKind);
@@ -243,59 +243,78 @@ GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
  */
 GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
-    std::string fq_name = parent->get_fullname();
+    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl *>(parent);
+    bool search_rgn       = false;
+    bool search_sig       = false;
+    bool search_var       = false;
+
+    std::string   fq_name  = parent_hdl->get_fullname();
+    gpi_objtype_t obj_type = parent_hdl->get_type();
 
     if (fq_name == "/") {
         fq_name += name;
-    } else if (parent->get_type() == GPI_MODULE) {
+        search_rgn = true;
+        search_sig = true;
+        search_var = true;
+    } else if (obj_type == GPI_MODULE) {
         fq_name += "/" + name;
-    } else if (parent->get_type() == GPI_STRUCTURE) {
+        search_rgn = true;
+        search_sig = true;
+        search_var = true;
+    } else if (obj_type == GPI_STRUCTURE) {
+        FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent_hdl);
+
         fq_name += "." + name;
+        search_rgn = false;
+        search_var = fli_obj->is_var();
+        search_sig = !search_var;
     } else {
-        LOG_ERROR("FLI: Parent of type %d must be of type GPI_MODULE or GPI_STRUCTURE to have a child.", parent->get_type());
+        LOG_ERROR("FLI: Parent of type %d must be of type GPI_MODULE or GPI_STRUCTURE to have a child.", obj_type);
         return NULL;
     }
 
-    LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent->get_name_str());
+    LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent_hdl->get_name_str());
 
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
-    HANDLE hdl;
+    HANDLE hdl = NULL;
     PLI_INT32 accType;
     PLI_INT32 accFullType;
 
-    if ((hdl = mti_FindRegion(&writable[0])) != NULL) {
+    if (search_rgn && (hdl = mti_FindRegion(&writable[0])) != NULL) {
         accType     = acc_fetch_type(hdl);
         accFullType = acc_fetch_fulltype(hdl);
         LOG_DEBUG("Found region %s -> %p", fq_name.c_str(), hdl);
         LOG_DEBUG("        Type: %d", accType);
         LOG_DEBUG("   Full Type: %d", accFullType);
-    } else if ((hdl = mti_FindSignal(&writable[0])) != NULL) {
+    } else if (search_sig && (hdl = mti_FindSignal(&writable[0])) != NULL) {
         accType     = acc_fetch_type(hdl);
         accFullType = acc_fetch_fulltype(hdl);
         LOG_DEBUG("Found a signal %s -> %p", fq_name.c_str(), hdl);
         LOG_DEBUG("        Type: %d", accType);
         LOG_DEBUG("   Full Type: %d", accFullType);
-    } else if ((hdl = mti_FindVar(&writable[0])) != NULL) {
+    } else if (search_var && (hdl = mti_FindVar(&writable[0])) != NULL) {
         accFullType = accType = mti_GetVarKind(static_cast<mtiVariableIdT>(hdl));
         LOG_DEBUG("Found a variable %s -> %p", fq_name.c_str(), hdl);
         LOG_DEBUG("        Type: %d", accType);
         LOG_DEBUG("   Full Type: %d", accFullType);
-    } else {
+    } else if (search_rgn){
         mtiRegionIdT rgn;
 
         /* If not found, check to see if the name of a generate loop and create a pseudo-region */
-        for (rgn = mti_FirstLowerRegion(parent->get_handle<mtiRegionIdT>()); rgn != NULL; rgn = mti_NextRegion(rgn)) {
+        for (rgn = mti_FirstLowerRegion(parent_hdl->get_handle<mtiRegionIdT>()); rgn != NULL; rgn = mti_NextRegion(rgn)) {
             if (acc_fetch_fulltype(rgn) == accForGenerate) {
                 std::string rgn_name = mti_GetRegionName(static_cast<mtiRegionIdT>(rgn));
                 if (rgn_name.compare(0,name.length(),name) == 0) {
-                    FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
-                    return create_gpi_obj_from_handle(parent->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
+                    FliObj *fli_obj = dynamic_cast<FliObj *>(parent_hdl);
+                    return create_gpi_obj_from_handle(parent_hdl->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
                 }
             }
         }
+    }
 
+    if (NULL == hdl) {
         LOG_DEBUG("Didn't find anything named %s", &writable[0]);
         return NULL;
     }
@@ -308,8 +327,8 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
      * being equivalent to the parent handle.
      */
     if (accFullType == accForGenerate) {
-        FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
-        return create_gpi_obj_from_handle(parent->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
+        FliObj *fli_obj = dynamic_cast<FliObj *>(parent_hdl);
+        return create_gpi_obj_from_handle(parent_hdl->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
     }
 
     return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
@@ -322,21 +341,22 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
  */
 GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 {
+    GpiObjHdl *parent_hdl  = sim_to_hdl<GpiObjHdl *>(parent);
+    gpi_objtype_t obj_type = parent_hdl->get_type();
+
     HANDLE hdl;
     PLI_INT32 accType;
     PLI_INT32 accFullType;
     char buff[14];
 
-    gpi_objtype_t obj_type = parent->get_type();
-
     if (obj_type == GPI_GENARRAY) {
-        LOG_DEBUG("Looking for index %d from %s", index, parent->get_name_str());
+        LOG_DEBUG("Looking for index %d from %s", index, parent_hdl->get_name_str());
 
         snprintf(buff, 14, "(%d)", index);
 
         std::string idx = buff;
-        std::string name = parent->get_name() + idx;
-        std::string fq_name = parent->get_fullname() + idx;
+        std::string name = parent_hdl->get_name() + idx;
+        std::string fq_name = parent_hdl->get_fullname() + idx;
 
         std::vector<char> writable(fq_name.begin(), fq_name.end());
         writable.push_back('\0');
@@ -354,24 +374,9 @@ GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
         return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
     } else if (obj_type == GPI_REGISTER || obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
-        int left       = parent->get_range_left();
-        int right      = parent->get_range_right();
-        bool ascending = (left < right);
+        FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent_hdl);
 
-        if (( ascending && (index < left || index > right)) ||
-            (!ascending && (index > left || index < right))) {
-            LOG_ERROR("Invalid Index - Index %d is not in the range of [%d:%d]", index, left, right);
-            return NULL;
-        }
-
-        FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent);
-
-        if (obj_type == GPI_REGISTER && fli_obj->get_fli_typekind() == MTI_TYPE_ENUM) {
-            LOG_ERROR("Logic Type is not a vector that can be indexed");
-            return NULL;
-        }
-
-        LOG_DEBUG("Looking for index %u from %s", index, parent->get_name_str());
+        LOG_DEBUG("Looking for index %u from %s", index, parent_hdl->get_name_str());
 
         if ((hdl = fli_obj->get_sub_hdl(index)) == NULL) {
             LOG_DEBUG("Didn't find the index %d", index);
@@ -381,8 +386,8 @@ GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
         snprintf(buff, 14, "(%d)", index);
 
         std::string idx = buff;
-        std::string name = parent->get_name() + idx;
-        std::string fq_name = parent->get_fullname() + idx;
+        std::string name = parent_hdl->get_name() + idx;
+        std::string fq_name = parent_hdl->get_fullname() + idx;
 
         if (!(fli_obj->is_var())) {
             accType     = acc_fetch_type(hdl);
@@ -398,7 +403,7 @@ GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
         }
         return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
     } else {
-        LOG_ERROR("FLI: Parent of type %d must be of type GPI_GENARRAY, GPI_REGISTER, GPI_ARRAY, or GPI_STRING to have an index.", parent->get_type());
+        LOG_ERROR("FLI: Parent of type %d must be of type GPI_GENARRAY, GPI_REGISTER, GPI_ARRAY, or GPI_STRING to have an index.", obj_type);
         return NULL;
     }
 }
@@ -883,72 +888,60 @@ void FliIterator::populate_handle_list(FliIterator::OneToMany childType)
             }
             break;
         case FliIterator::OTM_SIGNAL_SUB_ELEMENTS:
-            if (m_parent->get_type() == GPI_REGISTER || m_parent->get_type() == GPI_ARRAY || m_parent->get_type() == GPI_STRUCTURE) {
+            if (m_parent->get_type() == GPI_STRUCTURE) {
+                mtiSignalIdT parent = m_parent->get_handle<mtiSignalIdT>();
+
+                mtiTypeIdT type = mti_GetSignalType(parent);
+                mtiSignalIdT *ids = mti_GetSignalSubelements(parent,NULL);
+
+                LOG_DEBUG("GPI_STRUCTURE: %d fields", mti_TickLength(type));
+                for (int i = 0; i < mti_TickLength(type); i++) {
+                    m_sigs.push_back(ids[i]);
+                }
+                mti_VsimFree(ids);
+            } else if (m_parent->get_indexable()) {
                 FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(m_parent);
 
-                if (m_parent->get_type() == GPI_REGISTER && fli_obj->get_fli_typekind() == MTI_TYPE_ENUM) {
-                    break;
-                }
+                int left  = m_parent->get_range_left();
+                int right = m_parent->get_range_right();
 
-                if (m_parent->get_type() == GPI_STRUCTURE) {
-                    mtiSignalIdT parent = m_parent->get_handle<mtiSignalIdT>();
-
-                    mtiTypeIdT type = mti_GetSignalType(parent);
-                    mtiSignalIdT *ids = mti_GetSignalSubelements(parent,NULL);
-
-                    LOG_DEBUG("GPI_STRUCTURE: %d fields", mti_TickLength(type));
-                    for (int i = 0; i < mti_TickLength(type); i++) {
-                        m_sigs.push_back(ids[i]);
+                if (left > right) {
+                    for (int i = left; i >= right; i--) {
+                        m_sigs.push_back(static_cast<mtiSignalIdT>(fli_obj->get_sub_hdl(i)));
                     }
-                    mti_VsimFree(ids);
                 } else {
-                    int left  = m_parent->get_range_left();
-                    int right = m_parent->get_range_right();
-
-                    if (left > right) {
-                        for (int i = left; i >= right; i--) {
-                            m_sigs.push_back(static_cast<mtiSignalIdT>(fli_obj->get_sub_hdl(i)));
-                        }
-                    } else {
-                        for (int i = left; i <= right; i++) {
-                            m_sigs.push_back(static_cast<mtiSignalIdT>(fli_obj->get_sub_hdl(i)));
-                        }
+                    for (int i = left; i <= right; i++) {
+                        m_sigs.push_back(static_cast<mtiSignalIdT>(fli_obj->get_sub_hdl(i)));
                     }
                 }
             }
             break;
         case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
-            if (m_parent->get_type() == GPI_REGISTER || m_parent->get_type() == GPI_ARRAY || m_parent->get_type() == GPI_STRUCTURE) {
-                FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(m_parent);
+            if (m_parent->get_type() == GPI_STRUCTURE) {
+                mtiVariableIdT parent = m_parent->get_handle<mtiVariableIdT>();
 
-                if (m_parent->get_type() == GPI_REGISTER && fli_obj->get_fli_typekind() == MTI_TYPE_ENUM) {
-                    break;
+                mtiTypeIdT type = mti_GetVarType(parent);
+                mtiVariableIdT *ids = mti_GetVarSubelements(parent,NULL);
+
+                LOG_DEBUG("GPI_STRUCTURE: %d fields", mti_TickLength(type));
+                for (int i = 0; i < mti_TickLength(type); i++) {
+                    m_vars.push_back(ids[i]);
                 }
 
-                if (m_parent->get_type() == GPI_STRUCTURE) {
-                    mtiVariableIdT parent = m_parent->get_handle<mtiVariableIdT>();
+                mti_VsimFree(ids);
+            } else if (m_parent->get_indexable()) {
+                FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(m_parent);
 
-                    mtiTypeIdT type = mti_GetVarType(parent);
-                    mtiVariableIdT *ids = mti_GetVarSubelements(parent,NULL);
+                int left  = m_parent->get_range_left();
+                int right = m_parent->get_range_right();
 
-                    LOG_DEBUG("GPI_STRUCTURE: %d fields", mti_TickLength(type));
-                    for (int i = 0; i < mti_TickLength(type); i++) {
-                        m_vars.push_back(ids[i]);
+                if (left > right) {
+                    for (int i = left; i >= right; i--) {
+                        m_vars.push_back(static_cast<mtiVariableIdT>(fli_obj->get_sub_hdl(i)));
                     }
-
-                    mti_VsimFree(ids);
                 } else {
-                    int left  = m_parent->get_range_left();
-                    int right = m_parent->get_range_right();
-
-                    if (left > right) {
-                        for (int i = left; i >= right; i--) {
-                            m_vars.push_back(static_cast<mtiVariableIdT>(fli_obj->get_sub_hdl(i)));
-                        }
-                    } else {
-                        for (int i = left; i <= right; i++) {
-                            m_vars.push_back(static_cast<mtiVariableIdT>(fli_obj->get_sub_hdl(i)));
-                        }
+                    for (int i = left; i <= right; i++) {
+                        m_vars.push_back(static_cast<mtiVariableIdT>(fli_obj->get_sub_hdl(i)));
                     }
                 }
             }

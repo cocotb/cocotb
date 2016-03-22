@@ -149,6 +149,9 @@ int FliValueObjHdl::set_signal_value(const double value)
 }
 
 void *FliValueObjHdl::get_sub_hdl(int index) {
+    if (!m_indexable)
+        return NULL;
+
     if (m_sub_hdls == NULL) {
         if (is_var()) {
             m_sub_hdls = (void **)mti_GetVarSubelements(get_handle<mtiVariableIdT>(), NULL);
@@ -161,18 +164,14 @@ void *FliValueObjHdl::get_sub_hdl(int index) {
 
     if (m_range_left > m_range_right) {
         idx = m_range_left - index;
-
-        if (idx < 0 || idx > (m_range_left-m_range_right)) {
-            return NULL;
-        }
     } else {
         idx = index - m_range_left;
-
-        if (idx < 0 || idx > (m_range_right-m_range_left)) {
-            return NULL;
-        }
     }
-    return m_sub_hdls[idx];
+
+    if (idx < 0 || idx >= m_num_elems)
+        return NULL;
+    else
+        return m_sub_hdls[idx];
 }
 
 int FliEnumObjHdl::initialise(std::string &name, std::string &fq_name)
