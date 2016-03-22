@@ -44,6 +44,148 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl()
         free(m_binvalue.value.str);
 }
 
+bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
+#ifdef IUS
+    /* IUS does not appear to set the vhpiIsUnconstrainedP property.  IUS Docs say will return
+     * -1 if unconstrained, but with vhpiIntT being unsigned, the value returned is below.
+     */
+    const vhpiIntT UNCONSTRAINED = 2147483647;
+#endif
+
+    bool error = true;
+
+    vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, hdl);
+
+    if (base_hdl == NULL) {
+        vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, hdl);
+
+        if (st_hdl != NULL) {
+            base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
+            vhpi_release_handle(st_hdl);
+        }
+    }
+
+    if (base_hdl != NULL) {
+        vhpiHandleT it = vhpi_iterator(vhpiConstraints, base_hdl);
+        vhpiIntT curr_idx = 0;
+
+        if (it != NULL) {
+            vhpiHandleT constraint;
+            while ((constraint = vhpi_scan(it)) != NULL) {
+                if (curr_idx == dim) {
+
+                    vhpi_release_handle(it);
+                    vhpiIntT l_rng = vhpi_get(vhpiLeftBoundP, constraint);
+                    vhpiIntT r_rng = vhpi_get(vhpiRightBoundP, constraint);
+#ifdef IUS
+                    if (l_rng != UNCONSTRAINED && r_rng != UNCONSTRAINED) {
+#else
+                    if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
+#endif
+                        error = false;
+                        *left  = l_rng;
+                        *right = r_rng;
+                    }
+                    break;
+                }
+                ++curr_idx;
+            }
+        }
+        vhpi_release_handle(base_hdl);
+    }
+
+    if (error) {
+        vhpiHandleT sub_type_hdl = vhpi_handle(vhpiSubtype, hdl);
+
+        if (sub_type_hdl != NULL) {
+            vhpiHandleT it = vhpi_iterator(vhpiConstraints, sub_type_hdl);
+            vhpiIntT curr_idx = 0;
+
+            if (it != NULL) {
+                vhpiHandleT constraint;
+                while ((constraint = vhpi_scan(it)) != NULL) {
+                    if (curr_idx == dim) {
+                        vhpi_release_handle(it);
+
+                        /* IUS only sets the vhpiIsUnconstrainedP incorrectly on the base type */
+                        if (!vhpi_get(vhpiIsUnconstrainedP, constraint)) {
+                            error = false;
+                            *left  = vhpi_get(vhpiLeftBoundP, constraint);
+                            *right = vhpi_get(vhpiRightBoundP, constraint);
+                        }
+                        break;
+                    }
+                    ++curr_idx;
+                }
+            }
+            vhpi_release_handle(sub_type_hdl);
+        }
+    }
+
+    return error;
+
+}
+
+int VhpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
+    vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
+
+    m_indexable = true;
+
+    vhpiHandleT type = vhpi_handle(vhpiBaseType, handle);
+
+    if (type == NULL) {
+        vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, handle);
+
+        if (st_hdl != NULL) {
+            type = vhpi_handle(vhpiBaseType, st_hdl);
+            vhpi_release_handle(st_hdl);
+        }
+    }
+
+    if (NULL == type) {
+        LOG_ERROR("Unable to get vhpiBaseType for %s", fq_name.c_str());
+        return -1;
+    }
+
+    vhpiIntT num_dim = vhpi_get(vhpiNumDimensionsP, type);
+    vhpiIntT dim_idx = 0;
+
+    /* Need to determine which dimension constraint is needed */
+    if (num_dim > 1) {
+        std::string hdl_name = vhpi_get_str(vhpiCaseNameP, handle);
+
+        if (hdl_name.length() < name.length()) {
+            std::string pseudo_idx = name.substr(hdl_name.length());
+
+            while (pseudo_idx.length() > 0) {
+                std::size_t found = pseudo_idx.find_first_of(")");
+
+                if (found != std::string::npos) {
+                    ++dim_idx;
+                    pseudo_idx = pseudo_idx.substr(found+1);
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    bool error = get_range(handle, dim_idx, &m_range_left, &m_range_right);
+
+    if (error) {
+        LOG_ERROR("Unable to obtain constraints for an indexable object %s.", fq_name.c_str());
+        return -1;
+    }
+
+    if (m_range_left > m_range_right) {
+        m_num_elems = m_range_left - m_range_right + 1;
+    } else {
+        m_num_elems = m_range_right - m_range_left + 1;
+    }
+
+    return GpiObjHdl::initialise(name, fq_name);
+}
+
 int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     // Determine the type of object, either scalar or vector
     m_value.format = vhpiObjTypeVal;
@@ -59,12 +201,8 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
 
     if (0 > vhpi_get_value(get_handle<vhpiHandleT>(), &m_value)) {
-        if (vhpiSliceNameK == vhpi_get(vhpiKindP, handle)) {
-            m_value.format = vhpiEnumVecVal;
-        } else {
-            LOG_DEBUG("vhpi_get_value failed and not a vhpiSliceNameK setting to vhpiRawDataVal");
-            m_value.format = vhpiRawDataVal;
-        }
+        LOG_ERROR("vhpi_get_value failed for %s (%s)", fq_name.c_str(), vhpi_get_str(vhpiKindStrP, handle));
+        return -1;
     }
 
     LOG_DEBUG("Found %s of format type %s (%d) format object with %d elems buffsize %d size %d",
@@ -81,26 +219,13 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     switch (m_value.format) {
         case vhpiIntVal:
         case vhpiEnumVal:
-        case vhpiLogicVal:
         case vhpiRealVal:
         case vhpiCharVal: {
             break;
         }
 
-        case vhpiIntVecVal:
-        case vhpiEnumVecVal:
-        case vhpiLogicVecVal: {
-            m_num_elems = vhpi_get(vhpiSizeP, handle);
-            m_value.bufSize = m_num_elems*sizeof(vhpiEnumT);
-            m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize + 1);
-            if (!m_value.value.enumvs) {
-                LOG_CRITICAL("Unable to alloc mem for write buffer: ABORTING");
-            }
-            LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
-            break;
-        }
-
         case vhpiStrVal: {
+            m_indexable = true;
             m_num_elems = vhpi_get(vhpiSizeP, handle);
             m_value.bufSize = (m_num_elems)*sizeof(vhpiCharT) + 1;
             m_value.value.str = (vhpiCharT *)malloc(m_value.bufSize);
@@ -111,27 +236,16 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
             LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
             break;
         }
-        case vhpiRawDataVal: {
-            // This is an internal representation - the only way to determine
-            // the size is to iterate over the members and count sub-elements
-            m_num_elems = 0;
-            vhpiHandleT result = NULL;
-            vhpiHandleT iterator = vhpi_iterator(vhpiIndexedNames,
-                                                 handle);
-            while (true) {
-                result = vhpi_scan(iterator);
-                if (NULL == result)
-                    break;
-                m_num_elems++;
-            }
-            LOG_DEBUG("Found vhpiRawDataVal with %d elements", m_num_elems);
-            goto gpi_init;
-        }
 
         default: {
             LOG_ERROR("Unable to determine property for %s (%d) format object",
                          ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format), m_value.format);
+            return -1;
         }
+    }
+
+    if (m_indexable && get_range(handle, 0, &m_range_left, &m_range_right)) {
+        m_indexable = false;
     }
 
     if (m_num_elems) {
@@ -143,9 +257,51 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         }
     }
 
-gpi_init:
     return GpiObjHdl::initialise(name, fq_name);
 }
+
+int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
+    // Determine the type of object, either scalar or vector
+    m_value.format = vhpiLogicVal;
+    m_value.bufSize = 0;
+    m_value.value.str = NULL;
+    m_value.numElems = 0;
+    /* We also alloc a second value member for use with read string operations */
+    m_binvalue.format = vhpiBinStrVal;
+    m_binvalue.bufSize = 0;
+    m_binvalue.numElems = 0;
+    m_binvalue.value.str = NULL;
+
+    vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
+
+    m_num_elems = vhpi_get(vhpiSizeP, handle);
+
+    if (m_num_elems > 1) {
+        m_indexable = true;
+        m_value.format = vhpiLogicVecVal;
+        m_value.bufSize = m_num_elems*sizeof(vhpiEnumT);
+        m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize + 1);
+        if (!m_value.value.enumvs) {
+            LOG_CRITICAL("Unable to alloc mem for write buffer: ABORTING");
+        }
+    }
+
+    if (m_indexable && get_range(handle, 0, &m_range_left, &m_range_right)) {
+        m_indexable = false;
+    }
+
+    if (m_num_elems) {
+        m_binvalue.bufSize = m_num_elems*sizeof(vhpiCharT) + 1;
+        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, sizeof(vhpiCharT));
+
+        if (!m_binvalue.value.str) {
+            LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
+        }
+    }
+
+    return GpiObjHdl::initialise(name, fq_name);
+}
+
 
 VhpiCbHdl::VhpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl)
 {
@@ -572,7 +728,7 @@ int VhpiStartupCbHdl::run_callback(void) {
     gpi_sim_info_t sim_info;
     sim_info.argc = 0;
     sim_info.argv = NULL;
-    sim_info.product = gpi_copy_name(vhpi_get_str(vhpiCaseNameP, NULL));
+    sim_info.product = gpi_copy_name(vhpi_get_str(vhpiNameP, NULL));
     sim_info.version = gpi_copy_name(vhpi_get_str(vhpiToolVersionP, NULL));
     gpi_embed_init(&sim_info);
 
@@ -646,6 +802,7 @@ void vhpi_mappings(GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> &map)
         vhpiVarDecls,
         vhpiPortDecls,
         vhpiGenericDecls,
+        vhpiConstDecls,
         //    vhpiIndexedNames,
         vhpiCompInstStmts,
         vhpiBlockStmts,
@@ -687,19 +844,16 @@ void vhpi_mappings(GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> &map)
     /* vhpiForGenerateK */
     vhpiOneToManyT gen_options[] = {
         vhpiDecls,
-        vhpiCompInstStmts,  
+        vhpiInternalRegions,
+        vhpiSigDecls,
+        vhpiVarDecls,
+        vhpiConstDecls,
+        vhpiCompInstStmts,
+        vhpiBlockStmts,
         (vhpiOneToManyT)0,
     };
     map.add_to_options(vhpiForGenerateK, &gen_options[0]);
-
-    /* vhpiIfGenerateK */
-    vhpiOneToManyT ifgen_options[] = {
-        vhpiDecls,
-        vhpiInternalRegions,
-        vhpiCompInstStmts,
-        (vhpiOneToManyT)0,
-    };
-    map.add_to_options(vhpiIfGenerateK, &ifgen_options[0]);
+    map.add_to_options(vhpiIfGenerateK, &gen_options[0]);
 
     /* vhpiConstDeclK */
     vhpiOneToManyT const_options[] = {
@@ -815,7 +969,10 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
                 }
             }
 
-            if (obj != NULL && (vhpiProcessStmtK == vhpi_get(vhpiKindP, obj))) {
+            if (obj != NULL && (vhpiProcessStmtK         == vhpi_get(vhpiKindP, obj) ||
+                                vhpiCondSigAssignStmtK   == vhpi_get(vhpiKindP, obj) ||
+                                vhpiSimpleSigAssignStmtK == vhpi_get(vhpiKindP, obj) ||
+                                vhpiSelectSigAssignStmtK == vhpi_get(vhpiKindP, obj))) {
                 LOG_DEBUG("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
                                               vhpi_get_str(vhpiKindStrP, obj));
                 obj=NULL;
@@ -916,7 +1073,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
         fq_name += "." + name;
     }
     VhpiImpl *vhpi_impl = reinterpret_cast<VhpiImpl*>(m_impl);
-    new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name);
+    new_obj = vhpi_impl->create_gpi_obj_from_handle(obj, name, fq_name, m_parent->get_const());
     if (new_obj) {
         *hdl = new_obj;
         return GpiIterator::NATIVE;

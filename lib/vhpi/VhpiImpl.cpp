@@ -28,6 +28,7 @@
 #include "VhpiImpl.h"
 #include <cmath>
 #include <algorithm>
+#include <stdlib.h>
 
 extern "C" {
 static VhpiCbHdl *sim_init_cb;
@@ -35,74 +36,52 @@ static VhpiCbHdl *sim_finish_cb;
 static VhpiImpl  *vhpi_table;
 }
 
+#define CASE_STR(_X) \
+    case _X: return #_X
+
 const char * VhpiImpl::format_to_string(int format)
 {
     switch (format) {
-    case vhpiBinStrVal:
-        return "vhpiBinStrVal";
-    case vhpiOctStrVal:
-        return "vhpiOctStrVal";
-    case vhpiDecStrVal:
-        return "vhpiDecStrVal";
-    case vhpiHexStrVal:
-        return "vhpiHexStrVal";
-    case vhpiEnumVal:
-        return "vhpiEnumVal";
-    case vhpiIntVal:
-        return "vhpiIntVal";
-    case vhpiLogicVal:
-        return "vhpiLogicVal";
-    case vhpiRealVal:
-        return "vhpiRealVal";
-    case vhpiStrVal:
-        return "vhpiStrVal";
-    case vhpiCharVal:
-        return "vhpiCharVal";
-    case vhpiTimeVal:
-        return "vhpiTimeVal";
-    case vhpiPhysVal:
-        return "vhpiPhysVal";
-    case vhpiObjTypeVal:
-        return "vhpiObjTypeVal";
-    case vhpiPtrVal:
-        return "vhpiPtrVal";
-    case vhpiEnumVecVal:
-        return "vhpiEnumVecVal";
-    case vhpiRawDataVal:
-        return "vhpiRawDataVal";
+        CASE_STR(vhpiBinStrVal);
+        CASE_STR(vhpiOctStrVal);
+        CASE_STR(vhpiDecStrVal);
+        CASE_STR(vhpiHexStrVal);
+        CASE_STR(vhpiEnumVal);
+        CASE_STR(vhpiIntVal);
+        CASE_STR(vhpiLogicVal);
+        CASE_STR(vhpiRealVal);
+        CASE_STR(vhpiStrVal);
+        CASE_STR(vhpiCharVal);
+        CASE_STR(vhpiTimeVal);
+        CASE_STR(vhpiPhysVal);
+        CASE_STR(vhpiObjTypeVal);
+        CASE_STR(vhpiPtrVal);
+        CASE_STR(vhpiEnumVecVal);
+        CASE_STR(vhpiRawDataVal);
 
-    default:
-        return "unknown";
+        default: return "unknown";
     }
 }
 
 const char *VhpiImpl::reason_to_string(int reason)
 {
     switch (reason) {
-    case vhpiCbValueChange:
-        return "vhpiCbValueChange";
-    case vhpiCbStartOfNextCycle:
-        return "vhpiCbStartOfNextCycle";
-    case vhpiCbStartOfPostponed:
-        return "vhpiCbStartOfPostponed";
-    case vhpiCbEndOfTimeStep:
-        return "vhpiCbEndOfTimeStep";
-    case vhpiCbNextTimeStep:
-        return "vhpiCbNextTimeStep";
-    case vhpiCbAfterDelay:
-        return "vhpiCbAfterDelay";
-    case vhpiCbStartOfSimulation:
-        return "vhpiCbStartOfSimulation";
-    case vhpiCbEndOfSimulation:
-        return "vhpiCbEndOfSimulation";
-    case vhpiCbEndOfProcesses:
-        return "vhpiCbEndOfProcesses";
-    case vhpiCbLastKnownDeltaCycle:
-        return "vhpiCbLastKnownDeltaCycle";
-    default:
-        return "unknown";
+        CASE_STR(vhpiCbValueChange);
+        CASE_STR(vhpiCbStartOfNextCycle);
+        CASE_STR(vhpiCbStartOfPostponed);
+        CASE_STR(vhpiCbEndOfTimeStep);
+        CASE_STR(vhpiCbNextTimeStep);
+        CASE_STR(vhpiCbAfterDelay);
+        CASE_STR(vhpiCbStartOfSimulation);
+        CASE_STR(vhpiCbEndOfSimulation);
+        CASE_STR(vhpiCbEndOfProcesses);
+        CASE_STR(vhpiCbLastKnownDeltaCycle);
+
+        default: return "unknown";
     }
 }
+
+#undef CASE_STR
 
 void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 {
@@ -134,164 +113,208 @@ bool is_const(vhpiIntT vhpitype)
     }
 }
 
-gpi_objtype_t to_gpi_objtype(vhpiIntT vhpitype)
-{
-    switch (vhpitype) {
-        case vhpiPortDeclK:
-        case vhpiSigDeclK:
-        case vhpiIndexedNameK:
-        case vhpiSelectedNameK:
-        case vhpiVarDeclK:
-        case vhpiVarParamDeclK:
-        case vhpiSliceNameK:
-            return GPI_REGISTER;
+bool is_enum_logic(vhpiHandleT hdl) {
+    const char *type = vhpi_get_str(vhpiNameP, hdl);
 
-        case vhpiArrayTypeDeclK:
-            return GPI_ARRAY;
+    if (0 == strncmp(type, "BIT"       , sizeof("BIT")-1)        ||
+        0 == strncmp(type, "STD_ULOGIC", sizeof("STD_ULOGIC")-1) ||
+        0 == strncmp(type, "STD_LOGIC" , sizeof("STD_LOGIC")-1)) {
+        return true;
+    } else {
+        vhpiIntT num_enum = vhpi_get(vhpiNumLiteralsP, hdl);
 
-        case vhpiEnumLiteralK:
-        case vhpiEnumTypeDeclK:
-            return GPI_ENUM;
+        if (2 == num_enum) {
+            vhpiHandleT it = vhpi_iterator(vhpiEnumLiterals, hdl);
+            if (it != NULL) {
+                const char *enums_1[2] = { "0",   "1"}; //Aldec does not return the single quotes
+                const char *enums_2[2] = {"'0'", "'1'"};
+                vhpiHandleT enum_hdl;
+                int cnt = 0;
 
-        case vhpiConstDeclK:
-        case vhpiGenericDeclK:
-            return GPI_PARAMETER;
+                while ((enum_hdl = vhpi_scan(it)) != NULL) {
+                    const char *etype = vhpi_get_str(vhpiStrValP, enum_hdl);
+                    if (1 < cnt                                                    ||
+                        (0 != strncmp(etype, enums_1[cnt], strlen(enums_1[cnt]))  &&
+                         0 != strncmp(etype, enums_2[cnt], strlen(enums_2[cnt])))) {
+                        vhpi_release_handle(it);
+                        return false;
+                    }
+                    ++cnt;
+                }
+                return true;
+            }
+        } else if (9 == num_enum) {
+            vhpiHandleT it = vhpi_iterator(vhpiEnumLiterals, hdl);
+            if (it != NULL) {
+                const char *enums_1[9] = { "U",   "X",   "0",   "1",   "Z",   "W",   "L",   "H",   "-"}; //Aldec does not return the single quotes
+                const char *enums_2[9] = {"'U'", "'X'", "'0'", "'1'", "'Z'", "'W'", "'L'", "'H'", "'-'"};
+                vhpiHandleT enum_hdl;
+                int cnt = 0;
 
-        case vhpiRecordTypeDeclK:
-            return GPI_STRUCTURE;
+                while ((enum_hdl = vhpi_scan(it)) != NULL) {
+                    const char *etype = vhpi_get_str(vhpiStrValP, enum_hdl);
+                    if (8 < cnt                                                    ||
+                        (0 != strncmp(etype, enums_1[cnt], strlen(enums_1[cnt]))  &&
+                         0 != strncmp(etype, enums_2[cnt], strlen(enums_2[cnt])))) {
+                        vhpi_release_handle(it);
+                        return false;
+                    }
+                    ++cnt;
+                }
+                return true;
+            }
+        }
+    }
 
-        case vhpiForGenerateK:
-        case vhpiIfGenerateK:
-        case vhpiCompInstStmtK:
-        case vhpiEntityDeclK:
-        case vhpiRootInstK:
-        case vhpiProcessStmtK:
-        case vhpiSimpleSigAssignStmtK:
-        case vhpiCondSigAssignStmtK:
-        case vhpiSelectSigAssignStmtK:
-            return GPI_MODULE;
+    return false;
+}
 
-        default:
-            LOG_DEBUG("Unable to map VHPI type %d onto GPI type", vhpitype);
-            return GPI_UNKNOWN;
+bool is_enum_char(vhpiHandleT hdl) {
+    const vhpiIntT NUM_ENUMS_IN_CHAR_TYPE = 256;
+
+    const char *type = vhpi_get_str(vhpiNameP, hdl);
+
+    if (0 == strncmp(type, "CHARACTER", sizeof("STD_ULOGIC")-1)) {
+        return true;
+    } else {
+        return (vhpi_get(vhpiNumLiteralsP, hdl) == NUM_ENUMS_IN_CHAR_TYPE);
     }
 }
 
+bool is_enum_boolean(vhpiHandleT hdl) {
+    const char *type = vhpi_get_str(vhpiNameP, hdl);
 
+    if (0 == strncmp(type, "BOOLEAN", sizeof("BOOLEAN")-1)) {
+        return true;
+    } else {
+        vhpiIntT num_enum = vhpi_get(vhpiNumLiteralsP, hdl);
+
+        if (2 == num_enum) {
+            vhpiHandleT it = vhpi_iterator(vhpiEnumLiterals, hdl);
+            if (it != NULL) {
+                vhpiHandleT enum_hdl;
+                int cnt = 0;
+
+                while ((enum_hdl = vhpi_scan(it)) != NULL) {
+                    const char *etype = vhpi_get_str(vhpiStrValP, enum_hdl);
+                    if (((0 == cnt && 0 != strncmp(etype, "FALSE", strlen("FALSE")))  &&
+                         (0 == cnt && 0 != strncmp(etype, "false", strlen("false")))) ||
+                        ((1 == cnt && 0 != strncmp(etype, "TRUE" , strlen("TRUE")))   &&
+                         (1 == cnt && 0 != strncmp(etype, "true" , strlen("true"))))  ||
+                        2 <= cnt) {
+                        vhpi_release_handle(it);
+                        return false;
+                    }
+                    ++cnt;
+                }
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                                                 std::string &name,
-                                                std::string &fq_name)
+                                                std::string &fq_name,
+                                                bool parentConst)
 {
     vhpiIntT type;
     gpi_objtype_t gpi_type;
     GpiObjHdl *new_obj = NULL;
-    bool modifiable;
-    bool logic;
 
     if (vhpiVerilog == (type = vhpi_get(vhpiKindP, new_hdl))) {
         LOG_DEBUG("vhpiVerilog returned from vhpi_get(vhpiType, ...)")
         return NULL;
     }
 
+    bool is_constant = is_const(type) || parentConst;
+
     /* We need to delve further here to detemine how to later set
        the values of an object */
-    vhpiHandleT query_hdl;
     vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, new_hdl);
 
-    query_hdl = base_hdl ? base_hdl : new_hdl;
+    if (base_hdl == NULL) {
+        vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, new_hdl);
+
+        if (st_hdl != NULL) {
+            base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
+            vhpi_release_handle(st_hdl);
+        }
+    }
+
+    vhpiHandleT query_hdl = (base_hdl != NULL) ? base_hdl : new_hdl;
 
     vhpiIntT base_type = vhpi_get(vhpiKindP, query_hdl);
     vhpiIntT is_static = vhpi_get(vhpiStaticnessP, query_hdl);
-
-    gpi_type = to_gpi_objtype(base_type);
-    LOG_DEBUG("Creating %s of type %d (%s)",
-              vhpi_get_str(vhpiFullCaseNameP, new_hdl),
-              gpi_type,
-              vhpi_get_str(vhpiKindStrP, query_hdl));
 
     /* Non locally static objects are not accessible for read/write
        so we create this as a GpiObjType
     */
     if (is_static == vhpiGloballyStatic) {
-        modifiable = false;
-        logic = false;
+        gpi_type   = GPI_MODULE;
         goto create;
-    } else {
-        modifiable = true;
-        logic = false;
     }
 
     switch (base_type) {
-        case vhpiSliceNameK:
-        case vhpiIndexedNameK:
-        case vhpiSelectedNameK: {
-            vhpiHandleT sub_type = vhpi_handle(vhpiSubtype, new_hdl);
-            if (base_hdl)
-                vhpi_release_handle(base_hdl);
+        case vhpiArrayTypeDeclK: {
+            vhpiIntT num_dim = vhpi_get(vhpiNumDimensionsP, query_hdl);
 
-            base_hdl = vhpi_handle(vhpiBaseType, sub_type);
-            query_hdl = base_hdl;
-            /* Drop though */
-        }
-        case vhpiArrayTypeDeclK:
-        case vhpiEnumTypeDeclK: {
-            const char *type = vhpi_get_str(vhpiNameP, query_hdl);
-            if (0 == strcmp(type, "STD_ULOGIC") ||
-                0 == strcmp(type, "STD_LOGIC") ||
-                0 == strncmp(type, "STD_ULOGIC_VECTOR", sizeof("STD_ULOGIC_VECTOR")-1) ||
-                0 == strncmp(type, "STD_LOGIC_VECTOR", sizeof("STD_LOGIC_VECTOR")-1)) {
-                LOG_DEBUG("Detected std_logic %s", fq_name.c_str());
-                logic = true;
-            } else if (0 == strcmp(type, "BOOLEAN") ||
-                       0 == strcmp(type, "boolean") ||
-                       0 == strcmp(type, "UNSIGNED")) {
-                LOG_DEBUG("Detected boolean/integer %s", fq_name.c_str());
-                gpi_type = GPI_INTEGER;
-            } else if (0 == strncmp(type, "STRING", sizeof("STRING")-1)) {
-                LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
-                gpi_type = GPI_STRING;
-            } else if (0 == strcmp(type, "CHARACTER") ||
-                       0 == strcmp(type, "character")) {
-                LOG_DEBUG("Detected an CHAR type %s", fq_name.c_str());
-                gpi_type = GPI_INTEGER;
+            if (num_dim > 1) {
+                LOG_DEBUG("Detected a MULTI-DIMENSIONAL ARRAY type %s", fq_name.c_str());
+                gpi_type   = GPI_ARRAY;
             } else {
-                /* It not a standard type then we lastly try and use the format,
-                   we do this on the handle we where given on a sub type */
+                vhpiHandleT elem_base_type_hdl = NULL;
+                vhpiIntT elem_base_type        = 0;
 
-                vhpiValueT value;
-                value.format = vhpiObjTypeVal;
-                value.bufSize = 0;
-                value.numElems = 0;
-                value.value.str = NULL;
-                int num_elems = vhpi_get(vhpiSizeP, new_hdl);
-                vhpi_get_value(new_hdl, &value);
+                /* vhpiElemSubtype is deprecated.  Should be using vhpiElemType, but not supported in all simulators. */
+                vhpiHandleT elem_sub_type_hdl  = vhpi_handle(vhpiElemSubtype, query_hdl);
 
-                if (vhpiStrVal == value.format) {
-                    LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
-                    gpi_type = GPI_STRING;
-                    break;
-                } else if (vhpiRawDataVal == value.format ||
-                           vhpiObjTypeVal == value.format) {
-                    LOG_DEBUG("Detected a RAW type %s", fq_name.c_str());
-                    gpi_type = GPI_MODULE;
-                    break;
-                } else if (vhpiCharVal == value.format) {
-                    LOG_DEBUG("Detected an CHAR type %s", fq_name.c_str());
-                    gpi_type = GPI_INTEGER;
-                    break;
+                if (elem_sub_type_hdl != NULL) {
+                    elem_base_type_hdl = vhpi_handle(vhpiBaseType, elem_sub_type_hdl);
+                    vhpi_release_handle(elem_sub_type_hdl);
                 }
 
-                if (!value.numElems || (value.numElems == num_elems)) {
-                    LOG_DEBUG("Detected single dimension vector type", fq_name.c_str());
-                    gpi_type = GPI_ARRAY;
+                if (elem_base_type_hdl != NULL) {
+                    elem_base_type    = vhpi_get(vhpiKindP, elem_base_type_hdl);
+                    if (elem_base_type == vhpiEnumTypeDeclK) {
+                        if (is_enum_logic(elem_base_type_hdl)) {
+                            LOG_DEBUG("Detected a LOGIC VECTOR type %s", fq_name.c_str());
+                            gpi_type   = GPI_REGISTER;
+                        } else if (is_enum_char(elem_base_type_hdl)) {
+                            LOG_DEBUG("Detected a STRING type %s", fq_name.c_str());
+                            gpi_type   = GPI_STRING;
+                        } else {
+                            LOG_DEBUG("Detected a NON-LOGIC ENUM VECTOR type %s", fq_name.c_str());
+                            gpi_type   = GPI_ARRAY;
+                        }
+                    } else {
+                        LOG_DEBUG("Detected a NON-ENUM VECTOR type %s", fq_name.c_str());
+                        gpi_type   = GPI_ARRAY;
+                    }
                 } else {
-                    LOG_DEBUG("Detected an n dimension valueector type", fq_name.c_str());
-                    gpi_type = GPI_MODULE;
-                    modifiable = false;
+                    LOG_ERROR("Unable to determine the Array Element Base Type for %s.  Defaulting to GPI_ARRAY.", vhpi_get_str(vhpiFullCaseNameP, new_hdl));
+                    gpi_type   = GPI_ARRAY;
                 }
             }
+            break;
+        }
 
+        case vhpiEnumTypeDeclK: {
+            if (is_enum_logic(query_hdl)) {
+                LOG_DEBUG("Detected a LOGIC type %s", fq_name.c_str());
+                gpi_type   = GPI_REGISTER;
+            } else if (is_enum_char(query_hdl)) {
+                LOG_DEBUG("Detected a CHAR type %s", fq_name.c_str());
+                gpi_type   = GPI_INTEGER;
+            } else if (is_enum_boolean(query_hdl)) {
+                LOG_DEBUG("Detected a BOOLEAN/INTEGER type %s", fq_name.c_str());
+                gpi_type   = GPI_INTEGER;
+            } else {
+                LOG_DEBUG("Detected an ENUM type %s", fq_name.c_str());
+                gpi_type   = GPI_ENUM;
+            }
             break;
         }
 
@@ -307,12 +330,17 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
             break;
         }
 
+        case vhpiRecordTypeDeclK: {
+            LOG_DEBUG("Detected a STRUCTURE type %s", fq_name.c_str());
+            gpi_type   = GPI_STRUCTURE;
+            break;
+        }
+
         case vhpiProcessStmtK:
         case vhpiSimpleSigAssignStmtK:
         case vhpiCondSigAssignStmtK:
-        case vhpiRecordTypeDeclK:
         case vhpiSelectSigAssignStmtK: {
-            modifiable = false;
+            gpi_type   = GPI_MODULE;
             break;
         }
 
@@ -334,11 +362,11 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                 }
             }
 
-            modifiable = false;
-
             if (name != hdl_name) {
                 LOG_DEBUG("Found pseudo-region %s", fq_name.c_str());
                 gpi_type = GPI_GENARRAY;
+            } else {
+                gpi_type = GPI_MODULE;
             }
             break;
         }
@@ -352,14 +380,21 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     }
 
 create:
-    if (modifiable) {
-        if (logic)
-            new_obj = new VhpiLogicSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
+    LOG_DEBUG("Creating %s of type %d (%s)",
+              vhpi_get_str(vhpiFullCaseNameP, new_hdl),
+              gpi_type,
+              vhpi_get_str(vhpiKindStrP, query_hdl));
+
+    if (gpi_type != GPI_ARRAY && gpi_type != GPI_GENARRAY && gpi_type != GPI_MODULE && gpi_type != GPI_STRUCTURE) {
+        if (gpi_type == GPI_REGISTER)
+            new_obj = new VhpiLogicSignalObjHdl(this, new_hdl, gpi_type, is_constant);
         else
-            new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type, is_const(type));
+            new_obj = new VhpiSignalObjHdl(this, new_hdl, gpi_type, is_constant);
+    } else if (gpi_type == GPI_ARRAY) {
+        new_obj = new VhpiArrayObjHdl(this, new_hdl, gpi_type, is_constant);
+    } else {
+        new_obj = new GpiObjHdl(this, new_hdl, gpi_type, is_constant);
     }
-    else
-        new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
 
     if (new_obj->initialise(name, fq_name)) {
         delete new_obj;
@@ -367,7 +402,7 @@ create:
     }
 
 out:
-    if (base_hdl)
+    if (base_hdl != NULL)
         vhpi_release_handle(base_hdl);
 
     return new_obj;
@@ -394,7 +429,7 @@ GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
         fq_name += "." + name;
     }
 
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name, parent->get_const());
     if (new_obj == NULL) {
         vhpi_release_handle(new_hdl);
         LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
@@ -418,7 +453,25 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 
     new_hdl = vhpi_handle_by_name(&writable[0], NULL);
 
-    if (new_hdl == NULL) {
+    if (new_hdl == NULL && parent->get_type() == GPI_STRUCTURE) {
+        /* vhpi_handle_by_name() doesn't always work for records, specificaly records in generics */
+        vhpiHandleT iter = vhpi_iterator(vhpiSelectedNames, parent->get_handle<vhpiHandleT>());
+        if (iter != NULL) {
+            while ((new_hdl = vhpi_scan(iter)) != NULL) {
+                std::string selected_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
+                std::size_t found = selected_name.find_last_of(".");
+
+                if (found != std::string::npos) {
+                    selected_name = selected_name.substr(found+1);
+                }
+
+                if (selected_name == name) {
+                    vhpi_release_handle(iter);
+                    break;
+                }
+            }
+        }
+    } else if (new_hdl == NULL) {
         /* If not found, check to see if the name of a generate loop */
         vhpiHandleT iter = vhpi_iterator(vhpiInternalRegions, parent->get_handle<vhpiHandleT>());
 
@@ -454,7 +507,7 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         new_hdl = parent->get_handle<vhpiHandleT>();
     }
 
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name, parent->get_const());
     if (new_obj == NULL) {
         vhpi_release_handle(new_hdl);
         LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
@@ -464,74 +517,233 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     return new_obj;
 }
 
-GpiObjHdl *VhpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
+GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 {
     GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
-    vhpiHandleT vhpi_hdl = parent_hdl->get_handle<vhpiHandleT>();
-    vhpiHandleT new_hdl;
+    vhpiHandleT vhpi_hdl  = parent_hdl->get_handle<vhpiHandleT>();
+    std::string name      = parent->get_name();
+    std::string fq_name   = parent->get_fullname();
+    vhpiHandleT new_hdl   = NULL;
+    char buff[14]; // needs to be large enough to hold -2^31 to 2^31-1 in string form ('(''-'10+'')'\0')
 
-    if (parent_hdl->get_type() == GPI_GENARRAY) {
-        char buff[11]; // needs to be large enough to hold 2^32-1 in string form (10 + '\0')
+    gpi_objtype_t obj_type = parent_hdl->get_type();
 
-        snprintf(buff, 11, "%u", index);
-
-        LOG_DEBUG("Native check create for index %u of parent %s (pseudo-region)",
+    if (obj_type == GPI_GENARRAY) {
+        LOG_DEBUG("Native check create for index %d of parent %s (pseudo-region)",
                   index,
                   parent_hdl->get_name_str());
 
-        std::string idx      = buff;
-        std::string hdl_name = parent_hdl->get_fullname() + GEN_IDX_SEP_LHS + idx + GEN_IDX_SEP_RHS;
-        std::vector<char> writable(hdl_name.begin(), hdl_name.end());
+        snprintf(buff, sizeof(buff), "%d", index);
+
+        std::string idx_str = buff;
+        name    += (GEN_IDX_SEP_LHS + idx_str + GEN_IDX_SEP_RHS);
+        fq_name += (GEN_IDX_SEP_LHS + idx_str + GEN_IDX_SEP_RHS);
+
+        std::vector<char> writable(fq_name.begin(), fq_name.end());
         writable.push_back('\0');
 
         new_hdl = vhpi_handle_by_name(&writable[0], NULL);
-    } else {
-        LOG_DEBUG("Native check create for index %u of parent %s (%s)",
+    } else if (obj_type == GPI_REGISTER || obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+        LOG_DEBUG("Native check create for index %d of parent %s (%s)",
                   index,
-                  vhpi_get_str(vhpiCaseNameP, vhpi_hdl),
+                  parent_hdl->get_fullname_str(),
                   vhpi_get_str(vhpiKindStrP, vhpi_hdl));
 
-        new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vhpi_hdl, index);
-        if (!new_hdl) {
-            /* Support for the above seems poor, so if it did not work
-               try an iteration instead */
+        snprintf(buff, sizeof(buff), "(%d)", index);
 
-            vhpiHandleT iter = vhpi_iterator(vhpiIndexedNames, vhpi_hdl);
-            if (iter) {
-                uint32_t curr_index = 0;
-                while (true) {
-                    new_hdl = vhpi_scan(iter);
-                    if (!new_hdl) {
-                        break;
-                    }
-                    if (index == curr_index) {
-                        LOG_DEBUG("Index match %u == %u", curr_index, index);
-                        break;
-                    }
-                    curr_index++;
-                }
-                vhpi_release_handle(iter);
+        std::string idx_str = buff;
+        name    += idx_str;
+        fq_name += idx_str;
+
+        vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, vhpi_hdl);
+
+        if (base_hdl == NULL) {
+            vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, vhpi_hdl);
+
+            if (st_hdl != NULL) {
+                base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
+                vhpi_release_handle(st_hdl);
             }
         }
-    }
 
-    if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to query vhpi_handle_by_index %u", index);
+        if (base_hdl == NULL) {
+            LOG_ERROR("Unable to get the vhpiBaseType of %s", parent_hdl->get_fullname_str());
+            return NULL;
+        }
+
+        vhpiIntT    num_dim  = vhpi_get(vhpiNumDimensionsP,base_hdl);
+        uint32_t    idx      = 0;
+
+        /* Need to translate the index into a zero-based flattened array index */
+        if (num_dim > 1) {
+            std::string hdl_name = vhpi_get_str(vhpiCaseNameP, vhpi_hdl);
+            std::vector<int> indices;
+
+            /* Need to determine how many indices have been received.  A valid handle will only
+             * be found when all indices are received, otherwise need a pseudo-handle.
+             *
+             * When working with pseudo-handles:
+             *              hdl_name:   sig_name
+             *    parent->get_name():   sig_name(x)(y)...  where x,y,... are the indices to a multi-dimensional array.
+             *            pseudo_idx:   (x)(y)...
+             */
+            if (hdl_name.length() < parent_hdl->get_name().length()) {
+                std::string pseudo_idx = parent_hdl->get_name().substr(hdl_name.length());
+
+                while (pseudo_idx.length() > 0) {
+                    std::size_t found = pseudo_idx.find_first_of(")");
+
+                    if (found != std::string::npos) {
+                        indices.push_back(atoi(pseudo_idx.substr(1,found-1).c_str()));
+                        pseudo_idx = pseudo_idx.substr(found+1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            indices.push_back(index);
+
+            if (indices.size() == num_dim) {
+#ifdef IUS
+                /* IUS does not appear to set the vhpiIsUnconstrainedP property.  IUS Docs say will return
+                 * -1 if unconstrained, but with vhpiIntT being unsigned, the value returned is below.
+                 */
+                const vhpiIntT UNCONSTRAINED = 2147483647;
+#endif
+
+                std::vector<vhpiHandleT> constraints;
+
+                /* All necessary indices are available, need to iterate over dimension constraints to
+                 * determine the index into the zero-based flattened array.
+                 *
+                 * Check the constraints on the base type first. (always works for Aldec, but not unconstrained types in IUS)
+                 * If the base type fails, then try the sub-type.  (sub-type is listed as deprecated for Aldec)
+                 */
+                vhpiHandleT it, constraint;
+
+                it = vhpi_iterator(vhpiConstraints, base_hdl);
+
+                if (it != NULL) {
+                    while ((constraint = vhpi_scan(it)) != NULL) {
+#ifdef IUS
+                        vhpiIntT l_rng = vhpi_get(vhpiLeftBoundP, constraint);
+                        vhpiIntT r_rng = vhpi_get(vhpiRightBoundP, constraint);
+                        if (l_rng == UNCONSTRAINED || r_rng == UNCONSTRAINED) {
+#else
+                        if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
+#endif
+                            /* Bail and try the sub-type handle */
+                            vhpi_release_handle(it);
+                            break;
+                        }
+                        constraints.push_back(constraint);
+                    }
+                }
+
+                /* If all the dimensions were not obtained, try again with the sub-type handle */
+                if (constraints.size() != num_dim) {
+                    vhpiHandleT sub_hdl = vhpi_handle(vhpiSubtype, vhpi_hdl);;
+
+                    constraints.clear();
+
+                    if (sub_hdl != NULL) {
+                        it = vhpi_iterator(vhpiConstraints, sub_hdl);
+
+                        if (it != NULL) {
+                            while ((constraint = vhpi_scan(it)) != NULL) {
+                                /* IUS only sets the vhpiIsUnconstrainedP incorrectly on the base type */
+                                if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
+                                    vhpi_release_handle(it);
+                                    break;
+                                }
+                                constraints.push_back(constraint);
+                            }
+                        }
+                    }
+                }
+
+                if (constraints.size() == num_dim) {
+                    int scale = 1;
+
+                    while (constraints.size() > 0) {
+                        int raw_idx = indices.back();
+                        constraint  = constraints.back();
+
+                        vhpiIntT left  = vhpi_get(vhpiLeftBoundP, constraint);
+                        vhpiIntT right = vhpi_get(vhpiRightBoundP, constraint);
+                        vhpiIntT len   = 0;
+
+                        if (left > right) {
+                            idx += (scale * (left - raw_idx));
+                            len = left - right + 1;
+                        } else {
+                            idx += (scale * (raw_idx - left));
+                            len = right - left + 1;
+                        }
+                        scale = scale * len;
+
+                        indices.pop_back();
+                        constraints.pop_back();
+                    }
+                } else {
+                    LOG_ERROR("Unable to access all constraints for %s", parent_hdl->get_fullname_str());
+                    return NULL;
+                }
+
+            } else {
+                new_hdl = vhpi_hdl;  // Set to the parent handle to create the pseudo-handle
+            }
+        } else {
+            int left  = parent_hdl->get_range_left();
+            int right = parent_hdl->get_range_right();
+
+            if (left > right) {
+                idx = left - index;
+            } else {
+                idx = index - left;
+            }
+        }
+
+        if (new_hdl == NULL) {
+            new_hdl = vhpi_handle_by_index(vhpiIndexedNames, vhpi_hdl, idx);
+            if (!new_hdl) {
+                /* Support for the above seems poor, so if it did not work
+                   try an iteration instead, spotty support for multi-dimensional arrays */
+
+                vhpiHandleT iter = vhpi_iterator(vhpiIndexedNames, vhpi_hdl);
+                if (iter != NULL) {
+                    uint32_t curr_index = 0;
+                    while ((new_hdl = vhpi_scan(iter)) != NULL) {
+                        if (idx == curr_index) {
+                            vhpi_release_handle(iter);
+                            break;
+                        }
+                        curr_index++;
+                    }
+                }
+            }
+
+            if (new_hdl != NULL) {
+                LOG_DEBUG("Index (%d->%d) found %s (%s)", index, idx, vhpi_get_str(vhpiCaseNameP, new_hdl), vhpi_get_str(vhpiKindStrP, new_hdl));
+            }
+        }
+    } else {
+        LOG_ERROR("VHPI: Parent of type %s must be of type GPI_GENARRAY, GPI_REGISTER, GPI_ARRAY, or GPI_STRING to have an index.", parent_hdl->get_type_str());
         return NULL;
     }
 
-    std::string name = vhpi_get_str(vhpiCaseNameP, new_hdl);
-    std::string fq_name = parent->get_fullname();
-    if (fq_name == ":") {
-        fq_name += name;
-    } else {
-        fq_name += "." + name;
+
+    if (new_hdl == NULL) {
+        LOG_DEBUG("Unable to query vhpi_handle_by_index %d", index);
+        return NULL;
     }
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name, parent_hdl->get_const());
     if (new_obj == NULL) {
         vhpi_release_handle(new_hdl);
-        LOG_DEBUG("Could not fetch object below entity (%s) at index (%u)",
-                  parent->get_name_str(), index);
+        LOG_DEBUG("Could not fetch object below entity (%s) at index (%d)",
+                  parent_hdl->get_name_str(), index);
         return NULL;
     }
 
@@ -604,7 +816,7 @@ GpiObjHdl *VhpiImpl::get_root_handle(const char* name)
 
     root_name = found;
 
-    return create_gpi_obj_from_handle(dut, root_name, root_name);
+    return create_gpi_obj_from_handle(dut, root_name, root_name, false);
 
 }
 
