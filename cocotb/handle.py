@@ -82,7 +82,6 @@ class SimHandleBase(object):
         self._len = None
         self._sub_handles = {}  # Dictionary of children
         self._invalid_sub_handles = {} # Dictionary of invalid queries
-        self._discovered = False
 
         self._name = simulator.get_name_string(self._handle)
         self._type = simulator.get_type_string(self._handle)
@@ -115,67 +114,34 @@ class SimHandleBase(object):
     def __repr__(self):
         return self._fullname
 
-    def _raise_testerror(self, msg):
-        lastframe = sys._getframe(2)
-        if sys.version_info[0] >= 3:
-            buff = StringIO()
-            traceback.print_stack(lastframe, file=buff)
-        else:
-            buff_bytes = BytesIO()
-            traceback.print_stack(lastframe, file=buff_bytes)
-            buff = StringIO(buff_bytes.getvalue().decode("UTF8"))
-        self._log.error("%s\n%s" % (msg, buff.getvalue()))
-        exception = TestError(msg)
-        exception.stderr.write(buff.getvalue())
-        buff.close()
-        raise exception
-
-
-class HierarchyObject(SimHandleBase):
-    """
-    Hierarchy objects don't have values, they are effectively scopes or namespaces
-    """
+    def __str__(self):
+        return "%s @0x%x" % (self._name, self._handle)
 
     def __setattr__(self, name, value):
-        """
-        Provide transparent access to signals via the hierarchy
-
-        Slightly hacky version of operator overloading in Python
-
-        Raise an AttributeError if users attempt to create new members which
-        don't exist in the design.
-        """
-        if name.startswith("_") or name in self._compat_mapping:
+        if name in self._compat_mapping:
+            if name not in _deprecation_warned:
+                warnings.warn("Use of %s attribute is deprecated" % name)
+                _deprecation_warned[name] = True
+            return setattr(self, self._compat_mapping[name])
+        else:
             return object.__setattr__(self, name, value)
-        if self.__hasattr__(name) is not None:
-            return getattr(self, name)._setcachedvalue(value)
-        raise AttributeError("Attempt to access %s which isn't present in %s" %(
-            name, self._name))
 
     def __getattr__(self, name):
-        """
-        Query the simulator for a object with the specified name
-        and cache the result to build a tree of objects
-        """
-        if name in self._sub_handles:
-            return self._sub_handles[name]
-
         if name in self._compat_mapping:
             if name not in _deprecation_warned:
                 warnings.warn("Use of %s attribute is deprecated" % name)
                 _deprecation_warned[name] = True
             return getattr(self, self._compat_mapping[name])
+        else:
+            return object.__getattr__(self, name)
 
-        new_handle = simulator.get_handle_by_name(self._handle, name)
-
-        if not new_handle:
-            # To find generated indices we have to discover all
-            self._discover_all()
-            if name in self._sub_handles:
-                return self._sub_handles[name]
-            raise AttributeError("%s contains no object named %s" % (self._name, name))
-        self._sub_handles[name] = SimHandle(new_handle)
-        return self._sub_handles[name]
+class RegionObject(SimHandleBase):
+    """
+    Region objects don't have values, they are effectively scopes or namespaces
+    """
+    def __init__(self, handle):
+        SimHandleBase.__init__(self, handle)
+        self._discovered = False
 
     def __iter__(self):
         """
@@ -220,14 +186,70 @@ class HierarchyObject(SimHandleBase):
                 self._log.debug("%s" % e)
                 continue
 
-            self._sub_handles[hdl._name.split(".")[-1]] = hdl
+            key = self._sub_handle_key(hdl)
+
+            if not key is None:
+                self._sub_handles[key] = hdl
+            else:
+                self._log.debug("Unable to translate handle >%s< to a valid _sub_handle key" % hdl._name)
+                continue
 
         self._discovered = True
+
+    def _sub_handle_key(self, hdl):
+        """
+        Translates the handle name to a key to use in _sub_handles dictionary.
+        """
+        return hdl._name.split(".")[-1]
 
     def _getAttributeNames(self):
         """Permits IPython tab completion to work"""
         self._discover_all()
         return dir(self)
+
+
+class HierarchyObject(RegionObject):
+    """
+    Hierarchy objects are namespace/scope objects
+    """
+
+    def __setattr__(self, name, value):
+        """
+        Provide transparent access to signals via the hierarchy
+
+        Slightly hacky version of operator overloading in Python
+
+        Raise an AttributeError if users attempt to create new members which
+        don't exist in the design.
+        """
+        if name.startswith("_") or name in self._compat_mapping:
+            return SimHandleBase.__setattr__(self, name, value)
+        if self.__hasattr__(name) is not None:
+            return getattr(self, name)._setcachedvalue(value)
+        raise AttributeError("Attempt to access %s which isn't present in %s" %(
+            name, self._name))
+
+    def __getattr__(self, name):
+        """
+        Query the simulator for a object with the specified name
+        and cache the result to build a tree of objects
+        """
+        if name in self._sub_handles:
+            return self._sub_handles[name]
+
+        if name.startswith("_") or name in self._compat_mapping:
+            return SimHandleBase.__getattr__(self, name)
+
+        new_handle = simulator.get_handle_by_name(self._handle, name)
+
+        if not new_handle:
+            # To find generated indices we have to discover all
+            self._discover_all()
+            if name in self._sub_handles:
+                return self._sub_handles[name]
+            raise AttributeError("%s contains no object named %s" % (self._name, name))
+        self._sub_handles[name] = SimHandle(new_handle)
+        return self._sub_handles[name]
 
     def __hasattr__(self, name):
         """
@@ -252,55 +274,31 @@ class HierarchyObject(SimHandleBase):
         return new_handle
 
 
-class HierarchyArrayObject(HierarchyObject):
+class HierarchyArrayObject(RegionObject):
     """
-    Hierarchy Array objects don't have values, they are effectively scopes or namespaces
+    Hierarchy Array are containers of Hierarchy Objects
     """
 
-    def _discover_all(self):
+    def _sub_handle_key(self, hdl):
         """
-        When iterating or performing tab completion, we run through ahead of
-        time and discover all possible children, populating the _sub_handle
-        mapping. Hierarchy can't change after elaboration so we only have to
-        do this once.
+        Translates the handle name to a key to use in _sub_handles dictionary.
         """
-        if self._discovered: return
-        self._log.debug("Discovering all on %s", self._name)
-        iterator = simulator.iterate(self._handle, simulator.OBJECTS)
-        while True:
-            try:
-                thing = simulator.next(iterator)
-            except StopIteration:
-                # Iterator is cleaned up internally in GPI
-                break
-            name = simulator.get_name_string(thing)
-            try:
-                hdl = SimHandle(thing)
-            except TestError as e:
-                self._log.debug("%s" % e)
-                continue
+        # This is slightly hacky, but we need to extract the index from the name
+        #
+        # FLI and VHPI(IUS):  _name(X) where X is the index
+        # VHPI(ALDEC):        _name__X where X is the index
+        # VPI:                _name[X] where X is the index
+        import re
+        result = re.match("{}__(?P<index>\d+)$".format(self._name), hdl._name)
+        if not result:
+            result = re.match("{}\((?P<index>\d+)\)$".format(self._name), hdl._name)
+        if not result:
+            result = re.match("{}\[(?P<index>\d+)\]$".format(self._name), hdl._name)
 
-            # This is slightly hacky, but we need to extract the index from the name
-            #
-            # FLI and VHPI(IUS):  _name(X) where X is the index
-            # VHPI(ALDEC):        _name__X where X is the index
-            # VPI:                _name[X] where X is the index
-            import re
-            result = re.match("{}__(?P<index>\d+)$".format(self._name), name)
-            if not result:
-                result = re.match("{}\((?P<index>\d+)\)$".format(self._name), name)
-            if not result:
-                result = re.match("{}\[(?P<index>\d+)\]$".format(self._name), name)
-
-            if result:
-                index = int(result.group("index"))
-
-                self._sub_handles[index] = hdl
-                self._log.debug("Added %s[%d] to the cache", self._name, index)
-            else:
-                self._log.error("Dropping invalid Hierarchy Array handle >%s<", name)
-
-        self._discovered = True
+        if result:
+            return int(result.group("index"))
+        else:
+            return None
 
     def __len__(self):
         """Returns the 'length' of the generate block."""
@@ -312,13 +310,19 @@ class HierarchyArrayObject(HierarchyObject):
         return self._len
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            raise IndexError("Slice indexing is not supported")
         if index in self._sub_handles:
             return self._sub_handles[index]
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
-            self._raise_testerror("%s contains no object at index %d" % (self._name, index))
+            raise IndexError("%s contains no object at index %d" % (self._name, index))
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
+
+    def __setitem__(self, index, value):
+        """Provide transparent assignment to indexed array handles"""
+        raise TypeError("Not permissible to set %s at index %d" % (self._name, index))
 
 
 class NonHierarchyObject(SimHandleBase):
@@ -329,14 +333,47 @@ class NonHierarchyObject(SimHandleBase):
 
     def __init__(self, handle):
         SimHandleBase.__init__(self, handle)
-        for name, attribute in SimHandleBase._compat_mapping.items():
-            setattr(self, name, getattr(self, attribute))
-
-    def __str__(self):
-        return "%s @0x%x" % (self._name, self._handle)
 
     def __iter__(self):
-        return iter(())
+        raise StopIteration
+
+    def _getvalue(self):
+        raise TypeError("Not permissible to get values on object %s" % (self._name))
+
+    def setimmediatevalue(self, value):
+        raise TypeError("Not permissible to set values on object %s" % (self._name))
+
+    def _setcachedvalue(self, value):
+        raise TypeError("Not permissible to set values on object %s" % (self._name))
+
+    def __le__(self, value):
+        """Overload the less than or equal to operator to
+            provide an hdl-like shortcut
+                module.signal <= 2
+        """
+        self.value = value
+
+    def __eq__(self, other):
+        if isinstance(other, SimHandleBase):
+            if self._handle == other._handle: return 0
+            return 1
+
+        # Use the comparison method of the other object against our value
+        return self.value == other
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
+    value = property(fget=lambda self: self._getvalue(),
+                     fset=lambda self,v: self._setcachedvalue(v),
+                     fdel=None,
+                     doc="A reference to the value")
+
+    # Re-define hash becasue Python 3 has issues when using the above property
+    def __hash__(self):
+        return SimHandleBase.__hash__(self)
 
 class ConstantObject(NonHierarchyObject):
     """
@@ -362,47 +399,40 @@ class ConstantObject(NonHierarchyObject):
                 self._value = val
 
     def __int__(self):
-        return int(self._value)
+        return int(self.value)
 
-    def __eq__(self, other):
-        return self._value.__eq__(other)
-
-    def __ne__(self, other):
-        if isinstance(self._value, str):
-            return self._value.__ne__(other)
-        else:
-            return  self._value != other
+    def __float__(self):
+        return float(self.value)
 
     def __repr__(self):
-        return str(self._value)
+        return str(self.value)
 
-    @property
-    def value(self):
+    def _getvalue(self):
         return self._value
-
-    def _setcachedvalue(self, *args, **kwargs):
-        raise ValueError("Not permissible to set values on a constant object")
-
-    def __le__(self, *args, **kwargs):
-        raise ValueError("Not permissible to set values on a constant object")
 
 class NonHierarchyIndexableObject(NonHierarchyObject):
     def __init__(self, handle):
         """
             Args:
-                _handle [integer] : vpi/vhpi handle to the simulator object
+                _handle [integer] : fli/vpi/vhpi handle to the simulator object
         """
         NonHierarchyObject.__init__(self, handle)
         self._range = simulator.get_range(self._handle)
 
+    def __setitem__(self, index, value):
+        """Provide transparent assignment to indexed array handles"""
+        self.__getitem__(index).value = value
+
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            raise IndexError("Slice indexing is not supported")
         if self._range is None:
-            self._raise_testerror("%s %s is not indexable.  Unable to get object at index %d" % (self._name, simulator.get_type_string(self._handle), index))
+            raise IndexError("%s is not indexable.  Unable to get object at index %d" % (self._fullname, index))
         if index in self._sub_handles:
             return self._sub_handles[index]
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
-            self._raise_testerror("%s %s contains no object at index %d" % (self._name, simulator.get_type_string(self._handle), index))
+            raise IndexError("%s contains no object at index %d" % (self._fullname, index))
         self._sub_handles[index] = SimHandle(new_handle)
         return self._sub_handles[index]
 
@@ -439,36 +469,6 @@ class NonConstantObject(NonHierarchyIndexableObject):
         self._f_edge = _FallingEdge(self)
         self._e_edge = _Edge(self)
 
-    def _getvalue(self):
-        result = BinaryValue()
-        result.binstr = self._get_value_str()
-        return result
-
-    ## We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    #value = property(_getvalue, None, None, "A reference to the value")
-
-    def _get_value_str(self):
-        return simulator.get_signal_val_binstr(self._handle)
-
-    def __eq__(self, other):
-        if isinstance(other, SimHandleBase):
-            if self._handle == other._handle: return 0
-            return 1
-
-        # Use the comparison method of the other object against our value
-        return self.value.__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __int__(self):
-        val = self.value
-        return int(self.value)
-
-    def __repr__(self):
-        return repr(int(self))
-
-
     def drivers(self):
         """
         An iterator for gathering all drivers for a signal
@@ -490,11 +490,6 @@ class ModifiableObject(NonConstantObject):
     """
     Base class for simulator objects whose values can be modified
     """
-
-    def __setitem__(self, index, value):
-        """Provide transparent assignment to bit index"""
-        self.__getitem__(index)._setcachedvalue(value)
-
     def setimmediatevalue(self, value):
         """
         Set the value of the underlying simulation object to value.
@@ -529,7 +524,7 @@ class ModifiableObject(NonConstantObject):
 
     def _getvalue(self):
         result = BinaryValue()
-        result.binstr = self._get_value_str()
+        result.binstr = simulator.get_signal_val_binstr(self._handle)
         return result
 
     def _setcachedvalue(self, value):
@@ -542,19 +537,11 @@ class ModifiableObject(NonConstantObject):
         """
         cocotb.scheduler.save_write(self, value)
 
+    def __int__(self):
+        return int(self.value)
 
-    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    value = property(_getvalue, _setcachedvalue, None, "A reference to the value")
-
-
-    def __le__(self, value):
-        """Overload the less than or equal to operator to
-            provide an hdl-like shortcut
-                module.signal <= 2
-        """
-        self.value = value
-
-
+    def __repr__(self):
+        return repr(int(self))
 
 class RealObject(ModifiableObject):
     """
@@ -583,9 +570,6 @@ class RealObject(ModifiableObject):
 
     def _getvalue(self):
         return simulator.get_signal_val_real(self._handle)
-
-    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    value = property(_getvalue, ModifiableObject._setcachedvalue, None, "A reference to the value")
 
     def __float__(self):
         return self._getvalue()
@@ -620,9 +604,6 @@ class IntegerObject(ModifiableObject):
     def _getvalue(self):
         return simulator.get_signal_val_long(self._handle)
 
-    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    value = property(_getvalue, ModifiableObject._setcachedvalue, None, "A reference to the value")
-
     def __int__(self):
         return self._getvalue()
 
@@ -654,11 +635,8 @@ class StringObject(ModifiableObject):
     def _getvalue(self):
         return simulator.get_signal_val_str(self._handle)
 
-    # We want to maintain compatability with python 2.5 so we can't use @property with a setter
-    value = property(_getvalue, ModifiableObject._setcachedvalue, None, "A reference to the value")
-
     def __repr__(self):
-        return repr(self._getvalue())
+        return str(self.value)
 
 _handle2obj = {}
 

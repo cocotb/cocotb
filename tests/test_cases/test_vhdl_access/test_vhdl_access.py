@@ -79,14 +79,14 @@ def check_objects(dut):
         dut.inst_axi4s_buffer.DATA_WIDTH = 42
         tlog.error("Shouldn't be allowed to set a value on constant object")
         fails += 1
-    except ValueError as e:
+    except TypeError as e:
         pass
 
     try:
         dut.inst_axi4s_buffer.DATA_WIDTH <= 42
         tlog.error("Shouldn't be allowed to set a value on constant object using __le__")
         fails += 1
-    except ValueError as e:
+    except TypeError as e:
         pass
 
     if fails:

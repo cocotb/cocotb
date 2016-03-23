@@ -147,7 +147,7 @@ def access_integer(dut):
 
     try:
         bit = test_int[3]
-    except TestError as e:
+    except IndexError as e:
         tlog.info("Access to bit is an error as expected")
         bitFail = True
 
