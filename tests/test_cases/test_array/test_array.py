@@ -16,6 +16,166 @@ def _check_type(tlog, hdl, expected):
     else:
         tlog.info("   Found %s (%s) with length=%d", hdl._fullname, type(hdl), len(hdl))
 
+def _check_int(tlog, hdl, expected):
+    if int(hdl) != expected:
+        raise TestFailure("{2}: Expected >{0}< but got >{1}<".format(expected, int(hdl), hdl._fullname))
+    else:
+        tlog.info("   Found {0} ({1}) with value={2}".format(hdl._fullname, type(hdl), int(hdl)))
+
+def _check_logic(tlog, hdl, expected):
+    if int(hdl) != expected:
+        raise TestFailure("{2}: Expected >0x{0:X}< but got >0x{1:X}<".format(expected, int(hdl), hdl._fullname))
+    else:
+        tlog.info("   Found {0} ({1}) with value=0x{2:X}".format(hdl._fullname, type(hdl), int(hdl)))
+
+def _check_str(tlog, hdl, expected):
+    if repr(hdl) != expected:
+        raise TestFailure("{2}: Expected >{0}< but got >{1}<".format(expected, repr(hdl), hdl._fullname))
+    else:
+        tlog.info("   Found {0} ({1}) with value={2}".format(hdl._fullname, type(hdl), repr(hdl)))
+
+def _check_real(tlog, hdl, expected):
+    if float(hdl) != expected:
+        raise TestFailure("{2}: Expected >{0}< but got >{1}<".format(expected, float(hdl), hdl._fullname))
+    else:
+        tlog.info("   Found {0} ({1}) with value={2}".format(hdl._fullname, type(hdl), float(hdl)))
+
+@cocotb.test()
+def test_read_write(dut):
+    """Test handle inheritance"""
+    tlog = logging.getLogger("cocotb.test")
+
+    cocotb.fork(Clock(dut.clk, 1000).start())
+
+    yield Timer(1000)
+
+    tlog.info("Checking Generics/Parameters:")
+    _check_logic(tlog, dut.param_logic    , 1)
+    _check_logic(tlog, dut.param_logic_vec, 0xDA)
+
+    if cocotb.LANGUAGE in ["vhdl"]:
+        _check_int (tlog, dut.param_bool, 1)
+        _check_int (tlog, dut.param_int , 6)
+        _check_real(tlog, dut.param_real, 3.14)
+        _check_int (tlog, dut.param_char, ord('p'))
+        _check_str (tlog, dut.param_str , "ARRAYMOD")
+
+        if not cocotb.SIM_NAME.lower().startswith(("riviera")):
+            _check_logic(tlog, dut.param_rec.a        , 0)
+            _check_logic(tlog, dut.param_rec.b[0]     , 0)
+            _check_logic(tlog, dut.param_rec.b[1]     , 0)
+            _check_logic(tlog, dut.param_rec.b[2]     , 0)
+            _check_logic(tlog, dut.param_cmplx[0].a   , 0)
+            _check_logic(tlog, dut.param_cmplx[0].b[0], 0)
+            _check_logic(tlog, dut.param_cmplx[0].b[1], 0)
+            _check_logic(tlog, dut.param_cmplx[0].b[2], 0)
+            _check_logic(tlog, dut.param_cmplx[1].a   , 0)
+            _check_logic(tlog, dut.param_cmplx[1].b[0], 0)
+            _check_logic(tlog, dut.param_cmplx[1].b[1], 0)
+            _check_logic(tlog, dut.param_cmplx[1].b[2], 0)
+
+    tlog.info("Checking Constants:")
+    _check_logic(tlog, dut.const_logic    , 0)
+    _check_logic(tlog, dut.const_logic_vec, 0x3D)
+
+    if cocotb.LANGUAGE in ["vhdl"]:
+        _check_int (tlog, dut.const_bool, 0)
+        _check_int (tlog, dut.const_int , 12)
+        _check_real(tlog, dut.const_real, 6.28)
+        _check_int (tlog, dut.const_char, ord('c'))
+        _check_str (tlog, dut.const_str , "MODARRAY")
+
+        if not cocotb.SIM_NAME.lower().startswith(("riviera")):
+            _check_logic(tlog, dut.const_rec.a        , 1)
+            _check_logic(tlog, dut.const_rec.b[0]     , 0xFF)
+            _check_logic(tlog, dut.const_rec.b[1]     , 0xFF)
+            _check_logic(tlog, dut.const_rec.b[2]     , 0xFF)
+            _check_logic(tlog, dut.const_cmplx[1].a   , 1)
+            _check_logic(tlog, dut.const_cmplx[1].b[0], 0xFF)
+            _check_logic(tlog, dut.const_cmplx[1].b[1], 0xFF)
+            _check_logic(tlog, dut.const_cmplx[1].b[2], 0xFF)
+            _check_logic(tlog, dut.const_cmplx[2].a   , 1)
+            _check_logic(tlog, dut.const_cmplx[2].b[0], 0xFF)
+            _check_logic(tlog, dut.const_cmplx[2].b[1], 0xFF)
+            _check_logic(tlog, dut.const_cmplx[2].b[2], 0xFF)
+
+    dut.select_in         = 2
+
+    yield Timer(1000)
+
+    tlog.info("Writing the signals!!!")
+    dut.sig_logic         = 1
+    dut.sig_logic_vec     = 0xCC
+    if cocotb.LANGUAGE in ["vhdl"]:
+        dut.sig_bool          = 1
+        dut.sig_int           = 5000
+        dut.sig_real          = 22.54
+        dut.sig_char          = ord('Z')
+        dut.sig_str           = "Testing"
+        dut.sig_rec.a         = 1
+        dut.sig_rec.b[0]      = 0x01
+        dut.sig_rec.b[1]      = 0x23
+        dut.sig_rec.b[2]      = 0x45
+        dut.sig_cmplx[0].a    = 0
+        dut.sig_cmplx[0].b[0] = 0x67
+        dut.sig_cmplx[0].b[1] = 0x89
+        dut.sig_cmplx[0].b[2] = 0xAB
+        dut.sig_cmplx[1].a    = 1
+        dut.sig_cmplx[1].b[0] = 0xCD
+        dut.sig_cmplx[1].b[1] = 0xEF
+        dut.sig_cmplx[1].b[2] = 0x55
+
+    yield Timer(1000)
+
+    tlog.info("Checking writes:")
+    _check_logic(tlog, dut.port_logic_out    , 1)
+    _check_logic(tlog, dut.port_logic_vec_out, 0xCC)
+
+    if cocotb.LANGUAGE in ["vhdl"]:
+        _check_int (tlog, dut.port_bool_out, 1)
+        _check_int (tlog, dut.port_int_out , 5000)
+        _check_real(tlog, dut.port_real_out, 22.54)
+        _check_int (tlog, dut.port_char_out, ord('Z'))
+        _check_str (tlog, dut.port_str_out , "Testing")
+
+        _check_logic(tlog, dut.port_rec_out.a        , 1)
+        _check_logic(tlog, dut.port_rec_out.b[0]     , 0x01)
+        _check_logic(tlog, dut.port_rec_out.b[1]     , 0x23)
+        _check_logic(tlog, dut.port_rec_out.b[2]     , 0x45)
+        _check_logic(tlog, dut.port_cmplx_out[0].a   , 0)
+        _check_logic(tlog, dut.port_cmplx_out[0].b[0], 0x67)
+        _check_logic(tlog, dut.port_cmplx_out[0].b[1], 0x89)
+        _check_logic(tlog, dut.port_cmplx_out[0].b[2], 0xAB)
+        _check_logic(tlog, dut.port_cmplx_out[1].a   , 1)
+        _check_logic(tlog, dut.port_cmplx_out[1].b[0], 0xCD)
+        _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEF)
+        _check_logic(tlog, dut.port_cmplx_out[1].b[2], 0x55)
+
+    tlog.info("Writing a few signal sub-idices!!!")
+    dut.sig_logic_vec[2]     = 0
+    if cocotb.LANGUAGE in ["vhdl"] or not cocotb.SIM_NAME.lower().startswith(("ncsim")):
+        dut.sig_t6[1][3][2]      = 1
+        dut.sig_t6[0][2][7]      = 0
+
+    if cocotb.LANGUAGE in ["vhdl"]:
+        dut.sig_str[2]           = ord('E')
+        dut.sig_rec.b[1][7]      = 1
+        dut.sig_cmplx[1].b[1][0] = 0
+
+    yield Timer(1000)
+
+    tlog.info("Checking writes (2):")
+    _check_logic(tlog, dut.port_logic_vec_out, 0xC8)
+    if cocotb.LANGUAGE in ["vhdl"] or not cocotb.SIM_NAME.lower().startswith(("ncsim")):
+        _check_logic(tlog, dut.sig_t6[1][3][2], 1)
+        _check_logic(tlog, dut.sig_t6[0][2][7], 0)
+
+    if cocotb.LANGUAGE in ["vhdl"]:
+        _check_str (tlog, dut.port_str_out , "TEsting")
+
+        _check_logic(tlog, dut.port_rec_out.b[1]     , 0xA3)
+        _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)
+
 @cocotb.test()
 def test_gen_loop(dut):
     """Test accessing Generate Loops"""
@@ -42,12 +202,12 @@ def test_gen_loop(dut):
         tlog.info("Iterate access found %s", gens)
 
     if len(desc_gen) != 8:
-        raise TestError("Length of desc_gen is >%d< and should be 8".format(len(desc_gen)))
+        raise TestError("Length of desc_gen is >{}< and should be 8".format(len(desc_gen)))
     else:
         tlog.info("Length of desc_gen is %d", len(desc_gen))
 
     if len(dut.asc_gen) != 8:
-        raise TestError("Length of asc_gen is >%d< and should be 8".format(len(dut.asc_gen)))
+        raise TestError("Length of asc_gen is >{}< and should be 8".format(len(dut.asc_gen)))
     else:
        tlog.info("Length of asc_gen is %d", len(dut.asc_gen))
 
@@ -174,6 +334,12 @@ def test_discover_all(dut):
     if total != pass_total:
         raise TestFailure("Expected {0} objects but found {1}".format(pass_total, total))
 
+def test_basic_constant_access(dut):
+    """Test accessing constant/parameter basic data types"""
+
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(2000)
 
 @cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith(("riviera"))))
 def test_direct_constant_indexing(dut):
@@ -286,3 +452,12 @@ def test_direct_signal_indexing(dut):
         _check_type(tlog, dut.sig_rec.b[1], ModifiableObject)
         _check_type(tlog, dut.sig_rec.b[1][2], ModifiableObject)
 
+@cocotb.test()
+def delay_test(dut):
+    """Waits for time then ends"""
+
+    yield Timer(1000)
+
+    #tlog = logging.getLogger("cocotb.test")
+    #for thing in dut:
+    #    tlog.info("Found %s (%s)", thing._fullname, type(thing))
