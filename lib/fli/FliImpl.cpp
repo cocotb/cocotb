@@ -287,7 +287,7 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 
         /* If not found, check to see if the name of a generate loop and create a pseudo-region */
         for (rgn = mti_FirstLowerRegion(parent->get_handle<mtiRegionIdT>()); rgn != NULL; rgn = mti_NextRegion(rgn)) {
-            if (acc_fetch_fulltype(hdl) == accForGenerate) {
+            if (acc_fetch_fulltype(rgn) == accForGenerate) {
                 std::string rgn_name = mti_GetRegionName(static_cast<mtiRegionIdT>(rgn));
                 if (rgn_name.compare(0,name.length(),name) == 0) {
                     FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
