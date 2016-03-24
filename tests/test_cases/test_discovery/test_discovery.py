@@ -134,7 +134,7 @@ def access_single_bit_erroneous(dut):
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
 
-@cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("Icarus Verilog")),
+@cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("icarus")),
              expect_fail=cocotb.SIM_NAME.lower().startswith(("riviera")) and cocotb.LANGUAGE in ["verilog"])
 def access_integer(dut):
     """Integer should show as an IntegerObject"""
