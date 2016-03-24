@@ -99,7 +99,8 @@ def test_read_write(dut):
             _check_logic(tlog, dut.const_cmplx[2].b[1], 0xFF)
             _check_logic(tlog, dut.const_cmplx[2].b[2], 0xFF)
 
-    dut.select_in         = 2
+    if not cocotb.SIM_NAME.lower().startswith(("icarus")):
+        dut.select_in         = 2
 
     yield Timer(1000)
 
@@ -224,6 +225,7 @@ def test_discover_all(dut):
                           13 (param_cmplx[0:1].a, param_cmplx[0:1].b[0:2])           (VHDL only excluding Aldec)
                   ports:   1 (clk)
                            1 (select_in)                                             (VPI - Aldec sees as 32 bit register (i.e. cnt = 33)
+                                                                                     (VPI - Not present for Icarus)
                            9 (port_desc_in)
                            9 (port_asc_in)
                            9 (port_ofst_in)
@@ -284,7 +286,7 @@ def test_discover_all(dut):
                          816 (VHDL - Aldec)
                          780 (Verilog - Default)
                          649 (Verilog - Aldec)
-                         647 (Verilog - Aldec)
+                         614 (Verilog - Icarus)
     """
 
     tlog = logging.getLogger("cocotb.test")
@@ -319,8 +321,8 @@ def test_discover_all(dut):
         pass_total = 854
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
         pass_total = 649
-    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("icarus")):
-        pass_total = 647
+    elif cocotb.SIM_NAME.lower().startswith(("icarus")):
+        pass_total = 614
     else:
         pass_total = 780
 

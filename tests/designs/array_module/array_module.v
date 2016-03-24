@@ -39,7 +39,9 @@ typedef struct {
 module array_module (
     input                                       clk,
 
+`ifndef __ICARUS__
     input  integer                              select_in,
+`endif
 
     input          [7:0]                        port_desc_in,
     input          [0:7]                        port_asc_in,
@@ -110,6 +112,7 @@ assign port_ofst_out = port_ofst_in;
 //assign port_cmplx_out     = (select_in == 1) ? const_cmplx     : (select_in == 2) ? sig_cmplx     : param_cmplx;
 
 always @(posedge clk) begin
+`ifndef __ICARUS__
     if (select_in == 1) begin
         port_logic_out         = const_logic;
         port_logic_vec_out     = const_logic_vec;
@@ -132,8 +135,10 @@ always @(posedge clk) begin
         port_cmplx_out[1].b[2] = sig_cmplx[1].b[2];
     end else begin
         if (select_in == 2) begin
+`endif
             port_logic_out         = sig_logic;
             port_logic_vec_out     = sig_logic_vec;
+`ifndef __ICARUS__
 //            port_bool_out          = sig_bool;
 //            port_int_out           = sig_int;
 //            port_real_out          = sig_real;
@@ -173,6 +178,7 @@ always @(posedge clk) begin
             port_cmplx_out[1].b[2] = sig_cmplx[1].b[2];
         end
     end
+`endif
 end
 
 genvar idx1;
