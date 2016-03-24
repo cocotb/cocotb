@@ -412,13 +412,11 @@ out:
 
 GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 {
-    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
-
     LOG_DEBUG("Trying to convert raw to VHPI handle");
 
     vhpiHandleT new_hdl = (vhpiHandleT)raw_hdl;
 
-    std::string fq_name = parent_hdl->get_fullname();
+    std::string fq_name = parent->get_fullname();
     const char *c_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
     if (!c_name) {
         LOG_DEBUG("Unable to query name of passed in handle");
@@ -445,11 +443,10 @@ GpiObjHdl *VhpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 
 GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
-    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
-    vhpiHandleT vhpi_hdl  = parent_hdl->get_handle<vhpiHandleT>();
+    vhpiHandleT vhpi_hdl  = parent->get_handle<vhpiHandleT>();
 
     vhpiHandleT new_hdl;
-    std::string fq_name = parent_hdl->get_fullname();
+    std::string fq_name = parent->get_fullname();
     if (fq_name == ":") {
         fq_name += name;
     } else {
@@ -460,7 +457,7 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 
     new_hdl = vhpi_handle_by_name(&writable[0], NULL);
 
-    if (new_hdl == NULL && parent_hdl->get_type() == GPI_STRUCTURE) {
+    if (new_hdl == NULL && parent->get_type() == GPI_STRUCTURE) {
         /* vhpi_handle_by_name() doesn't always work for records, specificaly records in generics */
         vhpiHandleT iter = vhpi_iterator(vhpiSelectedNames, vhpi_hdl);
         if (iter != NULL) {
@@ -526,19 +523,18 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 
 GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 {
-    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
-    vhpiHandleT vhpi_hdl  = parent_hdl->get_handle<vhpiHandleT>();
-    std::string name      = parent_hdl->get_name();
-    std::string fq_name   = parent_hdl->get_fullname();
+    vhpiHandleT vhpi_hdl  = parent->get_handle<vhpiHandleT>();
+    std::string name      = parent->get_name();
+    std::string fq_name   = parent->get_fullname();
     vhpiHandleT new_hdl   = NULL;
     char buff[14]; // needs to be large enough to hold -2^31 to 2^31-1 in string form ('(''-'10+'')'\0')
 
-    gpi_objtype_t obj_type = parent_hdl->get_type();
+    gpi_objtype_t obj_type = parent->get_type();
 
     if (obj_type == GPI_GENARRAY) {
         LOG_DEBUG("Native check create for index %d of parent %s (pseudo-region)",
                   index,
-                  parent_hdl->get_name_str());
+                  parent->get_name_str());
 
         snprintf(buff, sizeof(buff), "%d", index);
 
@@ -553,7 +549,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
     } else if (obj_type == GPI_REGISTER || obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
         LOG_DEBUG("Native check create for index %d of parent %s (%s)",
                   index,
-                  parent_hdl->get_fullname_str(),
+                  parent->get_fullname_str(),
                   vhpi_get_str(vhpiKindStrP, vhpi_hdl));
 
         snprintf(buff, sizeof(buff), "(%d)", index);
@@ -574,7 +570,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
         }
 
         if (base_hdl == NULL) {
-            LOG_ERROR("Unable to get the vhpiBaseType of %s", parent_hdl->get_fullname_str());
+            LOG_ERROR("Unable to get the vhpiBaseType of %s", parent->get_fullname_str());
             return NULL;
         }
 
@@ -594,8 +590,8 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
              *    parent->get_name():   sig_name(x)(y)...  where x,y,... are the indices to a multi-dimensional array.
              *            pseudo_idx:   (x)(y)...
              */
-            if (hdl_name.length() < parent_hdl->get_name().length()) {
-                std::string pseudo_idx = parent_hdl->get_name().substr(hdl_name.length());
+            if (hdl_name.length() < parent->get_name().length()) {
+                std::string pseudo_idx = parent->get_name().substr(hdl_name.length());
 
                 while (pseudo_idx.length() > 0) {
                     std::size_t found = pseudo_idx.find_first_of(")");
@@ -694,7 +690,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
                         constraints.pop_back();
                     }
                 } else {
-                    LOG_ERROR("Unable to access all constraints for %s", parent_hdl->get_fullname_str());
+                    LOG_ERROR("Unable to access all constraints for %s", parent->get_fullname_str());
                     return NULL;
                 }
 
@@ -702,8 +698,8 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
                 new_hdl = vhpi_hdl;  // Set to the parent handle to create the pseudo-handle
             }
         } else {
-            int left  = parent_hdl->get_range_left();
-            int right = parent_hdl->get_range_right();
+            int left  = parent->get_range_left();
+            int right = parent->get_range_right();
 
             if (left > right) {
                 idx = left - index;
@@ -736,7 +732,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
             }
         }
     } else {
-        LOG_ERROR("VHPI: Parent of type %s must be of type GPI_GENARRAY, GPI_REGISTER, GPI_ARRAY, or GPI_STRING to have an index.", parent_hdl->get_type_str());
+        LOG_ERROR("VHPI: Parent of type %s must be of type GPI_GENARRAY, GPI_REGISTER, GPI_ARRAY, or GPI_STRING to have an index.", parent->get_type_str());
         return NULL;
     }
 
@@ -750,7 +746,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
     if (new_obj == NULL) {
         vhpi_release_handle(new_hdl);
         LOG_DEBUG("Could not fetch object below entity (%s) at index (%d)",
-                  parent_hdl->get_name_str(), index);
+                  parent->get_name_str(), index);
         return NULL;
     }
 

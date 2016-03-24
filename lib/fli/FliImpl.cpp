@@ -243,13 +243,12 @@ GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
  */
 GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
-    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl *>(parent);
     bool search_rgn       = false;
     bool search_sig       = false;
     bool search_var       = false;
 
-    std::string   fq_name  = parent_hdl->get_fullname();
-    gpi_objtype_t obj_type = parent_hdl->get_type();
+    std::string   fq_name  = parent->get_fullname();
+    gpi_objtype_t obj_type = parent->get_type();
 
     if (fq_name == "/") {
         fq_name += name;
@@ -262,7 +261,7 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         search_sig = true;
         search_var = true;
     } else if (obj_type == GPI_STRUCTURE) {
-        FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent_hdl);
+        FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent);
 
         fq_name += "." + name;
         search_rgn = false;
@@ -273,7 +272,7 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         return NULL;
     }
 
-    LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent_hdl->get_name_str());
+    LOG_DEBUG("Looking for child %s from %s", name.c_str(), parent->get_name_str());
 
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
@@ -303,12 +302,12 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
         mtiRegionIdT rgn;
 
         /* If not found, check to see if the name of a generate loop and create a pseudo-region */
-        for (rgn = mti_FirstLowerRegion(parent_hdl->get_handle<mtiRegionIdT>()); rgn != NULL; rgn = mti_NextRegion(rgn)) {
+        for (rgn = mti_FirstLowerRegion(parent->get_handle<mtiRegionIdT>()); rgn != NULL; rgn = mti_NextRegion(rgn)) {
             if (acc_fetch_fulltype(rgn) == accForGenerate) {
                 std::string rgn_name = mti_GetRegionName(static_cast<mtiRegionIdT>(rgn));
                 if (rgn_name.compare(0,name.length(),name) == 0) {
-                    FliObj *fli_obj = dynamic_cast<FliObj *>(parent_hdl);
-                    return create_gpi_obj_from_handle(parent_hdl->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
+                    FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
+                    return create_gpi_obj_from_handle(parent->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
                 }
             }
         }
@@ -327,8 +326,8 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
      * being equivalent to the parent handle.
      */
     if (accFullType == accForGenerate) {
-        FliObj *fli_obj = dynamic_cast<FliObj *>(parent_hdl);
-        return create_gpi_obj_from_handle(parent_hdl->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
+        FliObj *fli_obj = dynamic_cast<FliObj *>(parent);
+        return create_gpi_obj_from_handle(parent->get_handle<HANDLE>(), name, fq_name, fli_obj->get_acc_type(), fli_obj->get_acc_full_type());
     }
 
     return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
@@ -341,8 +340,7 @@ GpiObjHdl*  FliImpl::native_check_create(std::string &name, GpiObjHdl *parent)
  */
 GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 {
-    GpiObjHdl *parent_hdl  = sim_to_hdl<GpiObjHdl *>(parent);
-    gpi_objtype_t obj_type = parent_hdl->get_type();
+    gpi_objtype_t obj_type = parent->get_type();
 
     HANDLE hdl;
     PLI_INT32 accType;
@@ -350,13 +348,13 @@ GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
     char buff[14];
 
     if (obj_type == GPI_GENARRAY) {
-        LOG_DEBUG("Looking for index %d from %s", index, parent_hdl->get_name_str());
+        LOG_DEBUG("Looking for index %d from %s", index, parent->get_name_str());
 
         snprintf(buff, 14, "(%d)", index);
 
         std::string idx = buff;
-        std::string name = parent_hdl->get_name() + idx;
-        std::string fq_name = parent_hdl->get_fullname() + idx;
+        std::string name = parent->get_name() + idx;
+        std::string fq_name = parent->get_fullname() + idx;
 
         std::vector<char> writable(fq_name.begin(), fq_name.end());
         writable.push_back('\0');
@@ -374,9 +372,9 @@ GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
         return create_gpi_obj_from_handle(hdl, name, fq_name, accType, accFullType);
     } else if (obj_type == GPI_REGISTER || obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
-        FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent_hdl);
+        FliValueObjHdl *fli_obj = reinterpret_cast<FliValueObjHdl *>(parent);
 
-        LOG_DEBUG("Looking for index %u from %s", index, parent_hdl->get_name_str());
+        LOG_DEBUG("Looking for index %u from %s", index, parent->get_name_str());
 
         if ((hdl = fli_obj->get_sub_hdl(index)) == NULL) {
             LOG_DEBUG("Didn't find the index %d", index);
@@ -386,8 +384,8 @@ GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
         snprintf(buff, 14, "(%d)", index);
 
         std::string idx = buff;
-        std::string name = parent_hdl->get_name() + idx;
-        std::string fq_name = parent_hdl->get_fullname() + idx;
+        std::string name = parent->get_name() + idx;
+        std::string fq_name = parent->get_fullname() + idx;
 
         if (!(fli_obj->is_var())) {
             accType     = acc_fetch_type(hdl);
