@@ -29,10 +29,12 @@
 
 `timescale 1 ps / 1 ps
 
+`ifndef __ICARUS__
 typedef struct {
     logic a;
     logic [7:0] b[0:2];
 } rec_type;
+`endif
 
 module array_module (
     input                                       clk,
@@ -47,15 +49,17 @@ module array_module (
     output         [0:7]                        port_asc_out,
     output         [1:8]                        port_ofst_out,
 
-    output logic                                port_logic_out,
-    output logic   [7:0]                        port_logic_vec_out,
+`ifndef __ICARUS__
+    output rec_type                             port_rec_out,
+    output rec_type                             port_cmplx_out[0:1],
+`endif
     //output bit                                  port_bool_out,
     //output integer                              port_int_out,
     //output real                                 port_real_out,
     //output byte                                 port_char_out,
     //output string                               port_str_out,
-    output rec_type                             port_rec_out,
-    output rec_type                             port_cmplx_out[0:1]
+    output logic                                port_logic_out,
+    output logic   [7:0]                        port_logic_vec_out
 );
 
 parameter logic          param_logic       = 1'b1;
@@ -95,8 +99,10 @@ wire logic [7:0]    sig_logic_vec;
 //     real           sig_real;
 //     byte           sig_char;
 //     string         sig_str;
+`ifndef __ICARUS__
      rec_type       sig_rec;
      rec_type       sig_cmplx [0:1];
+`endif
 
 assign port_ofst_out = port_ofst_in;
 
