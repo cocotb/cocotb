@@ -29,19 +29,15 @@
 
 `timescale 1 ps / 1 ps
 
-`ifndef __ICARUS__
 typedef struct {
     logic a;
     logic [7:0] b[0:2];
 } rec_type;
-`endif
 
 module array_module (
     input                                       clk,
 
-`ifndef __ICARUS__
     input  integer                              select_in,
-`endif
 
     input          [7:0]                        port_desc_in,
     input          [0:7]                        port_asc_in,
@@ -51,17 +47,15 @@ module array_module (
     output         [0:7]                        port_asc_out,
     output         [1:8]                        port_ofst_out,
 
-`ifndef __ICARUS__
-    output rec_type                             port_rec_out,
-    output rec_type                             port_cmplx_out[0:1],
-`endif
+    output logic                                port_logic_out,
+    output logic   [7:0]                        port_logic_vec_out,
     //output bit                                  port_bool_out,
     //output integer                              port_int_out,
     //output real                                 port_real_out,
     //output byte                                 port_char_out,
     //output string                               port_str_out,
-    output logic                                port_logic_out,
-    output logic   [7:0]                        port_logic_vec_out
+    output rec_type                             port_rec_out,
+    output rec_type                             port_cmplx_out[0:1]
 );
 
 parameter logic          param_logic       = 1'b1;
@@ -101,10 +95,8 @@ wire logic [7:0]    sig_logic_vec;
 //     real           sig_real;
 //     byte           sig_char;
 //     string         sig_str;
-`ifndef __ICARUS__
      rec_type       sig_rec;
      rec_type       sig_cmplx [0:1];
-`endif
 
 assign port_ofst_out = port_ofst_in;
 
@@ -112,7 +104,6 @@ assign port_ofst_out = port_ofst_in;
 //assign port_cmplx_out     = (select_in == 1) ? const_cmplx     : (select_in == 2) ? sig_cmplx     : param_cmplx;
 
 always @(posedge clk) begin
-`ifndef __ICARUS__
     if (select_in == 1) begin
         port_logic_out         = const_logic;
         port_logic_vec_out     = const_logic_vec;
@@ -135,10 +126,8 @@ always @(posedge clk) begin
         port_cmplx_out[1].b[2] = sig_cmplx[1].b[2];
     end else begin
         if (select_in == 2) begin
-`endif
             port_logic_out         = sig_logic;
             port_logic_vec_out     = sig_logic_vec;
-`ifndef __ICARUS__
 //            port_bool_out          = sig_bool;
 //            port_int_out           = sig_int;
 //            port_real_out          = sig_real;
@@ -178,7 +167,6 @@ always @(posedge clk) begin
             port_cmplx_out[1].b[2] = sig_cmplx[1].b[2];
         end
     end
-`endif
 end
 
 genvar idx1;

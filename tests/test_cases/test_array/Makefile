@@ -27,7 +27,16 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+ifeq ($(SIM),)
+all:
+	@echo "Skipping test_array since icarus doesn't support indexing"
+else ifeq ($(shell echo $(SIM) | tr A-Z a-z),icarus)
+all:
+	@echo "Skipping test_array since icarus doesn't support indexing"
+else
 
 include ../../designs/array_module/Makefile
 
 MODULE = test_array
+
+endif

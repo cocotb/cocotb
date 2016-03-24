@@ -99,8 +99,7 @@ def test_read_write(dut):
             _check_logic(tlog, dut.const_cmplx[2].b[1], 0xFF)
             _check_logic(tlog, dut.const_cmplx[2].b[2], 0xFF)
 
-    if not cocotb.SIM_NAME.lower().startswith(("icarus")):
-        dut.select_in         = 2
+    dut.select_in         = 2
 
     yield Timer(1000)
 
@@ -225,7 +224,6 @@ def test_discover_all(dut):
                           13 (param_cmplx[0:1].a, param_cmplx[0:1].b[0:2])           (VHDL only excluding Aldec)
                   ports:   1 (clk)
                            1 (select_in)                                             (VPI - Aldec sees as 32 bit register (i.e. cnt = 33)
-                                                                                     (VPI - Not present for Icarus)
                            9 (port_desc_in)
                            9 (port_asc_in)
                            9 (port_ofst_in)
@@ -240,9 +238,7 @@ def test_discover_all(dut):
                            1 (port_char_out)                                         (VHDL Only)
                            9 (port_str_out)                                          (VHDL Only)
                           30 (port_rec_out)                                          (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
-                                                                                     (VPI - Not present for Icarus)
                           61 (port_cmplx_out)                                        (VPI - Aldec sees as a Module and not structure (i.e. cnt = 1))
-                                                                                     (VPI - Not present for Icarus)
               constants:   1 (const_logic)
                            1 (const_logic_vec)
                            1 (const_bool)                                            (VHDL Only)
@@ -268,8 +264,8 @@ def test_discover_all(dut):
                            1 (sig_real)                                              (VHDL Only)
                            1 (sig_char)                                              (VHDL Only)
                            9 (sig_str)                                               (VHDL Only)
-                          30 (sig_rec.a, sig_rec.b[0:2][7:0])                        (VPI doesn't find, added manually, except for Aldec and Icarus)
-                          61 (sig_cmplx[0:1].a, sig_cmplx[0:1].b[0:2][7:0])          (VPI - Aldec doesn't find, Not available in Icarus)
+                          30 (sig_rec.a, sig_rec.b[0:2][7:0])                        (VPI doesn't find, added manually, except for Aldec)
+                          61 (sig_cmplx[0:1].a, sig_cmplx[0:1].b[0:2][7:0])          (VPI - Aldec doesn't find)
                 regions:   9 (asc_gen[16:23])
                            8 (asc_gen: signals)                                      (VHPI - Riviera doesn't find, added manually)
                            8 (asc_gen: constant)
@@ -286,7 +282,6 @@ def test_discover_all(dut):
                          816 (VHDL - Aldec)
                          780 (Verilog - Default)
                          649 (Verilog - Aldec)
-                         614 (Verilog - Icarus)
     """
 
     tlog = logging.getLogger("cocotb.test")
@@ -296,7 +291,7 @@ def test_discover_all(dut):
     # Need to clear sub_handles so won't attempt to iterate over handles like sig_rec and sig_rec_array
     #
     # DO NOT REMOVE.  Aldec cannot iterate over the complex records due to bugs in the VPI interface.
-    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera","icarus")):
+    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
         if len(dut._sub_handles) != 0:
             dut._sub_handles = {}
 
@@ -321,8 +316,6 @@ def test_discover_all(dut):
         pass_total = 854
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
         pass_total = 649
-    elif cocotb.SIM_NAME.lower().startswith(("icarus")):
-        pass_total = 614
     else:
         pass_total = 780
 
@@ -340,6 +333,13 @@ def test_discover_all(dut):
     tlog.info("Found a total of %d things", total)
     if total != pass_total:
         raise TestFailure("Expected {0} objects but found {1}".format(pass_total, total))
+
+def test_basic_constant_access(dut):
+    """Test accessing constant/parameter basic data types"""
+
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(2000)
 
 @cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith(("riviera"))))
 def test_direct_constant_indexing(dut):
@@ -432,11 +432,10 @@ def test_direct_signal_indexing(dut):
     _check_type(tlog, dut.sig_t6[1], NonHierarchyIndexableObject)
     _check_type(tlog, dut.sig_t6[0][3], ModifiableObject)
     _check_type(tlog, dut.sig_t6[0][3][7], ModifiableObject)
-    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("icarus"))):
-        _check_type(tlog, dut.sig_cmplx, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.sig_cmplx, NonHierarchyIndexableObject)
 
     # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
-    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera","icarus"))):
+    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera"))):
         _check_type(tlog, dut.sig_cmplx[1], HierarchyObject)
         _check_type(tlog, dut.sig_cmplx[1].a, ModifiableObject)
         _check_type(tlog, dut.sig_cmplx[1].b, NonHierarchyIndexableObject)
@@ -444,13 +443,12 @@ def test_direct_signal_indexing(dut):
         _check_type(tlog, dut.sig_cmplx[1].b[1][2], ModifiableObject)
         tlog.info("   dut.sig_cmplx[1].a = %d (%s)", int(dut.sig_cmplx[1].a), dut.sig_cmplx[1].a.value.binstr)
 
-    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("icarus"))):
-        _check_type(tlog, dut.sig_rec, HierarchyObject)
-        _check_type(tlog, dut.sig_rec.a, ModifiableObject)
-        _check_type(tlog, dut.sig_rec.b, NonHierarchyIndexableObject)
+    _check_type(tlog, dut.sig_rec, HierarchyObject)
+    _check_type(tlog, dut.sig_rec.a, ModifiableObject)
+    _check_type(tlog, dut.sig_rec.b, NonHierarchyIndexableObject)
 
     # Riviera has a bug and finds dut.sig_rec.b[1], but the type returned is 0 which is unknown
-    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera","icarus"))):
+    if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera"))):
         _check_type(tlog, dut.sig_rec.b[1], ModifiableObject)
         _check_type(tlog, dut.sig_rec.b[1][2], ModifiableObject)
 
