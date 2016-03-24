@@ -335,7 +335,7 @@ class NonHierarchyObject(SimHandleBase):
         SimHandleBase.__init__(self, handle)
 
     def __iter__(self):
-        raise StopIteration
+        return iter(())
 
     def _getvalue(self):
         raise TypeError("Not permissible to get values on object %s" % (self._name))
@@ -439,6 +439,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
     def __iter__(self):
         if self._range is None:
             raise StopIteration
+
         self._log.debug("Iterating with range [%d:%d]" % (self._range[0], self._range[1]))
         for i in self._range_iter(self._range[0], self._range[1]):
             try:
