@@ -188,7 +188,7 @@ def access_string(dut):
     tlog = logging.getLogger("cocotb.test")
     yield Timer(10)
     constant_string = dut.isample_module1.EXAMPLE_STRING;
-    tlog.info("%s is %s" % (constant_string, repr(constant_string)))
+    tlog.info("%r is %s" % (constant_string, str(constant_string)))
     if not isinstance(constant_string, ConstantObject):
         raise TestFailure("EXAMPLE_STRING was not constant")
     if constant_string != "TESTING":
@@ -201,12 +201,12 @@ def access_string(dut):
 
     varible_string = dut.stream_out_string
     if varible_string != '':
-        raise TestFailure("%s not \'\'" % varible_string)
+        raise TestFailure("%r not \'\'" % varible_string)
 
     yield Timer(10)
 
     if varible_string != test_string:
-        raise TestFailure("%s %s != '%s'" % (varible_string, repr(varible_string), test_string))
+        raise TestFailure("%r %s != '%s'" % (varible_string, str(varible_string), test_string))
 
     test_string = "longer_than_the_array"
     tlog.info("Test writing over size with '%s'" % test_string)
@@ -219,7 +219,7 @@ def access_string(dut):
     test_string = test_string[:len(varible_string)]
 
     if varible_string != test_string:
-        raise TestFailure("%s %s != '%s'" % (varible_string, repr(varible_string), test_string))
+        raise TestFailure("%r %s != '%s'" % (varible_string, str(varible_string), test_string))
 
     tlog.info("Test read access to a string character")
 
@@ -247,10 +247,10 @@ def access_string(dut):
 
     test_string = test_string.upper()
 
-    result = repr(varible_string);
+    result = str(varible_string);
     tlog.info("After setting bytes of string value is %s" % result)
     if varible_string != test_string:
-        raise TestFailure("%s %s != '%s'" % (varible_string, result, test_string))
+        raise TestFailure("%r %s != '%s'" % (varible_string, result, test_string))
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def access_constant_boolean(dut):

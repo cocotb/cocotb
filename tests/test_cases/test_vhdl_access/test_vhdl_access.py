@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
 
 import cocotb
-from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, IntegerObject, ConstantObject
+from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, IntegerObject, ConstantObject, EnumObject
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 
@@ -38,8 +38,8 @@ def check_enum_object(dut):
     TODO: Implement an EnumObject class and detect valid string mappings
     """
     yield Timer(100)
-    if not isinstance(dut.inst_ram_ctrl.write_ram_fsm, ModifiableObject):
-        raise TestFailure("Expected the FSM enum to be an ModifiableObject")
+    if not isinstance(dut.inst_ram_ctrl.write_ram_fsm, EnumObject):
+        raise TestFailure("Expected the FSM enum to be an EnumObject")
 
 @cocotb.test()
 def check_objects(dut):

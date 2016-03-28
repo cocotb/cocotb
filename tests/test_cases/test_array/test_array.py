@@ -12,33 +12,33 @@ from cocotb.handle import HierarchyObject, HierarchyArrayObject, ModifiableObjec
 
 def _check_type(tlog, hdl, expected):
     if not isinstance(hdl, expected):
-        raise TestFailure(">{0} ({1})< should be >{2}<".format(hdl._fullname, type(hdl) ,expected))
+        raise TestFailure(">{0!r} ({1})< should be >{2}<".format(hdl, hdl._type ,expected))
     else:
-        tlog.info("   Found %s (%s) with length=%d", hdl._fullname, type(hdl), len(hdl))
+        tlog.info("   Found %r (%s) with length=%d", hdl, hdl._type, len(hdl))
 
 def _check_int(tlog, hdl, expected):
     if int(hdl) != expected:
-        raise TestFailure("{2}: Expected >{0}< but got >{1}<".format(expected, int(hdl), hdl._fullname))
+        raise TestFailure("{2!r}: Expected >{0}< but got >{1}<".format(expected, int(hdl), hdl))
     else:
-        tlog.info("   Found {0} ({1}) with value={2}".format(hdl._fullname, type(hdl), int(hdl)))
+        tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, int(hdl)))
 
 def _check_logic(tlog, hdl, expected):
     if int(hdl) != expected:
-        raise TestFailure("{2}: Expected >0x{0:X}< but got >0x{1:X}<".format(expected, int(hdl), hdl._fullname))
+        raise TestFailure("{2!r}: Expected >0x{0:X}< but got >0x{1:X}<".format(expected, int(hdl), hdl))
     else:
-        tlog.info("   Found {0} ({1}) with value=0x{2:X}".format(hdl._fullname, type(hdl), int(hdl)))
+        tlog.info("   Found {0!r} ({1}) with value=0x{2:X}".format(hdl, hdl._type, int(hdl)))
 
 def _check_str(tlog, hdl, expected):
-    if repr(hdl) != expected:
-        raise TestFailure("{2}: Expected >{0}< but got >{1}<".format(expected, repr(hdl), hdl._fullname))
+    if str(hdl) != expected:
+        raise TestFailure("{2!r}: Expected >{0}< but got >{1}<".format(expected, str(hdl), hdl))
     else:
-        tlog.info("   Found {0} ({1}) with value={2}".format(hdl._fullname, type(hdl), repr(hdl)))
+        tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, str(hdl)))
 
 def _check_real(tlog, hdl, expected):
     if float(hdl) != expected:
-        raise TestFailure("{2}: Expected >{0}< but got >{1}<".format(expected, float(hdl), hdl._fullname))
+        raise TestFailure("{2!r}: Expected >{0}< but got >{1}<".format(expected, float(hdl), hdl))
     else:
-        tlog.info("   Found {0} ({1}) with value={2}".format(hdl._fullname, type(hdl), float(hdl)))
+        tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, float(hdl)))
 
 @cocotb.test()
 def test_read_write(dut):
@@ -151,7 +151,7 @@ def test_read_write(dut):
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEF)
         _check_logic(tlog, dut.port_cmplx_out[1].b[2], 0x55)
 
-    tlog.info("Writing a few signal sub-idices!!!")
+    tlog.info("Writing a few signal sub-indices!!!")
     dut.sig_logic_vec[2]     = 0
     if cocotb.LANGUAGE in ["vhdl"] or not cocotb.SIM_NAME.lower().startswith(("ncsim")):
         dut.sig_t6[1][3][2]      = 1
@@ -187,13 +187,13 @@ def test_gen_loop(dut):
     desc_gen    = dut.desc_gen
 
     if not isinstance(dut.asc_gen, HierarchyArrayObject):
-        raise TestFailure("Generate Loop parent >{}< should be HierarchyArrayObject".format(dut.asc_gen))
+        raise TestFailure("Generate Loop parent >{!r}< should be HierarchyArrayObject".format(dut.asc_gen))
 
     if not isinstance(desc_gen, HierarchyArrayObject):
-        raise TestFailure("Generate Loop parent >{}< should be HierarchyArrayObject".format(desc_gen))
+        raise TestFailure("Generate Loop parent >{!r}< should be HierarchyArrayObject".format(desc_gen))
 
     if not isinstance(asc_gen_20, HierarchyObject):
-        raise TestFailure("Generate Loop child >{}< should be HierarchyObject".format(asc_gen_20))
+        raise TestFailure("Generate Loop child >{!r}< should be HierarchyObject".format(asc_gen_20))
 
     tlog.info("Direct access found %s", asc_gen_20)
     tlog.info("Direct access found %s", desc_gen)
@@ -324,22 +324,15 @@ def test_discover_all(dut):
         new_indent = indent+"---"
         for thing in obj:
             count += 1
-            tlog.info("%sFound %s (%s)", indent, thing._fullname, type(thing))
+            tlog.info("%sFound %r (%s)", indent, thing, thing._type)
             count += _discover(thing,new_indent)
         return count
 
-    tlog.info("Iterating over %s (%s)", dut._fullname, type(dut))
+    tlog.info("Iterating over %r (%s)", dut, dut._type)
     total = _discover(dut, "")
     tlog.info("Found a total of %d things", total)
     if total != pass_total:
         raise TestFailure("Expected {0} objects but found {1}".format(pass_total, total))
-
-def test_basic_constant_access(dut):
-    """Test accessing constant/parameter basic data types"""
-
-    tlog = logging.getLogger("cocotb.test")
-
-    yield Timer(2000)
 
 @cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith(("riviera"))))
 def test_direct_constant_indexing(dut):
@@ -395,20 +388,20 @@ def test_direct_signal_indexing(dut):
 
     tlog.info("Checking bit mapping from input to generate loops.")
     if int(dut.desc_gen[2].sig) != 1:
-        raise TestFailure("Expected dut.desc_gen[2].sig to be a 1 but got {}".format(int(dut.desc_gen[2].sig)))
+        raise TestFailure("Expected {0!r} to be a 1 but got {1}".format(dut.desc_gen[2].sig,int(dut.desc_gen[2].sig)))
     else:
-        tlog.info("   dut.desc_gen[2].sig = %d", int(dut.desc_gen[2].sig))
+        tlog.info("   %r = %d", dut.desc_gen[2].sig, int(dut.desc_gen[2].sig))
 
     if int(dut.asc_gen[18].sig) != 1:
-        raise TestFailure("Expected dut.asc_gen[18].sig to be a 1 but got {}".format(int(dut.asc_gen[18].sig)))
+        raise TestFailure("Expected {0!r} to be a 1 but got {1}".format(dut.asc_gen[18].sig,int(dut.asc_gen[18].sig)))
     else:
-        tlog.info("   dut.asc_gen[18].sig = %d", int(dut.asc_gen[18].sig))
+        tlog.info("   %r = %d", dut.asc_gen[18].sig, int(dut.asc_gen[18].sig))
 
     tlog.info("Checking indexing of data with offset index.")
     if int(dut.port_ofst_out) != 64:
-        raise TestFailure("Expected dut.port_ofst_out to be a 64 but got {}".format(int(dut.port_ofst_out)))
+        raise TestFailure("Expected {0!r} to be a 64 but got {0}".format(dut.port_ofst_out, int(dut.port_ofst_out)))
     else:
-        tlog.info("   dut.port_ofst_out = %d (%s)", int(dut.port_ofst_out), dut.port_ofst_out.value.binstr)
+        tlog.info("   %r = %d (%s)", dut.port_ofst_out, int(dut.port_ofst_out), dut.port_ofst_out.value.binstr)
 
     tlog.info("Checking Types of complex array structures in signals.")
     _check_type(tlog, dut.sig_desc[20], ModifiableObject)
@@ -441,7 +434,6 @@ def test_direct_signal_indexing(dut):
         _check_type(tlog, dut.sig_cmplx[1].b, NonHierarchyIndexableObject)
         _check_type(tlog, dut.sig_cmplx[1].b[1], ModifiableObject)
         _check_type(tlog, dut.sig_cmplx[1].b[1][2], ModifiableObject)
-        tlog.info("   dut.sig_cmplx[1].a = %d (%s)", int(dut.sig_cmplx[1].a), dut.sig_cmplx[1].a.value.binstr)
 
     _check_type(tlog, dut.sig_rec, HierarchyObject)
     _check_type(tlog, dut.sig_rec.a, ModifiableObject)
@@ -451,13 +443,3 @@ def test_direct_signal_indexing(dut):
     if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera"))):
         _check_type(tlog, dut.sig_rec.b[1], ModifiableObject)
         _check_type(tlog, dut.sig_rec.b[1][2], ModifiableObject)
-
-@cocotb.test()
-def delay_test(dut):
-    """Waits for time then ends"""
-
-    yield Timer(1000)
-
-    #tlog = logging.getLogger("cocotb.test")
-    #for thing in dut:
-    #    tlog.info("Found %s (%s)", thing._fullname, type(thing))

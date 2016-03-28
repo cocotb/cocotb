@@ -73,10 +73,11 @@ class SimHandleBase(object):
         "name"              :       "_name",
         }
 
-    def __init__(self, handle):
+    def __init__(self, handle, path):
         """
         Args:
             handle (integer)    : the GPI handle to the simulator object
+            path (string)       : path to this handle, None if root
         """
         self._handle = handle
         self._len = None
@@ -86,6 +87,7 @@ class SimHandleBase(object):
         self._name = simulator.get_name_string(self._handle)
         self._type = simulator.get_type_string(self._handle)
         self._fullname = self._name + "(%s)" % self._type
+        self._path = self._name if path is None else path
         self._log = SimLog("cocotb.%s" % self._name)
         self._log.debug("Created")
 
@@ -112,10 +114,10 @@ class SimHandleBase(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return self._fullname
+        return type(self).__name__ + "(" + self._path + ")"
 
     def __str__(self):
-        return "%s @0x%x" % (self._name, self._handle)
+        return self._path
 
     def __setattr__(self, name, value):
         if name in self._compat_mapping:
@@ -139,8 +141,8 @@ class RegionObject(SimHandleBase):
     """
     Region objects don't have values, they are effectively scopes or namespaces
     """
-    def __init__(self, handle):
-        SimHandleBase.__init__(self, handle)
+    def __init__(self, handle, path):
+        SimHandleBase.__init__(self, handle, path)
         self._discovered = False
 
     def __iter__(self):
@@ -181,12 +183,12 @@ class RegionObject(SimHandleBase):
                 break
             name = simulator.get_name_string(thing)
             try:
-                hdl = SimHandle(thing)
+                hdl = SimHandle(thing, self._child_path(name))
             except TestError as e:
                 self._log.debug("%s" % e)
                 continue
 
-            key = self._sub_handle_key(hdl)
+            key = self._sub_handle_key(name)
 
             if not key is None:
                 self._sub_handles[key] = hdl
@@ -196,11 +198,17 @@ class RegionObject(SimHandleBase):
 
         self._discovered = True
 
-    def _sub_handle_key(self, hdl):
+    def _child_path(self, name):
+        """
+        Returns a string of the path of the child SimHandle for a given name
+        """
+        return self._path + "." + name
+
+    def _sub_handle_key(self, name):
         """
         Translates the handle name to a key to use in _sub_handles dictionary.
         """
-        return hdl._name.split(".")[-1]
+        return name.split(".")[-1]
 
     def _getAttributeNames(self):
         """Permits IPython tab completion to work"""
@@ -248,7 +256,7 @@ class HierarchyObject(RegionObject):
             if name in self._sub_handles:
                 return self._sub_handles[name]
             raise AttributeError("%s contains no object named %s" % (self._name, name))
-        self._sub_handles[name] = SimHandle(new_handle)
+        self._sub_handles[name] = SimHandle(new_handle, self._child_path(name))
         return self._sub_handles[name]
 
     def __hasattr__(self, name):
@@ -268,7 +276,7 @@ class HierarchyObject(RegionObject):
 
         new_handle = simulator.get_handle_by_name(self._handle, name)
         if new_handle:
-            self._sub_handles[name] = SimHandle(new_handle)
+            self._sub_handles[name] = SimHandle(new_handle, self._child_path(name))
         else:
             self._invalid_sub_handles[name] = None
         return new_handle
@@ -279,7 +287,7 @@ class HierarchyArrayObject(RegionObject):
     Hierarchy Array are containers of Hierarchy Objects
     """
 
-    def _sub_handle_key(self, hdl):
+    def _sub_handle_key(self, name):
         """
         Translates the handle name to a key to use in _sub_handles dictionary.
         """
@@ -289,15 +297,16 @@ class HierarchyArrayObject(RegionObject):
         # VHPI(ALDEC):        _name__X where X is the index
         # VPI:                _name[X] where X is the index
         import re
-        result = re.match("{}__(?P<index>\d+)$".format(self._name), hdl._name)
+        result = re.match("{}__(?P<index>\d+)$".format(self._name), name)
         if not result:
-            result = re.match("{}\((?P<index>\d+)\)$".format(self._name), hdl._name)
+            result = re.match("{}\((?P<index>\d+)\)$".format(self._name), name)
         if not result:
-            result = re.match("{}\[(?P<index>\d+)\]$".format(self._name), hdl._name)
+            result = re.match("{}\[(?P<index>\d+)\]$".format(self._name), name)
 
         if result:
             return int(result.group("index"))
         else:
+            self._log.error("Unable to match an index pattern: %s", name);
             return None
 
     def __len__(self):
@@ -317,8 +326,16 @@ class HierarchyArrayObject(RegionObject):
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
             raise IndexError("%s contains no object at index %d" % (self._name, index))
-        self._sub_handles[index] = SimHandle(new_handle)
+        path = self._path + "[" + str(index) + "]"
+        self._sub_handles[index] = SimHandle(new_handle, path)
         return self._sub_handles[index]
+
+    def _child_path(self, name):
+        """
+        Returns a string of the path of the child SimHandle for a given name
+        """
+        index = self._sub_handle_key(name)
+        return self._path + "[" + str(index) + "]"
 
     def __setitem__(self, index, value):
         """Provide transparent assignment to indexed array handles"""
@@ -331,8 +348,8 @@ class NonHierarchyObject(SimHandleBase):
     Common base class for all non-hierarchy objects
     """
 
-    def __init__(self, handle):
-        SimHandleBase.__init__(self, handle)
+    def __init__(self, handle, path):
+        SimHandleBase.__init__(self, handle, path)
 
     def __iter__(self):
         return iter(())
@@ -382,8 +399,8 @@ class ConstantObject(NonHierarchyObject):
     We can also cache the value since it is elaboration time fixed and won't
     change within a simulation
     """
-    def __init__(self, handle, handle_type):
-        NonHierarchyObject.__init__(self, handle)
+    def __init__(self, handle, path, handle_type):
+        NonHierarchyObject.__init__(self, handle, path)
         if handle_type in [simulator.INTEGER, simulator.ENUM]:
             self._value = simulator.get_signal_val_long(self._handle)
         elif handle_type == simulator.REAL:
@@ -404,19 +421,19 @@ class ConstantObject(NonHierarchyObject):
     def __float__(self):
         return float(self.value)
 
-    def __repr__(self):
-        return str(self.value)
-
     def _getvalue(self):
         return self._value
 
+    def __str__(self):
+        return str(self.value)
+
 class NonHierarchyIndexableObject(NonHierarchyObject):
-    def __init__(self, handle):
+    def __init__(self, handle, path):
         """
             Args:
                 _handle [integer] : fli/vpi/vhpi handle to the simulator object
         """
-        NonHierarchyObject.__init__(self, handle)
+        NonHierarchyObject.__init__(self, handle, path)
         self._range = simulator.get_range(self._handle)
 
     def __setitem__(self, index, value):
@@ -433,7 +450,8 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         new_handle = simulator.get_handle_by_index(self._handle, index)
         if not new_handle:
             raise IndexError("%s contains no object at index %d" % (self._fullname, index))
-        self._sub_handles[index] = SimHandle(new_handle)
+        path = self._path + "[" + str(index) + "]"
+        self._sub_handles[index] = SimHandle(new_handle, path)
         return self._sub_handles[index]
 
     def __iter__(self):
@@ -460,12 +478,12 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
 
 
 class NonConstantObject(NonHierarchyIndexableObject):
-    def __init__(self, handle):
+    def __init__(self, handle, path):
         """
             Args:
                 _handle [integer] : vpi/vhpi handle to the simulator object
         """
-        NonHierarchyIndexableObject.__init__(self, handle)
+        NonHierarchyIndexableObject.__init__(self, handle, path)
         self._r_edge = _RisingEdge(self)
         self._f_edge = _FallingEdge(self)
         self._e_edge = _Edge(self)
@@ -476,6 +494,7 @@ class NonConstantObject(NonHierarchyIndexableObject):
         """
         iterator = simulator.iterate(self._handle, simulator.DRIVERS)
         while True:
+            # Path is left as the default None since handles are not derived from the hierarchy
             yield SimHandle(simulator.next(iterator))
 
     def loads(self):
@@ -484,6 +503,7 @@ class NonConstantObject(NonHierarchyIndexableObject):
         """
         iterator = simulator.iterate(self._handle, simulator.LOADS)
         while True:
+            # Path is left as the default None since handles are not derived from the hierarchy
             yield SimHandle(simulator.next(iterator))
 
 
@@ -541,8 +561,8 @@ class ModifiableObject(NonConstantObject):
     def __int__(self):
         return int(self.value)
 
-    def __repr__(self):
-        return repr(int(self))
+    def __str__(self):
+        return str(self.value)
 
 class RealObject(ModifiableObject):
     """
@@ -573,7 +593,38 @@ class RealObject(ModifiableObject):
         return simulator.get_signal_val_real(self._handle)
 
     def __float__(self):
-        return self._getvalue()
+        return float(self.value)
+
+class EnumObject(ModifiableObject):
+    """
+    Specific object handle for ENUM signals and variables
+    """
+
+    def setimmediatevalue(self, value):
+        """
+        Set the value of the underlying simulation object to value.
+
+        Args:
+            value (int)
+                The value to drive onto the simulator object
+
+        Raises:
+            TypeError
+
+        This operation will fail unless the handle refers to a modifiable
+        object eg net, signal or variable.
+        """
+        if isinstance(value, BinaryValue):
+            value = int(value)
+        elif not isinstance(value, get_python_integer_types()):
+            self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
+            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+
+        simulator.set_signal_val_long(self._handle, value)
+
+    def _getvalue(self):
+        return simulator.get_signal_val_long(self._handle)
+
 
 class IntegerObject(ModifiableObject):
     """
@@ -605,9 +656,6 @@ class IntegerObject(ModifiableObject):
     def _getvalue(self):
         return simulator.get_signal_val_long(self._handle)
 
-    def __int__(self):
-        return self._getvalue()
-
 class StringObject(ModifiableObject):
     """
     Specific object handle for String variables
@@ -636,12 +684,9 @@ class StringObject(ModifiableObject):
     def _getvalue(self):
         return simulator.get_signal_val_str(self._handle)
 
-    def __repr__(self):
-        return str(self.value)
-
 _handle2obj = {}
 
-def SimHandle(handle):
+def SimHandle(handle, path=None):
     """
     Factory function to create the correct type of SimHandle object
     """
@@ -652,7 +697,7 @@ def SimHandle(handle):
         simulator.NETARRAY:    NonHierarchyIndexableObject,
         simulator.REAL:        RealObject,
         simulator.INTEGER:     IntegerObject,
-        simulator.ENUM:        ModifiableObject,
+        simulator.ENUM:        EnumObject,
         simulator.STRING:      StringObject,
         simulator.GENARRAY:    HierarchyArrayObject,
     }
@@ -672,12 +717,12 @@ def SimHandle(handle):
                                                  simulator.STRUCTURE,
                                                  simulator.NETARRAY,
                                                  simulator.GENARRAY]:
-        obj = ConstantObject(handle, t)
+        obj = ConstantObject(handle, path, t)
         _handle2obj[handle] = obj
         return obj
 
     if t not in _type2cls:
         raise TestError("Couldn't find a matching object for GPI type %d" % t)
-    obj = _type2cls[t](handle)
+    obj = _type2cls[t](handle, path)
     _handle2obj[handle] = obj
     return obj
