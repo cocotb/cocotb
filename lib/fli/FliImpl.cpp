@@ -831,6 +831,9 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
 
         if (found != std::string::npos) {
             fq_name += name.substr(found);
+            if (obj_type != GPI_GENARRAY) {
+                name = name.substr(found+1);
+            }
         } else {
             LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
             fq_name += "/" + name;

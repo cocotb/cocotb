@@ -1061,14 +1061,23 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
         fq_name += name;
     } else if (obj_type == GPI_GENARRAY) {
         std::size_t found = name.rfind(GEN_IDX_SEP_LHS);
-        
+
         if (found != std::string::npos) {
             fq_name += name.substr(found);
         } else {
             LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
             fq_name += "." + name;
         }
+    } else if (obj_type == GPI_STRUCTURE) {
+        std::size_t found = name.rfind(".");
 
+        if (found != std::string::npos) {
+            fq_name += name.substr(found);
+            name = name.substr(found+1);
+        } else {
+            LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
+            fq_name += "." + name;
+        }
     } else {
         fq_name += "." + name;
     }

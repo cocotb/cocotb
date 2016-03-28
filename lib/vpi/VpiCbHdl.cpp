@@ -835,9 +835,19 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
 
     if (obj_type == GPI_GENARRAY) {
         std::size_t found = name.rfind("[");
-        
+
         if (found != std::string::npos) {
             fq_name += name.substr(found);
+        } else {
+            LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
+            fq_name += "." + name;
+        }
+    } else if (obj_type == GPI_STRUCTURE) {
+        std::size_t found = name.rfind(".");
+
+        if (found != std::string::npos) {
+            fq_name += name.substr(found);
+            name = name.substr(found+1);
         } else {
             LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
             fq_name += "." + name;
