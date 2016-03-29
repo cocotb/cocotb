@@ -63,33 +63,22 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
 int FliObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     bool is_signal = (get_acc_type() == accSignal || get_acc_full_type() == accAliasSignal);
-    bool is_value  = (is_signal                     || get_acc_type() == accAlias        || 
-                      get_acc_type() == accVariable || get_acc_type() == accVHDLConstant ||
-                      get_acc_type() == accGeneric);
+    mtiTypeIdT typeId; 
 
     switch (get_type()) {
-        case GPI_STRUCTURE: {
-                mtiTypeIdT recType; 
-                if (is_signal) {
-                    recType = mti_GetSignalType(get_handle<mtiSignalIdT>());
-                } else {
-                    recType = mti_GetVarType(get_handle<mtiVariableIdT>());
-                }
-                m_num_elems = mti_GetNumRecordElements(recType);
-            }
-            break;
-        case GPI_MODULE:
-            if (!is_value) {
-                m_num_elems = 1;
+        case GPI_STRUCTURE:
+            if (is_signal) {
+                typeId = mti_GetSignalType(get_handle<mtiSignalIdT>());
             } else {
-                mtiTypeIdT arrayType; 
-                if (is_signal) {
-                    arrayType = mti_GetSignalType(get_handle<mtiSignalIdT>());
-                } else {
-                    arrayType = mti_GetVarType(get_handle<mtiVariableIdT>());
-                }
-                m_num_elems = mti_TickLength(arrayType);
+                typeId = mti_GetVarType(get_handle<mtiVariableIdT>());
             }
+
+            m_num_elems = mti_GetNumRecordElements(typeId);
+            break;
+        case GPI_GENARRAY:
+            m_indexable = true;
+        case GPI_MODULE:
+            m_num_elems = 1;
             break;
         default:
             LOG_CRITICAL("Invalid object type for FliObjHdl. (%s (%s))", name.c_str(), get_type_str());
@@ -107,6 +96,13 @@ int FliSignalObjHdl::initialise(std::string &name, std::string &fq_name)
 
 int FliValueObjHdl::initialise(std::string &name, std::string &fq_name)
 {
+    if (get_type() == GPI_ARRAY) {
+        m_range_left  = mti_TickLeft(m_val_type);
+        m_range_right = mti_TickRight(m_val_type);
+        m_num_elems   = mti_TickLength(m_val_type);
+        m_indexable   = true;
+    }
+
     return FliSignalObjHdl::initialise(name, fq_name);
 }
 
@@ -150,6 +146,32 @@ int FliValueObjHdl::set_signal_value(const double value)
 {
     LOG_ERROR("Setting signal/variable value via double not supported for %s of type %d", m_fullname.c_str(), m_type);
     return -1;
+}
+
+void *FliValueObjHdl::get_sub_hdl(int index) {
+    if (!m_indexable)
+        return NULL;
+
+    if (m_sub_hdls == NULL) {
+        if (is_var()) {
+            m_sub_hdls = (void **)mti_GetVarSubelements(get_handle<mtiVariableIdT>(), NULL);
+        } else {
+            m_sub_hdls = (void **)mti_GetSignalSubelements(get_handle<mtiSignalIdT>(), NULL);
+        }
+    }
+
+    int idx;
+
+    if (m_range_left > m_range_right) {
+        idx = m_range_left - index;
+    } else {
+        idx = index - m_range_left;
+    }
+
+    if (idx < 0 || idx >= m_num_elems)
+        return NULL;
+    else
+        return m_sub_hdls[idx];
 }
 
 int FliEnumObjHdl::initialise(std::string &name, std::string &fq_name)
@@ -206,10 +228,13 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
         case MTI_TYPE_ARRAY: {
                 mtiTypeIdT elemType = mti_GetArrayElementType(m_val_type);
 
-                m_ascending   = (mti_TickDir(m_val_type) == 1);
+                m_range_left  = mti_TickLeft(m_val_type);
+                m_range_right = mti_TickRight(m_val_type);
+                m_num_elems   = mti_TickLength(m_val_type);
+                m_indexable   = true;
+
                 m_value_enum  = mti_GetEnumValues(elemType);
                 m_num_enum    = mti_TickLength(elemType);
-                m_num_elems   = mti_TickLength(m_val_type);
 
                 m_mti_buff    = (char*)malloc(sizeof(*m_mti_buff) * m_num_elems);
                 if (!m_mti_buff) {
@@ -279,41 +304,12 @@ int FliLogicObjHdl::set_signal_value(const long value)
             mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
         }
     } else {
-        int valLen = sizeof(value) * 8;
-        mtiInt32T enumVal;
-        int numPad;
-        int idx;
-
-        numPad       = valLen < m_num_elems ? m_num_elems-valLen : 0;
-        valLen       = valLen > m_num_elems ? m_num_elems : valLen;
-
         LOG_DEBUG("set_signal_value(long)::0x%016x", value);
+        for (int i = 0, idx = m_num_elems-1; i < m_num_elems; i++, idx--) {
+            mtiInt32T enumVal = value&(1L<<i) ? m_enum_map['1'] : m_enum_map['0'];
 
-        // Pad MSB for descending vector
-        for (idx = 0; idx < numPad && !m_ascending; idx++) {
-            m_mti_buff[idx] = (char)m_enum_map['0']; 
+            m_mti_buff[idx] = (char)enumVal; 
         }
-
-        if (m_ascending) {
-            for (int i = 0; i < valLen; i++) {
-                enumVal = value&(1L<<i) ? m_enum_map['1'] : m_enum_map['0'];
-
-                m_mti_buff[i] = (char)enumVal; 
-            }
-        } else {
-            int len = valLen + numPad;
-            for (int i = 0; i < valLen; i++, idx++) {
-                enumVal = value&(1L<<i) ? m_enum_map['1'] : m_enum_map['0'];
-
-                m_mti_buff[len - idx - 1] = (char)enumVal; 
-            }
-        }
-
-        // Pad MSB for ascending vector
-        for (idx = valLen; idx < (numPad+valLen) && m_ascending; idx++) {
-            m_mti_buff[idx] = (char)m_enum_map['0']; 
-        }
-
 
         if (m_is_var) {
             mti_SetVarValue(get_handle<mtiVariableIdT>(), (long)m_mti_buff);
@@ -336,35 +332,21 @@ int FliLogicObjHdl::set_signal_value(std::string &value)
             mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
         }
     } else {
-        int len = value.length();
-        int numPad;
-
-        numPad = len < m_num_elems ? m_num_elems-len : 0;
+        
+        if ((int)value.length() != m_num_elems) {
+            LOG_ERROR("FLI: Unable to set logic vector due to the string having incorrect length.  Length of %d needs to be %d", value.length(), m_num_elems);
+            return -1;
+        }
 
         LOG_DEBUG("set_signal_value(string)::%s", value.c_str());
-
-        if (len > m_num_elems) {
-            LOG_DEBUG("FLI: Attempt to write sting longer than (%s) signal %d > %d", m_name.c_str(), len, m_num_elems);
-            len = m_num_elems;
-        }
 
         mtiInt32T enumVal;
         std::string::iterator valIter;
         int i = 0;
 
-        // Pad MSB for descending vector
-        for (i = 0; i < numPad && !m_ascending; i++) {
-            m_mti_buff[i] = (char)m_enum_map['0']; 
-        }
-
         for (valIter = value.begin(); (valIter != value.end()) && (i < m_num_elems); valIter++, i++) {
             enumVal = m_enum_map[*valIter];
             m_mti_buff[i] = (char)enumVal; 
-        }
-
-        // Fill bits a the end of the value to 0's
-        for (i = len; i < m_num_elems && m_ascending; i++) {
-            m_mti_buff[i] = (char)m_enum_map['0']; 
         }
 
         if (m_is_var) {
@@ -474,7 +456,10 @@ int FliRealObjHdl::set_signal_value(const double value)
 
 int FliStringObjHdl::initialise(std::string &name, std::string &fq_name)
 {
+    m_range_left  = mti_TickLeft(m_val_type);
+    m_range_right = mti_TickRight(m_val_type);
     m_num_elems   = mti_TickLength(m_val_type);
+    m_indexable   = true;
 
     m_mti_buff    = (char*)malloc(sizeof(char) * m_num_elems);
     if (!m_mti_buff) {

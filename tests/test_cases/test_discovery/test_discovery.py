@@ -134,8 +134,8 @@ def access_single_bit_erroneous(dut):
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
-             expect_fail=cocotb.SIM_NAME in ["Riviera-PRO"])
+@cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("icarus")),
+             expect_fail=cocotb.SIM_NAME.lower().startswith(("riviera")) and cocotb.LANGUAGE in ["verilog"])
 def access_integer(dut):
     """Integer should show as an IntegerObject"""
     bitfail = False
@@ -147,7 +147,7 @@ def access_integer(dut):
 
     try:
         bit = test_int[3]
-    except TestError as e:
+    except IndexError as e:
         tlog.info("Access to bit is an error as expected")
         bitFail = True
 
@@ -188,7 +188,7 @@ def access_string(dut):
     tlog = logging.getLogger("cocotb.test")
     yield Timer(10)
     constant_string = dut.isample_module1.EXAMPLE_STRING;
-    tlog.info("%s is %s" % (constant_string, repr(constant_string)))
+    tlog.info("%r is %s" % (constant_string, str(constant_string)))
     if not isinstance(constant_string, ConstantObject):
         raise TestFailure("EXAMPLE_STRING was not constant")
     if constant_string != "TESTING":
@@ -201,12 +201,12 @@ def access_string(dut):
 
     varible_string = dut.stream_out_string
     if varible_string != '':
-        raise TestFailure("%s not \'\'" % varible_string)
+        raise TestFailure("%r not \'\'" % varible_string)
 
     yield Timer(10)
 
     if varible_string != test_string:
-        raise TestFailure("%s %s != '%s'" % (varible_string, repr(varible_string), test_string))
+        raise TestFailure("%r %s != '%s'" % (varible_string, str(varible_string), test_string))
 
     test_string = "longer_than_the_array"
     tlog.info("Test writing over size with '%s'" % test_string)
@@ -219,7 +219,7 @@ def access_string(dut):
     test_string = test_string[:len(varible_string)]
 
     if varible_string != test_string:
-        raise TestFailure("%s %s != '%s'" % (varible_string, repr(varible_string), test_string))
+        raise TestFailure("%r %s != '%s'" % (varible_string, str(varible_string), test_string))
 
     tlog.info("Test read access to a string character")
 
@@ -228,7 +228,9 @@ def access_string(dut):
     idx = 3
 
     result_slice = varible_string[idx]
-    if chr(result_slice) != test_string[idx]:
+
+    # String is defined as string(1 to 8) so idx=3 will access the 3rd character
+    if chr(result_slice) != test_string[idx-1]:
         raise TestFailure("Single character did not match '%c' != '%c'" %
                           (result_slice, test_string[idx]))
 
@@ -245,10 +247,10 @@ def access_string(dut):
 
     test_string = test_string.upper()
 
-    result = repr(varible_string);
+    result = str(varible_string);
     tlog.info("After setting bytes of string value is %s" % result)
     if varible_string != test_string:
-        raise TestFailure("%s %s != '%s'" % (varible_string, result, test_string))
+        raise TestFailure("%r %s != '%s'" % (varible_string, result, test_string))
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def access_constant_boolean(dut):
@@ -341,14 +343,8 @@ def custom_type(dut):
     new_type = dut.cosLut
     tlog.info("cosLut object %s %s" % (new_type, type(new_type)))
 
-    # FLI only iterates over one dimension at a time, where vhpi will
-    # iterate over two dimensions at the same time
-    if cocotb.SIM_NAME.lower().startswith(("modelsim")):
-        expected_sub = 84
-        expected_top = 4
-    else:
-        expected_sub = 11
-        expected_top = 28
+    expected_sub = 84
+    expected_top = 4
 
     count = 0
 

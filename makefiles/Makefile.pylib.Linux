@@ -58,7 +58,17 @@ endif
 # Since we don't know which modules we might need or whether the simulator
 # we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
 # is we simply link against all dynamic libraries in the Python installation
-PYLIBS = $(shell $(PYTHON_BIN)-config --libs)
+ifneq (, $(shell which $(PYTHON_BIN)-config 2>/dev/null))
+PY_CFG_EXE=$(PYTHON_BIN)-config
+else ifneq (, $(shell which $(PYTHON_BIN)$(PYTHON_MAJOR_VERSION)-config 2>/dev/null))
+PY_CFG_EXE=$(PYTHON_BIN)$(PYTHON_MAJOR_VERSION)-config
+else ifneq (, $(shell which $(PYTHON_BIN)$(PYTHON_VERSION)-config 2>/dev/null))
+PY_CFG_EXE=$(PYTHON_BIN)$(PYTHON_VERSION)-config
+else
+$(error ERROR: Unable to find a valid python-config.)
+endif
+
+PYLIBS = $(shell $(PY_CFG_EXE) --libs)
 
 PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
 PYTHON_DYN_LIB = libpython$(PYTHON_VERSION)$(DYN_SUFFIX).so

@@ -33,6 +33,15 @@
 #include <vector>
 #include <map>
 
+// Define Index separator
+#ifdef IUS
+#define GEN_IDX_SEP_LHS "("
+#define GEN_IDX_SEP_RHS ")"
+#else
+#define GEN_IDX_SEP_LHS "__"
+#define GEN_IDX_SEP_RHS ""
+#endif
+
 // Should be run after every VHPI call to check error status
 static inline int __check_vhpi_error(const char *file, const char *func, long line)
 {
@@ -149,6 +158,16 @@ public:
     virtual ~VhpiReadwriteCbHdl() { }
 };
 
+class VhpiArrayObjHdl : public GpiObjHdl {
+public:
+    VhpiArrayObjHdl(GpiImplInterface *impl,
+                    vhpiHandleT hdl,
+                    gpi_objtype_t objtype) : GpiObjHdl(impl, hdl, objtype) { }
+    virtual ~VhpiArrayObjHdl() { }
+
+    int initialise(std::string &name, std::string &fq_name);
+};
+
 class VhpiSignalObjHdl : public GpiSignalObjHdl {
 public:
     VhpiSignalObjHdl(GpiImplInterface *impl,
@@ -160,19 +179,19 @@ public:
                                       m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
     virtual ~VhpiSignalObjHdl();
 
-    const char* get_signal_value_binstr(void);
-    const char* get_signal_value_str(void);
-    double get_signal_value_real(void);
-    long get_signal_value_long(void);
+    virtual const char* get_signal_value_binstr(void);
+    virtual const char* get_signal_value_str(void);
+    virtual double get_signal_value_real(void);
+    virtual long get_signal_value_long(void);
 
 
-    int set_signal_value(const long value);
-    int set_signal_value(const double value);
-    int set_signal_value(std::string &value);
+    virtual int set_signal_value(const long value);
+    virtual int set_signal_value(const double value);
+    virtual int set_signal_value(std::string &value);
 
     /* Value change callback accessor */
-    GpiCbHdl *value_change_cb(unsigned int edge);
-    int initialise(std::string &name, std::string &fq_name);
+    virtual GpiCbHdl *value_change_cb(unsigned int edge);
+    virtual int initialise(std::string &name, std::string &fq_name);
 
 protected:
     const vhpiEnumT chr2vhpi(const char value);
@@ -194,6 +213,8 @@ public:
 
     int set_signal_value(const long value);
     int set_signal_value(std::string &value);
+
+    int initialise(std::string &name, std::string &fq_name);
 };
 
 class VhpiIterator : public GpiIterator {
@@ -235,7 +256,7 @@ public:
     GpiCbHdl *register_readwrite_callback(void);
     int deregister_callback(GpiCbHdl *obj_hdl);
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
-    GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *parent);
 
     const char * reason_to_string(int reason);

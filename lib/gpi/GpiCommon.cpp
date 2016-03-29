@@ -330,22 +330,22 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
     return hdl;
 }
 
-gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, uint32_t index)
+gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index)
 {
     vector<GpiImplInterface*>::iterator iter;
 
-    GpiObjHdl *hdl = NULL;
-    GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
+    GpiObjHdl *hdl         = NULL;
+    GpiObjHdl *base        = sim_to_hdl<GpiObjHdl*>(parent);
+    GpiImplInterface *intf = base->m_impl;
 
-    for (iter = registered_impls.begin();
-         iter != registered_impls.end();
-         iter++) {
-        LOG_DEBUG("Checking if index %d native though impl %s ", index, (*iter)->get_name_c());
-        if ((hdl = (*iter)->native_check_create(index, base))) {
-            LOG_DEBUG("Found %d via %s", index, (*iter)->get_name_c());
-            break;
-        }
-    }
+    /* Shouldn't need to iterate over interfaces because indexing into a handle shouldn't 
+     * cross the interface boundaries.
+     *
+     * NOTE: IUS's VPI interface returned valid VHDL handles, but then couldn't
+     *       use the handle properly.
+     */
+    LOG_DEBUG("Checking if index %d native though impl %s ", index, intf->get_name_c());
+    hdl = intf->native_check_create(index, base);
 
     if (hdl)
         return CHECK_AND_STORE(hdl);
@@ -456,6 +456,14 @@ int gpi_is_constant(gpi_sim_hdl sig_hdl)
     return 0;
 }
 
+int gpi_is_indexable(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    if (obj_hdl->get_indexable())
+        return 1;
+    return 0;
+}
+
 void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
@@ -479,6 +487,18 @@ int gpi_get_num_elems(gpi_sim_hdl sig_hdl)
 {
     GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_num_elems();
+}
+
+int gpi_get_range_left(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_range_left();
+}
+
+int gpi_get_range_right(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_range_right();
 }
 
 gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),

@@ -34,18 +34,11 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME.lower().startswith("ncsim"):
-    # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS
-    # But vhpiSimpleSigAssignStmtK objects do, and ther are 2.
-    # Process statements and all sub handles also show up.
-        pass_total = 35841
-    elif cocotb.SIM_NAME.lower().startswith("modelsim"):
-        # FLI only finds regions, signal, generics, constants, varibles and ports.
-        # It does not report any procedures
-        # Ports behave identically to signals, which seems to differ from the vhpi implementation
-        pass_total = 34562
+    if cocotb.SIM_NAME.lower().startswith(("ncsim","modelsim")):
+        # Finds regions, signal, generics, constants, varibles and ports.
+        pass_total = 34569
     else:
-        pass_total = 32306
+        pass_total = 32393
 
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)

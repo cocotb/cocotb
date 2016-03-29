@@ -29,7 +29,7 @@
 #define COCOTB_VPI_IMPL_H_ 
 
 #include "../gpi/gpi_priv.h"
-#include <vpi_user.h>
+#include <sv_vpi_user.h>
 #include <vector>
 #include <map>
 
@@ -173,6 +173,15 @@ public:
     virtual ~VpiShutdownCbHdl() { }
 };
 
+class VpiArrayObjHdl : public GpiObjHdl {
+public:
+    VpiArrayObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype) :
+                                                             GpiObjHdl(impl, hdl, objtype) { }
+    virtual ~VpiArrayObjHdl() { }
+
+    int initialise(std::string &name, std::string &fq_name);
+};
+
 class VpiSignalObjHdl : public GpiSignalObjHdl {
 public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype, bool is_const) :
@@ -266,7 +275,7 @@ public:
     GpiCbHdl *register_readwrite_callback(void);
     int deregister_callback(GpiCbHdl *obj_hdl);
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
-    GpiObjHdl* native_check_create(uint32_t index, GpiObjHdl *parent);
+    GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *parent);
     const char * reason_to_string(int reason);
     GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl,

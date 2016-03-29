@@ -65,6 +65,7 @@ const char * GpiObjHdl::get_type_str(void)
         CASE_OPTION(GPI_REAL);
         CASE_OPTION(GPI_INTEGER);
         CASE_OPTION(GPI_STRING);
+        CASE_OPTION(GPI_GENARRAY);
         default:
             ret = "unknown";
     }

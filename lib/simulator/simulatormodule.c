@@ -708,7 +708,7 @@ static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
 
 static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
 {
-    uint32_t index;
+    int32_t index;
     gpi_sim_hdl hdl;
     gpi_sim_hdl result;
     PyObject *value;
@@ -906,6 +906,33 @@ static PyObject *get_num_elems(PyObject *self, PyObject *args)
     return retstr;
 }
 
+static PyObject *get_range(PyObject *self, PyObject *args)
+{
+    gpi_sim_hdl hdl;
+    PyObject *retstr;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    int indexable = gpi_is_indexable((gpi_sim_hdl)hdl);
+    int rng_left  = gpi_get_range_left((gpi_sim_hdl)hdl);
+    int rng_right = gpi_get_range_right((gpi_sim_hdl)hdl);
+
+    if (indexable)
+        retstr = Py_BuildValue("(i,i)", rng_left,rng_right);
+    else
+        retstr = Py_BuildValue("");
+
+    DROP_GIL(gstate);
+
+    return retstr;
+}
+
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
     gpi_sim_end();
@@ -973,6 +1000,7 @@ static void add_module_constants(PyObject* simulator)
     rc |= PyModule_AddIntConstant(simulator, "REAL",          GPI_REAL);
     rc |= PyModule_AddIntConstant(simulator, "INTEGER",       GPI_INTEGER);
     rc |= PyModule_AddIntConstant(simulator, "STRING",        GPI_STRING);
+    rc |= PyModule_AddIntConstant(simulator, "GENARRAY",      GPI_GENARRAY);
     rc |= PyModule_AddIntConstant(simulator, "OBJECTS",       GPI_OBJECTS);
     rc |= PyModule_AddIntConstant(simulator, "DRIVERS",       GPI_DRIVERS);
     rc |= PyModule_AddIntConstant(simulator, "LOADS",         GPI_LOADS);

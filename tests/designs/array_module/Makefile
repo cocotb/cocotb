@@ -1,6 +1,6 @@
 ###############################################################################
-# Copyright (c) 2013 Potential Ventures Ltd
-# Copyright (c) 2013 SolarFlare Communications Inc
+# Copyright (c) 2016 Potential Ventures Ltd
+# Copyright (c) 2016 SolarFlare Communications Inc
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,60 +27,30 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-ifneq ($(VHDL_SOURCES),)
+TOPLEVEL_LANG ?= verilog
 
-results.xml:
-	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
-clean::
+TOPLEVEL := array_module
 
+PWD=$(shell pwd)
+COCOTB?=$(PWD)/../../..
+
+ifeq ($(OS),Msys)
+WPWD=$(shell sh -c 'pwd -W')
 else
+WPWD=$(shell pwd)
+endif
 
-CMD_BIN := vcs
-
-ifdef VCS_BIN_DIR
-    CMD := $(shell which $(VCS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+ifeq ($(TOPLEVEL_LANG),verilog)
+    VERILOG_SOURCES = $(COCOTB)/tests/designs/array_module/array_module.v
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+ifeq ($(shell echo $(SIM) | tr A-Z a-z),aldec)
+    VHDL_SOURCES =  $(COCOTB)/tests/designs/array_module/array_module_pack.vhd $(COCOTB)/tests/designs/array_module/array_module_aldec.vhd
 else
-    # auto-detect bin dir from system path
-    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+    VHDL_SOURCES =  $(COCOTB)/tests/designs/array_module/array_module_pack.vhd $(COCOTB)/tests/designs/array_module/array_module.vhd
 endif
-
-ifeq (, $(CMD))
-    $(error "Unable to locate command >$(CMD_BIN)<")
 else
-	VCS_BIN_DIR := $(shell dirname $(CMD))
-    export VCS_BIN_DIR
+    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
-ifeq ($(ARCH),x86_64)
-EXTRA_ARGS += -full64
-endif
-
-# TODO:
-# investigate +vpi+1 option which reduces memory requirements
-
-# Can't do this using an argument, we have to create a PLI table file
-# enabling write access to the design
-$(SIM_BUILD)/pli.tab :
-	echo "acc+=rw,wn:*" > $@
-
-# Compilation phase
-$(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(COCOTB_LIBS) $(COCOTB_VPI_LIB) $(CUSTOM_COMPILE_DEPS)
-	cd $(SIM_BUILD) && \
-    LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) TOPLEVEL=$(TOPLEVEL) \
-    $(CMD) +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -debug -load libvpi.so $(COMPILE_ARGS) $(VERILOG_SOURCES)
-
-# Execution phase
-results.xml: $(SIM_BUILD)/simv $(PYTHON_FILES) $(CUSTOM_SIM_DEPS)
-	-PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-		TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        $(SIM_BUILD)/simv +define+COCOTB_SIM=1 $(SIM_ARGS) $(EXTRA_ARGS)
-
-
-.PHONY: clean
-clean::
-	-@rm -rf $(SIM_BUILD)
-	-@rm -rf simv.daidir
-	-@rm -rf cm.log
-	-@rm -rf results.xml
-	-@rm -rf ucli.key
-endif
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim
