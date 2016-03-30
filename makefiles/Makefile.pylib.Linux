@@ -32,7 +32,6 @@
 ifneq ($(COCOTB_PYTHON_DEBUG),)
 DBG_PYTHON_VERSION=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
 PYTHON_BIN=python$(DBG_PYTHON_VERSION)-dbg
-DYN_SUFFIX="_d"
 else
 PYTHON_BIN=python
 endif
@@ -71,4 +70,4 @@ endif
 PYLIBS = $(shell $(PY_CFG_EXE) --libs)
 
 PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
-PYTHON_DYN_LIB = libpython$(PYTHON_VERSION)$(DYN_SUFFIX).so
+PYTHON_DYN_LIB:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))')
