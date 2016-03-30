@@ -340,7 +340,7 @@ class BinaryValue(object):
         self.assign(other)
 
     def __str__(self):
-        return "%d" % (self.value)
+        return self.binstr
 
     def __bool__(self):
         return self.__nonzero__()
