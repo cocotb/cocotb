@@ -214,7 +214,7 @@ class BusDriver(Driver):
                           but could work here as well)
             clock (SimHandle) : A handle to the clock associated with this bus
         """
-        self.log = SimLog("cocotb.%s.%s" % (entity.name, name))
+        self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         Driver.__init__(self)
         self.entity = entity
         self.name = name

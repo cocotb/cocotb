@@ -11,10 +11,10 @@ def mixed_language_test(dut):
     yield Timer(100)
 
     verilog = dut.i_swapper_sv
-    dut.log.info("Got: %s" % repr(verilog.name))
+    dut.log.info("Got: %s" % repr(verilog._name))
 
     vhdl = dut.i_swapper_vhdl
-    dut.log.info("Got: %s" % repr(vhdl.name))
+    dut.log.info("Got: %s" % repr(vhdl._name))
 
     verilog.reset_n = 1
     yield Timer(100)

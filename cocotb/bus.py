@@ -110,7 +110,7 @@ class Bus(object):
             if not hasattr(obj, name):
                 if strict:
                     msg = ("Unable to drive onto %s.%s because %s is missing "
-                           "attribute %s" % self._entity.name, self._name,
+                           "attribute %s" % self._entity._name, self._name,
                            obj.__class__.__name__, name)
                     raise AttributeError(msg)
                 else:

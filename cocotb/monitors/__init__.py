@@ -151,7 +151,7 @@ class BusMonitor(Monitor):
 
     def __init__(self, entity, name, clock, reset=None, reset_n=None,
                  callback=None, event=None):
-        self.log = SimLog("cocotb.%s.%s" % (entity.name, name))
+        self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         self.entity = entity
         self.name = name
         self.clock = clock
