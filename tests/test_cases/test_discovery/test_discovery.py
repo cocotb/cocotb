@@ -48,7 +48,7 @@ def discover_module_values(dut):
     yield Timer(0)
     count = 0
     for thing in dut:
-        thing.log.info("Found something: %s" % thing.fullname)
+        thing.log.info("Found something: %s" % thing._fullname)
         count += 1
     if count < 2:
         raise TestFailure("Expected to discover things in the DUT")
