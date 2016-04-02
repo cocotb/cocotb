@@ -281,6 +281,17 @@ class HierarchyObject(RegionObject):
             self._invalid_sub_handles[name] = None
         return new_handle
 
+    def _id(self, name, extended=True):
+        """
+        Query the simulator for a object with the specified name, including extended identifiers,
+        and cache the result to build a tree of objects
+        """
+        if extended:
+            name = "\\"+name+"\\"
+
+        if self.__hasattr__(name) is not None:
+            return getattr(self, name)
+        raise AttributeError("%s contains no object named %s" % (self._name, name))
 
 class HierarchyArrayObject(RegionObject):
     """
