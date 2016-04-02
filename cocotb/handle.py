@@ -230,10 +230,12 @@ class HierarchyObject(RegionObject):
         Raise an AttributeError if users attempt to create new members which
         don't exist in the design.
         """
-        if name.startswith("_") or name in self._compat_mapping:
+        if name.startswith("_"):
             return SimHandleBase.__setattr__(self, name, value)
         if self.__hasattr__(name) is not None:
             return getattr(self, name)._setcachedvalue(value)
+        if name in self._compat_mapping:
+            return SimHandleBase.__setattr__(self, name, value)
         raise AttributeError("Attempt to access %s which isn't present in %s" %(
             name, self._name))
 
@@ -245,16 +247,14 @@ class HierarchyObject(RegionObject):
         if name in self._sub_handles:
             return self._sub_handles[name]
 
-        if name.startswith("_") or name in self._compat_mapping:
+        if name.startswith("_"):
             return SimHandleBase.__getattr__(self, name)
 
         new_handle = simulator.get_handle_by_name(self._handle, name)
 
         if not new_handle:
-            # To find generated indices we have to discover all
-            self._discover_all()
-            if name in self._sub_handles:
-                return self._sub_handles[name]
+            if name in self._compat_mapping:
+                return SimHandleBase.__getattr__(self, name)
             raise AttributeError("%s contains no object named %s" % (self._name, name))
         self._sub_handles[name] = SimHandle(new_handle, self._child_path(name))
         return self._sub_handles[name]
