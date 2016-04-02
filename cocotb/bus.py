@@ -89,8 +89,8 @@ class Bus(object):
                 setattr(self, signal, hdl)
                 self._signals[signal] = getattr(self, signal)
             else:
-                self._entity.log.debug("Ignoring optional missing signal "
-                                       "%s on bus %s" % (signal, name))
+                self._entity._log.debug("Ignoring optional missing signal "
+                                        "%s on bus %s" % (signal, name))
 
     def drive(self, obj, strict=False):
         """

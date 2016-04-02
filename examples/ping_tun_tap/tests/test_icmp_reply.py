@@ -77,14 +77,14 @@ def tun_tap_example_test(dut):
     stream_out.log.setLevel(logging.DEBUG)
 
     # Reset the DUT
-    dut.log.debug("Resetting DUT")
+    dut._log.debug("Resetting DUT")
     dut.reset_n <= 0
     stream_in.bus.valid <= 0
     yield Timer(10000)
     yield RisingEdge(dut.clk)
     dut.reset_n <= 1
     dut.stream_out_ready <= 1
-    dut.log.debug("Out of reset")
+    dut._log.debug("Out of reset")
 
     # Create our interface (destroyed at the end of the test)
     tun = create_tun()
