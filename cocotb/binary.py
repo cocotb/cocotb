@@ -35,6 +35,10 @@ from cocotb.utils import get_python_integer_types
 def resolve(string):
     for char in BinaryValue._resolve_to_0:
         string = string.replace(char, "0")
+    for char in BinaryValue._resolve_to_1:
+        string = string.replace(char, "1")
+    if any(char in string for char in BinaryValue._resolve_to_error):
+        raise ValueError("Unable to resolve to binary >%s<" % string)
     return string
 
 
@@ -66,8 +70,10 @@ class BinaryValue(object):
     '*'
 
     """
-    _resolve_to_0    = "xXzZuU"  # noqa
-    _permitted_chars = "xXzZuU" + "01"  # noqa
+    _resolve_to_0     = "-lL"  # noqa
+    _resolve_to_1     = "hH"  # noqa
+    _resolve_to_error = "xXzZuUwW"  # Resolve to a ValueError() since these usually mean something is wrong
+    _permitted_chars  = _resolve_to_0 +_resolve_to_1 + _resolve_to_error + "01"  # noqa
 
     def __init__(self, value=None, bits=None, bigEndian=True,
                  binaryRepresentation=BinaryRepresentation.UNSIGNED):

@@ -28,5 +28,5 @@ def mixed_language_test(dut):
         raise TestFailure("reset_n signals were different")
 
     # Try accessing an object other than a port...
-    verilog_flush = int(verilog.flush_pipe)
-    vhdl_flush = int(vhdl.flush_pipe)
+    verilog_flush = str(verilog.flush_pipe)
+    vhdl_flush = str(vhdl.flush_pipe)
