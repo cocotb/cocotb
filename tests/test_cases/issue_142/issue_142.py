@@ -13,6 +13,8 @@ def issue_142_overflow_error(dut):
        through the GPI interface natively into BinaryValues"""
     cocotb.fork(Clock(dut.clk, 2500).start())
 
+    dut.stream_in_data_wide <= BinaryValue(0,len(dut.stream_in_data_wide),bigEndian=False)
+
     def _compare(value):
         if int(dut.stream_in_data_wide.value) != int(value):
             raise TestFailure("Expecting 0x%x but got 0x%x on %s" % (
