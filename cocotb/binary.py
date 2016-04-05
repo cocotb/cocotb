@@ -66,8 +66,8 @@ class BinaryValue(object):
     '*'
 
     """
-    _resolve_to_0    = "xXzZuU"  # noqa
-    _permitted_chars = "xXzZuU" + "01"  # noqa
+    _resolve_to_0    = "xXzZuU-"  # noqa
+    _permitted_chars = "xXzZuU-" + "01"  # noqa
 
     def __init__(self, value=None, bits=None, bigEndian=True,
                  binaryRepresentation=BinaryRepresentation.UNSIGNED):
