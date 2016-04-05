@@ -82,7 +82,6 @@ ifneq ($(GENERICS),)
 VSIM_ARGS += $(foreach gen, $(GENERICS),"-G $(gen)")
 endif
 
-.PHONY : $(SIM_BUILD)/runsim.do
 $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) $(SIM_BUILD)
 	echo "if [file exists $(RTL_LIBRARY)] {vdel -lib $(RTL_LIBRARY) -all}" > $@
 	echo "vlib $(RTL_LIBRARY)" >> $@
