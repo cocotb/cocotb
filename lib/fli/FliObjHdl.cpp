@@ -312,9 +312,9 @@ int FliLogicObjHdl::set_signal_value(const long value)
         }
 
         if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), (long)m_mti_buff);
+            mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
         } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(), (long)m_mti_buff);
+            mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
         }
     }
 
@@ -350,9 +350,9 @@ int FliLogicObjHdl::set_signal_value(std::string &value)
         }
 
         if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), (long)m_mti_buff);
+            mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
         } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(), (long)m_mti_buff);
+            mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
         }
     }
 
@@ -446,9 +446,9 @@ int FliRealObjHdl::set_signal_value(const double value)
     m_mti_buff[0] = value;
 
     if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), (long)m_mti_buff);
+        mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
     } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), (long)m_mti_buff);
+        mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
     }
 
     return 0;
@@ -497,9 +497,9 @@ int FliStringObjHdl::set_signal_value(std::string &value)
     strncpy(m_mti_buff, value.c_str(), m_num_elems);
 
     if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), (long)m_mti_buff);
+        mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
     } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), (long)m_mti_buff);
+        mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
     }
 
     return 0;
