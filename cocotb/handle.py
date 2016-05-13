@@ -124,7 +124,7 @@ class SimHandleBase(object):
             if name not in _deprecation_warned:
                 warnings.warn("Use of %s attribute is deprecated" % name)
                 _deprecation_warned[name] = True
-            return setattr(self, self._compat_mapping[name])
+            return setattr(self, self._compat_mapping[name], value)
         else:
             return object.__setattr__(self, name, value)
 
