@@ -952,7 +952,25 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     gstate = TAKE_GIL();
 
     pSihHdl = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
+
+
+    // In python 2.x pSohHdl is PyLong on 64bit systems, Pyint on 32bit systems
+#if PY_VERSION_HEX < 0x03000000
+        if (PyLong_Check(pSihHdl)) {
+            hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
+        }
+        else if (PyInt_Check(pSihHdl)) {
+            hdl = (gpi_sim_hdl)PyInt_AsLong(pSihHdl);
+        }
+        else {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to deregister callback!");
+            return NULL;
+        }
+        
+#else  // In python3.x all integers are PyLong
+        hdl = (gpi_sim_hdl)PyLong_AsVoidPtr(pSihHdl);
+#endif
+        
 
     gpi_deregister_callback(hdl);
 
