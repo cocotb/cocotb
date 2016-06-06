@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
 
 import logging
+from collections import deque
 
 import cocotb
 from cocotb.decorators import coroutine
@@ -93,7 +94,7 @@ class Driver(object):
         """
         # self._busy = Lock()
         self._pending = Event(name="Driver._pending")
-        self._sendQ = []
+        self._sendQ = deque()
 
         # Subclasses may already set up logging
         if not hasattr(self, "log"):
@@ -126,7 +127,7 @@ class Driver(object):
         """
         Clear any queued transactions without sending them onto the bus
         """
-        self._sendQ = []
+        self._sendQ = deque()
 
     @coroutine
     def send(self, transaction, sync=True):
@@ -185,7 +186,7 @@ class Driver(object):
             # Send in all the queued packets,
             # only synchronise on the first send
             while self._sendQ:
-                transaction, callback, event = self._sendQ.pop(0)
+                transaction, callback, event = self._sendQ.popleft()
                 self.log.debug("Sending queued packet...")
                 yield self._send(transaction, callback, event,
                                  sync=not synchronised)
@@ -339,4 +340,3 @@ def polled_socket_attachment(driver, sock):
             driver.log.info("Remote end closed the connection")
             break
         driver.append(data)
-

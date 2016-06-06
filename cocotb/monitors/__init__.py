@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
 
 import math
+from collections import deque
 
 import cocotb
 from cocotb.decorators import coroutine
@@ -65,7 +66,7 @@ class Monitor(object):
         """
         self._event = event
         self._wait_event = None
-        self._recvQ = []
+        self._recvQ = deque()
         self._callbacks = []
         self.stats = MonitorStatistics()
         self._wait_event = Event()
