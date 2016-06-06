@@ -186,7 +186,7 @@ class Driver(object):
             # Send in all the queued packets,
             # only synchronise on the first send
             while self._sendQ:
-                transaction, callback, event = self._sendQ.pop(0)
+                transaction, callback, event = self._sendQ.popleft()
                 self.log.debug("Sending queued packet...")
                 yield self._send(transaction, callback, event,
                                  sync=not synchronised)
