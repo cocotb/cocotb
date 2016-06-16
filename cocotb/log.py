@@ -147,6 +147,7 @@ class SimLog(object):
 
 class SimLogFormatter(logging.Formatter):
 
+    sim_precision = simulator.get_precision()
     """Log formatter to provide consistent log message handling."""
 
     # Justify and truncate
@@ -163,7 +164,8 @@ class SimLogFormatter(logging.Formatter):
         return string.rjust(chars)
 
     def _format(self, timeh, timel, level, record, msg):
-        simtime = "% 6d.%02dns" % ((timel / 1000), (timel % 1000) / 10)
+        time_ns = (timeh << 32 | timel) * (10.0**SimLogFormatter.sim_precision) / 1e-9
+        simtime = "%6.2fns" % (time_ns)
         prefix = simtime + ' ' + level + ' ' + \
             self.ljust(record.name, _RECORD_CHARS) + \
             self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \

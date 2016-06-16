@@ -27,12 +27,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
-TOPLEVEL := burst_read_master
 TOPLEVEL_LANG ?= verilog
 
-PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+ifneq ($(TOPLEVEL_LANG),verilog)
+
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
+clean::
+
+else
+
+TOPLEVEL := burst_read_master
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
@@ -40,10 +45,11 @@ else
 WPWD=$(shell pwd)
 endif
 
-VERILOG_SOURCES = $(COCOTB)/tests/designs/avalon_module/burst_read_master.v
-GPI_IMPL := vpi
+COCOTB?=$(WPWD)/../../..
 
-export TOPLEVEL_LANG
+VERILOG_SOURCES = $(COCOTB)/tests/designs/avalon_module/burst_read_master.v
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
+
+endif

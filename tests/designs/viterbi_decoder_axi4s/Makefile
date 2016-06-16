@@ -25,12 +25,25 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-TOPLEVEL_LANG = vhdl
+TOPLEVEL_LANG ?= vhdl
+
+ifneq ($(TOPLEVEL_LANG),vhdl)
+
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being vhdl"
+clean::
+
+else
 
 TOPLEVEL = dec_viterbi
 
-PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+ifeq ($(OS),Msys)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
+
+COCOTB?=$(WPWD)/../../..
 
 SRC_BASE = $(COCOTB)/tests/designs/viterbi_decoder_axi4s
 
@@ -52,17 +65,7 @@ VHDL_SOURCES = $(SRC_BASE)/packages/pkg_helper.vhd \
 	       $(SRC_BASE)/src/recursion.vhd \
 	       $(SRC_BASE)/src/dec_viterbi.vhd \
 
-ifeq ($(SIM),aldec)
-    GPI_IMPL=vhpi
-endif
-ifeq ($(SIM),modelsim)
-    GPI_IMPL=fli
-endif
-
-ifneq ($(SIM),)
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
-else
-all:
-	@echo "Skipping test as icarus does not support VHDL"
+
 endif

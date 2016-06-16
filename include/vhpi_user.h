@@ -166,7 +166,11 @@ extern "C" {
                                         [Small]Enum,Logic,Int,Real,[Small]Phys,Time,Ptr,
                                         [Small]EnumVec,LogicVec,IntVect,RealVec,[Small]PhysVec,TimeVec,
                                         PtrVec,ObjType,RawData]Val */
+#ifndef IUS
         size_t bufSize;  /* the size in bytes of the value buffer; this is set by the user */
+#else
+        int32_t bufSize;  /* IUS defines this as 32-bits, even when running in 64-bit mode */
+#endif
         int32_t numElems;
         /* different meanings depending on the format:
             vhpiStrVal, vhpi{Bin...}StrVal: size of string
@@ -202,7 +206,11 @@ extern "C" {
 
 */
 
+#ifndef IUS
 #define vhpiUndefined -1
+#else
+#define vhpiUndefined 1000
+#endif
 
 /*************** OBJECT KINDS *******************/
 typedef enum
@@ -322,7 +330,11 @@ typedef enum
     vhpiWaveformElemK           = 1113,
     vhpiWhileLoopK              = 1114,
     vhpiQualifiedExprK          = 1115,
+#ifndef IUS
     vhpiUseClauseK              = 1116,
+#else
+    vhpiUseClauseK              = 1200,
+#endif
 
 #ifdef VHPIEXTEND_CLASSES
     VHPIEXTEND_CLASSES
@@ -493,7 +505,11 @@ typedef enum
     vhpiLocalLoads              = 1559,
     vhpiOptimizedLoads          = 1560,
     vhpiTypes                   = 1561,
+#ifndef IUS
     vhpiUseClauses              = 1562,
+#else
+    vhpiUseClauses              = 1650,
+#endif
 
 #ifdef VHPIEXTEND_MANY_METHODS
     VHPIEXTEND_MANY_METHODS
@@ -609,7 +625,13 @@ typedef enum
     vhpiStrValP                 = 1315,
     vhpiToolVersionP            = 1316,
     vhpiUnitNameP               = 1317,
-    vhpiSaveRestartLocationP    = 1318
+    vhpiSaveRestartLocationP    = 1318,
+
+    /* Cadence IUS */
+    vhpiFullVlogNameP = 1500,       /* Full path name (VHDL names are Verilogized) */
+    vhpiFullVHDLNameP = 1501,       /* Full path name (Verilog names are vhdlized) */
+    vhpiFullLSNameP = 1502,         /* Full path name (Upper case) using ':' and '.' separators */
+    vhpiFullLSCaseNameP = 1503      /* Full path name (VHDL case sensitive) */
 
 #ifdef VHPIEXTEND_STR_PROPERTIES
     VHPIEXTEND_STR_PROPERTIES

@@ -57,7 +57,6 @@ include $(SIM_ROOT)/makefiles/Makefile.pylib
 export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
 export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
-export GPI_EXTRA
 
 LIB_EXT     := so
 PY_EXT	    := so
@@ -72,6 +71,9 @@ GXX_ARGS	+= -g -DDEBUG -fpic
 GCC_ARGS	:= $(GXX_ARGS)
 else ifeq ($(OS),Msys)
 GXX_ARGS 	+= -g -DDEBUG -shared
+ifeq ($(ARCH),x86_64)
+GXX_ARGS  += -DMS_WIN64
+endif
 GCC_ARGS	:= $(GXX_ARGS)
 LIB_EXT		:= dll
 PY_EXT		:= pyd

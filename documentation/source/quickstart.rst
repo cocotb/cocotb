@@ -34,7 +34,7 @@ Redhat based installation
 
 .. code-block:: bash
 
-    $> sudo yum install gcc gcc-c++ libstdc++-devel python-devel
+    $> sudo yum install gcc gcc-c++ libstdc++-devel swig python-devel
 
 This will allow building of the Cocotb libs for use with a 64 bit native simulator. If a 32 bit simulator is being used then additional steps to install 32bit development libraries and python are needed. 
 
@@ -127,11 +127,11 @@ To run a test using a different simulator:
 Running a VHDL example
 ----------------------
 
-The endian swapper example includes both a VHDL and Verilog RTL implementation.  The Cocotb testbench can execute against either implementation using VPI for Verilog and VHPI for VHDL.  To run the test suite against the VHDL implementation use the following command (a VHPI capable simulator must be used):
+The endian swapper example includes both a VHDL and Verilog RTL implementation.  The Cocotb testbench can execute against either implementation using VPI for Verilog and VHPI/FLI for VHDL.  To run the test suite against the VHDL implementation use the following command (a VHPI or FLI capable simulator must be used):
 
 .. code-block:: bash
 
-    $> make SIM=aldec GPI_IMPL=vhpi
+    $> make SIM=aldec TOPLEVEL_LANG=vhdl
 
 
 

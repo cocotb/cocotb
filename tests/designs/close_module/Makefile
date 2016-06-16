@@ -27,6 +27,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+TOPLEVEL_LANG ?= verilog
+
+ifneq ($(TOPLEVEL_LANG),verilog)
+
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
+clean::
+
+else
 
 TOPLEVEL = close_module
 
@@ -36,8 +45,8 @@ else
 WPWD=$(shell pwd)
 endif
 
-PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+COCOTB?=$(WPWD)/../../..
+
 VERILOG_SOURCES = $(COCOTB)/tests/designs/close_module/close_module.v
 
 ifneq ($(SIM),vcs)
@@ -48,3 +57,4 @@ all:
 	@echo "Skipping test as system call overrides seqfault VCS"
 endif
 
+endif

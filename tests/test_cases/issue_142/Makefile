@@ -26,6 +26,6 @@
 ###############################################################################
 
 
-include $(COCOTB)/tests/designs/sample_module/Makefile
+include ../../designs/sample_module/Makefile
 
 MODULE = issue_142

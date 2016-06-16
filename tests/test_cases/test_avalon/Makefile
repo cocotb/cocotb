@@ -28,6 +28,6 @@
 ###############################################################################
 
 
-include $(COCOTB)/tests/designs/avalon_module/Makefile
+include ../../designs/avalon_module/Makefile
 
 MODULE = test_avalon

@@ -66,8 +66,8 @@ class BinaryValue(object):
     '*'
 
     """
-    _resolve_to_0    = "xXzZuU"  # noqa
-    _permitted_chars = "xXzZuU" + "01"  # noqa
+    _resolve_to_0    = "xXzZuU-"  # noqa
+    _permitted_chars = "xXzZuU-" + "01"  # noqa
 
     def __init__(self, value=None, bits=None, bigEndian=True,
                  binaryRepresentation=BinaryRepresentation.UNSIGNED):
@@ -363,6 +363,16 @@ class BinaryValue(object):
                 return True
         return False
 
+    def __eq__(self, other):
+        if isinstance(other, BinaryValue):
+            other = other.value
+        return self.value == other
+
+    def __ne__(self, other):
+        if isinstance(other, BinaryValue):
+            other = other.value
+        return self.value != other
+
     def __cmp__(self, other):
         """Comparison against other values"""
         if isinstance(other, BinaryValue):
@@ -465,7 +475,10 @@ class BinaryValue(object):
             index = key
             if index > self._bits - 1:
                 raise IndexError('Index greater than number of bits.')
-            _binstr = self.binstr[index]
+            if self.big_endian:
+                _binstr = self.binstr[index]
+            else:
+                _binstr = self.binstr[self._bits-1-index]
         rv = BinaryValue(bits=len(_binstr), bigEndian=self.big_endian,
                          binaryRepresentation=self.binaryRepresentation)
         rv.set_binstr(_binstr)
@@ -514,7 +527,10 @@ class BinaryValue(object):
             index = key
             if index > self._bits - 1:
                 raise IndexError('Index greater than number of bits.')
-            self.binstr = self.binstr[:index] + val + self.binstr[index + 1:]
+            if self.big_endian:
+                self.binstr = self.binstr[:index] + val + self.binstr[index + 1:]
+            else:
+                self.binstr = self.binstr[0:self._bits-index-1] + val + self.binstr[self._bits-index:self._bits]
 
 if __name__ == "__main__":
     import doctest
