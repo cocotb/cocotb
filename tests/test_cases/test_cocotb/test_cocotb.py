@@ -174,8 +174,16 @@ def do_test_readwrite_in_readonly(dut):
     global exited
     yield RisingEdge(dut.clk)
     yield ReadOnly()
-    dut.clk <= 0
     yield ReadWrite()
+    exited = True
+
+
+@cocotb.coroutine
+def do_test_cached_write_in_readonly(dut):
+    global exited
+    yield RisingEdge(dut.clk)
+    yield ReadOnly()
+    dut.clk <= 0
     exited = True
 
 
@@ -199,6 +207,22 @@ def test_readwrite_in_readonly(dut):
     exited = False
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     coro = cocotb.fork(do_test_readwrite_in_readonly(dut))
+    yield [Join(coro), Timer(10000)]
+    clk_gen.kill()
+    if exited is not True:
+        raise TestFailure
+
+@cocotb.test(expect_error=True,
+             expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
+                                                             "riviera",
+                                                             "modelsim",
+                                                             "ncsim")))
+def test_cached_write_in_readonly(dut):
+    """Test doing invalid sim operation"""
+    global exited
+    exited = False
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+    coro = cocotb.fork(do_test_cached_write_in_readonly(dut))
     yield [Join(coro), Timer(10000)]
     clk_gen.kill()
     if exited is not True:
@@ -478,7 +502,7 @@ def test_binary_value(dut):
     Test out the cocotb supplied BinaryValue class for manipulating
     values in a style familiar to rtl coders.
     """
-    
+
     vec = BinaryValue(value=0,bits=16)
     dut.log.info("Checking default endianess is Big Endian.")
     if not vec.big_endian:
