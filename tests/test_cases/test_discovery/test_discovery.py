@@ -48,7 +48,7 @@ def discover_module_values(dut):
     yield Timer(0)
     count = 0
     for thing in dut:
-        thing.log.info("Found something: %s" % thing.fullname)
+        thing._log.info("Found something: %s" % thing._fullname)
         count += 1
     if count < 2:
         raise TestFailure("Expected to discover things in the DUT")
@@ -94,7 +94,7 @@ def access_single_bit(dut):
     """
     dut.stream_in_data <= 0
     yield Timer(10)
-    dut.log.info("%s = %d bits" %
+    dut._log.info("%s = %d bits" %
                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     dut.stream_in_data[2] <= 1
     yield Timer(10)
@@ -114,7 +114,7 @@ def access_single_bit_assignment(dut):
     """
     dut.stream_in_data = 0
     yield Timer(10)
-    dut.log.info("%s = %d bits" %
+    dut._log.info("%s = %d bits" %
                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     dut.stream_in_data[2] = 1
     yield Timer(10)
@@ -128,7 +128,7 @@ def access_single_bit_assignment(dut):
 def access_single_bit_erroneous(dut):
     """Access a non-existent single bit"""
     yield Timer(10)
-    dut.log.info("%s = %d bits" %
+    dut._log.info("%s = %d bits" %
                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
@@ -310,7 +310,7 @@ def access_boolean(dut):
 def skip_a_test(dut):
     """This test shouldn't execute"""
     yield Timer(10)
-    dut.log.info("%s = %d bits" %
+    dut._log.info("%s = %d bits" %
                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1

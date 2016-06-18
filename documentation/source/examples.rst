@@ -39,10 +39,10 @@ Example testbench for snipped of code from `comp.lang.verilog <https://github.co
                    int(dut.out2), int(dut.out1)]
 
             if got != expect:
-                dut.log.error('Expected %s' % expect)
-                dut.log.error('Got %s' % got)
+                dut._log.error('Expected %s' % expect)
+                dut._log.error('Got %s' % got)
                 raise TestFailure("Output didn't match")
 
-        dut.log.info('Sucessfully sent %d cycles of data' % (index + 1))
+        dut._log.info('Sucessfully sent %d cycles of data' % (index + 1))
 
 

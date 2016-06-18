@@ -36,8 +36,10 @@ import inspect
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
     simulator = None
+    _SIM_PRECISION = 1000
 else:
     import simulator
+    _SIM_PRECISION = simulator.get_precision()
 
 import cocotb.ANSI as ANSI
 from pdb import set_trace
@@ -146,8 +148,6 @@ class SimLog(object):
 
 
 class SimLogFormatter(logging.Formatter):
-
-    sim_precision = simulator.get_precision()
     """Log formatter to provide consistent log message handling."""
 
     # Justify and truncate
@@ -164,7 +164,7 @@ class SimLogFormatter(logging.Formatter):
         return string.rjust(chars)
 
     def _format(self, timeh, timel, level, record, msg):
-        time_ns = (timeh << 32 | timel) * (10.0**SimLogFormatter.sim_precision) / 1e-9
+        time_ns = (timeh << 32 | timel) * (10.0**_SIM_PRECISION) / 1e-9
         simtime = "%6.2fns" % (time_ns)
         prefix = simtime + ' ' + level + ' ' + \
             self.ljust(record.name, _RECORD_CHARS) + \

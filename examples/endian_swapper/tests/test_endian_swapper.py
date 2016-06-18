@@ -102,13 +102,13 @@ class EndianSwapperTB(object):
 
     @cocotb.coroutine
     def reset(self, duration=10000):
-        self.dut.log.debug("Resetting DUT")
+        self.dut._log.debug("Resetting DUT")
         self.dut.reset_n <= 0
         self.stream_in.bus.valid <= 0
         yield Timer(duration)
         yield RisingEdge(self.dut.clk)
         self.dut.reset_n <= 1
-        self.dut.log.debug("Out of reset")
+        self.dut._log.debug("Out of reset")
 
 
 @cocotb.coroutine
@@ -155,7 +155,7 @@ def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
         raise TestFailure("DUT recorded %d packets but tb counted %d" % (
                           pkt_count.integer, tb.pkts_sent))
     else:
-        dut.log.info("DUT correctly counted %d packets" % pkt_count.integer)
+        dut._log.info("DUT correctly counted %d packets" % pkt_count.integer)
 
     raise tb.scoreboard.result
 
@@ -202,4 +202,4 @@ def wavedrom_test(dut):
         yield tb.csr.read(0)
         yield RisingEdge(dut.clk)
         yield RisingEdge(dut.clk)
-        dut.log.info(waves.dumpj())
+        dut._log.info(waves.dumpj())
