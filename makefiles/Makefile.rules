@@ -37,10 +37,16 @@
 $(LIB_NAME)_OBJS:= $(patsubst %.c,$(LIB_OBJ_DIR)/%.o,$(filter %.c,$(SRCS)))
 $(LIB_NAME)_OBJS+= $(patsubst %.cpp,$(LIB_OBJ_DIR)/%.o,$(filter %.cpp,$(SRCS)))
 
-ifeq ($(SIM),ius)
-GCC_ARGS+= -DIUS
-GXX_ARGS+= -DIUS
+SIM_DEFINE := $(shell echo $(SIM) | tr a-z A-Z)
+
+# Use a common deine for Questa and Modelsim
+ifeq ($(SIM_DEFINE),QUESTA)
+SIM_DEFINE = MODELSIM
 endif
+
+# Add Simulator Define for compilation
+GCC_ARGS+= -D$(SIM_DEFINE)
+GXX_ARGS+= -D$(SIM_DEFINE)
 
 $(LIB_OBJ_DIR)/%.o: %.c
 	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<

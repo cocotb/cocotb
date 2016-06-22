@@ -89,7 +89,7 @@ triggers.
 .. code-block:: python
 
         # Reset the DUT
-        dut.log.debug("Resetting DUT")
+        dut._log.debug("Resetting DUT")
         dut.reset_n <= 0
         stream_in.bus.valid <= 0
         yield Timer(10000)

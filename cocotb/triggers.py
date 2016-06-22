@@ -225,7 +225,7 @@ class _Edge(GPITrigger):
         Trigger.prime(self)
 
     def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.signal.name
+        return self.__class__.__name__ + "(%s)" % self.signal._name
 
 def Edge(signal):
     return signal._e_edge
@@ -251,7 +251,7 @@ class _RisingOrFallingEdge(_Edge):
         Trigger.prime(self)
 
     def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.signal.name
+        return self.__class__.__name__ + "(%s)" % self.signal._name
 
 
 class _RisingEdge(_RisingOrFallingEdge):
@@ -313,7 +313,7 @@ class ClockCycles(_Edge):
         Trigger.prime(self)
 
     def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.signal.name
+        return self.__class__.__name__ + "(%s)" % self.signal._name
 
 
 class Combine(PythonTrigger):

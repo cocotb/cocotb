@@ -44,7 +44,7 @@ class Wavedrom(object):
                 self._hdls[name] = obj._signals[name]
             self._name = obj._name
         else:
-            self._hdls[obj.name.split(".")[-1]] = obj
+            self._hdls[obj._name.split(".")[-1]] = obj
 
         self.clear()
 

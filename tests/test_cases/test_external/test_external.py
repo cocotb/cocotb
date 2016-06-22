@@ -51,7 +51,7 @@ g_dut = None
 @cocotb.function
 def decorated_test_read(dut, signal):
     global test_count
-    dut.log.info("Inside decorated_test_read")
+    dut._log.info("Inside decorated_test_read")
     test_count = 0
     while test_count is not 5:
         yield RisingEdge(dut.clk)
@@ -62,7 +62,7 @@ def decorated_test_read(dut, signal):
 
 def test_read(dut, signal):
     global test_count
-    dut.log.info("Inside test_read")
+    dut._log.info("Inside test_read")
     while test_count is not 5:
         yield RisingEdge(dut.clk)
         test_count += 1
@@ -73,7 +73,7 @@ def hal_read(function):
     global test_count
     test_count = 0
     function(g_dut, g_dut.stream_out_ready)
-    g_dut.log.info("Cycles seen is %d" % test_count)
+    g_dut._log.info("Cycles seen is %d" % test_count)
 
 
 def create_thread(function):
@@ -94,7 +94,7 @@ def clock_gen(clock):
         clock <= 1
         yield Timer(100)
 
-    clock.log.warning("Clock generator finished!")
+    clock._log.warning("Clock generator finished!")
 
 
 @cocotb.test(expect_fail=False, skip=True)
@@ -110,7 +110,7 @@ def test_callable(dut):
     global test_count
     g_dut = dut
     create_thread(decorated_test_read)
-    dut.log.info("Test thread created")
+    dut._log.info("Test thread created")
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield Timer(100000)
     clk_gen.kill()
@@ -132,7 +132,7 @@ def test_callable_fail(dut):
     global test_count
     g_dut = dut
     create_thread(test_read)
-    dut.log.info("Test thread created")
+    dut._log.info("Test thread created")
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield Timer(100000)
     clk_gen.kill()
@@ -141,14 +141,14 @@ def test_callable_fail(dut):
 
 
 def test_ext_function(dut):
-    # dut.log.info("Sleeping")
+    # dut._log.info("Sleeping")
     return 2
 
 
 @cocotb.function
 def yield_to_readwrite(dut):
     yield RisingEdge(dut.clk)
-    dut.log.info("Returning from yield_to_readwrite")
+    dut._log.info("Returning from yield_to_readwrite")
     raise ReturnValue(2)
 
 
@@ -158,7 +158,7 @@ def test_ext_function_access(dut):
 
 def test_ext_function_return(dut):
     value = dut.clk.value.integer
-    # dut.log.info("Sleeping and returning %s" % value)
+    # dut._log.info("Sleeping and returning %s" % value)
     # time.sleep(0.2)
     return value
 
@@ -179,7 +179,7 @@ def test_ext_call_return(dut):
     mon = cocotb.scheduler.queue(clock_monitor(dut))
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     value = yield external(test_ext_function)(dut)
-    dut.log.info("Value was %d" % value)
+    dut._log.info("Value was %d" % value)
 
 
 @cocotb.test(expect_fail=False)
@@ -195,9 +195,9 @@ def test_ext_call_nreturn(dut):
 def test_multiple_externals(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     value = yield external(test_ext_function)(dut)
-    dut.log.info("First one completed")
+    dut._log.info("First one completed")
     value = yield external(test_ext_function)(dut)
-    dut.log.info("Second one completed")
+    dut._log.info("Second one completed")
 
 
 @cocotb.test(expect_fail=False)
@@ -205,7 +205,7 @@ def test_external_from_readonly(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
     yield ReadOnly()
-    dut.log.info("In readonly")
+    dut._log.info("In readonly")
     value = yield external(test_ext_function_access)(dut)
 
 

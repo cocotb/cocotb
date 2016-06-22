@@ -30,9 +30,27 @@
 # Common Makefile for Aldec Riviera-PRO simulator
 
 ifeq ($(GUI),1)
-    CMD := riviera -nosplash
+    CMD_BIN := riviera
 else
-    CMD := vsimsa
+    CMD_BIN := vsimsa
+endif
+
+ifdef ALDEC_BIN_DIR
+    CMD := $(shell which $(ALDEC_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error "Unable to locate command >$(CMD_BIN)<")
+else
+	ALDEC_BIN_DIR := $(shell dirname $(CMD))
+    export ALDEC_BIN_DIR
+endif
+
+ifeq ($(GUI),1)
+    CMD += -nosplash
 endif
 
 RTL_LIBRARY ?= work
@@ -96,13 +114,6 @@ ifeq ($(COVERAGE),1)
 	echo "acdb report -db $(RTL_LIBRARY).acdb -html -o coverage/acdb_report.html" >> $@
 	echo "acdb report -db $(RTL_LIBRARY).acdb -txt -o coverage/acdb_report.txt" >> $@
 endif
-endif
-
-# auto-detect riviera dir from system path
-export ALDEC_BIN_DIR = $(shell dirname $(shell which riviera))
-
-ifeq ($(ALDEC_BIN_DIR),)
-$(error "Directory containing Riviera-Pro binaries must be included in system path")
 endif
 
 ifeq ($(OS),Msys)

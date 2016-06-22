@@ -55,7 +55,7 @@ FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface *impl,
 
 int FliTimedCbHdl::arm_callback(void)
 {
-    mti_ScheduleWakeup(m_proc_hdl, m_time_ps);
+    mti_ScheduleWakeup64(m_proc_hdl, m_time_ps);
     m_sensitised = true;
     set_call_state(GPI_PRIMED);
     return 0;

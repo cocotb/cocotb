@@ -38,13 +38,13 @@ import io_module
 
 @cocotb.coroutine
 def reset(dut, duration=10000):
-    dut.log.debug("Resetting DUT")
+    dut._log.debug("Resetting DUT")
     dut.reset_n = 0
     dut.stream_in_valid = 0
     yield Timer(duration)
     yield RisingEdge(dut.clk)
     dut.reset_n = 1
-    dut.log.debug("Out of reset")
+    dut._log.debug("Out of reset")
 
 
 @cocotb.test()
@@ -75,7 +75,7 @@ def initial_hal_test(dut, debug=True):
     io_module.set_write_function(write)
     io_module.set_read_function(read)
 
-    dut.log.info("READ/WRITE functions set up, initialising HAL")
+    dut._log.info("READ/WRITE functions set up, initialising HAL")
 
     state = hal.endian_swapper_init(0)
 
@@ -89,4 +89,4 @@ def initial_hal_test(dut, debug=True):
         raise TestFailure("Byteswapping wasn't enabled after calling "
                           "endian_swapper_enable")
 
-    dut.log.info("HAL call endian_swapper_enable successfully enabled the DUT")
+    dut._log.info("HAL call endian_swapper_enable successfully enabled the DUT")

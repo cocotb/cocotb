@@ -39,14 +39,13 @@ else
 
 TOPLEVEL = tb_top
 
-PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
-
 ifeq ($(OS),Msys)
-PWD=$(shell sh -c 'pwd -W')
+WPWD=$(shell sh -c 'pwd -W')
 else
-PWD=$(shell pwd)
+WPWD=$(shell pwd)
 endif
+
+COCOTB?=$(WPWD)/../../..
 
 VERILOG_SOURCES = $(COCOTB)/tests/designs/plusargs_module/tb_top.v
 
