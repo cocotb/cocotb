@@ -29,7 +29,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """Collection of handy functions"""
 
+import os
 import ctypes
+
+# For autodocumentation don't need the extension modules
+if "SPHINX_BUILD" in os.environ:
+    simulator = None
+    _SIM_PRECISION = 1000
+else:
+    import simulator
+    _SIM_PRECISION = simulator.get_precision() # request once and cache
 
 
 # python2 to python3 helper functions
@@ -40,6 +49,40 @@ def get_python_integer_types():
         return (int,)  # python 3
     else:
         return (int, long)  # python 2
+
+# Simulator helper functions
+def get_sim_time(units=None):
+    """Retrieves the simulation time from the simulator
+
+    Kwargs:
+        units (str):  String specifying the units of the result. (None,'fs','ps','ns','us','ms','sec','min','hr')
+                      None will return the raw simulation time.
+
+    Returns:
+        The simulation time in the specified units
+    """
+    scale = {
+        'fs' :    1.0e-15,
+        'ps' :    1.0e-12,
+        'ns' :    1.0e-9,
+        'us' :    1.0e-6,
+        'ms' :    1.0e-3,
+        'sec':    1.0,
+        'min':   60.0,
+        'hr' : 3600.0}
+
+    timeh, timel = simulator.get_sim_time()
+
+    result = (timeh << 32 | timel)
+
+    if units is not None:
+        units_lwr = units.lower()
+        if units_lwr not in scale:
+            raise ValueError("Invalid unit ({}) provided".format(units))
+        else:
+            result = result * (10.0**_SIM_PRECISION) / scale[units_lwr]
+
+    return result
 
 # Ctypes helper functions
 

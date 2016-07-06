@@ -33,13 +33,8 @@ import os
 import sys
 import logging
 import inspect
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-    _SIM_PRECISION = 1000
-else:
-    import simulator
-    _SIM_PRECISION = simulator.get_precision()
+
+from cocotb.utils import get_sim_time
 
 import cocotb.ANSI as ANSI
 from pdb import set_trace
@@ -163,8 +158,8 @@ class SimLogFormatter(logging.Formatter):
             return ".." + string[(chars - 2) * -1:]
         return string.rjust(chars)
 
-    def _format(self, timeh, timel, level, record, msg):
-        time_ns = (timeh << 32 | timel) * (10.0**_SIM_PRECISION) / 1e-9
+    def _format(self, level, record, msg):
+        time_ns = get_sim_time('ns')
         simtime = "%6.2fns" % (time_ns)
         prefix = simtime + ' ' + level + ' ' + \
             self.ljust(record.name, _RECORD_CHARS) + \
@@ -184,9 +179,8 @@ class SimLogFormatter(logging.Formatter):
 
         msg = str(msg)
         level = record.levelname.ljust(_LEVEL_CHARS)
-        timeh, timel = simulator.get_sim_time()
 
-        return self._format(timeh, timel, level, record, msg)
+        return self._format(level, record, msg)
 
 
 class SimColourLogFormatter(SimLogFormatter):
@@ -212,5 +206,4 @@ class SimColourLogFormatter(SimLogFormatter):
         level = (SimColourLogFormatter.loglevel2colour[record.levelno] %
                  record.levelname.ljust(_LEVEL_CHARS))
 
-        timeh, timel = simulator.get_sim_time()
-        return self._format(timeh, timel, level, record, msg)
+        return self._format(level, record, msg)
