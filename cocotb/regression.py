@@ -56,6 +56,7 @@ import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
 from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
+from cocotb.utils import get_sim_time
 from cocotb.xunit_reporter import XUnitReporter
 
 
@@ -145,7 +146,9 @@ class RegressionManager(object):
                         self.log.info("Skipping test %s" % thing.name)
                         self.xunit.add_testcase(name=thing.name,
                                                 classname=module_name,
-                                                time="0.0")
+                                                time="0.0",
+                                                sim_time_ns="0.0",
+                                                ratio_time="0.0")
                         self.xunit.add_skipped()
                         self.skipped += 1
                     else:
@@ -190,10 +193,14 @@ class RegressionManager(object):
 
         Args: result (TestComplete exception)
         """
+        real_time   = time.time() - self._running_test.start_time
+        sim_time_ns = get_sim_time('ns') - self._running_test.start_sim_time
+        ratio_time  = sim_time_ns / real_time
         self.xunit.add_testcase(name=self._running_test.funcname,
                                 classname=self._running_test.module,
-                                time=repr(time.time() -
-                                          self._running_test.start_time))
+                                time=repr(real_time),
+                                sim_time_ns=repr(sim_time_ns),
+                                ratio_time=repr(ratio_time))
 
         running_test_funcname = self._running_test.funcname
 

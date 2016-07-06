@@ -39,6 +39,7 @@ from cocotb.log import SimLog
 from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error)
+from cocotb.utils import get_sim_time
 
 
 def public(f):
@@ -175,6 +176,7 @@ class RunningTest(RunningCoroutine):
         RunningCoroutine.__init__(self, inst, parent)
         self.started = False
         self.start_time = 0
+        self.start_sim_time = 0
         self.expect_fail = parent.expect_fail
         self.expect_error = parent.expect_error
         self.skip = parent.skip
@@ -188,6 +190,7 @@ class RunningTest(RunningCoroutine):
             self.log.info("Starting test: \"%s\"\nDescription: %s" %
                           (self.funcname, self.__doc__))
             self.start_time = time.time()
+            self.start_sim_time = get_sim_time('ns')
             self.started = True
         try:
             self.log.debug("Sending trigger %s" % (str(value)))
