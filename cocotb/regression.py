@@ -89,6 +89,8 @@ class RegressionManager(object):
 
     def initialise(self):
 
+        self.start_time = time.time()
+        self.test_results = []
         self.ntests = 0
         self.count = 1
         self.skipped = 0
@@ -151,6 +153,7 @@ class RegressionManager(object):
                                                 ratio_time="0.0")
                         self.xunit.add_skipped()
                         self.skipped += 1
+                        self._store_test_result(module_name, thing.name, None, 0.0, 0.0, 0.0)
                     else:
                         self._queue.append(test)
                         self.ntests += 1
@@ -176,6 +179,8 @@ class RegressionManager(object):
             self.log.info("Writing coverage data")
             self._cov.save()
             self._cov.html_report()
+        self._log_test_summary()
+        self._log_sim_summary()
         self.log.info("Shutting down...")
         self.xunit.write()
         simulator.stop_simulator()
@@ -210,6 +215,8 @@ class RegressionManager(object):
                           (running_test_funcname, result.__class__.__name__))
             return result_was
 
+        result_pass = True
+
         if (isinstance(result, TestSuccess) and
                 not self._running_test.expect_fail and
                 not self._running_test.expect_error):
@@ -227,6 +234,7 @@ class RegressionManager(object):
                                    stderr="\n".join(
                                    self._running_test.error_messages))
             self.failures += 1
+            result_pass = False
 
         elif isinstance(result, TestSuccess):
             self.log.error("Test passed but we expected a failure: " +
@@ -235,6 +243,7 @@ class RegressionManager(object):
                                    stderr="\n".join(
                                    self._running_test.error_messages))
             self.failures += 1
+            result_pass = False
 
         elif isinstance(result, TestError) and self._running_test.expect_error:
             self.log.info("Test errored as expected: " + _result_was())
@@ -246,6 +255,7 @@ class RegressionManager(object):
                 self.log.error("Test error has lead to simulator shuttting us "
                                "down")
                 self.failures += 1
+                self._store_test_result(self._running_test.module, self._running_test.funcname, False, sim_time_ns, real_time, ratio_time)
                 self.tear_down()
                 return
 
@@ -255,6 +265,9 @@ class RegressionManager(object):
                                    stderr="\n".join(
                                    self._running_test.error_messages))
             self.failures += 1
+            result_pass = False
+
+        self._store_test_result(self._running_test.module, self._running_test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
 
         self.execute()
 
@@ -274,6 +287,79 @@ class RegressionManager(object):
             self.count += 1
         else:
             self.tear_down()
+
+    def _log_test_summary(self):
+        TEST_FIELD   = 'TEST'
+        RESULT_FIELD = 'PASS/FAIL'
+        SIM_FIELD    = 'SIM TIME(NS)'
+        REAL_FIELD   = 'REAL TIME(S)'
+        RATIO_FIELD  = 'RATIO(NS/S)'
+
+        TEST_FIELD_LEN   = max(len(TEST_FIELD),len(max([x['test'] for x in self.test_results],key=len)))
+        RESULT_FIELD_LEN = len(RESULT_FIELD)
+        SIM_FIELD_LEN    = len(SIM_FIELD)
+        REAL_FIELD_LEN   = len(REAL_FIELD)
+        RATIO_FIELD_LEN  = len(RATIO_FIELD)
+
+        LINE_LEN = 3 + TEST_FIELD_LEN + 2 + RESULT_FIELD_LEN + 2 + SIM_FIELD_LEN + 2 + REAL_FIELD_LEN + 2 + RATIO_FIELD_LEN + 3
+
+        LINE_SEP = "*"*LINE_LEN+"\n"
+
+        summary = ""
+        summary += LINE_SEP
+        summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(a=TEST_FIELD,   a_len=TEST_FIELD_LEN,
+                                                                                                         b=RESULT_FIELD, b_len=RESULT_FIELD_LEN,
+                                                                                                         c=SIM_FIELD,    c_len=SIM_FIELD_LEN,
+                                                                                                         d=REAL_FIELD,   d_len=REAL_FIELD_LEN,
+                                                                                                         e=RATIO_FIELD,  e_len=RATIO_FIELD_LEN)
+        summary += LINE_SEP
+        for result in self.test_results:
+            dflt   = ANSI.DEFAULT_FG + ANSI.DEFAULT_BG
+            hilite = dflt
+
+            if result['pass'] is None:
+                pass_fail_str = "N/A"
+            elif result['pass']:
+                pass_fail_str = "PASS"
+            else:
+                pass_fail_str = "FAIL"
+                hilite = ANSI.WHITE_FG + ANSI.RED_BG
+
+            summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **{end}\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
+                                                                                                                                     b=pass_fail_str,    b_len=RESULT_FIELD_LEN,
+                                                                                                                                     c=result['sim'],    c_len=SIM_FIELD_LEN-1,
+                                                                                                                                     d=result['real'],   d_len=REAL_FIELD_LEN-1,
+                                                                                                                                     e=result['ratio'],  e_len=RATIO_FIELD_LEN-1,
+                                                                                                                                     start=hilite,       end=dflt)
+        summary += LINE_SEP
+
+        self.log.info(summary)
+
+    def _log_sim_summary(self):
+        real_time   = time.time() - self.start_time
+        sim_time_ns = get_sim_time('ns')
+        ratio_time  = sim_time_ns / real_time
+
+        summary = ""
+
+        summary += "*************************************************************************************\n"
+        summary += "**                                 ERRORS : {:<39}**\n".format(self.failures)
+        summary += "*************************************************************************************\n"
+        summary += "**                               SIM TIME : {:<39}**\n".format('{:.2f} NS'.format(sim_time_ns))
+        summary += "**                              REAL TIME : {:<39}**\n".format('{:.2f} S'.format(real_time))
+        summary += "**                        SIM / REAL TIME : {:<39}**\n".format('{:.2f} NS/S'.format(ratio_time))
+        summary += "*************************************************************************************\n"
+
+        self.log.info(summary)
+
+    def _store_test_result(self, module_name, test_name, result_pass, sim_time, real_time, ratio):
+        result = {
+            'test'  : '.'.join([module_name, test_name]),
+            'pass'  : result_pass,
+            'sim'   : sim_time,
+            'real'  : real_time,
+            'ratio' : ratio}
+        self.test_results.append(result)
 
 
 def _create_test(function, name, documentation, mod, *args, **kwargs):
