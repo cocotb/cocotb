@@ -55,7 +55,13 @@ FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface *impl,
 
 int FliTimedCbHdl::arm_callback(void)
 {
-    mti_ScheduleWakeup64(m_proc_hdl, m_time_ps);
+    #if defined(__LP64__) || defined(_WIN64)
+        mti_ScheduleWakeup64(m_proc_hdl, m_time_ps);
+    #else
+        mtiTime64T m_time_union_ps;
+        MTI_TIME64_ASGN(m_time_union_ps, (mtiInt32T)((m_time_ps) >> 32), (mtiUInt32T)(m_time_ps));
+        mti_ScheduleWakeup64(m_proc_hdl, m_time_union_ps);
+    #endif
     m_sensitised = true;
     set_call_state(GPI_PRIMED);
     return 0;
