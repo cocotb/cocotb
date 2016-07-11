@@ -54,7 +54,7 @@ endif
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && $(CMD) -a $(VHDL_SOURCES) && $(CMD) -e $(TOPLEVEL)
+	cd $(SIM_BUILD) && $(CMD) -a --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && $(CMD) -e --work=$(RTL_LIBRARY) $(TOPLEVEL)
 
 results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	cd $(SIM_BUILD); \
