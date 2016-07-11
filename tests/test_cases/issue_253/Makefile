@@ -32,7 +32,7 @@ all:
 	@echo "Skipping issue_253 only runs on icarus"
 else
 
-include $(COCOTB)/tests/designs/sample_module/Makefile
+include ../../designs/sample_module/Makefile
 
 MODULE = issue_253
 
@@ -61,6 +61,7 @@ no_top_level: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VP
 	vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 	mkdir -p $@_result && mv results.xml $@_result/
 
+endif
+
 clean::
 	@rm -rf empty_top_level_result no_top_level_result notset_top_level_result 
-endif

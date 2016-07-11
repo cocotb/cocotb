@@ -30,11 +30,11 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    += -I$(MODELSIM_BIN_DIR)/../include
 GXX_ARGS    += -DFLI_CHECKING -DUSE_CACHE
-LIBS        := -lgpilog -lgpi -lstdc++
+LIBS        := $(EXTRA_LIBS) -lgpilog -lgpi -lstdc++
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libfli
 
-SRCS        := FliImpl.cpp
+SRCS        := FliImpl.cpp FliCbHdl.cpp FliObjHdl.cpp
 
 all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 

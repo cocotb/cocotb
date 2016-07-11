@@ -29,8 +29,27 @@
 
 # Common Makefile for Cadence Incisive
 
-EXTRA_ARGS += -64bit
-EXTRA_ARGS += -nclibdirname $(SIM_BUILD)
+CMD_BIN := irun
+
+ifdef IUS_BIN_DIR
+    CMD := $(shell which $(IUS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error "Unable to locate command >$(CMD_BIN)<")
+else
+	IUS_BIN_DIR := $(shell dirname $(CMD))
+    export IUS_BIN_DIR
+endif
+
+ifneq ($(ARCH),i686)
+EXTRA_ARGS += -64
+endif
+
+EXTRA_ARGS += -nclibdirname $(SIM_BUILD) -plinowarn
 
 ifeq ($(GUI),1)
     EXTRA_ARGS += -gui
@@ -38,29 +57,43 @@ else
     EXTRA_ARGS +=
 endif
 
-ifeq ($(GPI_IMPL),vpi)
+# IUS loads vpi regardless of what is asked for, then VHPI if asked to
+# Which does not play nice with out multi language. So we supply vhpi
+# GPI_EXTRA if needed.
+
+GPI_EXTRA:=
+ifeq ($(TOPLEVEL_LANG),verilog)
     GPI_ARGS = -loadvpi $(LIB_DIR)/libvpi
     EXTRA_ARGS += -sv -v93
-    HDL_SOURCES = $(VERILOG_SOURCES) $(VHDL_SOURCES)
+    HDL_SOURCES = $(VERILOG_SOURCES)
+    ROOT_LEVEL = $(TOPLEVEL)
+ifneq ($(VHDL_SOURCES),)
+    HDL_SOURCES += $(VHDL_SOURCES)
+    GPI_EXTRA = vhpi 
 endif
-
-ifeq ($(GPI_IMPL),vhpi)
-    GPI_ARGS = -loadvhpi $(LIB_DIR)/libvhpi:vhpi_startup_routines_bootstrap
-    #EXTRA_ARGS += -cdslib cds.lib
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    GPI_EXTRA = vhpi
     EXTRA_ARGS += -v93
-    EXTRA_ARGS += -top worklib.$(TOPLEVEL)
+    EXTRA_ARGS += -top $(TOPLEVEL)
+    MAKE_LIB = -makelib $(TOPLEVEL)
     HDL_SOURCES = $(VHDL_SOURCES)
+ifneq ($(VERILOG_SOURCES),)
+    HDL_SOURCES += $(VERILOG_SOURCES)
+endif
+else
+   $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
 GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
 
-ifndef GPI_ARGS
-   $(error "Unable to determine appropriate GPI layer to use")
-endif
-
 results.xml: $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(GPI_LIB)
-	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
-               irun $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(HDL_SOURCES) $(PLUSARGS)
+	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
+	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
+	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	$(CMD) $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 clean::
-	-rm -rf $(SIM_BUILD)
+	@rm -rf $(SIM_BUILD)
+	@rm -rf irun.*
+	@rm -rf ncsim.*
+	@rm -rf gdb_cmd_ncsim

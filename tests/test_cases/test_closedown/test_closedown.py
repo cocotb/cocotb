@@ -40,7 +40,7 @@ from cocotb.clock import Clock
 
 def test_read(dut):
     global test_count
-    dut.log.info("Inside test_read")
+    dut._log.info("Inside test_read")
     while test_count is not 5:
         yield RisingEdge(dut.clk)
         test_count += 1
@@ -56,7 +56,7 @@ def clock_mon(dut):
     yield RisingEdge(dut.clk)
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_error=True)
 def test_failure_from_system_task(dut):
     """Allow the dut to call $fail_test() from verilog"""
     clock = Clock(dut.clk, 100)

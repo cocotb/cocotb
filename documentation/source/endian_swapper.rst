@@ -150,7 +150,7 @@ We want to run different variations of tests but they will all have a very simil
             raise TestFailure("DUT recorded %d packets but tb counted %d" % (
                             pkt_count.integer, tb.pkts_sent))
         else:
-            dut.log.info("DUT correctly counted %d packets" % pkt_count.integer)
+            dut._log.info("DUT correctly counted %d packets" % pkt_count.integer)
         
         raise tb.scoreboard.result
 

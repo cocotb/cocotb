@@ -26,7 +26,6 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
-#include <vector>
 
 extern "C" {
 
@@ -36,29 +35,26 @@ static VpiImpl *vpi_table;
 
 }
 
+#define CASE_STR(_X) \
+    case _X: return #_X
+
 const char *VpiImpl::reason_to_string(int reason)
 {
     switch (reason) {
-    case cbValueChange:
-        return "cbValueChange";
-    case cbAtStartOfSimTime:
-        return "cbAtStartOfSimTime";
-    case cbReadWriteSynch:
-        return "cbReadWriteSynch";
-    case cbReadOnlySynch:
-        return "cbReadOnlySynch";
-    case cbNextSimTime:
-        return "cbNextSimTime";
-    case cbAfterDelay:
-        return "cbAfterDelay";
-    case cbStartOfSimulation:
-        return "cbStartOfSimulation";
-    case cbEndOfSimulation:
-        return "cbEndOfSimulation";
-    default:
-        return "unknown";
+        CASE_STR(cbValueChange);
+        CASE_STR(cbAtStartOfSimTime);
+        CASE_STR(cbReadWriteSynch);
+        CASE_STR(cbReadOnlySynch);
+        CASE_STR(cbNextSimTime);
+        CASE_STR(cbAfterDelay);
+        CASE_STR(cbStartOfSimulation);
+        CASE_STR(cbEndOfSimulation);
+
+        default: return "unknown";
     }
 }
+
+#undef CASE_STR
 
 void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 {
@@ -70,7 +66,72 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vpi_time_s.low;
 }
 
-GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &name)
+void VpiImpl::get_sim_precision(int32_t *precision)
+{
+    *precision = vpi_get(vpiTimePrecision, NULL);
+}
+
+gpi_objtype_t to_gpi_objtype(int32_t vpitype)
+{
+    switch (vpitype) {
+        case vpiNet:
+        case vpiNetBit:
+        case vpiReg:
+        case vpiRegBit:
+            return GPI_REGISTER;
+
+        case vpiRealVar:
+            return GPI_REAL;
+
+        case vpiInterfaceArray:
+        case vpiPackedArrayVar:
+        case vpiRegArray:
+        case vpiNetArray:
+        case vpiGenScopeArray:
+            return GPI_ARRAY;
+
+        case vpiEnumNet:
+        case vpiEnumVar:
+            return GPI_ENUM;
+
+        case vpiIntVar:
+        case vpiIntegerVar:
+        case vpiIntegerNet:
+            return GPI_INTEGER;
+
+        case vpiParameter:
+            return GPI_PARAMETER;
+
+
+        case vpiStructVar:
+        case vpiStructNet:
+            return GPI_STRUCTURE;
+
+        case vpiModport:
+        case vpiInterface:
+        case vpiModule:
+        case vpiRefObj:
+        case vpiPort:
+        case vpiAlways:
+        case vpiFunction:
+        case vpiInitial:
+        case vpiGate:
+        case vpiPrimTerm:
+        case vpiGenScope:
+            return GPI_MODULE;
+
+        case vpiStringVar:
+            return GPI_STRING;
+
+        default:
+            LOG_DEBUG("Unable to map VPI type %d onto GPI type", vpitype);
+            return GPI_UNKNOWN;
+    }
+}
+
+GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
+                                               std::string &name,
+                                               std::string &fq_name)
 {
     int32_t type;
     GpiObjHdl *new_obj = NULL;
@@ -85,71 +146,246 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl, std::string &n
         case vpiNetBit:
         case vpiReg:
         case vpiRegBit:
-        case vpiParameter:
-        case vpiRegArray:
-        case vpiNetArray:
         case vpiEnumNet:
         case vpiEnumVar:
         case vpiIntVar:
-            new_obj = new VpiSignalObjHdl(this, new_hdl);
+        case vpiIntegerVar:
+        case vpiIntegerNet:
+        case vpiRealVar:
+            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
+            break;
+        case vpiParameter:
+            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), true);
+            break;
+        case vpiRegArray:
+        case vpiNetArray:
+        case vpiInterfaceArray:
+        case vpiPackedArrayVar:
+            new_obj = new VpiArrayObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiStructVar:
+        case vpiStructNet:
         case vpiModule:
         case vpiInterface:
         case vpiModport:
-        case vpiInterfaceArray:
         case vpiRefObj:
-        case vpiPackedArrayVar:
-            new_obj = new GpiObjHdl(this, new_hdl);
+        case vpiPort:
+        case vpiAlways:
+        case vpiFunction:
+        case vpiInitial:
+        case vpiGate:
+        case vpiPrimTerm:
+        case vpiGenScope:
+        case vpiGenScopeArray: {
+            std::string hdl_name = vpi_get_str(vpiName, new_hdl);
+
+            if (hdl_name != name) {
+                LOG_DEBUG("Found pseudo-region %s", fq_name.c_str());
+                new_obj = new GpiObjHdl(this, new_hdl, GPI_GENARRAY);
+            } else {
+                new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
+            }
             break;
+        }
         default:
-            LOG_WARN("Not able to map type %d to object.", type);
+            /* We should only print a warning here if the type is really verilog,
+               It could be vhdl as some simulators allow qurying of both languages
+               via the same handle
+               */
+            const char *type_name = vpi_get_str(vpiType, new_hdl);
+            std::string unknown = "vpiUnknown";
+            if (type_name && (unknown != type_name)) {
+                LOG_DEBUG("VPI: Not able to map type %s(%d) to object.", type_name, type);
+            } else {
+                LOG_DEBUG("VPI: Simulator does not know this type (%d) via VPI", type);
+            }
             return NULL;
     }
 
-    new_obj->initialise(name);
+    new_obj->initialise(name, fq_name);
 
+    LOG_DEBUG("VPI: Created object with type was %s(%d)",
+              vpi_get_str(vpiType, new_hdl), type);
+
+    return new_obj;
+}
+
+GpiObjHdl* VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
+{
+    LOG_DEBUG("Trying to convert raw to VPI handle");
+
+    vpiHandle new_hdl = (vpiHandle)raw_hdl;
+
+    const char *c_name = vpi_get_str(vpiName, new_hdl);
+    if (!c_name) {
+        LOG_DEBUG("Unable to query name of passed in handle");
+        return NULL;
+    }
+
+    std::string name = c_name;
+    std::string fq_name = parent->get_fullname() + "." + name;
+
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
+    if (new_obj == NULL) {
+        vpi_free_object(new_hdl);
+        LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
+        return NULL;
+    }
     return new_obj;
 }
 
 GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vpiHandle new_hdl;
-    std::string fq_name = parent->get_name() + "." + name;
+    std::string fq_name = parent->get_fullname() + "." + name;
     std::vector<char> writable(fq_name.begin(), fq_name.end());
     writable.push_back('\0');
 
     new_hdl = vpi_handle_by_name(&writable[0], NULL);
+
+    /* No need to iterate to look for generate loops as the tools will at least find vpiGenScopeArray */
     if (new_hdl == NULL) {
         LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
         return NULL;
     }
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, fq_name);
+
+    /* Generate Loops have inconsistent behavior across vpi tools.  A "name"
+     * without an index, i.e. dut.loop vs dut.loop[0], will find a handle to vpiGenScopeArray, 
+     * but not all tools support iterating over the vpiGenScopeArray.  We don't want to create
+     * a GpiObjHdl to this type of vpiHandle.
+     *
+     * If this unique case is hit, we need to create the Pseudo-region, with the handle
+     * being equivalent to the parent handle.
+     */
+    if (vpi_get(vpiType, new_hdl) == vpiGenScopeArray) {
+        vpi_free_object(new_hdl);
+
+        new_hdl = parent->get_handle<vpiHandle>();
+    }
+
+
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to query fetch object %s", fq_name.c_str());
+        LOG_DEBUG("Unable to fetch object %s", fq_name.c_str());
         return NULL;
     }
     return new_obj;
 }
 
-GpiObjHdl* VpiImpl::native_check_create(uint32_t index, GpiObjHdl *parent)
+GpiObjHdl* VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 {
-    GpiObjHdl *parent_hdl = sim_to_hdl<GpiObjHdl*>(parent);
-    vpiHandle vpi_hdl = parent_hdl->get_handle<vpiHandle>();
-    vpiHandle new_hdl;
+    vpiHandle vpi_hdl = parent->get_handle<vpiHandle>();
+    vpiHandle new_hdl = NULL;
 
-    new_hdl = vpi_handle_by_index(vpi_hdl, index);
-    if (new_hdl == NULL) {
-        LOG_DEBUG("Unable to vpi_get_handle_by_index %d", index);
+    char buff[14]; // needs to be large enough to hold -2^31 to 2^31-1 in string form ('['+'-'10+']'+'\0')
+
+    gpi_objtype_t obj_type = parent->get_type();
+
+    if (obj_type == GPI_GENARRAY) {
+        snprintf(buff, 14, "[%d]", index);
+
+        LOG_DEBUG("Native check create for index %d of parent %s (pseudo-region)",
+                  index,
+                  parent->get_name_str());
+
+        std::string idx      = buff;
+        std::string hdl_name = parent->get_fullname() + idx;
+        std::vector<char> writable(hdl_name.begin(), hdl_name.end());
+        writable.push_back('\0');
+
+        new_hdl = vpi_handle_by_name(&writable[0], NULL);
+    } else if (obj_type == GPI_REGISTER || obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+        new_hdl = vpi_handle_by_index(vpi_hdl, index);
+
+        /* vpi_handle_by_index() doesn't work for all simulators when dealing with a two-dimensional array.
+         *    For example:
+         *       wire [7:0] sig_t4 [0:1][0:2];
+         *
+         *    Assume vpi_hdl is for "sig_t4":
+         *       vpi_handl_by_index(vpi_hdl, 0);   // Returns a handle to sig_t4[0] for IUS, but NULL on Questa
+         *
+         *    Questa only works when both indicies are provided, i.e. will need a pseudo-handle to behave like the first index.
+         */
+        if (new_hdl == NULL) {
+            int left       = parent->get_range_left();
+            int right      = parent->get_range_right();
+            bool ascending = (left < right);
+
+            LOG_DEBUG("Unable to find handle through vpi_handle_by_index(), attempting second method");
+
+            if (( ascending && (index < left || index > right)) ||
+                (!ascending && (index > left || index < right))) {
+                LOG_ERROR("Invalid Index - Index %d is not in the range of [%d:%d]", index, left, right);
+                return NULL;
+            }
+
+            /* Get the number of constraints to determine if the index will result in a pseudo-handle or should be found */
+            vpiHandle p_hdl = parent->get_handle<vpiHandle>();
+            vpiHandle it         = vpi_iterate(vpiRange, p_hdl);
+            int constraint_cnt   = 0;
+            if (it != NULL) {
+                while (vpi_scan(it) != NULL) {
+                    ++constraint_cnt;
+                }
+            } else {
+                constraint_cnt = 1;
+            }
+
+            std::string act_hdl_name = vpi_get_str(vpiName, p_hdl);
+
+            /* Removing the act_hdl_name from the parent->get_name() will leave the psuedo-indices */
+            if (act_hdl_name.length() < parent->get_name().length()) {
+                std::string idx_str = parent->get_name().substr(act_hdl_name.length());
+
+                while (idx_str.length() > 0) {
+                    std::size_t found = idx_str.find_first_of("]");
+
+                    if (found != std::string::npos) {
+                        --constraint_cnt;
+                        idx_str = idx_str.substr(found+1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            snprintf(buff, 14, "[%d]", index);
+
+            std::string idx = buff;
+            std::string hdl_name = parent->get_fullname() + idx;
+
+            std::vector<char> writable(hdl_name.begin(), hdl_name.end());
+            writable.push_back('\0');
+
+            new_hdl = vpi_handle_by_name(&writable[0], NULL);
+
+            /* Create a pseudo-handle if not the last index into a multi-dimensional array */
+            if (new_hdl == NULL && constraint_cnt > 1) {
+                new_hdl = p_hdl;
+            }
+        }
+    } else {
+        LOG_ERROR("VPI: Parent of type %s must be of type GPI_GENARRAY, GPI_REGISTER, GPI_ARRAY, or GPI_STRING to have an index.", parent->get_type_str());
         return NULL;
     }
-    std::string name = vpi_get_str(vpiFullName, new_hdl);
-    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name);
+
+
+    if (new_hdl == NULL) {
+        LOG_DEBUG("Unable to vpi_get_handle_by_index %s[%d]", parent->get_name_str(), index);
+        return NULL;
+    }
+
+    snprintf(buff, 14, "[%d]", index);
+
+    std::string idx = buff;
+    std::string name = parent->get_name()+idx;
+    std::string fq_name = parent->get_fullname()+idx;
+    GpiObjHdl* new_obj = create_gpi_obj_from_handle(new_hdl, name, fq_name);
     if (new_obj == NULL) {
         vpi_free_object(new_hdl);
-        LOG_ERROR("Unable to fetch object below entity (%s) at index (%d)",
-                                 parent->get_name_str(), index);
+        LOG_DEBUG("Unable to fetch object below entity (%s) at index (%d)",
+                  parent->get_name_str(), index);
         return NULL;
     }
     return new_obj;
@@ -165,6 +401,10 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     // vpi_iterate with a ref of NULL returns the top level module
     iterator = vpi_iterate(vpiModule, NULL);
     check_vpi_error();
+    if (!iterator) {
+        LOG_INFO("Nothing visible via VPI");
+        return NULL;
+    }
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
 
@@ -184,8 +424,8 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     }
 
     root_name = vpi_get_str(vpiFullName, root);
-    rv = new GpiObjHdl(this, root);
-    rv->initialise(root_name);
+    rv = new GpiObjHdl(this, root, to_gpi_objtype(vpi_get(vpiType, root)));
+    rv->initialise(root_name, root_name);
 
     return rv;
 
@@ -206,6 +446,25 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     return NULL;
 }
 
+GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type)
+{
+    GpiIterator *new_iter;
+    switch (type) {
+        case GPI_OBJECTS:
+            new_iter = new VpiIterator(this, obj_hdl);
+            break;
+        case GPI_DRIVERS:
+            new_iter = new VpiSingleIterator(this, obj_hdl, vpiDriver);
+            break;
+        case GPI_LOADS:
+            new_iter = new VpiSingleIterator(this, obj_hdl, vpiLoad);
+            break;
+        default:
+            LOG_WARN("Other iterator types not implemented yet");
+            break;
+    }
+    return new_iter;
+}
 
 GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
 {

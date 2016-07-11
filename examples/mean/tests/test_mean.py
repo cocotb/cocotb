@@ -44,7 +44,7 @@ def value_test(dut, num):
 
     data_width = int(dut.DATA_WIDTH.value)
     bus_width = int(dut.BUS_WIDTH.value)
-    dut.log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
+    dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
                  (data_width, bus_width))
 
     cocotb.fork(clock_gen(dut.clk, period=clock_period))
@@ -99,7 +99,7 @@ def mean_randomised_test(dut):
 
     data_width = int(dut.DATA_WIDTH.value)
     bus_width = int(dut.BUS_WIDTH.value)
-    dut.log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
+    dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
                  (data_width, bus_width))
 
     cocotb.fork(clock_gen(dut.clk, period=clock_period))

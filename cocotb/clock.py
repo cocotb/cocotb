@@ -39,7 +39,7 @@ class BaseClock(object):
     def __init__(self, signal):
         self.signal = signal
         self.log = SimLog("cocotb.%s.%s" %
-                          (self.__class__.__name__, self.signal.name))
+                          (self.__class__.__name__, self.signal._name))
 
 
 class Clock(BaseClock):

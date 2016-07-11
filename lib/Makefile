@@ -29,13 +29,6 @@
 
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
-# Default to VPI layer for now, override this for VHPI
-GPI_IMPL ?= vpi
-
-ifndef GPI_IMPL
-   $(error "Unable to determine appropriate GPI layer to use")
-endif
-
 
 # FIXME it's a bit nasty to have the source files listed here as dependencies
 # but better than re-building the libraries every time.
@@ -47,28 +40,28 @@ $(LIB_DIR): $(LIB_OBJ_DIR)
 	mkdir -p $@
 
 $(LIB_DIR)/libgpilog.$(LIB_EXT): $(SIM_ROOT)/lib/gpi_log/gpi_logging.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/gpi_log
+	make -C $(SIM_ROOT)/lib/gpi_log SIM=$(SIM)
 
 $(LIB_DIR)/libcocotb.$(LIB_EXT): $(SIM_ROOT)/lib/embed/gpi_embed.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/embed
+	make -C $(SIM_ROOT)/lib/embed SIM=$(SIM)
 
 $(LIB_DIR)/libvpi.$(LIB_EXT): $(SIM_ROOT)/lib/vpi/VpiImpl.cpp $(SIM_ROOT)/lib/vpi/VpiCbHdl.cpp | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/vpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
+	make -C $(SIM_ROOT)/lib/vpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
 $(LIB_DIR)/libvhpi.$(LIB_EXT): $(SIM_ROOT)/lib/vhpi/VhpiImpl.cpp $(SIM_ROOT)/lib/vhpi/VhpiCbHdl.cpp | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/vhpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
+	make -C $(SIM_ROOT)/lib/vhpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
 $(LIB_DIR)/libgpi.$(LIB_EXT): $(SIM_ROOT)/lib/gpi/GpiCommon.cpp $(SIM_ROOT)/lib/gpi/GpiCbHdl.cpp | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/gpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
+	make -C $(SIM_ROOT)/lib/gpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
-$(LIB_DIR)/libfli.$(LIB_EXT): $(SIM_ROOT)/lib/fli/FliImpl.cpp | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/fli EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS)
+$(LIB_DIR)/libfli.$(LIB_EXT): $(SIM_ROOT)/lib/fli/FliImpl.cpp $(SIM_ROOT)/lib/fli/FliCbHdl.cpp $(SIM_ROOT)/lib/fli/FliObjHdl.cpp | $(LIB_DIR)
+	make -C $(SIM_ROOT)/lib/fli EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
 $(LIB_DIR)/libsim.$(LIB_EXT): $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/simulator
+	make -C $(SIM_ROOT)/lib/simulator SIM=$(SIM)
 
 $(LIB_DIR)/libcocotbutils.$(LIB_EXT): $(SIM_ROOT)/lib/utils/cocotb_utils.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/utils
+	make -C $(SIM_ROOT)/lib/utils SIM=$(SIM)
 
 COCOTB_LIBS := $(LIB_DIR)/libcocotbutils.$(LIB_EXT) \
 	       $(LIB_DIR)/libgpilog.$(LIB_EXT) \

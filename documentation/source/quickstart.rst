@@ -34,7 +34,7 @@ Redhat based installation
 
 .. code-block:: bash
 
-    $> sudo yum install gcc gcc-c++ libstdc++-devel python-devel
+    $> sudo yum install gcc gcc-c++ libstdc++-devel swig python-devel
 
 This will allow building of the Cocotb libs for use with a 64 bit native simulator. If a 32 bit simulator is being used then additional steps to install 32bit development libraries and python are needed. 
 
@@ -127,11 +127,11 @@ To run a test using a different simulator:
 Running a VHDL example
 ----------------------
 
-The endian swapper example includes both a VHDL and Verilog RTL implementation.  The Cocotb testbench can execute against either implementation using VPI for Verilog and VHPI for VHDL.  To run the test suite against the VHDL implementation use the following command (a VHPI capable simulator must be used):
+The endian swapper example includes both a VHDL and Verilog RTL implementation.  The Cocotb testbench can execute against either implementation using VPI for Verilog and VHPI/FLI for VHDL.  To run the test suite against the VHDL implementation use the following command (a VHPI or FLI capable simulator must be used):
 
 .. code-block:: bash
 
-    $> make SIM=aldec GPI_IMPL=vhpi
+    $> make SIM=aldec TOPLEVEL_LANG=vhdl
 
 
 
@@ -178,13 +178,13 @@ we could create a test file containing the following:
         """
         Try accessing the design
         """
-        dut.log.info("Running test!")
+        dut._log.info("Running test!")
         for cycle in range(10):
             dut.clk = 0
             yield Timer(1000)
             dut.clk = 1
             yield Timer(1000)
-        dut.log.info("Running test!")
+        dut._log.info("Running test!")
 
 This will drive a square wave clock onto the ``clk`` port of the toplevel.
 
@@ -258,7 +258,7 @@ Parallel and sequential execution of coroutines
         reset_n <= 0
         yield Timer(duration)
         reset_n <= 1
-        reset_n.log.debug("Reset complete")
+        reset_n._log.debug("Reset complete")
     
     @cocotb.test()
     def parallel_example(dut):
@@ -267,17 +267,17 @@ Parallel and sequential execution of coroutines
         # This will call reset_dut sequentially
         # Execution will block until reset_dut has completed
         yield reset_dut(reset_n, 500)
-        dut.log.debug("After reset")
+        dut._log.debug("After reset")
         
         # Call reset_dut in parallel with this coroutine
         reset_thread = cocotb.fork(reset_dut(reset_n, 500)
         
         yield Timer(250)
-        dut.log.debug("During reset (reset_n = %s)" % reset_n.value)
+        dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
         
         # Wait for the other thread to complete
         yield reset_thread.join()
-        dut.log.debug("After reset")
+        dut._log.debug("After reset")
 
 
 Creating a test

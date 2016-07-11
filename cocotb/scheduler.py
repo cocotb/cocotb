@@ -375,6 +375,8 @@ class Scheduler(object):
         del coro._join
 
     def save_write(self, handle, value):
+        if self._mode == Scheduler._MODE_READONLY:
+            raise Exception("Write to object {} was scheduled during a read-only sync phase.".format(handle._name))
         self._writes[handle] = value
 
     def _coroutine_yielded(self, coro, triggers):
@@ -469,6 +471,7 @@ class Scheduler(object):
         except TestComplete as test_result:
             # Tag that close down is needed, save the test_result
             # for later use in cleanup handler
+            self.log.debug("TestComplete received: %s" % test_result.__class__.__name__)
             self.finish_test(test_result)
             return
 

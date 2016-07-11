@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
 
 import math
+from collections import deque
 
 import cocotb
 from cocotb.decorators import coroutine
@@ -65,7 +66,7 @@ class Monitor(object):
         """
         self._event = event
         self._wait_event = None
-        self._recvQ = []
+        self._recvQ = deque()
         self._callbacks = []
         self.stats = MonitorStatistics()
         self._wait_event = Event()
@@ -151,7 +152,7 @@ class BusMonitor(Monitor):
 
     def __init__(self, entity, name, clock, reset=None, reset_n=None,
                  callback=None, event=None):
-        self.log = SimLog("cocotb.%s.%s" % (entity.name, name))
+        self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         self.entity = entity
         self.name = name
         self.clock = clock

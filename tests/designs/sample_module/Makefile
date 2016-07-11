@@ -27,12 +27,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
-TOPLEVEL := sample_module
 TOPLEVEL_LANG ?= verilog
 
-PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+TOPLEVEL := sample_module
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
@@ -40,16 +37,15 @@ else
 WPWD=$(shell pwd)
 endif
 
-ifeq ($(TOPLEVEL_LANG),vhdl)
-    VHDL_SOURCES = $(COCOTB)/tests/designs/sample_module/sample_module.vhdl
-    TOPLEVEL := $(TOPLEVEL)
-    GPI_IMPL := vhpi
-else
-    VERILOG_SOURCES = $(COCOTB)/tests/designs/sample_module/sample_module.v
-    GPI_IMPL := vpi
-endif
+COCOTB?=$(WPWD)/../../..
 
-export TOPLEVEL_LANG
+ifeq ($(TOPLEVEL_LANG),verilog)
+    VERILOG_SOURCES = $(COCOTB)/tests/designs/sample_module/sample_module.v
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES =  $(COCOTB)/tests/designs/sample_module/sample_module_pack.vhdl $(COCOTB)/tests/designs/sample_module/sample_module_1.vhdl $(COCOTB)/tests/designs/sample_module/sample_module.vhdl
+else
+    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+endif
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim

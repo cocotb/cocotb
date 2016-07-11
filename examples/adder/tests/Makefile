@@ -27,8 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
-TOPLEVEL := adder
 TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
@@ -41,14 +39,17 @@ else
 WPWD=$(shell pwd)
 PYTHONPATH := $(WPWD)/../model:$(PYTHONPATH)
 endif
-export PYTHONPATH
 
-VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
-GPI_IMPL := vpi
+ifeq ($(TOPLEVEL_LANG),verilog)
+    VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES = $(WPWD)/../hdl/adder.vhdl
+else
+    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+endif
 
-export TOPLEVEL_LANG
-
-MODULE ?= test_adder
+TOPLEVEL := adder
+MODULE   := test_adder
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim

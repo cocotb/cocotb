@@ -35,6 +35,10 @@ from cocotb.utils import get_python_integer_types
 def resolve(string):
     for char in BinaryValue._resolve_to_0:
         string = string.replace(char, "0")
+    for char in BinaryValue._resolve_to_1:
+        string = string.replace(char, "1")
+    if any(char in string for char in BinaryValue._resolve_to_error):
+        raise ValueError("Unable to resolve to binary >%s<" % string)
     return string
 
 
@@ -66,8 +70,10 @@ class BinaryValue(object):
     '*'
 
     """
-    _resolve_to_0    = "xXzZuU"  # noqa
-    _permitted_chars = "xXzZuU" + "01"  # noqa
+    _resolve_to_0     = "-lL"  # noqa
+    _resolve_to_1     = "hH"  # noqa
+    _resolve_to_error = "xXzZuUwW"  # Resolve to a ValueError() since these usually mean something is wrong
+    _permitted_chars  = _resolve_to_0 +_resolve_to_1 + _resolve_to_error + "01"  # noqa
 
     def __init__(self, value=None, bits=None, bigEndian=True,
                  binaryRepresentation=BinaryRepresentation.UNSIGNED):
@@ -340,7 +346,7 @@ class BinaryValue(object):
         self.assign(other)
 
     def __str__(self):
-        return "%d" % (self.value)
+        return self.binstr
 
     def __bool__(self):
         return self.__nonzero__()
@@ -362,6 +368,16 @@ class BinaryValue(object):
             if char == "1":
                 return True
         return False
+
+    def __eq__(self, other):
+        if isinstance(other, BinaryValue):
+            other = other.value
+        return self.value == other
+
+    def __ne__(self, other):
+        if isinstance(other, BinaryValue):
+            other = other.value
+        return self.value != other
 
     def __cmp__(self, other):
         """Comparison against other values"""
@@ -465,7 +481,10 @@ class BinaryValue(object):
             index = key
             if index > self._bits - 1:
                 raise IndexError('Index greater than number of bits.')
-            _binstr = self.binstr[index]
+            if self.big_endian:
+                _binstr = self.binstr[index]
+            else:
+                _binstr = self.binstr[self._bits-1-index]
         rv = BinaryValue(bits=len(_binstr), bigEndian=self.big_endian,
                          binaryRepresentation=self.binaryRepresentation)
         rv.set_binstr(_binstr)
@@ -514,7 +533,10 @@ class BinaryValue(object):
             index = key
             if index > self._bits - 1:
                 raise IndexError('Index greater than number of bits.')
-            self.binstr = self.binstr[:index] + val + self.binstr[index + 1:]
+            if self.big_endian:
+                self.binstr = self.binstr[:index] + val + self.binstr[index + 1:]
+            else:
+                self.binstr = self.binstr[0:self._bits-index-1] + val + self.binstr[self._bits-index:self._bits]
 
 if __name__ == "__main__":
     import doctest

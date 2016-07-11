@@ -26,14 +26,5 @@ MODULE_ENTRY_POINT(void)
         INITERROR;
     }
 
-    // Make the GPI constants accessible from the C world
-    int rc = 0;
-    rc |= PyModule_AddIntConstant(simulator, "MEMORY",        gpiMemory);
-    rc |= PyModule_AddIntConstant(simulator, "MODULE",        gpiModule);
-    rc |= PyModule_AddIntConstant(simulator, "PARAMETER",     gpiParameter);
-    rc |= PyModule_AddIntConstant(simulator, "REG",           gpiReg);
-    rc |= PyModule_AddIntConstant(simulator, "NET",           gpiNet);
-    rc |= PyModule_AddIntConstant(simulator, "NETARRAY",      gpiNetArray);
-    if (rc != 0)
-        fprintf(stderr, "Failed to add module constants!\n");
+    add_module_constants(simulator);
 }

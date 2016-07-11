@@ -25,7 +25,30 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+TOPLEVEL_LANG ?= verilog
 
-include $(COCOTB)/tests/designs/viterbi_decoder_axi4s/Makefile
+ifneq ($(TOPLEVEL_LANG),verilog)
 
-MODULE = test_iteration
+all:
+	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
+clean::
+
+else
+
+ifeq ($(OS),Msys)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
+
+COCOTB?=$(WPWD)/../../..
+
+VERILOG_SOURCES = $(COCOTB)/examples/endian_swapper/hdl/endian_swapper.sv
+TOPLEVEL = endian_swapper_sv
+
+MODULE = test_iteration_es
+
+include $(COCOTB)/makefiles/Makefile.inc
+include $(COCOTB)/makefiles/Makefile.sim
+
+endif

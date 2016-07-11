@@ -34,6 +34,10 @@
 #include "embed.h"
 #include "../compat/python3_compat.h"
 
+#if defined(_WIN32)
+#include <windows.h>
+#define sleep(n) Sleep(1000 * n)
+#endif
 static PyThreadState *gtstate = NULL;
 
 #if PY_MAJOR_VERSION >= 3
