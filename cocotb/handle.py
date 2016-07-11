@@ -570,8 +570,8 @@ class ModifiableObject(NonConstantObject):
         simulator.set_signal_val_str(self._handle, value.binstr)
 
     def _getvalue(self):
-        result = BinaryValue()
-        result.binstr = simulator.get_signal_val_binstr(self._handle)
+        binstr = simulator.get_signal_val_binstr(self._handle)
+        result = BinaryValue(binstr, len(binstr))
         return result
 
     def _setcachedvalue(self, value):
