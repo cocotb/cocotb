@@ -166,7 +166,7 @@ class SimLogFormatter(logging.Formatter):
     def _format(self, timeh, timel, level, record, msg):
         time_ns = (timeh << 32 | timel) * (10.0**SimLogFormatter.sim_precision) / 1e-9
         simtime = "%6.2fns" % (time_ns)
-        prefix = simtime + ' ' + level + ' ' + \
+        prefix = simtime.rjust(10) + ' ' + level + ' ' + \
             self.ljust(record.name, _RECORD_CHARS) + \
             self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
             ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
