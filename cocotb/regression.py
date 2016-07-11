@@ -238,6 +238,9 @@ class RegressionManager(object):
             else:
                 self.log.error("Test error has lead to simulator shuttting us "
                                "down")
+                self.xunit.add_failure(stdout=repr(str(result)),
+                                       stderr="\n".join(
+                                       self._running_test.error_messages))
                 self.failures += 1
                 self.tear_down()
                 return
