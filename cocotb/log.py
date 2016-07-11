@@ -39,6 +39,11 @@ from cocotb.utils import get_sim_time
 import cocotb.ANSI as ANSI
 from pdb import set_trace
 
+if "COCOTB_REDUCED_LOG_FMT" in os.environ:
+    _suppress = True
+else:
+    _suppress = False
+
 # Column alignment
 _LEVEL_CHARS    = len("CRITICAL")  # noqa
 _RECORD_CHARS   = 35  # noqa
@@ -161,11 +166,13 @@ class SimLogFormatter(logging.Formatter):
     def _format(self, level, record, msg):
         time_ns = get_sim_time('ns')
         simtime = "%6.2fns" % (time_ns)
-        prefix = simtime + ' ' + level + ' ' + \
-            self.ljust(record.name, _RECORD_CHARS) + \
-            self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
-            ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
-            ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
+
+        prefix = simtime + ' ' + level + ' '
+        if not _suppress:
+            prefix += self.ljust(record.name, _RECORD_CHARS) + \
+                      self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
+                      ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
+                      ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
 
         pad = "\n" + " " * (len(prefix))
         return prefix + pad.join(msg.split('\n'))
