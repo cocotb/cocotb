@@ -50,6 +50,8 @@ else
     export GHDL_BIN_DIR
 endif
 
+RTL_LIBRARY ?= work
+
 .PHONY: analyse
 
 # Compilation phase
