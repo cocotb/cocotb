@@ -318,8 +318,10 @@ def external(func):
         bridge = test_locker()
 
         def execute_external(func, _event):
-            _event.result = func(*args, **kwargs)
-            # Queue a co-routine to
+            try:
+                _event.result = func(*args, **kwargs)
+            except TypeError as e:
+                _event.result = None
             unblock_external(_event)
 
         thread = threading.Thread(group=None, target=execute_external,
