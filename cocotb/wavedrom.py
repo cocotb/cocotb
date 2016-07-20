@@ -196,14 +196,16 @@ class trace(object):
         with open(filename, "w") as f:
             f.write(self.dumpj(**kwargs))
 
-    def dumpj(self, header="", footer=""):
+    def dumpj(self, header="", footer="", config=""):
         trace = {"signal": []}
         trace["signal"].append(
             {"name": "clock", "wave": "p" + "."*(self._clocks-1)})
         for sig in self._signals:
             trace["signal"].extend(sig.get(add_clock=False))
         if header:
-            trace["head"] = {"text": header}
+            trace["head"] = header
         if footer:
-            trace["foot"] = {"text": footer}
+            trace["foot"] = footer
+        if config:
+            trace["config"] = config
         return json.dumps(trace, indent=4, sort_keys=False)
