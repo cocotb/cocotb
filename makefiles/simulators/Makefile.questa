@@ -98,7 +98,7 @@ ifeq ($(WAVES),1)
 	echo "log -recursive /*" >> $@
 endif
 ifeq ($(GUI),1)
-	echo "log -recursive /*" >> $@
+	echo "add log -r *" >> $@
 else
 	echo "onbreak resume" >> $@
 	echo "run -all" >> $@
