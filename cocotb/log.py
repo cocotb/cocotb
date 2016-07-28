@@ -163,7 +163,7 @@ class SimLogFormatter(logging.Formatter):
             return ".." + string[(chars - 2) * -1:]
         return string.rjust(chars)
 
-    def _format(self, level, record, msg):
+    def _format(self, level, record, msg, coloured=False):
         time_ns = get_sim_time('ns')
         simtime = "%6.2fns" % (time_ns)
 
@@ -174,7 +174,10 @@ class SimLogFormatter(logging.Formatter):
                       ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
                       ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
 
-        pad = "\n" + " " * (len(prefix))
+        prefix_len = len(prefix)
+        if coloured:
+            prefix_len -= (len(level) - _LEVEL_CHARS)
+        pad = "\n" + " " * (prefix_len)
         return prefix + pad.join(msg.split('\n'))
 
     def format(self, record):
@@ -213,4 +216,4 @@ class SimColourLogFormatter(SimLogFormatter):
         level = (SimColourLogFormatter.loglevel2colour[record.levelno] %
                  record.levelname.ljust(_LEVEL_CHARS))
 
-        return self._format(level, record, msg)
+        return self._format(level, record, msg, coloured=True)

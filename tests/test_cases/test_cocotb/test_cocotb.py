@@ -594,6 +594,8 @@ def test_logging_with_args(dut):
 
     dut._log.info("No substitution")
 
+    dut._log.warning("Testing multiple line\nmessage")
+
     yield Timer(100) #Make it do something with time
 
 @cocotb.test()
