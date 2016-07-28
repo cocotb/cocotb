@@ -38,7 +38,7 @@ import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
-                           ReturnValue, raise_error)
+                           ReturnValue, create_error)
 from cocotb.utils import get_sim_time
 
 
@@ -126,7 +126,7 @@ class RunningCoroutine(object):
             raise CoroutineComplete(callback=self._finished_cb)
         except Exception as e:
             self._finished = True
-            raise_error(self, "Send raised exception: %s" % (str(e)))
+            raise create_error(self, "Send raised exception: %s" % (str(e)))
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -209,7 +209,7 @@ class RunningTest(RunningCoroutine):
         except StopIteration:
             raise TestSuccess()
         except Exception as e:
-            raise_error(self, "Send raised exception: %s" % (str(e)))
+            raise create_error(self, "Send raised exception: %s" % (str(e)))
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
@@ -371,7 +371,7 @@ class test(coroutine):
             try:
                 return RunningTest(self._func(*args, **kwargs), self)
             except Exception as e:
-                raise_error(self, str(e))
+                raise create_error(self, str(e))
 
         _wrapped_test.im_test = True    # For auto-regressions
         _wrapped_test.name = self._func.__name__
