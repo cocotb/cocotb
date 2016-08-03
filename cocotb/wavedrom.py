@@ -203,9 +203,15 @@ class trace(object):
         for sig in self._signals:
             trace["signal"].extend(sig.get(add_clock=False))
         if header:
-            trace["head"] = header
+            if isinstance(header, dict):
+                trace["head"] = header
+            else:
+                trace["head"] = {"text": header}
         if footer:
-            trace["foot"] = footer
+            if isinstance(footer, dict):
+                trace["foot"] = footer
+            else:
+                trace["foot"] = {"text": footer}
         if config:
             trace["config"] = config
         return json.dumps(trace, indent=4, sort_keys=False)
