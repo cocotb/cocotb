@@ -30,7 +30,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """Collection of handy functions"""
 
 import ctypes
+import math
+import os
 
+# For autodocumentation don't need the extension modules
+if "SPHINX_BUILD" in os.environ:
+    simulator = None
+    _LOG_SIM_PRECISION = -15
+else:
+    import simulator
+    _LOG_SIM_PRECISION = simulator.get_precision() # request once and cache
 
 # python2 to python3 helper functions
 def get_python_integer_types():
@@ -40,6 +49,87 @@ def get_python_integer_types():
         return (int,)  # python 3
     else:
         return (int, long)  # python 2
+
+# Simulator helper functions
+def get_sim_time(units=None):
+    """Retrieves the simulation time from the simulator
+
+    Kwargs:
+        units (str):  String specifying the units of the result. (None,'fs','ps','ns','us','ms','sec')
+                      None will return the raw simulation time.
+
+    Returns:
+        The simulation time in the specified units
+    """
+    timeh, timel = simulator.get_sim_time()
+
+    result = (timeh << 32 | timel)
+
+    if units is not None:
+        result = get_time_from_sim_steps(result, units)
+
+    return result
+
+def get_time_from_sim_steps(steps, units):
+    """Calculates simulation time in the specified units from the steps based on the simulator precision.
+
+    Args:
+        steps (int):  Number of simulation steps
+        units (str):  String specifying the units of the result. ('fs','ps','ns','us','ms','sec')
+
+    Returns:
+        The simulation time in the specified units
+    """
+    result = steps * (10.0**(_LOG_SIM_PRECISION - _get_log_time_scale(units)))
+
+    return result
+
+def get_sim_steps(time, units=None):
+    """Calculates the number of Simulation time steps for a given amount of time
+
+    Args:
+        time (int/float):  The value to convert to simulation time steps.
+
+    Kwargs:
+        units (str):  String specifying the units of the result. (None,'fs','ps','ns','us','ms','sec')
+                      None means time is already in simulation time steps.
+
+    Returns:
+        The number of simulation time steps
+    """
+    result = time
+    if units is not None:
+        result = result * (10.0**(_get_log_time_scale(units) - _LOG_SIM_PRECISION))
+
+    err = int(result) - math.ceil(result)
+
+    if err:
+        raise ValueError("Unable to accurately represent {0}({1}) with the simulator precision of 1e{2}".format(time,units,_LOG_SIM_PRECISION))
+
+    return int(result)
+
+def _get_log_time_scale(units):
+    """Retrieves the log10() of the scale factor for a given time unit
+
+    Args:
+        units (str):  String specifying the units. ('fs','ps','ns','us','ms','sec')
+
+    Returns:
+        The the log10() of the scale factor for the time unit
+    """
+    scale = {
+        'fs' :    -15,
+        'ps' :    -12,
+        'ns' :     -9,
+        'us' :     -6,
+        'ms' :     -3,
+        'sec':      0}
+
+    units_lwr = units.lower()
+    if units_lwr not in scale:
+        raise ValueError("Invalid unit ({}) provided".format(units))
+    else:
+        return scale[units_lwr]
 
 # Ctypes helper functions
 
