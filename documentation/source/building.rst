@@ -77,6 +77,11 @@ CUSTOM_SIM_DEPS
 Use to add additional dependencies to the simulation target.
 
 
+SIM_BUILD
+~~~~~~~~~
+
+Use to define a scratch directory for use by the simulator. The path is relative to the Makefile location. If not provided, the default scratch directory is "sim_build".
+
 Environment Variables
 =====================
 
