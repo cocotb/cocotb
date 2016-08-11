@@ -149,21 +149,24 @@ class RegionObject(SimHandleBase):
         """
         Iterate over all known objects in this layer of hierarchy
         """
-        if not self._discovered:
-            self._discover_all()
+        try:
+            if not self._discovered:
+                self._discover_all()
 
-        for name, handle in self._sub_handles.items():
-            if isinstance(handle, list):
-                self._log.debug("Found index list length %d" % len(handle))
-                for subindex, subhdl in enumerate(handle):
-                    if subhdl is None:
-                        self._log.warning("Index %d doesn't exist in %s.%s", subindex, self._name, name)
-                        continue
-                    self._log.debug("Yielding index %d from %s (%s)" % (subindex, name, type(subhdl)))
-                    yield subhdl
-            else:
-                self._log.debug("Yielding %s (%s)" % (name, handle))
-                yield handle
+            for name, handle in self._sub_handles.items():
+                if isinstance(handle, list):
+                    self._log.debug("Found index list length %d" % len(handle))
+                    for subindex, subhdl in enumerate(handle):
+                        if subhdl is None:
+                            self._log.warning("Index %d doesn't exist in %s.%s", subindex, self._name, name)
+                            continue
+                        self._log.debug("Yielding index %d from %s (%s)" % (subindex, name, type(subhdl)))
+                        yield subhdl
+                else:
+                    self._log.debug("Yielding %s (%s)" % (name, handle))
+                    yield handle
+        except GeneratorExit:
+            pass
 
     def _discover_all(self):
         """
@@ -230,10 +233,12 @@ class HierarchyObject(RegionObject):
         Raise an AttributeError if users attempt to create new members which
         don't exist in the design.
         """
-        if name.startswith("_") or name in self._compat_mapping:
+        if name.startswith("_"):
             return SimHandleBase.__setattr__(self, name, value)
         if self.__hasattr__(name) is not None:
             return getattr(self, name)._setcachedvalue(value)
+        if name in self._compat_mapping:
+            return SimHandleBase.__setattr__(self, name, value)
         raise AttributeError("Attempt to access %s which isn't present in %s" %(
             name, self._name))
 
@@ -245,16 +250,14 @@ class HierarchyObject(RegionObject):
         if name in self._sub_handles:
             return self._sub_handles[name]
 
-        if name.startswith("_") or name in self._compat_mapping:
+        if name.startswith("_"):
             return SimHandleBase.__getattr__(self, name)
 
         new_handle = simulator.get_handle_by_name(self._handle, name)
 
         if not new_handle:
-            # To find generated indices we have to discover all
-            self._discover_all()
-            if name in self._sub_handles:
-                return self._sub_handles[name]
+            if name in self._compat_mapping:
+                return SimHandleBase.__getattr__(self, name)
             raise AttributeError("%s contains no object named %s" % (self._name, name))
         self._sub_handles[name] = SimHandle(new_handle, self._child_path(name))
         return self._sub_handles[name]
@@ -281,6 +284,17 @@ class HierarchyObject(RegionObject):
             self._invalid_sub_handles[name] = None
         return new_handle
 
+    def _id(self, name, extended=True):
+        """
+        Query the simulator for a object with the specified name, including extended identifiers,
+        and cache the result to build a tree of objects
+        """
+        if extended:
+            name = "\\"+name+"\\"
+
+        if self.__hasattr__(name) is not None:
+            return getattr(self, name)
+        raise AttributeError("%s contains no object named %s" % (self._name, name))
 
 class HierarchyArrayObject(RegionObject):
     """
@@ -455,27 +469,33 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         return self._sub_handles[index]
 
     def __iter__(self):
-        if self._range is None:
-            raise StopIteration
+        try:
+            if self._range is None:
+                raise StopIteration
 
-        self._log.debug("Iterating with range [%d:%d]" % (self._range[0], self._range[1]))
-        for i in self._range_iter(self._range[0], self._range[1]):
-            try:
-                result = self[i]
-                yield result
-            except:
-                continue
+            self._log.debug("Iterating with range [%d:%d]" % (self._range[0], self._range[1]))
+            for i in self._range_iter(self._range[0], self._range[1]):
+                try:
+                    result = self[i]
+                    yield result
+                except IndexError:
+                    continue
+        except GeneratorExit:
+            pass
+
 
     def _range_iter(self, left, right):
-        if left > right:
-            while left >= right:
-                yield left
-                left = left - 1
-        else:
-            while left <= right:
-                yield left
-                left = left + 1
-
+        try:
+            if left > right:
+                while left >= right:
+                    yield left
+                    left = left - 1
+            else:
+                while left <= right:
+                    yield left
+                    left = left + 1
+        except GeneratorExit:
+            pass
 
 class NonConstantObject(NonHierarchyIndexableObject):
     def __init__(self, handle, path):
@@ -492,19 +512,25 @@ class NonConstantObject(NonHierarchyIndexableObject):
         """
         An iterator for gathering all drivers for a signal
         """
-        iterator = simulator.iterate(self._handle, simulator.DRIVERS)
-        while True:
-            # Path is left as the default None since handles are not derived from the hierarchy
-            yield SimHandle(simulator.next(iterator))
+        try:
+            iterator = simulator.iterate(self._handle, simulator.DRIVERS)
+            while True:
+                # Path is left as the default None since handles are not derived from the hierarchy
+                yield SimHandle(simulator.next(iterator))
+        except GeneratorExit:
+            pass
 
     def loads(self):
         """
         An iterator for gathering all loads on a signal
         """
-        iterator = simulator.iterate(self._handle, simulator.LOADS)
-        while True:
-            # Path is left as the default None since handles are not derived from the hierarchy
-            yield SimHandle(simulator.next(iterator))
+        try:
+            iterator = simulator.iterate(self._handle, simulator.LOADS)
+            while True:
+                # Path is left as the default None since handles are not derived from the hierarchy
+                yield SimHandle(simulator.next(iterator))
+        except GeneratorExit:
+            pass
 
 
 class ModifiableObject(NonConstantObject):
@@ -544,8 +570,8 @@ class ModifiableObject(NonConstantObject):
         simulator.set_signal_val_str(self._handle, value.binstr)
 
     def _getvalue(self):
-        result = BinaryValue()
-        result.binstr = simulator.get_signal_val_binstr(self._handle)
+        binstr = simulator.get_signal_val_binstr(self._handle)
+        result = BinaryValue(binstr, len(binstr))
         return result
 
     def _setcachedvalue(self, value):

@@ -78,7 +78,7 @@ class XGMII(Monitor):
 
             byte0, byte1, ..., byte0_control, byte1_control...
         """
-        self.log = signal.log
+        self.log = signal._log
         self.clock = clock
         self.signal = signal
         self.bytes = len(self.signal) / 9

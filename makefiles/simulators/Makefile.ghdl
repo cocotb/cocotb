@@ -54,12 +54,13 @@ endif
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && $(CMD) -a $(VHDL_SOURCES) && $(GHDL) -e $(TOPLEVEL)
+	cd $(SIM_BUILD) && $(CMD) -a --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && $(CMD) -e --work=$(RTL_LIBRARY) $(TOPLEVEL)
 
 results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	cd $(SIM_BUILD); \
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(CMD) -r --workdir=$(SIM_BUILD) $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT)
+	$(CMD) -r $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT) $(SIM_ARGS)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

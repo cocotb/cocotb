@@ -53,7 +53,7 @@ class Scoreboard(object):
 
     def __init__(self, dut, reorder_depth=0, fail_immediately=True):
         self.dut = dut
-        self.log = SimLog("cocotb.scoreboard.%s" % self.dut.name)
+        self.log = SimLog("cocotb.scoreboard.%s" % self.dut._name)
         self.errors = 0
         self.expected = {}
         self._imm = fail_immediately
@@ -180,7 +180,12 @@ class Scoreboard(object):
             """Called back by the monitor when a new transaction has been
             received"""
 
-            log = logging.getLogger(self.log.name + '.' + monitor.name)
+            if monitor.name:
+                log_name = self.log.name + '.' + monitor.name
+            else:
+                log_name = self.log.name + '.' + monitor.__class__.__name__
+
+            log = logging.getLogger(log_name)
 
             if callable(expected_output):
                 exp = expected_output(transaction)

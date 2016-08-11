@@ -35,7 +35,7 @@ import random
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, ReadOnly, Event
+from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -359,6 +359,7 @@ class AvalonMemory(BusDriver):
 
                     # toggle waitrequest
                     # TODO: configure waitrequest time with avalon properties
+                    yield NextTimeStep()  # can't write during read-only phase
                     self.bus.waitrequest <= 1
                     yield edge
                     yield edge
@@ -419,14 +420,21 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.log.debug("Setting config option %s to %s" %
                            (configoption, str(value)))
 
-        word = BinaryValue(bits=len(self.bus.data),
-                           bigEndian=self.config['firstSymbolInHighOrderBits'])
-        word.binstr = ("x"*len(self.bus.data))
+        word   = BinaryValue(bits=len(self.bus.data),
+                             bigEndian=self.config['firstSymbolInHighOrderBits'])
+
+        empty  = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
+        single = BinaryValue(bits=1, bigEndian=False)
+
+        word.binstr   = ("x"*len(self.bus.data))
+        empty.binstr  = ("x"*len(self.bus.empty))
+        single.binstr = ("x")
+
         self.bus.valid <= 0
         self.bus.data <= word
-        self.bus.empty <= word
-        self.bus.startofpacket <= word
-        self.bus.endofpacket <= word
+        self.bus.empty <= empty
+        self.bus.startofpacket <= single
+        self.bus.endofpacket <= single
 
     @coroutine
     def _wait_ready(self):
@@ -456,6 +464,10 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         word = BinaryValue(bits=len(self.bus.data),
                            bigEndian=self.config['firstSymbolInHighOrderBits'])
+
+        empty  = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
+        single = BinaryValue(bits=1, bigEndian=False)
+
 
         # Drive some defaults since we don't know what state we're in
         # self.bus.empty <= 0
@@ -512,11 +524,13 @@ class AvalonSTPkts(ValidatedBusDriver):
         yield clkedge
         self.bus.valid <= 0
         self.bus.endofpacket <= 0
-        word.binstr = ("x"*len(self.bus.data))
+        word.binstr   = ("x"*len(self.bus.data))
+        empty.binstr  = ("x"*len(self.bus.empty))
+        single.binstr = ("x")
         self.bus.data <= word
-        self.bus.empty <= word
-        self.bus.startofpacket <= word
-        self.bus.endofpacket <= word
+        self.bus.empty <= empty
+        self.bus.startofpacket <= single
+        self.bus.endofpacket <= single
 
     @coroutine
     def _send_iterable(self, pkt, sync=True):
