@@ -38,7 +38,7 @@ import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
-                           ReturnValue, raise_error)
+                           ReturnValue, raise_error, ExternalException)
 
 
 def public(f):
@@ -111,11 +111,18 @@ class RunningCoroutine(object):
 
     def send(self, value):
         try:
+            if isinstance(value, ExternalException):
+                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
+                return self._coro.throw(value.exception)
             return self._coro.send(value)
         except TestComplete as e:
             if isinstance(e, TestFailure):
                 self.log.warning(str(e))
             raise
+        except ExternalException as e:
+            self.retval = e
+            self._finished = True
+            raise CoroutineComplete(callback=self._finished_cb)
         except ReturnValue as e:
             self.retval = e.retval
             self._finished = True
@@ -190,6 +197,9 @@ class RunningTest(RunningCoroutine):
             self.start_time = time.time()
             self.started = True
         try:
+            if isinstance(value, ExternalException):
+                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
+                return self._coro.throw(value.exception)
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
         except TestComplete as e:
@@ -320,8 +330,8 @@ def external(func):
         def execute_external(func, _event):
             try:
                 _event.result = func(*args, **kwargs)
-            except TypeError as e:
-                _event.result = None
+            except Exception as e:
+                _event.result = e
             unblock_external(_event)
 
         thread = threading.Thread(group=None, target=execute_external,
@@ -332,7 +342,10 @@ def external(func):
         yield bridge.out_event.wait()
 
         if bridge.result is not None:
-            raise ReturnValue(bridge.result)
+            if isinstance(bridge.result, Exception):
+                raise ExternalException(bridge.result)
+            else:
+                raise ReturnValue(bridge.result)
 
     return wrapped
 
