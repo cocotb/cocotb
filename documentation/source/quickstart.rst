@@ -108,6 +108,19 @@ It is beneficial to add the path to Python to the windows system PATH variable s
 
 Once inside the Msys shell commands as given here will work as expected.
 
+MAC Packages
+------------
+
+You need a few packages installed to get cocotb running on mac.
+Installing a package manager really helps things out here.
+
+Brew_ seems to be the most popular, so we'll assume you have that installed.
+.. _Brew: http://www.brew.sh
+
+.. code-block::bash
+    
+    $> brew install python icarus-verilog gtkwave
+    
 Running an example
 ------------------
 
