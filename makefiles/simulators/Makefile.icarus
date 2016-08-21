@@ -36,21 +36,29 @@ clean::
 
 else
 
+CMD_BIN := iverilog
+
+ifdef ICARUS_BIN_DIR
+    CMD := $(shell which $(ICARUS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error "Unable to locate command >$(CMD_BIN)<")
+else
+	ICARUS_BIN_DIR := $(shell dirname $(CMD))
+    export ICARUS_BIN_DIR
+endif
+
 BUILD_VPI=1
 
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
-	iverilog -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+	$(CMD) -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
-
-# auto-detect modelsim dir from system path
-export ICARUS_BIN_DIR = $(shell dirname $(shell which iverilog))
-
-# make sure modelsim dir was found
-ifeq ($(ICARUS_BIN_DIR),)
-$(error "Directory containing Icarus binaries must be included in system path")
-endif
 
 ifeq ($(OS),Msys)
 
@@ -68,12 +76,12 @@ endif
 results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+        $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
 debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        gdb --args vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+        gdb --args $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

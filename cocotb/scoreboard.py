@@ -53,7 +53,7 @@ class Scoreboard(object):
 
     def __init__(self, dut, reorder_depth=0, fail_immediately=True):
         self.dut = dut
-        self.log = SimLog("cocotb.scoreboard.%s" % self.dut.name)
+        self.log = SimLog("cocotb.scoreboard.%s" % self.dut._name)
         self.errors = 0
         self.expected = {}
         self._imm = fail_immediately
@@ -114,14 +114,20 @@ class Scoreboard(object):
             strgot, strexp = str(got), str(exp)
 
             log.error("Received transaction differed from expected output")
-            log.info("Expected:\n" + hexdump(strexp))
+            if not strict_type:
+                log.info("Expected:\n" + hexdump(strexp))
+            else:
+                log.info("Expected:\n" + repr(exp))
             if not isinstance(exp, str):
                 try:
                     for word in exp:
                         log.info(str(word))
                 except:
                     pass
-            log.info("Received:\n" + hexdump(strgot))
+            if not strict_type:
+                log.info("Received:\n" + hexdump(strgot))
+            else:
+                log.info("Received:\n" + repr(got))
             if not isinstance(got, str):
                 try:
                     for word in got:

@@ -29,14 +29,6 @@
 
 TOPLEVEL_LANG ?= verilog
 
-ifneq ($(TOPLEVEL_LANG),verilog)
-
-all:
-	@echo "Skipping example due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
-clean::
-
-else
-
 PWD=$(shell pwd)
 COCOTB=$(PWD)/../../..
 
@@ -48,12 +40,16 @@ WPWD=$(shell pwd)
 PYTHONPATH := $(WPWD)/../model:$(PYTHONPATH)
 endif
 
-VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
+ifeq ($(TOPLEVEL_LANG),verilog)
+    VERILOG_SOURCES = $(WPWD)/../hdl/adder.v
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES = $(WPWD)/../hdl/adder.vhdl
+else
+    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+endif
 
 TOPLEVEL := adder
 MODULE   := test_adder
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
-
-endif

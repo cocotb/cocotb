@@ -29,6 +29,22 @@
 
 # Common Makefile for Cadence Incisive
 
+CMD_BIN := irun
+
+ifdef IUS_BIN_DIR
+    CMD := $(shell which $(IUS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+else
+    # auto-detect bin dir from system path
+    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+endif
+
+ifeq (, $(CMD))
+    $(error "Unable to locate command >$(CMD_BIN)<")
+else
+	IUS_BIN_DIR := $(shell dirname $(CMD))
+    export IUS_BIN_DIR
+endif
+
 ifneq ($(ARCH),i686)
 EXTRA_ARGS += -64
 endif
@@ -74,7 +90,7 @@ results.xml: $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEP
 	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	irun $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS)
+	$(CMD) $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 clean::
 	@rm -rf $(SIM_BUILD)

@@ -206,7 +206,11 @@ extern "C" {
 
 */
 
+#ifndef IUS
 #define vhpiUndefined -1
+#else
+#define vhpiUndefined 1000
+#endif
 
 /*************** OBJECT KINDS *******************/
 typedef enum
@@ -326,7 +330,11 @@ typedef enum
     vhpiWaveformElemK           = 1113,
     vhpiWhileLoopK              = 1114,
     vhpiQualifiedExprK          = 1115,
+#ifndef IUS
     vhpiUseClauseK              = 1116,
+#else
+    vhpiUseClauseK              = 1200,
+#endif
 
 #ifdef VHPIEXTEND_CLASSES
     VHPIEXTEND_CLASSES
@@ -497,7 +505,11 @@ typedef enum
     vhpiLocalLoads              = 1559,
     vhpiOptimizedLoads          = 1560,
     vhpiTypes                   = 1561,
+#ifndef IUS
     vhpiUseClauses              = 1562,
+#else
+    vhpiUseClauses              = 1650,
+#endif
 
 #ifdef VHPIEXTEND_MANY_METHODS
     VHPIEXTEND_MANY_METHODS

@@ -8,8 +8,14 @@ clean::
 
 else
 
-PWD=$(shell pwd)
-COCOTB?=$(PWD)/../../..
+ifeq ($(OS),Msys)
+WPWD=$(shell sh -c 'pwd -W')
+else
+WPWD=$(shell pwd)
+endif
+
+COCOTB?=$(WPWD)/../../..
+
 SRC_BASE = $(COCOTB)/tests/designs/uart2bus
 
 VHDL_SOURCES =      $(SRC_BASE)/vhdl/uart2BusTop_pkg.vhd \

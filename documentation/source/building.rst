@@ -59,7 +59,7 @@ Any arguments or flags to pass to the compile stage of the simulation. Only appl
 SIM_ARGS
 ~~~~~~~~
 
-Any arguments or flags to pass to the execution of the compiled simulation.  Only applies to simulators with a separate compilation stage (currently Icarus and VCS).
+Any arguments or flags to pass to the execution of the compiled simulation.  Only applies to simulators with a separate compilation stage (currently Icarus, VCS and GHDL).
 
 EXTRA_ARGS
 ~~~~~~~~~~
