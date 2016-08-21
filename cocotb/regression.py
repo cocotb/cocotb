@@ -274,11 +274,16 @@ class RegressionManager(object):
     def execute(self):
         self._running_test = cocotb.regression.next_test()
         if self._running_test:
+            start = ''
+            end   = ''
+            if self.log.colour:
+                start = ANSI.BLUE_BG + ANSI.BLACK_FG
+                end   = ANSI.DEFAULT
             # Want this to stand out a little bit
             self.log.info("%sRunning test %d/%d:%s %s" %
-                          (ANSI.BLUE_BG + ANSI.BLACK_FG,
+                          (start,
                            self.count, self.ntests,
-                           ANSI.DEFAULT_FG + ANSI.DEFAULT_BG,
+                           end,
                            self._running_test.funcname))
             if self.count is 1:
                 test = cocotb.scheduler.add(self._running_test)
@@ -314,8 +319,7 @@ class RegressionManager(object):
                                                                                                          e=RATIO_FIELD,  e_len=RATIO_FIELD_LEN)
         summary += LINE_SEP
         for result in self.test_results:
-            dflt   = ANSI.DEFAULT_FG + ANSI.DEFAULT_BG
-            hilite = dflt
+            hilite = ''
 
             if result['pass'] is None:
                 pass_fail_str = "N/A"
@@ -323,14 +327,15 @@ class RegressionManager(object):
                 pass_fail_str = "PASS"
             else:
                 pass_fail_str = "FAIL"
-                hilite = ANSI.WHITE_FG + ANSI.RED_BG
+                if self.log.colour:
+                    hilite = ANSI.WHITE_FG + ANSI.RED_BG
 
-            summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **{end}\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
-                                                                                                                                     b=pass_fail_str,    b_len=RESULT_FIELD_LEN,
-                                                                                                                                     c=result['sim'],    c_len=SIM_FIELD_LEN-1,
-                                                                                                                                     d=result['real'],   d_len=REAL_FIELD_LEN-1,
-                                                                                                                                     e=result['ratio'],  e_len=RATIO_FIELD_LEN-1,
-                                                                                                                                     start=hilite,       end=dflt)
+            summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
+                                                                                                                                b=pass_fail_str,    b_len=RESULT_FIELD_LEN,
+                                                                                                                                c=result['sim'],    c_len=SIM_FIELD_LEN-1,
+                                                                                                                                d=result['real'],   d_len=REAL_FIELD_LEN-1,
+                                                                                                                                e=result['ratio'],  e_len=RATIO_FIELD_LEN-1,
+                                                                                                                                start=hilite)
         summary += LINE_SEP
 
         self.log.info(summary)
