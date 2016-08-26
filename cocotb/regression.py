@@ -93,8 +93,8 @@ class RegressionManager(object):
         self.skipped = 0
         self.failures = 0
         self.xunit = XUnitReporter()
-        suite_name = os.getenv('TESTSUITE') if os.getenv('TESTSUITE') else "all"
-        package_name = os.getenv('TESTPACKAGE') if os.getenv('TESTPACKAGE') else "all"
+        suite_name = os.getenv('RESULT_TESTSUITE') if os.getenv('RESULT_TESTSUITE') else "all"
+        package_name = os.getenv('RESULT_TESTPACKAGE') if os.getenv('RESULT_TESTPACKAGE') else "all"
         
         
         self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
