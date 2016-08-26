@@ -284,7 +284,7 @@ class ClockCycles(_Edge):
     Execution will resume after N rising edges or N falling edges
     """
     def __init__(self, signal, num_cycles, rising=True):
-        Edge.__init__(self, signal)
+        _Edge.__init__(self, signal)
         self.num_cycles = num_cycles
         if rising is True:
             self._rising = 1
