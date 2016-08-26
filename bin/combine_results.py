@@ -7,6 +7,7 @@ Useful for Jenkins.
 
 import os
 import sys
+import argparse
 from xml.etree import cElementTree as ET
 
 
@@ -16,33 +17,70 @@ def find_all(name, path):
         if name in files:
             yield os.path.join(root, name)
 
+def get_parser():
+    """Return the cmdline parser"""
+    parser = argparse.ArgumentParser(description=__doc__,
+                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-def main(path, output):
-    rc = 0
-    testsuite = ET.Element("testsuite", name="all", package="all", tests="0")
+    parser.add_argument("--directory", dest="directory", type=str, required=False,
+                        default=".",
+                        help="Name of base directory to search from")
 
-    for fname in find_all("results.xml", path):
+    parser.add_argument("--output_file", dest="output_file", type=str, required=False,
+                        default="combined_results.xml", 
+                        help="Name of output file")
+    parser.add_argument("--testsuites_name", dest="testsuites_name", type=str, required=False,
+                        default="results", 
+                        help="Name value for testsuites tag")
+    parser.add_argument("--verbose", dest="debug", action='store_const', required=False,
+                        const=True, default=False, 
+                        help="Verbose/debug output")
+    parser.add_argument("--suppress_rc", dest="set_rc", action='store_const', required=False,
+                        const=False, default=True, 
+                        help="Supress return code if failures found")
+                    
+    return parser
+
+
+def main():
+    
+    parser = get_parser()
+    args = parser.parse_args()
+    rc = 0;
+    
+    result = ET.Element("testsuites", name=args.testsuites_name);
+    
+    for fname in find_all("results.xml", args.directory):
+        if args.debug : print "Reading file %s" % fname
         tree = ET.parse(fname)
-        for element in tree.getiterator("testcase"):
-            testsuite.append(element)
-
-            for child in element:
-                if child.tag in ["failure", "error"]:
-                    sys.stderr.write("FAILURE: %s.%s\n" %
-                                     (element.attrib["classname"],
-                                      element.attrib["name"]))
-                    rc = 1
-
-    result = ET.Element("testsuites", name="results")
-    result.append(testsuite)
-
-    ET.ElementTree(result).write(output, encoding="UTF-8")
+        for ts in tree.getiterator("testsuite"):
+            if args.debug : print ("Ts name : %s, package : %s" % ( ts.get('name'), ts.get('package')))
+            use_element = None
+            for existing in result:
+                if ((existing.get('name') == ts.get('name') and (existing.get('package') == ts.get('package')))):
+                    if args.debug : print "Already found"
+                    use_element=existing
+                    break
+            if use_element is None:
+                result.append(ts)
+            else:
+                #for tc in ts.getiterator("testcase"):
+                use_element.extend(list(ts));
+            
+    if args.debug : ET.dump(result)
+    
+    for testsuite in result.iter('testsuite'):
+        for testcase in testsuite.iter('testcase'):
+            for failure in testcase.iter('failure'):
+                if args.set_rc: rc=1
+                print "Failure in testsuite: '%s' testcase: '%s' with parameters '%s'" % (testsuite.get('name'), testcase.get('name'), testsuite.get('package'))
+            
+    
+    ET.ElementTree(result).write(args.output_file, encoding="UTF-8")
     return rc
+   
+    
 
 if __name__ == "__main__":
-    rc = main(".", "combined_results.xml")
-    # Suppress exit code if run with any arguments
-    # Slightly hacky but argparse isnt' in 2.6
-    if len(sys.argv) > 1:
-        sys.exit(0)
+    rc = main()
     sys.exit(rc)
