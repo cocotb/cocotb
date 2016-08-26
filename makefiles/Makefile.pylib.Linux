@@ -69,5 +69,8 @@ endif
 
 PYLIBS = $(shell $(PY_CFG_EXE) --libs)
 
+$(info "*** PY_CFG_EXE: $(PY_CFG_EXE)")
+$(info "***    PY_LIBS: $(PYLIBS)")
+
 PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
 PYTHON_DYN_LIB:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))')
