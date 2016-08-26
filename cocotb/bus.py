@@ -50,7 +50,7 @@ class Bus(object):
         TODO:
             Support for struct/record ports where signals are member names
     """
-    def __init__(self, entity, name, signals, optional_signals=[]):
+    def __init__(self, entity, name, signals, optional_signals=[], bus_seperator="_"):
         """
         Args:
             entity (SimHandle): SimHandle instance to the entity containing the
@@ -62,7 +62,10 @@ class Bus(object):
             signals (list):     array of signal names
 
         Kwargs:
-            optiona_signals (list): array of optional signal names
+            optional_signals (list): array of optional signal names
+
+            bus_seperator (str): characters to use as seperator between bus
+                                 name and signal name
         """
         self._entity = entity
         self._name = name
@@ -70,7 +73,7 @@ class Bus(object):
 
         for signal in signals:
             if name:
-                signame = name + "_" + signal
+                signame = name + bus_seperator + signal
             else:
                 signame = signal
             setattr(self, signal, getattr(entity, signame))
