@@ -31,9 +31,9 @@
 
 ifneq ($(COCOTB_PYTHON_DEBUG),)
 DBG_PYTHON_VERSION=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
-PYTHON_BIN=python$(DBG_PYTHON_VERSION)-dbg
+PYTHON_BIN?=python$(DBG_PYTHON_VERSION)-dbg
 else
-PYTHON_BIN=python
+PYTHON_BIN?=python
 endif
 
 NATIVE_ARCH=$(shell uname -m)
@@ -57,14 +57,16 @@ endif
 # Since we don't know which modules we might need or whether the simulator
 # we're using passes the RTLD_GLOBAL to dlopen or whether the OS supports
 # is we simply link against all dynamic libraries in the Python installation
-ifneq (, $(shell which $(PYTHON_BIN)$(PYTHON_VERSION)-config 2>/dev/null))
-PY_CFG_EXE=$(PYTHON_BIN)$(PYTHON_VERSION)-config
+ifeq ($(PY_CFG_EXE),)
+ifneq (, $(shell which $(PYTHON_BIN)-config 2>/dev/null))
+PY_CFG_EXE=$(PYTHON_BIN)-config
 else ifneq (, $(shell which $(PYTHON_BIN)$(PYTHON_MAJOR_VERSION)-config 2>/dev/null))
 PY_CFG_EXE=$(PYTHON_BIN)$(PYTHON_MAJOR_VERSION)-config
-else ifneq (, $(shell which $(PYTHON_BIN)-config 2>/dev/null))
-PY_CFG_EXE=$(PYTHON_BIN)-config
+else ifneq (, $(shell which $(PYTHON_BIN)$(PYTHON_VERSION)-config 2>/dev/null))
+PY_CFG_EXE=$(PYTHON_BIN)$(PYTHON_VERSION)-config
 else
 $(error ERROR: Unable to find a valid python-config.)
+endif
 endif
 
 PYLIBS = $(shell $(PY_CFG_EXE) --libs)
