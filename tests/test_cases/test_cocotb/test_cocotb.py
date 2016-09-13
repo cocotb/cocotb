@@ -39,6 +39,7 @@ from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
+from cocotb.utils import get_sim_time
 
 from cocotb.binary import BinaryValue
 
@@ -153,6 +154,104 @@ def test_adding_a_coroutine_without_starting(dut):
     yield Timer(100)
     yield Join(forked)
     yield Timer(100)
+
+
+@cocotb.test(expect_fail=False)
+def test_clock_with_units(dut):
+    clk_1mhz   = Clock(dut.clk, 1.0, units='us')
+    clk_250mhz = Clock(dut.clk, 4.0, units='ns')
+
+    if str(clk_1mhz) != "Clock(1.0 MHz)":
+        raise TestFailure("{} != 'Clock(1.0 MHz)'".format(str(clk_1mhz)))
+    else:
+        dut._log.info('Created clock >{}<'.format(str(clk_1mhz)))
+
+    if str(clk_250mhz) != "Clock(250.0 MHz)":
+        raise TestFailure("{} != 'Clock(250.0 MHz)'".format(str(clk_250mhz)))
+    else:
+        dut._log.info('Created clock >{}<'.format(str(clk_250mhz)))
+
+    clk_gen = cocotb.fork(clk_1mhz.start())
+
+    start_time_ns = get_sim_time(units='ns')
+
+    yield Timer(1)
+
+    yield RisingEdge(dut.clk)
+
+    edge_time_ns = get_sim_time(units='ns')
+    if edge_time_ns != start_time_ns + 1000.0:
+        raise TestFailure("Expected a period of 1 us")
+
+    start_time_ns = edge_time_ns
+
+    yield RisingEdge(dut.clk)
+    edge_time_ns = get_sim_time(units='ns')
+    if edge_time_ns != start_time_ns + 1000.0:
+        raise TestFailure("Expected a period of 1 us")
+
+    clk_gen.kill()
+
+    clk_gen = cocotb.fork(clk_250mhz.start())
+
+    start_time_ns = get_sim_time(units='ns')
+
+    yield Timer(1)
+
+    yield RisingEdge(dut.clk)
+
+    edge_time_ns = get_sim_time(units='ns')
+    if edge_time_ns != start_time_ns + 4.0:
+        raise TestFailure("Expected a period of 4 ns")
+
+    start_time_ns = edge_time_ns
+
+    yield RisingEdge(dut.clk)
+    edge_time_ns = get_sim_time(units='ns')
+    if edge_time_ns != start_time_ns + 4.0:
+        raise TestFailure("Expected a period of 4 ns")
+
+    clk_gen.kill()
+
+@cocotb.test(expect_fail=False)
+def test_timer_with_units(dut):
+    time_fs = get_sim_time(units='fs')
+
+    # Yield for one simulation time step
+    yield Timer(1)
+    time_step = get_sim_time(units='fs') - time_fs
+
+    try:
+        #Yield for 2.5 timesteps, should throw exception
+        yield Timer(2.5*time_step, units='fs')
+        raise TestFailure("Timers should throw exception if time cannot be achieved with simulator resolution")
+    except ValueError:
+        dut._log.info("As expected, unable to create a timer of 2.5 simulator time steps")
+
+    time_fs = get_sim_time(units='fs')
+
+    yield Timer(3, "ns")
+
+    if get_sim_time(units='fs') != time_fs+3000000.0:
+        raise TestFailure("Expected a delay of 3 ns")
+
+    time_fs = get_sim_time(units='fs')
+    yield Timer(1.5, "ns")
+
+    if get_sim_time(units='fs') != time_fs+1500000.0:
+        raise TestFailure("Expected a delay of 1.5 ns")
+
+    time_fs = get_sim_time(units='fs')
+    yield Timer(10.0, "ps")
+
+    if get_sim_time(units='fs') != time_fs+10000.0:
+        raise TestFailure("Expected a delay of 10 ps")
+
+    time_fs = get_sim_time(units='fs')
+    yield Timer(1.0, "us")
+
+    if get_sim_time(units='fs') != time_fs+1000000000.0:
+        raise TestFailure("Expected a delay of 1 us")
 
 
 @cocotb.test(expect_fail=False)
@@ -301,6 +400,7 @@ def test_syntax_error(dut):
     fail
 
 
+#@cocotb.test(expect_error=True)
 @cocotb.test(expect_error=True)
 def test_coroutine_syntax_error(dut):
     """Syntax error in a coroutine that we yield"""
@@ -493,6 +593,8 @@ def test_logging_with_args(dut):
     assert counter.str_counter == 1
 
     dut._log.info("No substitution")
+
+    dut._log.warning("Testing multiple line\nmessage")
 
     yield Timer(100) #Make it do something with time
 
