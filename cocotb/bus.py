@@ -34,6 +34,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
 from cocotb.result import TestError
 
+def _build_sig_attr_dict(signals):
+    if isinstance(signals, dict):
+        return signals
+    else:
+        sig_to_attr = {}
+        for sig in signals:
+            sig_to_attr[sig] = sig
+        return sig_to_attr
+
 
 class Bus(object):
     """
@@ -53,16 +62,21 @@ class Bus(object):
     def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_"):
         """
         Args:
-            entity (SimHandle): SimHandle instance to the entity containing the
-                                bus
-            name (str):         name of the bus. None for nameless bus, e.g.
-                                bus-signals in an interface or a modport
-                                (untested on struct/record, but could work here
-                                as well)
-            signals (list):     array of signal names
+            entity (SimHandle):   SimHandle instance to the entity containing the
+                                  bus
+            name (str):           name of the bus. None for nameless bus, e.g.
+                                  bus-signals in an interface or a modport
+                                  (untested on struct/record, but could work here
+                                  as well)
+            signals (list/dict):  In the case of an obj (passed to drive/capture)
+                                  that has the same attribute names as the signal
+                                  names of the bus, the signals agument can be a list
+                                  of those names.  When obj has different attribute names,
+                                  the signals arg should be a dict that maps bus attribute names
+                                  to obj signal names
 
         Kwargs:
-            optional_signals (list): array of optional signal names
+            optional_signals (list/dict): optional signals (see signals argument above for details)
 
             bus_separator (str): characters to use as separator between bus
                                  name and signal name
@@ -71,29 +85,28 @@ class Bus(object):
         self._name = name
         self._signals = {}
 
-        for signal in signals:
+        for attr_name, sig_name in _build_sig_attr_dict(signals).iteritems():
             if name:
-                signame = name + bus_separator + signal
+                signame = name + bus_separator + sig_name
             else:
-                signame = signal
-            setattr(self, signal, getattr(entity, signame))
-            self._signals[signal] = getattr(self, signal)
+                signame = sig_name
+            setattr(self, attr_name, getattr(entity, signame))
+            self._signals[attr_name] = getattr(self, attr_name)
 
         # Also support a set of optional signals that don't have to be present
-        for signal in optional_signals:
+        for attr_name, sig_name in _build_sig_attr_dict(optional_signals).iteritems():
             if name:
-                signame = name + "_" + signal
+                signame = name + bus_separator + sig_name
             else:
-                signame = signal
+                signame = sig_name
             # Attempts to access a signal that doesn't exist will print a
             # backtrace so we 'peek' first, slightly un-pythonic
             if entity.__hasattr__(signame):
-                hdl = getattr(entity, signame)
-                setattr(self, signal, hdl)
-                self._signals[signal] = getattr(self, signal)
+                setattr(self, attr_name, getattr(entity, signame))
+                self._signals[attr_name] = getattr(self, attr_name)
             else:
                 self._entity._log.debug("Ignoring optional missing signal "
-                                        "%s on bus %s" % (signal, name))
+                                        "%s on bus %s" % (sig_name, name))
 
     def drive(self, obj, strict=False):
         """
@@ -109,16 +122,18 @@ class Bus(object):
         Raises:
             AttributeError
         """
-        for name, hdl in self._signals.items():
-            if not hasattr(obj, name):
+        for attr_name, hdl in self._signals.iteritems():
+            if not hasattr(obj, attr_name):
                 if strict:
-                    msg = ("Unable to drive onto %s.%s because %s is missing "
-                           "attribute %s" % self._entity._name, self._name,
-                           obj.__class__.__name__, name)
+                    msg = ("Unable to drive onto {0}.{1} because {2} is missing "
+                           "attribute {3}".format(self._entity._name,
+                                                  self._name,
+                                                  obj.__class__.__name__,
+                                                  attr_name))
                     raise AttributeError(msg)
                 else:
                     continue
-            val = getattr(obj, name)
+            val = getattr(obj, attr_name)
             hdl <= val
 
     def capture(self, obj, strict=False):
@@ -135,16 +150,18 @@ class Bus(object):
         Raises:
             AttributeError
         """
-        for name, hdl in self._signals.items():
-            if not hasattr(obj, name):
+        for attr_name, hdl in self._signals.iteritems():
+            if not hasattr(obj, attr_name):
                 if strict:
-                    msg = ("Unable to capture from %s.%s because %s is missing "
-                           "attribute %s" % self._entity._name, self._name,
-                           obj.__class__.__name__, name)
+                    msg = ("Unable to capture from {0}.{1} because {2} is missing "
+                           "attribute {3}".format(self._entity._name,
+                                                  self._name,
+                                                  obj.__class__.__name__,
+                                                  attr_name))
                     raise AttributeError(msg)
                 else:
                     continue
-            setattr(obj, name, hdl.value)
+            setattr(obj, attr_name, hdl.value)
 
 
     def __le__(self, value):
