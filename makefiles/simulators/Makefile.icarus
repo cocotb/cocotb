@@ -65,7 +65,7 @@ ifeq ($(OS),Msys)
 EXTRA_LIBS := -lvpi
 EXTRA_LIBDIRS := -L$(ICARUS_BIN_DIR)/../lib
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
-LIB_LOAD := PATH=$(OLD_PATH):$(LIB_DIR)
+LIB_LOAD = PATH=$(OLD_PATH):$(LIB_DIR)
 NEW_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
 
 else
