@@ -250,6 +250,8 @@ def test_discover_all(dut):
                           13 (const_cmplx[1:2].a, const_cmplx[1:2].b[0:2])           (VHDL only excluding Aldec)
                 signals:   9 (sig_desc)
                            9 (sig_asc)
+                           1 (\ext_id\)                                              (VHDL only)
+                           1 (\!\)                                                   (VHDL only)
                            5 (sig_t1)
                           37 (sig_t2[7:4][7:0])
                           37 (sig_t3a[1:4][7:0])
@@ -278,8 +280,8 @@ def test_discover_all(dut):
                            8 (desc_gen: process "always")                            (VPI - Aldec only)
                 process:   1 ("always")                                              (VPI - Aldec only)
 
-                  TOTAL: 854 (VHDL - Default)
-                         816 (VHDL - Aldec)
+                  TOTAL: 856 (VHDL - Default)
+                         818 (VHDL - Aldec)
                          780 (Verilog - Default)
                          649 (Verilog - Aldec)
     """
@@ -311,9 +313,9 @@ def test_discover_all(dut):
             dummy = hdl.sig
 
     if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
-        pass_total = 816
+        pass_total = 818
     elif cocotb.LANGUAGE in ["vhdl"]:
-        pass_total = 854
+        pass_total = 856
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
         pass_total = 649
     else:
@@ -443,3 +445,15 @@ def test_direct_signal_indexing(dut):
     if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera"))):
         _check_type(tlog, dut.sig_rec.b[1], ModifiableObject)
         _check_type(tlog, dut.sig_rec.b[1][2], ModifiableObject)
+
+@cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"]))
+def test_extended_identifiers(dut):
+    """Test accessing extended identifiers"""
+
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(2000)
+
+    tlog.info("Checking extended identifiers.")
+    _check_type(tlog, dut._id("\\ext_id\\",extended=False), ModifiableObject)
+    _check_type(tlog, dut._id("!"), ModifiableObject)

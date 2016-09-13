@@ -22,7 +22,7 @@ def adder_basic_test(dut):
         raise TestFailure(
             "Adder result is incorrect: %s != 15" % str(dut.X))
     else:  # these last two lines are not strictly necessary
-        dut.log.info("Ok!")
+        dut._log.info("Ok!")
 
 
 @cocotb.test()
@@ -44,4 +44,4 @@ def adder_randomised_test(dut):
                 "Randomised test failed with: %s + %s = %s" %
                 (int(dut.A), int(dut.B), int(dut.X)))
         else:  # these last two lines are not strictly necessary
-            dut.log.info("Ok!")
+            dut._log.info("Ok!")

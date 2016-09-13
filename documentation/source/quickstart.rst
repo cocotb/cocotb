@@ -108,6 +108,19 @@ It is beneficial to add the path to Python to the windows system PATH variable s
 
 Once inside the Msys shell commands as given here will work as expected.
 
+MAC Packages
+------------
+
+You need a few packages installed to get cocotb running on mac.
+Installing a package manager really helps things out here.
+
+Brew_ seems to be the most popular, so we'll assume you have that installed.
+.. _Brew: http://www.brew.sh
+
+.. code-block::bash
+    
+    $> brew install python icarus-verilog gtkwave
+    
 Running an example
 ------------------
 
@@ -178,13 +191,13 @@ we could create a test file containing the following:
         """
         Try accessing the design
         """
-        dut.log.info("Running test!")
+        dut._log.info("Running test!")
         for cycle in range(10):
             dut.clk = 0
             yield Timer(1000)
             dut.clk = 1
             yield Timer(1000)
-        dut.log.info("Running test!")
+        dut._log.info("Running test!")
 
 This will drive a square wave clock onto the ``clk`` port of the toplevel.
 
@@ -258,7 +271,7 @@ Parallel and sequential execution of coroutines
         reset_n <= 0
         yield Timer(duration)
         reset_n <= 1
-        reset_n.log.debug("Reset complete")
+        reset_n._log.debug("Reset complete")
     
     @cocotb.test()
     def parallel_example(dut):
@@ -267,17 +280,17 @@ Parallel and sequential execution of coroutines
         # This will call reset_dut sequentially
         # Execution will block until reset_dut has completed
         yield reset_dut(reset_n, 500)
-        dut.log.debug("After reset")
+        dut._log.debug("After reset")
         
         # Call reset_dut in parallel with this coroutine
         reset_thread = cocotb.fork(reset_dut(reset_n, 500)
         
         yield Timer(250)
-        dut.log.debug("During reset (reset_n = %s)" % reset_n.value)
+        dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
         
         # Wait for the other thread to complete
         yield reset_thread.join()
-        dut.log.debug("After reset")
+        dut._log.debug("After reset")
 
 
 Creating a test
