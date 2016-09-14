@@ -81,6 +81,11 @@ class TestComplete(StopIteration):
         self.stderr = StringIO()
 
 
+class ExternalException(StopIteration):
+    def __init__(self, exception):
+        self.exception = exception
+
+
 class TestError(TestComplete):
     pass
 

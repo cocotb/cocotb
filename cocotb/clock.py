@@ -32,6 +32,7 @@ import simulator
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Timer, RisingEdge
+from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 
 class BaseClock(object):
@@ -39,18 +40,18 @@ class BaseClock(object):
     def __init__(self, signal):
         self.signal = signal
         self.log = SimLog("cocotb.%s.%s" %
-                          (self.__class__.__name__, self.signal.name))
+                          (self.__class__.__name__, self.signal._name))
 
 
 class Clock(BaseClock):
     """
     simple 50:50 duty cycle clock
     """
-    def __init__(self, signal, period):
+    def __init__(self, signal, period, units=None):
         BaseClock.__init__(self, signal)
-        self.period = period
-        self.half_period = period / 2
-        self.frequency = 1.0 / period * 1000000
+        self.period = get_sim_steps(period, units)
+        self.half_period = get_sim_steps(period / 2.0, units)
+        self.frequency = 1.0 / get_time_from_sim_steps(self.period,units='us')
         self.hdl = None
         self.signal = signal
         self.coro = None
@@ -66,4 +67,4 @@ class Clock(BaseClock):
             yield t
 
     def __str__(self):
-        return self.__class__.__name__ + "(%3.1fMHz)" % self.frequency
+        return self.__class__.__name__ + "(%3.1f MHz)" % self.frequency

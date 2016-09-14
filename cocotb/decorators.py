@@ -38,7 +38,8 @@ import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
-                           ReturnValue, raise_error)
+                           ReturnValue, raise_error, ExternalException)
+from cocotb.utils import get_sim_time
 
 
 def public(f):
@@ -111,11 +112,18 @@ class RunningCoroutine(object):
 
     def send(self, value):
         try:
+            if isinstance(value, ExternalException):
+                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
+                return self._coro.throw(value.exception)
             return self._coro.send(value)
         except TestComplete as e:
             if isinstance(e, TestFailure):
                 self.log.warning(str(e))
             raise
+        except ExternalException as e:
+            self.retval = e
+            self._finished = True
+            raise CoroutineComplete(callback=self._finished_cb)
         except ReturnValue as e:
             self.retval = e.retval
             self._finished = True
@@ -125,7 +133,7 @@ class RunningCoroutine(object):
             raise CoroutineComplete(callback=self._finished_cb)
         except Exception as e:
             self._finished = True
-            raise_error(self, "Send raised exception: %s" % (str(e)))
+            raise create_error(self, "Send raised exception: %s" % (str(e)))
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -175,6 +183,7 @@ class RunningTest(RunningCoroutine):
         RunningCoroutine.__init__(self, inst, parent)
         self.started = False
         self.start_time = 0
+        self.start_sim_time = 0
         self.expect_fail = parent.expect_fail
         self.expect_error = parent.expect_error
         self.skip = parent.skip
@@ -188,8 +197,12 @@ class RunningTest(RunningCoroutine):
             self.log.info("Starting test: \"%s\"\nDescription: %s" %
                           (self.funcname, self.__doc__))
             self.start_time = time.time()
+            self.start_sim_time = get_sim_time('ns')
             self.started = True
         try:
+            if isinstance(value, ExternalException):
+                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
+                return self._coro.throw(value.exception)
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
         except TestComplete as e:
@@ -206,7 +219,7 @@ class RunningTest(RunningCoroutine):
         except StopIteration:
             raise TestSuccess()
         except Exception as e:
-            raise_error(self, "Send raised exception: %s" % (str(e)))
+            raise create_error(self, "Send raised exception: %s" % (str(e)))
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
@@ -320,8 +333,8 @@ def external(func):
         def execute_external(func, _event):
             try:
                 _event.result = func(*args, **kwargs)
-            except TypeError as e:
-                _event.result = None
+            except Exception as e:
+                _event.result = e
             unblock_external(_event)
 
         thread = threading.Thread(group=None, target=execute_external,
@@ -332,7 +345,10 @@ def external(func):
         yield bridge.out_event.wait()
 
         if bridge.result is not None:
-            raise ReturnValue(bridge.result)
+            if isinstance(bridge.result, Exception):
+                raise ExternalException(bridge.result)
+            else:
+                raise ReturnValue(bridge.result)
 
     return wrapped
 
@@ -370,7 +386,7 @@ class test(coroutine):
             try:
                 return RunningTest(self._func(*args, **kwargs), self)
             except Exception as e:
-                raise_error(self, str(e))
+                raise create_error(self, str(e))
 
         _wrapped_test.im_test = True    # For auto-regressions
         _wrapped_test.name = self._func.__name__
