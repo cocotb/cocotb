@@ -281,16 +281,22 @@ def FallingEdge(signal):
 
 class ClockCycles(_Edge):
     """
-    Execution will resume after N rising edges
+    Execution will resume after N rising edges or N falling edges
     """
-    def __init__(self, signal, num_cycles):
-        Edge.__init__(self, signal)
+    def __init__(self, signal, num_cycles, rising=True):
+        _Edge.__init__(self, signal)
         self.num_cycles = num_cycles
+        if rising is True:
+            self._rising = 1
+        else:
+            self._rising = 2
 
     def prime(self, callback):
         self._callback = callback
 
         def _check(obj):
+            self.unprime()
+
             if self.signal.value:
                 self.num_cycles -= 1
 
@@ -301,6 +307,7 @@ class ClockCycles(_Edge):
             self.cbhdl = simulator.register_value_change_callback(self.signal.
                                                                   _handle,
                                                                   _check,
+                                                                  self._rising,
                                                                   self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
@@ -308,6 +315,7 @@ class ClockCycles(_Edge):
         self.cbhdl = simulator.register_value_change_callback(self.signal.
                                                               _handle,
                                                               _check,
+                                                              self._rising,
                                                               self)
         if self.cbhdl is None:
             raise_error(self, "Unable set up %s Trigger" % (str(self)))

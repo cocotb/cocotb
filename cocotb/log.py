@@ -61,8 +61,10 @@ class SimBaseLog(logging.getLoggerClass()):
             want_ansi = want_ansi == '1'
         if want_ansi:
             hdlr.setFormatter(SimColourLogFormatter())
+            self.colour = True
         else:
             hdlr.setFormatter(SimLogFormatter())
+            self.colour = False
         self.name = name
         self.handlers = []
         self.disabled = False
@@ -166,8 +168,7 @@ class SimLogFormatter(logging.Formatter):
     def _format(self, level, record, msg, coloured=False):
         time_ns = get_sim_time('ns')
         simtime = "%6.2fns" % (time_ns)
-
-        prefix = simtime + ' ' + level + ' '
+        prefix = simtime.rjust(10) + ' ' + level + ' '
         if not _suppress:
             prefix += self.ljust(record.name, _RECORD_CHARS) + \
                       self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
@@ -198,11 +199,11 @@ class SimColourLogFormatter(SimLogFormatter):
     """Log formatter to provide consistent log message handling."""
     loglevel2colour = {
         logging.DEBUG   :       "%s",
-        logging.INFO    :       ANSI.BLUE_FG + "%s" + ANSI.DEFAULT_FG,
-        logging.WARNING :       ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT_FG,
-        logging.ERROR   :       ANSI.RED_FG + "%s" + ANSI.DEFAULT_FG,
+        logging.INFO    :       ANSI.BLUE_FG + "%s" + ANSI.DEFAULT,
+        logging.WARNING :       ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT,
+        logging.ERROR   :       ANSI.RED_FG + "%s" + ANSI.DEFAULT,
         logging.CRITICAL:       ANSI.RED_BG + ANSI.BLACK_FG + "%s" +
-                                ANSI.DEFAULT_FG + ANSI.DEFAULT_BG}
+                                ANSI.DEFAULT}
 
     def format(self, record):
         """pretify the log output, annotate with simulation time"""
@@ -212,7 +213,8 @@ class SimColourLogFormatter(SimLogFormatter):
         else:
             msg = record.msg
 
-        msg = SimColourLogFormatter.loglevel2colour[record.levelno] % msg
+        # Need to colour each line in case coloring is applied in the message
+        msg = '\n'.join([SimColourLogFormatter.loglevel2colour[record.levelno] % line for line in msg.split('\n')])
         level = (SimColourLogFormatter.loglevel2colour[record.levelno] %
                  record.levelname.ljust(_LEVEL_CHARS))
 

@@ -68,7 +68,7 @@ from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              _NextTimeStep, _ReadWrite)
 from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
-                           create_error)
+                           create_error, ExternalException)
 
 
 class Scheduler(object):
@@ -336,6 +336,8 @@ class Scheduler(object):
                     del self._trigger2coros[pending]
 
         for coro in scheduling:
+            if _debug:
+                self.log.debug("Scheduling coroutine %s" % (coro.__name__))
             self.schedule(coro, trigger=trigger)
             if _debug:
                 self.log.debug("Scheduled coroutine %s" % (coro.__name__))
@@ -454,8 +456,13 @@ class Scheduler(object):
         if hasattr(trigger, "pass_retval"):
             sendval = trigger.retval
             if _debug:
-                coroutine.log.debug("Scheduling with ReturnValue(%s)" %
-                                    (repr(sendval)))
+                if isinstance(sendval, ReturnValue):
+                    coroutine.log.debug("Scheduling with ReturnValue(%s)" %
+                                        (repr(sendval)))
+                elif isinstance(sendval, ExternalException):
+                    coroutine.log.debug("Scheduling with ExternalException(%s)" %
+                                        (repr(sendval.exception)))
+
         else:
             sendval = trigger
             if _debug:
