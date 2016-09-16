@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
 Functional Coverage features.
+
 Global variable:
 coverage_db - a coverage prefix tree (map) containing all coverage objects with name string as a key
 
@@ -36,7 +37,10 @@ CoverCross - a cover cross with references to CoverPoints
 CoverCheck - a cover point which checks only a pass/fail condition
 
 Functions:
-report_coverage(logger, bins) - prints coverage
+reportCoverage(logger, bins) - prints coverage
+coverageSection(*CoverItems) - allows for convenient definition of multiple coverage items and combines 
+  them into a single decorator
+
 """
 
 from functools import wraps
@@ -114,13 +118,13 @@ class CoverItem(object):
 class CoverPoint(CoverItem):
     """
     Class used to create coverage points as decorators. It matches predefined bins
-    according to the rule rel(f(args), bin) == True 
+    according to the rule rel(xf(args), bin) == True 
     Syntax:
-    @coverage.CoverPoint(name, f, rel, bins, weight, at_least, inj)
+    @coverage.CoverPoint(name, xf, rel, bins, weight, at_least, inj)
     Where:
     name - a CoverPoint path and name, defining its position in a coverage trie
-    f - (optional) transformation function, which transforms arguments of the decorated function (args)
-    rel - (optional) relation function which defines bins matching relation (by default equality operator)
+    xf - (optional) transformation function, which transforms arguments of the decorated function (args)
+    rel - (optional) relation function which defines bins matching relation (by default, equality operator)
     bins - a list of bins objects to be matched
     weight - (optional) a CoverPoint weight (by default 1)
     at_least - (optional) defines number of hits per bin to be considered as covered (by default 1)
@@ -129,7 +133,7 @@ class CoverPoint(CoverItem):
     Example:
     @coverage.CoverPoint(
       name = "top.parent.coverpoint", 
-      f = lambda x : x/2, 
+      xf = lambda x : x/2, 
       rel = lambda x, y : x < y, 
       bins = range(1,5)
     )
@@ -139,16 +143,16 @@ class CoverPoint(CoverItem):
     """
     
     #conditional Object creation, only if name not already registered
-    def __new__(cls, name, f=None, rel=None, bins=[], weight=1, at_least=1, inj=False):
+    def __new__(cls, name, xf=None, rel=None, bins=[], weight=1, at_least=1, inj=False):
         if name in coverage_db:
             return coverage_db[name]
         else:
             return super(CoverPoint, cls).__new__(CoverPoint)
 
-    def __init__(self, name, f=None, rel=None, bins=[], weight=1, at_least=1, inj=False):
+    def __init__(self, name, xf=None, rel=None, bins=[], weight=1, at_least=1, inj=False):
         if not name in coverage_db:
             CoverItem.__init__(self, name)
-            self._transformation = f
+            self._transformation = xf
             #equality operator is the defult bins matching relation
             self._relation = rel if rel is not None else operator.eq
             self._weight = weight
@@ -263,8 +267,8 @@ class CoverCross(CoverItem):
     ign_rel - (optional) defines a relation which applies to the ign_bins list (by default equality operator)
     
     Example:
-    @coverage.CoverPoint(name = "top.parent.coverpoint1", f = lambda x, y: x, bins = range(1,5))
-    @coverage.CoverPoint(name = "top.parent.coverpoint2", f = lambda x, y: y, bins = range(1,5))
+    @coverage.CoverPoint(name = "top.parent.coverpoint1", xf = lambda x, y: x, bins = range(1,5))
+    @coverage.CoverPoint(name = "top.parent.coverpoint2", xf = lambda x, y: y, bins = range(1,5))
     @coverage.CoverCross(
       name = "top.parent.covercross", 
       items = ["top.parent.coverpoint1", "top.parent.coverpoint2"],
@@ -487,7 +491,7 @@ class CoverCheck(CoverItem):
     def detailed_coverage(self):
         return self._hits
 
-def report_coverage(logger, bins=False):
+def reportCoverage(logger, bins=False):
     """Prints sorted coverage with optional bins details"""
     sorted_cov = sorted(coverage_db, key=str.lower)
     for ii in sorted_cov:
@@ -504,4 +508,36 @@ def report_coverage(logger, bins=False):
                   coverage_db[ii].detailed_coverage[jj]
                 )
 
+def coverageSection(*coverItems):
+    """
+    Combines multiple coverage items into a single decorator.
+    Example:
+    my_coverage = coverage.coverageSection(
+      coverage.CoverItem("x",...),
+      coverage.CoverItem("y",...),
+      ...
+    )
+    ...
+    @my_coverage()
+    def decorated_fun(self, arg):
+      ...
+    """
+    def nested(*decorators):
+        def decorator(f):
+             for dec in reversed(*decorators):
+                  f = dec(f)
+             return f
+        return decorator
+
+    fNested = nested(coverItems)
+
+    class CoverageSection():
+        def __call__(self, f):
+            @wraps(f)
+            @fNested
+            def _wrapped_function(*cb_args, **cb_kwargs):
+                return f(*cb_args, **cb_kwargs)
+            return _wrapped_function
+
+    return CoverageSection
 

@@ -78,11 +78,11 @@ class StreamBusDriver(BusDriver):
         #functional coverage - check if all possible data values were
         #sampled at first and last input
         @cocotb.coverage.CoverPoint("top.data1", 
-            f = lambda transaction : transaction.data[0], 
+            xf = lambda transaction : transaction.data[0], 
             bins = range(0, 2**transaction.data_width)
             )
         @cocotb.coverage.CoverPoint("top.dataN", 
-            f = lambda transaction : transaction.data[transaction.bus_width-1], 
+            xf = lambda transaction : transaction.data[transaction.bus_width-1], 
             bins = range(0, 2**transaction.data_width)
         )
         def sample_coverage(transaction):

@@ -25,10 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
-Contrained-random verification features.
-
-Classes:
-Randomized - base class for objects intended to have random variables
+Contrained-random verification features unittest.
 """
 
 import unittest
@@ -42,20 +39,23 @@ class TestCRV(unittest.TestCase):
             crv.Randomized.__init__(self)
             self.x = 0
             self.y = 0
+            self.size = "small"
         
             self.addRand("x", range(0,10))
             self.addRand("y", range(0,10))
+            self.addRand("size", ["small", "medium", "large"])
             
             self.addConstraint(lambda x, y : x < y)
 
     def test_simple_0(self):
         print "Running test_simple_0"
-        results = []
-        
+        size_hits = []
         for i in range (10):
             a = self.SimpleRandomized(0,0)
             a.randomize();
             self.assertTrue(a.x < a.y)
+            size_hits.append(a.size)
+        self.assertTrue([x in size_hits for x in["small", "medium", "large"]] == [True, True, True])
         
     class RandomizedTrasaction(crv.Randomized):
         def __init__(self, address, data=0, write=False, delay=1):

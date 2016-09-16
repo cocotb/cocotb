@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 Contrained-random verification features.
 
 Classes:
-Randomized - base class for objects intended to have random variables
+Randomized - base class for objects intended to contain random variables
 """
 
 import random
@@ -38,6 +38,37 @@ import copy
 import itertools
 
 class Randomized(object):
+    """
+    Base class for randomized types. Final class should contain defined random variables using addRand() 
+    method. Constraints may be added/deleted using add/delConstraint() methods. 
+    Constraint is an arbitrary function and may either return a true/false value (hard constraints) or 
+    a numeric value, which may be interpreted as soft constraints or distribution functions. Constraint 
+    function arguments must match final class attributes (random or not). Constraints may have multiple 
+    random arguments which corresponds to multi-dimensional distributions.
+    Function randomize() performs a randomization for all random variables meeting all defined  constraints. 
+    Function randomize_with() performs a randomization using additional constraint functions given in an 
+    argument.
+    Functions pre/post_randomize() are called before/after randomize and should be overloaded in a final
+    class if necessary. 
+    
+    Example:
+    class FinalRandomized(Randomized)
+      def __init__(self, x):
+        Randomized.__init__(self)
+        self.x = x
+        self.y = 0
+        self.z = 0
+        addRand(y, range(10)) #define y as a random variable taking values from 0 to 9
+        addRand(z, range(5))  #define z as a random variable taking values from 0 to 4
+        addConstraint(lambda x, y: x !=y ) #a hard constraint
+        addConstraint(lambda y, z: y + z ) #multi-dimensional distribution
+        
+    object = FinalRandomized(5)
+    object.randomize_with(lambda z : z > 3) # additional constraint to be applied
+    
+    As generating constrained random objects may involve a lot of computations, it is recommended to limit
+    random variables domains and use pre/post_randomize() methods where possible. 
+    """
 
     def __init__(self):
         #all random variables, map NAME -> DOMAIN
@@ -57,6 +88,19 @@ class Randomized(object):
         self._simpleDistributions = {} 
     
     def addRand(self, var, domain=None):
+        """
+        Adds a random variable to the solver. All random variables must be defined before adding any 
+        constraint. Therefore it is highly recommended to do this in an __init__ method. 
+        Syntax:
+        addRand(var, domain)
+        Where:
+        var - a variable name (string) corresponding to the class member variable
+        domain - a list of all allowed values of the variable var
+        
+        Examples:
+        addRand("data", range(1024))
+        addRand("delay", ["small", "medium", "high"])
+        """
         assert (not (self._simpleConstraints or self._implConstraints or self._implDistributions or
              self._simpleDistributions)), "All random variable must be defined before adding a costraint"
              
@@ -66,13 +110,43 @@ class Randomized(object):
         self._randVariables[var] = domain #add a variable to the map
 
     def addConstraint(self, cstr):
+        """
+        Adds a constraint function to the solver. A constraint may return a true/false or a numeric value.
+        Constraint function arguments must be valid class member names (random or not). Arguments must be
+        listed in alphabetical order. Due to calculation complexity, it is recommended to create as few 
+        constraints as possible and implement pre/post randomization methods. 
+        Each constraint is associated with its arguments being random variables, which means for each 
+        random variable combination only one constraint of the true/false type and one numeric may be 
+        defined. The latter will overwrite the existing one. For example, when class has two random 
+        variables (x,y), 6 constraint functions may be defined: boolean an numeric constraints of x, y and
+        a pair (x,y).  
+        Syntax:
+        (ovewritting = )addConstraint(cstr)
+        Where:
+        cstr - a constraint function
+        overwritting - returns an overwritten constraint or None if no overwrite happened (optional)
         
+        Examples:
+        def highdelay_cstr(delay):
+          delay == "high"
+        addConstraint(highdelay_cstr) #hard constraint
+        addConstraint(lambda data : data < 128) #hard constraint
+        #distribution (highest probability density at the boundaries):
+        addConstraint(lambda data : abs(64 - data)) 
+        #hard constraint of multiple variables (some of them may be non-random):
+        addConstraint(lambda x,y,z : x + y + z == 0) 
+        #soft constraint created by applying low probability density for some solutions:
+        addConstraint(lambda delay, size : 0.01 if (size < 5 & delay == "medium") else 1) 
+        #this constraint will overwrite the previously defined (lambda data : data < 128)
+        addConstraint(lambda data : data < 256)
+        """
         if isinstance(cstr, constraint.Constraint):
             #could be a Constraint object...
             pass
         else:
             variables = inspect.getargspec(cstr).args
-            assert (variables == sorted(variables)), "Variables of constraint function must be in alphabetic order"
+            assert (variables == sorted(variables)), \
+              "Variables of constraint function must be in alphabetical order"
             
             #determine the function type... rather unpythonic but necessary for distinction between 
             #a constraint and a distribution
@@ -111,7 +185,16 @@ class Randomized(object):
             return overwriting
                     
     def delConstraint(self, cstr):
+        """
+        Deletes a constraint function.
+        Syntax:
+        delConstraint(cstr)
+        Where:
+        cstr - a constraint function
         
+        Example:
+        delConstraint(highdelay_cstr) 
+        """
         if isinstance(cstr, constraint.Constraint):
             #could be a Constraint object...
             pass
@@ -138,26 +221,31 @@ class Randomized(object):
             #print "removing " + inspect.getsource(cstr) 
         
     def pre_randomize(self):
+        """
+        A function called before randomize(_with)(). To be overrided in a final class if used. 
+        """
         pass
     
     def post_randomize(self):
+        """
+        A function called after randomize(_with)(). To be overrided in a final class if used. 
+        """
         pass
         
-    def randomize(self, *constraints):
+    def randomize(self):
         """
         Randomizes a final class using only predefined constraints.
         """        
         self.pre_randomize()
         solution = self._resolve()
         self.post_randomize()
-        
         self._update_variables(solution)
         
     def randomize_with(self, *constraints):
         """
-        Randomizes a final class using additional constraints given in an argument.
+        Randomizes a final class using additional constraints given in an argument. Additional constraints
+        may override existing ones.
         """                   
-        
         overwritten_constrains = []
         
         #add new constraints
@@ -169,7 +257,6 @@ class Randomized(object):
         self.pre_randomize()
         solution = self._resolve()
         self.post_randomize()
-        
         self._update_variables(solution)
         
         #remove new constraints
@@ -180,9 +267,10 @@ class Randomized(object):
         for cstr in overwritten_constrains:
             self.addConstraint(cstr)
 
-            
     def _resolve(self):
-                
+        """
+        Resolves constraints. 
+        """   
         #step 1: determine search space by applying simple constraints to the random variables
         
         randVariables = dict(self._randVariables) #we need a copy, as we will be updating domains
