@@ -196,7 +196,7 @@ def mean_randomised_test(dut):
 def mean_mdv_test(dut):
     """ Test using functional coverage measurements and 
         Constrained-Random mechanisms. Generates random transactions
-        until coverage defined in Driver reaches 99% """
+        until coverage defined in Driver reaches 100% """
 
 
     dut_out = StreamBusMonitor(dut, "o", dut.clk)
@@ -208,7 +208,7 @@ def mean_mdv_test(dut):
 
     data_width = int(dut.DATA_WIDTH.value)
     bus_width = int(dut.BUS_WIDTH.value)
-    dut.log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
+    dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
                  (data_width, bus_width))
 
     cocotb.fork(clock_gen(dut.clk, period=clock_period))
@@ -230,7 +230,7 @@ def mean_mdv_test(dut):
     
     coverage = 0
     xaction = StreamTransaction(bus_width, data_width)
-    while coverage < 99:
+    while coverage < 100:
         
         #randomize without constraint
         #xaction.randomize() 
@@ -248,7 +248,7 @@ def mean_mdv_test(dut):
         yield dut_in.send(xaction)
         exp_out.append(xaction.mean_value())
         coverage = cocotb.coverage.coverage_db["top"].coverage*100/cocotb.coverage.coverage_db["top"].size
-        dut.log.info("Current Coverage = %d %%", coverage)
+        dut._log.info("Current Coverage = %d %%", coverage)
         
 
 

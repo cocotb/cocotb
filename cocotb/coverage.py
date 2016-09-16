@@ -34,6 +34,9 @@ CoverItem  - coverage base class, corresponds to a covergroup, created automatic
 CoverPoint - a cover point with bins
 CoverCross - a cover cross with references to CoverPoints
 CoverCheck - a cover point which checks only a pass/fail condition
+
+Functions:
+report_coverage(logger, bins) - prints coverage
 """
 
 from functools import wraps
@@ -483,3 +486,22 @@ class CoverCheck(CoverItem):
     @property
     def detailed_coverage(self):
         return self._hits
+
+def report_coverage(logger, bins=False):
+    """Prints sorted coverage with optional bins details"""
+    sorted_cov = sorted(coverage_db, key=str.lower)
+    for ii in sorted_cov:
+        logger ("   "*ii.count('.') + "%s : %s, coverage=%d, size=%d ", 
+          ii, 
+          coverage_db[ii], 
+          coverage_db[ii].coverage, 
+          coverage_db[ii].size
+        )
+        if (type(coverage_db[ii]) is not CoverItem) & (bins):
+            for jj in coverage_db[ii].detailed_coverage:
+                logger ("   "*ii.count('.') + "   BIN %s : %s", 
+                  jj, 
+                  coverage_db[ii].detailed_coverage[jj]
+                )
+
+
