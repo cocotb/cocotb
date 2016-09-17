@@ -134,17 +134,17 @@ class Problem(object):
         @type  domain: list, tuple, or instance of C{Domain}
         """
         if variable in self._variables:
-            raise ValueError, "Tried to insert duplicated variable %s" % \
-                              repr(variable)
+            raise ValueError("Tried to insert duplicated variable %s" % \
+                              repr(variable))
         if type(domain) in (list, tuple):
             domain = Domain(domain)
         elif isinstance(domain, Domain):
             domain = copy.copy(domain)
         else:
-            raise TypeError, "Domains must be instances of subclasses of "\
-                             "the Domain class"
+            raise TypeError("Domains must be instances of subclasses of "\
+                             "the Domain class")
         if not domain:
-            raise ValueError, "Domain is empty"
+            raise ValueError("Domain is empty")
         self._variables[variable] = domain
 
     def addVariables(self, variables, domain):
@@ -195,8 +195,8 @@ class Problem(object):
             if callable(constraint):
                 constraint = FunctionConstraint(constraint)
             else:
-                raise ValueError, "Constraints must be instances of "\
-                                  "subclasses of the Constraint class"
+                raise ValueError("Constraints must be instances of "\
+                                  "subclasses of the Constraint class")
         self._constraints.append((constraint, variables))
 
     def getSolution(self):
@@ -376,8 +376,8 @@ class Solver(object):
                              constraints affecting the given variables.
         @type  vconstraints: dict
         """
-        raise NotImplementedError, \
-              "%s is an abstract class" % self.__class__.__name__
+        raise NotImplementedError( \
+              "%s is an abstract class" % self.__class__.__name__)
 
     def getSolutions(self, domains, constraints, vconstraints):
         """
@@ -391,8 +391,8 @@ class Solver(object):
                              constraints affecting the given variables.
         @type  vconstraints: dict
         """
-        raise NotImplementedError, \
-              "%s provides only a single solution" % self.__class__.__name__
+        raise NotImplementedError( \
+              "%s provides only a single solution" % self.__class__.__name__)
 
     def getSolutionIter(self, domains, constraints, vconstraints):
         """
@@ -406,8 +406,8 @@ class Solver(object):
                              constraints affecting the given variables.
         @type  vconstraints: dict
         """
-        raise NotImplementedError, \
-              "%s doesn't provide iteration" % self.__class__.__name__
+        raise NotImplementedError( \
+              "%s doesn't provide iteration" % self.__class__.__name__)
 
 class BacktrackingSolver(Solver):
     """
@@ -522,7 +522,7 @@ class BacktrackingSolver(Solver):
             # Push state before looking for next variable.
             queue.append((variable, values, pushdomains))
 
-        raise RuntimeError, "Can't happen"
+        raise RuntimeError("Can't happen")
 
     def getSolution(self, domains, constraints, vconstraints):
         iter = self.getSolutionIter(domains, constraints, vconstraints)
@@ -1251,7 +1251,7 @@ class InSetConstraint(Constraint):
 
     def __call__(self, variables, domains, assignments, forwardcheck=False):
         # preProcess() will remove it.
-        raise RuntimeError, "Can't happen"
+        raise RuntimeError("Can't happen")
 
     def preProcess(self, variables, domains, constraints, vconstraints):
         set = self._set
@@ -1286,7 +1286,7 @@ class NotInSetConstraint(Constraint):
 
     def __call__(self, variables, domains, assignments, forwardcheck=False):
         # preProcess() will remove it.
-        raise RuntimeError, "Can't happen"
+        raise RuntimeError("Can't happen")
 
     def preProcess(self, variables, domains, constraints, vconstraints):
         set = self._set
