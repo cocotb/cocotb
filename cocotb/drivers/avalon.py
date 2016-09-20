@@ -445,6 +445,30 @@ class AvalonMemory(BusDriver):
                 if not self._burstwrite:
                     addr = self.bus.address.value.integer
                     data = self.bus.writedata.value.integer
+                    if hasattr(self.bus, "byteenable"):
+                        byteenable = int(self.bus.byteenable.value)
+                        mask = 0
+                        oldmask = 0
+                        olddata=  0
+                        if (addr in self._mem):
+                            olddata = self._mem[addr]
+                        self.log.debug("Old Data  : %x" % olddata)
+                        self.log.debug("Data in   : %x" % data)
+                        self.log.debug("Width     : %d" % self._width)
+                        self.log.debug("Byteenable: %x" % byteenable)
+                        for i in xrange(self._width/8):
+                            if (byteenable & 2**i):
+                                mask |= 0xFF << (8*i)
+                            else:
+                                oldmask |= 0xFF << (8*i)
+
+                        self.log.debug("Data mask : %x" % mask)
+                        self.log.debug("Old mask  : %x" % oldmask)
+
+                        data = (data & mask) | (olddata & oldmask)
+
+                        self.log.debug("Data out  : %x" % data)
+
                     self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
                     self._mem[addr] = data
                 else:
