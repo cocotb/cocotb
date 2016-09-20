@@ -18,7 +18,7 @@ def issue_330_direct(dut):
 
     structure = dut.inout_if
 
-    tlog.info("Value of inout_if => a_in = %d ; b_out = %d" % (structure.a_in, structure.b_out))
+    tlog.info("Value of inout_if => a_in = %s ; b_out = %s" % (structure.a_in, structure.b_out))
 
 @cocotb.test(skip=cocotb.SIM_NAME in ["Icarus Verilog"])
 def issue_330_iteration(dut):

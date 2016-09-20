@@ -261,6 +261,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 }
 
 int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
+
     // Determine the type of object, either scalar or vector
     m_value.format = vhpiLogicVal;
     m_value.bufSize = 0;
@@ -272,11 +273,23 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     m_binvalue.numElems = 0;
     m_binvalue.value.str = NULL;
 
-    vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
+    vhpiHandleT handle   = GpiObjHdl::get_handle<vhpiHandleT>();
+    vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, handle);
+
+    if (base_hdl == NULL) {
+        vhpiHandleT st_hdl = vhpi_handle(vhpiSubtype, handle);
+
+        if (st_hdl != NULL) {
+            base_hdl = vhpi_handle(vhpiBaseType, st_hdl);
+            vhpi_release_handle(st_hdl);
+        }
+    }
+
+    vhpiHandleT query_hdl = (base_hdl != NULL) ? base_hdl : handle;
 
     m_num_elems = vhpi_get(vhpiSizeP, handle);
 
-    if (m_num_elems > 1) {
+    if (vhpi_get(vhpiKindP, query_hdl) == vhpiArrayTypeDeclK) {
         m_indexable = true;
         m_value.format = vhpiLogicVecVal;
         m_value.bufSize = m_num_elems*sizeof(vhpiEnumT);

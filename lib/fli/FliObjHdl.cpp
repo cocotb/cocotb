@@ -295,7 +295,7 @@ const char* FliLogicObjHdl::get_signal_value_binstr(void)
 
 int FliLogicObjHdl::set_signal_value(const long value)
 {
-    if (m_num_elems == 1) {
+    if (m_fli_type == MTI_TYPE_ENUM) {
         mtiInt32T enumVal = value ? m_enum_map['1'] : m_enum_map['0'];
 
         if (m_is_var) {
@@ -323,7 +323,7 @@ int FliLogicObjHdl::set_signal_value(const long value)
 
 int FliLogicObjHdl::set_signal_value(std::string &value)
 {
-    if (m_num_elems == 1) {
+    if (m_fli_type == MTI_TYPE_ENUM) {
         mtiInt32T enumVal = m_enum_map[value.c_str()[0]];
 
         if (m_is_var) {
