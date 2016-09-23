@@ -151,6 +151,18 @@ class TestCRV(unittest.TestCase):
                   (x.delay1, x.delay2, x.delay3, x.data))
             self.assertTrue(x.delay1 < x.delay2)
             self.assertTrue(x.data > 50)
+            
+    def test_solve_order(self):
+        print("Running test_solve_order")
+
+        for i in range(5):
+            x = self.RandomizedTrasaction(i, data=None)
+            x.solveOrder("delay1", ["delay2", "delay3"])
+            x.randomize()
+            print("delay1 = %d, delay2 = %d, delay3 = %d, data = %d" %
+                  (x.delay1, x.delay2, x.delay3, x.data))
+            self.assertTrue(x.delay1 < x.delay2)
+            self.assertTrue(x.data < 50)         
 
     class RandomizedDist(crv.Randomized):
 
@@ -160,10 +172,15 @@ class TestCRV(unittest.TestCase):
             self.y = 0
             self.z = 0
             self.n = n
+            self.e_pr = False
 
             self.addRand("x", list(range(limit)))
             self.addRand("y", list(range(limit)))
             self.addRand("z", list(range(limit)))
+            
+        def post_randomize(self):
+            if self.e_pr:
+                self.n = self.x + self.y + self.z + self.n
 
     def test_distributions_1(self):
         print("Running test_distributions_1")
@@ -193,7 +210,7 @@ class TestCRV(unittest.TestCase):
         self.assertTrue(x_gr_y < 0)
 
     def test_cover(self):
-
+        print("Running test_cover")
         n = 5
 
         cover = coverage.coverageSection(
@@ -217,7 +234,19 @@ class TestCRV(unittest.TestCase):
         coverage_level = coverage.coverage_db["top"].coverage
 
         self.assertTrue(coverage_level > coverage_size / 2)  # expect >50%
+        
+    def test_post_randomize(self):
+        print("Running test_post_randomize")
 
+        n = 5
+        foo = self.RandomizedDist(10, n)
+        foo.e_pr = True #enable post-randomize
+        for _ in range(5):
+            foo.randomize()
+            print("x = %d, y = %d, z = %d, n = %d" %
+                  (foo.x, foo.y, foo.z, foo.n))
+            
+        self.assertTrue(foo.n > 5)
 
 if __name__ == '__main__':
     unittest.main()
