@@ -37,6 +37,7 @@ else:
     import simulator
 from cocotb.log import SimLog
 from cocotb.result import raise_error
+from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 
 class TriggerException(Exception):
@@ -112,21 +113,21 @@ class Timer(GPITrigger):
 
     Consumes simulation time
     """
-    def __init__(self, time_ps):
+    def __init__(self, time_ps, units=None):
         GPITrigger.__init__(self)
-        self.time_ps = time_ps
+        self.sim_steps = get_sim_steps(time_ps, units)
 
     def prime(self, callback):
         """Register for a timed callback"""
         if self.cbhdl is None:
-            self.cbhdl = simulator.register_timed_callback(self.time_ps,
+            self.cbhdl = simulator.register_timed_callback(self.sim_steps,
                                                            callback, self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
 
     def __str__(self):
-        return self.__class__.__name__ + "(%dps)" % self.time_ps
+        return self.__class__.__name__ + "(%1.2fps)" % get_time_from_sim_steps(self.sim_steps,units='ps')
 
 class _ReadOnly(GPITrigger):
     """
@@ -283,7 +284,7 @@ class ClockCycles(_Edge):
     Execution will resume after N rising edges or N falling edges
     """
     def __init__(self, signal, num_cycles, rising=True):
-        Edge.__init__(self, signal)
+        _Edge.__init__(self, signal)
         self.num_cycles = num_cycles
         if rising is True:
             self._rising = 1
