@@ -25,13 +25,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
-Contrained-random verification features unittest.
+Constrained-random verification features unittest.
 """
+import cocotb
+from cocotb import crv
+from cocotb import coverage
 
-import coverage
 import unittest
-import crv
-
 
 class TestCRV(unittest.TestCase):
 
