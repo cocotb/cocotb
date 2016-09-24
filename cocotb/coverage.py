@@ -573,23 +573,12 @@ def coverageSection(*coverItems):
     def decorated_fun(self, arg):
       ...
     """
-    def nested(*decorators):
-        def decorator(f):
+    def _nested(*decorators):
+        def _decorator(f):
             for dec in reversed(*decorators):
                 f = dec(f)
             return f
-        return decorator
+        return _decorator
 
-    fNested = nested(coverItems)
-
-    class CoverageSection():
-
-        def __call__(self, f):
-            @wraps(f)
-            @fNested
-            def _wrapped_function(*cb_args, **cb_kwargs):
-                return f(*cb_args, **cb_kwargs)
-            return _wrapped_function
-
-    return CoverageSection
+    return _nested(coverItems)
 

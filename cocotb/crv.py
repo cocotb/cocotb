@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
-Contrained-random verification features.
+Constrained-random verification features.
 
 Classes:
 Randomized - base class for objects intended to contain random variables
@@ -35,7 +35,6 @@ import random
 import constraint
 import inspect
 import itertools
-
 
 class Randomized(object):
     """
@@ -53,6 +52,9 @@ class Randomized(object):
     constraint functions given in an argument.
     Functions pre/post_randomize() are called before/after randomize and should 
     be overloaded in a final class if necessary. 
+    If a hard constraint cannot be resolved, an exception is thrown. If a soft
+    constraint cannot be resolved (all acceptable solutions have 0 probability)
+    a variable value is not being randomized. 
 
     Example:
     class FinalRandomized(Randomized)
@@ -75,7 +77,6 @@ class Randomized(object):
     it is recommended to limit random variables domains and use 
     pre/post_randomize() methods where possible. 
     """
-
     def __init__(self):
         # all random variables, map NAME -> DOMAIN
         self._randVariables = {}
@@ -100,7 +101,7 @@ class Randomized(object):
         # map VARIABLE NAME -> FUNCTION
         self._simpleDistributions = {}
         
-        # list of lists containing constraints solving order
+        # list of lists containing random variables solving order
         self._solveOrder = []
 
     def addRand(self, var, domain=None):
@@ -172,14 +173,13 @@ class Randomized(object):
         #just add constraint considering all random variables 
         return self._addConstraint(cstr, self._randVariables)
         
-        
     def solveOrder(self, *orderedVars):
         """
         Defines an order of the constraints resolving. May contain variable
         names or lists with variable names. Constraints are resolved in a given
         order, which means for implicit constraint and distribution functions,
-        they may be treated as simple ones, as one variable could be previously
-        resolved.
+        they may be treated as simple ones, as one some variables could be 
+        already resolved.
         solveOrder(*orderedVars)
         Where:
         orderedVars - variables that are requested to be resolved in an specific
@@ -191,12 +191,13 @@ class Randomized(object):
         addRand (w, list(range(0,10)))
         addConstraint(lambda x, y : x + y = 9)
         addConstraint(lambda z : z < 5) 
-        addConstraint(lambda w : w > 5) 
-        
-        #In first step, "z" and "x" will be resolved, which means only second 
-        #constraint will be applied. In second step, remaining constrains will 
-        #be resolved with variable "x" treated as a constant. 
-        solveOrder(["x", "z"], "y"]            
+        addConstraint(lambda w : w > 5)
+         
+        solveOrder(["x", "z"], "y"] 
+        #In first step, "z", "x" and "w" will be resolved, which means only 
+        #second  and third constraint will be applied. In second step, first 
+        #constraint will be resolved as it was requested to solve "y" after "x"
+        #and "z". "x" will be treated as a constant in this case.      
         """
         self._solveOrder = []
         for selRVars in orderedVars:
@@ -220,14 +221,14 @@ class Randomized(object):
 
     def pre_randomize(self):
         """
-        A function called before randomize(_with)(). To be overrided in a final 
+        A function called before randomize(_with)(). To be overridden in a final 
         class if used. 
         """
         pass
 
     def post_randomize(self):
         """
-        A function called after randomize(_with)(). To be overrided in a final 
+        A function called after randomize(_with)(). To be overridden in a final 
         class if used. 
         """
         pass
@@ -346,7 +347,8 @@ class Randomized(object):
     
     def _randomize(self):
         """
-        Calls _resolve and pre/post_randomize functions in given order.
+        Calls _resolve and pre/post_randomize functions with respect to defined 
+        variables resolving order.
         """
         self.pre_randomize()
         if not self._solveOrder:
@@ -354,53 +356,89 @@ class Randomized(object):
             solution = self._resolve(self._randVariables)
             self._update_variables(solution)
         else:
-            remainingVars = list(self._solveOrder)
+            
+            #list of random variables names
+            remainingRVars = list(self._randVariables.keys())
+            
+            #list of resolved random variables names 
+            resolvedRVars = []
+            
+            #list of random variables with defined solve order
+            remainingOrderedRVars = [item for sublist in self._solveOrder 
+                                     for item in sublist]
+            
+            allConstraints = [] # list of functions (all constraints and dstr)
+            allConstraints.extend([self._implConstraints[_] 
+                               for _ in self._implConstraints])
+            allConstraints.extend([self._implDistributions[_] 
+                               for _ in self._implDistributions])
+            allConstraints.extend([self._simpleConstraints[_] 
+                               for _ in self._simpleConstraints])
+            allConstraints.extend([self._simpleDistributions[_] 
+                               for _ in self._simpleDistributions])
+            
             for selRVars in self._solveOrder:
-                remainingVars.remove(selRVars)
-                print("remaining vars")
-                print (remainingVars)
+                  
+                #step 1: determine all variables to be solved at this stage
+                actualRVars = list(selRVars) #add selected
+                for rvar in actualRVars:
+                    remainingOrderedRVars.remove(rvar) #remove selected
+                    remainingRVars.remove(rvar) #remove selected
+                
+                #if implicit constraint requires a variable which is not given
+                #at this stage, it will be resolved later
+                for rvar in remainingRVars:
+                    rvar_unused = True
+                    for c_vars in self._implConstraints:
+                        if rvar in c_vars:
+                            rvar_unused = False
+                    for d_vars in self._implDistributions:
+                        if rvar in d_vars:
+                            rvar_unused = False
+                    if rvar_unused and not rvar in remainingOrderedRVars:
+                        actualRVars.append(rvar)
+                        remainingRVars.remove(rvar)
+                
                 # a new map of random variables
                 newRandVariables = {}
                 for var in self._randVariables:
-                    if var in selRVars:
+                    if var in actualRVars:
                         newRandVariables[var] = self._randVariables[var]
                 
-                #delete all constraints recognized as implicit
-                allImplConstraints = []     
+                #step 2: select only valid constraints at this stage
                 
-                def _deleteCstrAndUpdate(constraintsMap):
-                    to_delete = []
-                    for cstr in constraintsMap:
-                        #if a random variable is in constraint, but not in order 
-                        #list
-                        for var in cstr:
-                            if var not in selRVars and \
-                              [_ for _ in remainingVars if var not in _]:
-                                newRandVariables[var] = self._randVariables[var]  
-                                allImplConstraints.append(constraintsMap[cstr])   
-                        to_delete.append(constraintsMap[cstr])
-                    for cstr in to_delete:
-                        self.delConstraint(cstr)
+                #delete all constraints and add back but considering only 
+                #limited list of random vars
+                actualCstr = []
+                for f_cstr in allConstraints:
+                    self.delConstraint(f_cstr)
+                    f_cstr_args = inspect.getargspec(f_cstr).args
+                    #add only constraints containing actualRVars but not
+                    #remainingRVars
+                    add_cstr = True
+                    for var in f_cstr_args:
+                        if (var in self._randVariables and 
+                            not var in resolvedRVars and
+                            (not var in actualRVars or var in remainingRVars)
+                            ):
+                            add_cstr = False
+                    if add_cstr:                      
+                        self._addConstraint(f_cstr, newRandVariables)
+                        actualCstr.append(f_cstr)
                 
-                _deleteCstrAndUpdate(self._implDistributions)   
-                  
-                #add constraint but considering only limited list of random vars   
-                for cstr in allImplConstraints:
-                    self._addConstraint(cstr, newRandVariables)
-                
-                print ("newRandVariables")
-                print (newRandVariables)
-                
+                #call _resolve for all random variables 
                 solution = self._resolve(newRandVariables)
                 self._update_variables(solution) 
                 
-                #add back everything as it was before
-                for cstr in allImplConstraints:
-                    self._delConstraint(cstr, newRandVariables)
-                    self._addConstraint(cstr, self._randVariables)
+                resolvedRVars.extend(actualRVars)
                 
-                                          
-
+                #add back everything as it was before this stage
+                for f_cstr in actualCstr:
+                    self._delConstraint(f_cstr, newRandVariables)
+                    
+                for f_cstr in allConstraints:  
+                    self._addConstraint(f_cstr, self._randVariables)
+                
         self.post_randomize()
 
     def _resolve(self, randomVariables):
@@ -454,6 +492,9 @@ class Randomized(object):
 
         # solve problem
         solutions = problem.getSolutions()
+        
+        if len(solutions) < len(constrainedVars):
+            raise Exception("Could nor resolve implicit constraints!")
 
         # step 3: calculate implicit distributions for all random variables
         # except simple distributions
@@ -569,6 +610,9 @@ class Randomized(object):
         return solution
 
     def _weighted_choice(self, solutions, weights):
+        """
+        Gets a solution from the list with defined weights.
+        """
         try:
             import numpy
             # pick weighted random
@@ -594,6 +638,9 @@ class Randomized(object):
             return random.choice(weighted_solutions)
 
     def _update_variables(self, solution):
+        """
+        Updates members of the final class after randomization.
+        """
         # update class members
         for var in self._randVariables:
             if var in solution:

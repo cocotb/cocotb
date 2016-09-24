@@ -79,25 +79,25 @@ class TestCRV(unittest.TestCase):
             self.addRand("delay1", list(range(10)))
             self.addRand("delay2", list(range(10)))
             self.addRand("delay3", list(range(10)))
-            self.addConstraint(lambda delay1, delay2: delay1 < delay2)
-            self.addConstraint(
-                lambda delay1, delay2: 0.9 if (delay2 < 5) else 0.1
-            )
-            self.addConstraint(lambda delay1: 0.7 if (delay1 < 5) else 0.3)
-            self.addConstraint(
-                lambda addr, delay1: 0.5 * delay1 if (addr == 5) else 1
-            )
-            self.addConstraint(
-                lambda addr, data:
-                data <= 10000 if (addr == 0) else data <= 5000
-            )
+            
+            c1 = lambda delay1, delay2: delay1 <= delay2
+            d1 = lambda delay1, delay2: 0.9 if (delay2 < 5) else 0.1
+            d2 = lambda addr, delay1: 0.5 * delay1 if (addr == 5) else 1
+            d3 = lambda delay1: 0.7 if (delay1 < 5) else 0.3
+            c2 = lambda addr, data: data < 10000 if (addr == 0) else data < 5000
+            
+            self.addConstraint(c1)
+            self.addConstraint(c2)
+            self.addConstraint(d1)
+            self.addConstraint(d2)
+            self.addConstraint(d3)
 
     def test_simple_1(self):
         print("Running test_simple_1")
         for i in range(10):
             x = self.RandomizedTrasaction(i, data=None)
             x.randomize()
-            self.assertTrue(x.delay1 < x.delay2)
+            self.assertTrue(x.delay1 <= x.delay2)
             self.assertTrue(x.data <= 10000)
             print("delay1 = %d, delay2 = %d, delay3 = %d, data = %d" %
                   (x.delay1, x.delay2, x.delay3, x.data))
@@ -115,19 +115,19 @@ class TestCRV(unittest.TestCase):
     def test_adding_constraints(self):
         print("Running test_adding_constraints")
 
-        c1 = lambda data, delay1: 0 if (data < 10) else 1
-        c2 = lambda data, delay3: 0.5 * delay3 if (data < 20) else 2 * delay3
-        c3 = lambda data: data < 50
+        c3 = lambda data, delay1: 0 if (data < 10) else 1
+        c4 = lambda data, delay3: 0.5 * delay3 if (data < 20) else 2 * delay3
+        c5 = lambda data: data < 50
 
         for i in range(5):
             x = self.RandomizedTrasaction(i, data=None)
-            x.addConstraint(c1)
-            x.addConstraint(c2)
             x.addConstraint(c3)
+            x.addConstraint(c4)
+            x.addConstraint(c5)
             x.randomize()
             print("delay1 = %d, delay2 = %d, delay3 = %d, data = %d" %
                   (x.delay1, x.delay2, x.delay3, x.data))
-            self.assertTrue(x.delay1 < x.delay2)
+            self.assertTrue(x.delay1 <= x.delay2)
             self.assertTrue(x.data < 50)  # added such new constraint
             # added distribution with 0 probability
             self.assertTrue(x.data > 10)
@@ -143,26 +143,54 @@ class TestCRV(unittest.TestCase):
             x.randomize()
             print("delay1 = %d, delay2 = %d, delay3 = %d, data = %d" %
                   (x.delay1, x.delay2, x.delay3, x.data))
-            self.assertTrue(x.delay1 < x.delay2)
+            self.assertTrue(x.delay1 <= x.delay2)
             self.assertTrue(x.data < 50)
             x.delConstraint(c3)
             x.randomize()
             print("delay1 = %d, delay2 = %d, delay3 = %d, data = %d" %
                   (x.delay1, x.delay2, x.delay3, x.data))
-            self.assertTrue(x.delay1 < x.delay2)
+            self.assertTrue(x.delay1 <= x.delay2)
             self.assertTrue(x.data > 50)
             
     def test_solve_order(self):
         print("Running test_solve_order")
 
-        for i in range(5):
+        for i in range(10):
             x = self.RandomizedTrasaction(i, data=None)
             x.solveOrder("delay1", ["delay2", "delay3"])
             x.randomize()
             print("delay1 = %d, delay2 = %d, delay3 = %d, data = %d" %
                   (x.delay1, x.delay2, x.delay3, x.data))
-            self.assertTrue(x.delay1 < x.delay2)
-            self.assertTrue(x.data < 50)         
+            self.assertTrue(x.delay1 <= x.delay2) 
+            
+    def test_cannot_resolve(self):
+        print("Running test_cannot_resolve")
+
+        c3 = lambda delay2, delay3: delay3 > delay2
+        c4 = lambda delay1: delay1 == 9
+
+        for i in range(10):
+            x = self.RandomizedTrasaction(i, data=None)
+            x.addConstraint(c3)
+            x.addConstraint(c4)
+            try:
+                x.randomize()
+                self.assertTrue(0) 
+            except Exception:
+                self.assertTrue(1)     
+                
+    def test_zero_probability(self):
+        print("Running test_cannot_resolve")
+
+        d4 = lambda delay2: 0 if delay2 < 10 else 1
+
+        for i in range(10):
+            x = self.RandomizedTrasaction(i, data=None)
+            x.addConstraint(d4)
+            x.randomize()
+            print("delay1 = %d, delay2 = %d, delay3 = %d, data = %d" %
+                  (x.delay1, x.delay2, x.delay3, x.data))  
+            self.assertTrue(x.delay2 == 0) 
 
     class RandomizedDist(crv.Randomized):
 
@@ -221,9 +249,10 @@ class TestCRV(unittest.TestCase):
             coverage.CoverCheck("top.check", f_fail=lambda x: x.n != n)
         )
 
-        @cover()
+        @cover
         def sample(x):
-            print("%d %d" % (x.x, x.y))
+            print("x = %d, y = %d, z = %d, n = %d" %
+                  (foo.x, foo.y, foo.z, foo.n))
 
         for _ in range(10):
             foo = self.RandomizedDist(10, n)
@@ -250,3 +279,7 @@ class TestCRV(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    #suite = unittest.TestSuite()
+    #suite.addTest(TestCRV('test_cover'))
+    #unittest.TextTestRunner().run(suite)
+
