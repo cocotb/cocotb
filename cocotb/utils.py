@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import ctypes
 import math
 import os
+import sys
 
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
@@ -40,6 +41,13 @@ if "SPHINX_BUILD" in os.environ:
 else:
     import simulator
     _LOG_SIM_PRECISION = simulator.get_precision() # request once and cache
+
+def allow_ansi():
+    allow_ansi = os.getenv("COCOTB_ANSI_OUTPUT")
+    if allow_ansi is None:
+        allow_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
+    else:
+        allow_ansi = bool(int(allow_ansi))
 
 # python2 to python3 helper functions
 def get_python_integer_types():

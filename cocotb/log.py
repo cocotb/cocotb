@@ -39,7 +39,7 @@ import inspect
 import traceback
 import io
 
-from cocotb.utils import get_sim_time
+from cocotb.utils import get_sim_time, allow_ansi
 
 import cocotb.ANSI as ANSI
 from pdb import set_trace
@@ -103,11 +103,18 @@ def initialize(top):
     if _top_logger is not None:
         raise RuntimeError("Logging has already been initialized with >{}<".format(_top_logger.name))
 
-    logging.basicConfig()
-    logging.setLoggerClass(SimBaseLog)
-
     _top_name   = top
     _top_logger = SimLog()
+
+    hdlr = logging.StreamHandler(sys.stdout)
+
+    if allow_ansi():
+        hdlr.setFormatter(SimColourLogFormatter())
+    else:
+        hdlr.setFormatter(SimLogFormatter())
+
+    _top_logger.addHandler(hdlr)
+
 
     level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
     try:
@@ -256,33 +263,6 @@ def deep_debug(msg, *args, **kwargs):
     if _top_logger is None:
         raise RuntimeError("init_logging() must be called before attempting to log")
     _top_logger.deep_debug(msg, *args, **kwargs)
-
-
-class SimBaseLog(logging.getLoggerClass()):
-    def __init__(self, name):
-        hdlr = logging.StreamHandler(sys.stdout)
-        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT")
-        if want_ansi is None:
-            want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
-        else:
-            want_ansi = want_ansi == '1'
-        if want_ansi:
-            hdlr.setFormatter(SimColourLogFormatter())
-            self.colour = True
-        else:
-            hdlr.setFormatter(SimLogFormatter())
-            self.colour = False
-        self.name = name
-        self.handlers = []
-        self.disabled = False
-        self.filters = []
-        self.propagate = False
-        logging.__init__(name)
-        self.addHandler(hdlr)
-        self.setLevel(logging.NOTSET)
-
-""" Need to play with this to get the path of the called back,
-    construct our own makeRecord for this """
 
 
 class SimLog(object):
@@ -837,7 +817,7 @@ class ColumnFormatter(logging.Formatter):
 
 class SimLogFormatter(ColumnFormatter):
     """Log formatter to provide consistent log message handling."""
-    _fixed_columns    = ['{simtime:>12s}','{levelname:<10s}']
+    _fixed_columns    = ['{simtime:>14s}','{levelname:<10s}']
     _optional_columns = ['{name:<35}', '{filename:>20}:{lineno:<4}', '{funcName:<31}']
 
     def __init__(self, fmt=None, datefmt=None, simtimefmt=None, separator=' | ', divider=120):
