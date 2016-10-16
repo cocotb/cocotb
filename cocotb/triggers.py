@@ -47,7 +47,7 @@ class TriggerException(Exception):
 class Trigger(object):
     """Base class to derive from"""
     def __init__(self):
-        self.log = SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
+        self.log = SimLog(cls=self.__class__.__name__, ident=id(self))
         self.signal = None
         self.primed = False
 

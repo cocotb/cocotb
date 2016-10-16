@@ -36,10 +36,226 @@ import sys
 import logging
 import inspect
 
+import traceback
+import io
+
 from cocotb.utils import get_sim_time
 
 import cocotb.ANSI as ANSI
 from pdb import set_trace
+
+# Import the default logging levels to be available in this package
+from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
+
+# Define additional Logging Levels
+DEEP_DEBUG = 5
+
+_levelToName = {
+    DEEP_DEBUG: 'DEEP_DEBUG'
+}
+
+# Register the new levels
+for l,n in iter(_levelToName.items()): logging.addLevelName(l,n)
+
+_top_name   = None
+_top_logger = None
+_init_cbs   = []
+_notify_cbs = []
+
+def register_level_notify_cb(logger, f):
+    """Register a callback function for level change notifications.
+
+    Args:
+        logger (obj): The logger monitored for level changes
+        f      (fun): Function to notify, i.e. f(level)
+    """
+    global _notify_cbs
+    _notify_cbs.append({'log':logger, 'level':logger.getEffectiveLevel(), 'fun':f})
+
+def register_initialize_cb(f):
+    """Decorator to register function callback when logging has been initialized.
+    If logging has already been initialized, the function will be called immediately,
+    otherwise it will be called after this logging module has been initialized.
+
+    This decorator is useful to register a function that creates a module level
+    logger that is to be shared between functions in the module.
+
+    Args:
+        f (callable): A callable object that doesn't require any arguments
+    """
+    global _init_cbs
+    if _top_logger is None:
+        _init_cbs.append(f)
+    else:
+        f()
+    return f
+
+def initialize(top):
+    """Initializes and Configures logging
+
+    Args:
+        top (str): Name of the top logger
+
+    Exceptions:
+        RuntimeError: init_logging() called multiple times
+    """
+    global _top_logger, _top_name
+    if _top_logger is not None:
+        raise RuntimeError("Logging has already been initialized with >{}<".format(_top_logger.name))
+
+    logging.basicConfig()
+    logging.setLoggerClass(SimBaseLog)
+
+    _top_name   = top
+    _top_logger = SimLog()
+
+    level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
+    try:
+        level = getattr(sys.modules[__name__], level)
+    except AttributeError:
+        _top_logger.error("Unable to set loging level to %s" % level)
+        level = INFO
+    _top_logger.setLevel(level)
+
+    global _init_cbs
+    for cb in _init_cbs: cb()
+
+    return _top_logger
+
+
+def critical(msg, *args, **kwargs):
+    """Log messages with severity 'CRITICAL' to the top logger.
+
+    Args:
+        msg (str): Message to send to the logger
+         *args (): Arguments for the msg, i.e. msg % *args
+
+    Kwargs:
+        **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                     All other kwargs are packed into a dictionary and added to extra
+                     to allow to be used in the formatting strings
+
+    Exceptions:
+        RuntimeError: init_logging() not called first
+    """
+    if _top_logger is None:
+        raise RuntimeError("init_logging() must be called before attempting to log")
+    _top_logger.critical(msg, *args, **kwargs)
+
+def error(msg, *args, **kwargs):
+    """Log messages with severity 'ERROR' to the top logger.
+
+    Args:
+        msg (str): Message to send to the logger
+         *args (): Arguments for the msg, i.e. msg % *args
+
+    Kwargs:
+        **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                     All other kwargs are packed into a dictionary and added to extra
+                     to allow to be used in the formatting strings
+
+    Exceptions:
+        RuntimeError: init_logging() not called first
+    """
+    if _top_logger is None:
+        raise RuntimeError("init_logging() must be called before attempting to log")
+    _top_logger.error(msg, *args, **kwargs)
+
+def exception(msg, *args, exc_info=True, **kwargs):
+    """Log messages with severity 'ERROR' to the top logger with exception information.
+
+    Args:
+        msg (str): Message to send to the logger
+         *args (): Arguments for the msg, i.e. msg % *args
+
+    Kwargs:
+        exc_info (boolean): Whether to include exception information.  Default is True
+               **kwargs (): [extra, stack_info] are passed straight to the logger.
+                            All other kwargs are packed into a dictionary and added to extra
+                            to allow to be used in the formatting strings
+
+    Exceptions:
+        RuntimeError: init_logging() not called first
+    """
+    if _top_logger is None:
+        raise RuntimeError("init_logging() must be called before attempting to log")
+    _top_logger.error(msg, *args, exc_info=exc_info, **kwargs)
+
+def warning(msg, *args, **kwargs):
+    """Log messages with severity 'WARNING' to the top logger.
+
+    Args:
+        msg (str): Message to send to the logger
+         *args (): Arguments for the msg, i.e. msg % *args
+
+    Kwargs:
+        **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                     All other kwargs are packed into a dictionary and added to extra
+                     to allow to be used in the formatting strings
+
+    Exceptions:
+        RuntimeError: init_logging() not called first
+    """
+    if _top_logger is None:
+        raise RuntimeError("init_logging() must be called before attempting to log")
+    _top_logger.warning(msg, *args, **kwargs)
+
+def info(msg, *args, **kwargs):
+    """Log messages with severity 'INFO' to the top logger.
+
+    Args:
+        msg (str): Message to send to the logger
+         *args (): Arguments for the msg, i.e. msg % *args
+
+    Kwargs:
+        **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                     All other kwargs are packed into a dictionary and added to extra
+                     to allow to be used in the formatting strings
+
+    Exceptions:
+        RuntimeError: init_logging() not called first
+    """
+    if _top_logger is None:
+        raise RuntimeError("init_logging() must be called before attempting to log")
+    _top_logger.info(msg, *args, **kwargs)
+
+def debug(msg, *args, **kwargs):
+    """Log messages with severity 'DEBUG' to the top logger.
+
+    Args:
+        msg (str): Message to send to the logger
+         *args (): Arguments for the msg, i.e. msg % *args
+
+    Kwargs:
+        **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                     All other kwargs are packed into a dictionary and added to extra
+                     to allow to be used in the formatting strings
+
+    Exceptions:
+        RuntimeError: init_logging() not called first
+    """
+    if _top_logger is None:
+        raise RuntimeError("init_logging() must be called before attempting to log")
+    _top_logger.debug(msg, *args, **kwargs)
+
+def deep_debug(msg, *args, **kwargs):
+    """Log messages with severity 'DEEP_DEBUG' to the top logger.
+
+    Args:
+        msg (str): Message to send to the logger
+         *args (): Arguments for the msg, i.e. msg % *args
+
+    Kwargs:
+        **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                     All other kwargs are packed into a dictionary and added to extra
+                     to allow to be used in the formatting strings
+
+    Exceptions:
+        RuntimeError: init_logging() not called first
+    """
+    if _top_logger is None:
+        raise RuntimeError("init_logging() must be called before attempting to log")
+    _top_logger.deep_debug(msg, *args, **kwargs)
 
 
 class SimBaseLog(logging.getLoggerClass()):
@@ -70,29 +286,224 @@ class SimBaseLog(logging.getLoggerClass()):
 
 
 class SimLog(object):
-    def __init__(self, name, ident=None):
-        self._ident = ident
-        self._name = name
-        self.logger = logging.getLogger(name)
-        if self._ident is not None:
-            self._log_name = "%s.0x%x" % (self._name, self._ident)
-        else:
-            self._log_name = name
+    def __init__(self, name=None, ident=None, mod=None, cls=None):
+        """Creates an instance of the Logger.
 
-    def _makeRecord(self, level, msg, args, extra=None):
+        The name of the logger will be app[.mod][.cls][.name][.0x{ident:x}] where 'app' is the
+        name provided to init_logging()
+
+        Kwargs:
+             name (str): name for the logger
+            ident (int): an identifier, i.e. id()
+              mod (str): name of the module with the logger
+                             For module level loggers, use __name__
+                             For class level loggers, use self.__module__
+
+              cls (str): name of the class with the logger, use self.__class__.__name__
+
+        Exceptions:
+            RuntimeError: init_logging() not called first
+        """
+        if _top_name is None:
+            raise RuntimeError("init_logging() must be called before creating an instance of {}".format(self.__class__.__name__))
+
+        self._ident = ident
+        self._name  = name
+
+        # For Backwards compatibility
+        if name is not None and name.startswith(_top_name):
+            _name = [name]
+        else:
+            _name = [_top_name]
+            if mod is not None:
+                _name.append(mod)
+            if cls is not None:
+                _name.append(cls)
+            if name is not None:
+                _name.append(name)
+
+        _log = '.'.join(_name)
+        if ident is not None:
+            self._log_name = '{}.0x{:x}'.format(_log,ident)
+        else:
+            self._log_name = _log
+        self.logger = logging.getLogger(_log)
+
+    def setLevel(self, level):
+        self.logger.setLevel(level)
+
+        global _notify_cbs
+        for cb in _notify_cbs:
+            lvl = cb['log'].getEffectiveLevel()
+            if lvl != cb['level']:
+                cb['level'] = lvl
+                cb['fun'](lvl)
+
+    def findCaller(self, stack_info=False):
+        frame = inspect.stack()[3]
+        info  = inspect.getframeinfo(frame[0])
+
+        if info.filename == __file__:
+            frame = inspect.stack()[4]
+            info  = inspect.getframeinfo(frame[0])
+
+        sinfo = None
+        if stack_info:
+            sio = io.StringIO()
+            sio.write('Stack (most recent call last):\n')
+            traceback.print_stack(frame[0], file=sio)
+            sinfo = sio.getvalue()
+            if sinfo[-1] == '\n':
+                sinfo = sinfo[:-1]
+            sio.close()
+
+        return (info.filename, info.lineno, info.function, sinfo)
+
+    def critical(self, msg, *args, **kwargs):
+        """Log messages with severity 'CRITICAL' to the logger.
+
+        Args:
+            msg (str): Message to send to the logger
+             *args (): Arguments for the msg, i.e. msg % *args
+
+        Kwargs:
+            **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                         All other kwargs are packed into a dictionary and added to extra
+                         to allow to be used in the formatting strings
+        """
+        if self.logger.isEnabledFor(CRITICAL):
+            self._log(CRITICAL, msg, args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        """Log messages with severity 'ERROR' to the logger.
+
+        Args:
+            msg (str): Message to send to the logger
+             *args (): Arguments for the msg, i.e. msg % *args
+
+        Kwargs:
+            **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                         All other kwargs are packed into a dictionary and added to extra
+                         to allow to be used in the formatting strings
+        """
+        if self.logger.isEnabledFor(ERROR):
+            self._log(ERROR, msg, args, **kwargs)
+
+    def exception(self, msg, *args, exc_info=True, **kwargs):
+        """Log messages with severity 'ERROR' to the top logger with exception information.
+
+        Args:
+            msg (str): Message to send to the logger
+             *args (): Arguments for the msg, i.e. msg % *args
+
+        Kwargs:
+            exc_info (boolean): Whether to include exception information.  Default is True
+                   **kwargs (): [extra, stack_info] are passed straight to the logger.
+                                All other kwargs are packed into a dictionary and added to extra
+                                to allow to be used in the formatting strings
+        """
+        if self.logger.isEnabledFor(ERROR):
+            self._log(ERROR, msg, args, exc_info=exc_info, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        """Log messages with severity 'WARNING' to the top logger.
+
+        Args:
+            msg (str): Message to send to the logger
+             *args (): Arguments for the msg, i.e. msg % *args
+
+        Kwargs:
+            **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                         All other kwargs are packed into a dictionary and added to extra
+                         to allow to be used in the formatting strings
+        """
+        if self.logger.isEnabledFor(WARNING):
+            self._log(WARNING, msg, args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        """Log messages with severity 'INFO' to the top logger.
+
+        Args:
+            msg (str): Message to send to the logger
+             *args (): Arguments for the msg, i.e. msg % *args
+
+        Kwargs:
+            **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                         All other kwargs are packed into a dictionary and added to extra
+                         to allow to be used in the formatting strings
+        """
+        if self.logger.isEnabledFor(INFO):
+            self._log(INFO, msg, args, **kwargs)
+
+    def debug(self, msg, *args, **kwargs):
+        """Log messages with severity 'DEBUG' to the top logger.
+
+        Args:
+            msg (str): Message to send to the logger
+             *args (): Arguments for the msg, i.e. msg % *args
+
+        Kwargs:
+            **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                         All other kwargs are packed into a dictionary and added to extra
+                         to allow to be used in the formatting strings
+        """
+        if self.logger.isEnabledFor(DEBUG):
+            self._log(DEBUG, msg, args, **kwargs)
+
+    def deep_debug(self, msg, *args, **kwargs):
+        """Log messages with severity 'DEEP_DEBUG' to the top logger.
+
+        Args:
+            msg (str): Message to send to the logger
+             *args (): Arguments for the msg, i.e. msg % *args
+
+        Kwargs:
+            **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                         All other kwargs are packed into a dictionary and added to extra
+                         to allow to be used in the formatting strings
+        """
+        if self.logger.isEnabledFor(DEEP_DEBUG):
+            self._log(DEEP_DEBUG, msg, args, **kwargs)
+
+    def log(self, level, msg, *args, **kwargs):
+        """Log messages with severity 'DEEP_DEBUG' to the top logger.
+
+        Args:
+            msg (str): Message to send to the logger
+             *args (): Arguments for the msg, i.e. msg % *args
+
+        Kwargs:
+            **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                         All other kwargs are packed into a dictionary and added to extra
+                         to allow to be used in the formatting strings
+
+        Exceptions:
+            TypeError: level isn't an int
+        """
+        if not isinstance(level, int):
+            raise TypeError("level must be an integer")
         if self.logger.isEnabledFor(level):
-            frame = inspect.stack()[2]
-            info = inspect.getframeinfo(frame[0])
-            record = self.logger.makeRecord(self._log_name,
-                                            level,
-                                            info.filename,
-                                            info.lineno,
-                                            msg,
-                                            args,
-                                            None,
-                                            info.function,
-                                            extra)
-            self.logger.handle(record)
+            self._log(level, msg, args, **kwargs)
+
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False, **kwargs):
+        if extra is not None:
+            extra.update(kwargs)
+        elif kwargs:
+            extra = kwargs
+
+        sinfo = None
+
+        fn, lno, func, sinfo = self.findCaller(stack_info)
+
+        if exc_info:
+            if isinstance(exc_info, BaseException):
+                exc_info = (type(exc_info), exc_info, exc_info.__traceback__)
+            elif not isinstance(exc_info, tuple):
+                exc_info = sys.exc_info()
+        record = self.makeRecord(self._log_name, level, fn, lno, msg, args,
+                                 exc_info, func, extra, sinfo)
+        self.logger.handle(record)
+
 
     def _willLog(self, level):
         """ This is for user from the C world
@@ -117,26 +528,8 @@ class SimLog(object):
                                             function)
             self.logger.handle(record)
 
-    def warn(self, msg, *args, **kwargs):
-        self._makeRecord(logging.WARNING, msg, args, **kwargs)
-
-    def warning(self, msg, *args, **kwargs):
-        self._makeRecord(logging.WARNING, msg, args, **kwargs)
-
-    def debug(self, msg, *args, **kwargs):
-        self._makeRecord(logging.DEBUG, msg, args, **kwargs)
-
-    def error(self, msg, *args, **kwargs):
-        self._makeRecord(logging.ERROR, msg, args, **kwargs)
-
-    def critical(self, msg, *args, **kwargs):
-        self._makeRecord(logging.CRITICAL, msg, args, **kwargs)
-
-    def info(self, msg, *args, **kwargs):
-        self._makeRecord(logging.INFO, msg, args, **kwargs)
-
     def __getattr__(self, attribute):
-        """Forward any other attribute accesses on to our logger object"""
+        """Forward any attribute accesses on to our wrapped logger object"""
         return getattr(self.logger, attribute)
 
 

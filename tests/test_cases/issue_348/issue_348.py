@@ -15,7 +15,7 @@ def clock_gen(signal, num):
 
 @cocotb.coroutine
 def signal_mon(signal, idx, edge):
-    log = SimLog("cocotb.signal_mon.%d.%s" % (idx, signal._name))
+    log = SimLog("signal_mon.%d.%s" % (idx, signal._name))
     value = signal.value
 
     edges = 0

@@ -88,7 +88,7 @@ class SimHandleBase(object):
         self._type = simulator.get_type_string(self._handle)
         self._fullname = self._name + "(%s)" % self._type
         self._path = self._name if path is None else path
-        self._log = SimLog("cocotb.%s" % self._name)
+        self._log = SimLog(cls='handle', name=self._name)
         self._log.debug("Created")
 
     def __hash__(self):

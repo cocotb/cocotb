@@ -98,7 +98,7 @@ class Driver(object):
 
         # Subclasses may already set up logging
         if not hasattr(self, "log"):
-            self.log = SimLog("cocotb.driver.%s" % (self.__class__.__name__))
+            self.log = SimLog(mod="driver", cls=self.__class__.__name__)
 
         # Create an independent coroutine which can send stuff
         self._thread = cocotb.scheduler.add(self._send_thread())
@@ -215,7 +215,7 @@ class BusDriver(Driver):
                           but could work here as well)
             clock (SimHandle) : A handle to the clock associated with this bus
         """
-        self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
+        self.log = SimLog(mod='driver', cls=entity._name, name=name)
         Driver.__init__(self)
         self.entity = entity
         self.name = name

@@ -37,8 +37,6 @@ the ReadOnly (and this is invalid, at least in Modelsim).
 """
 import collections
 import os
-import logging
-
 
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
@@ -66,7 +64,7 @@ import cocotb
 import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              _NextTimeStep, _ReadWrite)
-from cocotb.log import SimLog
+from cocotb.log import SimLog, DEBUG
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error)
 
@@ -133,9 +131,9 @@ class Scheduler(object):
 
     def __init__(self):
 
-        self.log = SimLog("cocotb.scheduler")
+        self.log = SimLog('scheduler')
         if _debug:
-            self.log.setLevel(logging.DEBUG)
+            self.log.setLevel(DEBUG)
 
         # A dictionary of pending coroutines for each trigger,
         # indexed by trigger

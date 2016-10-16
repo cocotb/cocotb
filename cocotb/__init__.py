@@ -31,16 +31,17 @@ Cocotb is a coroutine, cosimulation framework for writing testbenches in Python.
 See http://cocotb.readthedocs.org for full documentation
 """
 import os
-import sys
-import logging
 import threading
 import random
 import time
 
+from cocotb.log import initialize as _log_init
+from cocotb.log import register_level_notify_cb
+_log_init('cocotb')
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
-from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
+from cocotb.log import SimLog
 from cocotb.regression import RegressionManager
 
 
@@ -52,23 +53,17 @@ from cocotb.decorators import test, coroutine, function, external
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
 
+# Setup logging
+log = SimLog()
+
 # GPI logging instance
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" not in os.environ:
     import simulator
-    logging.basicConfig()
-    logging.setLoggerClass(SimBaseLog)
-    log = SimLog('cocotb')
-    level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
-    try:
-        _default_log = getattr(logging, level)
-    except AttributeError as e:
-        log.error("Unable to set loging level to %s" % level)
-        _default_log = logging.INFO
-    log.setLevel(_default_log)
-    loggpi = SimLog('cocotb.gpi')
+    loggpi = SimLog('gpi')
     # Notify GPI of log level
-    simulator.log_level(_default_log)
+    simulator.log_level(loggpi.getEffectiveLevel())
+    register_level_notify_cb(loggpi, simulator.log_level)
 
 
 scheduler = Scheduler()

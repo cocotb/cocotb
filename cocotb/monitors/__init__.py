@@ -73,7 +73,7 @@ class Monitor(object):
 
         # Subclasses may already set up logging
         if not hasattr(self, "log"):
-            self.log = SimLog("cocotb.monitor.%s" % (self.__class__.__name__))
+            self.log = SimLog(mod='monitor', cls=self.__class__.__name__)
 
         if callback is not None:
             self.add_callback(callback)
@@ -152,7 +152,7 @@ class BusMonitor(Monitor):
 
     def __init__(self, entity, name, clock, reset=None, reset_n=None,
                  callback=None, event=None):
-        self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
+        self.log = SimLog(mod='monitor', cls=entity._name, name=name)
         self.entity = entity
         self.name = name
         self.clock = clock

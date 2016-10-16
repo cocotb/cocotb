@@ -86,9 +86,9 @@ class RunningCoroutine(object):
     def __init__(self, inst, parent):
         if hasattr(inst, "__name__"):
             self.__name__ = "%s" % inst.__name__
-            self.log = SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
+            self.log = SimLog(cls='coroutine',name=self.__name__, ident=id(self))
         else:
-            self.log = SimLog("cocotb.coroutine.fail")
+            self.log = SimLog(cls='coroutine', name='fail')
         self._coro = inst
         self._finished = False
         self._callbacks = []
@@ -225,7 +225,7 @@ class coroutine(object):
 
     def __init__(self, func):
         self._func = func
-        self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
+        self.log = SimLog(cls='function', name=self._func.__name__, ident=id(self))
         self.__name__ = self._func.__name__
 
     def __call__(self, *args, **kwargs):
@@ -266,7 +266,7 @@ class function(object):
     """
     def __init__(self, func):
         self._func = func
-        self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
+        self.log = SimLog(cls='function', name=self._func.__name__, ident=id(self))
 
     def __call__(self, *args, **kwargs):
 
