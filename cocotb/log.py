@@ -30,6 +30,8 @@ Everything related to logging
 """
 
 import os
+import re
+import string
 import sys
 import logging
 import inspect
@@ -39,17 +41,6 @@ from cocotb.utils import get_sim_time
 import cocotb.ANSI as ANSI
 from pdb import set_trace
 
-if "COCOTB_REDUCED_LOG_FMT" in os.environ:
-    _suppress = True
-else:
-    _suppress = False
-
-# Column alignment
-_LEVEL_CHARS    = len("CRITICAL")  # noqa
-_RECORD_CHARS   = 35  # noqa
-_FILENAME_CHARS = 20  # noqa
-_LINENO_CHARS   = 4  # noqa
-_FUNCNAME_CHARS = 31  # noqa
 
 class SimBaseLog(logging.getLoggerClass()):
     def __init__(self, name):
@@ -149,74 +140,374 @@ class SimLog(object):
         return getattr(self.logger, attribute)
 
 
-class SimLogFormatter(logging.Formatter):
-    """Log formatter to provide consistent log message handling."""
+class InvalidColumnFormat(Exception):
+    """Exception used by the ColumnFormatter"""
+    pass
 
-    # Justify and truncate
-    @staticmethod
-    def ljust(string, chars):
-        if len(string) > chars:
-            return ".." + string[(chars - 2) * -1:]
-        return string.ljust(chars)
 
-    @staticmethod
-    def rjust(string, chars):
-        if len(string) > chars:
-            return ".." + string[(chars - 2) * -1:]
-        return string.rjust(chars)
+class ColumnFormatter(logging.Formatter):
+    simtime_search         = '{simtime'
+    default_simtime_format = '{:>6.2f}ns'
+    fmt_spec_re            = re.compile('((?P<fill>.)?(?P<align>[<>=^]))?(?P<sign>[+\- ])?(?P<alt_form>#)?(?P<zero_fill>0)?(?P<width>\d+)?(?P<comma>,)?(?P<precision>\.\d+)?(?P<type>[bcdeEfFgGnosxX%])?')
+    fmt_simtime_re         = re.compile('(?P<spec>.*?)?(?P<resolution>fs|ps|ns|us|ms|sec)')
 
-    def _format(self, level, record, msg, coloured=False):
-        time_ns = get_sim_time('ns')
-        simtime = "%6.2fns" % (time_ns)
+    def __init__(self, fmt=None, datefmt=None, simtimefmt=None, separator=' | ', prefix="", divider=120, fixed=None, optional=None):
+        """Logging formatter that formats fields in columns, ensuring the text does
+        not exceed the column width through truncation.  Column formats must be
+        specified in the string format style, e.g. {col:8s}
 
-        prefix = simtime + ' ' + level + ' '
-        if not _suppress:
-            prefix += self.ljust(record.name, _RECORD_CHARS) + \
-                      self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
-                      ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
-                      ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
+        The 'fixed' columns will always be present and formated.
 
-        prefix_len = len(prefix)
-        if coloured:
-            prefix_len -= (len(level) - _LEVEL_CHARS)
-        pad = "\n" + " " * (prefix_len)
-        return prefix + pad.join(msg.split('\n'))
+        The 'optional' columns will only be present formatted if any of the optional
+        columns is present in the record.  For any missing from the record, will
+        be filled with spaces.
+
+        All columns must have a fixed width with the exception of the last column
+        which is defined by the 'fmt' argument.
+
+        Multi-line messages will be properly padded to maintain the column structure
+
+        Kwargs:
+                   fmt (str): Fromat for the last column
+               datefmt (str): Format string for creating {asctime}
+            simtimefmt (str): Format string for creating {simtime}
+             separator (str): The string separating the columns
+                prefix (str): A prefix that applied to the fmt string if formatting works
+               divider (int): Length of the divider/header markers
+                fixed (list): List of formats for persistent columns
+             optional (list): List of formats for optional columns
+
+        Excetpions:
+                      TypeError: 'fixed' and/or 'optional' not a list
+            InvalidColumnFormat: Issue processing the column format
+        """
+        if fixed is not None and not isinstance(fixed, list):
+            raise TypeError("Argument 'fixed' must be of type list.")
+
+        if optional is not None and not isinstance(optional, list):
+            raise TypeError("Argument 'optional' must be of type list.")
+
+        super(ColumnFormatter, self).__init__(fmt=fmt, datefmt=datefmt, style='{')
+        self.simtimefmt   = simtimefmt or self.default_simtime_format
+        self._usestime    = super(ColumnFormatter, self).usesTime()
+        self._usessimtime = self._fmt.find(self.simtime_search) >= 0
+        self._sep = separator
+        self._prefix = prefix
+
+        divider = int(divider)
+        self._divider = '{{message:-^{}}}'.format(divider)
+        self._hdr_len = divider-6
+        self._hdr_div = '-'*divider
+        self._header  = '-- {{line:{}}} --'.format(self._hdr_len)
+
+        self._fixed = []
+        self._optional = []
+
+        self._fixed_pad    = ""
+        self._optional_pad = ""
+        if fixed is not None:
+            for fixed_fmt in fixed:
+                col = {}
+                col['style']              = logging.StrFormatStyle(fixed_fmt)
+                col['fmt']                = col['style']._fmt
+                col['parsed'], col['len'] = self._parse_fmt(col['fmt'])
+                col['pad']                = ' '*col['len']
+                self._usestime            = self._usestime or col['style'].usesTime()
+                self._usessimtime         = self._usessimtime or col['fmt'].find(self.simtime_search) >= 0
+
+                self._fixed_pad += '{}{}'.format(col['pad'],self._sep)
+                self._fixed.append(col)
+
+        if optional is not None:
+            for opt_fmt in optional:
+                col = {}
+                col['style']              = logging.StrFormatStyle(opt_fmt)
+                col['fmt']                = col['style']._fmt
+                col['parsed'], col['len'] = self._parse_fmt(col['fmt'])
+                col['pad']                = ' '*col['len']
+                self._usestime            = self._usestime or col['style'].usesTime()
+                self._usessimtime         = self._usessimtime or col['fmt'].find(self.simtime_search) >= 0
+
+                self._optional_pad += '{}{}'.format(col['pad'],self._sep)
+                self._optional.append(col)
+
+    def usesTime(self):
+        """Returns if the {asctime} field is present in any of the columns"""
+        return self._usestime
+
+    def usesSimTime(self):
+        """Returns if the {simtime} field is present in any of the columns"""
+        return self._usessimtime
+
+    def _formatColumn(self, col, record):
+        """Returns a string of the formated column.
+
+        Args:
+              col (dict): Column information dictionary
+            record (obj): Container with all the parameters for formatting
+        """
+        return self._trunc(col['style'].format(record),col['len'])
+
+
+    def formatMessage(self, record):
+        """Returns a string of the formatted message with all of the columns.
+
+        Args:
+            record (obj): Container with all the parameters for formatting
+        """
+        s = ""
+
+        for col in self._fixed:
+            s += "{}{}".format(self._formatColumn(col,record),self._sep)
+
+        if not hasattr(record, 'include_optional') or record.include_optional:
+            include_optional = False
+            o = ""
+            for col in self._optional:
+                try:
+                    include_optional = True
+                    o += "{}{}".format(self._formatColumn(col,record),self._sep)
+                except KeyError:
+                    o += "{}{}".format(col['pad'],self._sep)
+            if not hasattr(record, 'include_optional'):
+                record.include_optional = include_optional
+
+        if record.include_optional:
+            s += o
+        if not hasattr(record, 'prefix'):
+            try:
+                record.prefix = self._prefix.format(**record.__dict__)
+            except KeyError:
+                record.prefix = ""
+        msg = super(ColumnFormatter, self).formatMessage(record)
+
+        msg = record.prefix + msg
+
+        s += self._fmt_multi_line_msg(msg,record)
+
+        return s
+
+    def formatHeader(self, record):
+        """Returns a string with record.message as a Header
+
+        Args:
+            record (obj): Container with all the parameters for formatting
+        """
+        s = '\n' + self._hdr_div
+        for line in record.message.split('\n'):
+            while len(line) > self._hdr_len:
+                s += '\n' + self._header.format(line=line[:self._hdr_len])
+                line = line[self._hdr_len:]
+            s += '\n' + self._header.format(line=line)
+        s += '\n' + self._hdr_div
+
+        return s
+
+    def formatDivider(self, record):
+        """Returns a string with record.message as a Divider
+
+        Args:
+            record (obj): Container with all the parameters for formatting
+        """
+        return self._divider.format(message=record.message)
+
+    def formatSimTime(self, fmt):
+        """Returns a formatted string of the current simultaion time
+
+        Args:
+            fmt (str): Format string for the simultaion time
+        """
+        parsed = self.fmt_simtime_re.match(fmt)
+
+        if parsed is None:
+            raise ValueError('Invalid SimTime Format String')
+
+        res     = parsed.groupdict()['resolution']
+        simtime = get_sim_time(res)
+
+        return fmt.format(simtime)
 
     def format(self, record):
-        """pretify the log output, annotate with simulation time"""
-        if record.args:
-            msg = record.msg % record.args
+        """Returns a string of the formatted message with all of the columns,
+        including the exception information and the stack information.
+
+        Args:
+            record (obj): Container with all the parameters for formatting
+        """
+        record.message = record.getMessage()
+
+        if not hasattr(record, 'include_optional') and 'COCOTB_REDUCED_LOG_FMT' in os.environ:
+            record.include_optional = not bool(int(os.environ['COCOTB_REDUCED_LOG_FMT']))
+
+        if hasattr(record, 'header') and record.header:
+            s = self.formatHeader(record)
+        elif hasattr(record, 'divider') and record.divider:
+            s = self.formatDivider(record)
         else:
-            msg = record.msg
+            if self.usesTime():
+                record.asctime = self.formatTime(record, self.datefmt)
+            if self.usesSimTime():
+                record.simtime = self.formatSimTime(self.simtimefmt)
+            s = self.formatMessage(record)
+            if record.exc_info:
+                # Cache the traceback text to avoid converting it multiple times
+                # (it's constant anyway)
+                if not record.exc_text:
+                    record.exc_text = self.formatException(record.exc_info)
+            if record.exc_text:
+                if s[-1:] != "\n":
+                    s = s + "\n"
+                s = s + self._fmt_multi_line_msg(record.exc_text,
+                                                 record,
+                                                 pad_first_line=True)
+            if record.stack_info:
+                if s[-1:] != "\n":
+                    s = s + "\n"
+                s = s + self._fmt_multi_line_msg(self.formatStack(record.stack_info),
+                                                 record,
+                                                 pad_first_line=True)
+        return s
 
-        msg = str(msg)
-        level = record.levelname.ljust(_LEVEL_CHARS)
+    def _trunc(self, s, max_len):
+        """Returns a string that will not exceed the max_len.
 
-        return self._format(level, record, msg)
+        Args:
+                  s (str): The string to truncate
+            max_len (int): The maximum allowable string
+        """
+        if len(s) > max_len:
+            return ".." + s[(max_len - 2) * -1:]
+        return s
+
+    def _fmt_multi_line_msg(self,msg,record,pad_first_line=False):
+        """Returns a formatted string that has been properly padded on each line.
+
+        Args:
+                           msg (str): The string to process
+                        record (obj): The message record
+            pad_first_line (boolean): Indicates whether padding should be applied
+                                      to the first line
+        """
+        pad = '\n' + self._fixed_pad
+
+        if record.include_optional:
+            pad += self._optional_pad
+
+        pad += "    " if len(record.prefix) > 0 else ""
+
+        s = pad.join(msg.split('\n'))
+
+        if pad_first_line:
+            s = pad[1:] + s
+        return s
+
+    def _parse_fmt(self, fmt):
+        """Returns the total length of the format string, i.e. column width.
+
+        Args:
+            fmt (str): The format string for the column
+
+        Exceptions:
+            InvalidColumnFormat: Column width is less than 2 or not a fixed width
+        """
+        _len = 0
+        parsed = []
+        for text, name, spec, conv in string.Formatter().parse(fmt):
+            _len += len(text)
+            if name is not None:
+                spec = self._parse_fmt_spec(spec)
+                if 'width' in spec:
+                    _len += int(spec['width'])
+                else:
+                    raise InvalidColumnFormat('Width must be defined in the format specifier')
+            parsed.append({'text':text,'name':name,'spec':spec,'conv':conv})
+        if _len < 2:
+            raise InvalidColumnFormat('Column length must be at least 2')
+
+        return parsed, _len
+
+    def _parse_fmt_spec(self, spec):
+        """Parses the format specification to get the length of a field.
+
+        Args:
+            spec (str): The field specification string
+
+        Exceptions:
+            InvalidColumnFormat: Unable to process the format specifier
+        """
+        match = ColumnFormatter.fmt_spec_re.match(spec)
+
+        if match is None:
+            raise InvalidColumnFormat('Unable to parse the format specifier')
+
+        return match.groupdict()
+
+class SimLogFormatter(ColumnFormatter):
+    """Log formatter to provide consistent log message handling."""
+    _fixed_columns    = ['{simtime:>12s}','{levelname:<10s}']
+    _optional_columns = ['{name:<35}', '{filename:>20}:{lineno:<4}', '{funcName:<31}']
+
+    def __init__(self, fmt=None, datefmt=None, simtimefmt=None, separator=' | ', divider=120):
+        ColumnFormatter.__init__(self,
+                                 fmt=fmt,
+                                 datefmt=datefmt,
+                                 simtimefmt=simtimefmt,
+                                 separator=separator,
+                                 prefix="",
+                                 divider=divider,
+                                 fixed=self._fixed_columns,
+                                 optional=self._optional_columns)
 
 
 class SimColourLogFormatter(SimLogFormatter):
 
     """Log formatter to provide consistent log message handling."""
     loglevel2colour = {
-        logging.DEBUG   :       "%s",
-        logging.INFO    :       ANSI.BLUE_FG + "%s" + ANSI.DEFAULT,
-        logging.WARNING :       ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT,
-        logging.ERROR   :       ANSI.RED_FG + "%s" + ANSI.DEFAULT,
-        logging.CRITICAL:       ANSI.RED_BG + ANSI.BLACK_FG + "%s" +
-                                ANSI.DEFAULT}
+        logging.DEBUG   :       ANSI.DEFAULT                     + "%s" + ANSI.DEFAULT,
+        logging.INFO    :       ANSI.DEFAULT_BG + ANSI.BLUE_FG   + "%s" + ANSI.DEFAULT,
+        logging.WARNING :       ANSI.DEFAULT_BG + ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT,
+        logging.ERROR   :       ANSI.DEFAULT_BG + ANSI.RED_FG    + "%s" + ANSI.DEFAULT,
+        logging.CRITICAL:       ANSI.RED_BG     + ANSI.BLACK_FG  + "%s" + ANSI.DEFAULT}
 
-    def format(self, record):
-        """pretify the log output, annotate with simulation time"""
+    def __init__(self, fmt=None, datefmt=None, simtimefmt=None, separator=' | ', divider=120):
+        SimLogFormatter.__init__(self,
+                                 fmt=fmt,
+                                 datefmt=datefmt,
+                                 simtimefmt=simtimefmt,
+                                 separator=separator,
+                                 divider=divider)
+        level_pad = self._fixed[1]['pad']
+        self._fixed[1]['pad'] = ANSI.DEFAULT + level_pad + ANSI.DEFAULT
 
-        if record.args:
-            msg = record.msg % record.args
-        else:
-            msg = record.msg
+        self._fixed_pad = ""
+        for col in self._fixed:
+            self._fixed_pad += '{}{}'.format(col['pad'],self._sep)
 
-        # Need to colour each line in case coloring is applied in the message
-        msg = '\n'.join([SimColourLogFormatter.loglevel2colour[record.levelno] % line for line in msg.split('\n')])
-        level = (SimColourLogFormatter.loglevel2colour[record.levelno] %
-                 record.levelname.ljust(_LEVEL_CHARS))
+    def _formatColumn(self, col, record):
+        """Returns a string of the formated column.
 
-        return self._format(level, record, msg, coloured=True)
+        Args:
+              col (dict): Column information dictionary
+            record (obj): Container with all the parameters for formatting
+        """
+        s = SimLogFormatter._formatColumn(self=self, col=col, record=record)
+
+        if id(col) == id(self._fixed[1]):
+            s = self.loglevel2colour[record.levelno] % s
+        return s
+
+
+    def _fmt_multi_line_msg(self,msg,record,pad_first_line=False):
+        """Returns a formatted string that has been properly padded on each line.
+
+        Args:
+                           msg (str): The string to process
+                        record (obj): The message record
+            pad_first_line (boolean): Indicates whether padding should be applied
+                                      to the first line
+        """
+        return SimLogFormatter._fmt_multi_line_msg(self,
+                                                   msg='\n'.join([self.loglevel2colour[record.levelno] % line for line in msg.split('\n')]),
+                                                   record=record,
+                                                   pad_first_line=pad_first_line)
+
