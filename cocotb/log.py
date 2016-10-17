@@ -30,6 +30,7 @@ Everything related to logging
 """
 
 import os
+import os.path
 import re
 import string
 import sys
@@ -187,8 +188,87 @@ def _cfg(top, cfg=None):
         level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
 
         cfg = io.StringIO(_DEFAULT_CONFIG.format(top=top, level=level, formatter=formatter))
+
+    try:
+        if not isinstance(cfg, dict):
+            return _cfg_ini(cfg)
+    except Exception:
+        pass
+
+    try:
+        return _cfg_dict(cfg)
+    except Exception:
+        pass
+
+    raise ValueError("The cfg object of type '{}' is of an incorrect format for logging configuration".format(type(cfg)))
+
+def _cfg_ini(cfg):
     logging.config.fileConfig(cfg)
 
+def _cfg_dict(cfg):
+    if isinstance(cfg, str):
+        with open(cfg, 'r') as f:
+            # Logging config files aren't that big.  Just read in everything.
+            cfg = io.StringIO(f.read())
+
+    if not isinstance(cfg, dict):
+        try:
+            import yaml as decoder
+        except ImportError:
+            import json as decoder
+        cfg.seek(0) # Ensure starting at the beginning
+        cfg = decoder.load(cfg)
+
+    if hasattr(logging.config, 'dictConfig'):
+        logging.config.dictConfig(cfg)
+    else:
+        # For older versions, support manual incremental configuration
+        # Allows for setting (level, propagate) on loggers and (level,) on handlers.
+        # No Structural changes.
+        if 'version' not in cfg or cfg['version'] != 1:
+            raise ValueError("The key 'version' must be specified and be equal to 1")
+
+        if 'incremental' not in cfg or not cfg['incremental']:
+            raise ValueError("The key 'incremental' must be specified and be equal to 1")
+
+        handlers = cfg.get('handlers', EMPTY_DICT)
+        for name in handlers:
+            if name not in logging._handlers:
+                raise ValueError('No handler found with '
+                                 'name %r'  % name)
+            else:
+                try:
+                    handler = logging._handlers[name]
+                    handler_config = handlers[name]
+                    level = handler_config.get('level', None)
+                    if level:
+                        handler.setLevel(logging._checkLevel(level))
+                except Exception as e:
+                    raise ValueError('Unable to configure handler '
+                                     '%r: %s' % (name, e))
+        loggers = config.get('loggers', EMPTY_DICT)
+        for name in loggers:
+            try:
+                logger = logging.getLogger(name)
+                propagate = config.get('propagate', None)
+                if propagate is not None:
+                    logger.propagate = propagate
+                level = config.get('level', None)
+                if level is not None:
+                    logger.setLevel(logging._checkLevel(level))
+            except Exception as e:
+                raise ValueError('Unable to configure logger '
+                                 '%r: %s' % (name, e))
+        root = config.get('root', None)
+        if root:
+            try:
+                logger = logging.getLogger()
+                level = config.get('level', None)
+                if level is not None:
+                    logger.setLevel(logging._checkLevel(level))
+            except Exception as e:
+                raise ValueError('Unable to configure root '
+                                 'logger: %s' % e)
 
 def critical(msg, *args, **kwargs):
     """Log messages with severity 'CRITICAL' to the top logger.
