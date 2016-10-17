@@ -34,6 +34,7 @@ import re
 import string
 import sys
 import logging
+import logging.config
 import inspect
 
 import traceback
@@ -56,6 +57,39 @@ _levelToName = {
 
 # Register the new levels
 for l,n in iter(_levelToName.items()): logging.addLevelName(l,n)
+
+_DEFAULT_CONFIG = """
+[loggers]
+keys=root,top
+
+[handlers]
+keys=console
+
+[formatters]
+keys=sim_log, sim_log_colour
+
+[logger_root]
+level=WARNING
+handlers=
+
+[logger_top]
+level={level}
+handlers=console
+propagate=0
+qualname={top}
+
+[handler_console]
+class=StreamHandler
+level=NOTSET
+formatter={formatter}
+args=(sys.stdout,)
+
+[formatter_sim_log]
+class=cocotb.log.SimLogFormatter
+
+[formatter_sim_log_colour]
+class=cocotb.log.SimColourLogFormatter
+"""
 
 _top_name   = None
 _top_logger = None
@@ -90,11 +124,16 @@ def register_initialize_cb(f):
         f()
     return f
 
-def initialize(top):
-    """Initializes and Configures logging
+
+def initialize(top, cfg=None):
+    """Initializes and Configures logging.
 
     Args:
         top (str): Name of the top logger
+
+    Kwargs:
+        cfg (str/obj): A filename, file-like object, dict.
+                       If None, default configuration will be used.
 
     Exceptions:
         RuntimeError: init_logging() called multiple times
@@ -106,28 +145,49 @@ def initialize(top):
     _top_name   = top
     _top_logger = SimLog()
 
-    hdlr = logging.StreamHandler(sys.stdout)
-
-    if allow_ansi():
-        hdlr.setFormatter(SimColourLogFormatter())
-    else:
-        hdlr.setFormatter(SimLogFormatter())
-
-    _top_logger.addHandler(hdlr)
-
-
-    level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
-    try:
-        level = getattr(sys.modules[__name__], level)
-    except AttributeError:
-        _top_logger.error("Unable to set loging level to %s" % level)
-        level = INFO
-    _top_logger.setLevel(level)
+    _cfg(_top_name, cfg)
 
     global _init_cbs
     for cb in _init_cbs: cb()
 
     return _top_logger
+
+def configure(cfg=None):
+    """Configures logging
+
+    Kwargs:
+        cfg (str/obj): A filename, file-like object, dict.
+                       If None, default configuration will be used.
+
+    Exceptions:
+        RuntimeError: init_logging() not called first
+    """
+    if _top_logger is None:
+        raise RuntimeError("init_logging() must be called before re-configuring")
+
+    _cfg(_top_name,cfg)
+
+def _cfg(top, cfg=None):
+    """Configures logging
+
+    Args:
+        top (str): Name of the top logger
+
+    Kwargs:
+        cfg (str/obj): A filename, file-like object, dict.
+                       If None, default configuration will be used.
+    """
+    if cfg is None:
+        pass
+        if allow_ansi():
+            formatter='sim_log_colour'
+        else:
+            formatter='sim_log'
+
+        level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
+
+        cfg = io.StringIO(_DEFAULT_CONFIG.format(top=top, level=level, formatter=formatter))
+    logging.config.fileConfig(cfg)
 
 
 def critical(msg, *args, **kwargs):
@@ -524,7 +584,7 @@ class ColumnFormatter(logging.Formatter):
     fmt_spec_re            = re.compile('((?P<fill>.)?(?P<align>[<>=^]))?(?P<sign>[+\- ])?(?P<alt_form>#)?(?P<zero_fill>0)?(?P<width>\d+)?(?P<comma>,)?(?P<precision>\.\d+)?(?P<type>[bcdeEfFgGnosxX%])?')
     fmt_simtime_re         = re.compile('(?P<spec>.*?)?(?P<resolution>fs|ps|ns|us|ms|sec)')
 
-    def __init__(self, fmt=None, datefmt=None, simtimefmt=None, separator=' | ', prefix="", divider=120, fixed=None, optional=None):
+    def __init__(self, fmt=None, datefmt=None, style=None, simtimefmt=None, separator=' | ', prefix="", divider=120, fixed=None, optional=None):
         """Logging formatter that formats fields in columns, ensuring the text does
         not exceed the column width through truncation.  Column formats must be
         specified in the string format style, e.g. {col:8s}
@@ -543,6 +603,7 @@ class ColumnFormatter(logging.Formatter):
         Kwargs:
                    fmt (str): Fromat for the last column
                datefmt (str): Format string for creating {asctime}
+                 style (str): IGNORED (Required for supporting fileConfig
             simtimefmt (str): Format string for creating {simtime}
              separator (str): The string separating the columns
                 prefix (str): A prefix that applied to the fmt string if formatting works
@@ -693,7 +754,7 @@ class ColumnFormatter(logging.Formatter):
         parsed = self.fmt_simtime_re.match(fmt)
 
         if parsed is None:
-            raise ValueError('Invalid SimTime Format String')
+            raise ValueError('Invalid SimTime Format String: {}'.format(fmt))
 
         res     = parsed.groupdict()['resolution']
         simtime = get_sim_time(res)
@@ -820,7 +881,7 @@ class SimLogFormatter(ColumnFormatter):
     _fixed_columns    = ['{simtime:>14s}','{levelname:<10s}']
     _optional_columns = ['{name:<35}', '{filename:>20}:{lineno:<4}', '{funcName:<31}']
 
-    def __init__(self, fmt=None, datefmt=None, simtimefmt=None, separator=' | ', divider=120):
+    def __init__(self, fmt=None, datefmt=None, style=None, simtimefmt=None, separator=' | ', divider=120):
         ColumnFormatter.__init__(self,
                                  fmt=fmt,
                                  datefmt=datefmt,

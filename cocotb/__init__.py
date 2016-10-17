@@ -33,11 +33,21 @@ See http://cocotb.readthedocs.org for full documentation
 import os
 import threading
 import random
+import sys
 import time
+import traceback
 
 from cocotb.log import initialize as _log_init
 from cocotb.log import register_level_notify_cb
-_log_init('cocotb')
+
+try:
+    _log_init('cocotb', cfg=os.getenv("COCOTB_LOG_CFG"))
+except Exception as e:
+    traceback.print_exc()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    raise
+
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
