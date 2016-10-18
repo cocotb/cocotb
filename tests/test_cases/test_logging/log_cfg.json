@@ -1,0 +1,27 @@
+{
+    "version": 1,
+    "incremental": false,
+    "formatters": {
+        "console_formatter": {
+            "()": "cocotb.log.SimColourLogFormatter",
+            "simtimefmt": "{:>6.0f}ps"
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "console_formatter",
+            "stream": "ext://sys.stdout"
+        }
+    },
+    "loggers": {
+        "cocotb": {
+            "level": "INFO",
+            "handlers": ["console"],
+            "propagate": false
+        },
+        "cocotb.dummy": {
+            "level": "CRITICAL"
+        }
+    }
+}
