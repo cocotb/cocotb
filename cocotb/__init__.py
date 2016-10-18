@@ -37,11 +37,11 @@ import sys
 import time
 import traceback
 
-from cocotb.log import initialize as _log_init
-from cocotb.log import register_level_notify_cb
+import cocotb.log as log
 
+# Setup logging
 try:
-    _log_init('cocotb', cfg=os.getenv("COCOTB_LOG_CFG"))
+    logger = log.initialize('cocotb', cfg=os.getenv("COCOTB_LOG_CFG"))
 except Exception as e:
     traceback.print_exc()
     sys.stdout.flush()
@@ -51,7 +51,6 @@ except Exception as e:
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
-from cocotb.log import SimLog
 from cocotb.regression import RegressionManager
 
 
@@ -63,17 +62,14 @@ from cocotb.decorators import test, coroutine, function, external
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
 
-# Setup logging
-log = SimLog()
-
 # GPI logging instance
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" not in os.environ:
     import simulator
-    loggpi = SimLog('gpi')
+    loggpi = log.SimLog('gpi')
     # Notify GPI of log level
     simulator.log_level(loggpi.getEffectiveLevel())
-    register_level_notify_cb(loggpi, simulator.log_level)
+    log.register_level_notify_cb(loggpi, simulator.log_level)
 
 
 scheduler = Scheduler()
@@ -195,3 +191,162 @@ def process_plusargs():
                 plusargs[name] = value
             else:
                 plusargs[option[1:]] = True
+
+
+def cocotbLogSetLevel(lvl):
+    """Set the level for the top cocotb logger.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb', lvl)
+
+def cocotbLogGetLevel():
+    """Returns the effective level of the top cocotb logger.
+    """
+    return _getLevel('cocotb')
+
+def gpiLogSetLevel(lvl):
+    """Set the level for the gpi logger.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb.gpi', lvl)
+
+def gpiLogGetLevel():
+    """Returns the effective level gpi logger.
+    """
+    return _getLevel('cocotb.gpi')
+
+def coroutineLogSetLevel(lvl):
+    """Set the level for the coroutine loggers.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb.coroutine', lvl)
+
+def coroutineLogGetLevel():
+    """Returns the effective level coroutine loggers.
+    """
+    return _getLevel('cocotb.coroutine')
+
+def functionLogSetLevel(lvl):
+    """Set the level for the function loggers.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb.function', lvl)
+
+def functionLogGetLevel():
+    """Returns the effective level function loggers.
+    """
+    return _getLevel('cocotb.function')
+
+def driverLogSetLevel(lvl):
+    """Set the level for the driver loggers.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb.driver', lvl)
+
+def driverLogGetLevel():
+    """Returns the effective level driver loggers.
+    """
+    return _getLevel('cocotb.driver')
+
+def handleLogSetLevel(lvl):
+    """Set the level for the handle loggers.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb.handle', lvl)
+
+def handleLogGetLevel():
+    """Returns the effective level handle loggers.
+    """
+    return _getLevel('cocotb.handle')
+
+def monitorLogSetLevel(lvl):
+    """Set the level for the monitor loggers.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb.monitor', lvl)
+
+def monitorLogGetLevel():
+    """Returns the effective level monitor loggers.
+    """
+    return _getLevel('cocotb.monitor')
+
+def regressionLogSetLevel(lvl):
+    """Set the level for the regression logger.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb.regression', lvl)
+
+def regressionLogGetLevel():
+    """Returns the effective level regression logger.
+    """
+    return _getLevel('cocotb.regression')
+
+def schedulerLogSetLevel(lvl):
+    """Set the level for the scheduler logger.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb.scheduler', lvl)
+
+def schedulerLogGetLevel():
+    """Returns the effective level scheduler logger.
+    """
+    return _getLevel('cocotb.scheduler')
+
+def scoreboardLogSetLevel(lvl):
+    """Set the level for the scoreboard logger.
+
+    Args:
+        lvl (int):  Log level
+    """
+    _setLevel('cocotb.scoreboard', lvl)
+
+def scoreboardLogGetLevel():
+    """Returns the effective level scoreboard logger.
+    """
+    return _getLevel('cocotb.scoreboard')
+
+def _setLevel(name,lvl):
+    """Set the level for a logger.
+
+    Args:
+        name (str): Name of the logger
+         lvl (int): Log level
+    """
+    cfg = {
+        'version':1,
+        'incremental':True,
+        'loggers': {
+            name: {
+                'level': lvl
+            }
+        }
+    }
+    log.configure(cfg)
+
+def _getLevel(name=None):
+    """Returns the effective level of the a logger.
+
+    Args:
+        name (str): name of the logger
+    """
+    return log.SimLog(name=name).getEffectiveLevel()
+
+

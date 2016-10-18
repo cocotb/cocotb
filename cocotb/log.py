@@ -192,15 +192,15 @@ def _cfg(top, cfg=None):
     try:
         if not isinstance(cfg, dict):
             return _cfg_ini(cfg)
-    except Exception:
-        pass
+    except Exception as e:
+        ini_err = str(e)
 
     try:
         return _cfg_dict(cfg)
-    except Exception:
-        pass
+    except Exception as e:
+        dict_err = str(e)
 
-    raise ValueError("The cfg object of type '{}' is of an incorrect format for logging configuration".format(type(cfg)))
+    raise ValueError("The cfg object of type '{}' is of an incorrect format for logging configuration\n   ini: {}\n   dict: {}".format(type(cfg),ini_err, dict_err))
 
 def _cfg_ini(cfg):
     logging.config.fileConfig(cfg)
