@@ -776,30 +776,32 @@ class ColumnFormatter(logging.Formatter):
         """
         s = ""
 
-        for col in self._fixed:
-            s += "{}{}".format(self._formatColumn(col,record),self._sep)
+        if not hasattr(record, 'suppress') or not record.suppress:
+            for col in self._fixed:
+                s += "{}{}".format(self._formatColumn(col,record),self._sep)
 
-        if not hasattr(record, 'include_optional') or record.include_optional:
-            include_optional = False
-            o = ""
-            for col in self._optional:
-                try:
-                    o += "{}{}".format(self._formatColumn(col,record),self._sep)
-                    include_optional = True
-                except KeyError:
-                    o += "{}{}".format(col['pad'],self._sep)
-            if not hasattr(record, 'include_optional'):
-                record.include_optional = include_optional
+            if not hasattr(record, 'include_optional') or record.include_optional:
+                include_optional = False
+                o = ""
+                for col in self._optional:
+                    try:
+                        o += "{}{}".format(self._formatColumn(col,record),self._sep)
+                        include_optional = True
+                    except KeyError:
+                        o += "{}{}".format(col['pad'],self._sep)
+                if not hasattr(record, 'include_optional'):
+                    record.include_optional = include_optional
 
-        if record.include_optional:
-            s += o
+            if record.include_optional:
+                s += o
+
         if not hasattr(record, 'prefix'):
             try:
                 record.prefix = self._prefix.format(**record.__dict__)
             except KeyError:
                 record.prefix = ""
-        msg = super(ColumnFormatter, self).formatMessage(record)
 
+        msg = super(ColumnFormatter, self).formatMessage(record)
         msg = record.prefix + msg
 
         s += self._fmt_multi_line_msg(msg,record)
@@ -907,17 +909,20 @@ class ColumnFormatter(logging.Formatter):
             pad_first_line (boolean): Indicates whether padding should be applied
                                       to the first line
         """
-        pad = '\n' + self._fixed_pad
+        if not hasattr(record, 'suppress') or not record.suppress:
+            pad = '\n' + self._fixed_pad
 
-        if record.include_optional:
-            pad += self._optional_pad
+            if record.include_optional:
+                pad += self._optional_pad
 
-        pad += "    " if len(record.prefix) > 0 else ""
+            pad += "    " if len(record.prefix) > 0 else ""
 
-        s = pad.join(msg.split('\n'))
+            s = pad.join(msg.split('\n'))
 
-        if pad_first_line:
-            s = pad[1:] + s
+            if pad_first_line:
+                s = pad[1:] + s
+        else:
+            s = msg
         return s
 
     def _parse_fmt(self, fmt):

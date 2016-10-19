@@ -79,6 +79,10 @@ def t01_basic_logging(dut):
     logging.critical('Top Logger logged a multi-line CRITICAL\nLINE 2\nLINE 3')
     logging.info('EXAMPLE OF DIVIDER WITH TEXT',divider=True)
 
+    logging.info("Demonstrate a multi-line message with no columns...",header=True)
+    logging.critical('Top Logger logged a multi-line CRITICAL\nLINE 2\nLINE 3', suppress=True)
+    logging.info('',divider=True)
+
 @cocotb.test()
 def t02_dflt_config(dut):
     # Configure with the defult configuration
