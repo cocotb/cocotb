@@ -48,6 +48,7 @@ def allow_ansi():
         allow_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
     else:
         allow_ansi = bool(int(allow_ansi))
+    return allow_ansi
 
 # python2 to python3 helper functions
 def get_python_integer_types():

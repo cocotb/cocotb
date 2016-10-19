@@ -107,6 +107,15 @@ def register_level_notify_cb(logger, f):
     global _notify_cbs
     _notify_cbs.append({'log':logger, 'level':logger.getEffectiveLevel(), 'fun':f})
 
+def _notify_level_change():
+    """Notify callbacks if the level has changed for the logger"""
+    global _notify_cbs
+    for cb in _notify_cbs:
+        lvl = cb['log'].getEffectiveLevel()
+        if lvl != cb['level']:
+            cb['level'] = lvl
+            cb['fun'](lvl)
+
 def register_initialize_cb(f):
     """Decorator to register function callback when logging has been initialized.
     If logging has already been initialized, the function will be called immediately,
@@ -204,6 +213,7 @@ def _cfg(top, cfg=None):
 
 def _cfg_ini(cfg):
     logging.config.fileConfig(cfg)
+    _notify_level_change()
 
 def _cfg_dict(cfg):
     if isinstance(cfg, str):
@@ -269,6 +279,7 @@ def _cfg_dict(cfg):
             except Exception as e:
                 raise ValueError('Unable to configure root '
                                  'logger: %s' % e)
+    _notify_level_change()
 
 def critical(msg, *args, **kwargs):
     """Log messages with severity 'CRITICAL' to the top logger.
@@ -451,13 +462,7 @@ class SimLog(object):
 
     def setLevel(self, level):
         self.logger.setLevel(level)
-
-        global _notify_cbs
-        for cb in _notify_cbs:
-            lvl = cb['log'].getEffectiveLevel()
-            if lvl != cb['level']:
-                cb['level'] = lvl
-                cb['fun'](lvl)
+        _notify_level_change()
 
     def findCaller(self, stack_info=False):
         frame = inspect.stack()[3]
@@ -779,8 +784,8 @@ class ColumnFormatter(logging.Formatter):
             o = ""
             for col in self._optional:
                 try:
-                    include_optional = True
                     o += "{}{}".format(self._formatColumn(col,record),self._sep)
+                    include_optional = True
                 except KeyError:
                     o += "{}{}".format(col['pad'],self._sep)
             if not hasattr(record, 'include_optional'):
@@ -977,11 +982,12 @@ class SimColourLogFormatter(SimLogFormatter):
 
     """Log formatter to provide consistent log message handling."""
     loglevel2colour = {
-        logging.DEBUG   :       ANSI.DEFAULT                     + "%s" + ANSI.DEFAULT,
-        logging.INFO    :       ANSI.DEFAULT_BG + ANSI.BLUE_FG   + "%s" + ANSI.DEFAULT,
-        logging.WARNING :       ANSI.DEFAULT_BG + ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT,
-        logging.ERROR   :       ANSI.DEFAULT_BG + ANSI.RED_FG    + "%s" + ANSI.DEFAULT,
-        logging.CRITICAL:       ANSI.RED_BG     + ANSI.BLACK_FG  + "%s" + ANSI.DEFAULT}
+        DEEP_DEBUG:       ANSI.DEFAULT                     + "%s" + ANSI.DEFAULT,
+        DEBUG     :       ANSI.DEFAULT                     + "%s" + ANSI.DEFAULT,
+        INFO      :       ANSI.DEFAULT_BG + ANSI.BLUE_FG   + "%s" + ANSI.DEFAULT,
+        WARNING   :       ANSI.DEFAULT_BG + ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT,
+        ERROR     :       ANSI.DEFAULT_BG + ANSI.RED_FG    + "%s" + ANSI.DEFAULT,
+        CRITICAL  :       ANSI.RED_BG     + ANSI.BLACK_FG  + "%s" + ANSI.DEFAULT}
 
     def __init__(self, fmt=None, datefmt=None, simtimefmt=None, separator=' | ', divider=120):
         SimLogFormatter.__init__(self,
