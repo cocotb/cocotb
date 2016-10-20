@@ -70,7 +70,11 @@ def get_sim_time(units=None):
     Returns:
         The simulation time in the specified units
     """
-    timeh, timel = simulator.get_sim_time()
+    if simulator is not None:
+        timeh, timel = simulator.get_sim_time()
+    else:
+        timeh = 0
+        timel = 0
 
     result = (timeh << 32 | timel)
 

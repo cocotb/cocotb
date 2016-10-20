@@ -192,7 +192,6 @@ def _cfg(top, cfg=None):
                        If None, default configuration will be used.
     """
     if cfg is None:
-        pass
         if allow_ansi():
             formatter='sim_log_colour'
         else:
@@ -635,10 +634,21 @@ class SimLog(object):
                 exc_info = (type(exc_info), exc_info, exc_info.__traceback__)
             elif not isinstance(exc_info, tuple):
                 exc_info = sys.exc_info()
+
         record = self.makeRecord(self._log_name, level, fn, lno, msg, args,
                                  exc_info, func, extra, sinfo)
         self.logger.handle(record)
 
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
+                   func=None, extra=None, sinfo=None):
+        rv = logging.LogRecord(name, level, fn, lno, msg, args, exc_info, func)
+        rv.stack_info = sinfo
+        if extra is not None:
+            for key in extra:
+                if (key in ["message", "asctime", "simtime"]) or (key in rv.__dict__):
+                    raise KeyError("Attempt to overwrite %r in LogRecord" % key)
+                rv.__dict__[key] = extra[key]
+        return rv
 
     def _willLog(self, level):
         """ This is for user from the C world
@@ -672,9 +682,25 @@ class InvalidColumnFormat(Exception):
     """Exception used by the ColumnFormatter"""
     pass
 
+class StrFormatStyle(object):
+    default_format = '{message}'
+    asctime_format = '{asctime}'
+    asctime_search = '{asctime'
+    simtime_search = '{simtime'
+
+    def __init__(self, fmt):
+        self._fmt = fmt or self.default_format
+
+    def usesTime(self):
+        return self._fmt.find(self.asctime_search) >= 0
+
+    def usesSimTime(self):
+        return self._fmt.find(self.simtime_search) >= 0
+
+    def format(self, record):
+        return self._fmt.format(**record.__dict__)
 
 class ColumnFormatter(logging.Formatter):
-    simtime_search         = '{simtime'
     default_simtime_format = '{:>6.2f}ns'
     fmt_spec_re            = re.compile('((?P<fill>.)?(?P<align>[<>=^]))?(?P<sign>[+\- ])?(?P<alt_form>#)?(?P<zero_fill>0)?(?P<width>\d+)?(?P<comma>,)?(?P<precision>\.\d+)?(?P<type>[bcdeEfFgGnosxX%])?')
     fmt_simtime_re         = re.compile('(?P<spec>.*?)?(?P<resolution>fs|ps|ns|us|ms|sec)')
@@ -716,10 +742,13 @@ class ColumnFormatter(logging.Formatter):
         if optional is not None and not isinstance(optional, list):
             raise TypeError("Argument 'optional' must be of type list.")
 
-        super(ColumnFormatter, self).__init__(fmt=fmt, datefmt=datefmt, style='{')
+        self._style  = StrFormatStyle(fmt)
+        self._fmt    = self._style._fmt
+        self.datefmt = datefmt
+
         self.simtimefmt   = simtimefmt or self.default_simtime_format
-        self._usestime    = super(ColumnFormatter, self).usesTime()
-        self._usessimtime = self._fmt.find(self.simtime_search) >= 0
+        self._usestime    = self._style.usesTime()
+        self._usessimtime = self._style.usesSimTime()
         self._sep = separator
         self._prefix = prefix
 
@@ -737,12 +766,12 @@ class ColumnFormatter(logging.Formatter):
         if fixed is not None:
             for fixed_fmt in fixed:
                 col = {}
-                col['style']              = logging.StrFormatStyle(fixed_fmt)
+                col['style']              = StrFormatStyle(fixed_fmt)
                 col['fmt']                = col['style']._fmt
                 col['parsed'], col['len'] = self._parse_fmt(col['fmt'])
                 col['pad']                = ' '*col['len']
                 self._usestime            = self._usestime or col['style'].usesTime()
-                self._usessimtime         = self._usessimtime or col['fmt'].find(self.simtime_search) >= 0
+                self._usessimtime         = self._usessimtime or col['style'].usesSimTime()
 
                 self._fixed_pad += '{}{}'.format(col['pad'],self._sep)
                 self._fixed.append(col)
@@ -750,12 +779,12 @@ class ColumnFormatter(logging.Formatter):
         if optional is not None:
             for opt_fmt in optional:
                 col = {}
-                col['style']              = logging.StrFormatStyle(opt_fmt)
+                col['style']              = StrFormatStyle(opt_fmt)
                 col['fmt']                = col['style']._fmt
                 col['parsed'], col['len'] = self._parse_fmt(col['fmt'])
                 col['pad']                = ' '*col['len']
                 self._usestime            = self._usestime or col['style'].usesTime()
-                self._usessimtime         = self._usessimtime or col['fmt'].find(self.simtime_search) >= 0
+                self._usessimtime         = self._usessimtime or col['style'].usesSimTime()
 
                 self._optional_pad += '{}{}'.format(col['pad'],self._sep)
                 self._optional.append(col)
@@ -811,7 +840,7 @@ class ColumnFormatter(logging.Formatter):
             except KeyError:
                 record.prefix = ""
 
-        msg = super(ColumnFormatter, self).formatMessage(record)
+        msg = self._style.format(record)
         msg = record.prefix + msg
 
         s += self._fmt_multi_line_msg(msg,record)
@@ -1025,7 +1054,7 @@ class SimColourLogFormatter(SimLogFormatter):
               col (dict): Column information dictionary
             record (obj): Container with all the parameters for formatting
         """
-        s = SimLogFormatter._formatColumn(self=self, col=col, record=record)
+        s = SimLogFormatter._formatColumn(self, col=col, record=record)
 
         if id(col) == id(self._fixed[1]):
             s = self.loglevel2colour[record.levelno] % s
