@@ -319,7 +319,7 @@ def error(msg, *args, **kwargs):
         raise RuntimeError("init_logging() must be called before attempting to log")
     _top_logger.error(msg, *args, **kwargs)
 
-def exception(msg, *args, exc_info=True, **kwargs):
+def exception(msg, *args, **kwargs):
     """Log messages with severity 'ERROR' to the top logger with exception information.
 
     Args:
@@ -337,6 +337,7 @@ def exception(msg, *args, exc_info=True, **kwargs):
     """
     if _top_logger is None:
         raise RuntimeError("init_logging() must be called before attempting to log")
+    exc_info = kwargs.pop('exc_info', True)
     _top_logger.error(msg, *args, exc_info=exc_info, **kwargs)
 
 def warning(msg, *args, **kwargs):
