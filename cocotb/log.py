@@ -663,14 +663,14 @@ class SimLog(object):
             be printed regardless
         """
         if self.logger.isEnabledFor(level):
-            record = self.logger.makeRecord(self._log_name,
-                                            level,
-                                            filename,
-                                            lineno,
-                                            msg,
-                                            None,
-                                            None,
-                                            function)
+            record = self.makeRecord(self._log_name,
+                                     level,
+                                     filename,
+                                     lineno,
+                                     msg,
+                                     None,
+                                     None,
+                                     function)
             self.logger.handle(record)
 
     def __getattr__(self, attribute):
