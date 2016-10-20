@@ -39,7 +39,11 @@ import logging.config
 import inspect
 
 import traceback
-import io
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io       import StringIO
 
 from cocotb.utils import get_sim_time, allow_ansi
 
@@ -196,7 +200,7 @@ def _cfg(top, cfg=None):
 
         level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
 
-        cfg = io.StringIO(_DEFAULT_CONFIG.format(top=top, level=level, formatter=formatter))
+        cfg = StringIO(_DEFAULT_CONFIG.format(top=top, level=level, formatter=formatter))
 
     try:
         if not isinstance(cfg, dict):
@@ -219,7 +223,7 @@ def _cfg_dict(cfg):
     if isinstance(cfg, str):
         with open(cfg, 'r') as f:
             # Logging config files aren't that big.  Just read in everything.
-            cfg = io.StringIO(f.read())
+            cfg = StringIO(f.read())
 
     if not isinstance(cfg, dict):
         try:
@@ -475,7 +479,7 @@ class SimLog(object):
 
         sinfo = None
         if stack_info:
-            sio = io.StringIO()
+            sio = StringIO()
             sio.write('Stack (most recent call last):\n')
             traceback.print_stack(frame[0], file=sio)
             sinfo = sio.getvalue()
