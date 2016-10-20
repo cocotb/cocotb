@@ -1,6 +1,11 @@
-import io
 import os.path
 import logging.config as py_log_cfg
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io       import StringIO
+
 
 import cocotb
 import cocotb.log as logging
@@ -243,7 +248,7 @@ args=(sys.stdout,)
 [formatter_sim_log]
 class=cocotb.log.SimLogFormatter
 '''
-    logging.configure(io.StringIO(cfg))
+    logging.configure(StringIO(cfg))
 
     s  = "Using the INI configuration:\n"
     s += "        Top Logger - cocotb: Will log all messages of INFO and above\n"
@@ -288,7 +293,7 @@ class=cocotb.log.SimLogFormatter
     }
 }
 '''
-        logging.configure(io.StringIO(cfg))
+        logging.configure(StringIO(cfg))
 
         s  = "Using the JSON configuration:\n"
         s += "        Top Logger - cocotb: Will log all messages of INFO and above\n"
@@ -328,7 +333,7 @@ loggers:
         handlers:
             - console
 '''
-            logging.configure(io.StringIO(cfg))
+            logging.configure(StringIO(cfg))
 
             s  = "Using the YAML configuration:\n"
             s += "        Top Logger - cocotb: Will log all messages of INFO and above\n"
