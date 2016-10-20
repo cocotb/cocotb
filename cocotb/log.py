@@ -514,7 +514,7 @@ class SimLog(object):
         if self.logger.isEnabledFor(ERROR):
             self._log(ERROR, msg, args, **kwargs)
 
-    def exception(self, msg, *args, exc_info=True, **kwargs):
+    def exception(self, msg, *args, **kwargs):
         """Log messages with severity 'ERROR' to the top logger with exception information.
 
         Args:
@@ -528,6 +528,7 @@ class SimLog(object):
                                 to allow to be used in the formatting strings
         """
         if self.logger.isEnabledFor(ERROR):
+            exc_info = kwargs.pop('exc_info', True)
             self._log(ERROR, msg, args, exc_info=exc_info, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
@@ -610,7 +611,11 @@ class SimLog(object):
         if self.logger.isEnabledFor(level):
             self._log(level, msg, args, **kwargs)
 
-    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False, **kwargs):
+    def _log(self, level, msg, args, **kwargs):
+        exc_info   = kwargs.pop('exc_info', None)
+        extra      = kwargs.pop('extra', None)
+        stack_info = kwargs.pop('stack_info', False)
+
         if extra is not None:
             extra.update(kwargs)
         elif kwargs:
