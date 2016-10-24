@@ -105,7 +105,7 @@ class RegressionManager(object):
                                  package=package_name)
         
         if (self._seed is not None):
-            self.xunit.add_property(name="random_seed", value=self._seed)
+            self.xunit.add_property(name="random_seed", value=("%d"%self._seed))
 
         if coverage is not None:
             self.log.info("Enabling coverage collection of Python code")
