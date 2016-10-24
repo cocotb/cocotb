@@ -39,6 +39,7 @@ from cocotb.log import SimLog
 from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
+from cocotb.utils import get_sim_time
 
 
 def public(f):
@@ -132,7 +133,7 @@ class RunningCoroutine(object):
             raise CoroutineComplete(callback=self._finished_cb)
         except Exception as e:
             self._finished = True
-            raise_error(self, "Send raised exception: %s" % (str(e)))
+            raise raise_error(self, "Send raised exception: %s" % (str(e)))
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -182,6 +183,7 @@ class RunningTest(RunningCoroutine):
         RunningCoroutine.__init__(self, inst, parent)
         self.started = False
         self.start_time = 0
+        self.start_sim_time = 0
         self.expect_fail = parent.expect_fail
         self.expect_error = parent.expect_error
         self.skip = parent.skip
@@ -195,6 +197,7 @@ class RunningTest(RunningCoroutine):
             self.log.info("Starting test: \"%s\"\nDescription: %s" %
                           (self.funcname, self.__doc__))
             self.start_time = time.time()
+            self.start_sim_time = get_sim_time('ns')
             self.started = True
         try:
             if isinstance(value, ExternalException):
@@ -216,7 +219,7 @@ class RunningTest(RunningCoroutine):
         except StopIteration:
             raise TestSuccess()
         except Exception as e:
-            raise_error(self, "Send raised exception: %s" % (str(e)))
+            raise raise_error(self, "Send raised exception: %s" % (str(e)))
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
@@ -383,7 +386,7 @@ class test(coroutine):
             try:
                 return RunningTest(self._func(*args, **kwargs), self)
             except Exception as e:
-                raise_error(self, str(e))
+                raise raise_error(self, str(e))
 
         _wrapped_test.im_test = True    # For auto-regressions
         _wrapped_test.name = self._func.__name__

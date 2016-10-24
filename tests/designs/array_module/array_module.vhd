@@ -86,6 +86,9 @@ architecture impl of array_module is
     signal   sig_desc      : std_logic_vector(23 downto 16);
     signal   sig_asc       : std_logic_vector(16 to 23);
 
+    signal   \ext_id\      : std_logic;
+    signal   \!\           : std_logic;
+
     signal   sig_t1        : t1;
     signal   sig_t2        : t2;
     signal   sig_t3a       : t3(1 to 4);
