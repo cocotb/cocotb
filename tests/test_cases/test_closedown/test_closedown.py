@@ -40,7 +40,7 @@ from cocotb.clock import Clock
 
 def test_read(dut):
     global test_count
-    dut.log.info("Inside test_read")
+    dut._log.info("Inside test_read")
     while test_count is not 5:
         yield RisingEdge(dut.clk)
         test_count += 1

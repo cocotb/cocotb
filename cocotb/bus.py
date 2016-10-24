@@ -89,8 +89,8 @@ class Bus(object):
                 setattr(self, signal, hdl)
                 self._signals[signal] = getattr(self, signal)
             else:
-                self._entity.log.debug("Ignoring optional missing signal "
-                                       "%s on bus %s" % (signal, name))
+                self._entity._log.debug("Ignoring optional missing signal "
+                                        "%s on bus %s" % (signal, name))
 
     def drive(self, obj, strict=False):
         """
@@ -110,7 +110,7 @@ class Bus(object):
             if not hasattr(obj, name):
                 if strict:
                     msg = ("Unable to drive onto %s.%s because %s is missing "
-                           "attribute %s" % self._entity.name, self._name,
+                           "attribute %s" % self._entity._name, self._name,
                            obj.__class__.__name__, name)
                     raise AttributeError(msg)
                 else:

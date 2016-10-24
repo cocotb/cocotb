@@ -39,6 +39,7 @@ from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
+from cocotb.utils import get_sim_time
 
 from cocotb.binary import BinaryValue
 
@@ -48,7 +49,7 @@ from cocotb.binary import BinaryValue
 @cocotb.test(expect_fail=True)
 def test_not_a_coroutine(dut):
     """Example of a failing to use the yield keyword in a test"""
-    dut.log.warning("This test will fail because we don't yield anything")
+    dut._log.warning("This test will fail because we don't yield anything")
 
 
 @cocotb.coroutine
@@ -101,7 +102,7 @@ def clock_gen(clock):
         yield Timer(100)
         clock <= 1
         yield Timer(100)
-    clock.log.warning("Clock generator finished!")
+    clock._log.warning("Clock generator finished!")
 
 
 @cocotb.test(expect_fail=False)
@@ -156,6 +157,104 @@ def test_adding_a_coroutine_without_starting(dut):
 
 
 @cocotb.test(expect_fail=False)
+def test_clock_with_units(dut):
+    clk_1mhz   = Clock(dut.clk, 1.0, units='us')
+    clk_250mhz = Clock(dut.clk, 4.0, units='ns')
+
+    if str(clk_1mhz) != "Clock(1.0 MHz)":
+        raise TestFailure("{} != 'Clock(1.0 MHz)'".format(str(clk_1mhz)))
+    else:
+        dut._log.info('Created clock >{}<'.format(str(clk_1mhz)))
+
+    if str(clk_250mhz) != "Clock(250.0 MHz)":
+        raise TestFailure("{} != 'Clock(250.0 MHz)'".format(str(clk_250mhz)))
+    else:
+        dut._log.info('Created clock >{}<'.format(str(clk_250mhz)))
+
+    clk_gen = cocotb.fork(clk_1mhz.start())
+
+    start_time_ns = get_sim_time(units='ns')
+
+    yield Timer(1)
+
+    yield RisingEdge(dut.clk)
+
+    edge_time_ns = get_sim_time(units='ns')
+    if edge_time_ns != start_time_ns + 1000.0:
+        raise TestFailure("Expected a period of 1 us")
+
+    start_time_ns = edge_time_ns
+
+    yield RisingEdge(dut.clk)
+    edge_time_ns = get_sim_time(units='ns')
+    if edge_time_ns != start_time_ns + 1000.0:
+        raise TestFailure("Expected a period of 1 us")
+
+    clk_gen.kill()
+
+    clk_gen = cocotb.fork(clk_250mhz.start())
+
+    start_time_ns = get_sim_time(units='ns')
+
+    yield Timer(1)
+
+    yield RisingEdge(dut.clk)
+
+    edge_time_ns = get_sim_time(units='ns')
+    if edge_time_ns != start_time_ns + 4.0:
+        raise TestFailure("Expected a period of 4 ns")
+
+    start_time_ns = edge_time_ns
+
+    yield RisingEdge(dut.clk)
+    edge_time_ns = get_sim_time(units='ns')
+    if edge_time_ns != start_time_ns + 4.0:
+        raise TestFailure("Expected a period of 4 ns")
+
+    clk_gen.kill()
+
+@cocotb.test(expect_fail=False)
+def test_timer_with_units(dut):
+    time_fs = get_sim_time(units='fs')
+
+    # Yield for one simulation time step
+    yield Timer(1)
+    time_step = get_sim_time(units='fs') - time_fs
+
+    try:
+        #Yield for 2.5 timesteps, should throw exception
+        yield Timer(2.5*time_step, units='fs')
+        raise TestFailure("Timers should throw exception if time cannot be achieved with simulator resolution")
+    except ValueError:
+        dut._log.info("As expected, unable to create a timer of 2.5 simulator time steps")
+
+    time_fs = get_sim_time(units='fs')
+
+    yield Timer(3, "ns")
+
+    if get_sim_time(units='fs') != time_fs+3000000.0:
+        raise TestFailure("Expected a delay of 3 ns")
+
+    time_fs = get_sim_time(units='fs')
+    yield Timer(1.5, "ns")
+
+    if get_sim_time(units='fs') != time_fs+1500000.0:
+        raise TestFailure("Expected a delay of 1.5 ns")
+
+    time_fs = get_sim_time(units='fs')
+    yield Timer(10.0, "ps")
+
+    if get_sim_time(units='fs') != time_fs+10000.0:
+        raise TestFailure("Expected a delay of 10 ps")
+
+    time_fs = get_sim_time(units='fs')
+    yield Timer(1.0, "us")
+
+    if get_sim_time(units='fs') != time_fs+1000000000.0:
+        raise TestFailure("Expected a delay of 1 us")
+
+
+@cocotb.test(expect_fail=False)
 def test_anternal_clock(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated
     function"""
@@ -174,8 +273,16 @@ def do_test_readwrite_in_readonly(dut):
     global exited
     yield RisingEdge(dut.clk)
     yield ReadOnly()
-    dut.clk <= 0
     yield ReadWrite()
+    exited = True
+
+
+@cocotb.coroutine
+def do_test_cached_write_in_readonly(dut):
+    global exited
+    yield RisingEdge(dut.clk)
+    yield ReadOnly()
+    dut.clk <= 0
     exited = True
 
 
@@ -199,6 +306,22 @@ def test_readwrite_in_readonly(dut):
     exited = False
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     coro = cocotb.fork(do_test_readwrite_in_readonly(dut))
+    yield [Join(coro), Timer(10000)]
+    clk_gen.kill()
+    if exited is not True:
+        raise TestFailure
+
+@cocotb.test(expect_error=True,
+             expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
+                                                             "riviera",
+                                                             "modelsim",
+                                                             "ncsim")))
+def test_cached_write_in_readonly(dut):
+    """Test doing invalid sim operation"""
+    global exited
+    exited = False
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+    coro = cocotb.fork(do_test_cached_write_in_readonly(dut))
     yield [Join(coro), Timer(10000)]
     clk_gen.kill()
     if exited is not True:
@@ -261,7 +384,7 @@ def test_coroutine_close_down(dut):
     yield Join(coro_one)
     yield Join(coro_two)
 
-    dut.log.info("Back from joins")
+    dut._log.info("Back from joins")
 
 
 @cocotb.coroutine
@@ -277,6 +400,7 @@ def test_syntax_error(dut):
     fail
 
 
+#@cocotb.test(expect_error=True)
 @cocotb.test(expect_error=True)
 def test_coroutine_syntax_error(dut):
     """Syntax error in a coroutine that we yield"""
@@ -309,7 +433,7 @@ def test_fork_and_monitor(dut, period=1000, clocks=6):
         if count > expect:
             raise TestFailure("Task didn't complete in expected time")
         if result is timer:
-            dut.log.info("Count %d: Task still running" % count)
+            dut._log.info("Count %d: Task still running" % count)
             count += 1
         else:
             break
@@ -326,8 +450,8 @@ def count_edges_cycles(signal, edges):
     edge = RisingEdge(signal)
     for i in range(edges):
         yield edge
-        signal.log.info("Rising edge %d detected" % i)
-    signal.log.info("Finished, returning %d" % edges)
+        signal._log.info("Rising edge %d detected" % i)
+    signal._log.info("Finished, returning %d" % edges)
     raise ReturnValue(edges)
 
 
@@ -335,7 +459,7 @@ def count_edges_cycles(signal, edges):
 def do_single_edge_check(dut, level):
     """Do test for rising edge"""
     old_value = dut.clk.value.integer
-    dut.log.info("Value of %s is %d" % (dut.clk, old_value))
+    dut._log.info("Value of %s is %d" % (dut.clk, old_value))
     if old_value is level:
         raise TestError("%s not to %d start with" % (dut.clk, not level))
     if level == 1:
@@ -343,7 +467,7 @@ def do_single_edge_check(dut, level):
     else:
         yield FallingEdge(dut.clk)
     new_value = dut.clk.value.integer
-    dut.log.info("Value of %s is %d" % (dut.clk, new_value))
+    dut._log.info("Value of %s is %d" % (dut.clk, new_value))
     if new_value is not level:
         raise TestError("%s not %d at end" % (dut.clk, level))
 
@@ -461,14 +585,16 @@ class StrCallCounter(object):
 @cocotb.test()
 def test_logging_with_args(dut):
     counter = StrCallCounter()
-    dut.log.logger.setLevel(logging.INFO) #To avoid logging debug message, to make next line run without error
-    dut.log.debug("%s", counter)
+    dut._log.logger.setLevel(logging.INFO) #To avoid logging debug message, to make next line run without error
+    dut._log.debug("%s", counter)
     assert counter.str_counter == 0
 
-    dut.log.info("%s", counter)
+    dut._log.info("%s", counter)
     assert counter.str_counter == 1
 
-    dut.log.info("No substitution")
+    dut._log.info("No substitution")
+
+    dut._log.warning("Testing multiple line\nmessage")
 
     yield Timer(100) #Make it do something with time
 
@@ -478,29 +604,29 @@ def test_binary_value(dut):
     Test out the cocotb supplied BinaryValue class for manipulating
     values in a style familiar to rtl coders.
     """
-    
+
     vec = BinaryValue(value=0,bits=16)
-    dut.log.info("Checking default endianess is Big Endian.")
+    dut._log.info("Checking default endianess is Big Endian.")
     if not vec.big_endian:
         raise TestFailure("The default endianess is Little Endian - was expecting Big Endian.")
     if vec.integer != 0:
         raise TestFailure("Expecting our BinaryValue object to have the value 0.")
 
-    dut.log.info("Checking single index assignment works as expected on a Little Endian BinaryValue.")
+    dut._log.info("Checking single index assignment works as expected on a Little Endian BinaryValue.")
     vec = BinaryValue(value=0,bits=16,bigEndian=False)
     if vec.big_endian:
         raise TestFailure("Our BinaryValue object is reporting it is Big Endian - was expecting Little Endian.")
     for x in range(vec._bits):
         vec[x] = '1'
-        dut.log.info("Trying vec[%s] = 1" % x)
+        dut._log.info("Trying vec[%s] = 1" % x)
         expected_value = 2**(x+1) - 1
         if vec.integer != expected_value:
             raise TestFailure("Failed on assignment to vec[%s] - expecting %s - got %s" % (x,expected_value,vec.integer))
         if vec[x] != 1:
             raise TestFailure("Failed on index compare on vec[%s] - expecting 1 - got %s" % (x,vec[x]))
-        dut.log.info("vec = 'b%s" % vec.binstr)
+        dut._log.info("vec = 'b%s" % vec.binstr)
 
-    dut.log.info("Checking slice assignment works as expected on a Little Endian BinaryValue.")
+    dut._log.info("Checking slice assignment works as expected on a Little Endian BinaryValue.")
     if vec.integer != 65535:
         raise TestFailure("Expecting our BinaryValue object to be 65535 after the end of the previous test.")
     vec[7:0] = '00110101'
@@ -509,8 +635,8 @@ def test_binary_value(dut):
     if vec[7:0].binstr != '00110101':
         raise TestFailure("Set lower 8-bits to 00110101 but readback %s from vec[7:0]" % vec[7:0].binstr)
 
-    dut.log.info("vec[7:0] = 'b%s" % vec[7:0].binstr)
-    dut.log.info("vec[15:8] = 'b%s" % vec[15:8].binstr)
-    dut.log.info("vec = 'b%s" % vec.binstr)
+    dut._log.info("vec[7:0] = 'b%s" % vec[7:0].binstr)
+    dut._log.info("vec[15:8] = 'b%s" % vec[15:8].binstr)
+    dut._log.info("vec = 'b%s" % vec.binstr)
 
     yield Timer(100) #Make it do something with time

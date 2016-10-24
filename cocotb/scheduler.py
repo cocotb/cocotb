@@ -377,6 +377,8 @@ class Scheduler(object):
         del coro._join
 
     def save_write(self, handle, value):
+        if self._mode == Scheduler._MODE_READONLY:
+            raise Exception("Write to object {} was scheduled during a read-only sync phase.".format(handle._name))
         self._writes[handle] = value
 
     def _coroutine_yielded(self, coro, triggers):

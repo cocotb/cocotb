@@ -51,3 +51,5 @@ MAGENTA_BG      = _ESCAPE + "45m"
 CYAN_BG         = _ESCAPE + "46m"
 WHITE_BG        = _ESCAPE + "47m"
 DEFAULT_BG      = _ESCAPE + "49m"
+
+DEFAULT         = DEFAULT_BG + DEFAULT_FG

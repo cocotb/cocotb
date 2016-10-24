@@ -11,10 +11,10 @@ def mixed_language_test(dut):
     yield Timer(100)
 
     verilog = dut.i_swapper_sv
-    dut.log.info("Got: %s" % repr(verilog.name))
+    dut._log.info("Got: %s" % repr(verilog._name))
 
     vhdl = dut.i_swapper_vhdl
-    dut.log.info("Got: %s" % repr(vhdl.name))
+    dut._log.info("Got: %s" % repr(vhdl._name))
 
     verilog.reset_n = 1
     yield Timer(100)
@@ -23,10 +23,10 @@ def mixed_language_test(dut):
     yield Timer(100)
 
     if int(verilog.reset_n) == int(vhdl.reset_n):
-        dut.log.info("Both signals read as %d" % int(vhdl.reset_n))
+        dut._log.info("Both signals read as %d" % int(vhdl.reset_n))
     else:
         raise TestFailure("reset_n signals were different")
 
     # Try accessing an object other than a port...
-    verilog_flush = int(verilog.flush_pipe)
-    vhdl_flush = int(vhdl.flush_pipe)
+    verilog_flush = str(verilog.flush_pipe)
+    vhdl_flush = str(vhdl.flush_pipe)

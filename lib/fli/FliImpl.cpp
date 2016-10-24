@@ -44,9 +44,12 @@ void FliImpl::sim_end(void)
 {
     if (GPI_DELETE != sim_finish_cb->get_call_state()) {
         sim_finish_cb->set_call_state(GPI_DELETE);
-        mti_Break();
+        if (mti_NowUpper() == 0 && mti_Now() == 0 && mti_Delta() == 0) {
+            mti_Quit();
+        } else {
+            mti_Break();
+        }
     }
-
 }
 
 bool FliImpl::isValueConst(int kind)

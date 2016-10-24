@@ -145,7 +145,7 @@ class XGMII(Driver):
 
             byte0, byte1, ..., byte0_control, byte1_control...
         """
-        self.log = signal.log
+        self.log = signal._log
         self.signal = signal
         self.clock = clock
         self.bus = _XGMIIBus(len(signal)/9, interleaved=interleaved)
