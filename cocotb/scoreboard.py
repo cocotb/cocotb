@@ -53,7 +53,7 @@ class Scoreboard(object):
 
     def __init__(self, dut, reorder_depth=0, fail_immediately=True):
         self.dut = dut
-        self.log = SimLog("cocotb.scoreboard.%s" % self.dut.name)
+        self.log = SimLog("cocotb.scoreboard.%s" % self.dut._name)
         self.errors = 0
         self.expected = {}
         self._imm = fail_immediately

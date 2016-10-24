@@ -35,7 +35,7 @@ import random
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, ReadOnly, Event
+from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -227,6 +227,8 @@ class AvalonMemory(BusDriver):
             "burstCountUnits": "symbols", # symbols or words
             "addressUnits": "symbols",    # symbols or words
             "readLatency": 1,    # number of cycles
+            "WriteBurstWaitReq": True,  # generate random waitrequest
+            "MaxWaitReqLen": 4,  # maximum value of waitrequest
             }
 
     def __init__(self, entity, name, clock, readlatency_min=1,
@@ -251,6 +253,7 @@ class AvalonMemory(BusDriver):
 
         if hasattr(self.bus, "readdata"):
             self._width = len(self.bus.readdata)
+            self.dataByteSize = self._width/8
             self._readable = True
 
         if hasattr(self.bus, "writedata"):
@@ -259,12 +262,8 @@ class AvalonMemory(BusDriver):
                 self.log.error("readdata and writedata bus" +
                                " are not the same size")
             self._width = width
+            self.dataByteSize = self._width/8
             self._writeable = True
-
-        if hasattr(self.bus, "burstcount"):
-            if hasattr(self.bus, "readdatavalid"):
-                self._burstread = True
-            self._burstwrite = True
 
         if not self._readable and not self._writeable:
             raise TestError("Attempt to instantiate useless memory")
@@ -286,6 +285,16 @@ class AvalonMemory(BusDriver):
 
         if hasattr(self.bus, "waitrequest"):
             self.bus.waitrequest.setimmediatevalue(0)
+
+        if hasattr(self.bus, "burstcount"):
+            if hasattr(self.bus, "readdatavalid"):
+                self._burstread = True
+            self._burstwrite = True
+            if self._avalon_properties.get("WriteBurstWaitReq", True):
+                self.bus.waitrequest <= 1
+            else:
+                self.bus.waitrequest <= 0
+
 
         if hasattr(self.bus, "readdatavalid"):
             self.bus.readdatavalid.setimmediatevalue(0)
@@ -315,13 +324,59 @@ class AvalonMemory(BusDriver):
         elif hasattr(self.bus, "readdatavalid"):
             self.bus.readdatavalid <= 0
 
+    def _write_burst_addr(self):
+        """ reading write burst address, burstcount, byteenable """
+        addr = self.bus.address.value.integer
+        if addr % self.dataByteSize != 0:
+            self.log.error("Address must be aligned to data width" +
+                           "(addr = " + hex(addr) +
+                           ", width = " + str(self._width))
+
+        byteenable = self.bus.byteenable.value
+        if byteenable != int("1"*len(self.bus.byteenable), 2):
+            self.log.error("Only full word access is supported " +
+                           "for burst write (byteenable must be " +
+                           "0b" + "1" * len(self.bus.byteenable) +
+                           ")")
+
+        burstcount = self.bus.burstcount.value.integer
+        if burstcount == 0:
+            self.log.error("Write burstcount must be 1 at least")
+
+        return (addr, byteenable, burstcount)
+
+    @coroutine
+    def _writing_byte_value(self, byteaddr):
+        """Writing value in _mem with byteaddr size """
+        yield FallingEdge(self.clock)
+        for i in range(self.dataByteSize):
+            data = self.bus.writedata.value.integer
+            addrtmp = byteaddr + i
+            datatmp = (data >> (i*8)) & 0xff
+            self._mem[addrtmp] = datatmp
+
+    @coroutine
+    def _waitrequest(self):
+        """ generate waitrequest randomly """
+        if self._avalon_properties.get("WriteBurstWaitReq", True):
+            if random.choice([True, False, False, False]):
+                randmax = self._avalon_properties.get("MaxWaitReqLen", 0)
+                waitingtime = range(random.randint(0, randmax))
+                for waitreq in waitingtime:
+                    self.bus.waitrequest <= 1
+                    yield RisingEdge(self.clock)
+            else:
+                yield NextTimeStep()
+
+            self.bus.waitrequest <= 0
+
+
     @coroutine
     def _respond(self):
         """
         Coroutine to response to the actual requests
         """
         edge = RisingEdge(self.clock)
-        dataByteSize = self._width/8
         while True:
             yield edge
             self._do_response()
@@ -342,11 +397,11 @@ class AvalonMemory(BusDriver):
                         self._responses.append(self._mem[addr])
                 else:
                     addr = self.bus.address.value.integer
-                    if addr % dataByteSize != 0:
+                    if addr % self.dataByteSize != 0:
                         self.log.error("Address must be aligned to data width" +
                                        "(addr = " + hex(addr) +
                                        ", width = " + str(self._width))
-                    addr = addr / dataByteSize
+                    addr = addr / self.dataByteSize
                     burstcount = self.bus.burstcount.value.integer
                     byteenable = self.bus.byteenable.value
                     if byteenable != int("1"*len(self.bus.byteenable), 2):
@@ -359,6 +414,7 @@ class AvalonMemory(BusDriver):
 
                     # toggle waitrequest
                     # TODO: configure waitrequest time with avalon properties
+                    yield NextTimeStep()  # can't write during read-only phase
                     self.bus.waitrequest <= 1
                     yield edge
                     yield edge
@@ -367,30 +423,76 @@ class AvalonMemory(BusDriver):
                     # wait for read data
                     for i in range(self._avalon_properties["readLatency"]):
                         yield edge
-
                     for count in range(burstcount):
-                        if (addr + count)*dataByteSize not in self._mem:
+                        if (addr + count)*self.dataByteSize not in self._mem:
                             self.log.warning(
                                    "Attempt to burst read from uninitialised " +
                                    "address 0x%x (addr 0x%x count 0x%x)" %
-                                    ((addr + count)*dataByteSize, addr, count) )
+                                    ((addr + count)*self.dataByteSize, addr, count) )
                             self._responses.append(True)
                         else:
                             value = 0
-                            for i in range(dataByteSize):
-                                value +=\
-                                    self._mem[(addr + count)*dataByteSize + i] << i*8
+                            for i in range(self.dataByteSize):
+                                rvalue = self._mem[(addr + count)*self.dataByteSize + i]
+                                value += rvalue << i*8
                             self.log.debug("Read from address 0x%x returning 0x%x" %
-                                           (addr*dataByteSize, value))
+                                           ((addr + count)*self.dataByteSize, value))
                             self._responses.append(value)
                         yield edge
                         self._do_response()
 
             if self._writeable and self.bus.write.value:
-                addr = self.bus.address.value.integer
-                data = self.bus.writedata.value.integer
-                self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
-                self._mem[addr] = data
+                if not self._burstwrite:
+                    addr = self.bus.address.value.integer
+                    data = self.bus.writedata.value.integer
+                    if hasattr(self.bus, "byteenable"):
+                        byteenable = int(self.bus.byteenable.value)
+                        mask = 0
+                        oldmask = 0
+                        olddata=  0
+                        if (addr in self._mem):
+                            olddata = self._mem[addr]
+                        self.log.debug("Old Data  : %x" % olddata)
+                        self.log.debug("Data in   : %x" % data)
+                        self.log.debug("Width     : %d" % self._width)
+                        self.log.debug("Byteenable: %x" % byteenable)
+                        for i in xrange(self._width/8):
+                            if (byteenable & 2**i):
+                                mask |= 0xFF << (8*i)
+                            else:
+                                oldmask |= 0xFF << (8*i)
+
+                        self.log.debug("Data mask : %x" % mask)
+                        self.log.debug("Old mask  : %x" % oldmask)
+
+                        data = (data & mask) | (olddata & oldmask)
+
+                        self.log.debug("Data out  : %x" % data)
+
+                    self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
+                    self._mem[addr] = data
+                else:
+                    self.log.debug("writing burst")
+                    # maintain waitrequest high randomly
+                    yield self._waitrequest()
+
+                    addr, byteenable, burstcount = self._write_burst_addr()
+
+                    count = 0
+                    for count in range(burstcount):
+                        while self.bus.write.value == 0:
+                            yield NextTimeStep()
+                        # self._mem is aligned on 8 bits words
+                        yield self._writing_byte_value(addr + count*self.dataByteSize)
+                        self.log.debug("writing %016X @ %08X"%(
+                            self.bus.writedata.value.integer,
+                            addr + count*self.dataByteSize))
+                        yield edge
+                        # generate waitrequest randomly
+                        yield self._waitrequest()
+
+                    if self._avalon_properties.get("WriteBurstWaitReq", True):
+                        self.bus.waitrequest <= 1
 
 
 class AvalonST(ValidatedBusDriver):
@@ -419,14 +521,21 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.log.debug("Setting config option %s to %s" %
                            (configoption, str(value)))
 
-        word = BinaryValue(bits=len(self.bus.data),
-                           bigEndian=self.config['firstSymbolInHighOrderBits'])
-        word.binstr = ("x"*len(self.bus.data))
+        word   = BinaryValue(bits=len(self.bus.data),
+                             bigEndian=self.config['firstSymbolInHighOrderBits'])
+
+        empty  = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
+        single = BinaryValue(bits=1, bigEndian=False)
+
+        word.binstr   = ("x"*len(self.bus.data))
+        empty.binstr  = ("x"*len(self.bus.empty))
+        single.binstr = ("x")
+
         self.bus.valid <= 0
         self.bus.data <= word
-        self.bus.empty <= word
-        self.bus.startofpacket <= word
-        self.bus.endofpacket <= word
+        self.bus.empty <= empty
+        self.bus.startofpacket <= single
+        self.bus.endofpacket <= single
 
     @coroutine
     def _wait_ready(self):
@@ -456,6 +565,10 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         word = BinaryValue(bits=len(self.bus.data),
                            bigEndian=self.config['firstSymbolInHighOrderBits'])
+
+        empty  = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
+        single = BinaryValue(bits=1, bigEndian=False)
+
 
         # Drive some defaults since we don't know what state we're in
         # self.bus.empty <= 0
@@ -512,11 +625,13 @@ class AvalonSTPkts(ValidatedBusDriver):
         yield clkedge
         self.bus.valid <= 0
         self.bus.endofpacket <= 0
-        word.binstr = ("x"*len(self.bus.data))
+        word.binstr   = ("x"*len(self.bus.data))
+        empty.binstr  = ("x"*len(self.bus.empty))
+        single.binstr = ("x")
         self.bus.data <= word
-        self.bus.empty <= word
-        self.bus.startofpacket <= word
-        self.bus.endofpacket <= word
+        self.bus.empty <= empty
+        self.bus.startofpacket <= single
+        self.bus.endofpacket <= single
 
     @coroutine
     def _send_iterable(self, pkt, sync=True):

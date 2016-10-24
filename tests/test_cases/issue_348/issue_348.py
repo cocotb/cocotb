@@ -15,7 +15,7 @@ def clock_gen(signal, num):
 
 @cocotb.coroutine
 def signal_mon(signal, idx, edge):
-    log = SimLog("cocotb.signal_mon.%d.%s" % (idx, signal.name))
+    log = SimLog("cocotb.signal_mon.%d.%s" % (idx, signal._name))
     value = signal.value
 
     edges = 0
@@ -23,7 +23,7 @@ def signal_mon(signal, idx, edge):
     while True:
         yield edge(signal)
         edges += 1
-    
+
     raise ReturnValue(edges)
 
 class DualMonitor:

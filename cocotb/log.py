@@ -33,14 +33,16 @@ import os
 import sys
 import logging
 import inspect
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-else:
-    import simulator
+
+from cocotb.utils import get_sim_time
 
 import cocotb.ANSI as ANSI
 from pdb import set_trace
+
+if "COCOTB_REDUCED_LOG_FMT" in os.environ:
+    _suppress = True
+else:
+    _suppress = False
 
 # Column alignment
 _LEVEL_CHARS    = len("CRITICAL")  # noqa
@@ -59,8 +61,10 @@ class SimBaseLog(logging.getLoggerClass()):
             want_ansi = want_ansi == '1'
         if want_ansi:
             hdlr.setFormatter(SimColourLogFormatter())
+            self.colour = True
         else:
             hdlr.setFormatter(SimLogFormatter())
+            self.colour = False
         self.name = name
         self.handlers = []
         self.disabled = False
@@ -146,8 +150,6 @@ class SimLog(object):
 
 
 class SimLogFormatter(logging.Formatter):
-
-    sim_precision = simulator.get_precision()
     """Log formatter to provide consistent log message handling."""
 
     # Justify and truncate
@@ -163,16 +165,20 @@ class SimLogFormatter(logging.Formatter):
             return ".." + string[(chars - 2) * -1:]
         return string.rjust(chars)
 
-    def _format(self, timeh, timel, level, record, msg):
-        time_ns = (timeh << 32 | timel) * (10.0**SimLogFormatter.sim_precision) / 1e-9
+    def _format(self, level, record, msg, coloured=False):
+        time_ns = get_sim_time('ns')
         simtime = "%6.2fns" % (time_ns)
-        prefix = simtime.rjust(10) + ' ' + level + ' ' + \
-            self.ljust(record.name, _RECORD_CHARS) + \
-            self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
-            ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
-            ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
+        prefix = simtime.rjust(10) + ' ' + level + ' '
+        if not _suppress:
+            prefix += self.ljust(record.name, _RECORD_CHARS) + \
+                      self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
+                      ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
+                      ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
 
-        pad = "\n" + " " * (len(prefix))
+        prefix_len = len(prefix)
+        if coloured:
+            prefix_len -= (len(level) - _LEVEL_CHARS)
+        pad = "\n" + " " * (prefix_len)
         return prefix + pad.join(msg.split('\n'))
 
     def format(self, record):
@@ -184,9 +190,8 @@ class SimLogFormatter(logging.Formatter):
 
         msg = str(msg)
         level = record.levelname.ljust(_LEVEL_CHARS)
-        timeh, timel = simulator.get_sim_time()
 
-        return self._format(timeh, timel, level, record, msg)
+        return self._format(level, record, msg)
 
 
 class SimColourLogFormatter(SimLogFormatter):
@@ -194,11 +199,11 @@ class SimColourLogFormatter(SimLogFormatter):
     """Log formatter to provide consistent log message handling."""
     loglevel2colour = {
         logging.DEBUG   :       "%s",
-        logging.INFO    :       ANSI.BLUE_FG + "%s" + ANSI.DEFAULT_FG,
-        logging.WARNING :       ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT_FG,
-        logging.ERROR   :       ANSI.RED_FG + "%s" + ANSI.DEFAULT_FG,
+        logging.INFO    :       ANSI.BLUE_FG + "%s" + ANSI.DEFAULT,
+        logging.WARNING :       ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT,
+        logging.ERROR   :       ANSI.RED_FG + "%s" + ANSI.DEFAULT,
         logging.CRITICAL:       ANSI.RED_BG + ANSI.BLACK_FG + "%s" +
-                                ANSI.DEFAULT_FG + ANSI.DEFAULT_BG}
+                                ANSI.DEFAULT}
 
     def format(self, record):
         """pretify the log output, annotate with simulation time"""
@@ -208,9 +213,9 @@ class SimColourLogFormatter(SimLogFormatter):
         else:
             msg = record.msg
 
-        msg = SimColourLogFormatter.loglevel2colour[record.levelno] % msg
+        # Need to colour each line in case coloring is applied in the message
+        msg = '\n'.join([SimColourLogFormatter.loglevel2colour[record.levelno] % line for line in msg.split('\n')])
         level = (SimColourLogFormatter.loglevel2colour[record.levelno] %
                  record.levelname.ljust(_LEVEL_CHARS))
 
-        timeh, timel = simulator.get_sim_time()
-        return self._format(timeh, timel, level, record, msg)
+        return self._format(level, record, msg, coloured=True)
