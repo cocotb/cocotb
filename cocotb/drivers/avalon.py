@@ -688,12 +688,12 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         # Avoid spurious object creation by recycling
 
-        self.log.debug("Sending packet of length %d bytes" % len(pkt))
-        self.log.debug(hexdump(pkt))
 
         if isinstance(pkt, str):
+            self.log.debug("Sending packet of length %d bytes" % len(pkt))
+            self.log.debug(hexdump(pkt))
             yield self._send_string(pkt, sync=sync)
+            self.log.info("Sucessfully sent packet of length %d bytes" % len(pkt))
         else:
             yield self._send_iterable(pkt, sync=sync)
 
-        self.log.info("Sucessfully sent packet of length %d bytes" % len(pkt))
