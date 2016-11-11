@@ -136,33 +136,31 @@ class Bus(object):
             val = getattr(obj, attr_name)
             hdl <= val
 
-    def capture(self, obj, strict=False):
+    def capture(self):
         """
         Capture the values from the bus.
 
-        Args:
-            obj (any type) : object with attribute names that match the bus
-                             signals
-
-        Kwargs:
-            strict (bool)  : Check that all signals are being assigned
-
-        Raises:
-            AttributeError
+        Returns:
+            A dict that supports access by attribute, each attribute corresponds to each signal's value
         """
-        for attr_name, hdl in self._signals.iteritems():
-            if not hasattr(obj, attr_name):
-                if strict:
-                    msg = ("Unable to capture from {0}.{1} because {2} is missing "
-                           "attribute {3}".format(self._entity._name,
-                                                  self._name,
-                                                  obj.__class__.__name__,
-                                                  attr_name))
-                    raise AttributeError(msg)
+        class _Capture(dict): 
+            def __getattr__(self, name):
+                if name in self:
+                    return self[name]
                 else:
-                    continue
-            setattr(obj, attr_name, hdl.value)
+                    raise RuntimeError('signal {} not present in bus'.format(name))
 
+            def __setattr__(self, name, value):
+               raise RuntimeError('modifying a bus capture is not supported')
+
+            def __delattr__(self, name):
+               raise RuntimeError('modifying a bus capture is not supported')
+
+        _capture = _Capture()
+        for attr_name, hdl in self._signals.iteritems():
+            _capture[attr_name] = hdl.value
+
+        return _capture
 
     def __le__(self, value):
         """Overload the less than or equal to operator for value assignment"""
