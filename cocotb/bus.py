@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
     A bus is simply defined as a collection of signals
 """
-from cocotb.result import TestError
+
 
 def _build_sig_attr_dict(signals):
     if isinstance(signals, dict):
@@ -138,7 +138,7 @@ class Bus(object):
 
     def capture(self):
         """
-        Capture the values from the bus.
+        Capture the values from the bus, returning an object representing the capture
 
         Returns:
             A dict that supports access by attribute, each attribute corresponds to each signal's value
@@ -151,16 +151,43 @@ class Bus(object):
                     raise RuntimeError('signal {} not present in bus'.format(name))
 
             def __setattr__(self, name, value):
-               raise RuntimeError('modifying a bus capture is not supported')
+                raise RuntimeError('modifying a bus capture is not supported')
 
             def __delattr__(self, name):
-               raise RuntimeError('modifying a bus capture is not supported')
+                raise RuntimeError('modifying a bus capture is not supported')
 
         _capture = _Capture()
         for attr_name, hdl in self._signals.iteritems():
             _capture[attr_name] = hdl.value
 
         return _capture
+
+    def sample(self, obj, strict=False):
+        """
+        Sample the values from the bus, assigning them to obj.
+
+        Args:
+            obj (any type) : object with attribute names that match the bus
+                             signals
+
+        Kwargs:
+            strict (bool)  : Check that all signals being sampled are present in obj
+
+        Raises:
+            AttributeError
+        """
+        for attr_name, hdl in self._signals.items():
+            if not hasattr(obj, attr_name):
+                if strict:
+                    msg = ("Unable to sample from {0}.{1} because {2} is missing "
+                           "attribute {3}".format(self._entity._name,
+                                                  self._name,
+                                                  obj.__class__.__name__,
+                                                  attr_name))
+                    raise AttributeError(msg)
+                else:
+                    continue
+            setattr(obj, attr_name, hdl.value)
 
     def __le__(self, value):
         """Overload the less than or equal to operator for value assignment"""
