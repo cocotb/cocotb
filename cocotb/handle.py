@@ -593,7 +593,7 @@ class ModifiableObject(NonConstantObject):
         elif isinstance(value, dict):
             #We're given a dictionary with a list of values and a bit size...
             num = 0;
-            vallist = value["values"]
+            vallist = list(value["values"])
             vallist.reverse()
             if len(vallist) * value["bits"] != len(self):
                 self._log.critical("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
