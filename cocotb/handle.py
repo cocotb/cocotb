@@ -591,7 +591,6 @@ class ModifiableObject(NonConstantObject):
         elif isinstance(value, get_python_integer_types()):
             value = BinaryValue(value=value, bits=len(self), bigEndian=False)
         elif isinstance(value, dict):
-            print value
             #We're given a dictionary with a list of values and a bit size...
             num = 0;
             vallist = value["values"]
