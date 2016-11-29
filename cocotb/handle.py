@@ -563,6 +563,22 @@ class ModifiableObject(NonConstantObject):
             value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
         elif isinstance(value, get_python_integer_types()):
             value = BinaryValue(value=value, bits=len(self), bigEndian=False)
+        elif isinstance(value, dict):
+            print value
+            #We're given a dictionary with a list of values and a bit size...
+            num = 0;
+            vallist = value["values"]
+            vallist.reverse()
+            if len(vallist) * value["bits"] != len(self):
+                self._log.critical("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
+                                   (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)));
+                raise TypeError("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
+                                (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)));
+
+            for val in vallist:
+                num = (num << value["bits"]) + val;
+            value = BinaryValue(value=num, bits=len(self), bigEndian=False)
+
         elif not isinstance(value, BinaryValue):
             self._log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
