@@ -444,8 +444,7 @@ class BinaryValue(object):
 
     def __invert__(self):
         """Preserves X values"""
-        self.binstr = self._invert(self.binstr)
-        return self
+        return self._invert(self.binstr)
 
     def __len__(self):
         return len(self.binstr)
