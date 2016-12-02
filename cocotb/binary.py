@@ -493,10 +493,25 @@ class BinaryValue(object):
     def __setitem__(self, key, val):
         ''' BinaryValue uses verilog/vhdl style slices as opposed to python
         style'''
-        if not isinstance(val, str):
-            raise TypeError('BinaryValue slices only accept string values')
+        if not isinstance(val, str) and not isinstance(val, (int, long)):
+            raise TypeError('BinaryValue slices only accept string or integer values')
+
+        # convert integer to string
+        if isinstance(val, (int, long)):
+            if isinstance(key, slice):
+                num_slice_bits = abs(key.start - key.stop) + 1
+            else:
+                num_slice_bits = 1
+            if val < 0:
+                raise ValueError('Integer must be positive')
+            if val >= 2**num_slice_bits:
+                raise ValueError('Integer is too large for the specified slice '
+                                 'length')
+            val = "{:0{width}b}".format(val, width=num_slice_bits)
+
         if isinstance(key, slice):
             first, second = key.start, key.stop
+
             if self.big_endian:
                 if first < 0 or second < 0:
                     raise IndexError('BinaryValue does not support negative '
@@ -530,6 +545,9 @@ class BinaryValue(object):
                 slice_2 = self.binstr[high:]
                 self.binstr = slice_1 + val + slice_2
         else:
+            if len(val) != 1:
+                raise ValueError('String length must be equal to slice '
+                                 'length')
             index = key
             if index > self._bits - 1:
                 raise IndexError('Index greater than number of bits.')
