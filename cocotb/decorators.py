@@ -100,7 +100,7 @@ class RunningCoroutine(object):
         self.retval = None
 
         if not hasattr(self._coro, "send"):
-            self.log.error("%s isn't a value coroutine! Did you use the yield "
+            self.log.error("%s isn't a valid coroutine! Did you use the yield "
                            "keyword?" % self.funcname)
             raise CoroutineComplete(callback=self._finished_cb)
 

@@ -180,7 +180,12 @@ class Scoreboard(object):
             """Called back by the monitor when a new transaction has been
             received"""
 
-            log = logging.getLogger(self.log.name + '.' + monitor.name)
+            if monitor.name:
+                log_name = self.log.name + '.' + monitor.name
+            else:
+                log_name = self.log.name + '.' + monitor.__class__.__name__
+
+            log = logging.getLogger(log_name)
 
             if callable(expected_output):
                 exp = expected_output(transaction)
