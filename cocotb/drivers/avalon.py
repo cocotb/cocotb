@@ -445,6 +445,30 @@ class AvalonMemory(BusDriver):
                 if not self._burstwrite:
                     addr = self.bus.address.value.integer
                     data = self.bus.writedata.value.integer
+                    if hasattr(self.bus, "byteenable"):
+                        byteenable = int(self.bus.byteenable.value)
+                        mask = 0
+                        oldmask = 0
+                        olddata=  0
+                        if (addr in self._mem):
+                            olddata = self._mem[addr]
+                        self.log.debug("Old Data  : %x" % olddata)
+                        self.log.debug("Data in   : %x" % data)
+                        self.log.debug("Width     : %d" % self._width)
+                        self.log.debug("Byteenable: %x" % byteenable)
+                        for i in xrange(self._width/8):
+                            if (byteenable & 2**i):
+                                mask |= 0xFF << (8*i)
+                            else:
+                                oldmask |= 0xFF << (8*i)
+
+                        self.log.debug("Data mask : %x" % mask)
+                        self.log.debug("Old mask  : %x" % oldmask)
+
+                        data = (data & mask) | (olddata & oldmask)
+
+                        self.log.debug("Data out  : %x" % data)
+
                     self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
                     self._mem[addr] = data
                 else:
@@ -664,12 +688,12 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         # Avoid spurious object creation by recycling
 
-        self.log.debug("Sending packet of length %d bytes" % len(pkt))
-        self.log.debug(hexdump(pkt))
 
         if isinstance(pkt, str):
+            self.log.debug("Sending packet of length %d bytes" % len(pkt))
+            self.log.debug(hexdump(pkt))
             yield self._send_string(pkt, sync=sync)
+            self.log.info("Sucessfully sent packet of length %d bytes" % len(pkt))
         else:
             yield self._send_iterable(pkt, sync=sync)
 
-        self.log.info("Sucessfully sent packet of length %d bytes" % len(pkt))
