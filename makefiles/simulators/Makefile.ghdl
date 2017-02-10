@@ -51,12 +51,13 @@ else
 endif
 
 RTL_LIBRARY ?= work
+GHDL_ARGS ?=
 
 .PHONY: analyse
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && $(CMD) -a --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && $(CMD) -e --work=$(RTL_LIBRARY) $(TOPLEVEL)
+	cd $(SIM_BUILD) && $(CMD) -a $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && $(CMD) -e $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL)
 
 results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	cd $(SIM_BUILD); \
