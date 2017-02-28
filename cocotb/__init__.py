@@ -145,7 +145,7 @@ def _initialise_testbench(root_name):
 
     global regression
 
-    regression = RegressionManager(root_name, modules, tests=test_str)
+    regression = RegressionManager(root_name, modules, tests=test_str, seed=seed)
     regression.initialise()
     regression.execute()
 
