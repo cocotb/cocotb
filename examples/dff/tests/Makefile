@@ -4,7 +4,7 @@
 # All rights reserved.
 
 CWD=$(shell pwd)
-COCOTB=$(CWD)/../../..
+COCOTB=$(shell SPHINX_BUILD=1 python -c 'import cocotb, os; print(os.path.dirname(os.path.dirname(cocotb.__file__)))')
 
 TOPLEVEL_LANG ?=verilog
 

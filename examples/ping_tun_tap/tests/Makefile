@@ -45,7 +45,7 @@ WPWD=$(shell pwd)
 endif
 
 PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+COCOTB=$(shell SPHINX_BUILD=1 python -c 'import cocotb, os; print(os.path.dirname(os.path.dirname(cocotb.__file__)))')
 
 VERILOG_SOURCES = $(PWD)/../hdl/icmp_reply.sv
 MODULE=test_icmp_reply

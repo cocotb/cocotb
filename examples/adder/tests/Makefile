@@ -30,7 +30,7 @@
 TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
+COCOTB=$(shell SPHINX_BUILD=1 python -c 'import cocotb, os; print(os.path.dirname(os.path.dirname(cocotb.__file__)))')
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')

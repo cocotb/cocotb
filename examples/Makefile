@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-COCOTB?=$(shell pwd)/../
+COCOTB=$(shell SPHINX_BUILD=1 python -c 'import cocotb, os; print(os.path.dirname(os.path.dirname(cocotb.__file__)))')
 export COCOTB
 
 EXAMPLES := adder/tests \
