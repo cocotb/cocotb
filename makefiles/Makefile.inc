@@ -33,11 +33,7 @@ ifeq ($(SIM_ROOT),)
 export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 endif
 
-ifeq ($(USER_DIR),)
-export USER_DIR:=$(SIM_ROOT)
-endif
-
-BUILD_DIR=$(USER_DIR)/build
+BUILD_DIR = build
 export BUILD_DIR
 
 ARCH?=$(shell uname -m)
