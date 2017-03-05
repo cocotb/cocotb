@@ -37,8 +37,9 @@ setup(
     author_email=author_email,
     maintainer_email=author_email,
     install_requires=install_requires,
-    packages=find_packages(),  
-    include_package_data=True,  
+    packages=find_packages(),
+    include_package_data=True,
     package_data={'cocotb': extra_files},
+    scripts=['bin/cocotb-path'],
     platforms='any'
 )

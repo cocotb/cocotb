@@ -4,7 +4,6 @@
 # All rights reserved.
 
 CWD=$(shell pwd)
-COCOTB=$(shell SPHINX_BUILD=1 python -c 'import cocotb, os; print(os.path.dirname(os.path.dirname(cocotb.__file__)))')
 
 TOPLEVEL_LANG ?=verilog
 
@@ -23,8 +22,8 @@ CUSTOM_SIM_DEPS=$(CWD)/Makefile
 
 VSIM_ARGS=-t 1ps
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-path)/makefiles/Makefile.inc
+include $(shell cocotb-path)/makefiles/Makefile.sim
 
 # list all required Python files here
 sim: $(MODULE).py
