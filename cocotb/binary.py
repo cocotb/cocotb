@@ -31,6 +31,10 @@ from __future__ import print_function
 from math import log, ceil
 from cocotb.utils import get_python_integer_types
 
+import os
+import random
+
+resolve_x_to = os.getenv('COCOTB_RESOLVE_X', "VALUE_ERROR")
 
 def resolve(string):
     for char in BinaryValue._resolve_to_0:
