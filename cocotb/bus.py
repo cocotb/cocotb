@@ -187,7 +187,7 @@ class Bus(object):
                     raise AttributeError(msg)
                 else:
                     continue
-            setattr(obj, attr_name, hdl.value)
+            getattr(obj, attr_name).set_binstr(hdl.value.get_binstr())
 
     def __le__(self, value):
         """Overload the less than or equal to operator for value assignment"""
