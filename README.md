@@ -6,7 +6,9 @@
 
 * Skim the introductory presentation: http://potential.ventures
 * Read the [documentation](http://cocotb.readthedocs.org)
-* Get involved: [Raise a bug / request an enhancement](https://github.com/potentialventures/cocotb/issues/new) (Requires a GitHub account)
+* Get involved:
+  * [Raise a bug / request an enhancement](https://github.com/potentialventures/cocotb/issues/new) (Requires a GitHub account)
+  * [Join the mailing list](https://lists.librecores.org/listinfo/cocotb)
 * Get in contact: [E-mail us](mailto:cocotb@potentialventures.com)
 * Follow us on twitter: [@PVCocotb](https://twitter.com/PVCocotb)
 
