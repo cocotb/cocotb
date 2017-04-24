@@ -133,7 +133,7 @@ void gpi_embed_event(gpi_event_t level, const char *msg)
 
 static void gpi_load_libs(std::vector<std::string> to_load)
 {
-#define DOT_LIB_EXT "."xstr(LIB_EXT)
+#define DOT_LIB_EXT "." xstr(LIB_EXT)
     std::vector<std::string>::iterator iter;
 
     for (iter = to_load.begin();
