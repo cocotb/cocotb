@@ -495,12 +495,16 @@ class Scheduler(object):
 
         # Queue current routine to schedule when the nested routine exits
         if isinstance(result, cocotb.decorators.RunningCoroutine):
-            if _debug:
-                self.log.debug("Scheduling nested co-routine: %s" %
-                               result.__name__)
 
             if not result.has_started():
                 self.queue(result)
+                if _debug:
+                    self.log.debug("Scheduling nested co-routine: %s" %
+                                   result.__name__)
+            else:
+                if _debug:
+                    self.log.debug("Joining to already running co-routine: %s" %
+                                   result.__name__)
 
             new_trigger = result.join()
             self._coroutine_yielded(coroutine, [new_trigger])
