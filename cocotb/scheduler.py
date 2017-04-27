@@ -499,6 +499,9 @@ class Scheduler(object):
                 self.log.debug("Scheduling nested co-routine: %s" %
                                result.__name__)
 
+            if not result.has_started():
+                self.queue(result)
+
             new_trigger = result.join()
             self._coroutine_yielded(coroutine, [new_trigger])
 

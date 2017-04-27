@@ -90,6 +90,7 @@ class RunningCoroutine(object):
         else:
             self.log = SimLog("cocotb.coroutine.fail")
         self._coro = inst
+        self._started = False
         self._finished = False
         self._callbacks = []
         self._join = _Join(self)
@@ -115,6 +116,7 @@ class RunningCoroutine(object):
             if isinstance(value, ExternalException):
                 self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
                 return self._coro.throw(value.exception)
+            self._started = True
             return self._coro.send(value)
         except TestComplete as e:
             if isinstance(e, TestFailure):
@@ -159,6 +161,9 @@ class RunningCoroutine(object):
             return NullTrigger()
         else:
             return self._join
+
+    def has_started(self):
+        return self._started
 
     def __nonzero__(self):
         """Provide boolean testing
