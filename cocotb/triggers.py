@@ -436,9 +436,10 @@ class _Lock(PythonTrigger):
 
     FIXME: This will leak - need to use peers to ensure everything is removed
     """
-    def __init__(self, parent):
+    def __init__(self, parent, key_count=1):
         PythonTrigger.__init__(self)
         self.parent = parent
+        self.key_count = key_count
 
     def prime(self, callback):
         self._callback = callback
@@ -452,47 +453,64 @@ class _Lock(PythonTrigger):
 class Lock(PythonTrigger):
     """
     Lock primitive (not re-entrant)
-    """
+    Implemented as a semaphore with default value of 1.
 
-    def __init__(self, name=""):
+    """
+    def __init__(self, name="", key_count=1):
+        """
+        Kwargs:
+            name (str): The name of the trigger used for display purposes.
+
+            key_count (int): The initial and maximum number of keys.
+        """
         PythonTrigger.__init__(self)
         self._pending_unprimed = []
         self._pending_primed = []
         self.name = name
-        self.locked = False
+        self._key_count_max = key_count
+        self._key_count_available = key_count
 
     def prime(self, callback, trigger):
         Trigger.prime(self)
 
         self._pending_unprimed.remove(trigger)
 
-        if not self.locked:
-            self.locked = True
+        if trigger.key_count <= self._key_count_available:
+            self._key_count_available -= trigger.key_count
             callback(trigger)
         else:
             self._pending_primed.append(trigger)
 
-    def acquire(self):
+    def acquire(self, key_count=1):
         """This can be yielded to block until the lock is acquired"""
-        trig = _Lock(self)
+        trig = _Lock(self, key_count=key_count)
         self._pending_unprimed.append(trig)
         return trig
 
-    def release(self):
+    def release(self, key_count=1):
+        if self._key_count_max == self._key_count_available:
+            raise_error(self, "Attempting to return keys to unacquired semaphore.")
 
-        if not self.locked:
-            raise_error(self, "Attempt to release an unacquired Lock %s" %
-                        (str(self)))
-
-        self.locked = False
+        self._key_count_available += key_count
+        if self._key_count_available > self._key_count_max:
+            raise_error(self, "Returned too many keys.")
 
         # nobody waiting for this lock
         if not self._pending_primed:
             return
 
+        trigger = self._pending_primed[0]
+        if trigger.key_count > self._key_count_available:
+            # Next requester requires more keys
+            return
+
         trigger = self._pending_primed.pop(0)
-        self.locked = True
+        self._key_count_available -= trigger.key_count
         trigger()
+
+    @property
+    def key_count_available(self):
+        return self._key_count_available
 
     def __str__(self):
         return "%s(%s) [%s waiting]" % (str(self.__class__.__name__),
@@ -501,8 +519,8 @@ class Lock(PythonTrigger):
 
     def __nonzero__(self):
         """Provide boolean of a Lock"""
-        return self.locked
-
+        return self._key_count_available != self._key_count_max
+    
 
 class NullTrigger(Trigger):
     """
