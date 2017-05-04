@@ -120,7 +120,7 @@ We want to run different variations of tests but they will all have a very simil
     @cocotb.coroutine
     def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backpressure_inserter=None):
         
-        cocotb.fork(clock_gen(dut.clk))
+        cocotb.fork(Clock(dut.clk, 5000).start())
         tb = EndianSwapperTB(dut)
         
         yield tb.reset()
