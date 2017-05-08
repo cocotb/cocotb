@@ -141,6 +141,10 @@ class Scheduler(object):
         # indexed by trigger
         self._trigger2coros = collections.defaultdict(list)
 
+        # A dictionary of helper functions pending on each trigger,
+        # indexed by trigger
+        self._trigger2helpers = collections.defaultdict(list)
+
         # A dictionary of pending triggers for each coroutine, indexed by coro
         self._coro2triggers = collections.defaultdict(list)
 
@@ -191,6 +195,7 @@ class Scheduler(object):
 
             self._timer1.prime(self.begin_test)
             self._trigger2coros = collections.defaultdict(list)
+            self._trigger2helpers = collections.defaultdict(list)
             self._coro2triggers = collections.defaultdict(list)
             self._terminate = False
             self._mode = Scheduler._MODE_TERM
@@ -287,12 +292,25 @@ class Scheduler(object):
                 _profile.disable()
             return
 
+        trigger_handled = False
+        if trigger in self._trigger2helpers:
+            trigger_handled = True
+            helpers = self._trigger2helpers.pop(trigger)
+            for i, help_func in enumerate(helpers):
+                ret = help_func(trigger)
+                if ret:
+                    sub_triggers, helper = ret
+                    self._coroutine_yielded(coro=None, triggers = sub_triggers)
+                    for sub_trig in sub_triggers:
+                        self._trigger2helpers[sub_trig].append(helper)
+
         if trigger not in self._trigger2coros:
 
             # GPI triggers should only be ever pending if there is an
             # associated coroutine waiting on that trigger, otherwise it would
-            # have been unprimed already
-            if isinstance(trigger, GPITrigger):
+            # have been unprimed already.  The exception to this is if
+            # the trigger was primed to support a nested trigger (with helper function).
+            if isinstance(trigger, GPITrigger) and not trigger_handled:
                 self.log.critical(
                     "No coroutines waiting on trigger that fired: %s" %
                     str(trigger))
@@ -329,8 +347,10 @@ class Scheduler(object):
                     if others not in scheduling:
                         break
                 else:
-                    # if pending is not trigger and pending.primed:
-                    #     pending.unprime()
+                    # Check for any helpers relying upon the pending trigger
+                    if pending in self._trigger2helpers:
+                        break
+                    # No other coroutines or helpers rely upon the pending trigger
                     if pending.primed:
                         pending.unprime()
                     del self._trigger2coros[pending]
@@ -364,7 +384,7 @@ class Scheduler(object):
         for trigger in self._coro2triggers[coro]:
             if coro in self._trigger2coros[trigger]:
                 self._trigger2coros[trigger].remove(coro)
-            if not self._trigger2coros[trigger]:
+            if not self._trigger2coros[trigger] and trigger not in self._trigger2helpers:
                 trigger.unprime()
         del self._coro2triggers[coro]
 
@@ -383,14 +403,21 @@ class Scheduler(object):
         """
         Prime the triggers and update our internal mappings
         """
-        self._coro2triggers[coro] = triggers
+        if coro:
+            self._coro2triggers[coro] = triggers
 
         for trigger in triggers:
 
-            self._trigger2coros[trigger].append(coro)
+            if coro:
+                self._trigger2coros[trigger].append(coro)
             if not trigger.primed:
                 try:
-                    trigger.prime(self.react)
+                    ret = trigger.prime(self.react)
+                    if ret != None:
+                        sub_triggers, helper = ret
+                        self._coroutine_yielded(coro=None, triggers = sub_triggers)
+                        for sub_trig in sub_triggers:
+                            self._trigger2helpers[sub_trig].append(helper)
                 except Exception as e:
                     # Convert any exceptions into a test result
                     self.finish_test(

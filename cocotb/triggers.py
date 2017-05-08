@@ -279,50 +279,88 @@ def FallingEdge(signal):
     return signal._f_edge
 
 
-class ClockCycles(_Edge):
+class Sequential(PythonTrigger):
+    """
+    Combines multiple triggers together sequentially.  Coroutine will continue when all
+    triggers have fired, each in turn.
+    """
+    def __init__(self, *args):
+        PythonTrigger.__init__(self)
+        self._triggers = list(args)
+        self._active = None
+        self._fired = []
+        try:
+            for trigger in self._triggers:
+                if not isinstance(trigger, Trigger):
+                    raise TriggerException("All combined triggers must be "
+                                           "instances of Trigger! Got: %s" %
+                                           trigger.__class__.__name__)
+        except Exception:
+            raise TriggerException("%s requires a list of Trigger objects" %
+                                   self.__class__.__name__)
+
+    def prime(self, callback):
+        self._callback = callback
+        if not self._triggers:
+            raise TriggerException("%s requires a list of Trigger objects, but they vanished" %
+                                   self.__class__.__name__)
+        self._active = self._triggers.pop(0)
+        Trigger.prime(self)
+        return [self._active,], self._check_all_fired
+
+    def _check_all_fired(self, trigger):
+        trigger.unprime()
+        self._fired.append(trigger)
+        if len(self._triggers):
+            self._active = self._triggers.pop(0)
+            return [self._active,], self._check_all_fired
+        else:
+            Trigger.unprime(self)
+            # reset lists in case we are primed again
+            self._triggers = self._fired
+            self._fired = []
+            self._callback(self)
+
+
+class RepeatNTriggers(PythonTrigger):
+    """
+    Execution will resume after N occurrances of a trigger
+    """
+    def __init__(self, trigger, num_cycles):
+        PythonTrigger.__init__(self)
+        self._trigger = trigger
+        self._num_cycles = num_cycles
+        self._count = 0
+
+    def prime(self, callback):
+        if self._num_cycles < 1:
+            # This is essentially a NullTrigger
+            callback(self)
+            return
+        self._callback = callback
+        self._count = 0
+        Trigger.prime(self)
+        return [self._trigger,], self._check_all_fired
+
+    def _check_all_fired(self, trigger):
+        self._count += 1
+        trigger.unprime()
+        if self._count >= self._num_cycles:
+            Trigger.unprime(self)
+            self._callback(self)
+        else:
+            return [trigger,], self._check_all_fired
+
+
+class ClockCycles(RepeatNTriggers):
     """
     Execution will resume after N rising edges or N falling edges
     """
     def __init__(self, signal, num_cycles, rising=True):
-        _Edge.__init__(self, signal)
-        self.num_cycles = num_cycles
-        if rising is True:
-            self._rising = 1
+        if rising:
+            RepeatNTriggers.__init__(self, RisingEdge(signal), num_cycles)
         else:
-            self._rising = 2
-
-    def prime(self, callback):
-        self._callback = callback
-
-        def _check(obj):
-            self.unprime()
-
-            if self.signal.value:
-                self.num_cycles -= 1
-
-                if self.num_cycles <= 0:
-                    self._callback(self)
-                    return
-
-            self.cbhdl = simulator.register_value_change_callback(self.signal.
-                                                                  _handle,
-                                                                  _check,
-                                                                  self._rising,
-                                                                  self)
-            if self.cbhdl is None:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
-
-        self.cbhdl = simulator.register_value_change_callback(self.signal.
-                                                              _handle,
-                                                              _check,
-                                                              self._rising,
-                                                              self)
-        if self.cbhdl is None:
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
-
-    def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.signal._name
+            RepeatNTriggers.__init__(self, FallingEdge(signal), num_cycles)
 
 
 class Combine(PythonTrigger):
@@ -333,9 +371,7 @@ class Combine(PythonTrigger):
 
     def __init__(self, *args):
         PythonTrigger.__init__(self)
-        self._triggers = args
-        # TODO: check that trigger is an iterable containing
-        # only Trigger objects
+        self._triggers = list(args)
         try:
             for trigger in self._triggers:
                 if not isinstance(trigger, Trigger):
@@ -349,18 +385,15 @@ class Combine(PythonTrigger):
     def prime(self, callback):
         self._callback = callback
         self._fired = []
-        for trigger in self._triggers:
-            trigger.prime(self._check_all_fired)
         Trigger.prime(self)
+        return self._triggers, self._check_all_fired
 
     def _check_all_fired(self, trigger):
         self._fired.append(trigger)
+        trigger.unprime()
         if self._fired == self._triggers:
+            Trigger.unprime(self)
             self._callback(self)
-
-    def unprime(self):
-        for trigger in self._triggers:
-            trigger.unprime()
 
 
 class _Event(PythonTrigger):
