@@ -90,7 +90,19 @@ class SimHandleBase(object):
         self._path = self._name if path is None else path
         self._log = SimLog("cocotb.%s" % self._name)
         self._log.debug("Created")
+        self._def_name = simulator.get_definition_name(self._handle)
+        self._def_file = simulator.get_definition_file(self._handle)
+        self._def_line = simulator.get_definition_line(self._handle)
 
+    def get_definition_name(self):
+        return object.__getattribute__(self, "_def_name")
+
+    def get_definition_file(self):
+        return object.__getattribute__(self, "_def_file")
+
+    def get_definition_line(self):
+        return object.__getattribute__(self, "_def_line")
+    
     def __hash__(self):
         return self._handle
 
@@ -114,7 +126,15 @@ class SimHandleBase(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return type(self).__name__ + "(" + self._path + ")"
+        desc = self._path
+        defname = object.__getattribute__(self, "_def_name")
+        if defname:
+            desc += " with definition "+defname
+            deffile = object.__getattribute__(self, "_def_file")
+            if deffile:
+                defline = object.__getattribute__(self, "_def_line")
+                desc += " (at "+deffile+" line "+str(defline)+")"
+        return type(self).__name__ + "(" + desc + ")"
 
     def __str__(self):
         return self._path

@@ -182,6 +182,15 @@ public:
     int initialise(std::string &name, std::string &fq_name);
 };
 
+class VpiObjHdl : public GpiObjHdl {
+public:
+    VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype) :
+                                                             GpiObjHdl(impl, hdl, objtype) { }
+    virtual ~VpiObjHdl() { }
+
+    int initialise(std::string &name, std::string &fq_name);
+};
+
 class VpiSignalObjHdl : public GpiSignalObjHdl {
 public:
     VpiSignalObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype, bool is_const) :

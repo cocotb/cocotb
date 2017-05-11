@@ -181,9 +181,9 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
 
             if (hdl_name != name) {
                 LOG_DEBUG("Found pseudo-region %s", fq_name.c_str());
-                new_obj = new GpiObjHdl(this, new_hdl, GPI_GENARRAY);
+                new_obj = new VpiObjHdl(this, new_hdl, GPI_GENARRAY);
             } else {
-                new_obj = new GpiObjHdl(this, new_hdl, to_gpi_objtype(type));
+                new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
             }
             break;
         }
