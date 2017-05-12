@@ -71,7 +71,7 @@ def _my_import(name):
 class RegressionManager(object):
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, root_name, modules, tests=None, seed=None):
+    def __init__(self, root_name, modules, tests=None, seed=None, hooks=[]):
         """
         Args:
             modules (list): A list of python module names to run
@@ -87,6 +87,7 @@ class RegressionManager(object):
         self._cov = None
         self.log = SimLog("cocotb.regression")
         self._seed = seed
+        self._hooks = hooks
 
     def initialise(self):
 
@@ -173,6 +174,20 @@ class RegressionManager(object):
             self.log.info("Found test %s.%s" %
                           (valid_tests.module,
                            valid_tests.funcname))
+
+        for module_name in self._hooks:
+            self.log.info("Loading hook from module '"+module_name+"'")
+            module = _my_import(module_name)
+
+            for thing in vars(module).values():
+                if hasattr(thing, "im_hook"):
+                    try:
+                        test = thing(self._dut)
+                    except TestError:
+                        self.log.warning("Failed to initialize hook %s" % thing.name)
+                    else:
+                        cocotb.scheduler.add(test)
+
 
     def tear_down(self):
         """It's the end of the world as we know it"""
