@@ -242,10 +242,10 @@ class AXI4Slave(BusDriver):
         while True:
             while True:
                 self.bus.WREADY <= 0
-                yield ReadOnly()
                 if self.bus.AWVALID.value:
                     self.bus.WREADY <= 1
                     break
+                yield ReadOnly()
                 yield clock_re
 
             yield ReadOnly()
