@@ -36,7 +36,7 @@ import binascii
 import array
 
 
-class AXIReadError(Exception):
+class AXIProtocolError(Exception):
     pass
 
 
@@ -141,8 +141,8 @@ class AXI4LiteMaster(BusDriver):
         yield RisingEdge(self.clock)
 
         if int(result):
-            raise AXIReadError("Write to address 0x%08x failed with BRESP: %d"
-                               % (address, int(result)))
+            raise AXIProtocolError("Write to address 0x%08x failed with BRESP: %d"
+                                   % (address, int(result)))
 
         raise ReturnValue(result)
 
@@ -175,8 +175,8 @@ class AXI4LiteMaster(BusDriver):
             yield RisingEdge(self.clock)
 
         if int(result):
-            raise AXIReadError("Read address 0x%08x failed with RRESP: %d" %
-                               (address, int(result)))
+            raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d" %
+                                   (address, int(result)))
 
         raise ReturnValue(data)
 
