@@ -243,9 +243,9 @@ class Scheduler(object):
         if not self._terminate and self._writes:
 
             if self._mode == Scheduler._MODE_NORMAL:
-                if not self._readwrite.primed:
+                if not self._readwrite.primed_for(self.react):
                     self._readwrite.prime(self.react)
-            elif not self._next_timestep.primed:
+            elif not self._next_timestep.primed_for(self.react):
                 self._next_timestep.prime(self.react)
 
         elif self._terminate:
@@ -253,12 +253,12 @@ class Scheduler(object):
                 self.log.debug("Test terminating, scheduling Timer")
 
             for t in self._trigger2coros:
-                t.unprime()
+                t.unprime(self.react)
 
             for t in [self._readwrite, self._readonly, self._next_timestep,
                       self._timer1, self._timer0]:
-                if t.primed:
-                    t.unprime()
+                if t.primed_for(self.react):
+                    t.unprime(self.react)
 
             self._timer1.prime(self.begin_test)
             self._trigger2coros = collections.defaultdict(list)
@@ -282,7 +282,7 @@ class Scheduler(object):
 
         self._mode = Scheduler._MODE_NORMAL
         if trigger is not None:
-            trigger.unprime()
+            trigger.unprime(self.react)
 
         # Issue previous test result, if there is one
         if self._test_result is not None:
@@ -312,7 +312,6 @@ class Scheduler(object):
         # When a trigger fires it is unprimed internally
         if _debug:
             self.log.debug("Trigger fired: %s" % str(trigger))
-        # trigger.unprime()
 
         if self._mode == Scheduler._MODE_TERM:
             if _debug:
@@ -336,8 +335,6 @@ class Scheduler(object):
             while self._writes:
                 handle, value = self._writes.popitem()
                 handle.setimmediatevalue(value)
-
-            self._readwrite.unprime()
 
             if _profiling:
                 _profile.disable()
@@ -402,8 +399,8 @@ class Scheduler(object):
                 else:
                     # if pending is not trigger and pending.primed:
                     #     pending.unprime()
-                    if pending.primed:
-                        pending.unprime()
+                    if pending.primed_for(self.react):
+                        pending.unprime(self.react)
                     del self._trigger2coros[pending]
 
         for coro in scheduling:
@@ -427,8 +424,8 @@ class Scheduler(object):
                                (str(self._pending_triggers[0])))
             self.react(self._pending_triggers.pop(0), depth=depth + 1)
 
-        # We only advance for GPI triggers
-        if not depth and isinstance(trigger, GPITrigger):
+        # We only advance for GPI triggers (may be indirectly)
+        if not depth and trigger.needs_advance():
             self.advance()
 
             if _debug:
@@ -446,7 +443,7 @@ class Scheduler(object):
             if coro in self._trigger2coros[trigger]:
                 self._trigger2coros[trigger].remove(coro)
             if not self._trigger2coros[trigger]:
-                trigger.unprime()
+                trigger.unprime(self.react)
                 del self._trigger2coros[trigger]
         del self._coro2triggers[coro]
 
@@ -470,7 +467,7 @@ class Scheduler(object):
         for trigger in triggers:
 
             self._trigger2coros[trigger].append(coro)
-            if not trigger.primed:
+            if not trigger.primed_for(self.react):
                 try:
                     trigger.prime(self.react)
                 except Exception as e:
