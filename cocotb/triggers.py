@@ -50,13 +50,32 @@ class Trigger(object):
         self.log = SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
         self.signal = None
         self.primed = False
+        self._callback_list = []
 
     def prime(self, *args):
         self.primed = True
 
-    def unprime(self):
+    def unprime(self, callback=None):
         """Remove any pending callbacks if necessary"""
-        self.primed = False
+        if callback and callback in self._callback_list:
+            self._callback_list.remove(callback)
+
+    def _callback(self, trigger):
+        assert trigger == self
+        # Make copy in case a callback re-primes us
+        # Since we triggered, clearing the callback list will allow
+        # GPITriggers to unprime/reprime properly
+        callbacks = self._callback_list[:]
+        self._callback_list = []
+        for callback in callbacks:
+            self.unprime(callback)
+            callback(trigger)
+
+    def needs_advance(self):
+        return False
+
+    def primed_for(self, trigger):
+        return trigger in self._callback_list
 
     def __del__(self):
         """Ensure if a trigger drops out of scope we remove any pending
@@ -93,12 +112,16 @@ class GPITrigger(Trigger):
         # else:
         self.cbhdl = None
 
-    def unprime(self):
+    def unprime(self, callback=None):
         """Disable a primed trigger, can be reprimed"""
-        if self.cbhdl:
-            simulator.deregister_callback(self.cbhdl)
-        self.cbhdl = None
-        Trigger.unprime(self)
+        Trigger.unprime(self, callback)
+        if not len(self._callback_list):
+            if self.cbhdl:
+                simulator.deregister_callback(self.cbhdl)
+            self.cbhdl = None
+
+    def needs_advance(self):
+        return True
 
     def __del__(self):
         """Remove knowledge of the trigger"""
@@ -119,9 +142,11 @@ class Timer(GPITrigger):
 
     def prime(self, callback):
         """Register for a timed callback"""
+        if callback not in self._callback_list:
+            self._callback_list.append(callback)
         if self.cbhdl is None:
             self.cbhdl = simulator.register_timed_callback(self.sim_steps,
-                                                           callback, self)
+                                                           self._callback, self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
@@ -138,8 +163,10 @@ class _ReadOnly(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        if callback not in self._callback_list:
+            self._callback_list.append(callback)
         if self.cbhdl is None:
-            self.cbhdl = simulator.register_readonly_callback(callback, self)
+            self.cbhdl = simulator.register_readonly_callback(self._callback, self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
@@ -163,10 +190,12 @@ class _ReadWrite(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        if callback not in self._callback_list:
+            self._callback_list.append(callback)
         if self.cbhdl is None:
             # import pdb
             # pdb.set_trace()
-            self.cbhdl = simulator.register_rwsynch_callback(callback, self)
+            self.cbhdl = simulator.register_rwsynch_callback(self._callback, self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
@@ -189,8 +218,10 @@ class _NextTimeStep(GPITrigger):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        if callback not in self._callback_list:
+            self._callback_list.append(callback)
         if self.cbhdl is None:
-            self.cbhdl = simulator.register_nextstep_callback(callback, self)
+            self.cbhdl = simulator.register_nextstep_callback(self._callback, self)
             if self.cbhdl is None:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
         Trigger.prime(self)
@@ -215,10 +246,12 @@ class _Edge(GPITrigger):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
+        if callback not in self._callback_list:
+            self._callback_list.append(callback)
         if self.cbhdl is None:
             self.cbhdl = simulator.register_value_change_callback(self.signal.
                                                                   _handle,
-                                                                  callback,
+                                                                  self._callback,
                                                                   3,
                                                                   self)
             if self.cbhdl is None:
@@ -241,10 +274,12 @@ class _RisingOrFallingEdge(_Edge):
             self._rising = 2
 
     def prime(self, callback):
+        if callback not in self._callback_list:
+            self._callback_list.append(callback)
         if self.cbhdl is None:
             self.cbhdl = simulator.register_value_change_callback(self.signal.
                                                                   _handle,
-                                                                  callback,
+                                                                  self._callback,
                                                                   self._rising,
                                                                   self)
             if self.cbhdl is None:
@@ -279,75 +314,122 @@ def FallingEdge(signal):
     return signal._f_edge
 
 
-class ClockCycles(_Edge):
+class Sequential(PythonTrigger):
     """
-    Execution will resume after N rising edges or N falling edges
+    Combines multiple triggers together sequentially.  Coroutine will continue when all
+    triggers have fired, each in turn.
     """
-    def __init__(self, signal, num_cycles, rising=True):
-        _Edge.__init__(self, signal)
-        self.num_cycles = num_cycles
-        if rising is True:
-            self._rising = 1
-        else:
-            self._rising = 2
-
-    def prime(self, callback):
-        self._callback = callback
-
-        def _check(obj):
-            self.unprime()
-
-            if self.signal.value:
-                self.num_cycles -= 1
-
-                if self.num_cycles <= 0:
-                    self._callback(self)
-                    return
-
-            self.cbhdl = simulator.register_value_change_callback(self.signal.
-                                                                  _handle,
-                                                                  _check,
-                                                                  self._rising,
-                                                                  self)
-            if self.cbhdl is None:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
-
-        self.cbhdl = simulator.register_value_change_callback(self.signal.
-                                                              _handle,
-                                                              _check,
-                                                              self._rising,
-                                                              self)
-        if self.cbhdl is None:
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
-
-    def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.signal._name
-
-
-class Combine(PythonTrigger):
-    """
-    Combines multiple triggers together.  Coroutine will continue when all
-    triggers have fired
-    """
-
     def __init__(self, *args):
         PythonTrigger.__init__(self)
-        self._triggers = args
-        # TODO: check that trigger is an iterable containing
-        # only Trigger objects
+        self._triggers = list(args)
+        self._active = None
+        self._fired = []
+        self._gpi_based = False
         try:
             for trigger in self._triggers:
                 if not isinstance(trigger, Trigger):
                     raise TriggerException("All combined triggers must be "
                                            "instances of Trigger! Got: %s" %
                                            trigger.__class__.__name__)
+                self._gpi_based |= trigger.needs_advance()
         except Exception:
             raise TriggerException("%s requires a list of Trigger objects" %
                                    self.__class__.__name__)
 
     def prime(self, callback):
-        self._callback = callback
+        if callback not in self._callback_list:
+            self._callback_list.append(callback)
+        if not self._triggers:
+            raise TriggerException("%s requires a list of Trigger objects, but they vanished" %
+                                   self.__class__.__name__)
+        self._active = self._triggers.pop(0)
+        Trigger.prime(self)
+        self._active.prime(self._check_all_fired)
+
+    def _check_all_fired(self, trigger):
+        self._fired.append(trigger)
+        if len(self._triggers):
+            self._active = self._triggers.pop(0)
+            self._active.prime(self._check_all_fired)
+        else:
+            # reset lists in case we are primed again
+            self._triggers = self._fired
+            self._fired = []
+            self._callback(self)
+
+    def needs_advance(self):
+        return self._gpi_based
+
+
+class RepeatNTriggers(PythonTrigger):
+    """
+    Execution will resume after N occurrances of a trigger
+    """
+    def __init__(self, trigger, num_cycles):
+        PythonTrigger.__init__(self)
+        self._trigger = trigger
+        self._num_cycles = num_cycles
+        self._count = 0
+        self._gpi_based = trigger.needs_advance()
+
+    def prime(self, callback):
+        if callback not in self._callback_list:
+            self._callback_list.append(callback)
+        if self._num_cycles < 1:
+            # This is essentially a NullTrigger
+            callback(self)
+            return
+        self._count = 0
+        Trigger.prime(self, callback)
+        self._trigger.prime(self._check_all_fired)
+
+    def _check_all_fired(self, trigger):
+        self._count += 1
+        if self._count >= self._num_cycles:
+            self._callback(self)
+        else:
+            trigger.prime(self._check_all_fired)
+        return
+
+    def needs_advance(self):
+        return self._gpi_based
+
+
+class ClockCycles(RepeatNTriggers):
+    """
+    Execution will resume after N rising edges or N falling edges
+    """
+    def __init__(self, signal, num_cycles, rising=True):
+        if rising:
+            RepeatNTriggers.__init__(self, RisingEdge(signal), num_cycles)
+        else:
+            RepeatNTriggers.__init__(self, FallingEdge(signal), num_cycles)
+
+
+class Combine(PythonTrigger):
+    """
+    Combines multiple triggers together.  Coroutine will continue when all
+    triggers have fired.  Order does not matter.
+    """
+
+    def __init__(self, *args):
+        PythonTrigger.__init__(self)
+        self._triggers = list(args)
+        self._gpi_based = False
+        try:
+            for trigger in self._triggers:
+                if not isinstance(trigger, Trigger):
+                    raise TriggerException("All combined triggers must be "
+                                           "instances of Trigger! Got: %s" %
+                                           trigger.__class__.__name__)
+                self._gpi_based |= trigger.needs_advance()
+        except Exception:
+            raise TriggerException("%s requires a list of Trigger objects" %
+                                   self.__class__.__name__)
+
+    def prime(self, callback):
+        if callback not in self._callback_list:
+            self._callback_list.append(callback)
         self._fired = []
         for trigger in self._triggers:
             trigger.prime(self._check_all_fired)
@@ -355,13 +437,15 @@ class Combine(PythonTrigger):
 
     def _check_all_fired(self, trigger):
         self._fired.append(trigger)
-        if self._fired == self._triggers:
+        if len(self._fired) == len(self._triggers):
             self._callback(self)
 
-    def unprime(self):
+    def unprime(self, callback=None):
         for trigger in self._triggers:
-            trigger.unprime()
+            trigger.unprime(self._check_all_fired)
 
+    def needs_advance(self):
+        return self._gpi_based
 
 class _Event(PythonTrigger):
     """

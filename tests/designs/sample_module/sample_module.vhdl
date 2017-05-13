@@ -56,6 +56,7 @@ entity sample_module is
         stream_out_data_comb            : out   std_ulogic_vector(7 downto 0);
         stream_out_data_registered      : out   std_ulogic_vector(7 downto 0);
         stream_out_data_wide            : out   std_ulogic_vector(63 downto 0);
+        stream_out_valid                : out   std_ulogic;
         stream_out_ready                : in    std_ulogic;
         stream_out_real                 : out   real;
         stream_out_int                  : out   integer;
@@ -102,6 +103,7 @@ begin
 
 process (clk) begin
     if rising_edge(clk) then
+        stream_out_valid           <= stream_in_valid;
         stream_out_data_registered <= stream_in_data;
     end if;
 end process;
