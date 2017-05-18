@@ -340,7 +340,6 @@ class AXI4Slave(AXI4):
 
             while True:
                 self.bus.RVALID <= 1
-                yield ReadOnly()
                 if self.bus.RREADY.value:
                     _burst_diff = burst_length - burst_count
                     _st = _araddr + (_burst_diff * bytes_in_beat)
@@ -349,6 +348,7 @@ class AXI4Slave(AXI4):
                     self.bus.RDATA <= word
                     if burst_count == 1:
                         self.bus.RLAST <= 1
+                    yield ReadOnly()
                 yield clock_re
                 burst_count -= 1
                 self.bus.RLAST <= 0
