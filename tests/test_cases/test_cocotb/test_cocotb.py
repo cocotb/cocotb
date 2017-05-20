@@ -42,6 +42,7 @@ from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
 
 from cocotb.binary import BinaryValue
+from cocotb.scheduler import After
 
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
@@ -104,12 +105,31 @@ def clock_gen(clock):
         yield Timer(100)
     clock._log.warning("Clock generator finished!")
 
+@cocotb.coroutine
+def alternate_clock_gen(clock):
+    """Example clock gen for test use - using After"""
+    clock.setimmediatevalue(0)
+    yield Timer(1) # Set Immediate isn't actually immediate. A read would return 'U'.  yield 1 time unit to avoid.
+    for i in range(5*2):
+        clock <= After(1 - int(clock), 100)
+        yield Edge(clock)
+    clock._log.warning("Alternate clock generator finished!")
+
 
 @cocotb.test(expect_fail=False)
 def test_yield_list(dut):
     """Example of yeilding on a list of triggers"""
     clock = dut.clk
     cocotb.scheduler.add(clock_gen(clock))
+    yield [Timer(1000), Timer(2000)]
+
+    yield Timer(10000)
+
+@cocotb.test(expect_fail=False)
+def test_after_based_clockgen(dut):
+    """Example of yeilding on a list of triggers"""
+    clock = dut.clk
+    cocotb.scheduler.add(alternate_clock_gen(clock))
     yield [Timer(1000), Timer(2000)]
 
     yield Timer(10000)

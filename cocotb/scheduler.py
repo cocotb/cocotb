@@ -71,6 +71,21 @@ from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error)
 
 
+class After(object):
+    """
+    Used for delayed writes.  Ie, dut.foo <= After(value, 10)
+    """
+    def __init__(self, value, time_ps=1, units=None):
+        self._time_ps = time_ps
+        self._units = units
+        self._value = value
+
+    @cocotb.decorators.coroutine
+    def helper(self, sig):
+        yield Timer(self._time_ps, units=self._units)
+        sig <= self._value
+
+
 class Scheduler(object):
     """
     The main scheduler.
@@ -377,7 +392,11 @@ class Scheduler(object):
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:
             raise Exception("Write to object {} was scheduled during a read-only sync phase.".format(handle._name))
-        self._writes[handle] = value
+        if isinstance(value, After):
+            # Fork a coroutine which issues the assignment at a later time.
+            self.add(value.helper(handle))
+        else:
+            self._writes[handle] = value
 
     def _coroutine_yielded(self, coro, triggers):
         """
