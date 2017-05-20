@@ -24,7 +24,6 @@ class Testbench:
     def datagen(self, dut):
         dut.stream_in_data <= 0
         dut.stream_in_valid <= 0
-        dut.stream_in_func_en <= 1
         dut.stream_out_ready <= 1
         for c in range(2):
             yield RisingEdge(dut.clk)
