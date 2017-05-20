@@ -54,11 +54,15 @@ module sample_module (
 
     input                                       stream_out_ready,
     output reg [7:0]                            stream_out_data_comb,
+    output reg                                  stream_out_valid,
     output reg [7:0]                            stream_out_data_registered,
 
     output                                      and_output
 
 );
+
+always @(posedge clk)
+    stream_out_valid <= stream_in_valid;
 
 always @(posedge clk)
     stream_out_data_registered <= stream_in_data;
