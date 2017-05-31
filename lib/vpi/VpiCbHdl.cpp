@@ -215,8 +215,6 @@ int VpiObjHdl::initialise(std::string &name, std::string &fq_name) {
     if (str != NULL)
         m_definition_file = str;
 
-    m_definition_line = vpi_get(vpiDefLineNo, hdl);
-
     return GpiObjHdl::initialise(name, fq_name);
 }
 

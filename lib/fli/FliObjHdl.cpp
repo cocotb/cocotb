@@ -64,6 +64,7 @@ int FliObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     bool is_signal = (get_acc_type() == accSignal || get_acc_full_type() == accAliasSignal);
     mtiTypeIdT typeId; 
+    char * str;
 
     switch (get_type()) {
         case GPI_STRUCTURE:
@@ -84,7 +85,15 @@ int FliObjHdl::initialise(std::string &name, std::string &fq_name)
             LOG_CRITICAL("Invalid object type for FliObjHdl. (%s (%s))", name.c_str(), get_type_str());
             return -1;
     }
- 
+
+    str = mti_GetPrimaryName(get_handle<mtiRegionIdT>());
+    if (str != NULL)
+        m_definition_name = str;
+
+    str = mti_GetRegionSourceName(get_handle<mtiRegionIdT>());
+    if (str != NULL)
+        m_definition_file = str;
+
     return GpiObjHdl::initialise(name, fq_name);
 }
 

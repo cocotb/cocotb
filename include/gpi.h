@@ -185,7 +185,6 @@ gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 // Get information about the definition of a handle
 const char* gpi_get_definition_name(gpi_sim_hdl gpi_hdl);
 const char* gpi_get_definition_file(gpi_sim_hdl gpi_hdl);
-int         gpi_get_definition_line(gpi_sim_hdl gpi_hdl);
 
 // Determine whether an object value is constant (parameters / generics etc)
 int gpi_is_constant(gpi_sim_hdl gpi_hdl);

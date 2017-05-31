@@ -92,7 +92,6 @@ class SimHandleBase(object):
         self._log.debug("Created")
         self._def_name = simulator.get_definition_name(self._handle)
         self._def_file = simulator.get_definition_file(self._handle)
-        self._def_line = simulator.get_definition_line(self._handle)
 
     def get_definition_name(self):
         return object.__getattribute__(self, "_def_name")
@@ -100,9 +99,6 @@ class SimHandleBase(object):
     def get_definition_file(self):
         return object.__getattribute__(self, "_def_file")
 
-    def get_definition_line(self):
-        return object.__getattribute__(self, "_def_line")
-    
     def __hash__(self):
         return self._handle
 
@@ -132,8 +128,7 @@ class SimHandleBase(object):
             desc += " with definition "+defname
             deffile = object.__getattribute__(self, "_def_file")
             if deffile:
-                defline = object.__getattribute__(self, "_def_line")
-                desc += " (at "+deffile+" line "+str(defline)+")"
+                desc += " (at "+deffile+")"
         return type(self).__name__ + "(" + desc + ")"
 
     def __str__(self):

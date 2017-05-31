@@ -726,28 +726,6 @@ static PyObject *get_definition_file(PyObject *self, PyObject *args)
     return retstr;
 }
 
-static PyObject *get_definition_line(PyObject *self, PyObject *args)
-{
-    int result;
-    gpi_sim_hdl hdl;
-    PyObject *retval;
-
-    PyGILState_STATE gstate;
-    gstate = TAKE_GIL();
-
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
-        DROP_GIL(gstate);
-        return NULL;
-    }
-
-    result = gpi_get_definition_line((gpi_sim_hdl)hdl);
-    retval = Py_BuildValue("l", result);
-
-    DROP_GIL(gstate);
-
-    return retval;
-}
-
 static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
 {
     const char *name;
