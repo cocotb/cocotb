@@ -168,6 +168,16 @@ public:
     int initialise(std::string &name, std::string &fq_name);
 };
 
+class VhpiObjHdl : public GpiObjHdl {
+public:
+    VhpiObjHdl(GpiImplInterface *impl,
+               vhpiHandleT hdl,
+               gpi_objtype_t objtype) : GpiObjHdl(impl, hdl, objtype) { }
+    virtual ~VhpiObjHdl() { }
+
+    int initialise(std::string &name, std::string &fq_name);
+};
+
 class VhpiSignalObjHdl : public GpiSignalObjHdl {
 public:
     VhpiSignalObjHdl(GpiImplInterface *impl,
