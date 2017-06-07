@@ -70,8 +70,8 @@ class AvalonSTPkts(BusMonitor):
     """
     Packetised AvalonST bus
     """
-    _signals = ["valid", "data", "startofpacket", "endofpacket", "empty"]
-    _optional_signals = ["error", "channel", "ready"]
+    _signals = ["valid", "data", "startofpacket", "endofpacket"]
+    _optional_signals = ["error", "channel", "ready", "empty"]
 
     _default_config = {
         "dataBitsPerSymbol"             : 8,
@@ -90,6 +90,15 @@ class AvalonSTPkts(BusMonitor):
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s" %
                            (configoption, str(value)))
+
+        num_data_symbols = (len(self.bus.data) /
+                            self.config["dataBitsPerSymbol"])
+        if (num_data_symbols > 1 and not hasattr(self.bus, 'empty')):
+            raise AttributeError(
+                "%s has %i data symbols, but contains no object named empty" %
+                (self.name, num_data_symbols))
+
+        self.config["useEmpty"] = (num_data_symbols > 1)
 
     @coroutine
     def _monitor_recv(self):
@@ -132,7 +141,8 @@ class AvalonSTPkts(BusMonitor):
 
                 if self.bus.endofpacket.value:
                     # Truncate the empty bits
-                    if self.bus.empty.value.integer:
+                    if (self.config["useEmpty"] and
+                       self.bus.empty.value.integer):
                         pkt = pkt[:-self.bus.empty.value.integer]
                     self.log.info("Received a packet of %d bytes" % len(pkt))
                     self.log.debug(hexdump(str((pkt))))
