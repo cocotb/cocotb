@@ -77,7 +77,8 @@ class AvalonSTPkts(BusMonitor):
         "dataBitsPerSymbol"             : 8,
         "firstSymbolInHighOrderBits"    : True,
         "maxChannel"                    : 0,
-        "readyLatency"                  : 0
+        "readyLatency"                  : 0,
+        "invalidTimeout"                : 0,
     }
 
     def __init__(self, *args, **kwargs):
@@ -109,6 +110,7 @@ class AvalonSTPkts(BusMonitor):
         rdonly = ReadOnly()
         pkt = ""
         in_pkt = False
+        invalid_cyclecount = 0
 
         def valid():
             if hasattr(self.bus, 'ready'):
@@ -123,6 +125,8 @@ class AvalonSTPkts(BusMonitor):
                 continue
 
             if valid():
+                invalid_cyclecount = 0
+
                 if self.bus.startofpacket.value:
                     if pkt:
                         raise AvalonProtocolError(
@@ -149,3 +153,11 @@ class AvalonSTPkts(BusMonitor):
                     self._recv(pkt)
                     pkt = ""
                     in_pkt = False
+            else :                
+                if in_pkt :
+                    invalid_cyclecount += 1
+                    if self.config["invalidTimeout"] :
+                        if invalid_cyclecount >= self.config["invalidTimeout"] :
+                            raise AvalonProtocolError(
+                                "In-Packet Timeout. Didn't receive any valid data for %d cycles!" %
+                                invalid_cyclecount)
