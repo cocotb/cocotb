@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 Drivers for Advanced Microcontroller Bus Architecture
 """
 import cocotb
-from cocotb.triggers import RisingEdge, ReadOnly, Lock
+from cocotb.triggers import RisingEdge, ReadOnly, Lock, NextTimeStep
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
@@ -243,6 +243,7 @@ class AXI4Slave(BusDriver):
             while True:
                 self.bus.WREADY <= 0
                 yield ReadOnly()
+                yield NextTimeStep()
                 if self.bus.AWVALID.value:
                     self.bus.WREADY <= 1
                     break
@@ -325,6 +326,7 @@ class AXI4Slave(BusDriver):
             while True:
                 self.bus.RVALID <= 1
                 yield ReadOnly()
+                yield NextTimeStep()
                 if self.bus.RREADY.value:
                     _burst_diff = burst_length - burst_count
                     _st = _araddr + (_burst_diff * bytes_in_beat)
