@@ -36,11 +36,19 @@ import binascii
 import array
 
 
-class AXIReadError(Exception):
+class AXIProtocolError(Exception):
     pass
 
+class AXI4(BusDriver):
+    """ Class that factorize all AXI4 data """
+    RESPCODE = {"OKAY":0x0,
+                "EXOKAY":0x1,
+                "SLVERR":0x2,
+                "DECERR":0x2}
+    _RESPCODE = {v: k for k, v in RESPCODE.items()}
 
-class AXI4LiteMaster(BusDriver):
+
+class AXI4LiteMaster(AXI4):
     """
     AXI4-Lite Master
 
@@ -140,9 +148,10 @@ class AXI4LiteMaster(BusDriver):
 
         yield RisingEdge(self.clock)
 
-        if int(result):
-            raise AXIReadError("Write to address 0x%08x failed with BRESP: %d"
-                               % (address, int(result)))
+        if int(result) != self.RESPCODE["OKAY"]:
+            raise AXIProtocolError("Write to address 0x%08x failed with BRESP: %d (%s)"
+                                   % (address, int(result),
+                                      self._RESPCODE[int(result)]))
 
         raise ReturnValue(result)
 
@@ -174,14 +183,15 @@ class AXI4LiteMaster(BusDriver):
                 break
             yield RisingEdge(self.clock)
 
-        if int(result):
-            raise AXIReadError("Read address 0x%08x failed with RRESP: %d" %
-                               (address, int(result)))
+        if int(result) != self.RESPCODE["OKAY"]:
+            raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d (%s)"
+                                   % (address, int(result),
+                                     self._RESPCODE[int(result)]))
 
         raise ReturnValue(data)
 
 
-class AXI4Slave(BusDriver):
+class AXI4Slave(AXI4):
     '''
     AXI4 Slave
 
@@ -197,13 +207,13 @@ class AXI4Slave(BusDriver):
         "AWPROT",  "AWSIZE",  "AWBURST", "AWLEN",
 
         "WREADY",  "WVALID",  "WDATA",
+        "BVALID",  "BREADY",  "BRESP",   "RRESP",   # Write response channel
 
     ]
 
     # Not currently supported by this driver
     _optional_signals = [
         "WLAST",   "WSTRB",
-        "BVALID",  "BREADY",  "BRESP",   "RRESP",
         "RCOUNT",  "WCOUNT",  "RACOUNT", "WACOUNT",
         "ARLOCK",  "AWLOCK",  "ARCACHE", "AWCACHE",
         "ARQOS",   "AWQOS",   "ARID",    "AWID",
@@ -221,6 +231,8 @@ class AXI4Slave(BusDriver):
         self.bus.RVALID.setimmediatevalue(0)
         self.bus.RLAST.setimmediatevalue(0)
         self.bus.AWREADY.setimmediatevalue(1)
+        self.bus.BVALID.setimmediatevalue(0)
+        self.bus.BRESP.setimmediatevalue(self.RESPCODE["OKAY"])
         self._memory = memory
 
         self.write_address_busy = Lock("%s_wabusy" % name)
@@ -242,10 +254,10 @@ class AXI4Slave(BusDriver):
         while True:
             while True:
                 self.bus.WREADY <= 0
-                yield ReadOnly()
                 if self.bus.AWVALID.value:
                     self.bus.WREADY <= 1
                     break
+                yield ReadOnly()
                 yield clock_re
 
             yield ReadOnly()
@@ -262,7 +274,7 @@ class AXI4Slave(BusDriver):
 
             if __debug__:
                 self.log.debug(
-                    "AWADDR  %d\n" % _awaddr +
+                    "AWADDR  0x{:x}\n".format(_awaddr) +
                     "AWLEN   %d\n" % _awlen +
                     "AWSIZE  %d\n" % _awsize +
                     "AWBURST %d\n" % _awburst +
@@ -283,6 +295,10 @@ class AXI4Slave(BusDriver):
                     self._memory[_st:_end] = array.array('B', word.get_buff())
                     burst_count -= 1
                     if burst_count == 0:
+                        self.bus.BVALID.value = 1
+                        while self.bus.BREADY == 0:
+                            yield clock_re
+                        self.bus.BVALID.value = 0
                         break
                 yield clock_re
 
@@ -324,7 +340,6 @@ class AXI4Slave(BusDriver):
 
             while True:
                 self.bus.RVALID <= 1
-                yield ReadOnly()
                 if self.bus.RREADY.value:
                     _burst_diff = burst_length - burst_count
                     _st = _araddr + (_burst_diff * bytes_in_beat)
@@ -333,6 +348,7 @@ class AXI4Slave(BusDriver):
                     self.bus.RDATA <= word
                     if burst_count == 1:
                         self.bus.RLAST <= 1
+                    yield ReadOnly()
                 yield clock_re
                 burst_count -= 1
                 self.bus.RLAST <= 0
