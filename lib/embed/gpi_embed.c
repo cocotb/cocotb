@@ -50,6 +50,22 @@ static char *argv[] = { progname };
 
 static PyObject *pEventFn = NULL;
 
+/**
+ * @name    Print the traceback
+ * @brief   Print traceback to stderr
+ *
+ * GILState before calling: N/A
+ *
+ * GILState after calling: N/A
+ *
+ * Print traceback and flush stderr if required (on Windows)
+ */
+void print_traceback(void) {
+  PyErr_Print();
+#if defined(_WIN32)
+  PyRun_SimpleString("import sys; sys.stderr.flush()");
+#endif
+}
 
 /**
  * @name    Initialise the python interpreter
@@ -135,7 +151,7 @@ int get_module_ref(const char *modname, PyObject **mod)
     PyObject *pModule = PyImport_ImportModule(modname);
 
     if (pModule == NULL) {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr, "Failed to load \"%s\"\n", modname);
         return -1;
     }
@@ -191,19 +207,19 @@ int embed_sim_init(gpi_sim_info_t *info)
     simlog_obj = PyObject_GetAttrString(cocotb_module, "loggpi");
 
     if (simlog_obj == NULL) {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr, "Failed to to get simlog object\n");
     }
 
     simlog_func = PyObject_GetAttrString(simlog_obj, "_printRecord");
     if (simlog_func == NULL) {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr, "Failed to get the _printRecord method");
         goto cleanup;
     }
 
     if (!PyCallable_Check(simlog_func)) {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr, "_printRecord is not callable");
         goto cleanup;
     }
@@ -214,13 +230,13 @@ int embed_sim_init(gpi_sim_info_t *info)
 
     simlog_func = PyObject_GetAttrString(simlog_obj, "_willLog");
     if (simlog_func == NULL) {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr, "Failed to get the _willLog method");
         goto cleanup;
     }
 
     if (!PyCallable_Check(simlog_func)) {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr, "_willLog is not callable");
         goto cleanup;
     }
@@ -240,7 +256,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     PyDict_SetItemString(arg_dict, "argc", argc);
 
     if (!PyCallable_Check(simlog_func)) {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr, "_printRecord is not callable");
         goto cleanup;
     }
@@ -250,7 +266,7 @@ int embed_sim_init(gpi_sim_info_t *info)
 
     // Now that logging has been set up ok we initialise the testbench
     if (-1 == PyObject_SetAttrString(cocotb_module, "SIM_NAME", PyString_FromString(info->product))) {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr, "Unable to set SIM_NAME");
         goto cleanup;
     }
@@ -272,7 +288,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");
 
     if (!PyCallable_Check(pEventFn)) {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr, "cocotb._sim_event is not callable");
         goto cleanup;
     }
@@ -282,7 +298,7 @@ int embed_sim_init(gpi_sim_info_t *info)
 
     if (cocotb_init == NULL || !PyCallable_Check(cocotb_init)) {
         if (PyErr_Occurred())
-            PyErr_Print();
+            print_traceback();
         fprintf(stderr, "Cannot find function \"%s\"\n", "_initialise_testbench");
         goto cleanup;
     }
@@ -298,7 +314,7 @@ int embed_sim_init(gpi_sim_info_t *info)
         LOG_DEBUG("_initialise_testbench successful");
         Py_DECREF(cocotb_retval);
     } else {
-        PyErr_Print();
+        print_traceback();
         fprintf(stderr,"Cocotb initialisation failed - exiting\n");
         goto cleanup;
     }
