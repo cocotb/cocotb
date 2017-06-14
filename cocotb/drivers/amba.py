@@ -344,7 +344,7 @@ class AXI4Slave(AXI4):
             self.bus.RDATA <= word
             while True:
                 self.bus.RVALID <= 1
-                yield ReadOnly()
+                yield clock_re
                 if self.bus.RREADY.value:
                     word.buff = self._read_memory(burst_length,
                                                   burst_count,
@@ -352,11 +352,11 @@ class AXI4Slave(AXI4):
                     self.bus.RDATA <= word
                     if burst_count == 1:
                         self.bus.RLAST <= 1
-                yield clock_re
+                        yield clock_re
+                        self.bus.RLAST <= 0
+                        self.bus.RVALID <= 0
+                        break
                 burst_count -= 1
-                self.bus.RLAST <= 0
-                if burst_count == 0:
-                    break
 
     def _read_memory(self, burst_length, burst_count, bytes_in_beat):
         _burst_diff = burst_length - burst_count
