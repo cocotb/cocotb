@@ -336,8 +336,12 @@ class AXI4Slave(AXI4):
 
             burst_count = burst_length
 
+            word.buff = self._read_memory(burst_length,
+                                          burst_count,
+                                          bytes_in_beat)
             yield clock_re
 
+            self.bus.RDATA <= word
             while True:
                 self.bus.RVALID <= 1
                 yield ReadOnly()
