@@ -275,7 +275,7 @@ class AXI4Slave(AXI4):
 
             if __debug__:
                 self.log.debug(
-                    "AWADDR  %d\n" % _awaddr +
+                    "AWADDR  0x{:x}\n".format(_awaddr) +
                     "AWLEN   %d\n" % _awlen +
                     "AWSIZE  %d\n" % _awsize +
                     "AWBURST %d\n" % _awburst +
