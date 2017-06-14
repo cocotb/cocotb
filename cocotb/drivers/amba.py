@@ -315,7 +315,7 @@ class AXI4Slave(AXI4):
                 yield clock_re
 
             yield ReadOnly()
-            _araddr = int(self.bus.ARADDR)
+            self._araddr = int(self.bus.ARADDR)
             _arlen = int(self.bus.ARLEN)
             _arsize = int(self.bus.ARSIZE)
             _arburst = int(self.bus.ARBURST)
@@ -328,7 +328,6 @@ class AXI4Slave(AXI4):
 
             if __debug__:
                 self.log.debug(
-                    "ARADDR  %d\n" % _araddr +
                     "ARLEN   %d\n" % _arlen +
                     "ARSIZE  %d\n" % _arsize +
                     "ARBURST %d\n" % _arburst +
@@ -343,10 +342,9 @@ class AXI4Slave(AXI4):
                 self.bus.RVALID <= 1
                 yield ReadOnly()
                 if self.bus.RREADY.value:
-                    _burst_diff = burst_length - burst_count
-                    _st = _araddr + (_burst_diff * bytes_in_beat)
-                    _end = _araddr + ((_burst_diff + 1) * bytes_in_beat)
-                    word.buff = self._memory[_st:_end].tostring()
+                    word.buff = self._read_memory(burst_length,
+                                                  burst_count,
+                                                  bytes_in_beat)
                     self.bus.RDATA <= word
                     if burst_count == 1:
                         self.bus.RLAST <= 1
@@ -355,3 +353,10 @@ class AXI4Slave(AXI4):
                 self.bus.RLAST <= 0
                 if burst_count == 0:
                     break
+
+    def _read_memory(self, burst_length, burst_count, bytes_in_beat):
+        _burst_diff = burst_length - burst_count
+        _st = self._araddr + (_burst_diff * bytes_in_beat)
+        _end = self._araddr + ((_burst_diff + 1) * bytes_in_beat)
+        return self._memory[_st:_end].tostring()
+
