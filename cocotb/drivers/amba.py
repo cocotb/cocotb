@@ -233,6 +233,7 @@ class AXI4Slave(AXI4):
         self.bus.AWREADY.setimmediatevalue(1)
         self.bus.BVALID.setimmediatevalue(0)
         self.bus.BRESP.setimmediatevalue(self.RESPCODE["OKAY"])
+        self.bus.RRESP.setimmediatevalue(self.RESPCODE["OKAY"])
         self._memory = memory
 
         self.write_address_busy = Lock("%s_wabusy" % name)
