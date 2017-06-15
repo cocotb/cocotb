@@ -58,7 +58,7 @@ from cocotb.log import SimLog
 from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
 from cocotb.utils import get_sim_time
 from cocotb.xunit_reporter import XUnitReporter
-
+from cocotb.requirements import Requirements
 
 def _my_import(name):
     mod = __import__(name)
@@ -85,6 +85,7 @@ class RegressionManager(object):
         self._functions = tests
         self._running_test = None
         self._cov = None
+        self.requirements = Requirements()
         self.log = SimLog("cocotb.regression")
 
     def initialise(self):
@@ -180,6 +181,8 @@ class RegressionManager(object):
             self._cov.save()
             self._cov.html_report()
         self._log_test_summary()
+        self.requirements.log_requirements_summary()
+        self.requirements.write_requirement_coverage()
         self._log_sim_summary()
         self.log.info("Shutting down...")
         self.xunit.write()
@@ -267,6 +270,7 @@ class RegressionManager(object):
             self.failures += 1
             result_pass = False
 
+        self.requirements.update_requirements(self._running_test, result_pass)
         self._store_test_result(self._running_test.module, self._running_test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
 
         self.execute()
