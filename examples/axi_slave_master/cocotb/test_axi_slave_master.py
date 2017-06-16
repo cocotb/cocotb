@@ -1,23 +1,10 @@
 #! /usr/bin/python3
 # -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
-# Author:   Fabien Marteau <fabien.marteau@armadeus.com>
+# Author:   Fabien Marteau <mail@fabienm.eu>
 # Created:  28/04/2017
 #-----------------------------------------------------------------------------
-#  Copyright (2017)  Armadeus Systems
-#-----------------------------------------------------------------------------
 """ test_axi_pattern_tester
-
-* Use AXI_update cocotb branch from Martoni github to simulate it :
-    $ git clone https://github.com/Martoni/cocotb.git
-    $ cd cocotb;git checkout AXI_update
-* Use master git of ghdl for VHDL simulation :
-    $ git clone https://github.com/tgingold/ghdl.git
-    $ cd ghdl
-    $ ./configure
-    $ make
-    $ sudo make install
-
 """
 
 import sys
@@ -44,16 +31,6 @@ MS = 1000*US
 
 # 200Mhz
 HALF_CLK = 2500*PS
-
-SKIP_LIST = [
-#    'axi4lite_slave_test',
-#    'axi4_master_test'
-]
-
-def skip_test(test_name):
-    if test_name in SKIP_LIST:
-        return True
-    return False
 
 class AxiPatternTest(object):
     """ class to test axi pattern test """
@@ -135,7 +112,7 @@ class AxiPatternTest(object):
                 rst <= 0
         resetlist[0]._log.info("Reset complete")
 
-@cocotb.test(skip=skip_test('axi4lite_slave_test'))
+@cocotb.test()
 def axi4lite_slave_test(dut):
     """
         test axi4 slave
@@ -176,7 +153,7 @@ def axi4lite_slave_test(dut):
                                 .format(addr<<2, writevalue, int(readvalue)))
     dut.log.info("Test done")
 
-@cocotb.test(skip=skip_test('axi4_master_test'))
+@cocotb.test()
 def axi4_master_test(dut):
     """
         test axi4 master
