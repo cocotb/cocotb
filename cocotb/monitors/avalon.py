@@ -84,7 +84,7 @@ class AvalonSTPkts(BusMonitor):
         config = kwargs.pop('config', {})
         BusMonitor.__init__(self, *args, **kwargs)
 
-        self.config = AvalonSTPkts._default_config.copy()
+        self.config = self._default_config.copy()
 
         for configoption, value in config.items():
             self.config[configoption] = value
