@@ -28,3 +28,5 @@ Mentor Questa
 Cadence Incisive
 ----------------
 
+GHDL
+----
