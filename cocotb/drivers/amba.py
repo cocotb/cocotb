@@ -152,7 +152,7 @@ class AXI4LiteMaster(AXI4):
             raise AXIProtocolError("Write to address 0x%08x failed with BRESP: %d (%s)"
                                    % (address, int(result),
                                       self._RESPCODE[int(result)]))
-
+        yield NextTimeStep()
         raise ReturnValue(result)
 
     @cocotb.coroutine
@@ -187,7 +187,7 @@ class AXI4LiteMaster(AXI4):
             raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d (%s)"
                                    % (address, int(result),
                                      self._RESPCODE[int(result)]))
-
+        yield NextTimeStep()
         raise ReturnValue(data)
 
 
