@@ -29,7 +29,7 @@ Drivers for Advanced Microcontroller Bus Architecture
 import cocotb
 from cocotb.triggers import RisingEdge, ReadOnly, Lock, NextTimeStep
 from cocotb.drivers import BusDriver
-from cocotb.result import ReturnValue
+from cocotb.result import ReturnValue, TestFailure
 from cocotb.binary import BinaryValue
 
 import binascii
@@ -47,21 +47,44 @@ class AXI4(BusDriver):
                 "DECERR":0x2}
     _RESPCODE = {v: k for k, v in RESPCODE.items()}
 
+    AxPROT_CODE = { "UNPRIVILEGED": 0x0,
+                    "PRIVILEGED": 0x1,
+                    "SECURE": 0x0,
+                    "NON_SECURE": 0x2,
+                    "DATA": 0x0,
+                    "INSTRUCTION": 0x4}
 
-class AXI4LiteMaster(AXI4):
+    def __init__(self, entity, name, clock):
+        BusDriver.__init__(self, entity, name, clock)
+
+
+class AXI4Lite(AXI4):
+    """ Class for AXI4 Lite """
+    DATABUS_LEN = [32, 64]
+
+    def __init__(self, entity, name, clock):
+        AXI4.__init__(self, entity, name, clock)
+        if len(self.bus.WDATA) not in self.DATABUS_LEN:
+            raise TestFailure("wrong WDATA width {}, must be {} for AXILite"
+                              .format(len(self.bus.WDATA), self.DATABUS_LEN))
+        if len(self.bus.WDATA) != len(self.bus.RDATA):
+            raise TestFailure("Width of WDATA and RDATA must be equal")
+
+
+class AXI4LiteMaster(AXI4Lite):
     """
     AXI4-Lite Master
 
     TODO: Kill all pending transactions if reset is asserted...
     """
-    _signals = ["AWVALID", "AWADDR", "AWREADY",        # Write address channel
+    _signals = ["AWVALID", "AWREADY", "AWADDR", "AWPROT", # Write address channel
                 "WVALID", "WREADY", "WDATA", "WSTRB",  # Write data channel
                 "BVALID", "BREADY", "BRESP",           # Write response channel
-                "ARVALID", "ARADDR", "ARREADY",        # Read address channel
+                "ARVALID", "ARREADY", "ARADDR", "ARPROT", # Read address channel
                 "RVALID", "RREADY", "RRESP", "RDATA"]  # Read data channel
 
     def __init__(self, entity, name, clock):
-        BusDriver.__init__(self, entity, name, clock)
+        AXI4Lite.__init__(self, entity, name, clock)
 
         # Drive some sensible defaults (setimmediatevalue to avoid x asserts)
         self.bus.AWVALID.setimmediatevalue(0)
@@ -69,6 +92,13 @@ class AXI4LiteMaster(AXI4):
         self.bus.ARVALID.setimmediatevalue(0)
         self.bus.BREADY.setimmediatevalue(1)
         self.bus.RREADY.setimmediatevalue(1)
+        self.bus.AWPROT.setimmediatevalue(self.AxPROT_CODE["UNPRIVILEGED"] +
+                                          self.AxPROT_CODE["SECURE"] +
+                                          self.AxPROT_CODE["DATA"])
+        self.bus.ARPROT.setimmediatevalue(self.AxPROT_CODE["UNPRIVILEGED"] +
+                                          self.AxPROT_CODE["SECURE"] +
+                                          self.AxPROT_CODE["DATA"])
+
 
         # Mutex for each channel that we master to prevent contention
         self.write_address_busy = Lock("%s_wabusy" % name)
