@@ -44,7 +44,7 @@ class AXI4(BusDriver):
     RESPCODE = {"OKAY":0x0,
                 "EXOKAY":0x1,
                 "SLVERR":0x2,
-                "DECERR":0x2}
+                "DECERR":0x3}
     _RESPCODE = {v: k for k, v in RESPCODE.items()}
 
     AxPROT_CODE = { "UNPRIVILEGED": 0x0,
