@@ -76,21 +76,22 @@ localparam  MAX_ADDR = ADDR_1;
 //registes/wires
 
 //User Interface
-wire [ADDR_WIDTH - 1: 0]    w_reg_address;
-reg                         r_reg_invalid_addr;
+wire [ADDR_WIDTH - 1: 0]          w_reg_address;
+wire [((ADDR_WIDTH - 1) - 2): 0]  w_reg_32bit_address;
+reg                               r_reg_invalid_addr;
 
-wire                        w_reg_in_rdy;
-reg                         r_reg_in_ack_stb;
-wire [DATA_WIDTH - 1: 0]    w_reg_in_data;
+wire                              w_reg_in_rdy;
+reg                               r_reg_in_ack_stb;
+wire [DATA_WIDTH - 1: 0]          w_reg_in_data;
 
-wire                        w_reg_out_req;
-reg                         r_reg_out_rdy_stb;
-reg [DATA_WIDTH - 1: 0]     r_reg_out_data;
+wire                              w_reg_out_req;
+reg                               r_reg_out_rdy_stb;
+reg [DATA_WIDTH - 1: 0]           r_reg_out_data;
 
 
 //TEMP DATA, JUST FOR THE DEMO
-reg [DATA_WIDTH - 1: 0]     r_temp_0;
-reg [DATA_WIDTH - 1: 0]     r_temp_1;
+reg [DATA_WIDTH - 1: 0]           r_temp_0;
+reg [DATA_WIDTH - 1: 0]           r_temp_1;
 
 //submodules
 
@@ -144,6 +145,7 @@ axi_lite_slave #(
 
 //asynchronous logic
 
+assign        w_reg_32bit_address     = w_reg_address[(ADDR_WIDTH - 1): 2];
 //synchronous logic
 always @ (posedge clk) begin
   //De-assert Strobes
@@ -162,7 +164,7 @@ always @ (posedge clk) begin
 
     if (w_reg_in_rdy) begin
       //From master
-      case (w_reg_address)
+      case (w_reg_32bit_address)
         ADDR_0: begin
           //$display("Incomming data on address: 0x%h: 0x%h", w_reg_address, w_reg_in_data);
           r_temp_0                        <=  w_reg_in_data;
@@ -172,10 +174,10 @@ always @ (posedge clk) begin
           r_temp_1                        <=  w_reg_in_data;
         end
         default: begin
-          $display ("Unknown address: 0x%h", w_reg_address);
+          $display ("Unknown address (32-bit): 0x%h", w_reg_32bit_address);
         end
       endcase
-      if (w_reg_address > MAX_ADDR) begin
+      if (w_reg_32bit_address > MAX_ADDR) begin
         //Tell the host they wrote to an invalid address
         r_reg_invalid_addr                <= 1;
       end
@@ -185,7 +187,7 @@ always @ (posedge clk) begin
     else if (w_reg_out_req) begin
       //To master
       //$display("User is reading from address 0x%0h", w_reg_address);
-      case (w_reg_address)
+      case (w_reg_32bit_address)
         ADDR_0: begin
           r_reg_out_data                  <= r_temp_0;
         end
@@ -197,7 +199,8 @@ always @ (posedge clk) begin
           r_reg_out_data                  <= 32'h00;
         end
       endcase
-      if (w_reg_address > MAX_ADDR) begin
+      if (w_reg_32bit_address > MAX_ADDR) begin
+        $display ("Unknown address (32-bit): 0x%h", w_reg_32bit_address);
         //Tell the host they are reading from an invalid address
         r_reg_invalid_addr                <= 1;
       end
