@@ -311,11 +311,11 @@ class HierarchyArrayObject(RegionObject):
         # VHPI(ALDEC):        _name__X where X is the index
         # VPI:                _name[X] where X is the index
         import re
-        result = re.match("{}__(?P<index>\d+)$".format(self._name), name)
+        result = re.match("{0}__(?P<index>\d+)$".format(self._name), name)
         if not result:
-            result = re.match("{}\((?P<index>\d+)\)$".format(self._name), name)
+            result = re.match("{0}\((?P<index>\d+)\)$".format(self._name), name)
         if not result:
-            result = re.match("{}\[(?P<index>\d+)\]$".format(self._name), name)
+            result = re.match("{0}\[(?P<index>\d+)\]$".format(self._name), name)
 
         if result:
             return int(result.group("index"))

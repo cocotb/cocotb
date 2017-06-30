@@ -127,7 +127,7 @@ def _get_log_time_scale(units):
 
     units_lwr = units.lower()
     if units_lwr not in scale:
-        raise ValueError("Invalid unit ({}) provided".format(units))
+        raise ValueError("Invalid unit ({0}) provided".format(units))
     else:
         return scale[units_lwr]
 
