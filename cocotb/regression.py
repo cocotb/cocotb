@@ -214,6 +214,12 @@ class RegressionManager(object):
             return None
         return self._queue.pop(0)
 
+    def _add_failure(self, result):
+        self.xunit.add_failure(stdout=repr(str(result)),
+                               stderr="\n".join(self._running_test.error_messages),
+                               message="Test failed with random_seed={}".format(self._seed))
+        self.failures += 1
+
     def handle_result(self, result):
         """Handle a test result
 
@@ -253,19 +259,13 @@ class RegressionManager(object):
               self._running_test.expect_error):
             self.log.error("Test passed but we expected an error: " +
                            _result_was())
-            self.xunit.add_failure(stdout=repr(str(result)),
-                                   stderr="\n".join(
-                                   self._running_test.error_messages))
-            self.failures += 1
+            self._add_failure(result)
             result_pass = False
 
         elif isinstance(result, TestSuccess):
             self.log.error("Test passed but we expected a failure: " +
                            _result_was())
-            self.xunit.add_failure(stdout=repr(str(result)),
-                                   stderr="\n".join(
-                                   self._running_test.error_messages))
-            self.failures += 1
+            self._add_failure(result)
             result_pass = False
 
         elif isinstance(result, TestError) and self._running_test.expect_error:
@@ -277,20 +277,14 @@ class RegressionManager(object):
             else:
                 self.log.error("Test error has lead to simulator shuttting us "
                                "down")
-                self.xunit.add_failure(stdout=repr(str(result)),
-                                       stderr="\n".join(
-                                       self._running_test.error_messages))
-                self.failures += 1
+                self._add_failure(result)
                 self._store_test_result(self._running_test.module, self._running_test.funcname, False, sim_time_ns, real_time, ratio_time)
                 self.tear_down()
                 return
 
         else:
             self.log.error("Test Failed: " + _result_was())
-            self.xunit.add_failure(stdout=repr(str(result)),
-                                   stderr="\n".join(
-                                   self._running_test.error_messages))
-            self.failures += 1
+            self._add_failure(result)
             result_pass = False
 
         self._store_test_result(self._running_test.module, self._running_test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
