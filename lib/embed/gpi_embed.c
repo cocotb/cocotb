@@ -62,9 +62,7 @@ static PyObject *pEventFn = NULL;
  */
 void print_traceback(void) {
   PyErr_Print();
-#if defined(_WIN32)
   PyRun_SimpleString("import sys; sys.stderr.flush()");
-#endif
 }
 
 /**
