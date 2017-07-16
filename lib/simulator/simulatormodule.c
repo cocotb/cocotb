@@ -110,7 +110,8 @@ int handle_gpi_callback(void *user_data)
     if (pValue == NULL)
     {
         fprintf(stderr, "ERROR: called callback function returned NULL\n");
-        fprintf(stderr, "Failed to execute callback\n");
+        fprintf(stderr, "Failed to execute callback due to internal python exception:\n");
+        PyErr_Print();
         gpi_sim_end();
         return 0;
     }
