@@ -76,6 +76,10 @@ CUSTOM_SIM_DEPS
 
 Use to add additional dependencies to the simulation target.
 
+COCOTB_NVC_TRACE
+~~~~~~~~~~~~~~~~
+
+Set this to 1 to enable display VHPI trace when using nvc VHDL simulator.
 
 Environment Variables
 =====================

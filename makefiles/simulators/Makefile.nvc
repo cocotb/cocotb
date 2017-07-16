@@ -8,6 +8,10 @@ clean::
 
 else
 
+ifeq ($(COCOTB_NVC_TRACE), 1)
+	TRACE :=--vhpi-trace
+endif
+
 CMD_BIN := nvc
 
 ifdef NVC_BIN_DIR
@@ -39,7 +43,7 @@ results.xml: analyse $(COCOTB_LIBS) $(COCOTB_VHPI_LIB)
 		LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
 		TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 		LD_LIBRARY_PATH=$(LIB_DIR) \
-		$(CMD) --work=$(RTL_LIBRARY) -r --load $(COCOTB_VHPI_LIB) $(TOPLEVEL)
+		$(CMD) --work=$(RTL_LIBRARY) -r --load $(COCOTB_VHPI_LIB) $(TRACE) $(TOPLEVEL)
 
 clean::
 	-@rm -rf $(SIM_BUILD)
