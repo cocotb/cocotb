@@ -348,11 +348,11 @@ class RegressionManager(object):
         summary = ""
 
         summary += "*************************************************************************************\n"
-        summary += "**                                 ERRORS : {:<39}**\n".format(self.failures)
+        summary += "**                                 ERRORS : {0:<39}**\n".format(self.failures)
         summary += "*************************************************************************************\n"
-        summary += "**                               SIM TIME : {:<39}**\n".format('{:.2f} NS'.format(sim_time_ns))
-        summary += "**                              REAL TIME : {:<39}**\n".format('{:.2f} S'.format(real_time))
-        summary += "**                        SIM / REAL TIME : {:<39}**\n".format('{:.2f} NS/S'.format(ratio_time))
+        summary += "**                               SIM TIME : {0:<39}**\n".format('{0:.2f} NS'.format(sim_time_ns))
+        summary += "**                              REAL TIME : {0:<39}**\n".format('{0:.2f} S'.format(real_time))
+        summary += "**                        SIM / REAL TIME : {0:<39}**\n".format('{0:.2f} NS/S'.format(ratio_time))
         summary += "*************************************************************************************\n"
 
         self.log.info(summary)
