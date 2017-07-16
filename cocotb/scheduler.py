@@ -366,6 +366,7 @@ class Scheduler(object):
                 self._trigger2coros[trigger].remove(coro)
             if not self._trigger2coros[trigger]:
                 trigger.unprime()
+                del self._trigger2coros[trigger]
         del self._coro2triggers[coro]
 
         if coro._join in self._trigger2coros:
