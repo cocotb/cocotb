@@ -363,11 +363,11 @@ class AvalonMemory(BusDriver):
                 randmax = self._avalon_properties.get("MaxWaitReqLen", 0)
                 waitingtime = range(random.randint(0, randmax))
                 for waitreq in waitingtime:
+                    yield NextTimeStep()
                     self.bus.waitrequest <= 1
                     yield RisingEdge(self.clock)
-            else:
-                yield NextTimeStep()
 
+            yield NextTimeStep()
             self.bus.waitrequest <= 0
 
 
