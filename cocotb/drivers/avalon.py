@@ -158,17 +158,17 @@ class AvalonMaster(AvalonMM):
             while True:
                 yield ReadOnly()
                 if int(self.bus.readdatavalid):
+                    data = self.bus.readdata.value
                     break
                 yield RisingEdge(self.clock)
         else:
             # Assume readLatency = 1 if no readdatavalid
             # FIXME need to configure this,
             # should take a dictionary of Avalon properties.
+            data = self.bus.readdata.value
             yield ReadOnly()
 
         # Get the data
-        data = self.bus.readdata.value
-
         self._release_lock()
         raise ReturnValue(data)
 
