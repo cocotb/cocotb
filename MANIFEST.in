@@ -5,6 +5,8 @@ recursive-include vpi_shim *.c Makefile
 recursive-include examples *.v *.py Makefile *.tcl *.cfg
 recursive-include scripts *
 recursive-include simulator *.c *.h Makefile
+recursive-include lib *.c* *.h Makefile
+recursive-include include *.h
 recursive-include modules *.py
 recursive-include makefiles Makefile.*
-include Makefile README.md
+include Makefile README.md version
