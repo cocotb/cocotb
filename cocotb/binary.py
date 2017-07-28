@@ -31,14 +31,26 @@ from __future__ import print_function
 from math import log, ceil
 from cocotb.utils import get_python_integer_types
 
+import os
+import random
+
+resolve_x_to = os.getenv('COCOTB_RESOLVE_X', "VALUE_ERROR")
 
 def resolve(string):
     for char in BinaryValue._resolve_to_0:
         string = string.replace(char, "0")
     for char in BinaryValue._resolve_to_1:
         string = string.replace(char, "1")
-    if any(char in string for char in BinaryValue._resolve_to_error):
-        raise ValueError("Unable to resolve to binary >%s<" % string)
+    for char in BinaryValue._resolve_to_error:
+	if resolve_x_to == "VALUE_ERROR":
+	    raise ValueError("Unable to resolve to binary >%s<" % string)
+	elif resolve_x_to == "ZEROS":
+	    string = string.replace(char, "0")
+	elif resolve_x_to == "ONES":
+	    string = string.replace(char, "1")
+	elif resolve_x_to == "RANDOM":
+	    bits = "{0:b}".format(random.getrandbits(1))
+            string = string.replace(char, bits)
     return string
 
 
@@ -274,6 +286,7 @@ class BinaryValue(object):
 
         """
         bits = resolve(self._str)
+
         if len(bits) % 8:
             bits = "0" * (8 - len(bits) % 8) + bits
 
@@ -444,8 +457,7 @@ class BinaryValue(object):
 
     def __invert__(self):
         """Preserves X values"""
-        self.binstr = self._invert(self.binstr)
-        return self
+        return self._invert(self.binstr)
 
     def __len__(self):
         return len(self.binstr)
@@ -493,10 +505,25 @@ class BinaryValue(object):
     def __setitem__(self, key, val):
         ''' BinaryValue uses verilog/vhdl style slices as opposed to python
         style'''
-        if not isinstance(val, str):
-            raise TypeError('BinaryValue slices only accept string values')
+        if not isinstance(val, str) and not isinstance(val, (int, long)):
+            raise TypeError('BinaryValue slices only accept string or integer values')
+
+        # convert integer to string
+        if isinstance(val, (int, long)):
+            if isinstance(key, slice):
+                num_slice_bits = abs(key.start - key.stop) + 1
+            else:
+                num_slice_bits = 1
+            if val < 0:
+                raise ValueError('Integer must be positive')
+            if val >= 2**num_slice_bits:
+                raise ValueError('Integer is too large for the specified slice '
+                                 'length')
+            val = "{:0{width}b}".format(val, width=num_slice_bits)
+
         if isinstance(key, slice):
             first, second = key.start, key.stop
+
             if self.big_endian:
                 if first < 0 or second < 0:
                     raise IndexError('BinaryValue does not support negative '
@@ -530,6 +557,9 @@ class BinaryValue(object):
                 slice_2 = self.binstr[high:]
                 self.binstr = slice_1 + val + slice_2
         else:
+            if len(val) != 1:
+                raise ValueError('String length must be equal to slice '
+                                 'length')
             index = key
             if index > self._bits - 1:
                 raise IndexError('Index greater than number of bits.')

@@ -395,7 +395,7 @@ create:
     } else if (gpi_type == GPI_ARRAY) {
         new_obj = new VhpiArrayObjHdl(this, new_hdl, gpi_type);
     } else {
-        new_obj = new GpiObjHdl(this, new_hdl, gpi_type);
+        new_obj = new VhpiObjHdl(this, new_hdl, gpi_type);
     }
 
     if (new_obj->initialise(name, fq_name)) {

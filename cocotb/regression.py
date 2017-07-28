@@ -71,7 +71,7 @@ def _my_import(name):
 class RegressionManager(object):
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, root_name, modules, tests=None):
+    def __init__(self, root_name, modules, tests=None, seed=None):
         """
         Args:
             modules (list): A list of python module names to run
@@ -86,6 +86,7 @@ class RegressionManager(object):
         self._running_test = None
         self._cov = None
         self.log = SimLog("cocotb.regression")
+        self._seed = seed
 
     def initialise(self):
 
@@ -96,12 +97,15 @@ class RegressionManager(object):
         self.skipped = 0
         self.failures = 0
         self.xunit = XUnitReporter()
+
         suite_name = os.getenv('RESULT_TESTSUITE') if os.getenv('RESULT_TESTSUITE') else "all"
         package_name = os.getenv('RESULT_TESTPACKAGE') if os.getenv('RESULT_TESTPACKAGE') else "all"
-        
-        
+                
         self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
                                  package=package_name)
+        
+        if (self._seed is not None):
+            self.xunit.add_property(name="random_seed", value=("%d"%self._seed))
 
         if coverage is not None:
             self.log.info("Enabling coverage collection of Python code")
