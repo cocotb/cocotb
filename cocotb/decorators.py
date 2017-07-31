@@ -29,14 +29,14 @@ import sys
 import time
 import logging
 import traceback
-import threading
 import pdb
+import threading
 
 from io import StringIO, BytesIO
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
+from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger, Join
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
 from cocotb.utils import get_sim_time
@@ -302,61 +302,59 @@ class function(object):
             and standalone functions"""
         return self.__class__(self._func.__get__(obj, type))
 
-
-@function
-def unblock_external(bridge):
-    yield NullTrigger()
-    bridge.set_out()
-
-
 @public
-class test_locker(object):
-    def __init__(self):
-        self.in_event = None
-        self.out_event = Event()
-        self.result = None
-
-    def set_in(self):
-        self.in_event.set()
-
-    def set_out(self):
-        self.out_event.set()
-
-
-def external(func):
+class external(object):
     """Decorator to apply to an external function to enable calling from cocotb
 
     This currently creates a new execution context for each function that is
     call. Scope for this to be streamlined to a queue in future
     """
+    def __init__(self, func):
+        self._func = func
+        self._log = SimLog("cocotb.externel.%s" % self._func.__name__, id(self))
 
-    @coroutine
-    def wrapped(*args, **kwargs):
-        # Start up the thread, this is done in coroutine context
-        bridge = test_locker()
+    def __call__(self, *args, **kwargs):
 
-        def execute_external(func, _event):
+        @coroutine
+        def wrapper():
+            ext = cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
+
+            yield ext.event.wait()
+
+            self._log.warn("External resuming")
+
+            if ext.result is not None:
+                if isinstance(ext.result, Exception):
+                    self._log.warn("Had an exception")
+                    raise ExternalException(ext.result)
+                else:
+                    self._log.warn("Had a return value")
+                    raise ReturnValue(ext.result)
+
+        return wrapper()
+
+@public
+class hook(coroutine):
+    """Decorator to mark a function as a hook for cocotb
+
+    All hooks are run at the beginning of a cocotb test suite, prior to any
+    test code being run."""
+    def __init__(self):
+        pass
+
+    def __call__(self, f):
+        super(hook, self).__init__(f)
+
+        def _wrapped_hook(*args, **kwargs):
             try:
-                _event.result = func(*args, **kwargs)
+                return RunningCoroutine(self._func(*args, **kwargs), self)
             except Exception as e:
-                _event.result = e
-            unblock_external(_event)
+                raise raise_error(self, str(e))
 
-        thread = threading.Thread(group=None, target=execute_external,
-                                  name=func.__name__ + "thread",
-                                  args=([func, bridge]), kwargs={})
-        thread.start()
-
-        yield bridge.out_event.wait()
-
-        if bridge.result is not None:
-            if isinstance(bridge.result, Exception):
-                raise ExternalException(bridge.result)
-            else:
-                raise ReturnValue(bridge.result)
-
-    return wrapped
-
+        _wrapped_hook.im_hook = True
+        _wrapped_hook.name = self._func.__name__
+        _wrapped_hook.__name__ = self._func.__name__
+        return _wrapped_hook
 
 @public
 class test(coroutine):

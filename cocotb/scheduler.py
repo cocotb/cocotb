@@ -37,7 +37,9 @@ the ReadOnly (and this is invalid, at least in Modelsim).
 """
 import collections
 import os
+import time
 import logging
+import threading
 
 
 # For autodocumentation don't need the extension modules
@@ -65,11 +67,34 @@ else:
 import cocotb
 import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
-                             _NextTimeStep, _ReadWrite)
+                             _NextTimeStep, _ReadWrite, Event, NullTrigger)
 from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error, ExternalException)
 
+@cocotb.decorators.function
+def unblock_external(bridge):
+    yield NullTrigger()
+    bridge.set_out()
+
+
+@cocotb.decorators.public
+class external_waiter(object):
+    def __init__(self):
+        self.result = None
+        self.thread = None
+        self.event = Event()
+        self._log = SimLog("cocotb.externel.thead.%s" % self.thread, id(self))
+
+    def thread_done(self):
+        self._log.debug("Thread finished from %s" % (threading.current_thread()))
+        # trigger the pending co-routine
+        self.event.set()
+
+    def thread_start(self):
+        if not self.thread.is_alive():
+            self._log.debug("Thread being started by %s" % (threading.current_thread()))
+            self.thread.start()
 
 class Scheduler(object):
     """
@@ -153,10 +178,12 @@ class Scheduler(object):
         self._pending_coros = []
         self._pending_callbacks = []
         self._pending_triggers = []
+        self._pending_threads = []
 
         self._terminate = False
         self._test_result = None
         self._entrypoint = None
+        self._main_thread = threading.current_thread()
 
         # Select the appropriate scheduling algorithm for this simulator
         self.advance = self.default_scheduling_algorithm
@@ -403,6 +430,35 @@ class Scheduler(object):
         """Queue a coroutine for execution"""
         self._pending_coros.append(coroutine)
 
+    def run_in_executor(self, func, *args, **kwargs):
+        """
+        Run the corouting in a seperate execution thread
+        and return a yieldable object for the caller
+        """
+        # Create a thread
+        # Create a trigger that is called as a result of the thread finishing
+        # Create an Event object that the caller can yield on
+        # Event object set when the thread finishes execution, this blocks the
+        #   calling coroutine (but not the thread) until the external completes
+
+        def execute_external(func, _waiter):
+            try:
+                _waiter.result = func(*args, **kwargs)
+            except Exception as e:
+                _waiter.result = e
+            _waiter.thread_done()
+
+        waiter = external_waiter()
+        thread = threading.Thread(group=None, target=execute_external,
+                                  name=func.__name__ + "thread",
+                                  args=([func, waiter]), kwargs={})
+
+        waiter.thread = thread;
+        self._pending_threads.append(waiter)
+        self.log.info("Added %s to scheduler" % waiter)
+
+        return waiter
+
     def add(self, coroutine):
         """
         Add a new coroutine.
@@ -510,6 +566,8 @@ class Scheduler(object):
             self._coroutine_yielded(coroutine, [new_trigger])
 
         elif isinstance(result, Trigger):
+            if _debug:
+                self.log.debug("%s: is instance of Trigger" % result)
             self._coroutine_yielded(coroutine, [result])
 
         elif (isinstance(result, list) and
@@ -527,12 +585,23 @@ class Scheduler(object):
             except Exception as e:
                 self.finish_test(e)
 
+        # We do not return from here until pending threads have completed, but only
+        # from the main thread, this seems like it could be problematic in cases
+        # where a sim might change what this thread is.
+        if self._main_thread is threading.current_thread():
+            for ext in self._pending_threads:
+                ext.thread_start()
+                self.log.debug("Blocking from %s on %s" % (threading.current_thread(), ext.thread))
+                ext.thread.join()
+                self._pending_threads.remove(ext)
+
         # Handle any newly queued coroutines that need to be scheduled
         while self._pending_coros:
             self.add(self._pending_coros.pop(0))
 
         while self._pending_callbacks:
             self._pending_callbacks.pop(0)()
+
 
     def finish_test(self, test_result):
         """Cache the test result and set the terminate flag"""
