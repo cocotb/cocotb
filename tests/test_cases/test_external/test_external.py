@@ -233,8 +233,13 @@ def test_external_from_readonly(dut):
 
     yield ReadOnly()
     dut._log.info("In readonly")
-    value = yield external(test_ext_function_access)(dut)
+    value = yield external(test_ext_function)(dut)
 
+@cocotb.test(expect_fail=False, skip=True)
+def test_external_that_yields(dut):
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    value = yield external(test_ext_function_access)(dut)
 
 @cocotb.test(expect_fail=True, skip=True)
 def ztest_ext_exit_error(dut):
