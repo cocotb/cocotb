@@ -41,6 +41,7 @@ from cocotb.result import ReturnValue, TestFailure
 from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge, ReadWrite
 from cocotb.clock import Clock
 from cocotb.decorators import external
+from cocotb.utils import get_sim_time
 
 test_count = 0
 g_dut = None
@@ -162,6 +163,17 @@ def test_ext_function_return(dut):
     # time.sleep(0.2)
     return value
 
+def test_print_sim_time(dut, base_time):
+    # We are not calling out here so time should not advance
+    # And should also remain consistent
+    for _ in range(100):
+        _t = get_sim_time('ns')
+        dut._log.info("Time reported = %d", _t)
+        if _t != base_time:
+            raise TestFailure("Time reported does not match base_time %f != %f" %
+                              (_t, base_time))
+    dut._log.info("external function has ended")
+
 
 @cocotb.coroutine
 def clock_monitor(dut):
@@ -170,6 +182,21 @@ def clock_monitor(dut):
         yield RisingEdge(dut.clk)
         yield Timer(1000)
         count += 1
+
+@cocotb.test(expect_fail=False)
+def test_time_in_external(dut):
+    """Test that the simulation time does no advance if the wrapped external
+    routine does not its self yield"""
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+    yield Timer(10, 'ns')
+    time = get_sim_time('ns')
+    dut._log.info("Time at start of test = %d" % time)
+    yield external(test_print_sim_time)(dut, time)
+    time_now = get_sim_time('ns')
+    yield Timer(10, 'ns')
+
+    if time != time_now:
+        raise TestFailure("Time has elapsed over external call")
 
 
 @cocotb.test(expect_fail=False)
