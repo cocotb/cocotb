@@ -653,12 +653,13 @@ static PyObject *set_signal_val_binstr(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     const char *binstr;
+    gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "O&s", gpi_sim_hdl_converter, &hdl, &binstr)) {
+    if (!PyArg_ParseTuple(args, "O&is", gpi_sim_hdl_converter, &hdl, &action, &binstr)) {
         return NULL;
     }
 
-    gpi_set_signal_value_binstr(hdl, binstr);
+    gpi_set_signal_value_binstr(hdl, binstr, action);
     Py_RETURN_NONE;
 }
 
@@ -666,13 +667,14 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
+    gpi_set_action_t action;
     const char *str;
 
-    if (!PyArg_ParseTuple(args, "O&s", gpi_sim_hdl_converter, &hdl, &str)) {
+    if (!PyArg_ParseTuple(args, "O&is", gpi_sim_hdl_converter, &hdl, &action, &str)) {
         return NULL;
     }
 
-    gpi_set_signal_value_str(hdl, str);
+    gpi_set_signal_value_str(hdl, str, action);
     Py_RETURN_NONE;
 }
 
@@ -681,12 +683,13 @@ static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     double value;
+    gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "O&d", gpi_sim_hdl_converter, &hdl, &value)) {
+    if (!PyArg_ParseTuple(args, "O&id", gpi_sim_hdl_converter, &hdl, &action, &value)) {
         return NULL;
     }
 
-    gpi_set_signal_value_real(hdl, value);
+    gpi_set_signal_value_real(hdl, value, action);
     Py_RETURN_NONE;
 }
 
@@ -695,12 +698,13 @@ static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     long value;
+    gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "O&l", gpi_sim_hdl_converter, &hdl, &value)) {
+    if (!PyArg_ParseTuple(args, "O&il", gpi_sim_hdl_converter, &hdl, &action, &value)) {
         return NULL;
     }
 
-    gpi_set_signal_value_long(hdl, value);
+    gpi_set_signal_value_long(hdl, value, action);
     Py_RETURN_NONE;
 }
 

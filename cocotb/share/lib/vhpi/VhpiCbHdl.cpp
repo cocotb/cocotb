@@ -151,6 +151,24 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
 
 }
 
+vhpiPutValueModeT map_put_value_mode(gpi_set_action_t action) {
+    vhpiPutValueModeT put_value_mode = vhpiDeposit;
+    switch (action) {
+        case GPI_DEPOSIT:
+            put_value_mode = vhpiDepositPropagate;
+            break;
+        case GPI_FORCE:
+            put_value_mode = vhpiForcePropagate;
+            break;
+        case GPI_RELEASE:
+            put_value_mode = vhpiRelease;
+            break;
+        default:
+            assert(0);
+    }
+    return put_value_mode;
+}
+
 int VhpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
 
@@ -474,7 +492,7 @@ vhpiEnumT VhpiSignalObjHdl::chr2vhpi(const char value)
 }
 
 // Value related functions
-int VhpiLogicSignalObjHdl::set_signal_value(long value)
+int VhpiLogicSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
 {
     switch (m_value.format) {
         case vhpiEnumVal:
@@ -499,7 +517,7 @@ int VhpiLogicSignalObjHdl::set_signal_value(long value)
         }
     }
 
-    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, map_put_value_mode(action))) {
         check_vhpi_error();
         return -1;
     }
@@ -507,7 +525,7 @@ int VhpiLogicSignalObjHdl::set_signal_value(long value)
     return 0;
 }
 
-int VhpiLogicSignalObjHdl::set_signal_value_binstr(std::string &value)
+int VhpiLogicSignalObjHdl::set_signal_value_binstr(std::string &value, gpi_set_action_t action)
 {
     switch (m_value.format) {
         case vhpiEnumVal:
@@ -544,7 +562,7 @@ int VhpiLogicSignalObjHdl::set_signal_value_binstr(std::string &value)
         }
     }
 
-    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, map_put_value_mode(action))) {
         check_vhpi_error();
         return -1;
     }
@@ -553,7 +571,7 @@ int VhpiLogicSignalObjHdl::set_signal_value_binstr(std::string &value)
 }
 
 // Value related functions
-int VhpiSignalObjHdl::set_signal_value(long value)
+int VhpiSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
 {
     switch (m_value.format) {
         case vhpiEnumVecVal:
@@ -606,7 +624,7 @@ int VhpiSignalObjHdl::set_signal_value(long value)
             return -1;
         }
     }
-    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, map_put_value_mode(action))) {
         check_vhpi_error();
         return -1;
     }
@@ -614,7 +632,7 @@ int VhpiSignalObjHdl::set_signal_value(long value)
     return 0;
 }
 
-int VhpiSignalObjHdl::set_signal_value(double value)
+int VhpiSignalObjHdl::set_signal_value(double value, gpi_set_action_t action)
 {
     switch (m_value.format) {
         case vhpiRealVal:
@@ -631,7 +649,7 @@ int VhpiSignalObjHdl::set_signal_value(double value)
 
     }
 
-    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, map_put_value_mode(action))) {
         check_vhpi_error();
         return -1;
     }
@@ -639,7 +657,7 @@ int VhpiSignalObjHdl::set_signal_value(double value)
     return 0;
 }
 
-int VhpiSignalObjHdl::set_signal_value_binstr(std::string &value)
+int VhpiSignalObjHdl::set_signal_value_binstr(std::string &value, gpi_set_action_t action)
 {
     switch (m_value.format) {
         case vhpiEnumVal:
@@ -677,7 +695,7 @@ int VhpiSignalObjHdl::set_signal_value_binstr(std::string &value)
         }
     }
 
-    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, map_put_value_mode(action))) {
         check_vhpi_error();
         return -1;
     }
@@ -685,7 +703,7 @@ int VhpiSignalObjHdl::set_signal_value_binstr(std::string &value)
     return 0;
 }
 
-int VhpiSignalObjHdl::set_signal_value_str(std::string &value)
+int VhpiSignalObjHdl::set_signal_value_str(std::string &value, gpi_set_action_t action)
 {
     switch (m_value.format) {
 
@@ -704,7 +722,7 @@ int VhpiSignalObjHdl::set_signal_value_str(std::string &value)
         }
     }
 
-    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, map_put_value_mode(action))) {
         check_vhpi_error();
         return -1;
     }

@@ -173,17 +173,17 @@ public:
     double get_signal_value_real() override;
     long get_signal_value_long() override;
 
-    int set_signal_value(const long value) override;
-    int set_signal_value(const double value) override;
-    int set_signal_value_binstr(std::string &value) override;
-    int set_signal_value_str(std::string &value) override;
+    int set_signal_value(const long value, gpi_set_action_t action) override;
+    int set_signal_value(const double value, gpi_set_action_t action) override;
+    int set_signal_value_binstr(std::string &value, gpi_set_action_t action) override;
+    int set_signal_value_str(std::string &value, gpi_set_action_t action) override;
 
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(int edge) override;
     int initialise(std::string &name, std::string &fq_name) override;
 
 private:
-    int set_signal_value(s_vpi_value value);
+    int set_signal_value(s_vpi_value value, gpi_set_action_t action);
 
     VpiValueCbHdl m_rising_cb;
     VpiValueCbHdl m_falling_cb;
