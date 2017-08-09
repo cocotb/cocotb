@@ -493,30 +493,31 @@ int gpi_is_indexable(gpi_sim_hdl sig_hdl)
     return 0;
 }
 
-void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value)
+void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value, gpi_set_action_t action)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
-    obj_hdl->set_signal_value(value);
+
+    obj_hdl->set_signal_value(value, action);
 }
 
-void gpi_set_signal_value_binstr(gpi_sim_hdl sig_hdl, const char *binstr)
+void gpi_set_signal_value_binstr(gpi_sim_hdl sig_hdl, const char *binstr, gpi_set_action_t action)
 {
     std::string value = binstr;
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
-    obj_hdl->set_signal_value_binstr(value);
+    obj_hdl->set_signal_value_binstr(value, action);
 }
 
-void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str)
+void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str, gpi_set_action_t action)
 {
     std::string value = str;
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
-    obj_hdl->set_signal_value_str(value);
+    obj_hdl->set_signal_value_str(value, action);
 }
 
-void gpi_set_signal_value_real(gpi_sim_hdl sig_hdl, double value)
+void gpi_set_signal_value_real(gpi_sim_hdl sig_hdl, double value, gpi_set_action_t action)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
-    obj_hdl->set_signal_value(value);
+    obj_hdl->set_signal_value(value, action);
 }
 
 int gpi_get_num_elems(gpi_sim_hdl sig_hdl)

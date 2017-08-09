@@ -250,6 +250,24 @@ writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 (see :meth:`~cocotb.handle.ModifiableObject.setimmediatevalue`).
 
+In addition to regular value assignments (deposits), signals can be forced
+to a predetermined value or frozen at their current value. To achieve this,
+the various actions described in :ref:`assignment-methods-section` can be used.
+
+.. code-block:: python3
+
+    # Deposit action
+    dut.my_signal <= 12
+    dut.my_signal <= Deposit(12)  # equivalent syntax
+
+    # Force action
+    dut.my_signal <= Force(12)    # my_signal stays 12 until released
+
+    # Release action
+    dut.my_signal <= Release()    # Reverts any force/freeze assignments
+
+    # Freeze action
+    dut.my_signal <= Freeze()     # my_signal stays at current value until released
 
 
 Reading values from signals

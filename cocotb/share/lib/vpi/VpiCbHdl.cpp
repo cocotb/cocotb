@@ -27,6 +27,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <assert.h>
 #include "VpiImpl.h"
 
 extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
@@ -324,27 +325,27 @@ long VpiSignalObjHdl::get_signal_value_long()
 }
 
 // Value related functions
-int VpiSignalObjHdl::set_signal_value(long value)
+int VpiSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
 {
     s_vpi_value value_s;
 
     value_s.value.integer = (int)value;
     value_s.format = vpiIntVal;
 
-    return set_signal_value(value_s);
+    return set_signal_value(value_s, action);
 }
 
-int VpiSignalObjHdl::set_signal_value(double value)
+int VpiSignalObjHdl::set_signal_value(double value, gpi_set_action_t action)
 {
     s_vpi_value value_s;
 
     value_s.value.real = value;
     value_s.format = vpiRealVal;
 
-    return set_signal_value(value_s);
+    return set_signal_value(value_s, action);
 }
 
-int VpiSignalObjHdl::set_signal_value_binstr(std::string &value)
+int VpiSignalObjHdl::set_signal_value_binstr(std::string &value, gpi_set_action_t action)
 {
     s_vpi_value value_s;
 
@@ -354,10 +355,10 @@ int VpiSignalObjHdl::set_signal_value_binstr(std::string &value)
     value_s.value.str = &writable[0];
     value_s.format = vpiBinStrVal;
 
-    return set_signal_value(value_s);
+    return set_signal_value(value_s, action);
 }
 
-int VpiSignalObjHdl::set_signal_value_str(std::string &value)
+int VpiSignalObjHdl::set_signal_value_str(std::string &value, gpi_set_action_t action)
 {
     s_vpi_value value_s;
 
@@ -367,26 +368,47 @@ int VpiSignalObjHdl::set_signal_value_str(std::string &value)
     value_s.value.str = &writable[0];
     value_s.format = vpiStringVal;
 
-    return set_signal_value(value_s);
+    return set_signal_value(value_s, action);
 }
 
-int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s)
+int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s, gpi_set_action_t action)
 {
     FENTER
-
+    PLI_INT32 vpi_put_flag = -1;
     s_vpi_time vpi_time_s;
 
     vpi_time_s.type = vpiSimTime;
     vpi_time_s.high = 0;
     vpi_time_s.low  = 0;
 
-    if (vpiStringVar == vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>())) {
-        // assigning to a vpiStringVar only seems to work with vpiNoDelay
+    switch (action) {
+    case GPI_DEPOSIT:
+        if (vpiStringVar == vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>())) {
+            // assigning to a vpiStringVar only seems to work with vpiNoDelay
+            vpi_put_flag = vpiNoDelay;
+        } else {
+            // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+            vpi_put_flag = vpiInertialDelay;
+        }
+        break;
+    case GPI_FORCE:
+        vpi_put_flag = vpiForceFlag;
+        break;
+    case GPI_RELEASE:
+        // Best to pass its current value to the sim when releasing
+        vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
+        vpi_put_flag = vpiReleaseFlag;
+        break;
+    default:
+        assert(0);
+    }
+
+    if (vpi_put_flag == vpiNoDelay) {
         vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, NULL, vpiNoDelay);
     } else {
-        // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
-        vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
+        vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpi_put_flag);
     }
+
     check_vpi_error();
 
     FEXIT

@@ -175,10 +175,10 @@ public:
 
     int m_length;
 
-    virtual int set_signal_value(const long value) = 0;
-    virtual int set_signal_value(const double value) = 0;
-    virtual int set_signal_value_str(std::string &value) = 0;
-    virtual int set_signal_value_binstr(std::string &value) = 0;
+    virtual int set_signal_value(const long value, gpi_set_action_t action) = 0;
+    virtual int set_signal_value(const double value, gpi_set_action_t action) = 0;
+    virtual int set_signal_value_str(std::string &value, gpi_set_action_t action) = 0;
+    virtual int set_signal_value_binstr(std::string &value, gpi_set_action_t action) = 0;
     //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
     // but the explicit ones are probably better
 

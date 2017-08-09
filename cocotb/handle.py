@@ -571,6 +571,35 @@ class NonConstantObject(NonHierarchyIndexableObject):
         """An iterator for gathering all loads on a signal."""
         return _SimIterator(self._handle, simulator.LOADS)
 
+class _SetAction:
+    """Base class representing the type of action used while write-accessing a handle."""
+    pass
+
+class _SetValueAction(_SetAction):
+    __slots__ = ("value",)
+    """Base class representing the type of action used while write-accessing a handle with a value."""
+    def __init__(self, value):
+        self.value = value
+
+class Deposit(_SetValueAction):
+    """Action used for placing a value into a given handle."""
+    def _as_gpi_args_for(self, hdl):
+        return self.value, 0  # GPI_DEPOSIT
+
+class Force(_SetValueAction):
+    """Action used to force a handle to a given value until a release is applied."""
+    def _as_gpi_args_for(self, hdl):
+        return self.value, 1  # GPI_FORCE
+
+class Freeze(_SetAction):
+    """Action used to make a handle keep its current value until a release is used."""
+    def _as_gpi_args_for(self, hdl):
+        return hdl.value, 1  # GPI_FORCE
+
+class Release(_SetAction):
+    """Action used to stop the effects of a previously applied force/freeze action."""
+    def _as_gpi_args_for(self, hdl):
+        return 0, 2  # GPI_RELEASE
 
 class ModifiableObject(NonConstantObject):
     """Base class for simulator objects whose values can be modified."""
@@ -592,10 +621,11 @@ class ModifiableObject(NonConstantObject):
             TypeError: If target is not wide enough or has an unsupported type
                  for value assignment.
         """
-        if isinstance(value, _py_compat.integer_types) and value < 0x7fffffff and len(self) <= 32:
-            simulator.set_signal_val_long(self._handle, value)
-            return
+        value, set_action = self._check_for_set_action(value)
 
+        if isinstance(value, _py_compat.integer_types) and value < 0x7fffffff and len(self) <= 32:
+            simulator.set_signal_val_long(self._handle, set_action, value)
+            return
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
         elif isinstance(value, _py_compat.integer_types):
@@ -619,7 +649,12 @@ class ModifiableObject(NonConstantObject):
             self._log.critical("Unsupported type for value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
-        simulator.set_signal_val_binstr(self._handle, value.binstr)
+        simulator.set_signal_val_binstr(self._handle, set_action, value.binstr)
+
+    def _check_for_set_action(self, value):
+        if not isinstance(value, _SetAction):
+            return value, 0  # GPI_DEPOSIT
+        return value._as_gpi_args_for(self)
 
     @NonConstantObject.value.getter
     def value(self):
@@ -660,6 +695,8 @@ class RealObject(ModifiableObject):
             TypeError: If target has an unsupported type for
                 real value assignment.
         """
+        value, set_action = self._check_for_set_action(value)
+
         try:
             value = float(value)
         except ValueError:
@@ -667,7 +704,7 @@ class RealObject(ModifiableObject):
                                (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
-        simulator.set_signal_val_real(self._handle, value)
+        simulator.set_signal_val_real(self._handle, set_action, value)
 
     @ModifiableObject.value.getter
     def value(self):
@@ -693,13 +730,15 @@ class EnumObject(ModifiableObject):
             TypeError: If target has an unsupported type for
                  integer value assignment.
         """
+        value, set_action = self._check_for_set_action(value)
+
         if isinstance(value, BinaryValue):
             value = int(value)
         elif not isinstance(value, _py_compat.integer_types):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
-        simulator.set_signal_val_long(self._handle, value)
+        simulator.set_signal_val_long(self._handle, set_action, value)
 
     @ModifiableObject.value.getter
     def value(self):
@@ -722,13 +761,15 @@ class IntegerObject(ModifiableObject):
             TypeError: If target has an unsupported type for
                  integer value assignment.
         """
+        value, set_action = self._check_for_set_action(value)
+
         if isinstance(value, BinaryValue):
             value = int(value)
         elif not isinstance(value, _py_compat.integer_types):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
-        simulator.set_signal_val_long(self._handle, value)
+        simulator.set_signal_val_long(self._handle, set_action, value)
 
     @ModifiableObject.value.getter
     def value(self):
@@ -751,11 +792,13 @@ class StringObject(ModifiableObject):
             TypeError: If target has an unsupported type for
                  string value assignment.
         """
+        value, set_action = self._check_for_set_action(value)
+
         if not isinstance(value, str):
             self._log.critical("Unsupported type for string value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
-        simulator.set_signal_val_str(self._handle, value)
+        simulator.set_signal_val_str(self._handle, set_action, value)
 
     @ModifiableObject.value.getter
     def value(self):

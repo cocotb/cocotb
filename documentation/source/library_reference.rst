@@ -198,6 +198,21 @@ Simulation Object Handles
     :show-inheritance:
     :synopsis: Classes for simulation objects.
 
+.. assigment-methods-section
+
+Assignment Methods
+------------------
+
+.. currentmodule:: cocotb.handle
+
+.. autoclass:: Deposit
+
+.. autoclass:: Force
+
+.. autoclass:: Freeze
+
+.. autoclass:: Release
+
 Implemented Testbench Structures
 ================================
 
