@@ -150,6 +150,9 @@ def test_ext_function(dut):
 def yield_to_readwrite(dut):
     yield RisingEdge(dut.clk)
     dut._log.info("Returning from yield_to_readwrite")
+    yield RisingEdge(dut.clk)
+    dut._log.info("Returning from yield_to_readwrite")
+    yield Timer(1, "ns")
     raise ReturnValue(2)
 
 

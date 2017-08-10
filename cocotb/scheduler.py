@@ -72,29 +72,71 @@ from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error, ExternalException)
 
-@cocotb.decorators.function
-def unblock_external(bridge):
-    yield NullTrigger()
-    bridge.set_out()
-
+class external_state(object):
+    INIT = 0
+    RUNNING = 1
+    PAUSED = 2
+    EXITED = 3
 
 @cocotb.decorators.public
 class external_waiter(object):
+
     def __init__(self):
         self.result = None
         self.thread = None
         self.event = Event()
+        self.state = external_state.INIT
+        self.cond = threading.Condition()
         self._log = SimLog("cocotb.externel.thead.%s" % self.thread, id(self))
 
+    def _propogate_state(self, new_state):
+        """ This can be called from threads other than main so _log is only called from main thread"""
+        self.cond.acquire()
+        print("Chainging state from %d -> %d from %s" % (self.state, new_state, threading.current_thread()))
+        self.state = new_state
+        self.cond.notify()
+        self.cond.release()
+
     def thread_done(self):
-        self._log.debug("Thread finished from %s" % (threading.current_thread()))
+        self._log.warn("Thread finished from %s" % (threading.current_thread()))
         # trigger the pending co-routine
         self.event.set()
+        self._propogate_state(external_state.EXITED)
+
+    def thread_suspend(self):
+        """ only called from an external so _log not safe"""
+        print("%s has yielded so telling main thread to carry on" % (threading.current_thread()))
+        self._propogate_state(external_state.PAUSED)
 
     def thread_start(self):
+        if self.state > external_state.INIT:
+            return
         if not self.thread.is_alive():
-            self._log.debug("Thread being started by %s" % (threading.current_thread()))
+            self._log.info("Thread %s being started by %s" % (self.thread, threading.current_thread()))
+            self._propogate_state(external_state.RUNNING)
             self.thread.start()
+
+    def thread_resume(self):
+        self._propogate_state(external_state.RUNNING)
+        
+    def thread_wait(self):
+        self._log.warn("Waiting for the condition lock %s" % threading.current_thread())
+        self.cond.acquire()
+
+        while self.state == external_state.RUNNING:
+            self.cond.wait()
+
+        if self.state == external_state.EXITED:
+            self._log.warn("Thread %s has exited from %s" % (self.thread, threading.current_thread()))
+        elif self.state == external_state.PAUSED:
+            self._log.warn("Thread %s has called yield from %s"  % (self.thread, threading.current_thread()))
+        elif self.state == external_state.RUNNING:
+            self._log.warn("Thread %s is in RUNNING from %d"  % (self.thread, threading.current_thread()))
+        else:
+            raise Exception("Thread %s state was not allowed from %s"  % (self.thread, threading.current_thread()))
+
+        self.cond.release()
+        return self.state
 
 class Scheduler(object):
     """
@@ -179,6 +221,7 @@ class Scheduler(object):
         self._pending_callbacks = []
         self._pending_triggers = []
         self._pending_threads = []
+        self._paused_threads = []
 
         self._terminate = False
         self._test_result = None
@@ -430,6 +473,22 @@ class Scheduler(object):
         """Queue a coroutine for execution"""
         self._pending_coros.append(coroutine)
 
+    def queue_function(self, coroutine):
+        """
+        Queue a coroutine for execution and move the containing thread
+        so that it does not block execution of the main thread any longer
+        """
+
+        # We should be able to find ourselves inside the _pending_threads list
+
+        for t in self._pending_threads:
+            if t.thread == threading.current_thread():
+                self.log.info("Found myself telling main")
+                t.thread_suspend()
+                self._pending_coros.append(coroutine)
+                return t
+
+
     def run_in_executor(self, func, *args, **kwargs):
         """
         Run the corouting in a seperate execution thread
@@ -444,6 +503,7 @@ class Scheduler(object):
         def execute_external(func, _waiter):
             try:
                 _waiter.result = func(*args, **kwargs)
+                self.log.warn("Execution of external routine done %s" % threading.current_thread())
             except Exception as e:
                 _waiter.result = e
             _waiter.thread_done()
@@ -588,12 +648,27 @@ class Scheduler(object):
         # We do not return from here until pending threads have completed, but only
         # from the main thread, this seems like it could be problematic in cases
         # where a sim might change what this thread is.
+
         if self._main_thread is threading.current_thread():
+
+            #for ext in self._paused_threads:
+            #    self.log.info("Have a paused thread in state %s" % ext.state)
+            #    if external_state.RUNNING == ext.state:
+            #        self._pending_threads.append(ext)
+            #        self._paused_threads.remove(ext)
+            #    #if external_state.EXITED == ext.state:
+            #    #    self._paused_threads.remove(ext)
+
             for ext in self._pending_threads:
                 ext.thread_start()
-                self.log.debug("Blocking from %s on %s" % (threading.current_thread(), ext.thread))
-                ext.thread.join()
-                self._pending_threads.remove(ext)
+                self.log.info("Blocking from %s on %s" % (threading.current_thread(), ext.thread))
+                state = ext.thread_wait()
+                self.log.info("Back from wait on self %s with newstate %d" % (threading.current_thread(), state))
+                #if external_state.PAUSED == state:
+                #    self._paused_threads.append(ext)
+                #self._pending_threads.remove(ext)
+                if state == external_state.EXITED:
+                    self._pending_threads.remove(ext)
 
         # Handle any newly queued coroutines that need to be scheduled
         while self._pending_coros:
