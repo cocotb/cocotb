@@ -180,7 +180,7 @@ import cocotb.wavedrom
 @cocotb.test()
 def wavedrom_test(dut):
     """
-    Generate a JSON wavedrom diagram of a trace
+    Generate a JSON wavedrom diagram of a trace and save it to wavedrom.json
     """
     cocotb.fork(Clock(dut.clk,5000).start())
     yield RisingEdge(dut.clk)
@@ -192,4 +192,5 @@ def wavedrom_test(dut):
         yield tb.csr.read(0)
         yield RisingEdge(dut.clk)
         yield RisingEdge(dut.clk)
-        dut._log.info(waves.dumpj())
+        dut._log.info(waves.dumpj(header = {'text':'WaveDrom example', 'tick':0}))
+        waves.write('wavedrom.json', header = {'tick':0}, config = {'hscale':3})
