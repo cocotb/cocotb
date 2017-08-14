@@ -28,7 +28,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 from __future__ import print_function
-from math import log, ceil
 from cocotb.utils import get_python_integer_types
 
 import os
@@ -52,6 +51,16 @@ def resolve(string):
 	    bits = "{0:b}".format(random.getrandbits(1))
             string = string.replace(char, bits)
     return string
+
+
+def _clog2(val):
+    if val < 0:
+        raise ValueError("_clog2 can't take a negative")
+    exp = 0
+    while True:
+        if (1 << exp) >= val:
+            return exp
+        exp += 1
 
 
 class BinaryRepresentation():
@@ -153,8 +162,7 @@ class BinaryValue(object):
 
     def _convert_to_twos_comp(self, x):
         if x < 0:
-            ceil_log2 = int(ceil(log(abs(x), 2)))
-            binstr = bin(2 ** (ceil_log2 + 1) + x)[2:]
+            binstr = bin(2 ** (_clog2(abs(x)) + 1) + x)[2:]
             binstr = self._adjust_twos_comp(binstr)
         else:
             binstr = self._adjust_twos_comp('0' + bin(x)[2:])

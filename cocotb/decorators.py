@@ -357,6 +357,28 @@ def external(func):
 
     return wrapped
 
+@public
+class hook(coroutine):
+    """Decorator to mark a function as a hook for cocotb
+
+    All hooks are run at the beginning of a cocotb test suite, prior to any
+    test code being run."""
+    def __init__(self):
+        pass
+
+    def __call__(self, f):
+        super(hook, self).__init__(f)
+
+        def _wrapped_hook(*args, **kwargs):
+            try:
+                return RunningCoroutine(self._func(*args, **kwargs), self)
+            except Exception as e:
+                raise raise_error(self, str(e))
+
+        _wrapped_hook.im_hook = True
+        _wrapped_hook.name = self._func.__name__
+        _wrapped_hook.__name__ = self._func.__name__
+        return _wrapped_hook
 
 @public
 class test(coroutine):

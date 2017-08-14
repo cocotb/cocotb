@@ -71,7 +71,7 @@ def _my_import(name):
 class RegressionManager(object):
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, root_name, modules, tests=None, seed=None):
+    def __init__(self, root_name, modules, tests=None, seed=None, hooks=[]):
         """
         Args:
             modules (list): A list of python module names to run
@@ -87,6 +87,7 @@ class RegressionManager(object):
         self._cov = None
         self.log = SimLog("cocotb.regression")
         self._seed = seed
+        self._hooks = hooks
 
     def initialise(self):
 
@@ -174,6 +175,20 @@ class RegressionManager(object):
                           (valid_tests.module,
                            valid_tests.funcname))
 
+        for module_name in self._hooks:
+            self.log.info("Loading hook from module '"+module_name+"'")
+            module = _my_import(module_name)
+
+            for thing in vars(module).values():
+                if hasattr(thing, "im_hook"):
+                    try:
+                        test = thing(self._dut)
+                    except TestError:
+                        self.log.warning("Failed to initialize hook %s" % thing.name)
+                    else:
+                        cocotb.scheduler.add(test)
+
+
     def tear_down(self):
         """It's the end of the world as we know it"""
         if self.failures:
@@ -198,6 +213,12 @@ class RegressionManager(object):
         if not self._queue:
             return None
         return self._queue.pop(0)
+
+    def _add_failure(self, result):
+        self.xunit.add_failure(stdout=repr(str(result)),
+                               stderr="\n".join(self._running_test.error_messages),
+                               message="Test failed with random_seed={}".format(self._seed))
+        self.failures += 1
 
     def handle_result(self, result):
         """Handle a test result
@@ -238,19 +259,13 @@ class RegressionManager(object):
               self._running_test.expect_error):
             self.log.error("Test passed but we expected an error: " +
                            _result_was())
-            self.xunit.add_failure(stdout=repr(str(result)),
-                                   stderr="\n".join(
-                                   self._running_test.error_messages))
-            self.failures += 1
+            self._add_failure(result)
             result_pass = False
 
         elif isinstance(result, TestSuccess):
             self.log.error("Test passed but we expected a failure: " +
                            _result_was())
-            self.xunit.add_failure(stdout=repr(str(result)),
-                                   stderr="\n".join(
-                                   self._running_test.error_messages))
-            self.failures += 1
+            self._add_failure(result)
             result_pass = False
 
         elif isinstance(result, TestError) and self._running_test.expect_error:
@@ -262,20 +277,14 @@ class RegressionManager(object):
             else:
                 self.log.error("Test error has lead to simulator shuttting us "
                                "down")
-                self.xunit.add_failure(stdout=repr(str(result)),
-                                       stderr="\n".join(
-                                       self._running_test.error_messages))
-                self.failures += 1
+                self._add_failure(result)
                 self._store_test_result(self._running_test.module, self._running_test.funcname, False, sim_time_ns, real_time, ratio_time)
                 self.tear_down()
                 return
 
         else:
             self.log.error("Test Failed: " + _result_was())
-            self.xunit.add_failure(stdout=repr(str(result)),
-                                   stderr="\n".join(
-                                   self._running_test.error_messages))
-            self.failures += 1
+            self._add_failure(result)
             result_pass = False
 
         self._store_test_result(self._running_test.module, self._running_test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
