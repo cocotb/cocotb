@@ -253,6 +253,20 @@ def test_external_and_continue(dut):
     yield Timer(10, "ns")
     yield RisingEdge(dut.clk)
 
+@cocotb.coroutine
+def run_external(dut):
+    value = yield external(test_ext_function_access)(dut)
+    raise ReturnValue(value)
+
+@cocotb.test(expect_fail=False)
+def test_external_from_fork(dut):
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    coro = cocotb.fork(run_external(dut))
+    yield coro.join()
+
+    dut._log.info("Back from join")
+
 
 @cocotb.test(expect_fail=True, skip=True)
 def ztest_ext_exit_error(dut):
