@@ -136,7 +136,7 @@ class external_waiter(object):
             elif self.state == external_state.RUNNING:
                 self._log.debug("Thread %s is in RUNNING from %d"  % (self.thread, threading.current_thread()))
 
-        if self.state == INIT:
+        if self.state == external_state.INIT:
             raise Exception("Thread %s state was not allowed from %s"  % (self.thread, threading.current_thread()))
 
         self.cond.release()
