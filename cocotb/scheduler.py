@@ -219,7 +219,6 @@ class Scheduler(object):
         self._pending_callbacks = []
         self._pending_triggers = []
         self._pending_threads = []
-        self._paused_threads = []
 
         self._terminate = False
         self._test_result = None
@@ -684,10 +683,18 @@ class Scheduler(object):
         """
         Clear up all our state
 
-        Unprime all pending triggers and kill off any coroutines
+        Unprime all pending triggers and kill off any coroutines stop all externals
         """
         for trigger, waiting in self._trigger2coros.items():
             for coro in waiting:
                 if _debug:
                     self.log.debug("Killing %s" % str(coro))
                 coro.kill()
+
+        if self._main_thread is not threading.current_thread():
+            raise Exception("Cleanup() called outside of the main thread")
+
+        for ext in self._pending_threads:
+            self.log.info("Waiting for %s to exit", ext.thread)
+
+
