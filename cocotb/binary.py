@@ -41,7 +41,7 @@ def resolve(string):
     for char in BinaryValue._resolve_to_1:
         string = string.replace(char, "1")
     for char in BinaryValue._resolve_to_error:
-	if resolve_x_to == "VALUE_ERROR":
+	if resolve_x_to == "VALUE_ERROR" and char in string:
 	    raise ValueError("Unable to resolve to binary >%s<" % string)
 	elif resolve_x_to == "ZEROS":
 	    string = string.replace(char, "0")
