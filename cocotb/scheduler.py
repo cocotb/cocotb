@@ -98,7 +98,8 @@ class external_waiter(object):
         self.cond.release()
 
     def thread_done(self):
-        self._log.debug("Thread finished from %s" % (threading.current_thread()))
+        if _debug:
+            self._log.debug("Thread finished from %s" % (threading.current_thread()))
         self._propogate_state(external_state.EXITED)
 
     def thread_suspend(self):
@@ -110,7 +111,8 @@ class external_waiter(object):
         if self.state > external_state.INIT:
             return
         if not self.thread.is_alive():
-            self._log.debug("Thread %s being started by %s" % (self.thread, threading.current_thread()))
+            if _debug:
+                self._log.debug("Thread %s being started by %s" % (self.thread, threading.current_thread()))
             self._propogate_state(external_state.RUNNING)
             self.thread.start()
 
@@ -118,19 +120,23 @@ class external_waiter(object):
         self._propogate_state(external_state.RUNNING)
         
     def thread_wait(self):
-        self._log.debug("Waiting for the condition lock %s" % threading.current_thread())
+        if _debug:
+            self._log.debug("Waiting for the condition lock %s" % threading.current_thread())
+
         self.cond.acquire()
 
         while self.state == external_state.RUNNING:
             self.cond.wait()
 
-        if self.state == external_state.EXITED:
-            self._log.debug("Thread %s has exited from %s" % (self.thread, threading.current_thread()))
-        elif self.state == external_state.PAUSED:
-            self._log.debug("Thread %s has called yield from %s"  % (self.thread, threading.current_thread()))
-        elif self.state == external_state.RUNNING:
-            self._log.debug("Thread %s is in RUNNING from %d"  % (self.thread, threading.current_thread()))
-        else:
+        if _debug:
+            if self.state == external_state.EXITED:
+                self._log.debug("Thread %s has exited from %s" % (self.thread, threading.current_thread()))
+            elif self.state == external_state.PAUSED:
+                self._log.debug("Thread %s has called yield from %s"  % (self.thread, threading.current_thread()))
+            elif self.state == external_state.RUNNING:
+                self._log.debug("Thread %s is in RUNNING from %d"  % (self.thread, threading.current_thread()))
+
+        if self.state == INIT:
             raise Exception("Thread %s state was not allowed from %s"  % (self.thread, threading.current_thread()))
 
         self.cond.release()
@@ -480,7 +486,6 @@ class Scheduler(object):
 
         for t in self._pending_threads:
             if t.thread == threading.current_thread():
-                self.log.debug("Found myself telling main")
                 t.thread_suspend()
                 self._pending_coros.append(coroutine)
                 return t
@@ -500,7 +505,8 @@ class Scheduler(object):
         def execute_external(func, _waiter):
             try:
                 _waiter.result = func(*args, **kwargs)
-                self.log.debug("Execution of external routine done %s" % threading.current_thread())
+                if _debug:
+                    self.log.debug("Execution of external routine done %s" % threading.current_thread())
             except Exception as e:
                 _waiter.result = e
             _waiter.thread_done()
@@ -512,7 +518,6 @@ class Scheduler(object):
 
         waiter.thread = thread;
         self._pending_threads.append(waiter)
-        self.log.debug("Added %s to scheduler" % waiter)
 
         return waiter
 
@@ -650,9 +655,11 @@ class Scheduler(object):
 
             for ext in self._pending_threads:
                 ext.thread_start()
-                self.log.debug("Blocking from %s on %s" % (threading.current_thread(), ext.thread))
+                if _debug:
+                    self.log.debug("Blocking from %s on %s" % (threading.current_thread(), ext.thread))
                 state = ext.thread_wait()
-                self.log.debug("Back from wait on self %s with newstate %d" % (threading.current_thread(), state))
+                if _debug:
+                    self.log.debug("Back from wait on self %s with newstate %d" % (threading.current_thread(), state))
                 if state == external_state.EXITED:
                     self._pending_threads.remove(ext)
                     ext.event.set()
@@ -695,6 +702,6 @@ class Scheduler(object):
             raise Exception("Cleanup() called outside of the main thread")
 
         for ext in self._pending_threads:
-            self.log.info("Waiting for %s to exit", ext.thread)
+            self.log.warn("Waiting for %s to exit", ext.thread)
 
 

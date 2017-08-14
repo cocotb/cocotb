@@ -288,7 +288,6 @@ class function(object):
         @coroutine
         def execute_function(self, event):
             event.result = yield cocotb.coroutine(self._func)(*args, **kwargs)
-            self.log.debug("Function Back from Yield %s" % threading.current_thread())
             event.set()
 
         self._event = threading.Event()
@@ -297,7 +296,6 @@ class function(object):
         # This blocks the calling external thread until the coroutine finishes
         self._event.wait()
         waiter.thread_resume()
-        self.log.debug("Function back from coroutine %s" % threading.current_thread())
 
         return self._event.result
 
@@ -327,10 +325,8 @@ class external(object):
 
             if ext.result is not None:
                 if isinstance(ext.result, Exception):
-                    self._log.debug("External Complete with exception %s" % threading.current_thread())
                     raise ExternalException(ext.result)
                 else:
-                    self._log.debug("External Complete with return value %s" % threading.current_thread())
                     raise ReturnValue(ext.result)
 
         return wrapper()
