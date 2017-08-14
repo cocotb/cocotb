@@ -267,7 +267,6 @@ def test_external_from_fork(dut):
 
     dut._log.info("Back from join")
 
-
 @cocotb.test(expect_fail=True, skip=True)
 def ztest_ext_exit_error(dut):
     """Test that a premature exit of the sim at it's request still results in

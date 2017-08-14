@@ -296,7 +296,6 @@ class function(object):
         # This blocks the calling external thread until the coroutine finishes
         self._event.wait()
         waiter.thread_resume()
-
         return self._event.result
 
     def __get__(self, obj, type=None):
@@ -307,7 +306,6 @@ class function(object):
 @public
 class external(object):
     """Decorator to apply to an external function to enable calling from cocotb
-
     This currently creates a new execution context for each function that is
     call. Scope for this to be streamlined to a queue in future
     """
