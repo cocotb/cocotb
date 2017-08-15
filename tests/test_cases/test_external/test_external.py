@@ -194,7 +194,10 @@ def test_time_in_external(dut):
     yield Timer(10, 'ns')
     time = get_sim_time('ns')
     dut._log.info("Time at start of test = %d" % time)
-    yield external(test_print_sim_time)(dut, time)
+    for i in range(100):
+        dut._log.info("Loop call %d" % i)
+        yield external(test_print_sim_time)(dut, time)
+
     time_now = get_sim_time('ns')
     yield Timer(10, 'ns')
 
