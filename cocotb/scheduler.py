@@ -66,7 +66,7 @@ else:
 
 import cocotb
 import cocotb.decorators
-from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
+from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly, PythonTrigger,
                              _NextTimeStep, _ReadWrite, Event, NullTrigger)
 from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
@@ -103,16 +103,13 @@ class external_waiter(object):
         self._propogate_state(external_state.EXITED)
 
     def thread_suspend(self):
-        if _debug:
-            self._log.debug("%s has yielded so telling main thread to carry on" % str(threading.current_thread()))
         self._propogate_state(external_state.PAUSED)
 
     def thread_start(self):
         if self.state > external_state.INIT:
             return
+
         if not self.thread.is_alive():
-            if _debug:
-                self._log.debug("Thread %s being started by %s" % (self.thread, threading.current_thread()))
             self._propogate_state(external_state.RUNNING)
             self.thread.start()
 
@@ -225,6 +222,7 @@ class Scheduler(object):
         self._pending_callbacks = []
         self._pending_triggers = []
         self._pending_threads = []
+        self._pending_events = []   # Events we need to call set on once we've unwound
 
         self._terminate = False
         self._test_result = None
@@ -414,6 +412,13 @@ class Scheduler(object):
             self.schedule(coro, trigger=trigger)
             if _debug:
                 self.log.debug("Scheduled coroutine %s" % (coro.__name__))
+
+        # Schedule may have queued up some events so we'll burn through those
+        while self._pending_events:
+            if _debug:
+                self.log.debug("Scheduling pending event %s" %
+                               (str(self._pending_events[0])))
+            self._pending_events.pop(0).set()
 
         while self._pending_triggers:
             if _debug:
@@ -650,6 +655,11 @@ class Scheduler(object):
         # We do not return from here until pending threads have completed, but only
         # from the main thread, this seems like it could be problematic in cases
         # where a sim might change what this thread is.
+        def unblock_event(ext):
+            @cocotb.coroutine
+            def wrapper():
+                ext.event.set()
+                yield PythonTrigger()
 
         if self._main_thread is threading.current_thread():
 
@@ -662,7 +672,7 @@ class Scheduler(object):
                     self.log.debug("Back from wait on self %s with newstate %d" % (threading.current_thread(), state))
                 if state == external_state.EXITED:
                     self._pending_threads.remove(ext)
-                    ext.event.set()
+                    self._pending_events.append(ext.event)
 
         # Handle any newly queued coroutines that need to be scheduled
         while self._pending_coros:
