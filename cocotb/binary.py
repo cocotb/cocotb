@@ -49,7 +49,7 @@ def resolve(string):
             string = string.replace(char, "1")
         elif resolve_x_to == "RANDOM":
             bits = "{0:b}".format(random.getrandbits(1))
-                string = string.replace(char, bits)
+            string = string.replace(char, bits)
     return string
 
 
