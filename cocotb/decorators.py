@@ -311,7 +311,7 @@ class external(object):
     """
     def __init__(self, func):
         self._func = func
-        self._log = SimLog("cocotb.externel.%s" % self._func.__name__, id(self))
+        self._log = SimLog("cocotb.external.%s" % self._func.__name__, id(self))
 
     def __call__(self, *args, **kwargs):
 
@@ -328,24 +328,6 @@ class external(object):
                     raise ReturnValue(ext.result)
 
         return wrapper()
-
-@public
-class hook(coroutine):
-    """Decorator to mark a function as a hook for cocotb
-
-    All hooks are run at the beginning of a cocotb test suite, prior to any
-    test code being run."""
-    def __init__(self):
-        pass
-
-    def __call__(self, f):
-        super(hook, self).__init__(f)
-
-        def _wrapped_hook(*args, **kwargs):
-            try:
-                return RunningCoroutine(self._func(*args, **kwargs), self)
-            except Exception as e:
-                raise raise_error(self, str(e))
 
 @public
 class hook(coroutine):

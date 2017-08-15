@@ -87,12 +87,12 @@ class external_waiter(object):
         self.event = Event()
         self.state = external_state.INIT
         self.cond = threading.Condition()
-        self._log = SimLog("cocotb.externel.thead.%s" % self.thread, id(self))
+        self._log = SimLog("cocotb.external.thead.%s" % self.thread, id(self))
 
     def _propogate_state(self, new_state):
-        """ This can be called from threads other than main so _log is only called from main thread"""
         self.cond.acquire()
-        #print("Chainging state from %d -> %d from %s" % (self.state, new_state, threading.current_thread()))
+        if _debug:
+            self._log.debug("Changing state from %d -> %d from %s" % (self.state, new_state, threading.current_thread()))
         self.state = new_state
         self.cond.notify()
         self.cond.release()
@@ -103,8 +103,8 @@ class external_waiter(object):
         self._propogate_state(external_state.EXITED)
 
     def thread_suspend(self):
-        """ only called from an external so _log not safe"""
-        #print("%s has yielded so telling main thread to carry on" % (threading.current_thread()))
+        if _debug:
+            self._log.debug("%s has yielded so telling main thread to carry on" % str(threading.current_thread()))
         self._propogate_state(external_state.PAUSED)
 
     def thread_start(self):
@@ -513,7 +513,7 @@ class Scheduler(object):
 
         waiter = external_waiter()
         thread = threading.Thread(group=None, target=execute_external,
-                                  name=func.__name__ + "thread",
+                                  name=func.__name__ + "_thread",
                                   args=([func, waiter]), kwargs={})
 
         waiter.thread = thread;
