@@ -59,7 +59,7 @@ class Bus(object):
         TODO:
             Support for struct/record ports where signals are member names
     """
-    def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_"):
+    def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", array_idx=None):
         """
         Args:
             entity (SimHandle):   SimHandle instance to the entity containing the
@@ -90,6 +90,10 @@ class Bus(object):
                 signame = name + bus_separator + sig_name
             else:
                 signame = sig_name
+
+            if array_idx is not None:
+                signame += "[{:d}]".format(array_idx)
+            self._entity._log.debug("Signal name {}".format(signame))
             setattr(self, attr_name, getattr(entity, signame))
             self._signals[attr_name] = getattr(self, attr_name)
 
@@ -99,6 +103,11 @@ class Bus(object):
                 signame = name + bus_separator + sig_name
             else:
                 signame = sig_name
+
+            if array_idx is not None:
+                signame += "[{:d}]".format(array_idx)
+
+            self._entity._log.debug("Signal name {}".format(signame))
             # Attempts to access a signal that doesn't exist will print a
             # backtrace so we 'peek' first, slightly un-pythonic
             if entity.__hasattr__(signame):
