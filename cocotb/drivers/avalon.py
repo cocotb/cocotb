@@ -667,12 +667,9 @@ class AvalonSTPkts(ValidatedBusDriver):
             else:
                 self.bus <= word
 
-            # If this is a bus with a ready signal, wait for this word to
-            # be acknowledged
-            if hasattr(self.bus, "ready"):
-                yield ReadOnly()
-                if (self.bus.valid):
-                    yield self._wait_ready()
+            # Wait for valid words to be acknowledged
+            if not hasattr(word, "valid") or word.valid:
+                yield self._wait_ready()
 
         yield clkedge
         self.bus.valid <= 0
