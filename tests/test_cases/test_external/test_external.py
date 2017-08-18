@@ -169,9 +169,9 @@ def test_ext_function_return(dut):
 def test_print_sim_time(dut, base_time):
     # We are not calling out here so time should not advance
     # And should also remain consistent
-    for _ in range(100):
+    for _ in range(1):
         _t = get_sim_time('ns')
-        dut._log.info("Time reported = %d", _t)
+        #dut._log.info("Time reported = %d", _t)
         if _t != base_time:
             raise TestFailure("Time reported does not match base_time %f != %f" %
                               (_t, base_time))
@@ -194,7 +194,7 @@ def test_time_in_external(dut):
     yield Timer(10, 'ns')
     time = get_sim_time('ns')
     dut._log.info("Time at start of test = %d" % time)
-    for i in range(100):
+    for i in range(1000):
         dut._log.info("Loop call %d" % i)
         yield external(test_print_sim_time)(dut, time)
 
