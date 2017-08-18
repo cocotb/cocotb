@@ -169,9 +169,9 @@ def test_ext_function_return(dut):
 def test_print_sim_time(dut, base_time):
     # We are not calling out here so time should not advance
     # And should also remain consistent
-    for _ in range(1):
+    for _ in range(10):
         _t = get_sim_time('ns')
-        #dut._log.info("Time reported = %d", _t)
+        dut._log.info("Time reported = %d", _t)
         if _t != base_time:
             raise TestFailure("Time reported does not match base_time %f != %f" %
                               (_t, base_time))
