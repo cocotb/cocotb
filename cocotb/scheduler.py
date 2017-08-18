@@ -413,12 +413,13 @@ class Scheduler(object):
             if _debug:
                 self.log.debug("Scheduled coroutine %s" % (coro.__name__))
 
-        # Schedule may have queued up some events so we'll burn through those
-        while self._pending_events:
-            if _debug:
-                self.log.debug("Scheduling pending event %s" %
-                               (str(self._pending_events[0])))
-            self._pending_events.pop(0).set()
+        if not depth:
+            # Schedule may have queued up some events so we'll burn through those
+            while self._pending_events:
+                if _debug:
+                    self.log.debug("Scheduling pending event %s" %
+                                   (str(self._pending_events[0])))
+                self._pending_events.pop(0).set()
 
         while self._pending_triggers:
             if _debug:
