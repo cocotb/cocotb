@@ -1,5 +1,5 @@
 
-'''Copyright (c) 2016, Marek Cieplucha, https://github.com/mciepluc
+'''Copyright (c) 2017, Marek Cieplucha, https://github.com/mciepluc
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, 
@@ -493,7 +493,7 @@ class Randomized(object):
         # solve problem
         solutions = problem.getSolutions()
         
-        if len(solutions) < len(constrainedVars):
+        if (len(solutions) == 0) & (len(constrainedVars) > 0):
             raise Exception("Could nor resolve implicit constraints!")
 
         # step 3: calculate implicit distributions for all random variables
