@@ -21,4 +21,4 @@ The list of supported simulators for the version you have can be found by *make 
 Centralised Usage
 =================
 
-A build can be installed in a centralised location with *make install INSTALL_PATH=<dir>*. This will also generate an uninstall script.
+A build can be installed in a centralised location with *make install FULL_INSTALL_DIR=<dir>*. This will also generate an uninstall script.

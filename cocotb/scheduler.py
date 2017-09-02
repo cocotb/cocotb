@@ -366,6 +366,7 @@ class Scheduler(object):
                 self._trigger2coros[trigger].remove(coro)
             if not self._trigger2coros[trigger]:
                 trigger.unprime()
+                del self._trigger2coros[trigger]
         del self._coro2triggers[coro]
 
         if coro._join in self._trigger2coros:
@@ -376,7 +377,7 @@ class Scheduler(object):
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:
-            raise Exception("Write to object {} was scheduled during a read-only sync phase.".format(handle._name))
+            raise Exception("Write to object {0} was scheduled during a read-only sync phase.".format(handle._name))
         self._writes[handle] = value
 
     def _coroutine_yielded(self, coro, triggers):
