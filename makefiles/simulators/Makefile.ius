@@ -70,7 +70,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
     ROOT_LEVEL = $(TOPLEVEL)
 ifneq ($(VHDL_SOURCES),)
     HDL_SOURCES += $(VHDL_SOURCES)
-    GPI_EXTRA = vhpi 
+    GPI_EXTRA = vhpi
 endif
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_EXTRA = vhpi
@@ -83,6 +83,12 @@ ifneq ($(VERILOG_SOURCES),)
 endif
 else
    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+endif
+
+# Tell IUS to generate coverage data if COVERAGE=1 set.
+# This is in analogy to the functionality in Makefile.aldec.
+ifeq ($(COVERAGE),1)
+    EXTRA_ARGS += -coverage ALL -covoverwrite
 endif
 
 GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
