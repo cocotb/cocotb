@@ -56,7 +56,7 @@ GHDL_ARGS ?=
 .PHONY: analyse
 
 # Compilation phase
-analyse: $(VHDL_SOURCES) $(SIM_BUILD)
+analyse: $(VHDL_SOURCES) $(CUSTOM_SIM_DEPS) $(SIM_BUILD)
 	cd $(SIM_BUILD) && $(CMD) -a $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && $(CMD) -e $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL)
 
 results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
