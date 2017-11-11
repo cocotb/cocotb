@@ -234,7 +234,7 @@ class coroutine(object):
         except Exception as e:
             traceback.print_exc()
             result = TestError(str(e))
-            if sys.version_info.major >= 3:
+            if sys.version_info[0] >= 3:
                 buff = StringIO()
                 traceback.print_exc(file=buff)
             else:
