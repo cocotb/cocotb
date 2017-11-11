@@ -542,7 +542,7 @@ class Scheduler(object):
 
         Unprime all pending triggers and kill off any coroutines
         """
-        for trigger, waiting in self._trigger2coros.items():
+        for trigger, waiting in dict(self._trigger2coros).items():
             for coro in waiting:
                 if _debug:
                     self.log.debug("Killing %s" % str(coro))
