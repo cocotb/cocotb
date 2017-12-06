@@ -414,7 +414,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     }
 
     PyObject *pSihHdl = PyTuple_GetItem(args, 0);
-    sig_hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
+    sig_hdl = (gpi_sim_hdl)PyLong_AsLong(pSihHdl);
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 1);
@@ -425,7 +425,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     Py_INCREF(function);
 
     PyObject *pedge = PyTuple_GetItem(args, 2);
-    edge = (unsigned int)PyLong_AsUnsignedLong(pedge);
+    edge = (unsigned int)PyLong_AsLong(pedge);
 
     // Remaining args for function
     if (numargs > 3)
@@ -952,7 +952,7 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     gstate = TAKE_GIL();
 
     pSihHdl = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsUnsignedLong(pSihHdl);
+    hdl = (gpi_sim_hdl)PyLong_AsLong(pSihHdl);
 
     gpi_deregister_callback(hdl);
 
@@ -973,7 +973,7 @@ static PyObject *log_level(PyObject *self, PyObject *args)
     gstate = TAKE_GIL();
 
     py_level = PyTuple_GetItem(args, 0);
-    new_level = (enum gpi_log_levels)PyLong_AsUnsignedLong(py_level);
+    new_level = (enum gpi_log_levels)PyLong_AsLong(py_level);
 
     set_log_level(new_level);
 
