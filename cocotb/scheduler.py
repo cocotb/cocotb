@@ -299,6 +299,16 @@ class Scheduler(object):
         if _profiling:
             _profile.disable()
 
+    def _writeout(self):
+        if _debug:
+            self.log.debug("Writing cached signal updates")
+
+        while self._writes:
+            handle, value = self._writes.popitem()
+            self.log.debug(repr(handle) + " <= " + str(value))
+            handle.setimmediatevalue(value)
+        
+
     def react(self, trigger, depth=0):
         """
         React called when a trigger fires.
@@ -329,14 +339,7 @@ class Scheduler(object):
         # We're the only source of ReadWrite triggers which are only used for
         # playing back any cached signal updates
         if trigger is self._readwrite:
-
-            if _debug:
-                self.log.debug("Writing cached signal updates")
-
-            while self._writes:
-                handle, value = self._writes.popitem()
-                handle.setimmediatevalue(value)
-
+            self._writeout()
             self._readwrite.unprime()
 
             if _profiling:
@@ -427,8 +430,12 @@ class Scheduler(object):
                                (str(self._pending_triggers[0])))
             self.react(self._pending_triggers.pop(0), depth=depth + 1)
 
+        # Write out pending writes, if we are still in the read/write state
+        if depth == 0 and self._mode != Scheduler._MODE_READONLY:
+            self._writeout()
+
         # We only advance for GPI triggers
-        if not depth and isinstance(trigger, GPITrigger):
+        if depth == 0 and isinstance(trigger, GPITrigger):
             self.advance()
 
             if _debug:
