@@ -45,6 +45,7 @@ clean:
 
 do_tests: 
 	$(MAKE) -k -C tests
+	$(MAKE) -k -C examples
 
 # For jenkins we use the exit code to detect compile errors or catestrphic
 # failures and the xml to track test results
