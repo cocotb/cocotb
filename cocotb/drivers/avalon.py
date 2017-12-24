@@ -31,6 +31,7 @@ See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 
 NB Currently we only support a very small subset of functionality
 """
+from collections import deque
 import random
 
 import cocotb
@@ -507,6 +508,8 @@ class AvalonSTPkts(ValidatedBusDriver):
         empty.binstr  = ("x"*len(self.bus.empty))
         single.binstr = ("x")
 
+        self.ready_delay = deque([True] * int(config['readyLatency']))
+
         self.bus.valid <= 0
         self.bus.data <= word
         self.bus.empty <= empty
@@ -519,12 +522,14 @@ class AvalonSTPkts(ValidatedBusDriver):
 
             Can no longer drive values this cycle...
 
-            FIXME assumes readyLatency of 0
+            A delay line is used to implement waitready latency
         """
         yield ReadOnly()
-        while not self.bus.ready.value:
+        self.ready_delay.appendleft(self.bus.ready.value)
+        while not self.ready_delay.pop():
             yield RisingEdge(self.clock)
             yield ReadOnly()
+            self.ready_delay.appendleft(self.bus.ready.value)
 
     @coroutine
     def _send_string(self, string, sync=True):
