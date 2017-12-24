@@ -522,7 +522,7 @@ class AvalonSTPkts(ValidatedBusDriver):
 
             Can no longer drive values this cycle...
 
-            A delay line is used to implement waitready latency
+            A delay line is used to implement ready latency
         """
         yield ReadOnly()
         self.ready_delay.appendleft(self.bus.ready.value)
