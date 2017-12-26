@@ -508,7 +508,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         empty.binstr  = ("x"*len(self.bus.empty))
         single.binstr = ("x")
 
-        self.ready_delay = deque([True] * int(config['readyLatency']))
+        self.ready_delay = deque([False] * int(config['readyLatency']))
 
         self.bus.valid <= 0
         self.bus.data <= word
@@ -516,20 +516,28 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.startofpacket <= single
         self.bus.endofpacket <= single
 
+
     @coroutine
-    def _wait_ready(self):
-        """Wait for a ready cycle on the bus before continuing
+    def start_stimulus(self):
+        """Method to start stimulus
 
-            Can no longer drive values this cycle...
-
-            A delay line is used to implement ready latency
+        Subclasses implement the actual stimulus, while the base class merely forks
+        the active cycle detection coroutine.
         """
-        yield ReadOnly()
-        self.ready_delay.appendleft(self.bus.ready.value)
-        while not self.ready_delay.pop():
-            yield RisingEdge(self.clock)
+        cocotb.fork(self._monitor_ready())
+        yield RisingEdge(self.clock)
+        
+
+    @coroutine
+    def _monitor_ready(self):
+        """Updates the ready cycle state on each clock edge"""
+        clkedge = RisingEdge(self.clock)
+        while True:
             yield ReadOnly()
-            self.ready_delay.appendleft(self.bus.ready.value)
+            self.ready_delay.append(self.bus.ready.value)
+            self.ready_delay.popleft()
+            yield clkedge
+            
 
     @coroutine
     def _send_string(self, string, sync=True):
@@ -540,6 +548,8 @@ class AvalonSTPkts(ValidatedBusDriver):
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
         firstword = True
+        has_ready = hasattr(self.bus, "ready")
+        latency = int(self.config['readyLatency'])
 
         # FIXME busses that aren't integer numbers of bytes
         bus_width = int(len(self.bus.data) / 8)
@@ -576,19 +586,11 @@ class AvalonSTPkts(ValidatedBusDriver):
             if self.on is not True and self.on:
                 self.on -= 1
 
-            self.bus.valid <= 1
-
-            if firstword:
-                #self.bus.empty <= 0
-                self.bus.startofpacket <= 1
-                firstword = False
-            else:
-                self.bus.startofpacket <= 0
-
             nbytes = min(len(string), bus_width)
             data = string[:nbytes]
             word.buff = data
 
+                    
             if len(string) <= bus_width:
                 self.bus.endofpacket <= 1
                 self.bus.empty <= bus_width - len(string)
@@ -596,12 +598,33 @@ class AvalonSTPkts(ValidatedBusDriver):
             else:
                 string = string[bus_width:]
 
-            self.bus.data <= word
+            # Process for the required ready latency
+            if not latency:
+                # Drive valid immediately and wait for the sink to be ready, if applicable
+                self.bus.valid <= 1
+                if firstword:
+                    self.bus.startofpacket <= 1
+                else:
+                    self.bus.startofpacket <= 0
+                self.bus.data <= word
+                if has_ready:
+                    while not self.ready_delay[0]:
+                        yield clkedge
+            else:
+                # Wait for a ready cycle
+                while not self.ready_delay[0]:
+                    self.bus.valid <= 0
+                    yield clkedge
 
-            # If this is a bus with a ready signal, wait for this word to
-            # be acknowledged
-            if hasattr(self.bus, "ready"):
-                yield self._wait_ready()
+                # This is a ready cycle, assert valid data
+                self.bus.valid <= 1
+                if firstword:
+                    self.bus.startofpacket <= 1
+                else:
+                    self.bus.startofpacket <= 0
+                self.bus.data <= word
+
+            firstword = False
 
         yield clkedge
         self.bus.valid <= 0
@@ -623,6 +646,8 @@ class AvalonSTPkts(ValidatedBusDriver):
         """
         clkedge = RisingEdge(self.clock)
         firstword = True
+        has_ready = hasattr(self.bus, "ready")
+        latency = int(self.config['readyLatency'])
 
         for word in pkt:
             if not firstword or (firstword and sync):
@@ -643,13 +668,23 @@ class AvalonSTPkts(ValidatedBusDriver):
             if self.on is not True and self.on:
                 self.on -= 1
 
-            self.bus <= word
-            self.bus.valid <= 1
+            # Process for the required ready latency
+            if not latency:
+                # Drive valid immediately and wait for the sink to be ready, if applicable
+                self.bus.valid <= 1
+                self.bus <= word
+                if has_ready:
+                    while not self.ready_delay[0]:
+                        yield clkedge
+            else:
+                # Wait for a ready cycle
+                while not self.ready_delay[0]:
+                    self.bus.valid <= 0
+                    yield clkedge
 
-            # If this is a bus with a ready signal, wait for this word to
-            # be acknowledged
-            if hasattr(self.bus, "ready"):
-                yield self._wait_ready()
+                # This is a ready cycle, assert valid data
+                self.bus.valid <= 1
+                self.bus <= word
 
         yield clkedge
         self.bus.valid <= 0
