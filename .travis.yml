@@ -1,3 +1,5 @@
+sudo: enabled
+dist: precise
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created via the "travis encrypt" command using the project repo's public key
@@ -29,4 +31,3 @@ addons:
     notification_email: github@potentialventures.com
     build_command:   "make"
     branch_pattern: coverity_scan
-
