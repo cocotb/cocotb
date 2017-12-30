@@ -10,9 +10,9 @@ before_install:
   # workaround for travis-ci/travis-ci/#5326
   - export PATH=$(echo $PATH | tr ':' "\n" | sed '/\/opt\/python/d' | tr "\n" ":" | sed "s|::|:|g")
   - sudo add-apt-repository -y ppa:team-electronics/ppa
-  - sudo apt-get update -qq
+  - sudo apt-get update
 install:
-  - sudo apt-get install -qq iverilog-daily
+  - sudo apt-get install -y iverilog-daily
   - pip install coverage
   - pip install xunitparser
   - if [ $( python -c "from __future__ import print_function; import sys; print(sys.version_info.major)") -eq 3 ]; then ln -sf /opt/python/3.4.4/bin/python3.4-config /home/travis/virtualenv/python3.4/bin/python3-config; fi
