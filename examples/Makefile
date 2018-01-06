@@ -32,6 +32,7 @@ export COCOTB
 
 EXAMPLES := adder/tests \
 	    endian_swapper/tests \
+	    mean_numpy/tests
 
 .PHONY: $(EXAMPLES)
 
