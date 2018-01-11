@@ -186,6 +186,28 @@ int VhpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
+int VhpiObjHdl::initialise(std::string &name, std::string &fq_name) {
+    vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
+    if (handle != NULL) {
+        vhpiHandleT du_handle = vhpi_handle(vhpiDesignUnit, handle);
+        if (du_handle != NULL) {
+            vhpiHandleT pu_handle = vhpi_handle(vhpiPrimaryUnit, du_handle);
+            if (pu_handle != NULL) {
+                const char * str;
+                str = vhpi_get_str(vhpiNameP, pu_handle);
+                if (str != NULL)
+                    m_definition_name = str;
+      
+                str = vhpi_get_str(vhpiFileNameP, pu_handle);
+                if (str != NULL)
+                    m_definition_file = str;
+            }
+        }
+    }
+
+    return GpiObjHdl::initialise(name, fq_name);
+}
+
 int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     // Determine the type of object, either scalar or vector
     m_value.format = vhpiObjTypeVal;

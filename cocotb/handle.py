@@ -90,6 +90,14 @@ class SimHandleBase(object):
         self._path = self._name if path is None else path
         self._log = SimLog("cocotb.%s" % self._name)
         self._log.debug("Created")
+        self._def_name = simulator.get_definition_name(self._handle)
+        self._def_file = simulator.get_definition_file(self._handle)
+
+    def get_definition_name(self):
+        return object.__getattribute__(self, "_def_name")
+
+    def get_definition_file(self):
+        return object.__getattribute__(self, "_def_file")
 
     def __hash__(self):
         return self._handle
@@ -114,7 +122,14 @@ class SimHandleBase(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return type(self).__name__ + "(" + self._path + ")"
+        desc = self._path
+        defname = object.__getattribute__(self, "_def_name")
+        if defname:
+            desc += " with definition "+defname
+            deffile = object.__getattribute__(self, "_def_file")
+            if deffile:
+                desc += " (at "+deffile+")"
+        return type(self).__name__ + "(" + desc + ")"
 
     def __str__(self):
         return self._path
@@ -236,7 +251,19 @@ class HierarchyObject(RegionObject):
         if name.startswith("_"):
             return SimHandleBase.__setattr__(self, name, value)
         if self.__hasattr__(name) is not None:
-            return getattr(self, name)._setcachedvalue(value)
+            sub = self.__getattr__(name)
+            if type(sub) is NonHierarchyIndexableObject:
+                if type(value) is not list:
+                    raise AttributeError("Attempting to set %s which is a NonHierarchyIndexableObject to something other than a list?" % (name))
+
+                if len(sub) != len(value):
+                    raise IndexError("Attempting to set %s with list length %d but target has length %d" % (
+                        name, len(value), len(sub)))
+                for idx in xrange(len(value)):
+                    sub[idx] = value[idx]
+                return
+            else:
+                return sub._setcachedvalue(value)
         if name in self._compat_mapping:
             return SimHandleBase.__setattr__(self, name, value)
         raise AttributeError("Attempt to access %s which isn't present in %s" %(
@@ -248,6 +275,7 @@ class HierarchyObject(RegionObject):
         and cache the result to build a tree of objects
         """
         if name in self._sub_handles:
+            sub = self._sub_handles[name]
             return self._sub_handles[name]
 
         if name.startswith("_"):
@@ -352,7 +380,6 @@ class HierarchyArrayObject(RegionObject):
         return self._path + "[" + str(index) + "]"
 
     def __setitem__(self, index, value):
-        """Provide transparent assignment to indexed array handles"""
         raise TypeError("Not permissible to set %s at index %d" % (self._name, index))
 
 
@@ -369,13 +396,20 @@ class NonHierarchyObject(SimHandleBase):
         return iter(())
 
     def _getvalue(self):
-        raise TypeError("Not permissible to get values on object %s" % (self._name))
+        if type(self) is NonHierarchyIndexableObject:
+            #Need to iterate over the sub-object
+            result =[]
+            for x in xrange(len(self)):
+                result.append(self[x]._getvalue())
+            return result
+        else:
+            raise TypeError("Not permissible to get values on object %s type %s" % (self._name, type(self)))
 
     def setimmediatevalue(self, value):
-        raise TypeError("Not permissible to set values on object %s" % (self._name))
+        raise TypeError("Not permissible to set values on object %s type %s" % (self._name, type(self)))
 
     def _setcachedvalue(self, value):
-        raise TypeError("Not permissible to set values on object %s" % (self._name))
+        raise TypeError("Not permissible to set values on object %s type %s" % (self._name, type(self)))
 
     def __le__(self, value):
         """Overload the less than or equal to operator to
@@ -452,7 +486,15 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
 
     def __setitem__(self, index, value):
         """Provide transparent assignment to indexed array handles"""
-        self.__getitem__(index).value = value
+        if type(value) is list:
+            if len(value) != len(self.__getitem__(index)):
+                raise IndexError("Assigning list of length %d to object %s of length %d" % (
+                    len(value), self.__getitem__(index)._fullname, len(self.__getitem__(index))))
+            self._log.info("Setting item %s to %s" % (self.__getitem__(index)._fullname, value))
+            for idx in xrange(len(value)):
+                self.__getitem__(index).__setitem__(idx, value[idx])
+        else:
+            self.__getitem__(index).value = value
 
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -563,6 +605,21 @@ class ModifiableObject(NonConstantObject):
             value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
         elif isinstance(value, get_python_integer_types()):
             value = BinaryValue(value=value, bits=len(self), bigEndian=False)
+        elif isinstance(value, dict):
+            #We're given a dictionary with a list of values and a bit size...
+            num = 0;
+            vallist = list(value["values"])
+            vallist.reverse()
+            if len(vallist) * value["bits"] != len(self):
+                self._log.critical("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
+                                   (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)));
+                raise TypeError("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
+                                (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)));
+
+            for val in vallist:
+                num = (num << value["bits"]) + val;
+            value = BinaryValue(value=num, bits=len(self), bigEndian=False)
+
         elif not isinstance(value, BinaryValue):
             self._log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))

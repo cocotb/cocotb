@@ -38,6 +38,7 @@ static int takes = 0;
 static int releases = 0;
 
 #include "simulatormodule.h"
+#include <cocotb_utils.h>
 
 typedef int (*gpi_function_t)(const void *);
 
@@ -53,6 +54,13 @@ void DROP_GIL(PyGILState_STATE state)
     PyGILState_Release(state);
     releases++;
 }
+
+struct sim_time {
+    uint32_t high;
+    uint32_t low;
+};
+
+static struct sim_time cache_time;
 
 /**
  * @name    Callback Handling
@@ -81,14 +89,19 @@ void DROP_GIL(PyGILState_STATE state)
  */
 int handle_gpi_callback(void *user_data)
 {
+    int ret = 0;
+    to_python();
     p_callback_data callback_data_p = (p_callback_data)user_data;
 
     if (callback_data_p->id_value != COCOTB_ACTIVE_ID) {
         fprintf(stderr, "Userdata corrupted!\n");
-        return 1;
+        ret = 1;
+        goto err;
     }
     callback_data_p->id_value = COCOTB_INACTIVE_ID;
 
+    /* Cache the sim time */
+    gpi_get_sim_time(&cache_time.high, &cache_time.low);
 
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
@@ -97,8 +110,8 @@ int handle_gpi_callback(void *user_data)
 
     if (!PyCallable_Check(callback_data_p->function)) {
         fprintf(stderr, "Callback fired but function isn't callable?!\n");
-        DROP_GIL(gstate);
-        return 1;
+        ret = 1;
+        goto out;
     }
 
     // Call the callback
@@ -110,9 +123,16 @@ int handle_gpi_callback(void *user_data)
     if (pValue == NULL)
     {
         fprintf(stderr, "ERROR: called callback function returned NULL\n");
-        fprintf(stderr, "Failed to execute callback\n");
+        if (PyErr_Occurred()) {
+            fprintf(stderr, "Failed to execute callback due to python exception\n");
+            PyErr_Print();
+        } else {
+            fprintf(stderr, "Failed to execute callback\n");
+        }
+
         gpi_sim_end();
-        return 0;
+        ret = 0;
+        goto out;
     }
 
     // Free up our mess
@@ -127,9 +147,12 @@ int handle_gpi_callback(void *user_data)
         free(callback_data_p);
     }
 
+out:
     DROP_GIL(gstate);
 
-    return 0;
+err:
+    to_simulator();
+    return ret;
 }
 
 static PyObject *log_msg(PyObject *self, PyObject *args)
@@ -682,6 +705,50 @@ static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
     return res;
 }
 
+static PyObject *get_definition_name(PyObject *self, PyObject *args)
+{
+    const char* result;
+    gpi_sim_hdl hdl;
+    PyObject *retstr;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_definition_name((gpi_sim_hdl)hdl);
+    retstr = Py_BuildValue("s", result);
+
+    DROP_GIL(gstate);
+
+    return retstr;
+}
+
+static PyObject *get_definition_file(PyObject *self, PyObject *args)
+{
+    const char* result;
+    gpi_sim_hdl hdl;
+    PyObject *retstr;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_definition_file((gpi_sim_hdl)hdl);
+    retstr = Py_BuildValue("s", result);
+
+    DROP_GIL(gstate);
+
+    return retstr;
+}
+
 static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
 {
     const char *name;
@@ -853,16 +920,21 @@ static PyObject *get_type_string(PyObject *self, PyObject *args)
 // log messages with the current simulation time
 static PyObject *get_sim_time(PyObject *self, PyObject *args)
 {
-    uint32_t high, low;
+    struct sim_time local_time;
 
     PyGILState_STATE gstate;
+
+    if (context) {
+        gpi_get_sim_time(&local_time.high, &local_time.low);
+    } else {
+        local_time = cache_time;
+    }
+
     gstate = TAKE_GIL();
 
-    gpi_get_sim_time(&high, &low);
-
     PyObject *pTuple = PyTuple_New(2);
-    PyTuple_SetItem(pTuple, 0, PyLong_FromUnsignedLong(high));       // Note: This function “steals” a reference to o.
-    PyTuple_SetItem(pTuple, 1, PyLong_FromUnsignedLong(low));       // Note: This function “steals” a reference to o.
+    PyTuple_SetItem(pTuple, 0, PyLong_FromUnsignedLong(local_time.high));       // Note: This function “steals” a reference to o.
+    PyTuple_SetItem(pTuple, 1, PyLong_FromUnsignedLong(local_time.low));       // Note: This function “steals” a reference to o.
 
     DROP_GIL(gstate);
 
