@@ -6,7 +6,6 @@ COCOTB=$(PWD)/../../..
 PYTHONPATH := ./model:$(PYTHONPATH)
 
 export PYTHONPATH
-export PYTHONHOME=$(shell python -c "from distutils.sysconfig import get_config_var; print(get_config_var('prefix'))")
 
 EXTRA_ARGS+=-I$(TOPDIR)/hdl/
 
