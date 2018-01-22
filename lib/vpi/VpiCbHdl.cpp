@@ -204,6 +204,20 @@ int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
+int VpiObjHdl::initialise(std::string &name, std::string &fq_name) {
+    char * str;
+    vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
+
+    str = vpi_get_str(vpiDefName, hdl);
+    if (str != NULL)
+        m_definition_name = str;
+    str = vpi_get_str(vpiDefFile, hdl);
+    if (str != NULL)
+        m_definition_file = str;
+
+    return GpiObjHdl::initialise(name, fq_name);
+}
+
 int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
     if ((vpiIntVar == type) ||

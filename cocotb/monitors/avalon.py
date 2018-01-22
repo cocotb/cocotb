@@ -70,26 +70,36 @@ class AvalonSTPkts(BusMonitor):
     """
     Packetised AvalonST bus
     """
-    _signals = ["valid", "data", "startofpacket", "endofpacket", "empty"]
-    _optional_signals = ["error", "channel", "ready"]
+    _signals = ["valid", "data", "startofpacket", "endofpacket"]
+    _optional_signals = ["error", "channel", "ready", "empty"]
 
     _default_config = {
         "dataBitsPerSymbol"             : 8,
         "firstSymbolInHighOrderBits"    : True,
         "maxChannel"                    : 0,
-        "readyLatency"                  : 0
+        "readyLatency"                  : 0,
+        "invalidTimeout"                : 0,
     }
 
     def __init__(self, *args, **kwargs):
         config = kwargs.pop('config', {})
         BusMonitor.__init__(self, *args, **kwargs)
 
-        self.config = AvalonSTPkts._default_config.copy()
+        self.config = self._default_config.copy()
 
         for configoption, value in config.items():
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s" %
                            (configoption, str(value)))
+
+        num_data_symbols = (len(self.bus.data) /
+                            self.config["dataBitsPerSymbol"])
+        if (num_data_symbols > 1 and not hasattr(self.bus, 'empty')):
+            raise AttributeError(
+                "%s has %i data symbols, but contains no object named empty" %
+                (self.name, num_data_symbols))
+
+        self.config["useEmpty"] = (num_data_symbols > 1)
 
     @coroutine
     def _monitor_recv(self):
@@ -100,6 +110,7 @@ class AvalonSTPkts(BusMonitor):
         rdonly = ReadOnly()
         pkt = ""
         in_pkt = False
+        invalid_cyclecount = 0
 
         def valid():
             if hasattr(self.bus, 'ready'):
@@ -114,6 +125,8 @@ class AvalonSTPkts(BusMonitor):
                 continue
 
             if valid():
+                invalid_cyclecount = 0
+
                 if self.bus.startofpacket.value:
                     if pkt:
                         raise AvalonProtocolError(
@@ -132,10 +145,19 @@ class AvalonSTPkts(BusMonitor):
 
                 if self.bus.endofpacket.value:
                     # Truncate the empty bits
-                    if self.bus.empty.value.integer:
+                    if (self.config["useEmpty"] and
+                       self.bus.empty.value.integer):
                         pkt = pkt[:-self.bus.empty.value.integer]
                     self.log.info("Received a packet of %d bytes" % len(pkt))
                     self.log.debug(hexdump(str((pkt))))
                     self._recv(pkt)
                     pkt = ""
                     in_pkt = False
+            else :                
+                if in_pkt :
+                    invalid_cyclecount += 1
+                    if self.config["invalidTimeout"] :
+                        if invalid_cyclecount >= self.config["invalidTimeout"] :
+                            raise AvalonProtocolError(
+                                "In-Packet Timeout. Didn't receive any valid data for %d cycles!" %
+                                invalid_cyclecount)

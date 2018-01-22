@@ -136,6 +136,9 @@ public:
     const std::string & get_name(void);
     const std::string & get_fullname(void);
 
+    virtual const char* get_definition_name() { return m_definition_name.c_str(); };
+    virtual const char* get_definition_file() { return m_definition_file.c_str(); };
+
     bool is_native_impl(GpiImplInterface *impl);
     virtual int initialise(std::string &name, std::string &full_name);
 
@@ -146,6 +149,10 @@ protected:
     int           m_range_right;
     std::string   m_name;
     std::string   m_fullname;
+
+    std::string   m_definition_name;
+    std::string   m_definition_file;
+
     gpi_objtype_t m_type;
     bool          m_const;
 };

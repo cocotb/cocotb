@@ -29,16 +29,16 @@ import sys
 import time
 import logging
 import traceback
-import threading
 import pdb
+import threading
 
 from io import StringIO, BytesIO
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger
+from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger, Join
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
-                           ReturnValue, create_error)
+                           ReturnValue, raise_error, ExternalException)
 from cocotb.utils import get_sim_time
 
 
@@ -90,6 +90,7 @@ class RunningCoroutine(object):
         else:
             self.log = SimLog("cocotb.coroutine.fail")
         self._coro = inst
+        self._started = False
         self._finished = False
         self._callbacks = []
         self._join = _Join(self)
@@ -100,7 +101,7 @@ class RunningCoroutine(object):
         self.retval = None
 
         if not hasattr(self._coro, "send"):
-            self.log.error("%s isn't a value coroutine! Did you use the yield "
+            self.log.error("%s isn't a valid coroutine! Did you use the yield "
                            "keyword?" % self.funcname)
             raise CoroutineComplete(callback=self._finished_cb)
 
@@ -112,11 +113,19 @@ class RunningCoroutine(object):
 
     def send(self, value):
         try:
+            if isinstance(value, ExternalException):
+                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
+                return self._coro.throw(value.exception)
+            self._started = True
             return self._coro.send(value)
         except TestComplete as e:
             if isinstance(e, TestFailure):
                 self.log.warning(str(e))
             raise
+        except ExternalException as e:
+            self.retval = e
+            self._finished = True
+            raise CoroutineComplete(callback=self._finished_cb)
         except ReturnValue as e:
             self.retval = e.retval
             self._finished = True
@@ -126,7 +135,7 @@ class RunningCoroutine(object):
             raise CoroutineComplete(callback=self._finished_cb)
         except Exception as e:
             self._finished = True
-            raise create_error(self, "Send raised exception: %s" % (str(e)))
+            raise raise_error(self, "Send raised exception: %s" % (str(e)))
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -152,6 +161,9 @@ class RunningCoroutine(object):
             return NullTrigger()
         else:
             return self._join
+
+    def has_started(self):
+        return self._started
 
     def __nonzero__(self):
         """Provide boolean testing
@@ -193,6 +205,9 @@ class RunningTest(RunningCoroutine):
             self.start_sim_time = get_sim_time('ns')
             self.started = True
         try:
+            if isinstance(value, ExternalException):
+                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
+                return self._coro.throw(value.exception)
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
         except TestComplete as e:
@@ -209,7 +224,7 @@ class RunningTest(RunningCoroutine):
         except StopIteration:
             raise TestSuccess()
         except Exception as e:
-            raise create_error(self, "Send raised exception: %s" % (str(e)))
+            raise raise_error(self, "Send raised exception: %s" % (str(e)))
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
@@ -277,9 +292,10 @@ class function(object):
 
         self._event = threading.Event()
         self._event.result = None
-        coro = cocotb.scheduler.queue(execute_function(self, self._event))
+        waiter = cocotb.scheduler.queue_function(execute_function(self, self._event))
+        # This blocks the calling external thread until the coroutine finishes
         self._event.wait()
-
+        waiter.thread_resume()
         return self._event.result
 
     def __get__(self, obj, type=None):
@@ -287,56 +303,54 @@ class function(object):
             and standalone functions"""
         return self.__class__(self._func.__get__(obj, type))
 
-
-@function
-def unblock_external(bridge):
-    yield NullTrigger()
-    bridge.set_out()
-
-
 @public
-class test_locker(object):
-    def __init__(self):
-        self.in_event = None
-        self.out_event = Event()
-        self.result = None
-
-    def set_in(self):
-        self.in_event.set()
-
-    def set_out(self):
-        self.out_event.set()
-
-
-def external(func):
+class external(object):
     """Decorator to apply to an external function to enable calling from cocotb
-
     This currently creates a new execution context for each function that is
     call. Scope for this to be streamlined to a queue in future
     """
+    def __init__(self, func):
+        self._func = func
+        self._log = SimLog("cocotb.external.%s" % self._func.__name__, id(self))
 
-    @coroutine
-    def wrapped(*args, **kwargs):
-        # Start up the thread, this is done in coroutine context
-        bridge = test_locker()
+    def __call__(self, *args, **kwargs):
 
-        def execute_external(func, _event):
-            _event.result = func(*args, **kwargs)
-            # Queue a co-routine to
-            unblock_external(_event)
+        @coroutine
+        def wrapper():
+            ext = cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
 
-        thread = threading.Thread(group=None, target=execute_external,
-                                  name=func.__name__ + "thread",
-                                  args=([func, bridge]), kwargs={})
-        thread.start()
+            yield ext.event.wait()
 
-        yield bridge.out_event.wait()
+            if ext.result is not None:
+                if isinstance(ext.result, Exception):
+                    raise ExternalException(ext.result)
+                else:
+                    raise ReturnValue(ext.result)
 
-        if bridge.result is not None:
-            raise ReturnValue(bridge.result)
+        return wrapper()
 
-    return wrapped
+@public
+class hook(coroutine):
+    """Decorator to mark a function as a hook for cocotb
 
+    All hooks are run at the beginning of a cocotb test suite, prior to any
+    test code being run."""
+    def __init__(self):
+        pass
+
+    def __call__(self, f):
+        super(hook, self).__init__(f)
+
+        def _wrapped_hook(*args, **kwargs):
+            try:
+                return RunningCoroutine(self._func(*args, **kwargs), self)
+            except Exception as e:
+                raise raise_error(self, str(e))
+
+        _wrapped_hook.im_hook = True
+        _wrapped_hook.name = self._func.__name__
+        _wrapped_hook.__name__ = self._func.__name__
+        return _wrapped_hook
 
 @public
 class test(coroutine):
@@ -371,7 +385,7 @@ class test(coroutine):
             try:
                 return RunningTest(self._func(*args, **kwargs), self)
             except Exception as e:
-                raise create_error(self, str(e))
+                raise raise_error(self, str(e))
 
         _wrapped_test.im_test = True    # For auto-regressions
         _wrapped_test.name = self._func.__name__

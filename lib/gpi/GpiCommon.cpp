@@ -406,6 +406,18 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
     }
 }
 
+const char* gpi_get_definition_name(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_definition_name();
+}
+
+const char* gpi_get_definition_file(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_definition_file();
+}
+
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl)
 {
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);

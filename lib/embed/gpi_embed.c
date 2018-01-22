@@ -50,6 +50,8 @@ static char *argv[] = { progname };
 
 static PyObject *pEventFn = NULL;
 
+// Tracks if we are in the context of Python or Simulator
+int context = 0;
 
 /**
  * @name    Initialise the python interpreter
@@ -82,6 +84,7 @@ void embed_init_python(void)
         fprintf(stderr, "Failed to find python lib\n");
     }
 
+    to_python();
     Py_SetProgramName(progname);
     Py_Initialize();                    /* Initialize the interpreter */
     PySys_SetArgvEx(1, argv, 0);
@@ -89,6 +92,7 @@ void embed_init_python(void)
 
     /* Swap out and return current thread state and release the GIL */
     gtstate = PyEval_SaveThread();
+    to_simulator();
 
     /* Before returning we check if the user wants pause the simulator thread
        such that they can attach */
@@ -183,6 +187,7 @@ int embed_sim_init(gpi_sim_info_t *info)
 
     //Ensure that the current thread is ready to callthe Python C API
     PyGILState_STATE gstate = PyGILState_Ensure();
+    to_python();
 
     if (get_module_ref(COCOTB_MODULE, &cocotb_module))
         goto cleanup;
@@ -316,6 +321,7 @@ ok:
         Py_DECREF(arg_dict);
     }
     PyGILState_Release(gstate);
+    to_simulator();
 
     return ret;
 }
@@ -327,6 +333,7 @@ void embed_sim_event(gpi_event_t level, const char *msg)
 
     if (pEventFn) {
         PyGILState_STATE gstate;
+        to_python();
         gstate = PyGILState_Ensure();
 
         PyObject *fArgs = PyTuple_New(2);
@@ -343,6 +350,7 @@ void embed_sim_event(gpi_event_t level, const char *msg)
 
         Py_DECREF(fArgs);
         PyGILState_Release(gstate);
+        to_simulator();
     }
 
     FEXIT
