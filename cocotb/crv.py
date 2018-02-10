@@ -251,8 +251,12 @@ class Randomized(object):
             overwritten = self.addConstraint(cstr)
             if overwritten:
                 overwritten_constrains.append(overwritten)
-
-        self._randomize()
+        
+        raise_exception = False
+        try:
+            self._randomize()
+        except:
+            raise_exception = True
 
         # remove new constraints
         for cstr in constraints:
@@ -261,6 +265,9 @@ class Randomized(object):
         # add back overwritten constraints
         for cstr in overwritten_constrains:
             self.addConstraint(cstr)
+ 
+        if raise_exception:
+            raise Exception("Could nor resolve implicit constraints!")
             
     def _addConstraint(self, cstr, rvars):
         """
