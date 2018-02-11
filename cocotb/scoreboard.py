@@ -51,12 +51,13 @@ class Scoreboard(object):
         Statistics for end-of-test summary etc.
     """
 
-    def __init__(self, dut, reorder_depth=0, fail_immediately=True):
+    def __init__(self, dut, reorder_depth=0, fail_immediately=True, verbose=True):
         self.dut = dut
         self.log = SimLog("cocotb.scoreboard.%s" % self.dut._name)
         self.errors = 0
         self.expected = {}
         self._imm = fail_immediately
+        self._verbose = verbose
 
     @property
     def result(self):
@@ -110,34 +111,47 @@ class Scoreboard(object):
         if got != exp:
             self.errors += 1
 
-            # Try our best to print out something useful
-            strgot, strexp = str(got), str(exp)
-
+            # Try our best to print out something useful if configured as verbose
             log.error("Received transaction differed from expected output")
-            if not strict_type:
-                log.info("Expected:\n" + hexdump(strexp))
+            if self._verbose:
+                strgot, strexp = str(got), str(exp)
+                
+                if not strict_type:
+                    log.info("Expected:\n" + hexdump(strexp))
+                else:
+                    log.info("Expected:\n" + repr(exp))
+                if not isinstance(exp, str):
+                    try:
+                        for word in exp:
+                            log.info(str(word))
+                    except:
+                        pass
+                if not strict_type:
+                    log.info("Received:\n" + hexdump(strgot))
+                else:
+                    log.info("Received:\n" + repr(got))
+                if not isinstance(got, str):
+                    try:
+                        for word in got:
+                            log.info(str(word))
+                    except:
+                        pass
+                log.warning("Difference:\n%s" % hexdiffs(strexp, strgot))
             else:
-                log.info("Expected:\n" + repr(exp))
-            if not isinstance(exp, str):
-                try:
-                    for word in exp:
-                        log.info(str(word))
-                except:
-                    pass
-            if not strict_type:
-                log.info("Received:\n" + hexdump(strgot))
-            else:
-                log.info("Received:\n" + repr(got))
-            if not isinstance(got, str):
-                try:
-                    for word in got:
-                        log.info(str(word))
-                except:
-                    pass
-            log.warning("Difference:\n%s" % hexdiffs(strexp, strgot))
+                # Unconditionally report any discrepancy in transaction length
+                if len(got) != len(exp):
+                    log.warning("Received length ({}) differs from expected ({})".format(len(got), len(exp)))
+                
+                # Loop through the two transactions to locate the first discrepancy
+                for word_index in range(len(got)):
+                    if(word_index >= len(exp)):
+                        break
+                    if(got[word_index] != exp[word_index]):
+                        log.warning("First difference at word ({}) : received 0x{:X}, expected 0x{:X}".format(word_index, ord(got[word_index]), ord(exp[word_index])))
+                        break
+                
             if self._imm:
-                raise TestFailure("Received transaction differed from expected"
-                                  "transaction")
+                raise TestFailure("Received transaction differed from expected transaction")
         else:
             # Don't want to fail the test
             # if we're passed something without __len__
