@@ -15,7 +15,7 @@ Cocotb has the following requirements:
 * Python-dev packages
 * GCC and associated development packages
 * GNU Make
-* A Verilog simulator
+* A Verilog or VHDL simulator, depending on your source RTL code
 
 Internal development is performed on Linux Mint 17 (x64). We also use Redhat 6.5(x64). Other Redhat and Ubuntu based distributions (x32 and x64) should work too but due fragmented nature of Linux we can not test everything. Instructions are provided for the main distributions we use.
 
@@ -144,7 +144,7 @@ The endian swapper example includes both a VHDL and Verilog RTL implementation. 
 
 .. code-block:: bash
 
-    $> make SIM=aldec TOPLEVEL_LANG=vhdl
+    $> make SIM=ghdl TOPLEVEL_LANG=vhdl
 
 
 
@@ -167,8 +167,8 @@ python test script to load.
 .. code-block:: bash
 
     VERILOG_SOURCES = $(PWD)/submodule.sv $(PWD)/my_design.sv
-    TOPLEVEL=my_design
-    MODULE=test_my_design
+    TOPLEVEL=my_design #the module name in your verilog or vhdl file
+    MODULE=test_my_design # the name of the python test file
     include $(COCOTB)/makefiles/Makefile.inc
     include $(COCOTB)/makefiles/Makefile.sim
 
@@ -178,8 +178,9 @@ We would then create a file called ``test_my_design.py`` containing our tests.
 Creating a test
 ---------------
 
-The test is written in Python.  Assuming we have a toplevel port called ``clk``
-we could create a test file containing the following:
+The test is written in Python. Cocotb wraps your top level with the handle **dut**
+to be used in all python files referencing your RTL project. Assuming we have a
+toplevel port called ``clk`` we could create a test file containing the following:
 
 .. code-block:: python
 
@@ -230,12 +231,17 @@ Values can be assigned to signals using either the .value property of a handle o
     clk.value = 1
     
     # Direct assignment through the hierarchy
-    dut.input_signal = 12
+    dut.input_signal <= 12 
 
     # Assign a value to a memory deep in the hierarchy
-    dut.sub_block.memory.array[4] = 2
-        
-        
+    dut.sub_block.memory.array[4] <= 2
+
+
+The "<=" operator is overridden by cocotb to help make it more clear when an object
+being assigned a value is part of the RTL source as compared to the python test code. 
+
+
+    
 Reading values from signals
 ---------------------------
 
@@ -245,12 +251,15 @@ Accessing the .value property of a handle object will return a :class:`BinaryVal
     
     >>> # Read a value back from the dut
     >>> count = dut.counter.value
-    >>>
+    >>> 
     >>> print(count.binstr)
     1X1010
     >>> # Resolve the value to an integer (X or Z treated as 0)
     >>> print(count.integer)
     42
+    >>> # Show number of bits in a value
+    >>> print(count.bits)
+    6
 
 We can also cast the signal handle directly to an integer:
 
@@ -292,19 +301,3 @@ Parallel and sequential execution of coroutines
         yield reset_thread.join()
         dut._log.debug("After reset")
 
-
-Creating a test
----------------
-
-.. code-block:: python
-
-    import cocotb
-    from cocotb.triggers import Timer
-    
-    @cocotb.test(timeout=None)
-    def my_first_test(dut):
-    
-        # drive the reset signal on the dut
-        dut.reset_n <= 0
-        yield Timer(12345)
-        dut.reset_n <= 1

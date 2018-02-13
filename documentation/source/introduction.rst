@@ -26,7 +26,7 @@ Windows Platform
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
 * `Mentor <http://www.mentor.com/>`_ Modelsim (DE and SE)
 
-**Cocotb** can be used live in a web-browser using `EDA Playground <http://www.edaplayground.com>`_.
+An older version of **Cocotb** can be used live in a web-browser using `EDA Playground <http://www.edaplayground.com>`_.
 
 
 

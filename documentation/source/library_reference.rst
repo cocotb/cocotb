@@ -38,6 +38,8 @@ Interacting with the Simulator
 .. autoclass:: cocotb.bus.Bus
     :members:
 
+.. autoclass:: cocotb.clock.Clock
+
 
 Triggers
 --------

@@ -1,7 +1,7 @@
 Triggers
 ========
 
-Triggers are used to indicate when the scheduler should resume coroutine execution.  Typically a coroutine will **yield** a trigger or a list of triggers.
+Triggers are used to indicate when the cocotb scheduler should resume coroutine execution.  Typically a coroutine will **yield** a trigger or a list of triggers, while it's waiting for them to complete. 
 
 Simulation Timing
 -----------------
@@ -18,7 +18,7 @@ Registers a timed callback with the simulator to continue execution of the corou
 ReadOnly()
 ^^^^^^^^^^
 
-Registers a callback which will continue execution of the coroutine when the current simulation timestep moves to the ReadOnly phase.  Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
+Registers a callback which will continue execution of the coroutine when the current simulation timestep moves to the ReadOnly phase of the rtl simulator. The ReadOnly phase is entered when the current timestep no longer has any further delta steps. This should be point where all the signal values are stable as there are no more rtl events scheduled for the timestep. The simulator should not allow scheduling of more events in this timestep. Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
 
 
 
