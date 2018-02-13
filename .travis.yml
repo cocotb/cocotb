@@ -1,32 +1,10 @@
-env:
-  global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created via the "travis encrypt" command using the project repo's public key
-   - secure: "YTKZKkNH8t11bZCtR4nMjszifW+QlIAluDAthYq8I4EpuRSKQ1ntVi9MnDs6EQu8CD9LfFOeQ0wymRU71FOf22n54sCVQgbo8OcwHXa/3PUeWi9A/i+BqRZ7iCdeGFJH8rQaCWov6mCyVjjdie52kwWv3jy1ZaTeuUTX54EKFII="
-language: python
-python:
-  - "2.7"
-  - "3.4"
-before_install:
-  # workaround for travis-ci/travis-ci/#5326
-  - export PATH=$(echo $PATH | tr ':' "\n" | sed '/\/opt\/python/d' | tr "\n" ":" | sed "s|::|:|g")
-  - sudo add-apt-repository -y ppa:team-electronics/ppa
-  - sudo apt-get update -qq
-install:
-  - sudo apt-get install -qq iverilog-daily
-  - pip install coverage
-  - pip install xunitparser
-  - if [ $( python -c "from __future__ import print_function; import sys; print(sys.version_info.major)") -eq 3 ]; then ln -sf /opt/python/3.4.4/bin/python3.4-config /home/travis/virtualenv/python3.4/bin/python3-config; fi
-  - if [ $( python -c "from __future__ import print_function; import sys; print(sys.version_info.major)") -eq 3 ]; then ln -sf /opt/python/3.4.4/bin/python3.4-config /home/travis/virtualenv/python3.4/bin/python-config; fi
-  - if [ $( python -c "from __future__ import print_function; import sys; print(sys.version_info.major)") -eq 3 ]; then export LD_LIBRARY_PATH=/opt/python/3.4.4/lib:$LD_LIBRARY_PATH; fi
-  - export PYTHONPATH=$PYTHONPATH:$(python -c "from __future__ import print_function; from distutils.sysconfig import get_python_lib; print(get_python_lib())") 
+# See Dockerfile for the full build instructions
+sudo: required
+language: cpp
+
+services:
+  - docker
+
 script:
-  - make test
-addons:
-  coverity_scan:
-    project:
-      name: "potentialventures/cocotb"
-      description: "Python Co-simulation library for RTL verification"
-    notification_email: github@potentialventures.com
-    build_command:   "make"
-    branch_pattern: coverity_scan
+  - docker build .
 
