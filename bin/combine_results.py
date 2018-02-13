@@ -51,14 +51,14 @@ def main():
     result = ET.Element("testsuites", name=args.testsuites_name);
     
     for fname in find_all("results.xml", args.directory):
-        if args.debug : print "Reading file %s" % fname
+        if args.debug : print("Reading file %s" % fname)
         tree = ET.parse(fname)
         for ts in tree.getiterator("testsuite"):
-            if args.debug : print ("Ts name : %s, package : %s" % ( ts.get('name'), ts.get('package')))
+            if args.debug : print("Ts name : %s, package : %s" % ( ts.get('name'), ts.get('package')))
             use_element = None
             for existing in result:
                 if ((existing.get('name') == ts.get('name') and (existing.get('package') == ts.get('package')))):
-                    if args.debug : print "Already found"
+                    if args.debug : print("Already found")
                     use_element=existing
                     break
             if use_element is None:
@@ -73,7 +73,7 @@ def main():
         for testcase in testsuite.iter('testcase'):
             for failure in testcase.iter('failure'):
                 if args.set_rc: rc=1
-                print "Failure in testsuite: '%s' testcase: '%s' with parameters '%s'" % (testsuite.get('name'), testcase.get('name'), testsuite.get('package'))
+                print("Failure in testsuite: '%s' testcase: '%s' with parameters '%s'" % (testsuite.get('name'), testcase.get('name'), testsuite.get('package')))
             
     
     ET.ElementTree(result).write(args.output_file, encoding="UTF-8")

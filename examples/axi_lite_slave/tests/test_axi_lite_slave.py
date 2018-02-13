@@ -52,9 +52,9 @@ def write_address_0(dut):
     if value != DATA:
         #Fail
         raise TestFailure("Register at address 0x%08X should have been: \
-                           0x%08X but was 0x%08X" % (ADDRESS, DATA, value))
+                           0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
 
-    dut.log.info("Write 0x%08X to addres 0x%08X" % (value, ADDRESS))
+    dut.log.info("Write 0x%08X to addres 0x%08X" % (int(value), ADDRESS))
 
 
 #Read back a value at address 0x01
@@ -73,12 +73,12 @@ def read_address_1(dut):
     """
     #Reset
     dut.rst <=  1
-    dut.test_id <= 0
+    dut.test_id <= 1
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
     yield Timer(CLK_PERIOD * 10)
     dut.rst <= 0
-
+    yield Timer(CLK_PERIOD)
     ADDRESS = 0x01
     DATA = 0xCD
 
@@ -91,9 +91,9 @@ def read_address_1(dut):
     if value != DATA:
         #Fail
         raise TestFailure("Register at address 0x%08X should have been: \
-                           0x%08X but was 0x%08X" % (ADDRESS, DATA, value))
+                           0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
 
-    dut.log.info("Read: 0x%08X From Address: 0x%08X" % (value, ADDRESS))
+    dut._log.info("Read: 0x%08X From Address: 0x%08X" % (int(value), ADDRESS))
 
 
 
@@ -133,9 +133,9 @@ def write_and_read(dut):
     if value != DATA:
         #Fail
         raise TestFailure("Register at address 0x%08X should have been: \
-                           0x%08X but was 0x%08X" % (ADDRESS, DATA, value))
+                           0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
 
-    dut.log.info("Write 0x%08X to addres 0x%08X" % (value, ADDRESS))
+    dut._log.info("Write 0x%08X to addres 0x%08X" % (int(value), ADDRESS))
 
 @cocotb.test(skip = False, expect_error=True)
 def write_fail(dut):
@@ -165,8 +165,8 @@ def write_fail(dut):
         yield axim.write(ADDRESS, DATA)
         yield Timer(CLK_PERIOD * 10)
     except AXIProtocolError as e:
-        print "Exception: %s" % str(e)
-        dut.log.info("Bus Successfully Raised an Error")
+        print ("Exception: %s" % str(e))
+        dut._log.info("Bus Successfully Raised an Error")
         raise TestSuccess()
     raise TestFailure("AXI Bus Should have raised an ERROR when writing to \
                         the wrong bus")
@@ -199,8 +199,8 @@ def read_fail(dut):
         yield axim.read(ADDRESS, DATA)
         yield Timer(CLK_PERIOD * 10)
     except AXIProtocolError as e:
-        print "Exception: %s" % str(e)
-        dut.log.info("Bus Successfully Raised an Error")
+        print ("Exception: %s" % str(e))
+        dut._log.info("Bus Successfully Raised an Error")
         raise TestSuccess()
     raise TestFailure("AXI Bus Should have raised an ERROR when writing to \
                         the wrong bus")
