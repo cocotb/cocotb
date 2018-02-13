@@ -155,6 +155,14 @@ def test_adding_a_coroutine_without_starting(dut):
     yield Join(forked)
     yield Timer(100)
 
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+    """
+    Polyfill for math.isclose() (Python 3.5+): floating-point "equal"
+
+    Implementation taken from
+    https://www.python.org/dev/peps/pep-0485/#proposed-implementation
+    """
+    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 @cocotb.test(expect_fail=False)
 def test_clock_with_units(dut):
@@ -180,14 +188,14 @@ def test_clock_with_units(dut):
     yield RisingEdge(dut.clk)
 
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 1000.0:
+    if not isclose(edge_time_ns, start_time_ns + 1000.0):
         raise TestFailure("Expected a period of 1 us")
 
     start_time_ns = edge_time_ns
 
     yield RisingEdge(dut.clk)
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 1000.0:
+    if not isclose(edge_time_ns, start_time_ns + 1000.0):
         raise TestFailure("Expected a period of 1 us")
 
     clk_gen.kill()
@@ -201,14 +209,14 @@ def test_clock_with_units(dut):
     yield RisingEdge(dut.clk)
 
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 4.0:
+    if not isclose(edge_time_ns, start_time_ns + 4.0):
         raise TestFailure("Expected a period of 4 ns")
 
     start_time_ns = edge_time_ns
 
     yield RisingEdge(dut.clk)
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 4.0:
+    if not isclose(edge_time_ns, start_time_ns + 4.0):
         raise TestFailure("Expected a period of 4 ns")
 
     clk_gen.kill()

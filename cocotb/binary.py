@@ -513,11 +513,11 @@ class BinaryValue(object):
     def __setitem__(self, key, val):
         ''' BinaryValue uses verilog/vhdl style slices as opposed to python
         style'''
-        if not isinstance(val, str) and not isinstance(val, (int, long)):
+        if not isinstance(val, str) and not isinstance(val, get_python_integer_types()):
             raise TypeError('BinaryValue slices only accept string or integer values')
 
         # convert integer to string
-        if isinstance(val, (int, long)):
+        if isinstance(val, get_python_integer_types()):
             if isinstance(key, slice):
                 num_slice_bits = abs(key.start - key.stop) + 1
             else:
