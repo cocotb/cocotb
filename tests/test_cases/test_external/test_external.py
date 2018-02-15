@@ -41,6 +41,7 @@ from cocotb.result import ReturnValue, TestFailure
 from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge, ReadWrite
 from cocotb.clock import Clock
 from cocotb.decorators import external
+from cocotb.utils import get_sim_time
 
 test_count = 0
 g_dut = None
@@ -149,6 +150,9 @@ def test_ext_function(dut):
 def yield_to_readwrite(dut):
     yield RisingEdge(dut.clk)
     dut._log.info("Returning from yield_to_readwrite")
+    yield RisingEdge(dut.clk)
+    dut._log.info("Returning from yield_to_readwrite")
+    yield Timer(1, "ns")
     raise ReturnValue(2)
 
 
@@ -162,6 +166,17 @@ def test_ext_function_return(dut):
     # time.sleep(0.2)
     return value
 
+def test_print_sim_time(dut, base_time):
+    # We are not calling out here so time should not advance
+    # And should also remain consistent
+    for _ in range(10):
+        _t = get_sim_time('ns')
+        dut._log.info("Time reported = %d", _t)
+        if _t != base_time:
+            raise TestFailure("Time reported does not match base_time %f != %f" %
+                              (_t, base_time))
+    dut._log.info("external function has ended")
+
 
 @cocotb.coroutine
 def clock_monitor(dut):
@@ -170,6 +185,24 @@ def clock_monitor(dut):
         yield RisingEdge(dut.clk)
         yield Timer(1000)
         count += 1
+
+@cocotb.test(expect_fail=False)
+def test_time_in_external(dut):
+    """Test that the simulation time does no advance if the wrapped external
+    routine does not its self yield"""
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+    yield Timer(10, 'ns')
+    time = get_sim_time('ns')
+    dut._log.info("Time at start of test = %d" % time)
+    for i in range(1000):
+        dut._log.info("Loop call %d" % i)
+        yield external(test_print_sim_time)(dut, time)
+
+    time_now = get_sim_time('ns')
+    yield Timer(10, 'ns')
+
+    if time != time_now:
+        raise TestFailure("Time has elapsed over external call")
 
 
 @cocotb.test(expect_fail=False)
@@ -206,8 +239,36 @@ def test_external_from_readonly(dut):
 
     yield ReadOnly()
     dut._log.info("In readonly")
+    value = yield external(test_ext_function)(dut)
+
+@cocotb.test(expect_fail=False)
+def test_external_that_yields(dut):
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
     value = yield external(test_ext_function_access)(dut)
 
+@cocotb.test(expect_fail=False)
+def test_external_and_continue(dut):
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    value = yield external(test_ext_function_access)(dut)
+
+    yield Timer(10, "ns")
+    yield RisingEdge(dut.clk)
+
+@cocotb.coroutine
+def run_external(dut):
+    value = yield external(test_ext_function_access)(dut)
+    raise ReturnValue(value)
+
+@cocotb.test(expect_fail=False)
+def test_external_from_fork(dut):
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    coro = cocotb.fork(run_external(dut))
+    yield coro.join()
+
+    dut._log.info("Back from join")
 
 @cocotb.test(expect_fail=True, skip=True)
 def ztest_ext_exit_error(dut):

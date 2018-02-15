@@ -36,7 +36,7 @@ Also used a regression test of cocotb capabilities
 
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite)
+                             ReadOnly, ReadWrite, ClockCycles)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
@@ -597,6 +597,24 @@ def test_logging_with_args(dut):
     dut._log.warning("Testing multiple line\nmessage")
 
     yield Timer(100) #Make it do something with time
+
+@cocotb.test()
+def test_clock_cycles(dut):
+    """
+    Test the ClockCycles Trigger
+    """
+
+    clk = dut.clk
+
+    clk_gen = cocotb.fork(Clock(clk, 100).start())
+
+    yield RisingEdge(clk)
+
+    dut.log.info("After one edge")
+
+    yield ClockCycles(clk, 10)
+
+    dut.log.info("After 10 edges")
 
 @cocotb.test()
 def test_binary_value(dut):

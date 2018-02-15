@@ -45,7 +45,7 @@ from cocotb.regression import RegressionManager
 
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine, function, external
+from cocotb.decorators import test, coroutine, hook, function, external
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference
@@ -96,6 +96,9 @@ def _initialise_testbench(root_name):
     The test must be defined by the environment variables
         MODULE
         TESTCASE
+
+    The environment variable COCOTB_HOOKS contains a comma-separated list of
+        modules that should be executed before the first test.
     """
     _rlock.acquire()
 
@@ -136,16 +139,18 @@ def _initialise_testbench(root_name):
 
     module_str = os.getenv('MODULE')
     test_str = os.getenv('TESTCASE')
+    hooks_str = os.getenv('COCOTB_HOOKS', '')
 
     if not module_str:
         raise ImportError("Environment variables defining the module(s) to \
                         execute not defined.  MODULE=\"%s\"\"" % (module_str))
 
     modules = module_str.split(',')
+    hooks = hooks_str.split(',') if hooks_str else []
 
     global regression
 
-    regression = RegressionManager(root_name, modules, tests=test_str)
+    regression = RegressionManager(root_name, modules, tests=test_str, seed=seed, hooks=hooks)
     regression.initialise()
     regression.execute()
 

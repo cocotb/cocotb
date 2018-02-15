@@ -49,7 +49,8 @@ ifneq ($(ARCH),i686)
 EXTRA_ARGS += -64
 endif
 
-EXTRA_ARGS += -nclibdirname $(SIM_BUILD) -plinowarn
+EXTRA_ARGS += -nclibdirpath $(SIM_BUILD) 
+EXTRA_ARGS += -plinowarn
 
 ifeq ($(GUI),1)
     EXTRA_ARGS += -gui
@@ -90,6 +91,7 @@ results.xml: $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEP
 	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
 	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	set -o pipefail; \
 	$(CMD) $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 clean::
