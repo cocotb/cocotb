@@ -85,7 +85,7 @@ class Bus(object):
         self._name = name
         self._signals = {}
 
-        for attr_name, sig_name in _build_sig_attr_dict(signals).iteritems():
+        for attr_name, sig_name in _build_sig_attr_dict(signals).items():
             if name:
                 signame = name + bus_separator + sig_name
             else:
@@ -98,7 +98,7 @@ class Bus(object):
             self._signals[attr_name] = getattr(self, attr_name)
 
         # Also support a set of optional signals that don't have to be present
-        for attr_name, sig_name in _build_sig_attr_dict(optional_signals).iteritems():
+        for attr_name, sig_name in _build_sig_attr_dict(optional_signals).items():
             if name:
                 signame = name + bus_separator + sig_name
             else:

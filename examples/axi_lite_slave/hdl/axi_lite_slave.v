@@ -97,7 +97,7 @@ localparam      READ_WAIT_FOR_USER  = 4'h4;
 localparam      SEND_READ_DATA      = 4'h5;
 
 //registes/wires
-reg   [3:0]                           state;
+reg   [3:0]                           state = IDLE;
 
 //submodules
 //asynchronous logic
