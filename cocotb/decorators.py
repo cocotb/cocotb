@@ -329,6 +329,11 @@ class external(object):
 
         return wrapper()
 
+    def __get__(self, obj, type=None):
+        """Permit the decorator to be used on class methods
+            and standalone functions"""
+        return self.__class__(self._func.__get__(obj, type))
+
 @public
 class hook(coroutine):
     """Decorator to mark a function as a hook for cocotb
