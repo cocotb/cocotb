@@ -311,6 +311,11 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 
     m_num_elems = vhpi_get(vhpiSizeP, handle);
 
+    if (m_num_elems == 0) {
+        LOG_DEBUG("Null vector... Delete object")
+        return -1;
+    }
+
     if (vhpi_get(vhpiKindP, query_hdl) == vhpiArrayTypeDeclK) {
         m_indexable = true;
         m_value.format = vhpiLogicVecVal;
