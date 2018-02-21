@@ -60,10 +60,11 @@ will display as something like
     160000000000000.00ns INFO     cocotb.endian_swapper_sv.stream_out           avalon.py:151  in _monitor_recv                   Received a packet of 125 bytes
 
 		
-Buses
-=====
+Busses
+======
 
 Busses are simply defined as collection of signals. The :py:class:`Bus` class will automatically bundle any group of signals together that are named similar to dut.<bus_name><seperator><signal_name>. for instance,
+
 .. code-block:: python
 
         dut.stream_in_valid
@@ -73,13 +74,39 @@ have a bus name of ``stream_in``, a seperator of ``_``, and signal names of ``va
 
 .. code-block:: python
 
-		stream_in_bus = Bus(dut, "stream_in", ["valid", "data"]) # _ is the default seperator
+		stream_in_bus = Bus(dut, "stream_in", ["valid", "data"]) # '_' is the default seperator
 
 
 Driving Busses
 ==============
 
-examples and specific bus implementation bus drivers (amba, avalon, xgmii, and others) exist in the **Driver** class enabling a test to append transactions to perform the serialization of transactions onto a physical interface.
+examples and specific bus implementation bus drivers (amba, avalon, xgmii, and others) exist in the :py:class:`Driver` class enabling a test to append transactions to perform the serialization of transactions onto a physical interface. Here's an example using the avalon bus driver in the endian swapper example
+
+..code-block:: python
+
+@cocotb.coroutine
+
+class EndianSwapperTB(object):
+
+    def __init__(self, dut, debug=False):
+        self.dut = dut
+        self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
+
+def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
+             backpressure_inserter=None):
+
+    cocotb.fork(Clock(dut.clk, 5000).start())
+    tb = EndianSwapperTB(dut)
+
+    yield tb.reset()
+    dut.stream_out_ready <= 1
+
+    if idle_inserter is not None:
+        tb.stream_in.set_valid_generator(idle_inserter())
+
+    # Send in the packets
+    for transaction in data_in():
+        yield tb.stream_in.send(transaction)
 
 
 Monitoring Busses
