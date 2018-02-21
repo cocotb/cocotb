@@ -82,7 +82,7 @@ Driving Busses
 
 examples and specific bus implementation bus drivers (amba, avalon, xgmii, and others) exist in the :py:class:`Driver` class enabling a test to append transactions to perform the serialization of transactions onto a physical interface. Here's an example using the avalon bus driver in the endian swapper example
 
-..code-block:: python
+.. code-block:: python
 
 @cocotb.coroutine
 
@@ -112,9 +112,80 @@ def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
 Monitoring Busses
 =================
 
-For our testbenches to actually be useful, we have to monitor some of these busses, and not just drive them. That's where the **Monitor** class comes in, with prebuilt Monitors for ``avalon`` and ``xgmii`` busses. The Monitor class is a base class which you are expected to derive for your particular purpose. You must create a `_monitor_recv()` function which is responsible for determining 1) at what points in simulation to call the `_recv()` function, and 2) what transaction values to pass to be stored in the monitors receiving queue. Monitors are good for both outputs of the dut for verification, and for the inputs of the dut, to drive a test model of the dut to be compared to the actual dut. For this purpose, input monitors will often have a callback function passed that is a model. This model will often generate expected transactions, which are then compared using the **Scoreboard** class. 
+For our testbenches to actually be useful, we have to monitor some of these busses, and not just drive them. That's where the :py:class:`Monitor` class comes in, with prebuilt Monitors for **avalon** and **xgmii** busses. The Monitor class is a base class which you are expected to derive for your particular purpose. You must create a `_monitor_recv()` function which is responsible for determining 1) at what points in simulation to call the `_recv()` function, and 2) what transaction values to pass to be stored in the monitors receiving queue. Monitors are good for both outputs of the dut for verification, and for the inputs of the dut, to drive a test model of the dut to be compared to the actual dut. For this purpose, input monitors will often have a callback function passed that is a model. This model will often generate expected transactions, which are then compared using the **Scoreboard** class.
+
+.. code-block:: python
+
+# ==============================================================================
+class BitMonitor(Monitor):
+    """Observes single input or output of DUT."""
+    def __init__(self, name, signal, clock, callback=None, event=None):
+        self.name = name
+        self.signal = signal
+        self.clock = clock
+        Monitor.__init__(self, callback, event)
+        
+    @coroutine
+    def _monitor_recv(self):
+        clkedge = RisingEdge(self.clock)
+
+        while True:
+            # Capture signal at rising edge of clock
+            yield clkedge
+            vec = self.signal.value
+            self._recv(vec)
+
+# ==============================================================================
+def input_gen():
+    """Generator for input data applied by BitDriver"""
+    while True:
+        yield random.randint(1,5), random.randint(1,5)
+        
+# ==============================================================================
+class DFF_TB(object):
+    def __init__(self, dut, init_val):
+
+        self.dut = dut
+
+        # Create input driver and output monitor
+        self.input_drv = BitDriver(dut.d, dut.c, input_gen())
+        self.output_mon = BitMonitor("output", dut.q, dut.c)
+        
+        # Create a scoreboard on the outputs
+        self.expected_output = [ init_val ]
+
+        # Reconstruct the input transactions from the pins
+        # and send them to our 'model'
+        self.input_mon = BitMonitor("input", dut.d, dut.c, callback=self.model)
+
+    def model(self, transaction):
+        """Model the DUT based on the input transaction."""
+        # Do not append an output transaction for the last clock cycle of the
+        # simulation, that is, after stop() has been called.
+        if not self.stopped:
+            self.expected_output.append(transaction)
+		
 
 Tracking testbench errors
 =========================
 
-The **Scoreboard** class is used to compare the actual outputs to expected outputs. Monitors are added to the scoreboard for the actual outputs, and the expected outputs can be either a simple list, or a function that provides a transaction. 
+The :py:class:`Scoreboard` class is used to compare the actual outputs to expected outputs. Monitors are added to the scoreboard for the actual outputs, and the expected outputs can be either a simple list, or a function that provides a transaction. Here's some code from the **DFF** example, similar to above with the scoreboard added. 
+
+.. code-block:: python
+		
+class DFF_TB(object):
+    def __init__(self, dut, init_val):
+        self.dut = dut
+
+        # Create input driver and output monitor
+        self.input_drv = BitDriver(dut.d, dut.c, input_gen())
+        self.output_mon = BitMonitor("output", dut.q, dut.c)
+        
+        # Create a scoreboard on the outputs
+        self.expected_output = [ init_val ]
+        self.scoreboard = Scoreboard(dut)
+        self.scoreboard.add_interface(self.output_mon, self.expected_output)
+
+        # Reconstruct the input transactions from the pins
+        # and send them to our 'model'
+        self.input_mon = BitMonitor("input", dut.d, dut.c,callback=self.model)
