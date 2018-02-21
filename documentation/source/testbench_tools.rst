@@ -12,19 +12,20 @@ When logging hdl objects, beware that **_log** is the preferred way to use loggi
 Log printing levels can also be set on a per object basis. 
 
 .. code-block:: python
-    class EndianSwapperTB(object):
+
+        class EndianSwapperTB(object):
     
-        def __init__(self, dut, debug=False):
-            self.dut = dut
-            self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
-            self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk,
-                                                       callback=self.model)
-    
-            # Set verbosity on our various interfaces
-            level = logging.DEBUG if debug else logging.WARNING
-            self.stream_in.log.setLevel(level)
-            self.stream_in_recovered.log.setLevel(level)
-            self.dut.reset_n._log(setLevel(logging.DEBUG)
+            def __init__(self, dut, debug=False):
+                self.dut = dut
+                self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
+                self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk,
+                                                           callback=self.model)
+    	    
+                # Set verbosity on our various interfaces
+                level = logging.DEBUG if debug else logging.WARNING
+                self.stream_in.log.setLevel(level)
+                self.stream_in_recovered.log.setLevel(level)
+                self.dut.reset_n._log(setLevel(logging.DEBUG)
 
 And when the logging is actually called
 
@@ -53,8 +54,8 @@ will display as something like
 
 .. code-block:: bash
 
-    0.00ns INFO     cocotb.scoreboard.endian_swapper_sv       scoreboard.py:177  in add_interface                   Created with reorder_depth 0    
-    0.00ns DEBUG    cocotb.endian_swapper_sv           .._endian_swapper.py:106  in reset                           Resetting DUT
+    0.00ns INFO                   cocotb.scoreboard.endian_swapper_sv       scoreboard.py:177  in add_interface                   Created with reorder_depth 0    
+    0.00ns DEBUG                  cocotb.endian_swapper_sv           .._endian_swapper.py:106  in reset                           Resetting DUT
     160000000000000.00ns INFO     cocotb.endian_swapper_sv.stream_out           avalon.py:151  in _monitor_recv                   Received a packet of 125 bytes
 
 		
