@@ -5,26 +5,26 @@ Test Bench Tools
 Logging
 =======
 
-Cocotb extends the python logging library. Each dut, monitor, driver, and scoreboard (as well as any other function using the **coroutine** decorator) implements it's own logging object, and each can be set to it's own logging level.
+Cocotb extends the python logging library. Each dut, monitor, driver, and scoreboard (as well as any other function using the **coroutine** decorator) implements it's own logging object, and each can be set to it's own logging level. Within a dut, each heirarchical object can also have individual logging levels set.
 
 When logging hdl objects, beware that **_log** is the preferred way to use logging. This helps minimize the change of name collisions with an hdl log component with the python logging functionality.
 
 Log printing levels can also be set on a per object basis. 
 
 .. code-block:: python
-class EndianSwapperTB(object):
-
-    def __init__(self, dut, debug=False):
-        self.dut = dut
-        self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
-        self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk,
-                                                   callback=self.model)
-
-        # Set verbosity on our various interfaces
-        level = logging.DEBUG if debug else logging.WARNING
-        self.stream_in.log.setLevel(level)
-        self.stream_in_recovered.log.setLevel(level)
-
+    class EndianSwapperTB(object):
+    
+        def __init__(self, dut, debug=False):
+            self.dut = dut
+            self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
+            self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk,
+                                                       callback=self.model)
+    
+            # Set verbosity on our various interfaces
+            level = logging.DEBUG if debug else logging.WARNING
+            self.stream_in.log.setLevel(level)
+            self.stream_in_recovered.log.setLevel(level)
+            self.dut.reset_n._log(setLevel(logging.DEBUG)
 
 And when the logging is actually called
 
