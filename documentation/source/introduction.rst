@@ -14,7 +14,7 @@ What is cocotb?
 Linux Platforms
 
 * `Icarus Verilog <http://iverilog.icarus.com/>`_
-* `GHDL <https://github.com/tgingold/ghdl>`_
+* `GHDL <https://ghdl.free.fr/>`_
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
 * `Synopsys <http://www.synopsys.com/>`_ VCS
 * `Cadence <http://www.cadence.com/>`_ Incisive

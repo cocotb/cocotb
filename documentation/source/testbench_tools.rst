@@ -7,8 +7,57 @@ Logging
 
 Cocotb extends the python logging library. Each dut, monitor, driver, and scoreboard (as well as any other function using the **coroutine** decorator) implements it's own logging object, and each can be set to it's own logging level.
 
-When logging hdl objects, beware that **_log** is the preferred way to use logging. This helps minimize the change of name collisions with an hdl log component with the python logging functionality. 
+When logging hdl objects, beware that **_log** is the preferred way to use logging. This helps minimize the change of name collisions with an hdl log component with the python logging functionality.
 
+Log printing levels can also be set on a per object basis. 
+
+.. code-block:: python
+class EndianSwapperTB(object):
+
+    def __init__(self, dut, debug=False):
+        self.dut = dut
+        self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
+        self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk,
+                                                   callback=self.model)
+
+        # Set verbosity on our various interfaces
+        level = logging.DEBUG if debug else logging.WARNING
+        self.stream_in.log.setLevel(level)
+        self.stream_in_recovered.log.setLevel(level)
+
+
+And when the logging is actually called
+
+.. code-block:: python
+
+        class AvalonSTPkts(BusMonitor):
+	...
+	@coroutine
+	def _monitor_recv(self):
+	    ...
+            self.log.info("Received a packet of %d bytes" % len(pkt))
+        @cocotb.coroutine
+	class Scoreboard(object):
+	    ...
+	    def add_interface(self):
+	        ...
+                self.log.info("Created with reorder_depth %d" % reorder_depth)
+        class EndianSwapTB(object):
+	    ...
+            @cocotb.coroutine
+	    def reset():
+                self.dut._log.debug("Resetting DUT")
+		
+
+will display as something like
+
+.. code-block:: bash
+
+    0.00ns INFO     cocotb.scoreboard.endian_swapper_sv       scoreboard.py:177  in add_interface                   Created with reorder_depth 0    
+    0.00ns DEBUG    cocotb.endian_swapper_sv           .._endian_swapper.py:106  in reset                           Resetting DUT
+    160000000000000.00ns INFO     cocotb.endian_swapper_sv.stream_out           avalon.py:151  in _monitor_recv                   Received a packet of 125 bytes
+
+		
 Buses
 =====
 
