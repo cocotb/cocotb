@@ -84,30 +84,28 @@ examples and specific bus implementation bus drivers (amba, avalon, xgmii, and o
 
 .. code-block:: python
 
-@cocotb.coroutine
-
-class EndianSwapperTB(object):
-
-    def __init__(self, dut, debug=False):
-        self.dut = dut
-        self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
-
-def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
-             backpressure_inserter=None):
-
-    cocotb.fork(Clock(dut.clk, 5000).start())
-    tb = EndianSwapperTB(dut)
-
-    yield tb.reset()
-    dut.stream_out_ready <= 1
-
-    if idle_inserter is not None:
-        tb.stream_in.set_valid_generator(idle_inserter())
-
-    # Send in the packets
-    for transaction in data_in():
-        yield tb.stream_in.send(transaction)
-
+    class EndianSwapperTB(object):
+    
+        def __init__(self, dut, debug=False):
+            self.dut = dut
+            self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
+    
+    def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
+                 backpressure_inserter=None):
+    
+        cocotb.fork(Clock(dut.clk, 5000).start())
+        tb = EndianSwapperTB(dut)
+    
+        yield tb.reset()
+        dut.stream_out_ready <= 1
+    
+        if idle_inserter is not None:
+            tb.stream_in.set_valid_generator(idle_inserter())
+    
+        # Send in the packets
+        for transaction in data_in():
+            yield tb.stream_in.send(transaction)
+    
 
 Monitoring Busses
 =================
@@ -116,55 +114,55 @@ For our testbenches to actually be useful, we have to monitor some of these buss
 
 .. code-block:: python
 
-# ==============================================================================
-class BitMonitor(Monitor):
-    """Observes single input or output of DUT."""
-    def __init__(self, name, signal, clock, callback=None, event=None):
-        self.name = name
-        self.signal = signal
-        self.clock = clock
-        Monitor.__init__(self, callback, event)
-        
-    @coroutine
-    def _monitor_recv(self):
-        clkedge = RisingEdge(self.clock)
-
+    # ==============================================================================
+    class BitMonitor(Monitor):
+        """Observes single input or output of DUT."""
+        def __init__(self, name, signal, clock, callback=None, event=None):
+            self.name = name
+            self.signal = signal
+            self.clock = clock
+            Monitor.__init__(self, callback, event)
+            
+        @coroutine
+        def _monitor_recv(self):
+            clkedge = RisingEdge(self.clock)
+    
+            while True:
+                # Capture signal at rising edge of clock
+                yield clkedge
+                vec = self.signal.value
+                self._recv(vec)
+    
+    # ==============================================================================
+    def input_gen():
+        """Generator for input data applied by BitDriver"""
         while True:
-            # Capture signal at rising edge of clock
-            yield clkedge
-            vec = self.signal.value
-            self._recv(vec)
-
-# ==============================================================================
-def input_gen():
-    """Generator for input data applied by BitDriver"""
-    while True:
-        yield random.randint(1,5), random.randint(1,5)
-        
-# ==============================================================================
-class DFF_TB(object):
-    def __init__(self, dut, init_val):
-
-        self.dut = dut
-
-        # Create input driver and output monitor
-        self.input_drv = BitDriver(dut.d, dut.c, input_gen())
-        self.output_mon = BitMonitor("output", dut.q, dut.c)
-        
-        # Create a scoreboard on the outputs
-        self.expected_output = [ init_val ]
-
-        # Reconstruct the input transactions from the pins
-        # and send them to our 'model'
-        self.input_mon = BitMonitor("input", dut.d, dut.c, callback=self.model)
-
-    def model(self, transaction):
-        """Model the DUT based on the input transaction."""
-        # Do not append an output transaction for the last clock cycle of the
-        # simulation, that is, after stop() has been called.
-        if not self.stopped:
-            self.expected_output.append(transaction)
-		
+            yield random.randint(1,5), random.randint(1,5)
+            
+    # ==============================================================================
+    class DFF_TB(object):
+        def __init__(self, dut, init_val):
+    
+            self.dut = dut
+    
+            # Create input driver and output monitor
+            self.input_drv = BitDriver(dut.d, dut.c, input_gen())
+            self.output_mon = BitMonitor("output", dut.q, dut.c)
+            
+            # Create a scoreboard on the outputs
+            self.expected_output = [ init_val ]
+    
+            # Reconstruct the input transactions from the pins
+            # and send them to our 'model'
+            self.input_mon = BitMonitor("input", dut.d, dut.c, callback=self.model)
+    
+        def model(self, transaction):
+            """Model the DUT based on the input transaction."""
+            # Do not append an output transaction for the last clock cycle of the
+            # simulation, that is, after stop() has been called.
+            if not self.stopped:
+                self.expected_output.append(transaction)
+    		
 
 Tracking testbench errors
 =========================
@@ -173,19 +171,19 @@ The :py:class:`Scoreboard` class is used to compare the actual outputs to expect
 
 .. code-block:: python
 		
-class DFF_TB(object):
-    def __init__(self, dut, init_val):
-        self.dut = dut
-
-        # Create input driver and output monitor
-        self.input_drv = BitDriver(dut.d, dut.c, input_gen())
-        self.output_mon = BitMonitor("output", dut.q, dut.c)
-        
-        # Create a scoreboard on the outputs
-        self.expected_output = [ init_val ]
-        self.scoreboard = Scoreboard(dut)
-        self.scoreboard.add_interface(self.output_mon, self.expected_output)
-
-        # Reconstruct the input transactions from the pins
-        # and send them to our 'model'
-        self.input_mon = BitMonitor("input", dut.d, dut.c,callback=self.model)
+    class DFF_TB(object):
+        def __init__(self, dut, init_val):
+            self.dut = dut
+    
+            # Create input driver and output monitor
+            self.input_drv = BitDriver(dut.d, dut.c, input_gen())
+            self.output_mon = BitMonitor("output", dut.q, dut.c)
+            
+            # Create a scoreboard on the outputs
+            self.expected_output = [ init_val ]
+            self.scoreboard = Scoreboard(dut)
+            self.scoreboard.add_interface(self.output_mon, self.expected_output)
+    
+            # Reconstruct the input transactions from the pins
+            # and send them to our 'model'
+            self.input_mon = BitMonitor("input", dut.d, dut.c,callback=self.model)
