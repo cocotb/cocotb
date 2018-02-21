@@ -5,7 +5,7 @@ Test Bench Tools
 Logging
 =======
 
-Cocotb extends the python logging library. Each dut, monitor, driver, and scoreboard (as well as any other function using the **coroutine** decorator) implements it's own logging object, and each can be set to it's own logging level. Within a dut, each heirarchical object can also have individual logging levels set.
+Cocotb extends the python logging library. Each dut, monitor, driver, and scoreboard (as well as any other function using the **coroutine** decorator) implements it's own :class:`logging` object, and each can be set to it's own logging level. Within a dut, each heirarchical object can also have individual logging levels set.
 
 When logging hdl objects, beware that **_log** is the preferred way to use logging. This helps minimize the change of name collisions with an hdl log component with the python logging functionality.
 
@@ -33,16 +33,17 @@ And when the logging is actually called
 
         class AvalonSTPkts(BusMonitor):
 	...
-	@coroutine
-	def _monitor_recv(self):
-	    ...
-            self.log.info("Received a packet of %d bytes" % len(pkt))
-        @cocotb.coroutine
+	    @coroutine
+	    def _monitor_recv(self):
+	        ...
+                self.log.info("Received a packet of %d bytes" % len(pkt))
+
 	class Scoreboard(object):
 	    ...
 	    def add_interface(self):
 	        ...
                 self.log.info("Created with reorder_depth %d" % reorder_depth)
+
         class EndianSwapTB(object):
 	    ...
             @cocotb.coroutine
@@ -62,10 +63,17 @@ will display as something like
 Buses
 =====
 
-Busses are simply defined as collection of signals. The **Bus** class will automatically bundle any group of signals together that are named similar to dut.<bus_name><seperator><signal_name>. for instance,
-    dut.stream_in_valid
-    dut.stream_in_data
-have a bus name of ``stream_in``, a seperator of ``_``, and signal names of ``valid`` and ``data``. a list of signal names, or a dictionary mapping attribute names to signal names is also passed into the **Bus** class. Busses can have values driven onto them, be captured (returning a dictionary), or sampled and stored into a similar object. 
+Busses are simply defined as collection of signals. The :py:class:`Bus` class will automatically bundle any group of signals together that are named similar to dut.<bus_name><seperator><signal_name>. for instance,
+.. code-block:: python
+
+        dut.stream_in_valid
+        dut.stream_in_data
+	
+have a bus name of ``stream_in``, a seperator of ``_``, and signal names of ``valid`` and ``data``. a list of signal names, or a dictionary mapping attribute names to signal names is also passed into the :py:class:`Bus` class. Busses can have values driven onto them, be captured (returning a dictionary), or sampled and stored into a similar object. 
+
+.. code-block:: python
+
+		stream_in_bus = Bus(dut, "stream_in", ["valid", "data"]) # _ is the default seperator
 
 
 Driving Busses
