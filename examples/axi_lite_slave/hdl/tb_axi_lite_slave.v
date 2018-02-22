@@ -44,7 +44,7 @@ output      [DATA_WIDTH - 1: 0]     AXIML_RDATA
 //Registers
 
 reg               r_rst;
-reg               test_id         = 0;
+reg [7:0] 	  test_id         = 0;
 
 //Workaround for weird icarus simulator bug
 always @ (*)      r_rst           = rst;

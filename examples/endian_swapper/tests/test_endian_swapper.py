@@ -182,7 +182,7 @@ def wavedrom_test(dut):
     """
     Generate a JSON wavedrom diagram of a trace
     """
-    cocotb.fork(clock_gen(dut.clk))
+    cocotb.fork(Clock(dut.clk,5000).start())
     yield RisingEdge(dut.clk)
     tb = EndianSwapperTB(dut)
     yield tb.reset()

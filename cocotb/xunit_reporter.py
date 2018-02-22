@@ -79,6 +79,12 @@ class XUnitReporter(object):
         self.last_testcase = SubElement(testsuite, "testcase", **kwargs)
         return self.last_testcase
 
+    def add_property(self, testsuite=None, **kwargs):
+        if testsuite is None:
+            testsuite = self.last_testsuite
+        self.last_property = SubElement(testsuite, "property", **kwargs)
+        return self.last_property
+
     def update_testsuite(self, testsuite=None, **kwargs):
         if testsuite is None:
             testsuite = self.last_testsuite

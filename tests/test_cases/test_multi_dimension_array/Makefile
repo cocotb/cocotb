@@ -1,19 +1,19 @@
 ###############################################################################
-# Copyright (c) 2013 Potential Ventures Ltd
-# Copyright (c) 2013 SolarFlare Communications Inc
+# Copyright (c) 2016 Potential Ventures Ltd
+# Copyright (c) 2016 SolarFlare Communications Inc
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-# * Neither the name of Potential Ventures Ltd,
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
 #       SolarFlare Communications Inc nor the
-# names of its contributors may be used to endorse or promote products
-# derived from this software without specific prior written permission.
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -27,19 +27,16 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-COCOTB?=$(shell pwd)/../
-export COCOTB
+ifeq ($(SIM),)
+all:
+	@echo "Skipping test_array since icarus doesn't support indexing"
+else ifeq ($(shell echo $(SIM) | tr A-Z a-z),icarus)
+all:
+	@echo "Skipping test_array since icarus doesn't support indexing"
+else
 
-EXAMPLES := adder/tests \
-	    endian_swapper/tests \
-            axi_lite_slave/tests \
+include ../../designs/multi_dimension_array/Makefile
 
-.PHONY: $(EXAMPLES)
+MODULE = test_cocotb_array
 
-all: $(EXAMPLES)
-
-$(EXAMPLES):
-	@cd $@ && $(MAKE)
-
-clean:
-	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) clean;)
+endif
