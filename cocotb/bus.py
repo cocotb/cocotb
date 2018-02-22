@@ -131,7 +131,7 @@ class Bus(object):
         Raises:
             AttributeError
         """
-        for attr_name, hdl in self._signals.iteritems():
+        for attr_name, hdl in self._signals.items():
             if not hasattr(obj, attr_name):
                 if strict:
                     msg = ("Unable to drive onto {0}.{1} because {2} is missing "
@@ -152,7 +152,7 @@ class Bus(object):
         Returns:
             A dict that supports access by attribute, each attribute corresponds to each signal's value
         """
-        class _Capture(dict): 
+        class _Capture(dict):
             def __getattr__(self, name):
                 if name in self:
                     return self[name]
@@ -166,7 +166,7 @@ class Bus(object):
                 raise RuntimeError('modifying a bus capture is not supported')
 
         _capture = _Capture()
-        for attr_name, hdl in self._signals.iteritems():
+        for attr_name, hdl in self._signals.items():
             _capture[attr_name] = hdl.value
 
         return _capture
