@@ -30,6 +30,7 @@ import time
 import logging
 import traceback
 import pdb
+import functools
 import threading
 
 from io import StringIO, BytesIO
@@ -242,6 +243,7 @@ class coroutine(object):
         self._func = func
         self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
         self.__name__ = self._func.__name__
+        functools.update_wrapper(self, func)
 
     def __call__(self, *args, **kwargs):
         try:
