@@ -457,7 +457,7 @@ class AvalonMemory(BusDriver):
                         self.log.debug("Data in   : %x" % data)
                         self.log.debug("Width     : %d" % self._width)
                         self.log.debug("Byteenable: %x" % byteenable)
-                        for i in xrange(self._width/8):
+                        for i in range(self._width/8):
                             if (byteenable & 2**i):
                                 mask |= 0xFF << (8*i)
                             else:

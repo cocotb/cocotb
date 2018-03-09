@@ -139,7 +139,7 @@ We want to run different variations of tests but they will all have a very simil
             yield tb.stream_in.send(transaction)
         
         # Wait at least 2 cycles where output ready is low before ending the test
-        for i in xrange(2):
+        for i in range(2):
             yield RisingEdge(dut.clk)
             while not dut.stream_out_ready.value:
                 yield RisingEdge(dut.clk)
