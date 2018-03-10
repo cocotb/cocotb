@@ -254,7 +254,7 @@ class AvalonMemory(BusDriver):
 
         if hasattr(self.bus, "readdata"):
             self._width = len(self.bus.readdata)
-            self.dataByteSize = self._width/8
+            self.dataByteSize = int(self._width/8)
             self._readable = True
 
         if hasattr(self.bus, "writedata"):
@@ -263,7 +263,7 @@ class AvalonMemory(BusDriver):
                 self.log.error("readdata and writedata bus" +
                                " are not the same size")
             self._width = width
-            self.dataByteSize = self._width/8
+            self.dataByteSize = int(self._width/8)
             self._writeable = True
 
         if not self._readable and not self._writeable:
@@ -402,7 +402,7 @@ class AvalonMemory(BusDriver):
                         self.log.error("Address must be aligned to data width" +
                                        "(addr = " + hex(addr) +
                                        ", width = " + str(self._width))
-                    addr = addr / self.dataByteSize
+                    addr = int(addr / self.dataByteSize)
                     burstcount = self.bus.burstcount.value.integer
                     byteenable = self.bus.byteenable.value
                     if byteenable != int("1"*len(self.bus.byteenable), 2):
@@ -699,4 +699,3 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.log.info("Sucessfully sent packet of length %d bytes" % len(pkt))
         else:
             yield self._send_iterable(pkt, sync=sync)
-
