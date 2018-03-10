@@ -112,7 +112,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl)
 void gpi_embed_init(gpi_sim_info_t *info)
 {
     if (embed_sim_init(info))
-        gpi_sim_end();
+        gpi_embed_end();
 }
 
 void gpi_embed_end(void)
@@ -338,7 +338,7 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index)
     GpiObjHdl *base        = sim_to_hdl<GpiObjHdl*>(parent);
     GpiImplInterface *intf = base->m_impl;
 
-    /* Shouldn't need to iterate over interfaces because indexing into a handle shouldn't 
+    /* Shouldn't need to iterate over interfaces because indexing into a handle shouldn't
      * cross the interface boundaries.
      *
      * NOTE: IUS's VPI interface returned valid VHDL handles, but then couldn't
