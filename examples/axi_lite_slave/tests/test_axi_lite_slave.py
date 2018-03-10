@@ -165,7 +165,7 @@ def write_fail(dut):
         yield axim.write(ADDRESS, DATA)
         yield Timer(CLK_PERIOD * 10)
     except AXIProtocolError as e:
-        print ("Exception: %s" % str(e))
+        print("Exception: %s" % str(e))
         dut._log.info("Bus Successfully Raised an Error")
         raise TestSuccess()
     raise TestFailure("AXI Bus Should have raised an ERROR when writing to \
@@ -199,10 +199,8 @@ def read_fail(dut):
         yield axim.read(ADDRESS, DATA)
         yield Timer(CLK_PERIOD * 10)
     except AXIProtocolError as e:
-        print ("Exception: %s" % str(e))
+        print("Exception: %s" % str(e))
         dut._log.info("Bus Successfully Raised an Error")
         raise TestSuccess()
     raise TestFailure("AXI Bus Should have raised an ERROR when writing to \
                         the wrong bus")
-
-

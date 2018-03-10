@@ -48,7 +48,7 @@ class AD9361(BusDriver):
 
     def send_data(self, i_data, q_data, i_data2=None, q_data2=None,
                   binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT):
-        print binaryRepresentation
+        print(binaryRepresentation)
         cocotb.fork(self.rx_data_to_ad9361(i_data, q_data, i_data2, q_data2,
                     binaryRepresentation))
 
@@ -145,8 +145,8 @@ class AD9361(BusDriver):
                 i_bin_val[11:6] = self.dut.tx_data_out_p.value.get_binstr()
             else:
                 i_bin_val[5:0] = self.dut.tx_data_out_p.value.get_binstr()
-                # print "i_data",i_bin_val.get_value()
-                # print "q_data",q_bin_val.get_value()
+                # print("i_data",i_bin_val.get_value())
+                # print("q_data",q_bin_val.get_value())
                 self.lbqi.append(i_bin_val)
                 self.lbqq.append(q_bin_val)
                 self.got_tx.set([i_bin_val, q_bin_val])

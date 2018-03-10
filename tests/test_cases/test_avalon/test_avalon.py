@@ -103,8 +103,8 @@ def test_burst_read(dut):
     dut.user_read_buffer = 0
     yield RisingEdge(dut.clk)
 
-    print str(read_mem)
-    print str(len(read_mem)) + " 8bits values read"
+    print(str(read_mem))
+    print(str(len(read_mem)) + " 8bits values read")
 
     # checking values read
     for key, value in read_mem.items():
@@ -122,4 +122,3 @@ def test_burst_read(dut):
     yield Timer(10)
     dut.user_read_buffer = 0
     yield Timer(10)
-

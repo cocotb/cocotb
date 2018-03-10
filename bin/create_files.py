@@ -67,7 +67,7 @@ def print_files(path):
 
 def check_args(args):
     if len(args) is not 1:
-        print "Please specify a path"
+        print("Please specify a path")
         return
 
     print_files(args[0])
