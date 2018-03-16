@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import ctypes
 import math
 import os
+import sys
 
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
@@ -231,7 +232,16 @@ def hexdiffs(x, y):
         return r
 
     def highlight(string, colour=ANSI.YELLOW_FG):
-        return colour + string + ANSI.DEFAULT_FG + ANSI.DEFAULT_BG
+        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT")
+        if want_ansi is None:
+            want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
+        else:
+            want_ansi = want_ansi == '1'
+
+        if want_ansi:
+            return colour + string + ANSI.DEFAULT_FG + ANSI.DEFAULT_BG
+        else:
+            return string
 
     rs = ""
 
