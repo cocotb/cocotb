@@ -259,7 +259,7 @@ class HierarchyObject(RegionObject):
                 if len(sub) != len(value):
                     raise IndexError("Attempting to set %s with list length %d but target has length %d" % (
                         name, len(value), len(sub)))
-                for idx in xrange(len(value)):
+                for idx in range(len(value)):
                     sub[idx] = value[idx]
                 return
             else:
@@ -399,7 +399,7 @@ class NonHierarchyObject(SimHandleBase):
         if type(self) is NonHierarchyIndexableObject:
             #Need to iterate over the sub-object
             result =[]
-            for x in xrange(len(self)):
+            for x in range(len(self)):
                 result.append(self[x]._getvalue())
             return result
         else:
@@ -491,7 +491,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
                 raise IndexError("Assigning list of length %d to object %s of length %d" % (
                     len(value), self.__getitem__(index)._fullname, len(self.__getitem__(index))))
             self._log.info("Setting item %s to %s" % (self.__getitem__(index)._fullname, value))
-            for idx in xrange(len(value)):
+            for idx in range(len(value)):
                 self.__getitem__(index).__setitem__(idx, value[idx])
         else:
             self.__getitem__(index).value = value

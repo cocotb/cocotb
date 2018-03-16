@@ -85,9 +85,9 @@ class BinaryValue(object):
 
     >>> vec = BinaryValue()
     >>> vec.integer = 42
-    >>> print vec.binstr
+    >>> print(vec.binstr)
     101010
-    >>> print repr(vec.buff)
+    >>> print(repr(vec.buff))
     '*'
 
     """
@@ -376,12 +376,12 @@ class BinaryValue(object):
         """Provide boolean testing of a binstr.
 
         >>> val = BinaryValue("0000")
-        >>> if val: print "True"
-        ... else:   print "False"
+        >>> if val: print("True")
+        ... else:   print("False")
         False
         >>> val.integer = 42
-        >>> if val: print "True"
-        ... else:   print "False"
+        >>> if val: print("True")
+        ... else:   print("False")
         True
 
         """
