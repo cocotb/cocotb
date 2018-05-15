@@ -91,6 +91,9 @@ $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) $
 	@echo "vlib $(RTL_LIBRARY)" >> $@
 	@echo "vmap -c" >> $@
 	@echo "vmap $(RTL_LIBRARY) $(RTL_LIBRARY)" >> $@
+ifdef SCRIPT_FILE_PRECOMP
+	@echo "do $(SCRIPT_FILE_PRECOMP)" >> $@
+endif
 ifeq ($(TOPLEVEL_LANG),verilog)
 ifneq ($(VHDL_SOURCES),)    
 	@echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
