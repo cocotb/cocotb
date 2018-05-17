@@ -35,10 +35,6 @@
 #include "../compat/python3_compat.h"
 #include "locale.h"
 
-#include <stdio.h>
-#include <wchar.h>
-#include <stdlib.h>
-
 #if defined(_WIN32)
 #include <windows.h>
 #define sleep(n) Sleep(1000 * n)
