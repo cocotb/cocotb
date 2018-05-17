@@ -369,6 +369,9 @@ class BinaryValue(object):
     def __str__(self):
         return self.binstr
 
+    def __repr__(self):
+        return self.__str__()
+
     def __bool__(self):
         return self.__nonzero__()
 
