@@ -619,6 +619,7 @@ class Scheduler(object):
             return
 
         # Queue current routine to schedule when the nested routine exits
+        yield_successful = False
         if isinstance(result, cocotb.decorators.RunningCoroutine):
 
             if not result.has_started():
@@ -633,11 +634,13 @@ class Scheduler(object):
 
             new_trigger = result.join()
             self._coroutine_yielded(coroutine, [new_trigger])
+            yield_successful = True
 
         elif isinstance(result, Trigger):
             if _debug:
                 self.log.debug("%s: is instance of Trigger" % result)
             self._coroutine_yielded(coroutine, [result])
+            yield_successful = True
 
         # If we get a list, make sure it's a list of triggers or coroutines.
         # For every coroutine, replace it with coroutine.join().
@@ -655,13 +658,21 @@ class Scheduler(object):
                         self.queue(listobj)
                     new_trigger = listobj.join()
                     new_triggers.append(new_trigger)
+                else:
+                    # If we encounter something not a coroutine or trigger,
+                    # set the success flag to False and break out of the loop.
+                    yield_successful = False
+                    break
 
             # Make sure the lists are the same size. If they are not, it means
             # it contained something not a trigger/coroutine, so do nothing.
             if len(new_triggers) == len(result):
                 self._coroutine_yielded(coroutine, new_triggers)
+                yield_successful = True
 
-        else:
+        # If we didn't successfully yield anything, thrown an error.
+        # Do it this way to make the logic in the list case simpler.
+        if not yield_successful:
             msg = ("Coroutine %s yielded something the scheduler can't handle"
                    % str(coroutine))
             msg += ("\nGot type: %s repr: %s str: %s" %
