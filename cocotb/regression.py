@@ -90,6 +90,14 @@ class RegressionManager(object):
         self._hooks = hooks
 
     def initialise(self):
+        try:
+            self._initialise()
+        except Exception as e:
+            import traceback
+            self.log.error(traceback.format_exc())
+            raise
+        
+    def _initialise(self):
 
         self.start_time = time.time()
         self.test_results = []
