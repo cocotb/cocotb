@@ -35,6 +35,7 @@ import inspect
 from itertools import product
 import sys
 import os
+import traceback
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
     simulator = None
@@ -124,11 +125,14 @@ class RegressionManager(object):
         # Auto discovery
         for module_name in self._modules:
             try:
+                self.log.debug("Python Path: " + ",".join(sys.path))
+                self.log.debug("PWD: " + os.getcwd())
                 module = _my_import(module_name)
-            except ImportError:
-                self.log.critical("Failed to import module %s", module_name)
-                self.log.info("MODULE variable was \"%s\"",
-                                                    ",".join(self._modules))
+            except Exception as E:
+                self.log.critical("Failed to import module %s: %s", (module_name, E))
+                self.log.info("MODULE variable was \"%s\"", ".".join(self._modules))
+                self.log.info("Traceback: ")
+                self.log.info(traceback.format_exc())
                 raise
 
             if self._functions:
