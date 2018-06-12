@@ -33,6 +33,7 @@
 #include <cocotb_utils.h>
 #include "embed.h"
 #include "../compat/python3_compat.h"
+#include "locale.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -85,7 +86,34 @@ void embed_init_python(void)
     }
 
     to_python();
-    Py_SetProgramName(progname);
+
+    // reset Program Name (i.e. argv[0]) if we are in a virtual environment
+    char *venv_path_home = getenv("VIRTUAL_ENV");
+    if (venv_path_home) {
+        char venv_path[strlen(venv_path_home)+64];
+        strcpy(venv_path, venv_path_home);
+        strcat(venv_path, "/bin/python");  // this is universal in any VIRTUAL_ENV the python interpreter
+#if PY_MAJOR_VERSION >= 3
+        static wchar_t venv_path_w[1024];
+#if PY_MINOR_VERSION >= 5
+        // Python3.5 + provides the locale decoder
+        wcscpy(venv_path_w, Py_DecodeLocale(venv_path, NULL));
+#else
+        // for lesser python versions, we just hope the user specified his locales correctly
+        setlocale (LC_ALL, "");
+        mbstowcs(venv_path_w, venv_path, sizeof(venv_path_w));
+#endif
+        LOG_INFO("Using virtualenv at %ls.", venv_path_w);
+        Py_SetProgramName(venv_path_w);
+#else
+        // Python2 case
+        LOG_INFO("Using virtualenv at %s.", venv_path);
+        Py_SetProgramName(venv_path);   
+#endif
+    } else {
+        LOG_INFO("Did not detect virtual environment. Using system-wide Python interpreter.");
+    }
+
     Py_Initialize();                    /* Initialize the interpreter */
     PySys_SetArgvEx(1, argv, 0);
     PyEval_InitThreads();               /* Create (and acquire) the interpreter lock */
