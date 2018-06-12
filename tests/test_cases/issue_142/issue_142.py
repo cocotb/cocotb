@@ -7,7 +7,7 @@ from cocotb.result import TestFailure
 from cocotb.binary import BinaryValue
 
 
-@cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("icarus")))
+@cocotb.test()
 def issue_142_overflow_error(dut):
     """Tranparently convert ints too long to pass
        through the GPI interface natively into BinaryValues"""
