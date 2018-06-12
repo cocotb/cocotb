@@ -24,6 +24,7 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+import traceback
 
 """
 All things relating to regression capabilities
@@ -124,11 +125,14 @@ class RegressionManager(object):
         # Auto discovery
         for module_name in self._modules:
             try:
+                self.log.debug("Python Path: " + ",".join(sys.path))
+                self.log.debug("PWD: " + os.getcwd())
                 module = _my_import(module_name)
-            except ImportError:
-                self.log.critical("Failed to import module %s", module_name)
-                self.log.info("MODULE variable was \"%s\"",
-                                                    ",".join(self._modules))
+            except Exception as E:
+                self.log.critical("Failed to import module %s: %s", (module_name, E))
+                self.log.info("MODULE variable was \"%s\"", ".".join(self._modules))
+                self.log.info("Traceback: ")
+                self.log.info(traceback.format_exc())
                 raise
 
             if self._functions:
