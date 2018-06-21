@@ -421,11 +421,11 @@ class Scheduler(object):
                                    (str(self._pending_events[0])))
                 self._pending_events.pop(0).set()
 
-        while self._pending_triggers:
-            if _debug:
-                self.log.debug("Scheduling pending trigger %s" %
-                               (str(self._pending_triggers[0])))
-            self.react(self._pending_triggers.pop(0), depth=depth + 1)
+            while self._pending_triggers:
+                if _debug:
+                    self.log.debug("Scheduling pending trigger %s" %
+                                   (str(self._pending_triggers[0])))
+                self.react(self._pending_triggers.pop(0), depth=depth + 1)
 
         # We only advance for GPI triggers
         if not depth and isinstance(trigger, GPITrigger):
