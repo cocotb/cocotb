@@ -27,6 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
+import sys
+import textwrap
 
 """
 A set of tests that demonstrate cocotb functionality
@@ -666,3 +668,40 @@ def test_binary_value(dut):
     dut._log.info("vec = 'b%s" % vec.binstr)
 
     yield Timer(100) #Make it do something with time
+
+
+# This is essentially six.exec_
+if sys.version_info.major == 3:
+    # this has to not be a syntax error in py2
+    import builtins
+    exec_ = getattr(builtins, 'exec')
+else:
+    # this has to not be a syntax error in py3
+    def exec_(_code_, _globs_=None, _locs_=None):
+        """Execute code in a namespace."""
+        if _globs_ is None:
+            frame = sys._getframe(1)
+            _globs_ = frame.f_globals
+            if _locs_ is None:
+                _locs_ = frame.f_locals
+            del frame
+        elif _locs_ is None:
+            _locs_ = _globs_
+        exec("""exec _code_ in _globs_, _locs_""")
+
+
+@cocotb.test(skip=sys.version_info[:2] < (3, 3))
+def test_coroutine_return(dut):
+    """ Test that the python 3.3 syntax for returning from generators works """
+    # this would be a syntax error in older python, so we do the whole
+    # thing inside exec
+    exec_(textwrap.dedent("""
+    @cocotb.coroutine
+    def return_it(x):
+        return x
+        yield
+
+    ret = yield return_it(42)
+    if ret != 42:
+        raise TestFailure("Return statement did not work")
+    """))
