@@ -670,32 +670,12 @@ def test_binary_value(dut):
     yield Timer(100) #Make it do something with time
 
 
-# This is essentially six.exec_
-if sys.version_info.major == 3:
-    # this has to not be a syntax error in py2
-    import builtins
-    exec_ = getattr(builtins, 'exec')
-else:
-    # this has to not be a syntax error in py3
-    def exec_(_code_, _globs_=None, _locs_=None):
-        """Execute code in a namespace."""
-        if _globs_ is None:
-            frame = sys._getframe(1)
-            _globs_ = frame.f_globals
-            if _locs_ is None:
-                _locs_ = frame.f_locals
-            del frame
-        elif _locs_ is None:
-            _locs_ = _globs_
-        exec("""exec _code_ in _globs_, _locs_""")
-
-
 @cocotb.test(skip=sys.version_info[:2] < (3, 3))
 def test_coroutine_return(dut):
     """ Test that the python 3.3 syntax for returning from generators works """
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
-    exec_(textwrap.dedent("""
+    cocotb.utils.exec_(textwrap.dedent("""
     @cocotb.coroutine
     def return_it(x):
         return x
@@ -705,3 +685,43 @@ def test_coroutine_return(dut):
     if ret != 42:
         raise TestFailure("Return statement did not work")
     """))
+
+
+@cocotb.test(skip=sys.version_info[:2] < (3, 5))
+def test_async(dut):
+    # this would be a syntax error in older python, so we do the whole
+    # thing inside exec
+    cocotb.utils.exec_(textwrap.dedent('''
+        # inner functions don't need the cocotb.coroutine decorator - but
+        # adding it should have no effect anyway
+        @cocotb.coroutine
+        async def wait_5_cycles_marked():
+            await ClockCycles(clk, 5)
+
+        async def wait_5_cycles_unmarked():
+            await ClockCycles(clk, 5)
+
+
+        @cocotb.coroutine
+        async def test_clock_cycles_async(dut):
+            """
+            Test the ClockCycles Trigger
+            """
+            clk = dut.clk
+
+            clk_gen = cocotb.fork(Clock(clk, 100).start())
+
+            await RisingEdge(clk)
+
+            dut.log.info("After one edge")
+
+            await wait_5_cycles_marked()
+            await wait_5_cycles_unmarked()
+
+            dut.log.info("After 10 edges")
+
+        # as along as an async function is marked with @cocotb.coroutine, it
+        # can be used in a non-async function, where `await` is a syntaxerror,
+        # with a yield
+        yield test_clock_cycles_async()
+    '''))

@@ -361,6 +361,26 @@ def hexdiffs(x, y):
     return rs
 
 
+# This is essentially six.exec_
+if sys.version_info.major == 3:
+    # this has to not be a syntax error in py2
+    import builtins
+    exec_ = getattr(builtins, 'exec')
+else:
+    # this has to not be a syntax error in py3
+    def exec_(_code_, _globs_=None, _locs_=None):
+        """Execute code in a namespace."""
+        if _globs_ is None:
+            frame = sys._getframe(1)
+            _globs_ = frame.f_globals
+            if _locs_ is None:
+                _locs_ = frame.f_locals
+            del frame
+        elif _locs_ is None:
+            _locs_ = _globs_
+        exec("""exec _code_ in _globs_, _locs_""")
+
+
 if __name__ == "__main__":
     import random
     a = ""
