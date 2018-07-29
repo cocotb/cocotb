@@ -223,7 +223,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 
     hdl = gpi_register_readonly_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
 
-    PyObject *rv = Py_BuildValue("l", hdl);
+    PyObject *rv = PyLong_FromVoidPtr(hdl);
     DROP_GIL(gstate);
     FEXIT
 
@@ -279,7 +279,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 
     hdl = gpi_register_readwrite_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
 
-    PyObject *rv = Py_BuildValue("l", hdl);
+    PyObject *rv = PyLong_FromVoidPtr(hdl);
     DROP_GIL(gstate);
     FEXIT
 
@@ -335,7 +335,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 
     hdl = gpi_register_nexttime_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
 
-    PyObject *rv = Py_BuildValue("l", hdl);
+    PyObject *rv = PyLong_FromVoidPtr(hdl);
     DROP_GIL(gstate);
     FEXIT
 
@@ -402,7 +402,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     hdl = gpi_register_timed_callback((gpi_function_t)handle_gpi_callback, callback_data_p, time_ps);
 
     // Check success
-    PyObject *rv = Py_BuildValue("l", hdl);
+    PyObject *rv = PyLong_FromVoidPtr(hdl);
     DROP_GIL(gstate);
     FEXIT
 
@@ -476,7 +476,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
                                              edge);
 
     // Check success
-    PyObject *rv = Py_BuildValue("l", hdl);
+    PyObject *rv = PyLong_FromVoidPtr(hdl);
 
     DROP_GIL(gstate);
     FEXIT
@@ -502,7 +502,7 @@ static PyObject *iterate(PyObject *self, PyObject *args)
 
     result = gpi_iterate(hdl, (gpi_iterator_sel_t)type);
 
-    res = Py_BuildValue("l", result);
+    res = PyLong_FromVoidPtr(result);
 
     DROP_GIL(gstate);
 
@@ -541,7 +541,7 @@ static PyObject *next(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    res = Py_BuildValue("l", result);
+    res = PyLong_FromVoidPtr(result);
 
     DROP_GIL(gstate);
 
@@ -766,7 +766,7 @@ static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
 
     result = gpi_get_handle_by_name((gpi_sim_hdl)hdl, name);
 
-    res = Py_BuildValue("l", result);
+    res = PyLong_FromVoidPtr(result);
 
     DROP_GIL(gstate);
 
@@ -790,7 +790,7 @@ static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
 
     result = gpi_get_handle_by_index((gpi_sim_hdl)hdl, index);
 
-    value = Py_BuildValue("l", result);
+    value = PyLong_FromVoidPtr(result);
 
     DROP_GIL(gstate);
 
@@ -818,7 +818,7 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args)
     }
 
 
-    value = Py_BuildValue("l", result);
+    value = PyLong_FromVoidPtr(result);
 
     DROP_GIL(gstate);
 
