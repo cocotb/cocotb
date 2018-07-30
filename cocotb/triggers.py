@@ -29,6 +29,8 @@
 
 import os
 import weakref
+import sys
+import textwrap
 
 if "COCOTB_SIM" in os.environ:
     import simulator
@@ -39,7 +41,7 @@ from cocotb.log import SimLog
 from cocotb.result import raise_error
 from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, with_metaclass,
-    ParametrizedSingleton
+    ParametrizedSingleton, exec_
 )
 from cocotb import outcomes
 
@@ -73,6 +75,14 @@ class Trigger(object):
     @property
     def _outcome(self):
         return outcomes.Value(self)
+
+    # Once 2.7 is dropped, this can be run unconditionally
+    if sys.version_info >= (3, 3):
+        exec_(textwrap.dedent("""
+        def __await__(self):
+            # hand the trigger back to the scheduler trampoline
+            return (yield self)
+        """))
 
 
 class PythonTrigger(Trigger):

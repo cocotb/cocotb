@@ -151,3 +151,65 @@ they'd naturally end.
         if not isclose(edge_time_ns, start_time_ns + 4.0):
             raise TestFailure("Expected a period of 4 ns")
 
+
+Async functions
+---------------
+
+Python 3.5 introduces :keyword:`async` functions, which provide an alternative
+syntax. For example:
+
+.. code-block:: python
+
+    @cocotb.coroutine
+    async def wait_10ns():
+        cocotb.log.info("About to wait for 10 ns")
+        await Timer(10000)
+        cocotb.log.info("Simulation time has advanced by 10 ns")
+
+To wait on a trigger or a nested coroutine, these use :keyword:`await` instead
+of :keyword:`yield`. Provided they are decorated with ``@cocotb.coroutine``,
+``async def`` functions using :keyword:`await` and regular functions using
+:keyword:`yield` can be used interchangeable - the appropriate keyword to use
+is determined by which type of function it appears in, not by the
+sub-coroutinue being called.
+
+..note::
+
+    It is currently not possible to ``await`` a list of triggers as can be done
+    in a ``yield``-based coroutine with ``yield [trig1, trig2]``.
+    Until this becomes possible, a simple workaround is to create a helper
+    function like:
+
+    .. code-block:: python
+
+        @cocotb.coroutine
+        def first_of(triggers):
+            return (yield triggers)
+
+    which thanks to the interoperability between the two types of coroutinue,
+    can then be used as ``await first_of([trig1, trig2])``.
+
+
+Async generators
+~~~~~~~~~~~~~~~~
+
+In Python 3.6, a ``yield`` statement within an ``async`` function has a new
+meaning (rather than being a ``SyntaxError``) which matches the typical meaning
+of ``yield`` within regular python code. It can be used to create a special
+type of generator function that can be iterated with ``async for``:
+
+.. code-block:: python
+
+    async def ten_samples_of(clk, signal):
+        for i in range(10):
+            await RisingEdge(clk)
+            yield signal.value  # this means "send back to the for loop"
+
+    @cocotb.test()
+    async def test_samples_are_even(dut):
+        async for sample in ten_samples_of(dut.clk, dut.signal):
+            assert sample % 2 == 0
+
+More details on this type of generator can be found in `PEP 525`_.
+
+.. PEP 525: https://www.python.org/dev/peps/pep-0525/
