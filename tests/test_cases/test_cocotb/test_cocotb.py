@@ -931,3 +931,6 @@ def test_immediate_coro(dut):
         pass
     else:
         raise TestFailure("Exception was not raised")
+
+if sys.version_info[:2] >= (3, 5):
+    from test_cocotb_35 import *

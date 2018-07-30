@@ -33,6 +33,8 @@ import traceback
 import pdb
 import functools
 import threading
+import inspect
+import textwrap
 
 from io import StringIO, BytesIO
 
@@ -41,7 +43,7 @@ from cocotb.log import SimLog
 from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
-from cocotb.utils import get_sim_time, with_metaclass
+from cocotb.utils import get_sim_time, with_metaclass, exec_
 from cocotb import outcomes
 
 
@@ -89,7 +91,13 @@ class RunningCoroutine(object):
             self.log = SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
         else:
             self.log = SimLog("cocotb.coroutine.fail")
-        self._coro = inst
+
+        if sys.version_info[:2] >= (3, 5) and inspect.iscoroutine(inst):
+            self._natively_awaitable = True
+            self._coro = inst.__await__()
+        else:
+            self._natively_awaitable = False
+            self._coro = inst
         self._started = False
         self._callbacks = []
         self._parent = parent
@@ -171,6 +179,20 @@ class RunningCoroutine(object):
             if the coroutine has finished return false
             otherwise return true"""
         return not self._finished
+
+    # Needs `yield from` syntax to implement this correctly.
+    # Once 2.7 is dropped, this can be run unconditionally
+    if sys.version_info >= (3, 3):
+        exec_(textwrap.dedent("""
+        def __await__(self):
+            if self._natively_awaitable:
+                # use the native trampoline, which will only hand back nested
+                # non-natively awaitable objects
+                return (yield from self._coro)
+            else:
+                # hand the coroutine back to the scheduler trampoline
+                return (yield self)
+        """))
 
     __bool__ = __nonzero__
 
