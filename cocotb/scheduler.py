@@ -452,6 +452,10 @@ class Scheduler(object):
 
         if coro._join in self._trigger2coros:
             self._pending_triggers.append(coro._join)
+            # immediately kick off the calling coroutine if we terminated
+            # normally (ie, not killed)
+            if coro._finished:
+                self.react(coro._join)
 
         # Remove references to allow GC to clean up
         del coro._join
