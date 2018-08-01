@@ -705,3 +705,33 @@ def test_coroutine_return(dut):
     if ret != 42:
         raise TestFailure("Return statement did not work")
     """))
+
+
+@cocotb.test()
+def test_empty(dut):
+    """ Test that a test can complete before the first yield """
+    return
+    yield  # needed to make this a coroutine
+
+
+@cocotb.test()
+def test_func_empty(dut):
+    complete = set()
+    """ Test that a function can complete before the first yield """
+    @cocotb.coroutine
+    def func_empty():
+        complete.add(func_empty)
+        return
+        yield # needed to make this a coroutine
+
+    @cocotb.coroutine
+    def func_empty_wrap():
+        yield func_empty()
+        complete.add(func_empty_wrap)
+
+    yield func_empty_wrap()
+
+    if func_empty_wrap not in complete
+        raise TestFailure("func_empty_wrap did not complete")
+    if func_empty not in complete
+        raise TestFailure("func_empty did not complete")
