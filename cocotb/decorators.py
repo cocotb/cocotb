@@ -67,9 +67,8 @@ class CoroutineComplete(Exception):
         exception that the Scheduler catches and the callbacks are attached
         here.
     """
-    def __init__(self, text="", callback=None):
+    def __init__(self, text=""):
         Exception.__init__(self, text)
-        self.callback = callback
 
 
 class RunningCoroutine(object):
@@ -104,7 +103,7 @@ class RunningCoroutine(object):
         if not hasattr(self._coro, "send"):
             self.log.error("%s isn't a valid coroutine! Did you use the yield "
                            "keyword?" % self.funcname)
-            raise CoroutineComplete(callback=self._finished_cb)
+            raise CoroutineComplete()
 
     def __iter__(self):
         return self
@@ -126,15 +125,15 @@ class RunningCoroutine(object):
         except ExternalException as e:
             self.retval = e
             self._finished = True
-            raise CoroutineComplete(callback=self._finished_cb)
+            raise CoroutineComplete()
         except ReturnValue as e:
             self.retval = e.retval
             self._finished = True
-            raise CoroutineComplete(callback=self._finished_cb)
+            raise CoroutineComplete()
         except StopIteration as e:
             self._finished = True
             self.retval = getattr(e, 'value', None)  # for python >=3.3
-            raise CoroutineComplete(callback=self._finished_cb)
+            raise CoroutineComplete()
         except Exception as e:
             self._finished = True
             raise raise_error(self, "Send raised exception:")
@@ -149,13 +148,6 @@ class RunningCoroutine(object):
         """Kill a coroutine"""
         self.log.debug("kill() called on coroutine")
         cocotb.scheduler.unschedule(self)
-
-    def _finished_cb(self):
-        """Called when the coroutine completes.
-            Allows us to mark the coroutine as finished so that boolean testing
-            works.
-            Also call any callbacks, usually the result of coroutine.join()"""
-        self._finished = True
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits"""
