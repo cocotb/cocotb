@@ -113,19 +113,12 @@ class RunningCoroutine(object):
 
     def send(self, value):
         try:
-            if isinstance(value, ExternalException):
-                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
-                return self._coro.throw(value.exception)
             self._started = True
             return self._coro.send(value)
         except TestComplete as e:
             if isinstance(e, TestFailure):
                 self.log.warning(str(e))
             raise
-        except ExternalException as e:
-            self.retval = e
-            self._finished = True
-            raise CoroutineComplete()
         except ReturnValue as e:
             self.retval = e.retval
             self._finished = True
@@ -205,9 +198,6 @@ class RunningTest(RunningCoroutine):
             self.start_sim_time = get_sim_time('ns')
             self.started = True
         try:
-            if isinstance(value, ExternalException):
-                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
-                return self._coro.throw(value.exception)
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
         except TestComplete as e:
