@@ -111,7 +111,7 @@ class RunningCoroutine(object):
     def __str__(self):
         return str(self.__name__)
 
-    def send(self, value):
+    def _advance(self, value):
         try:
             self._started = True
             return self._coro.send(value)
@@ -126,6 +126,9 @@ class RunningCoroutine(object):
         except BaseException as e:
             self._finished = True
             raise raise_error(self, "Send raised exception:")
+
+    def send(self, value):
+        return self._coro.send(value)
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -185,7 +188,7 @@ class RunningTest(RunningCoroutine):
         self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
         cocotb.log.addHandler(self.handler)
 
-    def send(self, value):
+    def _advance(self, value):
         if not self.started:
             self.error_messages = []
             self.log.info("Starting test: \"%s\"\nDescription: %s" %

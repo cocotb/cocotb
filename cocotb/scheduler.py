@@ -594,7 +594,7 @@ class Scheduler(object):
                 coroutine.log.debug("Scheduling with %s" % str(trigger))
 
         try:
-            result = coroutine.send(sendval)
+            result = coroutine._advance(sendval)
             if _debug:
                 self.log.debug("Coroutine %s yielded %s (mode %d)" %
                                (coroutine.__name__, str(result), self._mode))
