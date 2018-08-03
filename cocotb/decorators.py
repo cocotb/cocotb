@@ -115,10 +115,6 @@ class RunningCoroutine(object):
         try:
             self._started = True
             return self._coro.send(value)
-        except TestComplete as e:
-            if isinstance(e, TestFailure):
-                self.log.warning(str(e))
-            raise
         except ReturnValue as e:
             self.retval = e.retval
             self._finished = True
@@ -127,7 +123,7 @@ class RunningCoroutine(object):
             self._finished = True
             self.retval = getattr(e, 'value', None)  # for python >=3.3
             raise CoroutineComplete()
-        except Exception as e:
+        except BaseException as e:
             self._finished = True
             raise raise_error(self, "Send raised exception:")
 
