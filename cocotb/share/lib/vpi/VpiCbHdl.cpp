@@ -221,7 +221,8 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
     if ((vpiIntVar == type) ||
         (vpiIntegerVar == type) ||
-        (vpiIntegerNet == type )) {
+        (vpiIntegerNet == type ) ||
+        (vpiRealNet == type)) {
         m_num_elems = 1;
     } else {
         m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
@@ -537,6 +538,7 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
         vpiMemory,
         vpiIntegerVar,
         vpiRealVar,
+        vpiRealNet,
         vpiStructVar,
         vpiStructNet,
         //vpiVariables          // Aldec SEGV on plain Verilog
@@ -676,9 +678,10 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
         return;
     }
 
-    LOG_DEBUG("Created iterator working from type %d %s",
+    LOG_DEBUG("Created iterator working from type %d %s (%s)",
               *one2many,
-              vpi_get_str(vpiFullName, vpi_hdl));
+              vpi_get_str(vpiFullName, vpi_hdl),
+              vpi_get_str(vpiType, vpi_hdl));
 
     m_iterator = iterator;
 }

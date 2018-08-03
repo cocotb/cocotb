@@ -82,6 +82,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiMemoryWord:
             return GPI_REGISTER;
 
+        case vpiRealNet:
         case vpiRealVar:
             return GPI_REAL;
 
