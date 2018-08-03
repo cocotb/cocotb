@@ -72,6 +72,8 @@ from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error, ExternalException)
 
+from cocotb import outcomes
+
 class external_state(object):
     INIT = 0
     RUNNING = 1
@@ -452,6 +454,17 @@ class Scheduler(object):
 
         if coro._join in self._trigger2coros:
             self._pending_triggers.append(coro._join)
+        else:
+            try:
+                # throws an error if the background coroutine errored
+                # and no one was monitoring it
+                coro.retval
+            except Exception as e:
+                self._test_result = TestError(
+                    "Forked coroutine {} raised exception {}"
+                    .format(coro, e)
+                )
+                self._terminate = True
 
         # Remove references to allow GC to clean up
         del coro._join
@@ -578,23 +591,15 @@ class Scheduler(object):
             trigger (cocotb.triggers.Trigger): The trigger that caused this
                                                 coroutine to be scheduled
         """
-        if hasattr(trigger, "pass_retval"):
-            sendval = trigger.retval
-            if _debug:
-                if isinstance(sendval, ReturnValue):
-                    coroutine.log.debug("Scheduling with ReturnValue(%s)" %
-                                        (repr(sendval)))
-                elif isinstance(sendval, ExternalException):
-                    coroutine.log.debug("Scheduling with ExternalException(%s)" %
-                                        (repr(sendval.exception)))
-
+        if trigger is None:
+            send_outcome = outcomes.Value(None)
         else:
-            sendval = trigger
-            if _debug:
-                coroutine.log.debug("Scheduling with %s" % str(trigger))
+            send_outcome = trigger._outcome
+        if _debug:
+            self.log.debug("Scheduling with {}".format(send_outcome))
 
         try:
-            result = coroutine._advance(sendval)
+            result = coroutine._advance(send_outcome)
             if _debug:
                 self.log.debug("Coroutine %s yielded %s (mode %d)" %
                                (coroutine.__name__, str(result), self._mode))

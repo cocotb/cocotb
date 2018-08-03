@@ -41,6 +41,7 @@ from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger, Joi
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
 from cocotb.utils import get_sim_time
+from cocotb import outcomes
 
 
 def public(f):
@@ -91,19 +92,28 @@ class RunningCoroutine(object):
             self.log = SimLog("cocotb.coroutine.fail")
         self._coro = inst
         self._started = False
-        self._finished = False
         self._callbacks = []
         self._join = _Join(self)
         self._parent = parent
         self.__doc__ = parent._func.__doc__
         self.module = parent._func.__module__
         self.funcname = parent._func.__name__
-        self.retval = None
+        self._outcome = None
 
         if not hasattr(self._coro, "send"):
             self.log.error("%s isn't a valid coroutine! Did you use the yield "
                            "keyword?" % self.funcname)
             raise CoroutineComplete()
+
+    @property
+    def retval(self):
+        if self._outcome is None:
+            raise RuntimeError("coroutine is not complete")
+        return self._outcome.get()
+
+    @property
+    def _finished(self):
+        return self._outcome is not None
 
     def __iter__(self):
         return self
@@ -111,21 +121,29 @@ class RunningCoroutine(object):
     def __str__(self):
         return str(self.__name__)
 
-    def _advance(self, value):
+    def _advance(self, outcome):
+        """
+        Advance to the next yield in this coroutine
+
+        :param outcome: The `outcomes.Outcome` object to resume with.
+        :returns: The object yielded from the coroutine
+
+        If the coroutine returns or throws an error, self._outcome is set, and
+        this throws `CoroutineComplete`.
+        """
         try:
             self._started = True
-            return self._coro.send(value)
+            return outcome.send(self._coro)
         except ReturnValue as e:
-            self.retval = e.retval
-            self._finished = True
+            self._outcome = outcomes.Value(e.retval)
             raise CoroutineComplete()
         except StopIteration as e:
-            self._finished = True
-            self.retval = getattr(e, 'value', None)  # for python >=3.3
+            retval = getattr(e, 'value', None)  # for python >=3.3
+            self._outcome = outcomes.Value(retval)
             raise CoroutineComplete()
         except BaseException as e:
-            self._finished = True
-            raise raise_error(self, "Send raised exception:")
+            self._outcome = outcomes.Error(e)
+            raise CoroutineComplete()
 
     def send(self, value):
         return self._coro.send(value)
@@ -139,6 +157,8 @@ class RunningCoroutine(object):
     def kill(self):
         """Kill a coroutine"""
         self.log.debug("kill() called on coroutine")
+        # todo: probably better to throw an exception for anyone waiting on the coroutine
+        self._outcome = outcomes.Value(None)
         cocotb.scheduler.unschedule(self)
 
     def join(self):
@@ -188,7 +208,7 @@ class RunningTest(RunningCoroutine):
         self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
         cocotb.log.addHandler(self.handler)
 
-    def _advance(self, value):
+    def _advance(self, outcome):
         if not self.started:
             self.error_messages = []
             self.log.info("Starting test: \"%s\"\nDescription: %s" %
@@ -197,8 +217,8 @@ class RunningTest(RunningCoroutine):
             self.start_sim_time = get_sim_time('ns')
             self.started = True
         try:
-            self.log.debug("Sending trigger %s" % (str(value)))
-            return self._coro.send(value)
+            self.log.debug("Sending {}".format(outcome))
+            return outcome.send(self._coro)
         except TestComplete as e:
             if isinstance(e, TestFailure):
                 self.log.warning(str(e))

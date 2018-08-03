@@ -692,3 +692,18 @@ if sys.version_info[:2] >= (3, 3):
         if ret != 42:
             raise TestFailure("Return statement did not work")
     '''))
+
+
+@cocotb.test()
+def test_exceptions():
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(10)
+        raise ValueError('It is soon now')
+    
+    try:
+        yield raise_soon()
+    except ValueError:
+        pass
+    else:
+        raise TestFailure("Exception was not raised")
