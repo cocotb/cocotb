@@ -853,6 +853,8 @@ typedef struct t_cb_data
 #define cbNBASynch               30
 #define cbAtEndOfSimTime         31
 
+/**************************** Verilog AMS ****************************/
+#define vpiRealNet             526
 
 /************************* FUNCTION DECLARATIONS **************************/
 

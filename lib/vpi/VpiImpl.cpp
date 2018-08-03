@@ -80,6 +80,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiRegBit:
             return GPI_REGISTER;
 
+        case vpiRealNet:
         case vpiRealVar:
             return GPI_REAL;
 
@@ -152,6 +153,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiIntegerVar:
         case vpiIntegerNet:
         case vpiRealVar:
+        case vpiRealNet:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
             break;
         case vpiParameter:
