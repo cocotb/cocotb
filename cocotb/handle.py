@@ -666,8 +666,11 @@ class RealObject(ModifiableObject):
         This operation will fail unless the handle refers to a modifiable
         object eg net, signal or variable.
         """
-        if not isinstance(value, float):
-            self._log.critical("Unsupported type for real value assignment: %s (%s)" % (type(value), repr(value)))
+        try:
+            value = float(value)
+        except ValueError:
+            self._log.critical("Unsupported type for real value assignment: %s (%s)" %
+                               (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
         simulator.set_signal_val_real(self._handle, value)
