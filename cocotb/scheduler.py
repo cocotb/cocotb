@@ -84,12 +84,17 @@ class external_state(object):
 class external_waiter(object):
 
     def __init__(self):
-        self.result = None
+        self._outcome = None
         self.thread = None
         self.event = Event()
         self.state = external_state.INIT
         self.cond = threading.Condition()
         self._log = SimLog("cocotb.external.thead.%s" % self.thread, id(self))
+
+    @property
+    def result(self):
+        return self._outcome.get()
+    
 
     def _propogate_state(self, new_state):
         self.cond.acquire()
@@ -523,12 +528,9 @@ class Scheduler(object):
         #   calling coroutine (but not the thread) until the external completes
 
         def execute_external(func, _waiter):
-            try:
-                _waiter.result = func(*args, **kwargs)
-                if _debug:
-                    self.log.debug("Execution of external routine done %s" % threading.current_thread())
-            except Exception as e:
-                _waiter.result = e
+            _waiter._outcome = outcomes.capture(func, *args, **kwargs)
+            if _debug:
+                self.log.debug("Execution of external routine done %s" % threading.current_thread())
             _waiter.thread_done()
 
         waiter = external_waiter()

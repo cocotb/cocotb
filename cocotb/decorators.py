@@ -297,7 +297,12 @@ class function(object):
 
         @coroutine
         def execute_function(self, event):
-            event.result = yield cocotb.coroutine(self._func)(*args, **kwargs)
+            coro = cocotb.coroutine(self._func)(*args, **kwargs)
+            try:
+                _outcome = outcomes.Value((yield coro))
+            except BaseException as e:
+                _outcome = outcomes.Error(e)
+            event.outcome = _outcome
             event.set()
 
         self._event = threading.Event()
@@ -306,7 +311,7 @@ class function(object):
         # This blocks the calling external thread until the coroutine finishes
         self._event.wait()
         waiter.thread_resume()
-        return self._event.result
+        return self._event.outcome.get()
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
@@ -328,14 +333,10 @@ class external(object):
         @coroutine
         def wrapper():
             ext = cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
-
             yield ext.event.wait()
 
-            if ext.result is not None:
-                if isinstance(ext.result, Exception):
-                    raise ExternalException(ext.result)
-                else:
-                    raise ReturnValue(ext.result)
+            ret = ext.result  # raises if there was an exception
+            raise ReturnValue(ret)
 
         return wrapper()
 
