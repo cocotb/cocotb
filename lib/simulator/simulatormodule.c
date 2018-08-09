@@ -208,7 +208,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
     if (callback_data_p == NULL) {
-        LOG_CRITICAL("Failed to allocate user data\n");
+        return PyErr_NoMemory();
     }
 
     // Set up the user data (no more python API calls after this!
@@ -260,7 +260,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
     if (callback_data_p == NULL) {
-        LOG_CRITICAL("Failed to allocate user data\n");
+        return PyErr_NoMemory();
     }
 
     // Set up the user data (no more python API calls after this!
@@ -312,7 +312,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
     if (callback_data_p == NULL) {
-        LOG_CRITICAL("Failed to allocate user data\n");
+        return PyErr_NoMemory();
     }
 
     // Set up the user data (no more python API calls after this!
@@ -374,7 +374,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
     if (callback_data_p == NULL) {
-        LOG_CRITICAL("Failed to allocate user data\n");
+        return PyErr_NoMemory();
     }
 
     // Set up the user data (no more python API calls after this!
@@ -440,7 +440,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
     if (callback_data_p == NULL) {
-        LOG_CRITICAL("Failed to allocate user data\n");
+        return PyErr_NoMemory();
     }
 
     // Set up the user data (no more python API calls after this!
