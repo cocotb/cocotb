@@ -201,10 +201,10 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     Py_INCREF(function);
 
     // Remaining args for function
-    if (numargs > 1)
-        fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
-    else
-        fArgs = PyTuple_New(0); // args must not be NULL, use an empty tuple if no arguments are needed.
+    fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
+    if (fArgs == NULL) {
+        return NULL;
+    }
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
     if (callback_data_p == NULL) {
@@ -253,10 +253,10 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     Py_INCREF(function);
 
     // Remaining args for function
-    if (numargs > 1)
-        fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
-    else
-        fArgs = PyTuple_New(0); // args must not be NULL, use an empty tuple if no arguments are needed.
+    fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
+    if (fArgs == NULL) {
+        return NULL;
+    }
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
     if (callback_data_p == NULL) {
@@ -305,10 +305,10 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     Py_INCREF(function);
 
     // Remaining args for function
-    if (numargs > 1)
-        fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
-    else
-        fArgs = PyTuple_New(0); // args must not be NULL, use an empty tuple if no arguments are needed.
+    fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
+    if (fArgs == NULL) {
+        return NULL;
+    }
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
     if (callback_data_p == NULL) {
@@ -366,11 +366,10 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     Py_INCREF(function);
 
     // Remaining args for function
-    if (numargs > 2)
-        fArgs = PyTuple_GetSlice(args, 2, numargs);   // New reference
-    else
-        fArgs = PyTuple_New(0); // args must not be NULL, use an empty tuple if no arguments are needed.
-
+    fArgs = PyTuple_GetSlice(args, 2, numargs);   // New reference
+    if (fArgs == NULL) {
+        return NULL;
+    }
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
     if (callback_data_p == NULL) {
@@ -432,10 +431,10 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     edge = (unsigned int)PyLong_AsLong(pedge);
 
     // Remaining args for function
-    if (numargs > 3)
-        fArgs = PyTuple_GetSlice(args, 3, numargs);   // New reference
-    else
-        fArgs = PyTuple_New(0); // args must not be NULL, use an empty tuple if no arguments are needed.
+    fArgs = PyTuple_GetSlice(args, 3, numargs);   // New reference
+    if (fArgs == NULL) {
+        return NULL;
+    }
 
 
     callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
