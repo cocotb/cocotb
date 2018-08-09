@@ -417,7 +417,14 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     }
 
     PyObject *pSihHdl = PyTuple_GetItem(args, 0);
-    sig_hdl = (gpi_sim_hdl)PyLong_AsLong(pSihHdl);
+    sig_hdl = (gpi_sim_hdl)PyLong_AsVoidPtr(pSihHdl);
+    if (sig_hdl == NULL) {
+        // distinguish "parsing failed" from "parsed as NULL"
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError, "handle cannot be 0");
+        }
+        return NULL;
+    }
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 1);
@@ -866,7 +873,14 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     FENTER
 
     pSihHdl = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsLong(pSihHdl);
+    hdl = (gpi_sim_hdl)PyLong_AsVoidPtr(pSihHdl);
+    if (hdl == NULL) {
+        // distinguish "parsing failed" from "parsed as NULL"
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError, "handle cannot be 0");
+        }
+        return NULL;
+    }
 
     gpi_deregister_callback(hdl);
 
