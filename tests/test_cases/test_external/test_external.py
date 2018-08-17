@@ -205,6 +205,38 @@ def test_time_in_external(dut):
         raise TestFailure("Time has elapsed over external call")
 
 
+@cocotb.function
+def yield_to_next_clock(dut):
+    yield RisingEdge(dut.clk)
+
+
+def test_ext_time_between_functions(dut, clk_period):
+    dut._log.info("Clock edge %d" % 0)
+    yield_to_next_clock(dut)
+    base_time = get_sim_time('ps')
+    dut._log.info("Base time = %d ps", base_time)
+    for i in range(1, 501):
+        dut._log.info("Clock edge %d" % i)
+        yield_to_next_clock(dut)
+        for _ in range(10):
+            _t = get_sim_time('ps')
+            dut._log.info("Time reported = %d ps", _t)
+            if _t != base_time + clk_period * i:
+                raise TestFailure("Time reported does not match expected time %d ps != %d ps" %
+                                  (_t, base_time + clk_period * i))
+    dut._log.info("external function has ended")
+
+
+@cocotb.test(expect_fail=False)
+def test_time_between_functions(dut):
+    """Test that the simulation time does not advance in the external between
+    function calls, i.e. that it is synchronized to the simulator"""
+    period = 100
+    clk_gen = cocotb.fork(Clock(dut.clk, period).start())
+    yield Timer(10, 'ns')
+    yield cocotb.external(test_ext_time_between_functions)(dut, period)
+
+
 @cocotb.test(expect_fail=False)
 def test_ext_call_return(dut):
     """Test ability to yeild on an external non cocotb coroutine decorated
