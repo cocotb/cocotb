@@ -60,7 +60,7 @@ public(public)  # Emulate decorating ourself
 
 
 @public
-class CoroutineComplete(StopIteration):
+class CoroutineComplete(Exception):
     """
         To ensure that a coroutine has completed before we fire any triggers
         that are blocked waiting for the coroutine to end, we create a subclass
@@ -68,7 +68,7 @@ class CoroutineComplete(StopIteration):
         here.
     """
     def __init__(self, text="", callback=None):
-        StopIteration.__init__(self, text)
+        Exception.__init__(self, text)
         self.callback = callback
 
 
