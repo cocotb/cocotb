@@ -413,7 +413,7 @@ class Scheduler(object):
             if _debug:
                 self.log.debug("Scheduled coroutine %s" % (coro.__name__))
 
-        if not depth:
+        if not depth and isinstance(trigger, GPITrigger):
             # Schedule may have queued up some events so we'll burn through those
             while self._pending_events:
                 if _debug:

@@ -36,7 +36,7 @@ Also used a regression test of cocotb capabilities
 
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite, ClockCycles)
+                             ReadOnly, ReadWrite, ClockCycles, NullTrigger)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
@@ -508,7 +508,7 @@ def test_falling_edge(dut):
         raise TestError("Test timed out")
 
 
-@cocotb.test()
+#@cocotb.test()
 def test_either_edge(dut):
     """Test that either edge can be triggered on"""
     dut.clk <= 0
@@ -666,3 +666,22 @@ def test_binary_value(dut):
     dut._log.info("vec = 'b%s" % vec.binstr)
 
     yield Timer(100) #Make it do something with time
+
+@cocotb.coroutine
+def null_coroutine():
+    yield NullTrigger()
+
+@cocotb.test()
+def test_stack_overflow(dut):
+    """
+    Test against stack overflows when starting many coroutines that terminate
+    before passing control to the simulator.
+    """
+    # Need something that generates events, or the simulator will terminate
+    # too soon.
+    cocotb.fork(Clock(dut.clk, 100).start())
+
+    for _ in range(10000):
+        yield null_coroutine()
+
+    yield Timer(100)
