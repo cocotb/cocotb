@@ -413,19 +413,29 @@ class Scheduler(object):
             if _debug:
                 self.log.debug("Scheduled coroutine %s" % (coro.__name__))
 
-        if not depth:
-            # Schedule may have queued up some events so we'll burn through those
-            while self._pending_events:
-                if _debug:
-                    self.log.debug("Scheduling pending event %s" %
-                                   (str(self._pending_events[0])))
-                self._pending_events.pop(0).set()
+        # Schedule may have queued up some events so we'll burn through those.
+        # We need to alternate between events and triggers, because the
+        # recursive react call can also queue events again. We only do this for
+        # toplevel calls from the simulator because we can get stack overflows
+        # otherwise (for instance, if many coroutines terminate without
+        # yielding to the simulator. test_time_in_external does this, for
+        # instance)
+        if not depth and isinstance(trigger, GPITrigger):
+            while self._pending_events or self._pending_triggers:
+                while self._pending_events:
+                    if _debug:
+                        self.log.debug("Scheduling pending event %s" %
+                                    (str(self._pending_events[0])))
+                    self._pending_events.pop(0).set()
 
-        while self._pending_triggers:
-            if _debug:
-                self.log.debug("Scheduling pending trigger %s" %
-                               (str(self._pending_triggers[0])))
-            self.react(self._pending_triggers.pop(0), depth=depth + 1)
+                while self._pending_triggers:
+                    if _debug:
+                        self.log.debug("Scheduling pending trigger %s" %
+                                    (str(self._pending_triggers[0])))
+                    self.react(self._pending_triggers.pop(0), depth=depth + 1)
+
+                if self._pending_events:
+                    self.log.debug("Recursive react call queued up new events")
 
         # We only advance for GPI triggers
         if not depth and isinstance(trigger, GPITrigger):
