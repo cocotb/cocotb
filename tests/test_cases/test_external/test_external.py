@@ -169,7 +169,7 @@ def test_ext_function_return(dut):
 def test_print_sim_time(dut, base_time):
     # We are not calling out here so time should not advance
     # And should also remain consistent
-    for _ in range(10):
+    for _ in range(5):
         _t = get_sim_time('ns')
         dut._log.info("Time reported = %d", _t)
         if _t != base_time:
@@ -218,7 +218,7 @@ def test_ext_time_between_functions(dut, clk_period):
     for i in range(1, 501):
         dut._log.info("Clock edge %d" % i)
         yield_to_next_clock(dut)
-        for _ in range(10):
+        for _ in range(5):
             _t = get_sim_time('ps')
             dut._log.info("Time reported = %d ps", _t)
             if _t != base_time + clk_period * i:
