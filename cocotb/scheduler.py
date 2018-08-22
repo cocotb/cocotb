@@ -503,8 +503,12 @@ class Scheduler(object):
 
         for t in self._pending_threads:
             if t.thread == threading.current_thread():
-                t.thread_suspend()
+                # Add the wrapper coroutine of the function before unblocking
+                # the main thread with thread_suspend() to avoid race condition
+                # (if the OS would schedule the main thread before the coro is
+                # pended, simulation time could potentially pass).
                 self._pending_coros.append(coroutine)
+                t.thread_suspend()
                 return t
 
 
