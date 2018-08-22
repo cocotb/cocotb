@@ -614,6 +614,29 @@ class Scheduler(object):
             self.unschedule(coroutine)
             return
 
+        # Handle external threads. Regardless of how the coroutine returned,
+        # it may have queued or resumed an external (queued: through yield;
+        # resumed: if coroutine was the function wrapper coroutine and it
+        # returned). That means we always need to wait for all external threads
+        # to finish before continuing.
+        finally:
+
+            # We do not return from here until pending threads have completed, but only
+            # from the main thread, this seems like it could be problematic in cases
+            # where a sim might change what this thread is.
+            if self._main_thread is threading.current_thread():
+
+                for ext in self._pending_threads:
+                    ext.thread_start()
+                    if _debug:
+                        self.log.debug("Blocking from %s on %s" % (threading.current_thread(), ext.thread))
+                    state = ext.thread_wait()
+                    if _debug:
+                        self.log.debug("Back from wait on self %s with newstate %d" % (threading.current_thread(), state))
+                    if state == external_state.EXITED:
+                        self._pending_threads.remove(ext)
+                        self._pending_events.append(ext.event)
+
         # Don't handle the result if we're shutting down
         if self._terminate:
             return
@@ -653,28 +676,6 @@ class Scheduler(object):
                 raise_error(self, msg)
             except Exception as e:
                 self.finish_test(e)
-
-        # We do not return from here until pending threads have completed, but only
-        # from the main thread, this seems like it could be problematic in cases
-        # where a sim might change what this thread is.
-        def unblock_event(ext):
-            @cocotb.coroutine
-            def wrapper():
-                ext.event.set()
-                yield PythonTrigger()
-
-        if self._main_thread is threading.current_thread():
-
-            for ext in self._pending_threads:
-                ext.thread_start()
-                if _debug:
-                    self.log.debug("Blocking from %s on %s" % (threading.current_thread(), ext.thread))
-                state = ext.thread_wait()
-                if _debug:
-                    self.log.debug("Back from wait on self %s with newstate %d" % (threading.current_thread(), state))
-                if state == external_state.EXITED:
-                    self._pending_threads.remove(ext)
-                    self._pending_events.append(ext.event)
 
         # Handle any newly queued coroutines that need to be scheduled
         while self._pending_coros:
