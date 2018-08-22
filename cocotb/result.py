@@ -68,6 +68,8 @@ def create_error(obj, msg):
 
 class ReturnValue(StopIteration):
     def __init__(self, retval):
+        # The base class in python >= 3.3 holds a return value too
+        super(ReturnValue, self).__init__(retval)
         self.retval = retval
 
 

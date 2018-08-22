@@ -131,8 +131,9 @@ class RunningCoroutine(object):
             self.retval = e.retval
             self._finished = True
             raise CoroutineComplete(callback=self._finished_cb)
-        except StopIteration:
+        except StopIteration as e:
             self._finished = True
+            self.retval = getattr(e, 'value', None)  # for python >=3.3
             raise CoroutineComplete(callback=self._finished_cb)
         except Exception as e:
             self._finished = True
