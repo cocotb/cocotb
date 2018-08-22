@@ -205,6 +205,30 @@ def test_time_in_external(dut):
         raise TestFailure("Time has elapsed over external call")
 
 
+@cocotb.function
+def yield_to_next_clock(dut):
+    yield RisingEdge(dut.clk)
+
+
+def test_ext_instantaneous_return(dut):
+    yield_to_next_clock(dut)
+    return get_sim_time('ps')
+
+
+@cocotb.test(expect_fail=False)
+def test_instantaneous_return(dut):
+    """Test that the simulation time does not advance between the final
+    function call in the external and the calling coroutine continuing"""
+    period = 100
+    clk_gen = cocotb.fork(Clock(dut.clk, period).start())
+    yield Timer(10, 'ns')
+    ext_sim_time = yield cocotb.external(test_ext_instantaneous_return)(dut)
+    cur_sim_time = get_sim_time('ps')
+    if cur_sim_time != ext_sim_time:
+        raise TestFailure("Time reported does not match expected time %d ps != %d ps" %
+                            (cur_sim_time, ext_sim_time))
+
+
 @cocotb.test(expect_fail=False)
 def test_ext_call_return(dut):
     """Test ability to yield on an external non cocotb coroutine decorated
