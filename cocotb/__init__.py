@@ -155,7 +155,7 @@ def _initialise_testbench(root_name):
     regression.execute()
 
     global scheduler
-    scheduler.handle_pending()
+    scheduler.handle_pending_and_advance()
 
     _rlock.release()
     return True

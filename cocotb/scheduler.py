@@ -417,9 +417,7 @@ class Scheduler(object):
         if not depth and isinstance(trigger, GPITrigger):
 
             # Handle all pending events and triggers.
-            self.handle_pending()
-
-            self.advance()
+            self.handle_pending_and_advance()
 
             if _debug:
                 self.log.debug("All coroutines scheduled, handing control back"
@@ -429,12 +427,12 @@ class Scheduler(object):
                 _profile.disable()
         return
 
-    def handle_pending(self):
-        """Handles pending events and triggers queued up by schedule(), that
+    def handle_pending_and_advance(self):
+        """Handles pending events and triggers queued up by schedule() that
         could not be handled immediately without building up the call stack for
-        every trigger/event. This must be called before control is handed back
-        to the simulator; i.e. at the end of react() and at the end of the
-        cocotb entry point.
+        every trigger/event, then advance the simulation. This must be called
+        before control is handed back to the simulator; i.e. at the end of
+        react() and at the end of the cocotb entry point.
         """
 
         # We need to alternate between handling events and triggers:
@@ -458,6 +456,8 @@ class Scheduler(object):
 
             if self._pending_events:
                 self.log.debug("Recursive react call queued up new events")
+
+        self.advance()
 
     def unschedule(self, coro):
         """Unschedule a coroutine.  Unprime any pending triggers"""
