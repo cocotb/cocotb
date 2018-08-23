@@ -62,6 +62,18 @@ struct sim_time {
 
 static struct sim_time cache_time;
 
+// Converter function for turning a Python long into a sim handle, such that it
+// can be used by PyArg_ParseTuple format O&.
+static int gpi_sim_hdl_converter(PyObject *o, gpi_sim_hdl *data)
+{
+    void *p = PyLong_AsVoidPtr(o);
+    if ((p == NULL) && PyErr_Occurred()) {
+        return 0;
+    }
+    *data = (gpi_sim_hdl)p;
+    return 1;
+}
+
 /**
  * @name    Callback Handling
  * @brief   Handle a callback coming from GPI
@@ -437,7 +449,10 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     }
 
     PyObject *pSihHdl = PyTuple_GetItem(args, 0);
-    sig_hdl = (gpi_sim_hdl)PyLong_AsLong(pSihHdl);
+    if (!gpi_sim_hdl_converter(pSihHdl, &sig_hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 1);
@@ -495,7 +510,7 @@ static PyObject *iterate(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "li", &hdl, &type)) {
+    if (!PyArg_ParseTuple(args, "O&i", gpi_sim_hdl_converter, &hdl, &type)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -519,7 +534,7 @@ static PyObject *next(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -558,7 +573,7 @@ static PyObject *get_signal_val_binstr(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -580,7 +595,7 @@ static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -602,7 +617,7 @@ static PyObject *get_signal_val_real(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -625,7 +640,7 @@ static PyObject *get_signal_val_long(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -648,7 +663,7 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "ls", &hdl, &binstr)) {
+    if (!PyArg_ParseTuple(args, "O&s", gpi_sim_hdl_converter, &hdl, &binstr)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -670,7 +685,7 @@ static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "ld", &hdl, &value)) {
+    if (!PyArg_ParseTuple(args, "O&d", gpi_sim_hdl_converter, &hdl, &value)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -692,7 +707,7 @@ static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "ll", &hdl, &value)) {
+    if (!PyArg_ParseTuple(args, "O&l", gpi_sim_hdl_converter, &hdl, &value)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -714,7 +729,7 @@ static PyObject *get_definition_name(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -736,7 +751,7 @@ static PyObject *get_definition_file(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -759,7 +774,7 @@ static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "ls", &hdl, &name)) {
+    if (!PyArg_ParseTuple(args, "O&s", gpi_sim_hdl_converter, &hdl, &name)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -783,7 +798,7 @@ static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "li", &hdl, &index)) {
+    if (!PyArg_ParseTuple(args, "O&i", gpi_sim_hdl_converter, &hdl, &index)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -835,7 +850,7 @@ static PyObject *get_name_string(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -857,7 +872,7 @@ static PyObject *get_type(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -879,7 +894,7 @@ static PyObject *get_const(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -901,7 +916,7 @@ static PyObject *get_type_string(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -965,7 +980,7 @@ static PyObject *get_num_elems(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -986,7 +1001,7 @@ static PyObject *get_range(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "l", &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
@@ -1024,7 +1039,10 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     gstate = TAKE_GIL();
 
     pSihHdl = PyTuple_GetItem(args, 0);
-    hdl = (gpi_sim_hdl)PyLong_AsLong(pSihHdl);
+    if (!gpi_sim_hdl_converter(pSihHdl, &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
 
     gpi_deregister_callback(hdl);
 
