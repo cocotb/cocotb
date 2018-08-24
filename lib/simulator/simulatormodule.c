@@ -74,6 +74,17 @@ static int gpi_sim_hdl_converter(PyObject *o, gpi_sim_hdl *data)
     return 1;
 }
 
+// Same as above, for an iterator handle.
+static int gpi_iterator_hdl_converter(PyObject *o, gpi_iterator_hdl *data)
+{
+    void *p = PyLong_AsVoidPtr(o);
+    if ((p == NULL) && PyErr_Occurred()) {
+        return 0;
+    }
+    *data = (gpi_iterator_hdl)p;
+    return 1;
+}
+
 /**
  * @name    Callback Handling
  * @brief   Handle a callback coming from GPI
@@ -534,7 +545,7 @@ static PyObject *next(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_iterator_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
