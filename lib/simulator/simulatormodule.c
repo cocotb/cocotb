@@ -1041,7 +1041,6 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
 static PyObject *deregister_callback(PyObject *self, PyObject *args)
 {
     gpi_sim_hdl hdl;
-    PyObject *pSihHdl;
     PyObject *value;
 
     FENTER
@@ -1049,8 +1048,7 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     PyGILState_STATE gstate;
     gstate = TAKE_GIL();
 
-    pSihHdl = PyTuple_GetItem(args, 0);
-    if (!gpi_sim_hdl_converter(pSihHdl, &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
         DROP_GIL(gstate);
         return NULL;
     }
