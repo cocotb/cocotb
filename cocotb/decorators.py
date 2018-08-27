@@ -173,6 +173,8 @@ class RunningCoroutine(object):
             otherwise return true"""
         return not self._finished
 
+    __bool__ = __nonzero__
+
 
 class RunningTest(RunningCoroutine):
     """Add some useful Test functionality to a RunningCoroutine"""
