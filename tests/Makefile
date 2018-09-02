@@ -34,7 +34,15 @@ REGRESSIONS :=  $(shell ls test_cases/)
 all: $(REGRESSIONS)
 
 $(REGRESSIONS):
+ifeq ($(TRAVIS),true)
+	@echo "travs_fold:start:$@"
+endif
 	cd test_cases/$@ && $(MAKE)
+ifeq ($(TRAVIS),true)
+	@echo "travs_fold:end:$@"
+endif
+
+
 
 clean:
 	$(foreach TEST, $(REGRESSIONS), $(MAKE) -C test_cases/$(TEST) clean;)
