@@ -137,7 +137,7 @@ class RegressionManager(object):
                 self.log.debug("PWD: " + os.getcwd())
                 module = _my_import(module_name)
             except Exception as E:
-                self.log.critical("Failed to import module %s: %s", (module_name, E))
+                self.log.critical("Failed to import module %s: %s", module_name, E)
                 self.log.info("MODULE variable was \"%s\"", ".".join(self._modules))
                 self.log.info("Traceback: ")
                 self.log.info(traceback.format_exc())
