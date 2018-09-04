@@ -37,6 +37,12 @@ import threading
 import random
 import time
 
+# If stdout/stderr are not line buffered because they're pipes, make them line
+# buffered now to ensure that prints such as stack traces always appear.
+if not sys.stdout.line_buffering:
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 1)
+if not sys.stderr.line_buffering:
+    sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 1)
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
