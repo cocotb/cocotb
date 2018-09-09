@@ -70,6 +70,10 @@ static int gpi_sim_hdl_converter(PyObject *o, gpi_sim_hdl *data)
     if ((p == NULL) && PyErr_Occurred()) {
         return 0;
     }
+    if (p == NULL) {
+        PyErr_SetString(PyExc_ValueError, "handle cannot be 0");
+        return 0;
+    }
     *data = (gpi_sim_hdl)p;
     return 1;
 }
@@ -79,6 +83,10 @@ static int gpi_iterator_hdl_converter(PyObject *o, gpi_iterator_hdl *data)
 {
     void *p = PyLong_AsVoidPtr(o);
     if ((p == NULL) && PyErr_Occurred()) {
+        return 0;
+    }
+    if (p == NULL) {
+        PyErr_SetString(PyExc_ValueError, "handle cannot be 0");
         return 0;
     }
     *data = (gpi_iterator_hdl)p;
@@ -441,10 +449,6 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 
     PyObject *pSihHdl = PyTuple_GetItem(args, 0);
     if (!gpi_sim_hdl_converter(pSihHdl, &sig_hdl)) {
-        return NULL;
-    }
-    if (sig_hdl == NULL) {
-        PyErr_SetString(PyExc_ValueError, "handle cannot be 0");
         return NULL;
     }
 
@@ -894,10 +898,6 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
     FENTER
 
     if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
-        return NULL;
-    }
-    if (hdl == NULL) {
-        PyErr_SetString(PyExc_ValueError, "handle cannot be 0");
         return NULL;
     }
 
