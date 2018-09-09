@@ -35,11 +35,11 @@ all: $(REGRESSIONS)
 
 $(REGRESSIONS):
 ifeq ($(TRAVIS),true)
-	@echo "travs_fold:start:$@"
+	@echo "travis_fold:start:$@"
 endif
 	cd test_cases/$@ && $(MAKE)
 ifeq ($(TRAVIS),true)
-	@echo "travs_fold:end:$@"
+	@echo "travis_fold:end:$@"
 endif
 
 

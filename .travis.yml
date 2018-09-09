@@ -19,7 +19,7 @@ jobs:
       install: pip install flake8
       script: flake8 --exit-zero cocotb/
     - stage: SimTests
-      # env only here for easier visibiliyt in travis-ci
+      # env only here for easier visibility in travis-ci
       env:
         - COCOTB_PY27
       before_install: &docker_prep
@@ -32,7 +32,7 @@ jobs:
         - docker exec -it -e TRAVIS=true -e COCOTB=/build-py2/src cocotb bash -lc 'source /build-py2/venv/bin/activate; make -C /build-py2/src test'
         - echo -e 'travis_fold:end:cocotb_py27'
     - stage: SimTests
-      # env only here for easier visibiliyt in travis-ci
+      # env only here for easier visibility in travis-ci
       env:
         - COCOTB_PY35
       before_install: *docker_prep 
