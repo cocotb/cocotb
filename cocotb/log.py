@@ -65,6 +65,7 @@ class SimBaseLog(logging.getLoggerClass()):
         else:
             hdlr.setFormatter(SimLogFormatter())
             self.colour = False
+        self._cache = {}
         self.name = name
         self.handlers = []
         self.disabled = False
