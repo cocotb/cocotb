@@ -142,8 +142,8 @@ def _initialise_testbench(root_name):
     hooks_str = os.getenv('COCOTB_HOOKS', '')
 
     if not module_str:
-        raise ImportError("Environment variables defining the module(s) to \
-                        execute not defined.  MODULE=\"%s\"\"" % (module_str))
+        raise ImportError("Environment variables defining the module(s) to " +
+                          "execute not defined.  MODULE=\"%s\"" % (module_str))
 
     modules = module_str.split(',')
     hooks = hooks_str.split(',') if hooks_str else []
