@@ -194,6 +194,7 @@ class RunningTest(RunningCoroutine):
         self.expect_fail = parent.expect_fail
         self.expect_error = parent.expect_error
         self.skip = parent.skip
+        self.stage = parent.stage
 
         self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
         cocotb.log.addHandler(self.handler)
@@ -378,13 +379,16 @@ class test(coroutine):
             This is for cocotb internal regression use
         skip: (bool):
             Don't execute this test as part of the regression
+        stage: (int)
+            Order tests logically into stages, where multiple tests can share a stage
     """
     def __init__(self, timeout=None, expect_fail=False, expect_error=False,
-                 skip=False):
+                 skip=False, stage=0):
         self.timeout = timeout
         self.expect_fail = expect_fail
         self.expect_error = expect_error
         self.skip = skip
+        self.stage = stage
 
     def __call__(self, f):
         super(test, self).__init__(f)
