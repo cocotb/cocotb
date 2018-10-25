@@ -1,6 +1,14 @@
 Troubleshooting
 ---------------
 
+Increasing Verbosity
+====================
+
+If things fail in the VPI/VHPI/FLI area, check your simulator's documentation to see if it has options to 
+increase its verbosity about what may be wrong. You can then set these options on the ``make`` command line
+as ``COMPILE_ARGS, ``SIM_ARGS``or ``EXTRA_OPTS`` (see :doc:`building` for details).
+
+
 Attaching a Debugger
 ====================
 
