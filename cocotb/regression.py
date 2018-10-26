@@ -179,13 +179,11 @@ class RegressionManager(object):
                         self._queue.append(test)
                         self.ntests += 1
 
-        self._queue.sort(key=lambda test: "%s.%i.%s" %
-                         (test.module, test.stage, test.funcname))
+        self._queue.sort(key=lambda test: test.sort_name())
 
         for valid_tests in self._queue:
-            self.log.info("Found test %s.%i.%s" %
+            self.log.info("Found test %s.%s" %
                           (valid_tests.module,
-                           valid_tests.stage,
                            valid_tests.funcname))
 
         for module_name in self._hooks:

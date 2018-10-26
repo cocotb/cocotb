@@ -173,6 +173,11 @@ class RunningCoroutine(object):
             otherwise return true"""
         return not self._finished
 
+    def sort_name(self):
+        if self.stage is None:
+            return "%s.%s" % (self.module, self.funcname)
+        else:
+            return "%s.%d.%s" % (self.module, self.stage, self.funcname)
 
 class RunningTest(RunningCoroutine):
     """Add some useful Test functionality to a RunningCoroutine"""
@@ -383,7 +388,7 @@ class test(coroutine):
             Order tests logically into stages, where multiple tests can share a stage
     """
     def __init__(self, timeout=None, expect_fail=False, expect_error=False,
-                 skip=False, stage=0):
+                 skip=False, stage=None):
         self.timeout = timeout
         self.expect_fail = expect_fail
         self.expect_error = expect_error
