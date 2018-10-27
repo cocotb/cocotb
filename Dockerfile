@@ -10,10 +10,10 @@ RUN apt-get update; apt-get install -y virtualenv python3-venv python3-dev
 # Build and test using Python 2
 RUN mkdir /build-py2; cp -r /src /build-py2
 ENV COCOTB=/build-py2/src
-RUN bash -lc 'virtualenv /build-py2/venv; source /build-py2/venv/bin/activate; pip install coverage xunitparser; make -C /build-py2/src test'
+RUN bash -lc 'virtualenv /build-py2/venv; source /build-py2/venv/bin/activate; pip install coverage xunitparser; cd /build-py2/src; python setup.py develop; make test'
 
 # Build and test using Python 3
 RUN mkdir /build-py3; cp -r /src /build-py3
 ENV COCOTB=/build-py3/src
-RUN bash -lce 'python3 -m venv /build-py3/venv; source /build-py3/venv/bin/activate; pip install coverage xunitparser; make -C /build-py3/src test'
+RUN bash -lce 'python3 -m venv /build-py3/venv; source /build-py3/venv/bin/activate; pip install coverage xunitparser; cd /build-py3/src; python setup.py develop; make test'
 
