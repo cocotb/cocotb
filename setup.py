@@ -4,9 +4,8 @@ from setuptools import setup
 from setuptools import find_packages
 import os
 
-f = open('version', 'r')
-version = f.readline()[8:].strip()
-f.close()
+with open('version', 'r') as f:
+    version = f.readline()[8:].strip()
 
 author = 'Chris Higgs, Stuart Hodgson'
 author_email = 'cocotb@potentialventures.com'

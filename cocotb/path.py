@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 import os
-import imp
+import cocotb
 
 def main():
-    print(os.path.dirname(imp.find_module('cocotb')[1]))
+    print(os.path.dirname(os.path.dirname(cocotb.__file__)))
 
 if __name__ == "__main__":
     main()
+
