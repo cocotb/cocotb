@@ -112,20 +112,10 @@ class EndianSwapperTB(object):
 
 
 @cocotb.coroutine
-def clock_gen(signal):
-    while True:
-        signal <= 0
-        yield Timer(5000)
-        signal <= 1
-        yield Timer(5000)
-
-
-@cocotb.coroutine
 def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
              backpressure_inserter=None):
 
-    cocotb.fork(clock_gen(dut.clk))
-    yield RisingEdge(dut.clk)
+    cocotb.fork(Clock(dut.clk, 5000).start())
     tb = EndianSwapperTB(dut)
 
     yield tb.reset()
@@ -192,7 +182,7 @@ def wavedrom_test(dut):
     """
     Generate a JSON wavedrom diagram of a trace
     """
-    cocotb.fork(clock_gen(dut.clk))
+    cocotb.fork(Clock(dut.clk,5000).start())
     yield RisingEdge(dut.clk)
     tb = EndianSwapperTB(dut)
     yield tb.reset()

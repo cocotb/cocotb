@@ -45,11 +45,12 @@ clean:
 
 do_tests: 
 	$(MAKE) -k -C tests
+	$(MAKE) -k -C examples
 
 # For jenkins we use the exit code to detect compile errors or catestrphic
 # failures and the xml to track test results
 jenkins: do_tests
-	./bin/combine_results.py --squash_rc
+	./bin/combine_results.py --suppress_rc --testsuites_name=cocotb_regression
 
 # By default want the exit code to indicate the test results
 test: do_tests

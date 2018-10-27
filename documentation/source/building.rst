@@ -76,6 +76,15 @@ CUSTOM_SIM_DEPS
 
 Use to add additional dependencies to the simulation target.
 
+COCOTB_NVC_TRACE
+~~~~~~~~~~~~~~~~
+
+Set this to 1 to enable display VHPI trace when using nvc VHDL simulator.
+
+SIM_BUILD
+~~~~~~~~~
+
+Use to define a scratch directory for use by the simulator. The path is relative to the Makefile location. If not provided, the default scratch directory is "sim_build".
 
 Environment Variables
 =====================
@@ -116,6 +125,11 @@ COCOTB_ANSI_OUTPUT=1 forces output to be ANSI regardless of the type stdout
 
 COCOTB_ANSI_OUTPUT=0 supresses the ANSI output in the log messages
 
+COCOTB_REDUCED_LOG_FMT
+----------------------
+
+If defined, log lines displayed in terminal will be shorter. It will print only
+time, message type (INFO, WARNING, ERROR) and log message.
 
 MODULE
 ------

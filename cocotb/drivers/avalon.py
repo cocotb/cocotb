@@ -35,7 +35,8 @@ import random
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, ReadOnly, NextTimeStep, Event
+from cocotb.triggers import RisingEdge, FallingEdge
+from cocotb.triggers import ReadOnly, NextTimeStep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -253,7 +254,7 @@ class AvalonMemory(BusDriver):
 
         if hasattr(self.bus, "readdata"):
             self._width = len(self.bus.readdata)
-            self.dataByteSize = self._width/8
+            self.dataByteSize = int(self._width/8)
             self._readable = True
 
         if hasattr(self.bus, "writedata"):
@@ -262,7 +263,7 @@ class AvalonMemory(BusDriver):
                 self.log.error("readdata and writedata bus" +
                                " are not the same size")
             self._width = width
-            self.dataByteSize = self._width/8
+            self.dataByteSize = int(self._width/8)
             self._writeable = True
 
         if not self._readable and not self._writeable:
@@ -401,7 +402,7 @@ class AvalonMemory(BusDriver):
                         self.log.error("Address must be aligned to data width" +
                                        "(addr = " + hex(addr) +
                                        ", width = " + str(self._width))
-                    addr = addr / self.dataByteSize
+                    addr = int(addr / self.dataByteSize)
                     burstcount = self.bus.burstcount.value.integer
                     byteenable = self.bus.byteenable.value
                     if byteenable != int("1"*len(self.bus.byteenable), 2):
@@ -445,6 +446,30 @@ class AvalonMemory(BusDriver):
                 if not self._burstwrite:
                     addr = self.bus.address.value.integer
                     data = self.bus.writedata.value.integer
+                    if hasattr(self.bus, "byteenable"):
+                        byteenable = int(self.bus.byteenable.value)
+                        mask = 0
+                        oldmask = 0
+                        olddata=  0
+                        if (addr in self._mem):
+                            olddata = self._mem[addr]
+                        self.log.debug("Old Data  : %x" % olddata)
+                        self.log.debug("Data in   : %x" % data)
+                        self.log.debug("Width     : %d" % self._width)
+                        self.log.debug("Byteenable: %x" % byteenable)
+                        for i in range(self._width/8):
+                            if (byteenable & 2**i):
+                                mask |= 0xFF << (8*i)
+                            else:
+                                oldmask |= 0xFF << (8*i)
+
+                        self.log.debug("Data mask : %x" % mask)
+                        self.log.debug("Old mask  : %x" % oldmask)
+
+                        data = (data & mask) | (olddata & oldmask)
+
+                        self.log.debug("Data out  : %x" % data)
+
                     self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
                     self._mem[addr] = data
                 else:
@@ -638,13 +663,15 @@ class AvalonSTPkts(ValidatedBusDriver):
             if self.on is not True and self.on:
                 self.on -= 1
 
-            self.bus <= word
-            self.bus.valid <= 1
+            if not hasattr(word, "valid"):
+               self.bus.valid <= 1
+            else:
+                self.bus <= word
 
-            # If this is a bus with a ready signal, wait for this word to
-            # be acknowledged
-            if hasattr(self.bus, "ready"):
-                yield self._wait_ready()
+            # Wait for valid words to be acknowledged
+            if not hasattr(word, "valid") or word.valid:
+                if hasattr(self.bus, "ready"):
+                    yield self._wait_ready()
 
         yield clkedge
         self.bus.valid <= 0
@@ -664,12 +691,11 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         # Avoid spurious object creation by recycling
 
-        self.log.debug("Sending packet of length %d bytes" % len(pkt))
-        self.log.debug(hexdump(pkt))
 
         if isinstance(pkt, str):
+            self.log.debug("Sending packet of length %d bytes" % len(pkt))
+            self.log.debug(hexdump(pkt))
             yield self._send_string(pkt, sync=sync)
+            self.log.info("Sucessfully sent packet of length %d bytes" % len(pkt))
         else:
             yield self._send_iterable(pkt, sync=sync)
-
-        self.log.info("Sucessfully sent packet of length %d bytes" % len(pkt))

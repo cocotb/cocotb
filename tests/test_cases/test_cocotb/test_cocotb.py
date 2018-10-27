@@ -27,6 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
+import sys
+import textwrap
 
 """
 A set of tests that demonstrate cocotb functionality
@@ -36,7 +38,7 @@ Also used a regression test of cocotb capabilities
 
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite)
+                             ReadOnly, ReadWrite, ClockCycles)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
@@ -155,6 +157,14 @@ def test_adding_a_coroutine_without_starting(dut):
     yield Join(forked)
     yield Timer(100)
 
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+    """
+    Polyfill for math.isclose() (Python 3.5+): floating-point "equal"
+
+    Implementation taken from
+    https://www.python.org/dev/peps/pep-0485/#proposed-implementation
+    """
+    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 @cocotb.test(expect_fail=False)
 def test_clock_with_units(dut):
@@ -180,14 +190,14 @@ def test_clock_with_units(dut):
     yield RisingEdge(dut.clk)
 
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 1000.0:
+    if not isclose(edge_time_ns, start_time_ns + 1000.0):
         raise TestFailure("Expected a period of 1 us")
 
     start_time_ns = edge_time_ns
 
     yield RisingEdge(dut.clk)
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 1000.0:
+    if not isclose(edge_time_ns, start_time_ns + 1000.0):
         raise TestFailure("Expected a period of 1 us")
 
     clk_gen.kill()
@@ -201,14 +211,14 @@ def test_clock_with_units(dut):
     yield RisingEdge(dut.clk)
 
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 4.0:
+    if not isclose(edge_time_ns, start_time_ns + 4.0):
         raise TestFailure("Expected a period of 4 ns")
 
     start_time_ns = edge_time_ns
 
     yield RisingEdge(dut.clk)
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 4.0:
+    if not isclose(edge_time_ns, start_time_ns + 4.0):
         raise TestFailure("Expected a period of 4 ns")
 
     clk_gen.kill()
@@ -599,6 +609,24 @@ def test_logging_with_args(dut):
     yield Timer(100) #Make it do something with time
 
 @cocotb.test()
+def test_clock_cycles(dut):
+    """
+    Test the ClockCycles Trigger
+    """
+
+    clk = dut.clk
+
+    clk_gen = cocotb.fork(Clock(clk, 100).start())
+
+    yield RisingEdge(clk)
+
+    dut.log.info("After one edge")
+
+    yield ClockCycles(clk, 10)
+
+    dut.log.info("After 10 edges")
+
+@cocotb.test()
 def test_binary_value(dut):
     """
     Test out the cocotb supplied BinaryValue class for manipulating
@@ -640,3 +668,40 @@ def test_binary_value(dut):
     dut._log.info("vec = 'b%s" % vec.binstr)
 
     yield Timer(100) #Make it do something with time
+
+
+# This is essentially six.exec_
+if sys.version_info.major == 3:
+    # this has to not be a syntax error in py2
+    import builtins
+    exec_ = getattr(builtins, 'exec')
+else:
+    # this has to not be a syntax error in py3
+    def exec_(_code_, _globs_=None, _locs_=None):
+        """Execute code in a namespace."""
+        if _globs_ is None:
+            frame = sys._getframe(1)
+            _globs_ = frame.f_globals
+            if _locs_ is None:
+                _locs_ = frame.f_locals
+            del frame
+        elif _locs_ is None:
+            _locs_ = _globs_
+        exec("""exec _code_ in _globs_, _locs_""")
+
+
+@cocotb.test(skip=sys.version_info[:2] < (3, 3))
+def test_coroutine_return(dut):
+    """ Test that the python 3.3 syntax for returning from generators works """
+    # this would be a syntax error in older python, so we do the whole
+    # thing inside exec
+    exec_(textwrap.dedent("""
+    @cocotb.coroutine
+    def return_it(x):
+        return x
+        yield
+
+    ret = yield return_it(42)
+    if ret != 42:
+        raise TestFailure("Return statement did not work")
+    """))

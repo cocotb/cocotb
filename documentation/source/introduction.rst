@@ -14,16 +14,17 @@ What is cocotb?
 Linux Platforms
 
 * `Icarus Verilog <http://iverilog.icarus.com/>`_
+* `GHDL <https://github.com/tgingold/ghdl>`_
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
 * `Synopsys <http://www.synopsys.com/>`_ VCS
 * `Cadence <http://www.cadence.com/>`_ Incisive
-* `Mentor <http://www.mentor.com/>`_ Modelsim
+* `Mentor <http://www.mentor.com/>`_ Modelsim (DE and SE)
 
 Windows Platform
 
 * `Icarus Verilog <http://iverilog.icarus.com/>`_
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
-* `Mentor <http://www.mentor.com/>`_ Modelsim
+* `Mentor <http://www.mentor.com/>`_ Modelsim (DE and SE)
 
 **Cocotb** can be used live in a web-browser using `EDA Playground <http://www.edaplayground.com>`_.
 
