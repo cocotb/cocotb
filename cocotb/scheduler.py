@@ -39,12 +39,11 @@ import collections
 import os
 import logging
 
-
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-else:
+# Only for in case of simulation, disable for autodocumentation
+if "COCOTB_SIM" in os.environ:
     import simulator
+else:
+    simulator = None
 
 # Debug mode controlled by environment variables
 if "COCOTB_ENABLE_PROFILING" in os.environ:

@@ -30,11 +30,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
 import os
 
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-else:
+# Only for in case of simulation, disable for  autodocumentation
+if "COCOTB_SIM" in os.environ:
     import simulator
+else:
+    simulator = None
+
 from cocotb.log import SimLog
 from cocotb.result import raise_error
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps

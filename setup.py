@@ -40,6 +40,10 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={'cocotb': extra_files},
-    scripts=['bin/cocotb-path'],
+    entry_points={
+        'console_scripts': [
+            'cocotb-path=cocotb.path:main',
+        ]
+    },
     platforms='any'
 )

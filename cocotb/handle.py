@@ -38,11 +38,11 @@ from io import StringIO, BytesIO
 
 import os
 
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-else:
+# Only for in case of simulation, disable for autodocumentation
+if "COCOTB_SIM" in os.environ:
     import simulator
+else:
+    simulator = None
 
 import cocotb
 from cocotb.binary import BinaryValue

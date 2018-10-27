@@ -53,8 +53,8 @@ from cocotb.decorators import test, coroutine, function, external
 # scheduler package
 
 # GPI logging instance
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" not in os.environ:
+# Only for in case of simulation, disable for autodocumentation 
+if "COCOTB_SIM" in os.environ:
     import simulator
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)

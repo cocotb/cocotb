@@ -35,11 +35,12 @@ import inspect
 from itertools import product
 import sys
 import os
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-else:
+
+# Only for in case of simulation, disable for  autodocumentation
+if "COCOTB_SIM" in os.environ:
     import simulator
+else:
+    simulator = None
 
 # Optional support for coverage collection of testbench files
 coverage = None
