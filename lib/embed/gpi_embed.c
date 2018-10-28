@@ -51,9 +51,6 @@ static char *argv[] = { progname };
 
 static PyObject *pEventFn = NULL;
 
-// Tracks if we are in the context of Python or Simulator
-int context = 0;
-
 /**
  * @name    Initialise the python interpreter
  * @brief   Create and initialise the python interpreter

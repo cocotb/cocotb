@@ -31,7 +31,7 @@ include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GCC_ARGS    +=
-LIBS        := -lgpi -lgpilog $(PYLIBS)
+LIBS        := -lcocotbutils -lgpi -lgpilog $(PYLIBS)
 LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libsim
 
