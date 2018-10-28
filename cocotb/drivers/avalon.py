@@ -573,6 +573,7 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         # Drive some defaults since we don't know what state we're in
         # self.bus.empty <= 0
+        yield NextTimeStep()
         self.bus.startofpacket <= 0
         self.bus.endofpacket <= 0
         self.bus.valid <= 0
