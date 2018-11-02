@@ -105,10 +105,8 @@ endgenerate
 
 reg[7:0] register_array [1:0];
 always @(posedge clk) begin
-    //Ensure interanl array is not optimzed out
+    //Ensure internal array is not optimzed out
     register_array[0] <= 0;
 end
 
 endmodule
-
-
