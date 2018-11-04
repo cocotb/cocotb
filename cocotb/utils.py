@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -231,7 +231,7 @@ def hexdiffs(x, y):
                 r = r + i
         return r
 
-    def highlight(string, colour=ANSI.YELLOW_FG):
+    def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
         want_ansi = os.getenv("COCOTB_ANSI_OUTPUT")
         if want_ansi is None:
             want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
@@ -239,7 +239,7 @@ def hexdiffs(x, y):
             want_ansi = want_ansi == '1'
 
         if want_ansi:
-            return colour + string + ANSI.DEFAULT_FG + ANSI.DEFAULT_BG
+            return colour + string + ANSI.COLOR_DEFAULT
         else:
             return string
 
@@ -301,7 +301,7 @@ def hexdiffs(x, y):
             if dox != doy:
                 rs += highlight("%04x" % xd) + " "
             else:
-                rs += highlight("%04x" % xd, colour=ANSI.CYAN_FG) + " "
+                rs += highlight("%04x" % xd, colour=ANSI.COLOR_HILITE_HEXDIFF_1) + " "
             x += xx
             line = linex
         else:
@@ -315,7 +315,7 @@ def hexdiffs(x, y):
             if doy - dox != 0:
                 rs += " " + highlight("%04x" % yd)
             else:
-                rs += highlight("%04x" % yd, colour=ANSI.CYAN_FG)
+                rs += highlight("%04x" % yd, colour=ANSI.COLOR_HILITE_HEXDIFF_1)
             y += yy
             line = liney
         else:
@@ -329,15 +329,15 @@ def hexdiffs(x, y):
                 if line[j]:
                     if linex[j] != liney[j]:
                         rs += highlight("%02X" % ord(line[j]),
-                                        colour=ANSI.RED_FG)
+                                        colour=ANSI.COLOR_HILITE_HEXDIFF_2)
                     else:
                         rs += "%02X" % ord(line[j])
                     if linex[j] == liney[j]:
                         cl += highlight(_sane_color(line[j]),
-                                        colour=ANSI.MAGENTA_FG)
+                                        colour=ANSI.COLOR_HILITE_HEXDIFF_3)
                     else:
                         cl += highlight(sane(line[j]),
-                                        colour=ANSI.CYAN_BG + ANSI.BLACK_FG)
+                                        colour=ANSI.COLOR_HILITE_HEXDIFF_4)
                 else:
                     rs += "  "
                     cl += " "
