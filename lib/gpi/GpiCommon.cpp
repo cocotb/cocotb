@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * Copyright (c) 2013 SolarFlare Communications Inc
 * All rights reserved.
 *
@@ -48,6 +48,7 @@ public:
         const std::string &name = hdl->get_fullname();
 
         LOG_DEBUG("Checking %s exists", name.c_str());
+        LOG_DEBUG("%s is port: %d, direction %d", name.c_str(), hdl->get_is_port(), hdl->get_port_direction());
 
         it = handle_map.find(name);
         if (it == handle_map.end()) {
@@ -224,13 +225,13 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
 
     GpiObjHdl *hdl = NULL;
 
-    LOG_DEBUG("Looking for root handle '%s' over %d impls", name, registered_impls.size());
+    LOG_DEBUG("Looking for root handle '%s' over %d registered implementations", name, registered_impls.size());
 
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
          iter++) {
         if ((hdl = (*iter)->get_root_handle(name))) {
-            LOG_DEBUG("Got a Root handle (%s) back from %s",
+            LOG_DEBUG("Got a root handle (%s) back from %s",
                 hdl->get_name_str(),
                 (*iter)->get_name_c());
             break;
@@ -378,7 +379,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
 
         switch (ret) {
             case GpiIterator::NATIVE:
-                LOG_DEBUG("Create a native handle");
+                LOG_DEBUG("Creating a native handle");
                 return CHECK_AND_STORE(next);
             case GpiIterator::NATIVE_NO_NAME:
                 LOG_DEBUG("Unable to fully setup handle, skipping");
@@ -392,7 +393,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
                 LOG_WARN("Unable to create %s via any registered implementation", name.c_str());
                 continue;
             case GpiIterator::NOT_NATIVE_NO_NAME:
-                LOG_DEBUG("Found an object but not accesbile via %s, trying others", iter->m_impl->get_name_c());
+                LOG_DEBUG("Found an object but not accessible via %s, trying others", iter->m_impl->get_name_c());
                 next = __gpi_get_handle_by_raw(parent, raw_hdl, iter->m_impl);
                 if (next) {
                     return next;
@@ -474,6 +475,26 @@ int gpi_is_indexable(gpi_sim_hdl sig_hdl)
     if (obj_hdl->get_indexable())
         return 1;
     return 0;
+}
+
+int gpi_is_port(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    if (obj_hdl->get_is_port())
+        return 1;
+    return 0;
+}
+
+const char *gpi_get_port_direction_str(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_port_direction_str();
+}
+
+gpi_port_direction_t gpi_port_direction(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_port_direction();
 }
 
 void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value)

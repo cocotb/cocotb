@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -38,7 +38,7 @@ import random
 
 from scapy.all import Ether, IP, UDP
 
-# Supress SCAPY warning messages
+# Suppress SCAPY warning messages
 import logging
 logging.getLogger("scapy").setLevel(logging.ERROR)
 

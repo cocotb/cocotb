@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * Copyright (c) 2013 SolarFlare Communications Inc
 * All rights reserved.
 *
@@ -179,7 +179,7 @@ long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
-// Returns on of the types defined above e.g. gpiMemory etc.
+// Returns one of the types defined above e.g. gpiMemory etc.
 gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 
 // Get information about the definition of a handle
@@ -191,6 +191,28 @@ int gpi_is_constant(gpi_sim_hdl gpi_hdl);
 
 // Determine whether an object is indexable
 int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
+
+// Determine whether an object is a port
+int gpi_is_port(gpi_sim_hdl gpi_hdl);
+
+typedef enum gpi_port_direction_e {
+    GPI_UNDEFINED = -1,
+    GPI_UNHANDLED = 0,
+    GPI_INPUT = 1,
+    GPI_OUTPUT = 2,
+    GPI_INOUT = 3,
+    GPI_MIXEDIO = 4,  // Verilog only
+    GPI_NO_DIRECTION = 5,  // Verilog only
+    GPI_BUFFER = 6,  // VHDL only
+    GPI_LINKAGE = 7,  // VHDL only
+    GPI_INTERNAL = 8,  // FLI (Mentor) only, meaning "is not a port"
+} gpi_port_direction_t;
+
+// The direction of a port as a string
+const char *gpi_get_port_direction_str(gpi_sim_hdl gpi_hdl);
+
+// The direction of a port
+gpi_port_direction_t gpi_port_direction(gpi_sim_hdl gpi_hdl);
 
 // Functions for setting the properties of a handle
 void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value);

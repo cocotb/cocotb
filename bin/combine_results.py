@@ -37,7 +37,7 @@ def get_parser():
                         help="Verbose/debug output")
     parser.add_argument("--suppress_rc", dest="set_rc", action='store_const', required=False,
                         const=False, default=True, 
-                        help="Supress return code if failures found")
+                        help="Suppress return code if failures found")
                     
     return parser
 

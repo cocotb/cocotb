@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -69,6 +69,26 @@ void VpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 void VpiImpl::get_sim_precision(int32_t *precision)
 {
     *precision = vpi_get(vpiTimePrecision, NULL);
+}
+
+gpi_port_direction_t to_gpi_port_direction(int32_t vpitype)
+{
+    switch (vpitype) {
+        case vpiInput:
+            return GPI_INPUT;
+        case vpiOutput:
+            return GPI_OUTPUT;
+        case vpiInout:
+            return GPI_INOUT;
+        case vpiMixedIO:
+            return GPI_MIXEDIO;
+        case vpiNoDirection:
+            return GPI_NO_DIRECTION;
+
+        default:
+            LOG_DEBUG("Unable to map VPI type %d onto GPI type", vpitype);
+            return GPI_UNHANDLED;
+    }
 }
 
 gpi_objtype_t to_gpi_objtype(int32_t vpitype)
@@ -188,8 +208,8 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             break;
         }
         default:
-            /* We should only print a warning here if the type is really verilog,
-               It could be vhdl as some simulators allow qurying of both languages
+            /* We should only print a warning here if the type is really Verilog,
+               It could be VHDL as some simulators allow querying of both languages
                via the same handle
                */
             const char *type_name = vpi_get_str(vpiType, new_hdl);
@@ -202,10 +222,17 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             return NULL;
     }
 
-    new_obj->initialise(name, fq_name);
+    if (vpi_get(vpiType, new_hdl) == vpiPort) {
+        int dir_raw = vpi_get(vpiDirection, new_hdl);
+        gpi_port_direction_t dir = to_gpi_port_direction(dir_raw);
+        LOG_DEBUG("new_obj->initialise: is_port, port_direction=%d", dir);
+        new_obj->initialise(name, fq_name, true, dir);
+    } else {
+        new_obj->initialise(name, fq_name);
+    }
 
-    LOG_DEBUG("VPI: Created object with type was %s(%d)",
-              vpi_get_str(vpiType, new_hdl), type);
+    LOG_DEBUG("VPI: Created object '%s' with type %s(%d)",
+              vpi_get_str(vpiName, new_hdl), vpi_get_str(vpiType, new_hdl), type);
 
     return new_obj;
 }
@@ -417,7 +444,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
         goto error;
     }
 
-    //Need to free the iterator if it didn't return NULL
+    // Need to free the iterator if it didn't return NULL
     if (iterator && !vpi_free_object(iterator)) {
         LOG_WARN("VPI: Attempting to free root iterator failed!");
         check_vpi_error();
@@ -508,7 +535,7 @@ int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
     return 0;
 }
 
-// If the Pything world wants things to shut down then unregister
+// If the Python world wants things to shut down then unregister
 // the callback for end of sim
 void VpiImpl::sim_end(void)
 {

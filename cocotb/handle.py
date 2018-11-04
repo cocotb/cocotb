@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -86,6 +86,9 @@ class SimHandleBase(object):
 
         self._name = simulator.get_name_string(self._handle)
         self._type = simulator.get_type_string(self._handle)
+        self._is_port = simulator.get_is_port(self._handle)
+        self._port_direction = simulator.get_port_direction(self._handle)
+        self._port_direction_string = simulator.get_port_direction_string(self._handle)
         self._fullname = self._name + "(%s)" % self._type
         self._path = self._name if path is None else path
         self._log = SimLog("cocotb.%s" % self._name)
@@ -436,7 +439,7 @@ class NonHierarchyObject(SimHandleBase):
                      fdel=None,
                      doc="A reference to the value")
 
-    # Re-define hash becasue Python 3 has issues when using the above property
+    # Re-define hash because Python 3 has issues when using the above property
     def __hash__(self):
         return SimHandleBase.__hash__(self)
 
@@ -606,7 +609,7 @@ class ModifiableObject(NonConstantObject):
         elif isinstance(value, get_python_integer_types()):
             value = BinaryValue(value=value, bits=len(self), bigEndian=False)
         elif isinstance(value, dict):
-            #We're given a dictionary with a list of values and a bit size...
+            # We're given a dictionary with a list of values and a bit size...
             num = 0;
             vallist = list(value["values"])
             vallist.reverse()
@@ -756,7 +759,7 @@ class StringObject(ModifiableObject):
             TypeError
 
         This operation will fail unless the handle refers to a modifiable
-        object eg net, signal or variable.
+        object, e.g. net, signal or variable.
         """
         if not isinstance(value, str):
             self._log.critical("Unsupported type for string value assignment: %s (%s)" % (type(value), repr(value)))

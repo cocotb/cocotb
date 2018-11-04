@@ -1,4 +1,4 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -183,7 +183,7 @@ class SimLogFormatter(logging.Formatter):
         return prefix + pad.join(msg.split('\n'))
 
     def format(self, record):
-        """pretify the log output, annotate with simulation time"""
+        """Prettify the log output, annotate with simulation time"""
         if record.args:
             msg = record.msg % record.args
         else:
@@ -207,7 +207,7 @@ class SimColourLogFormatter(SimLogFormatter):
                                 ANSI.DEFAULT}
 
     def format(self, record):
-        """pretify the log output, annotate with simulation time"""
+        """Prettify the log output, annotate with simulation time"""
 
         if record.args:
             msg = record.msg % record.args

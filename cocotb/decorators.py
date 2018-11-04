@@ -1,4 +1,4 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -371,7 +371,7 @@ class test(coroutine):
     """Decorator to mark a function as a test
 
     All tests are coroutines.  The test decorator provides
-    some common reporting etc, a test timeout and allows
+    some common reporting etc., a test timeout and allows
     us to mark tests as expected failures.
 
     KWargs:
@@ -380,7 +380,7 @@ class test(coroutine):
         expect_fail: (bool):
             Don't mark the result as a failure if the test fails
         expect_error: (bool):
-            Don't make the result as an error if an error is raised
+            Don't mark the result as an error if an error is raised
             This is for cocotb internal regression use
         skip: (bool):
             Don't execute this test as part of the regression

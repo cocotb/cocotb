@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
@@ -30,7 +30,9 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    +=
-GXX_ARGS    += -DVPI_CHECKING -DLIB_EXT=$(LIB_EXT) -DSINGLETON_HANDLES
+# FIXME: defining SINGLETON_HANDLES is harmful for port discovery - does it hurt to remove it?
+#GXX_ARGS    += -DVPI_CHECKING -DLIB_EXT=$(LIB_EXT) -DSINGLETON_HANDLES
+GXX_ARGS    += -DVPI_CHECKING -DLIB_EXT=$(LIB_EXT)
 LIBS        := -lcocotbutils -lgpilog -lcocotb -lstdc++
 LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libgpi

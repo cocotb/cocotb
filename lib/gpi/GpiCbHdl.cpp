@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -73,12 +73,33 @@ const char * GpiObjHdl::get_type_str(void)
     return ret;
 }
 
+const char * GpiObjHdl::get_port_direction_str(void)
+{
+#define CASE_OPTION(_X) \
+    case _X: \
+        ret = #_X; \
+        break
+
+    const char *ret;
+
+    switch (m_port_direction) {
+        CASE_OPTION(GPI_UNDEFINED);
+        CASE_OPTION(GPI_INPUT);
+        CASE_OPTION(GPI_OUTPUT);
+        CASE_OPTION(GPI_INOUT);
+        default:
+            ret = "unknown";
+    }
+
+    return ret;
+}
+
 const std::string & GpiObjHdl::get_name(void)
 {
     return m_name;
 }
 
-/* Genertic base clss implementations */
+/* Generic base class implementations */
 char *GpiHdl::gpi_copy_name(const char *name)
 {
     int len;
@@ -118,6 +139,16 @@ int GpiObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     m_name = name;
     m_fullname = fq_name;
+    return 0;
+}
+
+int GpiObjHdl::initialise(std::string &name, std::string &fq_name, bool is_port, gpi_port_direction_t port_direction)
+{
+    LOG_DEBUG("Setting is_port %d and port_direction %d", is_port, port_direction);
+    m_name = name;
+    m_fullname = fq_name;
+    m_is_port = is_port;
+    m_port_direction = port_direction;
     return 0;
 }
 

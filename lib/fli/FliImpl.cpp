@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2014 Potential Ventures Ltd
+* Copyright (c) 2014, 2018 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,24 @@ extern "C" {
 static FliProcessCbHdl *sim_init_cb;
 static FliProcessCbHdl *sim_finish_cb;
 static FliImpl         *fli_table;
+}
+
+gpi_port_direction_t to_gpi_port_direction(mtiDirectionT flitype)
+{
+    switch (flitype) {
+        case MTI_DIR_IN:
+            return GPI_INPUT;
+        case MTI_DIR_OUT:
+            return GPI_OUTPUT;
+        case MTI_DIR_INOUT:
+            return GPI_INOUT;
+        case MTI_INTERNAL:
+            return GPI_INTERNAL;
+
+        default:
+            LOG_DEBUG("Unable to map FLI type %d onto GPI type", flitype);
+            return GPI_UNHANDLED;
+    }
 }
 
 void FliImpl::sim_end(void)
@@ -121,7 +139,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
 {
     GpiObjHdl *new_obj = NULL;
 
-    LOG_DEBUG("Attepmting to create GPI object from handle (Type=%d, FullType=%d).", accType, accFullType);
+    LOG_DEBUG("Attempting to create GPI object from handle (Type=%d, FullType=%d).", accType, accFullType);
     if (!VS_TYPE_IS_VHDL(accFullType)) {
         LOG_DEBUG("Handle is not a VHDL type.");
         return NULL;
@@ -209,10 +227,21 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
         return NULL;
     }
 
-    if (new_obj->initialise(name,fq_name) < 0) {
-        LOG_ERROR("Failed to initialise the handle %s", name.c_str());
-        delete new_obj;
-        return NULL;
+    mtiDirectionT dir_raw =  mti_GetSignalMode(static_cast<mtiSignalIdT>(hdl));
+    gpi_port_direction_t dir = to_gpi_port_direction(dir_raw);
+    if (GPI_INTERNAL != dir) {
+        LOG_DEBUG("new_obj->initialise: is_port, port_direction=%d", dir);
+        if (new_obj->initialise(name, fq_name, true, dir) < 0) {
+            LOG_ERROR("Failed to initialise the handle %s", name.c_str());
+            delete new_obj;
+            new_obj = NULL;
+        }
+    } else {
+        if (new_obj->initialise(name, fq_name) < 0) {
+            LOG_ERROR("Failed to initialise the handle %s", name.c_str());
+            delete new_obj;
+            return NULL;
+        }
     }
 
     return new_obj;

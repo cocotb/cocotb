@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * Copyright (c) 2013 SolarFlare Communications Inc
 * All rights reserved.
 *
@@ -237,7 +237,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
         LOG_CRITICAL("Failed to allocate user data\n");
     }
 
-    // Set up the user data (no more python API calls after this!
+    // Set up the user data (no more python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -293,7 +293,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
         LOG_CRITICAL("Failed to allocate user data\n");
     }
 
-    // Set up the user data (no more python API calls after this!
+    // Set up the user data (no more python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -349,7 +349,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
         LOG_CRITICAL("Failed to allocate user data\n");
     }
 
-    // Set up the user data (no more python API calls after this!
+    // Set up the user data (no more python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -415,7 +415,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         LOG_CRITICAL("Failed to allocate user data\n");
     }
 
-    // Set up the user data (no more python API calls after this!
+    // Set up the user data (no more python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -488,7 +488,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
         LOG_CRITICAL("Failed to allocate user data\n");
     }
 
-    // Set up the user data (no more python API calls after this!
+    // Set up the user data (no more python API calls after this!)
     // Causes segfault?
     callback_data_p->_saved_thread_state = PyThreadState_Get();//PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
@@ -560,7 +560,7 @@ static PyObject *next(PyObject *self, PyObject *args)
 
     result = gpi_next(hdl);
 
-    // Raise stopiteration when we're done
+    // Raise StopIteration when we're done
     if (!result) {
         PyErr_SetNone(PyExc_StopIteration);
         DROP_GIL(gstate);
@@ -679,7 +679,7 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    gpi_set_signal_value_str(hdl,binstr);
+    gpi_set_signal_value_str(hdl, binstr);
     res = Py_BuildValue("s", "OK!");
 
     DROP_GIL(gstate);
@@ -918,6 +918,72 @@ static PyObject *get_const(PyObject *self, PyObject *args)
     return pyresult;
 }
 
+static PyObject *get_is_port(PyObject *self, PyObject *args)
+{
+    int result;
+    gpi_sim_hdl hdl;
+    PyObject *pyresult;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_is_port((gpi_sim_hdl)hdl);
+    pyresult = Py_BuildValue("i", result);
+
+    DROP_GIL(gstate);
+
+    return pyresult;
+}
+
+static PyObject *get_port_direction(PyObject *self, PyObject *args)
+{
+    int result;
+    gpi_sim_hdl hdl;
+    PyObject *pyresult;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_port_direction((gpi_sim_hdl)hdl);
+    pyresult = Py_BuildValue("i", result);
+
+    DROP_GIL(gstate);
+
+    return pyresult;
+}
+
+static PyObject *get_port_direction_string(PyObject *self, PyObject *args)
+{
+    const char *result;
+    gpi_sim_hdl hdl;
+    PyObject *retstr;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_port_direction_str((gpi_sim_hdl)hdl);
+    retstr = Py_BuildValue("s", result);
+
+    DROP_GIL(gstate);
+
+    return retstr;
+}
+
 static PyObject *get_type_string(PyObject *self, PyObject *args)
 {
     const char *result;
@@ -1022,7 +1088,7 @@ static PyObject *get_range(PyObject *self, PyObject *args)
     int rng_right = gpi_get_range_right((gpi_sim_hdl)hdl);
 
     if (indexable)
-        retstr = Py_BuildValue("(i,i)", rng_left,rng_right);
+        retstr = Py_BuildValue("(i,i)", rng_left, rng_right);
     else
         retstr = Py_BuildValue("");
 
@@ -1103,6 +1169,11 @@ static void add_module_constants(PyObject* simulator)
     rc |= PyModule_AddIntConstant(simulator, "OBJECTS",       GPI_OBJECTS);
     rc |= PyModule_AddIntConstant(simulator, "DRIVERS",       GPI_DRIVERS);
     rc |= PyModule_AddIntConstant(simulator, "LOADS",         GPI_LOADS);
+    rc |= PyModule_AddIntConstant(simulator, "UNDEFINED",     GPI_UNDEFINED);
+    rc |= PyModule_AddIntConstant(simulator, "INPUT",         GPI_INPUT);
+    rc |= PyModule_AddIntConstant(simulator, "OUTPUT",        GPI_OUTPUT);
+    rc |= PyModule_AddIntConstant(simulator, "INOUT",         GPI_INOUT);
+
 
     if (rc != 0)
         fprintf(stderr, "Failed to add module constants!\n");

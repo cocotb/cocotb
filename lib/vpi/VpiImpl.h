@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -272,7 +272,7 @@ public:
     void get_sim_time(uint32_t *high, uint32_t *low);
     void get_sim_precision(int32_t *precision);
 
-    /* Hierachy related */
+    /* Hierarchy related */
     GpiObjHdl *get_root_handle(const char *name);
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type);
     GpiObjHdl *next_handle(GpiIterator *iter);

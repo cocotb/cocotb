@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -89,7 +89,7 @@ class external_waiter(object):
         self.cond = threading.Condition()
         self._log = SimLog("cocotb.external.thead.%s" % self.thread, id(self))
 
-    def _propogate_state(self, new_state):
+    def _propagate_state(self, new_state):
         self.cond.acquire()
         if _debug:
             self._log.debug("Changing state from %d -> %d from %s" % (self.state, new_state, threading.current_thread()))
@@ -100,21 +100,21 @@ class external_waiter(object):
     def thread_done(self):
         if _debug:
             self._log.debug("Thread finished from %s" % (threading.current_thread()))
-        self._propogate_state(external_state.EXITED)
+        self._propagate_state(external_state.EXITED)
 
     def thread_suspend(self):
-        self._propogate_state(external_state.PAUSED)
+        self._propagate_state(external_state.PAUSED)
 
     def thread_start(self):
         if self.state > external_state.INIT:
             return
 
         if not self.thread.is_alive():
-            self._propogate_state(external_state.RUNNING)
+            self._propagate_state(external_state.RUNNING)
             self.thread.start()
 
     def thread_resume(self):
-        self._propogate_state(external_state.RUNNING)
+        self._propagate_state(external_state.RUNNING)
         
     def thread_wait(self):
         if _debug:
