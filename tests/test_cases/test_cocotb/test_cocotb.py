@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -309,7 +309,8 @@ def do_test_afterdelay_in_readonly(dut, delay):
              expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "riviera",
                                                              "modelsim",
-                                                             "ncsim")))
+                                                             "ncsim",
+                                                             "xmsim")))
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -325,7 +326,8 @@ def test_readwrite_in_readonly(dut):
              expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "riviera",
                                                              "modelsim",
-                                                             "ncsim")))
+                                                             "ncsim",
+                                                             "xmsim")))
 def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -340,7 +342,7 @@ def test_cached_write_in_readonly(dut):
 
 @cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "chronologic simulation vcs")),
-             skip=cocotb.SIM_NAME.lower().startswith(("ncsim")))
+             skip=cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")))
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited

@@ -1,4 +1,4 @@
-''' Copyright (c) 2015 Potential Ventures Ltd
+''' Copyright (c) 2015, 2018 Potential Ventures Ltd
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME.lower().startswith(("ncsim","modelsim")):
+    if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim", "modelsim")):
         # Finds regions, signal, generics, constants, varibles and ports.
         pass_total = 34569
     else:

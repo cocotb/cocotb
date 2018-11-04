@@ -153,7 +153,7 @@ def test_read_write(dut):
 
     tlog.info("Writing a few signal sub-indices!!!")
     dut.sig_logic_vec[2]     = 0
-    if cocotb.LANGUAGE in ["vhdl"] or not cocotb.SIM_NAME.lower().startswith(("ncsim")):
+    if cocotb.LANGUAGE in ["vhdl"] or not cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         dut.sig_t6[1][3][2]      = 1
         dut.sig_t6[0][2][7]      = 0
 
@@ -166,12 +166,12 @@ def test_read_write(dut):
 
     tlog.info("Checking writes (2):")
     _check_logic(tlog, dut.port_logic_vec_out, 0xC8)
-    if cocotb.LANGUAGE in ["vhdl"] or not cocotb.SIM_NAME.lower().startswith(("ncsim")):
+    if cocotb.LANGUAGE in ["vhdl"] or not cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         _check_logic(tlog, dut.sig_t6[1][3][2], 1)
         _check_logic(tlog, dut.sig_t6[0][2][7], 0)
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        _check_str (tlog, dut.port_str_out , "TEsting")
+        _check_str (tlog, dut.port_str_out , "Testing")
 
         _check_logic(tlog, dut.port_rec_out.b[1]     , 0xA3)
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)
@@ -301,7 +301,7 @@ def test_discover_all(dut):
     # to ensure the handle is in the dut "sub_handles" for iterating
     #
     # DO NOT ADD FOR ALDEC.  Does not iterate over properly
-    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("modelsim","ncsim")):
+    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("modelsim", "ncsim", "xmsim")):
         dummy = dut.sig_rec
         dummy = dut.port_rec_out
 
