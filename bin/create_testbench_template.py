@@ -143,7 +143,7 @@ def my_first_test(dut):
 
         f.write('\n')
         f.write('    dut._log.info("Reading all DUT outputs")\n')
-        f.write('    # other possibilities: output._name.value or int(output._name)\n')  # FIXME
+        f.write('    # can also use int(port._name)\n')
 
         maxlen = get_name_maxlen(output_ports)
         for port_ in output_ports:
