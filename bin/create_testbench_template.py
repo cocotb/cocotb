@@ -9,11 +9,14 @@ import pprint
 # FIXME: port stuff needs SINGLETON_HANDLES in lib/gpi/Makefile not set!
 
 
-def get_longest_name(objlist):
+def get_name_maxlen(objlist):
     '''
     Return the longest name of a list of objects.
     '''
-    return max(len(x._name) for x in objlist)
+    try:
+        return max(len(x._name) for x in objlist)
+    except:
+        return 0
 
 
 @cocotb.test()
@@ -33,7 +36,7 @@ def create_testbench_template(dut, filename='testbench_template.py'):
     reset_ports=[]
     for thing_ in dut:
         if isinstance(thing_, HierarchyObject) and thing_._is_port:
-            dut._log.info(f'{thing_._port_direction_string[4:].capitalize()} Port {thing_._path}')
+            dut._log.info('%s Port %s' % (thing_._port_direction_string[4:].capitalize(), thing_._path))
             if thing_._port_direction_string == 'GPI_INPUT':
                 input_ports.append(thing_)
             elif thing_._port_direction_string == 'GPI_OUTPUT':
@@ -43,26 +46,26 @@ def create_testbench_template(dut, filename='testbench_template.py'):
                 input_ports.append(thing_)
                 output_ports.append(thing_)
             else:
-                dut._log.warning(f'Unhandled port direction {thing_._port_direction_string} of {thing_._path}!')
+                dut._log.info('Unhandled port direction %s of %s!' % (thing_._port_direction_string, thing_._path))
 
     # match names to identify "special" ports:
     for port_ in input_ports+inout_ports:
         if port_._name.startswith('vd') or port_._name.startswith('vc'):
             # Examples: vdd, vddd, vdda, vdio, vcc, vcore
-            dut._log.warning(f'Identified a supply port: {port_._name}')
+            dut._log.info('Identified a supply port: %s' % (port_._name))
             supply_ports.append(port_)
         elif port_._name.startswith('vs') or port_._name.startswith('gnd') or port_._name.endswith('gnd'):
             # Examples: gnd, agnd, dgnd, vs, vss, vssd, vsio
-            dut._log.warning(f'Identified a ground port: {port_._name}')
+            dut._log.info('Identified a ground port: %s' % (port_._name))
             ground_ports.append(port_)
         elif (port_._name.startswith('clk') or port_._name.endswith('clk')
               or port_._name.startswith('clock') or port_._name.endswith('clock')):
             # Examples: clk_2MHz, clk_main, main_clk, main_clock
-            dut._log.warning(f'Identified a clock: {port_._name}')
+            dut._log.info('Identified a clock: %s' % (port_._name))
             clock_ports.append(port_)
         elif port_._name in ('reset', 'reset_n', 'rst', 'rst_n'):
             # Examples: exactly these
-            dut._log.warning(f'Identified a reset: {port_._name}')
+            dut._log.info('Identified a reset: %s' % (port_._name))
             reset_ports.append(port_)
 
     with open(filename, 'w') as f:
@@ -92,30 +95,30 @@ def my_first_test(dut):
         f.write('\n')
         f.write('    dut._log.info("Asserting and de-asserting identified reset(s) (assuming active-low resets)")\n')
         for port_ in reset_ports:
-            f.write(f'''    dut.{port_._name} <= 0
+            f.write('''    dut.%s <= 0
     yield Timer(RESET_DURATION_NS, units='ns')
-    dut.{port_._name} <= 1\n''')
+    dut.%s <= 1\n''' % (port_._name, port_._name))
         if len(reset_ports) == 0:
-            f.write(f'    dut._log.info("    <none>")\n')
+            f.write('    dut._log.info("    <none>")\n')
             
         f.write('\n')
         f.write('    dut._log.info("Setting identified supply ports")\n')
         for port_ in supply_ports:
-            f.write(f'    dut.{port_._name} <= 1\n')
+            f.write('    dut.%s <= 1\n' % (port_._name))
         if len(supply_ports) == 0:
             f.write('    dut._log.info("    <none>")\n')
             
         f.write('\n')
         f.write('    dut._log.info("Setting identified ground ports")\n')
         for port_ in ground_ports:
-            f.write(f'    dut.{port_._name} <= 0\n')
+            f.write('    dut.%s <= 0\n' % (port_._name))
         if len(ground_ports) == 0:
             f.write('    dut._log.info("    <none>")\n')
 
         f.write('\n')
         f.write('    dut._log.info("Starting identified clock(s)")\n')
         for port_ in clock_ports:
-            f.write(f"    cocotb.fork(Clock(dut.{port_._name}, CLOCK_PERIOD_NS, units='ns').start())\n")
+            f.write(f"    cocotb.fork(Clock(dut.%s, CLOCK_PERIOD_NS, units='ns').start())\n" % (port_._name))
         if len(clock_ports) == 0:
             f.write('    dut._log.info("    <none>")\n')
 
@@ -124,26 +127,29 @@ def my_first_test(dut):
         f.write('    # Changes needed for real signals (drive with "0.0"), and struct/record ports\n')
         remaining_ports = list(set(input_ports+inout_ports) -
                                set(supply_ports+ground_ports+clock_ports+reset_ports))
+        maxlen = get_name_maxlen(remaining_ports)
         for port_ in remaining_ports:
-            f.write('    dut.{} <= 0x0\n'.format(port_._name.ljust(get_longest_name(remaining_ports))))
+            f.write('    dut.%s <= 0x0\n' % (port_._name.ljust(maxlen)))
         if len(remaining_ports) == 0:
             f.write('    dut._log.info("    <none>")\n')
         
         f.write('\n')
         f.write('    dut._log.info("Waiting for some rising edges on all clock signals")\n')
         for port_ in clock_ports:
-            f.write(f'    yield ClockCycles(dut.{port_._name}, 3)\n')
-            f.write(f'    yield RisingEdge(dut.{port_._name})\n')
+            f.write('    yield ClockCycles(dut.%s, 3)\n' % (port_._name))
+            f.write('    yield RisingEdge(dut.%s)\n' % (port_._name))
         if len(clock_ports) == 0:
             f.write('    dut._log.info("    <none>")\n')
 
         f.write('\n')
         f.write('    dut._log.info("Reading all DUT outputs")\n')
-        f.write('    # other possibilities: output._name.value or int(output._name)\n')
+        f.write('    # other possibilities: output._name.value or int(output._name)\n')  # FIXME
 
+        maxlen = get_name_maxlen(output_ports)
         for port_ in output_ports:
-            f.write('    dut._log.info("dut.{name_ljust} = {{val}}".format(val=dut.{name}.value.binstr))\n'.format(
-                name_ljust=port_._name.ljust(get_longest_name(output_ports)), name=port_._name))
+            f.write('    %s = dut.%s.value.binstr\n' % ((port_._name+'_val').ljust(maxlen+len('_val')), port_._name))
+        for port_ in output_ports:
+            f.write("""    dut._log.info("%s = %%s" %% str(%s))\n""" % ((port_._name+'_val').ljust(maxlen+len('_val')), (port_._name+'_val')))
         if len(output_ports) == 0:
             f.write('    dut._log.info("    <none>")\n')
         
@@ -152,4 +158,5 @@ def my_first_test(dut):
     yield Timer(10, units='ns')
     dut._log.info("Waiting 10 ns...done")\n''')
 
-    dut._log.info(f'Wrote testbench template {filename}')    
+    dut._log.warning('Wrote testbench template %s' % (filename))    
+    dut._log.warning('Try running with\n    make %s MODULE=testbench_template' % (os.getenv("MAKEFLAGS")[5:]))
