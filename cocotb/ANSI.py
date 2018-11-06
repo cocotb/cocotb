@@ -1,4 +1,4 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -31,25 +31,60 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 # flake8: noqa (skip this file for flake8: pypi.python.org/pypi/flake8)
 _ESCAPE = "\033["
 
+# see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 
-BLACK_FG        = _ESCAPE + "30m"
-RED_FG          = _ESCAPE + "31m"
-GREEN_FG        = _ESCAPE + "32m"
-YELLOW_FG       = _ESCAPE + "33m"
-BLUE_FG         = _ESCAPE + "34m"
-MAGENTA_FG      = _ESCAPE + "35m"
-CYAN_FG         = _ESCAPE + "36m"
-WHITE_FG        = _ESCAPE + "37m"
-DEFAULT_FG      = _ESCAPE + "39m"
+DEFAULT_FG        = _ESCAPE + "39m"
+DEFAULT_BG        = _ESCAPE + "49m"
+DEFAULT           = DEFAULT_BG + DEFAULT_FG
 
-BLACK_BG        = _ESCAPE + "40m"
-RED_BG          = _ESCAPE + "41m"
-GREEN_BG        = _ESCAPE + "42m"
-YELLOW_BG       = _ESCAPE + "43m"
-BLUE_BG         = _ESCAPE + "44m"
-MAGENTA_BG      = _ESCAPE + "45m"
-CYAN_BG         = _ESCAPE + "46m"
-WHITE_BG        = _ESCAPE + "47m"
-DEFAULT_BG      = _ESCAPE + "49m"
+BLACK_FG          = _ESCAPE + "30m"
+RED_FG            = _ESCAPE + "31m"
+GREEN_FG          = _ESCAPE + "32m"
+YELLOW_FG         = _ESCAPE + "33m"
+BLUE_FG           = _ESCAPE + "34m"
+MAGENTA_FG        = _ESCAPE + "35m"
+CYAN_FG           = _ESCAPE + "36m"
+WHITE_FG          = _ESCAPE + "37m"
 
-DEFAULT         = DEFAULT_BG + DEFAULT_FG
+BLACK_BG          = _ESCAPE + "40m"
+RED_BG            = _ESCAPE + "41m"
+GREEN_BG          = _ESCAPE + "42m"
+YELLOW_BG         = _ESCAPE + "43m"
+BLUE_BG           = _ESCAPE + "44m"
+MAGENTA_BG        = _ESCAPE + "45m"
+CYAN_BG           = _ESCAPE + "46m"
+WHITE_BG          = _ESCAPE + "47m"
+
+BRIGHT_BLACK_FG   = _ESCAPE + "90m"
+BRIGHT_RED_FG     = _ESCAPE + "91m"
+BRIGHT_GREEN_FG   = _ESCAPE + "92m"
+BRIGHT_YELLOW_FG  = _ESCAPE + "93m"
+BRIGHT_BLUE_FG    = _ESCAPE + "94m"
+BRIGHT_MAGENTA_FG = _ESCAPE + "95m"
+BRIGHT_CYAN_FG    = _ESCAPE + "96m"
+BRIGHT_WHITE_FG   = _ESCAPE + "97m"
+
+BRIGHT_BLACK_BG   = _ESCAPE + "100m"
+BRIGHT_RED_BG     = _ESCAPE + "101m"
+BRIGHT_GREEN_BG   = _ESCAPE + "102m"
+BRIGHT_YELLOW_BG  = _ESCAPE + "103m"
+BRIGHT_BLUE_BG    = _ESCAPE + "104m"
+BRIGHT_MAGENTA_BG = _ESCAPE + "105m"
+BRIGHT_CYAN_BG    = _ESCAPE + "106m"
+BRIGHT_WHITE_BG   = _ESCAPE + "107m"
+
+
+COLOR_DEFAULT  = DEFAULT
+
+COLOR_INFO     = BLUE_FG
+COLOR_WARNING  = YELLOW_FG
+COLOR_ERROR    = RED_FG
+COLOR_CRITICAL = RED_BG + BLACK_FG
+COLOR_TEST     = BLUE_BG + BLACK_FG
+
+COLOR_HILITE_SUMMARY         = WHITE_FG + RED_BG
+COLOR_HILITE_HEXDIFF_DEFAULT = YELLOW_FG
+COLOR_HILITE_HEXDIFF_1       = CYAN_FG
+COLOR_HILITE_HEXDIFF_2       = RED_FG
+COLOR_HILITE_HEXDIFF_3       = MAGENTA_BG
+COLOR_HILITE_HEXDIFF_4       = CYAN_BG + BLACK_FG

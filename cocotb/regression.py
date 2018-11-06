@@ -1,4 +1,4 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -48,7 +48,7 @@ if "COVERAGE" in os.environ:
     try:
         import coverage
     except ImportError as e:
-        msg = ("Coverage collection requested but coverage module not availble"
+        msg = ("Coverage collection requested but coverage module not available"
                "\n"
                "Import error was: %s\n" % repr(e))
         sys.stderr.write(msg)
@@ -75,7 +75,7 @@ class RegressionManager(object):
     def __init__(self, root_name, modules, tests=None, seed=None, hooks=[]):
         """
         Args:
-            modules (list): A list of python module names to run
+            modules (list): A list of Python module names to run
 
         Kwargs
         """
@@ -162,7 +162,7 @@ class RegressionManager(object):
                         skip = test.skip
                     except TestError:
                         skip = True
-                        self.log.warning("Failed to initialise test %s" %
+                        self.log.warning("Failed to initialize test %s" %
                                          thing.name)
 
                     if skip:
@@ -286,7 +286,7 @@ class RegressionManager(object):
             if self._running_test.expect_error:
                 self.log.info("Test errored as expected: " + _result_was())
             else:
-                self.log.error("Test error has lead to simulator shuttting us "
+                self.log.error("Test error has lead to simulator shutting us "
                                "down")
                 self._add_failure(result)
                 self._store_test_result(self._running_test.module, self._running_test.funcname, False, sim_time_ns, real_time, ratio_time)
@@ -308,8 +308,8 @@ class RegressionManager(object):
             start = ''
             end   = ''
             if self.log.colour:
-                start = ANSI.BLUE_BG + ANSI.BLACK_FG
-                end   = ANSI.DEFAULT
+                start = ANSI.COLOR_TEST
+                end   = ANSI.COLOR_DEFAULT
             # Want this to stand out a little bit
             self.log.info("%sRunning test %d/%d:%s %s" %
                           (start,
@@ -359,7 +359,7 @@ class RegressionManager(object):
             else:
                 pass_fail_str = "FAIL"
                 if self.log.colour:
-                    hilite = ANSI.WHITE_FG + ANSI.RED_BG
+                    hilite = ANSI.COLOR_HILITE_SUMMARY
 
             summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
                                                                                                                                 b=pass_fail_str,    b_len=RESULT_FIELD_LEN,
@@ -504,7 +504,7 @@ class TestFactory(object):
 
     def generate_tests(self, prefix="", postfix=""):
         """
-        Generates exhasutive set of tests using the cartesian product of the
+        Generates exhaustive set of tests using the cartesian product of the
         possible keyword arguments.
 
         The generated tests are appended to the namespace of the calling
