@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013, 2018 Potential Ventures Ltd
+* Copyright (c) 2013 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -651,7 +651,6 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
 
 const char* VhpiSignalObjHdl::get_signal_value_binstr(void)
 {
-    LOG_INFO("get_signal_value_binstr format is '%s'", ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
     switch (m_value.format) {
         case vhpiRealVal:
             LOG_INFO("get_signal_value_binstr not supported for %s",

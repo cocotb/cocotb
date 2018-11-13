@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014, 2018 Potential Ventures Ltd
+# Copyright (c) 2014 Potential Ventures Ltd
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,6 @@
 include $(SIM_ROOT)/makefiles/Makefile.inc
 
 INCLUDES    += -I$(MODELSIM_BIN_DIR)/../include
-INCLUDES    += -I$(MODELSIM_HOME)/questasim/include
 GXX_ARGS    += -DFLI_CHECKING -DUSE_CACHE
 LIBS        := $(EXTRA_LIBS) -lgpilog -lgpi -lstdc++
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)

@@ -439,7 +439,7 @@ class NonHierarchyObject(SimHandleBase):
                      fdel=None,
                      doc="A reference to the value")
 
-    # Re-define hash because Python 3 has issues when using the above property
+    # Re-define hash becasue Python 3 has issues when using the above property
     def __hash__(self):
         return SimHandleBase.__hash__(self)
 
@@ -609,7 +609,7 @@ class ModifiableObject(NonConstantObject):
         elif isinstance(value, get_python_integer_types()):
             value = BinaryValue(value=value, bits=len(self), bigEndian=False)
         elif isinstance(value, dict):
-            # We're given a dictionary with a list of values and a bit size...
+            #We're given a dictionary with a list of values and a bit size...
             num = 0;
             vallist = list(value["values"])
             vallist.reverse()
@@ -759,7 +759,7 @@ class StringObject(ModifiableObject):
             TypeError
 
         This operation will fail unless the handle refers to a modifiable
-        object, e.g. net, signal or variable.
+        object eg net, signal or variable.
         """
         if not isinstance(value, str):
             self._log.critical("Unsupported type for string value assignment: %s (%s)" % (type(value), repr(value)))
