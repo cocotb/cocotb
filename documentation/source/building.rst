@@ -48,11 +48,6 @@ Make Variables
     ``EXTRA_ARGS``
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
 
-.. comment
-..    ``GENERICS``
-..      Override the generics in the design.
-..      Note that capabilities may vary between simulators, e.g. whether you can only set generics of certain types, or only set toplevel generics, and, if hierarchical specifications are supported, in what format to specify them.
-    
     ``CUSTOM_COMPILE_DEPS``
       Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :term:`VERILOG_SOURCES` or :term:`VHDL_SOURCES`.
       
