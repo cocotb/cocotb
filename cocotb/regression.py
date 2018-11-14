@@ -213,7 +213,8 @@ class RegressionManager(object):
             self.log.info("Writing coverage data")
             self._cov.save()
             self._cov.html_report()
-        self._log_test_summary()
+        if len(self.test_results) > 0:
+            self._log_test_summary()
         self._log_sim_summary()
         self.log.info("Shutting down...")
         self.xunit.write()
