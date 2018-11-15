@@ -2,7 +2,7 @@
 
 from setuptools import setup
 from setuptools import find_packages
-from os import path
+from os import path, walk
 
 here = path.abspath(path.dirname(__file__))
 
@@ -16,6 +16,17 @@ author = 'Chris Higgs, Stuart Hodgson'
 author_email = 'cocotb@potentialventures.com'
 
 install_requires = []
+
+def package_files(directory):
+    paths = []
+    for (fpath, directories, filenames) in walk(directory):
+        for filename in filenames:
+            paths.append(path.join('..', fpath, filename))
+    return paths
+
+extra_files = package_files('makefiles')
+extra_files += package_files('lib')
+extra_files += package_files('include')
 
 setup(
     name='cocotb',
@@ -32,6 +43,7 @@ setup(
     install_requires=install_requires,
     packages=find_packages(),
     include_package_data=True,
+    package_data={'cocotb': extra_files},
     entry_points={
         'console_scripts': [
             'cocotb-path=cocotb.path:main',
