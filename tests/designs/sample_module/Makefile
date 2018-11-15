@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
@@ -40,7 +40,7 @@ endif
 COCOTB?=$(WPWD)/../../..
 
 ifeq ($(TOPLEVEL_LANG),verilog)
-    VERILOG_SOURCES = $(COCOTB)/tests/designs/sample_module/sample_module.v
+    VERILOG_SOURCES = $(COCOTB)/tests/designs/sample_module/sample_module.sv
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES =  $(COCOTB)/tests/designs/sample_module/sample_module_pack.vhdl $(COCOTB)/tests/designs/sample_module/sample_module_1.vhdl $(COCOTB)/tests/designs/sample_module/sample_module.vhdl
 else
