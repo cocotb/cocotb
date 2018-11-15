@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2014 Potential Ventures Ltd
+* Copyright (c) 2014, 2018 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -113,7 +113,7 @@ bool is_const(vhpiHandleT hdl)
         vhpiIntT vhpitype = vhpi_get(vhpiKindP, tmp);
         if (vhpiConstDeclK == vhpitype || vhpiGenericDeclK == vhpitype)
             return true;
-    } while ((tmp = vhpi_handle(vhpiPrefix,tmp)) != NULL);
+    } while ((tmp = vhpi_handle(vhpiPrefix, tmp)) != NULL);
 
     return false;
 }
@@ -233,7 +233,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         return NULL;
     }
 
-    /* We need to delve further here to detemine how to later set
+    /* We need to delve further here to determine how to later set
        the values of an object */
     vhpiHandleT base_hdl = vhpi_handle(vhpiBaseType, new_hdl);
 
@@ -574,7 +574,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
             return NULL;
         }
 
-        vhpiIntT    num_dim  = vhpi_get(vhpiNumDimensionsP,base_hdl);
+        vhpiIntT    num_dim  = vhpi_get(vhpiNumDimensionsP, base_hdl);
         uint32_t    idx      = 0;
 
         /* Need to translate the index into a zero-based flattened array index */

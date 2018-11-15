@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -287,7 +287,7 @@ class Scheduler(object):
         # Issue previous test result, if there is one
         if self._test_result is not None:
             if _debug:
-                self.log.debug("Issue test result to regresssion object")
+                self.log.debug("Issue test result to regression object")
             cocotb.regression.handle_result(self._test_result)
             self._test_result = None
         if self._entrypoint is not None:
@@ -500,7 +500,7 @@ class Scheduler(object):
 
     def run_in_executor(self, func, *args, **kwargs):
         """
-        Run the corouting in a seperate execution thread
+        Run the coroutine in a separate execution thread
         and return a yieldable object for the caller
         """
         # Create a thread
@@ -607,7 +607,7 @@ class Scheduler(object):
             self.finish_test(test_result)
             return
 
-        # Normal co-routine completion
+        # Normal coroutine completion
         except cocotb.decorators.CoroutineComplete as exc:
             if _debug:
                 self.log.debug("Coroutine completed: %s" % str(coroutine))
@@ -624,11 +624,11 @@ class Scheduler(object):
             if not result.has_started():
                 self.queue(result)
                 if _debug:
-                    self.log.debug("Scheduling nested co-routine: %s" %
+                    self.log.debug("Scheduling nested coroutine: %s" %
                                    result.__name__)
             else:
                 if _debug:
-                    self.log.debug("Joining to already running co-routine: %s" %
+                    self.log.debug("Joining to already running coroutine: %s" %
                                    result.__name__)
 
             new_trigger = result.join()
@@ -695,7 +695,7 @@ class Scheduler(object):
     def finish_scheduler(self, test_result):
         """Directly call into the regression manager and end test
            once we return the sim will close us so no cleanup is needed"""
-        self.log.debug("Issue sim closedown result to regresssion object")
+        self.log.debug("Issue sim closedown result to regression object")
         cocotb.regression.handle_result(test_result)
 
     def cleanup(self):

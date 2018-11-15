@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -188,8 +188,8 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             break;
         }
         default:
-            /* We should only print a warning here if the type is really verilog,
-               It could be vhdl as some simulators allow qurying of both languages
+            /* We should only print a warning here if the type is really Verilog,
+               It could be VHDL as some simulators allow querying of both languages
                via the same handle
                */
             const char *type_name = vpi_get_str(vpiType, new_hdl);
@@ -417,7 +417,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
         goto error;
     }
 
-    //Need to free the iterator if it didn't return NULL
+    // Need to free the iterator if it didn't return NULL
     if (iterator && !vpi_free_object(iterator)) {
         LOG_WARN("VPI: Attempting to free root iterator failed!");
         check_vpi_error();
@@ -508,7 +508,7 @@ int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
     return 0;
 }
 
-// If the Pything world wants things to shut down then unregister
+// If the Python world wants things to shut down then unregister
 // the callback for end of sim
 void VpiImpl::sim_end(void)
 {

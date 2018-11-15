@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * Copyright (c) 2013 SolarFlare Communications Inc
 * All rights reserved.
 *
@@ -84,7 +84,7 @@ void embed_init_python(void)
 
     to_python();
 
-    // reset Program Name (i.e. argv[0]) if we are in a virtual environment
+    // reset Program Name (i.e. argv[0]) if we are in a Python virtual environment
     char *venv_path_home = getenv("VIRTUAL_ENV");
     if (venv_path_home) {
         char venv_path[strlen(venv_path_home)+64];
@@ -108,7 +108,7 @@ void embed_init_python(void)
         Py_SetProgramName(venv_path);   
 #endif
     } else {
-        LOG_INFO("Did not detect virtual environment. Using system-wide Python interpreter.");
+        LOG_INFO("Did not detect Python virtual environment. Using system-wide Python interpreter.");
     }
 
     Py_Initialize();                    /* Initialize the interpreter */
@@ -134,7 +134,7 @@ void embed_init_python(void)
             goto out;
         }
 
-        fprintf(stderr, "Waiting for %lu seconds - Attach to %d\n", sleep_time, getpid());
+        fprintf(stderr, "Waiting for %lu seconds - attach to PID %d with your debugger\n", sleep_time, getpid());
         sleep(sleep_time);
     }
 out:

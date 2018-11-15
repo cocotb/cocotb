@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
@@ -36,10 +36,12 @@ EXAMPLES := adder/tests \
 
 .PHONY: $(EXAMPLES)
 
+.PHONY: all
 all: $(EXAMPLES)
 
 $(EXAMPLES):
 	@cd $@ && $(MAKE)
 
+.PHONY: clean
 clean:
 	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) clean;)
