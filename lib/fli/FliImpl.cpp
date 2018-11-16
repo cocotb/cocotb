@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2014 Potential Ventures Ltd
+* Copyright (c) 2014, 2018 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -121,7 +121,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
 {
     GpiObjHdl *new_obj = NULL;
 
-    LOG_DEBUG("Attepmting to create GPI object from handle (Type=%d, FullType=%d).", accType, accFullType);
+    LOG_DEBUG("Attempting to create GPI object from handle (Type=%d, FullType=%d).", accType, accFullType);
     if (!VS_TYPE_IS_VHDL(accFullType)) {
         LOG_DEBUG("Handle is not a VHDL type.");
         return NULL;

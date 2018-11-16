@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
@@ -66,7 +66,7 @@ hal:
 	-cd ../cosim && make
 
 # Stuff below is useful for profiling
-# Need grof2dot from https://github.com/jrfonseca/gprof2dot
+# Need gprof2dot from https://github.com/jrfonseca/gprof2dot
 test_profile.pstat: sim
 
 callgraph.svg: test_profile.pstat

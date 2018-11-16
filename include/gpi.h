@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * Copyright (c) 2013 SolarFlare Communications Inc
 * All rights reserved.
 *
@@ -179,7 +179,7 @@ long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
 const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
-// Returns on of the types defined above e.g. gpiMemory etc.
+// Returns one of the types defined above e.g. gpiMemory etc.
 gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 
 // Get information about the definition of a handle
