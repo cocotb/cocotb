@@ -34,7 +34,8 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME.lower().startswith(("ncsim","modelsim")):
+    if (cocotb.SIM_NAME.lower().startswith(("ncsim","modelsim")) or
+        (cocotb.SIM_NAME.lower().startswith("riviera") and not cocotb.SIM_VERSION.startswith("2016.02"))):
         # Finds regions, signal, generics, constants, varibles and ports.
         pass_total = 34569
     else:
