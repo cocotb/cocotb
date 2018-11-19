@@ -53,3 +53,7 @@ endif
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
+
+ifeq ($(SIM),ius)
+    EXTRA_ARGS += -licqueue
+endif

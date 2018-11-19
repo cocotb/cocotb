@@ -45,6 +45,8 @@ endif
 
 RTL_LIBRARY ?= work
 
+TOPLEVEL := "$(RTL_LIBRARY).$(TOPLEVEL)"
+
 ifdef VERILOG_INCLUDE_DIRS
 VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
 endif
