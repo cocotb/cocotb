@@ -35,7 +35,7 @@ from cocotb.utils import hexdump
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
 from cocotb.triggers import RisingEdge, ReadOnly
-
+from cocotb.binary import BinaryValue
 
 class AvalonProtocolError(Exception):
     pass
@@ -48,6 +48,21 @@ class AvalonST(BusMonitor):
     Non-packetised so each valid word is a separate transaction
     """
     _signals = ["valid", "data"]
+    _optional_signals = ["ready"]
+
+    _default_config = {
+            "firstSymbolInHighOrderBits" : True
+            }
+
+    def __init__(self, *args, **kwargs):
+        config = kwargs.pop('config', {})
+        BusMonitor.__init__(self, *args, **kwargs)
+
+        self.config = self._default_config.copy()
+
+        for configoption, value in config.items():
+            self.config[configoption] = value
+            self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
 
     @coroutine
     def _monitor_recv(self):
@@ -57,12 +72,18 @@ class AvalonST(BusMonitor):
         clkedge = RisingEdge(self.clock)
         rdonly = ReadOnly()
 
+        def valid():
+            if hasattr(self.bus, "ready"):
+                return self.bus.valid.value and self.bus.ready.value
+            return self.bus.valid.value
+
         # NB could yield on valid here more efficiently?
         while True:
             yield clkedge
             yield rdonly
-            if self.bus.valid.value:
+            if valid():
                 vec = self.bus.data.value
+                vec.big_endian = self.config["firstSymbolInHighOrderBits"]
                 self._recv(vec.buff)
 
 
@@ -139,21 +160,32 @@ class AvalonSTPkts(BusMonitor):
                     raise AvalonProtocolError("Data transfer outside of "
                                               "packet")
 
-                vec = self.bus.data.value
+                #Handle empty and X's in empty / data
+                vec = BinaryValue()
+                if not self.bus.endofpacket.value:
+                    vec = self.bus.data.value
+                else:
+                    value = self.bus.data.value.get_binstr()
+                    if self.config["useEmpty"] and self.bus.empty.value.integer:
+                        empty = self.bus.empty.value.integer * self.config["dataBitsPerSymbol"]
+                        if self.config["firstSymbolInHighOrderBits"]:
+                            value = value[:-empty]
+                        else:
+                            value = value[empty:]
+                    vec.assign(value)
+                    if not vec.is_resolvable():
+                        raise AvalonProtocolError("After empty masking value is still bad?  Had empty {:d}, got value {:s}".format(empty, self.bus.data.value.get_binstr()))
+
                 vec.big_endian = self.config['firstSymbolInHighOrderBits']
                 pkt += vec.buff
 
                 if self.bus.endofpacket.value:
-                    # Truncate the empty bits
-                    if (self.config["useEmpty"] and
-                       self.bus.empty.value.integer):
-                        pkt = pkt[:-self.bus.empty.value.integer]
                     self.log.info("Received a packet of %d bytes" % len(pkt))
                     self.log.debug(hexdump(str((pkt))))
                     self._recv(pkt)
                     pkt = ""
                     in_pkt = False
-            else :                
+            else :
                 if in_pkt :
                     invalid_cyclecount += 1
                     if self.config["invalidTimeout"] :
