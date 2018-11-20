@@ -599,6 +599,10 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         self.config = AvalonSTPkts._default_config.copy()
 
+        # Set default config maxChannel to max value on channel bus
+        if hasattr(self.bus, 'channel'):
+            self.config['maxChannel'] = (2 ** len(self.bus.channel)) -1
+
         for configoption, value in config.items():
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s" %
