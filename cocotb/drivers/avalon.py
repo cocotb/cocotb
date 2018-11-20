@@ -647,7 +647,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             yield ReadOnly()
 
     @coroutine
-    def _send_string(self, string, sync=True):
+    def _send_string(self, string, sync=True, channel=None):
         """
         Args:
             string (str): A string of bytes to send over the bus

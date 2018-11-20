@@ -122,6 +122,21 @@ class AvalonSTPkts(BusMonitor):
 
         self.config["useEmpty"] = (num_data_symbols > 1)
 
+        if hasattr(self.bus, 'channel'):
+            if "channel" in self._optional_signals:
+                self.log.warning("Channel is not fully implemented in this monitor. Recommend use of AvalonSTPktsWithChannel.")
+
+            if len(self.bus.channel) > 128:
+                raise AttributeError(
+                        "AvalonST interface specification defines channel width as 1-128. %d channel width is %d" %
+                        (self.name, len(self.bus.channel))
+                        )
+            maxChannel = (2 ^ len(self.bus.channel)) -1
+            if self.config['maxChannel'] > maxChannel:
+                raise AttributeError(
+                        "%s has maxChannel=%d, but can only support a maximum channel of (2^channel_width)-1=%d" %
+                        (self.name,self.config['maxChannel'],maxChannel))
+
     @coroutine
     def _monitor_recv(self):
         """Watch the pins and reconstruct transactions"""
@@ -132,6 +147,7 @@ class AvalonSTPkts(BusMonitor):
         pkt = ""
         in_pkt = False
         invalid_cyclecount = 0
+        channel = None
 
         def valid():
             if hasattr(self.bus, 'ready'):
@@ -179,12 +195,22 @@ class AvalonSTPkts(BusMonitor):
                 vec.big_endian = self.config['firstSymbolInHighOrderBits']
                 pkt += vec.buff
 
+                if hasattr(self.bus, 'channel'):
+                    if channel is None:
+                        channel = self.bus.channel.value.integer
+                        if channel > self.config["maxChannel"]:
+                            raise AvalonProtocolError("Channel value (%d) is greater than maxChannel (%d)" % (channel,self.config["maxChannel"]))
+                    elif self.bus.channel.value.integer != channel:
+                        raise AvalonProtocolError("Channel value changed during packet")
+
                 if self.bus.endofpacket.value:
                     self.log.info("Received a packet of %d bytes" % len(pkt))
                     self.log.debug(hexdump(str((pkt))))
+                    self.channel = channel
                     self._recv(pkt)
                     pkt = ""
                     in_pkt = False
+                    channel = None
             else :
                 if in_pkt :
                     invalid_cyclecount += 1
@@ -193,3 +219,21 @@ class AvalonSTPkts(BusMonitor):
                             raise AvalonProtocolError(
                                 "In-Packet Timeout. Didn't receive any valid data for %d cycles!" %
                                 invalid_cyclecount)
+
+class AvalonSTPktsWithChannel(AvalonSTPkts):
+    """
+    Packetised AvalonST bus using channel
+    """
+    _signals = ["valid", "data", "startofpacket", "endofpacket", "channel"]
+    _optional_signals = ["error", "ready", "empty"]
+
+    def __init__(self, *args, **kwargs):
+        AvalonSTPkts.__init__(self, *args, **kwargs)
+
+    def _recv(self,pkt):
+        """Force use of channel in recv function
+
+        args:
+            pkt: (string) Monitored data
+        """
+        AvalonSTPkts._recv(self,{"data":pkt,"channel":self.channel})
