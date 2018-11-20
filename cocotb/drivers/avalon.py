@@ -35,8 +35,7 @@ import random
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, FallingEdge
-from cocotb.triggers import ReadOnly, NextTimeStep, Event
+from cocotb.triggers import RisingEdge, FallingEdge, ReadOnly, NextTimeStep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -457,7 +456,7 @@ class AvalonMemory(BusDriver):
                         self.log.debug("Data in   : %x" % data)
                         self.log.debug("Width     : %d" % self._width)
                         self.log.debug("Byteenable: %x" % byteenable)
-                        for i in range(self._width/8):
+                        for i in xrange(self._width/8):
                             if (byteenable & 2**i):
                                 mask |= 0xFF << (8*i)
                             else:
@@ -633,6 +632,21 @@ class AvalonSTPkts(ValidatedBusDriver):
             empty.binstr  = ("x"*len(self.bus.empty))
             self.bus.empty <= empty
 
+        if hasattr(self.bus, 'channel'):
+            if len(self.bus.channel) > 128:
+                raise AttributeError(
+                        "AvalonST interface specification defines channel width as 1-128. %d channel width is %d" %
+                        (self.name, len(self.bus.channel))
+                        )
+            maxChannel = (2 ** len(self.bus.channel)) -1
+            if self.config['maxChannel'] > maxChannel:
+                raise AttributeError(
+                        "%s has maxChannel=%d, but can only support a maximum channel of (2**channel_width)-1=%d, channel_width=%d" %
+                        (self.name,self.config['maxChannel'],maxChannel,len(self.bus.channel)))
+            channel = BinaryValue(bits=len(self.bus.channel), bigEndian=False)
+            channel.binstr = ("x"*len(self.bus.channel))
+            self.bus.channel <= channel
+
     @coroutine
     def _wait_ready(self):
         """Wait for a ready cycle on the bus before continuing
@@ -651,6 +665,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         """
         Args:
             string (str): A string of bytes to send over the bus
+            channel (int): Channel to send the data on
         """
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -662,18 +677,24 @@ class AvalonSTPkts(ValidatedBusDriver):
         word = BinaryValue(bits=len(self.bus.data),
                            bigEndian=self.config['firstSymbolInHighOrderBits'])
 
-        empty  = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
         single = BinaryValue(bits=1, bigEndian=False)
-
+        if self.use_empty:
+            empty = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
 
         # Drive some defaults since we don't know what state we're in
-        # self.bus.empty <= 0
-        yield NextTimeStep()
+        # if self.use_empty:
+        #     self.bus.empty <= 0
         self.bus.startofpacket <= 0
         self.bus.endofpacket <= 0
         self.bus.valid <= 0
         if hasattr(self.bus, 'error'):
             self.bus.error <= 0
+
+        if hasattr(self.bus, 'channel'):
+            self.bus.channel <= 0
+            channel_value = BinaryValue(bits=len(self.bus.channel), bigEndian=False)
+        elif channel is not None:
+            raise TestError("%s does not has a channel signal" % self.name)
 
         while string:
             if not firstword or (firstword and sync):
@@ -693,6 +714,15 @@ class AvalonSTPkts(ValidatedBusDriver):
                 self.on -= 1
 
             self.bus.valid <= 1
+            if hasattr(self.bus, 'channel'):
+                if channel is None:
+                    self.bus.channel <= 0
+                elif channel > self.config['maxChannel'] or channel < 0:
+                    raise TestError(
+                            "%s: Channel value %d is outside range 0-%d" %
+                            (self.name,channel,self.config['maxChannel']))
+                else:
+                    self.bus.channel <= channel
 
             if firstword:
                 #if self.use_empty:
@@ -733,6 +763,9 @@ class AvalonSTPkts(ValidatedBusDriver):
         if self.use_empty:
             empty.binstr  = ("x"*len(self.bus.empty))
             self.bus.empty <= empty
+        if hasattr(self.bus, 'channel'):
+            channel_value.binstr = ("x"*len(self.bus.channel))
+            self.bus.channel <= channel_value
 
     @coroutine
     def _send_iterable(self, pkt, sync=True):
@@ -777,11 +810,12 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.valid <= 0
 
     @coroutine
-    def _driver_send(self, pkt, sync=True):
+    def _driver_send(self, pkt, sync=True, channel=None):
         """Send a packet over the bus
 
         Args:
             pkt (str or iterable): packet to drive onto the bus
+            channel (None or int): channel attributed to the packet
 
         If pkt is a string, we simply send it word by word
 
@@ -795,7 +829,9 @@ class AvalonSTPkts(ValidatedBusDriver):
         if isinstance(pkt, str):
             self.log.debug("Sending packet of length %d bytes" % len(pkt))
             self.log.debug(hexdump(pkt))
-            yield self._send_string(pkt, sync=sync)
-            self.log.debug("Sucessfully sent packet of length %d bytes" % len(pkt))
+            yield self._send_string(pkt, sync=sync, channel=channel)
+            self.log.debug("Successfully sent packet of length %d bytes" % len(pkt))
         else:
+            if channel is not None:
+                self.log.warning("%s is ignoring channel=%d because pkt is an iterable" % (self.name, channel))
             yield self._send_iterable(pkt, sync=sync)

@@ -131,11 +131,11 @@ class AvalonSTPkts(BusMonitor):
                         "AvalonST interface specification defines channel width as 1-128. %d channel width is %d" %
                         (self.name, len(self.bus.channel))
                         )
-            maxChannel = (2 ^ len(self.bus.channel)) -1
+            maxChannel = (2 ** len(self.bus.channel)) -1
             if self.config['maxChannel'] > maxChannel:
                 raise AttributeError(
-                        "%s has maxChannel=%d, but can only support a maximum channel of (2^channel_width)-1=%d" %
-                        (self.name,self.config['maxChannel'],maxChannel))
+                        "%s has maxChannel=%d, but can only support a maximum channel of (2**channel_width)-1=%d, channel_width=%d" %
+                        (self.name,self.config['maxChannel'],maxChannel,len(self.bus.channel)))
 
     @coroutine
     def _monitor_recv(self):
