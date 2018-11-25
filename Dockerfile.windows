@@ -1,0 +1,25 @@
+FROM mcr.microsoft.com/windowsservercore:1803
+
+ADD . src
+WORKDIR "C:\src"
+
+RUN PowerShell -Command Invoke-WebRequest -Uri http://bleyer.org/icarus/iverilog-10.1.1-x64_setup.exe -OutFile iverilog-10.1.1-x64_setup.exe
+RUN .\iverilog-10.1.1-x64_setup /VERYSILENT
+RUN setx path "%path%;C:\iverilog\bin"
+
+RUN PowerShell -Command "Invoke-WebRequest -outfile 7zsetup.exe http://www.7-zip.org/a/7z1604-x64.exe"
+RUN .\7zsetup /S /D=c:/7zip
+RUN setx path "%path%;C:\7zip"
+
+RUN PowerShell -Command "Invoke-WebRequest -outfile msys2-x86_64-latest.tar.xz http://repo.msys2.org/distrib/msys2-x86_64-latest.tar.xz"
+RUN 7z e msys2-x86_64-latest.tar.xz 
+RUN 7z x msys2-x86_64-latest.tar -o"C:\"
+RUN setx path "%path%;C:\msys64\usr\bin"
+
+RUN bash -lc "pacman --noconfirm -S mingw-w64-x86_64-gcc mingw-w64-x86_64-python2 mingw-w64-x86_64-python2-pip make"
+RUN setx path "%path%;C:\msys64\mingw64\bin"
+
+RUN pip install coverage xunitparser
+
+ENV COCOTB=C:\\src
+RUN make test

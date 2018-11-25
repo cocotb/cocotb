@@ -2,9 +2,16 @@
 sudo: required
 language: cpp
 
+os:
+  - linux
+  - windows
+  
 services:
   - docker
 
 script:
-  - docker build .
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker build . ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then docker build -f Dockerfile.windows . ; fi
+
+  
 
