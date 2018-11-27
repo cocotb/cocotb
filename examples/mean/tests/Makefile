@@ -25,8 +25,6 @@ VHDL_SOURCES += $(WPWD)/../hdl/mean.vhd
 
 VCOM_ARGS = -mixedsvvh
 
-GENERICS = "BUS_WIDTH=2"
-
 VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
 
 MODULE := test_mean
