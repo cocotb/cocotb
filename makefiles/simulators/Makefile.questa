@@ -53,11 +53,8 @@ endif
 
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
 VLOG_ARGS += $(COMPILE_ARGS)
+VCOM_ARGS += $(COMPILE_ARGS)
 VSIM_ARGS += $(SIM_ARGS)
-
-ifdef VERILOG_INCLUDE_DIRS
-VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
-endif
 
 ifeq ($(GUI),1)
 CMD += -gui
@@ -97,7 +94,7 @@ ifneq ($(VHDL_SOURCES),)
 	@echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
 endif
 ifneq ($(VERILOG_SOURCES),)
-	@echo "vlog -work $(RTL_LIBRARY) +define+COCOTB_SIM -timescale 1ns/100ps -mfcu +acc=rmb -sv $(VLOG_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)" >> $@
+	@echo "vlog -work $(RTL_LIBRARY) +define+COCOTB_SIM -sv $(VLOG_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)" >> $@
 endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@

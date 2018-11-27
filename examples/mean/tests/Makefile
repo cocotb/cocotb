@@ -23,7 +23,9 @@ endif
 VHDL_SOURCES = $(WPWD)/../hdl/mean_pkg.vhd
 VHDL_SOURCES += $(WPWD)/../hdl/mean.vhd
 
-VCOM_ARGS = -mixedsvvh
+ifeq ($(SIM),questa)
+COMPILE_ARGS = -mixedsvvh
+endif
 
 VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
 
