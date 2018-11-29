@@ -216,7 +216,7 @@ class AXI4Slave(BusDriver):
         BusDriver.__init__(self, entity, name, clock)
         self.clock = clock
 
-        self.big_endain = big_endian
+        self.big_endian = big_endian
         self.bus.ARREADY.setimmediatevalue(1)
         self.bus.RVALID.setimmediatevalue(0)
         self.bus.RLAST.setimmediatevalue(0)
@@ -258,7 +258,7 @@ class AXI4Slave(BusDriver):
             burst_length = _awlen + 1
             bytes_in_beat = self._size_to_bytes_in_beat(_awsize)
 
-            word = BinaryValue(bits=bytes_in_beat*8, bigEndian=self.big_endain)
+            word = BinaryValue(bits=bytes_in_beat*8, bigEndian=self.big_endian)
 
             if __debug__:
                 self.log.debug(
@@ -276,7 +276,7 @@ class AXI4Slave(BusDriver):
             while True:
                 if self.bus.WVALID.value:
                     word = self.bus.WDATA.value
-                    word.big_endian = self.big_endain
+                    word.big_endian = self.big_endian
                     _burst_diff = burst_length - burst_count
                     _st = _awaddr + (_burst_diff * bytes_in_beat)  # start
                     _end = _awaddr + ((_burst_diff + 1) * bytes_in_beat)  # end
@@ -307,7 +307,7 @@ class AXI4Slave(BusDriver):
             burst_length = _arlen + 1
             bytes_in_beat = self._size_to_bytes_in_beat(_arsize)
 
-            word = BinaryValue(bits=bytes_in_beat*8, bigEndian=self.big_endain)
+            word = BinaryValue(bits=bytes_in_beat*8, bigEndian=self.big_endian)
 
             if __debug__:
                 self.log.debug(
