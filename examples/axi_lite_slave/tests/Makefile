@@ -7,7 +7,14 @@ PYTHONPATH := ./model:$(PYTHONPATH)
 
 export PYTHONPATH
 
-EXTRA_ARGS+=-I$(TOPDIR)/hdl/
+SIM ?= icarus
+
+#not sure if only icarus include is by -I ...
+ifeq ($(SIM),icarus)
+COMPILE_ARGS+=-I$(TOPDIR)/hdl/
+else
+COMPILE_ARGS+=+incdir+$(TOPDIR)/hdl/
+endif
 
 #DUT
 VERILOG_SOURCES = $(TOPDIR)/hdl/axi_lite_slave.v
