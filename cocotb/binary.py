@@ -171,7 +171,10 @@ class BinaryValue(object):
         return binstr
 
     def _convert_from_unsigned(self, x):
-        return int(resolve(x), 2)
+        bits = resolve(x)
+        if self.big_endian:
+            bits = bits[::-1]
+        return int(bits, 2)
 
     def _convert_from_signed_mag(self, x):
         rv = int(resolve(self._str[1:]), 2)
@@ -207,7 +210,7 @@ class BinaryValue(object):
         l = len(x)
         if l <= self._bits:
             if self.big_endian:
-                rv = x + '0' * (self._bits - l)
+                rv = x[::-1] + '0' * (self._bits - l)
             else:
                 rv = '0' * (self._bits - l) + x
         elif l > self._bits:
