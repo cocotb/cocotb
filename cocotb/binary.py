@@ -156,8 +156,6 @@ class BinaryValue(object):
             binstr = self._adjust_signed_mag('1' + x[3:])
         else:
             binstr = self._adjust_signed_mag('0' + x[2:])
-        if self.big_endian:
-            binstr = binstr[::-1]
         return binstr
 
     def _convert_to_twos_comp(self, x):
@@ -166,19 +164,14 @@ class BinaryValue(object):
             binstr = self._adjust_twos_comp(binstr)
         else:
             binstr = self._adjust_twos_comp('0' + bin(x)[2:])
-        if self.big_endian:
-            binstr = binstr[::-1]
         return binstr
 
     def _convert_from_unsigned(self, x):
-        bits = resolve(x)
-        if self.big_endian:
-            bits = bits[::-1]
-        return int(bits, 2)
+        return int(resolve(x), 2)
 
     def _convert_from_signed_mag(self, x):
-        rv = int(resolve(self._str[1:]), 2)
-        if self._str[0] == '1':
+        rv = int(resolve(x[1:]), 2)
+        if x[0] == '1':
             rv = rv * -1
         return rv
 
@@ -209,17 +202,11 @@ class BinaryValue(object):
             return x
         l = len(x)
         if l <= self._bits:
-            if self.big_endian:
-                rv = x[::-1] + '0' * (self._bits - l)
-            else:
-                rv = '0' * (self._bits - l) + x
+            rv = '0' * (self._bits - l) + x
         elif l > self._bits:
             print("WARNING truncating value to match requested number of bits "
                   "(%d -> %d)" % (l, self._bits))
-            if self.big_endian:
-                rv = x[l - self._bits:]
-            else:
-                rv = x[:l - self._bits]
+            rv = x[:l - self._bits]
         return rv
 
     def _adjust_signed_mag(self, x):
@@ -228,19 +215,12 @@ class BinaryValue(object):
             return x
         l = len(x)
         if l <= self._bits:
-            if self.big_endian:
-                rv = x[:-1] + '0' * (self._bits - 1 - l)
-                rv = rv + x[-1]
-            else:
-                rv = '0' * (self._bits - 1 - l) + x[1:]
-                rv = x[0] + rv
+            rv = '0' * (self._bits -  l) + x[1:]
+            rv = x[0] + rv
         elif l > self._bits:
             print("WARNING truncating value to match requested number of bits "
                   "(%d -> %d)" % (l, self._bits))
-            if self.big_endian:
-                rv = x[l - self._bits:]
-            else:
-                rv = x[:-(l - self._bits)]
+            rv = x[:-(l - self._bits)]
         else:
             rv = x
         return rv
@@ -250,17 +230,11 @@ class BinaryValue(object):
             return x
         l = len(x)
         if l <= self._bits:
-            if self.big_endian:
-                rv = x + x[-1] * (self._bits - l)
-            else:
-                rv = x[0] * (self._bits - l) + x
+            rv = x[0] * (self._bits - l) + x
         elif l > self._bits:
             print("WARNING truncating value to match requested number of bits "
                   "(%d -> %d)" % (l, self._bits))
-            if self.big_endian:
-                rv = x[l - self._bits:]
-            else:
-                rv = x[:-(l - self._bits)]
+            rv = x[:-(l - self._bits)]
         else:
             rv = x
         return rv
