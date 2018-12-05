@@ -59,7 +59,7 @@ class Monitor(object):
     directly, but should be subclassed and the internal `_monitor_recv` method
     should be overridden and decorated as a @coroutine.  This `_monitor_recv`
     method should capture some behavior of the pins, form a transaction, and
-    pass this transaction to the internal `_recv` method.  The `_monitor_recvr`
+    pass this transaction to the internal `_recv` method.  The `_monitor_recv`
     method is added to the cocotb scheduler during the `__init__` phase, so in no
     other place does it need to be yielded.
 
