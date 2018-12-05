@@ -77,11 +77,24 @@ Python Triggers
 Testbench Structure
 ===================
 
+Driver
+------
+
 .. autoclass:: cocotb.drivers.Driver
     :members:
 
+Monitor
+-------
+
 .. autoclass:: cocotb.monitors.Monitor
     :members:
+    :private-members:
+
+.. autoclass:: cocotb.monitors.BusMonitor
+    :members:
+
+Scoreboard
+----------
 
 .. autoclass:: cocotb.scoreboard.Scoreboard
     :members:
