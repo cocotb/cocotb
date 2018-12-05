@@ -26,6 +26,7 @@ Writing and Generating tests
 .. autoclass:: cocotb.regression.TestFactory
     :members:
 
+.. autoclass:: cocotb.hook
 
 
 Interacting with the Simulator
@@ -77,9 +78,6 @@ Python Triggers
 Testbench Structure
 ===================
 
-Driver
-------
-
 .. autoclass:: cocotb.drivers.Driver
     :members:
     :private-members:
@@ -103,6 +101,63 @@ Utilities
 
 .. automodule:: cocotb.utils
     :members:
+
+Simulation Object Handles
+=========================
+
+.. autofunction:: cocotb.handle.SimHandle
+
+.. autoclass:: cocotb.handle.SimHandleBase
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.RegionObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.HierarchyObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.HierarchyArrayObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.NonHierarchyObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.ConstantObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.NonHierarchyIndexableObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.NonConstantObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.ModifiableObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.RealObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.EnumObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.IntegerObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.StringObject
+    :members:
+    :show-inheritance:
 
 Implemented Testbench Structures
 ================================

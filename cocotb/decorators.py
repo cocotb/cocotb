@@ -282,7 +282,7 @@ class coroutine(object):
 
 @public
 class function(object):
-    """Decorator class that allows a a function to block
+    """Decorator class that allows a function to block
 
     This allows a function to internally block while
     externally appear to yield
