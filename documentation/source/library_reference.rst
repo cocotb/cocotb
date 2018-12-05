@@ -77,14 +77,9 @@ Python Triggers
 Testbench Structure
 ===================
 
-Driver
-------
-
 .. autoclass:: cocotb.drivers.Driver
     :members:
-
-Monitor
--------
+    :private-members:
 
 .. autoclass:: cocotb.monitors.Monitor
     :members:
@@ -92,9 +87,6 @@ Monitor
 
 .. autoclass:: cocotb.monitors.BusMonitor
     :members:
-
-Scoreboard
-----------
 
 .. autoclass:: cocotb.scoreboard.Scoreboard
     :members:
@@ -104,5 +96,76 @@ Utilities
 =========
 
 .. automodule:: cocotb.utils
+    :members:
+
+Implemented Testbench Structures
+================================
+
+Drivers
+-------
+
+AD9361
+~~~~~~
+.. autoclass:: cocotb.drivers.ad9361.AD9361
+    :members:
+
+AMBA
+~~~~
+
+Advanced Microcontroller Bus Archicture
+
+.. autoclass:: cocotb.drivers.amba.AXI4LiteMaster
+    :members:
+
+.. autoclass:: cocotb.drivers.amba.AXI4LiteSlave
+    :members:
+
+
+Avalon
+~~~~~~
+
+.. autoclass:: cocotb.drivers.avalon.AvalonMM
+    :members:
+
+.. autoclass:: cocotb.drivers.avalon.AvalonMaster
+    :members:
+
+.. autoclass:: cocotb.drivers.avalon.AvalonMemory
+    :members:
+
+.. autoclass:: cocotb.drivers.avalon.AvalonST
+    :members:
+
+.. autoclass:: cocotb.drivers.avalon.AvalonSTPkts
+    :members:
+
+OPB
+~~~
+
+.. autoclass:: cocotb.drivers.opb.OPBMaster
+    :members:
+
+XGMII
+~~~~~
+
+.. autoclass:: cocotb.drivers.xgmii.XGMII
+    :members:
+
+Monitors
+--------
+
+Avalon
+~~~~~~
+
+.. autoclass:: cocotb.monitors.avalon.AvalonST
+    :members:
+
+.. autoclass:: cocotb.monitors.avalon.AvalonSTPkts
+    :members:
+
+XGMII
+~~~~~
+
+.. autoclass:: cocotb.monitors.xgmii.XGMII
     :members:
 

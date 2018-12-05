@@ -99,6 +99,8 @@ class Scoreboard(object):
                       "transaction")
             log.info("Got: %s but expected %s" %
                      (str(type(got)), str(type(exp))))
+            log.info("Set strict_type=False when calling add_interface or "
+                     "compare to avoid type checking")
             if self._imm:
                 raise TestFailure("Received transaction of wrong type")
             return
