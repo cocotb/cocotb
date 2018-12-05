@@ -87,4 +87,9 @@ Testbench Structure
     :members:
 
 
+Utilities
+=========
+
+.. automodule:: cocotb.utils
+    :members:
 
