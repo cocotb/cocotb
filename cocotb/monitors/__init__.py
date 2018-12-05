@@ -60,8 +60,8 @@ class Monitor(object):
     should be overridden and decorated as a @coroutine.  This `_monitor_recv`
     method should capture some behavior of the pins, form a transaction, and
     pass this transaction to the internal `_recv` method.  The `_monitor_recv`
-    method is added to the cocotb scheduler during the `__init__` phase, so in no
-    other place does it need to be yielded.
+    method is added to the cocotb scheduler during the `__init__` phase, so it
+    should not be yielded anywhere.
 
     The primary use of a Monitor is as an interface for a :Scoreboard:.
 
