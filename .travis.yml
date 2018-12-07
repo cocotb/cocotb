@@ -28,7 +28,7 @@ jobs:
         - docker run -d --name cocotb cocotb tail -f /dev/null
         - docker ps -a
       script:
-        - echo 'Running cocotb tests with python 27 ...' && echo 'travis_fold:start:cocotb_py27' 
+        - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27' 
         - docker exec -it -e TRAVIS=true -e COCOTB=/build-py2/src cocotb bash -lc 'source /build-py2/venv/bin/activate; make -C /build-py2/src test'
         - echo -e 'travis_fold:end:cocotb_py27'
     - stage: SimTests
