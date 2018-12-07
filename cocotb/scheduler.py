@@ -115,7 +115,7 @@ class external_waiter(object):
 
     def thread_resume(self):
         self._propogate_state(external_state.RUNNING)
-        
+
     def thread_wait(self):
         if _debug:
             self._log.debug("Waiting for the condition lock %s" % threading.current_thread())
@@ -619,6 +619,7 @@ class Scheduler(object):
             return
 
         # Queue current routine to schedule when the nested routine exits
+        yield_successful = False
         if isinstance(result, cocotb.decorators.RunningCoroutine):
 
             if not result.has_started():
@@ -633,17 +634,45 @@ class Scheduler(object):
 
             new_trigger = result.join()
             self._coroutine_yielded(coroutine, [new_trigger])
+            yield_successful = True
 
         elif isinstance(result, Trigger):
             if _debug:
                 self.log.debug("%s: is instance of Trigger" % result)
             self._coroutine_yielded(coroutine, [result])
+            yield_successful = True
 
-        elif (isinstance(result, list) and
-                all(isinstance(t, Trigger) for t in result)):
-            self._coroutine_yielded(coroutine, result)
+        # If we get a list, make sure it's a list of triggers or coroutines.
+        # For every coroutine, replace it with coroutine.join().
+        # This could probably be done more elegantly via list comprehension.
+        elif isinstance(result, list):
+            new_triggers = []
+            for listobj in result:
+                if isinstance(listobj, Trigger):
+                    new_triggers.append(listobj)
+                elif isinstance(listobj, cocotb.decorators.RunningCoroutine):
+                    if _debug:
+                        self.log.debug("Scheduling coroutine in list: %s" %
+                                       listobj.__name__)
+                    if not listobj.has_started():
+                        self.queue(listobj)
+                    new_trigger = listobj.join()
+                    new_triggers.append(new_trigger)
+                else:
+                    # If we encounter something not a coroutine or trigger,
+                    # set the success flag to False and break out of the loop.
+                    yield_successful = False
+                    break
 
-        else:
+            # Make sure the lists are the same size. If they are not, it means
+            # it contained something not a trigger/coroutine, so do nothing.
+            if len(new_triggers) == len(result):
+                self._coroutine_yielded(coroutine, new_triggers)
+                yield_successful = True
+
+        # If we didn't successfully yield anything, thrown an error.
+        # Do it this way to make the logic in the list case simpler.
+        if not yield_successful:
             msg = ("Coroutine %s yielded something the scheduler can't handle"
                    % str(coroutine))
             msg += ("\nGot type: %s repr: %s str: %s" %
