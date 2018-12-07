@@ -51,8 +51,8 @@ Before python 3.3, this requires a `ReturnValue` to be raised.
             raise TestFailure("Signal did not change")
 
 
-Coroutines may also yield a list of triggers to indicate that execution should
-resume if *any* of them fires:
+Coroutines may also yield a list of triggers and coroutines to indicate that
+execution should resume if *any* of them fires:
 
 .. code-block:: python
 
