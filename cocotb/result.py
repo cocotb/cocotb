@@ -66,14 +66,12 @@ def create_error(obj, msg):
     return TestError("Creating error traceback failed")
 
 
-class ReturnValue(StopIteration):
+class ReturnValue(Exception):
     def __init__(self, retval):
-        # The base class in python >= 3.3 holds a return value too
-        super(ReturnValue, self).__init__(retval)
         self.retval = retval
 
 
-class TestComplete(StopIteration):
+class TestComplete(Exception):
     """
         Exceptions are used to pass test results around.
     """
@@ -83,7 +81,7 @@ class TestComplete(StopIteration):
         self.stderr = StringIO()
 
 
-class ExternalException(StopIteration):
+class ExternalException(Exception):
     def __init__(self, exception):
         self.exception = exception
 
