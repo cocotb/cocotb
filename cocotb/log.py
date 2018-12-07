@@ -1,4 +1,4 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -1026,12 +1026,12 @@ class SimColourLogFormatter(SimLogFormatter):
 
     """Log formatter to provide consistent log message handling."""
     loglevel2colour = {
-        DEEP_DEBUG:       ANSI.DEFAULT                     + "%s" + ANSI.DEFAULT,
-        DEBUG     :       ANSI.DEFAULT                     + "%s" + ANSI.DEFAULT,
-        INFO      :       ANSI.DEFAULT_BG + ANSI.BLUE_FG   + "%s" + ANSI.DEFAULT,
-        WARNING   :       ANSI.DEFAULT_BG + ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT,
-        ERROR     :       ANSI.DEFAULT_BG + ANSI.RED_FG    + "%s" + ANSI.DEFAULT,
-        CRITICAL  :       ANSI.RED_BG     + ANSI.BLACK_FG  + "%s" + ANSI.DEFAULT}
+        DEEP_DEBUG:       ANSI.COLOR_DEFAULT   + "%s" + ANSI.COLOR_DEFAULT,
+        DEBUG     :       ANSI.COLOR_DEFAULT   + "%s" + ANSI.COLOR_DEFAULT,
+        INFO      :       ANSI.COLOR_INFO      + "%s" + ANSI.COLOR_DEFAULT,
+        WARNING   :       ANSI.COLOR_WARNING   + "%s" + ANSI.COLOR_DEFAULT,
+        ERROR     :       ANSI.COLOR_ERROR     + "%s" + ANSI.COLOR_DEFAULT,
+        CRITICAL  :       ANSI.COLOR_CRITICAL  + "%s" + ANSI.COLOR_DEFAULT}
 
     def __init__(self, fmt=None, datefmt=None, simtimefmt=None, separator=' | ', divider=120):
         SimLogFormatter.__init__(self,
@@ -1041,7 +1041,7 @@ class SimColourLogFormatter(SimLogFormatter):
                                  separator=separator,
                                  divider=divider)
         level_pad = self._fixed[1]['pad']
-        self._fixed[1]['pad'] = ANSI.DEFAULT + level_pad + ANSI.DEFAULT
+        self._fixed[1]['pad'] = ANSI.COLOR_DEFAULT + level_pad + ANSI.COLOR_DEFAULT
 
         self._fixed_pad = ""
         for col in self._fixed:

@@ -179,7 +179,12 @@ class Scoreboard(object):
             """Called back by the monitor when a new transaction has been
             received"""
 
-            log = SimLog(mod='scoreboard', cls=self.dut._name, name=monitor.name)
+            if monitor.name:
+                mon_name = self.log.name + '.' + monitor.name
+            else:
+                mon_name = self.log.name + '.' + monitor.__class__.__name__
+
+            log = SimLog(mod='scoreboard', cls=self.dut._name, name=mon_name)
 
             if callable(expected_output):
                 exp = expected_output(transaction)

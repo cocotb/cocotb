@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -27,16 +27,18 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
+import sys
+import textwrap
 
 """
 A set of tests that demonstrate cocotb functionality
 
-Also used a regression test of cocotb capabilities
+Also used as regression test of cocotb capabilities
 """
 
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite)
+                             ReadOnly, ReadWrite, ClockCycles)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
@@ -107,7 +109,7 @@ def clock_gen(clock):
 
 @cocotb.test(expect_fail=False)
 def test_yield_list(dut):
-    """Example of yeilding on a list of triggers"""
+    """Example of yielding on a list of triggers"""
     clock = dut.clk
     cocotb.scheduler.add(clock_gen(clock))
     yield [Timer(1000), Timer(2000)]
@@ -155,6 +157,14 @@ def test_adding_a_coroutine_without_starting(dut):
     yield Join(forked)
     yield Timer(100)
 
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+    """
+    Polyfill for math.isclose() (Python 3.5+): floating-point "equal"
+
+    Implementation taken from
+    https://www.python.org/dev/peps/pep-0485/#proposed-implementation
+    """
+    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 @cocotb.test(expect_fail=False)
 def test_clock_with_units(dut):
@@ -180,14 +190,14 @@ def test_clock_with_units(dut):
     yield RisingEdge(dut.clk)
 
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 1000.0:
+    if not isclose(edge_time_ns, start_time_ns + 1000.0):
         raise TestFailure("Expected a period of 1 us")
 
     start_time_ns = edge_time_ns
 
     yield RisingEdge(dut.clk)
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 1000.0:
+    if not isclose(edge_time_ns, start_time_ns + 1000.0):
         raise TestFailure("Expected a period of 1 us")
 
     clk_gen.kill()
@@ -201,14 +211,14 @@ def test_clock_with_units(dut):
     yield RisingEdge(dut.clk)
 
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 4.0:
+    if not isclose(edge_time_ns, start_time_ns + 4.0):
         raise TestFailure("Expected a period of 4 ns")
 
     start_time_ns = edge_time_ns
 
     yield RisingEdge(dut.clk)
     edge_time_ns = get_sim_time(units='ns')
-    if edge_time_ns != start_time_ns + 4.0:
+    if not isclose(edge_time_ns, start_time_ns + 4.0):
         raise TestFailure("Expected a period of 4 ns")
 
     clk_gen.kill()
@@ -222,7 +232,7 @@ def test_timer_with_units(dut):
     time_step = get_sim_time(units='fs') - time_fs
 
     try:
-        #Yield for 2.5 timesteps, should throw exception
+        # Yield for 2.5 timesteps, should throw exception
         yield Timer(2.5*time_step, units='fs')
         raise TestFailure("Timers should throw exception if time cannot be achieved with simulator resolution")
     except ValueError:
@@ -256,7 +266,7 @@ def test_timer_with_units(dut):
 
 @cocotb.test(expect_fail=False)
 def test_anternal_clock(dut):
-    """Test ability to yeild on an external non cocotb coroutine decorated
+    """Test ability to yield on an external non cocotb coroutine decorated
     function"""
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     count = 0
@@ -571,7 +581,7 @@ def test_edge_count(dut):
     yield Timer(clk_period * (edge_count + 1))
 
     if edge_count is not edges_seen:
-        raise TestFailure("Correct edge count failed saw %d wanted %d" %
+        raise TestFailure("Correct edge count failed - saw %d wanted %d" %
                           (edges_seen, edge_count))
 
 class StrCallCounter(object):
@@ -585,7 +595,7 @@ class StrCallCounter(object):
 @cocotb.test()
 def test_logging_with_args(dut):
     counter = StrCallCounter()
-    dut._log.logger.setLevel(logging.INFO) #To avoid logging debug message, to make next line run without error
+    dut._log.logger.setLevel(logging.INFO)  # To avoid logging debug message, to make next line run without error
     dut._log.debug("%s", counter)
     assert counter.str_counter == 0
 
@@ -596,7 +606,25 @@ def test_logging_with_args(dut):
 
     dut._log.warning("Testing multiple line\nmessage")
 
-    yield Timer(100) #Make it do something with time
+    yield Timer(100)  # Make it do something with time
+
+@cocotb.test()
+def test_clock_cycles(dut):
+    """
+    Test the ClockCycles Trigger
+    """
+
+    clk = dut.clk
+
+    clk_gen = cocotb.fork(Clock(clk, 100).start())
+
+    yield RisingEdge(clk)
+
+    dut.log.info("After one edge")
+
+    yield ClockCycles(clk, 10)
+
+    dut.log.info("After 10 edges")
 
 @cocotb.test()
 def test_binary_value(dut):
@@ -605,15 +633,15 @@ def test_binary_value(dut):
     values in a style familiar to rtl coders.
     """
 
-    vec = BinaryValue(value=0,bits=16)
-    dut._log.info("Checking default endianess is Big Endian.")
+    vec = BinaryValue(value=0, bits=16)
+    dut._log.info("Checking default endianness is Big Endian.")
     if not vec.big_endian:
-        raise TestFailure("The default endianess is Little Endian - was expecting Big Endian.")
+        raise TestFailure("The default endianness is Little Endian - was expecting Big Endian.")
     if vec.integer != 0:
         raise TestFailure("Expecting our BinaryValue object to have the value 0.")
 
     dut._log.info("Checking single index assignment works as expected on a Little Endian BinaryValue.")
-    vec = BinaryValue(value=0,bits=16,bigEndian=False)
+    vec = BinaryValue(value=0, bits=16, bigEndian=False)
     if vec.big_endian:
         raise TestFailure("Our BinaryValue object is reporting it is Big Endian - was expecting Little Endian.")
     for x in range(vec._bits):
@@ -621,9 +649,9 @@ def test_binary_value(dut):
         dut._log.info("Trying vec[%s] = 1" % x)
         expected_value = 2**(x+1) - 1
         if vec.integer != expected_value:
-            raise TestFailure("Failed on assignment to vec[%s] - expecting %s - got %s" % (x,expected_value,vec.integer))
+            raise TestFailure("Failed on assignment to vec[%s] - expecting %s - got %s" % (x, expected_value, vec.integer))
         if vec[x] != 1:
-            raise TestFailure("Failed on index compare on vec[%s] - expecting 1 - got %s" % (x,vec[x]))
+            raise TestFailure("Failed on index compare on vec[%s] - expecting 1 - got %s" % (x, vec[x]))
         dut._log.info("vec = 'b%s" % vec.binstr)
 
     dut._log.info("Checking slice assignment works as expected on a Little Endian BinaryValue.")
@@ -631,12 +659,69 @@ def test_binary_value(dut):
         raise TestFailure("Expecting our BinaryValue object to be 65535 after the end of the previous test.")
     vec[7:0] = '00110101'
     if vec.binstr != '1111111100110101':
-        raise TestFailure("Set lower 8-bits to 00110101 but readback %s" % vec.binstr)
+        raise TestFailure("Set lower 8-bits to 00110101 but read back %s" % vec.binstr)
     if vec[7:0].binstr != '00110101':
-        raise TestFailure("Set lower 8-bits to 00110101 but readback %s from vec[7:0]" % vec[7:0].binstr)
+        raise TestFailure("Set lower 8-bits to 00110101 but read back %s from vec[7:0]" % vec[7:0].binstr)
 
     dut._log.info("vec[7:0] = 'b%s" % vec[7:0].binstr)
     dut._log.info("vec[15:8] = 'b%s" % vec[15:8].binstr)
     dut._log.info("vec = 'b%s" % vec.binstr)
 
-    yield Timer(100) #Make it do something with time
+    yield Timer(100)  # Make it do something with time
+
+
+@cocotb.test(skip=sys.version_info[:2] < (3, 3))
+def test_coroutine_return(dut):
+    """ Test that the Python 3.3 syntax for returning from generators works """
+    # this would be a syntax error in older python, so we do the whole
+    # thing inside exec
+    cocotb.utils.exec_(textwrap.dedent("""
+    @cocotb.coroutine
+    def return_it(x):
+        return x
+        yield
+
+    ret = yield return_it(42)
+    if ret != 42:
+        raise TestFailure("Return statement did not work")
+    """))
+
+
+@cocotb.test(skip=sys.version_info[:2] < (3, 5))
+def test_async(dut):
+    # this would be a syntax error in older python, so we do the whole
+    # thing inside exec
+    cocotb.utils.exec_(textwrap.dedent('''
+        # inner functions don't need the cocotb.coroutine decorator - but
+        # adding it should have no effect anyway
+        @cocotb.coroutine
+        async def wait_5_cycles_marked():
+            await ClockCycles(clk, 5)
+
+        async def wait_5_cycles_unmarked():
+            await ClockCycles(clk, 5)
+
+
+        @cocotb.coroutine
+        async def test_clock_cycles_async(dut):
+            """
+            Test the ClockCycles Trigger
+            """
+            clk = dut.clk
+
+            clk_gen = cocotb.fork(Clock(clk, 100).start())
+
+            await RisingEdge(clk)
+
+            dut.log.info("After one edge")
+
+            await wait_5_cycles_marked()
+            await wait_5_cycles_unmarked()
+
+            dut.log.info("After 10 edges")
+
+        # as along as an async function is marked with @cocotb.coroutine, it
+        # can be used in a non-async function, where `await` is a syntaxerror,
+        # with a yield
+        yield test_clock_cycles_async()
+    '''))

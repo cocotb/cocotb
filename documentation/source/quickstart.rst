@@ -245,18 +245,18 @@ Accessing the .value property of a handle object will return a :class:`BinaryVal
     
     >>> # Read a value back from the dut
     >>> count = dut.counter.value
-    >>> 
-    >>> print count.binstr
+    >>>
+    >>> print(count.binstr)
     1X1010
     >>> # Resolve the value to an integer (X or Z treated as 0)
-    >>> print count.integer
+    >>> print(count.integer)
     42
 
 We can also cast the signal handle directly to an integer:
 
 .. code-block:: python
-    
-    >>> print int(dut.counter)
+
+    >>> print(int(dut.counter))
     42
 
 

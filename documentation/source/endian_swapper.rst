@@ -120,7 +120,7 @@ We want to run different variations of tests but they will all have a very simil
     @cocotb.coroutine
     def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backpressure_inserter=None):
         
-        cocotb.fork(clock_gen(dut.clk))
+        cocotb.fork(Clock(dut.clk, 5000).start())
         tb = EndianSwapperTB(dut)
         
         yield tb.reset()
@@ -139,7 +139,7 @@ We want to run different variations of tests but they will all have a very simil
             yield tb.stream_in.send(transaction)
         
         # Wait at least 2 cycles where output ready is low before ending the test
-        for i in xrange(2):
+        for i in range(2):
             yield RisingEdge(dut.clk)
             while not dut.stream_out_ready.value:
                 yield RisingEdge(dut.clk)

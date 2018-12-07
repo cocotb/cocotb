@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -31,7 +31,7 @@ import logging
 """
 A set of tests that demonstrate cocotb functionality
 
-Also used a regression test of cocotb capabilities
+Also used as regression test of cocotb capabilities
 """
 
 import cocotb
@@ -61,7 +61,7 @@ class BurstAvlReadTest(object):
                                   avl_properties=avlproperties)
     @cocotb.coroutine
     def init_sig(self, burstcount_w, address):
-        """ initialize all signals"""
+        """ Initialize all signals """
         yield Timer(10)
         self.dut.reset = 0
         self.dut.user_read_buffer = 0
@@ -103,8 +103,8 @@ def test_burst_read(dut):
     dut.user_read_buffer = 0
     yield RisingEdge(dut.clk)
 
-    print str(read_mem)
-    print str(len(read_mem)) + " 8bits values read"
+    print(str(read_mem))
+    print(str(len(read_mem)) + " 8bits values read")
 
     # checking values read
     for key, value in read_mem.items():
@@ -122,4 +122,3 @@ def test_burst_read(dut):
     yield Timer(10)
     dut.user_read_buffer = 0
     yield Timer(10)
-

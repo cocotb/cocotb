@@ -1,4 +1,4 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -35,6 +35,7 @@ import inspect
 from itertools import product
 import sys
 import os
+import traceback
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
     simulator = None
@@ -47,7 +48,7 @@ if "COVERAGE" in os.environ:
     try:
         import coverage
     except ImportError as e:
-        msg = ("Coverage collection requested but coverage module not availble"
+        msg = ("Coverage collection requested but coverage module not available"
                "\n"
                "Import error was: %s\n" % repr(e))
         sys.stderr.write(msg)
@@ -71,10 +72,10 @@ def _my_import(name):
 class RegressionManager(object):
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, root_name, modules, tests=None):
+    def __init__(self, root_name, modules, tests=None, seed=None, hooks=[]):
         """
         Args:
-            modules (list): A list of python module names to run
+            modules (list): A list of Python module names to run
 
         Kwargs
         """
@@ -86,6 +87,8 @@ class RegressionManager(object):
         self._running_test = None
         self._cov = None
         self.log = SimLog('regression')
+        self._seed = seed
+        self._hooks = hooks
 
     def initialise(self):
 
@@ -96,8 +99,15 @@ class RegressionManager(object):
         self.skipped = 0
         self.failures = 0
         self.xunit = XUnitReporter()
-        self.xunit.add_testsuite(name="all", tests=repr(self.ntests),
-                                 package="all")
+
+        suite_name = os.getenv('RESULT_TESTSUITE') if os.getenv('RESULT_TESTSUITE') else "all"
+        package_name = os.getenv('RESULT_TESTPACKAGE') if os.getenv('RESULT_TESTPACKAGE') else "all"
+                
+        self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
+                                 package=package_name)
+        
+        if (self._seed is not None):
+            self.xunit.add_property(name="random_seed", value=("%d"%self._seed))
 
         if coverage is not None:
             self.log.info("Enabling coverage collection of Python code")
@@ -115,11 +125,14 @@ class RegressionManager(object):
         # Auto discovery
         for module_name in self._modules:
             try:
+                self.log.debug("Python Path: " + ",".join(sys.path))
+                self.log.debug("PWD: " + os.getcwd())
                 module = _my_import(module_name)
-            except ImportError:
-                self.log.critical("Failed to import module %s", module_name)
-                self.log.info("MODULE variable was \"%s\"",
-                                                    ",".join(self._modules))
+            except Exception as E:
+                self.log.critical("Failed to import module %s: %s", module_name, E)
+                self.log.info("MODULE variable was \"%s\"", ".".join(self._modules))
+                self.log.info("Traceback: ")
+                self.log.info(traceback.format_exc())
                 raise
 
             if self._functions:
@@ -141,7 +154,7 @@ class RegressionManager(object):
                         skip = test.skip
                     except TestError:
                         skip = True
-                        self.log.warning("Failed to initialise test %s" %
+                        self.log.warning("Failed to initialize test %s" %
                                          thing.name)
 
                     if skip:
@@ -158,13 +171,26 @@ class RegressionManager(object):
                         self._queue.append(test)
                         self.ntests += 1
 
-        self._queue.sort(key=lambda test: "%s.%s" %
-                         (test.module, test.funcname))
+        self._queue.sort(key=lambda test: test.sort_name())
 
         for valid_tests in self._queue:
             self.log.info("Found test %s.%s" %
                           (valid_tests.module,
                            valid_tests.funcname))
+
+        for module_name in self._hooks:
+            self.log.info("Loading hook from module '"+module_name+"'")
+            module = _my_import(module_name)
+
+            for thing in vars(module).values():
+                if hasattr(thing, "im_hook"):
+                    try:
+                        test = thing(self._dut)
+                    except TestError:
+                        self.log.warning("Failed to initialize hook %s" % thing.name)
+                    else:
+                        cocotb.scheduler.add(test)
+
 
     def tear_down(self):
         """It's the end of the world as we know it"""
@@ -179,7 +205,8 @@ class RegressionManager(object):
             self.log.info("Writing coverage data")
             self._cov.save()
             self._cov.html_report()
-        self._log_test_summary()
+        if len(self.test_results) > 0:
+            self._log_test_summary()
         self._log_sim_summary()
         self.log.info("Shutting down...")
         self.xunit.write()
@@ -190,6 +217,12 @@ class RegressionManager(object):
         if not self._queue:
             return None
         return self._queue.pop(0)
+
+    def _add_failure(self, result):
+        self.xunit.add_failure(stdout=repr(str(result)),
+                               stderr="\n".join(self._running_test.error_messages),
+                               message="Test failed with random_seed={}".format(self._seed))
+        self.failures += 1
 
     def handle_result(self, result):
         """Handle a test result
@@ -230,19 +263,13 @@ class RegressionManager(object):
               self._running_test.expect_error):
             self.log.error("Test passed but we expected an error: " +
                            _result_was())
-            self.xunit.add_failure(message=repr(str(result)),
-                                   stdout=result.stdout.getvalue(),
-                                   stderr=result.stderr.getvalue())
-            self.failures += 1
+            self._add_failure(result)
             result_pass = False
 
         elif isinstance(result, TestSuccess):
             self.log.error("Test passed but we expected a failure: " +
                            _result_was())
-            self.xunit.add_failure(message=repr(str(result)),
-                                   stdout=result.stdout.getvalue(),
-                                   stderr=result.stderr.getvalue())
-            self.failures += 1
+            self._add_failure(result)
             result_pass = False
 
         elif isinstance(result, TestError) and self._running_test.expect_error:
@@ -252,22 +279,16 @@ class RegressionManager(object):
             if self._running_test.expect_error:
                 self.log.info("Test errored as expected: " + _result_was())
             else:
-                self.log.error("Test error has lead to simulator shuttting us "
+                self.log.error("Test error has lead to simulator shutting us "
                                "down")
-                self.xunit.add_failure(message=repr(str(result)),
-                                       stdout=result.stdout.getvalue(),
-                                       stderr=result.stderr.getvalue())
-                self.failures += 1
+                self._add_failure(result)
                 self._store_test_result(self._running_test.module, self._running_test.funcname, False, sim_time_ns, real_time, ratio_time)
                 self.tear_down()
                 return
 
         else:
             self.log.error("Test Failed: " + _result_was())
-            self.xunit.add_failure(message=repr(str(result)),
-                                   stdout=result.stdout.getvalue(),
-                                   stderr=result.stderr.getvalue())
-            self.failures += 1
+            self._add_failure(result)
             result_pass = False
 
         self._store_test_result(self._running_test.module, self._running_test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
@@ -280,8 +301,8 @@ class RegressionManager(object):
             start = ''
             end   = ''
             if allow_ansi():
-                start = ANSI.BLUE_BG + ANSI.BLACK_FG
-                end   = ANSI.DEFAULT
+                start = ANSI.COLOR_TEST
+                end   = ANSI.COLOR_DEFAULT
             # Want this to stand out a little bit
             self.log.info("%sRunning test %d/%d:%s %s" %
                           (start,
@@ -331,7 +352,7 @@ class RegressionManager(object):
             else:
                 pass_fail_str = "FAIL"
                 if allow_ansi():
-                    hilite = ANSI.WHITE_FG + ANSI.RED_BG
+                    hilite = ANSI.COLOR_HILITE_SUMMARY
 
             summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
                                                                                                                                 b=pass_fail_str,    b_len=RESULT_FIELD_LEN,
@@ -351,11 +372,11 @@ class RegressionManager(object):
         summary = ""
 
         summary += "*************************************************************************************\n"
-        summary += "**                                 ERRORS : {:<39}**\n".format(self.failures)
+        summary += "**                                 ERRORS : {0:<39}**\n".format(self.failures)
         summary += "*************************************************************************************\n"
-        summary += "**                               SIM TIME : {:<39}**\n".format('{:.2f} NS'.format(sim_time_ns))
-        summary += "**                              REAL TIME : {:<39}**\n".format('{:.2f} S'.format(real_time))
-        summary += "**                        SIM / REAL TIME : {:<39}**\n".format('{:.2f} NS/S'.format(ratio_time))
+        summary += "**                               SIM TIME : {0:<39}**\n".format('{0:.2f} NS'.format(sim_time_ns))
+        summary += "**                              REAL TIME : {0:<39}**\n".format('{0:.2f} S'.format(real_time))
+        summary += "**                        SIM / REAL TIME : {0:<39}**\n".format('{0:.2f} NS/S'.format(ratio_time))
         summary += "*************************************************************************************\n"
 
         self.log.info(summary)
@@ -476,7 +497,7 @@ class TestFactory(object):
 
     def generate_tests(self, prefix="", postfix=""):
         """
-        Generates exhasutive set of tests using the cartesian product of the
+        Generates exhaustive set of tests using the cartesian product of the
         possible keyword arguments.
 
         The generated tests are appended to the namespace of the calling

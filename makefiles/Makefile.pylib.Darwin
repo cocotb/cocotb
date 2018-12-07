@@ -40,8 +40,8 @@ NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
 
 # We might work with other Python versions
-PYTHON_MAJOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info.major)")
-PYTHON_MINOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info.minor)")
+PYTHON_MAJOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info[0])")
+PYTHON_MINOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info[1])")
 PYTHON_VERSION?=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
 
 PYTHON_LIBDIR:=$(shell python -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')

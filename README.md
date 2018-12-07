@@ -2,11 +2,13 @@
 
 [![Documentation Status](https://readthedocs.org/projects/cocotb/badge/?version=latest)](http://cocotb.readthedocs.org/en/latest/)
 [![Build Status](https://travis-ci.org/potentialventures/cocotb.svg?branch=master)](https://travis-ci.org/potentialventures/cocotb)
-[![Coverity Scan Status] (https://scan.coverity.com/projects/6110/badge.svg)](https://scan.coverity.com/projects/cocotb)
+[![Coverity Scan Status](https://scan.coverity.com/projects/6110/badge.svg)](https://scan.coverity.com/projects/cocotb)
 
-* Skim the introductory presentation: http://potential.ventures
 * Read the [documentation](http://cocotb.readthedocs.org)
-* Get involved: [Raise a bug / request an enhancement](https://github.com/potentialventures/cocotb/issues/new) (Requires a GitHub account)
+* Get involved:
+  * [Raise a bug / request an enhancement](https://github.com/potentialventures/cocotb/issues/new) (Requires a GitHub account)
+  * [Join the mailing list](https://lists.librecores.org/listinfo/cocotb)
+  * [Join the Gitter chat room](https://gitter.im/cocotb)
 * Get in contact: [E-mail us](mailto:cocotb@potentialventures.com)
 * Follow us on twitter: [@PVCocotb](https://twitter.com/PVCocotb)
 

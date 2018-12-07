@@ -25,6 +25,19 @@ Aldec Riviera-PRO
 Mentor Questa
 -------------
 
+Mentor Modelsim
+---------------
+Any ModelSim-PE or ModelSim-PE derivative (like ModelSim Microsemi, Altera, Lattice Edition) does not support the VHDL FLI feature.
+If you try to run with FLI enabled, you will see a vsim-FLI-3155 error:
+
+.. code-block:: bash
+
+    ** Error (suppressible): (vsim-FLI-3155) The FLI is not enabled in this version of ModelSim.
+
+ModelSim DE and SE (and Questa, of course) supports the FLI.
+
 Cadence Incisive
 ----------------
 
+GHDL
+----

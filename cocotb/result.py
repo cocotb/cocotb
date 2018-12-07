@@ -66,12 +66,12 @@ def create_error(obj, msg):
     return TestError("Creating error traceback failed")
 
 
-class ReturnValue(StopIteration):
+class ReturnValue(Exception):
     def __init__(self, retval):
         self.retval = retval
 
 
-class TestComplete(StopIteration):
+class TestComplete(Exception):
     """
         Exceptions are used to pass test results around.
     """
@@ -79,6 +79,11 @@ class TestComplete(StopIteration):
         super(TestComplete, self).__init__(*args, **kwargs)
         self.stdout = StringIO()
         self.stderr = StringIO()
+
+
+class ExternalException(Exception):
+    def __init__(self, exception):
+        self.exception = exception
 
 
 class TestError(TestComplete):

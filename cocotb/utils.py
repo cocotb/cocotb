@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -140,7 +140,7 @@ def _get_log_time_scale(units):
 
     units_lwr = units.lower()
     if units_lwr not in scale:
-        raise ValueError("Invalid unit ({}) provided".format(units))
+        raise ValueError("Invalid unit ({0}) provided".format(units))
     else:
         return scale[units_lwr]
 
@@ -243,8 +243,17 @@ def hexdiffs(x, y):
                 r = r + i
         return r
 
-    def highlight(string, colour=ANSI.YELLOW_FG):
-        return colour + string + ANSI.DEFAULT_FG + ANSI.DEFAULT_BG
+    def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
+        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT")
+        if want_ansi is None:
+            want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
+        else:
+            want_ansi = want_ansi == '1'
+
+        if want_ansi:
+            return colour + string + ANSI.COLOR_DEFAULT
+        else:
+            return string
 
     rs = ""
 
@@ -304,7 +313,7 @@ def hexdiffs(x, y):
             if dox != doy:
                 rs += highlight("%04x" % xd) + " "
             else:
-                rs += highlight("%04x" % xd, colour=ANSI.CYAN_FG) + " "
+                rs += highlight("%04x" % xd, colour=ANSI.COLOR_HILITE_HEXDIFF_1) + " "
             x += xx
             line = linex
         else:
@@ -318,7 +327,7 @@ def hexdiffs(x, y):
             if doy - dox != 0:
                 rs += " " + highlight("%04x" % yd)
             else:
-                rs += highlight("%04x" % yd, colour=ANSI.CYAN_FG)
+                rs += highlight("%04x" % yd, colour=ANSI.COLOR_HILITE_HEXDIFF_1)
             y += yy
             line = liney
         else:
@@ -332,15 +341,15 @@ def hexdiffs(x, y):
                 if line[j]:
                     if linex[j] != liney[j]:
                         rs += highlight("%02X" % ord(line[j]),
-                                        colour=ANSI.RED_FG)
+                                        colour=ANSI.COLOR_HILITE_HEXDIFF_2)
                     else:
                         rs += "%02X" % ord(line[j])
                     if linex[j] == liney[j]:
                         cl += highlight(_sane_color(line[j]),
-                                        colour=ANSI.MAGENTA_FG)
+                                        colour=ANSI.COLOR_HILITE_HEXDIFF_3)
                     else:
                         cl += highlight(sane(line[j]),
-                                        colour=ANSI.CYAN_BG + ANSI.BLACK_FG)
+                                        colour=ANSI.COLOR_HILITE_HEXDIFF_4)
                 else:
                     rs += "  "
                     cl += " "
@@ -362,6 +371,26 @@ def hexdiffs(x, y):
             else:
                 i += 16
     return rs
+
+
+# This is essentially six.exec_
+if sys.version_info.major == 3:
+    # this has to not be a syntax error in py2
+    import builtins
+    exec_ = getattr(builtins, 'exec')
+else:
+    # this has to not be a syntax error in py3
+    def exec_(_code_, _globs_=None, _locs_=None):
+        """Execute code in a namespace."""
+        if _globs_ is None:
+            frame = sys._getframe(1)
+            _globs_ = frame.f_globals
+            if _locs_ is None:
+                _locs_ = frame.f_locals
+            del frame
+        elif _locs_ is None:
+            _locs_ = _globs_
+        exec("""exec _code_ in _globs_, _locs_""")
 
 
 if __name__ == "__main__":
