@@ -103,5 +103,10 @@ for (idx = 0; idx < NUM_OF_MODULES; idx=idx+1) begin
 end
 endgenerate
 
-endmodule
+reg [7:0] register_array [1:0];
+always @(posedge clk) begin
+    // Ensure internal array is not optimized out
+    register_array[0] <= 0;
+end
 
+endmodule

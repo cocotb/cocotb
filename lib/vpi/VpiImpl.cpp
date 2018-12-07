@@ -78,6 +78,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiNetBit:
         case vpiReg:
         case vpiRegBit:
+        case vpiMemoryWord:
             return GPI_REGISTER;
 
         case vpiRealVar:
@@ -88,6 +89,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiRegArray:
         case vpiNetArray:
         case vpiGenScopeArray:
+        case vpiMemory:
             return GPI_ARRAY;
 
         case vpiEnumNet:
@@ -152,6 +154,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiIntegerVar:
         case vpiIntegerNet:
         case vpiRealVar:
+        case vpiMemoryWord:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
             break;
         case vpiParameter:
@@ -161,6 +164,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiNetArray:
         case vpiInterfaceArray:
         case vpiPackedArrayVar:
+        case vpiMemory:
             new_obj = new VpiArrayObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiStructVar:
