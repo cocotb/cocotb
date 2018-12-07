@@ -54,10 +54,12 @@ from pdb import set_trace
 from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
 
 # Define additional Logging Levels
-DEEP_DEBUG = 5
+VERBOSE    = 15
+DIAGNOSTIC = 5
 
 _levelToName = {
-    DEEP_DEBUG: 'DEEP_DEBUG'
+    VERBOSE:    'VERBOSE'
+    DIAGNOSTIC: 'DIAGNOSTIC'
 }
 
 # Register the new levels
@@ -381,6 +383,25 @@ def info(msg, *args, **kwargs):
         raise RuntimeError("init_logging() must be called before attempting to log")
     _top_logger.info(msg, *args, **kwargs)
 
+def verbose(msg, *args, **kwargs):
+    """Log messages with severity 'VERBOSE' to the top logger.
+
+    Args:
+        msg (str): Message to send to the logger
+         *args (): Arguments for the msg, i.e. msg % *args
+
+    Kwargs:
+        **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                     All other kwargs are packed into a dictionary and added to extra
+                     to allow to be used in the formatting strings
+
+    Exceptions:
+        RuntimeError: init_logging() not called first
+    """
+    if _top_logger is None:
+        raise RuntimeError("init_logging() must be called before attempting to log")
+    _top_logger.verbose(msg, *args, **kwargs)
+
 def debug(msg, *args, **kwargs):
     """Log messages with severity 'DEBUG' to the top logger.
 
@@ -400,8 +421,8 @@ def debug(msg, *args, **kwargs):
         raise RuntimeError("init_logging() must be called before attempting to log")
     _top_logger.debug(msg, *args, **kwargs)
 
-def deep_debug(msg, *args, **kwargs):
-    """Log messages with severity 'DEEP_DEBUG' to the top logger.
+def diagnostic(msg, *args, **kwargs):
+    """Log messages with severity 'DIAGNOSTIC' to the top logger.
 
     Args:
         msg (str): Message to send to the logger
@@ -417,7 +438,7 @@ def deep_debug(msg, *args, **kwargs):
     """
     if _top_logger is None:
         raise RuntimeError("init_logging() must be called before attempting to log")
-    _top_logger.deep_debug(msg, *args, **kwargs)
+    _top_logger.diagnostic(msg, *args, **kwargs)
 
 
 class SimLog(object):
@@ -519,7 +540,7 @@ class SimLog(object):
             self._log(ERROR, msg, args, **kwargs)
 
     def exception(self, msg, *args, **kwargs):
-        """Log messages with severity 'ERROR' to the top logger with exception information.
+        """Log messages with severity 'ERROR' to the logger with exception information.
 
         Args:
             msg (str): Message to send to the logger
@@ -536,7 +557,7 @@ class SimLog(object):
             self._log(ERROR, msg, args, exc_info=exc_info, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        """Log messages with severity 'WARNING' to the top logger.
+        """Log messages with severity 'WARNING' to the logger.
 
         Args:
             msg (str): Message to send to the logger
@@ -551,7 +572,7 @@ class SimLog(object):
             self._log(WARNING, msg, args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        """Log messages with severity 'INFO' to the top logger.
+        """Log messages with severity 'INFO' to the logger.
 
         Args:
             msg (str): Message to send to the logger
@@ -565,8 +586,23 @@ class SimLog(object):
         if self.logger.isEnabledFor(INFO):
             self._log(INFO, msg, args, **kwargs)
 
+    def verbose(self, msg, *args, **kwargs):
+        """Log messages with severity 'VERBOSE' to the logger.
+
+        Args:
+            msg (str): Message to send to the logger
+             *args (): Arguments for the msg, i.e. msg % *args
+
+        Kwargs:
+            **kwargs (): [exc_info, extra, stack_info] are passed straight to the logger.
+                         All other kwargs are packed into a dictionary and added to extra
+                         to allow to be used in the formatting strings
+        """
+        if self.logger.isEnabledFor(VERBOSE):
+            self._log(VERBOSE, msg, args, **kwargs)
+
     def debug(self, msg, *args, **kwargs):
-        """Log messages with severity 'DEBUG' to the top logger.
+        """Log messages with severity 'DEBUG' to the logger.
 
         Args:
             msg (str): Message to send to the logger
@@ -580,8 +616,8 @@ class SimLog(object):
         if self.logger.isEnabledFor(DEBUG):
             self._log(DEBUG, msg, args, **kwargs)
 
-    def deep_debug(self, msg, *args, **kwargs):
-        """Log messages with severity 'DEEP_DEBUG' to the top logger.
+    def diagnostic(self, msg, *args, **kwargs):
+        """Log messages with severity 'DIAGNOSTIC' to the logger.
 
         Args:
             msg (str): Message to send to the logger
@@ -592,11 +628,11 @@ class SimLog(object):
                          All other kwargs are packed into a dictionary and added to extra
                          to allow to be used in the formatting strings
         """
-        if self.logger.isEnabledFor(DEEP_DEBUG):
-            self._log(DEEP_DEBUG, msg, args, **kwargs)
+        if self.logger.isEnabledFor(DIAGNOSTIC):
+            self._log(DIAGNOSTIC, msg, args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
-        """Log messages with severity 'DEEP_DEBUG' to the top logger.
+        """Log messages of any level to the logger.
 
         Args:
             msg (str): Message to send to the logger
@@ -705,16 +741,10 @@ class ColumnFormatter(logging.Formatter):
     fmt_spec_re            = re.compile('((?P<fill>.)?(?P<align>[<>=^]))?(?P<sign>[+\- ])?(?P<alt_form>#)?(?P<zero_fill>0)?(?P<width>\d+)?(?P<comma>,)?(?P<precision>\.\d+)?(?P<type>[bcdeEfFgGnosxX%])?')
     fmt_simtime_re         = re.compile('(?P<spec>.*?)?(?P<resolution>fs|ps|ns|us|ms|sec)')
 
-    def __init__(self, fmt=None, datefmt=None, style=None, simtimefmt=None, separator=' | ', prefix="", divider=120, fixed=None, optional=None):
+    def __init__(self, fmt=None, datefmt=None, style=None, separator=' | ', divider_char='-', divider_len=120, header_char='-', header_len=120, columns=[], show_cols=None):
         """Logging formatter that formats fields in columns, ensuring the text does
         not exceed the column width through truncation.  Column formats must be
         specified in the string format style, e.g. {col:8s}
-
-        The 'fixed' columns will always be present and formated.
-
-        The 'optional' columns will only be present formatted if any of the optional
-        columns is present in the record.  For any missing from the record, will
-        be filled with spaces.
 
         All columns must have a fixed width with the exception of the last column
         which is defined by the 'fmt' argument.
@@ -722,72 +752,57 @@ class ColumnFormatter(logging.Formatter):
         Multi-line messages will be properly padded to maintain the column structure
 
         Kwargs:
-                   fmt (str): Fromat for the last column
-               datefmt (str): Format string for creating {asctime}
-                 style (str): IGNORED (Required for supporting fileConfig
-            simtimefmt (str): Format string for creating {simtime}
-             separator (str): The string separating the columns
-                prefix (str): A prefix that applied to the fmt string if formatting works
-               divider (int): Length of the divider/header markers
-                fixed (list): List of formats for persistent columns
-             optional (list): List of formats for optional columns
+                     fmt (str): Fromat for the last column
+                 datefmt (str): Format string for creating {asctime}
+                   style (str): IGNORED (Required for supporting fileConfig
+              simtimefmt (str): Format string for creating {simtime}
+               separator (str): The string separating the columns
+           divider_char (char): Character for the divider markers
+             divider_len (int): Length of the divider markers
+            header_char (char): Character for the divider markers
+              header_len (int): Length of the divider markers
+                columns (list): List of formats for persistent columns
+              show_cols (list): List of columns to display (None means all, Empty only shows the message)
 
         Excetpions:
-                      TypeError: 'fixed' and/or 'optional' not a list
+                      TypeError: 'columns' not a list
             InvalidColumnFormat: Issue processing the column format
         """
-        if fixed is not None and not isinstance(fixed, list):
-            raise TypeError("Argument 'fixed' must be of type list.")
+        if columns is not None and not isinstance(columns, list):
+            raise TypeError("Argument 'columns' must be of type list.")
 
-        if optional is not None and not isinstance(optional, list):
-            raise TypeError("Argument 'optional' must be of type list.")
-
-        self._style  = StrFormatStyle(fmt)
-        self._fmt    = self._style._fmt
-        self.datefmt = datefmt
-
+        self._style       = StrFormatStyle(fmt)
+        self._fmt         = self._style._fmt
+        self.datefmt      = datefmt
         self.simtimefmt   = simtimefmt or self.default_simtime_format
         self._usestime    = self._style.usesTime()
         self._usessimtime = self._style.usesSimTime()
-        self._sep = separator
-        self._prefix = prefix
+        self._sep         = separator
 
-        divider = int(divider)
-        self._divider = '{{message:-^{}}}'.format(divider)
-        self._hdr_len = divider-6
-        self._hdr_div = '-'*divider
-        self._header  = '-- {{line:{}}} --'.format(self._hdr_len)
+        divider_len = int(divider_len)
+        self._divider  = '{{message:{}^{}}}'.format(divider_char, divider_len)
+        
+        header_len = int(header_len)
+        self._hdr_len  = header_len-6
+        self._hdr_div  = header_char*header_len
+        self._header   = '{} {{line:{}}} {}'.format(header_char*2, self._hdr_len, header_char*2)
 
-        self._fixed = []
-        self._optional = []
+        self._columns   = []
 
-        self._fixed_pad    = ""
-        self._optional_pad = ""
-        if fixed is not None:
-            for fixed_fmt in fixed:
-                col = {}
-                col['style']              = StrFormatStyle(fixed_fmt)
-                col['fmt']                = col['style']._fmt
-                col['parsed'], col['len'] = self._parse_fmt(col['fmt'])
-                col['pad']                = ' '*col['len']
-                self._usestime            = self._usestime or col['style'].usesTime()
-                self._usessimtime         = self._usessimtime or col['style'].usesSimTime()
+        for col_fmt in columns:
+            col = {}
+            _style = StrFormatStyle(col_fmt)
+            self._usestime = self._usestime or _style.usesTime()
+            self._usessimtime = self._usessimtime or _style.usesSimTime()
+            col['style'] = _style
+            col['fmt']   = _style._fmt
+            parsed, _len = self._parse_fmt(col_fmt)
+            col['len']   = _len
+            col['parsed'] = parsed
 
-                self._fixed_pad += '{}{}'.format(col['pad'],self._sep)
-                self._fixed.append(col)
+            self._columns.append(col)
 
-        if optional is not None:
-            for opt_fmt in optional:
-                col = {}
-                col['style']              = StrFormatStyle(opt_fmt)
-                col['fmt']                = col['style']._fmt
-                col['parsed'], col['len'] = self._parse_fmt(col['fmt'])
-                col['pad']                = ' '*col['len']
-                self._usestime            = self._usestime or col['style'].usesTime()
-                self._usessimtime         = self._usessimtime or col['style'].usesSimTime()
-
-                self._optional_pad += '{}{}'.format(col['pad'],self._sep)
-                self._optional.append(col)
+        self._show_cols = show_cols if show_cols is not None else [i for i in range(len(self._columns))]
 
     def usesTime(self):
         """Returns if the {asctime} field is present in any of the columns"""
@@ -813,39 +828,23 @@ class ColumnFormatter(logging.Formatter):
         Args:
             record (obj): Container with all the parameters for formatting
         """
-        s = ""
+        s = []
 
-        if not hasattr(record, 'suppress') or not record.suppress:
-            for col in self._fixed:
-                s += "{}{}".format(self._formatColumn(col,record),self._sep)
+        show_cols = getattr(record, 'show_cols', self._show_cols)
 
-            if not hasattr(record, 'include_optional') or record.include_optional:
-                include_optional = False
-                o = ""
-                for col in self._optional:
-                    try:
-                        o += "{}{}".format(self._formatColumn(col,record),self._sep)
-                        include_optional = True
-                    except KeyError:
-                        o += "{}{}".format(col['pad'],self._sep)
-                if not hasattr(record, 'include_optional'):
-                    record.include_optional = include_optional
+        if not getattr(record, 'suppress', False):
+            for col in [c for i, c in enumerate(self._columns) if i in show_cols]:
+                try:
+                    c = self._trunc(col['style'].format(record),col['len'])
+                    s.append("{}{}".format(c,self._sep))
+                except KeyError:
+                    s.append("{}{}".format(' '*col['len'],self._sep))
 
-            if record.include_optional:
-                s += o
+        msg = super(ColumnFormatter, self).formatMessage(record)
 
-        if not hasattr(record, 'prefix'):
-            try:
-                record.prefix = self._prefix.format(**record.__dict__)
-            except KeyError:
-                record.prefix = ""
+        s.append(self._fmt_multi_line_msg(msg,record))
 
-        msg = self._style.format(record)
-        msg = record.prefix + msg
-
-        s += self._fmt_multi_line_msg(msg,record)
-
-        return s
+        return ''.join(s)
 
     def formatHeader(self, record):
         """Returns a string with record.message as a Header
@@ -894,14 +893,17 @@ class ColumnFormatter(logging.Formatter):
         Args:
             record (obj): Container with all the parameters for formatting
         """
+        show_cols = getattr(record, 'show_cols', self._show_cols)
+
+        record.pad = ""
+        for col in [c for i, c in enumerate(self._columns) if i in show_cols]:
+            record.pad += "{}{}".format(' '*col['len'],self._sep)
+
         record.message = record.getMessage()
 
-        if not hasattr(record, 'include_optional') and 'COCOTB_REDUCED_LOG_FMT' in os.environ:
-            record.include_optional = not bool(int(os.environ['COCOTB_REDUCED_LOG_FMT']))
-
-        if hasattr(record, 'header') and record.header:
+        if getattr(record, 'header', False):
             s = self.formatHeader(record)
-        elif hasattr(record, 'divider') and record.divider:
+        elif getattr(record, 'divider', False):
             s = self.formatDivider(record)
         else:
             if self.usesTime():
@@ -936,7 +938,7 @@ class ColumnFormatter(logging.Formatter):
             max_len (int): The maximum allowable string
         """
         if len(s) > max_len:
-            return ".." + s[(max_len - 2) * -1:]
+            return '..{0}'.format(s[(max_len - 2) * -1:])
         return s
 
     def _fmt_multi_line_msg(self,msg,record,pad_first_line=False):
@@ -948,18 +950,10 @@ class ColumnFormatter(logging.Formatter):
             pad_first_line (boolean): Indicates whether padding should be applied
                                       to the first line
         """
-        if not hasattr(record, 'suppress') or not record.suppress:
-            pad = '\n' + self._fixed_pad
+        if not getattr(record, 'suppress', False):
+            pad = '\n{0}'.fromat(record.pad)
 
-            if record.include_optional:
-                pad += self._optional_pad
-
-            pad += "    " if len(record.prefix) > 0 else ""
-
-            s = pad.join(msg.split('\n'))
-
-            if pad_first_line:
-                s = pad[1:] + s
+            s = '{0}{1}'.format(pad[1:] if pad_first_line else '', pad.join(msg.split('\n')))
         else:
             s = msg
         return s
@@ -1007,45 +1001,44 @@ class ColumnFormatter(logging.Formatter):
 
 class SimLogFormatter(ColumnFormatter):
     """Log formatter to provide consistent log message handling."""
-    _fixed_columns    = ['{simtime:>14s}','{levelname:<10s}']
-    _optional_columns = ['{name:<35}', '{filename:>20}:{lineno:<4}', '{funcName:<31}']
 
-    def __init__(self, fmt=None, datefmt=None, style=None, simtimefmt=None, separator=' | ', divider=120):
+    def __init__(self, fmt=None, datefmt=None, style=None, simtimefmt=None, separator=' | ', divider_char='-', divider_len=120, header_char='-', header_len=120, show_cols=None):
         ColumnFormatter.__init__(self,
                                  fmt=fmt,
                                  datefmt=datefmt,
+                                 style=style,
                                  simtimefmt=simtimefmt,
                                  separator=separator,
-                                 prefix="",
-                                 divider=divider,
-                                 fixed=self._fixed_columns,
-                                 optional=self._optional_columns)
-
+                                 divider_char=divider_char,
+                                 divider_len=divider_len,
+                                 header_char=header_char,
+                                 header_len=header_len,
+                                 columns=['{simtime:>14s}', '{levelname:<10s}', '{name:<35}', '{filename:>20}:{lineno:<4}', '{funcName:<31}'],
+                                 show_cols=show_cols)
 
 class SimColourLogFormatter(SimLogFormatter):
 
     """Log formatter to provide consistent log message handling."""
     loglevel2colour = {
-        DEEP_DEBUG:       ANSI.COLOR_DEFAULT   + "%s" + ANSI.COLOR_DEFAULT,
+        DIAGNOSTIC:       ANSI.COLOR_DEFAULT   + "%s" + ANSI.COLOR_DEFAULT,
         DEBUG     :       ANSI.COLOR_DEFAULT   + "%s" + ANSI.COLOR_DEFAULT,
+        VERBOSE   :       ANSI.COLOR_DEFAULT   + "%s" + ANSI.COLOR_DEFAULT,
         INFO      :       ANSI.COLOR_INFO      + "%s" + ANSI.COLOR_DEFAULT,
         WARNING   :       ANSI.COLOR_WARNING   + "%s" + ANSI.COLOR_DEFAULT,
         ERROR     :       ANSI.COLOR_ERROR     + "%s" + ANSI.COLOR_DEFAULT,
         CRITICAL  :       ANSI.COLOR_CRITICAL  + "%s" + ANSI.COLOR_DEFAULT}
 
-    def __init__(self, fmt=None, datefmt=None, simtimefmt=None, separator=' | ', divider=120):
+    def __init__(self, fmt=None, datefmt=None, style=None, simtimefmt=None, separator=' | ', divider_char='-', divider_len=120, header_char='-', header_len=120, show_cols=None):
         SimLogFormatter.__init__(self,
                                  fmt=fmt,
                                  datefmt=datefmt,
                                  simtimefmt=simtimefmt,
                                  separator=separator,
-                                 divider=divider)
-        level_pad = self._fixed[1]['pad']
-        self._fixed[1]['pad'] = ANSI.COLOR_DEFAULT + level_pad + ANSI.COLOR_DEFAULT
-
-        self._fixed_pad = ""
-        for col in self._fixed:
-            self._fixed_pad += '{}{}'.format(col['pad'],self._sep)
+                                 divider_char=divider_char,
+                                 divider_len=divider_len,
+                                 header_char=header_char,
+                                 header_len=header_len,
+                                 show_cols=show_cols)
 
     def _formatColumn(self, col, record):
         """Returns a string of the formated column.
@@ -1056,7 +1049,7 @@ class SimColourLogFormatter(SimLogFormatter):
         """
         s = SimLogFormatter._formatColumn(self, col=col, record=record)
 
-        if id(col) == id(self._fixed[1]):
+        if id(col) == id(self._columns[1]):
             s = self.loglevel2colour[record.levelno] % s
         return s
 
