@@ -85,7 +85,7 @@ class external_waiter(object):
         self.event = Event()
         self.state = external_state.INIT
         self.cond = threading.Condition()
-		self._log = self.log = SimLog(cls=self.__class__.__name__, ident=id(self))
+        self._log = self.log = SimLog(cls=self.__class__.__name__, ident=id(self))
 
     def _propogate_state(self, new_state):
         self.cond.acquire()
