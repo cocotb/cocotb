@@ -58,7 +58,7 @@ VERBOSE    = 15
 DIAGNOSTIC = 5
 
 _levelToName = {
-    VERBOSE:    'VERBOSE'
+    VERBOSE:    'VERBOSE',
     DIAGNOSTIC: 'DIAGNOSTIC'
 }
 
