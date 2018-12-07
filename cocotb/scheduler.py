@@ -640,7 +640,7 @@ class Scheduler(object):
             self._coroutine_yielded(coroutine, [result])
 
         elif (isinstance(result, list) and
-                not [t for t in result if not isinstance(t, Trigger)]):
+                all(isinstance(t, Trigger) for t in result)):
             self._coroutine_yielded(coroutine, result)
 
         else:
