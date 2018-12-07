@@ -310,14 +310,14 @@ def access_internal_register_array(dut):
     """Test access to an internal register array"""
     tlog = logging.getLogger("cocotb.test")
 
-    if(dut.register_array[0].value.binstr != "xxxxxxxx"):
+    if (dut.register_array[0].value.binstr != "xxxxxxxx"):
        raise TestFailure("Failed to access internal register array value")
 
     dut.register_array[1].setimmediatevalue(4)
     
     yield Timer(1)
 
-    if(dut.register_array[1].value !=4):
+    if (dut.register_array[1].value != 4):
        raise TestFailure("Failed to set internal register array value")
 
 @cocotb.test(skip=True)
