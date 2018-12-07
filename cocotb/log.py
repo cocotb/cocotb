@@ -246,7 +246,7 @@ def _cfg_dict(cfg):
         if 'incremental' not in cfg or not cfg['incremental']:
             raise ValueError("The key 'incremental' must be specified and be equal to 1")
 
-        handlers = cfg.get('handlers', EMPTY_DICT)
+        handlers = cfg.get('handlers', {})
         for name in handlers:
             if name not in logging._handlers:
                 raise ValueError('No handler found with '
@@ -261,24 +261,24 @@ def _cfg_dict(cfg):
                 except Exception as e:
                     raise ValueError('Unable to configure handler '
                                      '%r: %s' % (name, e))
-        loggers = config.get('loggers', EMPTY_DICT)
+        loggers = cfg.get('loggers', {})
         for name in loggers:
             try:
                 logger = logging.getLogger(name)
-                propagate = config.get('propagate', None)
+                propagate = cfg.get('propagate', None)
                 if propagate is not None:
                     logger.propagate = propagate
-                level = config.get('level', None)
+                level = cfg.get('level', None)
                 if level is not None:
                     logger.setLevel(logging._checkLevel(level))
             except Exception as e:
                 raise ValueError('Unable to configure logger '
                                  '%r: %s' % (name, e))
-        root = config.get('root', None)
+        root = cfg.get('root', None)
         if root:
             try:
                 logger = logging.getLogger()
-                level = config.get('level', None)
+                level = cfg.get('level', None)
                 if level is not None:
                     logger.setLevel(logging._checkLevel(level))
             except Exception as e:
@@ -741,7 +741,7 @@ class ColumnFormatter(logging.Formatter):
     fmt_spec_re            = re.compile('((?P<fill>.)?(?P<align>[<>=^]))?(?P<sign>[+\- ])?(?P<alt_form>#)?(?P<zero_fill>0)?(?P<width>\d+)?(?P<comma>,)?(?P<precision>\.\d+)?(?P<type>[bcdeEfFgGnosxX%])?')
     fmt_simtime_re         = re.compile('(?P<spec>.*?)?(?P<resolution>fs|ps|ns|us|ms|sec)')
 
-    def __init__(self, fmt=None, datefmt=None, style=None, separator=' | ', divider_char='-', divider_len=120, header_char='-', header_len=120, columns=[], show_cols=None):
+    def __init__(self, fmt=None, datefmt=None, style=None, simtimefmt=None, separator=' | ', divider_char='-', divider_len=120, header_char='-', header_len=120, columns=[], show_cols=None):
         """Logging formatter that formats fields in columns, ensuring the text does
         not exceed the column width through truncation.  Column formats must be
         specified in the string format style, e.g. {col:8s}
@@ -951,7 +951,7 @@ class ColumnFormatter(logging.Formatter):
                                       to the first line
         """
         if not getattr(record, 'suppress', False):
-            pad = '\n{0}'.fromat(record.pad)
+            pad = '\n{0}'.format(record.pad)
 
             s = '{0}{1}'.format(pad[1:] if pad_first_line else '', pad.join(msg.split('\n')))
         else:
