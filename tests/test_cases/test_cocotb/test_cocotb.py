@@ -670,58 +670,25 @@ def test_binary_value(dut):
     yield Timer(100)  # Make it do something with time
 
 
-@cocotb.test(skip=sys.version_info[:2] < (3, 3))
-def test_coroutine_return(dut):
-    """ Test that the Python 3.3 syntax for returning from generators works """
-    # this would be a syntax error in older python, so we do the whole
-    # thing inside exec
-    cocotb.utils.exec_(textwrap.dedent("""
-    @cocotb.coroutine
-    def return_it(x):
-        return x
-        yield
-
-    ret = yield return_it(42)
-    if ret != 42:
-        raise TestFailure("Return statement did not work")
-    """))
-
-
-@cocotb.test(skip=sys.version_info[:2] < (3, 5))
-def test_async(dut):
+if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
     cocotb.utils.exec_(textwrap.dedent('''
-        # inner functions don't need the cocotb.coroutine decorator - but
-        # adding it should have no effect anyway
+    @cocotb.test()
+    def test_coroutine_return(dut):
+        """ Test that the Python 3.3 syntax for returning from generators works """
         @cocotb.coroutine
-        async def wait_5_cycles_marked():
-            await ClockCycles(clk, 5)
+        def return_it(x):
+            # workaround for #gh-637 - need to yield something before finishing
+            yield Timer(1)
 
-        async def wait_5_cycles_unmarked():
-            await ClockCycles(clk, 5)
+            return x
 
+            # this makes `return_it` a coroutine, even after we remove the
+            # workaround above
+            yield
 
-        @cocotb.coroutine
-        async def test_clock_cycles_async(dut):
-            """
-            Test the ClockCycles Trigger
-            """
-            clk = dut.clk
-
-            clk_gen = cocotb.fork(Clock(clk, 100).start())
-
-            await RisingEdge(clk)
-
-            dut.log.info("After one edge")
-
-            await wait_5_cycles_marked()
-            await wait_5_cycles_unmarked()
-
-            dut.log.info("After 10 edges")
-
-        # as along as an async function is marked with @cocotb.coroutine, it
-        # can be used in a non-async function, where `await` is a syntaxerror,
-        # with a yield
-        yield test_clock_cycles_async()
+        ret = yield return_it(42)
+        if ret != 42:
+            raise TestFailure("Return statement did not work")
     '''))
