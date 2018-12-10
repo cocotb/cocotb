@@ -193,7 +193,7 @@ class AvalonSTPkts(BusMonitor):
                         else:
                             value = value[empty:]
                     vec.assign(value)
-                    if not vec.is_resolvable():
+                    if not vec.is_resolvable:
                         raise AvalonProtocolError("After empty masking value is still bad?  Had empty {:d}, got value {:s}".format(empty, self.bus.data.value.get_binstr()))
 
                 vec.big_endian = self.config['firstSymbolInHighOrderBits']

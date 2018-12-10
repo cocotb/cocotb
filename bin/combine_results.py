@@ -72,15 +72,13 @@ def main():
     testsuite_count = 0
     testcase_count = 0
 
-    for testsuite in result.iter('testsuite'):
-        testsuite_count += 1
-        for testcase in testsuite.iter('testcase'):
-            testcase_count += 1
+    for testsuite_count, testsuite in enumerate(result.iter('testsuite'),1):
+        for testcase_count, testcase in enumerate(testsuite.iter('testcase'),1):
             for failure in testcase.iter('failure'):
                 if args.set_rc: rc=1
-                print "Failure in testsuite: '%s' classname: '%s' testcase: '%s' with parameters '%s'" % (testsuite.get('name'), testcase.get('classname'), testcase.get('name'), testsuite.get('package'))
+                print("Failure in testsuite: '%s' classname: '%s' testcase: '%s' with parameters '%s'" % (testsuite.get('name'), testcase.get('classname'), testcase.get('name'), testsuite.get('package')))
 
-    print "Ran a total of %d TestSuites and %d TestCases" % ( testsuite_count, testcase_count)
+    print("Ran a total of %d TestSuites and %d TestCases" % (testsuite_count, testcase_count))
 
 
     ET.ElementTree(result).write(args.output_file, encoding="UTF-8")
