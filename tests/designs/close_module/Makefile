@@ -58,7 +58,3 @@ all:
 endif
 
 endif
-
-ifeq ($(SIM),ius)
-    EXTRA_ARGS += -licqueue
-endif
