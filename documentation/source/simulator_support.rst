@@ -21,6 +21,7 @@ Synopsys VCS
 
 Aldec Riviera-PRO
 -----------------
+The `$LICENSE_QUEUE` environmental variable can be used for this simulator - this setting will be mirrored in the TCL `license_queue` variable to control runtime license checkouts.
 
 Mentor Questa
 -------------

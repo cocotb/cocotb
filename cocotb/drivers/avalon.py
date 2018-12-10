@@ -456,7 +456,7 @@ class AvalonMemory(BusDriver):
                         self.log.debug("Data in   : %x" % data)
                         self.log.debug("Width     : %d" % self._width)
                         self.log.debug("Byteenable: %x" % byteenable)
-                        for i in xrange(self._width/8):
+                        for i in range(self._width/8):
                             if (byteenable & 2**i):
                                 mask |= 0xFF << (8*i)
                             else:
@@ -686,8 +686,8 @@ class AvalonSTPkts(ValidatedBusDriver):
             empty = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
 
         # Drive some defaults since we don't know what state we're in
-        # if self.use_empty:
-        #     self.bus.empty <= 0
+        if self.use_empty:
+            self.bus.empty <= 0
         self.bus.startofpacket <= 0
         self.bus.endofpacket <= 0
         self.bus.valid <= 0
@@ -698,7 +698,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.bus.channel <= 0
             channel_value = BinaryValue(bits=len(self.bus.channel), bigEndian=False)
         elif channel is not None:
-            raise TestError("%s does not has a channel signal" % self.name)
+            raise TestError("%s does not have a channel signal" % self.name)
 
         while string:
             if not firstword or (firstword and sync):
@@ -729,8 +729,6 @@ class AvalonSTPkts(ValidatedBusDriver):
                     self.bus.channel <= channel
 
             if firstword:
-                #if self.use_empty:
-                #    self.bus.empty <= 0
                 self.bus.startofpacket <= 1
                 firstword = False
             else:
