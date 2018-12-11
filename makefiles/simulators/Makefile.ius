@@ -45,6 +45,9 @@ else
     export IUS_BIN_DIR
 endif
 
+EXTRA_ARGS += $(COMPILE_ARGS)
+EXTRA_ARGS += $(SIM_ARGS)
+
 ifneq ($(ARCH),i686)
 EXTRA_ARGS += -64
 endif
@@ -83,6 +86,10 @@ ifneq ($(VERILOG_SOURCES),)
 endif
 else
    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+endif
+
+ifeq ($(SIM),ius)
+    EXTRA_ARGS += -licqueue
 endif
 
 GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)

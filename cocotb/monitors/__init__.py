@@ -54,16 +54,28 @@ class MonitorStatistics(object):
 
 
 class Monitor(object):
+    """Base class for Monitor objects. Monitors are passive 'listening' objects
+    that monitor pins in or out of a DUT. This class should not be used
+    directly, but should be subclassed and the internal `_monitor_recv` method
+    should be overridden and decorated as a @coroutine.  This `_monitor_recv`
+    method should capture some behavior of the pins, form a transaction, and
+    pass this transaction to the internal `_recv` method.  The `_monitor_recv`
+    method is added to the cocotb scheduler during the `__init__` phase, so it
+    should not be yielded anywhere.
+
+    The primary use of a Monitor is as an interface for a :Scoreboard:.
+
+    :type callback: callable
+    :param callback: Will be called with each recovered transaction as the
+    argument. If the callback isn't used, received transactions will be placed
+    on a queue and the event used to notify any consumers.
+
+    :type event: event
+    :param event: Object that supports a `set` method that will be called when
+    a transaction is received through the internal `_recv` method.
+    """
 
     def __init__(self, callback=None, event=None):
-        """
-        Constructor for a monitor instance
-
-        callback will be called with each recovered transaction as the argument
-
-        If the callback isn't used, received transactions will be placed on a
-        queue and the event used to notify any consumers.
-        """
         self._event = event
         self._wait_event = None
         self._recvQ = deque()

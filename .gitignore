@@ -23,6 +23,10 @@ __pycache__
 *.swp
 *~
 
+# Emacs tmp files
+\#*\#
+\.\#*
+
 # Waveforms
 *.vcd
 
@@ -34,3 +38,22 @@ combined_results.xml
 *.tab
 sim_build
 ucli.key
+
+# Cadence Incisive/Xcelium
+*.elog
+irun.log
+xrun.log
+irun.key
+xrun.key
+irun.history
+xrun.history
+INCA_libs
+xcelium.d
+ncelab_*.err
+xmelab_*.err
+ncsim_*.err
+xmsim_*.err
+bpad_*.err
+.bpad/
+.simvision/
+waves.shm/

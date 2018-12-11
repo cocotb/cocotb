@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2014 Potential Ventures Ltd
+# Copyright (c) 2018 Potential Ventures Ltd
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -10,7 +10,6 @@
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
 #     * Neither the name of Potential Ventures Ltd,
-#       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
@@ -26,46 +25,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-ifneq ($(VERILOG_SOURCES),)
 
-results.xml:
-	@echo "Skipping simulation as Verilog is not supported on simulator=$(SIM)"
-clean::
+include ../../designs/sample_module/Makefile
 
-else
-
-CMD_BIN := ghdl
-
-ifdef GHDL_BIN_DIR
-    CMD := $(shell which $(GHDL_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
-else
-    # auto-detect bin dir from system path
-    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
-endif
-
-ifeq (, $(CMD))
-    $(error "Unable to locate command >$(CMD_BIN)<")
-else
-	GHDL_BIN_DIR := $(shell dirname $(CMD))
-    export GHDL_BIN_DIR
-endif
-
-RTL_LIBRARY ?= work
-GHDL_ARGS ?=
-GHDL_ARGS += $(EXTRA_ARGS)
-
-.PHONY: analyse
-
-# Compilation phase
-analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && $(CMD) -a $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && $(CMD) -e $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL)
-
-results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	cd $(SIM_BUILD); \
-	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(CMD) -r $(GHDL_ARGS) $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT) $(SIM_ARGS) $(PLUSARGS)
-
-clean::
-	-@rm -rf $(SIM_BUILD)
-endif
+MODULE = issue_588
