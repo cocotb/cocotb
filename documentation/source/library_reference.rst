@@ -101,6 +101,11 @@ Scoreboard
 .. autoclass:: cocotb.scoreboard.Scoreboard
     :members:
 
+Clock
+-----
+
+.. autoclass:: cocotb.clock.Clock
+    :members:
 
 Implemented Testbench Structures
 ================================
