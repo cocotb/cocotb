@@ -55,9 +55,10 @@ def get_python_integer_types():
 def get_sim_time(units=None):
     """Retrieves the simulation time from the simulator
 
-    Kwargs:
-        units (str):  String specifying the units of the result. (None,'fs','ps','ns','us','ms','sec')
-                      None will return the raw simulation time.
+    Args:
+        units (str, optional): String specifying the units of the result.
+            (None,'fs','ps','ns','us','ms','sec') None will return the raw
+            simulation time.
 
     Returns:
         The simulation time in the specified units
@@ -72,11 +73,13 @@ def get_sim_time(units=None):
     return result
 
 def get_time_from_sim_steps(steps, units):
-    """Calculates simulation time in the specified units from the steps based on the simulator precision.
+    """Calculates simulation time in the specified units from the steps based
+    on the simulator precision.
 
     Args:
         steps (int):  Number of simulation steps
-        units (str):  String specifying the units of the result. ('fs','ps','ns','us','ms','sec')
+        units (str):  String specifying the units of the result.
+            ('fs','ps','ns','us','ms','sec')
 
     Returns:
         The simulation time in the specified units
@@ -90,10 +93,9 @@ def get_sim_steps(time, units=None):
 
     Args:
         time (int/float):  The value to convert to simulation time steps.
-
-    Kwargs:
-        units (str):  String specifying the units of the result. (None,'fs','ps','ns','us','ms','sec')
-                      None means time is already in simulation time steps.
+        units (str, optional):  String specifying the units of the result.
+            (None,'fs','ps','ns','us','ms','sec') None means time is already in
+            simulation time steps.
 
     Returns:
         The number of simulation time steps
@@ -105,7 +107,9 @@ def get_sim_steps(time, units=None):
     err = int(result) - math.ceil(result)
 
     if err:
-        raise ValueError("Unable to accurately represent {0}({1}) with the simulator precision of 1e{2}".format(time,units,_LOG_SIM_PRECISION))
+        raise ValueError("Unable to accurately represent {0}({1}) with the "
+                         "simulator precision of 1e{2}".format(
+                             time,units,_LOG_SIM_PRECISION))
 
     return int(result)
 
@@ -113,7 +117,8 @@ def _get_log_time_scale(units):
     """Retrieves the log10() of the scale factor for a given time unit
 
     Args:
-        units (str):  String specifying the units. ('fs','ps','ns','us','ms','sec')
+        units (str): String specifying the units.
+            ('fs','ps','ns','us','ms','sec')
 
     Returns:
         The the log10() of the scale factor for the time unit
@@ -138,10 +143,8 @@ def _get_log_time_scale(units):
 def pack(ctypes_obj):
     """Convert a ctypes structure into a python string
 
-
     Args:
         ctypes_obj (ctypes.Structure): ctypes structure to convert to a string
-
 
     Returns:
         New python string containing the bytes from memory holding ctypes_obj
@@ -155,14 +158,13 @@ def unpack(ctypes_obj, string, bytes=None):
 
     Args:
         ctypes_obj (ctypes.Structure):  ctypes structure to pack into
-
         string (str):  String to copy over the ctypes_obj memory space
-
-    Kwargs:
-        bytes: Number of bytes to copy
+        bytes (int, optional): Number of bytes to copy. Defaults to None.
 
     Raises:
-        ValueError, MemoryError
+        ValueError: If length of ``string`` and size of ``ctypes_obj``
+            are not equal.
+        MemoryError: If ``bytes`` is longer than size of ``ctypes_obj``.
 
     If the length of the string is not the correct size for the memory
     footprint of the ctypes structure then the bytes keyword argument must
@@ -196,7 +198,24 @@ def _sane_color(x):
 
 
 def hexdump(x):
-    """Hexdump a buffer"""
+    """Hexdump a buffer
+
+    Args:
+        x: Object that supports conversion via the ``str`` built-in.
+
+    Returns:
+        A string containing the hexdump
+
+    Example:
+    .. code-block:: python
+
+        print(hexdump('this somewhat long string'))
+
+    .. code-block::
+
+        0000   74 68 69 73 20 73 6F 6D 65 77 68 61 74 20 6C 6F   this somewhat lo
+        0010   6E 67 20 73 74 72 69 6E 67                        ng string
+    """
     # adapted from scapy.utils.hexdump
     rs = ""
     x = str(x)
@@ -218,7 +237,23 @@ def hexdump(x):
 
 
 def hexdiffs(x, y):
-    """Return a diff string showing differences between 2 binary strings"""
+    """Return a diff string showing differences between 2 binary strings
+
+    Args:
+        x: Object that supports conversion via the ``str`` built-in
+        y: Object that supports conversion via the ``str`` built-in
+
+    Example:
+    .. code-block:: python
+
+        print(hexdiffs('this short thing', 'this also short'))
+
+    .. code-block::
+
+        0000      746869732073686F 7274207468696E67 this short thing
+             0000 7468697320616C73 6F  2073686F7274 this also  short
+
+    """
     # adapted from scapy.utils.hexdiff
 
     def sane(x):
