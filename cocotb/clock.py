@@ -78,14 +78,23 @@ class Clock(BaseClock):
         this.
 
         Args:
-            cycles (int, optional): Not Implemented. Defaults to 0.
+            cycles (int, optional): Cycle clock ``cycles`` number of times.
+                Defaults to 0, meaning will cycle forever.
         """
         t = Timer(self.half_period)
-        while True:
-            self.signal <= 1
-            yield t
-            self.signal <= 0
-            yield t
+        if cycles > 0:
+            while cycles:
+                self.signal <= 1
+                yield t
+                self.signal <= 0
+                yield t
+                cycles -= 1
+        else:
+            while True:
+                self.signal <= 1
+                yield t
+                self.signal <= 0
+                yield t
 
     def __str__(self):
         return self.__class__.__name__ + "(%3.1f MHz)" % self.frequency
