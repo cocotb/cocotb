@@ -137,7 +137,7 @@ class RunningCoroutine(object):
             raise CoroutineComplete(callback=self._finished_cb)
         except Exception as e:
             self._finished = True
-            raise raise_error(self, "Send raised exception: %s" % (str(e)))
+            raise raise_error(self, "Send raised exception:")
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -232,7 +232,7 @@ class RunningTest(RunningCoroutine):
         except StopIteration:
             raise TestSuccess()
         except Exception as e:
-            raise raise_error(self, "Send raised exception: %s" % (str(e)))
+            raise raise_error(self, "Send raised exception:")
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
@@ -359,7 +359,7 @@ class hook(coroutine):
             try:
                 return RunningCoroutine(self._func(*args, **kwargs), self)
             except Exception as e:
-                raise raise_error(self, str(e))
+                raise raise_error(self, "Hook raised exception:")
 
         _wrapped_hook.im_hook = True
         _wrapped_hook.name = self._func.__name__
@@ -402,7 +402,7 @@ class test(coroutine):
             try:
                 return RunningTest(self._func(*args, **kwargs), self)
             except Exception as e:
-                raise raise_error(self, str(e))
+                raise raise_error(self, "Test raised exception:")
 
         _wrapped_test.im_test = True    # For auto-regressions
         _wrapped_test.name = self._func.__name__
