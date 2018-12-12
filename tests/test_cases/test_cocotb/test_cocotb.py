@@ -669,6 +669,30 @@ def test_binary_value(dut):
 
     yield Timer(100)  # Make it do something with time
 
+@cocotb.test()
+def test_error_message_on_multiple_unschedule(dut):
+    """
+    Test error messaging on an unsupported attempt to unschedule a previously
+    unscheduled coroutine.
+    """
+
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    clk_gen.kill()
+
+    def fail_test():
+         raise TestFailure(
+            "Expected an error on attempt to kill a coroutine twice.")
+
+    try:
+        clk_gen.kill()
+    except TestError as e:
+        if e.args != ("Attempted to kill a previously unscheduled coroutine.",):
+            fail_test()
+        else:
+            yield RisingEdge(dut.clk)
+    else:
+        fail_test()
 
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole

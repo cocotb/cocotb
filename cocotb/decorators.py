@@ -93,6 +93,7 @@ class RunningCoroutine(object):
         self._coro = inst
         self._started = False
         self._finished = False
+        self._unscheduled = False
         self._callbacks = []
         self._join = _Join(self)
         self._parent = parent
@@ -147,8 +148,13 @@ class RunningCoroutine(object):
 
     def kill(self):
         """Kill a coroutine"""
+        if self._unscheduled:
+            error_msg = "Attempted to kill a previously unscheduled coroutine."
+            raise raise_error(self, error_msg)
+
         self.log.debug("kill() called on coroutine")
         cocotb.scheduler.unschedule(self)
+        self._unscheduled = True
 
     def _finished_cb(self):
         """Called when the coroutine completes.
