@@ -63,16 +63,15 @@ class Monitor(object):
     method is added to the cocotb scheduler during the `__init__` phase, so it
     should not be yielded anywhere.
 
-    The primary use of a Monitor is as an interface for a :Scoreboard:.
+    The primary use of a Monitor is as an interface for a
+    :py:class:`cocotb.scoreboard.Scoreboard`.
 
-    :type callback: callable
-    :param callback: Will be called with each recovered transaction as the
-    argument. If the callback isn't used, received transactions will be placed
-    on a queue and the event used to notify any consumers.
-
-    :type event: event
-    :param event: Object that supports a `set` method that will be called when
-    a transaction is received through the internal `_recv` method.
+    Args:
+        callback (callable): Callback to be called with each recovered transaction 
+            as the argument. If the callback isn't used, received transactions will 
+            be placed on a queue and the event used to notify any consumers.
+        event (event): Object that supports a `set` method that will be called when
+            a transaction is received through the internal `_recv` method.
     """
 
     def __init__(self, callback=None, event=None):
