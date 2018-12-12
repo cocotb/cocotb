@@ -71,7 +71,7 @@ class BinaryRepresentation():
 
 
 class BinaryValue(object):
-    """Represenatation of values in binary format.
+    """Representation of values in binary format.
 
     The underlying value can be set or accessed using three aliasing attributes
 
@@ -102,7 +102,7 @@ class BinaryValue(object):
                  bits=None):
         """
         Kwagrs:
-            Value (string or int or long): value to assign to the bus
+            value (string or int or long): value to assign to the bus
 
             n_bits (int): Number of bits to use for the underlying binary
                           representation
@@ -279,11 +279,11 @@ class BinaryValue(object):
         return rv
 
     def get_value(self):
-        """value is an integer representaion of the underlying vector"""
+        """value is an integer representation of the underlying vector"""
         return self._convert_from[self.binaryRepresentation](self._str)
 
     def get_value_signed(self):
-        """value is an signed integer representaion of the underlying vector"""
+        """value is an signed integer representation of the underlying vector"""
         ival = int(resolve(self._str), 2)
         bits = len(self._str)
         signbit = (1 << (bits - 1))
