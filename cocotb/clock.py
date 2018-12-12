@@ -44,8 +44,23 @@ class BaseClock(object):
 
 
 class Clock(BaseClock):
-    """
-    simple 50:50 duty cycle clock
+    """Simple 50:50 duty cycle clock driver
+
+    Instances of this class should call its ``start`` method and fork the
+    result.  This will create a clocking thread that drives the signal at the
+    desired period/frequency.
+
+    Example:
+    .. code-block:: python
+
+        c = Clock(dut.clk, 10, 'ns')
+        cocotb.fork(c.start())
+
+    Args:
+        signal (pin): The clock pin/signal to be driven.
+        period (int): The clock period. Should be an even number.
+        units (str, optional): One of (None,'fs','ps','ns','us','ms','sec').
+            Defaults to ``None``.
     """
     def __init__(self, signal, period, units=None):
         BaseClock.__init__(self, signal)
@@ -59,6 +74,12 @@ class Clock(BaseClock):
 
     @cocotb.coroutine
     def start(self, cycles=0):
+        """Clocking coroutine.  Start driving your clock by forking a call to
+        this.
+
+        Args:
+            cycles (int, optional): Not Implemented. Defaults to 0.
+        """
         t = Timer(self.half_period)
         while True:
             self.signal <= 1
