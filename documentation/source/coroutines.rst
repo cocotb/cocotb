@@ -1,13 +1,13 @@
 Coroutines
 ==========
 
-Testbenches built using Cocotb use coroutines. While the coroutine is executing
-the simulation is paused. The coroutine uses the :keyword:`yield` keyword to
+Testbenches built using Cocotb use coroutines. While the `coroutine` is executing
+the simulation is paused. The `coroutine` uses the :keyword:`yield` keyword to
 pass control of execution back to the simulator and simulation time can advance
 again.
 
 Typically coroutines :keyword:`yield` a :py:class:`Trigger` object which
-indicates to the simulator some event which will cause the coroutine to be woken
+indicates to the simulator some event which will cause the `coroutine` to be woken
 when it occurs.  For example:
 
 .. code-block:: python
@@ -62,7 +62,7 @@ execution should resume if *any* of them fires:
         yield [Timer(timeout), RisingEdge(dut.ready)]
 
 
-The trigger that caused execution to resume is passed back to the coroutine,
+The trigger that caused execution to resume is passed back to the `coroutine`,
 allowing them to distinguish which trigger fired:
 
 .. code-block:: python

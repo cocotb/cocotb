@@ -178,8 +178,10 @@ We would then create a file called ``test_my_design.py`` containing our tests.
 Creating a test
 ---------------
 
-The test is written in Python. Cocotb wraps your top level with the handle **dut**
-to be used in all python files referencing your RTL project. Assuming we have a
+The test is written in Python. Cocotb wraps your top level with the handle you
+pass it. In this documentation, and most of the examples in the project, that
+handle is **dut**, but you can pass your own preferred name in instead. The handle
+is used in all python files referencing your RTL project. Assuming we have a
 toplevel port called ``clk`` we could create a test file containing the following:
 
 .. code-block:: python
