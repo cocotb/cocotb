@@ -28,7 +28,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
     A clock class
 """
-import simulator
+import os
+if "SPHINX_BUILD" in os.environ:
+    simulator = None
+else:
+    import simulator
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Timer, RisingEdge
