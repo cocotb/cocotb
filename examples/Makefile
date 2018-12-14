@@ -27,8 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-COCOTB=$(shell cocotb-path)
-export COCOTB
 
 EXAMPLES := adder/tests \
 	    endian_swapper/tests \

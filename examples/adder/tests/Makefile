@@ -50,6 +50,6 @@ endif
 TOPLEVEL := adder
 MODULE   := test_adder
 
-include $(shell cocotb-path)/makefiles/Makefile.inc
-include $(shell cocotb-path)/makefiles/Makefile.sim
+include $(shell cocotb-config)/makefiles/Makefile.inc
+include $(shell cocotb-config)/makefiles/Makefile.sim
 

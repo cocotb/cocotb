@@ -29,6 +29,6 @@ endif
 
 MODULE=test_mixed_language
 
-include $(shell cocotb-path)/makefiles/Makefile.inc
-include $(shell cocotb-path)/makefiles/Makefile.sim
+include $(shell cocotb-config)/makefiles/Makefile.inc
+include $(shell cocotb-config)/makefiles/Makefile.sim
 
