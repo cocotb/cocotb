@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -78,6 +78,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiNetBit:
         case vpiReg:
         case vpiRegBit:
+        case vpiMemoryWord:
             return GPI_REGISTER;
 
         case vpiRealVar:
@@ -88,6 +89,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiRegArray:
         case vpiNetArray:
         case vpiGenScopeArray:
+        case vpiMemory:
             return GPI_ARRAY;
 
         case vpiEnumNet:
@@ -152,6 +154,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiIntegerVar:
         case vpiIntegerNet:
         case vpiRealVar:
+        case vpiMemoryWord:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
             break;
         case vpiParameter:
@@ -161,6 +164,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiNetArray:
         case vpiInterfaceArray:
         case vpiPackedArrayVar:
+        case vpiMemory:
             new_obj = new VpiArrayObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiStructVar:
@@ -188,8 +192,8 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             break;
         }
         default:
-            /* We should only print a warning here if the type is really verilog,
-               It could be vhdl as some simulators allow qurying of both languages
+            /* We should only print a warning here if the type is really Verilog,
+               It could be VHDL as some simulators allow querying of both languages
                via the same handle
                */
             const char *type_name = vpi_get_str(vpiType, new_hdl);
@@ -417,7 +421,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
         goto error;
     }
 
-    //Need to free the iterator if it didn't return NULL
+    // Need to free the iterator if it didn't return NULL
     if (iterator && !vpi_free_object(iterator)) {
         LOG_WARN("VPI: Attempting to free root iterator failed!");
         check_vpi_error();
@@ -508,7 +512,7 @@ int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
     return 0;
 }
 
-// If the Pything world wants things to shut down then unregister
+// If the Python world wants things to shut down then unregister
 // the callback for end of sim
 void VpiImpl::sim_end(void)
 {

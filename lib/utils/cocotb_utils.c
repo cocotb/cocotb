@@ -36,6 +36,9 @@
 #include <windows.h>
 #endif
 
+// Tracks if we are in the context of Python or Simulator
+int context = 0;
+
 void* utils_dyn_open(const char* lib_name)
 {
     void *ret = NULL;

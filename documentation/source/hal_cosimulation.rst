@@ -173,7 +173,7 @@ software needs to execute on a different processor architecture.
 
 .. _SWIG: http://www.swig.org/
 
-.. _UIO framework: https://www.kernel.org/doc/htmldocs/uio-howto/about.html
+.. _UIO framework: https://www.kernel.org/doc/html/latest/driver-api/uio-howto.html
 
 .. _QEMU: http://wiki.qemu.org/Main_Page
 

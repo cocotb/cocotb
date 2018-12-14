@@ -1,4 +1,4 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -183,7 +183,7 @@ class SimLogFormatter(logging.Formatter):
         return prefix + pad.join(msg.split('\n'))
 
     def format(self, record):
-        """pretify the log output, annotate with simulation time"""
+        """Prettify the log output, annotate with simulation time"""
         if record.args:
             msg = record.msg % record.args
         else:
@@ -200,14 +200,14 @@ class SimColourLogFormatter(SimLogFormatter):
     """Log formatter to provide consistent log message handling."""
     loglevel2colour = {
         logging.DEBUG   :       "%s",
-        logging.INFO    :       ANSI.BLUE_FG + "%s" + ANSI.DEFAULT,
-        logging.WARNING :       ANSI.YELLOW_FG + "%s" + ANSI.DEFAULT,
-        logging.ERROR   :       ANSI.RED_FG + "%s" + ANSI.DEFAULT,
-        logging.CRITICAL:       ANSI.RED_BG + ANSI.BLACK_FG + "%s" +
-                                ANSI.DEFAULT}
+        logging.INFO    :       ANSI.COLOR_INFO + "%s" + ANSI.COLOR_DEFAULT,
+        logging.WARNING :       ANSI.COLOR_WARNING + "%s" + ANSI.COLOR_DEFAULT,
+        logging.ERROR   :       ANSI.COLOR_ERROR + "%s" + ANSI.COLOR_DEFAULT,
+        logging.CRITICAL:       ANSI.COLOR_CRITICAL + "%s" + ANSI.COLOR_DEFAULT,
+    }
 
     def format(self, record):
-        """pretify the log output, annotate with simulation time"""
+        """Prettify the log output, annotate with simulation time"""
 
         if record.args:
             msg = record.msg % record.args
