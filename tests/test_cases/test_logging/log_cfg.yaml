@@ -20,4 +20,4 @@ loggers:
         handlers:
             - console
     cocotb.dummy.Dummy:
-        level: DEEP_DEBUG
+        level: DIAGNOSTIC

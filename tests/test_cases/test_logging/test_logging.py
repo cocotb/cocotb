@@ -23,8 +23,9 @@ def log(hdr):
     yield Timer(1, units='ns')
 
     logging.critical(hdr,header=True)
-    logging.deep_debug('Top Logger is DEEP_DEBUG')
+    logging.diagnostic('Top Logger is DIAGNOSTIC')
     logging.debug('Top Logger is DEBUG')
+    logging.verbose('Top Logger is VERBOSE')
     logging.info('Top Logger is INFO')
     logging.warning('Top Logger is WARNING')
     logging.error('Top Logger is ERROR')
@@ -49,14 +50,14 @@ def t01_basic_logging(dut):
     yield log(s)
 
     # Directly access a Logger to set the Level
-    logging.SimLog(mod='dummy', cls='Dummy').setLevel(logging.DEEP_DEBUG)
+    logging.SimLog(mod='dummy', cls='Dummy').setLevel(logging.DIAGNOSTIC)
 
-    s  = "Update the class log level to DEEP_DEBUG:\n"
+    s  = "Update the class log level to DIAGNOSTIC:\n"
     s += "        Top Logger - cocotb: Will log all messages of INFO and above\n"
     s += "     Module Logger -  dummy: Log Level inherited from Top Logger, i.e. INFO and above\n"
-    s += "      Class Logger -  Dummy: Will log all messages of DEEP_DEBUG and above\n"
-    s += "   Instance Logger -    abc: Log Level inherited from Class Logger, i.e. DEEP_DEBUG and above\n"
-    s += "   Instance Logger -    def: Log Level inherited from Class Logger, i.e. DEEP_DEBUG and above\n"
+    s += "      Class Logger -  Dummy: Will log all messages of DIAGNOSTIC and above\n"
+    s += "   Instance Logger -    abc: Log Level inherited from Class Logger, i.e. DIAGNOSTIC and above\n"
+    s += "   Instance Logger -    def: Log Level inherited from Class Logger, i.e. DIAGNOSTIC and above\n"
     s += "\n"
     s += "                    console: Will display any message actually logged\n"
     s += "                       file: N/A"
@@ -109,14 +110,14 @@ def t02_dflt_config(dut):
 def t03_helper_function(dut):
     # Configure with the defult configuration
     current = cocotb.cocotbLogGetLevel()
-    cocotb.cocotbLogSetLevel(logging.DEEP_DEBUG)
+    cocotb.cocotbLogSetLevel(logging.DIAGNOSTIC)
 
-    s  = "Set the top logger level to DEEP_DEBUG:\n"
-    s += "        Top Logger - cocotb: Will log all messages of DEEP_DEBUG and above\n"
-    s += "     Module Logger -  dummy: Log Level inherited from Top Logger, i.e. DEEP_DEBUG and above\n"
-    s += "      Class Logger -  Dummy: Log Level inherited from Module Logger, i.e. DEEP_DEBUG and above\n"
-    s += "   Instance Logger -    abc: Log Level inherited from Class Logger, i.e. DEEP_DEBUG and above\n"
-    s += "   Instance Logger -    def: Log Level inherited from Class Logger, i.e. DEEP_DEBUG and above\n"
+    s  = "Set the top logger level to DIAGNOSTIC:\n"
+    s += "        Top Logger - cocotb: Will log all messages of DIAGNOSTIC and above\n"
+    s += "     Module Logger -  dummy: Log Level inherited from Top Logger, i.e. DIAGNOSTIC and above\n"
+    s += "      Class Logger -  Dummy: Log Level inherited from Module Logger, i.e. DIAGNOSTIC and above\n"
+    s += "   Instance Logger -    abc: Log Level inherited from Class Logger, i.e. DIAGNOSTIC and above\n"
+    s += "   Instance Logger -    def: Log Level inherited from Class Logger, i.e. DIAGNOSTIC and above\n"
     s += "\n"
     s += "                    console: Will display any message actually logged\n"
     s += "                       file: N/A"
@@ -167,7 +168,7 @@ def t06_file_cfg(dut):
     s += "        Top Logger - cocotb: Will log all messages of INFO and above\n"
     s += "     Module Logger -  dummy: Log Level inherited from Top Logger, i.e. INFO and above\n"
     s += "      Class Logger -  Dummy: Log Level inherited from Top Logger, i.e. INFO and above\n"
-    s += "   Instance Logger -    abc: Will log all messages of DEEP_DEBUG and above\n"
+    s += "   Instance Logger -    abc: Will log all messages of DIAGNOSTIC and above\n"
     s += "   Instance Logger -    def: Log Level inherited from Top Logger, i.e. INFO and above\n"
     s += "\n"
     s += "                    console: Will display any message actually logged\n"
@@ -197,9 +198,9 @@ def t06_file_cfg(dut):
             s  = "Using the configuration in log_cfg.yaml:\n"
             s += "        Top Logger - cocotb: Will log all messages of INFO and above\n"
             s += "     Module Logger -  dummy: Log Level inherited from Top Logger, i.e. INFO and above\n"
-            s += "      Class Logger -  Dummy: Will log all messages of DEEP_DEBUG and above\n"
-            s += "   Instance Logger -    abc: Log Level inherited from Class Logger, i.e. DEEP_DEBUG and above\n"
-            s += "   Instance Logger -    def: Log Level inherited from Class Logger, i.e. DEEP_DEBUG and above\n"
+            s += "      Class Logger -  Dummy: Will log all messages of DIAGNOSTIC and above\n"
+            s += "   Instance Logger -    abc: Log Level inherited from Class Logger, i.e. DIAGNOSTIC and above\n"
+            s += "   Instance Logger -    def: Log Level inherited from Class Logger, i.e. DIAGNOSTIC and above\n"
             s += "\n"
             s += "                    console: Will display any message of WARNING or higher\n"
             s += "                       file: N/A"
