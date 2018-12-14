@@ -764,7 +764,7 @@ class ColumnFormatter(logging.Formatter):
                 columns (list): List of formats for persistent columns
               show_cols (list): List of columns to display (None means all, Empty only shows the message)
 
-        Excetpions:
+        Exceptions:
                       TypeError: 'columns' not a list
             InvalidColumnFormat: Issue processing the column format
         """
