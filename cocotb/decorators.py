@@ -173,6 +173,8 @@ class RunningCoroutine(object):
             otherwise return true"""
         return not self._finished
 
+    __bool__ = __nonzero__
+
     def sort_name(self):
         if self.stage is None:
             return "%s.%s" % (self.module, self.funcname)
