@@ -14,7 +14,8 @@ Contents:
    library_reference
    endian_swapper
    ping_tun_tap
-   hal_cosimulation 
+   hal_cosimulation
+   troubleshooting
    roadmap
    simulator_support
 

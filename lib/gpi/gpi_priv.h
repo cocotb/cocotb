@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -78,7 +78,7 @@ private:
 public:
     GpiImplInterface *m_impl;                  // VPI/VHPI/FLI routines
     char *gpi_copy_name(const char *name);     // Might not be needed
-    bool is_this_impl(GpiImplInterface *impl); // Is the passed interface the one this object uses
+    bool is_this_impl(GpiImplInterface *impl); // Is the passed interface the one this object uses?
 
 protected:
     void *m_obj_hdl;
@@ -88,7 +88,7 @@ protected:
 // An object is any item in the hierarchy
 // Provides methods for iterating through children or finding by name
 // Initial object is returned by call to GpiImplInterface::get_root_handle()
-// Susequent operations to get children go through this handle.
+// Subsequent operations to get children go through this handle.
 // GpiObjHdl::get_handle_by_name/get_handle_by_index are really factories
 // that construct an object derived from GpiSignalObjHdl or GpiObjHdl
 class GpiObjHdl : public GpiHdl {
@@ -196,11 +196,11 @@ public:
                                        m_cb_data(NULL),
                                        m_state(GPI_FREE) { }
     // Pure virtual functions for derived classes
-    virtual int arm_callback(void) = 0;         // Register with siumlator
+    virtual int arm_callback(void) = 0;         // Register with simulator
     virtual int run_callback(void);         // Entry point from simulator
     virtual int cleanup_callback(void) = 0;     // Cleanup the callback, arm can be called after
 
-    // Set the data to be used for run callback, seperate to arm_callback so data can be re-used
+    // Set the data to be used for run callback, separate to arm_callback so data can be re-used
     int set_user_data(int (*gpi_function)(const void*), const void *data);
     const void *get_user_data(void);
 
@@ -242,8 +242,8 @@ public:
     enum Status {
         NATIVE,             // Fully resolved object was created
         NATIVE_NO_NAME,     // Native object was found but unable to fully create
-        NOT_NATIVE,         // Mon native object was found but we did get a name
-        NOT_NATIVE_NO_NAME, // Mon native object was found without a name
+        NOT_NATIVE,         // Non-native object was found but we did get a name
+        NOT_NATIVE_NO_NAME, // Non-native object was found without a name
         END
     };
 
@@ -312,14 +312,14 @@ public:
     virtual void get_sim_time(uint32_t *high, uint32_t *low) = 0;
     virtual void get_sim_precision(int32_t *precision) = 0;
 
-    /* Hierachy related */
+    /* Hierarchy related */
     virtual GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *parent) = 0;
     virtual GpiObjHdl *get_root_handle(const char *name) = 0;
     virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) = 0;
 
-    /* Callback related, these may (will) return the same handle*/
+    /* Callback related, these may (will) return the same handle */
     virtual GpiCbHdl *register_timed_callback(uint64_t time_ps) = 0;
     virtual GpiCbHdl *register_readonly_callback(void) = 0;
     virtual GpiCbHdl *register_nexttime_callback(void) = 0;
@@ -333,7 +333,7 @@ private:
     std::string m_name;
 };
 
-/* Called from implementaton layers back up the stack */
+/* Called from implementation layers back up the stack */
 int gpi_register_impl(GpiImplInterface *func_tbl);
 
 void gpi_embed_init(gpi_sim_info_t *info);

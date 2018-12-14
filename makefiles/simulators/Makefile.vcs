@@ -67,7 +67,7 @@ $(SIM_BUILD)/pli.tab :
 $(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(COCOTB_LIBS) $(COCOTB_VPI_LIB) $(CUSTOM_COMPILE_DEPS)
 	cd $(SIM_BUILD) && \
     LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) TOPLEVEL=$(TOPLEVEL) \
-    $(CMD) +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -debug -load libvpi.so $(COMPILE_ARGS) $(VERILOG_SOURCES)
+    $(CMD) $(PLUSARGS) +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -debug -load libvpi.so $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 results.xml: $(SIM_BUILD)/simv $(PYTHON_FILES) $(CUSTOM_SIM_DEPS)

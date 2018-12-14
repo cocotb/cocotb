@@ -20,7 +20,9 @@ MODULE=$(TOPLEVEL)_cocotb
 
 CUSTOM_SIM_DEPS=$(CWD)/Makefile
 
-VSIM_ARGS=-t 1ps
+ifeq ($(SIM),questa)
+SIM_ARGS=-t 1ps
+endif
 
 include $(shell cocotb-path)/makefiles/Makefile.inc
 include $(shell cocotb-path)/makefiles/Makefile.sim

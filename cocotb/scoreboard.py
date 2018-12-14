@@ -95,12 +95,12 @@ class Scoreboard(object):
         # Compare the types
         if strict_type and type(got) != type(exp):
             self.errors += 1
-            log.error("Received transaction is a different type to expected "
-                      "transaction")
-            log.info("Got: %s but expected %s" %
+            log.error("Received transaction type is different than expected")
+            log.info("Received: %s but expected %s" %
                      (str(type(got)), str(type(exp))))
             if self._imm:
-                raise TestFailure("Received transaction of wrong type")
+                raise TestFailure("Received transaction of wrong type. "
+                                  "Set strict_type=False to avoid this.")
             return
         # Or convert to a string before comparison
         elif not strict_type:

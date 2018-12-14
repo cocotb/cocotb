@@ -504,6 +504,8 @@ class Lock(PythonTrigger):
         """Provide boolean of a Lock"""
         return self.locked
 
+    __bool__ = __nonzero__
+
 
 class NullTrigger(Trigger):
     """

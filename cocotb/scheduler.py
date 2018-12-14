@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -114,7 +114,7 @@ class external_waiter(object):
 
     def thread_resume(self):
         self._propogate_state(external_state.RUNNING)
-        
+
     def thread_wait(self):
         if _debug:
             self._log.debug("Waiting for the condition lock %s" % threading.current_thread())
@@ -286,7 +286,7 @@ class Scheduler(object):
         # Issue previous test result, if there is one
         if self._test_result is not None:
             if _debug:
-                self.log.debug("Issue test result to regresssion object")
+                self.log.debug("Issue test result to regression object")
             cocotb.regression.handle_result(self._test_result)
             self._test_result = None
         if self._entrypoint is not None:
@@ -499,7 +499,7 @@ class Scheduler(object):
 
     def run_in_executor(self, func, *args, **kwargs):
         """
-        Run the corouting in a seperate execution thread
+        Run the coroutine in a separate execution thread
         and return a yieldable object for the caller
         """
         # Create a thread
@@ -606,7 +606,7 @@ class Scheduler(object):
             self.finish_test(test_result)
             return
 
-        # Normal co-routine completion
+        # Normal coroutine completion
         except cocotb.decorators.CoroutineComplete as exc:
             if _debug:
                 self.log.debug("Coroutine completed: %s" % str(coroutine))
@@ -618,31 +618,60 @@ class Scheduler(object):
             return
 
         # Queue current routine to schedule when the nested routine exits
+        yield_successful = False
         if isinstance(result, cocotb.decorators.RunningCoroutine):
 
             if not result.has_started():
                 self.queue(result)
                 if _debug:
-                    self.log.debug("Scheduling nested co-routine: %s" %
+                    self.log.debug("Scheduling nested coroutine: %s" %
                                    result.__name__)
             else:
                 if _debug:
-                    self.log.debug("Joining to already running co-routine: %s" %
+                    self.log.debug("Joining to already running coroutine: %s" %
                                    result.__name__)
 
             new_trigger = result.join()
             self._coroutine_yielded(coroutine, [new_trigger])
+            yield_successful = True
 
         elif isinstance(result, Trigger):
             if _debug:
                 self.log.debug("%s: is instance of Trigger" % result)
             self._coroutine_yielded(coroutine, [result])
+            yield_successful = True
 
-        elif (isinstance(result, list) and
-                not [t for t in result if not isinstance(t, Trigger)]):
-            self._coroutine_yielded(coroutine, result)
+        # If we get a list, make sure it's a list of triggers or coroutines.
+        # For every coroutine, replace it with coroutine.join().
+        # This could probably be done more elegantly via list comprehension.
+        elif isinstance(result, list):
+            new_triggers = []
+            for listobj in result:
+                if isinstance(listobj, Trigger):
+                    new_triggers.append(listobj)
+                elif isinstance(listobj, cocotb.decorators.RunningCoroutine):
+                    if _debug:
+                        self.log.debug("Scheduling coroutine in list: %s" %
+                                       listobj.__name__)
+                    if not listobj.has_started():
+                        self.queue(listobj)
+                    new_trigger = listobj.join()
+                    new_triggers.append(new_trigger)
+                else:
+                    # If we encounter something not a coroutine or trigger,
+                    # set the success flag to False and break out of the loop.
+                    yield_successful = False
+                    break
 
-        else:
+            # Make sure the lists are the same size. If they are not, it means
+            # it contained something not a trigger/coroutine, so do nothing.
+            if len(new_triggers) == len(result):
+                self._coroutine_yielded(coroutine, new_triggers)
+                yield_successful = True
+
+        # If we didn't successfully yield anything, thrown an error.
+        # Do it this way to make the logic in the list case simpler.
+        if not yield_successful:
             msg = ("Coroutine %s yielded something the scheduler can't handle"
                    % str(coroutine))
             msg += ("\nGot type: %s repr: %s str: %s" %
@@ -694,7 +723,7 @@ class Scheduler(object):
     def finish_scheduler(self, test_result):
         """Directly call into the regression manager and end test
            once we return the sim will close us so no cleanup is needed"""
-        self.log.debug("Issue sim closedown result to regresssion object")
+        self.log.debug("Issue sim closedown result to regression object")
         cocotb.regression.handle_result(test_result)
 
     def cleanup(self):

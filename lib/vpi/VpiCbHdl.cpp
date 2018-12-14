@@ -1,5 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
+* Copyright (c) 2013, 2018 Potential Ventures Ltd
 * Copyright (c) 2013 SolarFlare Communications Inc
 * All rights reserved.
 *
@@ -59,7 +59,7 @@ int VpiCbHdl::arm_callback(void) {
     }
 
     // Only a problem if we have not been asked to deregister and register
-    // in the same simultion callback
+    // in the same simulation callback
     if (m_obj_hdl != NULL && m_state != GPI_DELETE) {
         fprintf(stderr,
                 "We seem to already be registered, deregistering %s!\n",
@@ -99,7 +99,7 @@ int VpiCbHdl::cleanup_callback(void)
         }
 
         if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
-            LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
+            LOG_CRITICAL("VPI: unable to remove callback : ABORTING");
         }
 
         check_vpi_error();
@@ -107,7 +107,7 @@ int VpiCbHdl::cleanup_callback(void)
 #ifndef MODELSIM
         /* This is disabled for now, causes a small leak going to put back in */
         if (!(vpi_free_object(get_handle<vpiHandle>()))) {
-            LOG_CRITICAL("VPI: unbale to free handle : ABORTING");
+            LOG_CRITICAL("VPI: unable to free handle : ABORTING");
         }
 #endif
     }
@@ -129,7 +129,7 @@ int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     /* Need to determine if this is a pseudo-handle to be able to select the correct range */
     std::string hdl_name = vpi_get_str(vpiName, hdl);
 
-    /* Removing the hdl_name from the name will leave the psuedo-indices */
+    /* Removing the hdl_name from the name will leave the pseudo-indices */
     if (hdl_name.length() < name.length()) {
         std::string idx_str = name.substr(hdl_name.length());
 
@@ -163,7 +163,7 @@ int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
         }
 
         if (rangeHdl == NULL) {
-            LOG_CRITICAL("Unable to get Range for indexable object");
+            LOG_CRITICAL("Unable to get range for indexable object");
         } else {
             vpi_free_object(iter); // Need to free iterator since exited early
 
@@ -184,7 +184,7 @@ int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
         check_vpi_error();
         m_range_right = val.value.integer;
     } else {
-        LOG_CRITICAL("Unable to get Range for indexable object");
+        LOG_CRITICAL("Unable to get range for indexable object");
     }
 
     /* vpiSize will return a size that is incorrect for multi-dimensional arrays so use the range
@@ -207,7 +207,6 @@ int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
 int VpiObjHdl::initialise(std::string &name, std::string &fq_name) {
     char * str;
     vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
-
     str = vpi_get_str(vpiDefName, hdl);
     if (str != NULL)
         m_definition_name = str;
@@ -259,7 +258,7 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
                         check_vpi_error();
                         m_range_right = val.value.integer;
                     } else {
-                        LOG_CRITICAL("Unable to get Range for indexable object");
+                        LOG_CRITICAL("Unable to get range for indexable object");
                     }
                 }
                 else {
@@ -272,7 +271,7 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
                     m_range_right = val.value.integer;
                 }
 
-                LOG_DEBUG("VPI: Indexable Object initialised with range [%d:%d] and length >%d<", m_range_left, m_range_right, m_num_elems);
+                LOG_DEBUG("VPI: Indexable object initialised with range [%d:%d] and length >%d<", m_range_left, m_range_right, m_num_elems);
             }
         }
     }
@@ -495,14 +494,14 @@ int VpiTimedCbHdl::cleanup_callback(void)
 {
     switch (m_state) {
     case GPI_PRIMED:
-        /* Issue #188: Work around for modelsim that is harmless to othes too,
+        /* Issue #188: Work around for modelsim that is harmless to others too,
            we tag the time as delete, let it fire then do not pass up
            */
-        LOG_DEBUG("Not removing PRIMED timer %d\n",vpi_time.low);
+        LOG_DEBUG("Not removing PRIMED timer %d\n", vpi_time.low);
         m_state = GPI_DELETE;
         return 0;
     case GPI_DELETE:
-        LOG_DEBUG("Removing DELETE timer %d\n",vpi_time.low);
+        LOG_DEBUG("Removing DELETE timer %d\n", vpi_time.low);
     default:
         break;
     }

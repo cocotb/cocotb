@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
+''' Copyright (c) 2013, 2018 Potential Ventures Ltd
 Copyright (c) 2013 SolarFlare Communications Inc
 All rights reserved.
 
@@ -127,7 +127,7 @@ def test_callable_fail(dut):
 
     Test creates a thread to simulate another context. This thread will then
     "block" for 5 clock cycles but not using the function decorator.
-    No cycls should be seen.
+    No cycles should be seen.
     """
     global g_dut
     global test_count
@@ -169,7 +169,7 @@ def test_ext_function_return(dut):
 def test_print_sim_time(dut, base_time):
     # We are not calling out here so time should not advance
     # And should also remain consistent
-    for _ in range(10):
+    for _ in range(5):
         _t = get_sim_time('ns')
         dut._log.info("Time reported = %d", _t)
         if _t != base_time:
@@ -188,13 +188,13 @@ def clock_monitor(dut):
 
 @cocotb.test(expect_fail=False)
 def test_time_in_external(dut):
-    """Test that the simulation time does no advance if the wrapped external
-    routine does not its self yield"""
+    """Test that the simulation time does not advance if the wrapped external
+    routine does not itself yield"""
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield Timer(10, 'ns')
     time = get_sim_time('ns')
     dut._log.info("Time at start of test = %d" % time)
-    for i in range(1000):
+    for i in range(100):
         dut._log.info("Loop call %d" % i)
         yield external(test_print_sim_time)(dut, time)
 
@@ -207,7 +207,7 @@ def test_time_in_external(dut):
 
 @cocotb.test(expect_fail=False)
 def test_ext_call_return(dut):
-    """Test ability to yeild on an external non cocotb coroutine decorated
+    """Test ability to yield on an external non cocotb coroutine decorated
     function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
@@ -217,7 +217,7 @@ def test_ext_call_return(dut):
 
 @cocotb.test(expect_fail=False)
 def test_ext_call_nreturn(dut):
-    """Test ability to yeild on an external non cocotb coroutine decorated
+    """Test ability to yield on an external non cocotb coroutine decorated
     function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
@@ -271,8 +271,8 @@ def test_external_from_fork(dut):
     dut._log.info("Back from join")
 
 @cocotb.test(expect_fail=True, skip=True)
-def ztest_ext_exit_error(dut):
-    """Test that a premature exit of the sim at it's request still results in
+def test_ext_exit_error(dut):
+    """Test that a premature exit of the sim at its request still results in
     the clean close down of the sim world"""
     yield external(test_ext_function)(dut)
     yield Timer(1000)

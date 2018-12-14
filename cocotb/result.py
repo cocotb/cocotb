@@ -39,14 +39,14 @@ def raise_error(obj, msg):
         obj has a log method
         msg is a string
     """
-    exc_type, exc_value, exc_traceback = sys.exc_info()
+    exc_info = sys.exc_info()
     # 2.6 cannot use named access
     if sys.version_info[0] >= 3:
         buff = StringIO()
-        traceback.print_tb(exc_traceback, file=buff)
+        traceback.print_exception(*exc_info, file=buff)
     else:
         buff_bytes = BytesIO()
-        traceback.print_tb(exc_traceback, file=buff_bytes)
+        traceback.print_exception(*exc_info, file=buff_bytes)
         buff = StringIO(buff_bytes.getvalue().decode("UTF-8"))
     obj.log.error("%s\n%s" % (msg, buff.getvalue()))
     exception = TestError(msg)
@@ -66,14 +66,12 @@ def create_error(obj, msg):
     return TestError("Creating error traceback failed")
 
 
-class ReturnValue(StopIteration):
+class ReturnValue(Exception):
     def __init__(self, retval):
-        # The base class in python >= 3.3 holds a return value too
-        super(ReturnValue, self).__init__(retval)
         self.retval = retval
 
 
-class TestComplete(StopIteration):
+class TestComplete(Exception):
     """
         Exceptions are used to pass test results around.
     """
@@ -83,7 +81,7 @@ class TestComplete(StopIteration):
         self.stderr = StringIO()
 
 
-class ExternalException(StopIteration):
+class ExternalException(Exception):
     def __init__(self, exception):
         self.exception = exception
 

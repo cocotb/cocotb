@@ -455,5 +455,5 @@ def test_extended_identifiers(dut):
     yield Timer(2000)
 
     tlog.info("Checking extended identifiers.")
-    _check_type(tlog, dut._id("\\ext_id\\",extended=False), ModifiableObject)
+    _check_type(tlog, dut._id("\\ext_id\\", extended=False), ModifiableObject)
     _check_type(tlog, dut._id("!"), ModifiableObject)

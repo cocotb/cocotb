@@ -45,6 +45,9 @@ else
     export IUS_BIN_DIR
 endif
 
+EXTRA_ARGS += $(COMPILE_ARGS)
+EXTRA_ARGS += $(SIM_ARGS)
+
 ifneq ($(ARCH),i686)
 EXTRA_ARGS += -64
 endif
