@@ -36,7 +36,7 @@ import threading
 from io import StringIO, BytesIO
 
 import cocotb
-from cocotb.log import SimLog
+from cocotb.log import SimLog, DEBUG
 from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger, Join
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
@@ -187,7 +187,7 @@ class RunningTest(RunningCoroutine):
     class ErrorLogHandler(logging.Handler):
         def __init__(self, fn):
             self.fn = fn
-            logging.Handler.__init__(self, level=logging.DEBUG)
+            logging.Handler.__init__(self, level=DEBUG)
 
         def handle(self, record):
             self.fn(self.format(record))
@@ -204,7 +204,7 @@ class RunningTest(RunningCoroutine):
         self.stage = parent.stage
 
         self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
-        cocotb.log.addHandler(self.handler)
+        SimLog().addHandler(self.handler)
 
     def send(self, value):
         if not self.started:
