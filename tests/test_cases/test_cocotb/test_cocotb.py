@@ -594,22 +594,6 @@ class StrCallCounter(object):
         return "__str__ called %d time(s)" % self.str_counter
 
 @cocotb.test()
-def test_logging_with_args(dut):
-    counter = StrCallCounter()
-    dut._log.logger.setLevel(logging.INFO)  # To avoid logging debug message, to make next line run without error
-    dut._log.debug("%s", counter)
-    assert counter.str_counter == 0
-
-    dut._log.info("%s", counter)
-    assert counter.str_counter == 1
-
-    dut._log.info("No substitution")
-
-    dut._log.warning("Testing multiple line\nmessage")
-
-    yield Timer(100)  # Make it do something with time
-
-@cocotb.test()
 def test_clock_cycles(dut):
     """
     Test the ClockCycles Trigger
