@@ -184,7 +184,16 @@ class RunningCoroutine(object):
 class RunningTest(RunningCoroutine):
     """Add some useful Test functionality to a RunningCoroutine"""
 
+    class ErrorLogHandler(logging.Handler):
+        def __init__(self, fn):
+            self.fn = fn
+            logging.Handler.__init__(self, level=logging.DEBUG)
+
+        def handle(self, record):
+            self.fn(self.format(record))
+
     def __init__(self, inst, parent):
+        self.error_messages = []
         RunningCoroutine.__init__(self, inst, parent)
         self.started = False
         self.start_time = 0
@@ -194,8 +203,12 @@ class RunningTest(RunningCoroutine):
         self.skip = parent.skip
         self.stage = parent.stage
 
+        self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
+        cocotb.log.addHandler(self.handler)
+
     def send(self, value):
         if not self.started:
+            self.error_messages = []
             self.log.info("Starting test: \"%s\"\nDescription: %s" %
                           (self.funcname, self.__doc__))
             self.start_time = time.time()
@@ -208,19 +221,23 @@ class RunningTest(RunningCoroutine):
             self.log.debug("Sending trigger %s" % (str(value)))
             return self._coro.send(value)
         except TestComplete as e:
-            if isinstance(e, TestFailure) and not self.expect_fail:
-                self.log.error(str(e))
-            elif isinstance(e, TestError) and not self.expect_error:
-                self.log.error(str(e))
+            if isinstance(e, TestFailure):
+                self.log.warning(str(e))
             else:
                 self.log.info(str(e))
 
+            buff = StringIO()
+            for message in self.error_messages:
+                print(message, file=buff)
+            e.stderr.write(buff.getvalue())
             raise
         except StopIteration:
             raise TestSuccess()
         except Exception as e:
             raise raise_error(self, "Send raised exception:")
 
+    def _handle_error_message(self, msg):
+        self.error_messages.append(msg)
 
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
