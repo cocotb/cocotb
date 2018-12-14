@@ -31,15 +31,15 @@
 
 # if not explicitly set, auto-detect python dir from system path
 ifeq ($(PYTHON_DIR),)
-PYTHON_DIR = $(shell dirname $(shell which python))
+	PYTHON_DIR ?= $(shell dirname $(shell which python))
 endif
 
 # make sure python dir was set properly
 ifeq ($(PYTHON_DIR),)
-$(error "Path to Python directory must be included in system path or defined in PYTHON_DIR environment variable")
+	$(error "Path to Python directory must be included in system path or defined in PYTHON_DIR environment variable")
 endif
 
-PYTHON_BIN=$(PYTHON_DIR)/python.exe
+PYTHON_BIN?=$(PYTHON_DIR)/python.exe
 
 # We might work with other Python versions
 LOCAL_PYTHON_VERSION?=$(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print( distutils.sysconfig.get_python_version() )')
