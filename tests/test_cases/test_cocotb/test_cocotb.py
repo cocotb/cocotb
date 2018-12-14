@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
 import sys
 import textwrap
+import warnings
 
 """
 A set of tests that demonstrate cocotb functionality
@@ -633,7 +634,12 @@ def test_binary_value(dut):
     values in a style familiar to rtl coders.
     """
 
-    vec = BinaryValue(value=0, bits=16)
+    vec = BinaryValue(value=0, n_bits=16)
+
+    dut._log.info("Checking read access to the n_bits property")
+    if vec.n_bits != 16:
+        raise TestFailure("n_bits is not set correctly - expected %d, got %d" % (16, vec.n_bits))
+
     dut._log.info("Checking default endianness is Big Endian.")
     if not vec.big_endian:
         raise TestFailure("The default endianness is Little Endian - was expecting Big Endian.")
@@ -644,7 +650,7 @@ def test_binary_value(dut):
     vec = BinaryValue(value=0, bits=16, bigEndian=False)
     if vec.big_endian:
         raise TestFailure("Our BinaryValue object is reporting it is Big Endian - was expecting Little Endian.")
-    for x in range(vec._bits):
+    for x in range(vec.n_bits):
         vec[x] = '1'
         dut._log.info("Trying vec[%s] = 1" % x)
         expected_value = 2**(x+1) - 1
@@ -666,6 +672,42 @@ def test_binary_value(dut):
     dut._log.info("vec[7:0] = 'b%s" % vec[7:0].binstr)
     dut._log.info("vec[15:8] = 'b%s" % vec[15:8].binstr)
     dut._log.info("vec = 'b%s" % vec.binstr)
+
+    yield Timer(100)  # Make it do something with time
+
+
+@cocotb.test()
+def test_binary_value_compat(dut):
+    """
+    Test backwards-compatibility wrappers for BinaryValue
+    """
+
+    dut._log.info("Checking the renaming of bits -> n_bits")
+    vec = BinaryValue(value=0, bits=16)
+    if vec.n_bits != 16:
+        raise TestFailure("n_bits is not set correctly - expected %d, got %d" % (16, vec.n_bits))
+
+    vec = BinaryValue(0, 16)
+    if vec.n_bits != 16:
+        raise TestFailure("n_bits is not set correctly - expected %d, got %d" % (16, vec.n_bits))
+
+    try:
+        vec = BinaryValue(value=0, bits=16, n_bits=17)
+    except TypeError:
+        pass
+    else:
+        raise TestFailure("Expected TypeError when using bits and n_bits at the same time.")
+
+    # Test for the DeprecationWarning when using |bits|
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("error")
+
+        try:
+            vec = BinaryValue(value=0, bits=16)
+        except DeprecationWarning:
+            pass
+        else:
+            TestFailure("Expected DeprecationWarning when using bits instead of n_bits.")
 
     yield Timer(100)  # Make it do something with time
 
