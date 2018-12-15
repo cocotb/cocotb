@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     A collections of triggers which a testbench can 'yield'
 """
 import os
+import weakref
 
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
@@ -520,12 +521,25 @@ class NullTrigger(Trigger):
         callback(self)
 
 
-class _Join(PythonTrigger):
+class Join(PythonTrigger):
     """
     Join a coroutine, firing when it exits
     """
+    # Ensure that each coroutine has at most one join trigger.
+    # Using a weak dictionary ensures we don't create a reference cycle
+    _instances = weakref.WeakValueDictionary()
+
+    def __new__(cls, coroutine):
+        # find the existing instance, if possible - else create a new one
+        try:
+            return cls._instances[coroutine]
+        except KeyError:
+            instance = super(Join, cls).__new__(cls)
+            cls._instances[coroutine] = instance
+            return instance
+
     def __init__(self, coroutine):
-        PythonTrigger.__init__(self)
+        super(Join, self).__init__()
         self._coroutine = coroutine
         self.pass_retval = True
 
@@ -533,13 +547,11 @@ class _Join(PythonTrigger):
     def retval(self):
         return self._coroutine.retval
 
-    # def prime(self, callback):
-        # """Register our calback for when the coroutine exits"""
-        # Trigger.prime(self)
+    def prime(self, callback):
+        if self._coroutine._finished:
+            callback(self)
+        else:
+            super(Join, self).prime(callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self._coroutine.__name__
-
-
-def Join(coro):
-    return coro._join
