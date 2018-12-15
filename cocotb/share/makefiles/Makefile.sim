@@ -49,7 +49,7 @@ $(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available sim
 endif
 
 # We want to include the Python files from Cocotb in the dependencies
-CUSTOM_SIM_DEPS += $(shell find $(SIM_ROOT)/../../ -name "*.py")
+CUSTOM_SIM_DEPS += $(shell find $(abspath $(SIM_ROOT)/../) -name "*.py")
 
 include $(SIM_ROOT)/lib/Makefile
 include $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
