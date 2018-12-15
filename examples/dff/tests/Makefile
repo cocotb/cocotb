@@ -24,8 +24,8 @@ ifeq ($(SIM),questa)
 SIM_ARGS=-t 1ps
 endif
 
-include $(shell cocotb-config)/makefiles/Makefile.inc
-include $(shell cocotb-config)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 # list all required Python files here
 sim: $(MODULE).py

@@ -54,9 +54,6 @@ CUSTOM_SIM_DEPS += $(shell find $(SIM_ROOT)/../../ -name "*.py")
 include $(SIM_ROOT)/lib/Makefile
 include $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 
-#include $(SIM_ROOT)/version
-export VERSION=1.0.8
-
 $(SIM_BUILD):
 	mkdir -p $@
 

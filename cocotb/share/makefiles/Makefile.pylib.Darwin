@@ -39,6 +39,11 @@ endif
 NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
 
+VERSION?=$(shell $(PYTHON_BIN) -c 'import pkg_resources; print(pkg_resources.get_distribution("cocotb").version)')
+export VERSION
+
+PYTHONPATH := $(PYTHONPATH):$(abspath  $(SIM_ROOT)/../..)
+
 # We might work with other Python versions
 PYTHON_MAJOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info[0])")
 PYTHON_MINOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info[1])")

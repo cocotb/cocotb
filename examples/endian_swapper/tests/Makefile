@@ -57,8 +57,8 @@ CUSTOM_COMPILE_DEPS = hal
 
 LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
 
-include $(shell cocotb-config)/makefiles/Makefile.inc
-include $(shell cocotb-config)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 .PHONY: hal
 hal:

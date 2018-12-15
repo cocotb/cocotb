@@ -29,7 +29,7 @@
 
 all: test
 
-include $(shell cocotb-config)/makefiles/Makefile.inc
+include cocotb/share/makefiles/Makefile.inc
 include version
 
 clean:

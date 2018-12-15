@@ -29,7 +29,7 @@ jobs:
         - docker ps -a
       script:
         - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27' 
-        - docker exec -it -e TRAVIS=true -e COCOTB=/build-py2/src cocotb bash -lc 'source /build-py2/venv/bin/activate; cd /build-py2/src; python setup.py develop; make test'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'source /build-py2/venv/bin/activate; cd /build-py2/src; python setup.py develop; make test'
         - echo -e 'travis_fold:end:cocotb_py27'
     - stage: SimTests
       # env only here for easier visibility in travis-ci
@@ -38,6 +38,6 @@ jobs:
       before_install: *docker_prep 
       script:
         - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
-        - docker exec -it -e TRAVIS=true -e COCOTB=/build-py3/src cocotb bash -lc 'set -x; source /build-py3/venv/bin/activate; cd /build-py3/src;  python setup.py develop; make test'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'set -x; source /build-py3/venv/bin/activate; cd /build-py3/src;  python setup.py develop; make test'
         - echo 'travis_fold:end:cocotb_py35'
 

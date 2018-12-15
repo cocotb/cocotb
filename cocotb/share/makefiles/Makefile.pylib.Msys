@@ -41,6 +41,11 @@ endif
 
 PYTHON_BIN?=$(PYTHON_DIR)/python.exe
 
+VERSION?=$(shell $(PYTHON_BIN) -c 'import pkg_resources; print(pkg_resources.get_distribution("cocotb").version)')
+export VERSION
+
+PYTHONPATH := $(PYTHONPATH);$(abspath  $(SIM_ROOT)/../..)
+
 # We might work with other Python versions
 LOCAL_PYTHON_VERSION?=$(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print( distutils.sysconfig.get_python_version() )')
 PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from distutils import sysconfig; print( sysconfig.get_config_var("DESTSHARED") )')

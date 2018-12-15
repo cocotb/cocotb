@@ -30,7 +30,7 @@ VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
 
 MODULE := test_mean
 
-include $(shell cocotb-path)/makefiles/Makefile.inc
-include $(shell cocotb-path)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif
