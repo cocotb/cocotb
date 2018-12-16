@@ -280,12 +280,13 @@ def FallingEdge(signal):
     return signal._f_edge
 
 
-class ClockCycles(_Edge):
+class ClockCycles(GPITrigger):
     """
     Execution will resume after N rising edges or N falling edges
     """
     def __init__(self, signal, num_cycles, rising=True):
-        _Edge.__init__(self, signal)
+        super(ClockCycles, self).__init__()
+        self.signal = signal
         self.num_cycles = num_cycles
         if rising is True:
             self._rising = 1
