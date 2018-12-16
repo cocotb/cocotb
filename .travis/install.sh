@@ -3,7 +3,6 @@ set -e
 
 if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     # Manually install Python
-    brew install openssl readline
     brew outdated pyenv || brew upgrade pyenv
     # virtualenv doesn't work without pyenv knowledge. venv in Python 3.3
     # doesn't provide Pip by default. So, use `pyenv-virtualenv <https://github.com/yyuu/pyenv-virtualenv/blob/master/README.md>`_.
@@ -14,7 +13,7 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     # modify the Bash environment. ??? So, I hand-set the variables instead.
     export PYENV_VERSION=$PYTHON
     export PATH="/Users/travis/.pyenv/shims:${PATH}"
-    pyenv-virtualenv venv
+    pyenv virtualenv venv
     source venv/bin/activate
     # A manual check that the correct version of Python is running.
     python --version
