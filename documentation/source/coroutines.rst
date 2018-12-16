@@ -76,7 +76,8 @@ allowing them to distinguish which trigger fired:
             raise TestFailure("Timed out waiting for packet")
 
 
-Coroutines can be forked for parallel operation within a function of that code and the forked code.
+Coroutines can be forked for parallel operation within a function of that code and
+the forked code.
 
 .. code-block:: python
     @cocotb.test()
@@ -85,9 +86,10 @@ Coroutines can be forked for parallel operation within a function of that code a
         while reset is active, toggle signals
         """
         tb = uart_tb(dut)
-        cocotb.fork(Clock(dut.clk, 1000).start()) #Clock is a built in class for toggling a clock signal
-    
-        cocotb.fork(tb.reset_dut(dut.rstn,20000)) #reset_dut is a function part of the user generated uart_tb class. 
+	#Clock is a built in class for toggling a clock signal
+        cocotb.fork(Clock(dut.clk, 1000).start()) 
+        #reset_dut is a function- part of the user generated uart_tb class. 
+        cocotb.fork(tb.reset_dut(dut.rstn,20000))
     
         yield Timer(10000)
 	print("Reset is still active: %d" % dut.rstn)
@@ -118,10 +120,11 @@ Coroutines can be joined to end parallel operation within a function.
             else:
                 break
 
-Coroutines can be killed before they complete, forcing their completion before they'd naturally end.
+Coroutines can be killed before they complete, forcing their completion before
+they'd naturally end.
 
 .. code-block:: python
-    @cocotb.test(expect_fail=False)
+    @cocotb.test()
     def test_different_clocks(dut):
         clk_1mhz   = Clock(dut.clk, 1.0, units='us')
         clk_250mhz = Clock(dut.clk, 4.0, units='ns')
@@ -131,6 +134,7 @@ Coroutines can be killed before they complete, forcing their completion before t
         yield Timer(1)
         yield RisingEdge(dut.clk)
         edge_time_ns = get_sim_time(units='ns')
+	# note, isclose is a python 3.5+ feature. 
         if not isclose(edge_time_ns, start_time_ns + 1000.0):
             raise TestFailure("Expected a period of 1 us")
     
@@ -141,6 +145,7 @@ Coroutines can be killed before they complete, forcing their completion before t
         yield Timer(1)
         yield RisingEdge(dut.clk)
         edge_time_ns = get_sim_time(units='ns')
+	# note, isclose is a python 3.5+ feature
         if not isclose(edge_time_ns, start_time_ns + 4.0):
             raise TestFailure("Expected a period of 4 ns")
 
