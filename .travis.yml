@@ -6,8 +6,7 @@ git:
 
 env:
   global:
-    - ICARUS_VERILOG_VERSION=10_2
-    - MAKE_JOBS=2 # travis-ci only provides 2
+    - LINUX_ICARUS_VERILOG_VERSION=10_2
 
 cache:
   - pip
@@ -19,20 +18,17 @@ matrix:
   include:
     - os: osx
       language: generic
-      env: PYENV_VERSION=2.7.15
+      env: TRAVIS_PYTHON_VERSION=2.7.15
     - os: osx
       language: generic
-      env: PYENV_VERSION=3.5.6
+      env: TRAVIS_PYTHON_VERSION=3.4.9
     - os: osx
       language: generic
-      env: PYENV_VERSION=3.6.7
-    - os: linux
-      dist: trusty
-      language: python
-      python: 2.6
-      # flake8 does not support Python 2.6 since v3.0
-      # (http://flake8.pycqa.org/en/latest/release-notes/3.0.0.html)
-      env: NO_FLAKE8=1
+      env: TRAVIS_PYTHON_VERSION=3.6.7
+    - os: osx
+      language: generic
+      env: TRAVIS_PYTHON_VERSION=3.7.1
+
     - os: linux
       language: python
       python: 2.7
@@ -52,9 +48,7 @@ matrix:
 install:
   # The install.sh script is sourced to retain environment variables set there!
   - . ./.travis/install.sh
-  # Ensure that whatever the install.sh script does we're back in our build dir
-  - cd $TRAVIS_BUILD_DIR
 
 script:
-  - [ -z "$NO_FLAKE8" ] && flake8 --exit-zero cocotb/
+  - flake8 --exit-zero cocotb/
   - tox
