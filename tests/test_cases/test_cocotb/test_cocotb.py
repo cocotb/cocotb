@@ -712,6 +712,58 @@ def test_binary_value_compat(dut):
     yield Timer(100)  # Make it do something with time
 
 
+@cocotb.test()
+def join_finished(dut):
+    """
+    Test that joining a coroutine that has already been joined gives
+    the same result as it did the first time.
+    """
+
+    retval = None
+
+    @cocotb.coroutine
+    def some_coro():
+        yield Timer(1)
+        raise ReturnValue(retval)
+
+    coro = cocotb.fork(some_coro())
+
+    retval = 1
+    x = yield coro.join()
+    assert x == 1
+
+    # joining the second time should give the same result.
+    # we chage retval here to prove it does not run again
+    retval = 2
+    x = yield coro.join()
+    assert x == 1
+
+
+@cocotb.test()
+def test_kill_twice(dut):
+    """
+    Test that killing a coroutine that has already been killed does not crash
+    """
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+    yield Timer(1)
+    clk_gen.kill()
+    yield Timer(1)
+    clk_gen.kill()
+
+
+@cocotb.test()
+def test_join_identity(dut):
+    """
+    Test that Join() returns the same object each time
+    """
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    assert Join(clk_gen) is Join(clk_gen)
+    yield Timer(1)
+    clk_gen.kill()
+
+
+
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
