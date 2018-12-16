@@ -38,3 +38,4 @@ elif [[ $TRAVIS_OS_NAME == 'linux' ]]; then
 else
     echo Unknown OS $TRAVIS_OS_NAME, nothing to install! >&2
 fi
+
