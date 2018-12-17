@@ -24,9 +24,10 @@ RUN bash -lc "pacman --noconfirm -S \
     mingw-w64-x86_64-python2-virtualenv \
     mingw-w64-x86_64-python3 \
     mingw-w64-x86_64-python3-pip \
-    mingw-w64-x86_64-python3-virtualenv \
-    mingw-w64-x86_64-python3-tox"
+    mingw-w64-x86_64-python3-virtualenv
 RUN setx path "%path%;C:\msys64\mingw64\bin"
+
+RUN pip3 install tox
 
 RUN dir C:\msys64
 RUN dir C:\msys64\usr\bin

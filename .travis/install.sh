@@ -7,7 +7,7 @@
 #
 # - Install Python where Travis doesn't provide it itself.
 # - Install Icarus Verilog
-# - Install flake8, pytest and tox
+# - Install flake8 and tox
 #
 # For tox we use a wrapper called tox-travis which detects the targeted Python
 # version in this particular build and sets up tox correctly to run only for
@@ -31,10 +31,9 @@ if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     brew install icarus-verilog || exit 1
 
     # Install all other Python build/test dependencies
-    pip install tox-travis pytest flake8 || exit 1
+    pip install tox-travis flake8 || exit 1
 
     # Check installation
-    pytest --version
     flake8 --version
     iverilog -V 2>&1 | head -n1
 
@@ -51,10 +50,9 @@ elif [[ $TRAVIS_OS_NAME == 'linux' ]]; then
     sudo make -s install || exit 1
 
     # Install all other Python build/test dependencies
-    pip install tox-travis pytest flake8 || exit 1
+    pip install tox-travis flake8 || exit 1
 
     # Check installation
-    pytest --version
     flake8 --version
     iverilog -V 2>&1 | head -n1
 else
