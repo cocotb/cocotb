@@ -62,24 +62,24 @@ $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
 
 ifeq ($(OS),Msys)
 
-	ICARUS_DIR = $(shell dirname $(shell dirname $(shell where iverilog)))
-	EXTRA_LIBS := -lvpi
-	EXTRA_LIBDIRS := -L$(ICARUS_DIR)\lib
-	OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
-	NEW_LIB_DIR=:$(shell cygpath -u $(LIB_DIR))
-	NEW_PYTHONPATH:=$(shell python -c "import sys, os; print(':'.join(['/'+dir.replace(os.sep,'/').replace(':','') for dir in sys.path]))")
-	NEW_PYTHONPATH:=$(NEW_LIB_DIR):$(NEW_PYTHONPATH)
-	NEW_PYTHONPATH:=$(shell cygpath -u $(SIM_ROOT)):$(NEW_PYTHONPATH)
-	NEW_PYTHONPATH:=$(shell bash -c "pwd"):$(NEW_PYTHONPATH)
+ICARUS_DIR = $(shell dirname $(shell dirname $(shell where iverilog)))
+EXTRA_LIBS := -lvpi
+EXTRA_LIBDIRS := -L$(ICARUS_DIR)\lib
+OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
+NEW_LIB_DIR=:$(shell cygpath -u $(LIB_DIR))
+NEW_PYTHONPATH:=$(shell python -c "import sys, os; print(':'.join(['/'+dir.replace(os.sep,'/').replace(':','') for dir in sys.path]))")
+NEW_PYTHONPATH:=$(NEW_LIB_DIR):$(NEW_PYTHONPATH)
+NEW_PYTHONPATH:=$(shell cygpath -u $(SIM_ROOT)):$(NEW_PYTHONPATH)
+NEW_PYTHONPATH:=$(shell bash -c "pwd"):$(NEW_PYTHONPATH)
 
-	ICARUS_BIN:=$(shell cygpath -u $(ICARUS_DIR))/bin
-	PYTHON_BIN:=$(shell cygpath -u $(shell dirname $(shell where python)))
+ICARUS_BIN:=$(shell cygpath -u $(ICARUS_DIR))/bin
+PYTHON_BIN:=$(shell cygpath -u $(shell dirname $(shell where python)))
 
-	LIB_LOAD = PATH=$(NEW_LIB_DIR):$(ICARUS_BIN):$(PYTHON_BIN)
+LIB_LOAD = PATH=$(NEW_LIB_DIR):$(ICARUS_BIN):$(PYTHON_BIN)
 
 else
-	LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
-	NEW_PYTHONPATH := $(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH)
+LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
+NEW_PYTHONPATH := $(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH)
 endif
 
 results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
