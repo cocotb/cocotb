@@ -10,18 +10,28 @@ env:
 
 cache:
   - pip
-  - directories:
-    # Used by the osx builds
-    - $HOME/.pyenv_cache
+  # Caching on pyenv on osx leads to broken builds with libpython*.so.a not
+  # not found.
+  #- directories:
+  #  # Used by the osx builds
+  #  - $HOME/.pyenv_cache
 
 matrix:
   include:
+    - os: windows
+      language: cpp
+      services:
+        - docker
+
     - os: osx
       language: generic
       env: TRAVIS_PYTHON_VERSION=2.7.15
     - os: osx
       language: generic
       env: TRAVIS_PYTHON_VERSION=3.4.9
+    - os: osx
+      language: generic
+      env: TRAVIS_PYTHON_VERSION=3.5.6
     - os: osx
       language: generic
       env: TRAVIS_PYTHON_VERSION=3.6.7
@@ -44,11 +54,6 @@ matrix:
     - os: linux
       language: python
       python: 3.7
-
-    - os: windows
-      language: cpp
-      services:
-        - docker
 
 install:
   # The install.sh script is sourced to retain environment variables set there!
