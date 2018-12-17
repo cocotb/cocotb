@@ -45,10 +45,17 @@ matrix:
       language: python
       python: 3.7
 
+    - os: windows
+      language: generic
+      services:
+        - docker
+
 install:
   # The install.sh script is sourced to retain environment variables set there!
-  - . ./.travis/install.sh
+  - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; source ./.travis/install.sh; fi
 
 script:
-  - flake8 --exit-zero cocotb/
-  - tox
+  - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; flake8 --exit-zero cocotb/; fi
+  - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; tox; fi
+
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then docker build -f .travis/Dockerfile.windows . ; fi
