@@ -22,11 +22,11 @@ RUN bash -lc "pacman --noconfirm -S \
     mingw-w64-x86_64-python2 \
     mingw-w64-x86_64-python2-pip \
     mingw-w64-x86_64-python2-virtualenv \
-    mingw-w64-x86_64-python2-tox \
     mingw-w64-x86_64-python3 \
     mingw-w64-x86_64-python3-pip \
     mingw-w64-x86_64-python3-virtualenv \
     mingw-w64-x86_64-python3-tox"
-RUN setx path "%path%;C:\msys64\mingw64\bin"
 
-RUN bash -lc 'TOXENV=py2,py3 tox'
+RUN dir C:\msys64
+RUN dir C:\msys64\usr\bin
+RUN tox -e py2,py3
