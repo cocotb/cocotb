@@ -29,6 +29,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     A clock class
 """
 import os
+import itertools
+
 if "SPHINX_BUILD" in os.environ:
     simulator = None
 else:
@@ -62,9 +64,12 @@ class Clock(BaseClock):
 
     Args:
         signal (pin): The clock pin/signal to be driven.
-        period (int): The clock period. Should be an even number.
+        period (int): The clock period. Must convert to an even number of
+            timesteps.
         units (str, optional): One of (None,'fs','ps','ns','us','ms','sec').
-            Defaults to ``None``.
+            When no units are given (``None``) the timestep is determined by
+            the simulator. E.g. Cadence simulators have a default timestep of
+            'ps', so the clock will cycle every `period` picoseconds.
     """
     def __init__(self, signal, period, units=None):
         BaseClock.__init__(self, signal)
@@ -77,28 +82,25 @@ class Clock(BaseClock):
         self.mcoro = None
 
     @cocotb.coroutine
-    def start(self, cycles=0):
+    def start(self, cycles=None):
         """Clocking coroutine.  Start driving your clock by forking a call to
         this.
 
         Args:
-            cycles (int, optional): Cycle clock ``cycles`` number of times.
-                Defaults to 0, meaning will cycle forever.
+            cycles (int, optional): Cycle the clock `cycles` number of times.
+                Defaults to ``None`` (cycle the clock forever).
         """
         t = Timer(self.half_period)
-        if cycles > 0:
-            while cycles:
-                self.signal <= 1
-                yield t
-                self.signal <= 0
-                yield t
-                cycles -= 1
+        if cycles:
+            it = range(cycles)
         else:
-            while True:
-                self.signal <= 1
-                yield t
-                self.signal <= 0
-                yield t
+            it = itertools.count()
+
+        for _ in it:
+            self.signal <= 1
+            yield t
+            self.signal <= 0
+            yield t
 
     def __str__(self):
         return self.__class__.__name__ + "(%3.1f MHz)" % self.frequency

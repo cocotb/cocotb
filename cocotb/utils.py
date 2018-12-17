@@ -109,7 +109,7 @@ def get_sim_steps(time, units=None):
     if err:
         raise ValueError("Unable to accurately represent {0}({1}) with the "
                          "simulator precision of 1e{2}".format(
-                             time,units,_LOG_SIM_PRECISION))
+                             time, units, _LOG_SIM_PRECISION))
 
     return int(result)
 
