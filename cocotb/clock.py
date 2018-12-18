@@ -87,14 +87,15 @@ class Clock(BaseClock):
         this.
 
         Args:
-            cycles (int, optional): Cycle the clock `cycles` number of times.
-                Defaults to ``None`` (cycle the clock forever).
+            cycles (int, optional): Cycle the clock `cycles` number of times,
+                or if ``None`` then cycle the clock forever. Note: ``0`` is not
+                the same as ``None``, as 0 will cycle no times.
         """
         t = Timer(self.half_period)
-        if cycles:
-            it = range(cycles)
-        else:
+        if cycles is None:
             it = itertools.count()
+        else:
+            it = range(cycles)
 
         for _ in it:
             self.signal <= 1
