@@ -67,7 +67,7 @@ else:
 import cocotb
 import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly, PythonTrigger,
-                             _NextTimeStep, _ReadWrite, Event, NullTrigger)
+                             _NextTimeStep, _ReadWrite, Event, Join)
 from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error, ExternalException)
@@ -457,8 +457,8 @@ class Scheduler(object):
                 del self._trigger2coros[trigger]
         del self._coro2triggers[coro]
 
-        if coro._join in self._trigger2coros:
-            self._pending_triggers.append(coro._join)
+        if Join(coro) in self._trigger2coros:
+            self._pending_triggers.append(Join(coro))
         else:
             try:
                 # throws an error if the background coroutine errored
@@ -470,9 +470,6 @@ class Scheduler(object):
                     .format(coro, e)
                 )
                 self._terminate = True
-
-        # Remove references to allow GC to clean up
-        del coro._join
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:

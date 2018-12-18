@@ -48,7 +48,6 @@ import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
-from cocotb.triggers import _RisingEdge, _FallingEdge, _Edge
 from cocotb.utils import get_python_integer_types
 
 # Only issue a warning for each deprecated attribute access
@@ -546,9 +545,6 @@ class NonConstantObject(NonHierarchyIndexableObject):
                 _handle [integer] : vpi/vhpi handle to the simulator object
         """
         NonHierarchyIndexableObject.__init__(self, handle, path)
-        self._r_edge = _RisingEdge(self)
-        self._f_edge = _FallingEdge(self)
-        self._e_edge = _Edge(self)
 
     def drivers(self):
         """

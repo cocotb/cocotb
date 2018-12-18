@@ -37,7 +37,7 @@ from io import StringIO, BytesIO
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger, Join
+from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
 from cocotb.utils import get_sim_time
@@ -93,7 +93,6 @@ class RunningCoroutine(object):
         self._coro = inst
         self._started = False
         self._callbacks = []
-        self._join = _Join(self)
         self._parent = parent
         self.__doc__ = parent._func.__doc__
         self.module = parent._func.__module__
@@ -163,10 +162,7 @@ class RunningCoroutine(object):
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits"""
-        if self._finished:
-            return NullTrigger()
-        else:
-            return self._join
+        return Join(self)
 
     def has_started(self):
         return self._started
@@ -176,6 +172,8 @@ class RunningCoroutine(object):
             if the coroutine has finished return false
             otherwise return true"""
         return not self._finished
+
+    __bool__ = __nonzero__
 
     def sort_name(self):
         if self.stage is None:

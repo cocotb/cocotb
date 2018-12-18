@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     A collections of triggers which a testbench can 'yield'
 """
 import os
+import weakref
 
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
@@ -209,86 +210,72 @@ def NextTimeStep():
     return _nxts
 
 
-class _Edge(GPITrigger):
+class _EdgeBase(GPITrigger):
     """
     Execution will resume when an edge occurs on the provided signal
     """
+    @classmethod
+    @property
+    def _edge_type(self):
+        """
+        The edge type, as understood by the C code. Must be set in subclasses
+        """
+        raise NotImplementedError
+
+    # Ensure that each signal has at most one edge trigger per edge type.
+    # Using a weak dictionary ensures we don't create a reference cycle
+    _instances = weakref.WeakValueDictionary()
+
+    def __new__(cls, signal):
+        # find the existing instance, if possible - else create a new one
+        key = (signal, cls._edge_type)
+        try:
+            return cls._instances[key]
+        except KeyError:
+            instance = super(_EdgeBase, cls).__new__(cls)
+            cls._instances[key] = instance
+            return instance
+
     def __init__(self, signal):
-        GPITrigger.__init__(self)
+        super(_EdgeBase, self).__init__()
         self.signal = signal
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
         if self.cbhdl == 0:
-            self.cbhdl = simulator.register_value_change_callback(self.signal.
-                                                                  _handle,
-                                                                  callback,
-                                                                  3,
-                                                                  self)
+            self.cbhdl = simulator.register_value_change_callback(
+                self.signal._handle, callback, type(self)._edge_type, self
+            )
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
-
-    def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.signal._name
-
-def Edge(signal):
-    return signal._e_edge
-
-
-class _RisingOrFallingEdge(_Edge):
-    def __init__(self, signal, rising):
-        _Edge.__init__(self, signal)
-        if rising is True:
-            self._rising = 1
-        else:
-            self._rising = 2
-
-    def prime(self, callback):
-        if self.cbhdl == 0:
-            self.cbhdl = simulator.register_value_change_callback(self.signal.
-                                                                  _handle,
-                                                                  callback,
-                                                                  self._rising,
-                                                                  self)
-            if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
+        super(_EdgeBase, self).prime()
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal._name
 
 
-class _RisingEdge(_RisingOrFallingEdge):
-    """
-    Execution will resume when a rising edge occurs on the provided signal
-    """
-    def __init__(self, signal):
-        _RisingOrFallingEdge.__init__(self, signal, rising=True)
+class RisingEdge(_EdgeBase):
+    """ Triggers on the rising edge of the provided signal """
+    _edge_type = 1
 
 
-def RisingEdge(signal):
-    return signal._r_edge
+class FallingEdge(_EdgeBase):
+    """ Triggers on the falling edge of the provided signal """
+    _edge_type = 2
 
 
-class _FallingEdge(_RisingOrFallingEdge):
-    """
-    Execution will resume when a falling edge occurs on the provided signal
-    """
-    def __init__(self, signal):
-        _RisingOrFallingEdge.__init__(self, signal, rising=False)
+class Edge(_EdgeBase):
+    """ Triggers on either edge in a signal """
+    _edge_type = 3
 
 
-def FallingEdge(signal):
-    return signal._f_edge
-
-
-class ClockCycles(_Edge):
+class ClockCycles(GPITrigger):
     """
     Execution will resume after N rising edges or N falling edges
     """
     def __init__(self, signal, num_cycles, rising=True):
-        _Edge.__init__(self, signal)
+        super(ClockCycles, self).__init__()
+        self.signal = signal
         self.num_cycles = num_cycles
         if rising is True:
             self._rising = 1
@@ -507,6 +494,8 @@ class Lock(PythonTrigger):
         """Provide boolean of a Lock"""
         return self.locked
 
+    __bool__ = __nonzero__
+
 
 class NullTrigger(Trigger):
     """
@@ -522,12 +511,25 @@ class NullTrigger(Trigger):
         callback(self)
 
 
-class _Join(PythonTrigger):
+class Join(PythonTrigger):
     """
     Join a coroutine, firing when it exits
     """
+    # Ensure that each coroutine has at most one join trigger.
+    # Using a weak dictionary ensures we don't create a reference cycle
+    _instances = weakref.WeakValueDictionary()
+
+    def __new__(cls, coroutine):
+        # find the existing instance, if possible - else create a new one
+        try:
+            return cls._instances[coroutine]
+        except KeyError:
+            instance = super(Join, cls).__new__(cls)
+            cls._instances[coroutine] = instance
+            return instance
+
     def __init__(self, coroutine):
-        PythonTrigger.__init__(self)
+        super(Join, self).__init__()
         self._coroutine = coroutine
         self.pass_retval = True
 
@@ -539,13 +541,11 @@ class _Join(PythonTrigger):
     def retval(self):
         return self._coroutine.retval
 
-    # def prime(self, callback):
-        # """Register our calback for when the coroutine exits"""
-        # Trigger.prime(self)
+    def prime(self, callback):
+        if self._coroutine._finished:
+            callback(self)
+        else:
+            super(Join, self).prime(callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self._coroutine.__name__
-
-
-def Join(coro):
-    return coro._join
