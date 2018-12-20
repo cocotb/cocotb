@@ -33,6 +33,7 @@ import ctypes
 import math
 import os
 import sys
+import weakref
 
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
@@ -410,6 +411,41 @@ def with_metaclass(meta, *bases):
         def __prepare__(cls, name, this_bases):
             return meta.__prepare__(name, bases)
     return type.__new__(metaclass, 'temporary_class', (), {})
+
+
+class ParametrizedSingleton(type):
+    """
+    A metaclass that allows class construction to reuse an existing instance
+
+    We use this so that `RisingEdge(sig)` and `Join(coroutine)` always return
+    the same instance, rather than creating new copies.
+    """
+
+    def __init__(cls, *args, **kwargs):
+        # Attach a lookup table to this class.
+        # Weak such that if the instance is no longer referenced, it can be
+        # collected.
+        cls.__instances = weakref.WeakValueDictionary()
+
+    def __singleton_key__(cls, *args, **kwargs):
+        """
+        Convert the construction arguments into a normalized representation that
+        uniquely identifies this singleton.
+        """
+        # Once we drop python 2, we can implement a default like the following,
+        # which will work in 99% of cases:
+        # return tuple(inspect.Signature(cls).bind(*args, **kwargs).arguments.items())
+        raise NotImplementedError
+
+    def __call__(cls, *args, **kwargs):
+        key = cls.__singleton_key__(*args, **kwargs)
+        try:
+            return cls.__instances[key]
+        except KeyError:
+            # construct the object as normal
+            self = super(ParametrizedSingleton, cls).__call__(*args, **kwargs)
+            cls.__instances[key] = self
+            return self
 
 
 if __name__ == "__main__":

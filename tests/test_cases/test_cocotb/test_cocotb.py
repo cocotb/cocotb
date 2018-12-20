@@ -763,6 +763,24 @@ def test_join_identity(dut):
     clk_gen.kill()
 
 
+@cocotb.test()
+def test_edge_identity(dut):
+    """
+    Test that Edge triggers returns the same object each time
+    """
+
+    re = RisingEdge(dut.clk)
+    fe = FallingEdge(dut.clk)
+    e = Edge(dut.clk)
+
+    assert re is RisingEdge(dut.clk)
+    assert fe is FallingEdge(dut.clk)
+    assert e is Edge(dut.clk)
+
+    # check they are all unique
+    assert len({re, fe, e}) == 3
+    yield Timer(1)
+
 
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
