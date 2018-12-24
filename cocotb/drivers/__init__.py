@@ -219,7 +219,7 @@ class BusDriver(Driver):
         Driver.__init__(self)
         self.entity = entity
         self.clock = clock
-        index = kwargs.get("array_idx")        
+        index = kwargs.get("array_idx")
         self.bus = Bus(self.entity, name, self._signals,
                        self._optional_signals, array_idx=index)
 
@@ -281,8 +281,8 @@ class ValidatedBusDriver(BusDriver):
             valid_generator (generator): a generator that yields tuples  of
                                         (valid, invalid) cycles to insert
         """
+        valid_generator = kwargs.pop("valid_generator", None)
         BusDriver.__init__(self, entity, name, clock, **kwargs)
-        valid_generator = kwargs.get("valid_generator", None)
         self.set_valid_generator(valid_generator=valid_generator)
 
     def _next_valids(self):

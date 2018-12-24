@@ -696,7 +696,6 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         if hasattr(self.bus, 'channel'):
             self.bus.channel <= 0
-            channel_value = BinaryValue(bits=len(self.bus.channel), bigEndian=False)
         elif channel is not None:
             raise TestError("%s does not have a channel signal" % self.name)
 
@@ -766,6 +765,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             empty.binstr  = ("x"*len(self.bus.empty))
             self.bus.empty <= empty
         if hasattr(self.bus, 'channel'):
+            channel_value = BinaryValue(n_bits=len(self.bus.channel), bigEndian=False)
             channel_value.binstr = ("x"*len(self.bus.channel))
             self.bus.channel <= channel_value
 
