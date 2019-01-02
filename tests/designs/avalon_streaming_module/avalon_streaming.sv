@@ -11,24 +11,35 @@ module avalon_streaming (
     input wire logic aso_ready
 );
 
-logic [7:0] queue[$] = {};
+logic [7:0] queue[10];
+integer size;
 
 always @ (posedge clk or negedge reset) begin
     if (reset == 0) begin
-        queue = {};
+        size = 0;
         asi_ready <= 1'b0;
         aso_valid <= 1'b0;
         aso_data <= 'x;
     end else begin
-        asi_ready <= queue.size() < 10;
+        asi_ready <= size < 10;
         if (asi_valid && asi_ready) begin
-            queue.push_back(asi_data);
+            queue[size] = asi_data;
+            size        = size + 1;
         end
         if (aso_valid && aso_ready) begin
-            queue.pop_front();
+            queue[0]    = queue[1];
+            queue[1]    = queue[2];
+            queue[2]    = queue[3];
+            queue[3]    = queue[4];
+            queue[4]    = queue[5];
+            queue[5]    = queue[6];
+            queue[6]    = queue[7];
+            queue[7]    = queue[8];
+            queue[8]    = queue[9];
+            size        = size - 1;
         end
         aso_data <= queue[0];
-        aso_valid <= queue.size() > 0;
+        aso_valid <= size > 0;
     end
 end
 
