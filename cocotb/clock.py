@@ -68,8 +68,7 @@ class Clock(BaseClock):
             timesteps.
         units (str, optional): One of (None,'fs','ps','ns','us','ms','sec').
             When no units are given (``None``) the timestep is determined by
-            the simulator. E.g. Cadence simulators have a default timestep of
-            'ps', so the clock will cycle every `period` picoseconds.
+            the simulator.
     """
     def __init__(self, signal, period, units=None):
         BaseClock.__init__(self, signal)
