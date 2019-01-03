@@ -69,9 +69,6 @@ def main():
 
     if args.debug : ET.dump(result)
 
-    testsuite_count = 0
-    testcase_count = 0
-
     for testsuite_count, testsuite in enumerate(result.iter('testsuite'),1):
         for testcase_count, testcase in enumerate(testsuite.iter('testcase'),1):
             for failure in testcase.iter('failure'):
