@@ -267,7 +267,8 @@ def hexdiffs(x, y):
         return r
 
     def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
-        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT")
+        """Highlight only with ansi output if it's requested and we are not in a GUI"""
+        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT") and not os.getenv("GUI")
         if want_ansi is None:
             want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
         else:
