@@ -93,9 +93,7 @@ class Bus(object):
 
             if array_idx is not None:
                 signame += "[{:d}]".format(array_idx)
-            self._entity._log.debug("Signal name {}".format(signame))
-            setattr(self, attr_name, getattr(entity, signame))
-            self._signals[attr_name] = getattr(self, attr_name)
+            self._add_signal(attr_name, signame)
 
         # Also support a set of optional signals that don't have to be present
         for attr_name, sig_name in _build_sig_attr_dict(optional_signals).items():
@@ -111,11 +109,15 @@ class Bus(object):
             # Attempts to access a signal that doesn't exist will print a
             # backtrace so we 'peek' first, slightly un-pythonic
             if entity.__hasattr__(signame):
-                setattr(self, attr_name, getattr(entity, signame))
-                self._signals[attr_name] = getattr(self, attr_name)
+                self._add_signal(attr_name, signame)
             else:
                 self._entity._log.debug("Ignoring optional missing signal "
                                         "%s on bus %s" % (sig_name, name))
+
+    def _add_signal(self, attr_name, signame):
+        self._entity._log.debug("Signal name {}".format(signame))
+        setattr(self, attr_name, getattr(self._entity, signame))
+        self._signals[attr_name] = getattr(self, attr_name)
 
     def drive(self, obj, strict=False):
         """
