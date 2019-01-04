@@ -70,7 +70,7 @@ class AXI4LiteMaster(BusDriver):
     @cocotb.coroutine
     def _send_write_address(self, address, delay=0):
         """
-        Send the write address, with optional delay
+        Send the write address, with optional delay (in clocks)
         """
         yield self.write_address_busy.acquire()
         for cycle in range(delay):
@@ -91,7 +91,7 @@ class AXI4LiteMaster(BusDriver):
     @cocotb.coroutine
     def _send_write_data(self, data, delay=0, byte_enable=0xF):
         """
-        Send the write address, with optional delay
+        Send the write address, with optional delay (in clocks)
         """
         yield self.write_data_busy.acquire()
         for cycle in range(delay):
@@ -116,7 +116,23 @@ class AXI4LiteMaster(BusDriver):
         """
         Write a value to an address.
 
-        The *_latency KWargs allow control over the delta
+        Args:
+            address (int): The address to write to
+            
+            value (int): The data value to write
+            
+            byte_enable (int): Which bytes in value to actually write
+            
+        Kwargs:
+            address_latency (int): Delay before setting the address (in clock cycles)
+            
+            data_latency (int): Delay before setting the data value (in clock cycles)
+            
+        Returns:
+            The write response value
+            
+        Raises:
+            AXIProtocolError: If write response from AXI is not ``OKAY``
         """
 
         c_addr = cocotb.fork(self._send_write_address(address,
@@ -150,6 +166,18 @@ class AXI4LiteMaster(BusDriver):
     def read(self, address, sync=True):
         """
         Read from an address.
+        
+        Args:
+            address (int): The address to read from
+            
+        Kwargs:
+            sync (bool): Wait for rising edge on clock initially
+            
+        Returns:
+            The read data value
+            
+        Raises:
+            AXIProtocolError: If read response from AXI is not ``OKAY``
         """
         if sync:
             yield RisingEdge(self.clock)
