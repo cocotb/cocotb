@@ -54,9 +54,9 @@ Cocotb infrastructure
 
 There are two decorators provided to enable this flow, which are typically used
 together to achieve the required functionality.  The ``cocotb.external``
-decorator turns a normal function that isn't a coroutine into a blocking
-coroutine (by running the function in a separate thread).  The 
-``cocotb.function`` decorator allows a coroutine that consumes simulation time
+decorator turns a normal function that isn't a `coroutine` into a blocking
+`coroutine` (by running the function in a separate thread).  The 
+``cocotb.function`` decorator allows a `coroutine` that consumes simulation time
 to be called by a normal thread.  The call sequence looks like this:
 
 
@@ -144,7 +144,7 @@ a read or write.  These are then passed to the `IO Module`_:
 
 
 We can then intialise the HAL and call functions, using the ``cocotb.external``
-decorator to turn the normal function into a blocking coroutine that we can
+decorator to turn the normal function into a blocking `coroutine` that we can
 ``yield``:
 
 

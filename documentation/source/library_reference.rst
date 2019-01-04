@@ -39,11 +39,13 @@ Interacting with the Simulator
 .. autoclass:: cocotb.bus.Bus
     :members:
 
+.. autoclass:: cocotb.clock.Clock
+
 
 Triggers
 --------
 
-Triggers are used to indicate when the scheduler should resume coroutine execution.  Typically a coroutine will **yield** a trigger or a list of triggers.
+Triggers are used to indicate when the scheduler should resume `coroutine` execution.  Typically a `coroutine` will **yield** a trigger or a list of triggers.
 
 Simulation Timing
 ~~~~~~~~~~~~~~~~~

@@ -41,3 +41,4 @@ Cadence Incisive
 
 GHDL
 ----
+Support is preliminary. 

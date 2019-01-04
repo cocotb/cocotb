@@ -157,7 +157,7 @@ def ReadOnly():
 
 class _ReadWrite(GPITrigger):
     """
-    Execution will resume when the readwrite porttion of the sim cycles is
+    Execution will resume when the readwrite portion of the sim cycles is
     reached
     """
     def __init__(self):

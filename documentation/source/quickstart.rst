@@ -15,9 +15,12 @@ Cocotb has the following requirements:
 * Python-dev packages
 * GCC and associated development packages
 * GNU Make
-* A Verilog simulator
+* A Verilog or VHDL simulator, depending on your source RTL code
 
-Internal development is performed on Linux Mint 17 (x64). We also use Redhat 6.5(x64). Other Redhat and Ubuntu based distributions (x32 and x64) should work too but due fragmented nature of Linux we can not test everything. Instructions are provided for the main distributions we use.
+Internal development is performed on Linux Mint 17 (x64). We also use Redhat
+6.5(x64). Other Redhat and Ubuntu based distributions (x32 and x64) should work
+too but due fragmented nature of Linux we can not test everything. Instructions
+are provided for the main distributions we use.
 
 Linux native arch installation
 ------------------------------
@@ -28,7 +31,9 @@ Ubuntu based installation
 
     $> sudo apt-get install git make gcc g++ swig python-dev
 
-This will allow building of the Cocotb libs for use with a 64 bit native simulator. If a 32 bit simulator is being used then additional steps to install 32bit development libraries and python are needed. 
+This will allow building of the Cocotb libs for use with a 64 bit native
+simulator. If a 32 bit simulator is being used then additional steps to install
+32bit development libraries and python are needed. 
 
 Redhat based installation
 
@@ -36,13 +41,16 @@ Redhat based installation
 
     $> sudo yum install gcc gcc-c++ libstdc++-devel swig python-devel
 
-This will allow building of the Cocotb libs for use with a 64 bit native simulator. If a 32 bit simulator is being used then additional steps to install 32bit development libraries and python are needed. 
+This will allow building of the Cocotb libs for use with a 64 bit native
+simulator. If a 32 bit simulator is being used then additional steps to install
+32bit development libraries and python are needed. 
 
 
 32 bit Python
 -------------
 
-Additional development libraries are needed for building 32bit python on 64 bit systems.
+Additional development libraries are needed for building 32bit python on 64 bit
+systems.
 
 Ubuntu based installation
 
@@ -50,7 +58,9 @@ Ubuntu based installation
 
     $> sudo apt-get install libx32gcc1 gcc-4.8-multilib lib32stdc++-4.8-dev
 
-Replace 4.8 with the version of gcc that was installed on the system in the step above. Unlike on Redhat where 32 bit python can co-exist with native python ubuntu requires the source to be downloaded and built.
+Replace 4.8 with the version of gcc that was installed on the system in the step
+above. Unlike on Redhat where 32 bit python can co-exist with native python
+ubuntu requires the source to be downloaded and built.
 
 Redhat based installation
 
@@ -71,7 +81,9 @@ Specific releases can be downloaded from https://www.python.org/downloads/ .
     $> make
     $> sudo make install
 
-Cocotb can now be built against 32bit python by setting the architecture and placing the 32bit python ahead of the native version in the path when running a test
+Cocotb can now be built against 32bit python by setting the architecture and
+placing the 32bit python ahead of the native version in the path when running a
+test
 
 .. code-block:: bash
 
@@ -82,13 +94,18 @@ Cocotb can now be built against 32bit python by setting the architecture and pla
 Windows 7 installation
 ----------------------
 
-Recent work has been done with the support of the Cocotb community to enable Windows support using the MinGW/Msys environment. Download the MinGQ installer from.
+Recent work has been done with the support of the Cocotb community to enable
+Windows support using the MinGW/Msys environment. Download the MinGQ installer
+from.
 
 http://sourceforge.net/projects/mingw/files/latest/download?source=files .
 
-Run the GUI installer and specify a directory you would like the environment installed in. The installer will retrieve a list of possible packages, when this is done press continue. The MinGW Installation Manager is then launched.
+Run the GUI installer and specify a directory you would like the environment
+installed in. The installer will retrieve a list of possible packages, when this
+is done press continue. The MinGW Installation Manager is then launched.
 
-The following packages need selecting by checking the tick box and selecting "Mark for installation"
+The following packages need selecting by checking the tick box and selecting
+"Mark for installation"
 
 .. code-block:: bash
 
@@ -98,13 +115,18 @@ The following packages need selecting by checking the tick box and selecting "Ma
       -- mingw32-gcc-g++
       -- msys-base 
 
-From the Installation menu then select "Apply Changes", in the next dialog select "Apply".
+From the Installation menu then select "Apply Changes", in the next dialog
+select "Apply".
 
-When installed a shell can be opened using the "msys.bat" file located under the <install_dir>/msys/1.0/
+When installed a shell can be opened using the "msys.bat" file located under
+the <install_dir>/msys/1.0/
 
-Python can be downloaded from https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi, other versions of python can be used as well. Run the installer and download to your chosen location.
+Python can be downloaded from https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi,
+other versions of python can be used as well. Run the installer and download to
+your chosen location.
 
-It is beneficial to add the path to Python to the windows system PATH variable so it can be used easily from inside Msys.
+It is beneficial to add the path to Python to the windows system PATH variable
+so it can be used easily from inside Msys.
 
 Once inside the Msys shell commands as given here will work as expected.
 
@@ -140,11 +162,15 @@ To run a test using a different simulator:
 Running a VHDL example
 ----------------------
 
-The endian swapper example includes both a VHDL and Verilog RTL implementation.  The Cocotb testbench can execute against either implementation using VPI for Verilog and VHPI/FLI for VHDL.  To run the test suite against the VHDL implementation use the following command (a VHPI or FLI capable simulator must be used):
+The endian swapper example includes both a VHDL and Verilog RTL implementation.
+The Cocotb testbench can execute against either implementation using VPI for
+Verilog and VHPI/FLI for VHDL.  To run the test suite against the VHDL
+implementation use the following command (a VHPI or FLI capable simulator must
+be used):
 
 .. code-block:: bash
 
-    $> make SIM=aldec TOPLEVEL_LANG=vhdl
+    $> make SIM=ghdl TOPLEVEL_LANG=vhdl
 
 
 
@@ -152,8 +178,10 @@ Using Cocotb
 ============
 
 A typical Cocotb testbench requires no additional RTL code.
-The Design Under Test (DUT) is instantiated as the toplevel in the simulator without any wrapper code.
-Cocotb drives stimulus onto the inputs to the DUT and monitors the outputs directly from Python.
+The Design Under Test (DUT) is instantiated as the toplevel in the simulator
+without any wrapper code.
+Cocotb drives stimulus onto the inputs to the DUT and monitors the outputs
+directly from Python.
 
 
 Creating a Makefile
@@ -167,8 +195,8 @@ python test script to load.
 .. code-block:: bash
 
     VERILOG_SOURCES = $(PWD)/submodule.sv $(PWD)/my_design.sv
-    TOPLEVEL=my_design
-    MODULE=test_my_design
+    TOPLEVEL=my_design #the module name in your verilog or vhdl file
+    MODULE=test_my_design # the name of the python test file
     include $(COCOTB)/makefiles/Makefile.inc
     include $(COCOTB)/makefiles/Makefile.sim
 
@@ -178,8 +206,12 @@ We would then create a file called ``test_my_design.py`` containing our tests.
 Creating a test
 ---------------
 
-The test is written in Python.  Assuming we have a toplevel port called ``clk``
-we could create a test file containing the following:
+The test is written in Python. Cocotb wraps your top level with the handle you
+pass it. In this documentation, and most of the examples in the project, that
+handle is **dut**, but you can pass your own preferred name in instead. The
+handle is used in all python files referencing your RTL project. Assuming we
+have a toplevel port called ``clk`` we could create a test file containing the
+following:
 
 .. code-block:: python
 
@@ -205,9 +237,10 @@ This will drive a square wave clock onto the ``clk`` port of the toplevel.
 Accessing the design
 --------------------
 
-When cocotb initialises it finds the top-level instantiation in the simulator and creates a handle called **dut**.
-Top-level signals can be accessed using the "dot" notation used for accessing object attributes in Python. 
-The same mechanism can be used to access signals inside the design.
+When cocotb initialises it finds the top-level instantiation in the simulator
+and creates a handle called **dut**. Top-level signals can be accessed using the
+"dot" notation used for accessing object attributes in Python. The same mechanism
+can be used to access signals inside the design.
 
 .. code-block:: python
 
@@ -230,12 +263,19 @@ Values can be assigned to signals using either the .value property of a handle o
     clk.value = 1
     
     # Direct assignment through the hierarchy
-    dut.input_signal = 12
+    dut.input_signal <= 12 
 
     # Assign a value to a memory deep in the hierarchy
-    dut.sub_block.memory.array[4] = 2
-        
-        
+    dut.sub_block.memory.array[4] <= 2
+
+
+The syntax `sig <= new_value` is a short form of `sig.value = new_value`. It not
+only resembles HDL-syntax, but also has the same semantics: writes are not
+applied immediately, but delayed until the next write cycle. Use
+`sig.setimmediatevalue(new_val)` to set a new value immediately.
+
+
+    
 Reading values from signals
 ---------------------------
 
@@ -245,12 +285,15 @@ Accessing the .value property of a handle object will return a :class:`BinaryVal
     
     >>> # Read a value back from the dut
     >>> count = dut.counter.value
-    >>>
+    >>> 
     >>> print(count.binstr)
     1X1010
     >>> # Resolve the value to an integer (X or Z treated as 0)
     >>> print(count.integer)
     42
+    >>> # Show number of bits in a value
+    >>> print(count.bits)
+    6
 
 We can also cast the signal handle directly to an integer:
 
@@ -292,19 +335,3 @@ Parallel and sequential execution of coroutines
         yield reset_thread.join()
         dut._log.debug("After reset")
 
-
-Creating a test
----------------
-
-.. code-block:: python
-
-    import cocotb
-    from cocotb.triggers import Timer
-    
-    @cocotb.test(timeout=None)
-    def my_first_test(dut):
-    
-        # drive the reset signal on the dut
-        dut.reset_n <= 0
-        yield Timer(12345)
-        dut.reset_n <= 1
