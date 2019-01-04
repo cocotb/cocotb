@@ -60,7 +60,7 @@ decorator turns a normal function that isn't a `coroutine` into a blocking
 to be called by a normal thread.  The call sequence looks like this:
 
 
-.. image:: diagrams/svg/hal_cosimulation.*
+.. image:: diagrams/svg/hal_cosimulation.svg
 
 
 Implementation
