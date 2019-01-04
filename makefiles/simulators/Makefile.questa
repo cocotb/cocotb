@@ -45,6 +45,8 @@ endif
 
 RTL_LIBRARY ?= work
 
+TOPLEVEL := "$(RTL_LIBRARY).$(TOPLEVEL)"
+
 ifdef VLOG_ARGS
 VLOG_ARGS = $(VLOG_ARGS)
 else
