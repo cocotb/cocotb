@@ -247,8 +247,7 @@ class coroutine(object):
     def __init__(self, func):
         self._func = func
         self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
-        self.__name__ = self._func.__name__
-        functools.update_wrapper(self, func)
+        functools.update_wrapper(self, self._func)
 
     def __call__(self, *args, **kwargs):
         try:
@@ -289,6 +288,7 @@ class function(object):
     def __init__(self, func):
         self._func = func
         self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
+        functools.update_wrapper(self, self._func)
 
     def __call__(self, *args, **kwargs):
 
@@ -319,6 +319,7 @@ class external(object):
     def __init__(self, func):
         self._func = func
         self._log = SimLog("cocotb.external.%s" % self._func.__name__, id(self))
+        functools.update_wrapper(self, self._func)
 
     def __call__(self, *args, **kwargs):
 
