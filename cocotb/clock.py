@@ -28,7 +28,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 """
     A clock class
 """
-import simulator
+import os
+import itertools
+
+if "SPHINX_BUILD" in os.environ:
+    simulator = None
+else:
+    import simulator
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Timer, RisingEdge
@@ -44,8 +50,25 @@ class BaseClock(object):
 
 
 class Clock(BaseClock):
-    """
-    simple 50:50 duty cycle clock
+    """Simple 50:50 duty cycle clock driver
+
+    Instances of this class should call its ``start`` method and fork the
+    result.  This will create a clocking thread that drives the signal at the
+    desired period/frequency.
+
+    Example:
+    .. code-block:: python
+
+        c = Clock(dut.clk, 10, 'ns')
+        cocotb.fork(c.start())
+
+    Args:
+        signal (pin): The clock pin/signal to be driven.
+        period (int): The clock period. Must convert to an even number of
+            timesteps.
+        units (str, optional): One of (None,'fs','ps','ns','us','ms','sec').
+            When no units are given (``None``) the timestep is determined by
+            the simulator.
     """
     def __init__(self, signal, period, units=None):
         BaseClock.__init__(self, signal)
@@ -58,9 +81,22 @@ class Clock(BaseClock):
         self.mcoro = None
 
     @cocotb.coroutine
-    def start(self, cycles=0):
+    def start(self, cycles=None):
+        """Clocking coroutine.  Start driving your clock by forking a call to
+        this.
+
+        Args:
+            cycles (int, optional): Cycle the clock `cycles` number of times,
+                or if ``None`` then cycle the clock forever. Note: ``0`` is not
+                the same as ``None``, as 0 will cycle no times.
+        """
         t = Timer(self.half_period)
-        while True:
+        if cycles is None:
+            it = itertools.count()
+        else:
+            it = range(cycles)
+
+        for _ in it:
             self.signal <= 1
             yield t
             self.signal <= 0
