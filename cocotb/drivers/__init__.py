@@ -218,10 +218,13 @@ class BusDriver(Driver):
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         Driver.__init__(self)
         self.entity = entity
-        self.name = name
         self.clock = clock
-        self.bus = Bus(self.entity, self.name, self._signals,
-                       self._optional_signals, array_idx=kwargs.get("array_idx"))
+        index = kwargs.get("array_idx")
+        self.bus = Bus(self.entity, name, self._signals,
+                       self._optional_signals, array_idx=index)
+
+        # Give this instance a unique name
+        self.name = name if index is None else "%s_%d" % (name, index)
 
     @coroutine
     def _driver_send(self, transaction, sync=True):
@@ -266,7 +269,7 @@ class ValidatedBusDriver(BusDriver):
     which cycles are valid
     """
 
-    def __init__(self, entity, name, clock, valid_generator=None):
+    def __init__(self, entity, name, clock, **kwargs):
         """
         Args:
             entity (SimHandle) : a handle to the simulator entity
@@ -278,7 +281,8 @@ class ValidatedBusDriver(BusDriver):
             valid_generator (generator): a generator that yields tuples  of
                                         (valid, invalid) cycles to insert
         """
-        BusDriver.__init__(self, entity, name, clock)
+        valid_generator = kwargs.pop("valid_generator", None)
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.set_valid_generator(valid_generator=valid_generator)
 
     def _next_valids(self):

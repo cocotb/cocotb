@@ -162,14 +162,14 @@ class BusMonitor(Monitor):
     _optional_signals = []
 
     def __init__(self, entity, name, clock, reset=None, reset_n=None,
-                 callback=None, event=None, bus_separator="_"):
+                 callback=None, event=None, bus_separator="_", array_idx=None):
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         self.entity = entity
         self.name = name
         self.clock = clock
         self.bus = Bus(self.entity, self.name, self._signals,
                        optional_signals=self._optional_signals,
-                       bus_separator=bus_separator)
+                       bus_separator=bus_separator,array_idx=array_idx)
         self._reset = reset
         self._reset_n = reset_n
         Monitor.__init__(self, callback=callback, event=event)

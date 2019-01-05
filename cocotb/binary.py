@@ -295,6 +295,11 @@ class BinaryValue(object):
     def set_value(self, integer):
         self._str = self._convert_to[self.binaryRepresentation](integer)
 
+    @property
+    def is_resolvable(self):
+        """Does the value contain any X's?  Inquiring minds want to know"""
+        return not any(char in self._str for char in BinaryValue._resolve_to_error)
+
     value = property(get_value, set_value, None,
                      "Integer access to the value *** deprecated ***")
     integer = property(get_value, set_value, None,

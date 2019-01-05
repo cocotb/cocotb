@@ -45,10 +45,15 @@ endif
 
 RTL_LIBRARY ?= work
 
+TOPLEVEL := "$(RTL_LIBRARY).$(TOPLEVEL)"
+
 ifdef VLOG_ARGS
 VLOG_ARGS = $(VLOG_ARGS)
 else
 VLOG_ARGS = -timescale 1ns/100ps -mfcu +acc=rmb
+endif
+ifdef VERILOG_INCLUDE_DIRS
+VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
 endif
 
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS

@@ -140,9 +140,13 @@ class RegressionManager(object):
                 # Specific functions specified, don't auto discover
                 for test in self._functions.rsplit(','):
                     if not hasattr(module, test):
+                        self.log.error("Requested test %s wasn't found in module %s", test, module_name)
                         raise AttributeError("Test %s doesn't exist in %s" %
                                              (test, module_name))
-
+                    _test = getattr(module, test)
+                    if not hasattr(_test, "im_test"):
+                        self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine", test, module_name)
+                        raise ImportError("Failed to find requested test %s" % test)
                     self._queue.append(getattr(module, test)(self._dut))
                     self.ntests += 1
                 break
