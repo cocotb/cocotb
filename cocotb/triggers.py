@@ -38,7 +38,8 @@ else:
     import simulator
 from cocotb.log import SimLog
 from cocotb.result import raise_error
-from cocotb.utils import get_sim_steps, get_time_from_sim_steps
+from cocotb.utils import get_sim_steps, get_time_from_sim_steps, CallableClass
+
 
 
 class TriggerException(Exception):
@@ -206,7 +207,7 @@ def NextTimeStep():
     return _nxts
 
 
-class _EdgeBase(GPITrigger):
+class _EdgeBase(GPITrigger, CallableClass):
     """
     Execution will resume when an edge occurs on the provided signal
     """
@@ -222,13 +223,13 @@ class _EdgeBase(GPITrigger):
     # Using a weak dictionary ensures we don't create a reference cycle
     _instances = weakref.WeakValueDictionary()
 
-    def __new__(cls, signal):
+    def __class_call__(cls, signal):
         # find the existing instance, if possible - else create a new one
         key = (signal, cls._edge_type)
         try:
             return cls._instances[key]
         except KeyError:
-            instance = super(_EdgeBase, cls).__new__(cls)
+            instance = super(_EdgeBase, cls).__class_call__(cls, signal)
             cls._instances[key] = instance
             return instance
 
@@ -507,7 +508,7 @@ class NullTrigger(Trigger):
         callback(self)
 
 
-class Join(PythonTrigger):
+class Join(PythonTrigger, CallableClass):
     """
     Join a coroutine, firing when it exits
     """
@@ -515,12 +516,12 @@ class Join(PythonTrigger):
     # Using a weak dictionary ensures we don't create a reference cycle
     _instances = weakref.WeakValueDictionary()
 
-    def __new__(cls, coroutine):
+    def __class_call__(cls, coroutine):
         # find the existing instance, if possible - else create a new one
         try:
             return cls._instances[coroutine]
         except KeyError:
-            instance = super(Join, cls).__new__(cls)
+            instance = super(Join, cls).__class_call__(cls, coroutine)
             cls._instances[coroutine] = instance
             return instance
 

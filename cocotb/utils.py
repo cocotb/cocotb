@@ -412,6 +412,42 @@ def with_metaclass(meta, *bases):
     return type.__new__(metaclass, 'temporary_class', (), {})
 
 
+class _CallableClassMeta(type):
+    """
+    A metaclass that allows classes to override the call classmethod by
+    providing __class_call__ (name inspired by PEP560.
+    This shouldn't be used directly, and is just a building block for
+    CallableClass.
+    """
+    def __call__(cls, *args, **kwargs):
+        # use __dict__ to avoid unbound method troubles on python 2
+        method = cls.__dict__['__class_call__']
+        return method(cls, *args, **kwargs)
+
+
+class CallableClass(with_metaclass(_CallableClassMeta)):
+    """
+    Base class to allow overriding `cls.__call__`. Used as::
+
+        class Foo(CallableClass):
+
+            def __class_call__(cls, x):
+                if x == 0:
+                    return None
+                else:
+                    # fall back to the default
+                    return super(cls).__class_call__(cls, x)
+
+        assert Foo(0) is None
+        assert Foo(1) is not None
+
+    Unlike overriding `__new__`, this will not cause `__init__` to be called
+    again if a pre-existing instance of `Foo` is returned.
+    """
+    # default is just to use `type.__call__` as normal
+    __class_call__ = type.__call__
+
+
 if __name__ == "__main__":
     import random
     a = ""
