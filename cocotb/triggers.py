@@ -222,13 +222,14 @@ class _EdgeBase(GPITrigger):
     # Using a weak dictionary ensures we don't create a reference cycle
     _instances = weakref.WeakValueDictionary()
 
-    def __new__(cls, signal):
+    @classmethod
+    def _create(cls, signal):
         # find the existing instance, if possible - else create a new one
         key = (signal, cls._edge_type)
         try:
             return cls._instances[key]
         except KeyError:
-            instance = super(_EdgeBase, cls).__new__(cls)
+            instance = cls(signal)
             cls._instances[key] = instance
             return instance
 
@@ -250,19 +251,24 @@ class _EdgeBase(GPITrigger):
         return self.__class__.__name__ + "(%s)" % self.signal._name
 
 
-class RisingEdge(_EdgeBase):
+class _RisingEdge(_EdgeBase):
     """ Triggers on the rising edge of the provided signal """
     _edge_type = 1
 
 
-class FallingEdge(_EdgeBase):
+class _FallingEdge(_EdgeBase):
     """ Triggers on the falling edge of the provided signal """
     _edge_type = 2
 
 
-class Edge(_EdgeBase):
+class _Edge(_EdgeBase):
     """ Triggers on either edge in a signal """
     _edge_type = 3
+
+
+RisingEdge = _RisingEdge._create
+FallingEdge = _FallingEdge._create
+Edge = _Edge._create
 
 
 class ClockCycles(GPITrigger):
@@ -507,7 +513,7 @@ class NullTrigger(Trigger):
         callback(self)
 
 
-class Join(PythonTrigger):
+class _Join(PythonTrigger):
     """
     Join a coroutine, firing when it exits
     """
@@ -515,17 +521,18 @@ class Join(PythonTrigger):
     # Using a weak dictionary ensures we don't create a reference cycle
     _instances = weakref.WeakValueDictionary()
 
-    def __new__(cls, coroutine):
+    @classmethod
+    def _create(cls, coroutine):
         # find the existing instance, if possible - else create a new one
         try:
             return cls._instances[coroutine]
         except KeyError:
-            instance = super(Join, cls).__new__(cls)
+            instance = cls(coroutine)
             cls._instances[coroutine] = instance
             return instance
 
     def __init__(self, coroutine):
-        super(Join, self).__init__()
+        super(_Join, self).__init__()
         self._coroutine = coroutine
         self.pass_retval = True
 
@@ -537,7 +544,9 @@ class Join(PythonTrigger):
         if self._coroutine._finished:
             callback(self)
         else:
-            super(Join, self).prime(callback)
+            super(_Join, self).prime(callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self._coroutine.__name__
+
+Join = _Join._create
