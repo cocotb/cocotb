@@ -805,6 +805,21 @@ def test_edge_identity(dut):
     yield Timer(1)
 
 
+@cocotb.test()
+def test_singleton_isinstance(dut):
+    """
+    Test that the result of trigger expression have a predictable type
+    """
+    assert isinstance(RisingEdge(dut.clk), RisingEdge)
+    assert isinstance(FallingEdge(dut.clk), FallingEdge)
+    assert isinstance(Edge(dut.clk), Edge)
+    assert isinstance(NextTimestep(), NextTimestep)
+    assert isinstance(ReadOnly(), ReadOnly)
+    assert isinstance(ReadWrite(), ReadWrite)
+
+    yield Timer(1)
+
+
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec

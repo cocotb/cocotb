@@ -133,11 +133,16 @@ class Timer(GPITrigger):
     def __str__(self):
         return self.__class__.__name__ + "(%1.2fps)" % get_time_from_sim_steps(self.sim_steps,units='ps')
 
-class _ReadOnly(GPITrigger):
+
+class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
     """
     Execution will resume when the readonly portion of the sim cycles is
     readched
     """
+    @classmethod
+    def __singleton_key__(cls):
+        return None
+
     def __init__(self):
         GPITrigger.__init__(self)
 
@@ -151,18 +156,16 @@ class _ReadOnly(GPITrigger):
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
 
-_ro = _ReadOnly()
 
-
-def ReadOnly():
-    return _ro
-
-
-class _ReadWrite(GPITrigger):
+class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
     """
     Execution will resume when the readwrite portion of the sim cycles is
     reached
     """
+    @classmethod
+    def __singleton_key__(cls):
+        return None
+
     def __init__(self):
         GPITrigger.__init__(self)
 
@@ -178,17 +181,15 @@ class _ReadWrite(GPITrigger):
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
 
-_rw = _ReadWrite()
 
-
-def ReadWrite():
-    return _rw
-
-
-class _NextTimeStep(GPITrigger):
+class NextTimeStep(with_metaclass(ParametrizedSingleton, GPITrigger)):
     """
     Execution will resume when the next time step is started
     """
+    @classmethod
+    def __singleton_key__(cls):
+        return None
+
     def __init__(self):
         GPITrigger.__init__(self)
 
@@ -201,12 +202,6 @@ class _NextTimeStep(GPITrigger):
 
     def __str__(self):
         return self.__class__.__name__ + "(nexttimestep)"
-
-_nxts = _NextTimeStep()
-
-
-def NextTimeStep():
-    return _nxts
 
 
 class _EdgeBase(with_metaclass(ParametrizedSingleton, GPITrigger)):
