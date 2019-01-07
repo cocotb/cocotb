@@ -392,6 +392,9 @@ class Scheduler(object):
             self.log.debug("%d pending coroutines for event %s%s" %
                            (len(scheduling), str(trigger), debugstr))
 
+        # This trigger isn't needed any more
+        trigger.unprime()
+
         # If the coroutine was waiting on multiple triggers we may be able
         # to unprime the other triggers that didn't fire
         scheduling_set = set(scheduling)
@@ -399,12 +402,11 @@ class Scheduler(object):
             t
             for coro in scheduling
             for t in self._coro2triggers[coro]
-        }
+        } - {trigger}
+
         for pending in other_triggers:
             # every coroutine waiting on this trigger is already being woken
             if scheduling_set.issuperset(self._trigger2coros[pending]):
-                # if pending is not trigger and pending.primed:
-                #     pending.unprime()
                 if pending.primed:
                     pending.unprime()
                 del self._trigger2coros[pending]
