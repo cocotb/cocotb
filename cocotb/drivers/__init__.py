@@ -108,7 +108,7 @@ class Driver(object):
             self._thread.kill()
             self._thread = None
 
-    def append(self, transaction, callback=None, event=None):
+    def append(self, transaction, callback=None, event=None, **kwargs):
         """
         Queue up a transaction to be sent over the bus.
 
@@ -120,7 +120,7 @@ class Driver(object):
 
         event: event to be set when the tansaction has been sent
         """
-        self._sendQ.append((transaction, callback, event))
+        self._sendQ.append((transaction, callback, event, kwargs))
         self._pending.set()
 
     def clear(self):
@@ -130,7 +130,7 @@ class Driver(object):
         self._sendQ = deque()
 
     @coroutine
-    def send(self, transaction, sync=True):
+    def send(self, transaction, sync=True, **kwargs):
         """
         Blocking send call (hence must be "yielded" rather than called)
 
@@ -142,9 +142,9 @@ class Driver(object):
         Kwargs:
             sync (boolean): synchronise the transfer by waiting for risingedge
         """
-        yield self._send(transaction, None, None, sync=sync)
+        yield self._send(transaction, None, None, sync=sync, **kwargs)
 
-    def _driver_send(self, transaction, sync=True):
+    def _driver_send(self, transaction, sync=True, **kwargs):
         """
         actual impementation of the send.
 
@@ -155,13 +155,13 @@ class Driver(object):
                                   "_driver_send coroutine")
 
     @coroutine
-    def _send(self, transaction, callback, event, sync=True):
+    def _send(self, transaction, callback, event, sync=True, **kwargs):
         """
         assumes the caller has already acquired the busy lock
 
         releases busy lock once sending is complete
         """
-        yield self._driver_send(transaction, sync=sync)
+        yield self._driver_send(transaction, sync=sync, **kwargs)
 
         # Notify the world that this transaction is complete
         if event:
@@ -186,10 +186,10 @@ class Driver(object):
             # Send in all the queued packets,
             # only synchronise on the first send
             while self._sendQ:
-                transaction, callback, event = self._sendQ.popleft()
+                transaction, callback, event, kwargs = self._sendQ.popleft()
                 self.log.debug("Sending queued packet...")
                 yield self._send(transaction, callback, event,
-                                 sync=not synchronised)
+                                 sync=not synchronised, **kwargs)
                 synchronised = True
 
 
