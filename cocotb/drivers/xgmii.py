@@ -1,30 +1,30 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd nor the names of its
-      contributors may be used to endorse or promote products derived from this
-      software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+# Copyright (c) 2013 Potential Ventures Ltd
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd nor the names of its
+#       contributors may be used to endorse or promote products derived from this
+#       software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-Drivers for XGMII
+Drivers for XGMII (10 Gigabit Media Independent Interface)
 """
 
 import struct
@@ -66,8 +66,7 @@ class _XGMIIBus(object):
             nbytes (int):       The number of bytes transferred per clock cycle
                                 (usually 8 for SDR, 4 for DDR)
 
-        Kwargs:
-            interleaved (bool): The arrangement of control bits on the bus.
+            interleaved (bool, optional): The arrangement of control bits on the bus.
 
                                 If interleaved we have a bus with 9-bits per
                                 byte, the control bit being the 9th bit of each
@@ -123,27 +122,23 @@ class _XGMIIBus(object):
 
 class XGMII(Driver):
     """
-    XGMII driver
+    XGMII (10 Gigabit Media Independent Interface) driver
     """
 
     def __init__(self, signal, clock, interleaved=True):
         """
         Args:
-            signal (SimHandle):         The xgmii data bus
-
-            clock (SimHandle):          The associated clock (assumed to be
-                                        driven by another coroutine)
-
-        Kwargs:
-            interleaved (bool:          Whether control bits are interleaved
-                                        with the data bytes or not.
+            signal (SimHandle): The xgmii data bus
+            clock (SimHandle): The associated clock (assumed to be
+                driven by another coroutine)
+            interleaved (bool,  optional): Whether control bits are interleaved
+                with the data bytes or not.
 
         If interleaved the bus is
-            byte0, byte0_control, byte1, byte1_control ....
+            byte0, byte0_control, byte1, byte1_control, ...
 
-            Otherwise expect:
-
-            byte0, byte1, ..., byte0_control, byte1_control...
+        Otherwise expect
+            byte0, byte1, ..., byte0_control, byte1_control, ...
         """
         self.log = signal._log
         self.signal = signal
@@ -153,10 +148,16 @@ class XGMII(Driver):
 
     @staticmethod
     def layer1(packet):
-        """Take an Ethernet packet (as a string) and format as a layer 1 packet
+        """
+        Take an Ethernet packet (as a string) and format as a layer 1 packet.
 
-           Pads to 64-bytes,
-           prepends preamble and appends 4-byte CRC on the end
+        Pad to 64 bytes, prepend preamble and append 4-byte CRC on the end.
+
+        Args:
+            packet (str): The Ethernet packet to format.
+
+        Returns:
+            str: The formatted layer 1 packet.
         """
         if len(packet) < 60:
             padding = "\x00" * (60 - len(packet))
@@ -165,13 +166,20 @@ class XGMII(Driver):
                 struct.pack("<I", zlib.crc32(packet) & 0xFFFFFFFF))
 
     def idle(self):
-        """Helper to set bus to IDLE state"""
+        """
+        Helper function to set bus to IDLE state.
+        """
         for i in range(len(self.bus)):
             self.bus[i] = (_XGMII_IDLE, True)
         self.signal <= self.bus.value
 
     def terminate(self, index):
-        """Helper function to terminate from a provided lane index"""
+        """
+        Helper function to terminate from a provided lane index.
+
+        Args:
+            index (int): The index to terminate
+        """
         self.bus[index] = (_XGMII_TERMINATE, True)
 
         if index < len(self.bus) - 1:

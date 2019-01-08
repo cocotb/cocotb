@@ -118,18 +118,16 @@ class AXI4LiteMaster(BusDriver):
 
         Args:
             address (int): The address to write to
-            
             value (int): The data value to write
-            
-            byte_enable (int): Which bytes in value to actually write
-            
-        Kwargs:
-            address_latency (int): Delay before setting the address (in clock cycles)
-            
-            data_latency (int): Delay before setting the data value (in clock cycles)
+            byte_enable (int, optional): Which bytes in value to actually write.
+                Default is to write all bytes.
+            address_latency (int, optional): Delay before setting the address (in clock cycles).
+                Default is no delay.
+            data_latency (int, optional): Delay before setting the data value (in clock cycles).
+                Default is no delay.
             
         Returns:
-            The write response value
+            BinaryValue: The write response value
             
         Raises:
             AXIProtocolError: If write response from AXI is not ``OKAY``
@@ -169,12 +167,11 @@ class AXI4LiteMaster(BusDriver):
         
         Args:
             address (int): The address to read from
-            
-        Kwargs:
-            sync (bool): Wait for rising edge on clock initially
+            sync (bool, optional): Wait for rising edge on clock initially.
+                Defaults to True.
             
         Returns:
-            The read data value
+            BinaryValue: The read data value
             
         Raises:
             AXIProtocolError: If read response from AXI is not ``OKAY``

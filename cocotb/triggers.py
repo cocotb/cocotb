@@ -133,7 +133,7 @@ class Timer(GPITrigger):
 class _ReadOnly(GPITrigger):
     """
     Execution will resume when the readonly portion of the sim cycles is
-    readched
+    reached
     """
     def __init__(self):
         GPITrigger.__init__(self)
@@ -251,17 +251,17 @@ class _EdgeBase(GPITrigger):
 
 
 class RisingEdge(_EdgeBase):
-    """ Triggers on the rising edge of the provided signal """
+    """Triggers on the rising edge of the provided signal"""
     _edge_type = 1
 
 
 class FallingEdge(_EdgeBase):
-    """ Triggers on the falling edge of the provided signal """
+    """Triggers on the falling edge of the provided signal"""
     _edge_type = 2
 
 
 class Edge(_EdgeBase):
-    """ Triggers on either edge in a signal """
+    """Triggers on either edge of the provided signal"""
     _edge_type = 3
 
 
@@ -496,7 +496,7 @@ class Lock(PythonTrigger):
 class NullTrigger(Trigger):
     """
     Trigger for internal interfacing use call the callback as soon
-    as it is primed and then remove it's self from the scheduler
+    as it is primed and then remove itself from the scheduler
     """
     def __init__(self, name=""):
         Trigger.__init__(self)
