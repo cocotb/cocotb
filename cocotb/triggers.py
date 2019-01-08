@@ -402,6 +402,8 @@ class Event(PythonTrigger):
     def wait(self):
         """This can be yielded to block this coroutine
         until another wakes it"""
+        if self.fired:
+            return NullTrigger()
         return _Event(self)
 
     def clear(self):
