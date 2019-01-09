@@ -104,15 +104,18 @@ class SimHandleBase(object):
         return self._len
 
     def __eq__(self, other):
+        """Equality comparator for handles
 
-        # Permits comparison of handles i.e. if clk == dut.clk
-        if isinstance(other, SimHandleBase):
-            if self._handle == other._handle:
-                return 0
-            return 1
+        IE if clk == dut.clk
+        """
+        if not isinstance(other, SimHandleBase):
+            return NotImplemented
+        return self._handle == other._handle
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        if not isinstance(other, SimHandleBase):
+            return NotImplemented
+        return self._handle != other._handle
 
     def __repr__(self):
         desc = self._path
@@ -415,12 +418,13 @@ class NonHierarchyObject(SimHandleBase):
         return AssignmentResult(self, value)
 
     def __eq__(self, other):
-        if isinstance(other, SimHandleBase):
-            if self._handle == other._handle:
-                return 0
-            return 1
+        """Equality comparator for non hierarchy handles
 
-        # Use the comparison method of the other object against our value
+        If other is not SimHandleBase instance, use comparison method of the
+        other object against our value
+        """
+        if isinstance(other, SimHandleBase):
+            return SimHandleBase.__eq__(self, other)
         return self.value == other
 
     def __ne__(self, other):
