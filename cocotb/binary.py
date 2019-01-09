@@ -35,6 +35,9 @@ import random
 import warnings
 
 resolve_x_to = os.getenv('COCOTB_RESOLVE_X', "VALUE_ERROR")
+rand_gen = random.Random()
+rand_gen.seed(os.getenv('RANDOM_SEED', random.getrandbits(32)))
+consistent_val = rand_gen.getrandbits(32)
 
 def resolve(string):
     for char in BinaryValue._resolve_to_0:
@@ -51,6 +54,8 @@ def resolve(string):
         elif resolve_x_to == "RANDOM":
             bits = "{0:b}".format(random.getrandbits(1))
             string = string.replace(char, bits)
+        elif resolve_x_to == "CONSISTENT_RANDOM":
+            string = string.replace(char, '1' if (hash(string)*consistent_val) & 0x80000000 else '0')
     return string
 
 
