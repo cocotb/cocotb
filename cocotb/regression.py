@@ -75,9 +75,14 @@ class RegressionManager(object):
     def __init__(self, root_name, modules, tests=None, seed=None, hooks=[]):
         """
         Args:
-            modules (list): A list of Python module names to run
-
-        Kwargs
+            root_name (str): The name of the root handle.
+            modules (list): A list of Python module names to run.
+            tests (list, optional): A list of tests to run.
+                Defaults to ``None``, meaning all discovered tests will be run.
+            seed (int,  optional): The seed for the random number generator to use.
+                Defaults to ``None``.
+            hooks (list, optional): A list of hook modules to import.
+                Defaults to the empty list.
         """
         self._queue = []
         self._root_name = root_name
@@ -225,11 +230,13 @@ class RegressionManager(object):
         self.failures += 1
 
     def handle_result(self, result):
-        """Handle a test result
+        """
+        Handle a test result.
 
-        Dumps result to XML and schedules the next test (if any)
+        Dump result to XML and schedule the next test (if any).
 
-        Args: result (TestComplete exception)
+        Args: 
+            result: The sub-exception of TestComplete to raise
         """
         real_time   = time.time() - self._running_test.start_time
         sim_time_ns = get_sim_time('ns') - self._running_test.start_sim_time
@@ -392,27 +399,22 @@ class RegressionManager(object):
 
 
 def _create_test(function, name, documentation, mod, *args, **kwargs):
-    """Factory function to create tests, avoids late binding
+    """
+    Factory function to create tests, avoids late binding.
 
     Creates a test dynamically.  The test will call the supplied
     function with the supplied arguments.
 
     Args:
-        function: (function)    the test function to run
-
-        name: (string)          the name of the test
-
-        documentation: (string) the docstring for the test
-
-        mod: (module)           the module this function belongs to
-
-        *args:                  remaining args to pass to test function
-
-    Kwaygs:
-        **kwargs:               passed to the test function
+        function (function):  The test function to run
+        name (str):           The name of the test
+        documentation (str):  The docstring for the test
+        mod (module):         The module this function belongs to
+        *args:                Remaining args to pass to test function
+        **kwargs:             Passed to the test function
 
     Returns:
-        decorated test function
+        Decorated test function
     """
     def _my_test(dut):
         yield function(dut, *args, **kwargs)
@@ -424,7 +426,6 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
 
 
 class TestFactory(object):
-
     """
     Used to automatically generate tests.
 
@@ -436,7 +437,7 @@ class TestFactory(object):
     permutations of the possible arguments to the test function.
 
     For example if we have a module that takes backpressure and idles and
-    have some packet generations routines gen_a and gen_b.
+    have some packet generation routines ``gen_a`` and ``gen_b``:
 
     >>> tf = TestFactory(run_test)
     >>> tf.add_option('data_in', [gen_a, gen_b])
@@ -445,18 +446,18 @@ class TestFactory(object):
     >>> tf.generate_tests()
 
     We would get the following tests:
-        * gen_a with no backpressure and no idles
-        * gen_a with no backpressure and random_idles
-        * gen_a with random_backpressure and no idles
-        * gen_a with random_backpressure and random_idles
-        * gen_b with no backpressure and no idles
-        * gen_b with no backpressure and random_idles
-        * gen_b with random_backpressure and no idles
-        * gen_b with random_backpressure and random_idles
+        * ``gen_a`` with no backpressure and no idles
+        * ``gen_a`` with no backpressure and ``random_idles``
+        * ``gen_a`` with ``random_backpressure`` and no idles
+        * ``gen_a`` with ``random_backpressure`` and ``random_idles``
+        * ``gen_b`` with no backpressure and no idles
+        * ``gen_b`` with no backpressure and ``random_idles``
+        * ``gen_b`` with ``random_backpressure`` and no idles
+        * ``gen_b`` with ``random_backpressure`` and ``random_idles``
 
     The tests are appended to the calling module for auto-discovery.
 
-    Tests are simply named test_function_N. The docstring for the test (hence
+    Tests are simply named ``test_function_N``. The docstring for the test (hence
     the test description) includes the name and description of each generator.
     """
 
@@ -488,10 +489,10 @@ class TestFactory(object):
         """Add a named option to the test.
 
         Args:
-           name (string): name of the option. passed to test as a keyword
-                          argument
+           name (string): Name of the option. Passed to test as a keyword
+                          argument.
 
-           optionlist (list): A list of possible options for this test knob
+           optionlist (list): A list of possible options for this test knob.
         """
         self.kwargs[name] = optionlist
 
@@ -504,13 +505,13 @@ class TestFactory(object):
         module.
 
         Args:
-            prefix:  Text string to append to start of test_function name
+            prefix (str):  Text string to append to start of ``test_function`` name
                      when naming generated test cases. This allows reuse of
-                     a single test_function with multiple TestFactories without
+                     a single ``test_function`` with multiple TestFactories without
                      name clashes.
-            postfix: Text string to append to end of test_function name
+            postfix (str): Text string to append to end of ``test_function`` name
                      when naming generated test cases. This allows reuse of
-                     a single test_function with multiple TestFactories without
+                     a single ``test_function`` with multiple TestFactories without
                      name clashes.
         """
 
@@ -545,7 +546,7 @@ class TestFactory(object):
             kwargs.update(testoptions)
             if hasattr(mod, name):
                 cocotb.log.error("Overwriting %s in module %s. "
-                                 "This causes previously defined testcase "
+                                 "This causes a previously defined testcase "
                                  "not to be run. Consider setting/changing "
                                  "name_postfix" % (name, mod))
             setattr(mod, name, _create_test(self.test_function, name, doc, mod,

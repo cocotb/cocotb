@@ -56,8 +56,8 @@ def raise_error(obj, msg):
 
 def create_error(obj, msg):
     """
-    As above, but return the exception rather than raise it, simply to avoid
-    too many levels of nested try/except blocks
+    Like ``raise_error``, but return the exception rather than raise it, 
+    simply to avoid too many levels of nested try/except blocks.
     """
     try:
         raise_error(obj, msg)
@@ -73,7 +73,7 @@ class ReturnValue(Exception):
 
 class TestComplete(Exception):
     """
-        Exceptions are used to pass test results around.
+    Exception showing that test was completed. Sub-exceptions detail the exit status.
     """
     def __init__(self, *args, **kwargs):
         super(TestComplete, self).__init__(*args, **kwargs)
@@ -87,16 +87,28 @@ class ExternalException(Exception):
 
 
 class TestError(TestComplete):
+    """
+    Exception showing that test was completed with severity Error.
+    """
     pass
 
 
 class TestFailure(TestComplete):
+    """
+    Exception showing that test was completed with severity Failure.
+    """
     pass
 
 
 class TestSuccess(TestComplete):
+    """
+    Exception showing that test was completed successfully.
+    """
     pass
 
 
 class SimFailure(TestComplete):
+    """
+    Exception showing that test was completed successfully.
+    """
     pass
