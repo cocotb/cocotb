@@ -394,7 +394,13 @@ class Event(PythonTrigger):
 
     def wait(self):
         """This can be yielded to block this coroutine
-        until another wakes it"""
+        until another wakes it
+
+        If the Event has already been fired, this returns NullTrigger()
+        To reset the event (and enable the use of wait() again), clear() should be called
+        """
+        if self.fired:
+            return NullTrigger()
         return _Event(self)
 
     def clear(self):
