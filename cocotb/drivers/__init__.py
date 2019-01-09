@@ -119,6 +119,8 @@ class Driver(object):
         sent
 
         event: event to be set when the tansaction has been sent
+
+        **kwargs: Any additional arguments used in child class' _driver_send method
         """
         self._sendQ.append((transaction, callback, event, kwargs))
         self._pending.set()
@@ -141,6 +143,7 @@ class Driver(object):
 
         Kwargs:
             sync (boolean): synchronise the transfer by waiting for risingedge
+            kwargs (dict): Adddition arguments used in child class' _driver_send method
         """
         yield self._send(transaction, None, None, sync=sync, **kwargs)
 
@@ -150,6 +153,13 @@ class Driver(object):
 
         subclasses should override this method to implement the actual send
         routine
+
+        Args:
+            transaction (any): the transaction to send
+
+        Kwargs:
+            sync (boolean): synchronise the transfer by waiting for rising edge
+            kwargs (dict): additional arguments if required for protocol implemented in subclass
         """
         raise NotImplementedError("Subclasses of Driver should define a "
                                   "_driver_send coroutine")
