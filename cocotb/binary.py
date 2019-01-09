@@ -450,12 +450,18 @@ class BinaryValue(object):
         self.integer = self.integer + int(other)
         return self
 
+    def __radd__(self, other):
+        return self.integer + other
+
     def __sub__(self, other):
         return self.integer - int(other)
 
     def __isub__(self, other):
         self.integer = self.integer - int(other)
         return self
+
+    def __rsub__(self, other):
+        return other - self.integer
 
     def __mul__(self, other):
         return self.integer * int(other)
@@ -464,12 +470,24 @@ class BinaryValue(object):
         self.integer = self.integer * int(other)
         return self
 
-    def __divmod__(self, other):
+    def __rmul__(self, other):
+        return self.integer * other
+
+    def __floordiv__(self, other):
         return self.integer // int(other)
 
-    def __idivmod__(self, other):
-        self.integer = self.integer // int(other)
+    def __ifloordiv__(self, other):
+        self.integer = self.__floordiv__(other)
         return self
+
+    def __rfloordiv__(self, other):
+        return other // self.integer
+
+    def __divmod__(self, other):
+        return (self.integer // other, self.integer % other)
+
+    def __rdivmod__(self, other):
+        return other // self.integer
 
     def __mod__(self, other):
         return self.integer % int(other)
@@ -477,6 +495,19 @@ class BinaryValue(object):
     def __imod__(self, other):
         self.integer = self.integer % int(other)
         return self
+
+    def __rmod__(self, other):
+        return other % self.integer
+
+    def __pow__(self, other, modulo):
+        return pow(self.integer, other, modulo)
+
+    def __ipow__(self, other, modulo):
+        self.integer = pow(self.integer, other, modulo)
+        return self
+
+    def __rpow__(self, other):
+        return pow(other, self.integer, modulo)
 
     def __lshift__(self, other):
         return int(self) << int(other)
@@ -486,6 +517,9 @@ class BinaryValue(object):
         self.binstr = self.binstr[other:] + self.binstr[:other]
         return self
 
+    def __rlshift__(self, other):
+        return other << self.integer
+
     def __rshift__(self, other):
         return int(self) >> int(other)
 
@@ -494,9 +528,70 @@ class BinaryValue(object):
         self.binstr = self.binstr[-other:] + self.binstr[:-other]
         return self
 
+    def __rrshift__(self, other):
+        return other >> self.integer
+
+    def __and__(self, other):
+        return self.integer & other
+
+    def __iand__(self, other):
+        self.integer &= other
+        return self
+
+    def __rand__(self, other):
+        return self.integer & other
+
+    def __xor__(self, other):
+        return self.integer ^ other
+
+    def __ixor__(self, other):
+        self.integer ^= other
+        return self
+
+    def __rxor__(self, other):
+        return self.__xor__(other)
+
+    def __or__(self, other):
+        return self.integer | other
+
+    def __ior__(self, other):
+        self.integer |= other
+        return self
+
+    def __ror__(self, other):
+        return self.__or__(other)
+
+    def __div__(self, other):
+        return self.integer / other
+
+    def __idiv__(self, other):
+        self.integer /= other
+        return self
+
+    def __rdiv__(self, other):
+        return other / self.integer
+
+    def __neg__(self, other):
+        return - self.integer
+
+    def __pos__(self):
+        return + self.integer
+
+    def __abs__(self):
+        return abs(self.integer)
+
     def __invert__(self):
         """Preserves X values"""
         return self._invert(self.binstr)
+
+    def __oct__(self):
+        return oct(self.integer)
+
+    def __hex__(self):
+        return hex(self.integer)
+
+    def __index__(self):
+        return self.integer
 
     def __len__(self):
         return len(self.binstr)
