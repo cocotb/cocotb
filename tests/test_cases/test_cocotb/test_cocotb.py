@@ -740,6 +740,29 @@ def join_finished(dut):
 
 
 @cocotb.test()
+def consistent_join(dut):
+    """
+    Test that joining a coroutine returns the finished value
+    """
+    @cocotb.coroutine
+    def wait_for(clk, cycles):
+        rising_edge = RisingEdge(clk)
+        for _ in range(cycles):
+            yield rising_edge
+        raise ReturnValue(3)
+
+    cocotb.fork(Clock(dut.clk, 2000, 'ps').start())
+
+    short_wait = cocotb.fork(wait_for(dut.clk, 10))
+    long_wait = cocotb.fork(wait_for(dut.clk, 30))
+
+    yield wait_for(dut.clk, 20)
+    a = yield short_wait.join()
+    b = yield long_wait.join()
+    assert a == b == 3
+
+
+@cocotb.test()
 def test_kill_twice(dut):
     """
     Test that killing a coroutine that has already been killed does not crash
