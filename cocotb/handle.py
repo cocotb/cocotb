@@ -456,7 +456,7 @@ class ConstantObject(NonHierarchyObject):
             self._value = simulator.get_signal_val_str(self._handle)
         else:
             val = simulator.get_signal_val_binstr(self._handle)
-            self._value = BinaryValue(bits=len(val))
+            self._value = BinaryValue(n_bits=len(val))
             try:
                 self._value.binstr = val
             except:
@@ -598,9 +598,9 @@ class ModifiableObject(NonConstantObject):
             return
 
         if isinstance(value, ctypes.Structure):
-            value = BinaryValue(value=cocotb.utils.pack(value), bits=len(self))
+            value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
         elif isinstance(value, get_python_integer_types()):
-            value = BinaryValue(value=value, bits=len(self), bigEndian=False)
+            value = BinaryValue(value=value, n_bits=len(self), bigEndian=False)
         elif isinstance(value, dict):
             #We're given a dictionary with a list of values and a bit size...
             num = 0;
@@ -614,7 +614,7 @@ class ModifiableObject(NonConstantObject):
 
             for val in vallist:
                 num = (num << value["bits"]) + val;
-            value = BinaryValue(value=num, bits=len(self), bigEndian=False)
+            value = BinaryValue(value=num, n_bits=len(self), bigEndian=False)
 
         elif not isinstance(value, BinaryValue):
             self._log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
