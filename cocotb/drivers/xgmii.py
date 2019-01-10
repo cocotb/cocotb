@@ -77,7 +77,7 @@ class _XGMIIBus(object):
                                 byte plus a control bit per byte in the MSBs.
         """
 
-        self._value = BinaryValue(bits=nbytes*9, bigEndian=False)
+        self._value = BinaryValue(n_bits=nbytes*9, bigEndian=False)
         self._integer = long(0)
         self._interleaved = interleaved
         self._nbytes = nbytes

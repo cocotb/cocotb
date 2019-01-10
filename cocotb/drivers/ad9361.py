@@ -55,9 +55,9 @@ class AD9361(BusDriver):
     @cocotb.coroutine
     def rx_data_to_ad9361(self, i_data, q_data, i_data2=None, q_data2=None,
                           binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT):
-        i_bin_val = BinaryValue(bits=12, bigEndian=False,
+        i_bin_val = BinaryValue(n_bits=12, bigEndian=False,
                                 binaryRepresentation=binaryRepresentation)
-        q_bin_val = BinaryValue(bits=12, bigEndian=False,
+        q_bin_val = BinaryValue(n_bits=12, bigEndian=False,
                                 binaryRepresentation=binaryRepresentation)
         index = 0
         if i_data2 is None and q_data2 is None:
@@ -132,8 +132,8 @@ class AD9361(BusDriver):
 
     @cocotb.coroutine
     def _tx_data_from_ad9361(self):
-        i_bin_val = BinaryValue(bits=12, bigEndian=False)
-        q_bin_val = BinaryValue(bits=12, bigEndian=False)
+        i_bin_val = BinaryValue(n_bits=12, bigEndian=False)
+        q_bin_val = BinaryValue(n_bits=12, bigEndian=False)
         while True:
             yield RisingEdge(self.dut.tx_clk_out_p)
             if self.dut.tx_frame_out_p.value.integer == 1:
@@ -154,8 +154,8 @@ class AD9361(BusDriver):
     @cocotb.coroutine
     def _ad9361_tx_to_rx_loopback(self):
         cocotb.fork(self._tx_data_from_ad9361())
-        i_bin_val = BinaryValue(bits=12, bigEndian=False)
-        q_bin_val = BinaryValue(bits=12, bigEndian=False)
+        i_bin_val = BinaryValue(n_bits=12, bigEndian=False)
+        q_bin_val = BinaryValue(n_bits=12, bigEndian=False)
         while True:
             yield RisingEdge(self.dut.rx_clk_in_p)
             if self.rx_frame_asserted:

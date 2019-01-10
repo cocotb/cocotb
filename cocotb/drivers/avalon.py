@@ -274,7 +274,7 @@ class AvalonMemory(BusDriver):
         else:
             self._mem = memory
 
-        self._val = BinaryValue(bits=self._width, bigEndian=False)
+        self._val = BinaryValue(n_bits=self._width, bigEndian=False)
         self._readlatency_min = readlatency_min
         self._readlatency_max = readlatency_max
         self._responses = []
@@ -513,7 +513,7 @@ class AvalonST(ValidatedBusDriver):
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
 
-        word = BinaryValue(bits=len(self.bus.data), bigEndian=self.config['firstSymbolInHighOrderBits'])
+        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=self.config['firstSymbolInHighOrderBits'])
 
         self.bus.valid  <= 0
         self.bus.data   <= word
@@ -543,7 +543,7 @@ class AvalonST(ValidatedBusDriver):
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
 
-        word = BinaryValue(bits=len(self.bus.data), bigEndian=False)
+        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=False)
 
         # Drive some defaults since we don't know what state we're in
         self.bus.valid <= 0
@@ -618,10 +618,10 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.use_empty = (num_data_symbols > 1)
         self.config["useEmpty"] = self.use_empty
 
-        word   = BinaryValue(bits=len(self.bus.data),
+        word   = BinaryValue(n_bits=len(self.bus.data),
                              bigEndian=self.config['firstSymbolInHighOrderBits'])
 
-        single = BinaryValue(bits=1, bigEndian=False)
+        single = BinaryValue(n_bits=1, bigEndian=False)
 
         word.binstr   = ("x"*len(self.bus.data))
         single.binstr = ("x")
@@ -632,7 +632,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.endofpacket <= single
 
         if self.use_empty:
-            empty = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
+            empty = BinaryValue(n_bits=len(self.bus.empty), bigEndian=False)
             empty.binstr  = ("x"*len(self.bus.empty))
             self.bus.empty <= empty
 
@@ -647,7 +647,7 @@ class AvalonSTPkts(ValidatedBusDriver):
                 raise AttributeError(
                         "%s has maxChannel=%d, but can only support a maximum channel of (2**channel_width)-1=%d, channel_width=%d" %
                         (self.name,self.config['maxChannel'],maxChannel,len(self.bus.channel)))
-            channel = BinaryValue(bits=len(self.bus.channel), bigEndian=False)
+            channel = BinaryValue(n_bits=len(self.bus.channel), bigEndian=False)
             channel.binstr = ("x"*len(self.bus.channel))
             self.bus.channel <= channel
 
@@ -678,12 +678,12 @@ class AvalonSTPkts(ValidatedBusDriver):
         # FIXME busses that aren't integer numbers of bytes
         bus_width = int(len(self.bus.data) / 8)
 
-        word = BinaryValue(bits=len(self.bus.data),
+        word = BinaryValue(n_bits=len(self.bus.data),
                            bigEndian=self.config['firstSymbolInHighOrderBits'])
 
-        single = BinaryValue(bits=1, bigEndian=False)
+        single = BinaryValue(n_bits=1, bigEndian=False)
         if self.use_empty:
-            empty = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
+            empty = BinaryValue(n_bits=len(self.bus.empty), bigEndian=False)
 
         # Drive some defaults since we don't know what state we're in
         if self.use_empty:
