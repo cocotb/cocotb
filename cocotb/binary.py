@@ -75,12 +75,11 @@ class BinaryValue(object):
 
     The underlying value can be set or accessed using three aliasing attributes
 
-        - BinaryValue.integer is an integer
-        - BinaryValue.signed_integer is a signed integer
-        - BinaryValue.binstr is a string of "01xXzZ"
-        - BinaryValue.buff is a binary buffer of bytes
-
-        - BinaryValue.value is an integer *** deprecated ***
+        - ``BinaryValue.integer`` is an integer
+        - ``BinaryValue.signed_integer`` is a signed integer
+        - ``BinaryValue.binstr`` is a string of "01xXzZ"
+        - ``BinaryValue.buff`` is a binary buffer of bytes
+        - ``BinaryValue.value`` is an integer *** deprecated ***
 
     For example:
 
@@ -101,16 +100,20 @@ class BinaryValue(object):
                  binaryRepresentation=BinaryRepresentation.UNSIGNED,
                  bits=None):
         """
-        Kwagrs:
-            value (string or int or long): value to assign to the bus
-
-            n_bits (int): Number of bits to use for the underlying binary
-                          representation
-
-            bigEndian (bool): Interpret the binary as big-endian when
-                                converting to/from a string buffer.
-
-            bits (int): Deprecated: Compatibility wrapper for n_bits
+        Args:
+            value (str or int or long, optional): 
+                Value to assign to the bus.
+            n_bits (int, optional): 
+                Number of bits to use for the underlying binary representation.
+            bigEndian (bool, optional):
+                Interpret the binary as big-endian when converting to/from 
+                a string buffer.
+            binaryRepresentation (BinaryRepresentation):
+                The representation of the binary value 
+                (one of ``UNSIGNED``, ``SIGNED_MAGNITUDE``, ``TWOS_COMPLEMENT``).
+                Defaults to unsigned representation.
+            bits (int, optional): 
+                Deprecated: Compatibility wrapper for n_bits.
         """
         self._str = ""
         self.big_endian = bigEndian
@@ -144,12 +147,16 @@ class BinaryValue(object):
             self.assign(value)
 
     def assign(self, value):
-        """Decides how best to assign the value to the vector
+        """Decides how best to assign the value to the vector.
 
         We possibly try to be a bit too clever here by first of
         all trying to assign the raw string as a binstring, however
         if the string contains any characters that aren't 0, 1, X or Z
-        then we interpret the string as a binary buffer...
+        then we interpret the string as a binary buffer.
+
+        Args:
+            value (str or int or long):
+                The value to assign.
         """
         if isinstance(value, get_python_integer_types()):
             self.value = value
@@ -279,11 +286,19 @@ class BinaryValue(object):
         return rv
 
     def get_value(self):
-        """value is an integer representation of the underlying vector"""
+        """value is an integer representation of the underlying vector.
+
+        Returns:
+            int: integer representation
+        """
         return self._convert_from[self.binaryRepresentation](self._str)
 
     def get_value_signed(self):
-        """value is an signed integer representation of the underlying vector"""
+        """value is a signed integer representation of the underlying vector.
+
+        Returns:
+            int: signed integer representation
+        """
         ival = int(resolve(self._str), 2)
         bits = len(self._str)
         signbit = (1 << (bits - 1))
@@ -537,7 +552,7 @@ class BinaryValue(object):
         return rv
 
     def __setitem__(self, key, val):
-        ''' BinaryValue uses verilog/vhdl style slices as opposed to python
+        '''BinaryValue uses Verilog/VHDL style slices as opposed to Python
         style'''
         if not isinstance(val, str) and not isinstance(val, get_python_integer_types()):
             raise TypeError('BinaryValue slices only accept string or integer values')

@@ -26,8 +26,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 """
-    A clock class
+A clock class
 """
+
 import os
 import itertools
 
@@ -50,13 +51,14 @@ class BaseClock(object):
 
 
 class Clock(BaseClock):
-    """Simple 50:50 duty cycle clock driver
+    """Simple 50:50 duty cycle clock driver.
 
     Instances of this class should call its ``start`` method and fork the
     result.  This will create a clocking thread that drives the signal at the
     desired period/frequency.
 
     Example:
+
     .. code-block:: python
 
         c = Clock(dut.clk, 10, 'ns')
