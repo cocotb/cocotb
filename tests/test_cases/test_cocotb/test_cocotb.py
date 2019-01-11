@@ -39,7 +39,7 @@ Also used as regression test of cocotb capabilities
 
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite, ClockCycles)
+                             ReadOnly, ReadWrite, ClockCycles, NextTimeStep)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
@@ -813,7 +813,7 @@ def test_singleton_isinstance(dut):
     assert isinstance(RisingEdge(dut.clk), RisingEdge)
     assert isinstance(FallingEdge(dut.clk), FallingEdge)
     assert isinstance(Edge(dut.clk), Edge)
-    assert isinstance(NextTimestep(), NextTimestep)
+    assert isinstance(NextTimeStep(), NextTimeStep)
     assert isinstance(ReadOnly(), ReadOnly)
     assert isinstance(ReadWrite(), ReadWrite)
 
