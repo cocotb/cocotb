@@ -18,6 +18,10 @@ import datetime
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
+
+# Add in-tree extensions to path
+sys.path.insert(0, os.path.abspath('../sphinxext'))
+
 os.environ["SPHINX_BUILD"] = "1"
 
 # -- General configuration -----------------------------------------------------
@@ -32,9 +36,10 @@ extensions = [
     'sphinx.ext.doctest', 
     'sphinx.ext.todo', 
     'sphinx.ext.coverage', 
-    'sphinx.ext.pngmath', 
+    'sphinx.ext.imgmath', 
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'cairosvgconverter',
     ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -47,12 +47,13 @@ endif
 
 EXTRA_ARGS += $(COMPILE_ARGS)
 EXTRA_ARGS += $(SIM_ARGS)
+EXTRA_ARGS += -licqueue
 
 ifneq ($(ARCH),i686)
 EXTRA_ARGS += -64
 endif
 
-EXTRA_ARGS += -nclibdirpath $(SIM_BUILD) 
+EXTRA_ARGS += -nclibdirpath $(SIM_BUILD)
 EXTRA_ARGS += -plinowarn
 
 ifeq ($(GUI),1)

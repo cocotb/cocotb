@@ -62,9 +62,19 @@ RTL_LIBRARY ?= work
 ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
 ACOM_ARGS += -dbg
 
+# Aldec-specific coverage types:
+# - (s)tatement
+# - (b)ranch
+# - (e)xpression
+# - (c)ondition
+# - (a)ssertion
+# - (p)ath
+# - finite state (m)achine
+# Documentation: Riviera Pro 2017.02 Documentation - Page 359
+COVERAGE_TYPES ?= sb
 ifeq ($(COVERAGE),1)
-    ASIM_ARGS += -acdb
-    ALOG_ARGS += -coverage sb
+    ASIM_ARGS += -acdb -acdb_cov $(COVERAGE_TYPES)
+    ALOG_ARGS += -coverage $(COVERAGE_TYPES)
 endif
 
 GPI_EXTRA:=
@@ -98,6 +108,9 @@ $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
 	@echo "	puts [read [open sim.log r]]" >> $@
 	@echo "	quit -code 1" >> $@
 	@echo "}" >> $@
+	@echo "@if [string length [array get env LICENSE_QUEUE]] {" >> $@
+	@echo " set LICENSE_QUEUE $$::env(LICENSE_QUEUE)" >> $@
+	@echo "}" >> $@
 	@echo "alib $(RTL_LIBRARY)" >> $@
 	@echo "set worklib $(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
@@ -109,7 +122,11 @@ endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@
 endif
-	@echo "asim $(ASIM_ARGS) +access +w -interceptcoutput -O2 -dbg $(GPI_ARGS) $(TOPLEVEL)" >> $@
+ifneq ($(CFG_TOPLEVEL),)
+	@echo "asim $(ASIM_ARGS) +access +w -interceptcoutput -O2 -dbg $(GPI_ARGS) $(CFG_TOPLEVEL) $(EXTRA_TOPS)" >> $@
+else
+	@echo "asim $(ASIM_ARGS) +access +w -interceptcoutput -O2 -dbg $(GPI_ARGS) $(TOPLEVEL) $(EXTRA_TOPS)" >> $@
+endif
 ifeq ($(WAVES),1)
 	@echo "log -recursive *" >> $@
 endif
@@ -118,6 +135,10 @@ ifeq ($(GUI),1)
 else
 	@echo "run -all" >> $@
 	@echo "endsim" >> $@
+ifeq ($(COVERAGE),1)
+	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(RTL_LIBRARY).acdb -html -o coverage/acdb_report.html" >> $@
+	@echo "acdb report -cov $(COVERAGE_TYPES) -db $(RTL_LIBRARY).acdb -txt -o coverage/acdb_report.txt" >> $@
+endif
 endif
 
 ifeq ($(OS),Msys)

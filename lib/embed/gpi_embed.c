@@ -285,6 +285,12 @@ int embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
 
+    if (-1 == PyObject_SetAttrString(cocotb_module, "SIM_VERSION", PyString_FromString(info->version))) {
+            PyErr_Print();
+            fprintf(stderr, "Unable to set SIM_VERSION");
+            goto cleanup;
+    }
+
     // Set language in use as an attribute to cocotb module, or None if not provided
     const char *lang = getenv("TOPLEVEL_LANG");
     PyObject* PyLang;

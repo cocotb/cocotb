@@ -740,6 +740,29 @@ def join_finished(dut):
 
 
 @cocotb.test()
+def consistent_join(dut):
+    """
+    Test that joining a coroutine returns the finished value
+    """
+    @cocotb.coroutine
+    def wait_for(clk, cycles):
+        rising_edge = RisingEdge(clk)
+        for _ in range(cycles):
+            yield rising_edge
+        raise ReturnValue(3)
+
+    cocotb.fork(Clock(dut.clk, 2000, 'ps').start())
+
+    short_wait = cocotb.fork(wait_for(dut.clk, 10))
+    long_wait = cocotb.fork(wait_for(dut.clk, 30))
+
+    yield wait_for(dut.clk, 20)
+    a = yield short_wait.join()
+    b = yield long_wait.join()
+    assert a == b == 3
+
+
+@cocotb.test()
 def test_kill_twice(dut):
     """
     Test that killing a coroutine that has already been killed does not crash
@@ -762,6 +785,24 @@ def test_join_identity(dut):
     yield Timer(1)
     clk_gen.kill()
 
+
+@cocotb.test()
+def test_edge_identity(dut):
+    """
+    Test that Edge triggers returns the same object each time
+    """
+
+    re = RisingEdge(dut.clk)
+    fe = FallingEdge(dut.clk)
+    e = Edge(dut.clk)
+
+    assert re is RisingEdge(dut.clk)
+    assert fe is FallingEdge(dut.clk)
+    assert e is Edge(dut.clk)
+
+    # check they are all unique
+    assert len({re, fe, e}) == 3
+    yield Timer(1)
 
 
 if sys.version_info[:2] >= (3, 3):
