@@ -71,6 +71,17 @@ from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly, PythonTrigger
 from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error, ExternalException)
+from cocotb.utils import nullcontext
+
+
+class profiling_context(object):
+    """ Context manager that profiles its contents """
+    def __enter__(self):
+        _profile.enable()
+
+    def __exit__(self, *excinfo):
+        _profile.disable()
+
 
 class external_state(object):
     INIT = 0
@@ -280,26 +291,26 @@ class Scheduler(object):
         if _profiling:
             ps = pstats.Stats(_profile).sort_stats('cumulative')
             ps.dump_stats("test_profile.pstat")
-            _profile.enable()
+            ctx = profiling_context()
+        else:
+            ctx = nullcontext()
 
-        self._mode = Scheduler._MODE_NORMAL
-        if trigger is not None:
-            trigger.unprime()
+        with ctx:
+            self._mode = Scheduler._MODE_NORMAL
+            if trigger is not None:
+                trigger.unprime()
 
-        # Issue previous test result, if there is one
-        if self._test_result is not None:
-            if _debug:
-                self.log.debug("Issue test result to regression object")
-            cocotb.regression.handle_result(self._test_result)
-            self._test_result = None
-        if self._entrypoint is not None:
-            test = self._entrypoint
-            self._entrypoint = None
-            self.schedule(test)
-            self.advance()
-
-        if _profiling:
-            _profile.disable()
+            # Issue previous test result, if there is one
+            if self._test_result is not None:
+                if _debug:
+                    self.log.debug("Issue test result to regression object")
+                cocotb.regression.handle_result(self._test_result)
+                self._test_result = None
+            if self._entrypoint is not None:
+                test = self._entrypoint
+                self._entrypoint = None
+                self.schedule(test)
+                self.advance()
 
     def react(self, trigger, depth=0):
         """React called when a trigger fires.
@@ -308,142 +319,136 @@ class Scheduler(object):
         schedule them.
         """
         if _profiling and not depth:
-            _profile.enable()
+            ctx = profiling_context()
+        else:
+            ctx = nullcontext()
 
-        # When a trigger fires it is unprimed internally
-        if _debug:
-            self.log.debug("Trigger fired: %s" % str(trigger))
-        # trigger.unprime()
-
-        if self._mode == Scheduler._MODE_TERM:
+        with ctx:
+            # When a trigger fires it is unprimed internally
             if _debug:
-                self.log.debug("Ignoring trigger %s since we're terminating" %
-                               str(trigger))
-            return
+                self.log.debug("Trigger fired: %s" % str(trigger))
+            # trigger.unprime()
 
-        if trigger is self._readonly:
-            self._mode = Scheduler._MODE_READONLY
-        # Only GPI triggers affect the simulator scheduling mode
-        elif isinstance(trigger, GPITrigger):
-            self._mode = Scheduler._MODE_NORMAL
-
-        # We're the only source of ReadWrite triggers which are only used for
-        # playing back any cached signal updates
-        if trigger is self._readwrite:
-
-            if _debug:
-                self.log.debug("Writing cached signal updates")
-
-            while self._writes:
-                handle, value = self._writes.popitem()
-                handle.setimmediatevalue(value)
-
-            self._readwrite.unprime()
-
-            if _profiling:
-                _profile.disable()
-            return
-
-        # Similarly if we've scheduled our next_timestep on way to readwrite
-        if trigger is self._next_timestep:
-
-            if not self._writes:
-                self.log.error(
-                    "Moved to next timestep without any pending writes!")
-            else:
-                self.log.debug(
-                    "Priming ReadWrite trigger so we can playback writes")
-                self._readwrite.prime(self.react)
-
-            if _profiling:
-                _profile.disable()
-            return
-
-        if trigger not in self._trigger2coros:
-
-            # GPI triggers should only be ever pending if there is an
-            # associated coroutine waiting on that trigger, otherwise it would
-            # have been unprimed already
-            if isinstance(trigger, GPITrigger):
-                self.log.critical(
-                    "No coroutines waiting on trigger that fired: %s" %
-                    str(trigger))
-
-                trigger.log.info("I'm the culprit")
-            # For Python triggers this isn't actually an error - we might do
-            # event.set() without knowing whether any coroutines are actually
-            # waiting on this event, for example
-            elif _debug:
-                self.log.debug(
-                    "No coroutines waiting on trigger that fired: %s" %
-                    str(trigger))
-
-            if _profiling:
-                _profile.disable()
-            return
-
-        # Scheduled coroutines may append to our waiting list so the first
-        # thing to do is pop all entries waiting on this trigger.
-        scheduling = self._trigger2coros.pop(trigger)
-
-        if _debug:
-            debugstr = "\n\t".join([coro.__name__ for coro in scheduling])
-            if len(scheduling):
-                debugstr = "\n\t" + debugstr
-            self.log.debug("%d pending coroutines for event %s%s" %
-                           (len(scheduling), str(trigger), debugstr))
-
-        # This trigger isn't needed any more
-        trigger.unprime()
-
-        # If the coroutine was waiting on multiple triggers we may be able
-        # to unprime the other triggers that didn't fire
-        scheduling_set = set(scheduling)
-        other_triggers = {
-            t
-            for coro in scheduling
-            for t in self._coro2triggers[coro]
-        } - {trigger}
-
-        for pending in other_triggers:
-            # every coroutine waiting on this trigger is already being woken
-            if scheduling_set.issuperset(self._trigger2coros[pending]):
-                if pending.primed:
-                    pending.unprime()
-                del self._trigger2coros[pending]
-
-        for coro in scheduling:
-            if _debug:
-                self.log.debug("Scheduling coroutine %s" % (coro.__name__))
-            self.schedule(coro, trigger=trigger)
-            if _debug:
-                self.log.debug("Scheduled coroutine %s" % (coro.__name__))
-
-        if not depth:
-            # Schedule may have queued up some events so we'll burn through those
-            while self._pending_events:
+            if self._mode == Scheduler._MODE_TERM:
                 if _debug:
-                    self.log.debug("Scheduling pending event %s" %
-                                   (str(self._pending_events[0])))
-                self._pending_events.pop(0).set()
+                    self.log.debug("Ignoring trigger %s since we're terminating" %
+                                   str(trigger))
+                return
 
-        while self._pending_triggers:
+            if trigger is self._readonly:
+                self._mode = Scheduler._MODE_READONLY
+            # Only GPI triggers affect the simulator scheduling mode
+            elif isinstance(trigger, GPITrigger):
+                self._mode = Scheduler._MODE_NORMAL
+
+            # We're the only source of ReadWrite triggers which are only used for
+            # playing back any cached signal updates
+            if trigger is self._readwrite:
+
+                if _debug:
+                    self.log.debug("Writing cached signal updates")
+
+                while self._writes:
+                    handle, value = self._writes.popitem()
+                    handle.setimmediatevalue(value)
+
+                self._readwrite.unprime()
+
+                return
+
+            # Similarly if we've scheduled our next_timestep on way to readwrite
+            if trigger is self._next_timestep:
+
+                if not self._writes:
+                    self.log.error(
+                        "Moved to next timestep without any pending writes!")
+                else:
+                    self.log.debug(
+                        "Priming ReadWrite trigger so we can playback writes")
+                    self._readwrite.prime(self.react)
+
+                return
+
+            if trigger not in self._trigger2coros:
+
+                # GPI triggers should only be ever pending if there is an
+                # associated coroutine waiting on that trigger, otherwise it would
+                # have been unprimed already
+                if isinstance(trigger, GPITrigger):
+                    self.log.critical(
+                        "No coroutines waiting on trigger that fired: %s" %
+                        str(trigger))
+
+                    trigger.log.info("I'm the culprit")
+                # For Python triggers this isn't actually an error - we might do
+                # event.set() without knowing whether any coroutines are actually
+                # waiting on this event, for example
+                elif _debug:
+                    self.log.debug(
+                        "No coroutines waiting on trigger that fired: %s" %
+                        str(trigger))
+
+                return
+
+            # Scheduled coroutines may append to our waiting list so the first
+            # thing to do is pop all entries waiting on this trigger.
+            scheduling = self._trigger2coros.pop(trigger)
+
             if _debug:
-                self.log.debug("Scheduling pending trigger %s" %
-                               (str(self._pending_triggers[0])))
-            self.react(self._pending_triggers.pop(0), depth=depth + 1)
+                debugstr = "\n\t".join([coro.__name__ for coro in scheduling])
+                if len(scheduling):
+                    debugstr = "\n\t" + debugstr
+                self.log.debug("%d pending coroutines for event %s%s" %
+                               (len(scheduling), str(trigger), debugstr))
 
-        # We only advance for GPI triggers
-        if not depth and isinstance(trigger, GPITrigger):
-            self.advance()
+            # This trigger isn't needed any more
+            trigger.unprime()
 
-            if _debug:
-                self.log.debug("All coroutines scheduled, handing control back"
-                               " to simulator")
+            # If the coroutine was waiting on multiple triggers we may be able
+            # to unprime the other triggers that didn't fire
+            scheduling_set = set(scheduling)
+            other_triggers = {
+                t
+                for coro in scheduling
+                for t in self._coro2triggers[coro]
+            } - {trigger}
 
-            if _profiling:
-                _profile.disable()
-        return
+            for pending in other_triggers:
+                # every coroutine waiting on this trigger is already being woken
+                if scheduling_set.issuperset(self._trigger2coros[pending]):
+                    if pending.primed:
+                        pending.unprime()
+                    del self._trigger2coros[pending]
+
+            for coro in scheduling:
+                if _debug:
+                    self.log.debug("Scheduling coroutine %s" % (coro.__name__))
+                self.schedule(coro, trigger=trigger)
+                if _debug:
+                    self.log.debug("Scheduled coroutine %s" % (coro.__name__))
+
+            if not depth:
+                # Schedule may have queued up some events so we'll burn through those
+                while self._pending_events:
+                    if _debug:
+                        self.log.debug("Scheduling pending event %s" %
+                                       (str(self._pending_events[0])))
+                    self._pending_events.pop(0).set()
+
+            while self._pending_triggers:
+                if _debug:
+                    self.log.debug("Scheduling pending trigger %s" %
+                                   (str(self._pending_triggers[0])))
+                self.react(self._pending_triggers.pop(0), depth=depth + 1)
+
+            # We only advance for GPI triggers
+            if not depth and isinstance(trigger, GPITrigger):
+                self.advance()
+
+                if _debug:
+                    self.log.debug("All coroutines scheduled, handing control back"
+                                   " to simulator")
+
 
     def unschedule(self, coro):
         """Unschedule a coroutine.  Unprime any pending triggers"""
