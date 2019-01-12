@@ -45,10 +45,15 @@ endif
 
 RTL_LIBRARY ?= work
 
+TOPLEVEL := "$(RTL_LIBRARY).$(TOPLEVEL)"
+
 ifdef VLOG_ARGS
 VLOG_ARGS = $(VLOG_ARGS)
 else
 VLOG_ARGS = -timescale 1ns/100ps -mfcu +acc=rmb
+endif
+ifdef VERILOG_INCLUDE_DIRS
+VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
 endif
 
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
@@ -86,7 +91,7 @@ $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) $
 	@echo "onerror {" >> $@
 	@echo "	quit -f -code 1" >> $@
 	@echo "}" >> $@
-	@echo "if [file exists $(RTL_LIBRARY)] {vdel -lib $(RTL_LIBRARY) -all}" > $@
+	@echo "if [file exists $(RTL_LIBRARY)] {vdel -lib $(RTL_LIBRARY) -all}" >> $@
 	@echo "vlib $(RTL_LIBRARY)" >> $@
 	@echo "vmap -c" >> $@
 	@echo "vmap $(RTL_LIBRARY) $(RTL_LIBRARY)" >> $@

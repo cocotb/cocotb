@@ -107,6 +107,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 
         case vpiStructVar:
         case vpiStructNet:
+        case vpiUnionVar:
             return GPI_STRUCTURE;
 
         case vpiModport:
@@ -169,6 +170,9 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             break;
         case vpiStructVar:
         case vpiStructNet:
+        case vpiUnionVar:
+            new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
+            break;
         case vpiModule:
         case vpiInterface:
         case vpiModport:
@@ -184,7 +188,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             std::string hdl_name = vpi_get_str(vpiName, new_hdl);
 
             if (hdl_name != name) {
-                LOG_DEBUG("Found pseudo-region %s", fq_name.c_str());
+                LOG_DEBUG("Found pseudo-region %s (hdl_name=%s but name=%s)", fq_name.c_str(), hdl_name.c_str(), name.c_str());
                 new_obj = new VpiObjHdl(this, new_hdl, GPI_GENARRAY);
             } else {
                 new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
@@ -643,7 +647,7 @@ static int system_function_overload(char *userdata)
         msg = argval.value.str;
     }
 
-    gpi_log("simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), msg );
+    gpi_log("simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
 
     // Fail the test for critical errors
     if (GPICritical == *userdata)

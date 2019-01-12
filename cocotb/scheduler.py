@@ -36,6 +36,7 @@ also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
 import collections
+import copy
 import os
 import time
 import logging
@@ -67,7 +68,7 @@ else:
 import cocotb
 import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly, PythonTrigger,
-                             _NextTimeStep, _ReadWrite, Event, Join)
+                             NextTimeStep, ReadWrite, Event, Join)
 from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error, ExternalException)
@@ -201,8 +202,12 @@ class Scheduler(object):
 
     # Singleton events, recycled to avoid spurious object creation
     _readonly = ReadOnly()
-    _next_timestep = _NextTimeStep()
-    _readwrite = _ReadWrite()
+    # TODO[gh-759]: For some reason, the scheduler requires that these triggers
+    # are _not_ the same instances used by the tests themselves. This is risky,
+    # because it can lead to them overwriting each other's callbacks. We should
+    # try to remove this `copy.copy` in future.
+    _next_timestep = copy.copy(NextTimeStep())
+    _readwrite = copy.copy(ReadWrite())
     _timer1 = Timer(1)
     _timer0 = Timer(0)
 
@@ -399,19 +404,24 @@ class Scheduler(object):
             self.log.debug("%d pending coroutines for event %s%s" %
                            (len(scheduling), str(trigger), debugstr))
 
+        # This trigger isn't needed any more
+        trigger.unprime()
+
         # If the coroutine was waiting on multiple triggers we may be able
         # to unprime the other triggers that didn't fire
-        for coro in scheduling:
-            for pending in self._coro2triggers[coro]:
-                for others in self._trigger2coros[pending]:
-                    if others not in scheduling:
-                        break
-                else:
-                    # if pending is not trigger and pending.primed:
-                    #     pending.unprime()
-                    if pending.primed:
-                        pending.unprime()
-                    del self._trigger2coros[pending]
+        scheduling_set = set(scheduling)
+        other_triggers = {
+            t
+            for coro in scheduling
+            for t in self._coro2triggers[coro]
+        } - {trigger}
+
+        for pending in other_triggers:
+            # every coroutine waiting on this trigger is already being woken
+            if scheduling_set.issuperset(self._trigger2coros[pending]):
+                if pending.primed:
+                    pending.unprime()
+                del self._trigger2coros[pending]
 
         for coro in scheduling:
             if _debug:

@@ -98,6 +98,11 @@ wire logic [7:0]    sig_logic_vec;
      rec_type       sig_rec;
      rec_type       sig_cmplx [0:1];
 
+typedef logic [7:0] uint16_t;
+
+uint16_t sig_t7 [3:0][3:0];
+uint16_t [3:0][3:0] sig_t8;
+
 assign port_ofst_out = port_ofst_in;
 
 //assign port_rec_out       = (select_in == 1) ? const_rec       : (select_in == 2) ? sig_rec       : param_rec;

@@ -17,7 +17,7 @@ Design
 
 We have a relatively simplistic RTL block called the endian_swapper.  The DUT has three interfaces, all conforming to the Avalon standard:
 
-.. image:: diagrams/svg/endian_swapper_design.*
+.. image:: diagrams/svg/endian_swapper_design.svg
 
 The DUT will swap the endianness of packets on the Avalon-ST bus if a configuration bit is set.  For every packet arriving on the "stream_in" interface the entire packet will be endian swapped if the configuration bit is set, otherwise the entire packet will pass through unmodified.
 
@@ -46,7 +46,7 @@ To begin with we create a class to encapsulate all the common code for the testb
 
 With the above code we have created a testbench with the following structure:
 
-.. image:: diagrams/svg/endian_swapper_testbench.*
+.. image:: diagrams/svg/endian_swapper_testbench.svg
 
 If we inspect this line-by-line:
 
@@ -154,7 +154,7 @@ We want to run different variations of tests but they will all have a very simil
         
         raise tb.scoreboard.result
 
-We can see that this test function creates an instance of the testbench, resets the DUT by running the coroutine ``tb.reset()`` and then starts off any optional coroutines passed in using the keyword arguments.  We then send in all the packets from ``data_in``, ensure that all the packets have been received by waiting 2 cycles at the end.  We read the packet count and compare this with the number of packets.  Finally we use the ``tb.scoreboard.result`` to determine the status of the test.  If any transactions didn't match the expected output then this member would be an instance of the ``TestFailure`` result.
+We can see that this test function creates an instance of the testbench, resets the DUT by running the `coroutine` ``tb.reset()`` and then starts off any optional coroutines passed in using the keyword arguments.  We then send in all the packets from ``data_in``, ensure that all the packets have been received by waiting 2 cycles at the end.  We read the packet count and compare this with the number of packets.  Finally we use the ``tb.scoreboard.result`` to determine the status of the test.  If any transactions didn't match the expected output then this member would be an instance of the ``TestFailure`` result.
 
 
 Test permutations

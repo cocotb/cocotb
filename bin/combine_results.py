@@ -27,29 +27,29 @@ def get_parser():
                         help="Name of base directory to search from")
 
     parser.add_argument("--output_file", dest="output_file", type=str, required=False,
-                        default="combined_results.xml", 
+                        default="combined_results.xml",
                         help="Name of output file")
     parser.add_argument("--testsuites_name", dest="testsuites_name", type=str, required=False,
-                        default="results", 
+                        default="results",
                         help="Name value for testsuites tag")
     parser.add_argument("--verbose", dest="debug", action='store_const', required=False,
-                        const=True, default=False, 
+                        const=True, default=False,
                         help="Verbose/debug output")
     parser.add_argument("--suppress_rc", dest="set_rc", action='store_const', required=False,
-                        const=False, default=True, 
+                        const=False, default=True,
                         help="Suppress return code if failures found")
-                    
+
     return parser
 
 
 def main():
-    
+
     parser = get_parser()
     args = parser.parse_args()
     rc = 0;
-    
+
     result = ET.Element("testsuites", name=args.testsuites_name);
-    
+
     for fname in find_all("results.xml", args.directory):
         if args.debug : print("Reading file %s" % fname)
         tree = ET.parse(fname)
@@ -66,20 +66,21 @@ def main():
             else:
                 #for tc in ts.getiterator("testcase"):
                 use_element.extend(list(ts));
-            
+
     if args.debug : ET.dump(result)
-    
-    for testsuite in result.iter('testsuite'):
-        for testcase in testsuite.iter('testcase'):
+
+    for testsuite_count, testsuite in enumerate(result.iter('testsuite'),1):
+        for testcase_count, testcase in enumerate(testsuite.iter('testcase'),1):
             for failure in testcase.iter('failure'):
                 if args.set_rc: rc=1
-                print("Failure in testsuite: '%s' testcase: '%s' with parameters '%s'" % (testsuite.get('name'), testcase.get('name'), testsuite.get('package')))
-            
-    
+                print("Failure in testsuite: '%s' classname: '%s' testcase: '%s' with parameters '%s'" % (testsuite.get('name'), testcase.get('classname'), testcase.get('name'), testsuite.get('package')))
+
+    print("Ran a total of %d TestSuites and %d TestCases" % (testsuite_count, testcase_count))
+
+
     ET.ElementTree(result).write(args.output_file, encoding="UTF-8")
     return rc
-   
-    
+
 
 if __name__ == "__main__":
     rc = main()

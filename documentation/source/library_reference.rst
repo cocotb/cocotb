@@ -39,11 +39,13 @@ Interacting with the Simulator
 .. autoclass:: cocotb.bus.Bus
     :members:
 
+.. autoclass:: cocotb.clock.Clock
+
 
 Triggers
 --------
 
-Triggers are used to indicate when the scheduler should resume coroutine execution.  Typically a coroutine will **yield** a trigger or a list of triggers.
+Triggers are used to indicate when the scheduler should resume `coroutine` execution.  Typically a `coroutine` will **yield** a trigger or a list of triggers.
 
 Simulation Timing
 ~~~~~~~~~~~~~~~~~
@@ -78,6 +80,9 @@ Python Triggers
 Testbench Structure
 ===================
 
+Driver
+------
+
 .. autoclass:: cocotb.drivers.Driver
     :members:
     :private-members:
@@ -92,72 +97,17 @@ Monitor
 .. autoclass:: cocotb.monitors.BusMonitor
     :members:
 
+Scoreboard
+----------
+
 .. autoclass:: cocotb.scoreboard.Scoreboard
     :members:
 
+Clock
+-----
 
-Utilities
-=========
-
-.. automodule:: cocotb.utils
+.. autoclass:: cocotb.clock.Clock
     :members:
-
-Simulation Object Handles
-=========================
-
-.. autofunction:: cocotb.handle.SimHandle
-
-.. autoclass:: cocotb.handle.SimHandleBase
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.RegionObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.HierarchyObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.HierarchyArrayObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.NonHierarchyObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.ConstantObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.NonHierarchyIndexableObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.NonConstantObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.ModifiableObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.RealObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.EnumObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.IntegerObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.StringObject
-    :members:
-    :show-inheritance:
 
 Implemented Testbench Structures
 ================================
@@ -229,4 +179,67 @@ XGMII
 
 .. autoclass:: cocotb.monitors.xgmii.XGMII
     :members:
+
+Utilities
+=========
+
+.. automodule:: cocotb.utils
+    :members:
+
+Simulation Object Handles
+=========================
+
+.. autofunction:: cocotb.handle.SimHandle
+
+.. autoclass:: cocotb.handle.SimHandleBase
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.RegionObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.HierarchyObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.HierarchyArrayObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.NonHierarchyObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.ConstantObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.NonHierarchyIndexableObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.NonConstantObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.ModifiableObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.RealObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.EnumObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.IntegerObject
+    :members:
+    :show-inheritance:
+
+.. autoclass:: cocotb.handle.StringObject
+    :members:
+    :show-inheritance:
 

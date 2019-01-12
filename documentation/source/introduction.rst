@@ -14,7 +14,7 @@ What is cocotb?
 Linux Platforms
 
 * `Icarus Verilog <http://iverilog.icarus.com/>`_
-* `GHDL <https://github.com/tgingold/ghdl>`_
+* `GHDL <https://ghdl.free.fr/>`_
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
 * `Synopsys <http://www.synopsys.com/>`_ VCS
 * `Cadence <http://www.cadence.com/>`_ Incisive
@@ -26,7 +26,7 @@ Windows Platform
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
 * `Mentor <http://www.mentor.com/>`_ Modelsim (DE and SE)
 
-**Cocotb** can be used live in a web-browser using `EDA Playground <http://www.edaplayground.com>`_.
+An older version of **Cocotb** can be used live in a web-browser using `EDA Playground <http://www.edaplayground.com>`_.
 
 
 
@@ -63,7 +63,7 @@ Overview
 A typical cocotb testbench requires no additional RTL code. The Design Under Test (DUT) is instantiated as the toplevel in the simulator without any wrapper code. Cocotb drives stimulus onto the inputs to the DUT (or further down the hierarchy) and monitors the outputs directly from Python.
 
 
-.. image:: diagrams/svg/cocotb_overview.*
+.. image:: diagrams/svg/cocotb_overview.svg
 
 A test is simply a Python function.  At any given time either the simulator is advancing time or the Python code is executing.  The **yield** keyword is used to indicate when to pass control of execution back to the simulator.  A test can spawn multiple coroutines, allowing for independent flows of execution.
 

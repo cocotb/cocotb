@@ -6,11 +6,13 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   includeme
    introduction
    quickstart
    building
    coroutines
    triggers
+   testbench_tools
    library_reference
    endian_swapper
    ping_tun_tap

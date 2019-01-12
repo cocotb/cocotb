@@ -38,7 +38,10 @@ else:
     import simulator
 from cocotb.log import SimLog
 from cocotb.result import raise_error
-from cocotb.utils import get_sim_steps, get_time_from_sim_steps
+from cocotb.utils import (
+    get_sim_steps, get_time_from_sim_steps, with_metaclass,
+    ParametrizedSingleton
+)
 from cocotb import outcomes
 
 class TriggerException(Exception):
@@ -134,11 +137,16 @@ class Timer(GPITrigger):
     def __str__(self):
         return self.__class__.__name__ + "(%1.2fps)" % get_time_from_sim_steps(self.sim_steps,units='ps')
 
-class _ReadOnly(GPITrigger):
+
+class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
     """
     Execution will resume when the readonly portion of the sim cycles is
     readched
     """
+    @classmethod
+    def __singleton_key__(cls):
+        return None
+
     def __init__(self):
         GPITrigger.__init__(self)
 
@@ -152,18 +160,16 @@ class _ReadOnly(GPITrigger):
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
 
-_ro = _ReadOnly()
 
-
-def ReadOnly():
-    return _ro
-
-
-class _ReadWrite(GPITrigger):
+class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
     """
-    Execution will resume when the readwrite porttion of the sim cycles is
+    Execution will resume when the readwrite portion of the sim cycles is
     reached
     """
+    @classmethod
+    def __singleton_key__(cls):
+        return None
+
     def __init__(self):
         GPITrigger.__init__(self)
 
@@ -179,17 +185,15 @@ class _ReadWrite(GPITrigger):
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
 
-_rw = _ReadWrite()
 
-
-def ReadWrite():
-    return _rw
-
-
-class _NextTimeStep(GPITrigger):
+class NextTimeStep(with_metaclass(ParametrizedSingleton, GPITrigger)):
     """
     Execution will resume when the next time step is started
     """
+    @classmethod
+    def __singleton_key__(cls):
+        return None
+
     def __init__(self):
         GPITrigger.__init__(self)
 
@@ -203,14 +207,8 @@ class _NextTimeStep(GPITrigger):
     def __str__(self):
         return self.__class__.__name__ + "(nexttimestep)"
 
-_nxts = _NextTimeStep()
 
-
-def NextTimeStep():
-    return _nxts
-
-
-class _EdgeBase(GPITrigger):
+class _EdgeBase(with_metaclass(ParametrizedSingleton, GPITrigger)):
     """
     Execution will resume when an edge occurs on the provided signal
     """
@@ -222,19 +220,9 @@ class _EdgeBase(GPITrigger):
         """
         raise NotImplementedError
 
-    # Ensure that each signal has at most one edge trigger per edge type.
-    # Using a weak dictionary ensures we don't create a reference cycle
-    _instances = weakref.WeakValueDictionary()
-
-    def __new__(cls, signal):
-        # find the existing instance, if possible - else create a new one
-        key = (signal, cls._edge_type)
-        try:
-            return cls._instances[key]
-        except KeyError:
-            instance = super(_EdgeBase, cls).__new__(cls)
-            cls._instances[key] = instance
-            return instance
+    @classmethod
+    def __singleton_key__(cls, signal):
+        return signal
 
     def __init__(self, signal):
         super(_EdgeBase, self).__init__()
@@ -405,7 +393,13 @@ class Event(PythonTrigger):
 
     def wait(self):
         """This can be yielded to block this coroutine
-        until another wakes it"""
+        until another wakes it
+
+        If the Event has already been fired, this returns NullTrigger()
+        To reset the event (and enable the use of wait() again), clear() should be called
+        """
+        if self.fired:
+            return NullTrigger()
         return _Event(self)
 
     def clear(self):
@@ -511,22 +505,13 @@ class NullTrigger(Trigger):
         callback(self)
 
 
-class Join(PythonTrigger):
+class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
     """
     Join a coroutine, firing when it exits
     """
-    # Ensure that each coroutine has at most one join trigger.
-    # Using a weak dictionary ensures we don't create a reference cycle
-    _instances = weakref.WeakValueDictionary()
-
-    def __new__(cls, coroutine):
-        # find the existing instance, if possible - else create a new one
-        try:
-            return cls._instances[coroutine]
-        except KeyError:
-            instance = super(Join, cls).__new__(cls)
-            cls._instances[coroutine] = instance
-            return instance
+    @classmethod
+    def __singleton_key__(cls, coroutine):
+        return coroutine
 
     def __init__(self, coroutine):
         super(Join, self).__init__()

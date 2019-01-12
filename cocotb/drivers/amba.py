@@ -112,12 +112,16 @@ class AXI4LiteMaster(BusDriver):
 
     @cocotb.coroutine
     def write(self, address, value, byte_enable=0xf, address_latency=0,
-              data_latency=0):
+              data_latency=0, sync=True):
         """
         Write a value to an address.
 
         The *_latency KWargs allow control over the delta
+
+        sync dictates whether we wait for a clock edge or not
         """
+        if sync:
+            yield RisingEdge(self.clock)
 
         c_addr = cocotb.fork(self._send_write_address(address,
                                                       delay=address_latency))
@@ -180,6 +184,8 @@ class AXI4LiteMaster(BusDriver):
 
         raise ReturnValue(data)
 
+    def __len__(self):
+        return 2**len(self.bus.ARADDR)
 
 class AXI4Slave(BusDriver):
     '''
@@ -258,7 +264,7 @@ class AXI4Slave(BusDriver):
             burst_length = _awlen + 1
             bytes_in_beat = self._size_to_bytes_in_beat(_awsize)
 
-            word = BinaryValue(bits=bytes_in_beat*8, bigEndian=self.big_endian)
+            word = BinaryValue(n_bits=bytes_in_beat*8, bigEndian=self.big_endian)
 
             if __debug__:
                 self.log.debug(
@@ -307,7 +313,7 @@ class AXI4Slave(BusDriver):
             burst_length = _arlen + 1
             bytes_in_beat = self._size_to_bytes_in_beat(_arsize)
 
-            word = BinaryValue(bits=bytes_in_beat*8, bigEndian=self.big_endian)
+            word = BinaryValue(n_bits=bytes_in_beat*8, bigEndian=self.big_endian)
 
             if __debug__:
                 self.log.debug(
