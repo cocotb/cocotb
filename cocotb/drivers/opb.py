@@ -25,7 +25,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
-Drivers for On-chip Peripheral Bus
+Drivers for On-chip Peripheral Bus.
 
 NB Currently we only support a very small subset of functionality
 """
@@ -43,9 +43,7 @@ class OPBException(Exception):
 
 
 class OPBMaster(BusDriver):
-    """
-    On-chip peripheral bus master
-    """
+    """On-chip peripheral bus master."""
     _signals = ["xferAck", "errAck", "toutSup", "retry", "DBus_out", "select",
                 "RNW", "BE", "ABus", "DBus_in"]
     _optional_signals = ["seqAddr"]
@@ -77,15 +75,15 @@ class OPBMaster(BusDriver):
         but syntactically it blocks.
         
         Args:
-            address (int): The address to read from
+            address (int): The address to read from.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
             
         Returns:
-            BinaryValue: The read data value
+            BinaryValue: The read data value.
             
         Raises:
-            OPBException: If read took longer than 16 cycles
+            OPBException: If read took longer than 16 cycles.
         """
         yield self._acquire_lock()
 
@@ -117,13 +115,12 @@ class OPBMaster(BusDriver):
 
     @cocotb.coroutine
     def write(self, address, value, sync=True):
-        """
-        Issue a write to the given address with the specified
+        """Issue a write to the given address with the specified
         value.
         
         Args:
-            address (int): The address to read from
-            value (int): The data value to write
+            address (int): The address to read from.
+            value (int): The data value to write.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
             

@@ -55,24 +55,21 @@ class Bus(object):
         Support for struct/record ports where signals are member names.
     """
     def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", array_idx=None):
-        """
-        Args:
-            entity (SimHandle):   SimHandle instance to the entity containing the bus.
-            name (str):           name of the bus. None for nameless bus, e.g.
-                                  bus-signals in an interface or a modport
-                                  (untested on struct/record, but could work here
-                                  as well).
-            signals (list/dict):  In the case of an obj (passed to drive/capture)
-                                  that has the same attribute names as the signal
-                                  names of the bus, the signals argument can be a list
-                                  of those names.  When obj has different attribute names,
-                                  the signals arg should be a dict that maps bus attribute names
-                                  to obj signal names.
+        """Args:
+            entity (SimHandle): SimHandle instance to the entity containing the bus.
+            name (str): Name of the bus. ``None`` for nameless bus, e.g. bus-signals
+                in an interface or a modport (untested on struct/record, 
+                but could work here as well).
+            signals (list/dict): In the case of an obj (passed to drive/capture) that
+                has the same attribute names as the signal names of the bus,
+                the signals argument can be a list of those names.
+                When obj has different attribute names, the signals arg should be
+                a dict that maps bus attribute names to obj signal names.
             optional_signals (list/dict, optional): Signals that don't have to be present
-                                  on the interface. 
-                                  See ``signals`` argument above for details.
+                on the interface. 
+                See ``signals`` argument above for details.
             bus_separator (str, optional): Character(s) to use as separator between bus
-                                  name and signal name. Defaults to '_'.
+                name and signal name. Defaults to '_'.
             array_idx (int or None, optional): Optional index when signal is an array.
         """
         self._entity = entity
@@ -117,12 +114,11 @@ class Bus(object):
         """Drives values onto the bus.
 
         Args:
-            obj (any type): Object with attribute names that match the bus
-                            signals.
+            obj: Object with attribute names that match the bus signals.
             strict (bool, optional): Check that all signals are being assigned.
 
         Raises:
-            AttributeError: If not all signals have been assigned, when ``strict=True``.
+            AttributeError: If not all signals have been assigned when ``strict=True``.
         """
         for attr_name, hdl in self._signals.items():
             if not hasattr(obj, attr_name):
@@ -171,13 +167,12 @@ class Bus(object):
         """Sample the values from the bus, assigning them to ``obj``.
 
         Args:
-            obj (any type): Object with attribute names that match the bus
-                signals.
+            obj: Object with attribute names that match the bus signals.
             strict (bool, optional): Check that all signals being sampled
-                are present in ``obj``
+                are present in ``obj``.
 
         Raises:
-            AttributeError: If attribute is missing in ``obj``, when ``strict=True``.
+            AttributeError: If attribute is missing in ``obj`` when ``strict=True``.
         """
         for attr_name, hdl in self._signals.items():
             if not hasattr(obj, attr_name):

@@ -54,7 +54,7 @@ def get_python_integer_types():
 
 # Simulator helper functions
 def get_sim_time(units=None):
-    """Retrieves the simulation time from the simulator
+    """Retrieves the simulation time from the simulator.
 
     Args:
         units (str or None, optional): String specifying the units of the result
@@ -62,7 +62,7 @@ def get_sim_time(units=None):
             simulation time.
 
     Returns:
-        The simulation time in the specified units
+        The simulation time in the specified units.
     """
     timeh, timel = simulator.get_sim_time()
 
@@ -426,20 +426,22 @@ else:
 
 # this is six.with_metaclass, with a clearer docstring
 def with_metaclass(meta, *bases):
-    """
-    This provides:
+    """This provides:
+
+    .. code-block:: python
 
         class Foo(with_metaclass(Meta, Base1, Base2)): pass
 
     which is a unifying syntax for:
 
+    .. code-block:: python
+
         # python 3
         class Foo(Base1, Base2, metaclass=Meta): pass
 
         # python 2
-        class Foo(Base1, Base2)
+        class Foo(Base1, Base2):
             __metaclass__ = Meta
-
     """
     # This requires a bit of explanation: the basic idea is to make a dummy
     # metaclass for one level of class instantiation that replaces itself with
@@ -456,8 +458,7 @@ def with_metaclass(meta, *bases):
 
 
 class ParametrizedSingleton(type):
-    """
-    A metaclass that allows class construction to reuse an existing instance
+    """A metaclass that allows class construction to reuse an existing instance
 
     We use this so that `RisingEdge(sig)` and `Join(coroutine)` always return
     the same instance, rather than creating new copies.

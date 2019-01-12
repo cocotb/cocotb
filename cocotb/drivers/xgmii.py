@@ -23,9 +23,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-Drivers for XGMII (10 Gigabit Media Independent Interface)
-"""
+"""Drivers for XGMII (10 Gigabit Media Independent Interface)."""
 
 import struct
 import zlib
@@ -47,33 +45,31 @@ _PREAMBLE_SFD = "\x55\x55\x55\x55\x55\x55\xD5"
 
 
 class _XGMIIBus(object):
-    """
-    Helper object for abstracting the underlying bus format
+    """Helper object for abstracting the underlying bus format.
 
-    Index bytes directly on this object, pass a tuple of (value, ctrl) to
+    Index bytes directly on this object, pass a tuple of ``(value, ctrl)`` to
     set a byte.
 
     For example:
 
     >>> xgmii = _XGMIIBus(4)
-    >>> xgmii[0] = (_XGMII_IDLE, True) # Control byte
-    >>> xgmii[1] = ("\x55", False)     # Data byte
+    >>> xgmii[0] = (_XGMII_IDLE, True)  # Control byte
+    >>> xgmii[1] = ("\x55", False)      # Data byte
     """
 
     def __init__(self, nbytes, interleaved=True):
-        """
-        Args:
-            nbytes (int):       The number of bytes transferred per clock cycle
-                                (usually 8 for SDR, 4 for DDR)
+        """Args:
+            nbytes (int): The number of bytes transferred per clock cycle
+                (usually 8 for SDR, 4 for DDR).
 
             interleaved (bool, optional): The arrangement of control bits on the bus.
 
-                                If interleaved we have a bus with 9-bits per
-                                byte, the control bit being the 9th bit of each
-                                byte.
+                If interleaved we have a bus with 9-bits per
+                byte, the control bit being the 9th bit of each
+                byte.
 
-                                If not interleaved then we have a byte per data
-                                byte plus a control bit per byte in the MSBs.
+                If not interleaved then we have a byte per data
+                byte plus a control bit per byte in the MSBs.
         """
 
         self._value = BinaryValue(n_bits=nbytes*9, bigEndian=False)
@@ -106,11 +102,10 @@ class _XGMIIBus(object):
 
     @property
     def value(self):
-        """
-        Get the integer representation of this data word suitable for driving
+        """Get the integer representation of this data word suitable for driving
         onto the bus.
 
-        NB clears the value
+        NB clears the value.
         """
         self._value.integer = self._integer
         self._integer = long(0)
@@ -121,17 +116,14 @@ class _XGMIIBus(object):
 
 
 class XGMII(Driver):
-    """
-    XGMII (10 Gigabit Media Independent Interface) driver
-    """
+    """XGMII (10 Gigabit Media Independent Interface) driver."""
 
     def __init__(self, signal, clock, interleaved=True):
-        """
-        Args:
-            signal (SimHandle): The xgmii data bus
+        """Args:
+            signal (SimHandle): The xgmii data bus.
             clock (SimHandle): The associated clock (assumed to be
-                driven by another coroutine)
-            interleaved (bool,  optional): Whether control bits are interleaved
+                driven by another coroutine).
+            interleaved (bool, optional): Whether control bits are interleaved
                 with the data bytes or not.
 
         If interleaved the bus is
@@ -148,8 +140,7 @@ class XGMII(Driver):
 
     @staticmethod
     def layer1(packet):
-        """
-        Take an Ethernet packet (as a string) and format as a layer 1 packet.
+        """Take an Ethernet packet (as a string) and format as a layer 1 packet.
 
         Pad to 64 bytes, prepend preamble and append 4-byte CRC on the end.
 
@@ -166,19 +157,16 @@ class XGMII(Driver):
                 struct.pack("<I", zlib.crc32(packet) & 0xFFFFFFFF))
 
     def idle(self):
-        """
-        Helper function to set bus to IDLE state.
-        """
+        """Helper function to set bus to IDLE state."""
         for i in range(len(self.bus)):
             self.bus[i] = (_XGMII_IDLE, True)
         self.signal <= self.bus.value
 
     def terminate(self, index):
-        """
-        Helper function to terminate from a provided lane index.
+        """Helper function to terminate from a provided lane index.
 
         Args:
-            index (int): The index to terminate
+            index (int): The index to terminate.
         """
         self.bus[index] = (_XGMII_TERMINATE, True)
 
@@ -189,10 +177,10 @@ class XGMII(Driver):
 
     @cocotb.coroutine
     def _driver_send(self, pkt, sync=True):
-        """Send a packet over the bus
+        """Send a packet over the bus.
 
         Args:
-            pkt (str): Ethernet packet to drive onto the bus
+            pkt (str): The Ethernet packet to drive onto the bus.
         """
         pkt = self.layer1(str(pkt))
 

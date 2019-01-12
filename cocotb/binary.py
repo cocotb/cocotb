@@ -1,31 +1,31 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
 from cocotb.utils import get_python_integer_types
@@ -73,13 +73,13 @@ class BinaryRepresentation():
 class BinaryValue(object):
     """Representation of values in binary format.
 
-    The underlying value can be set or accessed using three aliasing attributes
+    The underlying value can be set or accessed using these aliasing attributes:
 
-        - ``BinaryValue.integer`` is an integer
-        - ``BinaryValue.signed_integer`` is a signed integer
-        - ``BinaryValue.binstr`` is a string of "01xXzZ"
-        - ``BinaryValue.buff`` is a binary buffer of bytes
-        - ``BinaryValue.value`` is an integer *** deprecated ***
+        - `BinaryValue.integer` is an integer
+        - `BinaryValue.signed_integer` is a signed integer
+        - `BinaryValue.binstr` is a string of "01xXzZ"
+        - `BinaryValue.buff` is a binary buffer of bytes
+        - `BinaryValue.value` is an integer **deprecated**
 
     For example:
 
@@ -99,21 +99,17 @@ class BinaryValue(object):
     def __init__(self, value=None, n_bits=None, bigEndian=True,
                  binaryRepresentation=BinaryRepresentation.UNSIGNED,
                  bits=None):
-        """
-        Args:
-            value (str or int or long, optional): 
-                Value to assign to the bus.
-            n_bits (int, optional): 
-                Number of bits to use for the underlying binary representation.
-            bigEndian (bool, optional):
-                Interpret the binary as big-endian when converting to/from 
-                a string buffer.
-            binaryRepresentation (BinaryRepresentation):
-                The representation of the binary value 
+        """Args:
+            value (str or int or long, optional): Value to assign to the bus.
+            n_bits (int, optional): Number of bits to use for the underlying
+                binary representation.
+            bigEndian (bool, optional): Interpret the binary as big-endian 
+                when converting to/from a string buffer.
+            binaryRepresentation (BinaryRepresentation): The representation 
+                of the binary value
                 (one of ``UNSIGNED``, ``SIGNED_MAGNITUDE``, ``TWOS_COMPLEMENT``).
                 Defaults to unsigned representation.
-            bits (int, optional): 
-                Deprecated: Compatibility wrapper for n_bits.
+            bits (int, optional): Deprecated: Compatibility wrapper for n_bits.
         """
         self._str = ""
         self.big_endian = bigEndian
@@ -155,8 +151,7 @@ class BinaryValue(object):
         then we interpret the string as a binary buffer.
 
         Args:
-            value (str or int or long):
-                The value to assign.
+            value (str or int or long): The value to assign.
         """
         if isinstance(value, get_python_integer_types()):
             self.value = value
@@ -234,7 +229,7 @@ class BinaryValue(object):
             else:
                 rv = '0' * (self._n_bits - l) + x
         elif l > self._n_bits:
-            print("WARNING truncating value to match requested number of bits "
+            print("WARNING: truncating value to match requested number of bits "
                   "(%d -> %d)" % (l, self._n_bits))
             if self.big_endian:
                 rv = x[l - self._n_bits:]
@@ -255,7 +250,7 @@ class BinaryValue(object):
                 rv = '0' * (self._n_bits - 1 - l) + x[1:]
                 rv = x[0] + rv
         elif l > self._n_bits:
-            print("WARNING truncating value to match requested number of bits "
+            print("WARNING: truncating value to match requested number of bits "
                   "(%d -> %d)" % (l, self._n_bits))
             if self.big_endian:
                 rv = x[l - self._n_bits:]
@@ -275,7 +270,7 @@ class BinaryValue(object):
             else:
                 rv = x[0] * (self._n_bits - l) + x
         elif l > self._n_bits:
-            print("WARNING truncating value to match requested number of bits "
+            print("WARNING: truncating value to match requested number of bits "
                   "(%d -> %d)" % (l, self._n_bits))
             if self.big_endian:
                 rv = x[l - self._n_bits:]
@@ -286,19 +281,11 @@ class BinaryValue(object):
         return rv
 
     def get_value(self):
-        """value is an integer representation of the underlying vector.
-
-        Returns:
-            int: integer representation
-        """
+        """Return the integer representation of the underlying vector."""
         return self._convert_from[self.binaryRepresentation](self._str)
 
     def get_value_signed(self):
-        """value is a signed integer representation of the underlying vector.
-
-        Returns:
-            int: signed integer representation
-        """
+        """Return the signed integer representation of the underlying vector."""
         ival = int(resolve(self._str), 2)
         bits = len(self._str)
         signbit = (1 << (bits - 1))
@@ -316,11 +303,11 @@ class BinaryValue(object):
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
 
     value = property(get_value, set_value, None,
-                     "Integer access to the value *** deprecated ***")
+                     "Integer access to the value. *** deprecated ***")
     integer = property(get_value, set_value, None,
-                       "Integer access to the value")
+                       "The integer representation of the underlying vector.")
     signed_integer = property(get_value_signed, set_value, None,
-                              "Signed integer access to the value")
+                              "The signed integer representation of the underlying vector.")
 
     def get_buff(self):
         """Attribute self.buff represents the value as a binary string buffer
@@ -370,7 +357,7 @@ class BinaryValue(object):
             else:
                 self._str = "0" * (self._n_bits - l) + self._str
         elif l > self._n_bits:
-            print("WARNING truncating value to match requested number of bits "
+            print("WARNING: truncating value to match requested number of bits "
                   "(%d -> %d)" % (l, self._n_bits))
             self._str = self._str[l - self._n_bits:]
 
@@ -612,8 +599,8 @@ class BinaryValue(object):
         return len(self.binstr)
 
     def __getitem__(self, key):
-        ''' BinaryValue uses verilog/vhdl style slices as opposed to python
-        style'''
+        """BinaryValue uses Verilog/VHDL style slices as opposed to Python
+        style"""
         if isinstance(key, slice):
             first, second = key.start, key.stop
             if self.big_endian:
@@ -652,8 +639,8 @@ class BinaryValue(object):
         return rv
 
     def __setitem__(self, key, val):
-        '''BinaryValue uses Verilog/VHDL style slices as opposed to Python
-        style'''
+        """BinaryValue uses Verilog/VHDL style slices as opposed to Python
+        style"""
         if not isinstance(val, str) and not isinstance(val, get_python_integer_types()):
             raise TypeError('BinaryValue slices only accept string or integer values')
 

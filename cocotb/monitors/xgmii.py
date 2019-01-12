@@ -23,9 +23,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-Monitor for XGMII (10 Gigabit Media Independent Interface)
-"""
+"""Monitor for XGMII (10 Gigabit Media Independent Interface)."""
 
 # By default cast to scapy packets, otherwise we pass the string of bytes
 try:
@@ -50,25 +48,21 @@ _PREAMBLE_SFD = "\x55\x55\x55\x55\x55\x55\xD5"
 
 
 class XGMII(Monitor):
-    """
-    XGMII (10 Gigabit Media Independent Interface) Monitor
+    """XGMII (10 Gigabit Media Independent Interface) Monitor.
 
-    Assumes a single vector, either 4 or 8 bytes plus control bit for each byte
+    Assumes a single vector, either 4 or 8 bytes plus control bit for each byte.
 
-    If interleaved is true then the control bits are adjacent to the bytes
+    If interleaved is true then the control bits are adjacent to the bytes.
     """
 
     def __init__(self, signal, clock, interleaved=True, callback=None,
                  event=None):
-        """
-        Args:
-            signal (SimHandle):         The xgmii data bus
-
-            clock (SimHandle):          The associated clock (assumed to be
-                                        driven by another coroutine)
-
+        """Args:
+            signal (SimHandle): The XGMII data bus.
+            clock (SimHandle): The associated clock (assumed to be
+                driven by another coroutine).
             interleaved (bool, optional): Whether control bits are interleaved
-                                        with the data bytes or not.
+                with the data bytes or not.
 
         If interleaved the bus is
             byte0, byte0_control, byte1, byte1_control, ...
@@ -84,10 +78,9 @@ class XGMII(Monitor):
         Monitor.__init__(self, callback=callback, event=event)
 
     def _get_bytes(self):
-        """
-        Take a value an extract the individual bytes / ctrl bits
+        """Take a value and extract the individual bytes / ctrl bits.
 
-        Returns a tuple of lists
+        Returns a tuple of lists.
         """
         value = self.signal.value.integer
         bytes = []
