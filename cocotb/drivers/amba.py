@@ -70,7 +70,7 @@ class AXI4LiteMaster(BusDriver):
     @cocotb.coroutine
     def _send_write_address(self, address, delay=0):
         """
-        Send the write address, with optional delay
+        Send the write address, with optional delay (in clocks)
         """
         yield self.write_address_busy.acquire()
         for cycle in range(delay):
@@ -91,7 +91,7 @@ class AXI4LiteMaster(BusDriver):
     @cocotb.coroutine
     def _send_write_data(self, data, delay=0, byte_enable=0xF):
         """
-        Send the write address, with optional delay
+        Send the write address, with optional delay (in clocks)
         """
         yield self.write_data_busy.acquire()
         for cycle in range(delay):
@@ -116,9 +116,23 @@ class AXI4LiteMaster(BusDriver):
         """
         Write a value to an address.
 
-        The *_latency KWargs allow control over the delta
-
-        sync dictates whether we wait for a clock edge or not
+        Args:
+            address (int): The address to write to
+            value (int): The data value to write
+            byte_enable (int, optional): Which bytes in value to actually write.
+                Default is to write all bytes.
+            address_latency (int, optional): Delay before setting the address (in clock cycles).
+                Default is no delay.
+            data_latency (int, optional): Delay before setting the data value (in clock cycles).
+                Default is no delay.
+            sync (bool, optional): Wait for rising edge on clock initially.
+                Defaults to True.
+            
+        Returns:
+            BinaryValue: The write response value
+            
+        Raises:
+            AXIProtocolError: If write response from AXI is not ``OKAY``
         """
         if sync:
             yield RisingEdge(self.clock)
@@ -154,6 +168,17 @@ class AXI4LiteMaster(BusDriver):
     def read(self, address, sync=True):
         """
         Read from an address.
+        
+        Args:
+            address (int): The address to read from
+            sync (bool, optional): Wait for rising edge on clock initially.
+                Defaults to True.
+            
+        Returns:
+            BinaryValue: The read data value
+            
+        Raises:
+            AXIProtocolError: If read response from AXI is not ``OKAY``
         """
         if sync:
             yield RisingEdge(self.clock)

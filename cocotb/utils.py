@@ -1,31 +1,31 @@
 from __future__ import print_function
 
-''' Copyright (c) 2013, 2018 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """Collection of handy functions"""
 
@@ -54,15 +54,15 @@ def get_python_integer_types():
 
 # Simulator helper functions
 def get_sim_time(units=None):
-    """Retrieves the simulation time from the simulator
+    """Retrieves the simulation time from the simulator.
 
     Args:
-        units (str, optional): String specifying the units of the result.
-            (None,'fs','ps','ns','us','ms','sec') None will return the raw
+        units (str or None, optional): String specifying the units of the result
+            (``None``,'fs','ps','ns','us','ms','sec'). ``None`` will return the raw
             simulation time.
 
     Returns:
-        The simulation time in the specified units
+        The simulation time in the specified units.
     """
     timeh, timel = simulator.get_sim_time()
 
@@ -78,9 +78,9 @@ def get_time_from_sim_steps(steps, units):
     on the simulator precision.
 
     Args:
-        steps (int):  Number of simulation steps
-        units (str):  String specifying the units of the result.
-            ('fs','ps','ns','us','ms','sec')
+        steps (int): Number of simulation steps
+        units (str): String specifying the units of the result
+            ('fs','ps','ns','us','ms','sec').
 
     Returns:
         The simulation time in the specified units
@@ -90,16 +90,19 @@ def get_time_from_sim_steps(steps, units):
     return result
 
 def get_sim_steps(time, units=None):
-    """Calculates the number of Simulation time steps for a given amount of time
+    """Calculates the number of simulation time steps for a given amount of time
 
     Args:
         time (int/float):  The value to convert to simulation time steps.
-        units (str, optional):  String specifying the units of the result.
-            (None,'fs','ps','ns','us','ms','sec') None means time is already in
+        units (str or None, optional):  String specifying the units of the result
+            (``None``,'fs','ps','ns','us','ms','sec'). ``None`` means time is already in
             simulation time steps.
 
     Returns:
-        The number of simulation time steps
+        int: The number of simulation time steps
+
+    Raises:
+        ValueError: If given time cannot be represented by simulator precision
     """
     result = time
     if units is not None:
@@ -118,8 +121,8 @@ def _get_log_time_scale(units):
     """Retrieves the log10() of the scale factor for a given time unit
 
     Args:
-        units (str): String specifying the units.
-            ('fs','ps','ns','us','ms','sec')
+        units (str): String specifying the units
+            ('fs','ps','ns','us','ms','sec').
 
     Returns:
         The the log10() of the scale factor for the time unit
@@ -142,25 +145,26 @@ def _get_log_time_scale(units):
 
 
 def pack(ctypes_obj):
-    """Convert a ctypes structure into a python string
+    """Convert a ctypes structure into a Python string
 
     Args:
         ctypes_obj (ctypes.Structure): ctypes structure to convert to a string
 
     Returns:
-        New python string containing the bytes from memory holding ctypes_obj
+        New Python string containing the bytes from memory holding ctypes_obj
     """
     return ctypes.string_at(ctypes.addressof(ctypes_obj),
                             ctypes.sizeof(ctypes_obj))
 
 
 def unpack(ctypes_obj, string, bytes=None):
-    """Unpack a python string into a ctypes structure
+    """Unpack a Python string into a ctypes structure
 
     Args:
         ctypes_obj (ctypes.Structure):  ctypes structure to pack into
         string (str):  String to copy over the ctypes_obj memory space
-        bytes (int, optional): Number of bytes to copy. Defaults to None.
+        bytes (int, optional): Number of bytes to copy. 
+            Defaults to ``None``, meaning the length of the string is used.
 
     Raises:
         ValueError: If length of ``string`` and size of ``ctypes_obj``
@@ -168,8 +172,8 @@ def unpack(ctypes_obj, string, bytes=None):
         MemoryError: If ``bytes`` is longer than size of ``ctypes_obj``.
 
     If the length of the string is not the correct size for the memory
-    footprint of the ctypes structure then the bytes keyword argument must
-    be used
+    footprint of the ctypes structure then the ``bytes`` keyword argument 
+    must be used.
     """
     if bytes is None:
         if len(string) != ctypes.sizeof(ctypes_obj):
@@ -208,11 +212,12 @@ def hexdump(x):
         A string containing the hexdump
 
     Example:
+
     .. code-block:: python
 
         print(hexdump('this somewhat long string'))
 
-    .. code-block::
+    .. code-block:: none
 
         0000   74 68 69 73 20 73 6F 6D 65 77 68 61 74 20 6C 6F   this somewhat lo
         0010   6E 67 20 73 74 72 69 6E 67                        ng string
@@ -245,11 +250,12 @@ def hexdiffs(x, y):
         y: Object that supports conversion via the ``str`` built-in
 
     Example:
+
     .. code-block:: python
 
         print(hexdiffs('this short thing', 'this also short'))
 
-    .. code-block::
+    .. code-block:: none
 
         0000      746869732073686F 7274207468696E67 this short thing
              0000 7468697320616C73 6F  2073686F7274 this also  short
@@ -420,20 +426,22 @@ else:
 
 # this is six.with_metaclass, with a clearer docstring
 def with_metaclass(meta, *bases):
-    """
-    This provides:
+    """This provides:
+
+    .. code-block:: python
 
         class Foo(with_metaclass(Meta, Base1, Base2)): pass
 
     which is a unifying syntax for:
 
+    .. code-block:: python
+
         # python 3
         class Foo(Base1, Base2, metaclass=Meta): pass
 
         # python 2
-        class Foo(Base1, Base2)
+        class Foo(Base1, Base2):
             __metaclass__ = Meta
-
     """
     # This requires a bit of explanation: the basic idea is to make a dummy
     # metaclass for one level of class instantiation that replaces itself with
@@ -450,8 +458,7 @@ def with_metaclass(meta, *bases):
 
 
 class ParametrizedSingleton(type):
-    """
-    A metaclass that allows class construction to reuse an existing instance
+    """A metaclass that allows class construction to reuse an existing instance
 
     We use this so that `RisingEdge(sig)` and `Join(coroutine)` always return
     the same instance, rather than creating new copies.

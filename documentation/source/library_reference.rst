@@ -117,7 +117,16 @@ Drivers
 
 AD9361
 ~~~~~~
-.. autoclass:: cocotb.drivers.ad9361.AD9361
+
+.. currentmodule:: cocotb.drivers.ad9361
+
+.. autoclass:: AD9361
+
+    .. automethod:: send_data(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
+    .. automethod:: rx_data_to_ad9361(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
+    .. automethod:: ad9361_tx_to_rx_loopback()
+    .. automethod:: tx_data_from_ad9361()
+
     :members:
 
 AMBA
@@ -125,41 +134,61 @@ AMBA
 
 Advanced Microcontroller Bus Archicture
 
-.. autoclass:: cocotb.drivers.amba.AXI4LiteMaster
+.. currentmodule:: cocotb.drivers.amba
+
+.. autoclass:: AXI4LiteMaster
+
+    .. automethod:: write(address, value, byte_enable=0xf, address_latency=0, data_latency=0)
+    .. automethod:: read(address, sync=True)
+
     :members:
 
-.. autoclass:: cocotb.drivers.amba.AXI4LiteSlave
+.. autoclass:: AXI4Slave
     :members:
 
 
 Avalon
 ~~~~~~
 
-.. autoclass:: cocotb.drivers.avalon.AvalonMM
+.. currentmodule:: cocotb.drivers.avalon
+
+.. autoclass:: AvalonMM
     :members:
 
-.. autoclass:: cocotb.drivers.avalon.AvalonMaster
+.. autoclass:: AvalonMaster
+               
+    .. automethod:: write(address, value)
+    .. automethod:: read(address, sync=True)
+                    
     :members:
 
-.. autoclass:: cocotb.drivers.avalon.AvalonMemory
+.. autoclass:: AvalonMemory
     :members:
 
-.. autoclass:: cocotb.drivers.avalon.AvalonST
+.. autoclass:: AvalonST
     :members:
 
-.. autoclass:: cocotb.drivers.avalon.AvalonSTPkts
+.. autoclass:: AvalonSTPkts
     :members:
 
 OPB
 ~~~
 
-.. autoclass:: cocotb.drivers.opb.OPBMaster
+.. currentmodule:: cocotb.drivers.opb
+                   
+.. autoclass:: OPBMaster
+               
+    .. automethod:: write(address, value, sync=True)
+    .. automethod:: read(address, sync=True)
+                    
     :members:
 
 XGMII
 ~~~~~
 
-.. autoclass:: cocotb.drivers.xgmii.XGMII
+.. currentmodule:: cocotb.drivers.xgmii
+
+.. autoclass:: XGMII
     :members:
 
 Monitors
@@ -168,10 +197,12 @@ Monitors
 Avalon
 ~~~~~~
 
-.. autoclass:: cocotb.monitors.avalon.AvalonST
+.. currentmodule:: cocotb.monitors.avalon
+
+.. autoclass:: AvalonST
     :members:
 
-.. autoclass:: cocotb.monitors.avalon.AvalonSTPkts
+.. autoclass:: AvalonSTPkts
     :members:
 
 XGMII
@@ -188,6 +219,8 @@ Utilities
 
 Simulation Object Handles
 =========================
+
+.. currentmodule:: cocotb.handle
 
 .. autofunction:: cocotb.handle.SimHandle
 

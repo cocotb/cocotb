@@ -239,9 +239,9 @@ class RunningTest(RunningCoroutine):
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
 
-        log methods will will log to cocotb.coroutines.name
+        ``log`` methods will will log to ``cocotb.coroutines.name``
 
-        join() method returns an event which will fire when the coroutine exits
+        ``join()`` method returns an event which will fire when the coroutine exits
     """
 
     def __init__(self, func):
@@ -282,8 +282,7 @@ class function(object):
     """Decorator class that allows a function to block
 
     This allows a function to internally block while
-    externally appear to yield
-
+    externally appear to yield.
     """
     def __init__(self, func):
         self._func = func
@@ -312,9 +311,9 @@ class function(object):
 
 @public
 class external(object):
-    """Decorator to apply to an external function to enable calling from cocotb
+    """Decorator to apply to an external function to enable calling from cocotb.
     This currently creates a new execution context for each function that is
-    call. Scope for this to be streamlined to a queue in future
+    called. Scope for this to be streamlined to a queue in future.
     """
     def __init__(self, func):
         self._func = func
@@ -373,18 +372,18 @@ class test(coroutine):
     some common reporting etc, a test timeout and allows
     us to mark tests as expected failures.
 
-    KWargs:
-        timeout: (int)
-            value representing simulation timeout (not implemented)
-        expect_fail: (bool):
-            Don't mark the result as a failure if the test fails
-        expect_error: (bool):
-            Don't make the result as an error if an error is raised
-            This is for cocotb internal regression use
-        skip: (bool):
-            Don't execute this test as part of the regression
-        stage: (int)
-            Order tests logically into stages, where multiple tests can share a stage
+    Args:
+        timeout (int, optional):
+            value representing simulation timeout (not implemented).
+        expect_fail (bool, optional):
+            Don't mark the result as a failure if the test fails.
+        expect_error (bool, optional):
+            Don't mark the result as an error if an error is raised.
+            This is for cocotb internal regression use.
+        skip (bool, optional):
+            Don't execute this test as part of the regression.
+        stage (int, optional)
+            Order tests logically into stages, where multiple tests can share a stage.
     """
     def __init__(self, timeout=None, expect_fail=False, expect_error=False,
                  skip=False, stage=None):

@@ -41,7 +41,7 @@ Registers a callback that will continue execution of the `coroutine` on a transi
 
 
 FallingEdge(signal)
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 Registers a callback that will continue execution of the `coroutine` on a transition from 1 to 0 of signal.
 
