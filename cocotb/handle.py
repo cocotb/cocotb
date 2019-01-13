@@ -360,6 +360,27 @@ class HierarchyArrayObject(RegionObject):
         raise TypeError("Not permissible to set %s at index %d" % (self._name, index))
 
 
+class AssignmentResult(object):
+    """
+    Object that exists solely to provide an error message if the caller
+    is not aware of cocotb's meaning of ``<=``.
+    """
+    def __init__(self, signal, value):
+        self._signal = signal
+        self._value = value
+
+    def __bool__(self):
+        raise TypeError(
+            "Attempted to use `{0._signal!r} <= {0._value!r}` (a cocotb "
+            "delayed write) as if it were a numeric comparison. To perform "
+            "comparison, use `{0._signal!r}.value <= {0._value!r}` instead."
+            .format(self)
+        )
+
+    # python 2
+    __nonzero__ = __bool__
+
+
 class NonHierarchyObject(SimHandleBase):
     """Common base class for all non-hierarchy objects."""
 
@@ -391,6 +412,7 @@ class NonHierarchyObject(SimHandleBase):
                 module.signal <= 2
         """
         self.value = value
+        return AssignmentResult(self, value)
 
     def __eq__(self, other):
         if isinstance(other, SimHandleBase):
