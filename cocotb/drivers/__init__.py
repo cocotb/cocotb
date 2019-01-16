@@ -85,7 +85,6 @@ class Driver(object):
     """
     def __init__(self):
         """Constructor for a driver instance."""
-        # self._busy = Lock()
         self._pending = Event(name="Driver._pending")
         self._sendQ = deque()
 
@@ -111,9 +110,10 @@ class Driver(object):
             transaction (any): The transaction to be sent.
             callback (callable, optional): Optional function to be called 
                 when the transaction has been sent.
-            event (optional): event to be set when the transaction has been sent.
+            event (optional): :class:`~cocotb.triggers.Event` to be set
+                when the transaction has been sent.
             **kwargs: Any additional arguments used in child class' 
-                ``_driver_send`` method.
+                :any:`_driver_send` method.
         """
         self._sendQ.append((transaction, callback, event, kwargs))
         self._pending.set()
@@ -132,16 +132,15 @@ class Driver(object):
             transaction (any): The transaction to be sent.
             sync (bool,  optional): Synchronise the transfer by waiting for rising edge.
             **kwargs (dict): Additional arguments used in child class'
-                ``_driver_send`` method.
+                :any:`_driver_send` method.
         """
         yield self._send(transaction, None, None, sync=sync, **kwargs)
 
     def _driver_send(self, transaction, sync=True, **kwargs):
-        """
-        Actual implementation of the send.
+        """Actual implementation of the send.
 
-        Subclasses should override this method to implement the actual ``send``
-        routine.
+        Subclasses should override this method to implement the actual 
+        :meth:`~cocotb.drivers.Driver.send` routine.
 
         Args:
             transaction (any): The transaction to be sent.
@@ -153,9 +152,7 @@ class Driver(object):
 
     @coroutine
     def _send(self, transaction, callback, event, sync=True, **kwargs):
-        """Assumes the caller has already acquired the busy lock.
-
-        Releases busy lock once sending is complete. FIXME: not true
+        """Send coroutine.
 
         Args:
             transaction (any): The transaction to be sent.
@@ -164,7 +161,7 @@ class Driver(object):
             event (optional): event to be set when the transaction has been sent.
             sync (boolean, optional): Synchronise the transfer by waiting for rising edge.
             **kwargs: Any additional arguments used in child class' 
-                ``_driver_send`` method.
+                :any:`_driver_send` method.
         """
         yield self._driver_send(transaction, sync=sync, **kwargs)
 
@@ -173,9 +170,6 @@ class Driver(object):
             event.set()
         if callback:
             callback(transaction)
-
-        # No longer hogging the bus
-        # self.busy.release()
 
     @coroutine
     def _send_thread(self):
@@ -200,23 +194,25 @@ class Driver(object):
 
 class BusDriver(Driver):
     """Wrapper around common functionality for busses which have:
-        * a list of _signals (class attribute)
-        * a list of _optional_signals (class attribute)
+
+        * a list of :attr:`_signals` (class attribute)
+        * a list of :attr:`_optional_signals` (class attribute)
         * a clock
         * a name
         * an entity
+
+        Args:
+            entity (SimHandle): A handle to the simulator entity.
+            name (str or None): Name of this bus. ``None`` for nameless bus, e.g.
+                bus-signals in an interface or a modport.
+                (untested on struct/record, but could work here as well).
+            clock (SimHandle): A handle to the clock associated with this bus.
+            array_idx (int or None, optional): Optional index when signal is an array.
     """
+    
     _optional_signals = []
 
     def __init__(self, entity, name, clock, **kwargs):
-        """Args:
-            entity (SimHandle): A handle to the simulator entity.
-
-            name (str): Name of this bus. ``None`` for nameless bus, e.g.
-                bus-signals in an interface or a modport
-                (untested on struct/record, but could work here as well).
-            clock (SimHandle): A handle to the clock associated with this bus.
-        """
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         Driver.__init__(self)
         self.entity = entity
@@ -237,8 +233,8 @@ class BusDriver(Driver):
     @coroutine
     def _wait_for_signal(self, signal):
         """This method will return with the specified signal
-        has hit logic 1. The state will be in the ReadOnly phase
-        so sim will need to move to NextTimeStep before
+        has hit logic ``1``. The state will be in the :any:`ReadOnly` phase
+        so sim will need to move to :any:`NextTimeStep` before
         registering more callbacks can occur.
         """
         yield ReadOnly()
@@ -250,8 +246,8 @@ class BusDriver(Driver):
     @coroutine
     def _wait_for_nsignal(self, signal):
         """This method will return with the specified signal
-        has hit logic 0. The state will be in the ReadOnly phase
-        so sim will need to move to NextTimeStep before
+        has hit logic ``0``. The state will be in the :any:`ReadOnly` phase
+        so sim will need to move to :any:`NextTimeStep` before
         registering more callbacks can occur.
         """
         yield ReadOnly()
@@ -268,18 +264,16 @@ class BusDriver(Driver):
 class ValidatedBusDriver(BusDriver):
     """Same as a BusDriver except we support an optional generator to control
     which cycles are valid.
+
+    Args:
+        entity (SimHandle): A handle to the simulator entity.
+        name (str): Name of this bus.
+        clock (SimHandle): A handle to the clock associated with this bus.
+        valid_generator (generator, optional): a generator that yields tuples  of
+            (valid, invalid) cycles to insert.
     """
 
     def __init__(self, entity, name, clock, **kwargs):
-        # FIXME: "Kwargs:" section not understood like this by Sphinx Napoleon
-        """Args:
-            entity (SimHandle): A handle to the simulator entity.
-            name (str): Name of this bus.
-            clock (SimHandle): A handle to the clock associated with this bus.
-        Kwargs:
-            valid_generator (generator): a generator that yields tuples  of
-                (valid, invalid) cycles to insert.
-        """
         valid_generator = kwargs.pop("valid_generator", None)
         BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.set_valid_generator(valid_generator=valid_generator)

@@ -1,35 +1,34 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+"""Common scoreboarding capability."""
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-
-"""
-    Common scoreboarding capability.
-"""
 import logging
 import cocotb
 
@@ -40,18 +39,28 @@ from cocotb.result import TestFailure, TestSuccess
 
 
 class Scoreboard(object):
-    """Generic scoreboarding class
+    """Generic scoreboarding class.
 
-    We can add interfaces by providing a monitor and an expected output queue
+    We can add interfaces by providing a monitor and an expected output queue.
 
     The expected output can either be a function which provides a transaction
     or a simple list containing the expected output.
 
     TODO:
         Statistics for end-of-test summary etc.
+        
+    Args:
+        dut (SimHandle): Handle to the DUT.
+        reorder_depth (int, optional): Consider up to `reorder_depth` elements 
+            of the expected result list as passing matches.
+            Default is 0, meaning only the first element in the expected result list
+            is considered for a passing match.
+        fail_immediately (bool, optional): Raise :any:`TestFailure`
+            immediately when something is wrong instead of just
+            recording an error. Default is ``True``.
     """
-
-    def __init__(self, dut, reorder_depth=0, fail_immediately=True):
+    
+    def __init__(self, dut, reorder_depth=0, fail_immediately=True):  # FIXME: reorder_depth needed here?
         self.dut = dut
         self.log = SimLog("cocotb.scoreboard.%s" % self.dut._name)
         self.errors = 0
@@ -60,7 +69,12 @@ class Scoreboard(object):
 
     @property
     def result(self):
-        """Determine the test result, do we have any pending data remaining?"""
+        """Determine the test result, do we have any pending data remaining?
+        
+        Returns:
+            :any:`TestFailure`: If not all expected output was received or 
+            error were recorded during the test.
+        """
         fail = False
         for monitor, expected_output in self.expected.items():
             if callable(expected_output):
@@ -86,10 +100,22 @@ class Scoreboard(object):
         return TestSuccess()
 
     def compare(self, got, exp, log, strict_type=True):
-        """
-        Common function for comparing two transactions.
+        """Common function for comparing two transactions.
 
         Can be re-implemented by a subclass.
+        
+        Args:
+            got: The received transaction.
+            exp: The expected transaction.
+            log: The logger for reporting messages.
+            strict_type (bool, optional): Require transaction type to match
+                exactly if ``True``, otherwise compare its string representation.
+
+        Raises:
+            :any:`TestFailure`: If received transaction differed from
+                expected transaction when :attr:`fail_immediately` is ``True``.
+                If *strict_type* is ``True``,
+                also the transaction type must match.
         """
 
         # Compare the types
@@ -152,11 +178,25 @@ class Scoreboard(object):
                       reorder_depth=0, strict_type=True):
         """Add an interface to be scoreboarded.
 
-            Provides a function which the monitor will callback with received
-            transactions
+        Provides a function which the monitor will callback with received
+        transactions.
 
-            Simply check against the expected output.
+        Simply check against the expected output.
+        
+        Args:
+            monitor: The monitor object.
+            expected_output: Queue of expected outputs.
+            compare_fn (callable, optional): 
+            reorder_depth (int, optional): Consider up to *reorder_depth* elements 
+                of the expected result list as passing matches.
+                Default is 0, meaning only the first element in the expected result list
+                is considered for a passing match.
+            strict_type (bool, optional): Require transaction type to match
+                exactly if ``True``, otherwise compare its string representation.
 
+        Raises:
+            :any:`TypeError`: If no monitor is on the interface or
+                *compare_fn* is not a callable function.
         """
         # save a handle to the expected output so we can check if all expected
         # data has been received at the end of a test.
@@ -178,7 +218,7 @@ class Scoreboard(object):
 
         def check_received_transaction(transaction):
             """Called back by the monitor when a new transaction has been
-            received"""
+            received."""
 
             if monitor.name:
                 log_name = self.log.name + '.' + monitor.name
@@ -190,11 +230,11 @@ class Scoreboard(object):
             if callable(expected_output):
                 exp = expected_output(transaction)
 
-            elif len(expected_output):
+            elif len(expected_output):  # we expect something
                 for i in range(min((reorder_depth + 1), len(expected_output))):
                     if expected_output[i] == transaction:
-                        break
-                else:
+                        break  # break out of enclosing for loop
+                else:  # run when for loop is exhausted (but no break occurs)
                     i = 0
                 exp = expected_output.pop(i)
             else:

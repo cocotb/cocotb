@@ -52,24 +52,26 @@ class MonitorStatistics(object):
 
 
 class Monitor(object):
-    """Base class for Monitor objects. Monitors are passive 'listening' objects
-    that monitor pins in or out of a DUT. This class should not be used
-    directly, but should be subclassed and the internal `_monitor_recv` method
-    should be overridden and decorated as a @coroutine.  This `_monitor_recv`
+    """Base class for Monitor objects. 
+
+    Monitors are passive 'listening' objects that monitor pins in or out of a DUT. 
+    This class should not be used
+    directly, but should be subclassed and the internal :any:`_monitor_recv` method
+    should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
     method should capture some behavior of the pins, form a transaction, and
-    pass this transaction to the internal `_recv` method.  The `_monitor_recv`
-    method is added to the cocotb scheduler during the `__init__` phase, so it
+    pass this transaction to the internal :any:`_recv` method.  The :any:`_monitor_recv`
+    method is added to the cocotb scheduler during the ``__init__`` phase, so it
     should not be yielded anywhere.
 
     The primary use of a Monitor is as an interface for a
-    :py:class:`cocotb.scoreboard.Scoreboard`.
+    :class:`~cocotb.scoreboard.Scoreboard`.
 
     Args:
         callback (callable): Callback to be called with each recovered transaction 
             as the argument. If the callback isn't used, received transactions will 
             be placed on a queue and the event used to notify any consumers.
-        event (event): Object that supports a `set` method that will be called when
-            a transaction is received through the internal `_recv` method.
+        event (event): Object that supports a ``set`` method that will be called when
+            a transaction is received through the internal :any:`_recv` method.
     """
 
     def __init__(self, callback=None, event=None):
@@ -121,11 +123,10 @@ class Monitor(object):
 
     @coroutine
     def _monitor_recv(self):
-        """
-        Actual implementation of the receiver
+        """Actual implementation of the receiver.
 
         Subclasses should override this method to implement the actual receive
-        routine and call ``self._recv()`` with the recovered transaction.
+        routine and call :any:`_recv` with the recovered transaction.
         """
         raise NotImplementedError("Attempt to use base monitor class without "
                                   "providing a ``_monitor_recv`` method")
@@ -153,9 +154,7 @@ class Monitor(object):
 
 
 class BusMonitor(Monitor):
-    """
-    Wrapper providing common functionality for monitoring busses
-    """
+    """Wrapper providing common functionality for monitoring busses."""
     _signals = []
     _optional_signals = []
 

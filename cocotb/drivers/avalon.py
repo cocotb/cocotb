@@ -25,8 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-Drivers for Altera Avalon interfaces.
+"""Drivers for Altera Avalon interfaces.
 
 See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
 
@@ -132,7 +131,7 @@ class AvalonMaster(AvalonMM):
             BinaryValue: The read data value.
             
         Raises:
-            TestError: If master is write-only.
+            :any:`TestError`: If master is write-only.
         """
         if not self._can_read:
             self.log.error("Cannot read - have no read signal")
@@ -194,7 +193,7 @@ class AvalonMaster(AvalonMM):
             value (int): The data value to write.
 
         Raises:
-            TestError: If master is read-only.
+            :any:`TestError`: If master is read-only.
         """
         if not self._can_write:
             self.log.error("Cannot write - have no write signal")

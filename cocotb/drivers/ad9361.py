@@ -49,7 +49,7 @@ class AD9361(BusDriver):
             i_data2 (int, optional): Data of the I1 channel.
             q_data2 (int, optional): Data of the Q1 channel.
             binaryRepresentation (BinaryRepresentation): The representation of the binary value.
-                Default is ``BinaryRepresentation.TWOS_COMPLEMENT``.
+                Default is :any:`TWOS_COMPLEMENT`.
         """
         print(binaryRepresentation)
         cocotb.fork(self.rx_data_to_ad9361(i_data, q_data, i_data2, q_data2,
@@ -68,7 +68,7 @@ class AD9361(BusDriver):
             i_data2 (int, optional): Data of the I1 channel.
             q_data2 (int, optional): Data of the Q1 channel.
             binaryRepresentation (BinaryRepresentation): The representation of the binary value.
-                Default is ``BinaryRepresentation.TWOS_COMPLEMENT``. 
+                Default is :any:`TWOS_COMPLEMENT`. 
        """
         i_bin_val = BinaryValue(n_bits=12, bigEndian=False,
                                 binaryRepresentation=binaryRepresentation)
