@@ -54,7 +54,7 @@ class MonitorStatistics(object):
 class Monitor(object):
     """Base class for Monitor objects. 
 
-    Monitors are passive 'listening' objects that monitor pins in or out of a DUT. 
+    Monitors are passive 'listening' objects that monitor pins going in or out of a DUT. 
     This class should not be used
     directly, but should be subclassed and the internal :any:`_monitor_recv` method
     should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
