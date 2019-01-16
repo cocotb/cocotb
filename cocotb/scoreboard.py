@@ -186,7 +186,7 @@ class Scoreboard(object):
         Args:
             monitor: The monitor object.
             expected_output: Queue of expected outputs.
-            compare_fn (callable, optional): 
+            compare_fn (callable, optional): Function doing the actual comparison.
             reorder_depth (int, optional): Consider up to *reorder_depth* elements 
                 of the expected result list as passing matches.
                 Default is 0, meaning only the first element in the expected result list

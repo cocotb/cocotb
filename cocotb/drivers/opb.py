@@ -27,7 +27,7 @@
 """
 Drivers for On-chip Peripheral Bus.
 
-NB Currently we only support a very small subset of functionality
+NOTE: Currently we only support a very small subset of functionality.
 """
 
 import random
@@ -69,10 +69,9 @@ class OPBMaster(BusDriver):
 
     @cocotb.coroutine
     def read(self, address, sync=True):
-        """
-        Issue a request to the bus and block until this
-        comes back. Simulation time still progresses
-        but syntactically it blocks.
+        """Issue a request to the bus and block until this comes back.
+
+        Simulation time still progresses but syntactically it blocks.
         
         Args:
             address (int): The address to read from.
@@ -115,8 +114,7 @@ class OPBMaster(BusDriver):
 
     @cocotb.coroutine
     def write(self, address, value, sync=True):
-        """Issue a write to the given address with the specified
-        value.
+        """Issue a write to the given address with the specified value.
         
         Args:
             address (int): The address to read from.
@@ -125,7 +123,7 @@ class OPBMaster(BusDriver):
                 Defaults to True.
             
         Raises:
-            OPBException: If write took longer than 16 cycles
+            OPBException: If write took longer than 16 cycles.
         """
         yield self._acquire_lock()
 

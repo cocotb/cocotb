@@ -83,6 +83,10 @@ Signal related
 Python Triggers
 ~~~~~~~~~~~~~~~
 
+.. autoclass:: cocotb.triggers.Combine
+    :members:
+    :member-order: bysource
+
 .. autoclass:: cocotb.triggers.Event
     :members:
     :member-order: bysource
@@ -130,6 +134,7 @@ Monitor
     :private-members:
 
     .. automethod:: wait_for_recv(timeout=None)
+                    
 
 .. autoclass:: BusMonitor
     :members:
@@ -194,6 +199,7 @@ Analog Devices AD9361 RF Transceiver.
     .. automethod:: rx_data_to_ad9361(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
     .. automethod:: ad9361_tx_to_rx_loopback()
     .. automethod:: tx_data_from_ad9361()
+                    
 
 AMBA
 ~~~~
@@ -207,14 +213,10 @@ Advanced Microcontroller Bus Architecture.
     .. automethod:: write(address, value, byte_enable=0xf, address_latency=0, data_latency=0)
     .. automethod:: read(address, sync=True)
 
-    :members:
-    :member-order: bysource
-    :show-inheritance:
 
 .. autoclass:: AXI4Slave
     :members:
     :member-order: bysource
-    :show-inheritance:
 
 
 Avalon
@@ -232,9 +234,6 @@ Avalon
     .. automethod:: write(address, value)
     .. automethod:: read(address, sync=True)
                     
-    :members:
-    :member-order: bysource
-    :show-inheritance:
 
 .. autoclass:: AvalonMemory
     :members:
@@ -262,9 +261,6 @@ OPB
     .. automethod:: write(address, value, sync=True)
     .. automethod:: read(address, sync=True)
                     
-    :members:
-    :member-order: bysource
-    :show-inheritance:
 
 XGMII
 ~~~~~
