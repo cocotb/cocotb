@@ -491,7 +491,7 @@ class TestFactory(object):
         """Add a named option to the test.
 
         Args:
-           name (string): Name of the option. Passed to test as a keyword
+           name (str): Name of the option. Passed to test as a keyword
                           argument.
 
            optionlist (list): A list of possible options for this test knob.
@@ -509,12 +509,12 @@ class TestFactory(object):
         Args:
             prefix (str):  Text string to append to start of ``test_function`` name
                      when naming generated test cases. This allows reuse of
-                     a single ``test_function`` with multiple TestFactories without
-                     name clashes.
+                     a single ``test_function`` with multiple
+                     :class:`TestFactories <.TestFactory>` without name clashes.
             postfix (str): Text string to append to end of ``test_function`` name
                      when naming generated test cases. This allows reuse of
-                     a single ``test_function`` with multiple TestFactories without
-                     name clashes.
+                     a single ``test_function`` with multiple
+                     :class:`TestFactories <.TestFactory>` without name clashes.
         """
 
         frm = inspect.stack()[1]

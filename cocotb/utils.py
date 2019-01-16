@@ -27,7 +27,7 @@ from __future__ import print_function
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Collection of handy functions"""
+"""Collection of handy functions."""
 
 import ctypes
 import math
@@ -58,8 +58,8 @@ def get_sim_time(units=None):
 
     Args:
         units (str or None, optional): String specifying the units of the result
-            (``None``,'fs','ps','ns','us','ms','sec'). ``None`` will return the raw
-            simulation time.
+            (one of ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+            ``None`` will return the raw simulation time.
 
     Returns:
         The simulation time in the specified units.
@@ -74,35 +74,35 @@ def get_sim_time(units=None):
     return result
 
 def get_time_from_sim_steps(steps, units):
-    """Calculates simulation time in the specified units from the steps based
+    """Calculates simulation time in the specified *units* from the *steps* based
     on the simulator precision.
 
     Args:
-        steps (int): Number of simulation steps
+        steps (int): Number of simulation steps.
         units (str): String specifying the units of the result
-            ('fs','ps','ns','us','ms','sec').
+            (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
     Returns:
-        The simulation time in the specified units
+        The simulation time in the specified units.
     """
     result = steps * (10.0**(_LOG_SIM_PRECISION - _get_log_time_scale(units)))
 
     return result
 
 def get_sim_steps(time, units=None):
-    """Calculates the number of simulation time steps for a given amount of time
+    """Calculates the number of simulation time steps for a given amount of *time*.
 
     Args:
-        time (int/float):  The value to convert to simulation time steps.
+        time (int or float):  The value to convert to simulation time steps.
         units (str or None, optional):  String specifying the units of the result
-            (``None``,'fs','ps','ns','us','ms','sec'). ``None`` means time is already in
-            simulation time steps.
+            (one of ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+            ``None`` means time is already in simulation time steps.
 
     Returns:
-        int: The number of simulation time steps
+        int: The number of simulation time steps.
 
     Raises:
-        ValueError: If given time cannot be represented by simulator precision
+        :exc:`ValueError`: If given *time* cannot be represented by simulator precision.
     """
     result = time
     if units is not None:
@@ -118,14 +118,14 @@ def get_sim_steps(time, units=None):
     return int(result)
 
 def _get_log_time_scale(units):
-    """Retrieves the log10() of the scale factor for a given time unit
+    """Retrieves the ``log10()`` of the scale factor for a given time unit.
 
     Args:
         units (str): String specifying the units
-            ('fs','ps','ns','us','ms','sec').
+            (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
     Returns:
-        The the log10() of the scale factor for the time unit
+        The the ``log10()`` of the scale factor for the time unit.
     """
     scale = {
         'fs' :    -15,
@@ -145,35 +145,35 @@ def _get_log_time_scale(units):
 
 
 def pack(ctypes_obj):
-    """Convert a ctypes structure into a Python string
+    """Convert a :mod:`ctypes` structure into a Python string.
 
     Args:
-        ctypes_obj (ctypes.Structure): ctypes structure to convert to a string
+        ctypes_obj (ctypes.Structure): The ctypes structure to convert to a string.
 
     Returns:
-        New Python string containing the bytes from memory holding ctypes_obj
+        New Python string containing the bytes from memory holding *ctypes_obj*.
     """
     return ctypes.string_at(ctypes.addressof(ctypes_obj),
                             ctypes.sizeof(ctypes_obj))
 
 
 def unpack(ctypes_obj, string, bytes=None):
-    """Unpack a Python string into a ctypes structure
+    """Unpack a Python string into a :mod:`ctypes` structure.
+
+    If the length of *string* is not the correct size for the memory
+    footprint of the ctypes structure then the *bytes* keyword argument 
+    must be used.
 
     Args:
-        ctypes_obj (ctypes.Structure):  ctypes structure to pack into
-        string (str):  String to copy over the ctypes_obj memory space
+        ctypes_obj (ctypes.Structure): The ctypes structure to pack into.
+        string (str):  String to copy over the ctypes_obj memory space.
         bytes (int, optional): Number of bytes to copy. 
-            Defaults to ``None``, meaning the length of the string is used.
+            Defaults to ``None``, meaning the length of *string* is used.
 
     Raises:
-        ValueError: If length of ``string`` and size of ``ctypes_obj``
+        :exc:`ValueError`: If length of *string* and size of *ctypes_obj*
             are not equal.
-        MemoryError: If ``bytes`` is longer than size of ``ctypes_obj``.
-
-    If the length of the string is not the correct size for the memory
-    footprint of the ctypes structure then the ``bytes`` keyword argument 
-    must be used.
+        :exc:`MemoryError`: If *bytes* is longer than size of *ctypes_obj*.
     """
     if bytes is None:
         if len(string) != ctypes.sizeof(ctypes_obj):
@@ -203,13 +203,13 @@ def _sane_color(x):
 
 
 def hexdump(x):
-    """Hexdump a buffer
+    """Hexdump a buffer.
 
     Args:
         x: Object that supports conversion via the ``str`` built-in.
 
     Returns:
-        A string containing the hexdump
+        A string containing the hexdump.
 
     Example:
 
@@ -243,11 +243,11 @@ def hexdump(x):
 
 
 def hexdiffs(x, y):
-    """Return a diff string showing differences between 2 binary strings
+    """Return a diff string showing differences between two binary strings.
 
     Args:
-        x: Object that supports conversion via the ``str`` built-in
-        y: Object that supports conversion via the ``str`` built-in
+        x: Object that supports conversion via the ``str`` built-in.
+        y: Object that supports conversion via the ``str`` built-in.
 
     Example:
 
@@ -274,7 +274,8 @@ def hexdiffs(x, y):
         return r
 
     def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
-        """Highlight only with ansi output if it's requested and we are not in a GUI"""
+        """Highlight only with ANSI output if it's requested and we are not in a GUI."""
+        
         want_ansi = os.getenv("COCOTB_ANSI_OUTPUT") and not os.getenv("GUI")
         if want_ansi is None:
             want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
@@ -458,9 +459,9 @@ def with_metaclass(meta, *bases):
 
 
 class ParametrizedSingleton(type):
-    """A metaclass that allows class construction to reuse an existing instance
+    """A metaclass that allows class construction to reuse an existing instance.
 
-    We use this so that `RisingEdge(sig)` and `Join(coroutine)` always return
+    We use this so that :class:`RisingEdge(sig) <cocotb.triggers.RisingEdge>` and :class:`Join(coroutine) <cocotb.triggers.Join>` always return
     the same instance, rather than creating new copies.
     """
 
@@ -471,8 +472,7 @@ class ParametrizedSingleton(type):
         cls.__instances = weakref.WeakValueDictionary()
 
     def __singleton_key__(cls, *args, **kwargs):
-        """
-        Convert the construction arguments into a normalized representation that
+        """Convert the construction arguments into a normalized representation that
         uniquely identifies this singleton.
         """
         # Once we drop python 2, we can implement a default like the following,

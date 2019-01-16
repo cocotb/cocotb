@@ -27,11 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-Common bus related functionality.
+"""Common bus related functionality.
 A bus is simply defined as a collection of signals.
 """
-
 
 def _build_sig_attr_dict(signals):
     if isinstance(signals, dict):
@@ -139,7 +137,7 @@ class Bus(object):
 
         Returns:
             dict: A dictionary that supports access by attribute, 
-                where each attribute corresponds to each signal's value.
+            where each attribute corresponds to each signal's value.
         Raises:
             RuntimeError: If signal not present in bus,
                 or attempt to modify a bus capture.
@@ -149,13 +147,13 @@ class Bus(object):
                 if name in self:
                     return self[name]
                 else:
-                    raise RuntimeError('signal {} not present in bus'.format(name))
+                    raise RuntimeError('Signal {} not present in bus'.format(name))
 
             def __setattr__(self, name, value):
-                raise RuntimeError('modifying a bus capture is not supported')
+                raise RuntimeError('Modifying a bus capture is not supported')
 
             def __delattr__(self, name):
-                raise RuntimeError('modifying a bus capture is not supported')
+                raise RuntimeError('Modifying a bus capture is not supported')
 
         _capture = _Capture()
         for attr_name, hdl in self._signals.items():
@@ -164,15 +162,15 @@ class Bus(object):
         return _capture
 
     def sample(self, obj, strict=False):
-        """Sample the values from the bus, assigning them to ``obj``.
+        """Sample the values from the bus, assigning them to *obj*.
 
         Args:
             obj: Object with attribute names that match the bus signals.
             strict (bool, optional): Check that all signals being sampled
-                are present in ``obj``.
+                are present in *obj*.
 
         Raises:
-            AttributeError: If attribute is missing in ``obj`` when ``strict=True``.
+            AttributeError: If attribute is missing in *obj* when ``strict=True``.
         """
         for attr_name, hdl in self._signals.items():
             if not hasattr(obj, attr_name):

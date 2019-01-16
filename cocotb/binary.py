@@ -64,10 +64,10 @@ def _clog2(val):
         exp += 1
 
 
-class BinaryRepresentation():
-    UNSIGNED         = 0  # noqa
-    SIGNED_MAGNITUDE = 1  # noqa
-    TWOS_COMPLEMENT  = 2  # noqa
+class BinaryRepresentation():  # noqa
+    UNSIGNED         = 0  #: Unsigned format
+    SIGNED_MAGNITUDE = 1  #: Sign and magnitude format
+    TWOS_COMPLEMENT  = 2  #: Two's complement format
 
 
 class BinaryValue(object):
@@ -75,11 +75,11 @@ class BinaryValue(object):
 
     The underlying value can be set or accessed using these aliasing attributes:
 
-        - `BinaryValue.integer` is an integer
-        - `BinaryValue.signed_integer` is a signed integer
-        - `BinaryValue.binstr` is a string of "01xXzZ"
-        - `BinaryValue.buff` is a binary buffer of bytes
-        - `BinaryValue.value` is an integer **deprecated**
+        - :attr:`BinaryValue.integer` is an integer
+        - :attr:`BinaryValue.signed_integer` is a signed integer
+        - :attr:`BinaryValue.binstr` is a string of "01xXzZ"
+        - :attr:`BinaryValue.buff` is a binary buffer of bytes
+        - :attr:`BinaryValue.value` is an integer **deprecated**
 
     For example:
 
@@ -107,9 +107,9 @@ class BinaryValue(object):
                 when converting to/from a string buffer.
             binaryRepresentation (BinaryRepresentation): The representation 
                 of the binary value
-                (one of ``UNSIGNED``, ``SIGNED_MAGNITUDE``, ``TWOS_COMPLEMENT``).
+                (one of :any:`UNSIGNED`, :any:`SIGNED_MAGNITUDE`, :any:`TWOS_COMPLEMENT`).
                 Defaults to unsigned representation.
-            bits (int, optional): Deprecated: Compatibility wrapper for n_bits.
+            bits (int, optional): Deprecated: Compatibility wrapper for :attr:`n_bits`.
         """
         self._str = ""
         self.big_endian = bigEndian
@@ -147,7 +147,8 @@ class BinaryValue(object):
 
         We possibly try to be a bit too clever here by first of
         all trying to assign the raw string as a binstring, however
-        if the string contains any characters that aren't 0, 1, X or Z
+        if the string contains any characters that aren't 
+        ``0``, ``1``, ``X`` or ``Z``
         then we interpret the string as a binary buffer.
 
         Args:
@@ -238,7 +239,7 @@ class BinaryValue(object):
         return rv
 
     def _adjust_signed_mag(self, x):
-        """Pad/truncate the bit string to the correct length"""
+        """Pad/truncate the bit string to the correct length."""
         if self._n_bits is None:
             return x
         l = len(x)
@@ -299,22 +300,21 @@ class BinaryValue(object):
 
     @property
     def is_resolvable(self):
-        """Does the value contain any X's?  Inquiring minds want to know"""
+        """Does the value contain any ``X``'s?  Inquiring minds want to know."""
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
 
     value = property(get_value, set_value, None,
-                     "Integer access to the value. *** deprecated ***")
+                     "Integer access to the value. **deprecated**")
     integer = property(get_value, set_value, None,
                        "The integer representation of the underlying vector.")
     signed_integer = property(get_value_signed, set_value, None,
                               "The signed integer representation of the underlying vector.")
 
     def get_buff(self):
-        """Attribute self.buff represents the value as a binary string buffer
+        """Attribute :attr:`buff` represents the value as a binary string buffer.
 
         >>> "0100000100101111".buff == "\x41\x2F"
         True
-
         """
         bits = resolve(self._str)
 
@@ -347,7 +347,7 @@ class BinaryValue(object):
         self._adjust()
 
     def _adjust(self):
-        """Pad/truncate the bit string to the correct length"""
+        """Pad/truncate the bit string to the correct length."""
         if self._n_bits is None:
             return
         l = len(self._str)
@@ -362,11 +362,11 @@ class BinaryValue(object):
             self._str = self._str[l - self._n_bits:]
 
     buff = property(get_buff, set_buff, None,
-                    "Access to the value as a buffer")
+                    "Access to the value as a buffer.")
 
     def get_binstr(self):
-        """Attribute binstr is the binary representation stored as a string of
-        1s and 0s"""
+        """Attribute :attr:`binstr` is the binary representation stored as 
+        a string of ``1`` and ``0``."""
         return self._str
 
     def set_binstr(self, string):
@@ -378,14 +378,14 @@ class BinaryValue(object):
         self._adjust()
 
     binstr = property(get_binstr, set_binstr, None,
-                      "Access to the binary string")
+                      "Access to the binary string.")
 
     def _get_n_bits(self):
-        """The number of bits of the binary value"""
+        """The number of bits of the binary value."""
         return self._n_bits
 
     n_bits = property(_get_n_bits, None, None,
-                      "Access to the number of bits of the binary value")
+                      "Access to the number of bits of the binary value.")
 
     def hex(self):
         try:
@@ -406,7 +406,7 @@ class BinaryValue(object):
         return self.__nonzero__()
 
     def __nonzero__(self):
-        """Provide boolean testing of a binstr.
+        """Provide boolean testing of a :attr:`binstr`.
 
         >>> val = BinaryValue("0000")
         >>> if val: print("True")
@@ -639,8 +639,7 @@ class BinaryValue(object):
         return rv
 
     def __setitem__(self, key, val):
-        """BinaryValue uses Verilog/VHDL style slices as opposed to Python
-        style"""
+        """BinaryValue uses Verilog/VHDL style slices as opposed to Python style."""
         if not isinstance(val, str) and not isinstance(val, get_python_integer_types()):
             raise TypeError('BinaryValue slices only accept string or integer values')
 

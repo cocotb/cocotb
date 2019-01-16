@@ -1,34 +1,33 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013, 2018 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-
-"""
-    Coroutine scheduler.
+"""Coroutine scheduler.
 
 
 FIXME: We have a problem here.  If a coroutine schedules a read-only but we
@@ -57,7 +56,7 @@ if "COCOTB_ENABLE_PROFILING" in os.environ:
 else:
     _profiling = False
 
-# Sadly the python standard logging module is very slow so it's better not to
+# Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
 if "COCOTB_SCHEDULER_DEBUG" in os.environ:
     _debug = True
@@ -141,13 +140,12 @@ class external_waiter(object):
         return self.state
 
 class Scheduler(object):
-    """
-    The main scheduler.
+    """The main scheduler.
 
     Here we accept callbacks from the simulator and schedule the appropriate
     coroutines.
 
-    A callback fires, causing the `react`_ method to be called, with the
+    A callback fires, causing the :any:`react` method to be called, with the
     trigger that caused the callback as the first argument.
 
     We look up a list of coroutines to schedule (indexed by the trigger) and
@@ -272,10 +270,9 @@ class Scheduler(object):
             self._mode = Scheduler._MODE_TERM
 
     def begin_test(self, trigger=None):
-        """
-        Called to initiate a test.
+        """Called to initiate a test.
 
-        Could be called on start-up or from a callback
+        Could be called on start-up or from a callback.
         """
         if _debug:
             self.log.debug("begin_test called with trigger: %s" %
@@ -305,8 +302,7 @@ class Scheduler(object):
             _profile.disable()
 
     def react(self, trigger, depth=0):
-        """
-        React called when a trigger fires.
+        """React called when a trigger fires.
 
         We find any coroutines that are waiting on the particular trigger and
         schedule them.
@@ -470,9 +466,7 @@ class Scheduler(object):
         self._writes[handle] = value
 
     def _coroutine_yielded(self, coro, triggers):
-        """
-        Prime the triggers and update our internal mappings
-        """
+        """Prime the triggers and update our internal mappings."""
         self._coro2triggers[coro] = triggers
 
         for trigger in triggers:
@@ -492,9 +486,8 @@ class Scheduler(object):
         self._pending_coros.append(coroutine)
 
     def queue_function(self, coroutine):
-        """
-        Queue a coroutine for execution and move the containing thread
-        so that it does not block execution of the main thread any longer
+        """Queue a coroutine for execution and move the containing thread
+        so that it does not block execution of the main thread any longer.
         """
 
         # We should be able to find ourselves inside the _pending_threads list
@@ -507,9 +500,8 @@ class Scheduler(object):
 
 
     def run_in_executor(self, func, *args, **kwargs):
-        """
-        Run the coroutine in a separate execution thread
-        and return a yieldable object for the caller
+        """Run the coroutine in a separate execution thread
+        and return a yieldable object for the caller.
         """
         # Create a thread
         # Create a trigger that is called as a result of the thread finishing
@@ -537,11 +529,10 @@ class Scheduler(object):
         return waiter
 
     def add(self, coroutine):
-        """
-        Add a new coroutine.
+        """Add a new coroutine.
 
         Just a wrapper around self.schedule which provides some debug and
-        useful error mesages in the event of common gotchas
+        useful error messages in the event of common gotchas.
         """
         if isinstance(coroutine, cocotb.decorators.coroutine):
             self.log.critical(
@@ -577,14 +568,12 @@ class Scheduler(object):
         self._entrypoint = coroutine
 
     def schedule(self, coroutine, trigger=None):
-        """
-        Schedule a coroutine by calling the send method
+        """Schedule a coroutine by calling the send method.
 
         Args:
-            coroutine (cocotb.decorators.coroutine): The coroutine to schedule
-
+            coroutine (cocotb.decorators.coroutine): The coroutine to schedule.
             trigger (cocotb.triggers.Trigger): The trigger that caused this
-                                                coroutine to be scheduled
+                coroutine to be scheduled.
         """
         if hasattr(trigger, "pass_retval"):
             sendval = trigger.retval
@@ -722,7 +711,7 @@ class Scheduler(object):
 
 
     def finish_test(self, test_result):
-        """Cache the test result and set the terminate flag"""
+        """Cache the test result and set the terminate flag."""
         self.log.debug("finish_test called with %s" % (repr(test_result)))
         if not self._terminate:
             self._terminate = True
@@ -731,15 +720,15 @@ class Scheduler(object):
 
     def finish_scheduler(self, test_result):
         """Directly call into the regression manager and end test
-           once we return the sim will close us so no cleanup is needed"""
+           once we return the sim will close us so no cleanup is needed.
+        """
         self.log.debug("Issue sim closedown result to regression object")
         cocotb.regression.handle_result(test_result)
 
     def cleanup(self):
-        """
-        Clear up all our state
+        """Clear up all our state.
 
-        Unprime all pending triggers and kill off any coroutines stop all externals
+        Unprime all pending triggers and kill off any coroutines stop all externals.
         """
         for trigger, waiting in dict(self._trigger2coros).items():
             for coro in waiting:

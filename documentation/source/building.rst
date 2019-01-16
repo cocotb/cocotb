@@ -104,7 +104,7 @@ Environment Variables
       
     ``TESTCASE``
       The name of the test function(s) to run.  If this variable is not defined Cocotb
-      discovers and executes all functions decorated with the :py:class:`cocotb.test` decorator in the supplied modules.
+      discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied modules.
       
       Multiple functions can be specified in a comma-separated list.
 
@@ -129,7 +129,7 @@ Additional Environment Variables
 
     ``COCOTB_HOOKS``
       A comma-separated list of modules that should be executed before the first test.
-      You can also use the :py:class:`cocotb.hook` decorator to mark a function to be run before test code.
+      You can also use the :class:`cocotb.hook` decorator to mark a function to be run before test code.
 
     ``COCOTB_LOG_LEVEL``
       Default logging level to use. This is set to ``INFO`` unless overridden.
@@ -139,7 +139,7 @@ Additional Environment Variables
       Valid settings are:
 
       ``VALUE_ERROR``
-         raise a ``ValueError`` exception
+         raise a :exc:`ValueError` exception
       ``ZEROS``
          resolve to ``0``
       ``ONES``
@@ -156,7 +156,7 @@ Additional Environment Variables
       HTTP port to use for debugging Python's memory usage.
       When set to e.g. ``8088``, data will be presented at `<http://localhost:8088>`_.
       
-      This needs the :py:mod:`cherrypy` and :py:mod:`dowser` Python modules installed.
+      This needs the :mod:`cherrypy` and :mod:`dowser` Python modules installed.
 
     ``SIM_ROOT``
       The root directory of the Cocotb installation.

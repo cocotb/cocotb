@@ -31,9 +31,10 @@ import sys
 # from StringIO import StringIO
 from io import StringIO, BytesIO
 
+"""Exceptions and functions for simulation result handling."""
 
 def raise_error(obj, msg):
-    """Creates a TestError exception and raises it after printing a traceback.
+    """Creates a :exc:`TestError` exception and raises it after printing a traceback.
 
     Args:
         obj: Object with a log method.
@@ -55,8 +56,8 @@ def raise_error(obj, msg):
 
 
 def create_error(obj, msg):
-    """Like `raise_error`, but return the exception rather than raise it, 
-    simply to avoid too many levels of nested try/except blocks.
+    """Like :func:`raise_error`, but return the exception rather than raise it, 
+    simply to avoid too many levels of nested `try/except` blocks.
 
     Args:
         obj: Object with a log method.
@@ -70,6 +71,7 @@ def create_error(obj, msg):
 
 
 class ReturnValue(Exception):
+    """Helper exception needed for Python versions prior to 3.3."""
     def __init__(self, retval):
         self.retval = retval
 
@@ -83,6 +85,7 @@ class TestComplete(Exception):
 
 
 class ExternalException(Exception):
+    """Exception thrown by external functions."""
     def __init__(self, exception):
         self.exception = exception
 
