@@ -45,3 +45,4 @@ Cadence Incisive, Cadence Xcelium
 GHDL
 ----
 Support is preliminary. 
+Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.
