@@ -1,29 +1,29 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import cocotb
 import logging
@@ -34,7 +34,7 @@ from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject
 
 @cocotb.test()
 def recursive_discover(dut):
-    """Discover absolutely everything in the dut"""
+    """Discover absolutely everything in the DUT"""
     yield Timer(0)
     def _discover(obj):
         for thing in obj:
@@ -44,7 +44,7 @@ def recursive_discover(dut):
 
 @cocotb.test()
 def discover_module_values(dut):
-    """Discover everything in the dut"""
+    """Discover everything in the DUT"""
     yield Timer(0)
     count = 0
     for thing in dut:
@@ -88,7 +88,7 @@ def access_signal(dut):
              skip=cocotb.LANGUAGE in ["vhdl"])
 def access_single_bit(dut):
     """
-    Access a single bit in a vector of the dut
+    Access a single bit in a vector of the DUT
 
     Icarus v0.96 doesn't support single bit access to vectors
     """
@@ -108,7 +108,7 @@ def access_single_bit(dut):
              skip=cocotb.LANGUAGE in ["vhdl"])
 def access_single_bit_assignment(dut):
     """
-    Access a single bit in a vector of the dut using the assignment mechanism
+    Access a single bit in a vector of the DUT using the assignment mechanism
 
     Icarus v0.96 doesn't support single bit access to vectors
     """
@@ -199,27 +199,27 @@ def access_string(dut):
     test_string = "cocotb"
     dut.stream_in_string.setimmediatevalue(test_string)
 
-    varible_string = dut.stream_out_string
-    if varible_string != '':
-        raise TestFailure("%r not \'\'" % varible_string)
+    variable_string = dut.stream_out_string
+    if variable_string != '':
+        raise TestFailure("%r not \'\'" % variable_string)
 
     yield Timer(10)
 
-    if varible_string != test_string:
-        raise TestFailure("%r %s != '%s'" % (varible_string, str(varible_string), test_string))
+    if variable_string != test_string:
+        raise TestFailure("%r %s != '%s'" % (variable_string, str(variable_string), test_string))
 
     test_string = "longer_than_the_array"
     tlog.info("Test writing over size with '%s'" % test_string)
 
     dut.stream_in_string.setimmediatevalue(test_string)
-    varible_string = dut.stream_out_string
+    variable_string = dut.stream_out_string
 
     yield Timer(10)
 
-    test_string = test_string[:len(varible_string)]
+    test_string = test_string[:len(variable_string)]
 
-    if varible_string != test_string:
-        raise TestFailure("%r %s != '%s'" % (varible_string, str(varible_string), test_string))
+    if variable_string != test_string:
+        raise TestFailure("%r %s != '%s'" % (variable_string, str(variable_string), test_string))
 
     tlog.info("Test read access to a string character")
 
@@ -227,7 +227,7 @@ def access_string(dut):
 
     idx = 3
 
-    result_slice = varible_string[idx]
+    result_slice = variable_string[idx]
 
     # String is defined as string(1 to 8) so idx=3 will access the 3rd character
     if chr(result_slice) != test_string[idx-1]:
@@ -238,7 +238,7 @@ def access_string(dut):
 
     yield Timer(10)
 
-    for i in varible_string:
+    for i in variable_string:
         lower = chr(i)
         upper = lower.upper()
         i.setimmediatevalue(ord(upper))
@@ -247,10 +247,10 @@ def access_string(dut):
 
     test_string = test_string.upper()
 
-    result = str(varible_string);
+    result = str(variable_string);
     tlog.info("After setting bytes of string value is %s" % result)
-    if varible_string != test_string:
-        raise TestFailure("%r %s != '%s'" % (varible_string, result, test_string))
+    if variable_string != test_string:
+        raise TestFailure("%r %s != '%s'" % (variable_string, result, test_string))
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def access_constant_boolean(dut):
