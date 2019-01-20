@@ -98,7 +98,7 @@ Work has been done with the support of the cocotb community to enable
 Windows support using the MinGW/Msys environment. Download the MinGQ installer
 from.
 
-http://sourceforge.net/projects/mingw/files/latest/download?source=files .
+https://sourceforge.net/projects/mingw/files/latest/download?source=files .
 
 Run the GUI installer and specify a directory you would like the environment
 installed in. The installer will retrieve a list of possible packages, when this
@@ -130,10 +130,10 @@ so it can be used easily from inside Msys.
 
 Once inside the Msys shell commands as given here will work as expected.
 
-Mac Packages
-------------
+macOS Packages
+--------------
 
-You need a few packages installed to get cocotb running on Mac.
+You need a few packages installed to get cocotb running on macOS.
 Installing a package manager really helps things out here.
 
 `Brew <https://brew.sh/>`_ seems to be the most popular, so we'll assume you have that installed.
@@ -172,8 +172,7 @@ be used):
     $> make SIM=ghdl TOPLEVEL_LANG=vhdl
 
 
-
-Using Cocotb
+Using cocotb
 ============
 
 A typical cocotb testbench requires no additional RTL code.
@@ -219,9 +218,8 @@ following:
     
     @cocotb.test()
     def my_first_test(dut):
-        """
-        Try accessing the design
-        """
+        """Try accessing the design."""
+        
         dut._log.info("Running test!")
         for cycle in range(10):
             dut.clk = 0
