@@ -13,6 +13,7 @@ Contents:
    triggers
    testbench_tools
    library_reference
+   library_reference_c
    endian_swapper
    ping_tun_tap
    hal_cosimulation
