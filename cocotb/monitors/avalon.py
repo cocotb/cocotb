@@ -25,12 +25,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-Monitors for Altera Avalon interfaces.
+"""Monitors for Intel Avalon interfaces.
 
-See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
+See https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/manual/mnl_avalon_spec_1_3.pdf
 
-NB Currently we only support a very small subset of functionality
+NB Currently we only support a very small subset of functionality.
 """
 
 from cocotb.utils import hexdump
@@ -44,11 +43,11 @@ class AvalonProtocolError(Exception):
 
 
 class AvalonST(BusMonitor):
-    """
-    Avalon-ST bus.
+    """Avalon-ST bus.
 
     Non-packetised so each valid word is a separate transaction.
     """
+    
     _signals = ["valid", "data"]
     _optional_signals = ["ready"]
 
@@ -68,7 +67,7 @@ class AvalonST(BusMonitor):
 
     @coroutine
     def _monitor_recv(self):
-        """Watch the pins and reconstruct transactions"""
+        """Watch the pins and reconstruct transactions."""
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -90,9 +89,8 @@ class AvalonST(BusMonitor):
 
 
 class AvalonSTPkts(BusMonitor):
-    """
-    Packetised Avalon-ST bus.
-    """
+    """Packetised Avalon-ST bus."""
+    
     _signals = ["valid", "data", "startofpacket", "endofpacket"]
     _optional_signals = ["error", "channel", "ready", "empty"]
 
@@ -145,7 +143,7 @@ class AvalonSTPkts(BusMonitor):
 
     @coroutine
     def _monitor_recv(self):
-        """Watch the pins and reconstruct transactions"""
+        """Watch the pins and reconstruct transactions."""
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -182,7 +180,7 @@ class AvalonSTPkts(BusMonitor):
                     raise AvalonProtocolError("Data transfer outside of "
                                               "packet")
 
-                #Handle empty and X's in empty / data
+                # Handle empty and X's in empty / data
                 vec = BinaryValue()
                 if not self.bus.endofpacket.value:
                     vec = self.bus.data.value
@@ -227,9 +225,8 @@ class AvalonSTPkts(BusMonitor):
                                 invalid_cyclecount)
 
 class AvalonSTPktsWithChannel(AvalonSTPkts):
-    """
-    Packetised AvalonST bus using channel
-    """
+    """Packetised AvalonST bus using channel."""
+    
     _signals = ["valid", "data", "startofpacket", "endofpacket", "channel"]
     _optional_signals = ["error", "ready", "empty"]
 
@@ -237,9 +234,9 @@ class AvalonSTPktsWithChannel(AvalonSTPkts):
         AvalonSTPkts.__init__(self, *args, **kwargs)
 
     def _recv(self,pkt):
-        """Force use of channel in recv function
+        """Force use of channel in recv function.
 
-        args:
-            pkt: (string) Monitored data
+        Args:
+            pkt: (string) Monitored data.
         """
         AvalonSTPkts._recv(self,{"data":pkt,"channel":self.channel})

@@ -232,13 +232,12 @@ class RegressionManager(object):
         self.failures += 1
 
     def handle_result(self, result):
-        """
-        Handle a test result.
+        """Handle a test result.
 
         Dump result to XML and schedule the next test (if any).
 
         Args: 
-            result: The sub-exception of TestComplete to raise
+            result: The sub-exception of TestComplete to raise.
         """
         real_time   = time.time() - self._running_test.start_time
         sim_time_ns = get_sim_time('ns') - self._running_test.start_sim_time
@@ -401,19 +400,18 @@ class RegressionManager(object):
 
 
 def _create_test(function, name, documentation, mod, *args, **kwargs):
-    """
-    Factory function to create tests, avoids late binding.
+    """Factory function to create tests, avoids late binding.
 
     Creates a test dynamically.  The test will call the supplied
     function with the supplied arguments.
 
     Args:
-        function (function):  The test function to run
-        name (str):           The name of the test
-        documentation (str):  The docstring for the test
-        mod (module):         The module this function belongs to
-        *args:                Remaining args to pass to test function
-        **kwargs:             Passed to the test function
+        function (function):  The test function to run.
+        name (str):           The name of the test.
+        documentation (str):  The docstring for the test.
+        mod (module):         The module this function belongs to.
+        *args:                Remaining args to pass to test function.
+        **kwargs:             Passed to the test function.
 
     Returns:
         Decorated test function
@@ -428,8 +426,7 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
 
 
 class TestFactory(object):
-    """
-    Used to automatically generate tests.
+    """Used to automatically generate tests.
 
     Assuming we have a common test function that will run a test. This test
     function will take keyword arguments (for example generators for each of
@@ -486,6 +483,7 @@ class TestFactory(object):
         self.args = args
         self.kwargs_constant = kwargs
         self.kwargs = {}
+        self.log = SimLog("cocotb.regression")
 
     def add_option(self, name, optionlist):
         """Add a named option to the test.
@@ -541,13 +539,13 @@ class TestFactory(object):
                 else:
                     doc += "\t%s: %s\n" % (optname, repr(optvalue))
 
-            cocotb.log.debug("Adding generated test \"%s\" to module \"%s\"" %
+            self.log.debug("Adding generated test \"%s\" to module \"%s\"" %
                              (name, mod.__name__))
             kwargs = {}
             kwargs.update(self.kwargs_constant)
             kwargs.update(testoptions)
             if hasattr(mod, name):
-                cocotb.log.error("Overwriting %s in module %s. "
+                self.log.error("Overwriting %s in module %s. "
                                  "This causes a previously defined testcase "
                                  "not to be run. Consider setting/changing "
                                  "name_postfix" % (name, mod))

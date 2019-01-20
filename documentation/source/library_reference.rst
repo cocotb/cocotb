@@ -20,11 +20,15 @@ Writing and Generating tests
 
 .. autoclass:: cocotb.coroutine
 
+.. autoclass:: cocotb.external
+
+.. autoclass:: cocotb.function
+
+.. autoclass:: cocotb.hook
+
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource
-
-.. autoclass:: cocotb.hook
 
 
 Interacting with the Simulator
@@ -52,6 +56,8 @@ Triggers
 
 Triggers are used to indicate when the scheduler should resume coroutine execution.
 Typically a coroutine will :keyword:`yield` a trigger or a list of triggers.
+
+.. autoclass:: cocotb.triggers.Trigger
 
 Simulation Timing
 ~~~~~~~~~~~~~~~~~
@@ -116,12 +122,16 @@ Driver
 Monitor
 -------
 
-.. autoclass:: cocotb.monitors.Monitor
-    :members:
+.. currentmodule:: cocotb.monitors
+
+.. autoclass:: Monitor
+    :members: _monitor_recv, _recv
     :member-order: bysource
     :private-members:
 
-.. autoclass:: cocotb.monitors.BusMonitor
+    .. automethod:: wait_for_recv(timeout=None)
+
+.. autoclass:: BusMonitor
     :members:
     :member-order: bysource
     :show-inheritance:
@@ -199,10 +209,12 @@ Advanced Microcontroller Bus Architecture.
 
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AXI4Slave
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 
 Avalon
@@ -213,6 +225,7 @@ Avalon
 .. autoclass:: AvalonMM
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonMaster
                
@@ -221,18 +234,22 @@ Avalon
                     
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonMemory
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonST
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonSTPkts
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 
 OPB
@@ -247,6 +264,7 @@ OPB
                     
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 XGMII
 ~~~~~
@@ -256,6 +274,7 @@ XGMII
 .. autoclass:: XGMII
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 Monitors
 --------
@@ -268,10 +287,12 @@ Avalon
 .. autoclass:: AvalonST
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonSTPkts
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 XGMII
 ~~~~~
@@ -279,3 +300,4 @@ XGMII
 .. autoclass:: cocotb.monitors.xgmii.XGMII
     :members:
     :member-order: bysource
+    :show-inheritance:

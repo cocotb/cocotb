@@ -1,29 +1,30 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 from __future__ import print_function
 import sys
 import time
@@ -61,11 +62,10 @@ public(public)  # Emulate decorating ourself
 
 @public
 class CoroutineComplete(Exception):
-    """
-        To ensure that a coroutine has completed before we fire any triggers
-        that are blocked waiting for the coroutine to end, we create a subclass
-        exception that the Scheduler catches and the callbacks are attached
-        here.
+    """To ensure that a coroutine has completed before we fire any triggers
+    that are blocked waiting for the coroutine to end, we create a subclass
+    exception that the Scheduler catches and the callbacks are attached
+    here.
     """
     def __init__(self, text="", callback=None):
         Exception.__init__(self, text)
@@ -73,16 +73,15 @@ class CoroutineComplete(Exception):
 
 
 class RunningCoroutine(object):
-    """Per instance wrapper around an function to turn it into a coroutine
+    """Per instance wrapper around an function to turn it into a coroutine.
 
+    Provides the following:
 
-        Provides the following:
+        coro.join() creates a Trigger that will fire when this coroutine
+        completes.
 
-            coro.join() creates a Trigger that will fire when this coroutine
-            completes
-
-            coro.kill() will destroy a coroutine instance (and cause any Join
-            triggers to fire
+        coro.kill() will destroy a coroutine instance (and cause any Join
+        triggers to fire.
     """
     def __init__(self, inst, parent):
         if hasattr(inst, "__name__"):
@@ -145,7 +144,7 @@ class RunningCoroutine(object):
         return self._coro.close()
 
     def kill(self):
-        """Kill a coroutine"""
+        """Kill a coroutine."""
         self.log.debug("kill() called on coroutine")
         cocotb.scheduler.unschedule(self)
 
@@ -157,7 +156,7 @@ class RunningCoroutine(object):
         self._finished = True
 
     def join(self):
-        """Return a trigger that will fire when the wrapped coroutine exits"""
+        """Return a trigger that will fire when the wrapped coroutine exits."""
         return Join(self)
 
     def has_started(self):
@@ -178,7 +177,7 @@ class RunningCoroutine(object):
             return "%s.%d.%s" % (self.module, self.stage, self.funcname)
 
 class RunningTest(RunningCoroutine):
-    """Add some useful Test functionality to a RunningCoroutine"""
+    """Add some useful Test functionality to a RunningCoroutine."""
 
     class ErrorLogHandler(logging.Handler):
         def __init__(self, fn):
@@ -239,15 +238,16 @@ class RunningTest(RunningCoroutine):
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
 
-        ``log`` methods will will log to ``cocotb.coroutines.name``
+    ``log`` methods will will log to ``cocotb.coroutines.name``.
 
-        ``join()`` method returns an event which will fire when the coroutine exits
+    ``join()`` method returns an event which will fire when the coroutine exits.
     """
 
     def __init__(self, func):
         self._func = func
         self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
-        functools.update_wrapper(self, self._func)
+        self.__name__ = self._func.__name__
+        functools.update_wrapper(self, func)
 
     def __call__(self, *args, **kwargs):
         try:
@@ -279,7 +279,7 @@ class coroutine(object):
 
 @public
 class function(object):
-    """Decorator class that allows a function to block
+    """Decorator class that allows a function to block.
 
     This allows a function to internally block while
     externally appear to yield.
@@ -287,7 +287,6 @@ class function(object):
     def __init__(self, func):
         self._func = func
         self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
-        functools.update_wrapper(self, self._func)
 
     def __call__(self, *args, **kwargs):
 
@@ -318,7 +317,6 @@ class external(object):
     def __init__(self, func):
         self._func = func
         self._log = SimLog("cocotb.external.%s" % self._func.__name__, id(self))
-        functools.update_wrapper(self, self._func)
 
     def __call__(self, *args, **kwargs):
 
@@ -343,7 +341,7 @@ class external(object):
 
 @public
 class hook(coroutine):
-    """Decorator to mark a function as a hook for cocotb
+    """Decorator to mark a function as a hook for cocotb.
 
     All hooks are run at the beginning of a cocotb test suite, prior to any
     test code being run."""
@@ -366,10 +364,10 @@ class hook(coroutine):
 
 @public
 class test(coroutine):
-    """Decorator to mark a function as a test
+    """Decorator to mark a function as a test.
 
     All tests are coroutines.  The test decorator provides
-    some common reporting etc, a test timeout and allows
+    some common reporting etc., a test timeout and allows
     us to mark tests as expected failures.
 
     Args:
