@@ -42,6 +42,7 @@ from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
 from cocotb.utils import get_sim_time
+from cocotb import outcomes
 
 
 def public(f):
@@ -67,9 +68,8 @@ class CoroutineComplete(Exception):
     exception that the Scheduler catches and the callbacks are attached
     here.
     """
-    def __init__(self, text="", callback=None):
+    def __init__(self, text=""):
         Exception.__init__(self, text)
-        self.callback = callback
 
 
 class RunningCoroutine(object):
@@ -91,18 +91,27 @@ class RunningCoroutine(object):
             self.log = SimLog("cocotb.coroutine.fail")
         self._coro = inst
         self._started = False
-        self._finished = False
         self._callbacks = []
         self._parent = parent
         self.__doc__ = parent._func.__doc__
         self.module = parent._func.__module__
         self.funcname = parent._func.__name__
-        self.retval = None
+        self._outcome = None
 
         if not hasattr(self._coro, "send"):
             self.log.error("%s isn't a valid coroutine! Did you use the yield "
                            "keyword?" % self.funcname)
-            raise CoroutineComplete(callback=self._finished_cb)
+            raise CoroutineComplete()
+
+    @property
+    def retval(self):
+        if self._outcome is None:
+            raise RuntimeError("coroutine is not complete")
+        return self._outcome.get()
+
+    @property
+    def _finished(self):
+        return self._outcome is not None
 
     def __iter__(self):
         return self
@@ -110,32 +119,32 @@ class RunningCoroutine(object):
     def __str__(self):
         return str(self.__name__)
 
-    def send(self, value):
+    def _advance(self, outcome):
+        """
+        Advance to the next yield in this coroutine
+
+        :param outcome: The `outcomes.Outcome` object to resume with.
+        :returns: The object yielded from the coroutine
+
+        If the coroutine returns or throws an error, self._outcome is set, and
+        this throws `CoroutineComplete`.
+        """
         try:
-            if isinstance(value, ExternalException):
-                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
-                return self._coro.throw(value.exception)
             self._started = True
-            return self._coro.send(value)
-        except TestComplete as e:
-            if isinstance(e, TestFailure):
-                self.log.warning(str(e))
-            raise
-        except ExternalException as e:
-            self.retval = e
-            self._finished = True
-            raise CoroutineComplete(callback=self._finished_cb)
+            return outcome.send(self._coro)
         except ReturnValue as e:
-            self.retval = e.retval
-            self._finished = True
-            raise CoroutineComplete(callback=self._finished_cb)
+            self._outcome = outcomes.Value(e.retval)
+            raise CoroutineComplete()
         except StopIteration as e:
-            self._finished = True
-            self.retval = getattr(e, 'value', None)  # for python >=3.3
-            raise CoroutineComplete(callback=self._finished_cb)
-        except Exception as e:
-            self._finished = True
-            raise raise_error(self, "Send raised exception:")
+            retval = getattr(e, 'value', None)  # for python >=3.3
+            self._outcome = outcomes.Value(retval)
+            raise CoroutineComplete()
+        except BaseException as e:
+            self._outcome = outcomes.Error(e)
+            raise CoroutineComplete()
+
+    def send(self, value):
+        return self._coro.send(value)
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -146,14 +155,9 @@ class RunningCoroutine(object):
     def kill(self):
         """Kill a coroutine."""
         self.log.debug("kill() called on coroutine")
+        # todo: probably better to throw an exception for anyone waiting on the coroutine
+        self._outcome = outcomes.Value(None)
         cocotb.scheduler.unschedule(self)
-
-    def _finished_cb(self):
-        """Called when the coroutine completes.
-            Allows us to mark the coroutine as finished so that boolean testing
-            works.
-            Also call any callbacks, usually the result of coroutine.join()"""
-        self._finished = True
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits."""
@@ -201,7 +205,7 @@ class RunningTest(RunningCoroutine):
         self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
         cocotb.log.addHandler(self.handler)
 
-    def send(self, value):
+    def _advance(self, outcome):
         if not self.started:
             self.error_messages = []
             self.log.info("Starting test: \"%s\"\nDescription: %s" %
@@ -210,11 +214,8 @@ class RunningTest(RunningCoroutine):
             self.start_sim_time = get_sim_time('ns')
             self.started = True
         try:
-            if isinstance(value, ExternalException):
-                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
-                return self._coro.throw(value.exception)
-            self.log.debug("Sending trigger %s" % (str(value)))
-            return self._coro.send(value)
+            self.log.debug("Sending {}".format(outcome))
+            return outcome.send(self._coro)
         except TestComplete as e:
             if isinstance(e, TestFailure):
                 self.log.warning(str(e))
@@ -292,7 +293,12 @@ class function(object):
 
         @coroutine
         def execute_function(self, event):
-            event.result = yield cocotb.coroutine(self._func)(*args, **kwargs)
+            coro = cocotb.coroutine(self._func)(*args, **kwargs)
+            try:
+                _outcome = outcomes.Value((yield coro))
+            except BaseException as e:
+                _outcome = outcomes.Error(e)
+            event.outcome = _outcome
             event.set()
 
         self._event = threading.Event()
@@ -301,7 +307,7 @@ class function(object):
         # This blocks the calling external thread until the coroutine finishes
         self._event.wait()
         waiter.thread_resume()
-        return self._event.result
+        return self._event.outcome.get()
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
@@ -323,14 +329,10 @@ class external(object):
         @coroutine
         def wrapper():
             ext = cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
-
             yield ext.event.wait()
 
-            if ext.result is not None:
-                if isinstance(ext.result, Exception):
-                    raise ExternalException(ext.result)
-                else:
-                    raise ReturnValue(ext.result)
+            ret = ext.result  # raises if there was an exception
+            raise ReturnValue(ret)
 
         return wrapper()
 

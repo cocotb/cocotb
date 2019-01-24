@@ -83,6 +83,8 @@ class profiling_context(object):
         _profile.disable()
 
 
+from cocotb import outcomes
+
 class external_state(object):
     INIT = 0
     RUNNING = 1
@@ -93,12 +95,17 @@ class external_state(object):
 class external_waiter(object):
 
     def __init__(self):
-        self.result = None
+        self._outcome = None
         self.thread = None
         self.event = Event()
         self.state = external_state.INIT
         self.cond = threading.Condition()
         self._log = SimLog("cocotb.external.thead.%s" % self.thread, id(self))
+
+    @property
+    def result(self):
+        return self._outcome.get()
+    
 
     def _propogate_state(self, new_state):
         self.cond.acquire()
@@ -463,7 +470,17 @@ class Scheduler(object):
 
         if Join(coro) in self._trigger2coros:
             self._pending_triggers.append(Join(coro))
-
+        else:
+            try:
+                # throws an error if the background coroutine errored
+                # and no one was monitoring it
+                coro.retval
+            except Exception as e:
+                self._test_result = TestError(
+                    "Forked coroutine {} raised exception {}"
+                    .format(coro, e)
+                )
+                self._terminate = True
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:
@@ -515,12 +532,9 @@ class Scheduler(object):
         #   calling coroutine (but not the thread) until the external completes
 
         def execute_external(func, _waiter):
-            try:
-                _waiter.result = func(*args, **kwargs)
-                if _debug:
-                    self.log.debug("Execution of external routine done %s" % threading.current_thread())
-            except Exception as e:
-                _waiter.result = e
+            _waiter._outcome = outcomes.capture(func, *args, **kwargs)
+            if _debug:
+                self.log.debug("Execution of external routine done %s" % threading.current_thread())
             _waiter.thread_done()
 
         waiter = external_waiter()
@@ -580,23 +594,15 @@ class Scheduler(object):
             trigger (cocotb.triggers.Trigger): The trigger that caused this
                 coroutine to be scheduled.
         """
-        if hasattr(trigger, "pass_retval"):
-            sendval = trigger.retval
-            if _debug:
-                if isinstance(sendval, ReturnValue):
-                    coroutine.log.debug("Scheduling with ReturnValue(%s)" %
-                                        (repr(sendval)))
-                elif isinstance(sendval, ExternalException):
-                    coroutine.log.debug("Scheduling with ExternalException(%s)" %
-                                        (repr(sendval.exception)))
-
+        if trigger is None:
+            send_outcome = outcomes.Value(None)
         else:
-            sendval = trigger
-            if _debug:
-                coroutine.log.debug("Scheduling with %s" % str(trigger))
+            send_outcome = trigger._outcome
+        if _debug:
+            self.log.debug("Scheduling with {}".format(send_outcome))
 
         try:
-            result = coroutine.send(sendval)
+            result = coroutine._advance(send_outcome)
             if _debug:
                 self.log.debug("Coroutine %s yielded %s (mode %d)" %
                                (coroutine.__name__, str(result), self._mode))

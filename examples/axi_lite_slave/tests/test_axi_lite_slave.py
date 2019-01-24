@@ -137,7 +137,7 @@ def write_and_read(dut):
 
     dut._log.info("Write 0x%08X to addres 0x%08X" % (int(value), ADDRESS))
 
-@cocotb.test(skip = False, expect_error=True)
+@cocotb.test(skip = False)
 def write_fail(dut):
     """
     Description:
@@ -171,7 +171,7 @@ def write_fail(dut):
     raise TestFailure("AXI Bus Should have raised an ERROR when writing to \
                         the wrong bus")
 
-@cocotb.test(skip = False, expect_error=True)
+@cocotb.test(skip = False)
 def read_fail(dut):
     """
     Description:

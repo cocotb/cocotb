@@ -276,3 +276,84 @@ def test_ext_exit_error(dut):
     the clean close down of the sim world"""
     yield external(test_ext_function)(dut)
     yield Timer(1000)
+
+
+@cocotb.test()
+def test_external_raised_exception(dut):
+    """ Test that exceptions thrown by @external functions can be caught """
+    # workaround for gh-637
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    @external
+    def func():
+        raise ValueError()
+
+    try:
+        yield func()
+    except ValueError:
+        pass
+    else:
+        raise TestFailure('Exception was not thrown')
+
+@cocotb.test()
+def test_external_returns_exception(dut):
+    """ Test that exceptions can be returned by @external functions """
+    # workaround for gh-637
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    @external
+    def func():
+        return ValueError()
+
+    try:
+        result = yield func()
+    except ValueError:
+        raise TestFailure('Exception should not have been thrown')
+
+    if not isinstance(result, ValueError):
+        raise TestFailure('Exception was not returned')
+
+@cocotb.test(skip=True)
+def test_function_raised_exception(dut):
+    """ Test that exceptions thrown by @function coroutines can be caught """
+    # workaround for gh-637
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    @cocotb.function
+    def func():
+        raise ValueError()
+        yield
+
+    @external
+    def ext():
+        return func()
+
+    try:
+        yield ext()
+    except ValueError:
+        pass
+    else:
+        raise TestFailure('Exception was not thrown')
+
+@cocotb.test()
+def test_function_returns_exception(dut):
+    """ Test that exceptions can be returned by @function coroutines """
+    # workaround for gh-637
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    @cocotb.function
+    def func():
+        return ValueError()
+        yield
+
+    @external
+    def ext():
+        return func()
+
+    try:
+        result = yield ext()
+    except ValueError:
+        raise TestFailure('Exception should not have been thrown')
+
+    if not isinstance(result, ValueError):
+        raise TestFailure('Exception was not returned')

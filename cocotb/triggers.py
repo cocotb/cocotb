@@ -41,6 +41,7 @@ from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, with_metaclass,
     ParametrizedSingleton
 )
+from cocotb import outcomes
 
 class TriggerException(Exception):
     pass
@@ -67,6 +68,10 @@ class Trigger(object):
 
     def __str__(self):
         return self.__class__.__name__
+
+    @property
+    def _outcome(self):
+        return outcomes.Value(self)
 
 
 class PythonTrigger(Trigger):
@@ -500,6 +505,10 @@ class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
         super(Join, self).__init__()
         self._coroutine = coroutine
         self.pass_retval = True
+
+    @property
+    def _outcome(self):
+        return self._coroutine._outcome
 
     @property
     def retval(self):
