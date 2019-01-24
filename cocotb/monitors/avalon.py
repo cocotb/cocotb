@@ -1,36 +1,37 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+"""Monitors for Intel Avalon interfaces.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+See https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/manual/mnl_avalon_spec_1_3.pdf
+
+NB Currently we only support a very small subset of functionality.
 """
-Monitors for Altera Avalon interfaces.
 
-See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
-
-NB Currently we only support a very small subset of functionality
-"""
 from cocotb.utils import hexdump
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
@@ -42,11 +43,11 @@ class AvalonProtocolError(Exception):
 
 
 class AvalonST(BusMonitor):
-    """
-    AvalonST bus.
+    """Avalon-ST bus.
 
-    Non-packetised so each valid word is a separate transaction
+    Non-packetised so each valid word is a separate transaction.
     """
+    
     _signals = ["valid", "data"]
     _optional_signals = ["ready"]
 
@@ -66,7 +67,7 @@ class AvalonST(BusMonitor):
 
     @coroutine
     def _monitor_recv(self):
-        """Watch the pins and reconstruct transactions"""
+        """Watch the pins and reconstruct transactions."""
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -88,9 +89,8 @@ class AvalonST(BusMonitor):
 
 
 class AvalonSTPkts(BusMonitor):
-    """
-    Packetised AvalonST bus
-    """
+    """Packetised Avalon-ST bus."""
+    
     _signals = ["valid", "data", "startofpacket", "endofpacket"]
     _optional_signals = ["error", "channel", "ready", "empty"]
 
@@ -143,7 +143,7 @@ class AvalonSTPkts(BusMonitor):
 
     @coroutine
     def _monitor_recv(self):
-        """Watch the pins and reconstruct transactions"""
+        """Watch the pins and reconstruct transactions."""
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -180,7 +180,7 @@ class AvalonSTPkts(BusMonitor):
                     raise AvalonProtocolError("Data transfer outside of "
                                               "packet")
 
-                #Handle empty and X's in empty / data
+                # Handle empty and X's in empty / data
                 vec = BinaryValue()
                 if not self.bus.endofpacket.value:
                     vec = self.bus.data.value
@@ -225,9 +225,8 @@ class AvalonSTPkts(BusMonitor):
                                 invalid_cyclecount)
 
 class AvalonSTPktsWithChannel(AvalonSTPkts):
-    """
-    Packetised AvalonST bus using channel
-    """
+    """Packetised AvalonST bus using channel."""
+    
     _signals = ["valid", "data", "startofpacket", "endofpacket", "channel"]
     _optional_signals = ["error", "ready", "empty"]
 
@@ -235,9 +234,9 @@ class AvalonSTPktsWithChannel(AvalonSTPkts):
         AvalonSTPkts.__init__(self, *args, **kwargs)
 
     def _recv(self,pkt):
-        """Force use of channel in recv function
+        """Force use of channel in recv function.
 
-        args:
-            pkt: (string) Monitored data
+        Args:
+            pkt: (string) Monitored data.
         """
         AvalonSTPkts._recv(self,{"data":pkt,"channel":self.channel})

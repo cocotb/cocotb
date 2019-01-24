@@ -1,38 +1,36 @@
 #!/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+"""Class defining the standard interface for a monitor within a testbench.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-
-"""
-
-    Class defining the standard interface for a monitor within a testbench
-
-    The monitor is responsible for watching the pins of the DUT and recreating
-    the transactions
+The monitor is responsible for watching the pins of the DUT and recreating
+the transactions.
 """
 
 import math
@@ -54,24 +52,26 @@ class MonitorStatistics(object):
 
 
 class Monitor(object):
-    """Base class for Monitor objects. Monitors are passive 'listening' objects
-    that monitor pins in or out of a DUT. This class should not be used
-    directly, but should be subclassed and the internal `_monitor_recv` method
-    should be overridden and decorated as a @coroutine.  This `_monitor_recv`
+    """Base class for Monitor objects. 
+
+    Monitors are passive 'listening' objects that monitor pins in or out of a DUT. 
+    This class should not be used
+    directly, but should be subclassed and the internal :any:`_monitor_recv` method
+    should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
     method should capture some behavior of the pins, form a transaction, and
-    pass this transaction to the internal `_recv` method.  The `_monitor_recv`
-    method is added to the cocotb scheduler during the `__init__` phase, so it
+    pass this transaction to the internal :any:`_recv` method.  The :any:`_monitor_recv`
+    method is added to the cocotb scheduler during the ``__init__`` phase, so it
     should not be yielded anywhere.
 
     The primary use of a Monitor is as an interface for a
-    :py:class:`cocotb.scoreboard.Scoreboard`.
+    :class:`~cocotb.scoreboard.Scoreboard`.
 
     Args:
         callback (callable): Callback to be called with each recovered transaction 
             as the argument. If the callback isn't used, received transactions will 
             be placed on a queue and the event used to notify any consumers.
-        event (event): Object that supports a `set` method that will be called when
-            a transaction is received through the internal `_recv` method.
+        event (event): Object that supports a ``set`` method that will be called when
+            a transaction is received through the internal :any:`_recv` method.
     """
 
     def __init__(self, callback=None, event=None):
@@ -93,6 +93,7 @@ class Monitor(object):
         self._thread = cocotb.scheduler.add(self._monitor_recv())
 
     def kill(self):
+        """Kill the monitor coroutine."""
         if self._thread:
             self._thread.kill()
             self._thread = None
@@ -104,12 +105,26 @@ class Monitor(object):
         return self._recvQ[idx]
 
     def add_callback(self, callback):
+        """Add function as a callback.
+
+        Args:
+            callback (callable): The function to call back.
+        """
         self.log.debug("Adding callback of function %s to monitor" %
                        (callback.__name__))
         self._callbacks.append(callback)
 
     @coroutine
     def wait_for_recv(self, timeout=None):
+        """With *timeout*, :meth:`.wait` for transaction to arrive on monitor 
+        and return its data.
+
+        Args:
+            timeout (optional): The timeout value for :class:`~.triggers.Timer`.
+                Defaults to ``None``.
+
+        Returns: Data of received transaction.
+        """
         if timeout:
             t = Timer(timeout)
             fired = yield [self._wait_event.wait(), t]
@@ -123,14 +138,13 @@ class Monitor(object):
 
     @coroutine
     def _monitor_recv(self):
-        """
-        actual impementation of the receiver
+        """Actual implementation of the receiver.
 
-        subclasses should override this method to implement the actual receive
-        routine and call self._recv() with the recovered transaction
+        Subclasses should override this method to implement the actual receive
+        routine and call :any:`_recv` with the recovered transaction.
         """
         raise NotImplementedError("Attempt to use base monitor class without "
-                                  "providing a _monitor_recv method")
+                                  "providing a ``_monitor_recv`` method")
 
     def _recv(self, transaction):
         """Common handling of a received transaction."""
@@ -155,9 +169,7 @@ class Monitor(object):
 
 
 class BusMonitor(Monitor):
-    """
-    Wrapper providing common functionality for monitoring busses
-    """
+    """Wrapper providing common functionality for monitoring busses."""
     _signals = []
     _optional_signals = []
 
@@ -176,6 +188,7 @@ class BusMonitor(Monitor):
 
     @property
     def in_reset(self):
+        """Boolean flag showing whether the bus is in reset state or not."""
         if self._reset_n is not None:
             return not bool(self._reset_n.value.integer)
         if self._reset is not None:

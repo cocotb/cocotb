@@ -1,13 +1,13 @@
 Coroutines
 ==========
 
-Testbenches built using Cocotb use coroutines. While the `coroutine` is executing
-the simulation is paused. The `coroutine` uses the :keyword:`yield` keyword to
+Testbenches built using cocotb use coroutines. While the coroutine is executing
+the simulation is paused. The coroutine uses the :keyword:`yield` keyword to
 pass control of execution back to the simulator and simulation time can advance
 again.
 
-Typically coroutines :keyword:`yield` a :py:class:`Trigger` object which
-indicates to the simulator some event which will cause the `coroutine` to be woken
+Typically coroutines :keyword:`yield` a :any:`Trigger` object which
+indicates to the simulator some event which will cause the coroutine to be woken
 when it occurs.  For example:
 
 .. code-block:: python
@@ -28,7 +28,7 @@ Coroutines may also yield other coroutines:
             yield wait_10ns()
 
 Coroutines can return a value, so that they can be used by other coroutines.
-Before python 3.3, this requires a `ReturnValue` to be raised.
+Before Python 3.3, this requires a :any:`ReturnValue` to be raised.
 
 .. code-block:: python
 
@@ -39,7 +39,7 @@ Before python 3.3, this requires a `ReturnValue` to be raised.
 
     @cocotb.coroutine
     def get_signal_python_33(clk, signal):
-        # newer versions of python can use return normally
+        # newer versions of Python can use return normally
         yield RisingEdge(clk)
         return signal.value
 
@@ -58,18 +58,18 @@ execution should resume if *any* of them fires:
 
     @cocotb.coroutine
     def packet_with_timeout(monitor, timeout):
-        """Wait for a packet but timeout if nothing arrives"""
+        """Wait for a packet but time out if nothing arrives"""
         yield [Timer(timeout), RisingEdge(dut.ready)]
 
 
-The trigger that caused execution to resume is passed back to the `coroutine`,
+The trigger that caused execution to resume is passed back to the coroutine,
 allowing them to distinguish which trigger fired:
 
 .. code-block:: python
 
     @cocotb.coroutine
     def packet_with_timeout(monitor, timeout):
-        """Wait for a packet but timeout if nothing arrives"""
+        """Wait for a packet but time out if nothing arrives"""
         tout_trigger = Timer(timeout)
         result = yield [tout_trigger, RisingEdge(dut.ready)]
         if result is tout_trigger:
@@ -80,26 +80,27 @@ Coroutines can be forked for parallel operation within a function of that code a
 the forked code.
 
 .. code-block:: python
+
     @cocotb.test()
     def test_act_during_reset(dut):
-        """ 
-        while reset is active, toggle signals
-        """
+        """While reset is active, toggle signals"""
         tb = uart_tb(dut)
-	#Clock is a built in class for toggling a clock signal
+        # "Clock" is a built in class for toggling a clock signal
         cocotb.fork(Clock(dut.clk, 1000).start()) 
-        #reset_dut is a function- part of the user generated uart_tb class. 
-        cocotb.fork(tb.reset_dut(dut.rstn,20000))
+        # reset_dut is a function -
+        # part of the user-generated "uart_tb" class
+        cocotb.fork(tb.reset_dut(dut.rstn, 20000))
     
         yield Timer(10000)
-	print("Reset is still active: %d" % dut.rstn)
+        print("Reset is still active: %d" % dut.rstn)
         yield Timer(15000)
-	print("Reset has gone inactive: %d" % dut.rstn)
-		
+        print("Reset has gone inactive: %d" % dut.rstn)
+                
 
 Coroutines can be joined to end parallel operation within a function.
 
 .. code-block:: python
+
     @cocotb.test()
     def test_count_edge_cycles(dut, period=1000, clocks=6):
         cocotb.fork(Clock(dut.clk, period).start())
@@ -124,6 +125,7 @@ Coroutines can be killed before they complete, forcing their completion before
 they'd naturally end.
 
 .. code-block:: python
+
     @cocotb.test()
     def test_different_clocks(dut):
         clk_1mhz   = Clock(dut.clk, 1.0, units='us')
@@ -134,7 +136,7 @@ they'd naturally end.
         yield Timer(1)
         yield RisingEdge(dut.clk)
         edge_time_ns = get_sim_time(units='ns')
-	# note, isclose is a python 3.5+ feature. 
+        # NOTE: isclose is a python 3.5+ feature
         if not isclose(edge_time_ns, start_time_ns + 1000.0):
             raise TestFailure("Expected a period of 1 us")
     
@@ -145,7 +147,7 @@ they'd naturally end.
         yield Timer(1)
         yield RisingEdge(dut.clk)
         edge_time_ns = get_sim_time(units='ns')
-	# note, isclose is a python 3.5+ feature
+        # NOTE: isclose is a python 3.5+ feature
         if not isclose(edge_time_ns, start_time_ns + 4.0):
             raise TestFailure("Expected a period of 4 ns")
 

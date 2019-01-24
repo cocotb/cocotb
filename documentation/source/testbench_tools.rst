@@ -1,21 +1,21 @@
 ################
-Test Bench Tools
+Testbench Tools
 ################
 
 Logging
 =======
 
-Cocotb extends the python logging library. Each dut, monitor, driver, and
-scoreboard (as well as any other function using the `coroutine` decorator)
-implements it's own :class:`logging` object, and each can be set to it's own
-logging level. Within a dut, each hierarchical object can also have individual
+Cocotb extends the Python logging library. Each DUT, monitor, driver, and
+scoreboard (as well as any other function using the coroutine decorator)
+implements its own :class:`logging` object, and each can be set to its own
+logging level. Within a DUT, each hierarchical object can also have individual
 logging levels set.
 
-When logging hdl objects, beware that **_log** is the preferred way to use
-logging. This helps minimize the change of name collisions with an hdl log
-component with the python logging functionality.
+When logging HDL objects, beware that ``_log`` is the preferred way to use
+logging. This helps minimize the change of name collisions with an HDL log
+component with the Python logging functionality.
 
-Log printing levels can also be set on a per object basis. 
+Log printing levels can also be set on a per-object basis. 
 
 .. code-block:: python
 
@@ -69,9 +69,9 @@ will display as something like
 Busses
 ======
 
-Busses are simply defined as collection of signals. The :py:class:`Bus` class
+Busses are simply defined as collection of signals. The :class:`.Bus` class
 will automatically bundle any group of signals together that are named similar
-to dut.<bus_name><separator><signal_name>. for instance,
+to ``dut.<bus_name><separator><signal_name>``. For instance,
 
 .. code-block:: python
 
@@ -80,23 +80,23 @@ to dut.<bus_name><separator><signal_name>. for instance,
         
 have a bus name of ``stream_in``, a separator of ``_``, and signal names of
 ``valid`` and ``data``. A list of signal names, or a dictionary mapping attribute
-names to signal names is also passed into the :py:class:`Bus` class. Busses can
+names to signal names is also passed into the :class:`.Bus` class. Busses can
 have values driven onto them, be captured (returning a dictionary), or sampled
 and stored into a similar object. 
 
 .. code-block:: python
 
-                stream_in_bus = Bus(dut, "stream_in", ["valid", "data"]) # '_' is the default separator
+     stream_in_bus = Bus(dut, "stream_in", ["valid", "data"]) # '_' is the default separator
 
 
 Driving Busses
 ==============
 
-Examples and specific bus implementation bus drivers (amba, avalon, xgmii, and
-others) exist in the :py:class:`Driver` class enabling a test to append
+Examples and specific bus implementation bus drivers (AMBA, Avalon, XGMII, and
+others) exist in the :class:`.Driver` class enabling a test to append
 transactions to perform the serialization of transactions onto a physical
-interface. Here's an example using the avalon bus driver in the endian swapper
-example
+interface. Here is an example using the Avalon bus driver in the ``endian_swapper``
+example:
 
 .. code-block:: python
 
@@ -127,17 +127,17 @@ Monitoring Busses
 =================
 
 For our testbenches to actually be useful, we have to monitor some of these
-busses, and not just drive them. That's where the :py:class:`Monitor` class
-comes in, with prebuilt Monitors for **avalon** and **xgmii** busses. The
+busses, and not just drive them. That's where the :class:`.Monitor` class
+comes in, with prebuilt monitors for Avalon and XGMII busses. The
 Monitor class is a base class which you are expected to derive for your
-particular purpose. You must create a `_monitor_recv()` function which is
+particular purpose. You must create a :any:`_monitor_recv()` function which is
 responsible for determining 1) at what points in simulation to call the
-`_recv()` function, and 2) what transaction values to pass to be stored in the
-monitors receiving queue. Monitors are good for both outputs of the dut for
-verification, and for the inputs of the dut, to drive a test model of the dut
-to be compared to the actual dut. For this purpose, input monitors will often
+:any:`_recv()` function, and 2) what transaction values to pass to be stored in the
+monitors receiving queue. Monitors are good for both outputs of the DUT for
+verification, and for the inputs of the DUT, to drive a test model of the DUT
+to be compared to the actual DUT. For this purpose, input monitors will often
 have a callback function passed that is a model. This model will often generate
-expected transactions, which are then compared using the :py:class:`Scoreboard`
+expected transactions, which are then compared using the :class:`.Scoreboard`
 class.
 
 .. code-block:: python
@@ -195,10 +195,10 @@ class.
 Tracking testbench errors
 =========================
 
-The :py:class:`Scoreboard` class is used to compare the actual outputs to
+The :class:`.Scoreboard` class is used to compare the actual outputs to
 expected outputs. Monitors are added to the scoreboard for the actual outputs,
 and the expected outputs can be either a simple list, or a function that
-provides a transaction. Here's some code from the **DFF** example, similar to
+provides a transaction. Here is some code from the ``dff`` example, similar to
 above with the scoreboard added. 
 
 .. code-block:: python

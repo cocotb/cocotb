@@ -1,33 +1,32 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+"""A clock class."""
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-
-"""
-    A clock class
-"""
 import os
 import itertools
 
@@ -42,7 +41,7 @@ from cocotb.utils import get_sim_steps, get_time_from_sim_steps
 
 
 class BaseClock(object):
-    """Base class to derive from"""
+    """Base class to derive from."""
     def __init__(self, signal):
         self.signal = signal
         self.log = SimLog("cocotb.%s.%s" %
@@ -50,26 +49,29 @@ class BaseClock(object):
 
 
 class Clock(BaseClock):
-    """Simple 50:50 duty cycle clock driver
+    """Simple 50:50 duty cycle clock driver.
 
-    Instances of this class should call its ``start`` method and fork the
+    Instances of this class should call its :any:`start` method and fork the
     result.  This will create a clocking thread that drives the signal at the
     desired period/frequency.
 
     Example:
+
     .. code-block:: python
 
         c = Clock(dut.clk, 10, 'ns')
         cocotb.fork(c.start())
 
     Args:
-        signal (pin): The clock pin/signal to be driven.
+        signal: The clock pin/signal to be driven.
         period (int): The clock period. Must convert to an even number of
             timesteps.
-        units (str, optional): One of (None,'fs','ps','ns','us','ms','sec').
-            When no units are given (``None``) the timestep is determined by
+        units (str, optional): One of 
+            ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
+            When no *units* is given (``None``) the timestep is determined by
             the simulator.
     """
+    
     def __init__(self, signal, period, units=None):
         BaseClock.__init__(self, signal)
         self.period = get_sim_steps(period, units)
@@ -82,13 +84,13 @@ class Clock(BaseClock):
 
     @cocotb.coroutine
     def start(self, cycles=None):
-        """Clocking coroutine.  Start driving your clock by forking a call to
-        this.
+        """Clocking coroutine.  Start driving your clock by forking a 
+        call to this.
 
         Args:
-            cycles (int, optional): Cycle the clock `cycles` number of times,
-                or if ``None`` then cycle the clock forever. Note: ``0`` is not
-                the same as ``None``, as 0 will cycle no times.
+            cycles (int, optional): Cycle the clock *cycles* number of times,
+                or if ``None`` then cycle the clock forever. 
+                Note: ``0`` is not the same as ``None``, as ``0`` will cycle no times.
         """
         t = Timer(self.half_period)
         if cycles is None:

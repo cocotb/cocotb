@@ -6,7 +6,6 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   includeme
    introduction
    quickstart
    building
@@ -17,6 +16,7 @@ Contents:
    endian_swapper
    ping_tun_tap
    hal_cosimulation
+   examples
    troubleshooting
    roadmap
    simulator_support

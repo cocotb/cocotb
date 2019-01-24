@@ -1,35 +1,33 @@
 #!/bin/env python
 
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-
-"""
-    Set of common driver base classes
-"""
+"""Set of common driver base classes."""
 
 import logging
 from collections import deque
@@ -44,10 +42,9 @@ from cocotb.result import ReturnValue
 
 
 class BitDriver(object):
-    """
-    Drives a signal onto a single bit
+    """Drives a signal onto a single bit.
 
-    Useful for exercising ready / valid
+    Useful for exercising ready / valid.
     """
     def __init__(self, signal, clk, generator=None):
         self._signal = signal
@@ -81,18 +78,13 @@ class BitDriver(object):
 
 
 class Driver(object):
-    """
-
-    Class defining the standard interface for a driver within a testbench
+    """Class defining the standard interface for a driver within a testbench.
 
     The driver is responsible for serialising transactions onto the physical
     pins of the interface.  This may consume simulation time.
     """
     def __init__(self):
-        """
-        Constructor for a driver instance
-        """
-        # self._busy = Lock()
+        """Constructor for a driver instance."""
         self._pending = Event(name="Driver._pending")
         self._sendQ = deque()
 
@@ -109,67 +101,67 @@ class Driver(object):
             self._thread = None
 
     def append(self, transaction, callback=None, event=None, **kwargs):
-        """
-        Queue up a transaction to be sent over the bus.
+        """Queue up a transaction to be sent over the bus.
 
         Mechanisms are provided to permit the caller to know when the
-        transaction is processed
+        transaction is processed.
 
-        callback: optional function to be called when the transaction has been
-        sent
-
-        event: event to be set when the tansaction has been sent
-
-        **kwargs: Any additional arguments used in child class' _driver_send method
+        Args:
+            transaction (any): The transaction to be sent.
+            callback (callable, optional): Optional function to be called 
+                when the transaction has been sent.
+            event (optional): :class:`~cocotb.triggers.Event` to be set
+                when the transaction has been sent.
+            **kwargs: Any additional arguments used in child class' 
+                :any:`_driver_send` method.
         """
         self._sendQ.append((transaction, callback, event, kwargs))
         self._pending.set()
 
     def clear(self):
-        """
-        Clear any queued transactions without sending them onto the bus
-        """
+        """Clear any queued transactions without sending them onto the bus."""
         self._sendQ = deque()
 
     @coroutine
     def send(self, transaction, sync=True, **kwargs):
-        """
-        Blocking send call (hence must be "yielded" rather than called)
+        """Blocking send call (hence must be "yielded" rather than called).
 
-        Sends the transaction over the bus
+        Sends the transaction over the bus.
 
         Args:
-            transaction (any): the transaction to send
-
-        Kwargs:
-            sync (boolean): synchronise the transfer by waiting for risingedge
-            kwargs (dict): Adddition arguments used in child class' _driver_send method
+            transaction (any): The transaction to be sent.
+            sync (bool,  optional): Synchronise the transfer by waiting for rising edge.
+            **kwargs (dict): Additional arguments used in child class'
+                :any:`_driver_send` method.
         """
         yield self._send(transaction, None, None, sync=sync, **kwargs)
 
     def _driver_send(self, transaction, sync=True, **kwargs):
-        """
-        actual impementation of the send.
+        """Actual implementation of the send.
 
-        subclasses should override this method to implement the actual send
-        routine
+        Subclasses should override this method to implement the actual 
+        :meth:`~cocotb.drivers.Driver.send` routine.
 
         Args:
-            transaction (any): the transaction to send
-
-        Kwargs:
-            sync (boolean): synchronise the transfer by waiting for rising edge
-            kwargs (dict): additional arguments if required for protocol implemented in subclass
+            transaction (any): The transaction to be sent.
+            sync (boolean, optional): Synchronise the transfer by waiting for rising edge.
+            **kwargs: Additional arguments if required for protocol implemented in subclass.
         """
         raise NotImplementedError("Subclasses of Driver should define a "
                                   "_driver_send coroutine")
 
     @coroutine
     def _send(self, transaction, callback, event, sync=True, **kwargs):
-        """
-        assumes the caller has already acquired the busy lock
+        """Send coroutine.
 
-        releases busy lock once sending is complete
+        Args:
+            transaction (any): The transaction to be sent.
+            callback (callable, optional): Optional function to be called 
+                when the transaction has been sent.
+            event (optional): event to be set when the transaction has been sent.
+            sync (boolean, optional): Synchronise the transfer by waiting for rising edge.
+            **kwargs: Any additional arguments used in child class' 
+                :any:`_driver_send` method.
         """
         yield self._driver_send(transaction, sync=sync, **kwargs)
 
@@ -178,9 +170,6 @@ class Driver(object):
             event.set()
         if callback:
             callback(transaction)
-
-        # No longer hogging the bus
-        # self.busy.release()
 
     @coroutine
     def _send_thread(self):
@@ -204,27 +193,26 @@ class Driver(object):
 
 
 class BusDriver(Driver):
+    """Wrapper around common functionality for busses which have:
+
+        * a list of :attr:`_signals` (class attribute)
+        * a list of :attr:`_optional_signals` (class attribute)
+        * a clock
+        * a name
+        * an entity
+
+        Args:
+            entity (SimHandle): A handle to the simulator entity.
+            name (str or None): Name of this bus. ``None`` for nameless bus, e.g.
+                bus-signals in an interface or a modport.
+                (untested on struct/record, but could work here as well).
+            clock (SimHandle): A handle to the clock associated with this bus.
+            array_idx (int or None, optional): Optional index when signal is an array.
     """
-    Wrapper around common functionality for busses which have:
-        a list of _signals (class attribute)
-        a list of _optional_signals (class attribute)
-        a clock
-        a name
-        an entity
-    """
+    
     _optional_signals = []
 
     def __init__(self, entity, name, clock, **kwargs):
-        """
-        Args:
-            entity (SimHandle) : a handle to the simulator entity
-
-            name (str) : name of this bus. None for nameless bus, e.g.
-                         bus-signals in an interface or a modport
-                         (untested on struct/record,
-                          but could work here as well)
-            clock (SimHandle) : A handle to the clock associated with this bus
-        """
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         Driver.__init__(self)
         self.entity = entity
@@ -245,9 +233,9 @@ class BusDriver(Driver):
     @coroutine
     def _wait_for_signal(self, signal):
         """This method will return with the specified signal
-        has hit logic 1. The state will be in the ReadOnly phase
-        so sim will need to move to NextTimeStep before
-        registering more callbacks can occour
+        has hit logic ``1``. The state will be in the :any:`ReadOnly` phase
+        so sim will need to move to :any:`NextTimeStep` before
+        registering more callbacks can occur.
         """
         yield ReadOnly()
         while signal.value.integer != 1:
@@ -258,9 +246,9 @@ class BusDriver(Driver):
     @coroutine
     def _wait_for_nsignal(self, signal):
         """This method will return with the specified signal
-        has hit logic 0. The state will be in the ReadOnly phase
-        so sim will need to move to NextTimeStep before
-        registering more callbacks can occour
+        has hit logic ``0``. The state will be in the :any:`ReadOnly` phase
+        so sim will need to move to :any:`NextTimeStep` before
+        registering more callbacks can occur.
         """
         yield ReadOnly()
         while signal.value.integer != 0:
@@ -274,33 +262,27 @@ class BusDriver(Driver):
 
 
 class ValidatedBusDriver(BusDriver):
-    """
-    Same as a BusDriver except we support an optional generator to control
-    which cycles are valid
+    """Same as a BusDriver except we support an optional generator to control
+    which cycles are valid.
+
+    Args:
+        entity (SimHandle): A handle to the simulator entity.
+        name (str): Name of this bus.
+        clock (SimHandle): A handle to the clock associated with this bus.
+        valid_generator (generator, optional): a generator that yields tuples  of
+            (valid, invalid) cycles to insert.
     """
 
     def __init__(self, entity, name, clock, **kwargs):
-        """
-        Args:
-            entity (SimHandle) : a handle to the simulator entity
-
-            name (str) : name of this bus
-
-            clock (SimHandle) : A handle to the clock associated with this bus
-        Kwargs:
-            valid_generator (generator): a generator that yields tuples  of
-                                        (valid, invalid) cycles to insert
-        """
         valid_generator = kwargs.pop("valid_generator", None)
         BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.set_valid_generator(valid_generator=valid_generator)
 
     def _next_valids(self):
-        """
-        Optionally insert invalid cycles every N cycles
+        """Optionally insert invalid cycles every N cycles
         Generator should return a tuple with the number of cycles to be
         on followed by the number of cycles to be off.
-        The 'on' cycles should be non-zero, we skip invalid generator entries
+        The 'on' cycles should be non-zero, we skip invalid generator entries.
         """
         self.on = False
 
@@ -323,19 +305,15 @@ class ValidatedBusDriver(BusDriver):
             self.log.debug("Not using valid generator")
 
     def set_valid_generator(self, valid_generator=None):
-        """
-        Set a new valid generator for this bus
-        """
-
+        """Set a new valid generator for this bus."""
         self.valid_generator = valid_generator
         self._next_valids()
 
 
 @cocotb.coroutine
 def polled_socket_attachment(driver, sock):
-    """
-    Non-blocking socket attachment that queues any payload received from the
-    socket to be queued for sending into the driver
+    """Non-blocking socket attachment that queues any payload received from the
+    socket to be queued for sending into the driver.
     """
     import socket, errno
     sock.setblocking(False)

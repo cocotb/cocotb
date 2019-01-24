@@ -5,15 +5,12 @@ Library Reference
 Test Results
 ============
 
-The following exceptions can be raised at any point by any code and will terminate the test:
+The exceptions in this module can be raised at any point by any code and will terminate the test.
 
-.. autoclass:: cocotb.result.TestComplete
-
-.. autoclass:: cocotb.result.TestError
-
-.. autoclass:: cocotb.result.TestFailure
-
-.. autoclass:: cocotb.result.TestSuccess
+.. automodule:: cocotb.result
+    :members:
+    :member-order: bysource
+    :synopsis: Exceptions and functions for simulation result handling.
 
 
 Writing and Generating tests
@@ -23,21 +20,33 @@ Writing and Generating tests
 
 .. autoclass:: cocotb.coroutine
 
-.. autoclass:: cocotb.regression.TestFactory
-    :members:
+.. autoclass:: cocotb.external
+
+.. autoclass:: cocotb.function
 
 .. autoclass:: cocotb.hook
+
+.. autoclass:: cocotb.regression.TestFactory
+    :members:
+    :member-order: bysource
 
 
 Interacting with the Simulator
 ==============================
 
+.. currentmodule:: cocotb.binary
 
-.. autoclass:: cocotb.binary.BinaryValue
+.. autoclass:: BinaryRepresentation
     :members:
+    :member-order: bysource
+
+.. autoclass:: BinaryValue
+    :members:
+    :member-order: bysource
 
 .. autoclass:: cocotb.bus.Bus
     :members:
+    :member-order: bysource
 
 .. autoclass:: cocotb.clock.Clock
 
@@ -45,7 +54,10 @@ Interacting with the Simulator
 Triggers
 --------
 
-Triggers are used to indicate when the scheduler should resume `coroutine` execution.  Typically a `coroutine` will **yield** a trigger or a list of triggers.
+Triggers are used to indicate when the scheduler should resume coroutine execution.
+Typically a coroutine will :keyword:`yield` a trigger or a list of triggers.
+
+.. autoclass:: cocotb.triggers.Trigger
 
 Simulation Timing
 ~~~~~~~~~~~~~~~~~
@@ -54,6 +66,9 @@ Simulation Timing
 
 .. autoclass:: cocotb.triggers.ReadOnly
 
+.. autoclass:: cocotb.triggers.NextTimeStep
+
+.. autoclass:: cocotb.triggers.ClockCycles
 
 Signal related
 ~~~~~~~~~~~~~~
@@ -62,19 +77,23 @@ Signal related
 
 .. autoclass:: cocotb.triggers.RisingEdge
 
+.. autoclass:: cocotb.triggers.FallingEdge
+
 
 Python Triggers
 ~~~~~~~~~~~~~~~
 
-
 .. autoclass:: cocotb.triggers.Event
     :members:
+    :member-order: bysource
 
 .. autoclass:: cocotb.triggers.Lock
     :members:
+    :member-order: bysource
 
 .. autoclass:: cocotb.triggers.Join
     :members:
+    :member-order: bysource
 
 
 Testbench Structure
@@ -85,29 +104,76 @@ Driver
 
 .. autoclass:: cocotb.drivers.Driver
     :members:
+    :member-order: bysource
+    :private-members:
+
+.. autoclass:: cocotb.drivers.BitDriver
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+    :private-members:
+
+.. autoclass:: cocotb.drivers.BusDriver
+    :members:
+    :member-order: bysource
+    :show-inheritance:
     :private-members:
 
 Monitor
 -------
 
-.. autoclass:: cocotb.monitors.Monitor
-    :members:
+.. currentmodule:: cocotb.monitors
+
+.. autoclass:: Monitor
+    :members: _monitor_recv, _recv
+    :member-order: bysource
     :private-members:
 
-.. autoclass:: cocotb.monitors.BusMonitor
+    .. automethod:: wait_for_recv(timeout=None)
+
+.. autoclass:: BusMonitor
     :members:
+    :member-order: bysource
+    :show-inheritance:
+    :private-members:
 
 Scoreboard
 ----------
 
-.. autoclass:: cocotb.scoreboard.Scoreboard
+.. currentmodule:: cocotb.scoreboard
+
+.. automodule:: cocotb.scoreboard
     :members:
+    :member-order: bysource
+    :show-inheritance:
+    :synopsis: Class for scoreboards.
 
 Clock
 -----
 
 .. autoclass:: cocotb.clock.Clock
     :members:
+    :member-order: bysource
+
+
+Utilities
+=========
+
+.. automodule:: cocotb.utils
+    :members:
+    :member-order: bysource
+    :synopsis: Various utilities for testbench writers.
+
+Simulation Object Handles
+=========================
+
+.. currentmodule:: cocotb.handle
+
+.. automodule:: cocotb.handle
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+    :synopsis: Classes for simulation objects.
 
 Implemented Testbench Structures
 ================================
@@ -117,50 +183,98 @@ Drivers
 
 AD9361
 ~~~~~~
-.. autoclass:: cocotb.drivers.ad9361.AD9361
-    :members:
+
+Analog Devices AD9361 RF Transceiver.
+
+.. currentmodule:: cocotb.drivers.ad9361
+
+.. autoclass:: AD9361
+
+    .. automethod:: send_data(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
+    .. automethod:: rx_data_to_ad9361(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
+    .. automethod:: ad9361_tx_to_rx_loopback()
+    .. automethod:: tx_data_from_ad9361()
 
 AMBA
 ~~~~
 
-Advanced Microcontroller Bus Archicture
+Advanced Microcontroller Bus Architecture.
 
-.. autoclass:: cocotb.drivers.amba.AXI4LiteMaster
-    :members:
+.. currentmodule:: cocotb.drivers.amba
 
-.. autoclass:: cocotb.drivers.amba.AXI4LiteSlave
+.. autoclass:: AXI4LiteMaster
+
+    .. automethod:: write(address, value, byte_enable=0xf, address_latency=0, data_latency=0)
+    .. automethod:: read(address, sync=True)
+
     :members:
+    :member-order: bysource
+    :show-inheritance:
+
+.. autoclass:: AXI4Slave
+    :members:
+    :member-order: bysource
+    :show-inheritance:
 
 
 Avalon
 ~~~~~~
 
-.. autoclass:: cocotb.drivers.avalon.AvalonMM
-    :members:
+.. currentmodule:: cocotb.drivers.avalon
 
-.. autoclass:: cocotb.drivers.avalon.AvalonMaster
+.. autoclass:: AvalonMM
     :members:
+    :member-order: bysource
+    :show-inheritance:
 
-.. autoclass:: cocotb.drivers.avalon.AvalonMemory
+.. autoclass:: AvalonMaster
+               
+    .. automethod:: write(address, value)
+    .. automethod:: read(address, sync=True)
+                    
     :members:
+    :member-order: bysource
+    :show-inheritance:
 
-.. autoclass:: cocotb.drivers.avalon.AvalonST
+.. autoclass:: AvalonMemory
     :members:
+    :member-order: bysource
+    :show-inheritance:
 
-.. autoclass:: cocotb.drivers.avalon.AvalonSTPkts
+.. autoclass:: AvalonST
     :members:
+    :member-order: bysource
+    :show-inheritance:
+
+.. autoclass:: AvalonSTPkts
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+
 
 OPB
 ~~~
 
-.. autoclass:: cocotb.drivers.opb.OPBMaster
+.. currentmodule:: cocotb.drivers.opb
+                   
+.. autoclass:: OPBMaster
+               
+    .. automethod:: write(address, value, sync=True)
+    .. automethod:: read(address, sync=True)
+                    
     :members:
+    :member-order: bysource
+    :show-inheritance:
 
 XGMII
 ~~~~~
 
-.. autoclass:: cocotb.drivers.xgmii.XGMII
+.. currentmodule:: cocotb.drivers.xgmii
+
+.. autoclass:: XGMII
     :members:
+    :member-order: bysource
+    :show-inheritance:
 
 Monitors
 --------
@@ -168,78 +282,22 @@ Monitors
 Avalon
 ~~~~~~
 
-.. autoclass:: cocotb.monitors.avalon.AvalonST
-    :members:
+.. currentmodule:: cocotb.monitors.avalon
 
-.. autoclass:: cocotb.monitors.avalon.AvalonSTPkts
+.. autoclass:: AvalonST
     :members:
+    :member-order: bysource
+    :show-inheritance:
+
+.. autoclass:: AvalonSTPkts
+    :members:
+    :member-order: bysource
+    :show-inheritance:
 
 XGMII
 ~~~~~
 
 .. autoclass:: cocotb.monitors.xgmii.XGMII
     :members:
-
-Utilities
-=========
-
-.. automodule:: cocotb.utils
-    :members:
-
-Simulation Object Handles
-=========================
-
-.. autofunction:: cocotb.handle.SimHandle
-
-.. autoclass:: cocotb.handle.SimHandleBase
-    :members:
+    :member-order: bysource
     :show-inheritance:
-
-.. autoclass:: cocotb.handle.RegionObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.HierarchyObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.HierarchyArrayObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.NonHierarchyObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.ConstantObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.NonHierarchyIndexableObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.NonConstantObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.ModifiableObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.RealObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.EnumObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.IntegerObject
-    :members:
-    :show-inheritance:
-
-.. autoclass:: cocotb.handle.StringObject
-    :members:
-    :show-inheritance:
-

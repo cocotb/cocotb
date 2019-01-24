@@ -1,33 +1,32 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+"""A collections of triggers which a testbench can yield."""
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-
-"""
-    A collections of triggers which a testbench can 'yield'
-"""
 import os
 import weakref
 
@@ -47,9 +46,9 @@ from cocotb import outcomes
 class TriggerException(Exception):
     pass
 
-
 class Trigger(object):
-    """Base class to derive from"""
+    """Base class to derive from."""
+    
     def __init__(self):
         self.log = SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
         self.signal = None
@@ -76,22 +75,20 @@ class Trigger(object):
 
 
 class PythonTrigger(Trigger):
-    """Python triggers don't use GPI at all
-
-        For example notification of coroutine completion etc
+    """Python triggers don't use GPI at all.
+        For example notification of coroutine completion etc.
 
         TODO:
-            Still need to implement unprime
+            Still need to implement unprime.
         """
     pass
 
 
 class GPITrigger(Trigger):
+    """Base Trigger class for GPI triggers.
+    Consumes simulation time.
     """
-    Base Trigger class for GPI triggers
-
-    Consumes simulation time
-    """
+    
     def __init__(self):
         Trigger.__init__(self)
 
@@ -116,10 +113,9 @@ class GPITrigger(Trigger):
 
 
 class Timer(GPITrigger):
-    """
-    Execution will resume when the specified time period expires
+    """Execution will resume when the specified time period expires.
 
-    Consumes simulation time
+    Consumes simulation time.
     """
     def __init__(self, time_ps, units=None):
         GPITrigger.__init__(self)
@@ -139,10 +135,10 @@ class Timer(GPITrigger):
 
 
 class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
+    """Execution will resume when the readonly portion of the sim cycles is
+    reached.
     """
-    Execution will resume when the readonly portion of the sim cycles is
-    readched
-    """
+    
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -162,10 +158,10 @@ class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
 
 
 class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
+    """Execution will resume when the readwrite portion of the sim cycles is
+    reached.
     """
-    Execution will resume when the readwrite portion of the sim cycles is
-    reached
-    """
+    
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -187,9 +183,8 @@ class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
 
 
 class NextTimeStep(with_metaclass(ParametrizedSingleton, GPITrigger)):
-    """
-    Execution will resume when the next time step is started
-    """
+    """Execution will resume when the next time step is started."""
+    
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -209,15 +204,12 @@ class NextTimeStep(with_metaclass(ParametrizedSingleton, GPITrigger)):
 
 
 class _EdgeBase(with_metaclass(ParametrizedSingleton, GPITrigger)):
-    """
-    Execution will resume when an edge occurs on the provided signal
-    """
+    """Execution will resume when an edge occurs on the provided signal."""
+    
     @classmethod
     @property
     def _edge_type(self):
-        """
-        The edge type, as understood by the C code. Must be set in subclasses
-        """
+        """The edge type, as understood by the C code. Must be set in subclasses."""
         raise NotImplementedError
 
     @classmethod
@@ -243,24 +235,25 @@ class _EdgeBase(with_metaclass(ParametrizedSingleton, GPITrigger)):
 
 
 class RisingEdge(_EdgeBase):
-    """ Triggers on the rising edge of the provided signal """
+    """Triggers on the rising edge of the provided signal."""
+    
     _edge_type = 1
 
 
 class FallingEdge(_EdgeBase):
-    """ Triggers on the falling edge of the provided signal """
+    """Triggers on the falling edge of the provided signal."""
+    
     _edge_type = 2
 
 
 class Edge(_EdgeBase):
-    """ Triggers on either edge in a signal """
+    """Triggers on either edge of the provided signal."""
     _edge_type = 3
 
 
 class ClockCycles(GPITrigger):
-    """
-    Execution will resume after N rising edges or N falling edges
-    """
+    """Execution will resume after *num_cycles* rising edges or *num_cycles* falling edges."""
+    
     def __init__(self, signal, num_cycles, rising=True):
         super(ClockCycles, self).__init__()
         self.signal = signal
@@ -305,9 +298,8 @@ class ClockCycles(GPITrigger):
 
 
 class Combine(PythonTrigger):
-    """
-    Combines multiple triggers together.  Coroutine will continue when all
-    triggers have fired
+    """Combines multiple triggers together.  Coroutine will continue when all
+    triggers have fired.
     """
 
     def __init__(self, *args):
@@ -343,14 +335,14 @@ class Combine(PythonTrigger):
 
 
 class _Event(PythonTrigger):
-    """
-    Unique instance used by the Event object.
+    """Unique instance used by the Event object.
 
     One created for each attempt to wait on the event so that the scheduler
-    can maintain a dictionary of indexing each individual coroutine
+    can maintain a dictionary of indexing each individual coroutine.
 
     FIXME: This will leak - need to use peers to ensure everything is removed
     """
+    
     def __init__(self, parent):
         PythonTrigger.__init__(self)
         self.parent = parent
@@ -365,9 +357,8 @@ class _Event(PythonTrigger):
 
 
 class Event(PythonTrigger):
-    """
-    Event to permit synchronisation between two coroutines
-    """
+    """Event to permit synchronisation between two coroutines."""
+    
     def __init__(self, name=""):
         PythonTrigger.__init__(self)
         self._pending = []
@@ -380,7 +371,7 @@ class Event(PythonTrigger):
         Trigger.prime(self)
 
     def set(self, data=None):
-        """Wake up any coroutines blocked on this event"""
+        """Wake up any coroutines blocked on this event."""
         self.fired = True
         self.data = data
 
@@ -393,19 +384,21 @@ class Event(PythonTrigger):
 
     def wait(self):
         """This can be yielded to block this coroutine
-        until another wakes it
+        until another wakes it.
 
-        If the Event has already been fired, this returns NullTrigger()
-        To reset the event (and enable the use of wait() again), clear() should be called
+        If the event has already been fired, this returns ``NullTrigger``.
+        To reset the event (and enable the use of ``wait`` again), 
+        :meth:`~cocotb.triggers.Event.clear` should be called.
         """
         if self.fired:
             return NullTrigger()
         return _Event(self)
 
     def clear(self):
-        """Clear this event that's fired.
+        """Clear this event that has fired.
 
-        Subsequent calls to wait will block until set() is called again"""
+        Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until 
+        :meth:`~cocotb.triggers.Event.set` is called again."""
         self.fired = False
 
     def __str__(self):
@@ -413,14 +406,14 @@ class Event(PythonTrigger):
 
 
 class _Lock(PythonTrigger):
-    """
-    Unique instance used by the Lock object.
+    """Unique instance used by the Lock object.
 
     One created for each attempt to acquire the Lock so that the scheduler
-    can maintain a dictionary of indexing each individual coroutine
+    can maintain a dictionary of indexing each individual coroutine.
 
-    FIXME: This will leak - need to use peers to ensure everything is removed
+    FIXME: This will leak - need to use peers to ensure everything is removed.
     """
+    
     def __init__(self, parent):
         PythonTrigger.__init__(self)
         self.parent = parent
@@ -435,9 +428,7 @@ class _Lock(PythonTrigger):
 
 
 class Lock(PythonTrigger):
-    """
-    Lock primitive (not re-entrant)
-    """
+    """Lock primitive (not re-entrant)."""
 
     def __init__(self, name=""):
         PythonTrigger.__init__(self)
@@ -458,13 +449,12 @@ class Lock(PythonTrigger):
             self._pending_primed.append(trigger)
 
     def acquire(self):
-        """This can be yielded to block until the lock is acquired"""
+        """This can be yielded to block until the lock is acquired."""
         trig = _Lock(self)
         self._pending_unprimed.append(trig)
         return trig
 
     def release(self):
-
         if not self.locked:
             raise_error(self, "Attempt to release an unacquired Lock %s" %
                         (str(self)))
@@ -492,9 +482,8 @@ class Lock(PythonTrigger):
 
 
 class NullTrigger(Trigger):
-    """
-    Trigger for internal interfacing use call the callback as soon
-    as it is primed and then remove it's self from the scheduler
+    """Trigger for internal interfacing use call the callback as soon
+    as it is primed and then remove itself from the scheduler.
     """
     def __init__(self, name=""):
         Trigger.__init__(self)
@@ -506,9 +495,8 @@ class NullTrigger(Trigger):
 
 
 class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
-    """
-    Join a coroutine, firing when it exits
-    """
+    """Join a coroutine, firing when it exits."""
+    
     @classmethod
     def __singleton_key__(cls, coroutine):
         return coroutine
