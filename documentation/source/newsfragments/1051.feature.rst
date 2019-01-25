@@ -1,0 +1,3 @@
+The ``mixed_signal`` example has been added,
+showing how to use HDL helper modules in cocotb testbenches that exercise
+two mixed-signal (i.e. analog and digital) designs.

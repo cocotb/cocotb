@@ -118,3 +118,25 @@ The directory :file:`cocotb/examples/axi_lite_slave/` contains ...
 .. todo::
 
     Write documentation, see :file:`README.md`
+
+
+Mixed-signal (analog/digital)
+=============================
+
+This example with two different designs shows
+how cocotb can be used in an analog-mixed signal (AMS) simulation,
+provided your simulator supports this.
+Such an AMS setup involves a digital and an analog simulation kernel,
+and also provides means to transfer data between the digital and the analog domain.
+
+The "-AMS" variants of the common digital HDLs (VHDL-AMS, Verilog-AMS and SystemVerilog-AMS)
+and languages like Spice can be used to express the analog behavior of your circuit.
+
+Due to limitations of the underlying simulator interfaces (VPI, VHPI, FLI),
+cocotb cannot directly access the analog domain but has to resort to e.g. HDL helper code.
+Thus, unlike the other examples,
+part of this testbench is implemented with cocotb and the helper part with HDL.
+
+.. toctree::
+   rescap
+   regulator

@@ -1,0 +1,29 @@
+// This file is public domain, it can be freely copied without restrictions.
+// SPDX-License-Identifier: CC0-1.0
+
+`include "disciplines.vams"
+`include "constants.vams"
+
+module regulator_block(vdd, trim, vout, vss);
+
+  input signed [3:0] trim; logic trim;
+  inout vdd; electrical vdd;
+  inout vout; electrical vout;
+  inout vss; electrical vss;
+
+  parameter real vout_abs=3.3 from (0:inf);  // must be > 0
+  parameter real trim_step=0.2 from (0:inf);  // must be > 0
+
+  real trim_volt;
+
+  always @(trim) begin
+    trim_volt = trim * trim_step;
+    // $display("%m: trim=%0d --> trim_volt=%f", trim, trim_volt);
+  end
+
+  analog begin
+    // TODO: limit voltage to vdd/vss
+    V(vout, vss) <+ transition(vout_abs + trim_volt, 0, 20p);
+  end
+
+endmodule
