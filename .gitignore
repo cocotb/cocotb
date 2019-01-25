@@ -27,6 +27,10 @@ __pycache__
 \#*\#
 \.\#*
 
+# Mergetool tmp files
+*.orig
+*.bak
+
 # Waveforms
 *.vcd
 
