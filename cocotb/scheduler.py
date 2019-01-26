@@ -250,6 +250,7 @@ class Scheduler(object):
 
         # Select the appropriate scheduling algorithm for this simulator
         self.advance = self.default_scheduling_algorithm
+        self._is_reacting = False
 
     def default_scheduling_algorithm(self):
         """
@@ -318,17 +319,39 @@ class Scheduler(object):
                 self.advance()
 
     def react(self, trigger):
-        """React called when a trigger fires.
+        """
+        Called when a trigger fires.
 
-        We find any coroutines that are waiting on the particular trigger and
-        schedule them.
+        We ensure that we only start the event loop once, rather than
+        letting it recurse.
+        """
+        if self._is_reacting:
+            # queue up the trigger, the event loop will get to it
+            self._pending_triggers.append(trigger)
+            return
+
+        # start the event loop
+        self._is_reacting = True
+        try:
+            self._event_loop(trigger)
+        finally:
+            self._is_reacting = False
+
+
+    def _event_loop(self, trigger):
+        """
+        Run an event loop triggered by the given trigger.
+
+        The loop will keep running until no further triggers fire.
+
+        This should be triggered by only:
+        * The beginning of a test, when there is no trigger to react to
+        * A GPI trigger
         """
         if _profiling:
             ctx = profiling_context()
         else:
             ctx = nullcontext()
-
-        called_by_simulator = isinstance(trigger, GPITrigger)
 
         with ctx:
             # When a trigger fires it is unprimed internally
@@ -361,8 +384,6 @@ class Scheduler(object):
 
                 self._readwrite.unprime()
 
-                # this should be the only trigger, probably?
-                assert not self._pending_triggers
                 return
 
             # Similarly if we've scheduled our next_timestep on way to readwrite
@@ -376,8 +397,6 @@ class Scheduler(object):
                         "Priming ReadWrite trigger so we can playback writes")
                     self._readwrite.prime(self.react)
 
-                # this should be the only trigger, probably?
-                assert not self._pending_triggers
                 return
 
             # work through triggers one by one
@@ -454,20 +473,18 @@ class Scheduler(object):
                     if _debug:
                         self.log.debug("Scheduled coroutine %s" % (coro.__name__))
 
-            # Schedule may have queued up some events so we'll burn through those
-            while self._pending_events:
-                if _debug:
-                    self.log.debug("Scheduling pending event %s" %
-                                   (str(self._pending_events[0])))
-                self._pending_events.pop(0).set()
+                # Schedule may have queued up some events so we'll burn through those
+                while self._pending_events:
+                    if _debug:
+                        self.log.debug("Scheduling pending event %s" %
+                                       (str(self._pending_events[0])))
+                    self._pending_events.pop(0).set()
 
-            # We only advance for GPI triggers
-            if called_by_simulator:
-                self.advance()
-
-                if _debug:
-                    self.log.debug("All coroutines scheduled, handing control back"
-                                   " to simulator")
+            # no more pending triggers
+            self.advance()
+            if _debug:
+                self.log.debug("All coroutines scheduled, handing control back"
+                               " to simulator")
 
 
     def unschedule(self, coro):

@@ -39,7 +39,8 @@ Also used as regression test of cocotb capabilities
 
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite, ClockCycles, NextTimeStep)
+                             ReadOnly, ReadWrite, ClockCycles, NextTimeStep,
+                             NullTrigger)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
@@ -879,9 +880,53 @@ def test_exceptions():
     def raise_soon():
         yield Timer(10)
         raise ValueError('It is soon now')
-    
+
     try:
         yield raise_soon()
+    except ValueError:
+        pass
+    else:
+        raise TestFailure("Exception was not raised")
+
+@cocotb.test()
+def test_stack_overflow(dut):
+    """
+    Test against stack overflows when starting many coroutines that terminate
+    before passing control to the simulator.
+    """
+    @cocotb.coroutine
+    def null_coroutine():
+        yield NullTrigger()
+
+    for _ in range(10000):
+        yield null_coroutine()
+
+    yield Timer(100)
+
+
+@cocotb.test()
+def test_immediate_coro(dut):
+    """
+    Test that coroutines can return immediately
+    """
+    # note: it seems that the test still has to yield at least once, even
+    # if the subroutines do not
+    yield Timer(1)
+
+    @cocotb.coroutine
+    def immediate_value():
+        raise ReturnValue(42)
+        yield
+
+    @cocotb.coroutine
+    def immediate_exception():
+        raise ValueError
+        yield
+
+    assert (yield immediate_value()) == 42
+
+    try:
+        yield immediate_exception()
     except ValueError:
         pass
     else:
