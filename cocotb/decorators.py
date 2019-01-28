@@ -41,7 +41,7 @@ from cocotb.log import SimLog
 from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
-from cocotb.utils import get_sim_time
+from cocotb.utils import get_sim_time, with_metaclass
 from cocotb import outcomes
 
 
@@ -242,6 +242,8 @@ class coroutine(object):
     ``log`` methods will will log to ``cocotb.coroutines.name``.
 
     ``join()`` method returns an event which will fire when the coroutine exits.
+
+    Used as ``@cocotb.coroutine``.
     """
 
     def __init__(self, func):
@@ -341,36 +343,59 @@ class external(object):
             and standalone functions"""
         return self.__class__(self._func.__get__(obj, type))
 
+
+class _decorator_helper(type):
+    """
+    Metaclass that allows a type to be constructed using decorator syntax,
+    passing the decorated function as the first argument.
+
+    So:
+
+        @MyClass(construction, args='go here')
+        def this_is_passed_as_f(...):
+            pass
+
+    ends up calling
+
+        MyClass.__init__(this_is_passed_as_f, construction, args='go here')
+    """
+    def __call__(cls, *args, **kwargs):
+        def decorator(f):
+            # fall back to the normal way of constructing an object, now that
+            # we have all the arguments
+            return type.__call__(cls, f, *args, **kwargs)
+        return decorator
+
+
 @public
-class hook(coroutine):
+class hook(with_metaclass(_decorator_helper, coroutine)):
     """Decorator to mark a function as a hook for cocotb.
+
+    Used as ``@cocotb.hook()``.
 
     All hooks are run at the beginning of a cocotb test suite, prior to any
     test code being run."""
     def __init__(self):
-        pass
-
-    def __call__(self, f):
         super(hook, self).__init__(f)
+        self.im_hook = True
+        self.name = self._func.__name__
 
-        def _wrapped_hook(*args, **kwargs):
-            try:
-                return RunningCoroutine(self._func(*args, **kwargs), self)
-            except Exception as e:
-                raise raise_error(self, "Hook raised exception:")
+    def __call__(self, *args, **kwargs):
+        try:
+            return RunningCoroutine(self._func(*args, **kwargs), self)
+        except Exception as e:
+            raise raise_error(self, "Hook raised exception:")
 
-        _wrapped_hook.im_hook = True
-        _wrapped_hook.name = self._func.__name__
-        _wrapped_hook.__name__ = self._func.__name__
-        return _wrapped_hook
 
 @public
-class test(coroutine):
+class test(with_metaclass(_decorator_helper, coroutine)):
     """Decorator to mark a function as a test.
 
     All tests are coroutines.  The test decorator provides
     some common reporting etc., a test timeout and allows
     us to mark tests as expected failures.
+
+    Used as ``@cocotb.test(...)``.
 
     Args:
         timeout (int, optional):
@@ -385,24 +410,21 @@ class test(coroutine):
         stage (int, optional)
             Order tests logically into stages, where multiple tests can share a stage.
     """
-    def __init__(self, timeout=None, expect_fail=False, expect_error=False,
+    def __init__(self, f, timeout=None, expect_fail=False, expect_error=False,
                  skip=False, stage=None):
+        super(test, self).__init__(f)
+
         self.timeout = timeout
         self.expect_fail = expect_fail
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
+        self.im_test = True    # For auto-regressions
+        self.name = self._func.__name__
 
-    def __call__(self, f):
-        super(test, self).__init__(f)
+    def __call__(self, *args, **kwargs):
+        try:
+            return RunningTest(self._func(*args, **kwargs), self)
+        except Exception as e:
+            raise raise_error(self, "Test raised exception:")
 
-        def _wrapped_test(*args, **kwargs):
-            try:
-                return RunningTest(self._func(*args, **kwargs), self)
-            except Exception as e:
-                raise raise_error(self, "Test raised exception:")
-
-        _wrapped_test.im_test = True    # For auto-regressions
-        _wrapped_test.name = self._func.__name__
-        _wrapped_test.__name__ = self._func.__name__
-        return _wrapped_test
