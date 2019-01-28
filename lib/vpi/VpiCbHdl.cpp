@@ -325,11 +325,40 @@ long VpiSignalObjHdl::get_signal_value_long(void)
 // Value related functions
 int VpiSignalObjHdl::set_signal_value(long value)
 {
-    FENTER
     s_vpi_value value_s;
 
     value_s.value.integer = value;
     value_s.format = vpiIntVal;
+
+    return set_signal_value(value_s);
+}
+
+int VpiSignalObjHdl::set_signal_value(double value)
+{
+    s_vpi_value value_s;
+
+    value_s.value.real = value;
+    value_s.format = vpiRealVal;
+
+    return set_signal_value(value_s);
+}
+
+int VpiSignalObjHdl::set_signal_value(std::string &value)
+{
+    s_vpi_value value_s;
+
+    std::vector<char> writable(value.begin(), value.end());
+    writable.push_back('\0');
+
+    value_s.value.str = &writable[0];
+    value_s.format = vpiBinStrVal;
+
+    return set_signal_value(value_s);
+}
+
+int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s)
+{
+    FENTER
 
     s_vpi_time vpi_time_s;
 
@@ -339,45 +368,6 @@ int VpiSignalObjHdl::set_signal_value(long value)
 
     // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
     vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
-    check_vpi_error();
-
-    FEXIT
-    return 0;
-}
-
-int VpiSignalObjHdl::set_signal_value(double value)
-{
-    FENTER
-    s_vpi_value value_s;
-
-    value_s.value.real = value;
-    value_s.format = vpiRealVal;
-
-    s_vpi_time vpi_time_s;
-
-    vpi_time_s.type = vpiSimTime;
-    vpi_time_s.high = 0;
-    vpi_time_s.low  = 0;
-
-    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
-    check_vpi_error();
-
-    FEXIT
-    return 0;
-}
-
-int VpiSignalObjHdl::set_signal_value(std::string &value)
-{
-    FENTER
-    s_vpi_value value_s;
-
-    std::vector<char> writable(value.begin(), value.end());
-    writable.push_back('\0');
-
-    value_s.value.str = &writable[0];
-    value_s.format = vpiBinStrVal;
-
-    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, NULL, vpiNoDelay);
     check_vpi_error();
 
     FEXIT
