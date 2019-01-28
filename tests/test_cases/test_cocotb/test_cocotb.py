@@ -839,6 +839,16 @@ def test_lessthan_raises_error(dut):
     if False: yield
 
 
+@cocotb.test()
+def test_tests_are_tests(dut):
+    """
+    Test that things annotated with cocotb.test are tests
+    """
+    yield Timer(1)
+
+    assert isinstance(test_tests_are_tests, cocotb.test)
+
+
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
