@@ -214,6 +214,8 @@ public:
     int initialise(std::string &name, std::string &fq_name);
 
 private:
+    int set_signal_value(s_vpi_value value);
+
     VpiValueCbHdl m_rising_cb;
     VpiValueCbHdl m_falling_cb;
     VpiValueCbHdl m_either_cb;
