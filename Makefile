@@ -32,7 +32,7 @@ FULL_INSTALL_DIR=$(INSTALL_DIR)/cocotb-$(VERSION)
 
 all: test
 
-include makefiles/Makefile.inc
+include cocotb/share/makefiles/Makefile.inc
 include version
 
 clean:
