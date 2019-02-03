@@ -2,7 +2,6 @@
 TOPLEVEL_LANG ?= verilog
 PWD=$(shell pwd)
 TOPDIR=$(PWD)/..
-COCOTB=$(PWD)/../../..
 PYTHONPATH := ./model:$(PYTHONPATH)
 
 export PYTHONPATH
@@ -30,6 +29,6 @@ GPI_IMPL := vpi
 export TOPLEVEL_LANG
 MODULE=test_axi_lite_slave
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
