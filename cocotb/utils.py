@@ -35,13 +35,12 @@ import os
 import sys
 import weakref
 
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-    _LOG_SIM_PRECISION = -15
-else:
+if "COCOTB_SIM" in os.environ:
     import simulator
     _LOG_SIM_PRECISION = simulator.get_precision() # request once and cache
+else:
+    simulator = None
+    _LOG_SIM_PRECISION = -15
 
 # python2 to python3 helper functions
 def get_python_integer_types():
