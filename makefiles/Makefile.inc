@@ -27,79 +27,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##############################################################################
 
-# Common makefile included by everything
+# Backwards-compatibility wrapper for people using
+# "include $COCOTB/makefiles/Makefile.inc" in their Makefile.
+COCOTB_INSTALL_METHOD = srctree
+export COCOTB_INSTALL_METHOD
 
-# Directory containing the cocotb Python module
-ifeq ($(COCOTB_PY_DIR),)
-export COCOTB_PY_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
-endif
-
-# Directory containing all support files required to build cocotb-based
-# simulations: Makefile fragments, and the simulator libraries.
-ifeq ($(COCOTB_SHARE_DIR),)
-export COCOTB_SHARE_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../)
-endif
-
-ifeq ($(USER_DIR),)
-export USER_DIR:=$(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-endif
-
-BUILD_DIR=$(USER_DIR)/build
-export BUILD_DIR
-
-ARCH?=$(shell uname -m)
-export ARCH
-
-OS=$(shell uname)
-ifneq (, $(findstring MINGW, $(OS)))
-OS=Msys
-else ifneq (, $(findstring MSYS, $(OS)))
-OS=Msys
-endif
-export OS
-
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.paths
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
-
-export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
-export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
-export INCLUDES := -I$(COCOTB_SHARE_DIR)/include -I$(PYTHON_INCLUDEDIR)
-
-LIB_EXT     := so
-PY_EXT	    := so
-
-# Base GCC flags
-ifeq ($(ARCH),i686)
-GXX_ARGS    := -m32
-endif
-
-ifeq ($(OS),Darwin)
-GXX_ARGS	+= -g -DDEBUG -fpic
-GCC_ARGS	:= $(GXX_ARGS)
-else ifeq ($(OS),Msys)
-GXX_ARGS 	+= -g -DDEBUG -shared
-ifeq ($(ARCH),x86_64)
-GXX_ARGS  += -DMS_WIN64
-endif
-GCC_ARGS	:= $(GXX_ARGS)
-LIB_EXT		:= dll
-PY_EXT		:= pyd
-else ifeq ($(OS),Linux)
-GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-			-Wall -Wno-unused-parameter \
-			-fno-common -g -DDEBUG -fpic
-GCC_ARGS	= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
-else
-$(error "Unsupported os " $(OS))
-endif
-
-ifeq ($(OS),Darwin)
-SO_LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
-else ifeq ($(OS),Linux)
-SO_LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
-else ifeq ($(OS),Msys)
-SO_LINKER_ARGS :=  -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2 \
-			-Wl,--enable-auto-import -L$(PYTHON_LIBDIR)
-else
-$(error "Unsupported os" $(OS))
-endif
+_NEW_SHARE_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))/../cocotb/share
+include $(_NEW_SHARE_DIR)/makefiles/Makefile.inc
