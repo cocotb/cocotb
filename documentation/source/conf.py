@@ -41,6 +41,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'cairosvgconverter',
+    'sphinxcontrib_trio',
     ]
 
 intersphinx_mapping = {'https://docs.python.org/3': None}
