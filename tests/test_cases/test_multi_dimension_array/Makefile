@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2016 Potential Ventures Ltd
+# Copyright (c) 2016, 2018 Potential Ventures Ltd
 # Copyright (c) 2016 SolarFlare Communications Inc
 # All rights reserved.
 #
@@ -29,10 +29,10 @@
 
 ifeq ($(SIM),)
 all:
-	@echo "Skipping test_array since icarus doesn't support indexing"
+	@echo "Skipping test_multi_dimension_array since icarus doesn't support indexing"
 else ifeq ($(shell echo $(SIM) | tr A-Z a-z),icarus)
 all:
-	@echo "Skipping test_array since icarus doesn't support indexing"
+	@echo "Skipping test_multi_dimension_array since icarus doesn't support indexing"
 else
 
 include ../../designs/multi_dimension_array/Makefile

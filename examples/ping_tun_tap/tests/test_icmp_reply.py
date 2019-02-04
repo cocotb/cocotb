@@ -112,14 +112,24 @@ def tun_tap_example_test(dut):
     subprocess.check_call('ping -c 5 192.168.255.2 &', shell=True)
 
     # Respond to 5 pings, then quit
-    for i in range(5):
-
+    pingcounter = 0
+    while True:
         cocotb.log.info("Waiting for packets on tun interface")
         packet = os.read(fd, 2048)
         cocotb.log.info("Received a packet!")
+
+        if packet[9] == '\x01' and packet[20] == '\x08':
+            cocotb.log.debug("Packet is an ICMP echo request")
+            pingcounter += 1
+        else:
+            cocotb.log.info("Packet is no ICMP echo request, throwing away packet")
+            continue
 
         stream_in.append(packet)
         result = yield stream_out.wait_for_recv()
 
         cocotb.log.info("Rtl replied!")
         os.write(fd, str(result))
+
+        if pingcounter == 5:
+            break

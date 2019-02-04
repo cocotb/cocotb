@@ -1,38 +1,39 @@
 from __future__ import print_function
 
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-
-"""Collection of handy functions"""
+"""Collection of handy functions."""
 
 import ctypes
 import math
 import os
 import sys
+import weakref
 
 # For autodocumentation don't need the extension modules
 if "SPHINX_BUILD" in os.environ:
@@ -53,14 +54,15 @@ def get_python_integer_types():
 
 # Simulator helper functions
 def get_sim_time(units=None):
-    """Retrieves the simulation time from the simulator
+    """Retrieves the simulation time from the simulator.
 
-    Kwargs:
-        units (str):  String specifying the units of the result. (None,'fs','ps','ns','us','ms','sec')
-                      None will return the raw simulation time.
+    Args:
+        units (str or None, optional): String specifying the units of the result
+            (one of ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+            ``None`` will return the raw simulation time.
 
     Returns:
-        The simulation time in the specified units
+        The simulation time in the specified units.
     """
     timeh, timel = simulator.get_sim_time()
 
@@ -72,31 +74,35 @@ def get_sim_time(units=None):
     return result
 
 def get_time_from_sim_steps(steps, units):
-    """Calculates simulation time in the specified units from the steps based on the simulator precision.
+    """Calculates simulation time in the specified *units* from the *steps* based
+    on the simulator precision.
 
     Args:
-        steps (int):  Number of simulation steps
-        units (str):  String specifying the units of the result. ('fs','ps','ns','us','ms','sec')
+        steps (int): Number of simulation steps.
+        units (str): String specifying the units of the result
+            (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
     Returns:
-        The simulation time in the specified units
+        The simulation time in the specified units.
     """
     result = steps * (10.0**(_LOG_SIM_PRECISION - _get_log_time_scale(units)))
 
     return result
 
 def get_sim_steps(time, units=None):
-    """Calculates the number of Simulation time steps for a given amount of time
+    """Calculates the number of simulation time steps for a given amount of *time*.
 
     Args:
-        time (int/float):  The value to convert to simulation time steps.
-
-    Kwargs:
-        units (str):  String specifying the units of the result. (None,'fs','ps','ns','us','ms','sec')
-                      None means time is already in simulation time steps.
+        time (int or float):  The value to convert to simulation time steps.
+        units (str or None, optional):  String specifying the units of the result
+            (one of ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+            ``None`` means time is already in simulation time steps.
 
     Returns:
-        The number of simulation time steps
+        int: The number of simulation time steps.
+
+    Raises:
+        :exc:`ValueError`: If given *time* cannot be represented by simulator precision.
     """
     result = time
     if units is not None:
@@ -105,18 +111,21 @@ def get_sim_steps(time, units=None):
     err = int(result) - math.ceil(result)
 
     if err:
-        raise ValueError("Unable to accurately represent {0}({1}) with the simulator precision of 1e{2}".format(time,units,_LOG_SIM_PRECISION))
+        raise ValueError("Unable to accurately represent {0}({1}) with the "
+                         "simulator precision of 1e{2}".format(
+                             time, units, _LOG_SIM_PRECISION))
 
     return int(result)
 
 def _get_log_time_scale(units):
-    """Retrieves the log10() of the scale factor for a given time unit
+    """Retrieves the ``log10()`` of the scale factor for a given time unit.
 
     Args:
-        units (str):  String specifying the units. ('fs','ps','ns','us','ms','sec')
+        units (str): String specifying the units
+            (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
     Returns:
-        The the log10() of the scale factor for the time unit
+        The the ``log10()`` of the scale factor for the time unit.
     """
     scale = {
         'fs' :    -15,
@@ -136,37 +145,35 @@ def _get_log_time_scale(units):
 
 
 def pack(ctypes_obj):
-    """Convert a ctypes structure into a python string
-
+    """Convert a :mod:`ctypes` structure into a Python string.
 
     Args:
-        ctypes_obj (ctypes.Structure): ctypes structure to convert to a string
-
+        ctypes_obj (ctypes.Structure): The ctypes structure to convert to a string.
 
     Returns:
-        New python string containing the bytes from memory holding ctypes_obj
+        New Python string containing the bytes from memory holding *ctypes_obj*.
     """
     return ctypes.string_at(ctypes.addressof(ctypes_obj),
                             ctypes.sizeof(ctypes_obj))
 
 
 def unpack(ctypes_obj, string, bytes=None):
-    """Unpack a python string into a ctypes structure
+    """Unpack a Python string into a :mod:`ctypes` structure.
+
+    If the length of *string* is not the correct size for the memory
+    footprint of the ctypes structure then the *bytes* keyword argument 
+    must be used.
 
     Args:
-        ctypes_obj (ctypes.Structure):  ctypes structure to pack into
-
-        string (str):  String to copy over the ctypes_obj memory space
-
-    Kwargs:
-        bytes: Number of bytes to copy
+        ctypes_obj (ctypes.Structure): The ctypes structure to pack into.
+        string (str):  String to copy over the ctypes_obj memory space.
+        bytes (int, optional): Number of bytes to copy. 
+            Defaults to ``None``, meaning the length of *string* is used.
 
     Raises:
-        ValueError, MemoryError
-
-    If the length of the string is not the correct size for the memory
-    footprint of the ctypes structure then the bytes keyword argument must
-    be used
+        :exc:`ValueError`: If length of *string* and size of *ctypes_obj*
+            are not equal.
+        :exc:`MemoryError`: If *bytes* is longer than size of *ctypes_obj*.
     """
     if bytes is None:
         if len(string) != ctypes.sizeof(ctypes_obj):
@@ -196,7 +203,25 @@ def _sane_color(x):
 
 
 def hexdump(x):
-    """Hexdump a buffer"""
+    """Hexdump a buffer.
+
+    Args:
+        x: Object that supports conversion via the ``str`` built-in.
+
+    Returns:
+        A string containing the hexdump.
+
+    Example:
+
+    .. code-block:: python
+
+        print(hexdump('this somewhat long string'))
+
+    .. code-block:: none
+
+        0000   74 68 69 73 20 73 6F 6D 65 77 68 61 74 20 6C 6F   this somewhat lo
+        0010   6E 67 20 73 74 72 69 6E 67                        ng string
+    """
     # adapted from scapy.utils.hexdump
     rs = ""
     x = str(x)
@@ -218,7 +243,24 @@ def hexdump(x):
 
 
 def hexdiffs(x, y):
-    """Return a diff string showing differences between 2 binary strings"""
+    """Return a diff string showing differences between two binary strings.
+
+    Args:
+        x: Object that supports conversion via the ``str`` built-in.
+        y: Object that supports conversion via the ``str`` built-in.
+
+    Example:
+
+    .. code-block:: python
+
+        print(hexdiffs('this short thing', 'this also short'))
+
+    .. code-block:: none
+
+        0000      746869732073686F 7274207468696E67 this short thing
+             0000 7468697320616C73 6F  2073686F7274 this also  short
+
+    """
     # adapted from scapy.utils.hexdiff
 
     def sane(x):
@@ -231,15 +273,17 @@ def hexdiffs(x, y):
                 r = r + i
         return r
 
-    def highlight(string, colour=ANSI.YELLOW_FG):
-        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT")
+    def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
+        """Highlight only with ANSI output if it's requested and we are not in a GUI."""
+        
+        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT") and not os.getenv("GUI")
         if want_ansi is None:
             want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
         else:
             want_ansi = want_ansi == '1'
 
         if want_ansi:
-            return colour + string + ANSI.DEFAULT_FG + ANSI.DEFAULT_BG
+            return colour + string + ANSI.COLOR_DEFAULT
         else:
             return string
 
@@ -301,7 +345,7 @@ def hexdiffs(x, y):
             if dox != doy:
                 rs += highlight("%04x" % xd) + " "
             else:
-                rs += highlight("%04x" % xd, colour=ANSI.CYAN_FG) + " "
+                rs += highlight("%04x" % xd, colour=ANSI.COLOR_HILITE_HEXDIFF_1) + " "
             x += xx
             line = linex
         else:
@@ -315,7 +359,7 @@ def hexdiffs(x, y):
             if doy - dox != 0:
                 rs += " " + highlight("%04x" % yd)
             else:
-                rs += highlight("%04x" % yd, colour=ANSI.CYAN_FG)
+                rs += highlight("%04x" % yd, colour=ANSI.COLOR_HILITE_HEXDIFF_1)
             y += yy
             line = liney
         else:
@@ -329,15 +373,15 @@ def hexdiffs(x, y):
                 if line[j]:
                     if linex[j] != liney[j]:
                         rs += highlight("%02X" % ord(line[j]),
-                                        colour=ANSI.RED_FG)
+                                        colour=ANSI.COLOR_HILITE_HEXDIFF_2)
                     else:
                         rs += "%02X" % ord(line[j])
                     if linex[j] == liney[j]:
                         cl += highlight(_sane_color(line[j]),
-                                        colour=ANSI.MAGENTA_FG)
+                                        colour=ANSI.COLOR_HILITE_HEXDIFF_3)
                     else:
                         cl += highlight(sane(line[j]),
-                                        colour=ANSI.CYAN_BG + ANSI.BLACK_FG)
+                                        colour=ANSI.COLOR_HILITE_HEXDIFF_4)
                 else:
                     rs += "  "
                     cl += " "
@@ -359,6 +403,112 @@ def hexdiffs(x, y):
             else:
                 i += 16
     return rs
+
+
+# This is essentially six.exec_
+if sys.version_info.major == 3:
+    # this has to not be a syntax error in py2
+    import builtins
+    exec_ = getattr(builtins, 'exec')
+else:
+    # this has to not be a syntax error in py3
+    def exec_(_code_, _globs_=None, _locs_=None):
+        """Execute code in a namespace."""
+        if _globs_ is None:
+            frame = sys._getframe(1)
+            _globs_ = frame.f_globals
+            if _locs_ is None:
+                _locs_ = frame.f_locals
+            del frame
+        elif _locs_ is None:
+            _locs_ = _globs_
+        exec("""exec _code_ in _globs_, _locs_""")
+
+
+# this is six.with_metaclass, with a clearer docstring
+def with_metaclass(meta, *bases):
+    """This provides:
+
+    .. code-block:: python
+
+        class Foo(with_metaclass(Meta, Base1, Base2)): pass
+
+    which is a unifying syntax for:
+
+    .. code-block:: python
+
+        # python 3
+        class Foo(Base1, Base2, metaclass=Meta): pass
+
+        # python 2
+        class Foo(Base1, Base2):
+            __metaclass__ = Meta
+    """
+    # This requires a bit of explanation: the basic idea is to make a dummy
+    # metaclass for one level of class instantiation that replaces itself with
+    # the actual metaclass.
+    class metaclass(type):
+
+        def __new__(cls, name, this_bases, d):
+            return meta(name, bases, d)
+
+        @classmethod
+        def __prepare__(cls, name, this_bases):
+            return meta.__prepare__(name, bases)
+    return type.__new__(metaclass, 'temporary_class', (), {})
+
+
+class ParametrizedSingleton(type):
+    """A metaclass that allows class construction to reuse an existing instance.
+
+    We use this so that :class:`RisingEdge(sig) <cocotb.triggers.RisingEdge>` and :class:`Join(coroutine) <cocotb.triggers.Join>` always return
+    the same instance, rather than creating new copies.
+    """
+
+    def __init__(cls, *args, **kwargs):
+        # Attach a lookup table to this class.
+        # Weak such that if the instance is no longer referenced, it can be
+        # collected.
+        cls.__instances = weakref.WeakValueDictionary()
+
+    def __singleton_key__(cls, *args, **kwargs):
+        """Convert the construction arguments into a normalized representation that
+        uniquely identifies this singleton.
+        """
+        # Once we drop python 2, we can implement a default like the following,
+        # which will work in 99% of cases:
+        # return tuple(inspect.Signature(cls).bind(*args, **kwargs).arguments.items())
+        raise NotImplementedError
+
+    def __call__(cls, *args, **kwargs):
+        key = cls.__singleton_key__(*args, **kwargs)
+        try:
+            return cls.__instances[key]
+        except KeyError:
+            # construct the object as normal
+            self = super(ParametrizedSingleton, cls).__call__(*args, **kwargs)
+            cls.__instances[key] = self
+            return self
+
+
+# backport of Python 3.7's contextlib.nullcontext
+class nullcontext(object):
+    """Context manager that does no additional processing.
+    Used as a stand-in for a normal context manager, when a particular
+    block of code is only sometimes used with a normal context manager:
+    cm = optional_cm if condition else nullcontext()
+    with cm:
+        # Perform operation, using optional_cm if condition is True
+    """
+
+    def __init__(self, enter_result=None):
+        self.enter_result = enter_result
+
+    def __enter__(self):
+        return self.enter_result
+
+    def __exit__(self, *excinfo):
+        pass
 
 
 if __name__ == "__main__":

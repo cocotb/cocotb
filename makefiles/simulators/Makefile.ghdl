@@ -52,18 +52,19 @@ endif
 
 RTL_LIBRARY ?= work
 GHDL_ARGS ?=
+GHDL_ARGS += $(EXTRA_ARGS)
 
 .PHONY: analyse
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && $(CMD) -a $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && $(CMD) -e $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL)
+	cd $(SIM_BUILD) && $(CMD) -a $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && $(CMD) -e $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL)
 
 results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	cd $(SIM_BUILD); \
 	PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(CMD) -r $(GHDL_ARGS) $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT) $(SIM_ARGS)
+	$(CMD) -r $(GHDL_ARGS) $(TOPLEVEL) --vpi=$(LIB_DIR)/libvpi.$(LIB_EXT) $(SIM_ARGS) $(PLUSARGS)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

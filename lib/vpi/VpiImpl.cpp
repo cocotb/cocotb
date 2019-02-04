@@ -98,6 +98,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiNetBit:
         case vpiReg:
         case vpiRegBit:
+        case vpiMemoryWord:
             return GPI_REGISTER;
 
         case vpiRealVar:
@@ -108,6 +109,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiRegArray:
         case vpiNetArray:
         case vpiGenScopeArray:
+        case vpiMemory:
             return GPI_ARRAY;
 
         case vpiEnumNet:
@@ -125,6 +127,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 
         case vpiStructVar:
         case vpiStructNet:
+        case vpiUnionVar:
             return GPI_STRUCTURE;
 
         case vpiModport:
@@ -172,6 +175,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiIntegerVar:
         case vpiIntegerNet:
         case vpiRealVar:
+        case vpiMemoryWord:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
             break;
         case vpiParameter:
@@ -181,10 +185,14 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiNetArray:
         case vpiInterfaceArray:
         case vpiPackedArrayVar:
+        case vpiMemory:
             new_obj = new VpiArrayObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiStructVar:
         case vpiStructNet:
+        case vpiUnionVar:
+            new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
+            break;
         case vpiModule:
         case vpiInterface:
         case vpiModport:
@@ -200,7 +208,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             std::string hdl_name = vpi_get_str(vpiName, new_hdl);
 
             if (hdl_name != name) {
-                LOG_DEBUG("Found pseudo-region %s", fq_name.c_str());
+                LOG_DEBUG("Found pseudo-region %s (hdl_name=%s but name=%s)", fq_name.c_str(), hdl_name.c_str(), name.c_str());
                 new_obj = new VpiObjHdl(this, new_hdl, GPI_GENARRAY);
             } else {
                 new_obj = new VpiObjHdl(this, new_hdl, to_gpi_objtype(type));
@@ -666,7 +674,7 @@ static int system_function_overload(char *userdata)
         msg = argval.value.str;
     }
 
-    gpi_log("simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), msg );
+    gpi_log("simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
 
     // Fail the test for critical errors
     if (GPICritical == *userdata)

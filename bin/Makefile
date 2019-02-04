@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2015, 2018 Potential Ventures Ltd
+# Copyright (c) 2015, 2018, 2019 Potential Ventures Ltd
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,9 +25,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-DESIGN ?= sample_module
+DESIGN ?= avalon_module
 
-COCOTB = ../
+COCOTB = ..
 
 include ../tests/designs/$(DESIGN)/Makefile
 

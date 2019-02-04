@@ -34,7 +34,7 @@ RTL_LIBRARY ?= work
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && $(CMD) --work=$(RTL_LIBRARY) -a $(VHDL_SOURCES)
+	cd $(SIM_BUILD) && $(CMD) --work=$(RTL_LIBRARY) -a $(VHDL_SOURCES) $(COMPILE_ARGS) $(EXTRA_ARGS)
 
 results.xml: analyse $(COCOTB_LIBS) $(COCOTB_VHPI_LIB)
 	cd $(SIM_BUILD) && LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) \
@@ -43,7 +43,7 @@ results.xml: analyse $(COCOTB_LIBS) $(COCOTB_VHPI_LIB)
 		LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
 		TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 		LD_LIBRARY_PATH=$(LIB_DIR) \
-		$(CMD) --work=$(RTL_LIBRARY) -r --load $(COCOTB_VHPI_LIB) $(TRACE) $(TOPLEVEL)
+		$(CMD) $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS) --work=$(RTL_LIBRARY) -r --load $(COCOTB_VHPI_LIB) $(TRACE) $(TOPLEVEL)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

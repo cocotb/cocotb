@@ -2,7 +2,7 @@
 Examples
 ########
 
-These code samples show some typical usage of Cocotb based on real-world problems.
+These code samples show some typical usage of cocotb based on real-world problems.
 
 
 Example testbench for snipped of code from `comp.lang.verilog <https://github.com/chiggs/comp.lang.verilog/blob/master/maja55/testbench.py>`_:
@@ -11,9 +11,7 @@ Example testbench for snipped of code from `comp.lang.verilog <https://github.co
 
     @cocotb.coroutine
     def run_test(dut, data_generator=random_data, delay_cycles=2):
-        """
-        Send data through the DUT and check it is sorted out output
-        """
+        """Send data through the DUT and check it is sorted output."""
         cocotb.fork(Clock(dut.clk, 100).start())
 
         # Don't check until valid output
@@ -32,8 +30,8 @@ Example testbench for snipped of code from `comp.lang.verilog <https://github.co
             yield ReadOnly()
             expect = expected.pop(0)
 
-            if expect is None: continue
-
+            if expect is None:
+                continue
 
             got = [int(dut.out5), int(dut.out4), int(dut.out3),
                    int(dut.out2), int(dut.out1)]
@@ -44,5 +42,3 @@ Example testbench for snipped of code from `comp.lang.verilog <https://github.co
                 raise TestFailure("Output didn't match")
 
         dut._log.info('Sucessfully sent %d cycles of data' % (index + 1))
-
-

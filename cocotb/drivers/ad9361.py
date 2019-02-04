@@ -1,8 +1,6 @@
-'''
-Created on Aug 24, 2014
-
-@author: msnook
-'''
+# Created on Aug 24, 2014
+# 
+# @author: msnook
 
 import cocotb
 from cocotb.triggers import Timer, RisingEdge, ReadOnly, Lock, Event
@@ -15,16 +13,11 @@ from collections import deque
 
 
 class AD9361(BusDriver):
-    '''
-    classdocs
-    '''
+    """Driver for the AD9361 RF Transceiver."""
 
     def __init__(self, dut, rx_channels=1, tx_channels=1,
                  tx_clock_half_period=16276, rx_clock_half_period=16276,
                  loopback_queue_maxlen=16):
-        '''
-        Constructor
-        '''
         self.dut = dut
         self.tx_clock_half_period = tx_clock_half_period
         self.rx_clock_half_period = rx_clock_half_period
@@ -48,6 +41,16 @@ class AD9361(BusDriver):
 
     def send_data(self, i_data, q_data, i_data2=None, q_data2=None,
                   binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT):
+        """Forks the ``rx_data_to_ad9361`` coroutine to send data.
+
+        Args:
+            i_data (int): Data of the I0 channel.
+            q_data (int): Data of the Q0 channel.
+            i_data2 (int, optional): Data of the I1 channel.
+            q_data2 (int, optional): Data of the Q1 channel.
+            binaryRepresentation (BinaryRepresentation): The representation of the binary value.
+                Default is :any:`TWOS_COMPLEMENT`.
+        """
         print(binaryRepresentation)
         cocotb.fork(self.rx_data_to_ad9361(i_data, q_data, i_data2, q_data2,
                     binaryRepresentation))
@@ -55,9 +58,21 @@ class AD9361(BusDriver):
     @cocotb.coroutine
     def rx_data_to_ad9361(self, i_data, q_data, i_data2=None, q_data2=None,
                           binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT):
-        i_bin_val = BinaryValue(bits=12, bigEndian=False,
+        """Receive data to AD9361.
+
+        This is a coroutine.
+
+        Args:
+            i_data (int): Data of the I0 channel.
+            q_data (int): Data of the Q0 channel.
+            i_data2 (int, optional): Data of the I1 channel.
+            q_data2 (int, optional): Data of the Q1 channel.
+            binaryRepresentation (BinaryRepresentation): The representation of the binary value.
+                Default is :any:`TWOS_COMPLEMENT`. 
+       """
+        i_bin_val = BinaryValue(n_bits=12, bigEndian=False,
                                 binaryRepresentation=binaryRepresentation)
-        q_bin_val = BinaryValue(bits=12, bigEndian=False,
+        q_bin_val = BinaryValue(n_bits=12, bigEndian=False,
                                 binaryRepresentation=binaryRepresentation)
         index = 0
         if i_data2 is None and q_data2 is None:
@@ -132,8 +147,8 @@ class AD9361(BusDriver):
 
     @cocotb.coroutine
     def _tx_data_from_ad9361(self):
-        i_bin_val = BinaryValue(bits=12, bigEndian=False)
-        q_bin_val = BinaryValue(bits=12, bigEndian=False)
+        i_bin_val = BinaryValue(n_bits=12, bigEndian=False)
+        q_bin_val = BinaryValue(n_bits=12, bigEndian=False)
         while True:
             yield RisingEdge(self.dut.tx_clk_out_p)
             if self.dut.tx_frame_out_p.value.integer == 1:
@@ -154,8 +169,8 @@ class AD9361(BusDriver):
     @cocotb.coroutine
     def _ad9361_tx_to_rx_loopback(self):
         cocotb.fork(self._tx_data_from_ad9361())
-        i_bin_val = BinaryValue(bits=12, bigEndian=False)
-        q_bin_val = BinaryValue(bits=12, bigEndian=False)
+        i_bin_val = BinaryValue(n_bits=12, bigEndian=False)
+        q_bin_val = BinaryValue(n_bits=12, bigEndian=False)
         while True:
             yield RisingEdge(self.dut.rx_clk_in_p)
             if self.rx_frame_asserted:
@@ -187,7 +202,15 @@ class AD9361(BusDriver):
                 self.dut.rx_data_in_n <= ~q_bin_val[5:0]
 
     def ad9361_tx_to_rx_loopback(self):
+        """Create loopback from tx to rx.
+
+        Forks a coroutine doing the actual task.
+        """
         cocotb.fork(self._ad9361_tx_to_rx_loopback())
 
     def tx_data_from_ad9361(self):
+        """Transmit data from AD9361.
+
+        Forks a coroutine doing the actual task.
+        """
         cocotb.fork(self._tx_data_from_ad9361())

@@ -8,21 +8,9 @@ import pprint
 
 # FIXME: port stuff needs SINGLETON_HANDLES in lib/gpi/Makefile not set!
 
-def get_name_maxlen(objlist):
-    '''
-    Return the longest name of a list of objects.
-    '''
-    try:
-        return max(len(x._name) for x in objlist)
-    except:
-        return 0
-
-
 @cocotb.test()
 def create_testbench_template(dut):
-    '''
-    Generate a testbench template for the DUT.
-    '''
+    """Generate a testbench template for the DUT."""
 
     yield Timer(0)  # needed to make this a valid coroutine
 
@@ -81,7 +69,7 @@ def create_testbench_template(dut):
         filename_ = 'testbench_template'
 
     with open(filename_+'.py', 'w') as f:
-        f.write('''# This is a generated testbench template for Cocotb (https://cocotb.readthedocs.io)
+        f.write("""# This is a generated testbench template for cocotb (https://cocotb.readthedocs.io)
 
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
@@ -97,13 +85,11 @@ RESET_DURATION_NS = 7
 
 @cocotb.test()
 def my_first_test(dut):
-    """
-    TODO: Add test documentation here.
-    """
+    \"\"\"TODO: Add test documentation here.\"\"\"
 
     import cocotb.wavedrom
 
-    dut._log.info("Running my first test")\n''')
+    dut._log.info("Running my first test")\n""")
 
         f.write('\n')
         f.write('    dut._log.info("Setting ground ports if any were identified")\n')
@@ -120,19 +106,19 @@ def my_first_test(dut):
             f.write('    # dut.%s <= 1\n' % ('<port>'))
 
         f.write('\n')
-        f.write('    dut._log.info("Asserting and de-asserting reset(s) if any were identified (assuming active-low resets)")\n')
+        f.write('    dut._log.info("Asserting and de-asserting reset(s) if any were identified (assuming active-low resets!)")\n')
         for port_ in reset_ports_:
-            f.write('''    dut.%s <= 1
+            f.write("""    dut.%s <= 1
     yield Timer(PRE_RESET_TIME_NS, units='ns')
     dut.%s <= 0
     yield Timer(RESET_DURATION_NS, units='ns')
-    dut.%s <= 1\n''' % (port_._name, port_._name, port_._name))
+    dut.%s <= 1\n""" % (port_._name, port_._name, port_._name))
         if len(reset_ports_) == 0:
-            f.write('''    # dut.%s <= 1
+            f.write("""    # dut.%s <= 1
     # yield Timer(PRE_RESET_TIME_NS, units='ns')
     # dut.%s <= 0
     # yield Timer(RESET_DURATION_NS, units='ns')
-    # dut.%s <= 1\n''' % ('<port>', '<port>', '<port>'))
+    # dut.%s <= 1\n""" % ('<port>', '<port>', '<port>'))
 
         f.write('\n')
         f.write('    dut._log.info("Starting clocks if any were identified")\n')
@@ -151,9 +137,8 @@ def my_first_test(dut):
         f.write('    dut._log.info("Driving all other DUT inputs and inouts if any are present")\n')
         f.write('    # Changes needed for real signals (drive with "0.0"), and struct/record ports\n')
         driveable_ports_ = input_ports_+inout_ports_
-        maxlen_ = get_name_maxlen(driveable_ports_)
         for port_ in driveable_ports_:
-            f.write('    dut.%s <= 0x0\n' % (port_._name.ljust(maxlen_)))
+            f.write('    dut.%s <= 0x0\n' % (port_._name))
         if len(driveable_ports_) == 0:
             f.write('    # dut.%s <= 0x0\n' % ('<port>'))
 
@@ -174,22 +159,21 @@ def my_first_test(dut):
         f.write('    # can also use int(port._name)\n')
 
         readable_ports_ = output_ports_+inout_ports_
-        maxlen_ = get_name_maxlen(readable_ports_)
         for port_ in readable_ports_:
-            f.write('    %s = dut.%s.value.binstr\n' % ((port_._name+'_val').ljust(maxlen_+len('_val')), port_._name))
+            f.write('    %s = dut.%s.value.binstr\n' % (port_._name+'_val', port_._name))
         if len(readable_ports_) == 0:
-            f.write('    # %s = dut.%s.value.binstr\n' % (('<port>'+'_val').ljust(maxlen_+len('_val')), '<port>'))
+            f.write('    # %s = dut.%s.value.binstr\n' % ('<port>'+'_val', '<port>'))
         for port_ in readable_ports_:
-            f.write("""    dut._log.info("%s = %%s" %% str(%s))\n""" % ((port_._name).ljust(maxlen_), (port_._name+'_val')))
+            f.write("""    dut._log.info("%s = %%s" %% str(%s))\n""" % (port_._name, port_._name+'_val'))
         if len(readable_ports_) == 0:
-            f.write("""    # dut._log.info("%s = %%s" %% str(%s))\n""" % (('<port>').ljust(maxlen_), ('<port>'+'_val')))
+            f.write("""    # dut._log.info("%s = %%s" %% str(%s))\n""" % ('<port>', '<port>'+'_val'))
 
-        f.write('''
+        f.write("""
     dut._log.info("Waiting 10 ns...")
     yield Timer(10, units='ns')
-    dut._log.info("Waiting 10 ns...done")\n''')
+    dut._log.info("Waiting 10 ns...done")\n""")
 
-        f.write('        dut._log.info(waves.write("%s"))\n' % (filename_+'.wavedrom.json'))
+        f.write('    dut._log.info(waves.write("%s"))\n' % (filename_+'.wavedrom.json'))
     dut._log.warning('Wrote testbench template %s' % (filename_+'.py'))
     try:
         dut._log.warning('Try running with\n    make %s MODULE=testbench_template' % (os.getenv("MAKEFLAGS")[5:]))
