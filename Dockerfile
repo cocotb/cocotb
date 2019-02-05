@@ -17,6 +17,7 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
        bison \
        python2.7-dev python3-dev\
        python-pip \
+       python-setuptools \
        python3 \
        virtualenv \
        python3-venv \
@@ -35,15 +36,5 @@ RUN git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v${
     && make -s install \
     && rm -r /usr/src/iverilog
 
-
 # make sources available in docker image - one copy per python version
-COPY . /build-py2/src
-COPY . /build-py3/src
-
-# Build and prepare using Python 2
-RUN bash -c 'virtualenv /build-py2/venv; source /build-py2/venv/bin/activate; pip install coverage xunitparser; deactivate'
-
-# Build and prepare virtual env using Python 3
-RUN bash -c 'python3 -m venv /build-py3/venv; source /build-py3/venv/bin/activate; pip install coverage xunitparser; deactivate'
-
-
+COPY . /src
