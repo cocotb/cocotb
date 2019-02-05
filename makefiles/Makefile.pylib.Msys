@@ -47,7 +47,7 @@ PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from distutils import sysconfig; pri
 PYTHON_LIBDIR=$(PYTHON_DIR)/libs
 
 period := .
-empty := 
+empty :=
 PYTHON_VERSION=$(subst $(period),$(empty),$(LOCAL_PYTHON_VERSION))
 PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print( distutils.sysconfig.get_python_inc() )')
 
