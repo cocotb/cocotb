@@ -1,5 +1,5 @@
-include $(SIM_ROOT)/makefiles/Makefile.pylib
-include $(SIM_ROOT)/makefiles/Makefile.inc
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 PYTHON_LIBDIR ?= /usr/lib64
 SWIG ?= swig

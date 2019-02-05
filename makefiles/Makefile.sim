@@ -41,20 +41,22 @@ SIM ?= icarus
 # Maintain backwards compatibility by supporting upper and lower case SIM variable
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
 
-HAVE_SIMULATOR = $(shell if [ -f $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE) ]; then echo 1; else echo 0; fi;)
-AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(SIM_ROOT)/makefiles/simulators/Makefile.*)))
+HAVE_SIMULATOR = $(shell if [ -f $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE) ]; then echo 1; else echo 0; fi;)
+AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.*)))
 
 ifeq ($(HAVE_SIMULATOR),0)
 $(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simulators: $(AVAILABLE_SIMULATORS)")
 endif
 
-# We want to include the Python files from Cocotb in the dependencies
-CUSTOM_SIM_DEPS += $(shell find $(SIM_ROOT)/cocotb/ -name "*.py")
+# Depend on all Python from the cocotb package. This triggers a
+# recompilation of the simulation if cocotb is updated.
+CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
 
-include $(SIM_ROOT)/lib/Makefile
-include $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
+include $(COCOTB_SHARE_DIR)/lib/Makefile
+include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 
-include $(SIM_ROOT)/version
+# XXX: This assumes COCOTB_SHARE_DIR == root dir of the cocotb src tree
+include $(COCOTB_SHARE_DIR)/version
 export VERSION
 
 $(SIM_BUILD):

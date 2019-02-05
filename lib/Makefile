@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(SIM_ROOT)/makefiles/Makefile.inc
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 
 # FIXME it's a bit nasty to have the source files listed here as dependencies
@@ -39,29 +39,29 @@ $(LIB_OBJ_DIR):
 $(LIB_DIR): $(LIB_OBJ_DIR)
 	mkdir -p $@
 
-$(LIB_DIR)/libgpilog.$(LIB_EXT): $(SIM_ROOT)/lib/gpi_log/gpi_logging.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/gpi_log SIM=$(SIM)
+$(LIB_DIR)/libgpilog.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/gpi_log/gpi_logging.c | $(LIB_DIR)
+	make -C $(COCOTB_SHARE_DIR)/lib/gpi_log SIM=$(SIM)
 
-$(LIB_DIR)/libcocotb.$(LIB_EXT): $(SIM_ROOT)/lib/embed/gpi_embed.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/embed SIM=$(SIM)
+$(LIB_DIR)/libcocotb.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/embed/gpi_embed.c | $(LIB_DIR)
+	make -C $(COCOTB_SHARE_DIR)/lib/embed SIM=$(SIM)
 
-$(LIB_DIR)/libvpi.$(LIB_EXT): $(SIM_ROOT)/lib/vpi/VpiImpl.cpp $(SIM_ROOT)/lib/vpi/VpiCbHdl.cpp | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/vpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
+$(LIB_DIR)/libvpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/vpi/VpiImpl.cpp $(COCOTB_SHARE_DIR)/lib/vpi/VpiCbHdl.cpp | $(LIB_DIR)
+	make -C $(COCOTB_SHARE_DIR)/lib/vpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
-$(LIB_DIR)/libvhpi.$(LIB_EXT): $(SIM_ROOT)/lib/vhpi/VhpiImpl.cpp $(SIM_ROOT)/lib/vhpi/VhpiCbHdl.cpp | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/vhpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
+$(LIB_DIR)/libvhpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/vhpi/VhpiImpl.cpp $(COCOTB_SHARE_DIR)/lib/vhpi/VhpiCbHdl.cpp | $(LIB_DIR)
+	make -C $(COCOTB_SHARE_DIR)/lib/vhpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
-$(LIB_DIR)/libgpi.$(LIB_EXT): $(SIM_ROOT)/lib/gpi/GpiCommon.cpp $(SIM_ROOT)/lib/gpi/GpiCbHdl.cpp | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/gpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
+$(LIB_DIR)/libgpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/gpi/GpiCommon.cpp $(COCOTB_SHARE_DIR)/lib/gpi/GpiCbHdl.cpp | $(LIB_DIR)
+	make -C $(COCOTB_SHARE_DIR)/lib/gpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
-$(LIB_DIR)/libfli.$(LIB_EXT): $(SIM_ROOT)/lib/fli/FliImpl.cpp $(SIM_ROOT)/lib/fli/FliCbHdl.cpp $(SIM_ROOT)/lib/fli/FliObjHdl.cpp | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/fli EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
+$(LIB_DIR)/libfli.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/fli/FliImpl.cpp $(COCOTB_SHARE_DIR)/lib/fli/FliCbHdl.cpp $(COCOTB_SHARE_DIR)/lib/fli/FliObjHdl.cpp | $(LIB_DIR)
+	make -C $(COCOTB_SHARE_DIR)/lib/fli EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
-$(LIB_DIR)/libsim.$(LIB_EXT): $(SIM_ROOT)/lib/simulator/simulatormodule.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/simulator SIM=$(SIM)
+$(LIB_DIR)/libsim.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/simulator/simulatormodule.c | $(LIB_DIR)
+	make -C $(COCOTB_SHARE_DIR)/lib/simulator SIM=$(SIM)
 
-$(LIB_DIR)/libcocotbutils.$(LIB_EXT): $(SIM_ROOT)/lib/utils/cocotb_utils.c | $(LIB_DIR)
-	make -C $(SIM_ROOT)/lib/utils SIM=$(SIM)
+$(LIB_DIR)/libcocotbutils.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/utils/cocotb_utils.c | $(LIB_DIR)
+	make -C $(COCOTB_SHARE_DIR)/lib/utils SIM=$(SIM)
 
 COCOTB_LIBS := $(LIB_DIR)/libcocotbutils.$(LIB_EXT) \
 	       $(LIB_DIR)/libgpilog.$(LIB_EXT) \
