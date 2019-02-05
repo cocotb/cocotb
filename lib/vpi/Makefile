@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(SIM_ROOT)/makefiles/Makefile.inc
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GXX_ARGS    += -DVPI_CHECKING
@@ -61,4 +61,4 @@ clean:
 	-@rm -rf $(LIB_DIR)/gpivpi.vpl
 	-@rm -rf $(LIB_DIR)/cocotb.vpi
 
-include $(SIM_ROOT)/makefiles/Makefile.rules
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.rules

@@ -26,7 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(SIM_ROOT)/makefiles/Makefile.inc
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 INCLUDES    += -I$(MODELSIM_BIN_DIR)/../include
 GXX_ARGS    += -DFLI_CHECKING -DUSE_CACHE
@@ -41,4 +41,4 @@ all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 clean:
 	-@rm -rf $(LIB_DIR)/$(LIB_NAME)
 
-include $(SIM_ROOT)/makefiles/Makefile.rules
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.rules

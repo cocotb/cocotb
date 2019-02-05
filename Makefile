@@ -57,7 +57,7 @@ test: do_tests
 	./bin/combine_results.py
 
 pycode:
-	@cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
+	@cp -R $(COCOTB_PY_DIR)/cocotb $(FULL_INSTALL_DIR)/
 
 src_install:
 	@mkdir -p $(FULL_INSTALL_DIR)/lib

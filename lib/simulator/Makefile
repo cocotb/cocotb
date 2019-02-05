@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(SIM_ROOT)/makefiles/Makefile.inc
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 INCLUDES    +=
 GCC_ARGS    +=
@@ -35,7 +35,7 @@ LIBS        := -lcocotbutils -lgpi -lgpilog $(PYLIBS)
 LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libsim
 
-SRCS        := simulatormodule.c 
+SRCS        := simulatormodule.c
 
 CLIBS       += $(LIB_DIR)/$(LIB_NAME)
 
@@ -46,4 +46,4 @@ clean:
 	-@rm -rf $(LIB_DIR)/simulator.$(LIB_EXT)
 	-@rm -rf $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 
-include $(SIM_ROOT)/makefiles/Makefile.rules
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.rules

@@ -158,8 +158,11 @@ Additional Environment Variables
       
       This needs the :mod:`cherrypy` and :mod:`dowser` Python modules installed.
 
-    ``SIM_ROOT``
-      The root directory of the Cocotb installation.
+    ``COCOTB_PY_DIR``
+      Path to the directory containing the cocotb Python package in the ``cocotb`` subdirectory.
+
+    ``COCOTB_SHARE_DIR``
+      Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories ``lib``, ``include``, and ``makefiles``.
 
     ``VERSION``
       The version of the Cocotb installation. You probably don't want to modify this.

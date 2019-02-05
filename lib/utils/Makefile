@@ -27,7 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(SIM_ROOT)/makefiles/Makefile.inc
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 INCLUDES	+=
 SRCS		:= cocotb_utils.c
@@ -39,4 +39,4 @@ all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 clean:
 	-@rm -rf $(OBJ_DIR)
 
-include $(SIM_ROOT)/makefiles/Makefile.rules
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.rules

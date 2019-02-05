@@ -32,7 +32,7 @@
 NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
 
-include $(SIM_ROOT)/makefiles/Makefile.pylib.$(OS)
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib.$(OS)
 
 export LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(PYTHON_LIBDIR)
 

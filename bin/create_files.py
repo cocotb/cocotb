@@ -40,7 +40,8 @@ from subprocess import call
 def print_make_inc(path):
     makefile = open("/tmp/Makefile.inc", "w")
     makefile.write("export ARCH:=$(shell uname -m)\n")
-    makefile.write("export SIM_ROOT:=" + path + "\n")
+    makefile.write("export COCOTB_PY_DIR:=" + path + "\n")
+    makefile.write("export COCOTB_SHARE_DIR:=" + path + "\n")
     makefile.write("export LIB_DIR:=" + path + "/lib/$(ARCH)\n")
     makefile.close()
 

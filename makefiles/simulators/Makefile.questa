@@ -73,13 +73,13 @@ GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),vhdl)
     VSIM_ARGS += -foreign \"cocotb_init libfli.$(LIB_EXT)\"
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = vpi 
+    GPI_EXTRA = vpi
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
     VSIM_ARGS += -pli libvpi.$(LIB_EXT)
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = fli 
+    GPI_EXTRA = fli
 endif
 
 else
@@ -95,8 +95,8 @@ $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) $
 	@echo "vlib $(RTL_LIBRARY)" >> $@
 	@echo "vmap -c" >> $@
 	@echo "vmap $(RTL_LIBRARY) $(RTL_LIBRARY)" >> $@
-ifneq ($(VHDL_SOURCES),)    
-	@echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@    
+ifneq ($(VHDL_SOURCES),)
+	@echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@
 endif
 ifneq ($(VERILOG_SOURCES),)
 	@echo "vlog -work $(RTL_LIBRARY) +define+COCOTB_SIM -sv $(VLOG_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)" >> $@
@@ -147,7 +147,7 @@ endif
 # Append or remove values to INT_LIBS depenending on your license
 results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
 	set -o pipefail; cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
-	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(NEW_PYTHONPATH) \
+	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(LIB_DIR):$(COCOTB_PY_DIR):$(PWD):$(NEW_PYTHONPATH) \
 	$(CMD) $(PLUSARGS) -do runsim.do 2>&1 | tee sim.log
 # Potential fix for buffered stdout, YMMV
 # STDOUT=$(SIM_BUILD)/sim.log stdbuf --output=0 $(CMD) -do runsim.do 2>&1 && stdbuf --output=0 --input=0 tail -f sim.log && exit $${PIPESTATUS[0]}

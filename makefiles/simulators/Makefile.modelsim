@@ -31,5 +31,5 @@
 #ARCH:=i686
 
 # Everything else is identical to Quest
-include $(SIM_ROOT)/makefiles/simulators/Makefile.questa
+include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.questa
 

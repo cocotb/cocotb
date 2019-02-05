@@ -119,7 +119,7 @@ def _initialise_testbench(root_name):
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-    exec_path = os.getenv('SIM_ROOT')
+    exec_path = os.getenv('COCOTB_PY_DIR')
     if exec_path is None:
         exec_path = 'Unknown'
 

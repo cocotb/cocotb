@@ -29,8 +29,15 @@
 
 # Common makefile included by everything
 
-ifeq ($(SIM_ROOT),)
-export SIM_ROOT:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+# Directory containing the cocotb Python module
+ifeq ($(COCOTB_PY_DIR),)
+export COCOTB_PY_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+endif
+
+# Directory containing all support files required to build cocotb-based
+# simulations: Makefile fragments, and the simulator libraries.
+ifeq ($(COCOTB_SHARE_DIR),)
+export COCOTB_SHARE_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../)
 endif
 
 ifeq ($(USER_DIR),)
@@ -51,12 +58,12 @@ OS=Msys
 endif
 export OS
 
-include $(SIM_ROOT)/makefiles/Makefile.paths
-include $(SIM_ROOT)/makefiles/Makefile.pylib
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.paths
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
 
 export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
-export INCLUDES := -I$(SIM_ROOT)/include -I$(PYTHON_INCLUDEDIR)
+export INCLUDES := -I$(COCOTB_SHARE_DIR)/include -I$(PYTHON_INCLUDEDIR)
 
 LIB_EXT     := so
 PY_EXT	    := so
