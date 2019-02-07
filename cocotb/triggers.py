@@ -397,7 +397,7 @@ class Event(PythonTrigger):
         :meth:`~cocotb.triggers.Event.clear` should be called.
         """
         if self.fired:
-            return NullTrigger()
+            return NullTrigger(name="{}.wait()".format(str(self)))
         return _Event(self)
 
     def clear(self):
@@ -499,6 +499,9 @@ class NullTrigger(Trigger):
 
     def prime(self, callback):
         callback(self)
+
+    def __str__(self):
+        return self.__class__.__name__ + "(%s)" % self.name
 
 
 class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
