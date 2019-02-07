@@ -456,7 +456,7 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
 
 GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type)
 {
-    GpiIterator *new_iter;
+    GpiIterator *new_iter = NULL;
     switch (type) {
         case GPI_OBJECTS:
             new_iter = new VpiIterator(this, obj_hdl);
