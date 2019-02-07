@@ -39,6 +39,8 @@ If you try to run with FLI enabled, you will see a ``vsim-FLI-3155`` error:
 
 ModelSim DE and SE (and Questa, of course) supports the FLI.
 
+Some versions of Modelsim are still 32-bit. Using a tool such as Anaconda or building Python for a 32-bit architecture, it is possible to use that environment to work with cocotb. Some versions of Python have libraries compiled in a manner that don't work well with certain simulators. This requires further testing.
+
 Cadence Incisive, Cadence Xcelium
 ---------------------------------
 
