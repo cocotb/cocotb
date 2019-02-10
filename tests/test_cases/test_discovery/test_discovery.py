@@ -53,6 +53,49 @@ def discover_module_values(dut):
     if count < 2:
         raise TestFailure("Expected to discover things in the DUT")
 
+
+@cocotb.test()
+def discover_ports(dut):
+    """Discover ports in the DUT"""
+    yield Timer(0)
+    count = 0
+    inputs = 0
+    outputs = 0
+    inouts = 0
+    if cocotb.SIM_NAME in ["Icarus Verilog"]:
+        # some ports are ifdef'ed out in the SV HDL with __ICARUS__
+        count_exp = 9
+        inputs_exp = 5
+        outputs_exp = 4
+        inouts_exp = 0
+    else:
+        count_exp = 14
+        inputs_exp = 8
+        outputs_exp = 6
+        inouts_exp = 0
+        
+    for thing in dut:
+        if thing._is_port:
+            thing._log.info("Found %s port %s (%s)", thing._port_direction_string, thing._name, type(thing))
+            count += 1
+            if thing._port_direction_string == 'GPI_INPUT':
+                inputs += 1
+            elif thing._port_direction_string == 'GPI_OUTPUT':
+                outputs += 1
+            elif thing._port_direction_string == 'GPI_INOUT':
+                inouts += 1
+            else:
+                raise TestFailure("Unhandled port direction")
+    if count != count_exp:
+        raise TestFailure("Did not discover the expected number of total ports in the DUT")
+    if inputs != inputs_exp:
+        raise TestFailure("Did not discover the expected number of input ports in the DUT")
+    if outputs != outputs_exp:
+        raise TestFailure("Did not discover the expected number of output ports in the DUT")
+    if inouts != inouts_exp:
+        raise TestFailure("Did not discover the expected number of inout ports in the DUT")
+
+
 @cocotb.test(skip=True)
 def ipython_embed(dut):
     yield Timer(0)
