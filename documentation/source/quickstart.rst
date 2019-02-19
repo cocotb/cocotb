@@ -11,7 +11,7 @@ Pre-requisites
 
 Cocotb has the following requirements:
 
-* Python 2.6+
+* Python 2.7+
 * Python-dev packages
 * GCC and associated development packages
 * GNU Make
