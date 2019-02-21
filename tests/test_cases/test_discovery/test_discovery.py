@@ -27,6 +27,8 @@
 
 import cocotb
 import logging
+import os
+import textwrap
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
@@ -60,7 +62,25 @@ def ipython_embed(dut):
     IPython.embed()
 
 
+@cocotb.test(skip=True)
+def ipython_embed_kernel(dut):
+    """Start an interactive Python shell."""
+    yield Timer(0)
+    import IPython
+    print(textwrap.dedent("""
+    ###############################################################################
+    Running IPython embed_kernel()
 
+    You can now send this process into the background with "Ctrl-Z bg" and run
+        jupyter console --existing
+    or
+        jupyter qtconsole --existing
+    or
+        jupyter console --existing kernel-{}.json
+    ###############################################################################""".format(os.getpid())))
+    IPython.embed_kernel()
+
+    
 @cocotb.test(expect_error=True)
 def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
