@@ -263,8 +263,8 @@ def test_discover_all(dut):
                          149 (sig_t4[0:3][7:4][7:0])
                          112 (sig_t5[0:2][0:3][7:0])
                           57 (sig_t6[0:1][2:4][7:0])
-                         149 (sig_t7[3:0][3:0])
-                         149 ([3:0][3:0]sig_t8)
+                         149 (sig_t7[3:0][3:0])                                      (VPI Only)
+                         149 ([3:0][3:0]sig_t8)                                      (VPI Only)
                            1 (sig_logic)
                            9 (sig_logic_vec)
                            1 (sig_bool)                                              (VHDL Only)
@@ -286,8 +286,8 @@ def test_discover_all(dut):
                            8 (desc_gen: process "always")                            (VPI - Aldec only)
                 process:   1 ("always")                                              (VPI - Aldec only)
 
-                  TOTAL: 1154 (VHDL - Default)
-                         818  (VHDL - Aldec)
+                  TOTAL:  856 (VHDL - Default)
+                          818 (VHDL - Aldec)
                          1078 (Verilog - Default)
                      947/1038 (Verilog - Aldec)
     """
@@ -320,9 +320,9 @@ def test_discover_all(dut):
             dummy = hdl.sig
 
     if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
-        pass_total = 1116
+        pass_total = 818
     elif cocotb.LANGUAGE in ["vhdl"]:
-        pass_total = 1154
+        pass_total = 856
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
         if cocotb.SIM_VERSION.startswith(("2017.10.61")):
             pass_total = 803
@@ -448,10 +448,12 @@ def test_direct_signal_indexing(dut):
         _check_type(tlog, dut.sig_t6[0][3], ModifiableObject)
         _check_type(tlog, dut.sig_t6[0][3][7], ModifiableObject)
     _check_type(tlog, dut.sig_cmplx, NonHierarchyIndexableObject)
-    _check_type(tlog, dut.sig_t7[1], NonHierarchyIndexableObject)
-    _check_type(tlog, dut.sig_t7[0][3], ModifiableObject)
-    _check_type(tlog, dut.sig_t8[1], NonHierarchyIndexableObject)
-    _check_type(tlog, dut.sig_t8[0][3], ModifiableObject)
+
+    if cocotb.LANGUAGE in ["verilog"]:
+        _check_type(tlog, dut.sig_t7[1], NonHierarchyIndexableObject)
+        _check_type(tlog, dut.sig_t7[0][3], ModifiableObject)
+        _check_type(tlog, dut.sig_t8[1], NonHierarchyIndexableObject)
+        _check_type(tlog, dut.sig_t8[0][3], ModifiableObject)
 
 
     # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
