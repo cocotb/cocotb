@@ -215,10 +215,10 @@ class RegionObject(SimHandleBase):
         """Translates the handle name to a key to use in ``_sub_handles`` dictionary."""
         return name.split(".")[-1]
 
-    def _getAttributeNames(self):
+    def __dir__(self):
         """Permits IPython tab completion to work."""
         self._discover_all()
-        return dir(self)
+        return super(RegionObject, self).__dir__() + [str(k) for k in self._sub_handles]
 
 
 class HierarchyObject(RegionObject):
