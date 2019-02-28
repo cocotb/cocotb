@@ -74,7 +74,7 @@ class Monitor(object):
             a transaction is received through the internal :any:`_recv` method.
     """
 
-    def __init__(self, callback=None, event=None):
+    def __init__(self, callback=None, event=None, **kwargs):
         self._event = event
         self._wait_event = None
         self._recvQ = deque()
@@ -174,7 +174,7 @@ class BusMonitor(Monitor):
     _optional_signals = []
 
     def __init__(self, entity, name, clock, reset=None, reset_n=None,
-                 callback=None, event=None, bus_separator="_", array_idx=None):
+                 callback=None, event=None, bus_separator="_", array_idx=None, **kwargs):
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         self.entity = entity
         self.name = name
