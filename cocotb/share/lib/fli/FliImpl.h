@@ -162,22 +162,16 @@ protected:
 
 class FliObjHdl : public GpiObjHdl, public FliObj {
 public:
-    FliObjHdl(GpiImplInterface *impl,
-              void *hdl,
-              gpi_objtype_t objtype,
-              int acc_type,
-              int acc_full_type) :
-                  GpiObjHdl(impl, hdl, objtype, false),
-                  FliObj(acc_type, acc_full_type) { }
-
-    FliObjHdl(GpiImplInterface *impl,
-              void *hdl,
-              gpi_objtype_t objtype,
-              int acc_type,
-              int acc_full_type,
-              bool is_const) :
-                  GpiObjHdl(impl, hdl, objtype, is_const),
-                  FliObj(acc_type, acc_full_type) { }
+    FliObjHdl(
+        GpiImplInterface *impl,
+        void *hdl,
+        gpi_objtype_t objtype,
+        int acc_type,
+        int acc_full_type,
+        bool is_const = false
+    ) :
+        GpiObjHdl(impl, hdl, objtype, is_const),
+        FliObj(acc_type, acc_full_type) { }
 
 
     int initialise(std::string &name, std::string &fq_name) override;
