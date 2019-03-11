@@ -12,10 +12,13 @@ services:
 jobs:
   include:
     - stage: PythonLint
+      os: linux
       python: 3.5
       install: pip install flake8
       script: flake8 --exit-zero cocotb/
+      
     - stage: SimTests
+      os: linux
       python: 2.7
       before_install: &docker_prep
         - docker build -t cocotb .
@@ -26,7 +29,9 @@ jobs:
         - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27' 
         - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py27'
         - echo -e 'travis_fold:end:cocotb_py27'
+        
     - stage: SimTests
+      os: linux
       python: 3.5
       before_install: *docker_prep 
       script:
@@ -34,3 +39,32 @@ jobs:
         - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py35'
         - echo 'travis_fold:end:cocotb_py35'
 
+    - stage: SimTests
+      python: 3.7
+      before_install: &travis_linx_prep
+        - sudo apt-get install gperf
+        - git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
+        - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
+        - pip install tox
+      script:
+        - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py37'
+        - echo 'travis_fold:end:cocotb_py37'
+        
+    - stage: SimTests
+      os: osx
+      language: generic
+      python: 2.7
+      before_install: &osx_prep
+        - brew install icarus-verilog
+        - pip install tox
+      script:
+        - tox -e py27
+
+    - stage: SimTests
+      os: osx
+      language: generic
+      python: 3.6
+      before_install: *osx_prep
+      script:
+        - tox -e py36
