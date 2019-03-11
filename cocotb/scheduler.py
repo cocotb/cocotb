@@ -424,6 +424,14 @@ class Scheduler(object):
                     if pending.primed:
                         pending.unprime()
                     del self._trigger2coros[pending]
+                # can't unprime trigger because other coroutines are waiting,
+                # but we should remove all coroutines being woken from the list
+                else:
+                    self._trigger2coros[pending] = [
+                        coro
+                        for coro in self._trigger2coros[pending]
+                        if coro not in scheduling
+                    ]
 
             for coro in scheduling:
                 if _debug:
