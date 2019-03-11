@@ -29,15 +29,7 @@
 
 TOPLEVEL_LANG ?= verilog
 
-ifneq ($(TOPLEVEL_LANG),verilog)
-
-all:
-	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
-clean::
-
-else
-
-TOPLEVEL = tb_top
+TOPLEVEL := tb_top
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
@@ -47,9 +39,13 @@ endif
 
 COCOTB?=$(WPWD)/../../..
 
-VERILOG_SOURCES = $(COCOTB)/tests/designs/plusargs_module/tb_top.v
+ifeq ($(TOPLEVEL_LANG),verilog)
+    VERILOG_SOURCES = $(COCOTB)/tests/designs/plusargs_module/tb_top.v
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES =  $(COCOTB)/tests/designs/plusargs_module/tb_top.vhd
+else
+    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+endif
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
-
-endif
