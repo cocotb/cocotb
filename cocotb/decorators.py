@@ -194,6 +194,7 @@ class RunningTest(RunningCoroutine):
     def __init__(self, inst, parent):
         self.error_messages = []
         RunningCoroutine.__init__(self, inst, parent)
+        self.log = SimLog("cocotb.test.%s" % self.__name__, id(self))
         self.started = False
         self.start_time = 0
         self.start_sim_time = 0
@@ -239,14 +240,14 @@ class RunningTest(RunningCoroutine):
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
 
-    ``log`` methods will will log to ``cocotb.coroutines.name``.
+    ``log`` methods will log to ``cocotb.coroutines.name``.
 
     ``join()`` method returns an event which will fire when the coroutine exits.
     """
 
     def __init__(self, func):
         self._func = func
-        self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
+        self.log = SimLog("cocotb.coroutine.%s" % self._func.__name__, id(self))
         self.__name__ = self._func.__name__
         functools.update_wrapper(self, func)
 
@@ -386,11 +387,12 @@ class test(coroutine):
             Order tests logically into stages, where multiple tests can share a stage.
     """
     def __init__(self, timeout=None, expect_fail=False, expect_error=False,
-                 skip=False, stage=None):
+                 skip=False, pass_test_log=False, stage=None):
         self.timeout = timeout
         self.expect_fail = expect_fail
         self.expect_error = expect_error
         self.skip = skip
+        self.pass_test_log = pass_test_log
         self.stage = stage
 
     def __call__(self, f):
@@ -398,6 +400,8 @@ class test(coroutine):
 
         def _wrapped_test(*args, **kwargs):
             try:
+                if self.pass_test_log:
+                    kwargs = dict(kwargs, test_log=SimLog("cocotb.test.%s" % self._func.__name__))
                 return RunningTest(self._func(*args, **kwargs), self)
             except Exception as e:
                 raise raise_error(self, "Test raised exception:")
