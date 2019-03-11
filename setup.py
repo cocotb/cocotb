@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ###############################################################################
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
@@ -27,39 +28,41 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-all: test
+from setuptools import setup
+from setuptools import find_packages
+from os import path, walk
 
-include cocotb/share/makefiles/Makefile.inc
-include version
+def read_file(fname):
+    return open(path.join(path.dirname(__file__), fname)).read()
 
-clean:
-	-@rm -rf $(BUILD_DIR)
-	-@find . -name "obj" | xargs rm -rf
-	-@find . -name "*.pyc" | xargs rm -rf
-	-@find . -name "*results.xml" | xargs rm -rf
-	$(MAKE) -C examples clean
-	$(MAKE) -C tests clean
+def package_files(directory):
+    paths = []
+    for (fpath, directories, filenames) in walk(directory):
+        for filename in filenames:
+            paths.append(path.join('..', fpath, filename))
+    return paths
 
-do_tests:
-	$(MAKE) -k -C tests
-	$(MAKE) -k -C examples
+version = read_file('version')[8:].strip()
 
-# For jenkins we use the exit code to detect compile errors or catestrphic
-# failures and the xml to track test results
-jenkins: do_tests
-	./bin/combine_results.py --suppress_rc --testsuites_name=cocotb_regression
+setup(
+    name='cocotb',
+    version=version,
+    description='cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.',
+    url='https://github.com/potentialventures/cocotb',
+    license='BSD',
+    long_description=read_file('README.md'),
+    long_description_content_type='text/markdown',
+    author='Chris Higgs, Stuart Hodgson',
+    author_email='cocotb@potentialventures.com',
+    install_requires=[],
+    packages=find_packages(),
+    include_package_data=True,
+    package_data={'cocotb': package_files('cocotb/share')},
+    entry_points={
+        'console_scripts': [
+            'cocotb-config=cocotb.config:main',
+        ]
+    },
+    platforms='any',
+)
 
-# By default want the exit code to indicate the test results
-test: do_tests
-	./bin/combine_results.py
-
-help:
-	@echo -e "\nCocotb make help\n\nall\t- Build libaries for native"
-	@echo -e "clean\t- Clean the build dir"
-	@echo -e "debug\t- Dump out some useful debug info\n\n"
-	@echo -e "To build natively just run make.\nTo build for 32bit on a 64 bit system set ARCH=i686\n"
-	@echo -e "Default simulator is Icarus. To use another set environment variable SIM as below\n"
-	@for X in $(shell ls makefiles/simulators/); do \
-		echo $$X | sed 's/^[^.]*./export SIM=/';\
-	done
-	@echo -e "\n\n"

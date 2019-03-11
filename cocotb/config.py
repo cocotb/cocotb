@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ###############################################################################
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
@@ -27,39 +28,41 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-all: test
+import os
+import sys
+import cocotb
+import argparse
+import pkg_resources
 
-include cocotb/share/makefiles/Makefile.inc
-include version
 
-clean:
-	-@rm -rf $(BUILD_DIR)
-	-@find . -name "obj" | xargs rm -rf
-	-@find . -name "*.pyc" | xargs rm -rf
-	-@find . -name "*results.xml" | xargs rm -rf
-	$(MAKE) -C examples clean
-	$(MAKE) -C tests clean
+class PrintAction(argparse.Action):
+    def __init__(self, option_strings, dest, text=None, **kwargs):
+        super(PrintAction, self).__init__(option_strings, dest, nargs=0, **kwargs)
+        self.text = text
 
-do_tests:
-	$(MAKE) -k -C tests
-	$(MAKE) -k -C examples
+    def __call__(self, parser, namespace, values, option_string=None):
+        print(self.text)
+        parser.exit()
 
-# For jenkins we use the exit code to detect compile errors or catestrphic
-# failures and the xml to track test results
-jenkins: do_tests
-	./bin/combine_results.py --suppress_rc --testsuites_name=cocotb_regression
+def main():
 
-# By default want the exit code to indicate the test results
-test: do_tests
-	./bin/combine_results.py
+    share_dir = os.path.join(os.path.dirname(cocotb.__file__),'share')
+    prefix_dir = os.path.dirname(os.path.dirname(cocotb.__file__))
+    makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__),'share', 'makefiles')
+    version = pkg_resources.get_distribution('cocotb').version
 
-help:
-	@echo -e "\nCocotb make help\n\nall\t- Build libaries for native"
-	@echo -e "clean\t- Clean the build dir"
-	@echo -e "debug\t- Dump out some useful debug info\n\n"
-	@echo -e "To build natively just run make.\nTo build for 32bit on a 64 bit system set ARCH=i686\n"
-	@echo -e "Default simulator is Icarus. To use another set environment variable SIM as below\n"
-	@for X in $(shell ls makefiles/simulators/); do \
-		echo $$X | sed 's/^[^.]*./export SIM=/';\
-	done
-	@echo -e "\n\n"
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('--prefix', help='echos the package-prefix of cocotb', action=PrintAction, text=prefix_dir)
+    parser.add_argument('--share', help='echos the package-share of cocotb', action=PrintAction, text=share_dir)
+    parser.add_argument('--makefiles', help='echos the package-makefiles of cocotb', action=PrintAction, text=makefiles_dir)
+    parser.add_argument('-v', '--version', help='echos version of cocotb', action=PrintAction, text=version)
+
+    if len(sys.argv)==1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+if __name__ == "__main__":
+    main()
+

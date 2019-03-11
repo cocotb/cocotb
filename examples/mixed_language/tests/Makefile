@@ -7,7 +7,6 @@ SIM?=aldec
 TOPLEVEL = endian_swapper_mixed
 
 PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
@@ -30,6 +29,5 @@ endif
 
 MODULE=test_mixed_language
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
-
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim

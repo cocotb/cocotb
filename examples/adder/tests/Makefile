@@ -30,7 +30,6 @@
 TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
@@ -51,5 +50,5 @@ endif
 TOPLEVEL := adder
 MODULE   := test_adder
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim

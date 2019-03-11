@@ -40,6 +40,10 @@ ifeq ($(COCOTB_SHARE_DIR),)
 export COCOTB_SHARE_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 endif
 
+ifeq ($(COCOTB_PY_DIR),$(COCOTB_SHARE_DIR))
+$(warning 'Deprecated cocotb file structure detected. Please use "include $$(shell cocotb-config --makefile)/Makefile.inc" in Makefiles')
+endif
+
 ifeq ($(USER_DIR),)
 export USER_DIR:=$(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 endif
