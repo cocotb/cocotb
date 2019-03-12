@@ -506,7 +506,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
     def __iter__(self):
         try:
             if self._range is None:
-                raise StopIteration
+                return
 
             self._log.debug("Iterating with range [%d:%d]" % (self._range[0], self._range[1]))
             for i in self._range_iter(self._range[0], self._range[1]):
