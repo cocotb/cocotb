@@ -349,6 +349,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         case vhpiRootInstK:
         case vhpiIfGenerateK:
         case vhpiForGenerateK:
+        case vhpiBlockStmtK:
         case vhpiCompInstStmtK: {
             std::string hdl_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
 
