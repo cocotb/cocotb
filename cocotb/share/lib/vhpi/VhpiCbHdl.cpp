@@ -918,6 +918,7 @@ void vhpi_mappings(GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> &map)
     };
     map.add_to_options(vhpiForGenerateK, &gen_options[0]);
     map.add_to_options(vhpiIfGenerateK, &gen_options[0]);
+    map.add_to_options(vhpiBlockStmtK, &gen_options[0]);
 
     /* vhpiConstDeclK */
     vhpiOneToManyT const_options[] = {
