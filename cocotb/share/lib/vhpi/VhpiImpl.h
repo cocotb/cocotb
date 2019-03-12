@@ -45,15 +45,15 @@
 // Should be run after every VHPI call to check error status
 static inline int __check_vhpi_error(const char *file, const char *func, long line)
 {
-    int level=0;
+    int err_occurred = 0;
 #if VHPI_CHECKING
     vhpiErrorInfoT info;
     int loglevel;
-    level = vhpi_check_error(&info);
-    if (level == 0)
+    err_occurred = vhpi_check_error(&info);
+    if (!err_occurred)
         return 0;
 
-    switch (level) {
+    switch (info.severity) {
         case vhpiNote:
             loglevel = GPIInfo;
             break;
@@ -75,7 +75,7 @@ static inline int __check_vhpi_error(const char *file, const char *func, long li
             info.severity, info.message, info.file, info.line);
 
 #endif
-    return level;
+    return err_occurred;
 }
 
 #define check_vhpi_error() do { \
