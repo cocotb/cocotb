@@ -5,9 +5,7 @@ from cocotb.result import TestFailure
 
 @cocotb.test()
 def mixed_language_test(dut):
-    """
-    Try accessing handles and setting values in a mixed language environment
-    """
+    """Try accessing handles and setting values in a mixed language environment."""
     yield Timer(100)
 
     verilog = dut.i_swapper_sv
@@ -16,10 +14,10 @@ def mixed_language_test(dut):
     vhdl = dut.i_swapper_vhdl
     dut._log.info("Got: %s" % repr(vhdl._name))
 
-    verilog.reset_n = 1
+    verilog.reset_n <= 1
     yield Timer(100)
 
-    vhdl.reset_n = 1
+    vhdl.reset_n <= 1
     yield Timer(100)
 
     if int(verilog.reset_n) == int(vhdl.reset_n):

@@ -52,8 +52,7 @@ from cocotb.decorators import test, coroutine, hook, function, external
 # scheduler package
 
 # GPI logging instance
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" not in os.environ:
+if "COCOTB_SIM" in os.environ:
     import simulator
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)
@@ -120,7 +119,7 @@ def _initialise_testbench(root_name):
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-    exec_path = os.getenv('SIM_ROOT')
+    exec_path = os.getenv('COCOTB_PY_DIR')
     if exec_path is None:
         exec_path = 'Unknown'
 

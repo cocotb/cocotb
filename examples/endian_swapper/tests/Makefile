@@ -32,7 +32,6 @@ TOPLEVEL_LANG ?= verilog
 
 WPWD=$(shell sh -c 'pwd -W')
 PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
@@ -58,8 +57,8 @@ CUSTOM_COMPILE_DEPS = hal
 
 LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 .PHONY: hal
 hal:

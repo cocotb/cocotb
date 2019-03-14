@@ -81,5 +81,5 @@ and contributions from Gordon McGregor and Finn Grimwood
 (see `contributers <https://github.com/potentialventures/cocotb/graphs/contributors>`_ for the full list of contributions).
 
 We also have a list of talks and papers, libraries and examples at our wiki page
-`Further Resources https://github.com/potentialventures/cocotb/wiki/Further-Resources>`_.
+`Further Resources <https://github.com/potentialventures/cocotb/wiki/Further-Resources>`_.
 Feel free to add links to cocotb-related content that we are still missing!
