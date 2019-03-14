@@ -30,11 +30,11 @@
 import os
 import weakref
 
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-else:
+if "COCOTB_SIM" in os.environ:
     import simulator
+else:
+    simulator = None
+
 from cocotb.log import SimLog
 from cocotb.result import raise_error
 from cocotb.utils import (
