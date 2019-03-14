@@ -1,4 +1,4 @@
-# Copyright (c) 2013, 2019 Potential Ventures Ltd
+# Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 # 

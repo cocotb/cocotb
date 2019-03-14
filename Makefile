@@ -27,12 +27,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-INSTALL_DIR?=/usr/local
-FULL_INSTALL_DIR=$(INSTALL_DIR)/cocotb-$(VERSION)
-
 all: test
 
-include makefiles/Makefile.inc
+include cocotb/share/makefiles/Makefile.inc
 include version
 
 clean:
@@ -43,7 +40,7 @@ clean:
 	$(MAKE) -C examples clean
 	$(MAKE) -C tests clean
 
-do_tests: 
+do_tests:
 	$(MAKE) -k -C tests
 	$(MAKE) -k -C examples
 
@@ -56,30 +53,8 @@ jenkins: do_tests
 test: do_tests
 	./bin/combine_results.py
 
-pycode:
-	@cp -R $(SIM_ROOT)/cocotb $(FULL_INSTALL_DIR)/
-
-src_install:
-	@mkdir -p $(FULL_INSTALL_DIR)/lib
-	@mkdir -p $(FULL_INSTALL_DIR)/bin
-	@mkdir -p $(FULL_INSTALL_DIR)/include
-	@cp -R lib/* $(FULL_INSTALL_DIR)/lib/
-	@cp -R include/* $(FULL_INSTALL_DIR)/include/
-
-common_install:
-	@cp -R makefiles $(FULL_INSTALL_DIR)/
-	@cp version $(FULL_INSTALL_DIR)/
-
-create_files:
-	bin/create_files.py $(FULL_INSTALL_DIR)
-
-install: src_install common_install pycode create_files
-	@echo -e "\nInstalled to $(FULL_INSTALL_DIR)"
-	@echo -e "To uninstall run $(FULL_INSTALL_DIR)/bin/cocotb_uninstall\n"
-
 help:
 	@echo -e "\nCocotb make help\n\nall\t- Build libaries for native"
-	@echo -e "install\t- Build and install libaries to FULL_INSTALL_DIR (default=$(FULL_INSTALL_DIR))"
 	@echo -e "clean\t- Clean the build dir"
 	@echo -e "debug\t- Dump out some useful debug info\n\n"
 	@echo -e "To build natively just run make.\nTo build for 32bit on a 64 bit system set ARCH=i686\n"

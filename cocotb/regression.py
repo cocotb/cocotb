@@ -1,7 +1,7 @@
 # Copyright (c) 2013, 2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,11 +34,11 @@ from itertools import product
 import sys
 import os
 import traceback
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-else:
+
+if "COCOTB_SIM" in os.environ:
     import simulator
+else:
+    simulator = None
 
 # Optional support for coverage collection of testbench files
 coverage = None
@@ -105,10 +105,10 @@ class RegressionManager(object):
 
         suite_name = os.getenv('RESULT_TESTSUITE') if os.getenv('RESULT_TESTSUITE') else "all"
         package_name = os.getenv('RESULT_TESTPACKAGE') if os.getenv('RESULT_TESTPACKAGE') else "all"
-                
+
         self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
                                  package=package_name)
-        
+
         if (self._seed is not None):
             self.xunit.add_property(name="random_seed", value=("%d"%self._seed))
 
@@ -236,7 +236,7 @@ class RegressionManager(object):
 
         Dump result to XML and schedule the next test (if any).
 
-        Args: 
+        Args:
             result: The sub-exception of TestComplete to raise.
         """
         real_time   = time.time() - self._running_test.start_time

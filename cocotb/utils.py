@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 # 
@@ -35,13 +35,12 @@ import os
 import sys
 import weakref
 
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-    _LOG_SIM_PRECISION = -15
-else:
+if "COCOTB_SIM" in os.environ:
     import simulator
     _LOG_SIM_PRECISION = simulator.get_precision() # request once and cache
+else:
+    simulator = None
+    _LOG_SIM_PRECISION = -15
 
 # python2 to python3 helper functions
 def get_python_integer_types():
@@ -496,9 +495,10 @@ class nullcontext(object):
     """Context manager that does no additional processing.
     Used as a stand-in for a normal context manager, when a particular
     block of code is only sometimes used with a normal context manager:
-    cm = optional_cm if condition else nullcontext()
-    with cm:
-        # Perform operation, using optional_cm if condition is True
+
+    >>> cm = optional_cm if condition else nullcontext()
+    >>> with cm:
+    >>>     # Perform operation, using optional_cm if condition is True
     """
 
     def __init__(self, enter_result=None):
