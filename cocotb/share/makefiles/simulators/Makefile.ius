@@ -69,7 +69,7 @@ endif
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
     GPI_ARGS = -loadvpi $(LIB_DIR)/libvpi
-    EXTRA_ARGS += -sv -v93
+    EXTRA_ARGS += -v93
     HDL_SOURCES = $(VERILOG_SOURCES)
     ROOT_LEVEL = $(TOPLEVEL)
 ifneq ($(VHDL_SOURCES),)
