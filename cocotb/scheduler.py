@@ -309,7 +309,7 @@ class Scheduler(object):
             if self._test_result is not None:
                 if _debug:
                     self.log.debug("Issue test result to regression object")
-                cocotb.regression.handle_result(self._test_result)
+                cocotb.regression_manager.handle_result(self._test_result)
                 self._test_result = None
             if self._entrypoint is not None:
                 test = self._entrypoint
@@ -732,7 +732,7 @@ class Scheduler(object):
            once we return the sim will close us so no cleanup is needed.
         """
         self.log.debug("Issue sim closedown result to regression object")
-        cocotb.regression.handle_result(test_result)
+        cocotb.regression_manager.handle_result(test_result)
 
     def cleanup(self):
         """Clear up all our state.

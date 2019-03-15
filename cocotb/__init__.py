@@ -85,7 +85,7 @@ if "COCOTB_SIM" in os.environ:
 
 
 scheduler = Scheduler()
-regression = None
+regression_manager = None
 
 plusargs = {}
 
@@ -161,11 +161,11 @@ def _initialise_testbench(root_name):
     modules = module_str.split(',')
     hooks = hooks_str.split(',') if hooks_str else []
 
-    global regression
+    global regression_manager
 
-    regression = RegressionManager(root_name, modules, tests=test_str, seed=seed, hooks=hooks)
-    regression.initialise()
-    regression.execute()
+    regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=seed, hooks=hooks)
+    regression_manager.initialise()
+    regression_manager.execute()
 
     _rlock.release()
     return True
