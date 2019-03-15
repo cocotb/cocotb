@@ -2,12 +2,18 @@
 TOPLEVEL_LANG ?= verilog
 PWD=$(shell pwd)
 TOPDIR=$(PWD)/..
-COCOTB=$(PWD)/../../..
 PYTHONPATH := ./model:$(PYTHONPATH)
 
 export PYTHONPATH
 
-EXTRA_ARGS+=-I$(TOPDIR)/hdl/
+SIM ?= icarus
+
+#not sure if only icarus include is by -I ...
+ifeq ($(SIM),icarus)
+COMPILE_ARGS+=-I$(TOPDIR)/hdl/
+else
+COMPILE_ARGS+=+incdir+$(TOPDIR)/hdl/
+endif
 
 #DUT
 VERILOG_SOURCES = $(TOPDIR)/hdl/axi_lite_slave.v
@@ -23,6 +29,6 @@ GPI_IMPL := vpi
 export TOPLEVEL_LANG
 MODULE=test_axi_lite_slave
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 

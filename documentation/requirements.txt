@@ -1,0 +1,5 @@
+# Python dependencies to build the documentation
+Sphinx>=1.6
+sphinx-rtd-theme
+cairosvg
+sphinxcontrib-trio

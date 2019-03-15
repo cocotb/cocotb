@@ -1,19 +1,40 @@
-FROM librecores/ci-osstools:2018.1-rc1
+FROM ubuntu:16.04
 
-# make sources available in docker image
-RUN mkdir -p /src
-ADD . /src
-WORKDIR /src
+# travis-ci only provides 2
+ARG MAKE_JOBS=-j2
 
-RUN apt-get update; apt-get install -y virtualenv python3-venv python3-dev
+# Simulation 
+ARG ICARUS_VERILOG_VERSION=10_2 
 
-# Build and test using Python 2
-RUN mkdir /build-py2; cp -r /src /build-py2
-ENV COCOTB=/build-py2/src
-RUN bash -lc 'virtualenv /build-py2/venv; source /build-py2/venv/bin/activate; pip install coverage xunitparser; make -C /build-py2/src test'
+RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
+       wget \
+       git \
+       gperf \
+       make \
+       autoconf \
+       g++ \
+       flex \
+       bison \
+       python2.7-dev python3-dev\
+       python-pip \
+       python-setuptools \
+       python3 \
+       virtualenv \
+       python3-venv \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && pip install --upgrade pip \
+    && g++ --version
 
-# Build and test using Python 3
-RUN mkdir /build-py3; cp -r /src /build-py3
-ENV COCOTB=/build-py3/src
-RUN bash -lce 'python3 -m venv /build-py3/venv; source /build-py3/venv/bin/activate; pip install coverage xunitparser; make -C /build-py3/src test'
+# Icarus Verilog 
+ENV ICARUS_VERILOG_VERSION=${ICARUS_VERILOG_VERSION} 
+WORKDIR /usr/src/iverilog
+RUN git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v${ICARUS_VERILOG_VERSION} . \
+    && sh autoconf.sh \
+    && ./configure \
+    && make -s ${MAKE_JOBS} \
+    && make -s install \
+    && rm -r /usr/src/iverilog
 
+# make sources available in docker image - one copy per python version
+COPY . /src

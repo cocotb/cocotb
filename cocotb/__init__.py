@@ -37,7 +37,6 @@ import threading
 import random
 import time
 
-
 import cocotb.handle
 from cocotb.scheduler import Scheduler
 from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
@@ -53,8 +52,7 @@ from cocotb.decorators import test, coroutine, hook, function, external
 # scheduler package
 
 # GPI logging instance
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" not in os.environ:
+if "COCOTB_SIM" in os.environ:
     import simulator
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)
@@ -69,6 +67,21 @@ if "SPHINX_BUILD" not in os.environ:
     loggpi = SimLog('cocotb.gpi')
     # Notify GPI of log level
     simulator.log_level(_default_log)
+
+    # If stdout/stderr are not TTYs, Python may not have opened them with line
+    # buffering. In that case, try to reopen them with line buffering
+    # explicitly enabled. This ensures that prints such as stack traces always
+    # appear. Continue silently if this fails.
+    try:
+        if not sys.stdout.isatty():
+            sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 1)
+            log.debug("Reopened stdout with line buffering")
+        if not sys.stderr.isatty():
+            sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 1)
+            log.debug("Reopened stderr with line buffering")
+    except Exception as e:
+        log.warning("Failed to ensure that stdout/stderr are line buffered: %s", e)
+        log.warning("Some stack traces may not appear because of this.")
 
 
 scheduler = Scheduler()
@@ -106,7 +119,7 @@ def _initialise_testbench(root_name):
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-    exec_path = os.getenv('SIM_ROOT')
+    exec_path = os.getenv('COCOTB_PY_DIR')
     if exec_path is None:
         exec_path = 'Unknown'
 

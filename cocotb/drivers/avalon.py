@@ -1,42 +1,42 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+"""Drivers for Intel Avalon interfaces.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-"""
-Drivers for Altera Avalon interfaces.
-
-See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
+See https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/manual/mnl_avalon_spec_1_3.pdf
 
 NB Currently we only support a very small subset of functionality
 """
+
 import random
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, FallingEdge
-from cocotb.triggers import ReadOnly, NextTimeStep, Event
+from cocotb.triggers import RisingEdge, FallingEdge, ReadOnly, NextTimeStep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -44,13 +44,13 @@ from cocotb.result import ReturnValue, TestError
 
 
 class AvalonMM(BusDriver):
-    """Avalon-MM Driver
+    """Avalon Memory Mapped Interface (Avalon-MM) Driver.
 
     Currently we only support the mode required to communicate with SF
-    avalon_mapper which is a limited subset of all the signals
+    avalon_mapper which is a limited subset of all the signals.
 
     Blocking operation is all that is supported at the moment, and for the near
-    future as well
+    future as well.
     Posted responses from a slave are not supported.
     """
     _signals = ["address"]
@@ -59,8 +59,8 @@ class AvalonMM(BusDriver):
                          "cs"]
 
 
-    def __init__(self, entity, name, clock):
-        BusDriver.__init__(self, entity, name, clock)
+    def __init__(self, entity, name, clock, **kwargs):
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
         self._can_read = False
         self._can_write = False
 
@@ -94,10 +94,9 @@ class AvalonMM(BusDriver):
 
 
 class AvalonMaster(AvalonMM):
-    """Avalon-MM master
-    """
-    def __init__(self, entity, name, clock):
-        AvalonMM.__init__(self, entity, name, clock)
+    """Avalon Memory Mapped Interface (Avalon-MM) Master"""
+    def __init__(self, entity, name, clock, **kwargs):
+        AvalonMM.__init__(self, entity, name, clock, **kwargs)
         self.log.debug("AvalonMaster created")
         self.busy_event = Event("%s_busy" % name)
         self.busy = False
@@ -118,11 +117,20 @@ class AvalonMaster(AvalonMM):
 
     @coroutine
     def read(self, address, sync=True):
-        """
-        Issue a request to the bus and block until this
+        """Issue a request to the bus and block until this
         comes back. Simulation time still progresses
         but syntactically it blocks.
-        See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
+        
+        Args:
+            address (int): The address to read from.
+            sync (bool, optional): Wait for rising edge on clock initially.
+                Defaults to True.
+            
+        Returns:
+            BinaryValue: The read data value.
+            
+        Raises:
+            :any:`TestError`: If master is write-only.
         """
         if not self._can_read:
             self.log.error("Cannot read - have no read signal")
@@ -175,10 +183,15 @@ class AvalonMaster(AvalonMM):
 
     @coroutine
     def write(self, address, value):
-        """
-        Issue a write to the given address with the specified
+        """Issue a write to the given address with the specified
         value.
-        See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
+
+        Args:
+            address (int): The address to write to.
+            value (int): The data value to write.
+
+        Raises:
+            :any:`TestError`: If master is read-only.
         """
         if not self._can_write:
             self.log.error("Cannot write - have no write signal")
@@ -186,7 +199,7 @@ class AvalonMaster(AvalonMM):
 
         yield self._acquire_lock()
 
-        # Apply valuse to bus
+        # Apply values to bus
         yield RisingEdge(self.clock)
         self.bus.address <= address
         self.bus.writedata <= value
@@ -218,9 +231,7 @@ class AvalonMaster(AvalonMM):
 
 
 class AvalonMemory(BusDriver):
-    """
-    Emulate a memory, with back-door access
-    """
+    """Emulate a memory, with back-door access."""
     _signals = ["address"]
     _optional_signals = ["write", "read", "writedata", "readdatavalid",
                          "readdata", "waitrequest", "burstcount", "byteenable"]
@@ -275,7 +286,7 @@ class AvalonMemory(BusDriver):
         else:
             self._mem = memory
 
-        self._val = BinaryValue(bits=self._width, bigEndian=False)
+        self._val = BinaryValue(n_bits=self._width, bigEndian=False)
         self._readlatency_min = readlatency_min
         self._readlatency_max = readlatency_max
         self._responses = []
@@ -301,7 +312,7 @@ class AvalonMemory(BusDriver):
             self.bus.readdatavalid.setimmediatevalue(0)
 
     def _pad(self):
-        """Pad response queue up to read latency"""
+        """Pad response queue up to read latency."""
         l = random.randint(self._readlatency_min, self._readlatency_max)
         while len(self._responses) < l:
             self._responses.append(None)
@@ -326,7 +337,7 @@ class AvalonMemory(BusDriver):
             self.bus.readdatavalid <= 0
 
     def _write_burst_addr(self):
-        """ reading write burst address, burstcount, byteenable """
+        """Reading write burst address, burstcount, byteenable."""
         addr = self.bus.address.value.integer
         if addr % self.dataByteSize != 0:
             self.log.error("Address must be aligned to data width" +
@@ -348,7 +359,7 @@ class AvalonMemory(BusDriver):
 
     @coroutine
     def _writing_byte_value(self, byteaddr):
-        """Writing value in _mem with byteaddr size """
+        """Writing value in _mem with byteaddr size."""
         yield FallingEdge(self.clock)
         for i in range(self.dataByteSize):
             data = self.bus.writedata.value.integer
@@ -358,7 +369,7 @@ class AvalonMemory(BusDriver):
 
     @coroutine
     def _waitrequest(self):
-        """ generate waitrequest randomly """
+        """Generate waitrequest randomly."""
         if self._avalon_properties.get("WriteBurstWaitReq", True):
             if random.choice([True, False, False, False]):
                 randmax = self._avalon_properties.get("MaxWaitReqLen", 0)
@@ -374,9 +385,7 @@ class AvalonMemory(BusDriver):
 
     @coroutine
     def _respond(self):
-        """
-        Coroutine to response to the actual requests
-        """
+        """Coroutine to respond to the actual requests."""
         edge = RisingEdge(self.clock)
         while True:
             yield edge
@@ -450,7 +459,7 @@ class AvalonMemory(BusDriver):
                         byteenable = int(self.bus.byteenable.value)
                         mask = 0
                         oldmask = 0
-                        olddata=  0
+                        olddata = 0
                         if (addr in self._mem):
                             olddata = self._mem[addr]
                         self.log.debug("Old Data  : %x" % olddata)
@@ -497,12 +506,99 @@ class AvalonMemory(BusDriver):
 
 
 class AvalonST(ValidatedBusDriver):
+    """Avalon Streaming Interface (Avalon-ST) Driver"""
+
     _signals = ["valid", "data"]
+    _optional_signals = ["ready"]
+
+    _default_config = {
+            "firstSymbolInHighOrderBits" : True
+            }
+
+    def __init__(self, *args, **kwargs):
+        config = kwargs.pop('config', {})
+        ValidatedBusDriver.__init__(self, *args, **kwargs)
+
+        self.config = AvalonST._default_config.copy()
+
+        for configoption, value in config.items():
+            self.config[configoption] = value
+            self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
+
+        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=self.config['firstSymbolInHighOrderBits'])
+
+        self.bus.valid  <= 0
+        self.bus.data   <= word
+
+    @coroutine
+    def _wait_ready(self):
+        """Wait for a ready cycle on the bus before continuing.
+
+            Can no longer drive values this cycle...
+
+            FIXME assumes readyLatency of 0
+        """
+        yield ReadOnly()
+        while not self.bus.ready.value:
+            yield RisingEdge(self.clock)
+            yield ReadOnly()
+
+    @coroutine
+    def _driver_send(self, value, sync=True):
+        """Send a transmission over the bus.
+
+        Args:
+            value: data to drive onto the bus.
+        """
+        self.log.debug("Sending Avalon transmission: %d" % value)
+
+        # Avoid spurious object creation by recycling
+        clkedge = RisingEdge(self.clock)
+
+        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=False)
+
+        # Drive some defaults since we don't know what state we're in
+        self.bus.valid <= 0
+
+        if sync:
+            yield clkedge
+
+        # Insert a gap where valid is low
+        if not self.on:
+            self.bus.valid <= 0
+            for i in range(self.off):
+                yield clkedge
+
+            # Grab the next set of on/off values
+            self._next_valids()
+
+        # Consume a valid cycle
+        if self.on is not True and self.on:
+            self.on -= 1
+
+        self.bus.valid <= 1
+
+        word.assign(value)
+        self.bus.data <= word
+
+        # If this is a bus with a ready signal, wait for this word to
+        # be acknowledged
+        if hasattr(self.bus, "ready"):
+            yield self._wait_ready()
+
+        yield clkedge
+        self.bus.valid <= 0
+        word.binstr   = ("x"*len(self.bus.data))
+        self.bus.data <= word
+
+        self.log.debug("Successfully sent Avalon transmission: %d" % value)
 
 
 class AvalonSTPkts(ValidatedBusDriver):
-    _signals = ["valid", "data", "startofpacket", "endofpacket", "empty"]
-    _optional_signals = ["error", "channel", "ready"]
+    """Avalon Streaming Interface (Avalon-ST) Driver, packetised."""
+
+    _signals = ["valid", "data", "startofpacket", "endofpacket"]
+    _optional_signals = ["error", "channel", "ready", "empty"]
 
     _default_config = {
         "dataBitsPerSymbol"             : 8,
@@ -517,30 +613,61 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         self.config = AvalonSTPkts._default_config.copy()
 
+        # Set default config maxChannel to max value on channel bus
+        if hasattr(self.bus, 'channel'):
+            self.config['maxChannel'] = (2 ** len(self.bus.channel)) -1
+
         for configoption, value in config.items():
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s" %
                            (configoption, str(value)))
 
-        word   = BinaryValue(bits=len(self.bus.data),
+        num_data_symbols = (len(self.bus.data) /
+                            self.config["dataBitsPerSymbol"])
+        if (num_data_symbols > 1 and not hasattr(self.bus, 'empty')):
+            raise AttributeError(
+                "%s has %i data symbols, but contains no object named empty" %
+                (self.name, num_data_symbols))
+
+        self.use_empty = (num_data_symbols > 1)
+        self.config["useEmpty"] = self.use_empty
+
+        word   = BinaryValue(n_bits=len(self.bus.data),
                              bigEndian=self.config['firstSymbolInHighOrderBits'])
 
-        empty  = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
-        single = BinaryValue(bits=1, bigEndian=False)
+        single = BinaryValue(n_bits=1, bigEndian=False)
 
         word.binstr   = ("x"*len(self.bus.data))
-        empty.binstr  = ("x"*len(self.bus.empty))
         single.binstr = ("x")
 
         self.bus.valid <= 0
         self.bus.data <= word
-        self.bus.empty <= empty
         self.bus.startofpacket <= single
         self.bus.endofpacket <= single
 
+        if self.use_empty:
+            empty = BinaryValue(n_bits=len(self.bus.empty), bigEndian=False)
+            empty.binstr  = ("x"*len(self.bus.empty))
+            self.bus.empty <= empty
+
+        if hasattr(self.bus, 'channel'):
+            if len(self.bus.channel) > 128:
+                raise AttributeError(
+                        "Avalon-ST interface specification defines channel width as 1-128. %d channel width is %d" %
+                        (self.name, len(self.bus.channel))
+                        )
+            maxChannel = (2 ** len(self.bus.channel)) -1
+            if self.config['maxChannel'] > maxChannel:
+                raise AttributeError(
+                        "%s has maxChannel=%d, but can only support a maximum channel of (2**channel_width)-1=%d, channel_width=%d" %
+                        (self.name,self.config['maxChannel'],maxChannel,len(self.bus.channel)))
+            channel = BinaryValue(n_bits=len(self.bus.channel), bigEndian=False)
+            channel.binstr = ("x"*len(self.bus.channel))
+            self.bus.channel <= channel
+
     @coroutine
     def _wait_ready(self):
-        """Wait for a ready cycle on the bus before continuing
+        """Wait for a ready cycle on the bus before continuing.
 
             Can no longer drive values this cycle...
 
@@ -552,10 +679,10 @@ class AvalonSTPkts(ValidatedBusDriver):
             yield ReadOnly()
 
     @coroutine
-    def _send_string(self, string, sync=True):
-        """
-        Args:
-            string (str): A string of bytes to send over the bus
+    def _send_string(self, string, sync=True, channel=None):
+        """Args:
+            string (str): A string of bytes to send over the bus.
+            channel (int): Channel to send the data on.
         """
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -564,21 +691,26 @@ class AvalonSTPkts(ValidatedBusDriver):
         # FIXME busses that aren't integer numbers of bytes
         bus_width = int(len(self.bus.data) / 8)
 
-        word = BinaryValue(bits=len(self.bus.data),
+        word = BinaryValue(n_bits=len(self.bus.data),
                            bigEndian=self.config['firstSymbolInHighOrderBits'])
 
-        empty  = BinaryValue(bits=len(self.bus.empty), bigEndian=False)
-        single = BinaryValue(bits=1, bigEndian=False)
-
+        single = BinaryValue(n_bits=1, bigEndian=False)
+        if self.use_empty:
+            empty = BinaryValue(n_bits=len(self.bus.empty), bigEndian=False)
 
         # Drive some defaults since we don't know what state we're in
-        # self.bus.empty <= 0
-        yield NextTimeStep()
+        if self.use_empty:
+            self.bus.empty <= 0
         self.bus.startofpacket <= 0
         self.bus.endofpacket <= 0
         self.bus.valid <= 0
         if hasattr(self.bus, 'error'):
             self.bus.error <= 0
+
+        if hasattr(self.bus, 'channel'):
+            self.bus.channel <= 0
+        elif channel is not None:
+            raise TestError("%s does not have a channel signal" % self.name)
 
         while string:
             if not firstword or (firstword and sync):
@@ -598,9 +730,17 @@ class AvalonSTPkts(ValidatedBusDriver):
                 self.on -= 1
 
             self.bus.valid <= 1
+            if hasattr(self.bus, 'channel'):
+                if channel is None:
+                    self.bus.channel <= 0
+                elif channel > self.config['maxChannel'] or channel < 0:
+                    raise TestError(
+                            "%s: Channel value %d is outside range 0-%d" %
+                            (self.name,channel,self.config['maxChannel']))
+                else:
+                    self.bus.channel <= channel
 
             if firstword:
-                #self.bus.empty <= 0
                 self.bus.startofpacket <= 1
                 firstword = False
             else:
@@ -612,7 +752,8 @@ class AvalonSTPkts(ValidatedBusDriver):
 
             if len(string) <= bus_width:
                 self.bus.endofpacket <= 1
-                self.bus.empty <= bus_width - len(string)
+                if self.use_empty:
+                    self.bus.empty <= bus_width - len(string)
                 string = ""
             else:
                 string = string[bus_width:]
@@ -628,19 +769,24 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.valid <= 0
         self.bus.endofpacket <= 0
         word.binstr   = ("x"*len(self.bus.data))
-        empty.binstr  = ("x"*len(self.bus.empty))
         single.binstr = ("x")
         self.bus.data <= word
-        self.bus.empty <= empty
         self.bus.startofpacket <= single
         self.bus.endofpacket <= single
 
+        if self.use_empty:
+            empty.binstr  = ("x"*len(self.bus.empty))
+            self.bus.empty <= empty
+        if hasattr(self.bus, 'channel'):
+            channel_value = BinaryValue(n_bits=len(self.bus.channel), bigEndian=False)
+            channel_value.binstr = ("x"*len(self.bus.channel))
+            self.bus.channel <= channel_value
+
     @coroutine
     def _send_iterable(self, pkt, sync=True):
-        """
-        Args:
+        """Args:
             pkt (iterable): Will yield objects with attributes matching the
-                            signal names for each individual bus cycle
+                signal names for each individual bus cycle.
         """
         clkedge = RisingEdge(self.clock)
         firstword = True
@@ -678,25 +824,26 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.valid <= 0
 
     @coroutine
-    def _driver_send(self, pkt, sync=True):
-        """Send a packet over the bus
+    def _driver_send(self, pkt, sync=True, channel=None):
+        """Send a packet over the bus.
 
         Args:
-            pkt (str or iterable): packet to drive onto the bus
+            pkt (str or iterable): Packet to drive onto the bus.
+            channel (None or int): Channel attributed to the packet.
 
-        If pkt is a string, we simply send it word by word
+        If ``pkt`` is a string, we simply send it word by word
 
-        If pkt is an iterable, it's assumed to yield objects with attributes
-        matching the signal names
+        If ``pkt`` is an iterable, it's assumed to yield objects with 
+        attributes matching the signal names.
         """
 
         # Avoid spurious object creation by recycling
-
-
         if isinstance(pkt, str):
             self.log.debug("Sending packet of length %d bytes" % len(pkt))
             self.log.debug(hexdump(pkt))
-            yield self._send_string(pkt, sync=sync)
-            self.log.info("Sucessfully sent packet of length %d bytes" % len(pkt))
+            yield self._send_string(pkt, sync=sync, channel=channel)
+            self.log.debug("Successfully sent packet of length %d bytes" % len(pkt))
         else:
+            if channel is not None:
+                self.log.warning("%s is ignoring channel=%d because pkt is an iterable" % (self.name, channel))
             yield self._send_iterable(pkt, sync=sync)

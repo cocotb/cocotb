@@ -4,7 +4,6 @@
 # All rights reserved.
 
 CWD=$(shell pwd)
-COCOTB=$(CWD)/../../..
 
 TOPLEVEL_LANG ?=verilog
 
@@ -21,10 +20,12 @@ MODULE=$(TOPLEVEL)_cocotb
 
 CUSTOM_SIM_DEPS=$(CWD)/Makefile
 
-VSIM_ARGS=-t 1ps
+ifeq ($(SIM),questa)
+SIM_ARGS=-t 1ps
+endif
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 # list all required Python files here
 sim: $(MODULE).py

@@ -6,14 +6,16 @@ In this tutorial we'll look at interfacing the standard GNU `ping`_ command
 to the simulator. Using Python we can ping our DUT with fewer than 50 lines of
 code.
 
-For the impatient this tutorial is provided as an example with Cocotb. You can
-run this example from a fresh checkout::
+For the impatient this tutorial is provided as an example with cocotb. You can
+run this example from a fresh checkout:
+
+.. code-block:: bash
 
     cd examples/ping_tun_tap/tests
     sudo make
 
-
-.. note:: To create a virtual interface the test either needs root permissions or have CAP_NET_ADMIN capability.
+.. note:: To create a virtual interface the test either needs root permissions or
+    have ``CAP_NET_ADMIN`` capability.
 
 
 Architecture
@@ -31,7 +33,7 @@ Linux has a `TUN/TAP`_ virtual network device which we can use for this
 purpose, allowing `ping`_ to run unmodified and unaware that it is
 communicating with our simulation rather than a remote network endpoint.
 
-.. image:: diagrams/svg/ping_tun_tap.*
+.. image:: diagrams/svg/ping_tun_tap.svg
 
 
 Implementation
@@ -59,9 +61,10 @@ we write a function that will create our virtual interface:
         return tun
 
 Now we can get started on the actual test.  First of all we'll create a clock
-signal and connect up the Avalon driver and monitor to the DUT.  To help debug
+signal and connect up the :class:`Avalon driver <cocotb.drivers.avalon.AvalonSTPkts>` and
+:class:`monitor <cocotb.monitors.avalon.AvalonSTPkts>` to the DUT.  To help debug
 the testbench we'll enable verbose debug on the drivers and monitors by setting
-the log level to **logging.DEBUG**.
+the log level to ``logging.DEBUG``.
 
 .. code-block:: python
 
@@ -83,8 +86,8 @@ the log level to **logging.DEBUG**.
 
 
 We also need to reset the DUT and drive some default values onto some of the
-bus signals.  Note that we'll need to import the **Timer** and **RisingEdge**
-triggers.
+bus signals.  Note that we'll need to import the :class:`~.triggers.Timer`
+and :class:`~.triggers.RisingEdge` triggers.
 
 .. code-block:: python
 
@@ -100,11 +103,11 @@ triggers.
 
 The rest of the test becomes fairly straightforward.  We create our TUN
 interface using our function defined previously.  We'll also use the
-**subprocess** module to actually start the ping command.
+:mod:`subprocess` module to actually start the ping command.
 
 We then wait for a packet by calling a blocking read call on the TUN file
 descriptor and simply append that to the queue on the driver. We wait for
-a packet to arrive on the monitor by yielding on wait_for_recv() and then
+a packet to arrive on the monitor by yielding on :meth:`.wait_for_recv()` and then
 write the received packet back to the TUN file descriptor.
 
 
@@ -145,8 +148,8 @@ and receiving of packets.
 
 .. _TUN example: https://gist.github.com/glacjay/585369
 
-.. _Ping: http://www.gnu.org/software/inetutils/manual/html_node/ping-invocation.html
+.. _Ping: https://www.gnu.org/software/inetutils/manual/html_node/ping-invocation.html
 
-.. _TUN/TAP: http://en.wikipedia.org/wiki/TUN/TAP
+.. _TUN/TAP: https://en.wikipedia.org/wiki/TUN/TAP
 
 

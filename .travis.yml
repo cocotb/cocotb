@@ -1,10 +1,36 @@
 # See Dockerfile for the full build instructions
 sudo: required
-language: cpp
+language: python
+cache: pip
+
+git:
+  quiet: true
 
 services:
   - docker
 
-script:
-  - docker build .
+jobs:
+  include:
+    - stage: PythonLint
+      python: 3.5
+      install: pip install flake8
+      script: flake8 --exit-zero cocotb/
+    - stage: SimTests
+      python: 2.7
+      before_install: &docker_prep
+        - docker build -t cocotb .
+        - docker images -a
+        - docker run -d --name cocotb cocotb tail -f /dev/null
+        - docker ps -a
+      script:
+        - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27' 
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py27'
+        - echo -e 'travis_fold:end:cocotb_py27'
+    - stage: SimTests
+      python: 3.5
+      before_install: *docker_prep 
+      script:
+        - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py35'
+        - echo 'travis_fold:end:cocotb_py35'
 

@@ -1,29 +1,30 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 from __future__ import print_function
 import sys
 import time
@@ -37,10 +38,11 @@ from io import StringIO, BytesIO
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import _Join, PythonTrigger, Timer, Event, NullTrigger, Join
+from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
 from cocotb.utils import get_sim_time
+from cocotb import outcomes
 
 
 def public(f):
@@ -60,29 +62,26 @@ public(public)  # Emulate decorating ourself
 
 
 @public
-class CoroutineComplete(StopIteration):
+class CoroutineComplete(Exception):
+    """To ensure that a coroutine has completed before we fire any triggers
+    that are blocked waiting for the coroutine to end, we create a subclass
+    exception that the Scheduler catches and the callbacks are attached
+    here.
     """
-        To ensure that a coroutine has completed before we fire any triggers
-        that are blocked waiting for the coroutine to end, we create a subclass
-        exception that the Scheduler catches and the callbacks are attached
-        here.
-    """
-    def __init__(self, text="", callback=None):
-        StopIteration.__init__(self, text)
-        self.callback = callback
+    def __init__(self, text=""):
+        Exception.__init__(self, text)
 
 
 class RunningCoroutine(object):
-    """Per instance wrapper around an function to turn it into a coroutine
+    """Per instance wrapper around an function to turn it into a coroutine.
 
+    Provides the following:
 
-        Provides the following:
+        coro.join() creates a Trigger that will fire when this coroutine
+        completes.
 
-            coro.join() creates a Trigger that will fire when this coroutine
-            completes
-
-            coro.kill() will destroy a coroutine instance (and cause any Join
-            triggers to fire
+        coro.kill() will destroy a coroutine instance (and cause any Join
+        triggers to fire.
     """
     def __init__(self, inst, parent):
         if hasattr(inst, "__name__"):
@@ -92,19 +91,27 @@ class RunningCoroutine(object):
             self.log = SimLog("cocotb.coroutine.fail")
         self._coro = inst
         self._started = False
-        self._finished = False
         self._callbacks = []
-        self._join = _Join(self)
         self._parent = parent
         self.__doc__ = parent._func.__doc__
         self.module = parent._func.__module__
         self.funcname = parent._func.__name__
-        self.retval = None
+        self._outcome = None
 
         if not hasattr(self._coro, "send"):
             self.log.error("%s isn't a valid coroutine! Did you use the yield "
                            "keyword?" % self.funcname)
-            raise CoroutineComplete(callback=self._finished_cb)
+            raise CoroutineComplete()
+
+    @property
+    def retval(self):
+        if self._outcome is None:
+            raise RuntimeError("coroutine is not complete")
+        return self._outcome.get()
+
+    @property
+    def _finished(self):
+        return self._outcome is not None
 
     def __iter__(self):
         return self
@@ -112,32 +119,32 @@ class RunningCoroutine(object):
     def __str__(self):
         return str(self.__name__)
 
-    def send(self, value):
+    def _advance(self, outcome):
+        """
+        Advance to the next yield in this coroutine
+
+        :param outcome: The `outcomes.Outcome` object to resume with.
+        :returns: The object yielded from the coroutine
+
+        If the coroutine returns or throws an error, self._outcome is set, and
+        this throws `CoroutineComplete`.
+        """
         try:
-            if isinstance(value, ExternalException):
-                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
-                return self._coro.throw(value.exception)
             self._started = True
-            return self._coro.send(value)
-        except TestComplete as e:
-            if isinstance(e, TestFailure):
-                self.log.warning(str(e))
-            raise
-        except ExternalException as e:
-            self.retval = e
-            self._finished = True
-            raise CoroutineComplete(callback=self._finished_cb)
+            return outcome.send(self._coro)
         except ReturnValue as e:
-            self.retval = e.retval
-            self._finished = True
-            raise CoroutineComplete(callback=self._finished_cb)
+            self._outcome = outcomes.Value(e.retval)
+            raise CoroutineComplete()
         except StopIteration as e:
-            self._finished = True
-            self.retval = getattr(e, 'value', None)  # for python >=3.3
-            raise CoroutineComplete(callback=self._finished_cb)
-        except Exception as e:
-            self._finished = True
-            raise raise_error(self, "Send raised exception: %s" % (str(e)))
+            retval = getattr(e, 'value', None)  # for python >=3.3
+            self._outcome = outcomes.Value(retval)
+            raise CoroutineComplete()
+        except BaseException as e:
+            self._outcome = outcomes.Error(e)
+            raise CoroutineComplete()
+
+    def send(self, value):
+        return self._coro.send(value)
 
     def throw(self, exc):
         return self._coro.throw(exc)
@@ -146,23 +153,15 @@ class RunningCoroutine(object):
         return self._coro.close()
 
     def kill(self):
-        """Kill a coroutine"""
+        """Kill a coroutine."""
         self.log.debug("kill() called on coroutine")
+        # todo: probably better to throw an exception for anyone waiting on the coroutine
+        self._outcome = outcomes.Value(None)
         cocotb.scheduler.unschedule(self)
 
-    def _finished_cb(self):
-        """Called when the coroutine completes.
-            Allows us to mark the coroutine as finished so that boolean testing
-            works.
-            Also call any callbacks, usually the result of coroutine.join()"""
-        self._finished = True
-
     def join(self):
-        """Return a trigger that will fire when the wrapped coroutine exits"""
-        if self._finished:
-            return NullTrigger()
-        else:
-            return self._join
+        """Return a trigger that will fire when the wrapped coroutine exits."""
+        return Join(self)
 
     def has_started(self):
         return self._started
@@ -173,6 +172,8 @@ class RunningCoroutine(object):
             otherwise return true"""
         return not self._finished
 
+    __bool__ = __nonzero__
+
     def sort_name(self):
         if self.stage is None:
             return "%s.%s" % (self.module, self.funcname)
@@ -180,7 +181,7 @@ class RunningCoroutine(object):
             return "%s.%d.%s" % (self.module, self.stage, self.funcname)
 
 class RunningTest(RunningCoroutine):
-    """Add some useful Test functionality to a RunningCoroutine"""
+    """Add some useful Test functionality to a RunningCoroutine."""
 
     class ErrorLogHandler(logging.Handler):
         def __init__(self, fn):
@@ -204,7 +205,7 @@ class RunningTest(RunningCoroutine):
         self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
         cocotb.log.addHandler(self.handler)
 
-    def send(self, value):
+    def _advance(self, outcome):
         if not self.started:
             self.error_messages = []
             self.log.info("Starting test: \"%s\"\nDescription: %s" %
@@ -213,11 +214,8 @@ class RunningTest(RunningCoroutine):
             self.start_sim_time = get_sim_time('ns')
             self.started = True
         try:
-            if isinstance(value, ExternalException):
-                self.log.debug("Injecting ExternalException(%s)" % (repr(value)))
-                return self._coro.throw(value.exception)
-            self.log.debug("Sending trigger %s" % (str(value)))
-            return self._coro.send(value)
+            self.log.debug("Sending {}".format(outcome))
+            return outcome.send(self._coro)
         except TestComplete as e:
             if isinstance(e, TestFailure):
                 self.log.warning(str(e))
@@ -232,7 +230,7 @@ class RunningTest(RunningCoroutine):
         except StopIteration:
             raise TestSuccess()
         except Exception as e:
-            raise raise_error(self, "Send raised exception: %s" % (str(e)))
+            raise raise_error(self, "Send raised exception:")
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
@@ -241,9 +239,9 @@ class RunningTest(RunningCoroutine):
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
 
-        log methods will will log to cocotb.coroutines.name
+    ``log`` methods will will log to ``cocotb.coroutines.name``.
 
-        join() method returns an event which will fire when the coroutine exits
+    ``join()`` method returns an event which will fire when the coroutine exits.
     """
 
     def __init__(self, func):
@@ -282,11 +280,10 @@ class coroutine(object):
 
 @public
 class function(object):
-    """Decorator class that allows a a function to block
+    """Decorator class that allows a function to block.
 
     This allows a function to internally block while
-    externally appear to yield
-
+    externally appear to yield.
     """
     def __init__(self, func):
         self._func = func
@@ -296,7 +293,12 @@ class function(object):
 
         @coroutine
         def execute_function(self, event):
-            event.result = yield cocotb.coroutine(self._func)(*args, **kwargs)
+            coro = cocotb.coroutine(self._func)(*args, **kwargs)
+            try:
+                _outcome = outcomes.Value((yield coro))
+            except BaseException as e:
+                _outcome = outcomes.Error(e)
+            event.outcome = _outcome
             event.set()
 
         self._event = threading.Event()
@@ -305,7 +307,7 @@ class function(object):
         # This blocks the calling external thread until the coroutine finishes
         self._event.wait()
         waiter.thread_resume()
-        return self._event.result
+        return self._event.outcome.get()
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
@@ -314,9 +316,9 @@ class function(object):
 
 @public
 class external(object):
-    """Decorator to apply to an external function to enable calling from cocotb
+    """Decorator to apply to an external function to enable calling from cocotb.
     This currently creates a new execution context for each function that is
-    call. Scope for this to be streamlined to a queue in future
+    called. Scope for this to be streamlined to a queue in future.
     """
     def __init__(self, func):
         self._func = func
@@ -327,14 +329,10 @@ class external(object):
         @coroutine
         def wrapper():
             ext = cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
-
             yield ext.event.wait()
 
-            if ext.result is not None:
-                if isinstance(ext.result, Exception):
-                    raise ExternalException(ext.result)
-                else:
-                    raise ReturnValue(ext.result)
+            ret = ext.result  # raises if there was an exception
+            raise ReturnValue(ret)
 
         return wrapper()
 
@@ -345,7 +343,7 @@ class external(object):
 
 @public
 class hook(coroutine):
-    """Decorator to mark a function as a hook for cocotb
+    """Decorator to mark a function as a hook for cocotb.
 
     All hooks are run at the beginning of a cocotb test suite, prior to any
     test code being run."""
@@ -359,7 +357,7 @@ class hook(coroutine):
             try:
                 return RunningCoroutine(self._func(*args, **kwargs), self)
             except Exception as e:
-                raise raise_error(self, str(e))
+                raise raise_error(self, "Hook raised exception:")
 
         _wrapped_hook.im_hook = True
         _wrapped_hook.name = self._func.__name__
@@ -368,24 +366,24 @@ class hook(coroutine):
 
 @public
 class test(coroutine):
-    """Decorator to mark a function as a test
+    """Decorator to mark a function as a test.
 
     All tests are coroutines.  The test decorator provides
-    some common reporting etc, a test timeout and allows
+    some common reporting etc., a test timeout and allows
     us to mark tests as expected failures.
 
-    KWargs:
-        timeout: (int)
-            value representing simulation timeout (not implemented)
-        expect_fail: (bool):
-            Don't mark the result as a failure if the test fails
-        expect_error: (bool):
-            Don't make the result as an error if an error is raised
-            This is for cocotb internal regression use
-        skip: (bool):
-            Don't execute this test as part of the regression
-        stage: (int)
-            Order tests logically into stages, where multiple tests can share a stage
+    Args:
+        timeout (int, optional):
+            value representing simulation timeout (not implemented).
+        expect_fail (bool, optional):
+            Don't mark the result as a failure if the test fails.
+        expect_error (bool, optional):
+            Don't mark the result as an error if an error is raised.
+            This is for cocotb internal regression use.
+        skip (bool, optional):
+            Don't execute this test as part of the regression.
+        stage (int, optional)
+            Order tests logically into stages, where multiple tests can share a stage.
     """
     def __init__(self, timeout=None, expect_fail=False, expect_error=False,
                  skip=False, stage=None):
@@ -402,7 +400,7 @@ class test(coroutine):
             try:
                 return RunningTest(self._func(*args, **kwargs), self)
             except Exception as e:
-                raise raise_error(self, str(e))
+                raise raise_error(self, "Test raised exception:")
 
         _wrapped_test.im_test = True    # For auto-regressions
         _wrapped_test.name = self._func.__name__
