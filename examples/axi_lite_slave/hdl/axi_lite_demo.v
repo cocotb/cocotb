@@ -73,7 +73,7 @@ localparam  ADDR_1      = 1;
 
 localparam  MAX_ADDR = ADDR_1;
 
-//registes/wires
+//registers/wires
 
 //User Interface
 wire [ADDR_WIDTH - 1: 0]    w_reg_address;

@@ -820,6 +820,25 @@ def test_singleton_isinstance(dut):
     yield Timer(1)
 
 
+@cocotb.test()
+def test_lessthan_raises_error(dut):
+    """
+    Test that trying to use <= as if it were a comparison produces an error
+    """
+    ret = dut.stream_in_data <= 0x12
+    try:
+        bool(ret)
+    except TypeError:
+        pass
+    else:
+        raise TestFailure(
+            "No exception was raised when confusing comparison with assignment"
+        )
+
+    # to make this a generator
+    if False: yield
+
+
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
@@ -842,3 +861,18 @@ if sys.version_info[:2] >= (3, 3):
         if ret != 42:
             raise TestFailure("Return statement did not work")
     '''))
+
+
+@cocotb.test()
+def test_exceptions():
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(10)
+        raise ValueError('It is soon now')
+    
+    try:
+        yield raise_soon()
+    except ValueError:
+        pass
+    else:
+        raise TestFailure("Exception was not raised")

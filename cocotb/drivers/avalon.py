@@ -25,9 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Drivers for Altera Avalon interfaces.
+"""Drivers for Intel Avalon interfaces.
 
-See http://www.altera.co.uk/literature/manual/mnl_avalon_spec.pdf
+See https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/manual/mnl_avalon_spec_1_3.pdf
 
 NB Currently we only support a very small subset of functionality
 """
@@ -120,7 +120,6 @@ class AvalonMaster(AvalonMM):
         """Issue a request to the bus and block until this
         comes back. Simulation time still progresses
         but syntactically it blocks.
-        See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
         
         Args:
             address (int): The address to read from.
@@ -186,7 +185,6 @@ class AvalonMaster(AvalonMM):
     def write(self, address, value):
         """Issue a write to the given address with the specified
         value.
-        See http://www.altera.com/literature/manual/mnl_avalon_spec_1_3.pdf
 
         Args:
             address (int): The address to write to.

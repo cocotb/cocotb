@@ -54,7 +54,7 @@ class MonitorStatistics(object):
 class Monitor(object):
     """Base class for Monitor objects. 
 
-    Monitors are passive 'listening' objects that monitor pins in or out of a DUT. 
+    Monitors are passive 'listening' objects that monitor pins going in or out of a DUT. 
     This class should not be used
     directly, but should be subclassed and the internal :any:`_monitor_recv` method
     should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
@@ -93,6 +93,7 @@ class Monitor(object):
         self._thread = cocotb.scheduler.add(self._monitor_recv())
 
     def kill(self):
+        """Kill the monitor coroutine."""
         if self._thread:
             self._thread.kill()
             self._thread = None
@@ -104,12 +105,26 @@ class Monitor(object):
         return self._recvQ[idx]
 
     def add_callback(self, callback):
+        """Add function as a callback.
+
+        Args:
+            callback (callable): The function to call back.
+        """
         self.log.debug("Adding callback of function %s to monitor" %
                        (callback.__name__))
         self._callbacks.append(callback)
 
     @coroutine
     def wait_for_recv(self, timeout=None):
+        """With *timeout*, :meth:`.wait` for transaction to arrive on monitor 
+        and return its data.
+
+        Args:
+            timeout (optional): The timeout value for :class:`~.triggers.Timer`.
+                Defaults to ``None``.
+
+        Returns: Data of received transaction.
+        """
         if timeout:
             t = Timer(timeout)
             fired = yield [self._wait_event.wait(), t]
@@ -173,6 +188,7 @@ class BusMonitor(Monitor):
 
     @property
     def in_reset(self):
+        """Boolean flag showing whether the bus is in reset state or not."""
         if self._reset_n is not None:
             return not bool(self._reset_n.value.integer)
         if self._reset is not None:

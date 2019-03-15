@@ -28,6 +28,7 @@
 import random
 
 import cocotb
+from cocotb.clock import Clock
 from cocotb.decorators import coroutine
 from cocotb.triggers import Timer, RisingEdge, ReadOnly
 from cocotb.monitors import Monitor
@@ -39,7 +40,7 @@ from cocotb.result import TestFailure, TestSuccess
 
 # ==============================================================================
 class BitMonitor(Monitor):
-    """Observes single input or output of DUT."""
+    """Observes a single-bit input or output of DUT."""
     def __init__(self, name, signal, clock, callback=None, event=None):
         self.name = name
         self.signal = signal
@@ -69,7 +70,7 @@ class DFF_TB(object):
         Setup testbench.
 
         init_val signifies the BinaryValue which must be captured by the
-        output monitor with the first risign edge. This is actually the initial 
+        output monitor with the first rising clock edge. This is actually the initial 
         state of the flip-flop.
         """
         # Some internal state
@@ -102,10 +103,9 @@ class DFF_TB(object):
         self.input_drv.start()
 
     def stop(self):
-        """
-        Stop generation of input data. 
+        """Stop generation of input data. 
         Also stop generation of expected output transactions.
-        One more clock cycle must be executed afterwards, so that, output of
+        One more clock cycle must be executed afterwards so that the output of
         D-FF can be checked.
         """
         self.input_drv.stop()
@@ -113,20 +113,13 @@ class DFF_TB(object):
 
 # ==============================================================================
 @cocotb.coroutine
-def clock_gen(signal):
-    """Generate the clock signal."""
-    while True:
-        signal <= 0
-        yield Timer(5000) # ps
-        signal <= 1
-        yield Timer(5000) # ps
-
-# ==============================================================================
-@cocotb.coroutine
 def run_test(dut):
     """Setup testbench and run a test."""
-    cocotb.fork(clock_gen(dut.c))
-    tb = DFF_TB(dut, BinaryValue(0,1))
+
+    cocotb.fork(Clock(dut.c, 5000).start())
+
+    tb = DFF_TB(dut, BinaryValue(0, 1))
+
     clkedge = RisingEdge(dut.c)
 
     # Apply random input data by input_gen via BitDriver for 100 clock cycle.
@@ -143,6 +136,6 @@ def run_test(dut):
     raise tb.scoreboard.result
 
 # ==============================================================================
-# Register test.
+# Register the test.
 factory = TestFactory(run_test)
 factory.generate_tests()

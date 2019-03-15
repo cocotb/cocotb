@@ -3,7 +3,7 @@ Tutorial: Endian Swapper
 
 In this tutorial we'll use some of the built-in features of cocotb to quickly create a complex testbench.
 
-.. note:: All the code and sample output from this example are available on `EDA Playground <http://www.edaplayground.com/s/example/199>`_
+.. note:: All the code and sample output from this example are available on `EDA Playground <https://www.edaplayground.com/s/example/199>`_
 
 For the impatient this tutorial is provided as an example with cocotb.
 You can run this example from a fresh checkout::

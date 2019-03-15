@@ -10,8 +10,10 @@ software abstraction layer or driver which communicates with the hardware. In
 this tutorial we will call unmodified production software from our testbench
 and re-use the code written to configure the entity.
 
-For the impatient this tutorial is provided as an example with Cocotb. You can
-run this example from a fresh checkout::
+For the impatient this tutorial is provided as an example with cocotb. You can
+run this example from a fresh checkout:
+
+.. code-block:: bash
 
     cd examples/endian_swapper/tests
     make MODULE=test_endian_swapper_hal
@@ -19,14 +21,12 @@ run this example from a fresh checkout::
 .. note:: `SWIG`_ is required to compile the example
 
 
-
-
 Difficulties with Driver Co-simulation
 --------------------------------------
 
 Co-simulating *un-modified* production software against a block-level
-testbench is not trivial - there are a couple of significant obstacles to
-overcome:
+testbench is not trivial – there are a couple of significant obstacles to
+overcome.
 
 
 Calling the HAL from a test
@@ -46,19 +46,19 @@ a low-level function to access the hardware, often something like ``ioread32``.
 We need this call to block while simulation time advances and a value is
 either read or written on the bus.  To achieve this we link the HAL against
 a C library that provides the low level read/write functions.  These functions
-in turn call into Cocotb and perform the relevant access on the DUT.
+in turn call into cocotb and perform the relevant access on the DUT.
 
 
 Cocotb infrastructure
 ---------------------
 
 There are two decorators provided to enable this flow, which are typically used
-together to achieve the required functionality.  The ``cocotb.external``
-decorator turns a normal function that isn't a `coroutine` into a blocking
-`coroutine` (by running the function in a separate thread).  The 
-``cocotb.function`` decorator allows a `coroutine` that consumes simulation time
-to be called by a normal thread.  The call sequence looks like this:
-
+together to achieve the required functionality.  The :class:`cocotb.external`
+decorator turns a normal function that isn't a coroutine into a blocking
+coroutine (by running the function in a separate thread).
+The :class:`cocotb.function` decorator allows a `coroutine` that consumes
+simulation time to be called by a normal thread.
+The call sequence looks like this:
 
 .. image:: diagrams/svg/hal_cosimulation.svg
 
@@ -89,7 +89,6 @@ HAL
 To keep things simple we use the same RTL from the :doc:`endian_swapper`. We
 write a simplistic HAL which provides the following functions:
 
-
 .. code-block:: c
 
     endian_swapper_enable(endian_swapper_state_t *state);
@@ -97,7 +96,7 @@ write a simplistic HAL which provides the following functions:
     endian_swapper_get_count(endian_swapper_state_t *state);
 
 
-These functions call ``IORD`` and ``IOWR`` - usually provided by the Altera
+These functions call ``IORD`` and ``IOWR``  – usually provided by the Altera
 NIOS framework.
 
 
@@ -117,10 +116,11 @@ instance.
 Testbench
 ~~~~~~~~~
 
-First of all we set up a clock, create an Avalon Master interface and reset
-the DUT.  Then we create two functions that are wrapped with the 
-``cocotb.function`` decorator to be called when the HAL attempts to perform
-a read or write.  These are then passed to the `IO Module`_:
+First of all we set up a clock, create an  :class:`Avalon Master <cocotb.drivers.avalon.AvalonMaster>`
+interface and reset the DUT.
+Then we create two functions that are wrapped with the :class:`cocotb.function` decorator
+to be called when the HAL attempts to perform a read or write.
+These are then passed to the `IO Module`_:
 
 
 .. code-block:: python
@@ -143,10 +143,9 @@ a read or write.  These are then passed to the `IO Module`_:
     io_module.set_read_function(read)
 
 
-We can then intialise the HAL and call functions, using the ``cocotb.external``
-decorator to turn the normal function into a blocking `coroutine` that we can
+We can then initialise the HAL and call functions, using the :class:`cocotb.external`
+decorator to turn the normal function into a blocking coroutine that we can
 ``yield``:
-
 
 .. code-block:: python
 
@@ -155,10 +154,10 @@ decorator to turn the normal function into a blocking `coroutine` that we can
 
 
 The HAL will perform whatever calls it needs, accessing the DUT through the
-Avalon-MM driver, and control will return to the testbench when the function
-returns.
+:class:`Avalon-MM driver <cocotb.drivers.avalon.AvalonMM>`,
+and control will return to the testbench when the function returns.
 
-.. note:: The decorator is applied to the function before it is called
+.. note:: The decorator is applied to the function before it is called.
 
 
 
@@ -171,10 +170,8 @@ interfacing with emulators like `QEMU`_ to allow us to co-simulate when the
 software needs to execute on a different processor architecture.
 
 
-.. _SWIG: http://www.swig.org/
+.. _SWIG: https://www.swig.org/
 
 .. _UIO framework: https://www.kernel.org/doc/html/latest/driver-api/uio-howto.html
 
-.. _QEMU: http://wiki.qemu.org/Main_Page
-
-
+.. _QEMU: https://wiki.qemu.org/Main_Page

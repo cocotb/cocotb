@@ -13,7 +13,7 @@ Accessing bits of a vector doesn't work:
 
     dut.stream_in_data[2] <= 1
 
-See "access_single_bit" test in examples/functionality/tests/test_discovery.py.
+See ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
 
 
 Synopsys VCS
@@ -21,15 +21,17 @@ Synopsys VCS
 
 Aldec Riviera-PRO
 -----------------
-The `$LICENSE_QUEUE` environmental variable can be used for this simulator - this setting will be mirrored in the TCL `license_queue` variable to control runtime license checkouts.
+The ``$LICENSE_QUEUE`` environment variable can be used for this simulator – 
+this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
 Mentor Questa
 -------------
 
 Mentor Modelsim
 ---------------
-Any ModelSim-PE or ModelSim-PE derivative (like ModelSim Microsemi, Altera, Lattice Edition) does not support the VHDL FLI feature.
-If you try to run with FLI enabled, you will see a vsim-FLI-3155 error:
+
+Any ModelSim PE or ModelSim PE derivative (like ModelSim Microsemi, Intel, Lattice Edition) does not support the VHDL FLI feature.
+If you try to run with FLI enabled, you will see a ``vsim-FLI-3155`` error:
 
 .. code-block:: bash
 
@@ -37,9 +39,10 @@ If you try to run with FLI enabled, you will see a vsim-FLI-3155 error:
 
 ModelSim DE and SE (and Questa, of course) supports the FLI.
 
-Cadence Incisive
-----------------
+Cadence Incisive, Cadence Xcelium
+---------------------------------
 
 GHDL
 ----
 Support is preliminary. 
+Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.

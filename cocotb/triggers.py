@@ -30,17 +30,18 @@
 import os
 import weakref
 
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-else:
+if "COCOTB_SIM" in os.environ:
     import simulator
+else:
+    simulator = None
+
 from cocotb.log import SimLog
 from cocotb.result import raise_error
 from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, with_metaclass,
     ParametrizedSingleton
 )
+from cocotb import outcomes
 
 class TriggerException(Exception):
     pass
@@ -54,19 +55,24 @@ class Trigger(object):
         self.primed = False
 
     def prime(self, *args):
+        """FIXME: document"""
         self.primed = True
 
     def unprime(self):
-        """Remove any pending callbacks if necessary"""
+        """Remove any pending callbacks if necessary."""
         self.primed = False
 
     def __del__(self):
         """Ensure if a trigger drops out of scope we remove any pending
-        callbacks"""
+        callbacks."""
         self.unprime()
 
     def __str__(self):
         return self.__class__.__name__
+
+    @property
+    def _outcome(self):
+        return outcomes.Value(self)
 
 
 class PythonTrigger(Trigger):
@@ -142,6 +148,7 @@ class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        """FIXME: document"""
         if self.cbhdl == 0:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl == 0:
@@ -165,6 +172,7 @@ class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
+        """FIXME: document"""
         if self.cbhdl == 0:
             # import pdb
             # pdb.set_trace()
@@ -259,6 +267,7 @@ class ClockCycles(GPITrigger):
             self._rising = 2
 
     def prime(self, callback):
+        """FIXME: document"""
         self._callback = callback
 
         def _check(obj):
@@ -325,6 +334,7 @@ class Combine(PythonTrigger):
             self._callback(self)
 
     def unprime(self):
+        """FIXME: document"""
         for trigger in self._triggers:
             trigger.unprime()
 
@@ -362,6 +372,7 @@ class Event(PythonTrigger):
         self.data = None
 
     def prime(self, callback, trigger):
+        """FIXME: document"""
         self._pending.append(trigger)
         Trigger.prime(self)
 
@@ -450,6 +461,7 @@ class Lock(PythonTrigger):
         return trig
 
     def release(self):
+        """Release the lock."""
         if not self.locked:
             raise_error(self, "Attempt to release an unacquired Lock %s" %
                         (str(self)))
@@ -502,10 +514,16 @@ class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
         self.pass_retval = True
 
     @property
+    def _outcome(self):
+        return self._coroutine._outcome
+
+    @property
     def retval(self):
+        """FIXME: document"""
         return self._coroutine.retval
 
     def prime(self, callback):
+        """FIXME: document"""
         if self._coroutine._finished:
             callback(self)
         else:

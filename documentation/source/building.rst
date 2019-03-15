@@ -12,7 +12,7 @@ Make Targets
 
 Makefiles define two targets, ``regression`` and ``sim``, the default target is ``sim``.
 
-Both rules create a results file in the calling directory called :file:`results.xml`.  This file is a JUnit-compatible output file suitable for use with `Jenkins <http://jenkins-ci.org/>`_. The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
+Both rules create a results file in the calling directory called :file:`results.xml`.  This file is a JUnit-compatible output file suitable for use with `Jenkins <https://jenkins.io/>`_. The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
 
 
 Make Phases
@@ -158,8 +158,11 @@ Additional Environment Variables
       
       This needs the :mod:`cherrypy` and :mod:`dowser` Python modules installed.
 
-    ``SIM_ROOT``
-      The root directory of the Cocotb installation.
+    ``COCOTB_PY_DIR``
+      Path to the directory containing the cocotb Python package in the ``cocotb`` subdirectory.
+
+    ``COCOTB_SHARE_DIR``
+      Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories ``lib``, ``include``, and ``makefiles``.
 
     ``VERSION``
       The version of the Cocotb installation. You probably don't want to modify this.

@@ -20,11 +20,15 @@ Writing and Generating tests
 
 .. autoclass:: cocotb.coroutine
 
+.. autoclass:: cocotb.external
+
+.. autoclass:: cocotb.function
+
+.. autoclass:: cocotb.hook
+
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource
-
-.. autoclass:: cocotb.hook
 
 
 Interacting with the Simulator
@@ -53,6 +57,8 @@ Triggers
 Triggers are used to indicate when the scheduler should resume coroutine execution.
 Typically a coroutine will :keyword:`yield` a trigger or a list of triggers.
 
+.. autoclass:: cocotb.triggers.Trigger
+
 Simulation Timing
 ~~~~~~~~~~~~~~~~~
 
@@ -76,6 +82,10 @@ Signal related
 
 Python Triggers
 ~~~~~~~~~~~~~~~
+
+.. autoclass:: cocotb.triggers.Combine
+    :members:
+    :member-order: bysource
 
 .. autoclass:: cocotb.triggers.Event
     :members:
@@ -116,12 +126,17 @@ Driver
 Monitor
 -------
 
-.. autoclass:: cocotb.monitors.Monitor
-    :members:
+.. currentmodule:: cocotb.monitors
+
+.. autoclass:: Monitor
+    :members: _monitor_recv, _recv
     :member-order: bysource
     :private-members:
 
-.. autoclass:: cocotb.monitors.BusMonitor
+    .. automethod:: wait_for_recv(timeout=None)
+                    
+
+.. autoclass:: BusMonitor
     :members:
     :member-order: bysource
     :show-inheritance:
@@ -184,6 +199,7 @@ Analog Devices AD9361 RF Transceiver.
     .. automethod:: rx_data_to_ad9361(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
     .. automethod:: ad9361_tx_to_rx_loopback()
     .. automethod:: tx_data_from_ad9361()
+                    
 
 AMBA
 ~~~~
@@ -197,8 +213,6 @@ Advanced Microcontroller Bus Architecture.
     .. automethod:: write(address, value, byte_enable=0xf, address_latency=0, data_latency=0)
     .. automethod:: read(address, sync=True)
 
-    :members:
-    :member-order: bysource
 
 .. autoclass:: AXI4Slave
     :members:
@@ -213,26 +227,28 @@ Avalon
 .. autoclass:: AvalonMM
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonMaster
                
     .. automethod:: write(address, value)
     .. automethod:: read(address, sync=True)
                     
-    :members:
-    :member-order: bysource
 
 .. autoclass:: AvalonMemory
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonST
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonSTPkts
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 
 OPB
@@ -245,8 +261,6 @@ OPB
     .. automethod:: write(address, value, sync=True)
     .. automethod:: read(address, sync=True)
                     
-    :members:
-    :member-order: bysource
 
 XGMII
 ~~~~~
@@ -256,6 +270,7 @@ XGMII
 .. autoclass:: XGMII
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 Monitors
 --------
@@ -268,10 +283,12 @@ Avalon
 .. autoclass:: AvalonST
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonSTPkts
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 XGMII
 ~~~~~
@@ -279,3 +296,4 @@ XGMII
 .. autoclass:: cocotb.monitors.xgmii.XGMII
     :members:
     :member-order: bysource
+    :show-inheritance:
