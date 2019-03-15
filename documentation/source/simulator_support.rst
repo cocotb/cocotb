@@ -9,7 +9,7 @@ Icarus
 
 Accessing bits of a vector doesn't work:
 
-.. code-block:: python
+.. code-block:: python3
 
     dut.stream_in_data[2] <= 1
 
@@ -21,7 +21,7 @@ Synopsys VCS
 
 Aldec Riviera-PRO
 -----------------
-The ``$LICENSE_QUEUE`` environment variable can be used for this simulator – 
+The ``$LICENSE_QUEUE`` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
 Mentor Questa
@@ -44,4 +44,5 @@ Cadence Incisive, Cadence Xcelium
 
 GHDL
 ----
-Support is preliminary. 
+Support is preliminary.
+Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.

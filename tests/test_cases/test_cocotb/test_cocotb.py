@@ -26,9 +26,12 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+import contextlib
 import logging
+import re
 import sys
 import textwrap
+import traceback
 import warnings
 
 """
@@ -39,12 +42,39 @@ Also used as regression test of cocotb capabilities
 
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite, ClockCycles, NextTimeStep)
+                             ReadOnly, ReadWrite, ClockCycles, NextTimeStep,
+                             NullTrigger, Combine, Event, First, Trigger)
 from cocotb.clock import Clock
-from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
+from cocotb.result import (
+    ReturnValue, TestFailure, TestError, TestSuccess, raise_error, create_error
+)
 from cocotb.utils import get_sim_time
 
 from cocotb.binary import BinaryValue
+from cocotb import _py_compat
+
+
+@contextlib.contextmanager
+def assert_deprecated():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        yield
+        if len(w) == 1 and issubclass(w[-1].category, DeprecationWarning):
+            return
+        raise AssertionError(
+            "Expected exactly one DeprecationWarning, got {}".format(w)
+        )
+
+
+@contextlib.contextmanager
+def assert_raises(exc_type):
+    try:
+        yield
+    except exc_type:
+        pass
+    else:
+        raise AssertionError("{} was not raised".format(exc_type.__name__))
+
 
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
@@ -61,28 +91,46 @@ def function_not_a_coroutine():
     return "This should fail"
 
 
-@cocotb.test(expect_error=True)
+@cocotb.test()
 def test_function_not_a_coroutine(dut):
     """Example of trying to yield a coroutine that isn't a coroutine"""
     yield Timer(500)
-    yield function_not_a_coroutine()
-
-
-@cocotb.test(expect_error=True)
-def test_function_not_a_coroutine_fork(dut):
-    """Example of trying to fork a coroutine that isn't a coroutine"""
-    yield Timer(500)
-    cocotb.fork(function_not_a_coroutine())
-    yield Timer(500)
+    try:
+        # failure should occur before we even try to yield or fork the coroutine
+        coro = function_not_a_coroutine()
+    except TypeError as exc:
+        assert "isn't a valid coroutine" in str(exc)
+    else:
+        raise TestFailure
 
 
 def normal_function(dut):
     return True
 
 
-@cocotb.test(expect_error=True)
+@cocotb.test()
 def test_function_not_decorated(dut):
-    yield normal_function(dut)
+    try:
+        yield normal_function(dut)
+    except TypeError as exc:
+        assert "yielded" in str(exc)
+        assert "scheduler can't handle" in str(exc)
+    except:
+        raise TestFailure
+
+
+@cocotb.test()
+def test_function_not_decorated_fork(dut):
+    """Example of trying to fork a coroutine that isn't a coroutine"""
+    yield Timer(500)
+    try:
+        cocotb.fork(normal_function(dut))
+    except TypeError as exc:
+        assert "isn't a coroutine" in str(exc)
+    else:
+        raise TestFailure()
+
+    yield Timer(500)
 
 
 @cocotb.test(expect_fail=False)
@@ -148,15 +196,17 @@ def test_coroutine_kill(dut):
         raise TestFailure
 
 
-@cocotb.test(expect_error=True)
+@cocotb.test()
 def test_adding_a_coroutine_without_starting(dut):
     """Catch (and provide useful error) for attempts to fork coroutines
     incorrectly"""
     yield Timer(100)
-    forked = cocotb.fork(clock_gen)
-    yield Timer(100)
-    yield Join(forked)
-    yield Timer(100)
+    try:
+        forked = cocotb.fork(clock_gen)
+    except TypeError as exc:
+        assert "a coroutine that hasn't started" in str(exc)
+    else:
+        raise TestFailure
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     """
@@ -310,7 +360,8 @@ def do_test_afterdelay_in_readonly(dut, delay):
              expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "riviera",
                                                              "modelsim",
-                                                             "ncsim")))
+                                                             "ncsim",
+                                                             "xmsim")))
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -326,7 +377,8 @@ def test_readwrite_in_readonly(dut):
              expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "riviera",
                                                              "modelsim",
-                                                             "ncsim")))
+                                                             "ncsim",
+                                                             "xmsim")))
 def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -341,7 +393,7 @@ def test_cached_write_in_readonly(dut):
 
 @cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "chronologic simulation vcs")),
-             skip=cocotb.SIM_NAME.lower().startswith(("ncsim")))
+             skip=cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")))
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -596,7 +648,7 @@ class StrCallCounter(object):
 @cocotb.test()
 def test_logging_with_args(dut):
     counter = StrCallCounter()
-    dut._log.logger.setLevel(logging.INFO)  # To avoid logging debug message, to make next line run without error
+    dut._log.setLevel(logging.INFO)  # To avoid logging debug message, to make next line run without error
     dut._log.debug("%s", counter)
     assert counter.str_counter == 0
 
@@ -621,11 +673,11 @@ def test_clock_cycles(dut):
 
     yield RisingEdge(clk)
 
-    dut.log.info("After one edge")
+    dut._log.info("After one edge")
 
     yield ClockCycles(clk, 10)
 
-    dut.log.info("After 10 edges")
+    dut._log.info("After 10 edges")
 
 @cocotb.test()
 def test_binary_value(dut):
@@ -699,15 +751,8 @@ def test_binary_value_compat(dut):
         raise TestFailure("Expected TypeError when using bits and n_bits at the same time.")
 
     # Test for the DeprecationWarning when using |bits|
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("error")
-
-        try:
-            vec = BinaryValue(value=0, bits=16)
-        except DeprecationWarning:
-            pass
-        else:
-            TestFailure("Expected DeprecationWarning when using bits instead of n_bits.")
+    with assert_deprecated():
+        vec = BinaryValue(value=0, bits=16)
 
     yield Timer(100)  # Make it do something with time
 
@@ -733,7 +778,7 @@ def join_finished(dut):
     assert x == 1
 
     # joining the second time should give the same result.
-    # we chage retval here to prove it does not run again
+    # we change retval here to prove it does not run again
     retval = 2
     x = yield coro.join()
     assert x == 1
@@ -839,22 +884,28 @@ def test_lessthan_raises_error(dut):
     if False: yield
 
 
+@cocotb.test()
+def test_tests_are_tests(dut):
+    """
+    Test that things annotated with cocotb.test are tests
+    """
+    yield Timer(1)
+
+    assert isinstance(test_tests_are_tests, cocotb.test)
+
+
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
-    cocotb.utils.exec_(textwrap.dedent('''
+    _py_compat.exec_(textwrap.dedent('''
     @cocotb.test()
     def test_coroutine_return(dut):
         """ Test that the Python 3.3 syntax for returning from generators works """
         @cocotb.coroutine
         def return_it(x):
-            # workaround for #gh-637 - need to yield something before finishing
-            yield Timer(1)
-
             return x
 
-            # this makes `return_it` a coroutine, even after we remove the
-            # workaround above
+            # this makes `return_it` a coroutine
             yield
 
         ret = yield return_it(42)
@@ -863,16 +914,326 @@ if sys.version_info[:2] >= (3, 3):
     '''))
 
 
+@cocotb.coroutine
+def _check_traceback(running_coro, exc_type, pattern):
+    try:
+        yield running_coro
+    except exc_type:
+        tb_text = traceback.format_exc()
+    else:
+        raise TestFailure("Exception was not raised")
+
+    if not re.match(pattern, tb_text):
+        raise TestFailure(
+            (
+                "Traceback didn't match - got:\n\n"
+                "{}\n"
+                "which did not match the pattern:\n\n"
+                "{}"
+            ).format(tb_text, pattern)
+        )
+
+
 @cocotb.test()
-def test_exceptions():
+def test_exceptions_direct(dut):
+    """ Test exception propagation via a direct yield statement """
     @cocotb.coroutine
-    def raise_soon():
+    def raise_inner():
         yield Timer(10)
         raise ValueError('It is soon now')
-    
+
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(1)
+        yield raise_inner()
+
+    # it's ok to change this value if the traceback changes - just make sure
+    # that when changed, it doesn't become harder to read.
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*test_cocotb\.py", line \d+, in _check_traceback
+        yield running_coro
+      File ".*test_cocotb\.py", line \d+, in raise_soon
+        yield raise_inner\(\)
+      File ".*test_cocotb\.py", line \d+, in raise_inner
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+    yield _check_traceback(raise_soon(), ValueError, expected)
+
+
+@cocotb.test()
+def test_exceptions_forked(dut):
+    """ Test exception propagation via cocotb.fork """
+    @cocotb.coroutine
+    def raise_inner():
+        yield Timer(10)
+        raise ValueError('It is soon now')
+
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(1)
+        coro = cocotb.fork(raise_inner())
+        yield coro.join()
+
+    # it's ok to change this value if the traceback changes - just make sure
+    # that when changed, it doesn't become harder to read.
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*test_cocotb\.py", line \d+, in _check_traceback
+        yield running_coro
+      File ".*test_cocotb\.py", line \d+, in raise_soon
+        yield coro\.join\(\)
+      File ".*test_cocotb\.py", line \d+, in raise_inner
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+    yield _check_traceback(raise_soon(), ValueError, expected)
+
+
+@cocotb.test()
+def test_exceptions_first(dut):
+    """ Test exception propagation via cocotb.triggers.First """
+    @cocotb.coroutine
+    def raise_inner():
+        yield Timer(10)
+        raise ValueError('It is soon now')
+
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(1)
+        yield cocotb.triggers.First(raise_inner())
+
+    # it's ok to change this value if the traceback changes - just make sure
+    # that when changed, it doesn't become harder to read.
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*test_cocotb\.py", line \d+, in _check_traceback
+        yield running_coro
+      File ".*test_cocotb\.py", line \d+, in raise_soon
+        yield cocotb\.triggers\.First\(raise_inner\(\)\)
+      File ".*triggers\.py", line \d+, in _wait
+        result = yield first_trigger  # the first of multiple triggers that fired
+      File ".*test_cocotb\.py", line \d+, in raise_inner
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+    yield _check_traceback(raise_soon(), ValueError, expected)
+
+
+@cocotb.test()
+def test_stack_overflow(dut):
+    """
+    Test against stack overflows when starting many coroutines that terminate
+    before passing control to the simulator.
+    """
+    @cocotb.coroutine
+    def null_coroutine():
+        yield NullTrigger()
+
+    for _ in range(10000):
+        yield null_coroutine()
+
+    yield Timer(100)
+
+
+@cocotb.test()
+def test_immediate_test(dut):
+    """ Test that tests can return immediately """
+    return
+    yield
+
+
+@cocotb.test()
+def test_immediate_coro(dut):
+    """
+    Test that coroutines can return immediately
+    """
+    @cocotb.coroutine
+    def immediate_value():
+        raise ReturnValue(42)
+        yield
+
+    @cocotb.coroutine
+    def immediate_exception():
+        raise ValueError
+        yield
+
+    assert (yield immediate_value()) == 42
+
     try:
-        yield raise_soon()
+        yield immediate_exception()
     except ValueError:
         pass
     else:
         raise TestFailure("Exception was not raised")
+
+
+@cocotb.test()
+def test_combine(dut):
+    """ Test the Combine trigger. """
+    # gh-852
+
+    @cocotb.coroutine
+    def do_something(delay):
+        yield Timer(delay)
+
+    crs = [cocotb.fork(do_something(dly)) for dly in [10, 30, 20]]
+
+    yield Combine(*(cr.join() for cr in crs))
+
+
+@cocotb.test()
+def test_clock_cycles_forked(dut):
+    """ Test that ClockCycles can be used in forked coroutines """
+    # gh-520
+
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    @cocotb.coroutine
+    def wait_ten():
+        yield ClockCycles(dut.clk, 10)
+
+    a = cocotb.fork(wait_ten())
+    b = cocotb.fork(wait_ten())
+    yield a.join()
+    yield b.join()
+
+
+@cocotb.test()
+def test_yield_list_stale(dut):
+    """ Test that a trigger yielded as part of a list can't cause a spurious wakeup """
+    # gh-843
+    events = [Event() for i in range(3)]
+
+    waiters = [e.wait() for e in events]
+
+    @cocotb.coroutine
+    def wait_for_lists():
+        ret_i = waiters.index((yield [waiters[0], waiters[1]]))
+        assert ret_i == 0, "Expected event 0 to fire, not {}".format(ret_i)
+
+        ret_i = waiters.index((yield [waiters[2]]))
+        assert ret_i == 2, "Expected event 2 to fire, not {}".format(ret_i)
+
+    @cocotb.coroutine
+    def wait_for_e1():
+        """ wait on the event that didn't wake `wait_for_lists` """
+        ret_i = waiters.index((yield waiters[1]))
+        assert ret_i == 1, "Expected event 1 to fire, not {}".format(ret_i)
+
+    @cocotb.coroutine
+    def fire_events():
+        """ fire the events in order """
+        for e in events:
+            yield Timer(1)
+            e.set()
+
+    fire_task = cocotb.fork(fire_events())
+    e1_task = cocotb.fork(wait_for_e1())
+    yield wait_for_lists()
+
+    # make sure the other tasks finish
+    yield fire_task.join()
+    yield e1_task.join()
+
+
+@cocotb.test()
+def test_nested_first(dut):
+    """ Test that nested First triggers behave as expected """
+    events = [Event() for i in range(3)]
+    waiters = [e.wait() for e in events]
+
+    @cocotb.coroutine
+    def fire_events():
+        """ fire the events in order """
+        for e in events:
+            yield Timer(1)
+            e.set()
+
+
+    @cocotb.coroutine
+    def wait_for_nested_first():
+        inner_first = First(waiters[0], waiters[1])
+        ret = yield First(inner_first, waiters[2])
+
+        # should unpack completely, rather than just by one level
+        assert ret is not inner_first
+        assert ret is waiters[0]
+
+    fire_task = cocotb.fork(fire_events())
+    yield wait_for_nested_first()
+    yield fire_task.join()
+
+
+@cocotb.test()
+def test_readwrite(dut):
+    """ Test that ReadWrite can be waited on """
+    # gh-759
+    yield Timer(1)
+    dut.clk <= 1
+    yield ReadWrite()
+
+
+@cocotb.test()
+def test_writes_have_taken_effect_after_readwrite(dut):
+    """ Test that ReadWrite fires first for the background write coro """
+    dut.stream_in_data.setimmediatevalue(0)
+
+    @cocotb.coroutine
+    def write_manually():
+        yield ReadWrite()
+        # this should overwrite the write written below
+        dut.stream_in_data.setimmediatevalue(2)
+
+    # queue a backround task to do a manual write
+    waiter = cocotb.fork(write_manually())
+
+    # do a delayed write. This will be overwritten
+    dut.stream_in_data <= 3
+    yield waiter
+
+    # check that the write we expected took precedence
+    yield ReadOnly()
+    assert dut.stream_in_data.value == 2
+
+
+@cocotb.test()
+def test_trigger_with_failing_prime(dut):
+    """ Test that a trigger failing to prime throws """
+    class ABadTrigger(Trigger):
+        def prime(self, callback):
+            raise RuntimeError("oops")
+
+    yield Timer(1)
+    try:
+        yield ABadTrigger()
+    except RuntimeError as exc:
+        assert "oops" in str(exc)
+    else:
+        raise TestFailure
+
+
+@cocotb.test()
+def test_create_error_deprecated(dut):
+    yield Timer(1)
+    with assert_deprecated():
+        e = create_error(Timer(1), "A test exception")
+
+
+@cocotb.test()
+def test_raise_error_deprecated(dut):
+    yield Timer(1)
+    with assert_deprecated():
+        with assert_raises(TestError):
+            raise_error(Timer(1), "A test exception")
+
+
+@cocotb.test(expect_fail=True)
+def test_assertion_is_failure(dut):
+    yield Timer(1)
+    assert False
+
+
+if sys.version_info[:2] >= (3, 5):
+    from test_cocotb_35 import *

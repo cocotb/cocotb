@@ -44,10 +44,10 @@ a huge developer base and a quick search of the web reveals a `TUN example`_
 that looks like an ideal starting point for our testbench. Using this example
 we write a function that will create our virtual interface:
 
-.. code-block:: python
+.. code-block:: python3
 
     import subprocess, fcntl, struct
-    
+
     def create_tun(name="tun0", ip="192.168.255.1"):
         TUNSETIFF = 0x400454ca
         TUNSETOWNER = TUNSETIFF + 2
@@ -66,20 +66,20 @@ signal and connect up the :class:`Avalon driver <cocotb.drivers.avalon.AvalonSTP
 the testbench we'll enable verbose debug on the drivers and monitors by setting
 the log level to ``logging.DEBUG``.
 
-.. code-block:: python
+.. code-block:: python3
 
     import cocotb
     from cocotb.clock import Clock
     from cocotb.drivers.avalon import AvalonSTPkts as AvalonSTDriver
     from cocotb.monitors.avalon import AvalonSTPkts as AvalonSTMonitor
-    
+
     @cocotb.test()
     def tun_tap_example_test(dut):
         cocotb.fork(Clock(dut.clk, 5000).start())
-    
+
         stream_in  = AvalonSTDriver(dut, "stream_in", dut.clk)
         stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk)
-   
+
         # Enable verbose logging on the streaming interfaces
         stream_in.log.setLevel(logging.DEBUG)
         stream_out.log.setLevel(logging.DEBUG)
@@ -89,7 +89,7 @@ We also need to reset the DUT and drive some default values onto some of the
 bus signals.  Note that we'll need to import the :class:`~.triggers.Timer`
 and :class:`~.triggers.RisingEdge` triggers.
 
-.. code-block:: python
+.. code-block:: python3
 
         # Reset the DUT
         dut._log.debug("Resetting DUT")
@@ -111,25 +111,25 @@ a packet to arrive on the monitor by yielding on :meth:`.wait_for_recv()` and th
 write the received packet back to the TUN file descriptor.
 
 
-.. code-block:: python
+.. code-block:: python3
 
     # Create our interface (destroyed at the end of the test)
     tun = create_tun()
     fd = tun.fileno()
-    
+
     # Kick off a ping...
     subprocess.check_call('ping -c 5 192.168.255.2 &', shell=True)
-   
+
     # Respond to 5 pings, then quit
     for i in range(5):
-    
+
         cocotb.log.info("Waiting for packets on tun interface")
         packet = os.read(fd, 2048)
         cocotb.log.info("Received a packet!")
-    
+
         stream_in.append(packet)
         result = yield stream_out.wait_for_recv()
-    
+
         os.write(fd, str(result))
 
 

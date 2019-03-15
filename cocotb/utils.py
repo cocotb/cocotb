@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 # 
@@ -34,23 +34,24 @@ import math
 import os
 import sys
 import weakref
+import functools
+import warnings
 
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" in os.environ:
+if "COCOTB_SIM" in os.environ:
+    import simulator
+    _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
+else:
     simulator = None
     _LOG_SIM_PRECISION = -15
-else:
-    import simulator
-    _LOG_SIM_PRECISION = simulator.get_precision() # request once and cache
 
-# python2 to python3 helper functions
+
 def get_python_integer_types():
-    try:
-        isinstance(1, long)
-    except NameError:
-        return (int,)  # python 3
-    else:
-        return (int, long)  # python 2
+    warnings.warn(
+        "This is an internal cocotb function, use six.integer_types instead",
+        DeprecationWarning)
+    from cocotb import _py_compat
+    return _py_compat.integer_types
+
 
 # Simulator helper functions
 def get_sim_time(units=None):
@@ -212,15 +213,10 @@ def hexdump(x):
         A string containing the hexdump.
 
     Example:
-
-    .. code-block:: python
-
-        print(hexdump('this somewhat long string'))
-
-    .. code-block:: none
-
+        >>> print(hexdump('this somewhat long string'))
         0000   74 68 69 73 20 73 6F 6D 65 77 68 61 74 20 6C 6F   this somewhat lo
         0010   6E 67 20 73 74 72 69 6E 67                        ng string
+        <BLANKLINE>
     """
     # adapted from scapy.utils.hexdump
     rs = ""
@@ -250,16 +246,18 @@ def hexdiffs(x, y):
         y: Object that supports conversion via the ``str`` built-in.
 
     Example:
-
-    .. code-block:: python
-
-        print(hexdiffs('this short thing', 'this also short'))
-
-    .. code-block:: none
-
+        >>> print(hexdiffs(0, 1))
+        0000      30                                               0
+             0000 31                                               1
+        <BLANKLINE>
+        >>> print(hexdiffs('a', 'b'))
+        0000      61                                               a
+             0000 62                                               b
+        <BLANKLINE>
+        >>> print(hexdiffs('this short thing', 'this also short'))
         0000      746869732073686F 7274207468696E67 this short thing
              0000 7468697320616C73 6F  2073686F7274 this also  short
-
+        <BLANKLINE>
     """
     # adapted from scapy.utils.hexdiff
 
@@ -274,15 +272,9 @@ def hexdiffs(x, y):
         return r
 
     def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
-        """Highlight only with ANSI output if it's requested and we are not in a GUI."""
+        """Highlight with ANSI colors if possible/requested and not running in GUI."""
         
-        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT") and not os.getenv("GUI")
-        if want_ansi is None:
-            want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
-        else:
-            want_ansi = want_ansi == '1'
-
-        if want_ansi:
+        if want_color_output():
             return colour + string + ANSI.COLOR_DEFAULT
         else:
             return string
@@ -405,57 +397,6 @@ def hexdiffs(x, y):
     return rs
 
 
-# This is essentially six.exec_
-if sys.version_info.major == 3:
-    # this has to not be a syntax error in py2
-    import builtins
-    exec_ = getattr(builtins, 'exec')
-else:
-    # this has to not be a syntax error in py3
-    def exec_(_code_, _globs_=None, _locs_=None):
-        """Execute code in a namespace."""
-        if _globs_ is None:
-            frame = sys._getframe(1)
-            _globs_ = frame.f_globals
-            if _locs_ is None:
-                _locs_ = frame.f_locals
-            del frame
-        elif _locs_ is None:
-            _locs_ = _globs_
-        exec("""exec _code_ in _globs_, _locs_""")
-
-
-# this is six.with_metaclass, with a clearer docstring
-def with_metaclass(meta, *bases):
-    """This provides:
-
-    .. code-block:: python
-
-        class Foo(with_metaclass(Meta, Base1, Base2)): pass
-
-    which is a unifying syntax for:
-
-    .. code-block:: python
-
-        # python 3
-        class Foo(Base1, Base2, metaclass=Meta): pass
-
-        # python 2
-        class Foo(Base1, Base2):
-            __metaclass__ = Meta
-    """
-    # This requires a bit of explanation: the basic idea is to make a dummy
-    # metaclass for one level of class instantiation that replaces itself with
-    # the actual metaclass.
-    class metaclass(type):
-
-        def __new__(cls, name, this_bases, d):
-            return meta(name, bases, d)
-
-        @classmethod
-        def __prepare__(cls, name, this_bases):
-            return meta.__prepare__(name, bases)
-    return type.__new__(metaclass, 'temporary_class', (), {})
 
 
 class ParametrizedSingleton(type):
@@ -475,7 +416,7 @@ class ParametrizedSingleton(type):
         """Convert the construction arguments into a normalized representation that
         uniquely identifies this singleton.
         """
-        # Once we drop python 2, we can implement a default like the following,
+        # Once we drop Python 2, we can implement a default like the following,
         # which will work in 99% of cases:
         # return tuple(inspect.Signature(cls).bind(*args, **kwargs).arguments.items())
         raise NotImplementedError
@@ -491,26 +432,67 @@ class ParametrizedSingleton(type):
             return self
 
 
-# backport of Python 3.7's contextlib.nullcontext
-class nullcontext(object):
-    """Context manager that does no additional processing.
-    Used as a stand-in for a normal context manager, when a particular
-    block of code is only sometimes used with a normal context manager:
-    cm = optional_cm if condition else nullcontext()
-    with cm:
-        # Perform operation, using optional_cm if condition is True
+
+def reject_remaining_kwargs(name, kwargs):
     """
+    Helper function to emulate Python 3 keyword-only arguments.
 
-    def __init__(self, enter_result=None):
-        self.enter_result = enter_result
+    Use as::
 
-    def __enter__(self):
-        return self.enter_result
+        def func(x1, **kwargs):
+            a = kwargs.pop('a', 1)
+            b = kwargs.pop('b', 2)
+            reject_remaining_kwargs('func', kwargs)
+            ...
 
-    def __exit__(self, *excinfo):
-        pass
+    To emulate the Python 3 syntax::
+
+        def func(x1, *, a=1, b=2):
+            ...
+    """
+    if kwargs:
+        # match the error message to what Python 3 produces
+        bad_arg = next(iter(kwargs))
+        raise TypeError(
+            '{}() got an unexpected keyword argument {!r}'.format(name, bad_arg)
+        )
 
 
+class lazy_property(object):
+    """
+    A property that is executed the first time, then cached forever.
+
+    It does this by replacing itself on the instance, which works because
+    unlike `@property` it does not define __set__.
+
+    This should be used for expensive members of objects that are not always
+    used.
+    """
+    def __init__(self, fget):
+        self.fget = fget
+
+        # copy the getter function's docstring and other attributes
+        functools.update_wrapper(self, fget)
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+
+        value = self.fget(obj)
+        setattr(obj, self.fget.__name__, value)
+        return value
+
+
+def want_color_output():
+    """Return ``True`` if colored output is possible/requested and not running in GUI."""
+    want_color = sys.stdout.isatty()  # default to color for TTYs
+    if os.getenv("COCOTB_ANSI_OUTPUT", default='0') == '1':
+        want_color = True
+    if os.getenv("GUI", default='0') == '1':
+        want_color = False
+    return want_color
+        
+    
 if __name__ == "__main__":
     import random
     a = ""
@@ -526,3 +508,40 @@ if __name__ == "__main__":
 
     space = '\n' + (" " * 20)
     print(space.join(diff.split('\n')))
+
+
+def remove_traceback_frames(tb_or_exc, frame_names):
+    """
+    Strip leading frames from a traceback
+
+    Args:
+        tb_or_exc (Union[traceback, BaseException, exc_info]):
+            Object to strip frames from. If an exception is passed, creates
+            a copy of the exception with a new shorter traceback. If a tuple
+            from `sys.exc_info` is passed, returns the same tuple with the
+            traceback shortened
+        frame_names (List[str]):
+            Names of the frames to strip, which must be present.
+    """
+    # self-invoking overloads
+    if isinstance(tb_or_exc, BaseException):
+        exc = tb_or_exc
+        if sys.version_info < (3,):
+            raise RuntimeError(
+                "Cannot use remove_traceback_frames on exceptions in python 2. "
+                "Call it directly on the traceback object instead.")
+
+        return exc.with_traceback(
+            remove_traceback_frames(exc.__traceback__, frame_names)
+        )
+    elif isinstance(tb_or_exc, tuple):
+        exc_type, exc_value, exc_tb = tb_or_exc
+        exc_tb = remove_traceback_frames(exc_tb, frame_names)
+        return exc_type, exc_value, exc_tb
+    # base case
+    else:
+        tb = tb_or_exc
+        for frame_name in frame_names:
+            assert tb.tb_frame.f_code.co_name == frame_name
+            tb = tb.tb_next
+        return tb

@@ -1,0 +1,55 @@
+##############################################################################
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
+# All common python related rules
+
+ifneq ($(COCOTB_PYTHON_DEBUG),)
+	DBG_PYTHON_VERSION=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
+	PYTHON_BIN?=python$(DBG_PYTHON_VERSION)-dbg
+else
+	PYTHON_BIN?=python
+endif
+
+NATIVE_ARCH=$(shell uname -m)
+ARCH?=$(NATIVE_ARCH)
+
+PYTHON_LIBDIR:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("DESTSHARED"))')
+
+# Nasty hack but there's no way in Python properly get the directories for 32-bit Python on a 64-bit system
+# TODO: Under OSX we can use "export VERSIONER_PYTHON_PREFER_32_BIT=yes", no Linux equivalent though
+ifneq ($(NATIVE_ARCH),$(ARCH))
+	PYTHON_LIBDIR:=$(subst 64,,$(PYTHON_LIBDIR))
+	PYTHON_DYNLIBDIR:=$(subst 64,,$(PYTHON_DYNLIBDIR))
+endif
+
+PYLIBS:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; import os; print("-l"+os.path.splitext(sysconfig.get_config_var("LIBRARY"))[0][3:])')
+
+PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
+PYTHON_DYN_LIB:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))')

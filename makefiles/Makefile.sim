@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013,2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
@@ -25,48 +25,15 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-###############################################################################
+##############################################################################
 
-# This is a simple wrapper Makefile to pull in the appropriate Makefile for
-# the desired simulator and set up common paths for the sims to use to build with
+# Backwards-compatibility wrapper for people using
+# "include $COCOTB/makefiles/Makefile.sim" in their Makefile.
 
-all: sim
+# COCOTB_INSTALL_METHOD should already have been set in Makefile.inc, but
+# better be safe than sorry to cover unusual ways of people using cocotb.
+COCOTB_INSTALL_METHOD = srctree
+export COCOTB_INSTALL_METHOD
 
-SIM_BUILD ?= sim_build
-export SIM_BUILD
-
-# Default to Icarus if no simulator is defined
-SIM ?= icarus
-
-# Maintain backwards compatibility by supporting upper and lower case SIM variable
-SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
-
-HAVE_SIMULATOR = $(shell if [ -f $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE) ]; then echo 1; else echo 0; fi;)
-AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(SIM_ROOT)/makefiles/simulators/Makefile.*)))
-
-ifeq ($(HAVE_SIMULATOR),0)
-$(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simulators: $(AVAILABLE_SIMULATORS)")
-endif
-
-# We want to include the Python files from Cocotb in the dependencies
-CUSTOM_SIM_DEPS += $(shell find $(SIM_ROOT)/cocotb/ -name "*.py")
-
-include $(SIM_ROOT)/lib/Makefile
-include $(SIM_ROOT)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
-
-include $(SIM_ROOT)/version
-export VERSION
-
-$(SIM_BUILD):
-	mkdir -p $@
-
-# Regression rule uses Make dependencies to determine whether to run the simulation
-.PHONY: regression
-regression: results.xml
-
-# Default sim rule will force a re-run of the simulation (though the cocotb library
-# and RTL compilation phases are still evaluated by makefile dependencies)
-.PHONY: sim
-sim:
-	-@rm -f results.xml
-	$(MAKE) results.xml
+_NEW_SHARE_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))/../cocotb/share
+include $(_NEW_SHARE_DIR)/makefiles/Makefile.sim

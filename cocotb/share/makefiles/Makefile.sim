@@ -1,0 +1,87 @@
+###############################################################################
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
+# This is a simple wrapper Makefile to pull in the appropriate Makefile for
+# the desired simulator and set up common paths for the sims to use to build with
+
+all: sim
+
+SIM_BUILD ?= sim_build
+export SIM_BUILD
+
+# Default to Icarus if no simulator is defined
+SIM ?= icarus
+
+COCOTB_RESULTS_FILE ?= results.xml
+
+# Maintain backwards compatibility by supporting upper and lower case SIM variable
+SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
+
+HAVE_SIMULATOR = $(shell if [ -f $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE) ]; then echo 1; else echo 0; fi;)
+AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.*)))
+
+ifeq ($(HAVE_SIMULATOR),0)
+$(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simulators: $(AVAILABLE_SIMULATORS)")
+endif
+
+# Depend on all Python from the cocotb package. This triggers a
+# recompilation of the simulation if cocotb is updated.
+CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
+
+include $(COCOTB_SHARE_DIR)/lib/Makefile
+include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
+
+ifeq ($(COCOTB_INSTALL_METHOD),srctree)
+  # cocotb is used from the source tree
+  include $(COCOTB_SHARE_DIR)/../../version
+else
+  # cocotb has been installed from a Python package
+  VERSION=$(shell $(PYTHON_BIN) -c 'import pkg_resources; print(pkg_resources.get_distribution("cocotb").version)')
+endif
+export VERSION
+
+# Append directory containing the cocotb Python package to PYTHONPATH
+# XXX: This is only needed if cocotb is not installed into the default
+# Python search path.
+PYTHONPATH := $(COCOTB_PY_DIR):$(PYTHONPATH)
+export PYTHONPATH
+
+$(SIM_BUILD):
+	mkdir -p $@
+
+# Regression rule uses Make dependencies to determine whether to run the simulation
+.PHONY: regression
+regression: $(COCOTB_RESULTS_FILE)
+
+# Default sim rule will force a re-run of the simulation (though the cocotb library
+# and RTL compilation phases are still evaluated by makefile dependencies)
+.PHONY: sim
+sim:
+	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(MAKE) $(COCOTB_RESULTS_FILE)

@@ -39,12 +39,12 @@ import time
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
-from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
+from cocotb.log import SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
 
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine, hook, function, external
+from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference
@@ -52,8 +52,7 @@ from cocotb.decorators import test, coroutine, hook, function, external
 # scheduler package
 
 # GPI logging instance
-# For autodocumentation don't need the extension modules
-if "SPHINX_BUILD" not in os.environ:
+if "COCOTB_SIM" in os.environ:
     import simulator
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)
@@ -86,7 +85,7 @@ if "SPHINX_BUILD" not in os.environ:
 
 
 scheduler = Scheduler()
-regression = None
+regression_manager = None
 
 plusargs = {}
 
@@ -120,7 +119,7 @@ def _initialise_testbench(root_name):
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-    exec_path = os.getenv('SIM_ROOT')
+    exec_path = os.getenv('COCOTB_PY_DIR')
     if exec_path is None:
         exec_path = 'Unknown'
 
@@ -136,20 +135,21 @@ def _initialise_testbench(root_name):
     process_plusargs()
 
     # Seed the Python random number generator to make this repeatable
-    seed = os.getenv('RANDOM_SEED')
+    global RANDOM_SEED
+    RANDOM_SEED = os.getenv('RANDOM_SEED')
 
-    if seed is None:
+    if RANDOM_SEED is None:
         if 'ntb_random_seed' in plusargs:
-            seed = eval(plusargs['ntb_random_seed'])
+            RANDOM_SEED = eval(plusargs['ntb_random_seed'])
         elif 'seed' in plusargs:
-            seed = eval(plusargs['seed'])
+            RANDOM_SEED = eval(plusargs['seed'])
         else:
-            seed = int(time.time())
-        log.info("Seeding Python random module with %d" % (seed))
+            RANDOM_SEED = int(time.time())
+        log.info("Seeding Python random module with %d" % (RANDOM_SEED))
     else:
-        seed = int(seed)
-        log.info("Seeding Python random module with supplied seed %d" % (seed))
-    random.seed(seed)
+        RANDOM_SEED = int(RANDOM_SEED)
+        log.info("Seeding Python random module with supplied seed %d" % (RANDOM_SEED))
+    random.seed(RANDOM_SEED)
 
     module_str = os.getenv('MODULE')
     test_str = os.getenv('TESTCASE')
@@ -162,11 +162,11 @@ def _initialise_testbench(root_name):
     modules = module_str.split(',')
     hooks = hooks_str.split(',') if hooks_str else []
 
-    global regression
+    global regression_manager
 
-    regression = RegressionManager(root_name, modules, tests=test_str, seed=seed, hooks=hooks)
-    regression.initialise()
-    regression.execute()
+    regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=RANDOM_SEED, hooks=hooks)
+    regression_manager.initialise()
+    regression_manager.execute()
 
     _rlock.release()
     return True

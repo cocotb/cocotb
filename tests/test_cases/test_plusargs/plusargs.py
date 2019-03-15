@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 import cocotb
 from cocotb.decorators import coroutine
+from cocotb.result import TestFailure
 from cocotb.triggers import Timer, Edge, Event
 
 import sys
@@ -45,5 +46,8 @@ def plusargs_test(dut):
 
     for name in cocotb.plusargs:
         print("COCOTB:", name, cocotb.plusargs[name])
+    
+    if cocotb.plusargs['foo'] != 'bar':
+        raise TestFailure("plusargs 'foo' value '{}' does not match expected 'bar'".format(cocotb.plusargs['foo']))
 
     yield Timer(10000)

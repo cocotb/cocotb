@@ -123,7 +123,7 @@ to be called when the HAL attempts to perform a read or write.
 These are then passed to the `IO Module`_:
 
 
-.. code-block:: python
+.. code-block:: python3
 
 
     @cocotb.function
@@ -147,7 +147,7 @@ We can then initialise the HAL and call functions, using the :class:`cocotb.exte
 decorator to turn the normal function into a blocking coroutine that we can
 ``yield``:
 
-.. code-block:: python
+.. code-block:: python3
 
     state = hal.endian_swapper_init(0)
     yield cocotb.external(hal.endian_swapper_enable)(state)
@@ -164,8 +164,8 @@ and control will return to the testbench when the function returns.
 Further Work
 ------------
 
-In future tutorials we'll consider co-simulating unmodified drivers written 
-using ``mmap`` (for example built upon the `UIO framework`_) and consider 
+In future tutorials we'll consider co-simulating unmodified drivers written
+using ``mmap`` (for example built upon the `UIO framework`_) and consider
 interfacing with emulators like `QEMU`_ to allow us to co-simulate when the
 software needs to execute on a different processor architecture.
 

@@ -30,7 +30,6 @@
 """Common scoreboarding capability."""
 
 import logging
-import cocotb
 
 from cocotb.utils import hexdump, hexdiffs
 from cocotb.log import SimLog
@@ -148,7 +147,7 @@ class Scoreboard(object):
                 try:
                     for word in exp:
                         log.info(str(word))
-                except:
+                except Exception:
                     pass
             if not strict_type:
                 log.info("Received:\n" + hexdump(strgot))
@@ -158,7 +157,7 @@ class Scoreboard(object):
                 try:
                     for word in got:
                         log.info(str(word))
-                except:
+                except Exception:
                     pass
             log.warning("Difference:\n%s" % hexdiffs(strexp, strgot))
             if self._imm:
@@ -171,7 +170,7 @@ class Scoreboard(object):
                 log.debug("Received expected transaction %d bytes" %
                           (len(got)))
                 log.debug(repr(got))
-            except:
+            except Exception:
                 pass
 
     def add_interface(self, monitor, expected_output, compare_fn=None,
@@ -186,7 +185,7 @@ class Scoreboard(object):
         Args:
             monitor: The monitor object.
             expected_output: Queue of expected outputs.
-            compare_fn (callable, optional): 
+            compare_fn (callable, optional): Function doing the actual comparison.
             reorder_depth (int, optional): Consider up to *reorder_depth* elements 
                 of the expected result list as passing matches.
                 Default is 0, meaning only the first element in the expected result list

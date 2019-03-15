@@ -12,7 +12,6 @@ else
 TOPLEVEL := mean_sv
 
 PWD=$(shell pwd)
-COCOTB=$(PWD)/../../..
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
@@ -31,7 +30,7 @@ VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
 
 MODULE := test_mean
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif

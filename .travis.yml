@@ -1,11 +1,10 @@
 # See Dockerfile for the full build instructions
 sudo: required
 language: python
-cache: pip
-
-# mainly for flake8 as everything else runs in docker
-python: 
-  - 3.5
+dist: xenial
+cache:
+  directories:
+  - iverilog
 
 git:
   quiet: true
@@ -16,28 +15,110 @@ services:
 jobs:
   include:
     - stage: PythonLint
+      os: linux
+      python: 3.5
       install: pip install flake8
-      script: flake8 --exit-zero cocotb/
+      script: flake8
+
     - stage: SimTests
-      # env only here for easier visibility in travis-ci
-      env:
-        - COCOTB_PY27
+      os: linux
+      python: 2.7
       before_install: &docker_prep
         - docker build -t cocotb .
         - docker images -a
         - docker run -d --name cocotb cocotb tail -f /dev/null
         - docker ps -a
       script:
-        - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27' 
-        - docker exec -it -e TRAVIS=true -e COCOTB=/build-py2/src cocotb bash -lc 'source /build-py2/venv/bin/activate; make -C /build-py2/src test'
+        - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py27'
         - echo -e 'travis_fold:end:cocotb_py27'
+
     - stage: SimTests
-      # env only here for easier visibility in travis-ci
-      env:
-        - COCOTB_PY35
-      before_install: *docker_prep 
+      os: linux
+      python: 3.5
+      before_install: *docker_prep
       script:
         - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
-        - docker exec -it -e TRAVIS=true -e COCOTB=/build-py3/src cocotb bash -lc 'set -x; source /build-py3/venv/bin/activate; make -C /build-py3/src test'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py35'
         - echo 'travis_fold:end:cocotb_py35'
+
+    - stage: SimTests
+      python: 3.7
+      before_install: &travis_linx_prep
+        - sudo apt-get install gperf
+        - if [[ ! -e "./iverilog/README.txt" ]]; then rm -rf iverilog; git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2; fi
+        - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
+        - pip install tox
+        - pyenv global system $TRAVIS_PYTHON_VERSION
+      script:
+        - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
+        - tox -e py37
+        - echo 'travis_fold:end:cocotb_py37'
+
+    - stage: SimTests
+      python: 3.6.7
+      before_install: *travis_linx_prep
+      script:
+        - echo 'Running cocotb tests with Python 3.6.7 ...' && echo -en 'travis_fold:start:cocotb_py36'
+        - tox -e py36
+        - echo 'travis_fold:end:cocotb_py36'
+
+    - stage: SimTests
+      os: osx
+      language: generic
+      python: 2.7
+      before_install: &osx_prep
+        - brew install icarus-verilog
+        - pip install tox
+      script:
+        - tox -e py27
+
+    - stage: SimTests
+      python: 3.7
+      os: windows
+      language: shell
+      before_install:
+        - docker build -t cocotb -f Dockerfile.windows .
+      script:
+        - docker run cocotb powershell 'python setup.py install ; make test'
+
+    - stage: SimTests
+      os: osx
+      language: generic
+      python: 3.6
+      before_install: *osx_prep
+      script:
+        - tox -e py36
+
+    - stage: SimTests
+      python: 3.7
+      env: SIM=ghdl
+      before_install:
+        - sudo apt-get install gnat
+        - git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
+        - cd ghdl && ./configure && make -j2 && sudo make install && cd ..
+        - pip install tox
+        - pyenv global system $TRAVIS_PYTHON_VERSION
+      script:
+        - tox -e py37
+
+    - stage: DeployPyPI
+      python: 3.7
+      if: tag IS present
+      script: skip
+      deploy:
+        provider: pypi
+        user: themperek
+        password:
+          secure: "MLCDTXDYX7TKtPDXxUz7hIibXAIHGkz297yVQ7inLToCX/bKAkjdy/uwQZ4W7goRUFKJ6XliqBU8l/tihqPXCPtRaIU4hdLF9LZjR02Z16Ik3vDHBQcX/htfm32WAkFIVdbzBldD0N1NJIPYc83GnwLtgFM2u1fuCffiu2VqkTY="
+        on:
+          tags: true
+          repo: cocotb/cocotb
+        distributions: sdist
+
+  allow_failures:
+    - stage: SimTests
+      python: 3.7
+      env: SIM=ghdl
+
 

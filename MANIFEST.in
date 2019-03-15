@@ -1,10 +1,4 @@
-recursive-include bin *
-recursive-include cocotb *.py *.c Makefile
-recursive-include gpi *.c *.h Makefile
-recursive-include vpi_shim *.c Makefile
+recursive-include cocotb/share *.c* *.h Makefile.* Makefile
 recursive-include examples *.v *.py Makefile *.tcl *.cfg
-recursive-include scripts *
-recursive-include simulator *.c *.h Makefile
-recursive-include modules *.py
-recursive-include makefiles Makefile.*
-include Makefile README.md
+include version
+include README.md

@@ -45,10 +45,11 @@ def _build_sig_attr_dict(signals):
 class Bus(object):
     """Wraps up a collection of signals.
 
-    Assumes we have a set of signals/nets named ``entity.<bus_name>_<signal>``.
+    Assumes we have a set of signals/nets named ``entity.<bus_name><separator><signal>``.
 
     For example a bus ``stream_in`` with signals ``valid`` and ``data`` is assumed
-    to be named ``dut.stream_in_valid`` and ``dut.stream_in_data``.
+    to be named ``dut.stream_in_valid`` and ``dut.stream_in_data`` (with 
+    the default separator '_').
 
     TODO:
         Support for struct/record ports where signals are member names.
