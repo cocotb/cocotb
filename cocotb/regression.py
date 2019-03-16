@@ -304,7 +304,7 @@ class RegressionManager(object):
         self.execute()
 
     def execute(self):
-        self._running_test = cocotb.regression.next_test()
+        self._running_test = cocotb.regression_manager.next_test()
         if self._running_test:
             start = ''
             end   = ''
