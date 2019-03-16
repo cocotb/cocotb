@@ -29,7 +29,7 @@ import cocotb
 import logging
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
-from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject
+from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
 
 
 @cocotb.test()
@@ -181,10 +181,8 @@ def access_constant_integer(dut):
         raise TestFailure("EXAMPLE_WIDTH was not 7")
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
-def access_string(dut):
-    """
-    Access to a string, both constant and signal
-    """
+def access_string_vhdl(dut):
+    """Access to a string, both constant and signal."""
     tlog = logging.getLogger("cocotb.test")
     yield Timer(10)
     constant_string = dut.isample_module1.EXAMPLE_STRING;
@@ -251,6 +249,53 @@ def access_string(dut):
     tlog.info("After setting bytes of string value is %s" % result)
     if variable_string != test_string:
         raise TestFailure("%r %s != '%s'" % (variable_string, result, test_string))
+
+
+# TODO: add tests for Verilog "string_input_port" and "STRING_LOCALPARAM" (see issue #802)
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
+             expect_error=cocotb.SIM_NAME.lower().startswith("icarus"))
+def access_const_string_verilog(dut):
+    """Access to a const Verilog string."""
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(10)
+    string_const = dut.STRING_CONST;
+    tlog.info("%r is %s" % (string_const, str(string_const)))
+    if not isinstance(string_const, StringObject):
+        raise TestFailure("STRING_CONST was not StringObject")
+    if string_const != "TESTING_CONST":
+        raise TestFailure("STRING_CONST was not == \'TESTING_CONST\'")
+    
+    tlog.info("Modifying const string")
+    string_const <= "MODIFIED"
+    yield Timer(10)
+    string_const = dut.STRING_CONST;
+    if string_const != "TESTING_CONST":
+        raise TestFailure("STRING_CONST was not still \'TESTING_CONST\'")
+
+    
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
+             expect_error=cocotb.SIM_NAME.lower().startswith("icarus"))
+def access_var_string_verilog(dut):
+    """Access to a var Verilog string."""
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(10)
+    string_var = dut.STRING_VAR;
+    tlog.info("%r is %s" % (string_var, str(string_var)))
+    if not isinstance(string_var, StringObject):
+        raise TestFailure("STRING_VAR was not StringObject")
+    if string_var != "TESTING_VAR":
+        raise TestFailure("STRING_VAR was not == \'TESTING_VAR\'")
+    
+    tlog.info("Modifying var string")
+    string_var <= "MODIFIED"
+    yield Timer(10)
+    string_var = dut.STRING_VAR;
+    if string_var != "MODIFIED":
+        raise TestFailure("STRING_VAR was not == \'MODIFIED\'")
+
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def access_constant_boolean(dut):

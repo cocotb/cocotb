@@ -48,6 +48,7 @@ module sample_module (
     output real                                 stream_out_real,
     output integer                              stream_out_int,
     input  test_if                              inout_if,
+    input string                                string_input_port,
 `endif
     input  [7:0]                                stream_in_data,
     input  [63:0]                               stream_in_data_wide,
@@ -59,6 +60,13 @@ module sample_module (
     output                                      and_output
 
 );
+
+`ifndef __ICARUS__
+localparam string STRING_LOCALPARAM = "TESTING_LOCALPARAM";
+
+var   string STRING_VAR   = "TESTING_VAR";
+const string STRING_CONST = "TESTING_CONST";
+`endif
 
 always @(posedge clk)
     stream_out_data_registered <= stream_in_data;
