@@ -4,11 +4,8 @@ import cocotb.triggers
 
 
 @cocotb.coroutine
-def test_adder(dut, val_a, val_b):
-    dut.a = val_a
-    dut.b = val_b
+def dummy_coroutine(dut):
     yield cocotb.triggers.Timer(10, 'ns')
-    assert dut.z == val_a + val_b
 
 
 # Try to instantiate the TestFactory class using it's full specifier name.
@@ -28,7 +25,5 @@ def test_adder(dut, val_a, val_b):
 # but the discoverer of the bug prefers the former approach.
 #
 # And in general, it's probably a good idea to not have name conflicts ;)
-test_factory = cocotb.regression.TestFactory(test_adder)
-test_factory.add_option('val_a', range(16))
-test_factory.add_option('val_b', range(16))
+test_factory = cocotb.regression.TestFactory(dummy_coroutine)
 test_factory.generate_tests()
