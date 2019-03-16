@@ -5,13 +5,13 @@ import cocotb.triggers
 
 @cocotb.coroutine
 def dummy_coroutine(dut):
-    yield cocotb.triggers.Timer(10, 'ns')
+    yield cocotb.triggers.Timer(10, "ns")
 
 
 # Try to instantiate the TestFactory class using its full specifier name.
 #
 # In issue #857, a global variable named "regression" in the cocotb module hide
-# the module cocotb.regression, so the TestFactory class is not accessible with 
+# the module cocotb.regression, so the TestFactory class is not accessible with
 # an import like
 #
 # >>> import cocotb.regression
