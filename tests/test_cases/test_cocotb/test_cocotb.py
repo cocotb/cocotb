@@ -875,7 +875,7 @@ if sys.version_info[:2] >= (3, 3):
 
 
 @cocotb.test()
-def test_exceptions():
+def test_exceptions(dut):
     @cocotb.coroutine
     def raise_soon():
         yield Timer(10)
