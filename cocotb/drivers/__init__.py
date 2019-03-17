@@ -39,6 +39,7 @@ from cocotb.triggers import (Event, RisingEdge, ReadOnly, Timer, NextTimeStep,
 from cocotb.bus import Bus
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
+from cocotb.utils import reject_remaining_kwargs
 
 
 class BitDriver(object):
@@ -220,11 +221,14 @@ class BusDriver(Driver):
     _optional_signals = []
 
     def __init__(self, entity, name, clock, **kwargs):
+        # emulate keyword-only arguments in python 2
+        index = kwargs.pop("array_idx", None)
+        reject_remaining_kwargs('__init__', kwargs)
+
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         Driver.__init__(self)
         self.entity = entity
         self.clock = clock
-        index = kwargs.get("array_idx")
         self.bus = Bus(self.entity, name, self._signals,
                        self._optional_signals, array_idx=index)
 
