@@ -47,7 +47,7 @@ jobs:
       python: 3.7
       before_install: &travis_linx_prep
         - sudo apt-get install gperf
-        - test -d "./iverilog" && echo Exist || git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2
+        - if [[ ! -d "./iverilog" ]]; then git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2; fi
         - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
         - pip install tox
         - pyenv global system $TRAVIS_PYTHON_VERSION
@@ -87,7 +87,7 @@ jobs:
       env: SIM=ghdl
       before_install:
         - sudo apt-get install gnat
-        - test -d "./ghdl" && echo Exist || git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
+        - if [[ ! -d "./ghdl" ]]; then git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36 fi
         - cd ghdl && ./configure && make -j2 && sudo make install && cd ..
         - pip install tox
         - pyenv global system $TRAVIS_PYTHON_VERSION
