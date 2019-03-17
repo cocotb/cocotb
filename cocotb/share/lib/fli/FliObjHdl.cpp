@@ -31,60 +31,119 @@
 #include "FliImpl.h"
 #include "acc_vhdl.h"
 
-GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
+
+mtiTypeIdT FliSignalObjIntf::mti_get_type(void)
 {
-    FliSignalCbHdl *cb = NULL;
+    return mti_GetSignalType(m_hdl);
+}
 
-    if (m_is_var) {
-        return NULL;
-    }
+mtiInt32T FliSignalObjIntf::mti_get_value(void)
+{
+    return mti_GetSignalValue(m_hdl);
+}
 
-    switch (edge) {
-        case 1:
-            cb = &m_rising_cb;
-            break;
-        case 2:
-            cb = &m_falling_cb;
-            break;
-        case 3:
-            cb = &m_either_cb;
-            break;
-        default:
-            return NULL;
-    }
+void * FliSignalObjIntf::mti_get_array_value(void *buffer)
+{
+    return mti_GetArraySignalValue(m_hdl, buffer);
+}
 
-    if (cb->arm_callback()) {
-        return NULL;
-    }
+void * FliSignalObjIntf::mti_get_value_indirect(void *buffer)
+{
+    return mti_GetSignalValueIndirect(m_hdl, buffer);
+}
 
-    return (GpiCbHdl *)cb;
+void FliSignalObjIntf::mti_set_value(mtiLongT value)
+{
+    mti_SetSignalValue(m_hdl, value);
+}
+
+mtiTypeIdT FliVariableObjIntf::mti_get_type(void)
+{
+    return mti_GetVarType(m_hdl);
+}
+
+mtiInt32T FliVariableObjIntf::mti_get_value(void)
+{
+    return mti_GetVarValue(m_hdl);
+}
+
+void * FliVariableObjIntf::mti_get_array_value(void *buffer)
+{
+    return mti_GetArrayVarValue(m_hdl, buffer);
+}
+
+void * FliVariableObjIntf::mti_get_value_indirect(void *buffer)
+{
+    return mti_GetVarValueIndirect(m_hdl, buffer);
+}
+
+void FliVariableObjIntf::mti_set_value(mtiLongT value)
+{
+    mti_SetVarValue(m_hdl, value);
+}
+
+
+FliArrayObjHdl::FliArrayObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) :
+                   GpiObjHdl(impl, hdl, GPI_ARRAY)
+{
+    m_fli_intf = new FliSignalObjIntf(hdl);
+}
+
+
+FliArrayObjHdl::FliArrayObjHdl(GpiImplInterface *impl, mtiVariableIdT hdl, bool is_const) :
+                   GpiObjHdl(impl, hdl, GPI_ARRAY, is_const)
+{
+    m_fli_intf = new FliVariableObjIntf(hdl);
+}
+
+FliArrayObjHdl::~FliArrayObjHdl()
+{
+    delete m_fli_intf;
+}
+
+int FliArrayObjHdl::initialise(std::string &name, std::string &fq_name)
+{
+    mtiTypeIdT _type = m_fli_intf->mti_get_type();
+
+    m_range_left  = mti_TickLeft(_type);
+    m_range_right = mti_TickRight(_type);
+    m_num_elems   = mti_TickLength(_type);
+    m_indexable   = true;
+
+    return GpiObjHdl::initialise(name, fq_name);
+}
+
+
+FliRecordObjHdl::FliRecordObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl) :
+                   GpiObjHdl(impl, hdl, GPI_STRUCTURE)
+{
+    m_fli_intf = new FliSignalObjIntf(hdl);
+}
+
+
+FliRecordObjHdl::FliRecordObjHdl(GpiImplInterface *impl, mtiVariableIdT hdl, bool is_const) :
+                   GpiObjHdl(impl, hdl, GPI_STRUCTURE, is_const)
+{
+    m_fli_intf = new FliVariableObjIntf(hdl);
+}
+
+FliRecordObjHdl::~FliRecordObjHdl()
+{
+    delete m_fli_intf;
+}
+
+int FliRecordObjHdl::initialise(std::string &name, std::string &fq_name)
+{
+    mtiTypeIdT _type = m_fli_intf->mti_get_type();
+
+    m_num_elems = mti_GetNumRecordElements(_type);
+
+    return GpiObjHdl::initialise(name, fq_name);
 }
 
 int FliObjHdl::initialise(std::string &name, std::string &fq_name)
 {
-    bool is_signal = (get_acc_type() == accSignal || get_acc_full_type() == accAliasSignal);
-    mtiTypeIdT typeId; 
     char * str;
-
-    switch (get_type()) {
-        case GPI_STRUCTURE:
-            if (is_signal) {
-                typeId = mti_GetSignalType(get_handle<mtiSignalIdT>());
-            } else {
-                typeId = mti_GetVarType(get_handle<mtiVariableIdT>());
-            }
-
-            m_num_elems = mti_GetNumRecordElements(typeId);
-            break;
-        case GPI_GENARRAY:
-            m_indexable = true;
-        case GPI_MODULE:
-            m_num_elems = 1;
-            break;
-        default:
-            LOG_CRITICAL("Invalid object type for FliObjHdl. (%s (%s))", name.c_str(), get_type_str());
-            return -1;
-    }
 
     str = mti_GetPrimaryName(get_handle<mtiRegionIdT>());
     if (str != NULL)
@@ -97,22 +156,66 @@ int FliObjHdl::initialise(std::string &name, std::string &fq_name)
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-
-int FliSignalObjHdl::initialise(std::string &name, std::string &fq_name)
+FliValueObjHdl::FliValueObjHdl(GpiImplInterface *impl, mtiSignalIdT hdl, gpi_objtype_t objtype) :
+                   GpiSignalObjHdl(impl, hdl, objtype, false)
 {
-    return GpiObjHdl::initialise(name, fq_name);
+    m_fli_intf   = new FliSignalObjIntf(hdl);
+    m_rising_cb  = new FliSignalCbHdl(m_impl, this, GPI_RISING);
+    m_falling_cb = new FliSignalCbHdl(m_impl, this, GPI_FALLING);
+    m_either_cb  = new FliSignalCbHdl(m_impl, this, GPI_FALLING | GPI_RISING);
+}
+FliValueObjHdl::FliValueObjHdl(GpiImplInterface *impl, mtiVariableIdT hdl, gpi_objtype_t objtype, bool is_const) :
+                   GpiSignalObjHdl(impl, hdl, objtype, is_const)
+{
+    m_fli_intf   = new FliVariableObjIntf(hdl);
+    m_rising_cb  = NULL;
+    m_falling_cb = NULL;
+    m_either_cb  = NULL;
+}
+
+FliValueObjHdl::~FliValueObjHdl() {
+    if (m_fli_intf != NULL)
+        delete m_fli_intf;
+    if (m_rising_cb != NULL)
+        delete m_rising_cb;
+    if (m_falling_cb != NULL)
+        delete m_falling_cb;
+    if (m_either_cb != NULL)
+        delete m_either_cb;
 }
 
 int FliValueObjHdl::initialise(std::string &name, std::string &fq_name)
 {
-    if (get_type() == GPI_ARRAY) {
-        m_range_left  = mti_TickLeft(m_val_type);
-        m_range_right = mti_TickRight(m_val_type);
-        m_num_elems   = mti_TickLength(m_val_type);
-        m_indexable   = true;
+    return GpiObjHdl::initialise(name, fq_name);
+}
+
+GpiCbHdl *FliValueObjHdl::value_change_cb(unsigned int edge)
+{
+    FliSignalCbHdl *cb = NULL;
+
+    switch (edge) {
+        case 1:
+            cb = m_rising_cb;
+            break;
+        case 2:
+            cb = m_falling_cb;
+            break;
+        case 3:
+            cb = m_either_cb;
+            break;
+        default:
+            return NULL;
     }
 
-    return FliSignalObjHdl::initialise(name, fq_name);
+    if (cb == NULL) {
+        return NULL;
+    }
+
+    if (cb->arm_callback()) {
+        return NULL;
+    }
+
+    return (GpiCbHdl *)cb;
 }
 
 const char* FliValueObjHdl::get_signal_value_binstr(void)
@@ -157,57 +260,25 @@ int FliValueObjHdl::set_signal_value(const double value)
     return -1;
 }
 
-void *FliValueObjHdl::get_sub_hdl(int index) {
-    if (!m_indexable)
-        return NULL;
-
-    if (m_sub_hdls == NULL) {
-        if (is_var()) {
-            m_sub_hdls = (void **)mti_GetVarSubelements(get_handle<mtiVariableIdT>(), NULL);
-        } else {
-            m_sub_hdls = (void **)mti_GetSignalSubelements(get_handle<mtiSignalIdT>(), NULL);
-        }
-    }
-
-    int idx;
-
-    if (m_range_left > m_range_right) {
-        idx = m_range_left - index;
-    } else {
-        idx = index - m_range_left;
-    }
-
-    if (idx < 0 || idx >= m_num_elems)
-        return NULL;
-    else
-        return m_sub_hdls[idx];
-}
-
 int FliEnumObjHdl::initialise(std::string &name, std::string &fq_name)
 {
+    mtiTypeIdT _type = m_fli_intf->mti_get_type();
+
     m_num_elems   = 1;
-    m_value_enum  = mti_GetEnumValues(m_val_type);
-    m_num_enum    = mti_TickLength(m_val_type);
+    m_value_enum  = mti_GetEnumValues(_type);
+    m_num_enum    = mti_TickLength(_type);
 
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
 const char* FliEnumObjHdl::get_signal_value_str(void)
 {
-    if (m_is_var) {
-        return m_value_enum[mti_GetVarValue(get_handle<mtiVariableIdT>())];
-    } else {
-        return m_value_enum[mti_GetSignalValue(get_handle<mtiSignalIdT>())];
-    }
+    return m_value_enum[m_fli_intf->mti_get_value()];
 }
 
 long FliEnumObjHdl::get_signal_value_long(void)
 {
-    if (m_is_var) {
-        return (long)mti_GetVarValue(get_handle<mtiVariableIdT>());
-    } else {
-        return (long)mti_GetSignalValue(get_handle<mtiSignalIdT>());
-    }
+    return (long)m_fli_intf->mti_get_value();
 }
 
 int FliEnumObjHdl::set_signal_value(const long value)
@@ -217,43 +288,37 @@ int FliEnumObjHdl::set_signal_value(const long value)
         return -1;
     }
 
-    if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), value);
-    } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), value);
-    }
+    m_fli_intf->mti_set_value(value);
 
     return 0;
 }
 
 int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
 {
-    switch (m_fli_type) {
+    mtiTypeIdT _type = m_fli_intf->mti_get_type();
+
+    switch (mti_GetTypeKind(_type)) {
         case MTI_TYPE_ENUM:
             m_num_elems   = 1;
-            m_value_enum  = mti_GetEnumValues(m_val_type);
-            m_num_enum    = mti_TickLength(m_val_type);
+            m_value_enum  = mti_GetEnumValues(_type);
+            m_num_enum    = mti_TickLength(_type);
             break;
         case MTI_TYPE_ARRAY: {
-                mtiTypeIdT elemType = mti_GetArrayElementType(m_val_type);
+                mtiTypeIdT elemType = mti_GetArrayElementType(_type);
 
-                m_range_left  = mti_TickLeft(m_val_type);
-                m_range_right = mti_TickRight(m_val_type);
-                m_num_elems   = mti_TickLength(m_val_type);
+                m_range_left  = mti_TickLeft(_type);
+                m_range_right = mti_TickRight(_type);
+                m_num_elems   = mti_TickLength(_type);
                 m_indexable   = true;
 
                 m_value_enum  = mti_GetEnumValues(elemType);
                 m_num_enum    = mti_TickLength(elemType);
 
-                m_mti_buff    = (char*)malloc(sizeof(*m_mti_buff) * m_num_elems);
-                if (!m_mti_buff) {
-                    LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
-                    return -1;
-                }
+                m_mti_buff    = new char[m_num_elems];
             }
             break;
         default:
-            LOG_CRITICAL("Object type is not 'logic' for %s (%d)", name.c_str(), m_fli_type);
+            LOG_CRITICAL("Object type is not 'logic' for %s (%d)", name.c_str(), mti_GetTypeKind(_type));
             return -1;
     }
 
@@ -261,10 +326,7 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
         m_enum_map[m_value_enum[i][1]] = i;  // enum is of the format 'U' or '0', etc.
     }
 
-    m_val_buff = (char*)malloc(m_num_elems+1);
-    if (!m_val_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object read buffer: ABORTING");
-    }
+    m_val_buff = new char[m_num_elems+1];
     m_val_buff[m_num_elems] = '\0';
 
     return FliValueObjHdl::initialise(name, fq_name);
@@ -272,29 +334,14 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
 
 const char* FliLogicObjHdl::get_signal_value_binstr(void)
 {
-    switch (m_fli_type) {
-        case MTI_TYPE_ENUM:
-            if (m_is_var) {
-                m_val_buff[0] = m_value_enum[mti_GetVarValue(get_handle<mtiVariableIdT>())][1];
-            } else {
-                m_val_buff[0] = m_value_enum[mti_GetSignalValue(get_handle<mtiSignalIdT>())][1];
-            }
-            break;
-        case MTI_TYPE_ARRAY: {
-                if (m_is_var) {
-                    mti_GetArrayVarValue(get_handle<mtiVariableIdT>(), m_mti_buff);
-                } else {
-                    mti_GetArraySignalValue(get_handle<mtiSignalIdT>(), m_mti_buff);
-                }
+    if (!m_indexable) {
+        m_val_buff[0] = m_value_enum[m_fli_intf->mti_get_value()][1];
+    } else {
+        m_fli_intf->mti_get_array_value(m_mti_buff);
 
-                for (int i = 0; i < m_num_elems; i++ ) {
-                    m_val_buff[i] = m_value_enum[(int)m_mti_buff[i]][1];
-                }
-            }
-            break;
-        default:
-            LOG_CRITICAL("Object type is not 'logic' for %s (%d)", m_name.c_str(), m_fli_type);
-            return NULL;
+        for (int i = 0; i < m_num_elems; i++ ) {
+            m_val_buff[i] = m_value_enum[(int)m_mti_buff[i]][1];
+        }
     }
 
     LOG_DEBUG("Retrieved \"%s\" for value object %s", m_val_buff, m_name.c_str());
@@ -304,27 +351,19 @@ const char* FliLogicObjHdl::get_signal_value_binstr(void)
 
 int FliLogicObjHdl::set_signal_value(const long value)
 {
-    if (m_fli_type == MTI_TYPE_ENUM) {
+    if (!m_indexable) {
         mtiInt32T enumVal = value ? m_enum_map['1'] : m_enum_map['0'];
 
-        if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), enumVal);
-        } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
-        }
+        m_fli_intf->mti_set_value(enumVal);
     } else {
         LOG_DEBUG("set_signal_value(long)::0x%016x", value);
         for (int i = 0, idx = m_num_elems-1; i < m_num_elems; i++, idx--) {
             mtiInt32T enumVal = value&(1L<<i) ? m_enum_map['1'] : m_enum_map['0'];
 
-            m_mti_buff[idx] = (char)enumVal; 
+            m_mti_buff[idx] = (char)enumVal;
         }
 
-        if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
-        } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
-        }
+        m_fli_intf->mti_set_value(reinterpret_cast<mtiLongT>(m_mti_buff));
     }
 
     return 0;
@@ -332,16 +371,12 @@ int FliLogicObjHdl::set_signal_value(const long value)
 
 int FliLogicObjHdl::set_signal_value(std::string &value)
 {
-    if (m_fli_type == MTI_TYPE_ENUM) {
+    if (!m_indexable) {
         mtiInt32T enumVal = m_enum_map[value.c_str()[0]];
 
-        if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), enumVal);
-        } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
-        }
+        m_fli_intf->mti_set_value(enumVal);
     } else {
-        
+
         if ((int)value.length() != m_num_elems) {
             LOG_ERROR("FLI: Unable to set logic vector due to the string having incorrect length.  Length of %d needs to be %d", value.length(), m_num_elems);
             return -1;
@@ -355,14 +390,10 @@ int FliLogicObjHdl::set_signal_value(std::string &value)
 
         for (valIter = value.begin(); (valIter != value.end()) && (i < m_num_elems); valIter++, i++) {
             enumVal = m_enum_map[*valIter];
-            m_mti_buff[i] = (char)enumVal; 
+            m_mti_buff[i] = (char)enumVal;
         }
 
-        if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
-        } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
-        }
+        m_fli_intf->mti_set_value(reinterpret_cast<mtiLongT>(m_mti_buff));
     }
 
     return 0;
@@ -372,13 +403,9 @@ int FliIntObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     m_num_elems   = 1;
 
-    m_val_buff = (char*)malloc(33);  // Integers are always 32-bits
-    if (!m_val_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object read buffer: ABORTING");
-        return -1;
-    }
-    m_val_buff[m_num_elems] = '\0';
- 
+    m_val_buff = new char[33];  // Integers are always 32-bits
+    m_val_buff[33] = '\0';
+
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
@@ -386,11 +413,7 @@ const char* FliIntObjHdl::get_signal_value_binstr(void)
 {
     mtiInt32T val;
 
-    if (m_is_var) {
-        val = mti_GetVarValue(get_handle<mtiVariableIdT>());
-    } else {
-        val = mti_GetSignalValue(get_handle<mtiSignalIdT>());
-    }
+    val = m_fli_intf->mti_get_value();
 
     std::bitset<32> value((unsigned long)val);
     std::string bin_str = value.to_string<char,std::string::traits_type, std::string::allocator_type>();
@@ -403,23 +426,14 @@ long FliIntObjHdl::get_signal_value_long(void)
 {
     mtiInt32T value;
 
-    if (m_is_var) {
-        value = mti_GetVarValue(get_handle<mtiVariableIdT>());
-    } else {
-        value = mti_GetSignalValue(get_handle<mtiSignalIdT>());
-    }
+    value = m_fli_intf->mti_get_value();
 
     return (long)value;
 }
 
 int FliIntObjHdl::set_signal_value(const long value)
 {
-    if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), value);
-    } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), value);
-    }
-
+    m_fli_intf->mti_set_value(value);
     return 0;
 }
 
@@ -428,73 +442,45 @@ int FliRealObjHdl::initialise(std::string &name, std::string &fq_name)
 
     m_num_elems   = 1;
 
-    m_mti_buff    = (double*)malloc(sizeof(double));
-    if (!m_mti_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
-        return -1;
-    }
- 
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
 double FliRealObjHdl::get_signal_value_real(void)
 {
-    if (m_is_var) {
-        mti_GetVarValueIndirect(get_handle<mtiVariableIdT>(), m_mti_buff);
-    } else {
-        mti_GetSignalValueIndirect(get_handle<mtiSignalIdT>(), m_mti_buff);
-    }
+    double rv;
 
-    LOG_DEBUG("Retrieved \"%f\" for value object %s", m_mti_buff[0], m_name.c_str());
+    m_fli_intf->mti_get_value_indirect(&rv);
 
-    return m_mti_buff[0];
+    LOG_DEBUG("Retrieved \"%f\" for value object %s", rv, m_name.c_str());
+
+    return rv;
 }
 
 int FliRealObjHdl::set_signal_value(const double value)
 {
-    m_mti_buff[0] = value;
-
-    if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
-    } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
-    }
+    m_fli_intf->mti_set_value(reinterpret_cast<mtiLongT>(&value));
 
     return 0;
 }
 
 int FliStringObjHdl::initialise(std::string &name, std::string &fq_name)
 {
-    m_range_left  = mti_TickLeft(m_val_type);
-    m_range_right = mti_TickRight(m_val_type);
-    m_num_elems   = mti_TickLength(m_val_type);
+    mtiTypeIdT _type = m_fli_intf->mti_get_type();
+
+    m_range_left  = mti_TickLeft(_type);
+    m_range_right = mti_TickRight(_type);
+    m_num_elems   = mti_TickLength(_type);
     m_indexable   = true;
 
-    m_mti_buff    = (char*)malloc(sizeof(char) * m_num_elems);
-    if (!m_mti_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
-        return -1;
-    }
-
-    m_val_buff = (char*)malloc(m_num_elems+1);
-    if (!m_val_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object read buffer: ABORTING");
-        return -1;
-    }
+    m_val_buff    = new char[m_num_elems+1];
     m_val_buff[m_num_elems] = '\0';
- 
+
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
 const char* FliStringObjHdl::get_signal_value_str(void)
 {
-    if (m_is_var) {
-        mti_GetArrayVarValue(get_handle<mtiVariableIdT>(), m_mti_buff);
-    } else {
-        mti_GetArraySignalValue(get_handle<mtiSignalIdT>(), m_mti_buff);
-    }
-
-    strncpy(m_val_buff, m_mti_buff, m_num_elems);
+    m_fli_intf->mti_get_array_value(m_val_buff);
 
     LOG_DEBUG("Retrieved \"%s\" for value object %s", m_val_buff, m_name.c_str());
 
@@ -503,14 +489,7 @@ const char* FliStringObjHdl::get_signal_value_str(void)
 
 int FliStringObjHdl::set_signal_value(std::string &value)
 {
-    strncpy(m_mti_buff, value.c_str(), m_num_elems);
-
-    if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
-    } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
-    }
+    m_fli_intf->mti_set_value(reinterpret_cast<mtiLongT>(value.data()));
 
     return 0;
 }
-
