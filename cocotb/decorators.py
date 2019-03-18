@@ -180,18 +180,19 @@ class RunningCoroutine(object):
             otherwise return true"""
         return not self._finished
 
-    # Needs `yield from` syntax to implement this correctly.
     # Once 2.7 is dropped, this can be run unconditionally
     if sys.version_info >= (3, 3):
         exec_(textwrap.dedent("""
         def __await__(self):
-            if self._natively_awaitable:
-                # use the native trampoline, which will only hand back nested
-                # non-natively awaitable objects
-                return (yield from self._coro)
-            else:
-                # hand the coroutine back to the scheduler trampoline
-                return (yield self)
+            # It's tempting to use `return (yield from self._coro)` here,
+            # which bypasses the scheduler. Unfortunately, this means that
+            # we can't keep track of the result or state of the coroutine,
+            # things which we expose in our public API. If you want the
+            # efficiency of bypassing the scheduler, remove the `@coroutine`
+            # decorator from your `async` functions.
+
+            # Hand the coroutine back to the scheduler trampoline.
+            return (yield self)
         """))
 
     __bool__ = __nonzero__
