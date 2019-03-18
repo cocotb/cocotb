@@ -173,22 +173,10 @@ of :keyword:`yield`. Provided they are decorated with ``@cocotb.coroutine``,
 is determined by which type of function it appears in, not by the
 sub-coroutinue being called.
 
-..note::
-
-    It is currently not possible to ``await`` a list of triggers as can be done
-    in a ``yield``-based coroutine with ``yield [trig1, trig2]``.
-    Until this becomes possible, a simple workaround is to create a helper
-    function like:
-
-    .. code-block:: python
-
-        @cocotb.coroutine
-        def first_of(triggers):
-            return (yield triggers)
-
-    which thanks to the interoperability between the two types of coroutinue,
-    can then be used as ``await first_of([trig1, trig2])``.
-
+.. note::
+    It is not legal to ``await`` a list of triggers as can be done in
+    ``yield``-based coroutine with ``yield [trig1, trig2]``. Use
+    ``await First(trig1, trig2)`` instead.
 
 Async generators
 ~~~~~~~~~~~~~~~~

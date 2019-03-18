@@ -40,7 +40,7 @@ Also used as regression test of cocotb capabilities
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite, ClockCycles, NextTimeStep,
-                             NullTrigger)
+                             NullTrigger, Combine, Event, First)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
@@ -931,6 +931,66 @@ def test_immediate_coro(dut):
         pass
     else:
         raise TestFailure("Exception was not raised")
+
+
+@cocotb.test()
+def test_combine(dut):
+    """ Test the Combine trigger. """
+    # gh-852
+
+    @cocotb.coroutine
+    def do_something(delay):
+        yield Timer(delay)
+
+    crs = [cocotb.fork(do_something(dly)) for dly in [10, 30, 20]]
+
+    yield Combine(*(cr.join() for cr in crs))
+
+
+@cocotb.test()
+def test_clock_cycles_forked(dut):
+    """ Test that ClockCycles can be used in forked coroutines """
+    # gh-520
+
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    @cocotb.coroutine
+    def wait_ten():
+        yield ClockCycles(dut.clk, 10)
+
+    a = cocotb.fork(wait_ten())
+    b = cocotb.fork(wait_ten())
+    yield a.join()
+    yield b.join()
+
+
+@cocotb.test()
+def test_nested_first(dut):
+    """ Test that nested First triggers behave as expected """
+    events = [Event() for i in range(3)]
+    waiters = [e.wait() for e in events]
+
+    @cocotb.coroutine
+    def fire_events():
+        """ fire the events in order """
+        for e in events:
+            yield Timer(1)
+            e.set()
+
+
+    @cocotb.coroutine
+    def wait_for_nested_first():
+        inner_first = First(waiters[0], waiters[1])
+        ret = yield First(inner_first, waiters[2])
+
+        # should unpack completely, rather than just by one level
+        assert ret is not inner_first
+        assert ret is waiters[0]
+
+    fire_task = cocotb.fork(fire_events())
+    yield wait_for_nested_first()
+    yield fire_task.join()
+
 
 if sys.version_info[:2] >= (3, 5):
     from test_cocotb_35 import *

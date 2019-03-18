@@ -40,7 +40,6 @@ from io import StringIO, BytesIO
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
 from cocotb.utils import get_sim_time, with_metaclass, exec_
@@ -162,6 +161,10 @@ class RunningCoroutine(object):
 
     def kill(self):
         """Kill a coroutine."""
+        if self._outcome is not None:
+            # already finished, nothing to kill
+            return
+
         self.log.debug("kill() called on coroutine")
         # todo: probably better to throw an exception for anyone waiting on the coroutine
         self._outcome = outcomes.Value(None)
@@ -169,7 +172,7 @@ class RunningCoroutine(object):
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits."""
-        return Join(self)
+        return cocotb.triggers.Join(self)
 
     def has_started(self):
         return self._started
