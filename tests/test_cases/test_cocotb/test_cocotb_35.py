@@ -107,3 +107,12 @@ async def test_trigger_await_gives_self(dut):
     t = Timer(1)
     t2 = await t
     assert t2 is t
+
+
+@cocotb.test()
+async def test_await_causes_start(dut):
+    """ Test that an annotated async coroutine gets marked as started """
+    coro = produce.async_annotated(Value(1))
+    assert not coro.has_started()
+    await coro
+    assert coro.has_started()
