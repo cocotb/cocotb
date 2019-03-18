@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,6 +37,7 @@ import inspect
 import textwrap
 
 from io import StringIO, BytesIO
+from functools import wraps
 
 import cocotb
 from cocotb.log import SimLog
@@ -422,6 +423,8 @@ class test(with_metaclass(_decorator_helper, coroutine)):
     Args:
         timeout (int, optional):
             value representing simulation timeout (not implemented).
+        timeout_units (str, optional):
+            units of the timeout value.  See Timer for valid values.
         expect_fail (bool, optional):
             Don't mark the result as a failure if the test fails.
         expect_error (bool, optional):
@@ -432,11 +435,12 @@ class test(with_metaclass(_decorator_helper, coroutine)):
         stage (int, optional)
             Order tests logically into stages, where multiple tests can share a stage.
     """
-    def __init__(self, f, timeout=None, expect_fail=False, expect_error=False,
-                 skip=False, stage=None):
+    def __init__(self, f, timeout=None, timeout_units=None, expect_fail=False,
+                 expect_error=False, skip=False, stage=None):
         super(test, self).__init__(f)
 
         self.timeout = timeout
+        self.timeout_units = timeout_units
         self.expect_fail = expect_fail
         self.expect_error = expect_error
         self.skip = skip
@@ -446,7 +450,21 @@ class test(with_metaclass(_decorator_helper, coroutine)):
 
     def __call__(self, *args, **kwargs):
         try:
-            return RunningTest(self._func(*args, **kwargs), self)
+            rc = coroutine(self._func)(*args, **kwargs)
+
+            @wraps(self._func)
+            def wrapper():
+                tst = cocotb.fork(rc)
+
+                if self.timeout is None:
+                    yield tst.join()
+                else:
+                    tmr = Timer(self.timeout, units=self.timeout_units)
+                    res = yield [tst.join(), tmr]
+                    if res == tmr:
+                        raise TestFailure("The test runtime exceeded the timeout of %d%s}" % (self.timeout, self.timeout_units))
+
+            self._func = wrapper
+            return RunningTest(self._func(), self)
         except Exception as e:
             raise raise_error(self, "Test raised exception:")
-

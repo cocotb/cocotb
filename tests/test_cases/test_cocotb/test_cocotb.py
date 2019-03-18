@@ -850,6 +850,14 @@ def test_tests_are_tests(dut):
     assert isinstance(test_tests_are_tests, cocotb.test)
 
 
+@cocotb.test(timeout=10, timeout_units="ns", expect_fail=True)
+def test_timeout(dut):
+    """
+    Test that tests with timeout raise TestFailure
+    """
+    yield Timer(500, units="ns")
+
+
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
