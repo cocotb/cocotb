@@ -5,7 +5,6 @@ dist: xenial
 cache:
   directories:
   - iverilog
-  - ghdl
 
 git:
   quiet: true
@@ -87,7 +86,7 @@ jobs:
       env: SIM=ghdl
       before_install:
         - sudo apt-get install gnat
-        - if [[ ! -e "./ghdl/README.md" ]]; then rm -rf ghdl; git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36 fi
+        - git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
         - cd ghdl && ./configure && make -j2 && sudo make install && cd ..
         - pip install tox
         - pyenv global system $TRAVIS_PYTHON_VERSION
