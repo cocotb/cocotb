@@ -965,6 +965,44 @@ def test_clock_cycles_forked(dut):
 
 
 @cocotb.test()
+def test_yield_list_stale(dut):
+    """ Test that a trigger yielded as part of a list can't cause a spurious wakeup """
+    # gh-843
+    events = [Event() for i in range(3)]
+
+    waiters = [e.wait() for e in events]
+
+    @cocotb.coroutine
+    def wait_for_lists():
+        ret_i = waiters.index((yield [waiters[0], waiters[1]]))
+        assert ret_i == 0, "Expected event 0 to fire, not {}".format(ret_i)
+
+        ret_i = waiters.index((yield [waiters[2]]))
+        assert ret_i == 2, "Expected event 2 to fire, not {}".format(ret_i)
+
+    @cocotb.coroutine
+    def wait_for_e1():
+        """ wait on the event that didn't wake `wait_for_lists` """
+        ret_i = waiters.index((yield waiters[1]))
+        assert ret_i == 1, "Expected event 1 to fire, not {}".format(ret_i)
+
+    @cocotb.coroutine
+    def fire_events():
+        """ fire the events in order """
+        for e in events:
+            yield Timer(1)
+            e.set()
+
+    fire_task = cocotb.fork(fire_events())
+    e1_task = cocotb.fork(wait_for_e1())
+    yield wait_for_lists()
+
+    # make sure the other tasks finish
+    yield fire_task.join()
+    yield e1_task.join()
+
+
+@cocotb.test()
 def test_nested_first(dut):
     """ Test that nested First triggers behave as expected """
     events = [Event() for i in range(3)]
