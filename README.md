@@ -20,6 +20,9 @@
     # Checkout git repositories
     git clone https://github.com/potentialventures/cocotb.git
     
+    # Install cocotb
+    pip install ./cocotb
+    
     # Run the tests...
     cd cocotb/examples/endian_swapper/tests
     make
