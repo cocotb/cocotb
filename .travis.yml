@@ -74,6 +74,15 @@ jobs:
         - tox -e py27
 
     - stage: SimTests
+      python: 3.7
+      os: windows
+      language: shell
+      before_install:
+        - docker build -t cocotb -f Dockerfile.windows .
+      script:
+        - docker run cocotb powershell 'python setup.py install ; make test'
+
+    - stage: SimTests
       os: osx
       language: generic
       python: 3.6
