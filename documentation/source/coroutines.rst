@@ -210,6 +210,5 @@ type of generator function that can be iterated with ``async for``:
         async for sample in ten_samples_of(dut.clk, dut.signal):
             assert sample % 2 == 0
 
-More details on this type of generator can be found in `PEP 525`_.
+More details on this type of generator can be found in :pep:`525`.
 
-.. PEP 525: https://www.python.org/dev/peps/pep-0525/
