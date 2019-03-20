@@ -44,7 +44,7 @@ a huge developer base and a quick search of the web reveals a `TUN example`_
 that looks like an ideal starting point for our testbench. Using this example
 we write a function that will create our virtual interface:
 
-.. code-block:: python
+.. code-block:: python3
 
     import subprocess, fcntl, struct
     
@@ -66,7 +66,7 @@ signal and connect up the :class:`Avalon driver <cocotb.drivers.avalon.AvalonSTP
 the testbench we'll enable verbose debug on the drivers and monitors by setting
 the log level to ``logging.DEBUG``.
 
-.. code-block:: python
+.. code-block:: python3
 
     import cocotb
     from cocotb.clock import Clock
@@ -89,7 +89,7 @@ We also need to reset the DUT and drive some default values onto some of the
 bus signals.  Note that we'll need to import the :class:`~.triggers.Timer`
 and :class:`~.triggers.RisingEdge` triggers.
 
-.. code-block:: python
+.. code-block:: python3
 
         # Reset the DUT
         dut._log.debug("Resetting DUT")
@@ -111,7 +111,7 @@ a packet to arrive on the monitor by yielding on :meth:`.wait_for_recv()` and th
 write the received packet back to the TUN file descriptor.
 
 
-.. code-block:: python
+.. code-block:: python3
 
     # Create our interface (destroyed at the end of the test)
     tun = create_tun()

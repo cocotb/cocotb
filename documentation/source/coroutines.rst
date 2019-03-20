@@ -10,7 +10,7 @@ Typically coroutines :keyword:`yield` a :any:`Trigger` object which
 indicates to the simulator some event which will cause the coroutine to be woken
 when it occurs.  For example:
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     def wait_10ns():
@@ -20,7 +20,7 @@ when it occurs.  For example:
 
 Coroutines may also yield other coroutines:
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     def wait_100ns():
@@ -30,7 +30,7 @@ Coroutines may also yield other coroutines:
 Coroutines can return a value, so that they can be used by other coroutines.
 Before Python 3.3, this requires a :any:`ReturnValue` to be raised.
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     def get_signal(clk, signal):
@@ -54,7 +54,7 @@ Before Python 3.3, this requires a :any:`ReturnValue` to be raised.
 Coroutines may also yield a list of triggers and coroutines to indicate that
 execution should resume if *any* of them fires:
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     def packet_with_timeout(monitor, timeout):
@@ -65,7 +65,7 @@ execution should resume if *any* of them fires:
 The trigger that caused execution to resume is passed back to the coroutine,
 allowing them to distinguish which trigger fired:
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     def packet_with_timeout(monitor, timeout):
@@ -79,7 +79,7 @@ allowing them to distinguish which trigger fired:
 Coroutines can be forked for parallel operation within a function of that code and
 the forked code.
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.test()
     def test_act_during_reset(dut):
@@ -99,7 +99,7 @@ the forked code.
 
 Coroutines can be joined to end parallel operation within a function.
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.test()
     def test_count_edge_cycles(dut, period=1000, clocks=6):
@@ -124,7 +124,7 @@ Coroutines can be joined to end parallel operation within a function.
 Coroutines can be killed before they complete, forcing their completion before
 they'd naturally end.
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.test()
     def test_different_clocks(dut):
@@ -158,7 +158,7 @@ Async functions
 Python 3.5 introduces :keyword:`async` functions, which provide an alternative
 syntax. For example:
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     async def wait_10ns():
@@ -198,7 +198,7 @@ meaning (rather than being a ``SyntaxError``) which matches the typical meaning
 of ``yield`` within regular python code. It can be used to create a special
 type of generator function that can be iterated with ``async for``:
 
-.. code-block:: python
+.. code-block:: python3
 
     async def ten_samples_of(clk, signal):
         for i in range(10):
