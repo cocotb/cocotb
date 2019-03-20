@@ -211,7 +211,7 @@ handle is used in all Python files referencing your RTL project. Assuming we
 have a toplevel port called ``clk`` we could create a test file containing the
 following:
 
-.. code-block:: python
+.. code-block:: python3
 
     import cocotb
     from cocotb.triggers import Timer
@@ -239,7 +239,7 @@ and creates a handle called ``dut``. Top-level signals can be accessed using the
 "dot" notation used for accessing object attributes in Python. The same mechanism
 can be used to access signals inside the design.
 
-.. code-block:: python
+.. code-block:: python3
 
     # Get a reference to the "clk" signal on the top-level
     clk = dut.clk
@@ -256,7 +256,7 @@ Values can be assigned to signals using either the
 :attr:`~cocotb.handle.NonHierarchyObject.value` property of a handle object
 or using direct assignment while traversing the hierarchy.
 
-.. code-block:: python
+.. code-block:: python3
     
     # Get a reference to the "clk" signal and assign a value
     clk = dut.clk
@@ -284,7 +284,7 @@ Accessing the :attr:`~cocotb.handle.NonHierarchyObject.value` property of a hand
 Any unresolved bits are preserved and can be accessed using the :attr:`~cocotb.binary.BinaryValue.binstr` attribute,
 or a resolved integer value can be accessed using the :attr:`~cocotb.binary.BinaryValue.integer` attribute.
 
-.. code-block:: python
+.. code-block:: python3
     
     >>> # Read a value back from the DUT
     >>> count = dut.counter.value
@@ -300,7 +300,7 @@ or a resolved integer value can be accessed using the :attr:`~cocotb.binary.Bina
 
 We can also cast the signal handle directly to an integer:
 
-.. code-block:: python
+.. code-block:: python3
 
     >>> print(int(dut.counter))
     42
@@ -310,7 +310,7 @@ We can also cast the signal handle directly to an integer:
 Parallel and sequential execution of coroutines
 -----------------------------------------------
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     def reset_dut(reset_n, duration):

@@ -9,7 +9,7 @@ Icarus
 
 Accessing bits of a vector doesn't work:
 
-.. code-block:: python
+.. code-block:: python3
 
     dut.stream_in_data[2] <= 1
 

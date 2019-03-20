@@ -81,7 +81,7 @@ Sorter
 
 Example testbench for snippet of code from `comp.lang.verilog <https://github.com/chiggs/comp.lang.verilog/blob/master/maja55/testbench.py>`_:
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     def run_test(dut, data_generator=random_data, delay_cycles=2):
