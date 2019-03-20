@@ -102,6 +102,13 @@ jobs:
       script:
         - tox -e py37
 
+    - stage: pytest
+      python: 3.7
+      before_install: *travis_linx_prep
+      script:
+        - cd examples/dff/tests
+        - pytest -s dff_cocotb.py
+
   allow_failures:
     - stage: SimTests
       python: 3.7

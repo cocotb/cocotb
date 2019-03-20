@@ -37,6 +37,7 @@ from cocotb.binary import BinaryValue
 from cocotb.regression import TestFactory
 from cocotb.scoreboard import Scoreboard
 from cocotb.result import TestFailure, TestSuccess
+from cocotb.run import Run
 
 # ==============================================================================
 class BitMonitor(Monitor):
@@ -139,3 +140,10 @@ def run_test(dut):
 # Register the test.
 factory = TestFactory(run_test)
 factory.generate_tests()
+
+def test_run():
+    Run(sources=['../hdl/dff.v'], toplevel='dff', module='dff_cocotb')
+
+if __name__ == "__main__":
+    test_run()
+

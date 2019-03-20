@@ -30,10 +30,11 @@
 import os
 import itertools
 
-if "SPHINX_BUILD" in os.environ:
-    simulator = None
-else:
+if "COCOTB_SIM" in os.environ:
     import simulator
+else:
+    simulator = None
+
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Timer, RisingEdge
