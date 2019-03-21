@@ -77,6 +77,8 @@ class ReturnValue(Exception):
 
 
 class TestComplete(Exception):
+    __test__ = False
+
     """Exception showing that test was completed. Sub-exceptions detail the exit status."""
     def __init__(self, *args, **kwargs):
         super(TestComplete, self).__init__(*args, **kwargs)

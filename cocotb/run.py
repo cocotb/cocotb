@@ -1,12 +1,13 @@
 """A run class."""
 
-from subprocess import Popen
+import subprocess
 import os
 import sys
 import sysconfig
 import cocotb
 import errno
 import distutils
+import inspect
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
@@ -48,7 +49,7 @@ def _build_lib(lib, dist):
         lib_path, os.path.join(os.path.abspath(dir_name), lib_name + "." + ext_name)
     )
 
-    return dir_name
+    return dir_name, ext_name
 
 
 def build_libs():
@@ -66,7 +67,7 @@ def build_libs():
         sources=[share_dir + "/lib/utils/cocotb_utils.c"],
     )
 
-    lib_path = _build_lib(libcocotbutils, dist)
+    lib_path, ext_name = _build_lib(libcocotbutils, dist)
 
     libgpilog = Extension(
         "libgpilog",
@@ -101,7 +102,7 @@ def build_libs():
     _build_lib(libgpi, dist)
 
     libsim = Extension(
-        "libsim",
+        "simulator",
         include_dirs=[share_dir + "/include"],
         sources=[share_dir + "/lib/simulator/simulatormodule.c"],
     )
@@ -122,24 +123,29 @@ def build_libs():
     _build_lib(libvpi, dist)
 
     _symlink_force(
-        os.path.join(os.path.abspath(lib_path), "libvpi.so"),
-        os.path.join(os.path.abspath(lib_path), "gpivpi.vpl"),
+        os.path.join(lib_path, "libvpi." + ext_name),
+        os.path.join(lib_path, "gpivpi.vpl"),
     )
     _symlink_force(
-        os.path.join(os.path.abspath(lib_path), "libvpi.so"),
-        os.path.join(os.path.abspath(lib_path), "cocotb.vpl"),
-    )
-    _symlink_force(
-        os.path.join(os.path.abspath(lib_path), "libsim.so"),
-        os.path.join(os.path.abspath(lib_path), "simulator.so"),
+        os.path.join(lib_path, "libvpi." + ext_name),
+        os.path.join(lib_path, "cocotb.vpl"),
     )
 
     return lib_path
 
 
-def Run(sources, toplevel, module):
+def Run(sources, toplevel, module=None):
 
     libs_dir = build_libs()
+
+    previous_frame = inspect.currentframe().f_back
+    (run_module_filename, _, _, _, _) = inspect.getframeinfo(previous_frame)
+
+    run_dir_name = os.path.dirname(run_module_filename)
+    run_module_name = os.path.splitext(os.path.split(run_module_filename)[-1])[0]
+
+    if module is None:
+        module = run_module_name
 
     my_env = os.environ
     my_env["LD_LIBRARY_PATH"] = libs_dir + ":" + sysconfig.get_config_var("LIBDIR")
@@ -151,25 +157,28 @@ def Run(sources, toplevel, module):
     my_env["COCOTB_SIM"] = "1"
     my_env["MODULE"] = module
 
-    os.makedirs("sim_build", exist_ok=True)
+    sim_build_dir = os.path.join(run_dir_name, "sim_build")
+    os.makedirs(sim_build_dir, exist_ok=True)
+    sim_comopile_file = os.path.join(sim_build_dir, "sim.vvp")
 
     sources_abs = []
     for src in sources:
-        sources_abs.append(os.path.abspath(src))
+        sources_abs.append(os.path.normpath(os.path.join(run_dir_name, src)))
 
     comp_cmd = [
         "iverilog",
         "-o",
-        "sim_build/sim.vvp",
+        sim_comopile_file,
         "-D",
         "COCOTB_SIM=1",
         "-s",
         toplevel,
         "-g2012",
     ] + sources_abs
+    print(comp_cmd)
     print(" ".join(comp_cmd))
-    process = Popen(comp_cmd).wait()
+    process = subprocess.check_call(comp_cmd)
 
-    cmd = ["vvp", "-M", libs_dir, "-m", "gpivpi", "sim_build/sim.vvp"]
+    cmd = ["vvp", "-M", libs_dir, "-m", "gpivpi", sim_comopile_file]
     print(" ".join(cmd))
-    process = Popen(cmd).wait()
+    process = subprocess.check_call(cmd)

@@ -16,7 +16,7 @@ else
 endif
 
 TOPLEVEL=dff
-MODULE=$(TOPLEVEL)_cocotb
+MODULE=test_$(TOPLEVEL)
 
 CUSTOM_SIM_DEPS=$(CWD)/Makefile
 

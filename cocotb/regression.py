@@ -459,7 +459,9 @@ class TestFactory(object):
     Tests are simply named ``test_function_N``. The docstring for the test (hence
     the test description) includes the name and description of each generator.
     """
-
+    
+    __test__ = False    
+    
     def __init__(self, test_function, *args, **kwargs):
         """
         Args:
