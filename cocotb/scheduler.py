@@ -274,7 +274,7 @@ class Scheduler(object):
             for t in self._trigger2coros:
                 t.unprime()
 
-            for t in [self._readwrite, self._readonly, self._next_timestep,
+            for t in [self._readwrite, self._next_timestep,
                       self._timer1, self._timer0]:
                 if t.primed:
                     t.unprime()
