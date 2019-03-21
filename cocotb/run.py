@@ -179,6 +179,6 @@ def Run(sources, toplevel, module=None):
     print(" ".join(comp_cmd))
     process = subprocess.check_call(comp_cmd)
 
-    cmd = ["vvp", "-M", libs_dir, "-m", "gpivpi", sim_comopile_file]
+    cmd = ["vvp", "-M", libs_dir, "-m", "gpivpi", sim_compile_file]
     print(" ".join(cmd))
     process = subprocess.check_call(cmd)
