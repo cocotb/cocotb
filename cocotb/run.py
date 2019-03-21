@@ -159,7 +159,7 @@ def Run(sources, toplevel, module=None):
 
     sim_build_dir = os.path.join(run_dir_name, "sim_build")
     os.makedirs(sim_build_dir, exist_ok=True)
-    sim_comopile_file = os.path.join(sim_build_dir, "sim.vvp")
+    sim_compile_file = os.path.join(sim_build_dir, "sim.vvp")
 
     sources_abs = []
     for src in sources:
@@ -168,7 +168,7 @@ def Run(sources, toplevel, module=None):
     comp_cmd = [
         "iverilog",
         "-o",
-        sim_comopile_file,
+        sim_compile_file,
         "-D",
         "COCOTB_SIM=1",
         "-s",
