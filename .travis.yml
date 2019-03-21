@@ -106,6 +106,7 @@ jobs:
       python: 3.7
       before_install: *travis_linx_prep
       script:
+        - python setup.py install
         - cd examples/dff/tests
         - pytest -s dff_cocotb.py
 
