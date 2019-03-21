@@ -540,6 +540,16 @@ class First(_AggregateWaitable):
     Wait for the first of multiple triggers.
 
     Returns the result of the trigger that fired.
+
+    .. note::
+        The event loop is single threaded, so while events may be simultaneous
+        in simulation time, they can never be simultaneous in real time.
+        For this reason, the value of ``t_ret is t1`` in the following example
+        is implementation-defined, and will vary by simulator::
+
+            t1 = Timer(10, units='ps')
+            t2 = Timer(10, units='ps')
+            t_ret = yield First(t1, t2)
     """
     @decorators.coroutine
     def _wait(self):
