@@ -127,28 +127,6 @@ class VpiReadwriteCbHdl : public VpiCbHdl {
 public:
     VpiReadwriteCbHdl(GpiImplInterface *impl);
     virtual ~VpiReadwriteCbHdl() { }
-    int run_callback(void) {
-        if (delay_kill) {
-            delay_kill = false;
-            return 0;
-        } else {
-            return VpiCbHdl::run_callback();
-        }
-    }
-    int cleanup_callback(void) {
-        if (m_state == GPI_PRIMED) {
-            delay_kill = true;
-            return 0;
-        } else {
-            return VpiCbHdl::cleanup_callback();
-        }
-    }
-    int arm_callback(void) {
-        delay_kill = false;
-        return VpiCbHdl::arm_callback();
-    }
-private:
-    bool delay_kill;
 };
 
 class VpiStartupCbHdl : public VpiCbHdl {

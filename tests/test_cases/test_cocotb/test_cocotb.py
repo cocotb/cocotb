@@ -1032,5 +1032,37 @@ def test_nested_first(dut):
     yield fire_task.join()
 
 
+@cocotb.test()
+def test_readwrite(dut):
+    """ Test that ReadWrite can be waited on """
+    # gh-759
+    yield Timer(1)
+    dut.clk <= 1
+    yield ReadWrite()
+
+
+@cocotb.test()
+def test_writes_have_taken_effect_after_readwrite(dut):
+    """ Test that ReadWrite fires first for the background write coro """
+    dut.stream_in_data.setimmediatevalue(0)
+
+    @cocotb.coroutine
+    def write_manually():
+        yield ReadWrite()
+        # this should overwrite the write written below
+        dut.stream_in_data.setimmediatevalue(2)
+
+    # queue a backround task to do a manual write
+    waiter = cocotb.fork(write_manually())
+
+    # do a delayed write. This will be overwritten
+    dut.stream_in_data <= 3
+    yield waiter
+
+    # check that the write we expected took precedence
+    yield ReadOnly()
+    assert dut.stream_in_data.value == 2
+
+
 if sys.version_info[:2] >= (3, 5):
     from test_cocotb_35 import *

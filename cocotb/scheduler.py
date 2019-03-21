@@ -208,12 +208,6 @@ class Scheduler(object):
 
     # Singleton events, recycled to avoid spurious object creation
     _readonly = ReadOnly()
-    # TODO[gh-759]: For some reason, the scheduler requires that these triggers
-    # are _not_ the same instances used by the tests themselves. This is risky,
-    # because it can lead to them overwriting each other's callbacks. We should
-    # try to remove this `copy.copy` in future.
-    _next_timestep = copy.copy(NextTimeStep())
-    _readwrite = copy.copy(ReadWrite())
     _timer1 = Timer(1)
     _timer0 = Timer(0)
 
@@ -247,35 +241,42 @@ class Scheduler(object):
         self._entrypoint = None
         self._main_thread = threading.current_thread()
 
-        # Select the appropriate scheduling algorithm for this simulator
-        self.advance = self.default_scheduling_algorithm
         self._is_reacting = False
 
-    def default_scheduling_algorithm(self):
+        self._write_coro_inst = None
+        self._writes_pending = Event()
+
+    @cocotb.decorators.coroutine
+    def _do_writes(self):
+        """ An internal coroutine that performs pending writes """
+        while True:
+            yield self._writes_pending.wait()
+            if self._mode != Scheduler._MODE_NORMAL:
+                yield NextTimeStep()
+
+            yield ReadWrite()
+
+            while self._writes:
+                handle, value = self._writes.popitem()
+                handle.setimmediatevalue(value)
+            self._writes_pending.clear()
+
+    def _check_termination(self):
         """
-        Decide whether we need to schedule our own triggers (if at all) in
-        order to progress to the next mode.
-
-        This algorithm has been tested against the following simulators:
-            Icarus Verilog
+        Handle a termination that causes us to move onto the next test.
         """
-        if not self._terminate and self._writes:
-
-            if self._mode == Scheduler._MODE_NORMAL:
-                if not self._readwrite.primed:
-                    self._readwrite.prime(self.react)
-            elif not self._next_timestep.primed:
-                self._next_timestep.prime(self.react)
-
-        elif self._terminate:
+        if self._terminate:
             if _debug:
                 self.log.debug("Test terminating, scheduling Timer")
+
+            if self._write_coro_inst is not None:
+                self._write_coro_inst.kill()
+                self._write_coro_inst = None
 
             for t in self._trigger2coros:
                 t.unprime()
 
-            for t in [self._readwrite, self._next_timestep,
-                      self._timer1, self._timer0]:
+            for t in [self._timer1, self._timer0]:
                 if t.primed:
                     t.unprime()
 
@@ -283,6 +284,8 @@ class Scheduler(object):
             self._trigger2coros = collections.defaultdict(list)
             self._coro2trigger = {}
             self._terminate = False
+            self._writes = {}
+            self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
     def begin_test(self, trigger=None):
@@ -315,7 +318,7 @@ class Scheduler(object):
                 test = self._entrypoint
                 self._entrypoint = None
                 self.schedule(test)
-                self.advance()
+                self._check_termination()
 
     def react(self, trigger):
         """
@@ -328,6 +331,8 @@ class Scheduler(object):
             # queue up the trigger, the event loop will get to it
             self._pending_triggers.append(trigger)
             return
+
+        assert not self._pending_triggers
 
         # start the event loop
         self._is_reacting = True
@@ -369,34 +374,6 @@ class Scheduler(object):
             # Only GPI triggers affect the simulator scheduling mode
             elif isinstance(trigger, GPITrigger):
                 self._mode = Scheduler._MODE_NORMAL
-
-            # We're the only source of ReadWrite triggers which are only used for
-            # playing back any cached signal updates
-            if trigger is self._readwrite:
-
-                if _debug:
-                    self.log.debug("Writing cached signal updates")
-
-                while self._writes:
-                    handle, value = self._writes.popitem()
-                    handle.setimmediatevalue(value)
-
-                self._readwrite.unprime()
-
-                return
-
-            # Similarly if we've scheduled our next_timestep on way to readwrite
-            if trigger is self._next_timestep:
-
-                if not self._writes:
-                    self.log.error(
-                        "Moved to next timestep without any pending writes!")
-                else:
-                    self.log.debug(
-                        "Priming ReadWrite trigger so we can playback writes")
-                    self._readwrite.prime(self.react)
-
-                return
 
             # work through triggers one by one
             is_first = True
@@ -464,7 +441,7 @@ class Scheduler(object):
                     self._pending_events.pop(0).set()
 
             # no more pending triggers
-            self.advance()
+            self._check_termination()
             if _debug:
                 self.log.debug("All coroutines scheduled, handing control back"
                                " to simulator")
@@ -503,13 +480,29 @@ class Scheduler(object):
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:
             raise Exception("Write to object {0} was scheduled during a read-only sync phase.".format(handle._name))
+
+        # TODO: we should be able to better keep track of when this needs to
+        # be scheduled
+        if self._write_coro_inst is None:
+            self._write_coro_inst = self._do_writes()
+            self.schedule(self._write_coro_inst)
+
         self._writes[handle] = value
+        self._writes_pending.set()
 
     def _coroutine_yielded(self, coro, trigger):
         """Prime the trigger and update our internal mappings."""
         self._coro2trigger[coro] = trigger
 
-        self._trigger2coros[trigger].append(coro)
+        if coro is self._write_coro_inst:
+            # Our internal write coroutine always runs before any user coroutines.
+            # This preserves the behavior prior to the refactoring of writes to
+            # this coroutine.
+            self._trigger2coros[trigger].insert(0, coro)
+        else:
+            # Everything else joins the back of the queue
+            self._trigger2coros[trigger].append(coro)
+
         if not trigger.primed:
             try:
                 trigger.prime(self.react)
@@ -595,7 +588,7 @@ class Scheduler(object):
             self.log.debug("Adding new coroutine %s" % coroutine.__name__)
 
         self.schedule(coroutine)
-        self.advance()
+        self._check_termination()
         return coroutine
 
     def new_test(self, coroutine):
