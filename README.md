@@ -24,7 +24,7 @@ Cocotb can be installed by running `pip install cocotb`.
     # Checkout git repositories
     git clone https://github.com/potentialventures/cocotb.git
     
-    # Install cocotb 
+    # Install cocotb
     pip install ./cocotb
     
     # Run the tests...
