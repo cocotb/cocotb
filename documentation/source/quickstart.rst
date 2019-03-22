@@ -142,8 +142,8 @@ Installing a package manager really helps things out here.
     
     $> brew install python icarus-verilog gtkwave
 
-Instaling cocotb
-================
+Installing cocotb
+=================
 
 Cocotb can be installed by running:
 
@@ -156,14 +156,13 @@ Or from repository:
 .. code-block:: bash
 
     $> git clone https://github.com/potentialventures/cocotb
-    $> cd cocotb
-    $> python setup.py install 
+    $> pip install ./cocotb 
 
 And for development:
 
 .. code-block:: bash
 
-    $> python setup.py develop
+    $> pip install -e ./cocotb 
     
 Running an example
 ------------------
@@ -180,7 +179,7 @@ To run a test using a different simulator:
 
     $> make SIM=vcs
 
-    
+
 Running a VHDL example
 ----------------------
 
