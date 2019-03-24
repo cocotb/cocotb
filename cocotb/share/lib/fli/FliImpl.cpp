@@ -40,6 +40,9 @@ static FliProcessCbHdl *sim_finish_cb;
 static FliImpl         *fli_table;
 } //extern "C"
 
+/** local helper functions */
+namespace {
+
 bool fli_is_logic(mtiTypeIdT type)
 {
     mtiInt32T numEnums = mti_TickLength(type);
@@ -127,6 +130,7 @@ bool fli_is_const(void *hdl)
                                 || _type == accAliasGeneric);
 }
 
+} //namespace
 
 void FliImpl::sim_end(void)
 {
