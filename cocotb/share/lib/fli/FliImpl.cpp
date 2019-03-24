@@ -38,6 +38,7 @@ extern "C" {
 static FliProcessCbHdl *sim_init_cb;
 static FliProcessCbHdl *sim_finish_cb;
 static FliImpl         *fli_table;
+} //extern "C"
 
 bool fli_is_logic(mtiTypeIdT type)
 {
@@ -126,7 +127,6 @@ bool fli_is_const(void *hdl)
                                 || _type == accAliasGeneric);
 }
 
-} //extern "C"
 
 void FliImpl::sim_end(void)
 {
@@ -142,50 +142,39 @@ void FliImpl::sim_end(void)
 
 gpi_objtype_t FliImpl::get_gpi_obj_type(mtiTypeIdT _typeid)
 {
-    gpi_objtype_t rv;
-
     switch (mti_GetTypeKind(_typeid)) {
-        case MTI_TYPE_ENUM:
-            if (fli_is_logic(_typeid))
-                rv = GPI_REGISTER;
-            else if (fli_is_boolean(_typeid) || fli_is_char(_typeid))
-                rv = GPI_INTEGER;
-            else
-                rv = GPI_ENUM;
-            break;
-        case MTI_TYPE_SCALAR:
-        case MTI_TYPE_PHYSICAL:
-            rv = GPI_INTEGER;
-            break;
-        case MTI_TYPE_REAL:
-            rv = GPI_REAL;
-            break;
-        case MTI_TYPE_ARRAY: {
-                mtiTypeIdT   elemType     = mti_GetArrayElementType(_typeid);
-                mtiTypeKindT elemTypeKind = mti_GetTypeKind(elemType);
+        case MTI_TYPE_ENUM:     { return get_enum_gpi_obj_type(_typeid);  }
+        case MTI_TYPE_SCALAR:   { return GPI_INTEGER;                     }
+        case MTI_TYPE_PHYSICAL: { return GPI_INTEGER;                     }
+        case MTI_TYPE_REAL:     { return GPI_REAL;                        }
+        case MTI_TYPE_ARRAY:    { return get_array_gpi_obj_type(_typeid); }
+        case MTI_TYPE_RECORD:   { return GPI_STRUCTURE;                   }
+        default:                { return GPI_UNKNOWN;                     }
+    }
+}
 
-                switch (elemTypeKind) {
-                    case MTI_TYPE_ENUM:
-                        if (fli_is_logic(elemType))
-                            rv = GPI_REGISTER;
-                        else if (fli_is_char(elemType))
-                            rv = GPI_STRING;
-                        else
-                            rv = GPI_ARRAY;
-                        break;
-                    default:
-                        rv = GPI_ARRAY;
-                }
-            }
-            break;
-        case MTI_TYPE_RECORD:
-            rv = GPI_STRUCTURE;
-            break;
-        default:
-            rv = GPI_UNKNOWN;
+
+gpi_objtype_t FliImpl::get_array_gpi_obj_type(mtiTypeIdT _typeid)
+{
+    mtiTypeIdT   elemType     = mti_GetArrayElementType(_typeid);
+    mtiTypeKindT elemTypeKind = mti_GetTypeKind(elemType);
+
+    if (elemTypeKind == MTI_TYPE_ENUM) {
+        if (fli_is_logic(elemType)) { return GPI_REGISTER; }
+        if (fli_is_char(elemType))  { return GPI_STRING;   }
     }
 
-    return rv;
+    return GPI_ARRAY;
+}
+
+
+gpi_objtype_t FliImpl::get_enum_gpi_obj_type(mtiTypeIdT _typeid)
+{
+    if (fli_is_logic(_typeid))   { return GPI_REGISTER; }
+    if (fli_is_boolean(_typeid)) { return GPI_INTEGER;  }
+    if (fli_is_char(_typeid))    { return GPI_INTEGER;  }
+
+    return GPI_ENUM;
 }
 
 
@@ -193,7 +182,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(mtiRegionIdT hdl, std::string &na
 {
     GpiObjHdl *new_obj = NULL;
 
-    LOG_DEBUG("FLI::Attempting to create GPI object (%s) from handle.", fq_name.c_str());
+    LOG_DEBUG("Attempting to create GPI object (%s) from handle.", fq_name.c_str());
 
     if (!VS_TYPE_IS_VHDL(acc_fetch_fulltype(hdl))) {
         LOG_DEBUG("Handle is not a VHDL type.");
@@ -225,7 +214,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(mtiSignalIdT hdl, std::string &na
 {
     GpiObjHdl *new_obj = NULL;
 
-    LOG_DEBUG("FLI::Attempting to create GPI object (%s) from handle.", fq_name.c_str());
+    LOG_DEBUG("Attempting to create GPI object (%s) from handle.", fq_name.c_str());
 
     switch (get_gpi_obj_type(mti_GetSignalType(hdl))) {
         case GPI_ENUM:
@@ -268,7 +257,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(mtiVariableIdT hdl, std::string &
 
     bool is_const = fli_is_const(hdl);
 
-    LOG_DEBUG("FLI::Attempting to create GPI object (%s) from handle.", fq_name.c_str());
+    LOG_DEBUG("Attempting to create GPI object (%s) from handle.", fq_name.c_str());
 
     switch (get_gpi_obj_type(mti_GetVarType(hdl))) {
         case GPI_ENUM:
@@ -320,14 +309,15 @@ GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
     std::string name    = c_name;
     std::string fq_name = c_fullname;
 
-    if (fli_is_region(raw_hdl))
+    if (fli_is_region(raw_hdl)) {
         return create_gpi_obj_from_handle(static_cast<mtiRegionIdT>(raw_hdl), name, fq_name);
-    else if (fli_is_signal(raw_hdl))
+    } else if (fli_is_signal(raw_hdl)) {
         return create_gpi_obj_from_handle(static_cast<mtiSignalIdT>(raw_hdl), name, fq_name);
-    else if (fli_is_variable(raw_hdl))
+    } else if (fli_is_variable(raw_hdl)) {
         return create_gpi_obj_from_handle(static_cast<mtiVariableIdT>(raw_hdl), name, fq_name);
-    else
-        return NULL;
+    }
+
+    return NULL;
 }
 
 /**

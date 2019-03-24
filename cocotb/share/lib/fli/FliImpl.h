@@ -460,13 +460,14 @@ public:
     /* Method to provide strings from operation types */
     const char *reason_to_string(int reason);
 
-    /* Method to provide strings from operation types */
     GpiObjHdl *create_gpi_obj_from_handle(mtiRegionIdT   hdl, std::string &name, std::string &fq_name);
     GpiObjHdl *create_gpi_obj_from_handle(mtiSignalIdT   hdl, std::string &name, std::string &fq_name);
     GpiObjHdl *create_gpi_obj_from_handle(mtiVariableIdT hdl, std::string &name, std::string &fq_name);
 
 private:
     gpi_objtype_t get_gpi_obj_type(mtiTypeIdT _typeid);
+    gpi_objtype_t get_array_gpi_obj_type(mtiTypeIdT _typeid);
+    gpi_objtype_t get_enum_gpi_obj_type(mtiTypeIdT _typeid);
 
 public:
     FliTimerCache cache;
