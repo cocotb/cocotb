@@ -103,7 +103,6 @@ class external_waiter(object):
     @property
     def result(self):
         return self._outcome.get()
-    
 
     def _propogate_state(self, new_state):
         self.cond.acquire()
@@ -537,7 +536,6 @@ class Scheduler(object):
                 self._pending_coros.append(coroutine)
                 return t
 
-
     def run_in_executor(self, func, *args, **kwargs):
         """Run the coroutine in a separate execution thread
         and return a yieldable object for the caller.
@@ -559,7 +557,7 @@ class Scheduler(object):
                                   name=func.__name__ + "_thread",
                                   args=([func, waiter]), kwargs={})
 
-        waiter.thread = thread;
+        waiter.thread = thread
         self._pending_threads.append(waiter)
 
         return waiter
@@ -742,5 +740,3 @@ class Scheduler(object):
 
         for ext in self._pending_threads:
             self.log.warn("Waiting for %s to exit", ext.thread)
-
-
