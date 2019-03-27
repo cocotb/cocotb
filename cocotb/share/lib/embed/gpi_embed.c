@@ -77,8 +77,8 @@ void embed_init_python(void)
     if (gtstate)
         return;
 
-    void * ret = utils_dyn_open(PY_SO_LIB);
-    if (!ret) {
+    void * lib_handle = utils_dyn_open(PY_SO_LIB);
+    if (!lib_handle) {
         fprintf(stderr, "Failed to find python lib\n");
     }
 
@@ -105,7 +105,7 @@ void embed_init_python(void)
 #else
         // Python2 case
         LOG_INFO("Using virtualenv at %s.", venv_path);
-        Py_SetProgramName(venv_path);   
+        Py_SetProgramName(venv_path);
 #endif
     } else {
         LOG_INFO("Did not detect Python virtual environment. Using system-wide Python interpreter.");
@@ -140,8 +140,6 @@ void embed_init_python(void)
 out:
     FEXIT;
 }
-
-
 
 /**
  * @name    Initialisation
@@ -210,7 +208,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     cocotb_module = NULL;
     arg_dict = NULL;
 
-    //Ensure that the current thread is ready to callthe Python C API
+    //Ensure that the current thread is ready to call the Python C API
     PyGILState_STATE gstate = PyGILState_Ensure();
     to_python();
 

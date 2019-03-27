@@ -271,14 +271,14 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
-        fprintf(stderr, "Attempt to register ReadOnly callback with!\n");
+        fprintf(stderr, "Attempt to register ReadWrite callback with!\n");
         return NULL;
     }
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
-        fprintf(stderr, "Attempt to register ReadOnly without supplying a callback!\n");
+        fprintf(stderr, "Attempt to register ReadWrite without supplying a callback!\n");
         return NULL;
     }
     Py_INCREF(function);
@@ -323,14 +323,14 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
-        fprintf(stderr, "Attempt to register ReadOnly callback with!\n");
+        fprintf(stderr, "Attempt to register NextStep callback with!\n");
         return NULL;
     }
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
-        fprintf(stderr, "Attempt to register ReadOnly without supplying a callback!\n");
+        fprintf(stderr, "Attempt to register NextStep without supplying a callback!\n");
         return NULL;
     }
     Py_INCREF(function);

@@ -220,6 +220,7 @@ class RunningTest(RunningCoroutine):
     def __init__(self, inst, parent):
         self.error_messages = []
         RunningCoroutine.__init__(self, inst, parent)
+        self.log = SimLog("cocotb.test.%s" % self.__name__, id(self))
         self.started = False
         self.start_time = 0
         self.start_sim_time = 0
@@ -265,7 +266,7 @@ class RunningTest(RunningCoroutine):
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
 
-    ``log`` methods will will log to ``cocotb.coroutines.name``.
+    ``log`` methods will log to ``cocotb.coroutine.name``.
 
     ``join()`` method returns an event which will fire when the coroutine exits.
 
@@ -274,7 +275,7 @@ class coroutine(object):
 
     def __init__(self, func):
         self._func = func
-        self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
+        self.log = SimLog("cocotb.coroutine.%s" % self._func.__name__, id(self))
         self.__name__ = self._func.__name__
         functools.update_wrapper(self, func)
 
