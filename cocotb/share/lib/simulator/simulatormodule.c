@@ -822,7 +822,7 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
 {
     struct sim_time local_time;
 
-    if (context) {
+    if (is_python_context) {
         gpi_get_sim_time(&local_time.high, &local_time.low);
     } else {
         local_time = cache_time;
