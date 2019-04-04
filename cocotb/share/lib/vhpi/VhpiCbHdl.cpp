@@ -784,7 +784,7 @@ int VhpiStartupCbHdl::run_callback() {
 
         argv_iter = vhpi_iterator(vhpiArgvs, tool);
         if (argv_iter) {
-            while ((argv_hdl = vhpi_scan(argv_iter))) {
+            while ((argv_hdl = vhpi_scan(argv_iter)))  {
                 tool_argv[i] = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiStrValP, argv_hdl)));
                 i++;
             }
