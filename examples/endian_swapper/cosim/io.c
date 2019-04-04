@@ -32,7 +32,6 @@
 
 
 #include "io.h"
-
 #include <Python.h>
 #include "io_module.h"
 
@@ -84,7 +83,6 @@ unsigned int IORD(unsigned int base, unsigned int address) {
 
     Py_DECREF(rv);
     Py_DECREF(call_args);
-
     return value;
 }
 
@@ -113,6 +111,28 @@ int IOWR(unsigned int base, unsigned int address, unsigned int value)
     return 0;
 }
 
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "io_module",
+    "",
+    -1,
+    io_module_methods    
+};
+
+PyMODINIT_FUNC
+PyInit_io_module(void)
+{
+    PyObject* io_module;
+    io_module = PyModule_Create(&moduledef);
+    if (!io_module) {
+        printf("Failed to load io_module\n");
+        exit(1);
+    }
+   return io_module;
+}
+#else
 PyMODINIT_FUNC
 initio_module(void)
 {
@@ -123,4 +143,4 @@ initio_module(void)
         exit(1);
     }
 }
-
+#endif
