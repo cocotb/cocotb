@@ -241,7 +241,13 @@ class RegressionManager(object):
         """
         real_time   = time.time() - self._running_test.start_time
         sim_time_ns = get_sim_time('ns') - self._running_test.start_sim_time
-        ratio_time  = sim_time_ns / real_time
+        try:
+            ratio_time  = sim_time_ns / real_time
+        except ZeroDivisionError:
+            if round(sim_time_ns, 2) == 0:
+                ratio_time = float('nan')
+            else:
+                ratio_time = float('inf')
         self.xunit.add_testcase(name=self._running_test.funcname,
                                 classname=self._running_test.module,
                                 time=repr(real_time),
