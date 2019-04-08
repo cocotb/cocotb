@@ -424,6 +424,28 @@ else:
         exec("""exec _code_ in _globs_, _locs_""")
 
 
+# This is essentially six.reraise
+if sys.version_info.major == 3:
+    # this has to not be a syntax error in py2
+    def reraise(tp, value, tb=None):
+        try:
+            if value is None:
+                value = tp()
+            if value.__traceback__ is not tb:
+                raise value.with_traceback(tb)
+            raise value
+        finally:
+            value = None
+            tb = None
+else:
+    exec_("""def reraise(tp, value, tb=None):
+    try:
+        raise tp, value, tb
+    finally:
+        tb = None
+""")
+
+
 # this is six.with_metaclass, with a clearer docstring
 def with_metaclass(meta, *bases):
     """This provides:

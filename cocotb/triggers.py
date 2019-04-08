@@ -565,7 +565,8 @@ class First(_AggregateWaitable):
                 try:
                     ret = outcomes.Value((yield t))
                 except BaseException as exc:
-                    ret = outcomes.Error(exc)
+                    exc_info = sys.exc_info()
+                    ret = outcomes.Error(*exc_info)
 
                 completed.append(ret)
                 e.set()

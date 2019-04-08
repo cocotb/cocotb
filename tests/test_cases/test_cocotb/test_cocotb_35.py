@@ -34,6 +34,8 @@ class SomeException(Exception):
     """ Custom exception to test for that can't be thrown by internals """
     pass
 
+exc_info = (SomeException, SomeException(), None)
+
 
 # just to be sure...
 @cocotb.test(expect_fail=True)
@@ -52,7 +54,7 @@ def test_annotated_async_from_coro(dut):
     assert v == 1
 
     try:
-        yield produce.async_annotated(Error(SomeException))
+        yield produce.async_annotated(Error(*exc_info))
     except SomeException:
         pass
     else:
@@ -66,7 +68,7 @@ async def test_annotated_async_from_async(dut):
     assert v == 1
 
     try:
-        await produce.async_annotated(Error(SomeException))
+        await produce.async_annotated(Error(*exc_info))
     except SomeException:
         pass
     else:
@@ -74,13 +76,13 @@ async def test_annotated_async_from_async(dut):
 
 
 @cocotb.test()
-async def test_annotated_async_from_async(dut):
+async def test_async_from_async(dut):
     """ Test that async coroutines are able to call raw async functions """
     v = await produce.async_(Value(1))
     assert v == 1
 
     try:
-        await produce.async_(Error(SomeException))
+        await produce.async_(Error(*exc_info))
     except SomeException:
         pass
     else:
@@ -94,7 +96,7 @@ async def test_coro_from_async(dut):
     assert v == 1
 
     try:
-        await produce.coro(Error(SomeException))
+        await produce.coro(Error(*exc_info))
     except SomeException:
         pass
     else:

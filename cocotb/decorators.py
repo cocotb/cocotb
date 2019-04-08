@@ -147,8 +147,11 @@ class RunningCoroutine(object):
             self._outcome = outcomes.Value(retval)
             raise CoroutineComplete()
         except BaseException as e:
-            self._outcome = outcomes.Error(e)
+            exc_info = sys.exc_info()
+            self._outcome = outcomes.Error(*exc_info)
             raise CoroutineComplete()
+        finally:
+            exc_info = None
 
     def send(self, value):
         return self._coro.send(value)
@@ -257,7 +260,12 @@ class RunningTest(RunningCoroutine):
         except StopIteration:
             raise TestSuccess()
         except Exception as e:
+            exc_info = sys.exc_info()
+            self._outcome = outcomes.Error(*exc_info)
             raise raise_error(self, "Send raised exception:")
+        finally:
+            exc_info = None
+            
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
@@ -326,7 +334,8 @@ class function(object):
             try:
                 _outcome = outcomes.Value((yield coro))
             except BaseException as e:
-                _outcome = outcomes.Error(e)
+                exc_info = sys.exc_info()
+                _outcome = outcomes.Error(*exc_info)
             event.outcome = _outcome
             event.set()
 

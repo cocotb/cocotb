@@ -6,6 +6,8 @@ or `asyncio.Future`, but without being tied to a particular task model.
 """
 import abc
 
+from cocotb.utils import reraise
+
 # https://stackoverflow.com/a/38668373
 # Backport of abc.ABC, compatible with Python 2 and 3
 abc_ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
@@ -44,14 +46,14 @@ class Value(Outcome):
 
 
 class Error(Outcome):
-    def __init__(self, error):
-        self.error = error
+    def __init__(self, *exc_info):
+        self.exc_info = exc_info
 
     def send(self, gen):
-        return gen.throw(self.error)
+        return gen.throw(*self.exc_info)
 
     def get(self):
-        raise self.error
+        reraise(*self.exc_info)
 
     def __repr__(self):
-        return "Error({!r})".format(self.error)
+        return "Error({!r})".format(self.exc_info[1])

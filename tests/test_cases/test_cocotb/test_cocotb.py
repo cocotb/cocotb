@@ -890,6 +890,36 @@ def test_exceptions(dut):
     else:
         raise TestFailure("Exception was not raised")
 
+
+@cocotb.test(expect_error=True)
+def test_nested_exc_traceback(dut):
+    """
+    Test that when an exception is passed up through coroutines
+    the same exception object is raised in the test, and that the
+    full traceback is shown.
+    """
+    the_exception = ValueError("Original exception")
+
+    @cocotb.coroutine
+    def raise_exc():
+        yield Timer(10)
+        raise the_exception
+
+    @cocotb.coroutine
+    def passthrough():
+        yield Timer(10)
+        yield raise_exc()
+
+    try:
+        yield passthrough()
+    except ValueError as e:
+        assert e is the_exception
+        # raise the exception to display traceback
+        raise
+    else:
+        raise TestFailure("Exception didn't reach top level test")
+
+
 @cocotb.test()
 def test_stack_overflow(dut):
     """
