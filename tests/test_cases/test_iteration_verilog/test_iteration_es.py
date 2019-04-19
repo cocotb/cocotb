@@ -35,8 +35,9 @@ def recursive_discovery(dut):
     Recursively discover every single object in the design
     """
     if cocotb.SIM_NAME.lower().startswith(("modelsim",
-                                           "ncsim")):
-        # vpiAlways does not show up in IUS
+                                           "ncsim",
+                                           "xmsim")):
+        # vpiAlways does not show up in IUS/Xcelium
         pass_total = 259
     elif cocotb.SIM_NAME.lower().startswith(("chronologic simulation vcs")):
         pass_total = 59

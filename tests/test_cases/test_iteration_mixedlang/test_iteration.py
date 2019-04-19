@@ -65,8 +65,8 @@ def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME.lower().startswith(("ncsim")):
-        # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS
+    if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
+        # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS/Xcelium
         pass_total = 917
     elif cocotb.SIM_NAME.lower().startswith(("modelsim")):
         pass_total = 933
@@ -93,7 +93,7 @@ def recursive_discovery_boundary(dut):
     """
     Iteration though the boundary works but this just double checks
     """
-    if cocotb.SIM_NAME.lower().startswith(("ncsim")):
+    if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         pass_total = 462
     else:
         pass_total = 478
