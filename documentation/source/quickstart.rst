@@ -149,19 +149,21 @@ Cocotb can be installed by running:
 
 .. code-block:: bash
 
-    $> pip install cocotb
+    $> pip3 install cocotb # Python3 - recommended 
 
-Or from repository:
+or
+
+.. code-block:: bash
+
+    $> pip install cocotb
+    
+*\*For user local install follow* `pip User Guide <https://https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
+
+For development version:
 
 .. code-block:: bash
 
     $> git clone https://github.com/potentialventures/cocotb
-    $> pip install ./cocotb 
-
-And for development:
-
-.. code-block:: bash
-
     $> pip install -e ./cocotb 
     
 Running an example
