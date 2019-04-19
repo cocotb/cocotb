@@ -145,11 +145,11 @@ Installing a package manager really helps things out here.
 Installing cocotb
 =================
 
-Cocotb can be installed by running:
+Cocotb can be installed by running (recommended Python3)
 
 .. code-block:: bash
 
-    $> pip3 install cocotb # Python3 - recommended 
+    $> pip3 install cocotb
 
 or
 
