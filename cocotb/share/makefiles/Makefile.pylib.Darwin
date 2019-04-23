@@ -40,12 +40,12 @@ NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
 
 # We might work with other Python versions
-PYTHON_MAJOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info[0])")
-PYTHON_MINOR_VERSION?=$(shell python -c "from __future__ import print_function; import sys; print(sys.version_info[1])")
-PYTHON_VERSION?=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
+PYTHON_MAJOR_VERSION?=$(shell $(PYTHON_BIN) -c "from __future__ import print_function; import sys; print(sys.version_info[0])")
+PYTHON_MINOR_VERSION?=$(shell $(PYTHON_BIN) -c "from __future__ import print_function; import sys; print(sys.version_info[1])")
+PYTHON_VERSION?=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
 
-PYTHON_LIBDIR:=$(shell python -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
-PYTHON_DYNLIBDIR:=$(shell python -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("DESTSHARED"))')
+PYTHON_LIBDIR:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("DESTSHARED"))')
 
 # Nasty hack but there's no way in Python properly get the directories for 32-bit Python on a 64-bit system
 # TODO: Under OSX we can use "export VERSIONER_PYTHON_PREFER_32_BIT=yes", no Linux equivalent though
@@ -69,5 +69,5 @@ endif
 
 PYLIBS = $(shell $(PY_CFG_EXE) --libs)
 
-PYTHON_INCLUDEDIR := $(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
-PYTHON_DYN_LIB:=$(shell python -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))')
+PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
+PYTHON_DYN_LIB:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))')
