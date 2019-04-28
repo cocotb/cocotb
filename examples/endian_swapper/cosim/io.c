@@ -113,14 +113,16 @@ int IOWR(unsigned int base, unsigned int address, unsigned int value)
     return 0;
 }
 
-PyMODINIT_FUNC
-initio_module(void)
-{
+#if PY_MAJOR_VERSION >= 3
+    #define MOD_RETVAL(x) x
+    #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
+#else
+    #define MOD_RETVAL(x)
+    #define MOD_INIT(name) PyMODINIT_FUNC init##name(void)
+#endif
+
+MOD_INIT(io_module) {
     PyObject* io_module;
     io_module = Py_InitModule("io_module", io_module_methods);
-    if (!io_module) {
-        printf("Failed to load io_module\n");
-        exit(1);
-    }
+    return MOD_RETVAL(io_module);
 }
-
