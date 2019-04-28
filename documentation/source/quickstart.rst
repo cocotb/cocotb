@@ -138,9 +138,33 @@ Installing a package manager really helps things out here.
 
 `Brew <https://brew.sh/>`_ seems to be the most popular, so we'll assume you have that installed.
 
-.. code-block::bash
+.. code-block:: bash
     
     $> brew install python icarus-verilog gtkwave
+
+Installing cocotb
+=================
+
+Cocotb can be installed by running (recommended Python3)
+
+.. code-block:: bash
+
+    $> pip3 install cocotb
+
+or
+
+.. code-block:: bash
+
+    $> pip install cocotb
+    
+*\*For user local install follow* `pip User Guide <https://https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
+
+For development version:
+
+.. code-block:: bash
+
+    $> git clone https://github.com/potentialventures/cocotb
+    $> pip install -e ./cocotb 
     
 Running an example
 ------------------
@@ -195,8 +219,8 @@ Python test script to load.
     VERILOG_SOURCES = $(PWD)/submodule.sv $(PWD)/my_design.sv
     TOPLEVEL=my_design  # the module name in your Verilog or VHDL file
     MODULE=test_my_design  # the name of the Python test file
-    include $(COCOTB)/makefiles/Makefile.inc
-    include $(COCOTB)/makefiles/Makefile.sim
+    include $(shell cocotb-config --makefiles)/Makefile.inc
+    include $(shell cocotb-config --makefiles)/Makefile.sim
 
 We would then create a file called ``test_my_design.py`` containing our tests.
 
