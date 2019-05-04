@@ -467,11 +467,7 @@ class Scheduler(object):
                 # and no one was monitoring it
                 coro.retval
             except Exception as e:
-                self._test_result = TestError(
-                    "Forked coroutine {} raised exception {}"
-                    .format(coro, e)
-                )
-                self._terminate = True
+                self.finish_test(create_error(self, "Forked coroutine {} raised exception: {}".format(coro, e)))
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:
