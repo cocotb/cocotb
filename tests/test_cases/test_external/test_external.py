@@ -313,7 +313,7 @@ def test_external_returns_exception(dut):
     if not isinstance(result, ValueError):
         raise TestFailure('Exception was not returned')
 
-@cocotb.test(skip=True)
+@cocotb.test()
 def test_function_raised_exception(dut):
     """ Test that exceptions thrown by @function coroutines can be caught """
     # workaround for gh-637
