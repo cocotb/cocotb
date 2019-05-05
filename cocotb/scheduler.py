@@ -466,6 +466,9 @@ class Scheduler(object):
                 # throws an error if the background coroutine errored
                 # and no one was monitoring it
                 coro.retval
+            except TestComplete as test_result:
+                self.log.debug("TestComplete received: {}".format(test_result.__class__.__name__))
+                self.finish_test(test_result)
             except Exception as e:
                 self.finish_test(create_error(self, "Forked coroutine {} raised exception: {}".format(coro, e)))
 
