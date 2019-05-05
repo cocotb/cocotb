@@ -402,7 +402,7 @@ class hook(with_metaclass(_decorator_helper, coroutine)):
 
     All hooks are run at the beginning of a cocotb test suite, prior to any
     test code being run."""
-    def __init__(self):
+    def __init__(self, f):
         super(hook, self).__init__(f)
         self.im_hook = True
         self.name = self._func.__name__
