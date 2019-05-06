@@ -53,7 +53,7 @@ if "COVERAGE" in os.environ:
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
-from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
+from cocotb.result import TestError, TestSuccess, SimFailure
 from cocotb.utils import get_sim_time, remove_traceback_frames
 from cocotb.xunit_reporter import XUnitReporter
 from cocotb import _py_compat
@@ -287,7 +287,7 @@ class RegressionManager(object):
                 not test.expect_error):
             self.log.info("Test Passed: %s" % test.funcname)
 
-        elif (isinstance(result, TestFailure) and
+        elif (isinstance(result, AssertionError) and
                 test.expect_fail):
             self.log.info("Test failed as expected: " + _result_was())
 

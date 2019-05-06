@@ -95,7 +95,7 @@ class TestError(TestComplete):
     pass
 
 
-class TestFailure(TestComplete):
+class TestFailure(TestComplete, AssertionError):
     """Exception showing that test was completed with severity Failure."""
     pass
 
