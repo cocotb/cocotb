@@ -1195,5 +1195,11 @@ def test_trigger_with_failing_prime(dut):
         raise TestFailure
 
 
+@cocotb.test(expect_fail=True)
+def test_assertion_is_failure(dut):
+    yield Timer(1)
+    assert False
+
+
 if sys.version_info[:2] >= (3, 5):
     from test_cocotb_35 import *
