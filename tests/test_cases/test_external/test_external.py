@@ -343,7 +343,8 @@ def test_function_returns_exception(dut):
 
     @cocotb.function
     def func():
-        return ValueError()
+        # avoid using `return` syntax here since that requires Python >= 3.3
+        raise ReturnValue(ValueError())
         yield
 
     @external
