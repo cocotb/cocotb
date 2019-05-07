@@ -520,14 +520,22 @@ class Scheduler(object):
         """Queue a coroutine for execution and move the containing thread
         so that it does not block execution of the main thread any longer.
         """
-
         # We should be able to find ourselves inside the _pending_threads list
+        matching_threads = [
+            t
+            for t in self._pending_threads
+            if t.thread == threading.current_thread()
+        ]
+        if len(matching_threads) == 0:
+            raise RuntimeError("queue_function called from unrecognized thread")
 
-        for t in self._pending_threads:
-            if t.thread == threading.current_thread():
-                t.thread_suspend()
-                self._pending_coros.append(coroutine)
-                return t
+        # Raises if there is more than one match. This can never happen, since
+        # each entry always has a unique thread.
+        t, = matching_threads
+
+        t.thread_suspend()
+        self._pending_coros.append(coroutine)
+        return t
 
     def run_in_executor(self, func, *args, **kwargs):
         """Run the coroutine in a separate execution thread
