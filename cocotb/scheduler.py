@@ -209,7 +209,6 @@ class Scheduler(object):
     # Singleton events, recycled to avoid spurious object creation
     _readonly = ReadOnly()
     _timer1 = Timer(1)
-    _timer0 = Timer(0)
 
     def __init__(self):
 
@@ -276,9 +275,8 @@ class Scheduler(object):
             for t in self._trigger2coros:
                 t.unprime()
 
-            for t in [self._timer1, self._timer0]:
-                if t.primed:
-                    t.unprime()
+            if self._timer1.primed:
+                self._timer1.unprime()
 
             self._timer1.prime(self.begin_test)
             self._trigger2coros = collections.defaultdict(list)
