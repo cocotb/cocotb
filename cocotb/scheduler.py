@@ -105,12 +105,11 @@ class external_waiter(object):
         return self._outcome.get()
 
     def _propogate_state(self, new_state):
-        self.cond.acquire()
-        if _debug:
-            self._log.debug("Changing state from %d -> %d from %s" % (self.state, new_state, threading.current_thread()))
-        self.state = new_state
-        self.cond.notify()
-        self.cond.release()
+        with self.cond:
+            if _debug:
+                self._log.debug("Changing state from %d -> %d from %s" % (self.state, new_state, threading.current_thread()))
+            self.state = new_state
+            self.cond.notify()
 
     def thread_done(self):
         if _debug:
@@ -135,23 +134,21 @@ class external_waiter(object):
         if _debug:
             self._log.debug("Waiting for the condition lock %s" % threading.current_thread())
 
-        self.cond.acquire()
+        with self.cond:
+            while self.state == external_state.RUNNING:
+                self.cond.wait()
 
-        while self.state == external_state.RUNNING:
-            self.cond.wait()
+            if _debug:
+                if self.state == external_state.EXITED:
+                    self._log.debug("Thread %s has exited from %s" % (self.thread, threading.current_thread()))
+                elif self.state == external_state.PAUSED:
+                    self._log.debug("Thread %s has called yield from %s"  % (self.thread, threading.current_thread()))
+                elif self.state == external_state.RUNNING:
+                    self._log.debug("Thread %s is in RUNNING from %d"  % (self.thread, threading.current_thread()))
 
-        if _debug:
-            if self.state == external_state.EXITED:
-                self._log.debug("Thread %s has exited from %s" % (self.thread, threading.current_thread()))
-            elif self.state == external_state.PAUSED:
-                self._log.debug("Thread %s has called yield from %s"  % (self.thread, threading.current_thread()))
-            elif self.state == external_state.RUNNING:
-                self._log.debug("Thread %s is in RUNNING from %d"  % (self.thread, threading.current_thread()))
+            if self.state == external_state.INIT:
+                raise Exception("Thread %s state was not allowed from %s"  % (self.thread, threading.current_thread()))
 
-        if self.state == external_state.INIT:
-            raise Exception("Thread %s state was not allowed from %s"  % (self.thread, threading.current_thread()))
-
-        self.cond.release()
         return self.state
 
 class Scheduler(object):
