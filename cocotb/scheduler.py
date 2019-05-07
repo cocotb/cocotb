@@ -232,7 +232,6 @@ class Scheduler(object):
         self._writes = collections.OrderedDict()
 
         self._pending_coros = []
-        self._pending_callbacks = []
         self._pending_triggers = []
         self._pending_threads = []
         self._pending_events = []   # Events we need to call set on once we've unwound
@@ -698,10 +697,6 @@ class Scheduler(object):
         # Handle any newly queued coroutines that need to be scheduled
         while self._pending_coros:
             self.add(self._pending_coros.pop(0))
-
-        while self._pending_callbacks:
-            self._pending_callbacks.pop(0)()
-
 
     def finish_test(self, test_result):
         """Cache the test result and set the terminate flag."""
