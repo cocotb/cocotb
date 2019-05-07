@@ -252,8 +252,8 @@ class RegressionManager(object):
 
         # Helper for logging result
         def _result_was():
-            result_was = ("%s (result was %s)" %
-                          (running_test_funcname, result.__class__.__name__))
+            result_was = ("%s (result was %r)" %
+                          (running_test_funcname, result))
             return result_was
 
         result_pass = True
