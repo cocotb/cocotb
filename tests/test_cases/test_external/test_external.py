@@ -403,3 +403,28 @@ def test_function_from_weird_thread_fails(dut):
     assert vals.raised, "No exception was raised to warn the user"
 
     yield task.join()
+
+@cocotb.test()
+def test_function_called_in_parallel(dut):
+    """
+    Test that the same `@function` can be called from two parallel background
+    threads.
+    """
+    # workaround for gh-637
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    @cocotb.function
+    def function(x):
+        yield Timer(1)
+        raise ReturnValue(x)
+
+    @cocotb.external
+    def call_function(x):
+        return function(x)
+
+    t1 = cocotb.fork(call_function(1))
+    t2 = cocotb.fork(call_function(2))
+    v1 = yield t1
+    v2 = yield t2
+    assert v1 == 1, v1
+    assert v2 == 2, v2

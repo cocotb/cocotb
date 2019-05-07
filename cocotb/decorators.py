@@ -330,13 +330,12 @@ class function(object):
             event.outcome = _outcome
             event.set()
 
-        self._event = threading.Event()
-        self._event.result = None
-        waiter = cocotb.scheduler.queue_function(execute_function(self, self._event))
+        event = threading.Event()
+        waiter = cocotb.scheduler.queue_function(execute_function(self, event))
         # This blocks the calling external thread until the coroutine finishes
-        self._event.wait()
+        event.wait()
         waiter.thread_resume()
-        return self._event.outcome.get()
+        return event.outcome.get()
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
