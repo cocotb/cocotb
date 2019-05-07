@@ -462,7 +462,7 @@ class Scheduler(object):
                 del self._trigger2coros[trigger]
 
         if Join(coro) in self._trigger2coros:
-            self.react(Join(coro))
+            self._pending_triggers.append(Join(coro))
         else:
             try:
                 # throws an error if the background coroutine errored
