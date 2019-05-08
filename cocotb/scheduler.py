@@ -216,18 +216,20 @@ class Scheduler(object):
         if _debug:
             self.log.setLevel(logging.DEBUG)
 
+        # Use OrderedDict here for deterministic behavior (gh-934)
+
         # A dictionary of pending coroutines for each trigger,
         # indexed by trigger
-        self._trigger2coros = collections.defaultdict(list)
+        self._trigger2coros = collections.OrderedDict()
 
         # A dictionary mapping coroutines to the trigger they are waiting for
-        self._coro2trigger = {}
+        self._coro2trigger = collections.OrderedDict()
 
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
 
         # A dictionary of pending writes
-        self._writes = {}
+        self._writes = collections.OrderedDict()
 
         self._pending_coros = []
         self._pending_callbacks = []
@@ -279,10 +281,10 @@ class Scheduler(object):
                 self._timer1.unprime()
 
             self._timer1.prime(self.begin_test)
-            self._trigger2coros = collections.defaultdict(list)
-            self._coro2trigger = {}
+            self._trigger2coros = collections.OrderedDict()
+            self._coro2trigger = collections.OrderedDict()
             self._terminate = False
-            self._writes = {}
+            self._writes = collections.OrderedDict()
             self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
@@ -455,7 +457,7 @@ class Scheduler(object):
             # coroutine probably finished
             pass
         else:
-            if coro in self._trigger2coros[trigger]:
+            if coro in self._trigger2coros.setdefault(trigger, []):
                 self._trigger2coros[trigger].remove(coro)
             if not self._trigger2coros[trigger]:
                 trigger.unprime()
@@ -492,14 +494,15 @@ class Scheduler(object):
         """Prime the trigger and update our internal mappings."""
         self._coro2trigger[coro] = trigger
 
+        trigger_coros = self._trigger2coros.setdefault(trigger, [])
         if coro is self._write_coro_inst:
             # Our internal write coroutine always runs before any user coroutines.
             # This preserves the behavior prior to the refactoring of writes to
             # this coroutine.
-            self._trigger2coros[trigger].insert(0, coro)
+            trigger_coros.insert(0, coro)
         else:
             # Everything else joins the back of the queue
-            self._trigger2coros[trigger].append(coro)
+            trigger_coros.append(coro)
 
         if not trigger.primed:
             try:
@@ -720,7 +723,12 @@ class Scheduler(object):
 
         Unprime all pending triggers and kill off any coroutines stop all externals.
         """
-        for trigger, waiting in dict(self._trigger2coros).items():
+        # copy since we modify this in kill
+        items = list(self._trigger2coros.items())
+
+        # reversing seems to fix gh-928, although the order is still somewhat
+        # arbitrary.
+        for trigger, waiting in items[::-1]:
             for coro in waiting:
                 if _debug:
                     self.log.debug("Killing %s" % str(coro))

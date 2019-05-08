@@ -56,7 +56,7 @@ def clock_mon(dut):
     yield RisingEdge(dut.clk)
 
 
-@cocotb.test(expect_error=True)
+@cocotb.test(expect_fail=True)
 def test_failure_from_system_task(dut):
     """Allow the dut to call $fail_test() from verilog"""
     clock = Clock(dut.clk, 100)
