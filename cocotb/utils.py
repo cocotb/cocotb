@@ -457,6 +457,28 @@ def with_metaclass(meta, *bases):
     return type.__new__(metaclass, 'temporary_class', (), {})
 
 
+# this is six.raise_from
+if sys.version_info[:2] == (3, 2):
+    exec_("""def raise_from(value, from_value):
+    try:
+        if from_value is None:
+            raise value
+        raise value from from_value
+    finally:
+        value = None
+    """)
+elif sys.version_info[:2] > (3, 2):
+    exec_("""def raise_from(value, from_value):
+    try:
+        raise value from from_value
+    finally:
+        value = None
+    """)
+else:
+    def raise_from(value, from_value):
+        raise value
+
+
 class ParametrizedSingleton(type):
     """A metaclass that allows class construction to reuse an existing instance.
 
