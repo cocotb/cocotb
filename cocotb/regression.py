@@ -55,7 +55,7 @@ import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
 from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
-from cocotb.utils import get_sim_time
+from cocotb.utils import get_sim_time, raise_from
 from cocotb.xunit_reporter import XUnitReporter
 
 
@@ -142,15 +142,17 @@ class RegressionManager(object):
 
                 # Specific functions specified, don't auto discover
                 for test in self._functions.rsplit(','):
-                    if not hasattr(module, test):
+                    try:
+                        _test = getattr(module, test)
+                    except AttributeError:
                         self.log.error("Requested test %s wasn't found in module %s", test, module_name)
-                        raise AttributeError("Test %s doesn't exist in %s" %
-                                             (test, module_name))
-                    _test = getattr(module, test)
+                        err = AttributeError("Test %s doesn't exist in %s" % (test, module_name))
+                        raise_from(err, None)  # discard nested traceback
+
                     if not hasattr(_test, "im_test"):
                         self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine", test, module_name)
                         raise ImportError("Failed to find requested test %s" % test)
-                    self._queue.append(getattr(module, test)(self._dut))
+                    self._queue.append(_test(self._dut))
                     self.ntests += 1
                 break
 
