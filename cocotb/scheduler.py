@@ -470,7 +470,7 @@ class Scheduler(object):
                 self.log.debug("TestComplete received: {}".format(test_result.__class__.__name__))
                 self.finish_test(test_result)
             except Exception as e:
-                self.finish_test(create_error(self, "Forked coroutine {} raised exception: {}".format(coro, e)))
+                pass
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:

@@ -41,6 +41,7 @@ import cocotb.handle
 from cocotb.scheduler import Scheduler
 from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
+from cocotb.result import TestComplete, raise_error
 
 
 # Things we want in the cocotb namespace
@@ -90,8 +91,19 @@ regression_manager = None
 plusargs = {}
 
 # To save typing provide an alias to scheduler.add
-fork = scheduler.add
 run = scheduler.add
+def fork(coro):
+    @coroutine
+    def _monitor():
+        try:
+            task = scheduler.add(coro)
+            res = yield task
+            return res
+        except TestComplete:
+            raise
+        except Exception as e:
+            raise_error(task, str(e))
+    return scheduler.add(_monitor())
 
 # FIXME is this really required?
 _rlock = threading.RLock()
