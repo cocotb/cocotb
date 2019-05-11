@@ -91,6 +91,7 @@ plusargs = {}
 
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
+run = scheduler.add
 
 # FIXME is this really required?
 _rlock = threading.RLock()
