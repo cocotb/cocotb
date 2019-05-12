@@ -469,7 +469,7 @@ class Scheduler(object):
             except TestComplete as test_result:
                 self.log.debug("TestComplete received: {}".format(test_result.__class__.__name__))
                 self.finish_test(test_result)
-            except Exception as e:
+            except Exception:
                 pass
 
     def save_write(self, handle, value):

@@ -41,7 +41,7 @@ import cocotb.handle
 from cocotb.scheduler import Scheduler
 from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
-from cocotb.result import TestComplete, raise_error
+from cocotb.result import TestComplete, raise_error, ReturnValue
 
 
 # Things we want in the cocotb namespace
@@ -98,11 +98,12 @@ def fork(coro):
         try:
             task = scheduler.add(coro)
             res = yield task
-            return res
         except TestComplete:
             raise
         except Exception as e:
             raise_error(task, str(e))
+        else:
+            raise ReturnValue(res)
     return scheduler.add(_monitor())
 
 # FIXME is this really required?
