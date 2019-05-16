@@ -1,6 +1,5 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
-* Copyright (c) 2013 SolarFlare Communications Inc
+* Copyright (c) 2013, 2019 Potential Ventures Ltd
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -10,8 +9,7 @@
 *    * Redistributions in binary form must reproduce the above copyright
 *      notice, this list of conditions and the following disclaimer in the
 *      documentation and/or other materials provided with the distribution.
-*    * Neither the name of Potential Ventures Ltd,
-*       SolarFlare Communications Inc nor the
+*    * Neither the name of Potential Ventures Ltd
 *      names of its contributors may be used to endorse or promote products
 *      derived from this software without specific prior written permission.
 *
@@ -27,24 +25,22 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#ifndef COCOTB_EMBED_H_
-#define COCOTB_EMBED_H_
+/* extensions to vpi_user.h */
 
-#include <gpi.h>
-#include <gpi_logging.h>
-#include <vpi_user_ext.h>
-#include <sv_vpi_user.h>
+#ifndef VPI_USER_EXT_H
+#define VPI_USER_EXT_H
 
-#ifdef __cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
-extern void embed_init_python(void);
-extern int embed_sim_init(gpi_sim_info_t *info);
-extern void embed_sim_event(gpi_event_t level, const char *msg);
-
-#ifdef __cplusplus
+/* used by Cadence Xcelium for Verilog-AMS */
+#define vpiRealNet           526
+#define vpiInterconnectNet   533
+#define vpiInterconnectArray 534
+ 
+#ifdef  __cplusplus
 }
 #endif
 
-#endif /* COCOTB_EMBED_H_ */
+#endif /* VPI_USER_EXT_H */

@@ -154,8 +154,10 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiIntegerVar:
         case vpiIntegerNet:
         case vpiRealVar:
+        case vpiRealNet:
         case vpiStringVar:
         case vpiMemoryWord:
+        case vpiInterconnectNet:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
             break;
         case vpiParameter:
@@ -166,6 +168,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiInterfaceArray:
         case vpiPackedArrayVar:
         case vpiMemory:
+        case vpiInterconnectArray:
             new_obj = new VpiArrayObjHdl(this, new_hdl, to_gpi_objtype(type));
             break;
         case vpiStructVar:
