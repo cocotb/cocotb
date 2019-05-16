@@ -169,7 +169,7 @@ class SimLogFormatter(logging.Formatter):
     def _format(self, level, record, msg, coloured=False):
         time_ns = get_sim_time('ns')
         simtime = "%6.2fns" % (time_ns)
-        prefix = simtime.rjust(10) + ' ' + level + ' '
+        prefix = simtime.rjust(11) + ' ' + level + ' '
         if not _suppress:
             prefix += self.ljust(record.name, _RECORD_CHARS) + \
                       self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \

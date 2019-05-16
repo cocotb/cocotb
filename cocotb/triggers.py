@@ -29,6 +29,8 @@
 
 import os
 import weakref
+import sys
+import textwrap
 
 if "COCOTB_SIM" in os.environ:
     import simulator
@@ -36,12 +38,15 @@ else:
     simulator = None
 
 from cocotb.log import SimLog
-from cocotb.result import raise_error
+from cocotb.result import raise_error, ReturnValue
 from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, with_metaclass,
-    ParametrizedSingleton
+    ParametrizedSingleton, exec_
 )
+from cocotb import decorators
 from cocotb import outcomes
+import cocotb
+
 
 class TriggerException(Exception):
     pass
@@ -73,6 +78,14 @@ class Trigger(object):
     @property
     def _outcome(self):
         return outcomes.Value(self)
+
+    # Once 2.7 is dropped, this can be run unconditionally
+    if sys.version_info >= (3, 3):
+        exec_(textwrap.dedent("""
+        def __await__(self):
+            # hand the trigger back to the scheduler trampoline
+            return (yield self)
+        """))
 
 
 class PythonTrigger(Trigger):
@@ -254,90 +267,6 @@ class Edge(_EdgeBase):
     _edge_type = 3
 
 
-class ClockCycles(GPITrigger):
-    """Execution will resume after *num_cycles* rising edges or *num_cycles* falling edges."""
-    
-    def __init__(self, signal, num_cycles, rising=True):
-        super(ClockCycles, self).__init__()
-        self.signal = signal
-        self.num_cycles = num_cycles
-        if rising is True:
-            self._rising = 1
-        else:
-            self._rising = 2
-
-    def prime(self, callback):
-        """FIXME: document"""
-        self._callback = callback
-
-        def _check(obj):
-            self.unprime()
-
-            if self.signal.value:
-                self.num_cycles -= 1
-
-                if self.num_cycles <= 0:
-                    self._callback(self)
-                    return
-
-            self.cbhdl = simulator.register_value_change_callback(self.signal.
-                                                                  _handle,
-                                                                  _check,
-                                                                  self._rising,
-                                                                  self)
-            if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
-
-        self.cbhdl = simulator.register_value_change_callback(self.signal.
-                                                              _handle,
-                                                              _check,
-                                                              self._rising,
-                                                              self)
-        if self.cbhdl == 0:
-            raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
-
-    def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.signal._name
-
-
-class Combine(PythonTrigger):
-    """Combines multiple triggers together.  Coroutine will continue when all
-    triggers have fired.
-    """
-
-    def __init__(self, *args):
-        PythonTrigger.__init__(self)
-        self._triggers = args
-        # TODO: check that trigger is an iterable containing
-        # only Trigger objects
-        try:
-            for trigger in self._triggers:
-                if not isinstance(trigger, Trigger):
-                    raise TriggerException("All combined triggers must be "
-                                           "instances of Trigger! Got: %s" %
-                                           trigger.__class__.__name__)
-        except Exception:
-            raise TriggerException("%s requires a list of Trigger objects" %
-                                   self.__class__.__name__)
-
-    def prime(self, callback):
-        self._callback = callback
-        self._fired = []
-        for trigger in self._triggers:
-            trigger.prime(self._check_all_fired)
-        Trigger.prime(self)
-
-    def _check_all_fired(self, trigger):
-        self._fired.append(trigger)
-        if self._fired == self._triggers:
-            self._callback(self)
-
-    def unprime(self):
-        """FIXME: document"""
-        for trigger in self._triggers:
-            trigger.unprime()
-
 
 class _Event(PythonTrigger):
     """Unique instance used by the Event object.
@@ -397,7 +326,7 @@ class Event(PythonTrigger):
         :meth:`~cocotb.triggers.Event.clear` should be called.
         """
         if self.fired:
-            return NullTrigger()
+            return NullTrigger(name="{}.wait()".format(str(self)))
         return _Event(self)
 
     def clear(self):
@@ -500,6 +429,9 @@ class NullTrigger(Trigger):
     def prime(self, callback):
         callback(self)
 
+    def __str__(self):
+        return self.__class__.__name__ + "(%s)" % self.name
+
 
 class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
     """Join a coroutine, firing when it exits."""
@@ -531,3 +463,143 @@ class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self._coroutine.__name__
+
+
+class Waitable(object):
+    """
+    Compatibility layer that emulates `collections.abc.Awaitable`.
+
+    This converts a `_wait` abstract method into a suitable `__await__` on
+    supporting python versions (>=3.3).
+    """
+    @decorators.coroutine
+    def _wait(self):
+        """
+        Should be implemented by the subclass. Called by `yield self` to
+        convert the waitable object into a coroutine.
+
+        ReturnValue can be used here
+        """
+        raise NotImplementedError
+        yield
+
+    if sys.version_info >= (3, 3):
+        def __await__(self):
+            return self._wait().__await__()
+
+
+class _AggregateWaitable(Waitable):
+    """
+    Base class for Waitables that take mutiple triggers in their constructor
+    """
+    def __init__(self, *args):
+        self.triggers = tuple(args)
+
+        # Do some basic type-checking up front, rather than waiting until we
+        # yield them.
+        allowed_types = (Trigger, Waitable, decorators.RunningCoroutine)
+        for trigger in self.triggers:
+            if not isinstance(trigger, allowed_types):
+                raise TypeError(
+                    "All triggers must be instances of Trigger! Got: {}"
+                    .format(type(trigger).__name__)
+                )
+
+
+class Combine(_AggregateWaitable):
+    """
+    Waits until all the passed triggers have fired.
+
+    Like most triggers, this simply returns itself.
+    """
+    @decorators.coroutine
+    def _wait(self):
+        waiters = []
+        e = Event()
+        triggers = list(self.triggers)
+
+        # start a parallel task for each trigger
+        for t in triggers:
+            @cocotb.coroutine
+            def waiter(t=t):
+                try:
+                    yield t
+                finally:
+                    triggers.remove(t)
+                    if not triggers:
+                        e.set()
+            waiters.append(cocotb.fork(waiter()))
+
+        # wait for the last waiter to complete
+        yield e.wait()
+        raise ReturnValue(self)
+
+
+class First(_AggregateWaitable):
+    """
+    Wait for the first of multiple triggers.
+
+    Returns the result of the trigger that fired.
+
+    .. note::
+        The event loop is single threaded, so while events may be simultaneous
+        in simulation time, they can never be simultaneous in real time.
+        For this reason, the value of ``t_ret is t1`` in the following example
+        is implementation-defined, and will vary by simulator::
+
+            t1 = Timer(10, units='ps')
+            t2 = Timer(10, units='ps')
+            t_ret = yield First(t1, t2)
+    """
+    @decorators.coroutine
+    def _wait(self):
+        waiters = []
+        e = Event()
+        triggers = list(self.triggers)
+        completed = []
+        # start a parallel task for each trigger
+        for t in triggers:
+            @cocotb.coroutine
+            def waiter(t=t):
+                # capture the outcome of this trigger
+                try:
+                    ret = outcomes.Value((yield t))
+                except BaseException as exc:
+                    ret = outcomes.Error(exc)
+
+                completed.append(ret)
+                e.set()
+            waiters.append(cocotb.fork(waiter()))
+
+        # wait for a waiter to complete
+        yield e.wait()
+
+        # kill all the other waiters
+        # TODO: Should this kill the coroutines behind any Join triggers?
+        # Right now it does not.
+        for w in waiters:
+            w.kill()
+
+        # get the result from the first task
+        ret = completed[0]
+        raise ReturnValue(ret.get())
+
+
+class ClockCycles(Waitable):
+    """
+    Execution will resume after *num_cycles* rising edges or *num_cycles* falling edges.
+    """
+    def __init__(self, signal, num_cycles, rising=True):
+        self.signal = signal
+        self.num_cycles = num_cycles
+        if rising is True:
+            self._type = RisingEdge
+        else:
+            self._type = FallingEdge
+
+    @decorators.coroutine
+    def _wait(self):
+        trigger = self._type(self.signal)
+        for _ in range(self.num_cycles):
+            yield trigger
+        raise ReturnValue(self)

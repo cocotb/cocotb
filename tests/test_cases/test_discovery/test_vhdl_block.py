@@ -1,8 +1,7 @@
-###############################################################################
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-#
+# 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -14,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-#
+# 
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,12 +24,24 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##############################################################################
 
-# Backwards-compatibility wrapper for people using
-# "include $COCOTB/makefiles/Makefile.inc" in their Makefile.
-COCOTB_INSTALL_METHOD = srctree
-export COCOTB_INSTALL_METHOD
+import cocotb
+import logging
+from cocotb.handle import ModifiableObject
+from cocotb.triggers import Timer
+from cocotb.result import TestError, TestFailure
+from cocotb.handle import IntegerObject
 
-_NEW_SHARE_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))/../cocotb/share
-include $(_NEW_SHARE_DIR)/makefiles/Makefile.inc
+
+@cocotb.test()
+def block_iter(dut):
+    """Access a VHDL block statement"""
+    yield Timer(0)
+    
+    try:
+        dut._log.info("Block: {} ({})".format(dut.isample_module1.SAMPLE_BLOCK._name,
+                                              type(dut.isample_module1.SAMPLE_BLOCK)))
+        dut._log.info("Signal inside Block: {} ({})".format(dut.isample_module1.SAMPLE_BLOCK.clk_inv._name,
+                                                            type(dut.isample_module1.SAMPLE_BLOCK.clk_inv)))
+    except AttributeError:
+        raise TestFailure("Could not traverse into vhpiBlockStmtK")

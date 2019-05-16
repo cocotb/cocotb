@@ -1,7 +1,10 @@
 # See Dockerfile for the full build instructions
 sudo: required
 language: python
-cache: pip
+dist: xenial
+cache:
+  directories:
+  - iverilog
 
 git:
   quiet: true
@@ -12,10 +15,13 @@ services:
 jobs:
   include:
     - stage: PythonLint
+      os: linux
       python: 3.5
       install: pip install flake8
       script: flake8 --exit-zero cocotb/
+
     - stage: SimTests
+      os: linux
       python: 2.7
       before_install: &docker_prep
         - docker build -t cocotb .
@@ -26,7 +32,9 @@ jobs:
         - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27' 
         - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py27'
         - echo -e 'travis_fold:end:cocotb_py27'
+
     - stage: SimTests
+      os: linux
       python: 3.5
       before_install: *docker_prep 
       script:
@@ -34,3 +42,67 @@ jobs:
         - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py35'
         - echo 'travis_fold:end:cocotb_py35'
 
+    - stage: SimTests
+      python: 3.7
+      before_install: &travis_linx_prep
+        - sudo apt-get install gperf
+        - if [[ ! -e "./iverilog/README.txt" ]]; then rm -rf iverilog; git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2; fi
+        - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
+        - pip install tox
+        - pyenv global system $TRAVIS_PYTHON_VERSION
+      script:
+        - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
+        - tox -e py37
+        - echo 'travis_fold:end:cocotb_py37'
+
+    - stage: SimTests
+      python: 3.6.7
+      before_install: *travis_linx_prep
+      script:
+        - echo 'Running cocotb tests with Python 3.6.7 ...' && echo -en 'travis_fold:start:cocotb_py36'
+        - tox -e py36
+        - echo 'travis_fold:end:cocotb_py36'
+
+    - stage: SimTests
+      os: osx
+      language: generic
+      python: 2.7
+      before_install: &osx_prep
+        - brew install icarus-verilog
+        - pip install tox
+      script:
+        - tox -e py27
+
+    - stage: SimTests
+      python: 3.7
+      os: windows
+      language: shell
+      before_install:
+        - docker build -t cocotb -f Dockerfile.windows .
+      script:
+        - docker run cocotb powershell 'python setup.py install ; make test'
+
+    - stage: SimTests
+      os: osx
+      language: generic
+      python: 3.6
+      before_install: *osx_prep
+      script:
+        - tox -e py36
+        
+    - stage: SimTests
+      python: 3.7
+      env: SIM=ghdl
+      before_install:
+        - sudo apt-get install gnat
+        - git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
+        - cd ghdl && ./configure && make -j2 && sudo make install && cd ..
+        - pip install tox
+        - pyenv global system $TRAVIS_PYTHON_VERSION
+      script:
+        - tox -e py37
+
+  allow_failures:
+    - stage: SimTests
+      python: 3.7
+      env: SIM=ghdl

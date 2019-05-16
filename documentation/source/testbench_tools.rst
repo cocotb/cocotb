@@ -17,7 +17,7 @@ component with the Python logging functionality.
 
 Log printing levels can also be set on a per-object basis. 
 
-.. code-block:: python
+.. code-block:: python3
 
         class EndianSwapperTB(object):
     
@@ -35,7 +35,7 @@ Log printing levels can also be set on a per-object basis.
 
 And when the logging is actually called
 
-.. code-block:: python
+.. code-block:: python3
 
         class AvalonSTPkts(BusMonitor):
         ...
@@ -73,7 +73,7 @@ Busses are simply defined as collection of signals. The :class:`.Bus` class
 will automatically bundle any group of signals together that are named similar
 to ``dut.<bus_name><separator><signal_name>``. For instance,
 
-.. code-block:: python
+.. code-block:: python3
 
         dut.stream_in_valid
         dut.stream_in_data
@@ -84,7 +84,7 @@ names to signal names is also passed into the :class:`.Bus` class. Busses can
 have values driven onto them, be captured (returning a dictionary), or sampled
 and stored into a similar object. 
 
-.. code-block:: python
+.. code-block:: python3
 
      stream_in_bus = Bus(dut, "stream_in", ["valid", "data"]) # '_' is the default separator
 
@@ -98,7 +98,7 @@ transactions to perform the serialization of transactions onto a physical
 interface. Here is an example using the Avalon bus driver in the ``endian_swapper``
 example:
 
-.. code-block:: python
+.. code-block:: python3
 
     class EndianSwapperTB(object):
     
@@ -140,7 +140,7 @@ have a callback function passed that is a model. This model will often generate
 expected transactions, which are then compared using the :class:`.Scoreboard`
 class.
 
-.. code-block:: python
+.. code-block:: python3
 
     # ==============================================================================
     class BitMonitor(Monitor):
@@ -201,7 +201,7 @@ and the expected outputs can be either a simple list, or a function that
 provides a transaction. Here is some code from the ``dff`` example, similar to
 above with the scoreboard added. 
 
-.. code-block:: python
+.. code-block:: python3
                 
     class DFF_TB(object):
         def __init__(self, dut, init_val):

@@ -215,10 +215,10 @@ class RegionObject(SimHandleBase):
         """Translates the handle name to a key to use in ``_sub_handles`` dictionary."""
         return name.split(".")[-1]
 
-    def _getAttributeNames(self):
+    def __dir__(self):
         """Permits IPython tab completion to work."""
         self._discover_all()
-        return dir(self)
+        return super(RegionObject, self).__dir__() + [str(k) for k in self._sub_handles]
 
 
 class HierarchyObject(RegionObject):
@@ -326,7 +326,7 @@ class HierarchyArrayObject(RegionObject):
         if result:
             return int(result.group("index"))
         else:
-            self._log.error("Unable to match an index pattern: %s", name);
+            self._log.error("Unable to match an index pattern: %s", name)
             return None
 
     def __len__(self):
@@ -506,7 +506,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
     def __iter__(self):
         try:
             if self._range is None:
-                raise StopIteration
+                return
 
             self._log.debug("Iterating with range [%d:%d]" % (self._range[0], self._range[1]))
             for i in self._range_iter(self._range[0], self._range[1]):
@@ -592,17 +592,17 @@ class ModifiableObject(NonConstantObject):
             value = BinaryValue(value=value, n_bits=len(self), bigEndian=False)
         elif isinstance(value, dict):
             # We're given a dictionary with a list of values and a bit size...
-            num = 0;
+            num = 0
             vallist = list(value["values"])
             vallist.reverse()
             if len(vallist) * value["bits"] != len(self):
                 self._log.critical("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
-                                   (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)));
+                                   (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)))
                 raise TypeError("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
-                                (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)));
+                                (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)))
 
             for val in vallist:
-                num = (num << value["bits"]) + val;
+                num = (num << value["bits"]) + val
             value = BinaryValue(value=num, n_bits=len(self), bigEndian=False)
 
         elif not isinstance(value, BinaryValue):

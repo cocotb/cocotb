@@ -32,7 +32,7 @@ It is possible to write directed tests without using a testbench class
 however to encourage code re-use it is good practice to create a distinct class.
 
 
-.. code-block:: python
+.. code-block:: python3
 
     class EndianSwapperTB(object):
     
@@ -55,7 +55,7 @@ With the above code we have created a testbench with the following structure:
 
 If we inspect this line-by-line:
 
-.. code-block:: python
+.. code-block:: python3
 
     self.stream_in  = AvalonSTDriver(dut, "stream_in", dut.clk)
 
@@ -81,7 +81,7 @@ Name                        Type              Description (from Avalon Specifica
 By following the signal naming convention the driver can find the signals associated with this interface automatically.
 
 
-.. code-block:: python
+.. code-block:: python3
 
             self.stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk)
             self.csr = AvalonMaster(dut, "csr", dut.clk)
@@ -89,7 +89,7 @@ By following the signal naming convention the driver can find the signals associ
 We do the same to create the :class:`monitor <cocotb.monitors.avalon.AvalonSTPkts>` on ``stream_out`` and the CSR interface.
 
 
-.. code-block:: python
+.. code-block:: python3
 
             self.expected_output = []
             self.scoreboard = Scoreboard(dut)
@@ -101,7 +101,7 @@ The call to :meth:`.add_interface()` takes a Monitor instance as the first argum
 the second argument is a mechanism for describing the expected output for that interface.
 This could be a callable function but in this example a simple list of expected transactions is sufficient.
 
-.. code-block:: python
+.. code-block:: python3
 
             # Reconstruct the input transactions from the pins and send them to our 'model'
             self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk, callback=self.model)
@@ -115,7 +115,7 @@ We also pass the keyword argument ``callback`` to the monitor constructor which 
 in the supplied function being called for each transaction seen on the bus with the transaction as the first argument.
 Our model function is quite straightforward in this case - we simply append the transaction to the expected output list and increment a counter:
 
-.. code-block:: python
+.. code-block:: python3
 
     def model(self, transaction):
         """Model the DUT based on the input transaction"""
@@ -136,7 +136,7 @@ There are various 'knobs' we can tweak on this testbench to vary the behaviour:
 We want to run different variations of tests but they will all have a very similar structure so we create a common ``run_test`` function.
 To generate backpressure on the ``stream_out`` interface we use the :class:`.BitDriver` class from :mod:`cocotb.drivers`.
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backpressure_inserter=None):
@@ -188,7 +188,7 @@ Test permutations
 
 Having defined a test function we can now auto-generate different permutations of tests using the :class:`.TestFactory` class:
 
-.. code-block:: python
+.. code-block:: python3
 
     factory = TestFactory(run_test)
     factory.add_option("data_in",                 [random_packet_sizes])

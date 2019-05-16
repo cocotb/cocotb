@@ -118,14 +118,21 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
             n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
             va_end(ap);
 
-            if (0 > n) {
+            if (n < 0) {
                fprintf(stderr, "Log message construction failed\n");
             }
- 
+
             fprintf(stdout, "     -.--ns ");
             fprintf(stdout, "%-9s", log_level(level));
             fprintf(stdout, "%-35s", name);
-            fprintf(stdout, "%20s:", pathname);
+
+            n = strlen(pathname);
+            if (n > 20) {
+                fprintf(stdout, "..%18s:", (pathname + (n - 18)));
+            } else {
+                fprintf(stdout, "%20s:", pathname);
+            }
+
             fprintf(stdout, "%-4ld", lineno);
             fprintf(stdout, " in %-31s ", funcname);
             fprintf(stdout, "%s", log_buff);

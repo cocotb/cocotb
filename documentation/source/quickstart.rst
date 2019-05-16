@@ -138,9 +138,33 @@ Installing a package manager really helps things out here.
 
 `Brew <https://brew.sh/>`_ seems to be the most popular, so we'll assume you have that installed.
 
-.. code-block::bash
+.. code-block:: bash
     
     $> brew install python icarus-verilog gtkwave
+
+Installing cocotb
+=================
+
+Cocotb can be installed by running (recommended Python3)
+
+.. code-block:: bash
+
+    $> pip3 install cocotb
+
+or
+
+.. code-block:: bash
+
+    $> pip install cocotb
+    
+*\*For user local install follow* `pip User Guide <https://https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
+
+For development version:
+
+.. code-block:: bash
+
+    $> git clone https://github.com/potentialventures/cocotb
+    $> pip install -e ./cocotb 
     
 Running an example
 ------------------
@@ -195,8 +219,8 @@ Python test script to load.
     VERILOG_SOURCES = $(PWD)/submodule.sv $(PWD)/my_design.sv
     TOPLEVEL=my_design  # the module name in your Verilog or VHDL file
     MODULE=test_my_design  # the name of the Python test file
-    include $(COCOTB)/makefiles/Makefile.inc
-    include $(COCOTB)/makefiles/Makefile.sim
+    include $(shell cocotb-config --makefiles)/Makefile.inc
+    include $(shell cocotb-config --makefiles)/Makefile.sim
 
 We would then create a file called ``test_my_design.py`` containing our tests.
 
@@ -211,7 +235,7 @@ handle is used in all Python files referencing your RTL project. Assuming we
 have a toplevel port called ``clk`` we could create a test file containing the
 following:
 
-.. code-block:: python
+.. code-block:: python3
 
     import cocotb
     from cocotb.triggers import Timer
@@ -239,7 +263,7 @@ and creates a handle called ``dut``. Top-level signals can be accessed using the
 "dot" notation used for accessing object attributes in Python. The same mechanism
 can be used to access signals inside the design.
 
-.. code-block:: python
+.. code-block:: python3
 
     # Get a reference to the "clk" signal on the top-level
     clk = dut.clk
@@ -256,7 +280,7 @@ Values can be assigned to signals using either the
 :attr:`~cocotb.handle.NonHierarchyObject.value` property of a handle object
 or using direct assignment while traversing the hierarchy.
 
-.. code-block:: python
+.. code-block:: python3
     
     # Get a reference to the "clk" signal and assign a value
     clk = dut.clk
@@ -284,7 +308,7 @@ Accessing the :attr:`~cocotb.handle.NonHierarchyObject.value` property of a hand
 Any unresolved bits are preserved and can be accessed using the :attr:`~cocotb.binary.BinaryValue.binstr` attribute,
 or a resolved integer value can be accessed using the :attr:`~cocotb.binary.BinaryValue.integer` attribute.
 
-.. code-block:: python
+.. code-block:: python3
     
     >>> # Read a value back from the DUT
     >>> count = dut.counter.value
@@ -300,7 +324,7 @@ or a resolved integer value can be accessed using the :attr:`~cocotb.binary.Bina
 
 We can also cast the signal handle directly to an integer:
 
-.. code-block:: python
+.. code-block:: python3
 
     >>> print(int(dut.counter))
     42
@@ -310,7 +334,7 @@ We can also cast the signal handle directly to an integer:
 Parallel and sequential execution of coroutines
 -----------------------------------------------
 
-.. code-block:: python
+.. code-block:: python3
 
     @cocotb.coroutine
     def reset_dut(reset_n, duration):

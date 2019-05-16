@@ -25,6 +25,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
+#include <assert.h>
 #include "VhpiImpl.h"
 
 extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
@@ -764,16 +765,39 @@ VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.reason = vhpiCbStartOfSimulation;
 }
 
-int VhpiStartupCbHdl::run_callback(void) {
+int VhpiStartupCbHdl::run_callback() {
+    vhpiHandleT tool, argv_iter, argv_hdl;
     gpi_sim_info_t sim_info;
-    sim_info.argc = 0;
-    sim_info.argv = NULL;
-    sim_info.product = gpi_copy_name(vhpi_get_str(vhpiNameP, NULL));
-    sim_info.version = gpi_copy_name(vhpi_get_str(vhpiToolVersionP, NULL));
-    gpi_embed_init(&sim_info);
+    char **tool_argv = NULL;
+    uint32_t tool_argc = 0;
+    int i = 0;
 
-    free(sim_info.product);
-    free(sim_info.version);
+    tool = vhpi_handle(vhpiTool, NULL);
+    
+    sim_info.product = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiNameP, tool)));
+    sim_info.version = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiToolVersionP, tool)));
+
+    if (tool) {
+        tool_argc = vhpi_get(vhpiArgcP, tool);
+        tool_argv = (char **)malloc(sizeof(char *) * tool_argc);
+        assert(tool_argv);
+
+        argv_iter = vhpi_iterator(vhpiArgvs, tool);
+        if (argv_iter) {
+            while ((argv_hdl = vhpi_scan(argv_iter))) {
+                tool_argv[i] = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiStrValP, argv_hdl)));
+                i++;
+            }
+            vhpi_release_handle(argv_iter);
+        }
+        sim_info.argc = tool_argc;
+        sim_info.argv = tool_argv;
+
+        vhpi_release_handle(tool);
+    }
+
+    gpi_embed_init(&sim_info);
+    free(tool_argv);
 
     return 0;
 }
@@ -894,6 +918,7 @@ void vhpi_mappings(GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> &map)
     };
     map.add_to_options(vhpiForGenerateK, &gen_options[0]);
     map.add_to_options(vhpiIfGenerateK, &gen_options[0]);
+    map.add_to_options(vhpiBlockStmtK, &gen_options[0]);
 
     /* vhpiConstDeclK */
     vhpiOneToManyT const_options[] = {

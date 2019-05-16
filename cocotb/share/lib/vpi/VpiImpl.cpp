@@ -104,7 +104,6 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiParameter:
             return GPI_PARAMETER;
 
-
         case vpiStructVar:
         case vpiStructNet:
         case vpiUnionVar:
@@ -155,6 +154,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiIntegerVar:
         case vpiIntegerNet:
         case vpiRealVar:
+        case vpiStringVar:
         case vpiMemoryWord:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
             break;

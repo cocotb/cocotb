@@ -313,7 +313,7 @@ def test_external_returns_exception(dut):
     if not isinstance(result, ValueError):
         raise TestFailure('Exception was not returned')
 
-@cocotb.test(skip=True)
+@cocotb.test()
 def test_function_raised_exception(dut):
     """ Test that exceptions thrown by @function coroutines can be caught """
     # workaround for gh-637
@@ -343,7 +343,8 @@ def test_function_returns_exception(dut):
 
     @cocotb.function
     def func():
-        return ValueError()
+        # avoid using `return` syntax here since that requires Python >= 3.3
+        raise ReturnValue(ValueError())
         yield
 
     @external
@@ -357,3 +358,73 @@ def test_function_returns_exception(dut):
 
     if not isinstance(result, ValueError):
         raise TestFailure('Exception was not returned')
+
+@cocotb.test()
+def test_function_from_weird_thread_fails(dut):
+    """
+    Test that background threads caling a @function do not hang forever
+    """
+    # workaround for gh-637
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    # workaround the lack of `nonlocal` in Python 2
+    class vals:
+        func_started = False
+        caller_resumed = False
+        raised = False
+
+    @cocotb.function
+    def func():
+        vals.started = True
+        yield Timer(10)
+
+    def function_caller():
+        try:
+            func()
+        except RuntimeError:
+            vals.raised = True
+        finally:
+            vals.caller_resumed = True
+
+    @external
+    def ext():
+        result = []
+
+        t = threading.Thread(target=function_caller)
+        t.start()
+        t.join()
+
+    task = cocotb.fork(ext())
+
+    yield Timer(20)
+
+    assert vals.caller_resumed, "Caller was never resumed"
+    assert not vals.func_started, "Function should never have started"
+    assert vals.raised, "No exception was raised to warn the user"
+
+    yield task.join()
+
+@cocotb.test()
+def test_function_called_in_parallel(dut):
+    """
+    Test that the same `@function` can be called from two parallel background
+    threads.
+    """
+    # workaround for gh-637
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    @cocotb.function
+    def function(x):
+        yield Timer(1)
+        raise ReturnValue(x)
+
+    @cocotb.external
+    def call_function(x):
+        return function(x)
+
+    t1 = cocotb.fork(call_function(1))
+    t2 = cocotb.fork(call_function(2))
+    v1 = yield t1
+    v2 = yield t2
+    assert v1 == 1, v1
+    assert v2 == 2, v2

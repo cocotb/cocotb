@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
 #
@@ -27,12 +27,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# Common Makefile for Cadence Incisive
+# Common Makefile for Cadence Xcelium
 
-CMD_BIN := irun
+CMD_BIN := xrun
 
-ifdef IUS_BIN_DIR
-    CMD := $(shell which $(IUS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+ifdef XCELIUM_BIN_DIR
+    CMD := $(shell which $(XCELIUM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
 else
     # auto-detect bin dir from system path
     CMD := $(shell which $(CMD_BIN) 2>/dev/null)
@@ -41,20 +41,24 @@ endif
 ifeq (, $(CMD))
     $(error "Unable to locate command >$(CMD_BIN)<")
 else
-	IUS_BIN_DIR := $(shell dirname $(CMD))
-    export IUS_BIN_DIR
+    XCELIUM_BIN_DIR := $(shell dirname $(CMD))
+    export XCELIUM_BIN_DIR
 endif
-
-EXTRA_ARGS += $(COMPILE_ARGS)
-EXTRA_ARGS += $(SIM_ARGS)
-EXTRA_ARGS += -licqueue
 
 ifneq ($(ARCH),i686)
-EXTRA_ARGS += -64
+    EXTRA_ARGS += -64
 endif
 
-EXTRA_ARGS += -nclibdirpath $(SIM_BUILD)
-EXTRA_ARGS += -plinowarn
+EXTRA_ARGS += -xmlibdirpath $(SIM_BUILD) 
+ifeq ($(DEBUG),1)
+    EXTRA_ARGS += -pliverbose
+    EXTRA_ARGS += -messages
+    EXTRA_ARGS += -plidebug             # Enhance the profile output with PLI info
+    EXTRA_ARGS += -plierr_verbose       # Expand handle info in PLI/VPI/VHPI messages
+    EXTRA_ARGS += -vpicompat 1800v2005  #  <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
+else
+    EXTRA_ARGS += -plinowarn
+endif
 
 ifeq ($(GUI),1)
     EXTRA_ARGS += -gui
@@ -62,44 +66,42 @@ else
     EXTRA_ARGS +=
 endif
 
-# IUS loads vpi regardless of what is asked for, then VHPI if asked to
-# Which does not play nice with out multi language. So we supply vhpi
-# GPI_EXTRA if needed.
+# Xcelium loads VPI regardless of what is asked for, then VHPI if asked to,
+# which does not play nice with our multi language, so we supply GPI_EXTRA=vhpi if needed.
 
-GPI_EXTRA:=
+#GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
     GPI_ARGS = -loadvpi $(LIB_DIR)/libvpi
-    EXTRA_ARGS += -v93
     HDL_SOURCES = $(VERILOG_SOURCES)
     ROOT_LEVEL = $(TOPLEVEL)
-ifneq ($(VHDL_SOURCES),)
-    HDL_SOURCES += $(VHDL_SOURCES)
-    GPI_EXTRA = vhpi
-endif
+    EXTRA_ARGS += -top $(TOPLEVEL)
+    ifneq ($(VHDL_SOURCES),)
+        HDL_SOURCES += $(VHDL_SOURCES)
+        GPI_EXTRA = vhpi 
+    endif
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_EXTRA = vhpi
-    EXTRA_ARGS += -v93
     EXTRA_ARGS += -top $(TOPLEVEL)
     MAKE_LIB = -makelib $(TOPLEVEL)
     HDL_SOURCES = $(VHDL_SOURCES)
-ifneq ($(VERILOG_SOURCES),)
-    HDL_SOURCES += $(VERILOG_SOURCES)
-endif
+    ifneq ($(VERILOG_SOURCES),)
+        HDL_SOURCES += $(VERILOG_SOURCES)
+    endif
 else
-   $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
 GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
 
 results.xml: $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(GPI_LIB)
-	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) \
-	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
+	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(SIM_ROOT):$(PWD):$(PYTHONPATH) \
+	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	set -o pipefail; \
-	$(CMD) $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
+	$(CMD) $(EXTRA_ARGS) $(GPI_ARGS) $(INCDIRS) -access +rwc -createdebugdb $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 clean::
 	@rm -rf $(SIM_BUILD)
-	@rm -rf irun.*
-	@rm -rf ncsim.*
-	@rm -rf gdb_cmd_ncsim
+	@rm -rf xrun.*
+	@rm -rf xmsim.*
+	@rm -rf gdb_cmd_xmsim
