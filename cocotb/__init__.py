@@ -41,7 +41,7 @@ import cocotb.handle
 from cocotb.scheduler import Scheduler
 from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
-from cocotb.result import TestComplete, raise_error, ReturnValue
+from cocotb.result import TestComplete, raise_error, create_error, ReturnValue
 
 
 # Things we want in the cocotb namespace
@@ -90,9 +90,17 @@ regression_manager = None
 
 plusargs = {}
 
-# To save typing provide an alias to scheduler.add
-run = scheduler.add
+def run(coro):
+    """
+    Runs a coroutine concurrently, user expected to yield on the returned object to obtain the outcome
+    """
+    return scheduler.add(coro)
+
 def fork(coro):
+    """
+    Runs a coroutine concurrently, user expects to never wait for the coroutine to finish, but allows it run indefinitely.
+    Immediately ends a test with TestError if an exception occurs.
+    """
     @coroutine
     def _monitor():
         try:
@@ -103,6 +111,26 @@ def fork(coro):
         except Exception as e:
             raise_error(task, str(e))
         else:
+            raise ReturnValue(res)
+    return scheduler.add(_monitor())
+
+def fire_and_forget(coro):
+    """
+    Runs a coroutine concurrently, user expects to never wait for the coroutine to finish, but allows it to run indefinitely.
+    If an exception is caught or the coroutine finishes, the outcome is logged and the coroutine finishes quitely.
+    """
+    @coroutine
+    def _monitor():
+        try:
+            task = scheduler.add(coro)
+            res = yield task
+        except TestComplete:
+            raise
+        except Exception as e:
+            create_error(task, str(e))
+            raise
+        else:
+            coro.log.debug("FaF coroutine {coro} yielded: {res}")
             raise ReturnValue(res)
     return scheduler.add(_monitor())
 

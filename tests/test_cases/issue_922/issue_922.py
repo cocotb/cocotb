@@ -28,3 +28,21 @@ def forks(dut):
     task = cocotb.fork(a_coroutine_that_fails_soon())
     yield longer_than_soon()
     assert False
+
+@cocotb.test()
+def fire_and_forget_not_caught(dut):
+    task = cocotb.fire_and_forget(a_coroutine_that_fails_soon())
+    yield longer_than_soon()
+    # look at stdout, error was printed
+
+@cocotb.test()
+def fire_and_forget_caught(dut):
+    task = cocotb.fire_and_forget(a_coroutine_that_fails_soon())
+    yield longer_than_soon()
+    # look at stdout, still printing
+    try:
+        yield task
+    except TestException as e:
+        pass
+    else:
+        assert False
