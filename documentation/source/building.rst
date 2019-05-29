@@ -39,6 +39,9 @@ Make Variables
     ``VHDL_SOURCES``
       A list of the VHDL source files to include.
       
+    ``VHDL_SOURCES_lib``
+      A list of the VHDL source files to include in the VHDL library *lib* (currently GHDL only).
+      
     ``COMPILE_ARGS``
       Any arguments or flags to pass to the compile stage of the simulation. Only applies to simulators with a separate compilation stage (currently Icarus and VCS).
       
