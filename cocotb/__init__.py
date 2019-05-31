@@ -135,6 +135,7 @@ def _initialise_testbench(root_name):
     process_plusargs()
 
     # Seed the Python random number generator to make this repeatable
+    global seed
     seed = os.getenv('RANDOM_SEED')
 
     if seed is None:
