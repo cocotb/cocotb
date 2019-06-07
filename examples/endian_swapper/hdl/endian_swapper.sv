@@ -109,6 +109,9 @@ always @(posedge clk or negedge reset_n) begin
         flush_pipe       <= 1'b0;
         in_packet        <= 1'b0;
         packet_count     <= 32'd0;
+
+        stream_out_startofpacket <= 1'b1;
+        stream_out_endofpacket   <= 1'b1;
     end else begin
 
         if (flush_pipe & stream_out_ready)
