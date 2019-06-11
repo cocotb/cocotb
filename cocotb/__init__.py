@@ -135,20 +135,21 @@ def _initialise_testbench(root_name):
     process_plusargs()
 
     # Seed the Python random number generator to make this repeatable
-    seed = os.getenv('RANDOM_SEED')
+    global RANDOM_SEED
+    RANDOM_SEED = os.getenv('RANDOM_SEED')
 
-    if seed is None:
+    if RANDOM_SEED is None:
         if 'ntb_random_seed' in plusargs:
-            seed = eval(plusargs['ntb_random_seed'])
+            RANDOM_SEED = eval(plusargs['ntb_random_seed'])
         elif 'seed' in plusargs:
-            seed = eval(plusargs['seed'])
+            RANDOM_SEED = eval(plusargs['seed'])
         else:
-            seed = int(time.time())
-        log.info("Seeding Python random module with %d" % (seed))
+            RANDOM_SEED = int(time.time())
+        log.info("Seeding Python random module with %d" % (RANDOM_SEED))
     else:
-        seed = int(seed)
-        log.info("Seeding Python random module with supplied seed %d" % (seed))
-    random.seed(seed)
+        RANDOM_SEED = int(RANDOM_SEED)
+        log.info("Seeding Python random module with supplied seed %d" % (RANDOM_SEED))
+    random.seed(RANDOM_SEED)
 
     module_str = os.getenv('MODULE')
     test_str = os.getenv('TESTCASE')
@@ -163,7 +164,7 @@ def _initialise_testbench(root_name):
 
     global regression_manager
 
-    regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=seed, hooks=hooks)
+    regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=RANDOM_SEED, hooks=hooks)
     regression_manager.initialise()
     regression_manager.execute()
 
