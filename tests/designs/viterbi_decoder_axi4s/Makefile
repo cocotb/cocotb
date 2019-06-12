@@ -35,7 +35,7 @@ clean::
 
 else
 
-TOPLEVEL = dec_viterbi
+TOPLEVEL = decoder_viterbi
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
@@ -46,6 +46,8 @@ endif
 COCOTB?=$(WPWD)/../../..
 
 SRC_BASE = $(COCOTB)/tests/designs/viterbi_decoder_axi4s
+
+GHDL_ARGS += --ieee=synopsys
 
 RTL_LIBRARY = dec_viterbi
 
@@ -63,7 +65,7 @@ VHDL_SOURCES = $(SRC_BASE)/packages/pkg_helper.vhd \
 	       $(SRC_BASE)/src/ram_ctrl.vhd \
 	       $(SRC_BASE)/src/reorder.vhd \
 	       $(SRC_BASE)/src/recursion.vhd \
-	       $(SRC_BASE)/src/dec_viterbi.vhd \
+	       $(SRC_BASE)/src/decoder_viterbi.vhd \
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
