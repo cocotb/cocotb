@@ -31,13 +31,13 @@
 
 # Directory containing the cocotb Python module
 ifeq ($(COCOTB_PY_DIR),)
-export COCOTB_PY_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../../..)
+export COCOTB_PY_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST)))/../../..)
 endif
 
 # Directory containing all support files required to build cocotb-based
 # simulations: Makefile fragments, and the simulator libraries.
 ifeq ($(COCOTB_SHARE_DIR),)
-export COCOTB_SHARE_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+export COCOTB_SHARE_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 endif
 
 ifeq ($(COCOTB_PY_DIR),$(COCOTB_SHARE_DIR))
@@ -45,7 +45,7 @@ $(warning 'Deprecated cocotb file structure detected. Please use "include $$(she
 endif
 
 ifeq ($(USER_DIR),)
-export USER_DIR:=$(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+export USER_DIR:=$(realpath $(dir $(firstword $(MAKEFILE_LIST))))
 endif
 
 BUILD_DIR=$(USER_DIR)/build

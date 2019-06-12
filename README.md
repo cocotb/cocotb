@@ -12,6 +12,10 @@
 * Get in contact: [E-mail us](mailto:cocotb@potentialventures.com)
 * Follow us on twitter: [@PVCocotb](https://twitter.com/PVCocotb)
 
+## Installation
+
+Cocotb can be installed by running `pip install cocotb`.
+
 ## Quickstart
 
     # Install pre-requisites (waveform viewer optional)
@@ -19,6 +23,9 @@
     
     # Checkout git repositories
     git clone https://github.com/potentialventures/cocotb.git
+    
+    # Install cocotb
+    pip install ./cocotb
     
     # Run the tests...
     cd cocotb/examples/endian_swapper/tests

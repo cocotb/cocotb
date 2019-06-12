@@ -504,7 +504,6 @@ VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                                VpiCbHdl(impl)
 {
     cb_data.reason = cbReadWriteSynch;
-    delay_kill = false;
 }
 
 VpiReadOnlyCbHdl::VpiReadOnlyCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),

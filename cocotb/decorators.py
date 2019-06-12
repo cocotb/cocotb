@@ -33,15 +33,16 @@ import traceback
 import pdb
 import functools
 import threading
+import inspect
+import textwrap
 
 from io import StringIO, BytesIO
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import Join, PythonTrigger, Timer, Event, NullTrigger
 from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
                            ReturnValue, raise_error, ExternalException)
-from cocotb.utils import get_sim_time
+from cocotb.utils import get_sim_time, with_metaclass, exec_
 from cocotb import outcomes
 
 
@@ -89,7 +90,13 @@ class RunningCoroutine(object):
             self.log = SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
         else:
             self.log = SimLog("cocotb.coroutine.fail")
-        self._coro = inst
+
+        if sys.version_info[:2] >= (3, 5) and inspect.iscoroutine(inst):
+            self._natively_awaitable = True
+            self._coro = inst.__await__()
+        else:
+            self._natively_awaitable = False
+            self._coro = inst
         self._started = False
         self._callbacks = []
         self._parent = parent
@@ -154,6 +161,10 @@ class RunningCoroutine(object):
 
     def kill(self):
         """Kill a coroutine."""
+        if self._outcome is not None:
+            # already finished, nothing to kill
+            return
+
         self.log.debug("kill() called on coroutine")
         # todo: probably better to throw an exception for anyone waiting on the coroutine
         self._outcome = outcomes.Value(None)
@@ -161,7 +172,7 @@ class RunningCoroutine(object):
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits."""
-        return Join(self)
+        return cocotb.triggers.Join(self)
 
     def has_started(self):
         return self._started
@@ -171,6 +182,21 @@ class RunningCoroutine(object):
             if the coroutine has finished return false
             otherwise return true"""
         return not self._finished
+
+    # Once 2.7 is dropped, this can be run unconditionally
+    if sys.version_info >= (3, 3):
+        exec_(textwrap.dedent("""
+        def __await__(self):
+            # It's tempting to use `return (yield from self._coro)` here,
+            # which bypasses the scheduler. Unfortunately, this means that
+            # we can't keep track of the result or state of the coroutine,
+            # things which we expose in our public API. If you want the
+            # efficiency of bypassing the scheduler, remove the `@coroutine`
+            # decorator from your `async` functions.
+
+            # Hand the coroutine back to the scheduler trampoline.
+            return (yield self)
+        """))
 
     __bool__ = __nonzero__
 
@@ -194,6 +220,7 @@ class RunningTest(RunningCoroutine):
     def __init__(self, inst, parent):
         self.error_messages = []
         RunningCoroutine.__init__(self, inst, parent)
+        self.log = SimLog("cocotb.test.%s" % self.__name__, id(self))
         self.started = False
         self.start_time = 0
         self.start_sim_time = 0
@@ -239,14 +266,16 @@ class RunningTest(RunningCoroutine):
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
 
-    ``log`` methods will will log to ``cocotb.coroutines.name``.
+    ``log`` methods will log to ``cocotb.coroutine.name``.
 
     ``join()`` method returns an event which will fire when the coroutine exits.
+
+    Used as ``@cocotb.coroutine``.
     """
 
     def __init__(self, func):
         self._func = func
-        self.log = SimLog("cocotb.function.%s" % self._func.__name__, id(self))
+        self.log = SimLog("cocotb.coroutine.%s" % self._func.__name__, id(self))
         self.__name__ = self._func.__name__
         functools.update_wrapper(self, func)
 
@@ -301,13 +330,12 @@ class function(object):
             event.outcome = _outcome
             event.set()
 
-        self._event = threading.Event()
-        self._event.result = None
-        waiter = cocotb.scheduler.queue_function(execute_function(self, self._event))
+        event = threading.Event()
+        waiter = cocotb.scheduler.queue_function(execute_function(self, event))
         # This blocks the calling external thread until the coroutine finishes
-        self._event.wait()
+        event.wait()
         waiter.thread_resume()
-        return self._event.outcome.get()
+        return event.outcome.get()
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
@@ -341,36 +369,59 @@ class external(object):
             and standalone functions"""
         return self.__class__(self._func.__get__(obj, type))
 
+
+class _decorator_helper(type):
+    """
+    Metaclass that allows a type to be constructed using decorator syntax,
+    passing the decorated function as the first argument.
+
+    So:
+
+        @MyClass(construction, args='go here')
+        def this_is_passed_as_f(...):
+            pass
+
+    ends up calling
+
+        MyClass.__init__(this_is_passed_as_f, construction, args='go here')
+    """
+    def __call__(cls, *args, **kwargs):
+        def decorator(f):
+            # fall back to the normal way of constructing an object, now that
+            # we have all the arguments
+            return type.__call__(cls, f, *args, **kwargs)
+        return decorator
+
+
 @public
-class hook(coroutine):
+class hook(with_metaclass(_decorator_helper, coroutine)):
     """Decorator to mark a function as a hook for cocotb.
+
+    Used as ``@cocotb.hook()``.
 
     All hooks are run at the beginning of a cocotb test suite, prior to any
     test code being run."""
-    def __init__(self):
-        pass
-
-    def __call__(self, f):
+    def __init__(self, f):
         super(hook, self).__init__(f)
+        self.im_hook = True
+        self.name = self._func.__name__
 
-        def _wrapped_hook(*args, **kwargs):
-            try:
-                return RunningCoroutine(self._func(*args, **kwargs), self)
-            except Exception as e:
-                raise raise_error(self, "Hook raised exception:")
+    def __call__(self, *args, **kwargs):
+        try:
+            return RunningCoroutine(self._func(*args, **kwargs), self)
+        except Exception as e:
+            raise raise_error(self, "Hook raised exception:")
 
-        _wrapped_hook.im_hook = True
-        _wrapped_hook.name = self._func.__name__
-        _wrapped_hook.__name__ = self._func.__name__
-        return _wrapped_hook
 
 @public
-class test(coroutine):
+class test(with_metaclass(_decorator_helper, coroutine)):
     """Decorator to mark a function as a test.
 
     All tests are coroutines.  The test decorator provides
     some common reporting etc., a test timeout and allows
     us to mark tests as expected failures.
+
+    Used as ``@cocotb.test(...)``.
 
     Args:
         timeout (int, optional):
@@ -386,24 +437,21 @@ class test(coroutine):
         stage (int, optional)
             Order tests logically into stages, where multiple tests can share a stage.
     """
-    def __init__(self, timeout=None, expect_fail=False, expect_error=False,
+    def __init__(self, f, timeout=None, expect_fail=False, expect_error=False,
                  skip=False, stage=None):
+        super(test, self).__init__(f)
+
         self.timeout = timeout
         self.expect_fail = expect_fail
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
+        self.im_test = True    # For auto-regressions
+        self.name = self._func.__name__
 
-    def __call__(self, f):
-        super(test, self).__init__(f)
+    def __call__(self, *args, **kwargs):
+        try:
+            return RunningTest(self._func(*args, **kwargs), self)
+        except Exception as e:
+            raise raise_error(self, "Test raised exception:")
 
-        def _wrapped_test(*args, **kwargs):
-            try:
-                return RunningTest(self._func(*args, **kwargs), self)
-            except Exception as e:
-                raise raise_error(self, "Test raised exception:")
-
-        _wrapped_test.im_test = True    # For auto-regressions
-        _wrapped_test.name = self._func.__name__
-        _wrapped_test.__name__ = self._func.__name__
-        return _wrapped_test

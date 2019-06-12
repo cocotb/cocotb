@@ -58,6 +58,9 @@ ALOG_ARGS += $(COMPILE_ARGS)
 ACOM_ARGS += $(COMPILE_ARGS)
 ASIM_ARGS += $(SIM_ARGS)
 
+# Plusargs need to be passed to ASIM command not vsimsa
+ASIM_ARGS += $(PLUSARGS)
+
 RTL_LIBRARY ?= work
 ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
 ACOM_ARGS += -dbg
@@ -171,7 +174,7 @@ endif
 # that turns on batch mode (i.e. exit on completion/error)
 results.xml: $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_SIM_DEPS)
 	set -o pipefail; cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) $(PLUSARGS) -do runsim.tcl | tee sim.log
+	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) -do runsim.tcl | tee sim.log
 
 clean::
 	@rm -rf $(SIM_BUILD)

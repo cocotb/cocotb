@@ -37,7 +37,7 @@
 #endif
 
 // Tracks if we are in the context of Python or Simulator
-int context = 0;
+int is_python_context = 0;
 
 void* utils_dyn_open(const char* lib_name)
 {

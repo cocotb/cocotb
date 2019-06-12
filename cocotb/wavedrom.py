@@ -30,6 +30,7 @@ from collections import OrderedDict, defaultdict
 import cocotb
 from cocotb.bus import Bus
 from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.utils import reject_remaining_kwargs
 
 
 class Wavedrom(object):
@@ -140,7 +141,9 @@ class trace(object):
     """
 
     def __init__(self, *args, **kwargs):
-        self._clock = kwargs.get("clk", None)
+        # emulate keyword-only arguments in python 2
+        self._clock = kwargs.pop("clk", None)
+        reject_remaining_kwargs('__init__', kwargs)
 
         self._signals = []
         for arg in args:
@@ -193,14 +196,22 @@ class trace(object):
         with open(filename, "w") as f:
             f.write(self.dumpj(**kwargs))
 
-    def dumpj(self, header="", footer=""):
+    def dumpj(self, header="", footer="", config=""):
         trace = {"signal": []}
         trace["signal"].append(
             {"name": "clock", "wave": "p" + "."*(self._clocks-1)})
         for sig in self._signals:
             trace["signal"].extend(sig.get(add_clock=False))
         if header:
-            trace["head"] = {"text": header}
+            if isinstance(header, dict):
+                trace["head"] = header
+            else:
+                trace["head"] = {"text": header}
         if footer:
-            trace["foot"] = {"text": footer}
+            if isinstance(footer, dict):
+                trace["foot"] = footer
+            else:
+                trace["foot"] = {"text": footer}
+        if config:
+            trace["config"] = config
         return json.dumps(trace, indent=4, sort_keys=False)

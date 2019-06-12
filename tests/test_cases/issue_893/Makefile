@@ -25,12 +25,9 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##############################################################################
+###############################################################################
 
-# Backwards-compatibility wrapper for people using
-# "include $COCOTB/makefiles/Makefile.inc" in their Makefile.
-COCOTB_INSTALL_METHOD = srctree
-export COCOTB_INSTALL_METHOD
 
-_NEW_SHARE_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))/../cocotb/share
-include $(_NEW_SHARE_DIR)/makefiles/Makefile.inc
+include ../../designs/sample_module/Makefile
+
+MODULE = issue_893

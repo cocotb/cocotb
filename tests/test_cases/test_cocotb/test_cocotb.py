@@ -39,7 +39,8 @@ Also used as regression test of cocotb capabilities
 
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite, ClockCycles, NextTimeStep)
+                             ReadOnly, ReadWrite, ClockCycles, NextTimeStep,
+                             NullTrigger, Combine, Event, First)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
@@ -310,7 +311,8 @@ def do_test_afterdelay_in_readonly(dut, delay):
              expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "riviera",
                                                              "modelsim",
-                                                             "ncsim")))
+                                                             "ncsim",
+                                                             "xmsim")))
 def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -326,7 +328,8 @@ def test_readwrite_in_readonly(dut):
              expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "riviera",
                                                              "modelsim",
-                                                             "ncsim")))
+                                                             "ncsim",
+                                                             "xmsim")))
 def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -341,7 +344,7 @@ def test_cached_write_in_readonly(dut):
 
 @cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "chronologic simulation vcs")),
-             skip=cocotb.SIM_NAME.lower().startswith(("ncsim")))
+             skip=cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")))
 def test_afterdelay_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
@@ -839,6 +842,16 @@ def test_lessthan_raises_error(dut):
     if False: yield
 
 
+@cocotb.test()
+def test_tests_are_tests(dut):
+    """
+    Test that things annotated with cocotb.test are tests
+    """
+    yield Timer(1)
+
+    assert isinstance(test_tests_are_tests, cocotb.test)
+
+
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
@@ -864,15 +877,192 @@ if sys.version_info[:2] >= (3, 3):
 
 
 @cocotb.test()
-def test_exceptions():
+def test_exceptions(dut):
     @cocotb.coroutine
     def raise_soon():
         yield Timer(10)
         raise ValueError('It is soon now')
-    
+
     try:
         yield raise_soon()
     except ValueError:
         pass
     else:
         raise TestFailure("Exception was not raised")
+
+@cocotb.test()
+def test_stack_overflow(dut):
+    """
+    Test against stack overflows when starting many coroutines that terminate
+    before passing control to the simulator.
+    """
+    @cocotb.coroutine
+    def null_coroutine():
+        yield NullTrigger()
+
+    for _ in range(10000):
+        yield null_coroutine()
+
+    yield Timer(100)
+
+
+@cocotb.test()
+def test_immediate_coro(dut):
+    """
+    Test that coroutines can return immediately
+    """
+    # note: it seems that the test still has to yield at least once, even
+    # if the subroutines do not
+    yield Timer(1)
+
+    @cocotb.coroutine
+    def immediate_value():
+        raise ReturnValue(42)
+        yield
+
+    @cocotb.coroutine
+    def immediate_exception():
+        raise ValueError
+        yield
+
+    assert (yield immediate_value()) == 42
+
+    try:
+        yield immediate_exception()
+    except ValueError:
+        pass
+    else:
+        raise TestFailure("Exception was not raised")
+
+
+@cocotb.test()
+def test_combine(dut):
+    """ Test the Combine trigger. """
+    # gh-852
+
+    @cocotb.coroutine
+    def do_something(delay):
+        yield Timer(delay)
+
+    crs = [cocotb.fork(do_something(dly)) for dly in [10, 30, 20]]
+
+    yield Combine(*(cr.join() for cr in crs))
+
+
+@cocotb.test()
+def test_clock_cycles_forked(dut):
+    """ Test that ClockCycles can be used in forked coroutines """
+    # gh-520
+
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+
+    @cocotb.coroutine
+    def wait_ten():
+        yield ClockCycles(dut.clk, 10)
+
+    a = cocotb.fork(wait_ten())
+    b = cocotb.fork(wait_ten())
+    yield a.join()
+    yield b.join()
+
+
+@cocotb.test()
+def test_yield_list_stale(dut):
+    """ Test that a trigger yielded as part of a list can't cause a spurious wakeup """
+    # gh-843
+    events = [Event() for i in range(3)]
+
+    waiters = [e.wait() for e in events]
+
+    @cocotb.coroutine
+    def wait_for_lists():
+        ret_i = waiters.index((yield [waiters[0], waiters[1]]))
+        assert ret_i == 0, "Expected event 0 to fire, not {}".format(ret_i)
+
+        ret_i = waiters.index((yield [waiters[2]]))
+        assert ret_i == 2, "Expected event 2 to fire, not {}".format(ret_i)
+
+    @cocotb.coroutine
+    def wait_for_e1():
+        """ wait on the event that didn't wake `wait_for_lists` """
+        ret_i = waiters.index((yield waiters[1]))
+        assert ret_i == 1, "Expected event 1 to fire, not {}".format(ret_i)
+
+    @cocotb.coroutine
+    def fire_events():
+        """ fire the events in order """
+        for e in events:
+            yield Timer(1)
+            e.set()
+
+    fire_task = cocotb.fork(fire_events())
+    e1_task = cocotb.fork(wait_for_e1())
+    yield wait_for_lists()
+
+    # make sure the other tasks finish
+    yield fire_task.join()
+    yield e1_task.join()
+
+
+@cocotb.test()
+def test_nested_first(dut):
+    """ Test that nested First triggers behave as expected """
+    events = [Event() for i in range(3)]
+    waiters = [e.wait() for e in events]
+
+    @cocotb.coroutine
+    def fire_events():
+        """ fire the events in order """
+        for e in events:
+            yield Timer(1)
+            e.set()
+
+
+    @cocotb.coroutine
+    def wait_for_nested_first():
+        inner_first = First(waiters[0], waiters[1])
+        ret = yield First(inner_first, waiters[2])
+
+        # should unpack completely, rather than just by one level
+        assert ret is not inner_first
+        assert ret is waiters[0]
+
+    fire_task = cocotb.fork(fire_events())
+    yield wait_for_nested_first()
+    yield fire_task.join()
+
+
+@cocotb.test()
+def test_readwrite(dut):
+    """ Test that ReadWrite can be waited on """
+    # gh-759
+    yield Timer(1)
+    dut.clk <= 1
+    yield ReadWrite()
+
+
+@cocotb.test()
+def test_writes_have_taken_effect_after_readwrite(dut):
+    """ Test that ReadWrite fires first for the background write coro """
+    dut.stream_in_data.setimmediatevalue(0)
+
+    @cocotb.coroutine
+    def write_manually():
+        yield ReadWrite()
+        # this should overwrite the write written below
+        dut.stream_in_data.setimmediatevalue(2)
+
+    # queue a backround task to do a manual write
+    waiter = cocotb.fork(write_manually())
+
+    # do a delayed write. This will be overwritten
+    dut.stream_in_data <= 3
+    yield waiter
+
+    # check that the write we expected took precedence
+    yield ReadOnly()
+    assert dut.stream_in_data.value == 2
+
+
+if sys.version_info[:2] >= (3, 5):
+    from test_cocotb_35 import *

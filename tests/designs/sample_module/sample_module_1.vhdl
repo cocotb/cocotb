@@ -27,4 +27,10 @@ begin
 
   stream_out_data_valid  <= '1' when (stream_out_data_registered(EXAMPLE_WIDTH) = '1') else '0';
 
+  SAMPLE_BLOCK : block
+    signal clk_inv : std_ulogic;
+  begin
+    clk_inv <= not clk;
+  end block;
+
 end architecture;

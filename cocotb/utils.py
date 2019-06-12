@@ -511,6 +511,31 @@ class nullcontext(object):
         pass
 
 
+def reject_remaining_kwargs(name, kwargs):
+    """
+    Helper function to emulate python 3 keyword-only arguments.
+
+    Use as::
+
+        def func(x1, **kwargs):
+            a = kwargs.pop('a', 1)
+            b = kwargs.pop('b', 2)
+            reject_remaining_kwargs('func', kwargs)
+            ...
+
+    To emulate the Python 3 syntax::
+
+        def func(x1, *, a=1, b=2):
+            ...
+    """
+    if kwargs:
+        # match the error message to what python 3 produces
+        bad_arg = next(iter(kwargs))
+        raise TypeError(
+            '{}() got an unexpected keyword argument {!r}'.format(name, bad_arg)
+        )
+
+
 if __name__ == "__main__":
     import random
     a = ""
