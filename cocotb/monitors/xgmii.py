@@ -52,7 +52,7 @@ class XGMII(Monitor):
 
     Assumes a single vector, either 4 or 8 bytes plus control bit for each byte.
 
-    If interleaved is true then the control bits are adjacent to the bytes.
+    If interleaved is ``True`` then the control bits are adjacent to the bytes.
     """
 
     def __init__(self, signal, clock, interleaved=True, callback=None,
@@ -78,7 +78,7 @@ class XGMII(Monitor):
         Monitor.__init__(self, callback=callback, event=event)
 
     def _get_bytes(self):
-        """Take a value and extract the individual bytes / ctrl bits.
+        """Take a value and extract the individual bytes and control bits.
 
         Returns a tuple of lists.
         """

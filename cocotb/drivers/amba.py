@@ -23,9 +23,9 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
-"""
-Drivers for Advanced Microcontroller Bus Architecture
-"""
+
+"""Drivers for Advanced Microcontroller Bus Architecture."""
+
 import cocotb
 from cocotb.triggers import RisingEdge, ReadOnly, Lock
 from cocotb.drivers import BusDriver
@@ -41,11 +41,11 @@ class AXIProtocolError(Exception):
 
 
 class AXI4LiteMaster(BusDriver):
-    """
-    AXI4-Lite Master
+    """AXI4-Lite Master.
 
-    TODO: Kill all pending transactions if reset is asserted...
+    TODO: Kill all pending transactions if reset is asserted.
     """
+    
     _signals = ["AWVALID", "AWADDR", "AWREADY",        # Write address channel
                 "WVALID", "WREADY", "WDATA", "WSTRB",  # Write data channel
                 "BVALID", "BREADY", "BRESP",           # Write response channel
@@ -90,9 +90,7 @@ class AXI4LiteMaster(BusDriver):
 
     @cocotb.coroutine
     def _send_write_data(self, data, delay=0, byte_enable=0xF):
-        """
-        Send the write address, with optional delay (in clocks)
-        """
+        """Send the write address, with optional delay (in clocks)."""
         yield self.write_data_busy.acquire()
         for cycle in range(delay):
             yield RisingEdge(self.clock)
@@ -113,12 +111,11 @@ class AXI4LiteMaster(BusDriver):
     @cocotb.coroutine
     def write(self, address, value, byte_enable=0xf, address_latency=0,
               data_latency=0, sync=True):
-        """
-        Write a value to an address.
+        """Write a value to an address.
 
         Args:
-            address (int): The address to write to
-            value (int): The data value to write
+            address (int): The address to write to.
+            value (int): The data value to write.
             byte_enable (int, optional): Which bytes in value to actually write.
                 Default is to write all bytes.
             address_latency (int, optional): Delay before setting the address (in clock cycles).
@@ -129,10 +126,10 @@ class AXI4LiteMaster(BusDriver):
                 Defaults to True.
             
         Returns:
-            BinaryValue: The write response value
+            BinaryValue: The write response value.
             
         Raises:
-            AXIProtocolError: If write response from AXI is not ``OKAY``
+            AXIProtocolError: If write response from AXI is not ``OKAY``.
         """
         if sync:
             yield RisingEdge(self.clock)
@@ -166,19 +163,18 @@ class AXI4LiteMaster(BusDriver):
 
     @cocotb.coroutine
     def read(self, address, sync=True):
-        """
-        Read from an address.
+        """Read from an address.
         
         Args:
-            address (int): The address to read from
+            address (int): The address to read from.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
             
         Returns:
-            BinaryValue: The read data value
+            BinaryValue: The read data value.
             
         Raises:
-            AXIProtocolError: If read response from AXI is not ``OKAY``
+            AXIProtocolError: If read response from AXI is not ``OKAY``.
         """
         if sync:
             yield RisingEdge(self.clock)

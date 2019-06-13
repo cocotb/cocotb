@@ -430,7 +430,8 @@ class test(with_metaclass(_decorator_helper, coroutine)):
             Don't mark the result as a failure if the test fails.
         expect_error (bool, optional):
             Don't mark the result as an error if an error is raised.
-            This is for cocotb internal regression use.
+            This is for cocotb internal regression use 
+            when a simulator error is expected.
         skip (bool, optional):
             Don't execute this test as part of the regression.
         stage (int, optional)
