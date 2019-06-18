@@ -29,7 +29,10 @@
 ###############################################################################
 
 from setuptools import setup
-from setuptools import find_packages
+from setuptools import find_packages, Extension
+from distutils import sysconfig
+
+import os
 from os import path, walk
 
 def read_file(fname):
@@ -70,5 +73,39 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
     ],
+    # this works by itself, but there's a circular dependency between this
+    # package, which provides cocotb-config, and cocotbutils, which is built
+    # using cocotb-config
+    ext_modules=[
+        Extension(
+            'cocotb.simulator',
+            sources=['cocotb/share/lib/simulator/simulatormodule.c'],
+            include_dirs=['cocotb/share/include'],
+            library_dirs=['build/libs/x86_64'],
+            libraries=['cocotbutils', 'gpi', 'gpilog']),
+    ],
+    # I think this creates static libraries, which probably doesn't work correctly
+    libraries=[
+        ('cocotbutils', dict(
+            sources=['cocotb/share/lib/utils/cocotb_utils.c'],
+            include_dirs=['cocotb/share/include']
+        )),
+        ('gpilog', dict(
+            sources=['cocotb/share/lib/gpi_log/gpi_logging.c'],
+            include_dirs=['cocotb/share/include'] + sysconfig.get_python_inc().split(os.pathsep),
+            macros=[('FILTER',)]
+        )),
+        ('gpi', dict(
+            sources=[
+                'cocotb/share/lib/gpi/GpiCbHdl.cpp',
+                'cocotb/share/lib/gpi/GpiCommon.cpp',
+            ],
+            include_dirs=['cocotb/share/include'] + sysconfig.get_python_inc().split(os.pathsep),
+            macros=[
+                ('VPI_CHECKING',),
+                ('SINGLETON_HANDLES',)
+            ]
+        ))
+    ]
 )
 
