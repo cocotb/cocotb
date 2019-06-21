@@ -72,6 +72,11 @@ from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
 from cocotb.utils import nullcontext
 
 
+class InternalError(RuntimeError):
+    """ An error internal to scheduler. If you see this, report a bug! """
+    pass
+
+
 class profiling_context(object):
     """ Context manager that profiles its contents """
     def __enter__(self):
@@ -328,7 +333,11 @@ class Scheduler(object):
             self._pending_triggers.append(trigger)
             return
 
-        assert not self._pending_triggers
+        if self._pending_triggers:
+            raise InternalError(
+                "Expected all triggers to be handled but found {}"
+                .format(self._pending_triggers)
+            )
 
         # start the event loop
         self._is_reacting = True
@@ -406,6 +415,7 @@ class Scheduler(object):
                             "No coroutines waiting on trigger that fired: %s" %
                             str(trigger))
 
+                    del trigger
                     continue
 
                 # Scheduled coroutines may append to our waiting list so the first
@@ -435,6 +445,13 @@ class Scheduler(object):
                         self.log.debug("Scheduling pending event %s" %
                                        (str(self._pending_events[0])))
                     self._pending_events.pop(0).set()
+
+                # remove our reference to the objects at the end of each loop,
+                # to try and avoid them being destroyed at a weird time (as
+                # happened in gh-957)
+                del trigger
+                del coro
+                del scheduling
 
             # no more pending triggers
             self._check_termination()
