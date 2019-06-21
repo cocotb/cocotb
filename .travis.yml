@@ -29,14 +29,14 @@ jobs:
         - docker run -d --name cocotb cocotb tail -f /dev/null
         - docker ps -a
       script:
-        - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27' 
+        - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27'
         - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py27'
         - echo -e 'travis_fold:end:cocotb_py27'
 
     - stage: SimTests
       os: linux
       python: 3.5
-      before_install: *docker_prep 
+      before_install: *docker_prep
       script:
         - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
         - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py35'
@@ -89,7 +89,7 @@ jobs:
       before_install: *osx_prep
       script:
         - tox -e py36
-        
+
     - stage: SimTests
       python: 3.7
       env: SIM=ghdl
@@ -111,8 +111,8 @@ deploy:
   provider: pypi
   user: themperek
   password:
-    secure: "Olc0PdhY/0b8zYrgsPCUrfusPJgYLRBpAux/c5M6j4OzKyZN3fjjpPw+Yrs6o8RxBPa4uqN/niKo8MmgxLQeq3vAy+3nNo3YukL9Q/AYrbJ+JvHfe+2Be73LaujbNvuS9+A7NX3GOT40bB1eo/kOT/kjgzAJvlFhVnXq8h5a9Gc="  on:
+    secure: "Olc0PdhY/0b8zYrgsPCUrfusPJgYLRBpAux/c5M6j4OzKyZN3fjjpPw+Yrs6o8RxBPa4uqN/niKo8MmgxLQeq3vAy+3nNo3YukL9Q/AYrbJ+JvHfe+2Be73LaujbNvuS9+A7NX3GOT40bB1eo/kOT/kjgzAJvlFhVnXq8h5a9Gc="
+  on:
     tags: true
     repo: potentialventures/cocotb
   distributions: sdist
-  
