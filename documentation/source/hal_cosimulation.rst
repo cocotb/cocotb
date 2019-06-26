@@ -164,8 +164,8 @@ and control will return to the testbench when the function returns.
 Further Work
 ------------
 
-In future tutorials we'll consider co-simulating unmodified drivers written 
-using ``mmap`` (for example built upon the `UIO framework`_) and consider 
+In future tutorials we'll consider co-simulating unmodified drivers written
+using ``mmap`` (for example built upon the `UIO framework`_) and consider
 interfacing with emulators like `QEMU`_ to allow us to co-simulate when the
 software needs to execute on a different processor architecture.
 

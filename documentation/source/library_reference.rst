@@ -134,7 +134,7 @@ Monitor
     :private-members:
 
     .. automethod:: wait_for_recv(timeout=None)
-                    
+
 
 .. autoclass:: BusMonitor
     :members:
@@ -199,7 +199,7 @@ Analog Devices AD9361 RF Transceiver.
     .. automethod:: rx_data_to_ad9361(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
     .. automethod:: ad9361_tx_to_rx_loopback()
     .. automethod:: tx_data_from_ad9361()
-                    
+
 
 AMBA
 ~~~~
@@ -230,10 +230,10 @@ Avalon
     :show-inheritance:
 
 .. autoclass:: AvalonMaster
-               
+
     .. automethod:: write(address, value)
     .. automethod:: read(address, sync=True)
-                    
+
 
 .. autoclass:: AvalonMemory
     :members:
@@ -255,12 +255,12 @@ OPB
 ~~~
 
 .. currentmodule:: cocotb.drivers.opb
-                   
+
 .. autoclass:: OPBMaster
-               
+
     .. automethod:: write(address, value, sync=True)
     .. automethod:: read(address, sync=True)
-                    
+
 
 XGMII
 ~~~~~

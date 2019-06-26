@@ -33,7 +33,7 @@ Ubuntu based installation
 
 This will allow building of the cocotb libs for use with a 64-bit native
 simulator. If a 32-bit simulator is being used then additional steps to install
-32-bit development libraries and Python are needed. 
+32-bit development libraries and Python are needed.
 
 RedHat based installation
 
@@ -43,7 +43,7 @@ RedHat based installation
 
 This will allow building of the cocotb libs for use with a 64-bit native
 simulator. If a 32-bit simulator is being used then additional steps to install
-32-bit development libraries and Python are needed. 
+32-bit development libraries and Python are needed.
 
 
 32-bit Python
@@ -113,7 +113,7 @@ The following packages need selecting by checking the tick box and selecting
       -- mingw-developer-tools
       -- mingw32-base
       -- mingw32-gcc-g++
-      -- msys-base 
+      -- msys-base
 
 From the Installation menu then select "Apply Changes", in the next dialog
 select "Apply".
@@ -139,7 +139,7 @@ Installing a package manager really helps things out here.
 `Brew <https://brew.sh/>`_ seems to be the most popular, so we'll assume you have that installed.
 
 .. code-block:: bash
-    
+
     $> brew install python icarus-verilog gtkwave
 
 Installing cocotb
@@ -156,7 +156,7 @@ or
 .. code-block:: bash
 
     $> pip install cocotb
-    
+
 *\*For user local install follow* `pip User Guide <https://https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
 
 For development version:
@@ -164,8 +164,8 @@ For development version:
 .. code-block:: bash
 
     $> git clone https://github.com/potentialventures/cocotb
-    $> pip install -e ./cocotb 
-    
+    $> pip install -e ./cocotb
+
 Running an example
 ------------------
 
@@ -239,11 +239,11 @@ following:
 
     import cocotb
     from cocotb.triggers import Timer
-    
+
     @cocotb.test()
     def my_first_test(dut):
         """Try accessing the design."""
-        
+
         dut._log.info("Running test!")
         for cycle in range(10):
             dut.clk = 0
@@ -267,7 +267,7 @@ can be used to access signals inside the design.
 
     # Get a reference to the "clk" signal on the top-level
     clk = dut.clk
-    
+
     # Get a reference to a register "count"
     # in a sub-block "inst_sub_block"
     count = dut.inst_sub_block.count
@@ -281,13 +281,13 @@ Values can be assigned to signals using either the
 or using direct assignment while traversing the hierarchy.
 
 .. code-block:: python3
-    
+
     # Get a reference to the "clk" signal and assign a value
     clk = dut.clk
     clk.value = 1
-    
+
     # Direct assignment through the hierarchy
-    dut.input_signal <= 12 
+    dut.input_signal <= 12
 
     # Assign a value to a memory deep in the hierarchy
     dut.sub_block.memory.array[4] <= 2
@@ -300,7 +300,7 @@ Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 (see :meth:`~cocotb.handle.ModifiableObject.setimmediatevalue`).
 
 
-    
+
 Reading values from signals
 ---------------------------
 
@@ -309,10 +309,10 @@ Any unresolved bits are preserved and can be accessed using the :attr:`~cocotb.b
 or a resolved integer value can be accessed using the :attr:`~cocotb.binary.BinaryValue.integer` attribute.
 
 .. code-block:: python3
-    
+
     >>> # Read a value back from the DUT
     >>> count = dut.counter.value
-    >>> 
+    >>>
     >>> print(count.binstr)
     1X1010
     >>> # Resolve the value to an integer (X or Z treated as 0)
@@ -342,22 +342,22 @@ Parallel and sequential execution of coroutines
         yield Timer(duration)
         reset_n <= 1
         reset_n._log.debug("Reset complete")
-    
+
     @cocotb.test()
     def parallel_example(dut):
         reset_n = dut.reset
-    
+
         # This will call reset_dut sequentially
         # Execution will block until reset_dut has completed
         yield reset_dut(reset_n, 500)
         dut._log.debug("After reset")
-        
+
         # Call reset_dut in parallel with this coroutine
         reset_thread = cocotb.fork(reset_dut(reset_n, 500)
-        
+
         yield Timer(250)
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
-        
+
         # Wait for the other thread to complete
         yield reset_thread.join()
         dut._log.debug("After reset")
