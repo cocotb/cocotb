@@ -4,3 +4,4 @@ sphinx-rtd-theme
 cairosvg
 breathe
 sphinxcontrib-trio
+sphinx-issues

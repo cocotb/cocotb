@@ -41,9 +41,13 @@ extensions = [
     'cairosvgconverter',
     'breathe',
     'sphinxcontrib_trio',
+    'sphinx_issues',
     ]
 
 intersphinx_mapping = {'https://docs.python.org/3': None}
+
+# Github repo
+issues_github_path = "potentialventures/cocotb"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
