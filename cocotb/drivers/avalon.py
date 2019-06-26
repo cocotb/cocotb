@@ -550,7 +550,7 @@ class AvalonST(ValidatedBusDriver):
         Args:
             value: data to drive onto the bus.
         """
-        self.log.debug("Sending Avalon transmission: %d" % value)
+        self.log.debug("Sending Avalon transmission: %r" % value)
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -591,7 +591,7 @@ class AvalonST(ValidatedBusDriver):
         word.binstr   = ("x"*len(self.bus.data))
         self.bus.data <= word
 
-        self.log.debug("Successfully sent Avalon transmission: %d" % value)
+        self.log.debug("Successfully sent Avalon transmission: %r" % value)
 
 
 class AvalonSTPkts(ValidatedBusDriver):
