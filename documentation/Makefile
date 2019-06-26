@@ -16,7 +16,7 @@ BUILDDIR      = build
 help: .venv
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.venv:
+.venv: requirements.txt
 	@echo Creating Python venv for Sphinx build
 	python3 -m venv .venv
 	.venv/bin/pip -q install --upgrade pip
