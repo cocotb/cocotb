@@ -19,8 +19,9 @@ Contents:
    hal_cosimulation
    examples
    troubleshooting
-   roadmap
    simulator_support
+   roadmap
+   release_notes
 
 
 
