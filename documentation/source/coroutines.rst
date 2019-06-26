@@ -86,16 +86,16 @@ the forked code.
         """While reset is active, toggle signals"""
         tb = uart_tb(dut)
         # "Clock" is a built in class for toggling a clock signal
-        cocotb.fork(Clock(dut.clk, 1000).start()) 
+        cocotb.fork(Clock(dut.clk, 1000).start())
         # reset_dut is a function -
         # part of the user-generated "uart_tb" class
         cocotb.fork(tb.reset_dut(dut.rstn, 20000))
-    
+
         yield Timer(10000)
         print("Reset is still active: %d" % dut.rstn)
         yield Timer(15000)
         print("Reset has gone inactive: %d" % dut.rstn)
-                
+
 
 Coroutines can be joined to end parallel operation within a function.
 
@@ -105,12 +105,12 @@ Coroutines can be joined to end parallel operation within a function.
     def test_count_edge_cycles(dut, period=1000, clocks=6):
         cocotb.fork(Clock(dut.clk, period).start())
         yield RisingEdge(dut.clk)
-    
+
         timer = Timer(period + 10)
         task = cocotb.fork(count_edges_cycles(dut.clk, clocks))
         count = 0
         expect = clocks - 1
-    
+
         while True:
             result = yield [timer, task.join()]
             if count > expect:
@@ -130,7 +130,7 @@ they'd naturally end.
     def test_different_clocks(dut):
         clk_1mhz   = Clock(dut.clk, 1.0, units='us')
         clk_250mhz = Clock(dut.clk, 4.0, units='ns')
-    
+
         clk_gen = cocotb.fork(clk_1mhz.start())
         start_time_ns = get_sim_time(units='ns')
         yield Timer(1)
@@ -139,9 +139,9 @@ they'd naturally end.
         # NOTE: isclose is a python 3.5+ feature
         if not isclose(edge_time_ns, start_time_ns + 1000.0):
             raise TestFailure("Expected a period of 1 us")
-    
+
         clk_gen.kill()
-    
+
         clk_gen = cocotb.fork(clk_250mhz.start())
         start_time_ns = get_sim_time(units='ns')
         yield Timer(1)

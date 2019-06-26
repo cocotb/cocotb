@@ -15,7 +15,7 @@ API Documentation
 =================
 
 .. toctree::
-    
+
     generated/classlist
     generated/filelist
     generated/structlist

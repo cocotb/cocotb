@@ -3,7 +3,7 @@ Triggers
 
 Triggers are used to indicate when the cocotb scheduler should resume coroutine execution.
 Typically a coroutine will :keyword:`yield` a trigger or a list of triggers,
-while it is waiting for them to complete. 
+while it is waiting for them to complete.
 
 Simulation Timing
 -----------------
