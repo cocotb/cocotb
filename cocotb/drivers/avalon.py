@@ -555,7 +555,7 @@ class AvalonST(ValidatedBusDriver):
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
 
-        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=False)
+        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=self.config['firstSymbolInHighOrderBits'])
 
         # Drive some defaults since we don't know what state we're in
         self.bus.valid <= 0
