@@ -151,6 +151,7 @@ they'd naturally end.
         if not isclose(edge_time_ns, start_time_ns + 4.0):
             raise TestFailure("Expected a period of 4 ns")
 
+.. _async_functions:
 
 Async functions
 ---------------
