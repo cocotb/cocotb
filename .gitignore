@@ -61,3 +61,5 @@ bpad_*.err
 .bpad/
 .simvision/
 waves.shm/
+
+/_skbuild

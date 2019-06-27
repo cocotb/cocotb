@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-from setuptools import setup
+from skbuild import setup
 from setuptools import find_packages
 from os import path, walk
 
