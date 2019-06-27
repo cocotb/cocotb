@@ -39,25 +39,6 @@
 // Tracks if we are in the context of Python or Simulator
 int is_python_context = 0;
 
-void to_python(void) {
-    if (is_python_context) {
-        fprintf(stderr, "FATAL: We are calling up again\n");
-        exit(1);
-    }
-    ++is_python_context;
-    //fprintf(stderr, "INFO: Calling up to python %d\n", is_python_context);
-}
-
-void to_simulator(void) {
-    if (!is_python_context) {
-        fprintf(stderr, "FATAL: We have returned twice from python\n");
-        exit(1);
-    }
-
-    --is_python_context;
-    //fprintf(stderr, "INFO: Returning back to simulator %d\n", is_python_context);
-}
-
 void* utils_dyn_open(const char* lib_name)
 {
     void *ret = NULL;
