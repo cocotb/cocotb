@@ -34,6 +34,7 @@ import math
 import os
 import sys
 import weakref
+import functools
 import warnings
 
 if "COCOTB_SIM" in os.environ:
@@ -562,6 +563,31 @@ def reject_remaining_kwargs(name, kwargs):
         raise TypeError(
             '{}() got an unexpected keyword argument {!r}'.format(name, bad_arg)
         )
+
+
+class lazy_property(object):
+    """
+    A property that is executed the first time, then cached forever.
+
+    It does this by replacing itself on the instance, which works because
+    unlike `@property` it does not define __set__.
+
+    This should be used for expensive members of objects that are not always
+    used.
+    """
+    def __init__(self, fget):
+        self.fget = fget
+
+        # copy the getter function's docstring and other attributes
+        functools.update_wrapper(self, fget)
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+
+        value = self.fget(obj)
+        setattr(obj, self.fget.__name__, value)
+        return value
 
 
 if __name__ == "__main__":

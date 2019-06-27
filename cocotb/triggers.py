@@ -41,7 +41,7 @@ from cocotb.log import SimLog
 from cocotb.result import raise_error, ReturnValue
 from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, with_metaclass,
-    ParametrizedSingleton, exec_
+    ParametrizedSingleton, exec_, lazy_property
 )
 from cocotb import decorators
 from cocotb import outcomes
@@ -55,9 +55,12 @@ class Trigger(object):
     """Base class to derive from."""
     
     def __init__(self):
-        self.log = SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
         self.signal = None
         self.primed = False
+
+    @lazy_property
+    def log(self):
+        return SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
 
     def prime(self, *args):
         """FIXME: document"""
