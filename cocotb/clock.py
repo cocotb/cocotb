@@ -38,15 +38,19 @@ else:
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Timer, RisingEdge
-from cocotb.utils import get_sim_steps, get_time_from_sim_steps
+from cocotb.utils import get_sim_steps, get_time_from_sim_steps, lazy_property
 
 
 class BaseClock(object):
     """Base class to derive from."""
     def __init__(self, signal):
         self.signal = signal
-        self.log = SimLog("cocotb.%s.%s" %
-                          (self.__class__.__name__, self.signal._name))
+
+    @lazy_property
+    def log(self):
+        return SimLog("cocotb.%s.%s" % (
+            self.__class__.__name__, self.signal._name
+        ))
 
 
 class Clock(BaseClock):
