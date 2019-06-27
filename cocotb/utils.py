@@ -34,6 +34,7 @@ import math
 import os
 import sys
 import weakref
+import warnings
 
 if "COCOTB_SIM" in os.environ:
     import simulator
@@ -42,14 +43,19 @@ else:
     simulator = None
     _LOG_SIM_PRECISION = -15
 
-# python2 to python3 helper functions
+# This is six.integer_types
+if sys.version_info.major >= 3:
+    integer_types = (int,)
+else:
+    integer_types = (int, long)
+
+
 def get_python_integer_types():
-    try:
-        isinstance(1, long)
-    except NameError:
-        return (int,)  # python 3
-    else:
-        return (int, long)  # python 2
+    warnings.warn(
+        "This is an internal cocotb function, use six.integer_types instead",
+        DeprecationWarning)
+    return integer_types
+
 
 # Simulator helper functions
 def get_sim_time(units=None):
