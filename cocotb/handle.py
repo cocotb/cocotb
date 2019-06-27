@@ -47,7 +47,7 @@ import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
-from cocotb.utils import get_python_integer_types
+from cocotb.utils import integer_types
 
 # Only issue a warning for each deprecated attribute access
 _deprecation_warned = {}
@@ -582,13 +582,13 @@ class ModifiableObject(NonConstantObject):
             TypeError: If target is not wide enough or has an unsupported type 
                  for value assignment.
         """
-        if isinstance(value, get_python_integer_types()) and value < 0x7fffffff and len(self) <= 32:
+        if isinstance(value, integer_types) and value < 0x7fffffff and len(self) <= 32:
             simulator.set_signal_val_long(self._handle, value)
             return
 
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
-        elif isinstance(value, get_python_integer_types()):
+        elif isinstance(value, integer_types):
             value = BinaryValue(value=value, n_bits=len(self), bigEndian=False)
         elif isinstance(value, dict):
             # We're given a dictionary with a list of values and a bit size...
@@ -677,7 +677,7 @@ class EnumObject(ModifiableObject):
         """
         if isinstance(value, BinaryValue):
             value = int(value)
-        elif not isinstance(value, get_python_integer_types()):
+        elif not isinstance(value, integer_types):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
@@ -705,7 +705,7 @@ class IntegerObject(ModifiableObject):
         """
         if isinstance(value, BinaryValue):
             value = int(value)
-        elif not isinstance(value, get_python_integer_types()):
+        elif not isinstance(value, integer_types):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 

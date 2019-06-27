@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
-from cocotb.utils import get_python_integer_types
+from cocotb.utils import integer_types
 
 import os
 import random
@@ -154,7 +154,7 @@ class BinaryValue(object):
         Args:
             value (str or int or long): The value to assign.
         """
-        if isinstance(value, get_python_integer_types()):
+        if isinstance(value, integer_types):
             self.value = value
         elif isinstance(value, str):
             try:
@@ -640,11 +640,11 @@ class BinaryValue(object):
 
     def __setitem__(self, key, val):
         """BinaryValue uses Verilog/VHDL style slices as opposed to Python style."""
-        if not isinstance(val, str) and not isinstance(val, get_python_integer_types()):
+        if not isinstance(val, str) and not isinstance(val, integer_types):
             raise TypeError('BinaryValue slices only accept string or integer values')
 
         # convert integer to string
-        if isinstance(val, get_python_integer_types()):
+        if isinstance(val, integer_types):
             if isinstance(key, slice):
                 num_slice_bits = abs(key.start - key.stop) + 1
             else:
