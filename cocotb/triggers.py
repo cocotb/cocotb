@@ -510,6 +510,18 @@ class _AggregateWaitable(Waitable):
                 )
 
 
+@decorators.coroutine
+def _wait_callback(trigger, callback):
+    """
+    Wait for a trigger, and call `callback` with the outcome of the yield
+    """
+    try:
+        ret = outcomes.Value((yield trigger))
+    except BaseException as exc:
+        ret = outcomes.Error(exc)
+    callback(ret)
+
+
 class Combine(_AggregateWaitable):
     """
     Waits until all the passed triggers have fired.
@@ -524,15 +536,13 @@ class Combine(_AggregateWaitable):
 
         # start a parallel task for each trigger
         for t in triggers:
-            @cocotb.coroutine
-            def waiter(t=t):
-                try:
-                    yield t
-                finally:
-                    triggers.remove(t)
-                    if not triggers:
-                        e.set()
-            waiters.append(cocotb.fork(waiter()))
+            # t=t is needed for the closure to bind correctly
+            def on_done(ret, t=t):
+                triggers.remove(t)
+                if not triggers:
+                    e.set()
+                ret.get()  # re-raise any exception
+            waiters.append(cocotb.fork(_wait_callback(t, on_done)))
 
         # wait for the last waiter to complete
         yield e.wait()
@@ -555,6 +565,7 @@ class First(_AggregateWaitable):
             t2 = Timer(10, units='ps')
             t_ret = yield First(t1, t2)
     """
+
     @decorators.coroutine
     def _wait(self):
         waiters = []
@@ -563,17 +574,10 @@ class First(_AggregateWaitable):
         completed = []
         # start a parallel task for each trigger
         for t in triggers:
-            @cocotb.coroutine
-            def waiter(t=t):
-                # capture the outcome of this trigger
-                try:
-                    ret = outcomes.Value((yield t))
-                except BaseException as exc:
-                    ret = outcomes.Error(exc)
-
+            def on_done(ret):
                 completed.append(ret)
                 e.set()
-            waiters.append(cocotb.fork(waiter()))
+            waiters.append(cocotb.fork(_wait_callback(t, on_done)))
 
         # wait for a waiter to complete
         yield e.wait()
