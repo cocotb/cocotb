@@ -617,33 +617,53 @@ class Scheduler(object):
     def new_test(self, coroutine):
         self._entrypoint = coroutine
 
+    # This collection of functions parses a trigger out of the object
+    # that was yielded by a coroutine, converting `list` -> `Waitable`,
+    # `Waitable` -> `RunningCoroutine`, `RunningCoroutine` -> `Trigger`.
+    # Doing them as separate functions allows us to avoid repeating unencessary
+    # `isinstance` checks.
+
+    def _trigger_from_started_coro(self, result):
+        # type: (RunningCoroutine) -> Trigger
+        if _debug:
+            self.log.debug("Joining to already running coroutine: %s" %
+                           result.__name__)
+        return result.join()
+
+    def _trigger_from_unstarted_coro(self, result):
+        # type: (RunningCoroutine) -> Trigger
+        self.queue(result)
+        if _debug:
+            self.log.debug("Scheduling nested coroutine: %s" %
+                           result.__name__)
+        return result.join()
+
+    def _trigger_from_waitable(self, result):
+        # type: (Waitable) -> Trigger
+        return self._trigger_from_unstarted_coro(result._wait())
+
+    def _trigger_from_list(self, result):
+        # type: (list) -> Trigger
+        return self._trigger_from_waitable(cocotb.triggers.First(*result))
+
     def _trigger_from_any(self, result):
         """Convert a yielded object into a Trigger instance"""
-
-        # convert lists into `First` Waitables.
-        if isinstance(result, list):
-            result = cocotb.triggers.First(*result)
-
-        # convert waitables into coroutines
-        if isinstance(result, cocotb.triggers.Waitable):
-            result = result._wait()
-
-        # convert coroutinues into triggers
-        if isinstance(result, cocotb.decorators.RunningCoroutine):
-            if not result.has_started():
-                self.queue(result)
-                if _debug:
-                    self.log.debug("Scheduling nested coroutine: %s" %
-                                   result.__name__)
-            else:
-                if _debug:
-                    self.log.debug("Joining to already running coroutine: %s" %
-                                   result.__name__)
-
-            result = result.join()
+        # note: the order of these can significantly impact performance
 
         if isinstance(result, Trigger):
             return result
+
+        if isinstance(result, cocotb.decorators.RunningCoroutine):
+            if not result.has_started():
+                return self._trigger_from_unstarted_coro(result)
+            else:
+                return self._trigger_from_started_coro(result)
+
+        if isinstance(result, list):
+            return self._trigger_from_list(result)
+
+        if isinstance(result, cocotb.triggers.Waitable):
+            return self._trigger_from_waitable(result)
 
         raise TypeError
 
