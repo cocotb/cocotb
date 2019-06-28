@@ -617,6 +617,36 @@ class Scheduler(object):
     def new_test(self, coroutine):
         self._entrypoint = coroutine
 
+    def _trigger_from_any(self, result):
+        """Convert a yielded object into a Trigger instance"""
+
+        # convert lists into `First` Waitables.
+        if isinstance(result, list):
+            result = cocotb.triggers.First(*result)
+
+        # convert waitables into coroutines
+        if isinstance(result, cocotb.triggers.Waitable):
+            result = result._wait()
+
+        # convert coroutinues into triggers
+        if isinstance(result, cocotb.decorators.RunningCoroutine):
+            if not result.has_started():
+                self.queue(result)
+                if _debug:
+                    self.log.debug("Scheduling nested coroutine: %s" %
+                                   result.__name__)
+            else:
+                if _debug:
+                    self.log.debug("Joining to already running coroutine: %s" %
+                                   result.__name__)
+
+            result = result.join()
+
+        if isinstance(result, Trigger):
+            return result
+
+        raise TypeError
+
     def schedule(self, coroutine, trigger=None):
         """Schedule a coroutine by calling the send method.
 
@@ -657,34 +687,9 @@ class Scheduler(object):
         if self._terminate:
             return
 
-        # convert lists into `First` Waitables.
-        if isinstance(result, list):
-            result = cocotb.triggers.First(*result)
-
-        # convert waitables into coroutines
-        if isinstance(result, cocotb.triggers.Waitable):
-            result = result._wait()
-
-        # convert coroutinues into triggers
-        if isinstance(result, cocotb.decorators.RunningCoroutine):
-            if not result.has_started():
-                self.queue(result)
-                if _debug:
-                    self.log.debug("Scheduling nested coroutine: %s" %
-                                   result.__name__)
-            else:
-                if _debug:
-                    self.log.debug("Joining to already running coroutine: %s" %
-                                   result.__name__)
-
-            result = result.join()
-
-        if isinstance(result, Trigger):
-            if _debug:
-                self.log.debug("%s: is instance of Trigger" % result)
-            self._coroutine_yielded(coroutine, result)
-
-        else:
+        try:
+            result = self._trigger_from_any(result)
+        except TypeError:
             msg = ("Coroutine %s yielded something the scheduler can't handle"
                    % str(coroutine))
             msg += ("\nGot type: %s repr: %s str: %s" %
@@ -694,6 +699,8 @@ class Scheduler(object):
                 raise_error(self, msg)
             except Exception as e:
                 self.finish_test(e)
+        else:
+            self._coroutine_yielded(coroutine, result)
 
         # We do not return from here until pending threads have completed, but only
         # from the main thread, this seems like it could be problematic in cases
