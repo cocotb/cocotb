@@ -68,110 +68,121 @@ Make Variables
 Environment Variables
 =====================
 
-.. glossary::
+.. envvar:: TOPLEVEL
 
-    ``TOPLEVEL``
-      Used to indicate the instance in the hierarchy to use as the DUT.
-      If this isn't defined then the first root instance is used.
+    Used to indicate the instance in the hierarchy to use as the DUT.
+    If this isn't defined then the first root instance is used.
 
-    ``RANDOM_SEED``
-      Seed the Python random module to recreate a previous test stimulus.
-      At the beginning of every test a message is displayed with the seed used for that execution:
+.. envvar:: RANDOM_SEED
 
-      .. code-block:: bash
+    Seed the Python random module to recreate a previous test stimulus.
+    At the beginning of every test a message is displayed with the seed used for that execution:
 
-          INFO     cocotb.gpi                                  __init__.py:89   in _initialise_testbench           Seeding Python random module with 1377424946
+    .. code-block:: bash
 
-
-      To recreate the same stimuli use the following:
-
-      .. code-block:: bash
-
-         make RANDOM_SEED=1377424946
-
-    ``COCOTB_ANSI_OUTPUT``
-      Use this to override the default behaviour of annotating Cocotb output with
-      ANSI colour codes if the output is a terminal (``isatty()``).
-
-      ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type stdout
-
-      ``COCOTB_ANSI_OUTPUT=0`` supresses the ANSI output in the log messages
-
-    ``COCOTB_REDUCED_LOG_FMT``
-      If defined, log lines displayed in terminal will be shorter. It will print only
-      time, message type (``INFO``, ``WARNING``, ``ERROR``) and log message.
-
-    ``MODULE``
-      The name of the module(s) to search for test functions.  Multiple modules can be specified using a comma-separated list.
+        INFO     cocotb.gpi                                  __init__.py:89   in _initialise_testbench           Seeding Python random module with 1377424946
 
 
-    ``TESTCASE``
-      The name of the test function(s) to run.  If this variable is not defined Cocotb
-      discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied modules.
+    To recreate the same stimuli use the following:
 
-      Multiple functions can be specified in a comma-separated list.
+    .. code-block:: bash
+
+       make RANDOM_SEED=1377424946
+
+.. envvar:: COCOTB_ANSI_OUTPUT
+
+    Use this to override the default behaviour of annotating Cocotb output with
+    ANSI colour codes if the output is a terminal (``isatty()``).
+
+    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type stdout
+
+    ``COCOTB_ANSI_OUTPUT=0`` supresses the ANSI output in the log messages
+
+.. envvar:: COCOTB_REDUCED_LOG_FMT
+
+    If defined, log lines displayed in terminal will be shorter. It will print only
+    time, message type (``INFO``, ``WARNING``, ``ERROR``) and log message.
+
+.. envvar:: MODULE
+
+    The name of the module(s) to search for test functions.  Multiple modules can be specified using a comma-separated list.
+
+.. envvar:: TESTCASE
+
+    The name of the test function(s) to run.  If this variable is not defined Cocotb
+    discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied modules.
+
+    Multiple functions can be specified in a comma-separated list.
 
 
 Additional Environment Variables
 --------------------------------
 
-.. glossary::
+.. envvar:: COCOTB_ATTACH
 
-    ``COCOTB_ATTACH``
-      In order to give yourself time to attach a debugger to the simulator process before it starts to run,
-      you can set the environment variable ``COCOTB_ATTACH`` to a pause time value in seconds.
-      If set, Cocotb will print the process ID (PID) to attach to and wait the specified time before
-      actually letting the simulator run.
+    In order to give yourself time to attach a debugger to the simulator process before it starts to run,
+    you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time value in seconds.
+    If set, Cocotb will print the process ID (PID) to attach to and wait the specified time before
+    actually letting the simulator run.
 
-    ``COCOTB_ENABLE_PROFILING``
-      Enable performance analysis of the Python portion of Cocotb. When set, a file :file:`test_profile.pstat`
-      will be written which contains statistics about the cumulative time spent in the functions.
+.. envvar:: COCOTB_ENABLE_PROFILING
 
-      From this, a callgraph diagram can be generated with `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ and ``graphviz``.
-      See the ``profile`` Make target in the ``endian_swapper`` example on how to set this up.
+    Enable performance analysis of the Python portion of Cocotb. When set, a file :file:`test_profile.pstat`
+    will be written which contains statistics about the cumulative time spent in the functions.
 
-    ``COCOTB_HOOKS``
-      A comma-separated list of modules that should be executed before the first test.
-      You can also use the :class:`cocotb.hook` decorator to mark a function to be run before test code.
+    From this, a callgraph diagram can be generated with `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ and ``graphviz``.
+    See the ``profile`` Make target in the ``endian_swapper`` example on how to set this up.
 
-    ``COCOTB_LOG_LEVEL``
-      Default logging level to use. This is set to ``INFO`` unless overridden.
+.. envvar:: COCOTB_HOOKS
 
-    ``COCOTB_RESOLVE_X``
-      Defines how to resolve bits with a value of ``X``, ``Z``, ``U`` or ``W`` when being converted to integer.
-      Valid settings are:
+    A comma-separated list of modules that should be executed before the first test.
+    You can also use the :class:`cocotb.hook` decorator to mark a function to be run before test code.
 
-      ``VALUE_ERROR``
-         raise a :exc:`ValueError` exception
-      ``ZEROS``
-         resolve to ``0``
-      ``ONES``
-         resolve to ``1``
-      ``RANDOM``
-         randomly resolve to a ``0`` or a ``1``
+.. envvar:: COCOTB_LOG_LEVEL
 
-      Set to ``VALUE_ERROR`` by default.
+    Default logging level to use. This is set to ``INFO`` unless overridden.
 
-    ``COCOTB_SCHEDULER_DEBUG``
-      Enable additional log output of the coroutine scheduler.
+.. envvar:: COCOTB_RESOLVE_X
 
-    ``COVERAGE``
-      Enable to report python coverage data. For some simulators, this will also report HDL coverage.
+    Defines how to resolve bits with a value of ``X``, ``Z``, ``U`` or ``W`` when being converted to integer.
+    Valid settings are:
 
-      This needs the :mod:`coverage` python module
+    ``VALUE_ERROR``
+       raise a :exc:`ValueError` exception
+    ``ZEROS``
+       resolve to ``0``
+    ``ONES``
+       resolve to ``1``
+    ``RANDOM``
+       randomly resolve to a ``0`` or a ``1``
 
-    ``MEMCHECK``
-      HTTP port to use for debugging Python's memory usage.
-      When set to e.g. ``8088``, data will be presented at `<http://localhost:8088>`_.
+    Set to ``VALUE_ERROR`` by default.
 
-      This needs the :mod:`cherrypy` and :mod:`dowser` Python modules installed.
+.. envvar:: COCOTB_SCHEDULER_DEBUG
 
-    ``COCOTB_PY_DIR``
-      Path to the directory containing the cocotb Python package in the ``cocotb`` subdirectory.
+    Enable additional log output of the coroutine scheduler.
 
-    ``COCOTB_SHARE_DIR``
-      Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories ``lib``, ``include``, and ``makefiles``.
+.. envvar:: COVERAGE
 
-    ``VERSION``
-      The version of the Cocotb installation. You probably don't want to modify this.
+    Enable to report python coverage data. For some simulators, this will also report HDL coverage.
 
+    This needs the :mod:`coverage` python module
+
+.. envvar:: MEMCHECK
+
+    HTTP port to use for debugging Python's memory usage.
+    When set to e.g. ``8088``, data will be presented at `<http://localhost:8088>`_.
+
+    This needs the :mod:`cherrypy` and :mod:`dowser` Python modules installed.
+
+.. envvar:: COCOTB_PY_DIR
+
+    Path to the directory containing the cocotb Python package in the ``cocotb`` subdirectory.
+
+.. envvar:: COCOTB_SHARE_DIR
+
+    Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories ``lib``, ``include``, and ``makefiles``.
+
+.. envvar:: VERSION
+
+    The version of the Cocotb installation. You probably don't want to modify this.
