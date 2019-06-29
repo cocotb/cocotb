@@ -214,7 +214,7 @@ rules which make it easy to get started.  We simply inform cocotb of the
 source files we need compiling, the toplevel entity to instantiate and the
 Python test script to load.
 
-.. code-block:: bash
+.. code-block:: make
 
     VERILOG_SOURCES = $(PWD)/submodule.sv $(PWD)/my_design.sv
     TOPLEVEL=my_design  # the module name in your Verilog or VHDL file

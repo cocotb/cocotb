@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
+    'sphinxcontrib.makedomain',
     'cairosvgconverter',
     'breathe',
     'sphinxcontrib_trio',

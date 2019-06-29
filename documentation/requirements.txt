@@ -4,4 +4,5 @@ sphinx-rtd-theme
 cairosvg
 breathe
 sphinxcontrib-trio
+sphinxcontrib-makedomain
 sphinx-issues
