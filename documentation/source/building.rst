@@ -155,6 +155,11 @@ Additional Environment Variables
     ``COCOTB_SCHEDULER_DEBUG``
       Enable additional log output of the coroutine scheduler.
 
+    ``COVERAGE``
+      Enable to report python coverage data. For some simulators, this will also report HDL coverage.
+
+      This needs the :mod:`coverage` python module
+
     ``MEMCHECK``
       HTTP port to use for debugging Python's memory usage.
       When set to e.g. ``8088``, data will be presented at `<http://localhost:8088>`_.
