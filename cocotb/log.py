@@ -33,6 +33,7 @@ import os
 import sys
 import logging
 import inspect
+import warnings
 
 from cocotb.utils import get_sim_time
 
@@ -51,8 +52,12 @@ _FILENAME_CHARS = 20  # noqa
 _LINENO_CHARS   = 4  # noqa
 _FUNCNAME_CHARS = 31  # noqa
 
+
 class SimBaseLog(logging.getLoggerClass()):
     def __init__(self, name):
+        super(SimBaseLog, self).__init__(name)
+
+        # customizations of the defaults
         hdlr = logging.StreamHandler(sys.stdout)
         want_ansi = os.getenv("COCOTB_ANSI_OUTPUT") and not os.getenv("GUI")
         if want_ansi is None:
@@ -65,89 +70,43 @@ class SimBaseLog(logging.getLoggerClass()):
         else:
             hdlr.setFormatter(SimLogFormatter())
             self.colour = False
-        self._cache = {}
-        self.name = name
-        self.handlers = []
-        self.disabled = False
-        self.filters = []
+
         self.propagate = False
-        logging.__init__(name)
         self.addHandler(hdlr)
-        self.setLevel(logging.NOTSET)
 
-""" Need to play with this to get the path of the called back,
-    construct our own makeRecord for this """
-
-
-class SimLog(object):
-    def __init__(self, name, ident=None):
-        self._ident = ident
-        self._name = name
-        self.logger = logging.getLogger(name)
-        if self._ident is not None:
-            self._log_name = "%s.0x%x" % (self._name, self._ident)
-        else:
-            self._log_name = name
-
-    def _makeRecord(self, level, msg, args, extra=None):
-        if self.logger.isEnabledFor(level):
-            frame = inspect.stack()[2]
-            info = inspect.getframeinfo(frame[0])
-            record = self.logger.makeRecord(self._log_name,
-                                            level,
-                                            info.filename,
-                                            info.lineno,
-                                            msg,
-                                            args,
-                                            None,
-                                            info.function,
-                                            extra)
-            self.logger.handle(record)
-
-    def _willLog(self, level):
-        """ This is for user from the C world
-            it allows a check on if the message will
-            be printed. Saves doing lots of work
-            for no reason.
+    def _logFromC(self, level, filename, lineno, msg, function):
         """
-        return self.logger.isEnabledFor(level)
-
-    def _printRecord(self, level, filename, lineno, msg, function):
-        """ This is for use from the C world and will
-            be printed regardless
+        This is for use from the C world, and allows us to insert C stack
+        information.
         """
-        if self.logger.isEnabledFor(level):
-            record = self.logger.makeRecord(self._log_name,
-                                            level,
-                                            filename,
-                                            lineno,
-                                            msg,
-                                            None,
-                                            None,
-                                            function)
-            self.logger.handle(record)
+        if self.isEnabledFor(level):
+            record = self.makeRecord(
+                self.name,
+                level,
+                filename,
+                lineno,
+                msg,
+                None,
+                None,
+                function
+            )
+            self.handle(record)
 
-    def warn(self, msg, *args, **kwargs):
-        self._makeRecord(logging.WARNING, msg, args, **kwargs)
+    @property
+    def logger(self):
+        warnings.warn(
+            "the .logger attribute should not be used now that `SimLog` "
+            "returns a native logger instance directly.",
+            DeprecationWarning)
+        return self
 
-    def warning(self, msg, *args, **kwargs):
-        self._makeRecord(logging.WARNING, msg, args, **kwargs)
 
-    def debug(self, msg, *args, **kwargs):
-        self._makeRecord(logging.DEBUG, msg, args, **kwargs)
-
-    def error(self, msg, *args, **kwargs):
-        self._makeRecord(logging.ERROR, msg, args, **kwargs)
-
-    def critical(self, msg, *args, **kwargs):
-        self._makeRecord(logging.CRITICAL, msg, args, **kwargs)
-
-    def info(self, msg, *args, **kwargs):
-        self._makeRecord(logging.INFO, msg, args, **kwargs)
-
-    def __getattr__(self, attribute):
-        """Forward any other attribute accesses on to our logger object"""
-        return getattr(self.logger, attribute)
+# this used to be a class, hence the unusual capitalization
+def SimLog(name, ident=None):
+    """ Like logging.getLogger, but append a numeric identifier to the name """
+    if ident is not None:
+        name = "%s.0x%x" % (name, ident)
+    return logging.getLogger(name)
 
 
 class SimLogFormatter(logging.Formatter):
