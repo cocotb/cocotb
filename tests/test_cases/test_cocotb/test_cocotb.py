@@ -40,7 +40,7 @@ Also used as regression test of cocotb capabilities
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite, ClockCycles, NextTimeStep,
-                             NullTrigger, Combine, Event, First)
+                             NullTrigger, Combine, Event, First, Trigger)
 from cocotb.clock import Clock
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
@@ -62,28 +62,46 @@ def function_not_a_coroutine():
     return "This should fail"
 
 
-@cocotb.test(expect_error=True)
+@cocotb.test()
 def test_function_not_a_coroutine(dut):
     """Example of trying to yield a coroutine that isn't a coroutine"""
     yield Timer(500)
-    yield function_not_a_coroutine()
-
-
-@cocotb.test(expect_error=True)
-def test_function_not_a_coroutine_fork(dut):
-    """Example of trying to fork a coroutine that isn't a coroutine"""
-    yield Timer(500)
-    cocotb.fork(function_not_a_coroutine())
-    yield Timer(500)
+    try:
+        # failure should occur before we even try to yield or fork the coroutine
+        coro = function_not_a_coroutine()
+    except TypeError as exc:
+        assert "isn't a valid coroutine" in str(exc)
+    else:
+        raise TestFailure
 
 
 def normal_function(dut):
     return True
 
 
-@cocotb.test(expect_error=True)
+@cocotb.test()
 def test_function_not_decorated(dut):
-    yield normal_function(dut)
+    yield Timer(1)  # gh-437
+    try:
+        yield normal_function(dut)
+    except TypeError as exc:
+        assert "yielded something the scheduler can't handle" in str(exc)
+    except:
+        raise TestFailure
+
+
+@cocotb.test()
+def test_function_not_decorated_fork(dut):
+    """Example of trying to fork a coroutine that isn't a coroutine"""
+    yield Timer(500)
+    try:
+        cocotb.fork(normal_function(dut))
+    except TypeError as exc:
+        assert "isn't a coroutine" in str(exc)
+    else:
+        raise TestFailure()
+
+    yield Timer(500)
 
 
 @cocotb.test(expect_fail=False)
@@ -149,15 +167,17 @@ def test_coroutine_kill(dut):
         raise TestFailure
 
 
-@cocotb.test(expect_error=True)
+@cocotb.test()
 def test_adding_a_coroutine_without_starting(dut):
     """Catch (and provide useful error) for attempts to fork coroutines
     incorrectly"""
     yield Timer(100)
-    forked = cocotb.fork(clock_gen)
-    yield Timer(100)
-    yield Join(forked)
-    yield Timer(100)
+    try:
+        forked = cocotb.fork(clock_gen)
+    except TypeError as exc:
+        assert "a coroutine that hasn't started" in str(exc)
+    else:
+        raise TestFailure
 
 def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     """
@@ -1062,6 +1082,22 @@ def test_writes_have_taken_effect_after_readwrite(dut):
     # check that the write we expected took precedence
     yield ReadOnly()
     assert dut.stream_in_data.value == 2
+
+
+@cocotb.test()
+def test_trigger_with_failing_prime(dut):
+    """ Test that a trigger failing to prime throws """
+    class ABadTrigger(Trigger):
+        def prime(self, callback):
+            raise RuntimeError("oops")
+
+    yield Timer(1)
+    try:
+        yield ABadTrigger()
+    except RuntimeError as exc:
+        assert "oops" in str(exc)
+    else:
+        raise TestFailure
 
 
 if sys.version_info[:2] >= (3, 5):

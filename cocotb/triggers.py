@@ -421,13 +421,20 @@ class Lock(PythonTrigger):
 
 
 class NullTrigger(Trigger):
-    """Trigger for internal interfacing use call the callback as soon
-    as it is primed and then remove itself from the scheduler.
     """
-    def __init__(self, name=""):
-        Trigger.__init__(self)
+    A trigger that fires instantly, primarily for internal scheduler use.
+    """
+    def __init__(self, name="", outcome=None):
+        super(NullTrigger, self).__init__()
         self._callback = None
         self.name = name
+        self.__outcome = outcome
+
+    @property
+    def _outcome(self):
+        if self.__outcome is not None:
+            return self.__outcome
+        return super(NullTrigger, self)._outcome
 
     def prime(self, callback):
         callback(self)

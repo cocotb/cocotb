@@ -65,7 +65,7 @@ else:
 import cocotb
 import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly, PythonTrigger,
-                             NextTimeStep, ReadWrite, Event, Join)
+                             NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error, ExternalException)
@@ -519,13 +519,25 @@ class Scheduler(object):
             trigger_coros.append(coro)
 
         if not trigger.primed:
+
+            if trigger_coros != [coro]:
+                # should never happen
+                raise InternalError(
+                    "More than one coroutine waiting on an unprimed trigger")
+
             try:
                 trigger.prime(self.react)
             except Exception as e:
-                # Convert any exceptions into a test result
-                self.finish_test(
-                    create_error(self, "Unable to prime trigger %s: %s" %
-                                 (str(trigger), str(e))))
+                # discard the trigger we associated, it will never fire
+                self._trigger2coros.pop(trigger)
+
+                # replace it with a new trigger that throws back the exception
+                error_trigger = NullTrigger(outcome=outcomes.Error(e))
+                self._coro2trigger[coro] = error_trigger
+                self._trigger2coros[error_trigger] = [coro]
+
+                # wake up the coroutines
+                error_trigger.prime(self.react)
 
     def queue(self, coroutine):
         """Queue a coroutine for execution"""
@@ -585,27 +597,20 @@ class Scheduler(object):
         useful error messages in the event of common gotchas.
         """
         if isinstance(coroutine, cocotb.decorators.coroutine):
-            self.log.critical(
-                "Attempt to schedule a coroutine that hasn't started")
-            coroutine.log.error("This is the failing coroutine")
-            self.log.warning(
-                "Did you forget to add parentheses to the @test decorator?")
-            self._test_result = TestError(
-                "Attempt to schedule a coroutine that hasn't started")
-            self._terminate = True
-            return
+            raise TypeError(
+                "Attempt to schedule a coroutine that hasn't started: {}.\n"
+                "Did you forget to add parentheses to the @test decorator?"
+                .format(coroutine)
+            )
 
         elif not isinstance(coroutine, cocotb.decorators.RunningCoroutine):
-            self.log.critical(
+            raise TypeError(
                 "Attempt to add something to the scheduler which isn't a "
-                "coroutine")
-            self.log.warning(
-                "Got: %s (%s)" % (str(type(coroutine)), repr(coroutine)))
-            self.log.warning("Did you use the @coroutine decorator?")
-            self._test_result = TestError(
-                "Attempt to schedule a coroutine that hasn't started")
-            self._terminate = True
-            return
+                "coroutine.\n"
+                "Got: {} ({!r})\n"
+                "Did you use the @coroutine decorator?"
+                .format(type(coroutine), coroutine)
+            )
 
         if _debug:
             self.log.debug("Adding new coroutine %s" % coroutine.__name__)
@@ -665,7 +670,12 @@ class Scheduler(object):
         if isinstance(result, cocotb.triggers.Waitable):
             return self._trigger_from_waitable(result)
 
-        raise TypeError
+        raise TypeError(
+            "Coroutine yielded something the scheduler can't handle\n"
+            "Got type: {} repr: {!r} str: {}\n"
+            "Did you forget to decorate with @cocotb.coroutine?"
+            .format(type(result), result, result)
+        )
 
     def schedule(self, coroutine, trigger=None):
         """Schedule a coroutine by calling the send method.
@@ -709,18 +719,12 @@ class Scheduler(object):
 
         try:
             result = self._trigger_from_any(result)
-        except TypeError:
-            msg = ("Coroutine %s yielded something the scheduler can't handle"
-                   % str(coroutine))
-            msg += ("\nGot type: %s repr: %s str: %s" %
-                    (type(result), repr(result), str(result)))
-            msg += "\nDid you forget to decorate with @cocotb.coroutine?"
-            try:
-                raise_error(self, msg)
-            except Exception as e:
-                self.finish_test(e)
-        else:
-            self._coroutine_yielded(coroutine, result)
+        except TypeError as exc:
+            # restart this coroutine with an exception object telling it that
+            # it wasn't allowed to yield that
+            result = NullTrigger(outcome=outcomes.Error(exc))
+
+        self._coroutine_yielded(coroutine, result)
 
         # We do not return from here until pending threads have completed, but only
         # from the main thread, this seems like it could be problematic in cases
