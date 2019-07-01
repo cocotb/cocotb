@@ -418,6 +418,8 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     }
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
+        if (to_gpi_objtype(vpi_get(vpiType, root)) != GPI_MODULE)
+            continue;
 
         if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
             break;
