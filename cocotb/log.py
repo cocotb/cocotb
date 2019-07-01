@@ -135,6 +135,17 @@ class SimLogFormatter(logging.Formatter):
                       ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
                       ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
 
+        # these lines are copied from the builtin logger
+        if record.exc_info:
+            # Cache the traceback text to avoid converting it multiple times
+            # (it's constant anyway)
+            if not record.exc_text:
+                record.exc_text = self.formatException(record.exc_info)
+        if record.exc_text:
+            if msg[-1:] != "\n":
+                msg = msg + "\n"
+            msg = msg + record.exc_text
+
         prefix_len = len(prefix)
         if coloured:
             prefix_len -= (len(level) - _LEVEL_CHARS)
