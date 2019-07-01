@@ -35,12 +35,9 @@ import inspect
 import textwrap
 import os
 
-from io import StringIO
-
 import cocotb
 from cocotb.log import SimLog
-from cocotb.result import (TestComplete, TestFailure, TestSuccess,
-                           ReturnValue, raise_error)
+from cocotb.result import ReturnValue, raise_error
 from cocotb.utils import get_sim_time, with_metaclass, exec_, lazy_property
 from cocotb import outcomes
 
@@ -254,27 +251,28 @@ class RunningTest(RunningCoroutine):
             self.start_time = time.time()
             self.start_sim_time = get_sim_time('ns')
             self.started = True
-        try:
-            self.log.debug("Sending {}".format(outcome))
-            return outcome.send(self._coro)
-        except TestComplete as e:
-            if isinstance(e, TestFailure):
-                self.log.warning(str(e))
-            else:
-                self.log.info(str(e))
-
-            buff = StringIO()
-            for message in self.error_messages:
-                print(message, file=buff)
-            e.stderr.write(buff.getvalue())
-            raise
-        except StopIteration:
-            raise TestSuccess()
-        except Exception as e:
-            raise raise_error(self, "Send raised exception:")
+        return super(RunningTest, self)._advance(outcome)
 
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
+
+    # like RunningCoroutine.kill(), but with a way to inject a failure
+    def abort(self, exc):
+        """
+        Force this test to end early, without executing any cleanup.
+
+        This happens when a background task fails, and is consistent with
+        how the behavior has always been. In future, we may want to behave
+        more gracefully to allow the test body to clean up.
+
+        `exc` is the exception that the test should report as its reason for
+        aborting.
+        """
+        assert self._outcome is None
+        if _debug:
+            self.log.debug("abort() called on test")
+        self._outcome = outcomes.Error(exc)
+        cocotb.scheduler.unschedule(self)
 
 
 class coroutine(object):
@@ -457,7 +455,4 @@ class test(with_metaclass(_decorator_helper, coroutine)):
         self.name = self._func.__name__
 
     def __call__(self, *args, **kwargs):
-        try:
-            return RunningTest(self._func(*args, **kwargs), self)
-        except Exception as e:
-            raise raise_error(self, "Test raised exception:")
+        return RunningTest(self._func(*args, **kwargs), self)
