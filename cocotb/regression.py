@@ -160,7 +160,7 @@ class RegressionManager(object):
                     try:
                         test = thing(self._dut)
                         skip = test.skip
-                    except TestError:
+                    except Exception:
                         skip = True
                         self.log.warning("Failed to initialize test %s" %
                                          thing.name, exc_info=True)
@@ -232,15 +232,15 @@ class RegressionManager(object):
                                message="Test failed with random_seed={}".format(self._seed))
         self.failures += 1
 
-    def handle_result(self, result):
-        """Handle a test result.
+    def handle_result(self, test):
+        """Handle a test completing.
 
         Dump result to XML and schedule the next test (if any).
 
         Args:
-            result: The sub-exception of TestComplete to raise.
+            test: The test that completed
         """
-        test = self._running_test
+        assert test is self._running_test
 
         real_time   = time.time() - test.start_time
         sim_time_ns = get_sim_time('ns') - test.start_sim_time
@@ -259,6 +259,13 @@ class RegressionManager(object):
             return result_was
 
         result_pass = True
+
+        # check what exception the test threw
+        try:
+            test._outcome.get()
+            raise TestSuccess()
+        except Exception as e:
+            result = e
 
         if (isinstance(result, TestSuccess) and
                 not test.expect_fail and
@@ -282,9 +289,6 @@ class RegressionManager(object):
             self._add_failure(result)
             result_pass = False
 
-        elif isinstance(result, TestError) and test.expect_error:
-            self.log.info("Test errored as expected: " + _result_was())
-
         elif isinstance(result, SimFailure):
             if test.expect_error:
                 self.log.info("Test errored as expected: " + _result_was())
@@ -295,6 +299,9 @@ class RegressionManager(object):
                 self._store_test_result(test.module, test.funcname, False, sim_time_ns, real_time, ratio_time)
                 self.tear_down()
                 return
+
+        elif test.expect_error:
+            self.log.info("Test errored as expected: " + _result_was())
 
         else:
             self.log.error("Test Failed: " + _result_was())
@@ -319,10 +326,8 @@ class RegressionManager(object):
                            self.count, self.ntests,
                            end,
                            self._running_test.funcname))
-            if self.count == 1:
-                test = cocotb.scheduler.add(self._running_test)
-            else:
-                test = cocotb.scheduler.new_test(self._running_test)
+
+            cocotb.scheduler.add_test(self._running_test)
             self.count += 1
         else:
             self.tear_down()
