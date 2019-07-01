@@ -85,7 +85,8 @@ def test_function_not_decorated(dut):
     try:
         yield normal_function(dut)
     except TypeError as exc:
-        assert "yielded something the scheduler can't handle" in str(exc)
+        assert "yielded" in str(exc)
+        assert "scheduler can't handle" in str(exc)
     except:
         raise TestFailure
 

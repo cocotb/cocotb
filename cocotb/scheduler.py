@@ -599,16 +599,16 @@ class Scheduler(object):
         if isinstance(coroutine, cocotb.decorators.coroutine):
             raise TypeError(
                 "Attempt to schedule a coroutine that hasn't started: {}.\n"
-                "Did you forget to add parentheses to the @test decorator?"
+                "Did you forget to add parentheses to the @cocotb.test() "
+                "decorator?"
                 .format(coroutine)
             )
 
         elif not isinstance(coroutine, cocotb.decorators.RunningCoroutine):
             raise TypeError(
-                "Attempt to add something to the scheduler which isn't a "
-                "coroutine.\n"
-                "Got: {} ({!r})\n"
-                "Did you use the @coroutine decorator?"
+                "Attempt to add a object of type {} to the scheduler, which "
+                "isn't a coroutine: {!r}\n"
+                "Did you forget to use the @cocotb.coroutine decorator?"
                 .format(type(coroutine), coroutine)
             )
 
@@ -671,10 +671,10 @@ class Scheduler(object):
             return self._trigger_from_waitable(result)
 
         raise TypeError(
-            "Coroutine yielded something the scheduler can't handle\n"
-            "Got type: {} repr: {!r} str: {}\n"
+            "Coroutine yielded an object of type {}, which the scheduler can't "
+            "handle: {!r}\n"
             "Did you forget to decorate with @cocotb.coroutine?"
-            .format(type(result), result, result)
+            .format(type(result), result)
         )
 
     def schedule(self, coroutine, trigger=None):
