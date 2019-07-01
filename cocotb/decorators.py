@@ -111,9 +111,10 @@ class RunningCoroutine(object):
         self._outcome = None
 
         if not hasattr(self._coro, "send"):
-            self.log.error("%s isn't a valid coroutine! Did you use the yield "
-                           "keyword?" % self.funcname)
-            raise CoroutineComplete()
+            raise TypeError(
+                "%s isn't a valid coroutine! Did you use the yield "
+                "keyword?" % self.funcname
+            )
 
     @lazy_property
     def log(self):
@@ -298,20 +299,7 @@ class coroutine(object):
         return SimLog("cocotb.coroutine.%s" % self._func.__name__, id(self))
 
     def __call__(self, *args, **kwargs):
-        try:
-            return RunningCoroutine(self._func(*args, **kwargs), self)
-        except Exception as e:
-            traceback.print_exc()
-            result = TestError(str(e))
-            if sys.version_info[0] >= 3:
-                buff = StringIO()
-                traceback.print_exc(file=buff)
-            else:
-                buff_bytes = BytesIO()
-                traceback.print_exc(file=buff_bytes)
-                buff = StringIO(buff_bytes.getvalue().decode("UTF-8"))
-            result.stderr.write(buff.getvalue())
-            raise result
+        return RunningCoroutine(self._func(*args, **kwargs), self)
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
