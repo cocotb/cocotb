@@ -254,7 +254,7 @@ class RegressionManager(object):
 
         # Helper for logging result
         def _result_was():
-            result_was = ("%s (result was %s)" %
+            result_was = ("{} (result was {})".format
                           (test.funcname, result.__class__.__name__))
             return result_was
 
@@ -266,6 +266,7 @@ class RegressionManager(object):
             raise TestSuccess()
         except Exception as e:
             result = e
+            exc_info = sys.exc_info()
 
         if (isinstance(result, TestSuccess) and
                 not test.expect_fail and
@@ -294,7 +295,7 @@ class RegressionManager(object):
                 self.log.info("Test errored as expected: " + _result_was())
             else:
                 self.log.error("Test error has lead to simulator shutting us "
-                               "down")
+                               "down", exc_info=exc_info)
                 self._add_failure(result)
                 self._store_test_result(test.module, test.funcname, False, sim_time_ns, real_time, ratio_time)
                 self.tear_down()
@@ -304,7 +305,7 @@ class RegressionManager(object):
             self.log.info("Test errored as expected: " + _result_was())
 
         else:
-            self.log.error("Test Failed: " + _result_was())
+            self.log.error("Test Failed: " + _result_was(), exc_info=exc_info)
             self._add_failure(result)
             result_pass = False
 
