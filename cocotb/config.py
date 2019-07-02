@@ -53,6 +53,7 @@ def main():
     prefix_dir = os.path.dirname(os.path.dirname(cocotb.__file__))
     makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__), 'share', 'makefiles')
     version = pkg_resources.get_distribution('cocotb').version
+    python_bin = sys.executable
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--prefix',
@@ -67,6 +68,10 @@ def main():
                         help='echo the package-makefiles of cocotb',
                         action=PrintAction,
                         text=makefiles_dir)
+    parser.add_argument('--python-bin',
+                        help='echo the path to the Python binary cocotb is installed for',
+                        action=PrintAction,
+                        text=python_bin)
     parser.add_argument('-v', '--version',
                         help='echo the version of cocotb',
                         action=PrintAction,
