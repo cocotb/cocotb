@@ -279,34 +279,31 @@ class _Event(PythonTrigger):
 
     FIXME: This will leak - need to use peers to ensure everything is removed
     """
-    
+
     def __init__(self, parent):
         PythonTrigger.__init__(self)
         self.parent = parent
 
     def prime(self, callback):
         self._callback = callback
-        self.parent.prime(callback, self)
+        self.parent._prime_trigger(self, callback)
         Trigger.prime(self)
 
     def __call__(self):
         self._callback(self)
 
 
-class Event(PythonTrigger):
+class Event(object):
     """Event to permit synchronisation between two coroutines."""
-    
+
     def __init__(self, name=""):
-        PythonTrigger.__init__(self)
         self._pending = []
         self.name = name
         self.fired = False
         self.data = None
 
-    def prime(self, callback, trigger):
-        """FIXME: document"""
+    def _prime_trigger(self, trigger, callback):
         self._pending.append(trigger)
-        Trigger.prime(self)
 
     def set(self, data=None):
         """Wake up any coroutines blocked on this event."""
@@ -351,33 +348,30 @@ class _Lock(PythonTrigger):
 
     FIXME: This will leak - need to use peers to ensure everything is removed.
     """
-    
+
     def __init__(self, parent):
         PythonTrigger.__init__(self)
         self.parent = parent
 
     def prime(self, callback):
         self._callback = callback
-        self.parent.prime(callback, self)
+        self.parent._prime_trigger(self, callback)
         Trigger.prime(self)
 
     def __call__(self):
         self._callback(self)
 
 
-class Lock(PythonTrigger):
+class Lock(object):
     """Lock primitive (not re-entrant)."""
 
     def __init__(self, name=""):
-        PythonTrigger.__init__(self)
         self._pending_unprimed = []
         self._pending_primed = []
         self.name = name
         self.locked = False
 
-    def prime(self, callback, trigger):
-        Trigger.prime(self)
-
+    def _prime_trigger(self, trigger, callback):
         self._pending_unprimed.remove(trigger)
 
         if not self.locked:
