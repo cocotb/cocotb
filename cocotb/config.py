@@ -56,19 +56,19 @@ def main():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--prefix',
-                        help='echos the package-prefix of cocotb',
+                        help='echo the package-prefix of cocotb',
                         action=PrintAction,
                         text=prefix_dir)
     parser.add_argument('--share',
-                        help='echos the package-share of cocotb',
+                        help='echo the package-share of cocotb',
                         action=PrintAction,
                         text=share_dir)
     parser.add_argument('--makefiles',
-                        help='echos the package-makefiles of cocotb',
+                        help='echo the package-makefiles of cocotb',
                         action=PrintAction,
                         text=makefiles_dir)
     parser.add_argument('-v', '--version',
-                        help='echos version of cocotb',
+                        help='echo the version of cocotb',
                         action=PrintAction,
                         text=version)
 
