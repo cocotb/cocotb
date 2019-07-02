@@ -60,7 +60,7 @@ ifeq ($(COCOTB_INSTALL_METHOD),srctree)
   include $(COCOTB_SHARE_DIR)/../../version
 else
   # cocotb has been installed from a Python package
-  VERSION=$(shell $(PYTHON_BIN) -c 'import pkg_resources; print(pkg_resources.get_distribution("cocotb").version)')
+  VERSION=$(shell cocotb-config --version)
 endif
 export VERSION
 
