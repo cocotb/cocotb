@@ -29,12 +29,12 @@
 
 # All common python related rules
 
+_PYTHON_BIN?=$(shell cocotb-config --python-bin)
 ifneq ($(COCOTB_PYTHON_DEBUG),)
-	DBG_PYTHON_VERSION=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
-	PYTHON_BIN?=python$(DBG_PYTHON_VERSION)-dbg
-else
-	PYTHON_BIN?=python
+	DBG_PYTHON_VERSION=$(shell $(_PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
+	_PYTHON_BIN=python$(DBG_PYTHON_VERSION)-dbg
 endif
+PYTHON_BIN?=$(_PYTHON_BIN)
 
 NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
