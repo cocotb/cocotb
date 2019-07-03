@@ -374,6 +374,7 @@ void embed_sim_event(gpi_event_t level, const char *msg)
             PyTuple_SetItem(fArgs, 1, PyString_FromString("No message provided"));
         PyObject *pValue = PyObject_CallObject(pEventFn, fArgs);
         if (!pValue) {
+            PyErr_Print();
             LOG_ERROR("Passing event to upper layer failed");
         }
 
