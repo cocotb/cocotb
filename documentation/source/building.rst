@@ -43,10 +43,10 @@ Make Variables
       A list of the VHDL source files to include in the VHDL library *lib* (currently GHDL only).
 
     ``COMPILE_ARGS``
-      Any arguments or flags to pass to the compile stage of the simulation. Only applies to simulators with a separate compilation stage (currently Icarus and VCS).
+      Any arguments or flags to pass to the compile stage of the simulation.
 
     ``SIM_ARGS``
-      Any arguments or flags to pass to the execution of the compiled simulation.  Only applies to simulators with a separate compilation stage (currently Icarus, VCS and GHDL).
+      Any arguments or flags to pass to the execution of the compiled simulation.
 
     ``EXTRA_ARGS``
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
