@@ -398,8 +398,11 @@ class Scheduler(object):
                 # this only exists to enable the warning above
                 is_first = False
 
-                if trigger not in self._trigger2coros:
-
+                # Scheduled coroutines may append to our waiting list so the first
+                # thing to do is pop all entries waiting on this trigger.
+                try:
+                    scheduling = self._trigger2coros.pop(trigger)
+                except KeyError:
                     # GPI triggers should only be ever pending if there is an
                     # associated coroutine waiting on that trigger, otherwise it would
                     # have been unprimed already
@@ -420,9 +423,6 @@ class Scheduler(object):
                     del trigger
                     continue
 
-                # Scheduled coroutines may append to our waiting list so the first
-                # thing to do is pop all entries waiting on this trigger.
-                scheduling = self._trigger2coros.pop(trigger)
 
                 if _debug:
                     debugstr = "\n\t".join([coro.__name__ for coro in scheduling])
