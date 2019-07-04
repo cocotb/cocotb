@@ -245,13 +245,8 @@ class RegressionManager(object):
 
         real_time   = time.time() - test.start_time
         sim_time_ns = get_sim_time('ns') - test.start_sim_time
-        try:
-            ratio_time  = sim_time_ns / real_time
-        except ZeroDivisionError:
-            if round(sim_time_ns, 2) == 0:
-                ratio_time = float('nan')
-            else:
-                ratio_time = float('inf')
+        ratio_time  = self._safe_divide(sim_time_ns, real_time)
+        
         self.xunit.add_testcase(name=test.funcname,
                                 classname=test.module,
                                 time=repr(real_time),
@@ -383,7 +378,7 @@ class RegressionManager(object):
     def _log_sim_summary(self):
         real_time   = time.time() - self.start_time
         sim_time_ns = get_sim_time('ns')
-        ratio_time  = sim_time_ns / real_time
+        ratio_time  = self._safe_divide(sim_time_ns, real_time)
 
         summary = ""
 
@@ -396,7 +391,17 @@ class RegressionManager(object):
         summary += "*************************************************************************************\n"
 
         self.log.info(summary)
-
+    
+    @staticmethod
+    def _safe_divide(a, b):
+        try:
+            return a / b
+        except ZeroDivisionError:
+            if a == 0:
+                return float('nan')
+            else:
+                return float('inf')
+    
     def _store_test_result(self, module_name, test_name, result_pass, sim_time, real_time, ratio):
         result = {
             'test'  : '.'.join([module_name, test_name]),
