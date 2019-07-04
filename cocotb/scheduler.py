@@ -49,7 +49,7 @@ else:
 
 # Debug mode controlled by environment variables
 if "COCOTB_ENABLE_PROFILING" in os.environ:
-    import cProfile, StringIO, pstats
+    import cProfile, pstats
     _profile = cProfile.Profile()
     _profiling = True
 else:
