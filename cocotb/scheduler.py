@@ -37,6 +37,7 @@ the ReadOnly (and this is invalid, at least in Modelsim).
 import collections
 import copy
 import os
+import sys
 import time
 import logging
 import threading
@@ -70,6 +71,14 @@ from cocotb.log import SimLog
 from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
                            create_error, ExternalException)
 from cocotb.utils import nullcontext
+
+# On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
+# Since `OrderedDict` is a little slower that `dict`, we prefer the latter
+# when possible.
+if sys.version_info[:2] >= (3, 7):
+    _ordered_dict = dict
+else:
+    _ordered_dict = collections.OrderedDict
 
 
 class InternalError(RuntimeError):
@@ -224,16 +233,16 @@ class Scheduler(object):
 
         # A dictionary of pending coroutines for each trigger,
         # indexed by trigger
-        self._trigger2coros = collections.OrderedDict()
+        self._trigger2coros = _ordered_dict()
 
         # A dictionary mapping coroutines to the trigger they are waiting for
-        self._coro2trigger = collections.OrderedDict()
+        self._coro2trigger = _ordered_dict()
 
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
 
         # A dictionary of pending writes
-        self._writes = collections.OrderedDict()
+        self._writes = _ordered_dict()
 
         self._pending_coros = []
         self._pending_triggers = []
@@ -284,10 +293,10 @@ class Scheduler(object):
                 self._timer1.unprime()
 
             self._timer1.prime(self.begin_test)
-            self._trigger2coros = collections.OrderedDict()
-            self._coro2trigger = collections.OrderedDict()
+            self._trigger2coros = _ordered_dict()
+            self._coro2trigger = _ordered_dict()
             self._terminate = False
-            self._writes = collections.OrderedDict()
+            self._writes = _ordered_dict()
             self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
