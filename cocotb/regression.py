@@ -392,15 +392,15 @@ class RegressionManager(object):
 
         self.log.info(summary)
     
-    def _safe_divide(self, sim_time_ns, real_time):
+    @staticmethod
+    def _safe_divide(a, b):
         try:
-            ratio_time  = sim_time_ns / real_time
+            return a / b
         except ZeroDivisionError:
-            if round(sim_time_ns, 2) == 0:
-                ratio_time = float('nan')
+            if a == 0:
+                return float('nan')
             else:
-                ratio_time = float('inf')
-        return ratio_time
+                return float('inf')
     
     def _store_test_result(self, module_name, test_name, result_pass, sim_time, real_time, ratio):
         result = {
