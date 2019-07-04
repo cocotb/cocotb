@@ -383,7 +383,13 @@ class RegressionManager(object):
     def _log_sim_summary(self):
         real_time   = time.time() - self.start_time
         sim_time_ns = get_sim_time('ns')
-        ratio_time  = sim_time_ns / real_time
+        try:
+            ratio_time  = sim_time_ns / real_time
+        except ZeroDivisionError:
+            if round(sim_time_ns, 2) == 0:
+                ratio_time = float('nan')
+            else:
+                ratio_time = float('inf')
 
         summary = ""
 
