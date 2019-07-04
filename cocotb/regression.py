@@ -388,7 +388,7 @@ class RegressionManager(object):
 
         self.log.info(summary)
 
-    def _sim_time_stat()
+    def _sim_time_stat():
         real_time   = time.time() - test.start_time
         sim_time_ns = get_sim_time('ns') - test.start_sim_time
         try:
