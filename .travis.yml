@@ -70,7 +70,6 @@ jobs:
       before_install: &osx_prep
         - brew install icarus-verilog
         - pip install tox
-        - python -m sysconfig
       script:
         - tox -e py27
 
