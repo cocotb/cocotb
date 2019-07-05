@@ -49,7 +49,7 @@ ifneq ($(NATIVE_ARCH),$(ARCH))
 	PYTHON_DYNLIBDIR:=$(subst 64,,$(PYTHON_DYNLIBDIR))
 endif
 
-PYLIBS:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; import os; print("-l"+os.path.splitext(sysconfig.get_config_var("LDLIBRARY"))[0][3:])')
+PYLIBS:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; import os; print("-l"+os.path.splitext(sysconfig.get_config_var("LIBRARY"))[0][3:])')
 
 PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
 PYTHON_DYN_LIB:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))')
