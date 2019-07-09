@@ -19,6 +19,9 @@ develop-eggs
 .installed.cfg
 __pycache__
 
+# OSX Caches
+.DS_Store
+
 # Vim tmp files
 *.swp
 *~
