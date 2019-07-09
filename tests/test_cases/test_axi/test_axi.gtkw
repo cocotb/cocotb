@@ -1,0 +1,49 @@
+[*]
+[*] GTKWave Analyzer v3.3.92 (w)1999-2018 BSI
+[*] Thu Jul 18 11:22:16 2019
+[*]
+[dumpfile] "/Users/benc/Documents/cocotb/tests/test_cases/test_axi/sim_build/wave.ghw"
+[dumpfile_mtime] "Thu Jul 18 11:17:31 2019"
+[dumpfile_size] 9918
+[savefile] "/Users/benc/Documents/cocotb/tests/test_cases/test_axi/test_axi.gtkw"
+[timestart] 0
+[size] 1000 600
+[pos] -1 -1
+*-30.076139 843000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] top.
+[sst_width] 223
+[signals_width] 198
+[sst_expanded] 1
+[sst_vpaned_height] 287
+@28
+top.axi4_shim.clk
+top.axi4_shim.reset
+@200
+-AW
+@28
+top.axi4_shim.saxi_awvalid
+top.axi4_shim.saxi_awready
+@200
+-W
+@28
+top.axi4_shim.saxi_wvalid
+top.axi4_shim.saxi_wready
+top.axi4_shim.saxi_wlast
+@200
+-B
+@28
+top.axi4_shim.saxi_bvalid
+top.axi4_shim.saxi_bready
+@200
+-AR
+@28
+top.axi4_shim.saxi_arvalid
+top.axi4_shim.saxi_arready
+@200
+-R
+@28
+top.axi4_shim.saxi_rvalid
+top.axi4_shim.saxi_rready
+top.axi4_shim.saxi_rlast
+[pattern_trace] 1
+[pattern_trace] 0

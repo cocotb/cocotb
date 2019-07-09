@@ -1,4 +1,5 @@
 # Copyright (c) 2014 Potential Ventures Ltd
+# Copyright 2019 by Ben Coughlan <ben@liquidinstruments.com>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,9 +31,7 @@ import cocotb
 from cocotb.triggers import RisingEdge, ReadOnly, Lock
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
-from cocotb.binary import BinaryValue
-
-import array
+from cocotb.utils import int_to_bytes, int_from_bytes
 
 
 class AXIProtocolError(Exception):
@@ -44,7 +43,7 @@ class AXI4LiteMaster(BusDriver):
 
     TODO: Kill all pending transactions if reset is asserted.
     """
-    
+
     _signals = ["AWVALID", "AWADDR", "AWREADY",        # Write address channel
                 "WVALID", "WREADY", "WDATA", "WSTRB",  # Write data channel
                 "BVALID", "BREADY", "BRESP",           # Write response channel
@@ -123,10 +122,10 @@ class AXI4LiteMaster(BusDriver):
                 Default is no delay.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
-            
+
         Returns:
             BinaryValue: The write response value.
-            
+
         Raises:
             AXIProtocolError: If write response from AXI is not ``OKAY``.
         """
@@ -163,15 +162,15 @@ class AXI4LiteMaster(BusDriver):
     @cocotb.coroutine
     def read(self, address, sync=True):
         """Read from an address.
-        
+
         Args:
             address (int): The address to read from.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
-            
+
         Returns:
             BinaryValue: The read data value.
-            
+
         Raises:
             AXIProtocolError: If read response from AXI is not ``OKAY``.
         """
@@ -207,158 +206,343 @@ class AXI4LiteMaster(BusDriver):
     def __len__(self):
         return 2**len(self.bus.ARADDR)
 
+
+@cocotb.coroutine
+def handshake(clock, drive, listen, delay=-1):
+    """ Wait for a valid handshake on the supplied AXI signals
+
+    `drive` and `listen` are the valid and ready signals for a given AXI
+    channel depending on which direction this handshake is occuring. This
+    coroutine will drive `drive` and wait for `listen`.
+
+    `delay` specifies the clock cycles to wait before asserting drive
+    after the master asserts listen.
+        delay < 0: drive is asserted before listen.
+        delay = 0: drive asserted combinatorially with listen.
+        delay > 0: wait 'delay' clock cycles after listen to assert drive.
+    """
+    drive <= int(delay < 0)
+
+    # check if listen is already asserted
+    if not listen.value:
+        yield RisingEdge(listen)
+
+    # artificial delay
+    for i in range(delay):
+        yield RisingEdge(clock)
+
+    # handshake - either drive or listen may already be asserted
+    drive <= 1
+    yield RisingEdge(clock)
+    while not listen.value:
+        yield RisingEdge(clock)
+    drive <= 0
+
+
 class AXI4Slave(BusDriver):
-    '''
-    AXI4 Slave
-
-    Monitors an internal memory and handles read and write requests.
-    '''
+    """AXI4 Slave
+    """
     _signals = [
-        "ARREADY", "ARVALID", "ARADDR",             # Read address channel
-        "ARLEN",   "ARSIZE",  "ARBURST", "ARPROT",
-
-        "RREADY",  "RVALID",  "RDATA",   "RLAST",   # Read response channel
-
-        "AWREADY", "AWADDR",  "AWVALID",            # Write address channel
-        "AWPROT",  "AWSIZE",  "AWBURST", "AWLEN",
-
-        "WREADY",  "WVALID",  "WDATA",
-
+        "ARID", "ARADDR", "ARLEN", "ARSIZE", "ARBURST", "ARVALID", "ARREADY",
+        "AWID", "AWADDR", "AWLEN", "AWSIZE", "AWBURST", "AWVALID", "AWREADY",
+        "WID", "WDATA", "WSTRB", "WLAST", "WVALID", "WREADY",
+        "RID", "RDATA", "RRESP", "RLAST", "RVALID", "RREADY",
+        "BID", "BRESP", "BVALID",  "BREADY",
     ]
 
     # Not currently supported by this driver
     _optional_signals = [
-        "WLAST",   "WSTRB",
-        "BVALID",  "BREADY",  "BRESP",   "RRESP",
-        "RCOUNT",  "WCOUNT",  "RACOUNT", "WACOUNT",
-        "ARLOCK",  "AWLOCK",  "ARCACHE", "AWCACHE",
-        "ARQOS",   "AWQOS",   "ARID",    "AWID",
-        "BID",     "RID",     "WID"
+        "ARLOCK", "ARCACHE", "ARPROT", "ARQOS", "ARREGION", "ARUSER",
+        "AWLOCK", "AWCACHE", "ARPROT", "AWQOS", "AWREGION", "AWUSER",
+        "WUSER", "RUSER", "BUSER",
     ]
 
-    def __init__(self, entity, name, clock, memory, callback=None, event=None,
-                 big_endian=False, **kwargs):
-
+    def __init__(self, entity, name, clock, max_threads=1,
+                awready_delay=-1, wready_delay=1, bresp_delay=1,
+                arready_delay=-1, rresp_delay=1, **kwargs):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.clock = clock
 
-        self.big_endian = big_endian
-        self.bus.ARREADY.setimmediatevalue(1)
-        self.bus.RVALID.setimmediatevalue(0)
-        self.bus.RLAST.setimmediatevalue(0)
-        self.bus.AWREADY.setimmediatevalue(1)
-        self._memory = memory
+        self.bus.RVALID <= 0
+        self.bus.RLAST <= 0
+        self.bus.BVALID <= 0
+        self.bus.BID <= 0
 
-        self.write_address_busy = Lock("%s_wabusy" % name)
-        self.read_address_busy = Lock("%s_rabusy" % name)
-        self.write_data_busy = Lock("%s_wbusy" % name)
+        self.awready_delay = awready_delay
+        self.wready_delay = wready_delay
+        self.arready_delay = arready_delay
+        assert bresp_delay > 0, "bresp_delay < 1 not supported"
+        self.bresp_delay = bresp_delay
+        assert rresp_delay > 0, "rresp_delay < 1 not supported"
+        self.rresp_delay = rresp_delay
 
-        cocotb.fork(self._read_data())
-        cocotb.fork(self._write_data())
+        self._bus_width = (
+            abs(self.bus.WDATA._range[0] - self.bus.WDATA._range[1]) + 1) // 8
 
-    def _size_to_bytes_in_beat(self, AxSIZE):
-        if AxSIZE < 7:
-            return 2 ** AxSIZE
-        return None
+        assert self._bus_width in [2**n for n in range(8)], \
+            "Unsupported Bus Width"
+
+        self.max_threads = max_threads
+        self._write_threads = []
+        self._read_threads = []
+
+        self.bresp_lock = Lock("%s_bresp_lock" % name)
+        self.rresp_lock = Lock("%s_rresp_lock" % name)
+
+        cocotb.fork(self._read_transaction())
+        cocotb.fork(self._write_transaction())
+
+    @cocotb.coroutine
+    def _write_address(self):
+        """Monitor the Write Address channel for transactions
+        """
+        yield handshake(self.clock,
+                             self.bus.AWREADY,
+                             self.bus.AWVALID,
+                             self.awready_delay)
+
+        awaddr = int(self.bus.AWADDR)
+        awlen = int(self.bus.AWLEN)
+        awsize = int(self.bus.AWSIZE)
+        awburst = int(self.bus.AWBURST)
+        awid = int(self.bus.AWID)
+
+        raise ReturnValue((awaddr, awlen, awsize, awburst, awid))
 
     @cocotb.coroutine
     def _write_data(self):
-        clock_re = RisingEdge(self.clock)
+        """Monitor the Write Data channel for transactions
+        """
+        last = 0
+        wdata = []
+        wstrb = []
+        while not last:
+            yield handshake(self.clock,
+                                 self.bus.WREADY,
+                                 self.bus.WVALID,
+                                 self.wready_delay)
 
-        while True:
-            while True:
-                self.bus.WREADY <= 0
-                yield ReadOnly()
-                if self.bus.AWVALID.value:
-                    self.bus.WREADY <= 1
-                    break
-                yield clock_re
+            wdata.append(int(self.bus.WDATA))
+            wstrb.append(int(self.bus.WSTRB))
+            last = int(self.bus.WLAST)
+            wid = int(self.bus.WID)  # should be the same for each beat
 
-            yield ReadOnly()
-            _awaddr = int(self.bus.AWADDR)
-            _awlen = int(self.bus.AWLEN)
-            _awsize = int(self.bus.AWSIZE)
-            _awburst = int(self.bus.AWBURST)
-            _awprot = int(self.bus.AWPROT)
-
-            burst_length = _awlen + 1
-            bytes_in_beat = self._size_to_bytes_in_beat(_awsize)
-
-            if __debug__:
-                self.log.debug(
-                    "AWADDR  %d\n" % _awaddr +
-                    "AWLEN   %d\n" % _awlen +
-                    "AWSIZE  %d\n" % _awsize +
-                    "AWBURST %d\n" % _awburst +
-                    "BURST_LENGTH %d\n" % burst_length +
-                    "Bytes in beat %d\n" % bytes_in_beat)
-
-            burst_count = burst_length
-
-            yield clock_re
-
-            while True:
-                if self.bus.WVALID.value:
-                    word = self.bus.WDATA.value
-                    word.big_endian = self.big_endian
-                    _burst_diff = burst_length - burst_count
-                    _st = _awaddr + (_burst_diff * bytes_in_beat)  # start
-                    _end = _awaddr + ((_burst_diff + 1) * bytes_in_beat)  # end
-                    self._memory[_st:_end] = array.array('B', word.get_buff())
-                    burst_count -= 1
-                    if burst_count == 0:
-                        break
-                yield clock_re
+        raise ReturnValue((wdata, wid, wstrb))
 
     @cocotb.coroutine
-    def _read_data(self):
-        clock_re = RisingEdge(self.clock)
+    def _write_transaction(self):
+        """Process write transactions
 
+        This requires both wdata and awaddr to complete.
+        """
         while True:
-            while True:
-                yield ReadOnly()
-                if self.bus.ARVALID.value:
-                    break
-                yield clock_re
+            # Wait for wdata and awaddr
+            data = cocotb.fork(self._write_data())
+            addr = cocotb.fork(self._write_address())
+            wdata, wid, wstrb = yield data.join()
+            awaddr, awlen, awsize, awburst, awid = yield addr.join()
 
-            yield ReadOnly()
-            _araddr = int(self.bus.ARADDR)
-            _arlen = int(self.bus.ARLEN)
-            _arsize = int(self.bus.ARSIZE)
-            _arburst = int(self.bus.ARBURST)
-            _arprot = int(self.bus.ARPROT)
+            self.log.debug(
+                "Write Transaction:\n"
+                "\t0x{:08X} <= {}"
+                .format(
+                    awaddr,
+                    "\n\t{:14}".format('').join(
+                        "0x{:016X}".format(d) for d in wdata
+                    )
+                )
+            )
 
-            burst_length = _arlen + 1
-            bytes_in_beat = self._size_to_bytes_in_beat(_arsize)
+            cocotb.fork(self._write_response(
+                awaddr, awlen, awsize, awburst, awid,
+                wdata, wid, wstrb))
 
-            word = BinaryValue(n_bits=bytes_in_beat*8, bigEndian=self.big_endian)
+            # delay here until a thread is free
+            while len(self._write_threads) >= self.max_threads:
+                yield RisingEdge(self.clock)
 
-            if __debug__:
-                self.log.debug(
-                    "ARADDR  %d\n" % _araddr +
-                    "ARLEN   %d\n" % _arlen +
-                    "ARSIZE  %d\n" % _arsize +
-                    "ARBURST %d\n" % _arburst +
-                    "BURST_LENGTH %d\n" % burst_length +
-                    "Bytes in beat %d\n" % bytes_in_beat)
+    @cocotb.coroutine
+    def _write_response(self, awaddr, awlen, awsize,
+                        awburst, awid, wdata, wid, wstrb):
+        """Wait for a write response
+        """
+        bresp = 0
+        bresp_delay = self.bresp_delay
+        try:
+            assert awid == wid, "WID doesn't match AWID"
+            assert awid not in self._write_threads, \
+                "Thread ID already in progress"
+            self._write_threads.append(awid)
 
-            burst_count = burst_length
+            yield self._data_transfer(awaddr, 2**awsize, awlen + 1,
+                                      awburst, wdata, wstrb)
+        except Exception as e:
+            self.log.warning("SAXI Error: {}".format(str(e)))
+            bresp = 2
+            bresp_delay = 1
 
-            yield clock_re
+        for i in range(bresp_delay-1):
+            yield RisingEdge(self.clock)
 
-            while True:
-                self.bus.RVALID <= 1
-                yield ReadOnly()
-                if self.bus.RREADY.value:
-                    _burst_diff = burst_length - burst_count
-                    _st = _araddr + (_burst_diff * bytes_in_beat)
-                    _end = _araddr + ((_burst_diff + 1) * bytes_in_beat)
-                    word.buff = self._memory[_st:_end].tostring()
-                    self.bus.RDATA <= word
-                    if burst_count == 1:
-                        self.bus.RLAST <= 1
-                yield clock_re
-                burst_count -= 1
-                self.bus.RLAST <= 0
-                if burst_count == 0:
-                    break
+        yield self.bresp_lock.acquire()
+        self.bus.BID <= awid
+        self.bus.BRESP <= bresp
+        yield handshake(self.clock, self.bus.BVALID, self.bus.BREADY)
+        self.bresp_lock.release()
+
+        if awid in self._write_threads:
+            self._write_threads.remove(awid)
+
+    @cocotb.coroutine
+    def _read_transaction(self):
+        """Process a read transaction
+        """
+        while True:
+            yield handshake(self.clock,
+                            self.bus.ARREADY,
+                            self.bus.ARVALID,
+                            self.arready_delay)
+
+            araddr = int(self.bus.ARADDR)
+            arlen = int(self.bus.ARLEN)
+            arsize = int(self.bus.ARSIZE)
+            arburst = int(self.bus.ARBURST)
+            arid = int(self.bus.ARID)
+
+            cocotb.fork(self._read_response(
+                    araddr, arlen, arsize, arburst, arid))
+
+            # delay here until a thread is free
+            while len(self._read_threads) >= self.max_threads:
+                yield RisingEdge(self.clock)
+
+    @cocotb.coroutine
+    def _read_response(self, araddr, arlen, arsize, arburst, arid):
+        """Wait for a read response, return the data transferred.
+        """
+        rresp = 0
+        rresp_delay = self.rresp_delay
+        try:
+            assert arid not in self._read_threads, \
+                "Thread ID already in progress"
+            self._read_threads.append(arid)
+
+            data = yield self._data_transfer(araddr, 2**arsize, arlen + 1,
+                                             arburst)
+        except Exception as e:
+            self.log.warning("SAXI Error: {}".format(str(e)))
+            rresp = 2
+            rresp_delay = 1
+            data = [0]
+
+        for i in range(rresp_delay-1):
+            yield RisingEdge(self.clock)
+
+        yield self.rresp_lock.acquire()
+        for i, d in enumerate(data):
+            self.bus.RID <= arid
+            self.bus.RRESP <= rresp
+            self.bus.RDATA <= d
+            self.bus.RLAST <= (1 if i == len(data)-1 else 0)
+            yield handshake(self.clock, self.bus.RVALID, self.bus.RREADY)
+            self.bus.RLAST <= 0
+        self.rresp_lock.release()
+
+        if arid in self._read_threads:
+            self._read_threads.remove(arid)
+
+    @cocotb.coroutine
+    def _data_transfer(self, start_address, num_bytes, burst_length, mode,
+                       data=None, strbs=None):
+        """Perform AXI4 Data Transfer
+
+        This method is basically the pseudocode from A3.4.2 of the Protocol
+        Specification
+        """
+        # [FIXED, INCR, WRAP]
+        assert mode in [0, 1, 2], "Unsupported Burst Mode:0x{:1X}".format(mode)
+
+        if data is None or strbs is None:
+            is_write = False
+            data = []
+        else:
+            is_write = True
+            assert len(data) == burst_length, \
+                "Data supplied doesn't match burst_length"
+            assert len(strbs) == burst_length, \
+                "Data supplied doesn't match burst_length"
+
+        addr = start_address
+        aligned_address = (addr // num_bytes) * num_bytes
+        aligned = aligned_address == addr
+        dtsize = num_bytes * burst_length
+        lower_wrap_boundary = (addr // dtsize) * dtsize
+        upper_wrap_boundary = lower_wrap_boundary + dtsize
+
+        for i in range(burst_length):
+            lower_byte_lane = addr - (addr // self._bus_width) \
+                * self._bus_width
+            if aligned:
+                upper_byte_lane = lower_byte_lane + num_bytes - 1
+            else:
+                upper_byte_lane = aligned_address + num_bytes - 1 \
+                                  - (addr // self._bus_width) * self._bus_width
+
+            # TODO check strb matches data address alignment
+            if is_write:
+                data_bytes = int_to_bytes(data[i], self._bus_width, 'little')
+                yield self.do_slave_write(addr,
+                    data_bytes[lower_byte_lane:upper_byte_lane + 1])
+            else:
+                data_bytes = yield self.do_slave_read(addr,
+                    lower_byte_lane, upper_byte_lane)
+                # TODO not sure how these bytes are aligned, might need some
+                # padding
+                data.append(int_from_bytes(data_bytes, 'little'))
+
+            if mode != 0:
+                if aligned:
+                    addr = addr + num_bytes
+                    if mode == 2:  # WRAP
+                        if addr >= upper_wrap_boundary:
+                            addr = lower_wrap_boundary
+                else:  # INCR
+                    addr = addr + num_bytes
+                    aligned = True
+
+        raise ReturnValue(data)
+
+    @cocotb.coroutine
+    def do_slave_write(self, addr, data_bytes):
+        """Perform action on a write transaction
+        """
+        return
+        yield
+
+    @cocotb.coroutine
+    def do_slave_read(self, addr, low_byte, high_byte):
+        """Perform action on a read transaction
+        """
+        raise ReturnValue(int_to_bytes(0, high_byte - low_byte + 1, 'little'))
+        yield
+
+
+class AXI4MemoryMap(AXI4Slave):
+    """An example AXI4 driver that provides a simple memory block.
+    """
+    def __init__(self, size, *args, **kwargs):
+        AXI4Slave.__init__(self, *args, **kwargs)
+        self._memory = memoryview(bytearray(size))
+
+    @cocotb.coroutine
+    def do_slave_write(self, addr, data_bytes):
+        self._memory[addr:addr + len(data_bytes)] = data_bytes
+
+        return
+        yield
+
+    @cocotb.coroutine
+    def do_slave_read(self, addr, low_byte, high_byte):
+        data_bytes = self._memory[addr:addr + high_byte + 1].tobytes()
+        raise ReturnValue(data_bytes[low_byte:high_byte + 1])
+        yield

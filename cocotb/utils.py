@@ -408,6 +408,37 @@ def hexdiffs(x, y):
     return rs
 
 
+# backport of int.to/from_bytes
+if sys.version_info.major >= 3:
+    int_to_bytes = int.to_bytes
+    int_from_bytes = int.from_bytes
+else:
+    def int_to_bytes(val, length, byteorder):
+        in_range = 0 <= val < 2**(length * 8)
+        if not in_range:
+            raise OverflowError("int too big to convert")
+        big_endian = '{:0{}x}'.format(val, 2*length).decode('hex')
+        if byteorder == 'big':
+            return big_endian
+        elif byteorder == 'little':
+            return big_endian[::-1]
+        else:
+            raise ValueError("byteorder must be either 'little' or 'big'")
+
+
+    def int_from_bytes(bytes, byteorder, signed=False):
+        if byteorder == 'big':
+            val = int(bytes.encode('hex'), 16)
+        elif byteorder == 'little':
+            val = int(bytes[::-1].encode('hex'), 16)
+        else:
+            raise ValueError("byteorder must be either 'little' or 'big'")
+
+        if signed:
+            sign_bit = 2**(8 * len(bytes) - 1)
+            if val & sign_bit:
+                val = val - (sign_bit << 1)
+        return val
 
 
 class ParametrizedSingleton(type):
