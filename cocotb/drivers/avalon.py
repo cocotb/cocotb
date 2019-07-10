@@ -811,7 +811,7 @@ class AvalonSTPkts(ValidatedBusDriver):
                 self.on -= 1
 
             if not hasattr(word, "valid"):
-               self.bus.valid <= 1
+                self.bus.valid <= 1
             else:
                 self.bus <= word
 
