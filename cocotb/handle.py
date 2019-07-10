@@ -111,7 +111,8 @@ class SimHandleBase(object):
 
         # Permits comparison of handles i.e. if clk == dut.clk
         if isinstance(other, SimHandleBase):
-            if self._handle == other._handle: return 0
+            if self._handle == other._handle:
+                return 0
             return 1
 
     def __ne__(self, other):
@@ -181,7 +182,8 @@ class RegionObject(SimHandleBase):
         mapping. Hierarchy can't change after elaboration so we only have to
         do this once.
         """
-        if self._discovered: return
+        if self._discovered:
+            return
         self._log.debug("Discovering all on %s", self._name)
         iterator = simulator.iterate(self._handle, simulator.OBJECTS)
         while True:
@@ -415,7 +417,8 @@ class NonHierarchyObject(SimHandleBase):
 
     def __eq__(self, other):
         if isinstance(other, SimHandleBase):
-            if self._handle == other._handle: return 0
+            if self._handle == other._handle:
+                return 0
             return 1
 
         # Use the comparison method of the other object against our value
