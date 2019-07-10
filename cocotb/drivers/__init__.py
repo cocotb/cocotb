@@ -334,7 +334,8 @@ def polled_socket_attachment(driver, sock):
     """Non-blocking socket attachment that queues any payload received from the
     socket to be queued for sending into the driver.
     """
-    import socket, errno
+    import socket
+    import errno
     sock.setblocking(False)
     driver.log.info("Listening for data from %s" % repr(sock))
     while True:
