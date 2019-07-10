@@ -199,7 +199,7 @@ class RegionObject(SimHandleBase):
 
             key = self._sub_handle_key(name)
 
-            if not key is None:
+            if key is not None:
                 self._sub_handles[key] = hdl
             else:
                 self._log.debug("Unable to translate handle >%s< to a valid _sub_handle key" % hdl._name)
@@ -766,7 +766,7 @@ def SimHandle(handle, path=None):
     t = simulator.get_type(handle)
 
     # Special case for constants
-    if simulator.get_const(handle) and not t in [simulator.MODULE,
+    if simulator.get_const(handle) and t not in [simulator.MODULE,
                                                  simulator.STRUCTURE,
                                                  simulator.NETARRAY,
                                                  simulator.GENARRAY]:
