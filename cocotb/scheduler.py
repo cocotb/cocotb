@@ -638,14 +638,14 @@ class Scheduler(object):
     # `isinstance` checks.
 
     def _trigger_from_started_coro(self, result):
-        # type: (RunningCoroutine) -> Trigger
+        # type: (cocotb.decorators.RunningCoroutine) -> Trigger
         if _debug:
             self.log.debug("Joining to already running coroutine: %s" %
                            result.__name__)
         return result.join()
 
     def _trigger_from_unstarted_coro(self, result):
-        # type: (RunningCoroutine) -> Trigger
+        # type: (cocotb.decorators.RunningCoroutine) -> Trigger
         self.queue(result)
         if _debug:
             self.log.debug("Scheduling nested coroutine: %s" %
@@ -653,7 +653,7 @@ class Scheduler(object):
         return result.join()
 
     def _trigger_from_waitable(self, result):
-        # type: (Waitable) -> Trigger
+        # type: (cocotb.triggers.Waitable) -> Trigger
         return self._trigger_from_unstarted_coro(result._wait())
 
     def _trigger_from_list(self, result):

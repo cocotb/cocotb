@@ -73,7 +73,7 @@ class _XGMIIBus(object):
         """
 
         self._value = BinaryValue(n_bits=nbytes*9, bigEndian=False)
-        self._integer = long(0)
+        self._integer = 0
         self._interleaved = interleaved
         self._nbytes = nbytes
 
@@ -108,7 +108,7 @@ class _XGMIIBus(object):
         NB clears the value.
         """
         self._value.integer = self._integer
-        self._integer = long(0)
+        self._integer = 0
         return self._value
 
     def __len__(self):
