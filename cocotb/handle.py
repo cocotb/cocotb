@@ -457,7 +457,7 @@ class ConstantObject(NonHierarchyObject):
             self._value = BinaryValue(n_bits=len(val))
             try:
                 self._value.binstr = val
-            except:
+            except Exception:
                 self._value = val
 
     def __int__(self):

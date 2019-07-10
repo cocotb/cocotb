@@ -390,7 +390,7 @@ class BinaryValue(object):
     def hex(self):
         try:
             return hex(self.get_value())
-        except:
+        except Exception:
             return hex(int(self.binstr, 2))
 
     def __le__(self, other):
