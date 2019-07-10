@@ -39,7 +39,7 @@ import warnings
 
 if "COCOTB_SIM" in os.environ:
     import simulator
-    _LOG_SIM_PRECISION = simulator.get_precision() # request once and cache
+    _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
 else:
     simulator = None
     _LOG_SIM_PRECISION = -15
