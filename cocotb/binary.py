@@ -509,7 +509,7 @@ class BinaryValue(object):
         return self
 
     def __rpow__(self, other):
-        return pow(other, self.integer, modulo)
+        return pow(other, self.integer)
 
     def __lshift__(self, other):
         return int(self) << int(other)
