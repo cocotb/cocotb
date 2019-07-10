@@ -463,4 +463,3 @@ class test(with_metaclass(_decorator_helper, coroutine)):
             return RunningTest(self._func(*args, **kwargs), self)
         except Exception as e:
             raise raise_error(self, "Test raised exception:")
-
