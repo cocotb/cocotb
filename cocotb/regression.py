@@ -320,7 +320,7 @@ class RegressionManager(object):
                            self.count, self.ntests,
                            end,
                            self._running_test.funcname))
-            if self.count is 1:
+            if self.count == 1:
                 test = cocotb.scheduler.add(self._running_test)
             else:
                 test = cocotb.scheduler.new_test(self._running_test)
