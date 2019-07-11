@@ -29,16 +29,14 @@
 
 """Set of common driver base classes."""
 
-import logging
 from collections import deque
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import (Event, RisingEdge, ReadOnly, Timer, NextTimeStep,
+from cocotb.triggers import (Event, RisingEdge, ReadOnly, NextTimeStep,
                              Edge)
 from cocotb.bus import Bus
 from cocotb.log import SimLog
-from cocotb.result import ReturnValue
 from cocotb.utils import reject_remaining_kwargs
 
 

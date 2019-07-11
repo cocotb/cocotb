@@ -29,12 +29,8 @@
 
 # -*- coding: utf-8 -*-
 
-import logging
 import ctypes
-import traceback
-import sys
 import warnings
-from io import StringIO, BytesIO
 
 import os
 

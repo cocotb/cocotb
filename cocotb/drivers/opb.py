@@ -30,8 +30,6 @@ Drivers for On-chip Peripheral Bus.
 NOTE: Currently we only support a very small subset of functionality.
 """
 
-import random
-
 import cocotb
 from cocotb.triggers import RisingEdge, ReadOnly, Event
 from cocotb.drivers import BusDriver

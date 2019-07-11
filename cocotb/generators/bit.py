@@ -34,7 +34,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     These yield a tuple which is intended to be interpreted as a number of
     cycles (ON,OFF)
 """
-import random
 import sys
 
 from cocotb.decorators import public

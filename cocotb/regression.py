@@ -28,7 +28,6 @@
 """All things relating to regression capabilities."""
 
 import time
-import logging
 import inspect
 from itertools import product
 import sys

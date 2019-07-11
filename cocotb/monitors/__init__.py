@@ -33,13 +33,11 @@ The monitor is responsible for watching the pins of the DUT and recreating
 the transactions.
 """
 
-import math
 from collections import deque
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Edge, Event, RisingEdge, ReadOnly, Timer
-from cocotb.binary import BinaryValue
+from cocotb.triggers import Event, Timer
 from cocotb.bus import Bus
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue

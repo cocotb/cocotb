@@ -38,7 +38,7 @@ import zlib
 import cocotb
 from cocotb.utils import hexdump
 from cocotb.monitors import Monitor
-from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge
 
 _XGMII_IDLE      = "\x07"  # noqa
 _XGMII_START     = "\xFB"  # noqa

@@ -32,7 +32,6 @@ from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
 
-import binascii
 import array
 
 

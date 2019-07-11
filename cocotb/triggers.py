@@ -28,7 +28,6 @@
 """A collections of triggers which a testbench can yield."""
 
 import os
-import weakref
 import sys
 import textwrap
 
