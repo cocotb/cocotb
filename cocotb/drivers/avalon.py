@@ -488,7 +488,6 @@ class AvalonMemory(BusDriver):
 
                     addr, byteenable, burstcount = self._write_burst_addr()
 
-                    count = 0
                     for count in range(burstcount):
                         while self.bus.write.value == 0:
                             yield NextTimeStep()

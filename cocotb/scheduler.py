@@ -739,11 +739,6 @@ class Scheduler(object):
         # We do not return from here until pending threads have completed, but only
         # from the main thread, this seems like it could be problematic in cases
         # where a sim might change what this thread is.
-        def unblock_event(ext):
-            @cocotb.coroutine
-            def wrapper():
-                ext.event.set()
-                yield PythonTrigger()
 
         if self._main_thread is threading.current_thread():
 
