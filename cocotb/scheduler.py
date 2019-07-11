@@ -35,17 +35,10 @@ also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
 import collections
-import copy
 import os
 import sys
-import time
 import logging
 import threading
-
-if "COCOTB_SIM" in os.environ:
-    import simulator
-else:
-    simulator = None
 
 # Debug mode controlled by environment variables
 if "COCOTB_ENABLE_PROFILING" in os.environ:
@@ -66,11 +59,10 @@ else:
 
 import cocotb
 import cocotb.decorators
-from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly, PythonTrigger,
+from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
-from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
-                           create_error, ExternalException)
+from cocotb.result import (TestComplete, create_error)
 from cocotb.utils import nullcontext
 
 # On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.

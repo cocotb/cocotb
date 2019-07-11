@@ -39,12 +39,12 @@ import time
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
-from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
+from cocotb.log import SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
 
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine, hook, function, external
+from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference

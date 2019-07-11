@@ -3,9 +3,7 @@
 # @author: msnook
 
 import cocotb
-from cocotb.triggers import Timer, RisingEdge, ReadOnly, Lock, Event
-from cocotb.bus import Bus
-from cocotb.result import ReturnValue
+from cocotb.triggers import Timer, RisingEdge, Event
 from cocotb.drivers import BusDriver
 from cocotb.binary import BinaryValue, BinaryRepresentation
 
