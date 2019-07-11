@@ -501,11 +501,11 @@ class BinaryValue(object):
     def __rmod__(self, other):
         return other % self.integer
 
-    def __pow__(self, other, modulo):
-        return pow(self.integer, other, modulo)
+    def __pow__(self, other, modulo=None):
+        return pow(self.integer, other)
 
-    def __ipow__(self, other, modulo):
-        self.integer = pow(self.integer, other, modulo)
+    def __ipow__(self, other):
+        self.integer = pow(self.integer, other)
         return self
 
     def __rpow__(self, other):
@@ -573,7 +573,7 @@ class BinaryValue(object):
     def __rdiv__(self, other):
         return other / self.integer
 
-    def __neg__(self, other):
+    def __neg__(self):
         return - self.integer
 
     def __pos__(self):
