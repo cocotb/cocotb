@@ -135,7 +135,7 @@ class XGMII(Driver):
         self.log = signal._log
         self.signal = signal
         self.clock = clock
-        self.bus = _XGMIIBus(len(signal)/9, interleaved=interleaved)
+        self.bus = _XGMIIBus(len(signal)//9, interleaved=interleaved)
         Driver.__init__(self)
 
     @staticmethod
