@@ -73,7 +73,7 @@ class XGMII(Monitor):
         self.log = signal._log
         self.clock = clock
         self.signal = signal
-        self.bytes = len(self.signal) / 9
+        self.bytes = len(self.signal) // 9
         self.interleaved = interleaved
         Monitor.__init__(self, callback=callback, event=event)
 
