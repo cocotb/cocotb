@@ -285,8 +285,6 @@ class AXI4Slave(BusDriver):
             burst_length = _awlen + 1
             bytes_in_beat = self._size_to_bytes_in_beat(_awsize)
 
-            word = BinaryValue(n_bits=bytes_in_beat*8, bigEndian=self.big_endian)
-
             if __debug__:
                 self.log.debug(
                     "AWADDR  %d\n" % _awaddr +
