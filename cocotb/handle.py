@@ -259,9 +259,10 @@ class HierarchyObject(RegionObject):
         """Query the simulator for a object with the specified name
         and cache the result to build a tree of objects.
         """
-        if name in self._sub_handles:
-            sub = self._sub_handles[name]
+        try:
             return self._sub_handles[name]
+        except KeyError:
+            pass
 
         if name.startswith("_"):
             return SimHandleBase.__getattr__(self, name)
@@ -272,8 +273,10 @@ class HierarchyObject(RegionObject):
             if name in self._compat_mapping:
                 return SimHandleBase.__getattr__(self, name)
             raise AttributeError("%s contains no object named %s" % (self._name, name))
-        self._sub_handles[name] = SimHandle(new_handle, self._child_path(name))
-        return self._sub_handles[name]
+
+        sub_handle = SimHandle(new_handle, self._child_path(name))
+        self._sub_handles[name] = sub_handle
+        return sub_handle
 
     def __hasattr__(self, name):
         """Since calling ``hasattr(handle, "something")`` will print out a
