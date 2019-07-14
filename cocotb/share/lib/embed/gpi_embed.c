@@ -208,7 +208,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     cocotb_module = NULL;
     arg_dict = NULL;
 
-    //Ensure that the current thread is ready to call the Python C API
+    // Ensure that the current thread is ready to call the Python C API
     PyGILState_STATE gstate = PyGILState_Ensure();
     to_python();
 
@@ -220,7 +220,7 @@ int embed_sim_init(gpi_sim_info_t *info)
 
     if (simlog_obj == NULL) {
         PyErr_Print();
-        fprintf(stderr, "Failed to to get simlog object\n");
+        fprintf(stderr, "Failed to get simlog object\n");
     }
 
     simlog_func = PyObject_GetAttrString(simlog_obj, "_logFromC");
@@ -358,7 +358,7 @@ ok:
 void embed_sim_event(gpi_event_t level, const char *msg)
 {
     FENTER
-    /* Indicate to the upper layer a sim event occoured */
+    /* Indicate to the upper layer a sim event occurred */
 
     if (pEventFn) {
         PyGILState_STATE gstate;

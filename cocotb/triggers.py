@@ -63,7 +63,7 @@ class Trigger(object):
         return SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
 
     def prime(self, *args):
-        """FIXME: document"""
+        """Don't call this in your own code, this is for internal use by the scheduler."""
         self.primed = True
 
     def unprime(self):
@@ -164,7 +164,7 @@ class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        """FIXME: document"""
+        """Don't call this in your own code, this is for internal use by the scheduler."""
         if self.cbhdl == 0:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl == 0:
@@ -188,7 +188,7 @@ class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        """FIXME: document"""
+        """Don't call this in your own code, this is for internal use by the scheduler."""
         if self.cbhdl == 0:
             # import pdb
             # pdb.set_trace()
@@ -459,7 +459,7 @@ class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
         return self._coroutine.retval
 
     def prime(self, callback):
-        """FIXME: document"""
+        """Don't call this in your own code, this is for internal use by the scheduler."""
         if self._coroutine._finished:
             callback(self)
         else:

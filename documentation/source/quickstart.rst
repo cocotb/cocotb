@@ -87,22 +87,22 @@ test.
 
 .. code-block:: bash
 
-    $> export PATH=/opt/pym32/bin
-    $> cd <cocotb_dir>
+    $> export PATH=/opt/pym32/bin:$PATH
+    $> cd `cocotb-config --prefix`
     $> ARCH=i686 make
 
-Windows 7 installation
-----------------------
+Windows Installation
+--------------------
 
 Work has been done with the support of the cocotb community to enable
-Windows support using the MinGW/Msys environment. Download the MinGQ installer
+Windows support using the MinGW/Msys environment. Download the MinGW installer
 from.
 
 https://sourceforge.net/projects/mingw/files/latest/download?source=files .
 
 Run the GUI installer and specify a directory you would like the environment
 installed in. The installer will retrieve a list of possible packages, when this
-is done press continue. The MinGW Installation Manager is then launched.
+is done press "Continue". The MinGW Installation Manager is then launched.
 
 The following packages need selecting by checking the tick box and selecting
 "Mark for installation"
@@ -214,7 +214,7 @@ rules which make it easy to get started.  We simply inform cocotb of the
 source files we need compiling, the toplevel entity to instantiate and the
 Python test script to load.
 
-.. code-block:: bash
+.. code-block:: makefile
 
     VERILOG_SOURCES = $(PWD)/submodule.sv $(PWD)/my_design.sv
     TOPLEVEL=my_design  # the module name in your Verilog or VHDL file
