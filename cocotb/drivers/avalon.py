@@ -509,7 +509,8 @@ class AvalonST(ValidatedBusDriver):
     _signals = ["valid", "data"]
     _optional_signals = ["ready"]
 
-    _default_config = {"firstSymbolInHighOrderBits" : True}
+    _default_config = {"firstSymbolInHighOrderBits" : True,
+                       "dataBitsPerSymbol": 8}
 
     def __init__(self, *args, **kwargs):
         config = kwargs.pop('config', {})
@@ -520,6 +521,9 @@ class AvalonST(ValidatedBusDriver):
         for configoption, value in config.items():
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s", configoption, str(value))
+
+        if self.config["dataBitsPerSymbol"] != 8:
+            raise AttributeError("AvalonST driver doesn't support support dataBitsPerSymbol != 8")
 
         word = BinaryValue(n_bits=len(self.bus.data), bigEndian=self.config["firstSymbolInHighOrderBits"],
                            value="x" * len(self.bus.data))
@@ -552,7 +556,7 @@ class AvalonST(ValidatedBusDriver):
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
 
-        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=False)
+        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=self.config["firstSymbolInHighOrderBits"])
 
         # Drive some defaults since we don't know what state we're in
         self.bus.valid <= 0
@@ -619,6 +623,9 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.log.debug("Setting config option %s to %s",
                            configoption, str(value))
 
+        if self.config["dataBitsPerSymbol"] != 8:
+            raise AttributeError("AvalonSTPkts driver doesn't support support dataBitsPerSymbol != 8")
+
         num_data_symbols = (len(self.bus.data) /
                             self.config["dataBitsPerSymbol"])
         if (num_data_symbols > 1 and not hasattr(self.bus, 'empty')):
@@ -632,7 +639,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         word = BinaryValue(n_bits=len(self.bus.data),
                            bigEndian=self.config["firstSymbolInHighOrderBits"])
 
-        single = BinaryValue(n_bits=1, bigEndian=False)
+        single = BinaryValue(n_bits=1, bigEndian=self.config["firstSymbolInHighOrderBits"])
 
         word.binstr   = "x" * len(self.bus.data)
         single.binstr = "x"

@@ -51,7 +51,8 @@ class AvalonST(BusMonitor):
     _signals = ["valid", "data"]
     _optional_signals = ["ready"]
 
-    _default_config = {"firstSymbolInHighOrderBits": True}
+    _default_config = {"dataBitsPerSymbol": 8,
+                       "firstSymbolInHighOrderBits": True}
 
     def __init__(self, *args, **kwargs):
         config = kwargs.pop('config', {})
@@ -62,6 +63,9 @@ class AvalonST(BusMonitor):
         for configoption, value in config.items():
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s", configoption, str(value))
+
+        if self.config["dataBitsPerSymbol"] != 8:
+            raise AttributeError("AvalonST driver doesn't support support dataBitsPerSymbol != 8")
 
     @coroutine
     def _monitor_recv(self):
@@ -114,6 +118,9 @@ class AvalonSTPkts(BusMonitor):
             self.config[configoption] = value
             self.log.debug("Setting config option %s to %s",
                            configoption, str(value))
+
+        if self.config["dataBitsPerSymbol"] != 8:
+            raise AttributeError("AvalonST driver doesn't support support dataBitsPerSymbol != 8")
 
         num_data_symbols = (len(self.bus.data) /
                             self.config["dataBitsPerSymbol"])
