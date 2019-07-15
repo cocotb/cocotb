@@ -56,7 +56,7 @@ def test_signed_counting(dut):
 
     def compare_count(expected_value, actual_value, sign_type, big_endian, desc):
         """Compare the signal with the expected count value"""
-        actual_value.big_endian = big_endian
+        actual_value.ascending_range = big_endian
         actual_value.sign_type = sign_type
 
         # Shouldn't overflow so don't need to worry about the sign_type
@@ -102,14 +102,14 @@ def test_signed_overflow(dut):
     tb = BinaryTestbench(dut)
     yield tb.initialise()
 
-    count_unsigned = BinaryValue(value=1, n_bits=3, bigEndian=False,
+    count_unsigned = BinaryValue(value=1, n_bits=3, ascending_range=False,
                                  binaryRepresentation=BinaryRepresentation.UNSIGNED)
-    count_signed = BinaryValue(value=1, n_bits=4, bigEndian=False,
+    count_signed = BinaryValue(value=1, n_bits=4, ascending_range=False,
                                binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
 
     def compare_count(expected_value, actual_value, sign_type, big_endian, desc):
         """Compare the signal with the expected binary count value"""
-        actual_value.big_endian = big_endian
+        actual_value.ascending_range = big_endian
         actual_value.binaryRepresentation = sign_type
 
         if not big_endian:
@@ -160,13 +160,13 @@ def test_verilog_truncation(dut):
 
     def compare_truncated(long_value, short_value, sign_type, big_endian, desc):
         """Compare two equal values, one a truncation of the other"""
-        short_value.big_endian = big_endian
+        short_value.ascending_range = big_endian
         short_value.binaryRepresentation = sign_type
         short_length = short_value.n_bits
 
         truncate_value = BinaryValue(value=long_value.binstr, binaryRepresentation=sign_type,
-                                     bigEndian=False, n_bits=short_length)
-        truncate_value.big_endian = big_endian
+                                     ascending_range=False, n_bits=short_length)
+        truncate_value.ascending_range = big_endian
 
         if short_value.integer != truncate_value.integer:
             raise TestError("Values ({}) do not match as expected. "
@@ -214,8 +214,8 @@ def test_vhdl_truncation(dut):
 
     def compare_truncated(long_value, short_value, sign_type, big_endian, desc):
         """Compare two equal values, one a truncation of the other"""
-        long_value.big_endian = big_endian
-        short_value.big_endian = big_endian
+        long_value.ascending_range = big_endian
+        short_value.ascending_range = big_endian
         long_value.binaryRepresentation = sign_type
         short_value.binaryRepresentation = sign_type
         short_length = short_value.n_bits
@@ -227,10 +227,8 @@ def test_vhdl_truncation(dut):
                                                                                  long_value.binstr,
                                                                                  short_value.binstr))
         elif sign_type == BinaryRepresentation.TWOS_COMPLEMENT:
-            dut._log.info(long_value.integer)
             truncated_value = BinaryValue(value=long_value.integer, binaryRepresentation=sign_type,
-                                          bigEndian=big_endian, n_bits=short_length)
-            dut._log.info("{} {} {} {}".format(truncated_value.integer, truncated_value.binstr, truncated_value.n_bits, truncated_value.big_endian))
+                                          ascending_range=big_endian, n_bits=short_length)
             if short_value.integer != truncated_value.integer:
                 raise TestError("Values ({}) do not match as expected. "
                                 "Original value: {}; Truncated value: {}".format(desc,
@@ -266,8 +264,8 @@ def test_extension(dut):
 
     def compare_extended(short_value, long_value, sign_type, big_endian, desc):
         """Compare two equal values, one an extension of the other"""
-        short_value.big_endian = big_endian
-        long_value.big_endian = big_endian
+        short_value.ascending_range = big_endian
+        long_value.ascending_range = big_endian
         short_value.binaryRepresentation = sign_type
         long_value.binaryRepresentation = sign_type
         short_length = short_value.n_bits
@@ -327,9 +325,9 @@ def test_endianness_swap(dut):
 
     def compare_flipped_value(big_endian_value, little_endian_value, binary_repr, desc):
         """Compare two equal values (in verilog) with different endian-ness"""
-        big_endian_value.big_endian = True
+        big_endian_value.ascending_range = True
         big_endian_value.binaryRepresentation = binary_repr
-        little_endian_value.big_endian = False
+        little_endian_value.ascending_range = False
         little_endian_value.binaryRepresentation = binary_repr
 
         if big_endian_value.binstr != little_endian_value.binstr:
@@ -380,7 +378,7 @@ def test_signed_function(dut):
     unsigned_little_end_signal = dut.unsigned_assigned_dollar_signed_little.value
     if unsigned_little_end_signal.binstr != EXPECTED_STRING[1:]: # Signal is only 8 bits
         raise TestError("Didn't get expected value: $signed(-57) == 11000111 (in unsigned little-endian wire)")
-    unsigned_little_end_signal.big_endian = False
+    unsigned_little_end_signal.ascending_range = False
     unsigned_little_end_signal.binaryRepresentation = BinaryRepresentation.UNSIGNED
     if unsigned_little_end_signal.integer != EXPECTED_UNSIGNED_VALUE:
         tb.log.error("Expected value: %d; Actual value: %d",
@@ -390,7 +388,7 @@ def test_signed_function(dut):
     unsigned_big_end_signal = dut.unsigned_assigned_dollar_signed_big.value
     if unsigned_big_end_signal.binstr != EXPECTED_STRING[1:]: # Signal is only 8 bits
         raise TestError("Didn't get expected value: $signed(-57) == 11000111 (in unsigned big-endian wire)")
-    unsigned_big_end_signal.big_endian = True
+    unsigned_big_end_signal.ascending_range = True
     unsigned_big_end_signal.binaryRepresentation = BinaryRepresentation.UNSIGNED
     if unsigned_big_end_signal.integer != int(EXPECTED_STRING[1:][::-1], 2):
         tb.log.error("Expected value: %d; Actual value: %d",
@@ -400,7 +398,7 @@ def test_signed_function(dut):
     signed_little_end_signal = dut.signed_assigned_dollar_signed_little.value
     if signed_little_end_signal.binstr != EXPECTED_STRING:
         raise TestError("Didn't get expected value: $signed(-57) == 111000111 (in signed little-endian wire)")
-    signed_little_end_signal.big_endian = False
+    signed_little_end_signal.ascending_range = False
     signed_little_end_signal.binaryRepresentation = BinaryRepresentation.TWOS_COMPLEMENT
     if signed_little_end_signal.integer != EXPECTED_SIGNED_VALUE:
         tb.log.error("Expected value: %d; Actual value: %d",
@@ -410,7 +408,7 @@ def test_signed_function(dut):
     signed_big_end_signal = dut.signed_assigned_dollar_signed_big.value
     if signed_big_end_signal.binstr != EXPECTED_STRING:
         raise TestError("Didn't get expected value: $signed(-57) == 111000111 (in signed big-endian wire)")
-    signed_big_end_signal.big_endian = False
+    signed_big_end_signal.ascending_range = False
     signed_big_end_signal.binaryRepresentation = BinaryRepresentation.TWOS_COMPLEMENT
     if signed_big_end_signal.integer != EXPECTED_SIGNED_VALUE: # -57 is the same value reversed when 9 bits
         tb.log.error("Expected value: %d; Actual value: %d",
@@ -437,7 +435,7 @@ def test_to_signed_function(dut):
     little_end_signal = dut.signed_assigned_signed_little.value
     if little_end_signal.binstr != EXPECTED_STRING:
         raise TestError("Didn't get expected value: to_signed(-57, 9) == 111000111 (for little-endian signal)")
-    little_end_signal.big_endian = False
+    little_end_signal.ascending_range = False
     little_end_signal.binaryRepresentation = BinaryRepresentation.TWOS_COMPLEMENT
     if little_end_signal != EXPECTED_VALUE:
         tb.log.error("Expected value: %d; Actual value: %d",
@@ -447,7 +445,7 @@ def test_to_signed_function(dut):
     big_end_signal = dut.signed_assigned_signed_big.value
     if big_end_signal.binstr != EXPECTED_STRING:
         raise TestError("Didn't get expected value: to_signed(-57, 9) == 111000111 (for big-endian signal)")
-    big_end_signal.big_endian = True
+    big_end_signal.ascending_range = True
     big_end_signal.binaryRepresentation = BinaryRepresentation.TWOS_COMPLEMENT
     if big_end_signal.integer != EXPECTED_VALUE: # Fun: -57 is the same backwards when 9 bits
         tb.log.error("Expected value: %d; Actual value: %d",

@@ -148,20 +148,17 @@ class BinaryValue(object):
         # Convert integer to string buffer
         self._convert_to = {BinaryRepresentation.UNSIGNED         : self._convert_to_unsigned,
                             BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_to_signed_mag,
-                            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_to_twos_comp,
-                           }
+                            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_to_twos_comp}
 
         # Convert to integer from string buffer
         self._convert_from = {BinaryRepresentation.UNSIGNED         : self._convert_from_unsigned,
                               BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_from_signed_mag,
-                              BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_from_twos_comp,
-                             }
+                              BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_from_twos_comp}
 
         # Extend/truncate string buffer
         self._adjust = {BinaryRepresentation.UNSIGNED         : self._adjust_unsigned,
                         BinaryRepresentation.SIGNED_MAGNITUDE : self._adjust_signed_mag,
-                        BinaryRepresentation.TWOS_COMPLEMENT  : self._adjust_twos_comp,
-                       }
+                        BinaryRepresentation.TWOS_COMPLEMENT  : self._adjust_twos_comp}
 
         if value is not None:
             self.assign(value)
@@ -195,25 +192,25 @@ class BinaryValue(object):
         if x[0] == '-':
             raise ValueError('Attempt to assigned negative number to unsigned '
                              'BinaryValue')
-        x = x[2:] # Remove '0b' prefix
+        x = x[2:]  # Remove '0b' prefix
         if self.ascending_range:
             x = x[::-1]
         return self._adjust_unsigned(x)
 
     def _convert_to_signed_mag(self, x):
         """Convert a signed integer to a signed magnitude binary string"""
-        x = bin(x) # Little-endian bit-order
+        x = bin(x)  # Little-endian bit-order
         if x[0] == '-':
-            x = '1' + x[3:] # Attach negative sign
+            x = '1' + x[3:]  # Attach negative sign
         else:
-            x = '0' + x[2:0] # Attach positive sign
+            x = '0' + x[2:0]  # Attach positive sign
         if self.ascending_range:
-            x = x[::-1] # Convert x to big-endian bit-order
+            x = x[::-1]  # Convert x to big-endian bit-order
         return self._adjust_signed_mag(x)
 
     def _convert_to_twos_comp(self, x):
         """Convert a signed integer to a twos complement signed binary string"""
-        if x < 0: # Convert to integer representing unsigned twos complement value
+        if x < 0:  # Convert to integer representing unsigned twos complement value
             binstr = bin(2 ** (_clog2(abs(x)) + 1) + x)[2:]
         else:
             binstr = '0' + bin(x)[2:]
@@ -225,25 +222,25 @@ class BinaryValue(object):
     def _convert_from_unsigned(self, x):
         """Convert an unsigned binary string to an integer"""
         if self.ascending_range:
-            x = x[::-1] # Python interprets binary strings as little-endian bit-order
+            x = x[::-1]  # Python interprets binary strings as little-endian bit-order
         return int(resolve(x), 2)
 
     def _convert_from_signed_mag(self, x):
         """Convert a signed magnitude binary string to an integer"""
         if self.ascending_range:
-            x = x[::-1] # Python interprets binary strings as little-endian bit-order
+            x = x[::-1]  # Python interprets binary strings as little-endian bit-order
         magnitude = int(resolve(x[1:]), 2)
-        if x[0] == '1': # Handle sign bit
+        if x[0] == '1':  # Handle sign bit
             return 0 - magnitude
         return magnitude
 
     def _convert_from_twos_comp(self, x):
         """Convert a signed twos complement binary string to an integer"""
         if self.ascending_range:
-            x = x[::-1] # Python interprets binary strings as little-endian bit-order
-        if x[0] == '1': # Negative value
+            x = x[::-1]  # Python interprets binary strings as little-endian bit-order
+        if x[0] == '1':  # Negative value
             # Conversion = invert and add 1
-            binstr = self._invert(x[1:]) # Remove sign and invert
+            binstr = self._invert(x[1:])  # Remove sign and invert
             return 0 - (int(binstr, 2) + 1)
         return int(resolve(x), 2)
 
@@ -272,11 +269,11 @@ class BinaryValue(object):
         if n_bits is None:
             return x
         length = len(x)
-        if length <= n_bits: # Extension with 0s (unsigned)
+        if length <= n_bits:  # Extension with 0s (unsigned)
             if self.ascending_range:
                 return x + '0' * (n_bits - length)
             return '0' * (n_bits - length) + x
-        else: # Truncation (l > n_bits)
+        else:  # Truncation (l > n_bits)
             self._log.warning("Truncating value to match requested number of bits (%d -> %d)",
                               length, n_bits)
             # Truncate MSBs (standard verilog behaviour)
@@ -302,7 +299,7 @@ class BinaryValue(object):
                 return x[:-1] + '0' * (n_bits - 1 - length) + x[-1]
             # (sign) + (padding 0s) + (x without sign)
             return x[0] + '0' * (n_bits - 1 - length) + x[1:]
-        else: # Truncation (l > n_bits)
+        else:  # Truncation (l > n_bits)
             self._log.warning("Truncating value to match requested number of bits (%d -> %d)",
                               length, n_bits)
             # Truncate MSBs (standard verilog behaviour)
@@ -323,11 +320,11 @@ class BinaryValue(object):
         if n_bits is None:
             return x
         length = len(x)
-        if length <= n_bits: # Sign extension
+        if length <= n_bits:  # Sign extension
             if self.ascending_range:
                 return x + x[-1] * (n_bits - length)
             return x[0] * (n_bits - length) + x
-        else: # Truncation (l > self._n_bits)
+        else:  # Truncation (l > self._n_bits)
             self._log.warning("Truncating value to match requested number of bits (%d -> %d)",
                               length, n_bits)
             if self.ascending_range:
@@ -363,7 +360,7 @@ class BinaryValue(object):
         """
         length = len(self._str)
         if length % 8 != 0:
-            length = ((length // 8) + 1) * 8 # Round up to nearest byte
+            length = ((length // 8) + 1) * 8  # Round up to nearest byte
         bits = self._adjust[self.binaryRepresentation](resolve(self._str), length)
         byte_list = (int(bits[i:i+8], 2) for i in range(0, len(bits), 8))
         if self.big_endian:
@@ -774,13 +771,13 @@ class BinaryValue(object):
         else:
             num_slice_bits = 1
 
-        if isinstance(val, str): # We want value as a bit string
+        if isinstance(val, str):  # We want value as a bit string
             if len(val) != num_slice_bits:
                 raise ValueError('String length must be equal to slice '
                                  'length')
         elif isinstance(val, integer_types):
             if val < 0:
-                raise ValueError('Integer must be positive') # Don't know representation of slice
+                raise ValueError('Integer must be positive')  # Don't know representation of slice
             if val >= pow(2, num_slice_bits):
                 raise ValueError('Integer is too large for the specified slice '
                                  'length')
