@@ -3,7 +3,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -159,15 +159,15 @@ class RegionObject(SimHandleBase):
 
             for name, handle in self._sub_handles.items():
                 if isinstance(handle, list):
-                    self._log.debug("Found index list length %d" % len(handle))
+                    self._log.debug("Found index list length %d", len(handle))
                     for subindex, subhdl in enumerate(handle):
                         if subhdl is None:
                             self._log.warning("Index %d doesn't exist in %s.%s", subindex, self._name, name)
                             continue
-                        self._log.debug("Yielding index %d from %s (%s)" % (subindex, name, type(subhdl)))
+                        self._log.debug("Yielding index %d from %s (%s)", subindex, name, type(subhdl))
                         yield subhdl
                 else:
-                    self._log.debug("Yielding %s (%s)" % (name, handle))
+                    self._log.debug("Yielding %s (%s)", name, handle)
                     yield handle
         except GeneratorExit:
             pass
@@ -192,7 +192,7 @@ class RegionObject(SimHandleBase):
             try:
                 hdl = SimHandle(thing, self._child_path(name))
             except TestError as e:
-                self._log.debug("%s" % e)
+                self._log.debug("%s", e)
                 continue
 
             key = self._sub_handle_key(name)
@@ -200,7 +200,7 @@ class RegionObject(SimHandleBase):
             if key is not None:
                 self._sub_handles[key] = hdl
             else:
-                self._log.debug("Unable to translate handle >%s< to a valid _sub_handle key" % hdl._name)
+                self._log.debug("Unable to translate handle >%s< to a valid _sub_handle key", hdl._name)
                 continue
 
         self._discovered = True
@@ -296,7 +296,7 @@ class HierarchyObject(RegionObject):
         return new_handle
 
     def _id(self, name, extended=True):
-        """Query the simulator for a object with the specified name, 
+        """Query the simulator for a object with the specified name,
         including extended identifiers,
         and cache the result to build a tree of objects.
         """
@@ -393,7 +393,7 @@ class NonHierarchyObject(SimHandleBase):
     def _getvalue(self):
         if type(self) is NonHierarchyIndexableObject:
             # need to iterate over the sub-object
-            result =[]
+            result = []
             for x in range(len(self)):
                 result.append(self[x]._getvalue())
             return result
@@ -429,7 +429,7 @@ class NonHierarchyObject(SimHandleBase):
 
     # We want to maintain compatibility with python 2.5 so we can't use @property with a setter
     value = property(fget=lambda self: self._getvalue(),
-                     fset=lambda self,v: self._setcachedvalue(v),
+                     fset=lambda self, v: self._setcachedvalue(v),
                      fdel=None,
                      doc="A reference to the value")
 
@@ -485,7 +485,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
             if len(value) != len(self.__getitem__(index)):
                 raise IndexError("Assigning list of length %d to object %s of length %d" % (
                     len(value), self.__getitem__(index)._fullname, len(self.__getitem__(index))))
-            self._log.info("Setting item %s to %s" % (self.__getitem__(index)._fullname, value))
+            self._log.info("Setting item %s to %s", self.__getitem__(index)._fullname, value)
             for idx in range(len(value)):
                 self.__getitem__(index).__setitem__(idx, value[idx])
         else:
@@ -510,7 +510,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
             if self._range is None:
                 return
 
-            self._log.debug("Iterating with range [%d:%d]" % (self._range[0], self._range[1]))
+            self._log.debug("Iterating with range [%d:%d]", self._range[0], self._range[1])
             for i in self._range_iter(self._range[0], self._range[1]):
                 try:
                     result = self[i]
@@ -536,7 +536,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
 
 class NonConstantObject(NonHierarchyIndexableObject):
     # FIXME: what is the difference to ModifiableObject? Explain in docstring.
-    
+
     def __init__(self, handle, path):
         """Args:
             handle (int): FLI/VPI/VHPI handle to the simulator object.
@@ -566,7 +566,7 @@ class NonConstantObject(NonHierarchyIndexableObject):
 
 class ModifiableObject(NonConstantObject):
     """Base class for simulator objects whose values can be modified."""
-    
+
     def setimmediatevalue(self, value):
         """Set the value of the underlying simulation object to value.
 
@@ -581,7 +581,7 @@ class ModifiableObject(NonConstantObject):
                 The value to drive onto the simulator object.
 
         Raises:
-            TypeError: If target is not wide enough or has an unsupported type 
+            TypeError: If target is not wide enough or has an unsupported type
                  for value assignment.
         """
         if isinstance(value, integer_types) and value < 0x7fffffff and len(self) <= 32:
@@ -598,8 +598,8 @@ class ModifiableObject(NonConstantObject):
             vallist = list(value["values"])
             vallist.reverse()
             if len(vallist) * value["bits"] != len(self):
-                self._log.critical("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
-                                   (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)))
+                self._log.critical("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long",
+                                   len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self))
                 raise TypeError("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
                                 (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)))
 
@@ -608,7 +608,7 @@ class ModifiableObject(NonConstantObject):
             value = BinaryValue(value=num, n_bits=len(self), bigEndian=False)
 
         elif not isinstance(value, BinaryValue):
-            self._log.critical("Unsupported type for value assignment: %s (%s)" % (type(value), repr(value)))
+            self._log.critical("Unsupported type for value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
         simulator.set_signal_val_str(self._handle, value.binstr)
@@ -646,11 +646,11 @@ class RealObject(ModifiableObject):
             value (float): The value to drive onto the simulator object.
 
         Raises:
-            TypeError: If target has an unsupported type for 
+            TypeError: If target has an unsupported type for
                 real value assignment.
         """
         if not isinstance(value, float):
-            self._log.critical("Unsupported type for real value assignment: %s (%s)" % (type(value), repr(value)))
+            self._log.critical("Unsupported type for real value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
         simulator.set_signal_val_real(self._handle, value)
@@ -674,13 +674,13 @@ class EnumObject(ModifiableObject):
             value (int): The value to drive onto the simulator object.
 
         Raises:
-            TypeError: If target has an unsupported type for 
+            TypeError: If target has an unsupported type for
                  integer value assignment.
         """
         if isinstance(value, BinaryValue):
             value = int(value)
         elif not isinstance(value, integer_types):
-            self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
+            self._log.critical("Unsupported type for integer value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
         simulator.set_signal_val_long(self._handle, value)
@@ -702,13 +702,13 @@ class IntegerObject(ModifiableObject):
             value (int): The value to drive onto the simulator object.
 
         Raises:
-            TypeError: If target has an unsupported type for 
+            TypeError: If target has an unsupported type for
                  integer value assignment.
         """
         if isinstance(value, BinaryValue):
             value = int(value)
         elif not isinstance(value, integer_types):
-            self._log.critical("Unsupported type for integer value assignment: %s (%s)" % (type(value), repr(value)))
+            self._log.critical("Unsupported type for integer value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
         simulator.set_signal_val_long(self._handle, value)
@@ -729,11 +729,11 @@ class StringObject(ModifiableObject):
             value (str): The value to drive onto the simulator object.
 
         Raises:
-            TypeError: If target has an unsupported type for 
+            TypeError: If target has an unsupported type for
                  string value assignment.
         """
         if not isinstance(value, str):
-            self._log.critical("Unsupported type for string value assignment: %s (%s)" % (type(value), repr(value)))
+            self._log.critical("Unsupported type for string value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
         simulator.set_signal_val_str(self._handle, value)
