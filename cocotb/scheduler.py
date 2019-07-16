@@ -35,20 +35,15 @@ also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
 import collections
-import copy
 import os
-import time
+import sys
 import logging
 import threading
 
-if "COCOTB_SIM" in os.environ:
-    import simulator
-else:
-    simulator = None
-
 # Debug mode controlled by environment variables
 if "COCOTB_ENABLE_PROFILING" in os.environ:
-    import cProfile, StringIO, pstats
+    import cProfile
+    import pstats
     _profile = cProfile.Profile()
     _profiling = True
 else:
@@ -64,12 +59,19 @@ else:
 
 import cocotb
 import cocotb.decorators
-from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly, PythonTrigger,
+from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
-from cocotb.result import (TestComplete, TestError, ReturnValue, raise_error,
-                           create_error, ExternalException)
+from cocotb.result import (TestComplete, create_error)
 from cocotb.utils import nullcontext
+
+# On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
+# Since `OrderedDict` is a little slower that `dict`, we prefer the latter
+# when possible.
+if sys.version_info[:2] >= (3, 7):
+    _ordered_dict = dict
+else:
+    _ordered_dict = collections.OrderedDict
 
 
 class InternalError(RuntimeError):
@@ -224,16 +226,16 @@ class Scheduler(object):
 
         # A dictionary of pending coroutines for each trigger,
         # indexed by trigger
-        self._trigger2coros = collections.OrderedDict()
+        self._trigger2coros = _ordered_dict()
 
         # A dictionary mapping coroutines to the trigger they are waiting for
-        self._coro2trigger = collections.OrderedDict()
+        self._coro2trigger = _ordered_dict()
 
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
 
         # A dictionary of pending writes
-        self._writes = collections.OrderedDict()
+        self._writes = _ordered_dict()
 
         self._pending_coros = []
         self._pending_triggers = []
@@ -284,10 +286,10 @@ class Scheduler(object):
                 self._timer1.unprime()
 
             self._timer1.prime(self.begin_test)
-            self._trigger2coros = collections.OrderedDict()
-            self._coro2trigger = collections.OrderedDict()
+            self._trigger2coros = _ordered_dict()
+            self._coro2trigger = _ordered_dict()
             self._terminate = False
-            self._writes = collections.OrderedDict()
+            self._writes = _ordered_dict()
             self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
@@ -398,8 +400,11 @@ class Scheduler(object):
                 # this only exists to enable the warning above
                 is_first = False
 
-                if trigger not in self._trigger2coros:
-
+                # Scheduled coroutines may append to our waiting list so the first
+                # thing to do is pop all entries waiting on this trigger.
+                try:
+                    scheduling = self._trigger2coros.pop(trigger)
+                except KeyError:
                     # GPI triggers should only be ever pending if there is an
                     # associated coroutine waiting on that trigger, otherwise it would
                     # have been unprimed already
@@ -420,9 +425,6 @@ class Scheduler(object):
                     del trigger
                     continue
 
-                # Scheduled coroutines may append to our waiting list so the first
-                # thing to do is pop all entries waiting on this trigger.
-                scheduling = self._trigger2coros.pop(trigger)
 
                 if _debug:
                     debugstr = "\n\t".join([coro.__name__ for coro in scheduling])
@@ -629,14 +631,14 @@ class Scheduler(object):
     # `isinstance` checks.
 
     def _trigger_from_started_coro(self, result):
-        # type: (RunningCoroutine) -> Trigger
+        # type: (cocotb.decorators.RunningCoroutine) -> Trigger
         if _debug:
             self.log.debug("Joining to already running coroutine: %s" %
                            result.__name__)
         return result.join()
 
     def _trigger_from_unstarted_coro(self, result):
-        # type: (RunningCoroutine) -> Trigger
+        # type: (cocotb.decorators.RunningCoroutine) -> Trigger
         self.queue(result)
         if _debug:
             self.log.debug("Scheduling nested coroutine: %s" %
@@ -644,7 +646,7 @@ class Scheduler(object):
         return result.join()
 
     def _trigger_from_waitable(self, result):
-        # type: (Waitable) -> Trigger
+        # type: (cocotb.triggers.Waitable) -> Trigger
         return self._trigger_from_unstarted_coro(result._wait())
 
     def _trigger_from_list(self, result):
@@ -729,11 +731,6 @@ class Scheduler(object):
         # We do not return from here until pending threads have completed, but only
         # from the main thread, this seems like it could be problematic in cases
         # where a sim might change what this thread is.
-        def unblock_event(ext):
-            @cocotb.coroutine
-            def wrapper():
-                ext.event.set()
-                yield PythonTrigger()
 
         if self._main_thread is threading.current_thread():
 

@@ -32,13 +32,11 @@ Everything related to logging
 import os
 import sys
 import logging
-import inspect
 import warnings
 
 from cocotb.utils import get_sim_time
 
 import cocotb.ANSI as ANSI
-from pdb import set_trace
 
 if "COCOTB_REDUCED_LOG_FMT" in os.environ:
     _suppress = True

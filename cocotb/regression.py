@@ -28,7 +28,6 @@
 """All things relating to regression capabilities."""
 
 import time
-import logging
 import inspect
 from itertools import product
 import sys
@@ -241,42 +240,37 @@ class RegressionManager(object):
         Args:
             result: The sub-exception of TestComplete to raise.
         """
-        real_time   = time.time() - self._running_test.start_time
-        sim_time_ns = get_sim_time('ns') - self._running_test.start_sim_time
-        try:
-            ratio_time  = sim_time_ns / real_time
-        except ZeroDivisionError:
-            if round(sim_time_ns, 2) == 0:
-                ratio_time = float('nan')
-            else:
-                ratio_time = float('inf')
-        self.xunit.add_testcase(name=self._running_test.funcname,
-                                classname=self._running_test.module,
+        test = self._running_test
+
+        real_time   = time.time() - test.start_time
+        sim_time_ns = get_sim_time('ns') - test.start_sim_time
+        ratio_time  = self._safe_divide(sim_time_ns, real_time)
+        
+        self.xunit.add_testcase(name=test.funcname,
+                                classname=test.module,
                                 time=repr(real_time),
                                 sim_time_ns=repr(sim_time_ns),
                                 ratio_time=repr(ratio_time))
 
-        running_test_funcname = self._running_test.funcname
-
         # Helper for logging result
         def _result_was():
             result_was = ("%s (result was %s)" %
-                          (running_test_funcname, result.__class__.__name__))
+                          (test.funcname, result.__class__.__name__))
             return result_was
 
         result_pass = True
 
         if (isinstance(result, TestSuccess) and
-                not self._running_test.expect_fail and
-                not self._running_test.expect_error):
-            self.log.info("Test Passed: %s" % running_test_funcname)
+                not test.expect_fail and
+                not test.expect_error):
+            self.log.info("Test Passed: %s" % test.funcname)
 
         elif (isinstance(result, TestFailure) and
-                self._running_test.expect_fail):
+                test.expect_fail):
             self.log.info("Test failed as expected: " + _result_was())
 
         elif (isinstance(result, TestSuccess) and
-              self._running_test.expect_error):
+              test.expect_error):
             self.log.error("Test passed but we expected an error: " +
                            _result_was())
             self._add_failure(result)
@@ -288,17 +282,17 @@ class RegressionManager(object):
             self._add_failure(result)
             result_pass = False
 
-        elif isinstance(result, TestError) and self._running_test.expect_error:
+        elif isinstance(result, TestError) and test.expect_error:
             self.log.info("Test errored as expected: " + _result_was())
 
         elif isinstance(result, SimFailure):
-            if self._running_test.expect_error:
+            if test.expect_error:
                 self.log.info("Test errored as expected: " + _result_was())
             else:
                 self.log.error("Test error has lead to simulator shutting us "
                                "down")
                 self._add_failure(result)
-                self._store_test_result(self._running_test.module, self._running_test.funcname, False, sim_time_ns, real_time, ratio_time)
+                self._store_test_result(test.module, test.funcname, False, sim_time_ns, real_time, ratio_time)
                 self.tear_down()
                 return
 
@@ -307,7 +301,7 @@ class RegressionManager(object):
             self._add_failure(result)
             result_pass = False
 
-        self._store_test_result(self._running_test.module, self._running_test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
+        self._store_test_result(test.module, test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
 
         self.execute()
 
@@ -325,7 +319,7 @@ class RegressionManager(object):
                            self.count, self.ntests,
                            end,
                            self._running_test.funcname))
-            if self.count is 1:
+            if self.count == 1:
                 test = cocotb.scheduler.add(self._running_test)
             else:
                 test = cocotb.scheduler.new_test(self._running_test)
@@ -383,7 +377,7 @@ class RegressionManager(object):
     def _log_sim_summary(self):
         real_time   = time.time() - self.start_time
         sim_time_ns = get_sim_time('ns')
-        ratio_time  = sim_time_ns / real_time
+        ratio_time  = self._safe_divide(sim_time_ns, real_time)
 
         summary = ""
 
@@ -396,7 +390,17 @@ class RegressionManager(object):
         summary += "*************************************************************************************\n"
 
         self.log.info(summary)
-
+    
+    @staticmethod
+    def _safe_divide(a, b):
+        try:
+            return a / b
+        except ZeroDivisionError:
+            if a == 0:
+                return float('nan')
+            else:
+                return float('inf')
+    
     def _store_test_result(self, module_name, test_name, result_pass, sim_time, real_time, ratio):
         result = {
             'test'  : '.'.join([module_name, test_name]),

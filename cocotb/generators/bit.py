@@ -34,10 +34,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
     These yield a tuple which is intended to be interpreted as a number of
     cycles (ON,OFF)
 """
-import random
+import sys
 
 from cocotb.decorators import public
 from cocotb.generators import *
+
+if sys.version_info.major < 3:
+    # zip is not lazy on python 2, so use itertools
+    import itertools
+    izip = itertools.izip
+else:
+    izip = zip
 
 
 def bit_toggler(gen_on, gen_off):
@@ -48,8 +55,8 @@ def bit_toggler(gen_on, gen_off):
 
         gen_off (generator): generator that yields number of cycles off
     """
-    while True:
-        yield int(abs(next(gen_on))), int(abs(next(gen_off)))
+    for n_on, n_off in izip(gen_on, gen_off):
+        yield int(abs(n_on)), int(abs(n_off))
 
 
 @public

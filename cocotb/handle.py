@@ -29,12 +29,8 @@
 
 # -*- coding: utf-8 -*-
 
-import logging
 import ctypes
-import traceback
-import sys
 import warnings
-from io import StringIO, BytesIO
 
 import os
 
@@ -78,7 +74,7 @@ class SimHandleBase(object):
         self._handle = handle
         self._len = None
         self._sub_handles = {}  # Dictionary of children
-        self._invalid_sub_handles = {} # Dictionary of invalid queries
+        self._invalid_sub_handles = {}  # Dictionary of invalid queries
 
         self._name = simulator.get_name_string(self._handle)
         self._type = simulator.get_type_string(self._handle)
@@ -111,7 +107,8 @@ class SimHandleBase(object):
 
         # Permits comparison of handles i.e. if clk == dut.clk
         if isinstance(other, SimHandleBase):
-            if self._handle == other._handle: return 0
+            if self._handle == other._handle:
+                return 0
             return 1
 
     def __ne__(self, other):
@@ -181,7 +178,8 @@ class RegionObject(SimHandleBase):
         mapping. Hierarchy can't change after elaboration so we only have to
         do this once.
         """
-        if self._discovered: return
+        if self._discovered:
+            return
         self._log.debug("Discovering all on %s", self._name)
         iterator = simulator.iterate(self._handle, simulator.OBJECTS)
         while True:
@@ -199,7 +197,7 @@ class RegionObject(SimHandleBase):
 
             key = self._sub_handle_key(name)
 
-            if not key is None:
+            if key is not None:
                 self._sub_handles[key] = hdl
             else:
                 self._log.debug("Unable to translate handle >%s< to a valid _sub_handle key" % hdl._name)
@@ -257,9 +255,10 @@ class HierarchyObject(RegionObject):
         """Query the simulator for a object with the specified name
         and cache the result to build a tree of objects.
         """
-        if name in self._sub_handles:
-            sub = self._sub_handles[name]
+        try:
             return self._sub_handles[name]
+        except KeyError:
+            pass
 
         if name.startswith("_"):
             return SimHandleBase.__getattr__(self, name)
@@ -270,8 +269,10 @@ class HierarchyObject(RegionObject):
             if name in self._compat_mapping:
                 return SimHandleBase.__getattr__(self, name)
             raise AttributeError("%s contains no object named %s" % (self._name, name))
-        self._sub_handles[name] = SimHandle(new_handle, self._child_path(name))
-        return self._sub_handles[name]
+
+        sub_handle = SimHandle(new_handle, self._child_path(name))
+        self._sub_handles[name] = sub_handle
+        return sub_handle
 
     def __hasattr__(self, name):
         """Since calling ``hasattr(handle, "something")`` will print out a
@@ -317,11 +318,11 @@ class HierarchyArrayObject(RegionObject):
         # VHPI(ALDEC):        _name__X where X is the index
         # VPI:                _name[X] where X is the index
         import re
-        result = re.match("{0}__(?P<index>\d+)$".format(self._name), name)
+        result = re.match(r"{0}__(?P<index>\d+)$".format(self._name), name)
         if not result:
-            result = re.match("{0}\((?P<index>\d+)\)$".format(self._name), name)
+            result = re.match(r"{0}\((?P<index>\d+)\)$".format(self._name), name)
         if not result:
-            result = re.match("{0}\[(?P<index>\d+)\]$".format(self._name), name)
+            result = re.match(r"{0}\[(?P<index>\d+)\]$".format(self._name), name)
 
         if result:
             return int(result.group("index"))
@@ -415,7 +416,8 @@ class NonHierarchyObject(SimHandleBase):
 
     def __eq__(self, other):
         if isinstance(other, SimHandleBase):
-            if self._handle == other._handle: return 0
+            if self._handle == other._handle:
+                return 0
             return 1
 
         # Use the comparison method of the other object against our value
@@ -454,7 +456,7 @@ class ConstantObject(NonHierarchyObject):
             self._value = BinaryValue(n_bits=len(val))
             try:
                 self._value.binstr = val
-            except:
+            except Exception:
                 self._value = val
 
     def __int__(self):
@@ -766,7 +768,7 @@ def SimHandle(handle, path=None):
     t = simulator.get_type(handle)
 
     # Special case for constants
-    if simulator.get_const(handle) and not t in [simulator.MODULE,
+    if simulator.get_const(handle) and t not in [simulator.MODULE,
                                                  simulator.STRUCTURE,
                                                  simulator.NETARRAY,
                                                  simulator.GENARRAY]:

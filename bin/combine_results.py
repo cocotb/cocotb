@@ -12,7 +12,6 @@ from xml.etree import cElementTree as ET
 
 
 def find_all(name, path):
-    result = []
     for root, dirs, files in os.walk(path):
         if name in files:
             yield os.path.join(root, name)

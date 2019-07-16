@@ -39,7 +39,7 @@ import warnings
 
 if "COCOTB_SIM" in os.environ:
     import simulator
-    _LOG_SIM_PRECISION = simulator.get_precision() # request once and cache
+    _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
 else:
     simulator = None
     _LOG_SIM_PRECISION = -15
@@ -48,7 +48,7 @@ else:
 if sys.version_info.major >= 3:
     integer_types = (int,)
 else:
-    integer_types = (int, long)
+    integer_types = (int, long)  # noqa
 
 
 def get_python_integer_types():

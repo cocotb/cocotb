@@ -29,16 +29,14 @@
 
 """Set of common driver base classes."""
 
-import logging
 from collections import deque
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import (Event, RisingEdge, ReadOnly, Timer, NextTimeStep,
+from cocotb.triggers import (Event, RisingEdge, ReadOnly, NextTimeStep,
                              Edge)
 from cocotb.bus import Bus
 from cocotb.log import SimLog
-from cocotb.result import ReturnValue
 from cocotb.utils import reject_remaining_kwargs
 
 
@@ -334,7 +332,8 @@ def polled_socket_attachment(driver, sock):
     """Non-blocking socket attachment that queues any payload received from the
     socket to be queued for sending into the driver.
     """
-    import socket, errno
+    import socket
+    import errno
     sock.setblocking(False)
     driver.log.info("Listening for data from %s" % repr(sock))
     while True:
