@@ -27,17 +27,11 @@
 
 """A clock class."""
 
-import os
 import itertools
-
-if "COCOTB_SIM" in os.environ:
-    import simulator
-else:
-    simulator = None
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import Timer, RisingEdge
+from cocotb.triggers import Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps, lazy_property
 
 

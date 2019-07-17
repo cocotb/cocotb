@@ -3,7 +3,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -103,9 +103,9 @@ class BinaryValue(object):
             value (str or int or long, optional): Value to assign to the bus.
             n_bits (int, optional): Number of bits to use for the underlying
                 binary representation.
-            bigEndian (bool, optional): Interpret the binary as big-endian 
+            bigEndian (bool, optional): Interpret the binary as big-endian
                 when converting to/from a string buffer.
-            binaryRepresentation (BinaryRepresentation): The representation 
+            binaryRepresentation (BinaryRepresentation): The representation
                 of the binary value
                 (one of :any:`UNSIGNED`, :any:`SIGNED_MAGNITUDE`, :any:`TWOS_COMPLEMENT`).
                 Defaults to unsigned representation.
@@ -147,7 +147,7 @@ class BinaryValue(object):
 
         We possibly try to be a bit too clever here by first of
         all trying to assign the raw string as a binstring, however
-        if the string contains any characters that aren't 
+        if the string contains any characters that aren't
         ``0``, ``1``, ``X`` or ``Z``
         then we interpret the string as a binary buffer.
 
@@ -365,7 +365,7 @@ class BinaryValue(object):
                     "Access to the value as a buffer.")
 
     def get_binstr(self):
-        """Attribute :attr:`binstr` is the binary representation stored as 
+        """Attribute :attr:`binstr` is the binary representation stored as
         a string of ``1`` and ``0``."""
         return self._str
 
@@ -501,11 +501,11 @@ class BinaryValue(object):
     def __rmod__(self, other):
         return other % self.integer
 
-    def __pow__(self, other, modulo):
-        return pow(self.integer, other, modulo)
+    def __pow__(self, other, modulo=None):
+        return pow(self.integer, other)
 
-    def __ipow__(self, other, modulo):
-        self.integer = pow(self.integer, other, modulo)
+    def __ipow__(self, other):
+        self.integer = pow(self.integer, other)
         return self
 
     def __rpow__(self, other):
@@ -573,7 +573,7 @@ class BinaryValue(object):
     def __rdiv__(self, other):
         return other / self.integer
 
-    def __neg__(self, other):
+    def __neg__(self):
         return - self.integer
 
     def __pos__(self):

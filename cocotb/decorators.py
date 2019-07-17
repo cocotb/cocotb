@@ -29,20 +29,18 @@ from __future__ import print_function
 import sys
 import time
 import logging
-import traceback
-import pdb
 import functools
 import threading
 import inspect
 import textwrap
 import os
 
-from io import StringIO, BytesIO
+from io import StringIO
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.result import (TestComplete, TestError, TestFailure, TestSuccess,
-                           ReturnValue, raise_error, ExternalException)
+from cocotb.result import (TestComplete, TestFailure, TestSuccess,
+                           ReturnValue, raise_error)
 from cocotb.utils import get_sim_time, with_metaclass, exec_, lazy_property
 from cocotb import outcomes
 

@@ -27,7 +27,7 @@ import logging
 
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
+from cocotb.result import TestFailure
 
 @cocotb.test()
 def recursive_discovery(dut):
@@ -61,18 +61,18 @@ def discovery_all(dut):
     dut._log.info("Trying to discover")
     yield Timer(0)
     for thing in dut:
-        thing._log.info("Found something: %s" % thing._fullname)
+        thing._log.info("Found something: %s", thing._fullname)
         #for subthing in thing:
         #    thing._log.info("Found something: %s" % thing._fullname)
 
-    dut._log.info("length of dut.inst_acs is %d" % len(dut.gen_acs))
+    dut._log.info("length of dut.inst_acs is %d", len(dut.gen_acs))
     item = dut.gen_acs[3]
     item._log.info("this is item")
 
 @cocotb.coroutine
 def iteration_loop(dut):
     for thing in dut:
-        thing._log.info("Found something: %s" % thing._fullname)
+        thing._log.info("Found something: %s", thing._fullname)
         yield Timer(1)
 
 @cocotb.test()
@@ -84,7 +84,7 @@ def dual_iteration(dut):
 
 @cocotb.test()
 def get_clock(dut):
-    dut._log.info("dut.aclk is %s" % dut.aclk.__class__.__name__)
+    dut._log.info("dut.aclk is %s", dut.aclk.__class__.__name__)
     dut.aclk <= 0
     yield Timer(1)
     dut.aclk <= 1
@@ -108,4 +108,3 @@ def test_n_dimension_array(dut):
 
     if inner_count != 14 or outer_count != 2:
         raise TestFailure("dut.inst_ram_ctrl.config should have a total of 14 elems over 2 loops")
-

@@ -34,18 +34,18 @@ from cocotb.drivers import Driver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
 
-_XGMII_IDLE      = "\x07"  # noqa
-_XGMII_START     = "\xFB"  # noqa
-_XGMII_TERMINATE = "\xFD"  # noqa
+_XGMII_IDLE      = b"\x07"  # noqa
+_XGMII_START     = b"\xFB"  # noqa
+_XGMII_TERMINATE = b"\xFD"  # noqa
 
 # Preamble is technically supposed to be 7 bytes of 0x55 but it seems that it's
 # permissible for the start byte to replace one of the preamble bytes
 # see http://grouper.ieee.org/groups/802/3/10G_study/email/msg04647.html
-_PREAMBLE_SFD = "\x55\x55\x55\x55\x55\x55\xD5"
+_PREAMBLE_SFD = b"\x55\x55\x55\x55\x55\x55\xD5"
 
 
 class _XGMIIBus(object):
-    """Helper object for abstracting the underlying bus format.
+    r"""Helper object for abstracting the underlying bus format.
 
     Index bytes directly on this object, pass a tuple of ``(value, ctrl)`` to
     set a byte.
@@ -54,7 +54,7 @@ class _XGMIIBus(object):
 
     >>> xgmii = _XGMIIBus(4)
     >>> xgmii[0] = (_XGMII_IDLE, True)  # Control byte
-    >>> xgmii[1] = ("\x55", False)      # Data byte
+    >>> xgmii[1] = (b"\x55", False)      # Data byte
     """
 
     def __init__(self, nbytes, interleaved=True):
@@ -84,7 +84,7 @@ class _XGMIIBus(object):
     def __setitem__(self, index, value):
         byte, ctrl = value
 
-        if isinstance(byte, str):
+        if isinstance(byte, bytes):
             byte = ord(byte)
 
         if index >= self._nbytes:
@@ -135,7 +135,7 @@ class XGMII(Driver):
         self.log = signal._log
         self.signal = signal
         self.clock = clock
-        self.bus = _XGMIIBus(len(signal)/9, interleaved=interleaved)
+        self.bus = _XGMIIBus(len(signal)//9, interleaved=interleaved)
         Driver.__init__(self)
 
     @staticmethod
@@ -151,7 +151,7 @@ class XGMII(Driver):
             str: The formatted layer 1 packet.
         """
         if len(packet) < 60:
-            padding = "\x00" * (60 - len(packet))
+            padding = b"\x00" * (60 - len(packet))
             packet += padding
         return (_PREAMBLE_SFD + packet +
                 struct.pack("<I", zlib.crc32(packet) & 0xFFFFFFFF))
@@ -180,9 +180,9 @@ class XGMII(Driver):
         """Send a packet over the bus.
 
         Args:
-            pkt (str): The Ethernet packet to drive onto the bus.
+            pkt (bytes): The Ethernet packet to drive onto the bus.
         """
-        pkt = self.layer1(str(pkt))
+        pkt = self.layer1(bytes(pkt))
 
         self.log.debug("Sending packet of length %d bytes" % len(pkt))
         self.log.debug(hexdump(pkt))
@@ -207,7 +207,7 @@ class XGMII(Driver):
             for i in range(len(self.bus)):
                 if i == len(pkt):
                     self.terminate(i)
-                    pkt = ""
+                    pkt = b""
                     done = True
                     break
                 self.bus[i] = (pkt[i], False)

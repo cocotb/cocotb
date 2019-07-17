@@ -30,7 +30,6 @@
 """Common scoreboarding capability."""
 
 import logging
-import cocotb
 
 from cocotb.utils import hexdump, hexdiffs
 from cocotb.log import SimLog

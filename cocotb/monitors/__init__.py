@@ -3,7 +3,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,13 +33,11 @@ The monitor is responsible for watching the pins of the DUT and recreating
 the transactions.
 """
 
-import math
 from collections import deque
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import Edge, Event, RisingEdge, ReadOnly, Timer
-from cocotb.binary import BinaryValue
+from cocotb.triggers import Event, Timer
 from cocotb.bus import Bus
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
@@ -52,9 +50,9 @@ class MonitorStatistics(object):
 
 
 class Monitor(object):
-    """Base class for Monitor objects. 
+    """Base class for Monitor objects.
 
-    Monitors are passive 'listening' objects that monitor pins going in or out of a DUT. 
+    Monitors are passive 'listening' objects that monitor pins going in or out of a DUT.
     This class should not be used
     directly, but should be subclassed and the internal :any:`_monitor_recv` method
     should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
@@ -67,8 +65,8 @@ class Monitor(object):
     :class:`~cocotb.scoreboard.Scoreboard`.
 
     Args:
-        callback (callable): Callback to be called with each recovered transaction 
-            as the argument. If the callback isn't used, received transactions will 
+        callback (callable): Callback to be called with each recovered transaction
+            as the argument. If the callback isn't used, received transactions will
             be placed on a queue and the event used to notify any consumers.
         event (event): Object that supports a ``set`` method that will be called when
             a transaction is received through the internal :any:`_recv` method.
@@ -110,13 +108,13 @@ class Monitor(object):
         Args:
             callback (callable): The function to call back.
         """
-        self.log.debug("Adding callback of function %s to monitor" %
-                       (callback.__name__))
+        self.log.debug("Adding callback of function %s to monitor",
+                       callback.__name__)
         self._callbacks.append(callback)
 
     @coroutine
     def wait_for_recv(self, timeout=None):
-        """With *timeout*, :meth:`.wait` for transaction to arrive on monitor 
+        """With *timeout*, :meth:`.wait` for transaction to arrive on monitor
         and return its data.
 
         Args:
@@ -181,7 +179,7 @@ class BusMonitor(Monitor):
         self.clock = clock
         self.bus = Bus(self.entity, self.name, self._signals,
                        optional_signals=self._optional_signals,
-                       bus_separator=bus_separator,array_idx=array_idx)
+                       bus_separator=bus_separator, array_idx=array_idx)
         self._reset = reset
         self._reset_n = reset_n
         Monitor.__init__(self, callback=callback, event=event)

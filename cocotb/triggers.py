@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,9 +28,9 @@
 """A collections of triggers which a testbench can yield."""
 
 import os
-import weakref
 import sys
 import textwrap
+import abc
 
 if "COCOTB_SIM" in os.environ:
     import simulator
@@ -51,28 +51,48 @@ import cocotb
 class TriggerException(Exception):
     pass
 
-class Trigger(object):
+class Trigger(with_metaclass(abc.ABCMeta)):
     """Base class to derive from."""
-    
+    __slots__ = ('primed', '__weakref__')
+
     def __init__(self):
-        self.signal = None
         self.primed = False
 
     @lazy_property
     def log(self):
         return SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
 
-    def prime(self, *args):
-        """Don't call this in your own code, this is for internal use by the scheduler."""
+    @abc.abstractmethod
+    def prime(self, callback):
+        """Set a callback to be invoked when the trigger fires.
+
+        The callback will be invoked with a single argumement, `self`.
+
+        Subclasses must override this, but should end by calling the base class
+        method.
+
+        Do not call this directly within coroutines, it is intended to be used
+        only by the scheduler.
+        """
         self.primed = True
 
     def unprime(self):
-        """Remove any pending callbacks if necessary."""
+        """Remove the callback, and perform cleanup if necessary.
+
+        After being unprimed, a Trigger may be reprimed again in future.
+        Calling `unprime` multiple times is allowed, subsequent calls should be
+        a no-op.
+
+        Subclasses may override this, but should end by calling the base class
+        method.
+
+        Do not call this directly within coroutines, it is intended to be used
+        only by the scheduler.
+        """
         self.primed = False
 
     def __del__(self):
-        """Ensure if a trigger drops out of scope we remove any pending
-        callbacks."""
+        # Ensure if a trigger drops out of scope we remove any pending callbacks
         self.unprime()
 
     def __str__(self):
@@ -80,6 +100,11 @@ class Trigger(object):
 
     @property
     def _outcome(self):
+        """The result that `yield this_trigger` produces in a coroutine.
+
+        The default is to produce the trigger itself, which is done for
+        ease of use with :class:`~cocotb.triggers.First`.
+        """
         return outcomes.Value(self)
 
     # Once 2.7 is dropped, this can be run unconditionally
@@ -93,19 +118,17 @@ class Trigger(object):
 
 class PythonTrigger(Trigger):
     """Python triggers don't use GPI at all.
-        For example notification of coroutine completion etc.
 
-        TODO:
-            Still need to implement unprime.
-        """
-    pass
+    For example notification of coroutine completion etc.
+    """
 
 
 class GPITrigger(Trigger):
     """Base Trigger class for GPI triggers.
     Consumes simulation time.
     """
-    
+    __slots__ = ('cbhdl',)
+
     def __init__(self):
         Trigger.__init__(self)
 
@@ -145,17 +168,24 @@ class Timer(GPITrigger):
                                                            callback, self)
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
+        GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(%1.2fps)" % get_time_from_sim_steps(self.sim_steps,units='ps')
 
 
-class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
+# This is needed to make our custom metaclass work with abc.ABCMeta used in the
+# `Trigger` base class.
+class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
+    pass
+
+
+class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when the readonly portion of the sim cycles is
     reached.
     """
-    
+    __slots__ = ()
+
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -164,22 +194,22 @@ class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        """Don't call this in your own code, this is for internal use by the scheduler."""
         if self.cbhdl == 0:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
+        GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
 
 
-class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
+class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when the readwrite portion of the sim cycles is
     reached.
     """
-    
+    __slots__ = ()
+
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -188,22 +218,22 @@ class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        """Don't call this in your own code, this is for internal use by the scheduler."""
         if self.cbhdl == 0:
             # import pdb
             # pdb.set_trace()
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
+        GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
 
 
-class NextTimeStep(with_metaclass(ParametrizedSingleton, GPITrigger)):
+class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when the next time step is started."""
-    
+    __slots__ = ()
+
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -216,15 +246,16 @@ class NextTimeStep(with_metaclass(ParametrizedSingleton, GPITrigger)):
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
+        GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(nexttimestep)"
 
 
-class _EdgeBase(with_metaclass(ParametrizedSingleton, GPITrigger)):
+class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when an edge occurs on the provided signal."""
-    
+    __slots__ = ('signal',)
+
     @classmethod
     @property
     def _edge_type(self):
@@ -247,7 +278,7 @@ class _EdgeBase(with_metaclass(ParametrizedSingleton, GPITrigger)):
             )
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        super(_EdgeBase, self).prime()
+        super(_EdgeBase, self).prime(callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal._name
@@ -255,20 +286,20 @@ class _EdgeBase(with_metaclass(ParametrizedSingleton, GPITrigger)):
 
 class RisingEdge(_EdgeBase):
     """Triggers on the rising edge of the provided signal."""
-    
+    __slots__ = ()
     _edge_type = 1
 
 
 class FallingEdge(_EdgeBase):
     """Triggers on the falling edge of the provided signal."""
-    
+    __slots__ = ()
     _edge_type = 2
 
 
 class Edge(_EdgeBase):
     """Triggers on either edge of the provided signal."""
+    __slots__ = ()
     _edge_type = 3
-
 
 
 class _Event(PythonTrigger):
@@ -287,7 +318,7 @@ class _Event(PythonTrigger):
     def prime(self, callback):
         self._callback = callback
         self.parent._prime_trigger(self, callback)
-        Trigger.prime(self)
+        Trigger.prime(self, callback)
 
     def __call__(self):
         self._callback(self)
@@ -322,7 +353,7 @@ class Event(object):
         until another wakes it.
 
         If the event has already been fired, this returns ``NullTrigger``.
-        To reset the event (and enable the use of ``wait`` again), 
+        To reset the event (and enable the use of ``wait`` again),
         :meth:`~cocotb.triggers.Event.clear` should be called.
         """
         if self.fired:
@@ -332,7 +363,7 @@ class Event(object):
     def clear(self):
         """Clear this event that has fired.
 
-        Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until 
+        Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until
         :meth:`~cocotb.triggers.Event.set` is called again."""
         self.fired = False
 
@@ -356,7 +387,7 @@ class _Lock(PythonTrigger):
     def prime(self, callback):
         self._callback = callback
         self.parent._prime_trigger(self, callback)
-        Trigger.prime(self)
+        Trigger.prime(self, callback)
 
     def __call__(self):
         self._callback(self)
@@ -437,9 +468,10 @@ class NullTrigger(Trigger):
         return self.__class__.__name__ + "(%s)" % self.name
 
 
-class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
+class Join(with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
     """Join a coroutine, firing when it exits."""
-    
+    __slots__ = ('_coroutine',)
+
     @classmethod
     def __singleton_key__(cls, coroutine):
         return coroutine
@@ -447,7 +479,6 @@ class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
     def __init__(self, coroutine):
         super(Join, self).__init__()
         self._coroutine = coroutine
-        self.pass_retval = True
 
     @property
     def _outcome(self):
@@ -455,11 +486,13 @@ class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
 
     @property
     def retval(self):
-        """FIXME: document"""
+        """The return value of the joined coroutine.
+
+        If the coroutine threw an exception, this attribute will re-raise it.
+        """
         return self._coroutine.retval
 
     def prime(self, callback):
-        """Don't call this in your own code, this is for internal use by the scheduler."""
         if self._coroutine._finished:
             callback(self)
         else:
@@ -476,6 +509,7 @@ class Waitable(object):
     This converts a `_wait` abstract method into a suitable `__await__` on
     supporting python versions (>=3.3).
     """
+    __slots__ = ()
     @decorators.coroutine
     def _wait(self):
         """
@@ -496,6 +530,8 @@ class _AggregateWaitable(Waitable):
     """
     Base class for Waitables that take mutiple triggers in their constructor
     """
+    __slots__ = ('triggers',)
+
     def __init__(self, *args):
         self.triggers = tuple(args)
 
@@ -528,6 +564,8 @@ class Combine(_AggregateWaitable):
 
     Like most triggers, this simply returns itself.
     """
+    __slots__ = ()
+
     @decorators.coroutine
     def _wait(self):
         waiters = []
@@ -565,6 +603,7 @@ class First(_AggregateWaitable):
             t2 = Timer(10, units='ps')
             t_ret = yield First(t1, t2)
     """
+    __slots__ = ()
 
     @decorators.coroutine
     def _wait(self):

@@ -2,8 +2,8 @@
 A set of tests that demonstrate Array structure support
 """
 
-import cocotb
 import logging
+import cocotb
 
 from cocotb.clock import Clock
 from cocotb.triggers import Timer, RisingEdge
@@ -12,7 +12,7 @@ from cocotb.handle import HierarchyObject, HierarchyArrayObject, ModifiableObjec
 
 def _check_type(tlog, hdl, expected):
     if not isinstance(hdl, expected):
-        raise TestFailure(">{0!r} ({1})< should be >{2}<".format(hdl, hdl._type ,expected))
+        raise TestFailure(">{0!r} ({1})< should be >{2}<".format(hdl, hdl._type, expected))
     else:
         tlog.info("   Found %r (%s) with length=%d", hdl, hdl._type, len(hdl))
 
@@ -155,7 +155,7 @@ def test_read_write(dut):
     dut.sig_logic_vec[2]     = 0
     if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")) or
                                            (cocotb.SIM_NAME.lower().startswith(("riviera")) and
-                                            cocotb.SIM_VERSION.startswith(("2016.06","2016.10","2017.02")))):
+                                            cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")))):
         dut.sig_t6[1][3][2]      = 1
         dut.sig_t6[0][2][7]      = 0
 
@@ -170,12 +170,12 @@ def test_read_write(dut):
     _check_logic(tlog, dut.port_logic_vec_out, 0xC8)
     if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")) or
                                            (cocotb.SIM_NAME.lower().startswith(("riviera")) and
-                                            cocotb.SIM_VERSION.startswith(("2016.06","2016.10","2017.02")))):
+                                            cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")))):
         _check_logic(tlog, dut.sig_t6[1][3][2], 1)
         _check_logic(tlog, dut.sig_t6[0][2][7], 0)
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        _check_str (tlog, dut.port_str_out , "Testing")
+        _check_str(tlog, dut.port_str_out, "Testing")
 
         _check_logic(tlog, dut.port_rec_out.b[1]     , 0xA3)
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)
@@ -213,7 +213,7 @@ def test_gen_loop(dut):
     if len(dut.asc_gen) != 8:
         raise TestError("Length of asc_gen is >{}< and should be 8".format(len(dut.asc_gen)))
     else:
-       tlog.info("Length of asc_gen is %d", len(dut.asc_gen))
+        tlog.info("Length of asc_gen is %d", len(dut.asc_gen))
 
     for gens in dut.asc_gen:
         tlog.info("Iterate access found %s", gens)
@@ -326,22 +326,22 @@ def test_discover_all(dut):
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
         if cocotb.SIM_VERSION.startswith(("2017.10.61")):
             pass_total = 803
-        elif cocotb.SIM_VERSION.startswith(("2016.06","2016.10","2017.02")):
+        elif cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")):
             pass_total = 813
         elif cocotb.SIM_VERSION.startswith(("2016.02")):
             pass_total = 947
-        else :
+        else:
             pass_total = 1038
     else:
         pass_total = 1078
 
-    def _discover(obj,indent):
+    def _discover(obj, indent):
         count = 0
         new_indent = indent+"---"
         for thing in obj:
             count += 1
             tlog.info("%sFound %r (%s)", indent, thing, thing._type)
-            count += _discover(thing,new_indent)
+            count += _discover(thing, new_indent)
         return count
 
     tlog.info("Iterating over %r (%s)", dut, dut._type)
@@ -404,18 +404,18 @@ def test_direct_signal_indexing(dut):
 
     tlog.info("Checking bit mapping from input to generate loops.")
     if int(dut.desc_gen[2].sig) != 1:
-        raise TestFailure("Expected {0!r} to be a 1 but got {1}".format(dut.desc_gen[2].sig,int(dut.desc_gen[2].sig)))
+        raise TestFailure("Expected {0!r} to be a 1 but got {1}".format(dut.desc_gen[2].sig, int(dut.desc_gen[2].sig)))
     else:
         tlog.info("   %r = %d", dut.desc_gen[2].sig, int(dut.desc_gen[2].sig))
 
     if int(dut.asc_gen[18].sig) != 1:
-        raise TestFailure("Expected {0!r} to be a 1 but got {1}".format(dut.asc_gen[18].sig,int(dut.asc_gen[18].sig)))
+        raise TestFailure("Expected {0!r} to be a 1 but got {1}".format(dut.asc_gen[18].sig, int(dut.asc_gen[18].sig)))
     else:
         tlog.info("   %r = %d", dut.asc_gen[18].sig, int(dut.asc_gen[18].sig))
 
     tlog.info("Checking indexing of data with offset index.")
     if int(dut.port_ofst_out) != 64:
-        raise TestFailure("Expected {0!r} to be a 64 but got {0}".format(dut.port_ofst_out, int(dut.port_ofst_out)))
+        raise TestFailure("Expected {0!r} to be a 64 but got {1}".format(dut.port_ofst_out, int(dut.port_ofst_out)))
     else:
         tlog.info("   %r = %d (%s)", dut.port_ofst_out, int(dut.port_ofst_out), dut.port_ofst_out.value.binstr)
 
@@ -433,7 +433,7 @@ def test_direct_signal_indexing(dut):
     _check_type(tlog, dut.sig_t4[3], NonHierarchyIndexableObject)
     # the following version cannot index into those arrays and will error out
     if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")) and
-            cocotb.SIM_VERSION.startswith(("2016.06","2016.10","2017.02"))) :
+            cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))):
         _check_type(tlog, dut.sig_t4[3][4], ModifiableObject)
         _check_type(tlog, dut.sig_t4[3][4][1], ModifiableObject)
     _check_type(tlog, dut.sig_t5, NonHierarchyIndexableObject)
@@ -444,7 +444,7 @@ def test_direct_signal_indexing(dut):
     _check_type(tlog, dut.sig_t6[1], NonHierarchyIndexableObject)
     # the following version cannot index into those arrays and will error out
     if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")) and
-            cocotb.SIM_VERSION.startswith(("2016.06","2016.10","2017.02"))) :
+            cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02"))):
         _check_type(tlog, dut.sig_t6[0][3], ModifiableObject)
         _check_type(tlog, dut.sig_t6[0][3][7], ModifiableObject)
     _check_type(tlog, dut.sig_cmplx, NonHierarchyIndexableObject)
@@ -459,7 +459,7 @@ def test_direct_signal_indexing(dut):
     # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
     # only true for version 2016.02
     if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")) and
-            cocotb.SIM_VERSION.startswith(("2016.02"))) :
+            cocotb.SIM_VERSION.startswith(("2016.02"))):
 
         _check_type(tlog, dut.sig_cmplx[1], HierarchyObject)
         _check_type(tlog, dut.sig_cmplx[1].a, ModifiableObject)
@@ -474,7 +474,7 @@ def test_direct_signal_indexing(dut):
     # Riviera has a bug and finds dut.sig_rec.b[1], but the type returned is 0 which is unknown
     # only true for version 2016.02
     if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")) and
-            cocotb.SIM_VERSION.startswith(("2016.02"))) :
+            cocotb.SIM_VERSION.startswith(("2016.02"))):
         _check_type(tlog, dut.sig_rec.b[1], ModifiableObject)
         _check_type(tlog, dut.sig_rec.b[1][2], ModifiableObject)
 

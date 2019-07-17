@@ -366,8 +366,13 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s)
     vpi_time_s.high = 0;
     vpi_time_s.low  = 0;
 
-    // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
-    vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
+    if (vpiStringVar == vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>())) {
+        // assigning to a vpiStringVar only seems to work with vpiNoDelay
+        vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, NULL, vpiNoDelay);
+    } else {
+        // Use Inertial delay to schedule an event, thus behaving like a verilog testbench
+        vpi_put_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s, &vpi_time_s, vpiInertialDelay);
+    }
     check_vpi_error();
 
     FEXIT
