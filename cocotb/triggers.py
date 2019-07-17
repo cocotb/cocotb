@@ -30,6 +30,7 @@
 import os
 import sys
 import textwrap
+import abc
 
 if "COCOTB_SIM" in os.environ:
     import simulator
@@ -50,7 +51,7 @@ import cocotb
 class TriggerException(Exception):
     pass
 
-class Trigger(object):
+class Trigger(with_metaclass(abc.ABCMeta)):
     """Base class to derive from."""
     __slots__ = ('primed', '__weakref__')
 
@@ -61,17 +62,37 @@ class Trigger(object):
     def log(self):
         return SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
 
-    def prime(self, *args):
-        """FIXME: document"""
+    @abc.abstractmethod
+    def prime(self, callback):
+        """Set a callback to be invoked when the trigger fires.
+
+        The callback will be invoked with a single argumement, `self`.
+
+        Subclasses must override this, but should end by calling the base class
+        method.
+
+        Do not call this directly within coroutines, it is intended to be used
+        only by the scheduler.
+        """
         self.primed = True
 
     def unprime(self):
-        """Remove any pending callbacks if necessary."""
+        """Remove the callback, and perform cleanup if necessary.
+
+        After being unprimed, a Trigger may be reprimed again in future.
+        Calling `unprime` multiple times is allowed, subsequent calls should be
+        a no-op.
+
+        Subclasses may override this, but should end by calling the base class
+        method.
+
+        Do not call this directly within coroutines, it is intended to be used
+        only by the scheduler.
+        """
         self.primed = False
 
     def __del__(self):
-        """Ensure if a trigger drops out of scope we remove any pending
-        callbacks."""
+        # Ensure if a trigger drops out of scope we remove any pending callbacks
         self.unprime()
 
     def __str__(self):
@@ -79,6 +100,11 @@ class Trigger(object):
 
     @property
     def _outcome(self):
+        """The result that `yield this_trigger` produces in a coroutine.
+
+        The default is to produce the trigger itself, which is done for
+        ease of use with :class:`~cocotb.triggers.First`.
+        """
         return outcomes.Value(self)
 
     # Once 2.7 is dropped, this can be run unconditionally
@@ -92,12 +118,9 @@ class Trigger(object):
 
 class PythonTrigger(Trigger):
     """Python triggers don't use GPI at all.
-        For example notification of coroutine completion etc.
 
-        TODO:
-            Still need to implement unprime.
-        """
-    pass
+    For example notification of coroutine completion etc.
+    """
 
 
 class GPITrigger(Trigger):
@@ -145,13 +168,19 @@ class Timer(GPITrigger):
                                                            callback, self)
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
+        GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(%1.2fps)" % get_time_from_sim_steps(self.sim_steps,units='ps')
 
 
-class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
+# This is needed to make our custom metaclass work with abc.ABCMeta used in the
+# `Trigger` base class.
+class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
+    pass
+
+
+class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when the readonly portion of the sim cycles is
     reached.
     """
@@ -165,18 +194,17 @@ class ReadOnly(with_metaclass(ParametrizedSingleton, GPITrigger)):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        """FIXME: document"""
         if self.cbhdl == 0:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
+        GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
 
 
-class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
+class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when the readwrite portion of the sim cycles is
     reached.
     """
@@ -190,20 +218,19 @@ class ReadWrite(with_metaclass(ParametrizedSingleton, GPITrigger)):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        """FIXME: document"""
         if self.cbhdl == 0:
             # import pdb
             # pdb.set_trace()
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
+        GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
 
 
-class NextTimeStep(with_metaclass(ParametrizedSingleton, GPITrigger)):
+class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when the next time step is started."""
     __slots__ = ()
 
@@ -219,13 +246,13 @@ class NextTimeStep(with_metaclass(ParametrizedSingleton, GPITrigger)):
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        Trigger.prime(self)
+        GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(nexttimestep)"
 
 
-class _EdgeBase(with_metaclass(ParametrizedSingleton, GPITrigger)):
+class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when an edge occurs on the provided signal."""
     __slots__ = ('signal',)
 
@@ -251,7 +278,7 @@ class _EdgeBase(with_metaclass(ParametrizedSingleton, GPITrigger)):
             )
             if self.cbhdl == 0:
                 raise_error(self, "Unable set up %s Trigger" % (str(self)))
-        super(_EdgeBase, self).prime()
+        super(_EdgeBase, self).prime(callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(%s)" % self.signal._name
@@ -291,7 +318,7 @@ class _Event(PythonTrigger):
     def prime(self, callback):
         self._callback = callback
         self.parent._prime_trigger(self, callback)
-        Trigger.prime(self)
+        Trigger.prime(self, callback)
 
     def __call__(self):
         self._callback(self)
@@ -360,7 +387,7 @@ class _Lock(PythonTrigger):
     def prime(self, callback):
         self._callback = callback
         self.parent._prime_trigger(self, callback)
-        Trigger.prime(self)
+        Trigger.prime(self, callback)
 
     def __call__(self):
         self._callback(self)
@@ -441,7 +468,7 @@ class NullTrigger(Trigger):
         return self.__class__.__name__ + "(%s)" % self.name
 
 
-class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
+class Join(with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
     """Join a coroutine, firing when it exits."""
     __slots__ = ('_coroutine',)
 
@@ -459,11 +486,13 @@ class Join(with_metaclass(ParametrizedSingleton, PythonTrigger)):
 
     @property
     def retval(self):
-        """FIXME: document"""
+        """The return value of the joined coroutine.
+
+        If the coroutine threw an exception, this attribute will re-raise it.
+        """
         return self._coroutine.retval
 
     def prime(self, callback):
-        """FIXME: document"""
         if self._coroutine._finished:
             callback(self)
         else:
