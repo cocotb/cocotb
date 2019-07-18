@@ -191,8 +191,8 @@ class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Fires when the current simulation timestep moves to the readonly phase.
 
     The :any:`ReadOnly` phase is entered when the current timestep no longer has any further delta steps.
-    This should be a point where all the signal values are stable as there are no more RTL events scheduled for the timestep.
-    The simulator should not allow scheduling of more events in this timestep.
+    This will be a point where all the signal values are stable as there are no more RTL events scheduled for the timestep.
+    The simulator will not allow scheduling of more events in this timestep.
     Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
     """
     __slots__ = ()
