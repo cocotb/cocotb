@@ -1,5 +1,5 @@
-Cococtb Contribution Guidelines
-===============================
+Cocotb Contribution Guidelines
+==============================
 
 Welcome to the cocotb development!
 We are an inclusive community with the common goal of improving the cocotb, a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
