@@ -305,3 +305,5 @@ breathe_domain_by_extension = {
     "h" : "cpp",
 }
 breathe_show_define_initializer = True
+
+autoclass_content = "both"
