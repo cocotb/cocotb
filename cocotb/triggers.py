@@ -163,10 +163,7 @@ class GPITrigger(Trigger):
 
 
 class Timer(GPITrigger):
-    """Execution will resume when the specified time period expires.
-
-    Consumes simulation time.
-    """
+    """Fires after the specified simulation time period has elapsed."""
     def __init__(self, time_ps, units=None):
         GPITrigger.__init__(self)
         self.sim_steps = get_sim_steps(time_ps, units)
@@ -191,8 +188,12 @@ class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
 
 
 class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
-    """Execution will resume when the readonly portion of the sim cycles is
-    reached.
+    """Fires when the current simulation timestep moves to the readonly phase.
+
+    The :any:`ReadOnly` phase is entered when the current timestep no longer has any further delta steps.
+    This should be a point where all the signal values are stable as there are no more RTL events scheduled for the timestep.
+    The simulator should not allow scheduling of more events in this timestep.
+    Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
     """
     __slots__ = ()
 
@@ -215,9 +216,7 @@ class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
 
 
 class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
-    """Execution will resume when the readwrite portion of the sim cycles is
-    reached.
-    """
+    """Fires when the readwrite portion of the sim cycles is reached."""
     __slots__ = ()
 
     @classmethod
@@ -241,7 +240,7 @@ class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
 
 
 class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
-    """Execution will resume when the next time step is started."""
+    """Fires when the next time step is started."""
     __slots__ = ()
 
     @classmethod
@@ -263,7 +262,7 @@ class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
 
 
 class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
-    """Execution will resume when an edge occurs on the provided signal."""
+    """Internal base class that fires on a given edge of a signal."""
     __slots__ = ('signal',)
 
     @classmethod
@@ -295,19 +294,19 @@ class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
 
 
 class RisingEdge(_EdgeBase):
-    """Triggers on the rising edge of the provided signal."""
+    """Fires on the rising edge of *signal*, on a transition from ``0`` to ``1``."""
     __slots__ = ()
     _edge_type = 1
 
 
 class FallingEdge(_EdgeBase):
-    """Triggers on the falling edge of the provided signal."""
+    """Fires on the falling edge of *signal*, on a transition from ``1`` to ``0``."""
     __slots__ = ()
     _edge_type = 2
 
 
 class Edge(_EdgeBase):
-    """Triggers on either edge of the provided signal."""
+    """Fires on any value change of *signal*."""
     __slots__ = ()
     _edge_type = 3
 
@@ -335,7 +334,11 @@ class _Event(PythonTrigger):
 
 
 class Event(object):
-    """Event to permit synchronisation between two coroutines."""
+    """Event to permit synchronisation between two coroutines.
+
+    Yielding :meth:`wait()` from one coroutine will block the coroutine until
+    :meth:`set()` is called somewhere else.
+    """
 
     def __init__(self, name=""):
         self._pending = []
@@ -347,7 +350,7 @@ class Event(object):
         self._pending.append(trigger)
 
     def set(self, data=None):
-        """Wake up any coroutines blocked on this event."""
+        """Wake up all coroutines blocked on this event."""
         self.fired = True
         self.data = data
 
@@ -359,12 +362,12 @@ class Event(object):
             trigger()
 
     def wait(self):
-        """This can be yielded to block this coroutine
-        until another wakes it.
+        """Get a trigger which fires when another coroutine sets the event.
 
-        If the event has already been fired, this returns ``NullTrigger``.
+        If the event has already been set, the trigger will fire immediately.
+
         To reset the event (and enable the use of ``wait`` again),
-        :meth:`~cocotb.triggers.Event.clear` should be called.
+        :meth:`clear` should be called.
         """
         if self.fired:
             return NullTrigger(name="{}.wait()".format(str(self)))
@@ -404,13 +407,22 @@ class _Lock(PythonTrigger):
 
 
 class Lock(object):
-    """Lock primitive (not re-entrant)."""
+    """Lock primitive (not re-entrant).
+
+    This should be used as::
+
+        yield lock.acquire()
+        try:
+            # do some stuff
+        finally:
+            lock.release()
+    """
 
     def __init__(self, name=""):
         self._pending_unprimed = []
         self._pending_primed = []
         self.name = name
-        self.locked = False
+        self.locked = False  #: True if the lock is held
 
     def _prime_trigger(self, trigger, callback):
         self._pending_unprimed.remove(trigger)
@@ -422,7 +434,7 @@ class Lock(object):
             self._pending_primed.append(trigger)
 
     def acquire(self):
-        """This can be yielded to block until the lock is acquired."""
+        """ Produce a trigger which fires when the lock is acquired. """
         trig = _Lock(self)
         self._pending_unprimed.append(trig)
         return trig
@@ -456,8 +468,9 @@ class Lock(object):
 
 
 class NullTrigger(Trigger):
-    """
-    A trigger that fires instantly, primarily for internal scheduler use.
+    """Fires immediately.
+
+    Primarily for internal scheduler use.
     """
     def __init__(self, name="", outcome=None):
         super(NullTrigger, self).__init__()
@@ -479,7 +492,37 @@ class NullTrigger(Trigger):
 
 
 class Join(with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
-    """Join a coroutine, firing when it exits."""
+    r"""Fires when a :func:`fork`\ ed coroutine completes
+
+    The result of blocking on the trigger can be used to get the coroutine
+    result::
+
+        @cocotb.coroutine()
+        def coro_inner():
+            yield Timer(1)
+            raise ReturnValue("Hello world")
+
+        task = cocotb.fork(coro_inner())
+        result = yield Join(task)
+        assert result == "Hello world"
+
+    Or using the syntax in Python 3.5 onwards:
+
+    .. code-block:: python3
+
+        @cocotb.coroutine()
+        async def coro_inner():
+            await Timer(1)
+            return "Hello world"
+
+        task = cocotb.fork(coro_inner())
+        result = await Join(task)
+        assert result == "Hello world"
+
+    If the coroutine threw an exception, the :keyword:`await` or :keyword:`yield`
+    will re-raise it.
+
+    """
     __slots__ = ('_coroutine',)
 
     @classmethod
@@ -498,7 +541,19 @@ class Join(with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
     def retval(self):
         """The return value of the joined coroutine.
 
-        If the coroutine threw an exception, this attribute will re-raise it.
+        .. note::
+            Typically there is no need to use this attribute - the
+            following code samples are equivalent::
+
+                forked = cocotb.fork(mycoro())
+                j = Join(forked)
+                yield j
+                result = j.retval
+
+            ::
+
+                forked = cocotb.fork(mycoro())
+                result = yield Join(forked)
         """
         return self._coroutine.retval
 
@@ -542,8 +597,8 @@ class _AggregateWaitable(Waitable):
     """
     __slots__ = ('triggers',)
 
-    def __init__(self, *args):
-        self.triggers = tuple(args)
+    def __init__(self, *triggers):
+        self.triggers = tuple(triggers)
 
         # Do some basic type-checking up front, rather than waiting until we
         # yield them.
@@ -570,7 +625,7 @@ def _wait_callback(trigger, callback):
 
 class Combine(_AggregateWaitable):
     """
-    Waits until all the passed triggers have fired.
+    Fires when all of *triggers* have fired.
 
     Like most triggers, this simply returns itself.
     """
@@ -599,9 +654,13 @@ class Combine(_AggregateWaitable):
 
 class First(_AggregateWaitable):
     """
-    Wait for the first of multiple triggers.
+    Fires when the first trigger in *triggers* fires.
 
     Returns the result of the trigger that fired.
+
+    As a shorthand, ``t = yield [a, b]`` can be used instead of
+    ``t = yield First(a, b)``. Note that this shorthand is not available when
+    using :keyword:`await`.
 
     .. note::
         The event loop is single threaded, so while events may be simultaneous
@@ -644,9 +703,13 @@ class First(_AggregateWaitable):
 
 class ClockCycles(Waitable):
     """
-    Execution will resume after *num_cycles* rising edges or *num_cycles* falling edges.
+    Fires after *num_cycles* transitions of *signal* from ``0`` to ``1``.
     """
     def __init__(self, signal, num_cycles, rising=True):
+        """
+        :param rising: If true, the default, count rising edges. Otherwise,
+            count falling edges
+        """
         self.signal = signal
         self.num_cycles = num_cycles
         if rising is True:
