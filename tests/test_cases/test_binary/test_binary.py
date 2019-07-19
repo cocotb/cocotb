@@ -102,9 +102,9 @@ def test_signed_overflow(dut):
     tb = BinaryTestbench(dut)
     yield tb.initialise()
 
-    count_unsigned = BinaryValue(value=1, n_bits=3, ascending_range=False,
+    count_unsigned = BinaryValue(value=1, n_bits=3, ascendingRange=False,
                                  binaryRepresentation=BinaryRepresentation.UNSIGNED)
-    count_signed = BinaryValue(value=1, n_bits=4, ascending_range=False,
+    count_signed = BinaryValue(value=1, n_bits=4, ascendingRange=False,
                                binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
 
     def compare_count(expected_value, actual_value, sign_type, big_endian, desc):
@@ -165,7 +165,7 @@ def test_verilog_truncation(dut):
         short_length = short_value.n_bits
 
         truncate_value = BinaryValue(value=long_value.binstr, binaryRepresentation=sign_type,
-                                     ascending_range=False, n_bits=short_length)
+                                     ascendingRange=False, n_bits=short_length)
         truncate_value.ascending_range = big_endian
 
         if short_value.integer != truncate_value.integer:
@@ -228,7 +228,7 @@ def test_vhdl_truncation(dut):
                                                                                  short_value.binstr))
         elif sign_type == BinaryRepresentation.TWOS_COMPLEMENT:
             truncated_value = BinaryValue(value=long_value.integer, binaryRepresentation=sign_type,
-                                          ascending_range=big_endian, n_bits=short_length)
+                                          ascendingRange=big_endian, n_bits=short_length)
             if short_value.integer != truncated_value.integer:
                 raise TestError("Values ({}) do not match as expected. "
                                 "Original value: {}; Truncated value: {}".format(desc,

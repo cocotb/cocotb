@@ -453,7 +453,7 @@ class ConstantObject(NonHierarchyObject):
             self._value = simulator.get_signal_val_str(self._handle)
         else:
             val = simulator.get_signal_val_binstr(self._handle)
-            self._value = BinaryValue(n_bits=len(val))
+            self._value = BinaryValue(n_bits=len(val), ascendingRange=False)
             try:
                 self._value.binstr = val
             except Exception:
@@ -615,7 +615,7 @@ class ModifiableObject(NonConstantObject):
 
     def _getvalue(self):
         binstr = simulator.get_signal_val_binstr(self._handle)
-        result = BinaryValue(binstr, len(binstr))
+        result = BinaryValue(binstr, len(binstr), ascendingRange=False)
         return result
 
     def _setcachedvalue(self, value):

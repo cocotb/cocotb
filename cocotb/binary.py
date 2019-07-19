@@ -102,16 +102,18 @@ class BinaryValue(object):
     _resolve_to_error = "xXzZuUwW"  # Resolve to a ValueError() since these usually mean something is wrong
     _permitted_chars  = _resolve_to_0 +_resolve_to_1 + _resolve_to_error + "01"  # noqa
 
-    def __init__(self, value=None, n_bits=None, bigEndian=True,
+    # Class logging member
+    _log = SimLog("cocotb.binary.BinaryValue")
+
+    def __init__(self, value=None, n_bits=None, ascendingRange=None,
                  binaryRepresentation=BinaryRepresentation.UNSIGNED,
-                 bits=None, ascending_range=False):
+                 bits=None, bigEndian=None):
         """Args:
             value (str or int or long, optional): Value to assign to the bus.
             n_bits (int, optional): Number of bits to use for the underlying
                 binary representation.
-            bigEndian (bool, optional): Interpret the binary string as
-                big-endian when converting to/from a byte string buffer.
-                AKA byte-ordering
+            ascendingRange (bool, optional): Interpret the binary string as
+                having a big-endian bit order.
             binaryRepresentation (BinaryRepresentation): The representation
                 of the binary value
                 (one of :any:`UNSIGNED`, :any:`SIGNED_MAGNITUDE`, :any:`TWOS_COMPLEMENT`).
@@ -119,6 +121,8 @@ class BinaryValue(object):
             ascending_range (bool, optional): Interpret the binary string bit-order
                 as having an ascending range (big-endian bits).
             bits (int, optional): Deprecated: Compatibility wrapper for :attr:`n_bits`.
+            bigEndian (bool, optional): Deprecated: Compatibility wrapper for
+                :attr:`ascendingRange`.
         """
         # The underlying vector:
         # - Mirrors the representation in HW
@@ -127,15 +131,23 @@ class BinaryValue(object):
         #   longer provides the expected result (0th index is still the start of the string)
         self._str = ""
 
-        self.big_endian = bigEndian
         self.binaryRepresentation = binaryRepresentation
-        self.ascending_range = ascending_range
 
-        self._log = SimLog("cocotb.binary.%s" % self.__class__.__name__)
+        # bigEndian is the deprecated name for ascendingRange, allow its use for
+        # backwards-compat reasons.
+        if bigEndian is not None and ascendingRange is not None:
+            raise TypeError("You cannot use bigEndian and ascendingRange at the same time")
+        if bigEndian is not None:
+            warnings.warn("The bigEndian argument to BinaryValue has been renamed to ascendingRange",
+                          DeprecationWarning, stacklevel=2)
+            ascendingRange = bigEndian
+        if ascendingRange is None:
+            ascendingRange = True  # DEFAULT BIG-ENDIAN
+        self.ascending_range = ascendingRange
 
         # bits is the deprecated name for n_bits, allow its use for
         # backward-compat reasons.
-        if (bits is not None and n_bits is not None):
+        if bits is not None and n_bits is not None:
             raise TypeError("You cannot use n_bits and bits at the same time.")
         if bits is not None:
             warnings.warn(
@@ -362,10 +374,12 @@ class BinaryValue(object):
         if length % 8 != 0:
             length = ((length // 8) + 1) * 8  # Round up to nearest byte
         bits = self._adjust[self.binaryRepresentation](resolve(self._str), length)
-        byte_list = (int(bits[i:i+8], 2) for i in range(0, len(bits), 8))
-        if self.big_endian:
-            return list(byte_list)
-        return list(byte_list)[::-1]
+        byte_strings = (bits[i:i+8] for i in range(0, len(bits), 8))
+        if self.ascending_range:
+            # Bytes are in correct positions, but within each byte the bit-order is incorrect
+            return [int(byte_str[::-1], 2) for byte_str in byte_strings]
+        # Bit-order for each byte is correct, but bytes are in little-endian byte order
+        return [int(byte_str, 2) for byte_str in byte_strings][::-1]
 
     def get_buff(self):
         """Attribute :attr:`buff` represents the value as a resolved byte string buffer.
@@ -373,8 +387,7 @@ class BinaryValue(object):
         >>> "0100000100101111".buff == "\x41\x2F"
         True
 
-        Buffer has the same bit order endian-ness as the binary value
-        Returns a big-endian byte-order bytestring
+        Returns a big-endian byte-order bytestring (where each byte has little-endian bit order)
         """
         return "".join(chr(byte) for byte in self._get_bytes())
 
@@ -384,8 +397,7 @@ class BinaryValue(object):
         >>> "0100000100101111".buff == "412F"
         True
 
-        Buffer has the same bit order endian-ness as the binary value
-        Returns a big-endian byte-order hex string
+        Returns a big-endian byte-order hex string (where each byte has little-endian bit order)
         """
         return "".join(hex(byte)[2:0] for byte in self._get_bytes()).upper()
 
@@ -393,11 +405,15 @@ class BinaryValue(object):
         """Set the value using a byte string
 
         Takes a big-endian byte-order bit string.
-        Buffer assumed to have the same bit order endian-ness as the binary value
+        (Within each byte, bit-order is little-endian)
         """
-        converted_buffer = "".join("{:08b}".format(ord(char)) for char in buff)
-        if not self.big_endian:
-            converted_buffer = list(converted_buffer)[::-1]
+        converted_buffer = ("{:08b}".format(ord(char)) for char in buff)
+        if self.ascending_range:
+            # Need to swap bit-order within each byte
+            converted_buffer = "".join(binstr[::-1] for binstr in converted_buffer)
+        else:
+            # Need to swap byte-order for each byte
+            converted_buffer = "".join(list(converted_buffer)[::-1])
         self._str = self._adjust[self.binaryRepresentation](converted_buffer)
 
     def get_binstr(self):
@@ -426,16 +442,16 @@ class BinaryValue(object):
 
     @property
     def big_endian(self):
-        """Whether the byte order is big endian (bool)
+        """Whether the byte order is big endian (bool) **Deprecated**
 
         Changes how binary string is interpreted when converting to/from a string buffer
         """
-        return self._big_endian
+        return self._ascending_range
 
     @big_endian.setter
     def big_endian(self, value):
         if isinstance(value, bool):
-            self._big_endian = value
+            self._ascending_range = value
         else:
             raise TypeError("big_endian is a boolean")
 
@@ -751,8 +767,7 @@ class BinaryValue(object):
         else:
             binstr = self.binstr[key]
         return BinaryValue(bits=len(binstr),
-                           bigEndian=self.big_endian,
-                           ascending_range=self.ascending_range,
+                           ascendingRange=self.ascending_range,
                            binaryRepresentation=self.binaryRepresentation,
                            value=binstr)
 
