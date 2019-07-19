@@ -280,15 +280,9 @@ def hexdiffs(x, y):
         return r
 
     def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
-        """Highlight only with ANSI output if it's requested and we are not in a GUI."""
+        """Highlight with ANSI colors if possible/requested and not running in GUI."""
         
-        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT") and not os.getenv("GUI")
-        if want_ansi is None:
-            want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
-        else:
-            want_ansi = want_ansi == '1'
-
-        if want_ansi:
+        if want_color_output():
             return colour + string + ANSI.COLOR_DEFAULT
         else:
             return string
@@ -542,7 +536,7 @@ class nullcontext(object):
 
 def reject_remaining_kwargs(name, kwargs):
     """
-    Helper function to emulate python 3 keyword-only arguments.
+    Helper function to emulate Python 3 keyword-only arguments.
 
     Use as::
 
@@ -590,6 +584,16 @@ class lazy_property(object):
         return value
 
 
+def want_color_output():
+    """Return ``True`` if colored output is possible/requested and not running in GUI."""
+    want_color = sys.stdout.isatty()  # default to color for TTYs
+    if os.getenv("COCOTB_ANSI_OUTPUT", default='0') == '1':
+        want_color = True
+    if os.getenv("GUI", default='0') == '1':
+        want_color = False
+    return want_color
+        
+    
 if __name__ == "__main__":
     import random
     a = ""
