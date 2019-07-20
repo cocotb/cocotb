@@ -47,7 +47,7 @@ extensions = [
 intersphinx_mapping = {'https://docs.python.org/3': None}
 
 # Github repo
-issues_github_path = "potentialventures/cocotb"
+issues_github_path = "cocotb/cocotb"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

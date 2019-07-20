@@ -163,7 +163,7 @@ For development version:
 
 .. code-block:: bash
 
-    $> git clone https://github.com/potentialventures/cocotb
+    $> git clone https://github.com/cocotb/cocotb
     $> pip install -e ./cocotb
 
 Running an example
@@ -171,7 +171,7 @@ Running an example
 
 .. code-block:: bash
 
-    $> git clone https://github.com/potentialventures/cocotb
+    $> git clone https://github.com/cocotb/cocotb
     $> cd cocotb/examples/endian_swapper/tests
     $> make
 

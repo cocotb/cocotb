@@ -2,7 +2,7 @@
 Release Notes
 #############
 
-All releases are available from the `GitHub Releases Page <https://github.com/potentialventures/cocotb/releases>`_.
+All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
 cocotb 1.2
 ==========
