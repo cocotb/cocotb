@@ -5,7 +5,7 @@
 
 * Read the [documentation](http://cocotb.readthedocs.org)
 * Get involved:
-  * [Raise a bug / request an enhancement](https://github.com/potentialventures/cocotb/issues/new) (Requires a GitHub account)
+  * [Raise a bug / request an enhancement](https://github.com/cocotb/cocotb/issues/new) (Requires a GitHub account)
   * [Join the mailing list](https://lists.librecores.org/listinfo/cocotb)
   * [Join the Gitter chat room](https://gitter.im/cocotb)
 * Get in contact: [E-mail us](mailto:cocotb@potentialventures.com)
@@ -21,7 +21,7 @@ Cocotb can be installed by running `pip install cocotb`.
     sudo yum install -y iverilog python-devel gtkwave
     
     # Checkout git repositories
-    git clone https://github.com/potentialventures/cocotb.git
+    git clone https://github.com/cocotb/cocotb.git
     
     # Install cocotb
     pip install ./cocotb
