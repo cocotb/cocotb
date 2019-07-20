@@ -102,8 +102,10 @@ jobs:
       script:
         - tox -e py37
 
-    - stage: Deploy
+    - stage: DeployPyPI
       python: 3.7
+      if: tag IS present
+      script: skip
       deploy:
         provider: pypi
         user: themperek
