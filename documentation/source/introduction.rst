@@ -7,7 +7,7 @@ What is cocotb?
 
 **cocotb** is a *COroutine* based *COsimulation* *TestBench* environment for verifying VHDL/Verilog RTL using `Python <https://www.python.org>`_.
 
-cocotb is completely free, open source (under the `BSD License <https://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_(%22BSD_License_2.0%22,_%22Revised_BSD_License%22,_%22New_BSD_License%22,_or_%22Modified_BSD_License%22)>`_) and hosted on `GitHub <https://github.com/potentialventures/cocotb>`_.
+cocotb is completely free, open source (under the `BSD License <https://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_(%22BSD_License_2.0%22,_%22Revised_BSD_License%22,_%22New_BSD_License%22,_or_%22Modified_BSD_License%22)>`_) and hosted on `GitHub <https://github.com/cocotb/cocotb>`_.
 
 cocotb requires a simulator to simulate the RTL. Simulators that have been tested and known to work with cocotb:
 
@@ -78,8 +78,8 @@ Contributors
 cocotb was developed by `Potential Ventures <https://potential.ventures>`_ with the support of
 `Solarflare Communications Ltd <https://www.solarflare.com/>`_
 and contributions from Gordon McGregor and Finn Grimwood
-(see `contributers <https://github.com/potentialventures/cocotb/graphs/contributors>`_ for the full list of contributions).
+(see `contributers <https://github.com/cocotb/cocotb/graphs/contributors>`_ for the full list of contributions).
 
 We also have a list of talks and papers, libraries and examples at our wiki page
-`Further Resources <https://github.com/potentialventures/cocotb/wiki/Further-Resources>`_.
+`Further Resources <https://github.com/cocotb/cocotb/wiki/Further-Resources>`_.
 Feel free to add links to cocotb-related content that we are still missing!
