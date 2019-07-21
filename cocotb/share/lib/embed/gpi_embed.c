@@ -52,8 +52,8 @@ static char *argv[] = { progname };
 static PyObject *pEventFn = NULL;
 
 /**
- * @name    Initialise the python interpreter
- * @brief   Create and initialise the python interpreter
+ * @name    Initialise the Python interpreter
+ * @brief   Create and initialise the Python interpreter
  * @ingroup python_c_api
  *
  * GILState before calling: N/A
@@ -73,13 +73,13 @@ void embed_init_python(void)
 #define PY_SO_LIB xstr(PYTHON_SO_LIB)
 #endif
 
-    // Don't initialise python if already running
+    // Don't initialise Python if already running
     if (gtstate)
         return;
 
     void * lib_handle = utils_dyn_open(PY_SO_LIB);
     if (!lib_handle) {
-        fprintf(stderr, "Failed to find python lib\n");
+        LOG_ERROR("Failed to find Python shared library\n");
     }
 
     to_python();
@@ -89,21 +89,21 @@ void embed_init_python(void)
     if (venv_path_home) {
         char venv_path[strlen(venv_path_home)+64];
         strcpy(venv_path, venv_path_home);
-        strcat(venv_path, "/bin/python");  // this is universal in any VIRTUAL_ENV the python interpreter
+        strcat(venv_path, "/bin/python");  // this is universal in any VIRTUAL_ENV the Python interpreter
 #if PY_MAJOR_VERSION >= 3
         static wchar_t venv_path_w[1024];
 #if PY_MINOR_VERSION >= 5
-        // Python3.5 + provides the locale decoder
+        // Python3.5+ provides the locale decoder
         wcscpy(venv_path_w, Py_DecodeLocale(venv_path, NULL));
 #else
-        // for lesser python versions, we just hope the user specified his locales correctly
+        // for lesser Python versions, we just hope the user specified his locales correctly
         setlocale (LC_ALL, "");
         mbstowcs(venv_path_w, venv_path, sizeof(venv_path_w));
 #endif
         LOG_INFO("Using virtualenv at %ls.", venv_path_w);
         Py_SetProgramName(venv_path_w);
 #else
-        // Python2 case
+        // Python 2 case
         LOG_INFO("Using virtualenv at %s.", venv_path);
         Py_SetProgramName(venv_path);
 #endif
@@ -125,16 +125,16 @@ void embed_init_python(void)
     if (pause) {
         long sleep_time = strtol(pause, NULL, 10);
         if (errno == ERANGE && (sleep_time == LONG_MAX || sleep_time == LONG_MIN)) {
-            fprintf(stderr, "COCOTB_ATTACH only needs to be set to ~30 seconds");
+            LOG_ERROR("COCOTB_ATTACH only needs to be set to ~30 seconds");
             goto out;
         }
         if ((errno != 0 && sleep_time == 0) ||
             (sleep_time <= 0)) {
-            fprintf(stderr, "COCOTB_ATTACH must be set to an integer base 10 or omitted");
+            LOG_ERROR("COCOTB_ATTACH must be set to an integer base 10 or omitted");
             goto out;
         }
 
-        fprintf(stderr, "Waiting for %lu seconds - attach to PID %d with your debugger\n", sleep_time, getpid());
+        LOG_ERROR("Waiting for %lu seconds - attach to PID %d with your debugger\n", sleep_time, getpid());
         sleep(sleep_time);
     }
 out:
@@ -143,7 +143,7 @@ out:
 
 /**
  * @name    Initialisation
- * @brief   Called by the simulator on initialisation. Load cocotb python module
+ * @brief   Called by the simulator on initialisation. Load cocotb Python module
  * @ingroup python_c_api
  *
  * GILState before calling: Not held
@@ -163,7 +163,7 @@ int get_module_ref(const char *modname, PyObject **mod)
 
     if (pModule == NULL) {
         PyErr_Print();
-        fprintf(stderr, "Failed to load \"%s\"\n", modname);
+        LOG_ERROR("Failed to load Python module \"%s\"\n", modname);
         return -1;
     }
 
@@ -208,7 +208,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     cocotb_module = NULL;
     arg_dict = NULL;
 
-    //Ensure that the current thread is ready to call the Python C API
+    // Ensure that the current thread is ready to call the Python C API
     PyGILState_STATE gstate = PyGILState_Ensure();
     to_python();
 
@@ -220,19 +220,19 @@ int embed_sim_init(gpi_sim_info_t *info)
 
     if (simlog_obj == NULL) {
         PyErr_Print();
-        fprintf(stderr, "Failed to to get simlog object\n");
+        LOG_ERROR("Failed to get simlog object from loggpi\n");
     }
 
     simlog_func = PyObject_GetAttrString(simlog_obj, "_logFromC");
     if (simlog_func == NULL) {
         PyErr_Print();
-        fprintf(stderr, "Failed to get the _logFromC method");
+        LOG_ERROR("Failed to get the _logFromC method");
         goto cleanup;
     }
 
     if (!PyCallable_Check(simlog_func)) {
         PyErr_Print();
-        fprintf(stderr, "_logFromC is not callable");
+        LOG_ERROR("_logFromC is not callable");
         goto cleanup;
     }
 
@@ -243,13 +243,13 @@ int embed_sim_init(gpi_sim_info_t *info)
     simlog_func = PyObject_GetAttrString(simlog_obj, "isEnabledFor");
     if (simlog_func == NULL) {
         PyErr_Print();
-        fprintf(stderr, "Failed to get the isEnabledFor method");
+        LOG_ERROR("Failed to get the isEnabledFor method");
         goto cleanup;
     }
 
     if (!PyCallable_Check(simlog_func)) {
         PyErr_Print();
-        fprintf(stderr, "isEnabledFor is not callable");
+        LOG_ERROR("isEnabledFor is not callable");
         goto cleanup;
     }
 
@@ -269,7 +269,7 @@ int embed_sim_init(gpi_sim_info_t *info)
 
     if (!PyCallable_Check(simlog_func)) {
         PyErr_Print();
-        fprintf(stderr, "_printRecord is not callable");
+        LOG_ERROR("_printRecord is not callable");
         goto cleanup;
     }
 
@@ -279,13 +279,13 @@ int embed_sim_init(gpi_sim_info_t *info)
     // Now that logging has been set up ok we initialise the testbench
     if (-1 == PyObject_SetAttrString(cocotb_module, "SIM_NAME", PyString_FromString(info->product))) {
         PyErr_Print();
-        fprintf(stderr, "Unable to set SIM_NAME");
+        LOG_ERROR("Unable to set SIM_NAME");
         goto cleanup;
     }
 
     if (-1 == PyObject_SetAttrString(cocotb_module, "SIM_VERSION", PyString_FromString(info->version))) {
             PyErr_Print();
-            fprintf(stderr, "Unable to set SIM_VERSION");
+            LOG_ERROR("Unable to set SIM_VERSION");
             goto cleanup;
     }
 
@@ -298,7 +298,7 @@ int embed_sim_init(gpi_sim_info_t *info)
         PyLang = Py_None;
 
     if (-1 == PyObject_SetAttrString(cocotb_module, "LANGUAGE", PyLang)) {
-        fprintf(stderr, "Unable to set LANGUAGE");
+        LOG_ERROR("Unable to set LANGUAGE");
         goto cleanup;
     }
 
@@ -307,7 +307,7 @@ int embed_sim_init(gpi_sim_info_t *info)
 
     if (!PyCallable_Check(pEventFn)) {
         PyErr_Print();
-        fprintf(stderr, "cocotb._sim_event is not callable");
+        LOG_ERROR("cocotb._sim_event is not callable");
         goto cleanup;
     }
     Py_INCREF(pEventFn);
@@ -317,7 +317,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     if (cocotb_init == NULL || !PyCallable_Check(cocotb_init)) {
         if (PyErr_Occurred())
             PyErr_Print();
-        fprintf(stderr, "Cannot find function \"%s\"\n", "_initialise_testbench");
+        LOG_ERROR("Cannot find function \"%s\"\n", "_initialise_testbench");
         goto cleanup;
     }
 
@@ -333,7 +333,7 @@ int embed_sim_init(gpi_sim_info_t *info)
         Py_DECREF(cocotb_retval);
     } else {
         PyErr_Print();
-        fprintf(stderr,"Cocotb initialisation failed - exiting\n");
+        LOG_ERROR("Cocotb initialisation failed - exiting\n");
         goto cleanup;
     }
 
@@ -358,7 +358,7 @@ ok:
 void embed_sim_event(gpi_event_t level, const char *msg)
 {
     FENTER
-    /* Indicate to the upper layer a sim event occoured */
+    /* Indicate to the upper layer a sim event occurred */
 
     if (pEventFn) {
         PyGILState_STATE gstate;
