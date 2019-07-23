@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-#
+# 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-#
+# 
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -53,9 +53,9 @@ class TriggerException(Exception):
 
 class Trigger(with_metaclass(abc.ABCMeta)):
     """Base class to derive from."""
-    __slots__ = ('primed', '__weakref__')
-
+    
     def __init__(self):
+        self.signal = None
         self.primed = False
 
     @lazy_property
@@ -127,8 +127,7 @@ class GPITrigger(Trigger):
     """Base Trigger class for GPI triggers.
     Consumes simulation time.
     """
-    __slots__ = ('cbhdl',)
-
+    
     def __init__(self):
         Trigger.__init__(self)
 
@@ -184,8 +183,7 @@ class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when the readonly portion of the sim cycles is
     reached.
     """
-    __slots__ = ()
-
+    
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -208,8 +206,7 @@ class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when the readwrite portion of the sim cycles is
     reached.
     """
-    __slots__ = ()
-
+    
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -232,8 +229,7 @@ class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
 
 class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when the next time step is started."""
-    __slots__ = ()
-
+    
     @classmethod
     def __singleton_key__(cls):
         return None
@@ -254,8 +250,7 @@ class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
 
 class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Execution will resume when an edge occurs on the provided signal."""
-    __slots__ = ('signal',)
-
+    
     @classmethod
     @property
     def _edge_type(self):
@@ -286,20 +281,20 @@ class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
 
 class RisingEdge(_EdgeBase):
     """Triggers on the rising edge of the provided signal."""
-    __slots__ = ()
+    
     _edge_type = 1
 
 
 class FallingEdge(_EdgeBase):
     """Triggers on the falling edge of the provided signal."""
-    __slots__ = ()
+    
     _edge_type = 2
 
 
 class Edge(_EdgeBase):
     """Triggers on either edge of the provided signal."""
-    __slots__ = ()
     _edge_type = 3
+
 
 
 class _Event(PythonTrigger):
@@ -353,7 +348,7 @@ class Event(object):
         until another wakes it.
 
         If the event has already been fired, this returns ``NullTrigger``.
-        To reset the event (and enable the use of ``wait`` again),
+        To reset the event (and enable the use of ``wait`` again), 
         :meth:`~cocotb.triggers.Event.clear` should be called.
         """
         if self.fired:
@@ -363,7 +358,7 @@ class Event(object):
     def clear(self):
         """Clear this event that has fired.
 
-        Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until
+        Subsequent calls to :meth:`~cocotb.triggers.Event.wait` will block until 
         :meth:`~cocotb.triggers.Event.set` is called again."""
         self.fired = False
 
@@ -470,8 +465,7 @@ class NullTrigger(Trigger):
 
 class Join(with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
     """Join a coroutine, firing when it exits."""
-    __slots__ = ('_coroutine',)
-
+    
     @classmethod
     def __singleton_key__(cls, coroutine):
         return coroutine
@@ -479,6 +473,7 @@ class Join(with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
     def __init__(self, coroutine):
         super(Join, self).__init__()
         self._coroutine = coroutine
+        self.pass_retval = True
 
     @property
     def _outcome(self):
@@ -509,7 +504,6 @@ class Waitable(object):
     This converts a `_wait` abstract method into a suitable `__await__` on
     supporting python versions (>=3.3).
     """
-    __slots__ = ()
     @decorators.coroutine
     def _wait(self):
         """
@@ -530,8 +524,6 @@ class _AggregateWaitable(Waitable):
     """
     Base class for Waitables that take mutiple triggers in their constructor
     """
-    __slots__ = ('triggers',)
-
     def __init__(self, *args):
         self.triggers = tuple(args)
 
@@ -564,8 +556,6 @@ class Combine(_AggregateWaitable):
 
     Like most triggers, this simply returns itself.
     """
-    __slots__ = ()
-
     @decorators.coroutine
     def _wait(self):
         waiters = []
@@ -603,7 +593,6 @@ class First(_AggregateWaitable):
             t2 = Timer(10, units='ps')
             t_ret = yield First(t1, t2)
     """
-    __slots__ = ()
 
     @decorators.coroutine
     def _wait(self):
