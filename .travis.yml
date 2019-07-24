@@ -112,6 +112,7 @@ jobs:
         password:
           secure: "MLCDTXDYX7TKtPDXxUz7hIibXAIHGkz297yVQ7inLToCX/bKAkjdy/uwQZ4W7goRUFKJ6XliqBU8l/tihqPXCPtRaIU4hdLF9LZjR02Z16Ik3vDHBQcX/htfm32WAkFIVdbzBldD0N1NJIPYc83GnwLtgFM2u1fuCffiu2VqkTY="
         on:
+          tags: true
           repo: cocotb/cocotb
         distributions: sdist
 
