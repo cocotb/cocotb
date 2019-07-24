@@ -53,7 +53,17 @@ class TriggerException(Exception):
 
 class Trigger(with_metaclass(abc.ABCMeta)):
     """Base class to derive from."""
-    __slots__ = ('primed', '__weakref__')
+
+    # __dict__ is needed here for the `.log` lazy_property below to work.
+    # The implementation of `_PyObject_GenericGetAttrWithDict` suggests that
+    # despite its inclusion, __slots__ will overall give speed and memory
+    # improvements:
+    #  - the `__dict__` is not actually constructed until it's needed, and that
+    #    only happens if the `.log` attribute is used, where performance
+    #    concerns no longer matter.
+    #  - Attribute setting and getting will still go through the slot machinery
+    #    first, as "data descriptors" take priority over dict access
+    __slots__ = ('primed', '__weakref__', '__dict__')
 
     def __init__(self):
         self.primed = False
