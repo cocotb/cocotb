@@ -2,6 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/cocotb/badge/?version=latest)](http://cocotb.readthedocs.org/en/latest/)
 [![Build Status](https://travis-ci.org/cocotb/cocotb.svg?branch=master)](https://travis-ci.org/cocotb/cocotb)
+[![PyPI](https://img.shields.io/pypi/dm/cocotb.svg?label=PyPI%20downloads)](https://pypi.org/project/cocotb/)
 
 * Read the [documentation](http://cocotb.readthedocs.org)
 * Get involved:
