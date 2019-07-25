@@ -102,17 +102,22 @@ jobs:
       script:
         - tox -e py37
 
+    - stage: DeployPyPI
+      python: 3.7
+      if: tag IS present
+      script: skip
+      deploy:
+        provider: pypi
+        user: themperek
+        password:
+          secure: "MLCDTXDYX7TKtPDXxUz7hIibXAIHGkz297yVQ7inLToCX/bKAkjdy/uwQZ4W7goRUFKJ6XliqBU8l/tihqPXCPtRaIU4hdLF9LZjR02Z16Ik3vDHBQcX/htfm32WAkFIVdbzBldD0N1NJIPYc83GnwLtgFM2u1fuCffiu2VqkTY="
+        on:
+          repo: cocotb/cocotb
+        distributions: sdist
+
   allow_failures:
     - stage: SimTests
       python: 3.7
       env: SIM=ghdl
 
-deploy:
-  provider: pypi
-  user: themperek
-  password:
-    secure: "Olc0PdhY/0b8zYrgsPCUrfusPJgYLRBpAux/c5M6j4OzKyZN3fjjpPw+Yrs6o8RxBPa4uqN/niKo8MmgxLQeq3vAy+3nNo3YukL9Q/AYrbJ+JvHfe+2Be73LaujbNvuS9+A7NX3GOT40bB1eo/kOT/kjgzAJvlFhVnXq8h5a9Gc="
-  on:
-    tags: true
-    repo: potentialventures/cocotb
-  distributions: sdist
+

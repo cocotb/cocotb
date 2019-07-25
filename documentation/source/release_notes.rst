@@ -2,12 +2,12 @@
 Release Notes
 #############
 
-All releases are available from the `GitHub Releases Page <https://github.com/potentialventures/cocotb/releases>`_.
+All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
 cocotb 1.2
 ==========
 
-Released on DD MM YYYY.
+Released on 24 July 2019
 
 New features
 ------------
@@ -25,7 +25,19 @@ Notable changes and bug fixes
 - The ``setimmediatevalue()`` function now works for values larger than 32 bit. (:pr:`768`)
 - The documentation was cleaned up, improved and extended in various places, making it more consistent and complete.
 - Tab completion in newer versions of IPython is fixed. (:pr:`825`)
-- Python 2.6 is officially not supported any more. cocotb supports Python 2.7 and Python 3.5+
+- Python 2.6 is officially not supported any more. cocotb supports Python 2.7 and Python 3.5+.
+- The cocotb GitHub project moved from ``potentialventures/cocotb`` to ``cocotb/cocotb``. 
+  Redirects for old URLs are in place.
+
+Known issues
+------------
+
+- Depending on your simulation, cocotb 1.2 might be roughly 20 percent slower than cocotb 1.1.
+  Much of the work in this release cycle went into fixing correctness bugs in the scheduler, sometimes at the cost of performance.
+  We are continuing to investigate this in issue :issue:`961`.
+  Independent of the cocotb version, we recommend using the latest Python 3 version, which is shown to be significantly faster than previous Python 3 versions, and slightly faster than Python 2.7.
+
+Please have a look at the `issue tracker <https://github.com/cocotb/cocotb/issues>`_ for more outstanding issues and contribution opportunities.
 
 cocotb 1.1
 ==========
