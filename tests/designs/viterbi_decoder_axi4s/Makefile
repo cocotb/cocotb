@@ -35,7 +35,7 @@ clean::
 
 else
 
-TOPLEVEL = dec_viterbi
+TOPLEVEL = dec_viterbi_ent
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')
