@@ -100,8 +100,10 @@ class RegressionManager(object):
         self.count = 1
         self.skipped = 0
         self.failures = 0
-        self.xunit = XUnitReporter()
 
+        results_filename = os.getenv('COCOTB_RESULTS_FILE_NAME', "results.xml")
+
+        self.xunit = XUnitReporter(filename=results_filename)
         suite_name = os.getenv('RESULT_TESTSUITE') if os.getenv('RESULT_TESTSUITE') else "all"
         package_name = os.getenv('RESULT_TESTPACKAGE') if os.getenv('RESULT_TESTPACKAGE') else "all"
 
