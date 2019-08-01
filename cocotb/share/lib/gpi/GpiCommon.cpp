@@ -119,6 +119,7 @@ void gpi_embed_end(void)
 
 {
     embed_sim_event(SIM_FAIL, "Simulator shutdown prematurely");
+    embed_sim_end();
 }
 
 void gpi_sim_end(void)

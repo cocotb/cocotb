@@ -384,3 +384,10 @@ void embed_sim_event(gpi_event_t level, const char *msg)
 
     FEXIT
 }
+
+void embed_sim_end(void)
+{
+    FENTER
+
+    Py_Finalize();
+}
