@@ -89,10 +89,10 @@ $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_SIM_DEPS) $
 	@echo "onerror {" >> $@
 	@echo "	quit -f -code 1" >> $@
 	@echo "}" >> $@
-	@echo "if [file exists $(RTL_LIBRARY)] {vdel -lib $(RTL_LIBRARY) -all}" >> $@
-	@echo "vlib $(RTL_LIBRARY)" >> $@
+	@echo "if [file exists $(SIM_BUILD)/$(RTL_LIBRARY)] {vdel -lib $(SIM_BUILD)/$(RTL_LIBRARY) -all}" >> $@
+	@echo "vlib $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
 	@echo "vmap -c" >> $@
-	@echo "vmap $(RTL_LIBRARY) $(RTL_LIBRARY)" >> $@
+	@echo "vmap $(RTL_LIBRARY) $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
 	@echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@
 endif
@@ -102,7 +102,7 @@ endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@
 endif
-	@echo "vsim $(VSIM_ARGS) $(EXTRA_ARGS) $(TOPLEVEL)" >> $@
+	@echo "vsim $(VSIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/$(TOPLEVEL)" >> $@
 ifeq ($(WAVES),1)
 	@echo "log -recursive /*" >> $@
 endif
@@ -146,9 +146,9 @@ endif
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
-	set -o pipefail; cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
+	set -o pipefail; $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) \
-	$(CMD) $(PLUSARGS) -do runsim.do 2>&1 | tee sim.log
+	$(CMD) $(PLUSARGS) -do $(SIM_BUILD)/runsim.do 2>&1 | tee $(SIM_BUILD)/sim.log
 
 	# check that the file was actually created, since we can't set an exit code from cocotb
 	test -f $(COCOTB_RESULTS_FILE)
