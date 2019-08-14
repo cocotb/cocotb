@@ -217,8 +217,10 @@ Python test script to load.
 .. code-block:: bash
 
     VERILOG_SOURCES = $(PWD)/submodule.sv $(PWD)/my_design.sv
-    TOPLEVEL=my_design  # the module name in your Verilog or VHDL file
-    MODULE=test_my_design  # the name of the Python test file
+    # TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file:
+    TOPLEVEL=my_design
+    # MODULE is the name of the Python test file:
+    MODULE=test_my_design
     include $(shell cocotb-config --makefiles)/Makefile.inc
     include $(shell cocotb-config --makefiles)/Makefile.sim
 
