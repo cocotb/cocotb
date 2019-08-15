@@ -181,7 +181,7 @@ class Timer(GPITrigger):
         GPITrigger.prime(self, callback)
 
     def __str__(self):
-        return self.__class__.__name__ + "(%1.2fps)" % get_time_from_sim_steps(self.sim_steps,units='ps')
+        return self.__class__.__name__ + "(%1.2fps)" % get_time_from_sim_steps(self.sim_steps, units='ps')
 
 
 # This is needed to make our custom metaclass work with abc.ABCMeta used in the
@@ -517,7 +517,7 @@ class Waitable(object):
     Compatibility layer that emulates `collections.abc.Awaitable`.
 
     This converts a `_wait` abstract method into a suitable `__await__` on
-    supporting python versions (>=3.3).
+    supporting Python versions (>=3.3).
     """
     __slots__ = ()
     @decorators.coroutine
@@ -526,7 +526,7 @@ class Waitable(object):
         Should be implemented by the subclass. Called by `yield self` to
         convert the waitable object into a coroutine.
 
-        ReturnValue can be used here
+        ReturnValue can be used here.
         """
         raise NotImplementedError
         yield
@@ -559,7 +559,7 @@ class _AggregateWaitable(Waitable):
 @decorators.coroutine
 def _wait_callback(trigger, callback):
     """
-    Wait for a trigger, and call `callback` with the outcome of the yield
+    Wait for a trigger, and call `callback` with the outcome of the yield.
     """
     try:
         ret = outcomes.Value((yield trigger))
