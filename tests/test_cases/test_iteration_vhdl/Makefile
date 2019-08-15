@@ -27,3 +27,4 @@
 
 include ../../designs/viterbi_decoder_axi4s/Makefile
 MODULE = test_iteration
+SIM_ARGS ?= --ieee-asserts=disable-at-0
