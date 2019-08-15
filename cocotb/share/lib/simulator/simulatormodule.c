@@ -219,7 +219,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
-        fprintf(stderr, "Attempt to register ReadOnly callback with!\n");
+        fprintf(stderr, "Attempt to register ReadOnly callback without enough arguments!\n");
         return NULL;
     }
 
@@ -242,7 +242,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -271,7 +271,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
-        fprintf(stderr, "Attempt to register ReadWrite callback with!\n");
+        fprintf(stderr, "Attempt to register ReadWrite callback without enough arguments!\n");
         return NULL;
     }
 
@@ -294,7 +294,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -323,7 +323,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
-        fprintf(stderr, "Attempt to register NextStep callback with!\n");
+        fprintf(stderr, "Attempt to register NextStep callback without enough arguments!\n");
         return NULL;
     }
 
@@ -346,7 +346,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -407,7 +407,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -475,7 +475,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     // Causes segfault?
     callback_data_p->_saved_thread_state = PyThreadState_Get();//PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
