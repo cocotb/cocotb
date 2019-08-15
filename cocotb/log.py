@@ -34,7 +34,7 @@ import sys
 import logging
 import warnings
 
-from cocotb.utils import get_sim_time
+from cocotb.utils import get_sim_time, want_color_output
 
 import cocotb.ANSI as ANSI
 
@@ -57,12 +57,8 @@ class SimBaseLog(logging.getLoggerClass()):
 
         # customizations of the defaults
         hdlr = logging.StreamHandler(sys.stdout)
-        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT") and not os.getenv("GUI")
-        if want_ansi is None:
-            want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
-        else:
-            want_ansi = want_ansi == '1'
-        if want_ansi:
+
+        if want_color_output():
             hdlr.setFormatter(SimColourLogFormatter())
             self.colour = True
         else:
@@ -164,8 +160,8 @@ class SimLogFormatter(logging.Formatter):
 
 
 class SimColourLogFormatter(SimLogFormatter):
-
     """Log formatter to provide consistent log message handling."""
+    
     loglevel2colour = {
         logging.DEBUG   :       "%s",
         logging.INFO    :       ANSI.COLOR_INFO + "%s" + ANSI.COLOR_DEFAULT,
