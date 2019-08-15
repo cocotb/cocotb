@@ -290,7 +290,7 @@ texinfo_documents = [
 # For now show the todos
 todo_include_todos = True
 
-# -- Extra setup for C documentation with Doxygen and breathe 
+# -- Extra setup for C documentation with Doxygen and breathe ------------------
 # see also https://breathe.readthedocs.io/en/latest/readthedocs.html
 
 env = os.environ.copy()
@@ -305,3 +305,22 @@ breathe_domain_by_extension = {
     "h" : "cpp",
 }
 breathe_show_define_initializer = True
+
+# -- Extra setup for spelling check --------------------------------------------
+
+# Spelling check needs an additional module that is not installed by default.
+# Add it only if spelling check is requested so docs can be generated without it.
+
+if 'spelling' in sys.argv:
+    extensions.append("sphinxcontrib.spelling")
+
+# Spelling language.
+spelling_lang = 'en_US'
+tokenizer_lang = spelling_lang
+
+# Location of word list.
+spelling_word_list_filename = ["spelling_wordlist.txt", "c_symbols.txt"]
+
+spelling_ignore_pypi_package_names = False
+spelling_ignore_wiki_words = False
+spelling_show_suggestions = True

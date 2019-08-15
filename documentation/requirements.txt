@@ -4,4 +4,6 @@ sphinx-rtd-theme
 cairosvg
 breathe
 sphinxcontrib-trio
+sphinxcontrib-spelling
+pyenchant
 sphinx-issues
