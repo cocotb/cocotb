@@ -143,7 +143,7 @@ These are then passed to the `IO Module`_:
     io_module.set_read_function(read)
 
 
-We can then initialise the HAL and call functions, using the :class:`cocotb.external`
+We can then initialize the HAL and call functions, using the :class:`cocotb.external`
 decorator to turn the normal function into a blocking coroutine that we can
 ``yield``:
 

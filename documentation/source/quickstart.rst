@@ -95,7 +95,7 @@ Windows 7 installation
 ----------------------
 
 Work has been done with the support of the cocotb community to enable
-Windows support using the MinGW/Msys environment. Download the MinGQ installer
+Windows support using the MinGW/Msys environment. Download the MinGW installer
 from.
 
 https://sourceforge.net/projects/mingw/files/latest/download?source=files .
@@ -260,7 +260,7 @@ This will drive a square wave clock onto the ``clk`` port of the toplevel.
 Accessing the design
 --------------------
 
-When cocotb initialises it finds the top-level instantiation in the simulator
+When cocotb initializes it finds the top-level instantiation in the simulator
 and creates a handle called ``dut``. Top-level signals can be accessed using the
 "dot" notation used for accessing object attributes in Python. The same mechanism
 can be used to access signals inside the design.
