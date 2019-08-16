@@ -41,7 +41,7 @@ def raise_error(obj, msg):
         msg (str): The log message.
     """
     exc_info = sys.exc_info()
-    # 2.6 cannot use named access
+    # Python 2.6 cannot use named access
     if sys.version_info[0] >= 3:
         buff = StringIO()
         traceback.print_exception(*exc_info, file=buff)

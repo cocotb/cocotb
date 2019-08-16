@@ -26,7 +26,7 @@ use dec_viterbi.pkg_components.all;
 use dec_viterbi.pkg_trellis.all;
 
 
-entity dec_viterbi is
+entity dec_viterbi_ent is
 	port(
 
 	--
@@ -70,10 +70,10 @@ entity dec_viterbi is
 	s_axis_ctrl_tlast  : in std_logic;
 	s_axis_ctrl_tready : out std_logic
 );
-end entity dec_viterbi;
+end entity dec_viterbi_ent;
 
 
-architecture rtl of dec_viterbi is
+architecture rtl of dec_viterbi_ent is
 
 	alias clk is aclk;
 	signal rst : std_logic;

@@ -3,6 +3,7 @@ Aldec
 Altera
 Async
 Avalon
+AXI
 Cosimulation
 FLI
 GPI
@@ -48,6 +49,7 @@ coroutine
 coroutines
 dev
 dir
+diff
 docstring
 endian
 endianness
@@ -95,3 +97,5 @@ timesteps
 toplevel
 trimmable
 utils
+packetized
+
