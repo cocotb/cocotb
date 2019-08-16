@@ -81,7 +81,6 @@ def normal_function(dut):
 
 @cocotb.test()
 def test_function_not_decorated(dut):
-    yield Timer(1)  # gh-437
     try:
         yield normal_function(dut)
     except TypeError as exc:
@@ -882,13 +881,9 @@ if sys.version_info[:2] >= (3, 3):
         """ Test that the Python 3.3 syntax for returning from generators works """
         @cocotb.coroutine
         def return_it(x):
-            # workaround for #gh-637 - need to yield something before finishing
-            yield Timer(1)
-
             return x
 
-            # this makes `return_it` a coroutine, even after we remove the
-            # workaround above
+            # this makes `return_it` a coroutine
             yield
 
         ret = yield return_it(42)
@@ -928,14 +923,17 @@ def test_stack_overflow(dut):
 
 
 @cocotb.test()
+def test_immediate_test(dut):
+    """ Test that tests can return immediately """
+    return
+    yield
+
+
+@cocotb.test()
 def test_immediate_coro(dut):
     """
     Test that coroutines can return immediately
     """
-    # note: it seems that the test still has to yield at least once, even
-    # if the subroutines do not
-    yield Timer(1)
-
     @cocotb.coroutine
     def immediate_value():
         raise ReturnValue(42)
