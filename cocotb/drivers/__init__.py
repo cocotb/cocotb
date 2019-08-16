@@ -207,7 +207,7 @@ class Driver(object):
 
 
 class BusDriver(Driver):
-    """Wrapper around common functionality for busses which have:
+    """Wrapper around common functionality for buses which have:
 
         * a list of :attr:`_signals` (class attribute)
         * a list of :attr:`_optional_signals` (class attribute)

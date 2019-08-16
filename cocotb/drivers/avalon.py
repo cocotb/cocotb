@@ -47,7 +47,7 @@ class AvalonMM(BusDriver):
     """Avalon Memory Mapped Interface (Avalon-MM) Driver.
 
     Currently we only support the mode required to communicate with SF
-    avalon_mapper which is a limited subset of all the signals.
+    ``avalon_mapper`` which is a limited subset of all the signals.
 
     Blocking operation is all that is supported at the moment, and for the near
     future as well.
@@ -94,7 +94,7 @@ class AvalonMM(BusDriver):
 
 
 class AvalonMaster(AvalonMM):
-    """Avalon Memory Mapped Interface (Avalon-MM) Master"""
+    """Avalon Memory Mapped Interface (Avalon-MM) Master."""
     def __init__(self, entity, name, clock, **kwargs):
         AvalonMM.__init__(self, entity, name, clock, **kwargs)
         self.log.debug("AvalonMaster created")
@@ -117,8 +117,9 @@ class AvalonMaster(AvalonMM):
 
     @coroutine
     def read(self, address, sync=True):
-        """Issue a request to the bus and block until this
-        comes back. Simulation time still progresses
+        """Issue a request to the bus and block until this comes back.
+
+        Simulation time still progresses
         but syntactically it blocks.
 
         Args:
@@ -423,7 +424,7 @@ class AvalonMemory(BusDriver):
                         self.log.error("Burstcount must be 1 at least")
 
                     # toggle waitrequest
-                    # TODO: configure waitrequest time with avalon properties
+                    # TODO: configure waitrequest time with Avalon properties
                     yield NextTimeStep()  # can't write during read-only phase
                     self.bus.waitrequest <= 1
                     yield edge
@@ -683,7 +684,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         clkedge = RisingEdge(self.clock)
         firstword = True
 
-        # FIXME busses that aren't integer numbers of bytes
+        # FIXME: buses that aren't an integer numbers of bytes
         bus_width = int(len(self.bus.data) / 8)
 
         word = BinaryValue(n_bits=len(self.bus.data),

@@ -484,7 +484,7 @@ class lazy_property(object):
 
 
 def want_color_output():
-    """Return ``True`` if colored output is possible/requested and not running in GUI."""
+    """Return ``True`` if coloured output is possible/requested and not running in GUI."""
     want_color = sys.stdout.isatty()  # default to color for TTYs
     if os.getenv("COCOTB_ANSI_OUTPUT", default='0') == '1':
         want_color = True
