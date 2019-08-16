@@ -75,14 +75,14 @@ class Clock(BaseClock):
         BaseClock.__init__(self, signal)
         self.period = get_sim_steps(period, units)
         self.half_period = get_sim_steps(period / 2.0, units)
-        self.frequency = 1.0 / get_time_from_sim_steps(self.period,units='us')
+        self.frequency = 1.0 / get_time_from_sim_steps(self.period, units='us')
         self.hdl = None
         self.signal = signal
         self.coro = None
         self.mcoro = None
 
     @cocotb.coroutine
-    def start(self, cycles=None):
+    def start(self, cycles=None, start_high=True):
         """Clocking coroutine.  Start driving your clock by forking a 
         call to this.
 
@@ -90,6 +90,9 @@ class Clock(BaseClock):
             cycles (int, optional): Cycle the clock *cycles* number of times,
                 or if ``None`` then cycle the clock forever. 
                 Note: ``0`` is not the same as ``None``, as ``0`` will cycle no times.
+            start_high (bool, optional): Whether to start the clock with a ``1``
+                for the first half of the period.
+                Default is ``True``.
         """
         t = Timer(self.half_period)
         if cycles is None:
@@ -97,11 +100,19 @@ class Clock(BaseClock):
         else:
             it = range(cycles)
 
-        for _ in it:
-            self.signal <= 1
-            yield t
-            self.signal <= 0
-            yield t
+        # branch outside for loop for performance (decision has to be taken only once)
+        if start_high:
+            for _ in it:
+                self.signal <= 1
+                yield t
+                self.signal <= 0
+                yield t
+        else:
+            for _ in it:
+                self.signal <= 0
+                yield t
+                self.signal <= 1
+                yield t
 
     def __str__(self):
         return self.__class__.__name__ + "(%3.1f MHz)" % self.frequency
