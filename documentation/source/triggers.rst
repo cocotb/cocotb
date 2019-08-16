@@ -34,7 +34,7 @@ Signal related
     Registers a callback that will continue execution of the coroutine on a transition from ``1`` to ``0`` of *signal*.
 
 :class:`ClockCycles(signal, num_cycles) <.ClockCycles>`
-    Registers a callback that will continue execution of the coroutine when *num_cycles* transitions from ``0`` to ``1`` have occured on *signal*.
+    Registers a callback that will continue execution of the coroutine when *num_cycles* transitions from ``0`` to ``1`` have occurred on *signal*.
 
 
 Python Triggers

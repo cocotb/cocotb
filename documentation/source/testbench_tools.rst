@@ -128,7 +128,7 @@ Monitoring Busses
 
 For our testbenches to actually be useful, we have to monitor some of these
 busses, and not just drive them. That's where the :class:`.Monitor` class
-comes in, with prebuilt monitors for Avalon and XGMII busses. The
+comes in, with pre-built monitors for Avalon and XGMII busses. The
 Monitor class is a base class which you are expected to derive for your
 particular purpose. You must create a :any:`_monitor_recv()` function which is
 responsible for determining 1) at what points in simulation to call the

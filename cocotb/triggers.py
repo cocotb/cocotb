@@ -76,7 +76,7 @@ class Trigger(with_metaclass(abc.ABCMeta)):
     def prime(self, callback):
         """Set a callback to be invoked when the trigger fires.
 
-        The callback will be invoked with a single argumement, `self`.
+        The callback will be invoked with a single argument, `self`.
 
         Subclasses must override this, but should end by calling the base class
         method.
@@ -117,7 +117,7 @@ class Trigger(with_metaclass(abc.ABCMeta)):
         """
         return outcomes.Value(self)
 
-    # Once 2.7 is dropped, this can be run unconditionally
+    # Once Python 2.7 support is dropped, this can be run unconditionally
     if sys.version_info >= (3, 3):
         exec_(textwrap.dedent("""
         def __await__(self):
@@ -129,12 +129,13 @@ class Trigger(with_metaclass(abc.ABCMeta)):
 class PythonTrigger(Trigger):
     """Python triggers don't use GPI at all.
 
-    For example notification of coroutine completion etc.
+    For example: notification of coroutine completion.
     """
 
 
 class GPITrigger(Trigger):
     """Base Trigger class for GPI triggers.
+
     Consumes simulation time.
     """
     __slots__ = ('cbhdl',)

@@ -1,28 +1,27 @@
-'''
-Copyright (c) 2014 Potential Ventures Ltd
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd, nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+# Copyright (c) 2014 Potential Ventures Ltd
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd, nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
 from collections import OrderedDict, defaultdict
@@ -34,9 +33,7 @@ from cocotb.utils import reject_remaining_kwargs
 
 
 class Wavedrom(object):
-    """
-    Base class for a wavedrom compatible tracer
-    """
+    """Base class for a WaveDrom compatible tracer."""
     def __init__(self, obj):
 
         self._hdls = OrderedDict()
@@ -50,9 +47,7 @@ class Wavedrom(object):
         self.clear()
 
     def sample(self):
-        """
-        Record a sample of the signal value at this point in time
-        """
+        """Record a sample of the signal value at this point in time."""
 
         def _lastval(samples):
             for x in range(len(samples)-1, -1, -1):
@@ -88,9 +83,7 @@ class Wavedrom(object):
             self._samples[name].append(char)
 
     def clear(self):
-        """
-        Delete all sampled data
-        """
+        """Delete all sampled data."""
         self._samples = defaultdict(list)
         self._data = defaultdict(list)
 
@@ -99,9 +92,7 @@ class Wavedrom(object):
             self._samples[name].append("|")
 
     def get(self, add_clock=True):
-        """
-        Return the samples as a list suitable for use with WaveDrom
-        """
+        """Return the samples as a list suitable for use with WaveDrom."""
         siglist = []
         traces = []
         for name in self._hdls.keys():
@@ -124,19 +115,17 @@ class Wavedrom(object):
 
 
 class trace(object):
-    """
-    Context manager to enable tracing of signals
+    """Context manager to enable tracing of signals.
 
-    Arguments are an arbitrary number of signals or busses to trace.
+    Arguments are an arbitrary number of signals or buses to trace.
+    We also require a clock to sample on, passed in as a keyword argument.
 
-    We also require a clock to sample on, passed in as a keyword argument
-
-    Usage:
+    Usage::
 
         with trace(sig1, sig2, a_bus, clk=clk) as waves:
             # Stuff happens, we trace it
 
-            # Dump to JSON format compatible with wavedrom
+            # Dump to JSON format compatible with WaveDrom
             j = waves.dumpj()
     """
 

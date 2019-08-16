@@ -199,7 +199,7 @@ class Driver(object):
 
 
 class BusDriver(Driver):
-    """Wrapper around common functionality for busses which have:
+    """Wrapper around common functionality for buses which have:
 
         * a list of :attr:`_signals` (class attribute)
         * a list of :attr:`_optional_signals` (class attribute)
@@ -209,7 +209,7 @@ class BusDriver(Driver):
 
         Args:
             entity (SimHandle): A handle to the simulator entity.
-            name (str or None): Name of this bus. ``None`` for nameless bus, e.g.
+            name (str or None): Name of this bus. ``None`` for a nameless bus, e.g.
                 bus-signals in an interface or a modport.
                 (untested on struct/record, but could work here as well).
             clock (SimHandle): A handle to the clock associated with this bus.

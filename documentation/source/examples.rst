@@ -73,7 +73,7 @@ The directory :file:`cocotb/examples/axi_lite_slave/` contains ...
 
 .. todo::
 
-    Write documentation, see README.md
+    Write documentation, see :file:`README.md`
 
 
 Sorter

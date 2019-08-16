@@ -36,7 +36,7 @@ How is cocotb different?
 
 cocotb encourages the same philosophy of design re-use and randomised testing as UVM, however is implemented in Python rather than SystemVerilog.
 
-In cocotb, VHDL/Verilog/SystemVerilog are only used for the synthesisable design.
+With cocotb, VHDL/Verilog/SystemVerilog are normally only used for the design itself, not the testbench.
 
 cocotb has built-in support for integrating with the `Jenkins <https://jenkins.io/>`_ continuous integration system.
 
@@ -80,6 +80,6 @@ cocotb was developed by `Potential Ventures <https://potential.ventures>`_ with 
 and contributions from Gordon McGregor and Finn Grimwood
 (see `contributers <https://github.com/cocotb/cocotb/graphs/contributors>`_ for the full list of contributions).
 
-We also have a list of talks and papers, libraries and examples at our wiki page
+We also have a list of talks and papers, libraries and examples at our Wiki page
 `Further Resources <https://github.com/cocotb/cocotb/wiki/Further-Resources>`_.
 Feel free to add links to cocotb-related content that we are still missing!

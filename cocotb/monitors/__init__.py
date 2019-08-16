@@ -56,7 +56,7 @@ class Monitor(object):
     This class should not be used
     directly, but should be subclassed and the internal :any:`_monitor_recv` method
     should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
-    method should capture some behavior of the pins, form a transaction, and
+    method should capture some behaviour of the pins, form a transaction, and
     pass this transaction to the internal :any:`_recv` method.  The :any:`_monitor_recv`
     method is added to the cocotb scheduler during the ``__init__`` phase, so it
     should not be yielded anywhere.
@@ -167,7 +167,7 @@ class Monitor(object):
 
 
 class BusMonitor(Monitor):
-    """Wrapper providing common functionality for monitoring busses."""
+    """Wrapper providing common functionality for monitoring buses."""
     _signals = []
     _optional_signals = []
 
