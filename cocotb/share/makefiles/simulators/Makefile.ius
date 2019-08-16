@@ -80,7 +80,8 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_EXTRA = vhpi
     EXTRA_ARGS += -v93
     EXTRA_ARGS += -top $(TOPLEVEL)
-    MAKE_LIB = -makelib $(TOPLEVEL)
+    RTL_LIBRARY ?= $(TOPLEVEL)
+    MAKE_LIB = -makelib $(RTL_LIBRARY)
     HDL_SOURCES = $(VHDL_SOURCES)
 ifneq ($(VERILOG_SOURCES),)
     HDL_SOURCES += $(VERILOG_SOURCES)
