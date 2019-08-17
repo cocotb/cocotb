@@ -33,7 +33,7 @@ VERILOG_SOURCES =   $(SRC_BASE)/verilog/baud_gen.v \
                     $(SRC_BASE)/verilog/uart_top.v \
                     $(SRC_BASE)/verilog/uart2bus_top.v
 
-VERILOG_SOURCES += $(SRC_BASE)/top/verilog_toplevel.v
+VERILOG_SOURCES += $(SRC_BASE)/top/verilog_toplevel.sv
 TOPLEVEL = verilog_toplevel
 
 include $(COCOTB)/makefiles/Makefile.inc
