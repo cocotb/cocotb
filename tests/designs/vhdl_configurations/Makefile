@@ -28,11 +28,15 @@ VHDL_SOURCES = $(COCOTB)/tests/designs/vhdl_configurations/dut.vhd
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(COCOTB)/tests/designs/vhdl_configurations/testbench.sv
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-   	VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/testbench.vhd
+    VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/testbench.vhd
 else
     $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/configurations.vhd
+
+ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+    SIM_ARGS += -v93
+endif
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim
