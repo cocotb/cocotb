@@ -2,47 +2,76 @@ Triggers
 ========
 
 Triggers are used to indicate when the cocotb scheduler should resume coroutine execution.
-Typically a coroutine will :keyword:`yield` a trigger or a list of triggers,
-while it is waiting for them to complete.
+To use a trigger, a coroutine should :keyword:`await` or :keyword:`yield` it.
+This will cause execution of the current coroutine to pause.
+When the trigger fires, execution of the paused coroutine will resume::
 
-Simulation Timing
------------------
+    @cocotb.coroutine
+    def coro():
+        print("Some time before the edge")
+        yield RisingEdge(clk)
+        print("Immediately after the edge")
 
-:class:`Timer(time) <.Timer()>`
-    Registers a timed callback with the simulator to continue execution of the coroutine
-    after a specified simulation time period has elapsed.
+Or using the syntax in Python 3.5 onwards:
+
+.. code-block:: python3
+
+    @cocotb.coroutine
+    async def coro():
+        print("Some time before the edge")
+        await RisingEdge(clk)
+        print("Immediately after the edge")
+
+.. _simulator-triggers:
+
+Simulator Triggers
+------------------
+
+Signals
+~~~~~~~
+
+.. autoclass:: cocotb.triggers.Edge
+
+.. autoclass:: cocotb.triggers.RisingEdge
+
+.. autoclass:: cocotb.triggers.FallingEdge
+
+.. autoclass:: cocotb.triggers.ClockCycles
 
 
-:class:`.ReadOnly()`
-    Registers a callback which will continue execution of the coroutine when the current simulation timestep moves to the :any:`ReadOnly` phase of the RTL simulator.
-    The :any:`ReadOnly` phase is entered when the current timestep no longer has any further delta steps.
-    This should be a point where all the signal values are stable as there are no more RTL events scheduled for the timestep.
-    The simulator should not allow scheduling of more events in this timestep.
-    Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
+Timing
+~~~~~~
 
+.. autoclass:: cocotb.triggers.Timer
 
-Signal related
---------------
+.. autoclass:: cocotb.triggers.ReadOnly
 
-:class:`Edge(signal) <.Edge()>`
-    Registers a callback that will continue execution of the coroutine on any value change of *signal*.
+.. autoclass:: cocotb.triggers.ReadWrite
 
-:class:`RisingEdge(signal) <.RisingEdge()>`
-    Registers a callback that will continue execution of the coroutine on a transition from ``0`` to ``1`` of *signal*.
-
-:class:`FallingEdge(signal) <.FallingEdge()>`
-    Registers a callback that will continue execution of the coroutine on a transition from ``1`` to ``0`` of *signal*.
-
-:class:`ClockCycles(signal, num_cycles) <.ClockCycles>`
-    Registers a callback that will continue execution of the coroutine when *num_cycles* transitions from ``0`` to ``1`` have occured on *signal*.
+.. autoclass:: cocotb.triggers.NextTimeStep
 
 
 Python Triggers
 ---------------
 
-:class:`.Event()`
-    Can be used to synchronise between coroutines.
-    Yielding :meth:`.Event.wait()` will block the coroutine until :meth:`.Event.set()` is called somewhere else.
+.. autoclass:: cocotb.triggers.Combine
 
-:class:`Join(coroutine_2) <.Join()>`
-    Will block the coroutine until *coroutine_2* has completed.
+.. autoclass:: cocotb.triggers.First
+
+.. autoclass:: cocotb.triggers.Join
+    :members: retval
+
+
+Synchronization
+~~~~~~~~~~~~~~~
+
+These are not :class:`Trigger`\ s themselves, but contain methods that can be used as triggers.
+These are used to synchronize coroutines with each other.
+
+.. autoclass:: cocotb.triggers.Event
+    :members:
+    :member-order: bysource
+
+.. autoclass:: cocotb.triggers.Lock
+    :members:
+    :member-order: bysource

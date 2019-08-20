@@ -218,15 +218,10 @@ def hexdump(x):
         A string containing the hexdump.
 
     Example:
-
-    .. code-block:: python
-
-        print(hexdump('this somewhat long string'))
-
-    .. code-block:: none
-
+        >>> print(hexdump('this somewhat long string'))
         0000   74 68 69 73 20 73 6F 6D 65 77 68 61 74 20 6C 6F   this somewhat lo
         0010   6E 67 20 73 74 72 69 6E 67                        ng string
+        <BLANKLINE>
     """
     # adapted from scapy.utils.hexdump
     rs = ""
@@ -256,16 +251,18 @@ def hexdiffs(x, y):
         y: Object that supports conversion via the ``str`` built-in.
 
     Example:
-
-    .. code-block:: python
-
-        print(hexdiffs('this short thing', 'this also short'))
-
-    .. code-block:: none
-
+        >>> print(hexdiffs(0, 1))
+        0000      30                                               0
+             0000 31                                               1
+        <BLANKLINE>
+        >>> print(hexdiffs('a', 'b'))
+        0000      61                                               a
+             0000 62                                               b
+        <BLANKLINE>
+        >>> print(hexdiffs('this short thing', 'this also short'))
         0000      746869732073686F 7274207468696E67 this short thing
              0000 7468697320616C73 6F  2073686F7274 this also  short
-
+        <BLANKLINE>
     """
     # adapted from scapy.utils.hexdiff
 
@@ -280,15 +277,9 @@ def hexdiffs(x, y):
         return r
 
     def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
-        """Highlight only with ANSI output if it's requested and we are not in a GUI."""
+        """Highlight with ANSI colors if possible/requested and not running in GUI."""
         
-        want_ansi = os.getenv("COCOTB_ANSI_OUTPUT") and not os.getenv("GUI")
-        if want_ansi is None:
-            want_ansi = sys.stdout.isatty()  # default to ANSI for TTYs
-        else:
-            want_ansi = want_ansi == '1'
-
-        if want_ansi:
+        if want_color_output():
             return colour + string + ANSI.COLOR_DEFAULT
         else:
             return string
@@ -443,10 +434,10 @@ def with_metaclass(meta, *bases):
 
     .. code-block:: python
 
-        # python 3
+        # Python 3
         class Foo(Base1, Base2, metaclass=Meta): pass
 
-        # python 2
+        # Python 2
         class Foo(Base1, Base2):
             __metaclass__ = Meta
     """
@@ -503,7 +494,7 @@ class ParametrizedSingleton(type):
         """Convert the construction arguments into a normalized representation that
         uniquely identifies this singleton.
         """
-        # Once we drop python 2, we can implement a default like the following,
+        # Once we drop Python 2, we can implement a default like the following,
         # which will work in 99% of cases:
         # return tuple(inspect.Signature(cls).bind(*args, **kwargs).arguments.items())
         raise NotImplementedError
@@ -525,9 +516,9 @@ class nullcontext(object):
     Used as a stand-in for a normal context manager, when a particular
     block of code is only sometimes used with a normal context manager:
 
-    >>> cm = optional_cm if condition else nullcontext()
-    >>> with cm:
-    >>>     # Perform operation, using optional_cm if condition is True
+    cm = optional_cm if condition else nullcontext()
+    with cm:
+        # Perform operation, using optional_cm if condition is True
     """
 
     def __init__(self, enter_result=None):
@@ -542,7 +533,7 @@ class nullcontext(object):
 
 def reject_remaining_kwargs(name, kwargs):
     """
-    Helper function to emulate python 3 keyword-only arguments.
+    Helper function to emulate Python 3 keyword-only arguments.
 
     Use as::
 
@@ -558,7 +549,7 @@ def reject_remaining_kwargs(name, kwargs):
             ...
     """
     if kwargs:
-        # match the error message to what python 3 produces
+        # match the error message to what Python 3 produces
         bad_arg = next(iter(kwargs))
         raise TypeError(
             '{}() got an unexpected keyword argument {!r}'.format(name, bad_arg)
@@ -590,6 +581,16 @@ class lazy_property(object):
         return value
 
 
+def want_color_output():
+    """Return ``True`` if colored output is possible/requested and not running in GUI."""
+    want_color = sys.stdout.isatty()  # default to color for TTYs
+    if os.getenv("COCOTB_ANSI_OUTPUT", default='0') == '1':
+        want_color = True
+    if os.getenv("GUI", default='0') == '1':
+        want_color = False
+    return want_color
+        
+    
 if __name__ == "__main__":
     import random
     a = ""

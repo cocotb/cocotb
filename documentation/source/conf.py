@@ -40,7 +40,6 @@ extensions = [
     'sphinx.ext.intersphinx',
     'cairosvgconverter',
     'breathe',
-    'sphinxcontrib_trio',
     'sphinx_issues',
     ]
 
@@ -305,3 +304,5 @@ breathe_domain_by_extension = {
     "h" : "cpp",
 }
 breathe_show_define_initializer = True
+
+autoclass_content = "both"
