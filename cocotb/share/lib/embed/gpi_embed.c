@@ -38,6 +38,9 @@
 #if defined(_WIN32)
 #include <windows.h>
 #define sleep(n) Sleep(1000 * n)
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
 #endif
 static PyThreadState *gtstate = NULL;
 
@@ -49,7 +52,61 @@ static char progname[] = "cocotb";
 static char *argv[] = { progname };
 #endif
 
+#if defined(_WIN32)
+#if defined(__MINGW32__) || defined (__CYGWIN32__)
+const char* PYTHON_INTERPRETER_PATH = "/Scripts/python";
+#else
+const char* PYTHON_INTERPRETER_PATH = "\\Scripts\\python";
+#endif
+#else
+const char* PYTHON_INTERPRETER_PATH = "/bin/python";
+#endif
+
+
 static PyObject *pEventFn = NULL;
+
+
+static void set_program_name_in_venv(void)
+{
+    static char venv_path[PATH_MAX];
+#if PY_MAJOR_VERSION >= 3
+    static wchar_t venv_path_w[PATH_MAX];
+#endif
+
+    const char *venv_path_home = getenv("VIRTUAL_ENV");
+    if (!venv_path_home) {
+        LOG_INFO("Did not detect Python virtual environment. Using system-wide Python interpreter");
+        return;
+    }
+
+    strncpy(venv_path, venv_path_home, sizeof(venv_path));
+    if (venv_path[sizeof(venv_path) - 1]) {
+        LOG_ERROR("Unable to set Python Program Name using virtual environment. Path to virtual environment too long");
+        return;
+    }
+
+    strncat(venv_path, PYTHON_INTERPRETER_PATH, sizeof(venv_path) - strlen(venv_path) - 1);
+    if (venv_path[sizeof(venv_path) - 1]) {
+        LOG_ERROR("Unable to set Python Program Name using virtual environment. Path to interpreter too long");
+        return;
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    wcsncpy(venv_path_w, Py_DecodeLocale(venv_path, NULL), sizeof(venv_path_w)/sizeof(wchar_t));
+
+    if (venv_path_w[(sizeof(venv_path_w)/sizeof(wchar_t)) - 1]) {
+        LOG_ERROR("Unable to set Python Program Name using virtual environment. Path to interpreter too long");
+        return;
+    }
+
+    LOG_INFO("Using Python virtual environment interpreter at %ls", venv_path_w);
+    Py_SetProgramName(venv_path_w);
+#else
+    LOG_INFO("Using Python virtual environment interpreter at %s", venv_path);
+    Py_SetProgramName(venv_path);
+#endif
+}
+
 
 /**
  * @name    Initialise the Python interpreter
@@ -83,34 +140,7 @@ void embed_init_python(void)
     }
 
     to_python();
-
-    // reset Program Name (i.e. argv[0]) if we are in a Python virtual environment
-    char *venv_path_home = getenv("VIRTUAL_ENV");
-    if (venv_path_home) {
-        char venv_path[strlen(venv_path_home)+64];
-        strcpy(venv_path, venv_path_home);
-        strcat(venv_path, "/bin/python");  // this is universal in any VIRTUAL_ENV the Python interpreter
-#if PY_MAJOR_VERSION >= 3
-        static wchar_t venv_path_w[1024];
-#if PY_MINOR_VERSION >= 5
-        // Python3.5+ provides the locale decoder
-        wcscpy(venv_path_w, Py_DecodeLocale(venv_path, NULL));
-#else
-        // for lesser Python versions, we just hope the user specified his locales correctly
-        setlocale (LC_ALL, "");
-        mbstowcs(venv_path_w, venv_path, sizeof(venv_path_w));
-#endif
-        LOG_INFO("Using virtualenv at %ls.", venv_path_w);
-        Py_SetProgramName(venv_path_w);
-#else
-        // Python 2 case
-        LOG_INFO("Using virtualenv at %s.", venv_path);
-        Py_SetProgramName(venv_path);
-#endif
-    } else {
-        LOG_INFO("Did not detect Python virtual environment. Using system-wide Python interpreter.");
-    }
-
+    set_program_name_in_venv();
     Py_Initialize();                    /* Initialize the interpreter */
     PySys_SetArgvEx(1, argv, 0);
     PyEval_InitThreads();               /* Create (and acquire) the interpreter lock */
@@ -197,9 +227,6 @@ int embed_sim_init(gpi_sim_info_t *info)
             }
         }
     }
-
-
-
 
     PyObject *cocotb_module, *cocotb_init, *cocotb_args, *cocotb_retval;
     PyObject *simlog_obj, *simlog_func;
