@@ -137,6 +137,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
             fprintf(stdout, " in %-31s ", funcname);
             fprintf(stdout, "%s", log_buff);
             fprintf(stdout, "\n");
+            fflush(stdout);
         }
         return;
     }
