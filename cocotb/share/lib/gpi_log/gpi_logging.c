@@ -160,14 +160,19 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
         PyGILState_Release(gstate);
         return;
     }
-
-    if (filter_ret == Py_True) {
-        Py_DECREF(filter_ret);
+    int is_enabled = PyObject_IsTrue(filter_ret);
+    Py_DECREF(filter_ret);
+    if (is_enabled < 0) {
+        /* A python exception occured while converting `filter_ret` to bool */
+        PyErr_Print();
         PyGILState_Release(gstate);
         return;
     }
 
-    Py_DECREF(filter_ret);
+    if (!is_enabled) {
+        PyGILState_Release(gstate);
+        return;
+    }
 
     va_start(ap, msg);
     n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
