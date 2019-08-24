@@ -47,7 +47,7 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl()
 
 bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
 #ifdef IUS
-    /* IUS does not appear to set the vhpiIsUnconstrainedP property.  IUS Docs say will return
+    /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP property.  IUS Docs say will return
      * -1 if unconstrained, but with vhpiIntT being unsigned, the value returned is below.
      */
     const vhpiIntT UNCONSTRAINED = 2147483647;
@@ -108,7 +108,7 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
                     if (curr_idx == dim) {
                         vhpi_release_handle(it);
 
-                        /* IUS only sets the vhpiIsUnconstrainedP incorrectly on the base type */
+                        /* IUS/Xcelium only sets the vhpiIsUnconstrainedP incorrectly on the base type */
                         if (!vhpi_get(vhpiIsUnconstrainedP, constraint)) {
                             error = false;
                             *left  = vhpi_get(vhpiLeftBoundP, constraint);
