@@ -89,6 +89,12 @@ Driver
     :show-inheritance:
     :private-members:
 
+.. autoclass:: cocotb.drivers.ValidatedBusDriver
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+    :private-members:
+
 Monitor
 -------
 
