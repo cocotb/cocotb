@@ -644,11 +644,11 @@ def test_clock_cycles(dut):
 
     yield RisingEdge(clk)
 
-    dut.log.info("After one edge")
+    dut._log.info("After one edge")
 
     yield ClockCycles(clk, 10)
 
-    dut.log.info("After 10 edges")
+    dut._log.info("After 10 edges")
 
 @cocotb.test()
 def test_binary_value(dut):
@@ -756,7 +756,7 @@ def join_finished(dut):
     assert x == 1
 
     # joining the second time should give the same result.
-    # we chage retval here to prove it does not run again
+    # we change retval here to prove it does not run again
     retval = 2
     x = yield coro.join()
     assert x == 1
