@@ -5,7 +5,8 @@ Build options and Environment Variables
 Make System
 ===========
 
-Makefiles are provided for a variety of simulators in :file:`cocotb/makefiles/simulators`.  The common Makefile :file:`cocotb/makefiles/Makefile.sim` includes the appropriate simulator Makefile based on the contents of the ``SIM`` variable.
+Makefiles are provided for a variety of simulators in :file:`cocotb/share/makefiles/simulators`.
+The common Makefile :file:`cocotb/share/makefiles/Makefile.sim` includes the appropriate simulator Makefile based on the contents of the ``SIM`` variable.
 
 Make Targets
 ------------
@@ -31,7 +32,7 @@ Make Variables
       Set this to 1 to enable the GUI mode in the simulator (if supported).
 
     ``SIM``
-      Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/makefiles/makefile.$(SIM)`
+      Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/makefile.$(SIM)`
 
     ``VERILOG_SOURCES``
       A list of the Verilog source files to include.
