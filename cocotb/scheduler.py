@@ -711,6 +711,7 @@ class Scheduler(object):
         if _debug:
             self.log.debug("Scheduling with {}".format(send_outcome))
 
+        coro_completed = False
         try:
             result = coroutine._advance(send_outcome)
             if _debug:
@@ -722,6 +723,11 @@ class Scheduler(object):
                 self.log.debug("Coroutine {} completed with {}".format(
                     coroutine, coroutine._outcome
                 ))
+            coro_completed = True
+
+        # this can't go in the else above, as that causes unwanted exception
+        # chaining
+        if coro_completed:
             self.unschedule(coroutine)
             return
 
