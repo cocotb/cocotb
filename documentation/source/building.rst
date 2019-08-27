@@ -12,8 +12,7 @@ Make Targets
 
 Makefiles define two targets, ``regression`` and ``sim``, the default target is ``sim``.
 
-Both rules create a results file in the calling directory called :file:`results.xml`.  This file is a JUnit-compatible output file suitable for use with `Jenkins <https://jenkins.io/>`_. The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
-
+Both rules create a results file accordingly to :envvar:`COCOTB_RESULTS_FILE` variable.  This file is a JUnit-compatible output file suitable for use with `Jenkins <https://jenkins.io/>`_. The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
 
 Make Phases
 -----------
@@ -113,6 +112,10 @@ Environment Variables
     discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied modules.
 
     Multiple functions can be specified in a comma-separated list.
+
+.. envvar:: COCOTB_RESULTS_FILE
+
+    The filename where XML tests results are stored. If not provided, the default is :file:`results.xml`.
 
 
 Additional Environment Variables
