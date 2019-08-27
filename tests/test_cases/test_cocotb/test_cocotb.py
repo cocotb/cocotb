@@ -895,55 +895,112 @@ if sys.version_info[:2] >= (3, 3):
     '''))
 
 
+@cocotb.coroutine
+def _check_traceback(running_coro, exc_type, pattern):
+    try:
+        yield running_coro
+    except exc_type:
+        tb_text = traceback.format_exc()
+    else:
+        raise TestFailure("Exception was not raised")
+
+    if not re.match(pattern, tb_text):
+        raise TestFailure(
+            (
+                "Traceback didn't match - got:\n\n"
+                "{}\n"
+                "which did not match the pattern:\n\n"
+                "{}"
+            ).format(tb_text, pattern)
+        )
+
+
 @cocotb.test()
-def test_exceptions(dut):
+def test_exceptions_direct(dut):
+    """ Test exception propagation via a direct yield statement """
     @cocotb.coroutine
     def raise_inner():
         yield Timer(10)
         raise ValueError('It is soon now')
-
 
     @cocotb.coroutine
     def raise_soon():
         yield Timer(1)
         yield raise_inner()
 
-    try:
-        yield raise_soon()
-    except ValueError:
-        tb_text = traceback.format_exc()
-    else:
-        raise TestFailure("Exception was not raised")
-
-    # check the traceback is readable
+    # it's ok to change this value if the traceback changes - just make sure
+    # that when changed, it doesn't become harder to read.
     expected = textwrap.dedent(r"""
     Traceback \(most recent call last\):
-      File ".*test_cocotb\.py", line \d+, in test_exceptions
-        yield raise_soon\(\)
-      File ".*decorators\.py", line \d+, in _advance
-        .*
-      File ".*outcomes\.py", line \d+, in send
-        .*
+      File ".*test_cocotb\.py", line \d+, in _check_traceback
+        yield running_coro
       File ".*test_cocotb\.py", line \d+, in raise_soon
         yield raise_inner\(\)
-      File ".*decorators\.py", line \d+, in _advance
-        .*
-      File ".*outcomes\.py", line \d+, in send
-        .*
       File ".*test_cocotb\.py", line \d+, in raise_inner
         raise ValueError\('It is soon now'\)
     ValueError: It is soon now""").strip()
 
+    yield _check_traceback(raise_soon(), ValueError, expected)
 
-    if not re.match(expected, tb_text):
-        raise TestFailure(
-            (
-                "Traceback didn't match - got:\n"
-                "{}\n"
-                "which did not match:\n"
-                "{}"
-            ).format(tb_text, expected)
-        )
+
+@cocotb.test()
+def test_exceptions_forked(dut):
+    """ Test exception propagation via cocotb.fork """
+    @cocotb.coroutine
+    def raise_inner():
+        yield Timer(10)
+        raise ValueError('It is soon now')
+
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(1)
+        coro = cocotb.fork(raise_inner())
+        yield coro.join()
+
+    # it's ok to change this value if the traceback changes - just make sure
+    # that when changed, it doesn't become harder to read.
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*test_cocotb\.py", line \d+, in _check_traceback
+        yield running_coro
+      File ".*test_cocotb\.py", line \d+, in raise_soon
+        yield coro\.join\(\)
+      File ".*test_cocotb\.py", line \d+, in raise_inner
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+    yield _check_traceback(raise_soon(), ValueError, expected)
+
+
+@cocotb.test()
+def test_exceptions_first(dut):
+    """ Test exception propagation via cocotb.triggers.First """
+    @cocotb.coroutine
+    def raise_inner():
+        yield Timer(10)
+        raise ValueError('It is soon now')
+
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(1)
+        yield cocotb.triggers.First(raise_inner())
+
+    # it's ok to change this value if the traceback changes - just make sure
+    # that when changed, it doesn't become harder to read.
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*test_cocotb\.py", line \d+, in _check_traceback
+        yield running_coro
+      File ".*test_cocotb\.py", line \d+, in raise_soon
+        yield cocotb\.triggers\.First\(raise_inner\(\)\)
+      File ".*triggers\.py", line \d+, in _wait
+        result = yield first_trigger  # the first of multiple triggers that fired
+      File ".*test_cocotb\.py", line \d+, in raise_inner
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+    yield _check_traceback(raise_soon(), ValueError, expected)
+
 
 @cocotb.test()
 def test_stack_overflow(dut):

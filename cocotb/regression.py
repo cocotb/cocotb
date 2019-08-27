@@ -54,7 +54,7 @@ import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
 from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
-from cocotb.utils import get_sim_time
+from cocotb.utils import get_sim_time, remove_traceback_frames
 from cocotb.xunit_reporter import XUnitReporter
 from cocotb import _py_compat
 
@@ -266,10 +266,21 @@ class RegressionManager(object):
         # check what exception the test threw
         try:
             test._outcome.get()
-            raise TestSuccess()
         except Exception as e:
-            result = e
-            exc_info = sys.exc_info()
+            if sys.version_info >= (3, 5):
+                result = remove_traceback_frames(e, ['handle_result', 'get'])
+                # newer versions of the `logging` module accept plain exception objects
+                exc_info = result
+            elif sys.version_info >= (3,):
+                result = remove_traceback_frames(e, ['handle_result', 'get'])
+                # newer versions of python have Exception.__traceback__
+                exc_info = (type(result), result, result.__traceback__)
+            else:
+                # Python 2
+                result = e
+                exc_info = remove_traceback_frames(sys.exc_info(), ['handle_result', 'get'])
+        else:
+            result = TestSuccess()
 
         if (isinstance(result, TestSuccess) and
                 not test.expect_fail and

@@ -499,12 +499,15 @@ class Scheduler(object):
             try:
                 # throws an error if the background coroutine errored
                 # and no one was monitoring it
-                coro.retval
+                coro._outcome.get()
             except TestComplete as e:
-                self.log.debug("TestComplete received: {}".format(type(e).__name__))
-                self._test.abort(e)
+                coro.log.info("Test stopped by this forked coroutine")
+                outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
+                self._test._force_outcome(outcome)
             except Exception as e:
-                self._test.abort(e)
+                coro.log.error("Exception raised by this forked coroutine")
+                outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
+                self._test._force_outcome(outcome)
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:
