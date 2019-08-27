@@ -101,7 +101,7 @@ class RegressionManager(object):
         self.skipped = 0
         self.failures = 0
 
-        results_filename = os.getenv('COCOTB_RESULTS_FILE_NAME', "results.xml")
+        results_filename = os.getenv('COCOTB_RESULTS_FILE', "results.xml")
         suite_name = os.getenv('RESULT_TESTSUITE', "all")
         package_name = os.getenv('RESULT_TESTPACKAGE', "all")
         
