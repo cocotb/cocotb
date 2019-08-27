@@ -47,9 +47,7 @@ RTL_LIBRARY ?= work
 
 TOPLEVEL := "$(RTL_LIBRARY).$(TOPLEVEL)"
 
-ifdef VLOG_ARGS
-VLOG_ARGS = $(VLOG_ARGS)
-else
+ifndef VLOG_ARGS
 VLOG_ARGS = -timescale 1ns/100ps -mfcu +acc=rmb
 endif
 ifdef VERILOG_INCLUDE_DIRS
