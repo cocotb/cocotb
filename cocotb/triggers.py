@@ -620,7 +620,8 @@ def _wait_callback(trigger, callback):
     try:
         ret = outcomes.Value((yield trigger))
     except BaseException as exc:
-        ret = outcomes.Error(exc)
+        # hide this from the traceback
+        ret = outcomes.Error(exc).without_frames(['_wait_callback'])
     callback(ret)
 
 
@@ -697,9 +698,18 @@ class First(_AggregateWaitable):
         for w in waiters:
             w.kill()
 
-        # get the result from the first task
-        ret = completed[0]
-        raise ReturnValue(ret.get())
+        # These lines are the way they are to make tracebacks readable:
+        #  - The comment helps the user nderstand why they are seeing the
+        #    traceback, even if it is obvious top cocotb maintainers.
+        #  - Raising ReturnValue on a separate line avoids confusion about what
+        #    is actually raising the error, because seeing
+        #    `raise Exception(foo())` in a traceback when in fact `foo()` itself
+        #    raises is confusing. We can recombine once we drop python 2 support
+        #  - Using `NullTrigger` here instead of `result = completed[0].get()`
+        #    means we avoid inserting an `outcome.get` frame in the traceback
+        first_trigger = NullTrigger(outcome=completed[0])
+        result = yield first_trigger  # the first of multiple triggers that fired
+        raise ReturnValue(result)
 
 
 class ClockCycles(Waitable):

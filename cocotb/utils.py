@@ -508,3 +508,40 @@ if __name__ == "__main__":
 
     space = '\n' + (" " * 20)
     print(space.join(diff.split('\n')))
+
+
+def remove_traceback_frames(tb_or_exc, frame_names):
+    """
+    Strip leading frames from a traceback
+
+    Args:
+        tb_or_exc (Union[traceback, BaseException, exc_info]):
+            Object to strip frames from. If an exception is passed, creates
+            a copy of the exception with a new shorter traceback. If a tuple
+            from `sys.exc_info` is passed, returns the same tuple with the
+            traceback shortened
+        frame_names (List[str]):
+            Names of the frames to strip, which must be present.
+    """
+    # self-invoking overloads
+    if isinstance(tb_or_exc, BaseException):
+        exc = tb_or_exc
+        if sys.version_info < (3,):
+            raise RuntimeError(
+                "Cannot use remove_traceback_frames on exceptions in python 2. "
+                "Call it directly on the traceback object instead.")
+
+        return exc.with_traceback(
+            remove_traceback_frames(exc.__traceback__, frame_names)
+        )
+    elif isinstance(tb_or_exc, tuple):
+        exc_type, exc_value, exc_tb = tb_or_exc
+        exc_tb = remove_traceback_frames(exc_tb, frame_names)
+        return exc_type, exc_value, exc_tb
+    # base case
+    else:
+        tb = tb_or_exc
+        for frame_name in frame_names:
+            assert tb.tb_frame.f_code.co_name == frame_name
+            tb = tb.tb_next
+        return tb

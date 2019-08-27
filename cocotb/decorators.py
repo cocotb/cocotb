@@ -158,7 +158,7 @@ class RunningCoroutine(object):
             self._outcome = outcomes.Value(retval)
             raise CoroutineComplete()
         except BaseException as e:
-            self._outcome = outcomes.Error(e)
+            self._outcome = outcomes.Error(e).without_frames(['_advance', 'send'])
             raise CoroutineComplete()
 
     def send(self, value):
@@ -257,6 +257,19 @@ class RunningTest(RunningCoroutine):
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
 
+    def _force_outcome(self, outcome):
+        """
+        This method exists as a workaround for preserving tracebacks on
+        python 2, and is called in unschedule. Once Python 2 is dropped, this
+        should be inlined into `abort` below, and the call in `unschedule`
+        replaced with `abort(outcome.error)`.
+        """
+        assert self._outcome is None
+        if _debug:
+            self.log.debug("outcome forced to {}".format(outcome))
+        self._outcome = outcome
+        cocotb.scheduler.unschedule(self)
+
     # like RunningCoroutine.kill(), but with a way to inject a failure
     def abort(self, exc):
         """
@@ -269,11 +282,7 @@ class RunningTest(RunningCoroutine):
         `exc` is the exception that the test should report as its reason for
         aborting.
         """
-        assert self._outcome is None
-        if _debug:
-            self.log.debug("abort() called on test")
-        self._outcome = outcomes.Error(exc)
-        cocotb.scheduler.unschedule(self)
+        return self._force_outcome(outcomes.Error(exc))
 
 
 class coroutine(object):
