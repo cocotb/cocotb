@@ -269,3 +269,14 @@ XGMII
     :members:
     :member-order: bysource
     :show-inheritance:
+
+Miscellaneous
+=============
+
+Signal Tracer for WaveDrom
+--------------------------
+
+.. automodule:: cocotb.wavedrom
+    :members:
+    :member-order: bysource
+    :synopsis: A signal tracer for WaveDrom.
