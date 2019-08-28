@@ -27,10 +27,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
 EXAMPLES := adder/tests \
-	    endian_swapper/tests \
             axi_lite_slave/tests \
+            dff/tests \
+            endian_swapper/tests \
+            mean/tests \
+            mixed_language/tests \
+            ping_tun_tap/tests
 
 .PHONY: $(EXAMPLES)
 
@@ -38,8 +41,17 @@ EXAMPLES := adder/tests \
 all: $(EXAMPLES)
 
 $(EXAMPLES):
+ifeq ($(TRAVIS),true)
+	@echo "travis_fold:start:$@"
+endif
 	@cd $@ && $(MAKE)
+ifeq ($(TRAVIS),true)
+	@echo "travis_fold:end:$@"
+endif
 
 .PHONY: clean
 clean:
 	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) clean;)
+
+regression:
+	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) regression;)
