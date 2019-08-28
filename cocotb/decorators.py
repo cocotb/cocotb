@@ -38,8 +38,9 @@ import os
 import cocotb
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue, raise_error
-from cocotb.utils import get_sim_time, with_metaclass, exec_, lazy_property
+from cocotb.utils import get_sim_time, lazy_property
 from cocotb import outcomes
+from cocotb import _py_compat
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
@@ -196,7 +197,7 @@ class RunningCoroutine(object):
 
     # Once 2.7 is dropped, this can be run unconditionally
     if sys.version_info >= (3, 3):
-        exec_(textwrap.dedent("""
+        _py_compat.exec_(textwrap.dedent("""
         def __await__(self):
             # It's tempting to use `return (yield from self._coro)` here,
             # which bypasses the scheduler. Unfortunately, this means that
@@ -399,7 +400,7 @@ class _decorator_helper(type):
 
 
 @public
-class hook(with_metaclass(_decorator_helper, coroutine)):
+class hook(_py_compat.with_metaclass(_decorator_helper, coroutine)):
     """Decorator to mark a function as a hook for cocotb.
 
     Used as ``@cocotb.hook()``.
@@ -419,7 +420,7 @@ class hook(with_metaclass(_decorator_helper, coroutine)):
 
 
 @public
-class test(with_metaclass(_decorator_helper, coroutine)):
+class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
     """Decorator to mark a function as a test.
 
     All tests are coroutines.  The test decorator provides

@@ -40,18 +40,19 @@ else:
 from cocotb.log import SimLog
 from cocotb.result import raise_error, ReturnValue
 from cocotb.utils import (
-    get_sim_steps, get_time_from_sim_steps, with_metaclass,
-    ParametrizedSingleton, exec_, lazy_property
+    get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,
+    lazy_property,
 )
 from cocotb import decorators
 from cocotb import outcomes
+from cocotb import _py_compat
 import cocotb
 
 
 class TriggerException(Exception):
     pass
 
-class Trigger(with_metaclass(abc.ABCMeta)):
+class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
     """Base class to derive from."""
 
     # __dict__ is needed here for the `.log` lazy_property below to work.
@@ -119,7 +120,7 @@ class Trigger(with_metaclass(abc.ABCMeta)):
 
     # Once 2.7 is dropped, this can be run unconditionally
     if sys.version_info >= (3, 3):
-        exec_(textwrap.dedent("""
+        _py_compat.exec_(textwrap.dedent("""
         def __await__(self):
             # hand the trigger back to the scheduler trampoline
             return (yield self)
@@ -187,7 +188,7 @@ class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
     pass
 
 
-class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Fires when the current simulation timestep moves to the readonly phase.
 
     The :any:`ReadOnly` phase is entered when the current timestep no longer has any further delta steps.
@@ -215,7 +216,7 @@ class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
         return self.__class__.__name__ + "(readonly)"
 
 
-class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Fires when the readwrite portion of the sim cycles is reached."""
     __slots__ = ()
 
@@ -239,7 +240,7 @@ class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
         return self.__class__.__name__ + "(readwritesync)"
 
 
-class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class NextTimeStep(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Fires when the next time step is started."""
     __slots__ = ()
 
@@ -261,7 +262,7 @@ class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
         return self.__class__.__name__ + "(nexttimestep)"
 
 
-class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class _EdgeBase(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Internal base class that fires on a given edge of a signal."""
     __slots__ = ('signal',)
 
@@ -491,7 +492,7 @@ class NullTrigger(Trigger):
         return self.__class__.__name__ + "(%s)" % self.name
 
 
-class Join(with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
+class Join(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
     r"""Fires when a :func:`fork`\ ed coroutine completes
 
     The result of blocking on the trigger can be used to get the coroutine
