@@ -46,6 +46,7 @@ from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 from cocotb.utils import get_sim_time
 
 from cocotb.binary import BinaryValue
+from cocotb import _py_compat
 
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
@@ -875,7 +876,7 @@ def test_tests_are_tests(dut):
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
-    cocotb.utils.exec_(textwrap.dedent('''
+    _py_compat.exec_(textwrap.dedent('''
     @cocotb.test()
     def test_coroutine_return(dut):
         """ Test that the Python 3.3 syntax for returning from generators works """

@@ -63,7 +63,7 @@ from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
 from cocotb.result import TestComplete
-from cocotb.utils import nullcontext
+from cocotb import _py_compat
 
 # On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
 # Since `OrderedDict` is a little slower that `dict`, we prefer the latter
@@ -303,7 +303,7 @@ class Scheduler(object):
             ps.dump_stats("test_profile.pstat")
             ctx = profiling_context()
         else:
-            ctx = nullcontext()
+            ctx = _py_compat.nullcontext()
 
         with ctx:
             self._mode = Scheduler._MODE_NORMAL
@@ -367,7 +367,7 @@ class Scheduler(object):
         if _profiling:
             ctx = profiling_context()
         else:
-            ctx = nullcontext()
+            ctx = _py_compat.nullcontext()
 
         with ctx:
             # When a trigger fires it is unprimed internally
