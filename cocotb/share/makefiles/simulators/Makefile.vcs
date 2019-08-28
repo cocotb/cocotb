@@ -29,7 +29,7 @@
 
 ifneq ($(VHDL_SOURCES),)
 
-results.xml:
+$(COCOTB_RESULTS_FILE):
 	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
 clean::
 
@@ -70,7 +70,7 @@ $(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(COCOTB
     $(CMD) $(PLUSARGS) +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog $(EXTRA_ARGS) -debug -load libvpi.so $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
-results.xml: $(SIM_BUILD)/simv $(PYTHON_FILES) $(CUSTOM_SIM_DEPS)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(PYTHON_FILES) $(CUSTOM_SIM_DEPS)
 	-PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
 		TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $(SIM_BUILD)/simv +define+COCOTB_SIM=1 $(SIM_ARGS) $(EXTRA_ARGS)
@@ -81,6 +81,6 @@ clean::
 	-@rm -rf $(SIM_BUILD)
 	-@rm -rf simv.daidir
 	-@rm -rf cm.log
-	-@rm -rf results.xml
+	-@rm -rf $(COCOTB_RESULTS_FILE)
 	-@rm -rf ucli.key
 endif

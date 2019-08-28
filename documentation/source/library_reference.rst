@@ -2,6 +2,21 @@
 Library Reference
 #################
 
+.. spelling::
+    BusDriver
+    bigEndian
+    BinaryRepresentation
+    binaryRepresentation
+    sim
+    SimHandle
+    Todo
+    un
+    arg
+    idx
+    Args
+    Enum
+
+
 Test Results
 ============
 
@@ -52,7 +67,7 @@ Interacting with the Simulator
 
 Triggers
 --------
-See :ref:`simulator-triggers` for a list of subclasses. Below are the internal
+See :ref:`simulator-triggers` for a list of sub-classes. Below are the internal
 classes used within ``cocotb``.
 
 .. currentmodule:: cocotb.triggers
@@ -84,6 +99,12 @@ Driver
     :private-members:
 
 .. autoclass:: cocotb.drivers.BusDriver
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+    :private-members:
+
+.. autoclass:: cocotb.drivers.ValidatedBusDriver
     :members:
     :member-order: bysource
     :show-inheritance:

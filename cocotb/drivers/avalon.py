@@ -399,7 +399,7 @@ class AvalonMemory(BusDriver):
                     self._pad()
                     addr = self.bus.address.value.integer
                     if addr not in self._mem:
-                        self.log.warning("Attempt to read from uninitialised "
+                        self.log.warning("Attempt to read from uninitialized "
                                          "address 0x%x", addr)
                         self._responses.append(True)
                     else:
@@ -436,7 +436,7 @@ class AvalonMemory(BusDriver):
                         yield edge
                     for count in range(burstcount):
                         if (addr + count)*self.dataByteSize not in self._mem:
-                            self.log.warning("Attempt to burst read from uninitialised "
+                            self.log.warning("Attempt to burst read from uninitialized "
                                              "address 0x%x (addr 0x%x count 0x%x)",
                                              (addr + count) * self.dataByteSize, addr, count)
                             self._responses.append(True)
@@ -593,7 +593,7 @@ class AvalonST(ValidatedBusDriver):
 
 
 class AvalonSTPkts(ValidatedBusDriver):
-    """Avalon Streaming Interface (Avalon-ST) Driver, packetised."""
+    """Avalon Streaming Interface (Avalon-ST) Driver, packetized."""
 
     _signals = ["valid", "data", "startofpacket", "endofpacket"]
     _optional_signals = ["error", "channel", "ready", "empty"]

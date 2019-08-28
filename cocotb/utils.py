@@ -154,7 +154,7 @@ def pack(ctypes_obj):
     """Convert a :mod:`ctypes` structure into a Python string.
 
     Args:
-        ctypes_obj (ctypes.Structure): The ctypes structure to convert to a string.
+        ctypes_obj (ctypes.Structure): The :mod:`ctypes` structure to convert to a string.
 
     Returns:
         New Python string containing the bytes from memory holding *ctypes_obj*.
@@ -167,12 +167,12 @@ def unpack(ctypes_obj, string, bytes=None):
     """Unpack a Python string into a :mod:`ctypes` structure.
 
     If the length of *string* is not the correct size for the memory
-    footprint of the ctypes structure then the *bytes* keyword argument 
+    footprint of the :mod:`ctypes` structure then the *bytes* keyword argument 
     must be used.
 
     Args:
-        ctypes_obj (ctypes.Structure): The ctypes structure to pack into.
-        string (str):  String to copy over the ctypes_obj memory space.
+        ctypes_obj (ctypes.Structure): The :mod:`ctypes` structure to pack into.
+        string (str):  String to copy over the *ctypes_obj* memory space.
         bytes (int, optional): Number of bytes to copy. 
             Defaults to ``None``, meaning the length of *string* is used.
 
@@ -514,11 +514,11 @@ class ParametrizedSingleton(type):
 class nullcontext(object):
     """Context manager that does no additional processing.
     Used as a stand-in for a normal context manager, when a particular
-    block of code is only sometimes used with a normal context manager:
+    block of code is only sometimes used with a normal context manager::
 
-    cm = optional_cm if condition else nullcontext()
-    with cm:
-        # Perform operation, using optional_cm if condition is True
+        cm = optional_cm if condition else nullcontext()
+        with cm:
+            # Perform operation, using optional_cm if condition is True
     """
 
     def __init__(self, enter_result=None):

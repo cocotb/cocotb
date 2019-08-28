@@ -27,9 +27,9 @@
 
 ifneq ($(VHDL_SOURCES),)
 
-results.xml:
+$(COCOTB_RESULTS_FILE):
 	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
-debug: results.xml
+debug: $(COCOTB_RESULTS_FILE)
 clean::
 
 else
@@ -65,9 +65,9 @@ $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(C
 
 # Execution phase
 ifeq ($(CVC_ITERP),1)
-    results.xml: $(SIM_BUILD)/sim.vvp
+    $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp
 else
-    results.xml: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
+    $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
         $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)

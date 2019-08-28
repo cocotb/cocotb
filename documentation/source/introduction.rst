@@ -77,6 +77,7 @@ Contributors
 
 .. spelling::
    McGregor
+   Grimwood
 
 cocotb was developed by `Potential Ventures <https://potential.ventures>`_ with the support of
 `Solarflare Communications Ltd <https://www.solarflare.com/>`_

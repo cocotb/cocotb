@@ -610,7 +610,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
             if (indices.size() == num_dim) {
 #ifdef IUS
-                /* IUS does not appear to set the vhpiIsUnconstrainedP property.  IUS Docs say will return
+                /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP property.  IUS Docs say will return
                  * -1 if unconstrained, but with vhpiIntT being unsigned, the value returned is below.
                  */
                 const vhpiIntT UNCONSTRAINED = 2147483647;
@@ -621,7 +621,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
                 /* All necessary indices are available, need to iterate over dimension constraints to
                  * determine the index into the zero-based flattened array.
                  *
-                 * Check the constraints on the base type first. (always works for Aldec, but not unconstrained types in IUS)
+                 * Check the constraints on the base type first. (always works for Aldec, but not unconstrained types in IUS/Xcelium)
                  * If the base type fails, then try the sub-type.  (sub-type is listed as deprecated for Aldec)
                  */
                 vhpiHandleT it, constraint;
@@ -656,7 +656,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
                         if (it != NULL) {
                             while ((constraint = vhpi_scan(it)) != NULL) {
-                                /* IUS only sets the vhpiIsUnconstrainedP incorrectly on the base type */
+                                /* IUS/Xcelium only sets the vhpiIsUnconstrainedP incorrectly on the base type */
                                 if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
                                     vhpi_release_handle(it);
                                     break;

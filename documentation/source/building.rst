@@ -5,15 +5,15 @@ Build options and Environment Variables
 Make System
 ===========
 
-Makefiles are provided for a variety of simulators in :file:`cocotb/makefiles/simulators`.  The common Makefile :file:`cocotb/makefiles/Makefile.sim` includes the appropriate simulator Makefile based on the contents of the ``SIM`` variable.
+Makefiles are provided for a variety of simulators in :file:`cocotb/share/makefiles/simulators`.
+The common Makefile :file:`cocotb/share/makefiles/Makefile.sim` includes the appropriate simulator Makefile based on the contents of the ``SIM`` variable.
 
 Make Targets
 ------------
 
 Makefiles define two targets, ``regression`` and ``sim``, the default target is ``sim``.
 
-Both rules create a results file in the calling directory called :file:`results.xml`.  This file is a JUnit-compatible output file suitable for use with `Jenkins <https://jenkins.io/>`_. The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
-
+Both rules create a results file with the name taken from :envvar:`COCOTB_RESULTS_FILE`, defaulting to ``results.xml``.  This file is a JUnit-compatible output file suitable for use with `Jenkins <https://jenkins.io/>`_. The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
 
 Make Phases
 -----------
@@ -31,7 +31,7 @@ Make Variables
       Set this to 1 to enable the GUI mode in the simulator (if supported).
 
     ``SIM``
-      Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/makefiles/makefile.$(SIM)`
+      Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/makefile.$(SIM)`
 
     ``VERILOG_SOURCES``
       A list of the Verilog source files to include.
@@ -91,10 +91,10 @@ Environment Variables
 
 .. envvar:: COCOTB_ANSI_OUTPUT
 
-    Use this to override the default behavior of annotating Cocotb output with
+    Use this to override the default behavior of annotating cocotb output with
     ANSI color codes if the output is a terminal (``isatty()``).
 
-    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type stdout
+    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type of ``stdout``
 
     ``COCOTB_ANSI_OUTPUT=0`` suppresses the ANSI output in the log messages
 
@@ -113,6 +113,10 @@ Environment Variables
     discovers and executes all functions decorated with the :class:`cocotb.test` decorator in the supplied modules.
 
     Multiple functions can be specified in a comma-separated list.
+
+.. envvar:: COCOTB_RESULTS_FILE
+
+    The file name where XML tests results are stored. If not provided, the default is :file:`results.xml`.
 
 
 Additional Environment Variables

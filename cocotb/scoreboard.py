@@ -101,7 +101,7 @@ class Scoreboard(object):
     def compare(self, got, exp, log, strict_type=True):
         """Common function for comparing two transactions.
 
-        Can be re-implemented by a subclass.
+        Can be re-implemented by a sub-class.
         
         Args:
             got: The received transaction.

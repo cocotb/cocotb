@@ -46,3 +46,6 @@ endif
 
 clean:
 	$(foreach TEST, $(REGRESSIONS), $(MAKE) -C test_cases/$(TEST) clean;)
+
+regression:
+	$(foreach TEST, $(REGRESSIONS), $(MAKE) -C test_cases/$(TEST) regression;)

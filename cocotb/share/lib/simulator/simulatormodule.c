@@ -203,7 +203,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
 }
 
 
-// Register a callback for ReadOnly state of sim
+// Register a callback for read-only state of sim
 // First argument is the function to call
 // Remaining arguments are keyword arguments to be passed to the callback
 static PyObject *register_readonly_callback(PyObject *self, PyObject *args)

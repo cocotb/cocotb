@@ -120,7 +120,7 @@ class XGMII(Driver):
 
     def __init__(self, signal, clock, interleaved=True):
         """Args:
-            signal (SimHandle): The xgmii data bus.
+            signal (SimHandle): The XGMII data bus.
             clock (SimHandle): The associated clock (assumed to be
                 driven by another coroutine).
             interleaved (bool, optional): Whether control bits are interleaved

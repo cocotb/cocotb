@@ -100,7 +100,7 @@ static char log_buff[LOG_SIZE];
  *
  * Makes one call to PyGILState_Ensure and one call to PyGILState_Release
  *
- * If the Python logging mechanism is not initialised, dumps to stderr.
+ * If the Python logging mechanism is not initialised, dumps to `stderr`.
  *
  */
 void gpi_log(const char *name, long level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
@@ -137,6 +137,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
             fprintf(stdout, " in %-31s ", funcname);
             fprintf(stdout, "%s", log_buff);
             fprintf(stdout, "\n");
+            fflush(stdout);
         }
         return;
     }
@@ -159,14 +160,19 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
         PyGILState_Release(gstate);
         return;
     }
-
-    if (filter_ret == Py_True) {
-        Py_DECREF(filter_ret);
+    int is_enabled = PyObject_IsTrue(filter_ret);
+    Py_DECREF(filter_ret);
+    if (is_enabled < 0) {
+        /* A python exception occured while converting `filter_ret` to bool */
+        PyErr_Print();
         PyGILState_Release(gstate);
         return;
     }
 
-    Py_DECREF(filter_ret);
+    if (!is_enabled) {
+        PyGILState_Release(gstate);
+        return;
+    }
 
     va_start(ap, msg);
     n = vsnprintf(log_buff, LOG_SIZE, msg, ap);

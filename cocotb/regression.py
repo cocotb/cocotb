@@ -100,10 +100,12 @@ class RegressionManager(object):
         self.count = 1
         self.skipped = 0
         self.failures = 0
-        self.xunit = XUnitReporter()
 
-        suite_name = os.getenv('RESULT_TESTSUITE') if os.getenv('RESULT_TESTSUITE') else "all"
-        package_name = os.getenv('RESULT_TESTPACKAGE') if os.getenv('RESULT_TESTPACKAGE') else "all"
+        results_filename = os.getenv('COCOTB_RESULTS_FILE', "results.xml")
+        suite_name = os.getenv('RESULT_TESTSUITE', "all")
+        package_name = os.getenv('RESULT_TESTPACKAGE', "all")
+        
+        self.xunit = XUnitReporter(filename=results_filename)
 
         self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
                                  package=package_name)
@@ -160,7 +162,7 @@ class RegressionManager(object):
                     try:
                         test = thing(self._dut)
                         skip = test.skip
-                    except TestError:
+                    except Exception:
                         skip = True
                         self.log.warning("Failed to initialize test %s" %
                                          thing.name, exc_info=True)
@@ -232,15 +234,15 @@ class RegressionManager(object):
                                message="Test failed with random_seed={}".format(self._seed))
         self.failures += 1
 
-    def handle_result(self, result):
-        """Handle a test result.
+    def handle_result(self, test):
+        """Handle a test completing.
 
         Dump result to XML and schedule the next test (if any).
 
         Args:
-            result: The sub-exception of TestComplete to raise.
+            test: The test that completed
         """
-        test = self._running_test
+        assert test is self._running_test
 
         real_time   = time.time() - test.start_time
         sim_time_ns = get_sim_time('ns') - test.start_sim_time
@@ -254,11 +256,19 @@ class RegressionManager(object):
 
         # Helper for logging result
         def _result_was():
-            result_was = ("%s (result was %s)" %
+            result_was = ("{} (result was {})".format
                           (test.funcname, result.__class__.__name__))
             return result_was
 
         result_pass = True
+
+        # check what exception the test threw
+        try:
+            test._outcome.get()
+            raise TestSuccess()
+        except Exception as e:
+            result = e
+            exc_info = sys.exc_info()
 
         if (isinstance(result, TestSuccess) and
                 not test.expect_fail and
@@ -282,22 +292,22 @@ class RegressionManager(object):
             self._add_failure(result)
             result_pass = False
 
-        elif isinstance(result, TestError) and test.expect_error:
-            self.log.info("Test errored as expected: " + _result_was())
-
         elif isinstance(result, SimFailure):
             if test.expect_error:
                 self.log.info("Test errored as expected: " + _result_was())
             else:
                 self.log.error("Test error has lead to simulator shutting us "
-                               "down")
+                               "down", exc_info=exc_info)
                 self._add_failure(result)
                 self._store_test_result(test.module, test.funcname, False, sim_time_ns, real_time, ratio_time)
                 self.tear_down()
                 return
 
+        elif test.expect_error:
+            self.log.info("Test errored as expected: " + _result_was())
+
         else:
-            self.log.error("Test Failed: " + _result_was())
+            self.log.error("Test Failed: " + _result_was(), exc_info=exc_info)
             self._add_failure(result)
             result_pass = False
 
@@ -319,10 +329,8 @@ class RegressionManager(object):
                            self.count, self.ntests,
                            end,
                            self._running_test.funcname))
-            if self.count == 1:
-                test = cocotb.scheduler.add(self._running_test)
-            else:
-                test = cocotb.scheduler.new_test(self._running_test)
+
+            cocotb.scheduler.add_test(self._running_test)
             self.count += 1
         else:
             self.tear_down()
@@ -476,13 +484,13 @@ class TestFactory(object):
         """
         Args:
             test_function (function): the function that executes a test.
-                                      Must take 'dut' as the first argument.
+                Must take *dut* as the first argument.
 
-            *args: Remaining args are passed directly to the test function.
+            *args: Remaining arguments are passed directly to the test function.
                    Note that these arguments are not varied. An argument that
                    varies with each test must be a keyword argument to the
                    test function.
-            *kwargs: Remaining kwargs are passed directly to the test function.
+            *kwargs: Remaining keyword arguments are passed directly to the test function.
                    Note that these arguments are not varied. An argument that
                    varies with each test must be a keyword argument to the
                    test function.

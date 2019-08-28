@@ -78,7 +78,7 @@ class Trigger(with_metaclass(abc.ABCMeta)):
 
         The callback will be invoked with a single argument, `self`.
 
-        Subclasses must override this, but should end by calling the base class
+        Sub-classes must override this, but should end by calling the base class
         method.
 
         Do not call this directly within coroutines, it is intended to be used
@@ -89,11 +89,11 @@ class Trigger(with_metaclass(abc.ABCMeta)):
     def unprime(self):
         """Remove the callback, and perform cleanup if necessary.
 
-        After being unprimed, a Trigger may be reprimed again in future.
+        After being un-primed, a Trigger may be re-primed again in the future.
         Calling `unprime` multiple times is allowed, subsequent calls should be
         a no-op.
 
-        Subclasses may override this, but should end by calling the base class
+        Sub-classes may override this, but should end by calling the base class
         method.
 
         Do not call this directly within coroutines, it is intended to be used
@@ -150,14 +150,14 @@ class GPITrigger(Trigger):
         self.cbhdl = 0
 
     def unprime(self):
-        """Disable a primed trigger, can be reprimed"""
+        """Disable a primed trigger, can be re-primed."""
         if self.cbhdl != 0:
             simulator.deregister_callback(self.cbhdl)
         self.cbhdl = 0
         Trigger.unprime(self)
 
     def __del__(self):
-        """Remove knowledge of the trigger"""
+        """Remove knowledge of the trigger."""
         if self.cbhdl != 0:
             self.unprime()
         Trigger.__del__(self)
@@ -189,7 +189,7 @@ class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
 
 
 class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
-    """Fires when the current simulation timestep moves to the readonly phase.
+    """Fires when the current simulation timestep moves to the read-only phase.
 
     The :any:`ReadOnly` phase is entered when the current timestep no longer has any further delta steps.
     This will be a point where all the signal values are stable as there are no more RTL events scheduled for the timestep.
@@ -217,7 +217,7 @@ class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
 
 
 class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
-    """Fires when the readwrite portion of the sim cycles is reached."""
+    """Fires when the read-write phase of the simulation cycle is reached."""
     __slots__ = ()
 
     @classmethod
@@ -269,7 +269,7 @@ class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     @classmethod
     @property
     def _edge_type(self):
-        """The edge type, as understood by the C code. Must be set in subclasses."""
+        """The edge type, as understood by the C code. Must be set in sub-classes."""
         raise NotImplementedError
 
     @classmethod
@@ -335,7 +335,7 @@ class _Event(PythonTrigger):
 
 
 class Event(object):
-    """Event to permit synchronisation between two coroutines.
+    """Event to permit synchronization between two coroutines.
 
     Yielding :meth:`wait()` from one coroutine will block the coroutine until
     :meth:`set()` is called somewhere else.
@@ -579,7 +579,7 @@ class Waitable(object):
     @decorators.coroutine
     def _wait(self):
         """
-        Should be implemented by the subclass. Called by `yield self` to
+        Should be implemented by the sub-class. Called by `yield self` to
         convert the waitable object into a coroutine.
 
         ReturnValue can be used here.
