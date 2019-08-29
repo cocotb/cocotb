@@ -53,3 +53,5 @@ PYLIBS:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from di
 
 PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
 PYTHON_DYN_LIB:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))')
+
+LIB_LOAD = LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)

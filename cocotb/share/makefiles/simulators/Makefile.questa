@@ -115,37 +115,17 @@ else
 endif
 
 ifeq ($(OS),Msys)
-
-# Windows allows the situation where the libstc++ used at link time as
-# specified by -L can be different to the one that is used at runtime which
-# comes from the first libstdc++ that it finds in the path. As such
-# we use the mingw lib used at build time and put this at the start of the path
-# before running
-
-MINGW_BIN_DIR = $(shell dirname $(shell which gcc))
-
-EXTRA_LIBS := -lmtipli
-EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
-OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
-
-LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
-NEW_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
-else
-LIB_LOAD = LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
-NEW_PYTHONPATH := $(PYTHONPATH)
+    EXTRA_LIBS := -lmtipli
+    EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
 endif
 
 INT_LIBS := $(COCOTB_VPI_LIB) $(COCOTB_FLI_LIB)
-
-ifneq ($(ARCH),i686)
-CMD += -64
-endif
 
 # Depending on the version of modelsim the interfaces that it supports can change
 # Append or remove values to INT_LIBS depenending on your license
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
 	set -o pipefail; cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
-	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) \
+	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) \
 	$(CMD) $(PLUSARGS) -do runsim.do 2>&1 | tee sim.log
 # Potential fix for buffered stdout, YMMV
 # STDOUT=$(SIM_BUILD)/sim.log stdbuf --output=0 $(CMD) -do runsim.do 2>&1 && stdbuf --output=0 --input=0 tail -f sim.log && exit $${PIPESTATUS[0]}

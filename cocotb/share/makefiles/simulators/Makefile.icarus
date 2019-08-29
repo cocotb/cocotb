@@ -56,33 +56,23 @@ BUILD_VPI=1
 
 COMPILE_ARGS += -g2012 # Default to latest SystemVerilog standard
 
+ifeq ($(OS),Msys)
+    EXTRA_LIBS := -lvpi
+    EXTRA_LIBDIRS := -L$(ICARUS_BIN_DIR)/../lib
+endif
+
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
 	$(CMD) -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 -s $(TOPLEVEL) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
-
-ifeq ($(OS),Msys)
-
-EXTRA_LIBS := -lvpi
-EXTRA_LIBDIRS := -L$(ICARUS_BIN_DIR)/../lib
-OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
-LIB_LOAD = PATH=$(OLD_PATH):$(LIB_DIR)
-NEW_PYTHONPATH:=$(shell python -c "import sys, os; print(':'.join(['/'+dir.replace(os.sep,'/').replace(':','') for dir in sys.path]))")
-PWD = $(shell pwd)
-
-else
-LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
-NEW_PYTHONPATH := $(PYTHONPATH)
-endif
-
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
         $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
 debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
-	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
         gdb --args $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 

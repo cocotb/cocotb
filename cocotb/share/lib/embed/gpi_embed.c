@@ -34,6 +34,7 @@
 #include "embed.h"
 #include "../compat/python3_compat.h"
 #include "locale.h"
+#include <unistd.h>
 
 #if defined(_WIN32)
 #include <windows.h>
