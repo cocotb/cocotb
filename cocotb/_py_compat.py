@@ -28,6 +28,7 @@ Backports and compatibility shims for newer python features.
 These are for internal use - users should use a third party library like `six`
 if they want to use these shims in their own code
 """
+import abc
 import sys
 
 # This is six.integer_types
@@ -131,3 +132,8 @@ class nullcontext(object):
 
     def __exit__(self, *excinfo):
         pass
+
+
+# https://stackoverflow.com/a/38668373
+# Backport of abc.ABC, compatible with Python 2 and 3
+abc_ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
