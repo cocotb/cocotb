@@ -27,8 +27,10 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
+import re
 import sys
 import textwrap
+import traceback
 import warnings
 
 """
@@ -896,16 +898,52 @@ if sys.version_info[:2] >= (3, 3):
 @cocotb.test()
 def test_exceptions(dut):
     @cocotb.coroutine
-    def raise_soon():
+    def raise_inner():
         yield Timer(10)
         raise ValueError('It is soon now')
+
+
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(1)
+        yield raise_inner()
 
     try:
         yield raise_soon()
     except ValueError:
-        pass
+        tb_text = traceback.format_exc()
     else:
         raise TestFailure("Exception was not raised")
+
+    # check the traceback is readable
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*test_cocotb\.py", line \d+, in test_exceptions
+        yield raise_soon\(\)
+      File ".*decorators\.py", line \d+, in _advance
+        .*
+      File ".*outcomes\.py", line \d+, in send
+        .*
+      File ".*test_cocotb\.py", line \d+, in raise_soon
+        yield raise_inner\(\)
+      File ".*decorators\.py", line \d+, in _advance
+        .*
+      File ".*outcomes\.py", line \d+, in send
+        .*
+      File ".*test_cocotb\.py", line \d+, in raise_inner
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+
+    if not re.match(expected, tb_text):
+        raise TestFailure(
+            (
+                "Traceback didn't match - got:\n"
+                "{}\n"
+                "which did not match:\n"
+                "{}"
+            ).format(tb_text, expected)
+        )
 
 @cocotb.test()
 def test_stack_overflow(dut):

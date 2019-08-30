@@ -5,6 +5,7 @@ An outcome is similar to the builtin `concurrent.futures.Future`
 or `asyncio.Future`, but without being tied to a particular task model.
 """
 import abc
+import sys
 
 from cocotb import _py_compat
 
@@ -41,15 +42,43 @@ class Value(Outcome):
         return "Value({!r})".format(self.value)
 
 
-class Error(Outcome):
+class _ErrorBase(Outcome):
     def __init__(self, error):
         self.error = error
 
-    def send(self, gen):
-        return gen.throw(self.error)
-
-    def get(self):
-        raise self.error
-
     def __repr__(self):
         return "Error({!r})".format(self.error)
+
+
+if sys.version_info.major >= 3:
+    class Error(_ErrorBase):
+        def send(self, gen):
+            return gen.throw(self.error)
+
+        def get(self):
+            raise self.error
+
+else:
+    # Python 2 needs extra work to preserve tracebacks
+    class Error(_ErrorBase):
+        def __init__(self, error):
+            super(Error, self).__init__(error)
+            # guess the traceback
+            t, e, tb = sys.exc_info()
+            if e is error:
+                self.error_type = t
+                self.error_tb = tb
+            else:
+                # no traceback - this might be a new exception
+                self.error_type = type(error)
+                self.error_tb = None
+
+        def send(self, gen):
+            return gen.throw(self.error_type, self.error, self.error_tb)
+
+        _py_compat.exec_("""def get(self):
+            try:
+                raise self.error_type, self.error, self.error_tb
+            finally:
+                del self
+        """)
