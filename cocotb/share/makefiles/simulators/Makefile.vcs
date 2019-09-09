@@ -55,6 +55,12 @@ ifeq ($(ARCH),x86_64)
 EXTRA_ARGS += -full64
 endif
 
+ifeq ($(GUI),1)
+    EXTRA_ARGS += -gui
+else
+    EXTRA_ARGS +=
+endif
+
 # TODO:
 # investigate +vpi+1 option which reduces memory requirements
 
