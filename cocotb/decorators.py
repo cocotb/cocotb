@@ -37,7 +37,7 @@ import os
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.result import ReturnValue, raise_error
+from cocotb.result import ReturnValue
 from cocotb.utils import get_sim_time, lazy_property
 from cocotb import outcomes
 from cocotb import _py_compat
@@ -420,12 +420,6 @@ class hook(_py_compat.with_metaclass(_decorator_helper, coroutine)):
         super(hook, self).__init__(f)
         self.im_hook = True
         self.name = self._func.__name__
-
-    def __call__(self, *args, **kwargs):
-        try:
-            return RunningCoroutine(self._func(*args, **kwargs), self)
-        except Exception as e:
-            raise raise_error(self, "Hook raised exception:")
 
 
 @public

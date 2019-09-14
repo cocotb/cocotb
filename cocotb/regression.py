@@ -53,7 +53,7 @@ if "COVERAGE" in os.environ:
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
-from cocotb.result import TestError, TestSuccess, SimFailure
+from cocotb.result import TestSuccess, SimFailure
 from cocotb.utils import get_sim_time, remove_traceback_frames
 from cocotb.xunit_reporter import XUnitReporter
 from cocotb import _py_compat
@@ -197,8 +197,8 @@ class RegressionManager(object):
                 if hasattr(thing, "im_hook"):
                     try:
                         test = thing(self._dut)
-                    except TestError:
-                        self.log.warning("Failed to initialize hook %s" % thing.name)
+                    except Exception:
+                        self.log.warning("Failed to initialize hook %s" % thing.name, exc_info=True)
                     else:
                         cocotb.scheduler.add(test)
 

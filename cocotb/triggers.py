@@ -38,7 +38,7 @@ else:
     simulator = None
 
 from cocotb.log import SimLog
-from cocotb.result import raise_error, ReturnValue
+from cocotb.result import ReturnValue
 from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,
     lazy_property,
@@ -175,7 +175,7 @@ class Timer(GPITrigger):
             self.cbhdl = simulator.register_timed_callback(self.sim_steps,
                                                            callback, self)
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __str__(self):
@@ -209,7 +209,7 @@ class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigg
         if self.cbhdl == 0:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __str__(self):
@@ -233,7 +233,7 @@ class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrig
             # pdb.set_trace()
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __str__(self):
@@ -255,7 +255,7 @@ class NextTimeStep(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPIT
         if self.cbhdl == 0:
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __str__(self):
@@ -287,7 +287,7 @@ class _EdgeBase(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrig
                 self.signal._handle, callback, type(self)._edge_type, self
             )
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         super(_EdgeBase, self).prime(callback)
 
     def __str__(self):
@@ -443,7 +443,7 @@ class Lock(object):
     def release(self):
         """Release the lock."""
         if not self.locked:
-            raise_error(self, "Attempt to release an unacquired Lock %s" %
+            raise TriggerException("Attempt to release an unacquired Lock %s" %
                         (str(self)))
 
         self.locked = False
