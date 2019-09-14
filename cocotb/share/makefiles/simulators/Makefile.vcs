@@ -57,8 +57,6 @@ endif
 
 ifeq ($(GUI),1)
     EXTRA_ARGS += -gui
-else
-    EXTRA_ARGS +=
 endif
 
 # TODO:
