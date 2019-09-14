@@ -36,6 +36,10 @@ from io import StringIO, BytesIO
 def raise_error(obj, msg):
     """Creates a :exc:`TestError` exception and raises it after printing a traceback.
 
+    Note that since cocotb will print a traceback for you when an exception is
+    caught, you are unlikely to need this - use ``raise TestError(msg)``
+    instead.
+
     Args:
         obj: Object with a log method.
         msg (str): The log message.
@@ -58,6 +62,8 @@ def raise_error(obj, msg):
 def create_error(obj, msg):
     """Like :func:`raise_error`, but return the exception rather than raise it, 
     simply to avoid too many levels of nested `try/except` blocks.
+
+    Prefer using ``TestError(msg)`` directly instead of this function.
 
     Args:
         obj: Object with a log method.
