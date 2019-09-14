@@ -117,4 +117,10 @@ always @(posedge clk) begin
     register_array[0] <= 0;
 end
 
+//For testing type assigned to logic
+logic logic_a, logic_b, logic_c;
+assign logic_a = stream_in_valid;
+always@* logic_b = stream_in_valid;
+always@(posedge clk) logic_c <= stream_in_valid;
+
 endmodule

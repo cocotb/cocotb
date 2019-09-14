@@ -786,6 +786,7 @@ def SimHandle(handle, path=None):
         simulator.MODULE:      HierarchyObject,
         simulator.STRUCTURE:   HierarchyObject,
         simulator.REG:         ModifiableObject,
+        simulator.NET:         ModifiableObject,
         simulator.NETARRAY:    NonHierarchyIndexableObject,
         simulator.REAL:        RealObject,
         simulator.INTEGER:     IntegerObject,

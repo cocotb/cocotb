@@ -443,3 +443,33 @@ def custom_type(dut):
     if expected_top != count:
         raise TestFailure("Expected %d found %d for cosLut" % (expected_top, count))
 
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
+def type_check_verilog(dut):
+    """
+    Test if types are recognized
+    """
+
+    tlog = logging.getLogger("cocotb.test")
+
+    yield Timer(1)
+
+    test_handles = [
+        (dut.stream_in_ready, "GPI_REGISTER"),
+        (dut.register_array, "GPI_ARRAY"),
+        (dut.NUM_OF_MODULES, "GPI_PARAMETER"),
+        (dut.temp, "GPI_REGISTER"),
+        (dut.and_output, "GPI_NET"),
+        (dut.stream_in_data, "GPI_NET"),
+        (dut.logic_b, "GPI_REGISTER"),
+        (dut.logic_c, "GPI_REGISTER"),
+    ]
+
+    if cocotb.SIM_NAME.lower().startswith(("icarus")):
+        test_handles.append((dut.logic_a, "GPI_NET")) # https://github.com/steveicarus/iverilog/issues/312
+    else:
+        test_handles.append((dut.logic_a, "GPI_REGISTER"))
+
+    for handle in test_handles:
+        tlog.info("Handle %s" %  (handle[0]._fullname,))
+        if handle[0]._type != handle[1]:
+            raise TestFailure("Expected %s found %s for %s" % (handle[1], handle[0]._type, handle[0]._fullname))
