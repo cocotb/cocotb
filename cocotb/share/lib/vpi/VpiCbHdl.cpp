@@ -231,7 +231,7 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
             m_indexable   = false; // Don't want to iterate over indices
             m_range_left  = 0;
             m_range_right = m_num_elems-1;
-        } else if (GpiObjHdl::get_type() == GPI_REGISTER) {
+        } else if (GpiObjHdl::get_type() == GPI_REGISTER || GpiObjHdl::get_type() == GPI_NET) {
             vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
 
             m_indexable   = vpi_get(vpiVector, hdl);
