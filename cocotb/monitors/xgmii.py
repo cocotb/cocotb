@@ -133,6 +133,15 @@ class XGMII(Monitor):
                     yield clk
                     ctrl, bytes = self._get_bytes()
 
+            elif self.bytes == 8 :
+                if ctrl[4] and bytes[4] == _XGMII_START:
+
+                    ctrl, bytes = ctrl[5:], bytes[5:]
+
+                    while self._add_payload(ctrl, bytes):
+                        yield clk
+                        ctrl, bytes = self._get_bytes()
+
             if self._pkt:
 
                 self.log.debug("Received:\n%s" % (hexdump(self._pkt)))
