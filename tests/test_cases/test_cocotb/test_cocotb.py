@@ -26,6 +26,7 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+import contextlib
 import logging
 import re
 import sys
@@ -44,11 +45,36 @@ from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite, ClockCycles, NextTimeStep,
                              NullTrigger, Combine, Event, First, Trigger)
 from cocotb.clock import Clock
-from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
+from cocotb.result import (
+    ReturnValue, TestFailure, TestError, TestSuccess, raise_error, create_error
+)
 from cocotb.utils import get_sim_time
 
 from cocotb.binary import BinaryValue
 from cocotb import _py_compat
+
+
+@contextlib.contextmanager
+def assert_deprecated():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        yield
+        if len(w) == 1 and issubclass(w[-1].category, DeprecationWarning):
+            return
+        raise AssertionError(
+            "Expected exactly one DeprecationWarning, got {}".format(w)
+        )
+
+
+@contextlib.contextmanager
+def assert_raises(exc_type):
+    try:
+        yield
+    except exc_type:
+        pass
+    else:
+        raise AssertionError("{} was not raised".format(exc_type.__name__))
+
 
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
@@ -725,15 +751,8 @@ def test_binary_value_compat(dut):
         raise TestFailure("Expected TypeError when using bits and n_bits at the same time.")
 
     # Test for the DeprecationWarning when using |bits|
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("error")
-
-        try:
-            vec = BinaryValue(value=0, bits=16)
-        except DeprecationWarning:
-            pass
-        else:
-            TestFailure("Expected DeprecationWarning when using bits instead of n_bits.")
+    with assert_deprecated():
+        vec = BinaryValue(value=0, bits=16)
 
     yield Timer(100)  # Make it do something with time
 
@@ -1193,6 +1212,21 @@ def test_trigger_with_failing_prime(dut):
         assert "oops" in str(exc)
     else:
         raise TestFailure
+
+
+@cocotb.test()
+def test_create_error_deprecated(dut):
+    yield Timer(1)
+    with assert_deprecated():
+        e = create_error(Timer(1), "A test exception")
+
+
+@cocotb.test()
+def test_raise_error_deprecated(dut):
+    yield Timer(1)
+    with assert_deprecated():
+        with assert_raises(TestError):
+            raise_error(Timer(1), "A test exception")
 
 
 @cocotb.test(expect_fail=True)
