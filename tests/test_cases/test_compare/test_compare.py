@@ -1,15 +1,18 @@
-"""Test for comparing handle classes
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
 
-https://github.com/cocotb/cocotb/pull/751
+"""Test for comparing handle classes
 """
 
 import cocotb
+from cocotb.clock import Clock
 from cocotb.handle import SimHandleBase, NonHierarchyObject
 from cocotb.triggers import RisingEdge, FallingEdge
-from cocotb.clock import Clock
+
 
 class Testbench(object):
-    """Issue 751 Testbench"""
+
     def __init__(self, dut):
         self.dut = dut
         self.clkedge = RisingEdge(dut.clk)

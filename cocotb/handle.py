@@ -106,7 +106,10 @@ class SimHandleBase(object):
     def __eq__(self, other):
         """Equality comparator for handles
 
-        IE if clk == dut.clk
+        Example usage::
+
+            if clk == dut.clk:
+                do_something()
         """
         if not isinstance(other, SimHandleBase):
             return NotImplemented
@@ -418,10 +421,11 @@ class NonHierarchyObject(SimHandleBase):
         return AssignmentResult(self, value)
 
     def __eq__(self, other):
-        """Equality comparator for non hierarchy handles
+        """Equality comparator for non-hierarchy objects
 
-        If other is not SimHandleBase instance, use comparison method of the
-        other object against our value
+        If ``other`` is not a :class:`SimHandleBase` instance the comparision
+        uses the comparison method of the ``other`` object against our
+        ``.value``.
         """
         if isinstance(other, SimHandleBase):
             return SimHandleBase.__eq__(self, other)
