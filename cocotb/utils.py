@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
@@ -74,6 +74,17 @@ def get_sim_time(units=None):
 
     return result
 
+
+def _ldexp10(frac, exp):
+    """ Like math.ldexp, but base 10 """
+    # using * or / separately prevents rounding errors if `frac` is a
+    # high-precision type
+    if exp > 0:
+        return frac * (10 ** exp)
+    else:
+        return frac / (10 ** -exp)
+
+
 def get_time_from_sim_steps(steps, units):
     """Calculates simulation time in the specified *units* from the *steps* based
     on the simulator precision.
@@ -86,15 +97,14 @@ def get_time_from_sim_steps(steps, units):
     Returns:
         The simulation time in the specified units.
     """
-    result = steps * (10.0**(_LOG_SIM_PRECISION - _get_log_time_scale(units)))
+    return _ldexp10(steps, _LOG_SIM_PRECISION - _get_log_time_scale(units))
 
-    return result
 
 def get_sim_steps(time, units=None):
     """Calculates the number of simulation time steps for a given amount of *time*.
 
     Args:
-        time (int or float):  The value to convert to simulation time steps.
+        time (numbers.Number):  The value to convert to simulation time steps.
         units (str or None, optional):  String specifying the units of the result
             (one of ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
             ``None`` means time is already in simulation time steps.
@@ -107,16 +117,17 @@ def get_sim_steps(time, units=None):
     """
     result = time
     if units is not None:
-        result = result * (10.0**(_get_log_time_scale(units) - _LOG_SIM_PRECISION))
+        result = _ldexp10(result, _get_log_time_scale(units) - _LOG_SIM_PRECISION)
 
-    err = int(result) - math.ceil(result)
+    result_rounded = math.floor(result)
 
-    if err:
+    if result_rounded != result:
         raise ValueError("Unable to accurately represent {0}({1}) with the "
                          "simulator precision of 1e{2}".format(
                              time, units, _LOG_SIM_PRECISION))
 
-    return int(result)
+    return int(result_rounded)
+
 
 def _get_log_time_scale(units):
     """Retrieves the ``log10()`` of the scale factor for a given time unit.

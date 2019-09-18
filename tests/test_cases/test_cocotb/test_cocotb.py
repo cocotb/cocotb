@@ -34,6 +34,8 @@ import sys
 import textwrap
 import traceback
 import warnings
+from fractions import Fraction
+from decimal import Decimal
 
 """
 A set of tests that demonstrate cocotb functionality
@@ -314,6 +316,19 @@ def test_timer_with_units(dut):
 
     if get_sim_time(units='fs') != time_fs+1000000000.0:
         raise TestFailure("Expected a delay of 1 us")
+
+@cocotb.test()
+def test_timer_with_rational_units(dut):
+    """ Test that rounding errors are not introduced in exact values """
+    # now with fractions
+    time_fs = get_sim_time(units='fs')
+    yield Timer(Fraction(1, int(1e9)), units='sec')
+    assert get_sim_time(units='fs') == time_fs + 1000000.0, "Expected a delay of 1 ns"
+
+    # now with decimals
+    time_fs = get_sim_time(units='fs')
+    yield Timer(Decimal('1e-9'), units='sec')
+    assert get_sim_time(units='fs') == time_fs + 1000000.0, "Expected a delay of 1 ns"
 
 
 @cocotb.test(expect_fail=False)
