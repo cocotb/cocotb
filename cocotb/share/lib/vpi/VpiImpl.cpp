@@ -592,6 +592,7 @@ static void register_final_callback(void)
     sim_finish_cb->arm_callback();
 }
 
+#ifndef VERILATOR
 // Called at compile time to validate the arguments to the system functions
 // we redefine (info, warning, error, fatal).
 //
@@ -686,10 +687,13 @@ static void register_system_functions(void)
     vpi_register_systf( &tfData );
 
 }
+#endif
 
 void (*vlog_startup_routines[])(void) = {
     register_embed,
+#ifndef VERILATOR
     register_system_functions,
+#endif
     register_initial_callback,
     register_final_callback,
     0
