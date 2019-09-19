@@ -1251,5 +1251,20 @@ def test_assertion_is_failure(dut):
     assert False
 
 
+class MyException(Exception):
+    pass
+
+@cocotb.test(expect_error=MyException)
+def test_expect_particular_exception(dut):
+    yield Timer(1)
+    raise MyException()
+
+
+@cocotb.test(expect_error=(MyException, ValueError))
+def test_expect_exception_list(dut):
+    yield Timer(1)
+    raise MyException()
+
+
 if sys.version_info[:2] >= (3, 5):
     from test_cocotb_35 import *

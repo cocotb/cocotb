@@ -305,7 +305,7 @@ class RegressionManager(object):
             result_pass = False
 
         elif isinstance(result, SimFailure):
-            if test.expect_error:
+            if isinstance(result, test.expect_error):
                 self.log.info("Test errored as expected: " + _result_was())
             else:
                 self.log.error("Test error has lead to simulator shutting us "
@@ -316,7 +316,12 @@ class RegressionManager(object):
                 return
 
         elif test.expect_error:
-            self.log.info("Test errored as expected: " + _result_was())
+            if isinstance(result, test.expect_error):
+                self.log.info("Test errored as expected: " + _result_was())
+            else:
+                self.log.info("Test errored with unexpected type: " + _result_was())
+                self._add_failure(result)
+                result_pass = False
 
         else:
             self.log.error("Test Failed: " + _result_was(), exc_info=exc_info)

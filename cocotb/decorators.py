@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -413,10 +413,24 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
             value representing simulation timeout (not implemented).
         expect_fail (bool, optional):
             Don't mark the result as a failure if the test fails.
-        expect_error (bool, optional):
-            Don't mark the result as an error if an error is raised.
-            This is for cocotb internal regression use 
-            when a simulator error is expected.
+        expect_error (bool or exception type or tuple of exception types, optional):
+            If ``True``, consider this test passing if it raises *any* :class:`Exception`, and failing if it does not.
+            If given an exception type or tuple of exception types, catching *only* a listed exception type is considered passing.
+            This is primarily for cocotb internal regression use for when a simulator error is expected.
+
+            Users are encouraged to use the following idiom instead::
+
+                @cocotb.test()
+                def my_test(dut):
+                    try:
+                        yield thing_that_should_fail()
+                    except ExceptionIExpect:
+                        pass
+                    else:
+                        assert False, "Exception did not occur"
+
+            .. versionchanged:: 1.3
+                Specific exception types can be expected
         skip (bool, optional):
             Don't execute this test as part of the regression.
         stage (int, optional)
@@ -428,6 +442,10 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
 
         self.timeout = timeout
         self.expect_fail = expect_fail
+        if expect_error is True:
+            expect_error = (Exception,)
+        elif expect_error is False:
+            expect_error = ()
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
