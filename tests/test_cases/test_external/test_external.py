@@ -47,7 +47,7 @@ from cocotb.utils import get_sim_time
 
 # Tests relating to calling convention and operation
 
-def test_ext_function(dut):
+def return_two(dut):
     # dut._log.info("Sleeping")
     return 2
 
@@ -62,17 +62,11 @@ def yield_to_readwrite(dut):
     raise ReturnValue(2)
 
 
-def test_ext_function_access(dut):
+def calls_cocotb_function(dut):
     return yield_to_readwrite(dut)
 
 
-def test_ext_function_return(dut):
-    value = dut.clk.value.integer
-    # dut._log.info("Sleeping and returning %s" % value)
-    # time.sleep(0.2)
-    return value
-
-def test_print_sim_time(dut, base_time):
+def print_sim_time(dut, base_time):
     # We are not calling out here so time should not advance
     # And should also remain consistent
     for _ in range(5):
@@ -102,7 +96,7 @@ def test_time_in_external(dut):
     dut._log.info("Time at start of test = %d" % time)
     for i in range(100):
         dut._log.info("Loop call %d" % i)
-        yield external(test_print_sim_time)(dut, time)
+        yield external(print_sim_time)(dut, time)
 
     time_now = get_sim_time('ns')
     yield Timer(10, 'ns')
@@ -117,26 +111,20 @@ def test_ext_call_return(dut):
     function"""
     mon = cocotb.scheduler.queue(clock_monitor(dut))
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-    value = yield external(test_ext_function)(dut)
-    dut._log.info("Value was %d" % value)
-
-
-@cocotb.test(expect_fail=False)
-def test_ext_call_nreturn(dut):
-    """Test ability to yield on an external non cocotb coroutine decorated
-    function"""
-    mon = cocotb.scheduler.queue(clock_monitor(dut))
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-    yield external(test_ext_function)(dut)
-
+    value = yield external(return_two)(dut)
+    assert value == 2
 
 @cocotb.test(expect_fail=False)
 def test_multiple_externals(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-    value = yield external(test_ext_function)(dut)
+
+    value = yield external(return_two)(dut)
     dut._log.info("First one completed")
-    value = yield external(test_ext_function)(dut)
+    assert value == 2
+
+    value = yield external(return_two)(dut)
     dut._log.info("Second one completed")
+    assert value == 2
 
 
 @cocotb.test(expect_fail=False)
@@ -145,26 +133,29 @@ def test_external_from_readonly(dut):
 
     yield ReadOnly()
     dut._log.info("In readonly")
-    value = yield external(test_ext_function)(dut)
+    value = yield external(return_two)(dut)
+    assert value == 2
 
 @cocotb.test(expect_fail=False)
 def test_external_that_yields(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
-    value = yield external(test_ext_function_access)(dut)
+    value = yield external(calls_cocotb_function)(dut)
+    assert value == 2
 
 @cocotb.test(expect_fail=False)
 def test_external_and_continue(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
-    value = yield external(test_ext_function_access)(dut)
+    value = yield external(calls_cocotb_function)(dut)
+    assert value == 2
 
     yield Timer(10, "ns")
     yield RisingEdge(dut.clk)
 
 @cocotb.coroutine
 def run_external(dut):
-    value = yield external(test_ext_function_access)(dut)
+    value = yield external(calls_cocotb_function)(dut)
     raise ReturnValue(value)
 
 @cocotb.test(expect_fail=False)
@@ -172,7 +163,8 @@ def test_external_from_fork(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
     coro = cocotb.fork(run_external(dut))
-    yield coro.join()
+    value = yield coro.join()
+    assert value == 2
 
     dut._log.info("Back from join")
 
@@ -180,7 +172,7 @@ def test_external_from_fork(dut):
 def test_ext_exit_error(dut):
     """Test that a premature exit of the sim at its request still results in
     the clean close down of the sim world"""
-    yield external(test_ext_function)(dut)
+    yield external(return_two)(dut)
     yield Timer(1000)
 
 
