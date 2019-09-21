@@ -86,7 +86,7 @@ def clock_monitor(dut):
         yield Timer(1000)
         count += 1
 
-@cocotb.test(expect_fail=False)
+@cocotb.test()
 def test_time_in_external(dut):
     """Test that the simulation time does not advance if the wrapped external
     routine does not itself yield"""
@@ -105,7 +105,7 @@ def test_time_in_external(dut):
         raise TestFailure("Time has elapsed over external call")
 
 
-@cocotb.test(expect_fail=False)
+@cocotb.test()
 def test_ext_call_return(dut):
     """Test ability to yield on an external non cocotb coroutine decorated
     function"""
@@ -114,7 +114,7 @@ def test_ext_call_return(dut):
     value = yield external(return_two)(dut)
     assert value == 2
 
-@cocotb.test(expect_fail=False)
+@cocotb.test()
 def test_multiple_externals(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
@@ -127,7 +127,7 @@ def test_multiple_externals(dut):
     assert value == 2
 
 
-@cocotb.test(expect_fail=False)
+@cocotb.test()
 def test_external_from_readonly(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
@@ -136,14 +136,14 @@ def test_external_from_readonly(dut):
     value = yield external(return_two)(dut)
     assert value == 2
 
-@cocotb.test(expect_fail=False)
+@cocotb.test()
 def test_external_that_yields(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
     value = yield external(calls_cocotb_function)(dut)
     assert value == 2
 
-@cocotb.test(expect_fail=False)
+@cocotb.test()
 def test_external_and_continue(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
@@ -158,7 +158,7 @@ def run_external(dut):
     value = yield external(calls_cocotb_function)(dut)
     raise ReturnValue(value)
 
-@cocotb.test(expect_fail=False)
+@cocotb.test()
 def test_external_from_fork(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
