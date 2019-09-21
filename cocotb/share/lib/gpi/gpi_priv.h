@@ -68,7 +68,7 @@ public:
     virtual int initialise(std::string &name);                   // Post constructor init
 
 
-    template<typename T> T get_handle(void) const {
+    template<typename T> T get_handle() const {
         return static_cast<T>(m_obj_hdl);
     }
 
@@ -120,21 +120,21 @@ public:
                                                                           m_const(is_const) { }
     virtual ~GpiObjHdl() { }
 
-    virtual const char* get_name_str(void);
-    virtual const char* get_fullname_str(void);
-    virtual const char* get_type_str(void);
-    gpi_objtype_t get_type(void) { return m_type; };
-    bool get_const(void) { return m_const; };
-    int get_num_elems(void) {
+    virtual const char* get_name_str();
+    virtual const char* get_fullname_str();
+    virtual const char* get_type_str();
+    gpi_objtype_t get_type() { return m_type; };
+    bool get_const() { return m_const; };
+    int get_num_elems() {
         LOG_DEBUG("%s has %d elements", m_name.c_str(), m_num_elems);
         return m_num_elems;
     }
-    int get_range_left(void) { return m_range_left; }
-    int get_range_right(void) { return m_range_right; }
-    int get_indexable(void) { return m_indexable; }
+    int get_range_left() { return m_range_left; }
+    int get_range_right() { return m_range_right; }
+    int get_indexable() { return m_indexable; }
 
-    const std::string & get_name(void);
-    const std::string & get_fullname(void);
+    const std::string & get_name();
+    const std::string & get_fullname();
 
     virtual const char* get_definition_name() { return m_definition_name.c_str(); };
     virtual const char* get_definition_file() { return m_definition_file.c_str(); };
@@ -169,10 +169,10 @@ public:
                                                          m_length(0) { }
     virtual ~GpiSignalObjHdl() { }
     // Provide public access to the implementation (composition vs inheritance)
-    virtual const char* get_signal_value_binstr(void) = 0;
-    virtual const char* get_signal_value_str(void) = 0;
-    virtual double get_signal_value_real(void) = 0;
-    virtual long get_signal_value_long(void) = 0;
+    virtual const char* get_signal_value_binstr() = 0;
+    virtual const char* get_signal_value_str() = 0;
+    virtual double get_signal_value_real() = 0;
+    virtual long get_signal_value_long() = 0;
 
     int m_length;
 
@@ -196,16 +196,16 @@ public:
                                        m_cb_data(NULL),
                                        m_state(GPI_FREE) { }
     // Pure virtual functions for derived classes
-    virtual int arm_callback(void) = 0;         // Register with simulator
-    virtual int run_callback(void);         // Entry point from simulator
-    virtual int cleanup_callback(void) = 0;     // Cleanup the callback, arm can be called after
+    virtual int arm_callback() = 0;         // Register with simulator
+    virtual int run_callback();         // Entry point from simulator
+    virtual int cleanup_callback() = 0;     // Cleanup the callback, arm can be called after
 
     // Set the data to be used for run callback, separate to arm_callback so data can be re-used
     int set_user_data(int (*gpi_function)(const void*), const void *data);
-    const void *get_user_data(void);
+    const void *get_user_data();
 
     void set_call_state(gpi_cb_state_e new_state);
-    gpi_cb_state_e get_call_state(void);
+    gpi_cb_state_e get_call_state();
 
     virtual ~GpiCbHdl();
 
@@ -219,8 +219,8 @@ class GpiValueCbHdl : public virtual GpiCbHdl {
 public:
     GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal, int edge);
     virtual ~GpiValueCbHdl() { }
-    virtual int run_callback(void);
-    virtual int cleanup_callback(void) = 0;
+    virtual int run_callback();
+    virtual int cleanup_callback() = 0;
 
 protected:
     std::string required_value;
@@ -234,7 +234,7 @@ public:
     GpiClockHdl(const char *clk) { }
     ~GpiClockHdl() { }
     int start_clock(const int period_ps) { return 0; } ; /* Do things with the GpiSignalObjHdl */
-    int stop_clock(void) { return 0; }
+    int stop_clock() { return 0; }
 };
 
 class GpiIterator : public GpiHdl {
@@ -257,7 +257,7 @@ public:
         return GpiIterator::END;
     }
 
-    GpiObjHdl *get_parent(void) {
+    GpiObjHdl *get_parent() {
         return m_parent;
     }
 
@@ -303,12 +303,12 @@ template <class Ti, class Tm> std::vector<Tm> * GpiIteratorMapping<Ti, Tm>::get_
 class GpiImplInterface {
 public:
     GpiImplInterface(const std::string& name) : m_name(name) { }
-    const char *get_name_c(void);
-    const std::string& get_name_s(void);
+    const char *get_name_c();
+    const std::string& get_name_s();
     virtual ~GpiImplInterface() { }
 
     /* Sim related */
-    virtual void sim_end(void) = 0;
+    virtual void sim_end() = 0;
     virtual void get_sim_time(uint32_t *high, uint32_t *low) = 0;
     virtual void get_sim_precision(int32_t *precision) = 0;
 
@@ -321,9 +321,9 @@ public:
 
     /* Callback related, these may (will) return the same handle */
     virtual GpiCbHdl *register_timed_callback(uint64_t time_ps) = 0;
-    virtual GpiCbHdl *register_readonly_callback(void) = 0;
-    virtual GpiCbHdl *register_nexttime_callback(void) = 0;
-    virtual GpiCbHdl *register_readwrite_callback(void) = 0;
+    virtual GpiCbHdl *register_readonly_callback() = 0;
+    virtual GpiCbHdl *register_nexttime_callback() = 0;
+    virtual GpiCbHdl *register_readwrite_callback() = 0;
     virtual int deregister_callback(GpiCbHdl *obj_hdl) = 0;
 
     /* Method to provide strings from operation types */
@@ -337,16 +337,16 @@ private:
 int gpi_register_impl(GpiImplInterface *func_tbl);
 
 void gpi_embed_init(gpi_sim_info_t *info);
-void gpi_embed_end(void);
+void gpi_embed_end();
 void gpi_embed_event(gpi_event_t level, const char *msg);
-void gpi_load_extra_libs(void);
+void gpi_load_extra_libs();
 
-typedef const void (*layer_entry_func)(void);
+typedef const void (*layer_entry_func)();
 
 /* Use this macro in an implementation layer to define an enty point */
 #define GPI_ENTRY_POINT(NAME, func) \
     extern "C" { \
-        const void NAME##_entry_point(void)  \
+        const void NAME##_entry_point()  \
         { \
             func(); \
         } \

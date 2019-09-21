@@ -61,7 +61,7 @@ public:
         }
     }
 
-    uint64_t handle_count(void) {
+    uint64_t handle_count() {
         return handle_map.size();
     }
 
@@ -81,7 +81,7 @@ static GpiHandleStore unique_handles;
 #endif
 
 
-int gpi_print_registered_impl(void)
+int gpi_print_registered_impl()
 {
     vector<GpiImplInterface*>::iterator iter;
     for (iter = registered_impls.begin();
@@ -115,13 +115,13 @@ void gpi_embed_init(gpi_sim_info_t *info)
         gpi_embed_end();
 }
 
-void gpi_embed_end(void)
+void gpi_embed_end()
 
 {
     embed_sim_event(SIM_FAIL, "Simulator shutdown prematurely");
 }
 
-void gpi_sim_end(void)
+void gpi_sim_end()
 {
     registered_impls[0]->sim_end();
 }
@@ -161,7 +161,7 @@ static void gpi_load_libs(std::vector<std::string> to_load)
     }
 }
 
-void gpi_load_extra_libs(void)
+void gpi_load_extra_libs()
 {
     static bool loading = false;
 
@@ -613,10 +613,10 @@ void gpi_deregister_callback(gpi_sim_hdl hdl)
     cb_hdl->m_impl->deregister_callback(cb_hdl);
 }
 
-const char* GpiImplInterface::get_name_c(void) {
+const char* GpiImplInterface::get_name_c() {
     return m_name.c_str();
 }
 
-const string& GpiImplInterface::get_name_s(void) {
+const string& GpiImplInterface::get_name_s() {
     return m_name;
 }

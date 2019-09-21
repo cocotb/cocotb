@@ -36,7 +36,7 @@
  * NB need a way to determine if should leave it sensitised, hmmm...
  *
  */
-int FliProcessCbHdl::cleanup_callback(void)
+int FliProcessCbHdl::cleanup_callback()
 {
     if (m_sensitised) {
         mti_Desensitize(m_proc_hdl);
@@ -53,7 +53,7 @@ FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface *impl,
     m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, MTI_PROC_IMMEDIATE);
 }
 
-int FliTimedCbHdl::arm_callback(void)
+int FliTimedCbHdl::arm_callback()
 {
     #if defined(__LP64__) || defined(_WIN64)
         mti_ScheduleWakeup64(m_proc_hdl, m_time_ps);
@@ -67,7 +67,7 @@ int FliTimedCbHdl::arm_callback(void)
     return 0;
 }
 
-int FliTimedCbHdl::cleanup_callback(void)
+int FliTimedCbHdl::cleanup_callback()
 {
     switch (get_call_state()) {
     case GPI_PRIMED:
@@ -93,7 +93,7 @@ int FliTimedCbHdl::cleanup_callback(void)
     return 0;
 }
 
-int FliSignalCbHdl::arm_callback(void)
+int FliSignalCbHdl::arm_callback()
 {
     if (NULL == m_proc_hdl) {
         LOG_DEBUG("Creating a new process to sensitise to signal %s", mti_GetSignalName(m_sig_hdl));
@@ -108,7 +108,7 @@ int FliSignalCbHdl::arm_callback(void)
     return 0;
 }
 
-int FliSimPhaseCbHdl::arm_callback(void)
+int FliSimPhaseCbHdl::arm_callback()
 {
     if (NULL == m_proc_hdl) {
         LOG_DEBUG("Creating a new process to sensitise with priority %d", m_priority);
@@ -132,7 +132,7 @@ FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface *impl,
     m_sig_hdl = m_signal->get_handle<mtiSignalIdT>();
 }
 
-int FliStartupCbHdl::arm_callback(void)
+int FliStartupCbHdl::arm_callback()
 {
     mti_AddLoadDoneCB(handle_fli_callback,(void *)this);
     set_call_state(GPI_PRIMED);
@@ -140,7 +140,7 @@ int FliStartupCbHdl::arm_callback(void)
     return 0;
 }
 
-int FliStartupCbHdl::run_callback(void)
+int FliStartupCbHdl::run_callback()
 {
     gpi_sim_info_t sim_info;
 
@@ -178,7 +178,7 @@ int FliStartupCbHdl::run_callback(void)
     return 0;
 }
 
-int FliShutdownCbHdl::arm_callback(void)
+int FliShutdownCbHdl::arm_callback()
 {
     mti_AddQuitCB(handle_fli_callback,(void *)this);
     set_call_state(GPI_PRIMED);
@@ -186,7 +186,7 @@ int FliShutdownCbHdl::arm_callback(void)
     return 0;
 }
 
-int FliShutdownCbHdl::run_callback(void)
+int FliShutdownCbHdl::run_callback()
 {
     gpi_embed_end();
 
