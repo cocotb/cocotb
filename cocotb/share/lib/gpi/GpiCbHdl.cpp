@@ -28,22 +28,22 @@
 
 #include "gpi_priv.h"
 
-const char * GpiObjHdl::get_name_str(void)
+const char * GpiObjHdl::get_name_str()
 {
     return m_name.c_str();
 }
 
-const char * GpiObjHdl::get_fullname_str(void)
+const char * GpiObjHdl::get_fullname_str()
 {
     return m_fullname.c_str();
 }
 
-const std::string & GpiObjHdl::get_fullname(void)
+const std::string & GpiObjHdl::get_fullname()
 {
     return m_fullname;
 }
 
-const char * GpiObjHdl::get_type_str(void)
+const char * GpiObjHdl::get_type_str()
 {
 #define CASE_OPTION(_X) \
     case _X: \
@@ -73,7 +73,7 @@ const char * GpiObjHdl::get_type_str(void)
     return ret;
 }
 
-const std::string & GpiObjHdl::get_name(void)
+const std::string & GpiObjHdl::get_name()
 {
     return m_name;
 }
@@ -121,7 +121,7 @@ int GpiObjHdl::initialise(std::string &name, std::string &fq_name)
     return 0;
 }
 
-int GpiCbHdl::run_callback(void)
+int GpiCbHdl::run_callback()
 {
     LOG_DEBUG("Generic run_callback");
     this->gpi_function(m_cb_data);
@@ -129,13 +129,13 @@ int GpiCbHdl::run_callback(void)
     return 0;
 }
 
-int GpiCbHdl::cleanup_callback(void)
+int GpiCbHdl::cleanup_callback()
 {
     LOG_WARN("Generic cleanup_handler");
     return 0;
 }
 
-int GpiCbHdl::arm_callback(void)
+int GpiCbHdl::arm_callback()
 {
     LOG_WARN("Generic arm_callback");
     return 0;
@@ -151,7 +151,7 @@ int GpiCbHdl::set_user_data(int (*gpi_function)(const void*), const void *data)
     return 0;
 }
 
-const void * GpiCbHdl::get_user_data(void)
+const void * GpiCbHdl::get_user_data()
 {
     return m_cb_data;
 }
@@ -161,12 +161,12 @@ void GpiCbHdl::set_call_state(gpi_cb_state_e new_state)
     m_state = new_state;
 }
 
-gpi_cb_state_e GpiCbHdl::get_call_state(void)
+gpi_cb_state_e GpiCbHdl::get_call_state()
 {
     return m_state;
 }
 
-GpiCbHdl::~GpiCbHdl(void)
+GpiCbHdl::~GpiCbHdl()
 {
 
 }
@@ -184,7 +184,7 @@ GpiValueCbHdl::GpiValueCbHdl(GpiImplInterface *impl,
         required_value = "0";
 }
 
-int GpiValueCbHdl::run_callback(void)
+int GpiValueCbHdl::run_callback()
 {
     std::string current_value;
     bool pass = false;

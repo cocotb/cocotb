@@ -87,8 +87,8 @@ public:
     VhpiCbHdl(GpiImplInterface *impl); 
     virtual ~VhpiCbHdl() { }
 
-    virtual int arm_callback(void);
-    virtual int cleanup_callback(void);
+    virtual int arm_callback();
+    virtual int cleanup_callback();
 
 protected:
     vhpiCbDataT cb_data;
@@ -101,7 +101,7 @@ class VhpiValueCbHdl : public VhpiCbHdl, public GpiValueCbHdl {
 public:
     VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig, int edge);
     virtual ~VhpiValueCbHdl() { }
-    int cleanup_callback(void) {
+    int cleanup_callback() {
         return VhpiCbHdl::cleanup_callback();
     }
 private:
@@ -133,8 +133,8 @@ public:
 class VhpiStartupCbHdl : public VhpiCbHdl {
 public:
     VhpiStartupCbHdl(GpiImplInterface *impl);
-    int run_callback(void);
-    int cleanup_callback(void) {
+    int run_callback();
+    int cleanup_callback() {
         /* Too many sims get upset with this so we override to do nothing */
         return 0;
     }
@@ -144,8 +144,8 @@ public:
 class VhpiShutdownCbHdl : public VhpiCbHdl {
 public:
     VhpiShutdownCbHdl(GpiImplInterface *impl);
-    int run_callback(void);
-    int cleanup_callback(void) {
+    int run_callback();
+    int cleanup_callback() {
         /* Too many sims get upset with this so we override to do nothing */
         return 0;
     }
@@ -189,10 +189,10 @@ public:
                                       m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
     virtual ~VhpiSignalObjHdl();
 
-    virtual const char* get_signal_value_binstr(void);
-    virtual const char* get_signal_value_str(void);
-    virtual double get_signal_value_real(void);
-    virtual long get_signal_value_long(void);
+    virtual const char* get_signal_value_binstr();
+    virtual const char* get_signal_value_str();
+    virtual double get_signal_value_real();
+    virtual long get_signal_value_long();
 
 
     virtual int set_signal_value(const long value);
@@ -251,7 +251,7 @@ public:
                                         m_read_only(this) { }
 
      /* Sim related */
-    void sim_end(void);
+    void sim_end();
     void get_sim_time(uint32_t *high, uint32_t *low);
     void get_sim_precision(int32_t *precision);
 
@@ -261,9 +261,9 @@ public:
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time_ps);
-    GpiCbHdl *register_readonly_callback(void);
-    GpiCbHdl *register_nexttime_callback(void);
-    GpiCbHdl *register_readwrite_callback(void);
+    GpiCbHdl *register_readonly_callback();
+    GpiCbHdl *register_nexttime_callback();
+    GpiCbHdl *register_readwrite_callback();
     int deregister_callback(GpiCbHdl *obj_hdl);
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
     GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent);
