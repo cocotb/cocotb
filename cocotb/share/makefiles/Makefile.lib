@@ -29,58 +29,30 @@
 
 # This is a simple wrapper Makefile to build appropriate libraries
 
-all: sim
+COCOTB_SHARE_MAKEFILES_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+COCOTB_SHARE_DIR := $(abspath $(COCOTB_SHARE_MAKEFILES_DIR)/..)
+export COCOTB_SHARE_DIR
 
-SIM_BUILD ?= sim_build
-export SIM_BUILD
+all-libs: cocotb-libs cocotb-vpi-libs cocotb-vhpi-libs cocotb-fli-libs
+
+vpi-libs : cocotb-libs cocotb-vpi-libs
+
+#SIM_BUILD ?= sim_build
+#export SIM_BUILD
 
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
 
-COCOTB_RESULTS_FILE ?= results.xml
-
-# Maintain backwards compatibility by supporting upper and lower case SIM variable
-SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
-
-HAVE_SIMULATOR = $(shell if [ -f $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE) ]; then echo 1; else echo 0; fi;)
-AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.*)))
-
-ifeq ($(HAVE_SIMULATOR),0)
-$(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simulators: $(AVAILABLE_SIMULATORS)")
-endif
-
-# Depend on all Python from the cocotb package. This triggers a
-# recompilation of the simulation if cocotb is updated.
-CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
+USER_DIR ?= $(shell pwd)
+export USER_DIR
 
 include $(COCOTB_SHARE_DIR)/lib/Makefile
-include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 
-ifeq ($(COCOTB_INSTALL_METHOD),srctree)
-  # cocotb is used from the source tree
-  include $(COCOTB_SHARE_DIR)/../../version
-else
-  # cocotb has been installed from a Python package
-  VERSION=$(shell $(PYTHON_BIN) -c 'import pkg_resources; print(pkg_resources.get_distribution("cocotb").version)')
-endif
-export VERSION
+cocotb-libs : $(COCOTB_LIBS) 
 
-# Append directory containing the cocotb Python package to PYTHONPATH
-# XXX: This is only needed if cocotb is not installed into the default
-# Python search path.
-PYTHONPATH := $(COCOTB_PY_DIR):$(PYTHONPATH)
-export PYTHONPATH
+cocotb-vpi-libs : $(COCOTB_VPI_LIB)
 
-$(SIM_BUILD):
-	mkdir -p $@
+cocotb-vhpi-libs : $(COCOTB_VHPI_LIB)
 
-# Regression rule uses Make dependencies to determine whether to run the simulation
-.PHONY: regression
-regression: $(COCOTB_RESULTS_FILE)
+cocotb-fli-libs : $(COCOTB_FLI_LIB)
 
-# Default sim rule will force a re-run of the simulation (though the cocotb library
-# and RTL compilation phases are still evaluated by makefile dependencies)
-.PHONY: sim
-sim:
-	-@rm -f $(COCOTB_RESULTS_FILE)
-	$(MAKE) $(COCOTB_RESULTS_FILE)
