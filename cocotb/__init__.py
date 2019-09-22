@@ -159,8 +159,17 @@ def _initialise_testbench(root_name):
     modules = get_option('MODULE', 'cocotb.module', is_list=True)
     test_str = get_option('TESTCASE', 'cocotb.testcase')
     hooks = get_option('COCOTB_HOOKS', 'cocotb.hooks', [], is_list=True)
+    
+    module_path = get_option('COCOTB_PYPATH', 'cocotb.pypath', is_list=True)
+    
+    if module_path is not None:
+        seen = {}
+        for p in module_path:
+            if p not in seen:
+                sys.path.append(p)
+                seen[p] = 1
 
-    if len(modules) == 0:
+    if modules is None or len(modules) == 0:
         raise ImportError("Environment variables defining the module(s) to " +
                           "execute not defined.  MODULE=\"%s\"" % (modules))
 
@@ -197,7 +206,8 @@ def get_option(env_var, plusarg, default=None, is_list=False):
                 val = [val]
         else:
             # We split environment-variable values to form lists
-            val = val.split(',')
+            if not isinstance(val, list):
+                val = val.split(',')
        
     return val
     
