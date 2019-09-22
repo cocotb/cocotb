@@ -134,6 +134,11 @@ void embed_init_python(void)
     if (gtstate)
         return;
 
+    // Before loading Python, ensure that COCOTB_SIM is set
+    if (!getenv("COCOTB_SIM") || !getenv("COCOTB_SiM")[0]) {
+    	setenv("COCOTB_SIM", "1", 1);
+    }
+
     void * lib_handle = utils_dyn_open(PY_SO_LIB);
     if (!lib_handle) {
         LOG_ERROR("Failed to find Python shared library\n");
@@ -238,6 +243,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     // Ensure that the current thread is ready to call the Python C API
     PyGILState_STATE gstate = PyGILState_Ensure();
     to_python();
+
 
     if (get_module_ref(COCOTB_MODULE, &cocotb_module))
         goto cleanup;
