@@ -100,7 +100,7 @@ static char log_buff[LOG_SIZE];
  *
  * Makes one call to PyGILState_Ensure and one call to PyGILState_Release
  *
- * If the Python logging mechanism is not initialised, dumps to stderr.
+ * If the Python logging mechanism is not initialised, dumps to `stderr`.
  *
  */
 void gpi_log(const char *name, long level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)

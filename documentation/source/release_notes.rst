@@ -20,8 +20,8 @@ New features
 Notable changes and bug fixes
 -----------------------------
 
-- The heart of cocotb, its scheduler, is now even more robust. Many small bugs, inconsistencies and unreliable behaviour have been ironed out.
-- Exceptions are now correctly propagated between coroutines, giving users the "natural" behaviour they'd expect with exceptions. (:pr:`633`)
+- The heart of cocotb, its scheduler, is now even more robust. Many small bugs, inconsistencies and unreliable behavior have been ironed out.
+- Exceptions are now correctly propagated between coroutines, giving users the "natural" behavior they'd expect with exceptions. (:pr:`633`)
 - The ``setimmediatevalue()`` function now works for values larger than 32 bit. (:pr:`768`)
 - The documentation was cleaned up, improved and extended in various places, making it more consistent and complete.
 - Tab completion in newer versions of IPython is fixed. (:pr:`825`)
@@ -55,7 +55,7 @@ Released on 15 February 2015.
 New features
 ------------
 
-- FLI support for Modelsim
+- FLI support for ModelSim
 - Mixed Language, Verilog and VHDL
 - Windows
 - 300% performance improvement with VHPI interface
@@ -106,7 +106,7 @@ Released on 19 July 2013.
 New features
 ------------
 - Release 0.2 supports more simulators and increases robustness over 0.1.
-- A centralised installation is now supported (see documentation) with supporting libraries build when the simulation is run for the first time.
+- A centralized installation is now supported (see documentation) with supporting libraries build when the simulation is run for the first time.
 
 
 cocotb 0.1

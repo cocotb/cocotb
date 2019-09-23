@@ -149,7 +149,7 @@ def pack(ctypes_obj):
     """Convert a :mod:`ctypes` structure into a Python string.
 
     Args:
-        ctypes_obj (ctypes.Structure): The ctypes structure to convert to a string.
+        ctypes_obj (ctypes.Structure): The :mod:`ctypes` structure to convert to a string.
 
     Returns:
         New Python string containing the bytes from memory holding *ctypes_obj*.
@@ -162,12 +162,12 @@ def unpack(ctypes_obj, string, bytes=None):
     """Unpack a Python string into a :mod:`ctypes` structure.
 
     If the length of *string* is not the correct size for the memory
-    footprint of the ctypes structure then the *bytes* keyword argument 
+    footprint of the :mod:`ctypes` structure then the *bytes* keyword argument 
     must be used.
 
     Args:
-        ctypes_obj (ctypes.Structure): The ctypes structure to pack into.
-        string (str):  String to copy over the ctypes_obj memory space.
+        ctypes_obj (ctypes.Structure): The :mod:`ctypes` structure to pack into.
+        string (str):  String to copy over the *ctypes_obj* memory space.
         bytes (int, optional): Number of bytes to copy. 
             Defaults to ``None``, meaning the length of *string* is used.
 
@@ -432,7 +432,6 @@ class ParametrizedSingleton(type):
             return self
 
 
-
 def reject_remaining_kwargs(name, kwargs):
     """
     Helper function to emulate Python 3 keyword-only arguments.
@@ -484,7 +483,7 @@ class lazy_property(object):
 
 
 def want_color_output():
-    """Return ``True`` if coloured output is possible/requested and not running in GUI."""
+    """Return ``True`` if colored output is possible/requested and not running in GUI."""
     want_color = sys.stdout.isatty()  # default to color for TTYs
     if os.getenv("COCOTB_ANSI_OUTPUT", default='0') == '1':
         want_color = True

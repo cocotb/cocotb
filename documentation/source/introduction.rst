@@ -18,13 +18,13 @@ Linux Platforms
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
 * `Synopsys <https://www.synopsys.com/>`_ VCS
 * `Cadence <https://www.cadence.com/>`_ Incisive
-* `Mentor <https://www.mentor.com/>`_ Modelsim (DE and SE)
+* `Mentor <https://www.mentor.com/>`_ ModelSim (DE and SE)
 
 Windows Platform
 
 * `Icarus Verilog <http://iverilog.icarus.com/>`_
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
-* `Mentor <https://www.mentor.com/>`_ Modelsim (DE and SE)
+* `Mentor <https://www.mentor.com/>`_ ModelSim (DE and SE)
 
 A (possibly older) version of cocotb can be used live in a web-browser using `EDA Playground <https://www.edaplayground.com>`_.
 
@@ -34,7 +34,7 @@ How is cocotb different?
 ========================
 
 
-cocotb encourages the same philosophy of design re-use and randomised testing as UVM, however is implemented in Python rather than SystemVerilog.
+cocotb encourages the same philosophy of design re-use and randomized testing as UVM, however is implemented in Python rather than SystemVerilog.
 
 With cocotb, VHDL/Verilog/SystemVerilog are normally only used for the design itself, not the testbench.
 
@@ -74,6 +74,10 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
 
 Contributors
 ============
+
+.. spelling::
+   McGregor
+   Grimwood
 
 cocotb was developed by `Potential Ventures <https://potential.ventures>`_ with the support of
 `Solarflare Communications Ltd <https://www.solarflare.com/>`_

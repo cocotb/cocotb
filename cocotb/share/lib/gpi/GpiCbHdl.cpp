@@ -110,7 +110,7 @@ bool GpiHdl::is_this_impl(GpiImplInterface *impl)
 
 int GpiHdl::initialise(std::string &name)
 {
-    LOG_WARN("Generic initialise, doubt you should have called this");
+    LOG_WARN("Generic initialize, doubt you should have called this");
     return 0;
 }
 

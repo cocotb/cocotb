@@ -69,8 +69,8 @@ public(public)  # Emulate decorating ourself
 @public
 class CoroutineComplete(Exception):
     """To ensure that a coroutine has completed before we fire any triggers
-    that are blocked waiting for the coroutine to end, we create a subclass
-    exception that the Scheduler catches and the callbacks are attached
+    that are blocked waiting for the coroutine to end, we create a sub-class
+    exception that the scheduler catches and the callbacks are attached
     here.
     """
     def __init__(self, text=""):

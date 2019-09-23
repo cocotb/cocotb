@@ -222,7 +222,7 @@ class Scheduler(object):
         if _debug:
             self.log.setLevel(logging.DEBUG)
 
-        # Use OrderedDict here for deterministic behaviour (gh-934)
+        # Use OrderedDict here for deterministic behavior (gh-934)
 
         # A dictionary of pending coroutines for each trigger,
         # indexed by trigger
@@ -529,7 +529,7 @@ class Scheduler(object):
         trigger_coros = self._trigger2coros.setdefault(trigger, [])
         if coro is self._write_coro_inst:
             # Our internal write coroutine always runs before any user coroutines.
-            # This preserves the behaviour prior to the refactoring of writes to
+            # This preserves the behavior prior to the refactoring of writes to
             # this coroutine.
             trigger_coros.insert(0, coro)
         else:
