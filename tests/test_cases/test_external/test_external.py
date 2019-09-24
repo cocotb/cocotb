@@ -54,7 +54,7 @@ def decorated_test_read(dut, signal):
     global test_count
     dut._log.info("Inside decorated_test_read")
     test_count = 0
-    while test_count is not 5:
+    while test_count != 5:
         yield RisingEdge(dut.clk)
         test_count += 1
 
@@ -64,7 +64,7 @@ def decorated_test_read(dut, signal):
 def test_read(dut, signal):
     global test_count
     dut._log.info("Inside test_read")
-    while test_count is not 5:
+    while test_count != 5:
         yield RisingEdge(dut.clk)
         test_count += 1
 
@@ -115,7 +115,7 @@ def test_callable(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield Timer(100000)
     clk_gen.kill()
-    if test_count is not 5:
+    if test_count != 5:
         print("Count was %d" % test_count)
         raise TestFailure
 
@@ -137,7 +137,7 @@ def test_callable_fail(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield Timer(100000)
     clk_gen.kill()
-    if test_count is not 5:
+    if test_count != 5:
         raise TestFailure
 
 
