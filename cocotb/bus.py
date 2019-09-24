@@ -55,7 +55,8 @@ class Bus(object):
         Support for struct/record ports where signals are member names.
     """
     def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", array_idx=None):
-        """Args:
+        """
+        Args:
             entity (SimHandle): SimHandle instance to the entity containing the bus.
             name (str): Name of the bus. ``None`` for nameless bus, e.g. bus-signals
                 in an interface or a modport (untested on struct/record, 

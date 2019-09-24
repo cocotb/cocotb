@@ -99,7 +99,8 @@ class BinaryValue(object):
     def __init__(self, value=None, n_bits=None, bigEndian=True,
                  binaryRepresentation=BinaryRepresentation.UNSIGNED,
                  bits=None):
-        """Args:
+        """
+        Args:
             value (str or int or long, optional): Value to assign to the bus.
             n_bits (int, optional): Number of bits to use for the underlying
                 binary representation.
