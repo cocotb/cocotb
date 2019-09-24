@@ -54,7 +54,7 @@ class Monitor(object):
 
     Monitors are passive 'listening' objects that monitor pins going in or out of a DUT.
     This class should not be used
-    directly, but should be subclassed and the internal :any:`_monitor_recv` method
+    directly, but should be sub-classed and the internal :any:`_monitor_recv` method
     should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
     method should capture some behavior of the pins, form a transaction, and
     pass this transaction to the internal :any:`_recv` method.  The :any:`_monitor_recv`
@@ -80,7 +80,7 @@ class Monitor(object):
         self.stats = MonitorStatistics()
         self._wait_event = Event()
 
-        # Subclasses may already set up logging
+        # Sub-classes may already set up logging
         if not hasattr(self, "log"):
             self.log = SimLog("cocotb.monitor.%s" % (self.__class__.__name__))
 
@@ -138,7 +138,7 @@ class Monitor(object):
     def _monitor_recv(self):
         """Actual implementation of the receiver.
 
-        Subclasses should override this method to implement the actual receive
+        Sub-classes should override this method to implement the actual receive
         routine and call :any:`_recv` with the recovered transaction.
         """
         raise NotImplementedError("Attempt to use base monitor class without "
@@ -167,7 +167,7 @@ class Monitor(object):
 
 
 class BusMonitor(Monitor):
-    """Wrapper providing common functionality for monitoring busses."""
+    """Wrapper providing common functionality for monitoring buses."""
     _signals = []
     _optional_signals = []
 

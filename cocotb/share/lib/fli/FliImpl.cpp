@@ -210,7 +210,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
     }
 
     if (new_obj->initialise(name,fq_name) < 0) {
-        LOG_ERROR("Failed to initialise the handle %s", name.c_str());
+        LOG_ERROR("Failed to initialize the handle %s", name.c_str());
         delete new_obj;
         return NULL;
     }

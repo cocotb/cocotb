@@ -28,7 +28,7 @@ No reset port exists.
 The cocotb testbench checks the initial state first, then applies random data to the data input.
 The flip-flop output is captured at each rising edge of the clock and compared to the applied input data using a :class:`.Scoreboard`.
 
-The testbench defines a ``BitMonitor`` (a subclass of :class:`.Monitor`) as a pendant to the cocotb-provided :class:`.BitDriver`.
+The testbench defines a ``BitMonitor`` (a sub-class of :class:`.Monitor`) as a pendant to the cocotb-provided :class:`.BitDriver`.
 The :class:`.BitDriver`'s  :meth:`~.BitDriver.start` and  :meth:`~.BitDriver.stop` methods are used
 to start and stop generation of input data.
 
@@ -44,7 +44,7 @@ outputs it on ``o`` (with ``i_data`` and ``o_valid``).
 
 It has implementations in both VHDL and SystemVerilog.
 
-The testbench defines a ``StreamBusMonitor`` (a subclass of :class:`.BusMonitor`), a clock generator,
+The testbench defines a ``StreamBusMonitor`` (a sub-class of :class:`.BusMonitor`), a clock generator,
 a ``value_test`` helper coroutine and a few tests.
 Test ``mean_randomised_test`` uses the ``StreamBusMonitor`` to
 feed a :class:`.Scoreboard` with the collected transactions on input bus ``i``.
@@ -65,6 +65,9 @@ The cocotb testbench pulls the reset on both instances and checks that they beha
 
    This example is not complete.
 
+.. spelling::
+   Todo
+
 
 AXI Lite Slave
 ==============
@@ -73,7 +76,7 @@ The directory :file:`cocotb/examples/axi_lite_slave/` contains ...
 
 .. todo::
 
-    Write documentation, see README.md
+    Write documentation, see :file:`README.md`
 
 
 Sorter

@@ -172,7 +172,7 @@ of :keyword:`yield`. Provided they are decorated with ``@cocotb.coroutine``,
 ``async def`` functions using :keyword:`await` and regular functions using
 :keyword:`yield` can be used interchangeable - the appropriate keyword to use
 is determined by which type of function it appears in, not by the
-sub-coroutinue being called.
+sub-coroutine being called.
 
 .. note::
     It is not legal to ``await`` a list of triggers as can be done in

@@ -59,7 +59,7 @@ Debian/Ubuntu-based
 
     $> sudo apt-get install git make gcc g++ swig python-dev
 
-RedHat-based
+Red Hat-based
 
 .. code-block:: bash
 
@@ -89,8 +89,8 @@ The following packages need selecting by checking the tick box and selecting
 From the Installation menu then select "Apply Changes", in the next dialog
 select "Apply".
 
-When installed a shell can be opened using the "msys.bat" file located under
-the <install_dir>/msys/1.0/
+When installed a shell can be opened using the :file:`msys.bat` file located under
+the :file:`<install_dir>/msys/1.0/`
 
 Python can be downloaded from https://www.python.org/downloads/windows/.
 Run the installer and download to your chosen location.
@@ -211,7 +211,7 @@ This will drive a square wave clock onto the ``clk`` port of the toplevel.
 Accessing the design
 --------------------
 
-When cocotb initialises it finds the top-level instantiation in the simulator
+When cocotb initializes it finds the top-level instantiation in the simulator
 and creates a handle called ``dut``. Top-level signals can be accessed using the
 "dot" notation used for accessing object attributes in Python. The same mechanism
 can be used to access signals inside the design.

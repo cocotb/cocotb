@@ -66,10 +66,10 @@ will display as something like
     160000000000000.00ns INFO     cocotb.endian_swapper_sv.stream_out           avalon.py:151  in _monitor_recv                   Received a packet of 125 bytes
 
 
-Busses
-======
+Buses
+=====
 
-Busses are simply defined as collection of signals. The :class:`.Bus` class
+Buses are simply defined as collection of signals. The :class:`.Bus` class
 will automatically bundle any group of signals together that are named similar
 to ``dut.<bus_name><separator><signal_name>``. For instance,
 
@@ -80,7 +80,7 @@ to ``dut.<bus_name><separator><signal_name>``. For instance,
 
 have a bus name of ``stream_in``, a separator of ``_``, and signal names of
 ``valid`` and ``data``. A list of signal names, or a dictionary mapping attribute
-names to signal names is also passed into the :class:`.Bus` class. Busses can
+names to signal names is also passed into the :class:`.Bus` class. Buses can
 have values driven onto them, be captured (returning a dictionary), or sampled
 and stored into a similar object.
 
@@ -89,8 +89,8 @@ and stored into a similar object.
      stream_in_bus = Bus(dut, "stream_in", ["valid", "data"]) # '_' is the default separator
 
 
-Driving Busses
-==============
+Driving Buses
+=============
 
 Examples and specific bus implementation bus drivers (AMBA, Avalon, XGMII, and
 others) exist in the :class:`.Driver` class enabling a test to append
@@ -123,12 +123,12 @@ example:
             yield tb.stream_in.send(transaction)
 
 
-Monitoring Busses
-=================
+Monitoring Buses
+================
 
 For our testbenches to actually be useful, we have to monitor some of these
-busses, and not just drive them. That's where the :class:`.Monitor` class
-comes in, with prebuilt monitors for Avalon and XGMII busses. The
+buses, and not just drive them. That's where the :class:`.Monitor` class
+comes in, with pre-built monitors for Avalon and XGMII buses. The
 Monitor class is a base class which you are expected to derive for your
 particular purpose. You must create a :any:`_monitor_recv()` function which is
 responsible for determining 1) at what points in simulation to call the

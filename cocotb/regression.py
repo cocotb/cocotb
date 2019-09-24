@@ -496,13 +496,13 @@ class TestFactory(object):
         """
         Args:
             test_function (function): the function that executes a test.
-                                      Must take 'dut' as the first argument.
+                Must take *dut* as the first argument.
 
-            *args: Remaining args are passed directly to the test function.
+            *args: Remaining arguments are passed directly to the test function.
                    Note that these arguments are not varied. An argument that
                    varies with each test must be a keyword argument to the
                    test function.
-            *kwargs: Remaining kwargs are passed directly to the test function.
+            *kwargs: Remaining keyword arguments are passed directly to the test function.
                    Note that these arguments are not varied. An argument that
                    varies with each test must be a keyword argument to the
                    test function.

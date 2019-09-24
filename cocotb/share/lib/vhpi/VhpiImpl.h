@@ -135,7 +135,7 @@ public:
     VhpiStartupCbHdl(GpiImplInterface *impl);
     int run_callback();
     int cleanup_callback() {
-        /* Too many sims get upset with this so we override to do nothing */
+        /* Too many simulators get upset with this so we override to do nothing */
         return 0;
     }
     virtual ~VhpiStartupCbHdl() { }
@@ -146,7 +146,7 @@ public:
     VhpiShutdownCbHdl(GpiImplInterface *impl);
     int run_callback();
     int cleanup_callback() {
-        /* Too many sims get upset with this so we override to do nothing */
+        /* Too many simulators get upset with this so we override to do nothing */
         return 0;
     }
     virtual ~VhpiShutdownCbHdl() { }

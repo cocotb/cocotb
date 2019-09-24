@@ -109,8 +109,8 @@ static void set_program_name_in_venv(void)
 
 
 /**
- * @name    Initialise the Python interpreter
- * @brief   Create and initialise the Python interpreter
+ * @name    Initialize the Python interpreter
+ * @brief   Create and initialize the Python interpreter
  * @ingroup python_c_api
  *
  * GILState before calling: N/A
@@ -130,7 +130,7 @@ void embed_init_python(void)
 #define PY_SO_LIB xstr(PYTHON_SO_LIB)
 #endif
 
-    // Don't initialise Python if already running
+    // Don't initialize Python if already running
     if (gtstate)
         return;
 
@@ -172,8 +172,8 @@ out:
 }
 
 /**
- * @name    Initialisation
- * @brief   Called by the simulator on initialisation. Load cocotb Python module
+ * @name    Initialization
+ * @brief   Called by the simulator on initialization. Load cocotb Python module
  * @ingroup python_c_api
  *
  * GILState before calling: Not held
@@ -208,7 +208,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     int i;
     int ret = 0;
 
-    /* Check that we are not already initialised */
+    /* Check that we are not already initialized */
     if (pEventFn)
         return ret;
 
@@ -301,9 +301,9 @@ int embed_sim_init(gpi_sim_info_t *info)
     }
 
     LOG_INFO("Running on %s version %s", info->product, info->version);
-    LOG_INFO("Python interpreter initialised and cocotb loaded!");
+    LOG_INFO("Python interpreter initialized and cocotb loaded!");
 
-    // Now that logging has been set up ok we initialise the testbench
+    // Now that logging has been set up ok we initialize the testbench
     if (-1 == PyObject_SetAttrString(cocotb_module, "SIM_NAME", PyString_FromString(info->product))) {
         PyErr_Print();
         LOG_ERROR("Unable to set SIM_NAME");
@@ -360,7 +360,7 @@ int embed_sim_init(gpi_sim_info_t *info)
         Py_DECREF(cocotb_retval);
     } else {
         PyErr_Print();
-        LOG_ERROR("Cocotb initialisation failed - exiting\n");
+        LOG_ERROR("cocotb initialization failed - exiting\n");
         goto cleanup;
     }
 

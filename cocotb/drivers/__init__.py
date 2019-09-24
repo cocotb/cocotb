@@ -93,7 +93,7 @@ class BitDriver(object):
 class Driver(object):
     """Class defining the standard interface for a driver within a testbench.
 
-    The driver is responsible for serialising transactions onto the physical
+    The driver is responsible for serializing transactions onto the physical
     pins of the interface.  This may consume simulation time.
     """
     def __init__(self):
@@ -101,7 +101,7 @@ class Driver(object):
         self._pending = Event(name="Driver._pending")
         self._sendQ = deque()
 
-        # Subclasses may already set up logging
+        # Sub-classes may already set up logging
         if not hasattr(self, "log"):
             self.log = SimLog("cocotb.driver.%s" % (self.__class__.__name__))
 
@@ -144,7 +144,7 @@ class Driver(object):
 
         Args:
             transaction (any): The transaction to be sent.
-            sync (bool, optional): Synchronise the transfer by waiting for a rising edge.
+            sync (bool, optional): Synchronize the transfer by waiting for a rising edge.
             **kwargs (dict): Additional arguments used in child class'
                 :any:`_driver_send` method.
         """
@@ -153,15 +153,15 @@ class Driver(object):
     def _driver_send(self, transaction, sync=True, **kwargs):
         """Actual implementation of the send.
 
-        Subclasses should override this method to implement the actual 
+        Sub-classes should override this method to implement the actual 
         :meth:`~cocotb.drivers.Driver.send` routine.
 
         Args:
             transaction (any): The transaction to be sent.
-            sync (boolean, optional): Synchronise the transfer by waiting for a rising edge.
-            **kwargs: Additional arguments if required for protocol implemented in subclass.
+            sync (boolean, optional): Synchronize the transfer by waiting for a rising edge.
+            **kwargs: Additional arguments if required for protocol implemented in a sub-class.
         """
-        raise NotImplementedError("Subclasses of Driver should define a "
+        raise NotImplementedError("Sub-classes of Driver should define a "
                                   "_driver_send coroutine")
 
     @coroutine
@@ -173,7 +173,7 @@ class Driver(object):
             callback (callable, optional): Optional function to be called 
                 when the transaction has been sent.
             event (optional): event to be set when the transaction has been sent.
-            sync (boolean, optional): Synchronise the transfer by waiting for a rising edge.
+            sync (boolean, optional): Synchronize the transfer by waiting for a rising edge.
             **kwargs: Any additional arguments used in child class' 
                 :any:`_driver_send` method.
         """
@@ -197,7 +197,7 @@ class Driver(object):
             synchronised = False
 
             # Send in all the queued packets,
-            # only synchronise on the first send
+            # only synchronize on the first send
             while self._sendQ:
                 transaction, callback, event, kwargs = self._sendQ.popleft()
                 self.log.debug("Sending queued packet...")
@@ -207,7 +207,7 @@ class Driver(object):
 
 
 class BusDriver(Driver):
-    """Wrapper around common functionality for busses which have:
+    """Wrapper around common functionality for buses which have:
 
         * a list of :attr:`_signals` (class attribute)
         * a list of :attr:`_optional_signals` (class attribute)
@@ -218,8 +218,8 @@ class BusDriver(Driver):
         Args:
             entity (SimHandle): A handle to the simulator entity.
             name (str or None): Name of this bus. ``None`` for a nameless bus, e.g.
-                bus-signals in an interface or a modport.
-                (untested on struct/record, but could work here as well).
+                bus-signals in an interface or a ``modport``.
+                (untested on ``struct``/``record``, but could work here as well).
             clock (SimHandle): A handle to the clock associated with this bus.
             array_idx (int or None, optional): Optional index when signal is an array.
     """
@@ -247,7 +247,7 @@ class BusDriver(Driver):
 
         Args:
             transaction: The transaction to send.
-            sync (bool, optional): Synchronise the transfer by waiting for a rising edge.
+            sync (bool, optional): Synchronize the transfer by waiting for a rising edge.
         """
         if sync:
             yield RisingEdge(self.clock)

@@ -45,7 +45,7 @@ class AvalonProtocolError(Exception):
 class AvalonST(BusMonitor):
     """Avalon-ST bus.
 
-    Non-packetised so each valid word is a separate transaction.
+    Non-packetized so each valid word is a separate transaction.
     """
 
     _signals = ["valid", "data"]
@@ -87,7 +87,7 @@ class AvalonST(BusMonitor):
 
 
 class AvalonSTPkts(BusMonitor):
-    """Packetised Avalon-ST bus."""
+    """Packetized Avalon-ST bus."""
 
     _signals = ["valid", "data", "startofpacket", "endofpacket"]
     _optional_signals = ["error", "channel", "ready", "empty"]
@@ -224,7 +224,7 @@ class AvalonSTPkts(BusMonitor):
                                 invalid_cyclecount)
 
 class AvalonSTPktsWithChannel(AvalonSTPkts):
-    """Packetised AvalonST bus using channel."""
+    """Packetized AvalonST bus using channel."""
 
     _signals = ["valid", "data", "startofpacket", "endofpacket", "channel"]
     _optional_signals = ["error", "ready", "empty"]

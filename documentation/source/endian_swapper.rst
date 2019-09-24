@@ -96,7 +96,7 @@ We do the same to create the :class:`monitor <cocotb.monitors.avalon.AvalonSTPkt
             self.scoreboard.add_interface(self.stream_out, self.expected_output)
 
 The above lines create a :class:`.Scoreboard` instance and attach it to the ``stream_out`` monitor instance.
-The scoreboard is used to check that the DUT behaviour is correct.
+The scoreboard is used to check that the DUT behavior is correct.
 The call to :meth:`.add_interface()` takes a Monitor instance as the first argument and
 the second argument is a mechanism for describing the expected output for that interface.
 This could be a callable function but in this example a simple list of expected transactions is sufficient.
@@ -126,7 +126,7 @@ Our model function is quite straightforward in this case - we simply append the 
 Test Function
 ~~~~~~~~~~~~~
 
-There are various 'knobs' we can tweak on this testbench to vary the behaviour:
+There are various 'knobs' we can tweak on this testbench to vary the behavior:
 
 * Packet size
 * Backpressure on the ``stream_out`` interface
@@ -198,4 +198,4 @@ Having defined a test function we can now auto-generate different permutations o
     factory.generate_tests()
 
 This will generate 32 tests (named ``run_test_001`` to ``run_test_032``) with all possible permutations of the options provided for each argument.
-Note that we utilise some of the built-in generators to toggle backpressure and insert idle cycles.
+Note that we utilize some of the built-in generators to toggle backpressure and insert idle cycles.

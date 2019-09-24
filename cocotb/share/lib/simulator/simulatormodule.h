@@ -35,10 +35,10 @@
 #include "gpi_logging.h"
 #include "gpi.h"
 
-// This file defines the routines available to python
+// This file defines the routines available to Python
 
 #define COCOTB_ACTIVE_ID        0xC0C07B        // User data flag to indicate callback is active
-#define COCOTB_INACTIVE_ID      0xDEADB175      // User data flag set when callback has been deregistered
+#define COCOTB_INACTIVE_ID      0xDEADB175      // User data flag set when callback has been de-registered
 
 #define MODULE_NAME "simulator"
 
@@ -46,7 +46,7 @@
 typedef struct t_callback_data {
     PyThreadState *_saved_thread_state; // Thread state of the calling thread FIXME is this required?
     uint32_t id_value;                  // COCOTB_ACTIVE_ID or COCOTB_INACTIVE_ID
-    PyObject *function;                 // Fuction to call when the callback fires
+    PyObject *function;                 // Function to call when the callback fires
     PyObject *args;                     // The arguments to call the function with
     PyObject *kwargs;                   // Keyword arguments to call the function with
     gpi_sim_hdl cb_hdl;
@@ -92,9 +92,9 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args);
 static PyObject *log_level(PyObject *self, PyObject *args);
 
 static PyMethodDef SimulatorMethods[] = {
-    {"log_msg",         log_msg, METH_VARARGS, "Log a message"},
+    {"log_msg", log_msg, METH_VARARGS, "Log a message"},
     {"get_signal_val_long", get_signal_val_long, METH_VARARGS, "Get the value of a signal as a long"},
-    {"get_signal_val_str", get_signal_val_str, METH_VARARGS, "Get the value of a signal as an ascii string"},
+    {"get_signal_val_str", get_signal_val_str, METH_VARARGS, "Get the value of a signal as an ASCII string"},
     {"get_signal_val_binstr", get_signal_val_binstr, METH_VARARGS, "Get the value of a signal as a binary string"},
     {"get_signal_val_real", get_signal_val_real, METH_VARARGS, "Get the value of a signal as a double precision float"},
     {"set_signal_val_long", set_signal_val_long, METH_VARARGS, "Set the value of a signal using a long"},
@@ -110,12 +110,12 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_type", get_type, METH_VARARGS, "Get the type of an object, mapped to a GPI enumeration"},
     {"get_const", get_const, METH_VARARGS, "Get a flag indicating whether the object is a constant"},
     {"get_num_elems", get_num_elems, METH_VARARGS, "Get the number of elements contained in the handle"},
-    {"get_range", get_range, METH_VARARGS, "Get the range of elements (tuple) contained in the handle, Returns None if not indexable"},
+    {"get_range", get_range, METH_VARARGS, "Get the range of elements (tuple) contained in the handle, returns None if not indexable"},
     {"register_timed_callback", register_timed_callback, METH_VARARGS, "Register a timed callback"},
     {"register_value_change_callback", register_value_change_callback, METH_VARARGS, "Register a signal change callback"},
-    {"register_readonly_callback", register_readonly_callback, METH_VARARGS, "Register a callback for readonly section"},
-    {"register_nextstep_callback", register_nextstep_callback, METH_VARARGS, "Register a cllback for the nextsimtime callback"},
-    {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS, "Register a callback for the readwrite section"},
+    {"register_readonly_callback", register_readonly_callback, METH_VARARGS, "Register a callback for the read-only section"},
+    {"register_nextstep_callback", register_nextstep_callback, METH_VARARGS, "Register a callback for the NextSimTime callback"},
+    {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS, "Register a callback for the read-write section"},
     {"stop_simulator", stop_simulator, METH_VARARGS, "Instruct the attached simulator to stop"},
     {"iterate", iterate, METH_VARARGS, "Get an iterator handle to loop over all members in an object"},
     {"next", next, METH_VARARGS, "Get the next object from the iterator"},
@@ -124,7 +124,7 @@ static PyMethodDef SimulatorMethods[] = {
     // FIXME METH_NOARGS => initialization from incompatible pointer type
     {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as an int tuple"},
     {"get_precision", get_precision, METH_VARARGS, "Get the precision of the simulator"},
-    {"deregister_callback", deregister_callback, METH_VARARGS, "Deregister a callback"},
+    {"deregister_callback", deregister_callback, METH_VARARGS, "De-register a callback"},
     
     {"error_out", (PyCFunction)error_out, METH_NOARGS, NULL},
     

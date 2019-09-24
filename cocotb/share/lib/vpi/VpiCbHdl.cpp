@@ -271,11 +271,11 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
                     m_range_right = val.value.integer;
                 }
 
-                LOG_DEBUG("VPI: Indexable object initialised with range [%d:%d] and length >%d<", m_range_left, m_range_right, m_num_elems);
+                LOG_DEBUG("VPI: Indexable object initialized with range [%d:%d] and length >%d<", m_range_left, m_range_right, m_num_elems);
             }
         }
     }
-    LOG_DEBUG("VPI: %s initialised with %d elements", name.c_str(), m_num_elems);
+    LOG_DEBUG("VPI: %s initialized with %d elements", name.c_str(), m_num_elems);
     return GpiObjHdl::initialise(name, fq_name);
 }
 
