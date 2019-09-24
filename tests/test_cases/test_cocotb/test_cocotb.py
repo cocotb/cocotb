@@ -322,7 +322,7 @@ def test_anternal_clock(dut):
     function"""
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     count = 0
-    while count is not 100:
+    while count != 100:
         yield RisingEdge(dut.clk)
         count += 1
     clk_gen.kill()
@@ -423,7 +423,7 @@ def test_afterdelay_in_readonly_valid(dut):
 @cocotb.coroutine
 def clock_one(dut):
     count = 0
-    while count is not 50:
+    while count != 50:
         yield RisingEdge(dut.clk)
         yield Timer(1000)
         count += 1
@@ -432,7 +432,7 @@ def clock_one(dut):
 @cocotb.coroutine
 def clock_two(dut):
     count = 0
-    while count is not 50:
+    while count != 50:
         yield RisingEdge(dut.clk)
         yield Timer(10000)
         count += 1
@@ -571,32 +571,32 @@ def test_either_edge(dut):
     yield Timer(1)
     dut.clk <= 1
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 1:
+    if dut.clk.value.integer != 1:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 0
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 0:
+    if dut.clk.value.integer != 0:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 1
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 1:
+    if dut.clk.value.integer != 1:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 0
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 0:
+    if dut.clk.value.integer != 0:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 1
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 1:
+    if dut.clk.value.integer != 1:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 0
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 0:
+    if dut.clk.value.integer != 0:
         raise TestError("Value should be 0")
 
 
