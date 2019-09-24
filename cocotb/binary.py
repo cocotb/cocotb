@@ -77,7 +77,7 @@ class BinaryValue(object):
 
         - :attr:`BinaryValue.integer` is an integer
         - :attr:`BinaryValue.signed_integer` is a signed integer
-        - :attr:`BinaryValue.binstr` is a string of "01xXzZ"
+        - :attr:`BinaryValue.binstr` is a string of ``01xXzZ``
         - :attr:`BinaryValue.buff` is a binary buffer of bytes
         - :attr:`BinaryValue.value` is an integer **deprecated**
 
@@ -147,8 +147,8 @@ class BinaryValue(object):
         """Decides how best to assign the value to the vector.
 
         We possibly try to be a bit too clever here by first of
-        all trying to assign the raw string as a binstring, however
-        if the string contains any characters that aren't
+        all trying to assign the raw string as a :attr:`BinaryValue.binstr`,
+        however if the string contains any characters that aren't
         ``0``, ``1``, ``X`` or ``Z``
         then we interpret the string as a binary buffer.
 

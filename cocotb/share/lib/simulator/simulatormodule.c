@@ -150,7 +150,7 @@ int handle_gpi_callback(void *user_data)
 
     // If the return value is NULL a Python exception has occurred
     // The best thing to do here is shutdown as any subsequent
-    // calls will go back to python which is now in an unknown state
+    // calls will go back to Python which is now in an unknown state
     if (pValue == NULL)
     {
         fprintf(stderr, "ERROR: called callback function returned NULL\n");
@@ -203,7 +203,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
 }
 
 
-// Register a callback for read only state of sim
+// Register a callback for read-only state of sim
 // First argument is the function to call
 // Remaining arguments are keyword arguments to be passed to the callback
 static PyObject *register_readonly_callback(PyObject *self, PyObject *args)

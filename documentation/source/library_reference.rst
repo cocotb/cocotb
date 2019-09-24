@@ -2,6 +2,7 @@
 Library Reference
 #################
 
+
 Test Results
 ============
 
@@ -52,7 +53,7 @@ Interacting with the Simulator
 
 Triggers
 --------
-See :ref:`simulator-triggers` for a list of subclasses. Below are the internal
+See :ref:`simulator-triggers` for a list of sub-classes. Below are the internal
 classes used within ``cocotb``.
 
 .. currentmodule:: cocotb.triggers

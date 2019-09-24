@@ -31,9 +31,9 @@
  * @name    cleanup callback
  * @brief   Called while unwinding after a GPI callback
  *
- * We keep the process but de-sensitise it
+ * We keep the process but desensitize it
  *
- * NB need a way to determine if should leave it sensitised, hmmm...
+ * NB: need a way to determine if should leave it sensitized...
  *
  */
 int FliProcessCbHdl::cleanup_callback()

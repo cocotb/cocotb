@@ -149,7 +149,7 @@ def pack(ctypes_obj):
     """Convert a :mod:`ctypes` structure into a Python string.
 
     Args:
-        ctypes_obj (ctypes.Structure): The ctypes structure to convert to a string.
+        ctypes_obj (ctypes.Structure): The :mod:`ctypes` structure to convert to a string.
 
     Returns:
         New Python string containing the bytes from memory holding *ctypes_obj*.
@@ -162,12 +162,12 @@ def unpack(ctypes_obj, string, bytes=None):
     """Unpack a Python string into a :mod:`ctypes` structure.
 
     If the length of *string* is not the correct size for the memory
-    footprint of the ctypes structure then the *bytes* keyword argument 
+    footprint of the :mod:`ctypes` structure then the *bytes* keyword argument 
     must be used.
 
     Args:
-        ctypes_obj (ctypes.Structure): The ctypes structure to pack into.
-        string (str):  String to copy over the ctypes_obj memory space.
+        ctypes_obj (ctypes.Structure): The :mod:`ctypes` structure to pack into.
+        string (str):  String to copy over the *ctypes_obj* memory space.
         bytes (int, optional): Number of bytes to copy. 
             Defaults to ``None``, meaning the length of *string* is used.
 
@@ -430,7 +430,6 @@ class ParametrizedSingleton(type):
             self = super(ParametrizedSingleton, cls).__call__(*args, **kwargs)
             cls.__instances[key] = self
             return self
-
 
 
 def reject_remaining_kwargs(name, kwargs):

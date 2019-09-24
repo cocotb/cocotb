@@ -27,7 +27,7 @@ this setting will be mirrored in the TCL ``license_queue`` variable to control r
 Mentor Questa
 -------------
 
-Mentor Modelsim
+Mentor ModelSim
 ---------------
 
 Any ModelSim PE or ModelSim PE derivative (like ModelSim Microsemi, Intel, Lattice Edition) does not support the VHDL FLI feature.

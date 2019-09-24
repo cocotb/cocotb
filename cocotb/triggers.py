@@ -77,9 +77,9 @@ class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
     def prime(self, callback):
         """Set a callback to be invoked when the trigger fires.
 
-        The callback will be invoked with a single argumement, `self`.
+        The callback will be invoked with a single argument, `self`.
 
-        Subclasses must override this, but should end by calling the base class
+        Sub-classes must override this, but should end by calling the base class
         method.
 
         Do not call this directly within coroutines, it is intended to be used
@@ -90,11 +90,11 @@ class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
     def unprime(self):
         """Remove the callback, and perform cleanup if necessary.
 
-        After being unprimed, a Trigger may be reprimed again in future.
+        After being un-primed, a Trigger may be re-primed again in the future.
         Calling `unprime` multiple times is allowed, subsequent calls should be
         a no-op.
 
-        Subclasses may override this, but should end by calling the base class
+        Sub-classes may override this, but should end by calling the base class
         method.
 
         Do not call this directly within coroutines, it is intended to be used
@@ -118,7 +118,7 @@ class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
         """
         return outcomes.Value(self)
 
-    # Once 2.7 is dropped, this can be run unconditionally
+    # Once Python 2.7 support is dropped, this can be run unconditionally
     if sys.version_info >= (3, 3):
         _py_compat.exec_(textwrap.dedent("""
         def __await__(self):
@@ -130,12 +130,13 @@ class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
 class PythonTrigger(Trigger):
     """Python triggers don't use GPI at all.
 
-    For example notification of coroutine completion etc.
+    For example: notification of coroutine completion.
     """
 
 
 class GPITrigger(Trigger):
     """Base Trigger class for GPI triggers.
+
     Consumes simulation time.
     """
     __slots__ = ('cbhdl',)
@@ -150,14 +151,14 @@ class GPITrigger(Trigger):
         self.cbhdl = 0
 
     def unprime(self):
-        """Disable a primed trigger, can be reprimed"""
+        """Disable a primed trigger, can be re-primed."""
         if self.cbhdl != 0:
             simulator.deregister_callback(self.cbhdl)
         self.cbhdl = 0
         Trigger.unprime(self)
 
     def __del__(self):
-        """Remove knowledge of the trigger"""
+        """Remove knowledge of the trigger."""
         if self.cbhdl != 0:
             self.unprime()
         Trigger.__del__(self)
@@ -189,9 +190,9 @@ class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
 
 
 class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
-    """Fires when the current simulation timestep moves to the readonly phase.
+    """Fires when the current simulation timestep moves to the read-only phase.
 
-    The :any:`ReadOnly` phase is entered when the current timestep no longer has any further delta steps.
+    The read-only phase is entered when the current timestep no longer has any further delta steps.
     This will be a point where all the signal values are stable as there are no more RTL events scheduled for the timestep.
     The simulator will not allow scheduling of more events in this timestep.
     Useful for monitors which need to wait for all processes to execute (both RTL and cocotb) to ensure sampled signal values are final.
@@ -217,7 +218,7 @@ class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigg
 
 
 class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
-    """Fires when the readwrite portion of the sim cycles is reached."""
+    """Fires when the read-write portion of the sim cycles is reached."""
     __slots__ = ()
 
     @classmethod
@@ -269,7 +270,7 @@ class _EdgeBase(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrig
     @classmethod
     @property
     def _edge_type(self):
-        """The edge type, as understood by the C code. Must be set in subclasses."""
+        """The edge type, as understood by the C code. Must be set in sub-classes."""
         raise NotImplementedError
 
     @classmethod
@@ -335,7 +336,7 @@ class _Event(PythonTrigger):
 
 
 class Event(object):
-    """Event to permit synchronisation between two coroutines.
+    """Event to permit synchronization between two coroutines.
 
     Yielding :meth:`wait()` from one coroutine will block the coroutine until
     :meth:`set()` is called somewhere else.
@@ -579,7 +580,7 @@ class Waitable(object):
     @decorators.coroutine
     def _wait(self):
         """
-        Should be implemented by the subclass. Called by `yield self` to
+        Should be implemented by the sub-class. Called by `yield self` to
         convert the waitable object into a coroutine.
 
         ReturnValue can be used here.

@@ -58,7 +58,7 @@ Make Variables
       Use to add additional dependencies to the simulation target.
 
     ``COCOTB_NVC_TRACE``
-      Set this to 1 to enable display of VHPI traces when using the nvc VHDL simulator.
+      Set this to 1 to enable display of VHPI traces when using the NVC VHDL simulator.
 
     ``SIM_BUILD``
       Use to define a scratch directory for use by the simulator. The path is relative to the Makefile location.
@@ -91,12 +91,12 @@ Environment Variables
 
 .. envvar:: COCOTB_ANSI_OUTPUT
 
-    Use this to override the default behaviour of annotating Cocotb output with
-    ANSI colour codes if the output is a terminal (``isatty()``).
+    Use this to override the default behavior of annotating cocotb output with
+    ANSI color codes if the output is a terminal (``isatty()``).
 
-    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type stdout
+    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type of ``stdout``
 
-    ``COCOTB_ANSI_OUTPUT=0`` supresses the ANSI output in the log messages
+    ``COCOTB_ANSI_OUTPUT=0`` suppresses the ANSI output in the log messages
 
 .. envvar:: COCOTB_REDUCED_LOG_FMT
 
@@ -116,7 +116,7 @@ Environment Variables
 
 .. envvar:: COCOTB_RESULTS_FILE
 
-    The filename where XML tests results are stored. If not provided, the default is :file:`results.xml`.
+    The file name where XML tests results are stored. If not provided, the default is :file:`results.xml`.
 
     .. versionadded:: 1.3
 
