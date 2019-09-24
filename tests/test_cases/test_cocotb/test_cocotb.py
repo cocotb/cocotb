@@ -26,9 +26,12 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+import contextlib
 import logging
+import re
 import sys
 import textwrap
+import traceback
 import warnings
 
 """
@@ -42,10 +45,36 @@ from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite, ClockCycles, NextTimeStep,
                              NullTrigger, Combine, Event, First, Trigger)
 from cocotb.clock import Clock
-from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
+from cocotb.result import (
+    ReturnValue, TestFailure, TestError, TestSuccess, raise_error, create_error
+)
 from cocotb.utils import get_sim_time
 
 from cocotb.binary import BinaryValue
+from cocotb import _py_compat
+
+
+@contextlib.contextmanager
+def assert_deprecated():
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        yield
+        if len(w) == 1 and issubclass(w[-1].category, DeprecationWarning):
+            return
+        raise AssertionError(
+            "Expected exactly one DeprecationWarning, got {}".format(w)
+        )
+
+
+@contextlib.contextmanager
+def assert_raises(exc_type):
+    try:
+        yield
+    except exc_type:
+        pass
+    else:
+        raise AssertionError("{} was not raised".format(exc_type.__name__))
+
 
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
@@ -722,15 +751,8 @@ def test_binary_value_compat(dut):
         raise TestFailure("Expected TypeError when using bits and n_bits at the same time.")
 
     # Test for the DeprecationWarning when using |bits|
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("error")
-
-        try:
-            vec = BinaryValue(value=0, bits=16)
-        except DeprecationWarning:
-            pass
-        else:
-            TestFailure("Expected DeprecationWarning when using bits instead of n_bits.")
+    with assert_deprecated():
+        vec = BinaryValue(value=0, bits=16)
 
     yield Timer(100)  # Make it do something with time
 
@@ -875,7 +897,7 @@ def test_tests_are_tests(dut):
 if sys.version_info[:2] >= (3, 3):
     # this would be a syntax error in older python, so we do the whole
     # thing inside exec
-    cocotb.utils.exec_(textwrap.dedent('''
+    _py_compat.exec_(textwrap.dedent('''
     @cocotb.test()
     def test_coroutine_return(dut):
         """ Test that the Python 3.3 syntax for returning from generators works """
@@ -892,19 +914,112 @@ if sys.version_info[:2] >= (3, 3):
     '''))
 
 
+@cocotb.coroutine
+def _check_traceback(running_coro, exc_type, pattern):
+    try:
+        yield running_coro
+    except exc_type:
+        tb_text = traceback.format_exc()
+    else:
+        raise TestFailure("Exception was not raised")
+
+    if not re.match(pattern, tb_text):
+        raise TestFailure(
+            (
+                "Traceback didn't match - got:\n\n"
+                "{}\n"
+                "which did not match the pattern:\n\n"
+                "{}"
+            ).format(tb_text, pattern)
+        )
+
+
 @cocotb.test()
-def test_exceptions(dut):
+def test_exceptions_direct(dut):
+    """ Test exception propagation via a direct yield statement """
     @cocotb.coroutine
-    def raise_soon():
+    def raise_inner():
         yield Timer(10)
         raise ValueError('It is soon now')
 
-    try:
-        yield raise_soon()
-    except ValueError:
-        pass
-    else:
-        raise TestFailure("Exception was not raised")
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(1)
+        yield raise_inner()
+
+    # it's ok to change this value if the traceback changes - just make sure
+    # that when changed, it doesn't become harder to read.
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*test_cocotb\.py", line \d+, in _check_traceback
+        yield running_coro
+      File ".*test_cocotb\.py", line \d+, in raise_soon
+        yield raise_inner\(\)
+      File ".*test_cocotb\.py", line \d+, in raise_inner
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+    yield _check_traceback(raise_soon(), ValueError, expected)
+
+
+@cocotb.test()
+def test_exceptions_forked(dut):
+    """ Test exception propagation via cocotb.fork """
+    @cocotb.coroutine
+    def raise_inner():
+        yield Timer(10)
+        raise ValueError('It is soon now')
+
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(1)
+        coro = cocotb.fork(raise_inner())
+        yield coro.join()
+
+    # it's ok to change this value if the traceback changes - just make sure
+    # that when changed, it doesn't become harder to read.
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*test_cocotb\.py", line \d+, in _check_traceback
+        yield running_coro
+      File ".*test_cocotb\.py", line \d+, in raise_soon
+        yield coro\.join\(\)
+      File ".*test_cocotb\.py", line \d+, in raise_inner
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+    yield _check_traceback(raise_soon(), ValueError, expected)
+
+
+@cocotb.test()
+def test_exceptions_first(dut):
+    """ Test exception propagation via cocotb.triggers.First """
+    @cocotb.coroutine
+    def raise_inner():
+        yield Timer(10)
+        raise ValueError('It is soon now')
+
+    @cocotb.coroutine
+    def raise_soon():
+        yield Timer(1)
+        yield cocotb.triggers.First(raise_inner())
+
+    # it's ok to change this value if the traceback changes - just make sure
+    # that when changed, it doesn't become harder to read.
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*test_cocotb\.py", line \d+, in _check_traceback
+        yield running_coro
+      File ".*test_cocotb\.py", line \d+, in raise_soon
+        yield cocotb\.triggers\.First\(raise_inner\(\)\)
+      File ".*triggers\.py", line \d+, in _wait
+        result = yield first_trigger  # the first of multiple triggers that fired
+      File ".*test_cocotb\.py", line \d+, in raise_inner
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+    yield _check_traceback(raise_soon(), ValueError, expected)
+
 
 @cocotb.test()
 def test_stack_overflow(dut):
@@ -1097,6 +1212,27 @@ def test_trigger_with_failing_prime(dut):
         assert "oops" in str(exc)
     else:
         raise TestFailure
+
+
+@cocotb.test()
+def test_create_error_deprecated(dut):
+    yield Timer(1)
+    with assert_deprecated():
+        e = create_error(Timer(1), "A test exception")
+
+
+@cocotb.test()
+def test_raise_error_deprecated(dut):
+    yield Timer(1)
+    with assert_deprecated():
+        with assert_raises(TestError):
+            raise_error(Timer(1), "A test exception")
+
+
+@cocotb.test(expect_fail=True)
+def test_assertion_is_failure(dut):
+    yield Timer(1)
+    assert False
 
 
 if sys.version_info[:2] >= (3, 5):

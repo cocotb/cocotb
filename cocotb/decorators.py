@@ -37,9 +37,10 @@ import os
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.result import ReturnValue, raise_error
-from cocotb.utils import get_sim_time, with_metaclass, exec_, lazy_property
+from cocotb.result import ReturnValue
+from cocotb.utils import get_sim_time, lazy_property
 from cocotb import outcomes
+from cocotb import _py_compat
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
@@ -157,7 +158,7 @@ class RunningCoroutine(object):
             self._outcome = outcomes.Value(retval)
             raise CoroutineComplete()
         except BaseException as e:
-            self._outcome = outcomes.Error(e)
+            self._outcome = outcomes.Error(e).without_frames(['_advance', 'send'])
             raise CoroutineComplete()
 
     def send(self, value):
@@ -196,7 +197,7 @@ class RunningCoroutine(object):
 
     # Once 2.7 is dropped, this can be run unconditionally
     if sys.version_info >= (3, 3):
-        exec_(textwrap.dedent("""
+        _py_compat.exec_(textwrap.dedent("""
         def __await__(self):
             # It's tempting to use `return (yield from self._coro)` here,
             # which bypasses the scheduler. Unfortunately, this means that
@@ -256,6 +257,19 @@ class RunningTest(RunningCoroutine):
     def _handle_error_message(self, msg):
         self.error_messages.append(msg)
 
+    def _force_outcome(self, outcome):
+        """
+        This method exists as a workaround for preserving tracebacks on
+        python 2, and is called in unschedule. Once Python 2 is dropped, this
+        should be inlined into `abort` below, and the call in `unschedule`
+        replaced with `abort(outcome.error)`.
+        """
+        assert self._outcome is None
+        if _debug:
+            self.log.debug("outcome forced to {}".format(outcome))
+        self._outcome = outcome
+        cocotb.scheduler.unschedule(self)
+
     # like RunningCoroutine.kill(), but with a way to inject a failure
     def abort(self, exc):
         """
@@ -268,11 +282,7 @@ class RunningTest(RunningCoroutine):
         `exc` is the exception that the test should report as its reason for
         aborting.
         """
-        assert self._outcome is None
-        if _debug:
-            self.log.debug("abort() called on test")
-        self._outcome = outcomes.Error(exc)
-        cocotb.scheduler.unschedule(self)
+        return self._force_outcome(outcomes.Error(exc))
 
 
 class coroutine(object):
@@ -399,7 +409,7 @@ class _decorator_helper(type):
 
 
 @public
-class hook(with_metaclass(_decorator_helper, coroutine)):
+class hook(_py_compat.with_metaclass(_decorator_helper, coroutine)):
     """Decorator to mark a function as a hook for cocotb.
 
     Used as ``@cocotb.hook()``.
@@ -411,15 +421,9 @@ class hook(with_metaclass(_decorator_helper, coroutine)):
         self.im_hook = True
         self.name = self._func.__name__
 
-    def __call__(self, *args, **kwargs):
-        try:
-            return RunningCoroutine(self._func(*args, **kwargs), self)
-        except Exception as e:
-            raise raise_error(self, "Hook raised exception:")
-
 
 @public
-class test(with_metaclass(_decorator_helper, coroutine)):
+class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
     """Decorator to mark a function as a test.
 
     All tests are coroutines.  The test decorator provides

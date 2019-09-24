@@ -63,7 +63,7 @@ from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
 from cocotb.result import TestComplete
-from cocotb.utils import nullcontext
+from cocotb import _py_compat
 
 # On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
 # Since `OrderedDict` is a little slower that `dict`, we prefer the latter
@@ -303,7 +303,7 @@ class Scheduler(object):
             ps.dump_stats("test_profile.pstat")
             ctx = profiling_context()
         else:
-            ctx = nullcontext()
+            ctx = _py_compat.nullcontext()
 
         with ctx:
             self._mode = Scheduler._MODE_NORMAL
@@ -367,7 +367,7 @@ class Scheduler(object):
         if _profiling:
             ctx = profiling_context()
         else:
-            ctx = nullcontext()
+            ctx = _py_compat.nullcontext()
 
         with ctx:
             # When a trigger fires it is unprimed internally
@@ -499,12 +499,15 @@ class Scheduler(object):
             try:
                 # throws an error if the background coroutine errored
                 # and no one was monitoring it
-                coro.retval
+                coro._outcome.get()
             except TestComplete as e:
-                self.log.debug("TestComplete received: {}".format(type(e).__name__))
-                self._test.abort(e)
+                coro.log.info("Test stopped by this forked coroutine")
+                outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
+                self._test._force_outcome(outcome)
             except Exception as e:
-                self._test.abort(e)
+                coro.log.error("Exception raised by this forked coroutine")
+                outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
+                self._test._force_outcome(outcome)
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:

@@ -35,7 +35,7 @@
 #include <map>
 
 extern "C" {
-void cocotb_init(void);
+void cocotb_init();
 void handle_fli_callback(void *data);
 }
 
@@ -53,8 +53,8 @@ public:
                                               m_sensitised(false) { }
     virtual ~FliProcessCbHdl() { }
 
-    virtual int arm_callback(void) = 0;
-    virtual int cleanup_callback(void);
+    virtual int arm_callback() = 0;
+    virtual int cleanup_callback();
 
 protected:
     mtiProcessIdT       m_proc_hdl;
@@ -70,8 +70,8 @@ public:
                    unsigned int edge);
 
     virtual ~FliSignalCbHdl() { }
-    int arm_callback(void);
-    int cleanup_callback(void) {
+    int arm_callback();
+    int cleanup_callback() {
         return FliProcessCbHdl::cleanup_callback();
     }
 
@@ -88,7 +88,7 @@ public:
                                                                              m_priority(priority) { }
     virtual ~FliSimPhaseCbHdl() { }
 
-    int arm_callback(void);
+    int arm_callback();
 
 protected:
     mtiProcessPriorityT         m_priority;
@@ -122,8 +122,8 @@ public:
                                               FliProcessCbHdl(impl) { }
     virtual ~FliStartupCbHdl() { }
 
-    int arm_callback(void);
-    int run_callback(void);
+    int arm_callback();
+    int run_callback();
 };
 
 class FliShutdownCbHdl : public FliProcessCbHdl {
@@ -132,8 +132,8 @@ public:
                                                FliProcessCbHdl(impl) { }
     virtual ~FliShutdownCbHdl() { }
 
-    int arm_callback(void);
-    int run_callback(void);
+    int arm_callback();
+    int run_callback();
 };
 
 class FliTimedCbHdl : public FliProcessCbHdl {
@@ -141,11 +141,11 @@ public:
     FliTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
     virtual ~FliTimedCbHdl() { }
 
-    int arm_callback(void);
+    int arm_callback();
     void reset_time(uint64_t new_time) {
         m_time_ps = new_time;
     }
-    int cleanup_callback(void);
+    int cleanup_callback();
 private:
     uint64_t m_time_ps;
 };
@@ -161,8 +161,8 @@ public:
 
     virtual ~FliObj() { }
 
-    int get_acc_type(void) { return m_acc_type; }
-    int get_acc_full_type(void) { return m_acc_full_type; }
+    int get_acc_type() { return m_acc_type; }
+    int get_acc_full_type() { return m_acc_full_type; }
 
 
 protected:
@@ -215,7 +215,7 @@ public:
     virtual GpiCbHdl *value_change_cb(unsigned int edge);
     virtual int initialise(std::string &name, std::string &fq_name);
 
-    bool is_var(void) { return m_is_var; }
+    bool is_var() { return m_is_var; }
 
 protected:
     bool               m_is_var;
@@ -248,10 +248,10 @@ public:
             mti_VsimFree(m_sub_hdls);
     }
 
-    virtual const char* get_signal_value_binstr(void);
-    virtual const char* get_signal_value_str(void);
-    virtual double get_signal_value_real(void);
-    virtual long get_signal_value_long(void);
+    virtual const char* get_signal_value_binstr();
+    virtual const char* get_signal_value_str();
+    virtual double get_signal_value_real();
+    virtual long get_signal_value_long();
 
     virtual int set_signal_value(const long value);
     virtual int set_signal_value(const double value);
@@ -261,8 +261,8 @@ public:
 
     virtual int initialise(std::string &name, std::string &fq_name);
 
-    mtiTypeKindT get_fli_typekind(void) { return m_fli_type; }
-    mtiTypeIdT   get_fli_typeid(void) { return m_val_type; }
+    mtiTypeKindT get_fli_typekind() { return m_fli_type; }
+    mtiTypeIdT   get_fli_typeid() { return m_val_type; }
 
 protected:
     mtiTypeKindT       m_fli_type;
@@ -288,8 +288,8 @@ public:
 
     virtual ~FliEnumObjHdl() { }
 
-    const char* get_signal_value_str(void);
-    long get_signal_value_long(void);
+    const char* get_signal_value_str();
+    long get_signal_value_long();
 
     int set_signal_value(const long value);
 
@@ -330,7 +330,7 @@ public:
             free(m_mti_buff);
     }
 
-    const char* get_signal_value_binstr(void);
+    const char* get_signal_value_binstr();
 
     int set_signal_value(const long value);
     int set_signal_value(std::string &value);
@@ -360,8 +360,8 @@ public:
 
     virtual ~FliIntObjHdl() { }
 
-    const char* get_signal_value_binstr(void);
-    long get_signal_value_long(void);
+    const char* get_signal_value_binstr();
+    long get_signal_value_long();
 
     int set_signal_value(const long value);
 
@@ -387,7 +387,7 @@ public:
             free(m_mti_buff);
     }
 
-    double get_signal_value_real(void);
+    double get_signal_value_real();
 
     int set_signal_value(const double value);
 
@@ -416,7 +416,7 @@ public:
             free(m_mti_buff);
     }
 
-    const char* get_signal_value_str(void);
+    const char* get_signal_value_str();
 
     int set_signal_value(std::string &value);
 
@@ -480,7 +480,7 @@ public:
                                        m_readwrite_cbhdl(this) { }
 
      /* Sim related */
-    void sim_end(void);
+    void sim_end();
     void get_sim_time(uint32_t *high, uint32_t *low);
     void get_sim_precision(int32_t *precision);
 
@@ -493,9 +493,9 @@ public:
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time_ps);
-    GpiCbHdl *register_readonly_callback(void);
-    GpiCbHdl *register_nexttime_callback(void);
-    GpiCbHdl *register_readwrite_callback(void);
+    GpiCbHdl *register_readonly_callback();
+    GpiCbHdl *register_nexttime_callback();
+    GpiCbHdl *register_readwrite_callback();
     int deregister_callback(GpiCbHdl *obj_hdl);
 
     /* Method to provide strings from operation types */

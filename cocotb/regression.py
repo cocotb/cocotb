@@ -53,9 +53,10 @@ if "COVERAGE" in os.environ:
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
-from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
-from cocotb.utils import get_sim_time, raise_from
+from cocotb.result import TestSuccess, SimFailure
+from cocotb.utils import get_sim_time, remove_traceback_frames
 from cocotb.xunit_reporter import XUnitReporter
+from cocotb import _py_compat
 
 
 def _my_import(name):
@@ -148,7 +149,7 @@ class RegressionManager(object):
                     except AttributeError:
                         self.log.error("Requested test %s wasn't found in module %s", test, module_name)
                         err = AttributeError("Test %s doesn't exist in %s" % (test, module_name))
-                        raise_from(err, None)  # discard nested traceback
+                        _py_compat.raise_from(err, None)  # discard nested traceback
 
                     if not hasattr(_test, "im_test"):
                         self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine", test, module_name)
@@ -196,8 +197,8 @@ class RegressionManager(object):
                 if hasattr(thing, "im_hook"):
                     try:
                         test = thing(self._dut)
-                    except TestError:
-                        self.log.warning("Failed to initialize hook %s" % thing.name)
+                    except Exception:
+                        self.log.warning("Failed to initialize hook %s" % thing.name, exc_info=True)
                     else:
                         cocotb.scheduler.add(test)
 
@@ -265,17 +266,28 @@ class RegressionManager(object):
         # check what exception the test threw
         try:
             test._outcome.get()
-            raise TestSuccess()
         except Exception as e:
-            result = e
-            exc_info = sys.exc_info()
+            if sys.version_info >= (3, 5):
+                result = remove_traceback_frames(e, ['handle_result', 'get'])
+                # newer versions of the `logging` module accept plain exception objects
+                exc_info = result
+            elif sys.version_info >= (3,):
+                result = remove_traceback_frames(e, ['handle_result', 'get'])
+                # newer versions of python have Exception.__traceback__
+                exc_info = (type(result), result, result.__traceback__)
+            else:
+                # Python 2
+                result = e
+                exc_info = remove_traceback_frames(sys.exc_info(), ['handle_result', 'get'])
+        else:
+            result = TestSuccess()
 
         if (isinstance(result, TestSuccess) and
                 not test.expect_fail and
                 not test.expect_error):
             self.log.info("Test Passed: %s" % test.funcname)
 
-        elif (isinstance(result, TestFailure) and
+        elif (isinstance(result, AssertionError) and
                 test.expect_fail):
             self.log.info("Test failed as expected: " + _result_was())
 

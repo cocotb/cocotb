@@ -12,7 +12,7 @@ Cocotb has the following requirements:
 
 * Python 2.7, Python 3.5+ (recommended)
 * Python-dev packages
-* GCC and associated development packages
+* GCC 4.8.1+ and associated development packages
 * GNU Make
 * A Verilog or VHDL simulator, depending on your RTL source code
 

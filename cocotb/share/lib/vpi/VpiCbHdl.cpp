@@ -50,7 +50,7 @@ VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl)
 /* If the user data already has a callback handle then deregister
  * before getting the new one
  */
-int VpiCbHdl::arm_callback(void) {
+int VpiCbHdl::arm_callback() {
 
     if (m_state == GPI_PRIMED) {
         fprintf(stderr,
@@ -84,7 +84,7 @@ int VpiCbHdl::arm_callback(void) {
     return 0;
 }
 
-int VpiCbHdl::cleanup_callback(void)
+int VpiCbHdl::cleanup_callback()
 {
     if (m_state == GPI_FREE)
         return 0;
@@ -279,7 +279,7 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
-const char* VpiSignalObjHdl::get_signal_value_binstr(void)
+const char* VpiSignalObjHdl::get_signal_value_binstr()
 {
     FENTER
     s_vpi_value value_s = {vpiBinStrVal};
@@ -290,7 +290,7 @@ const char* VpiSignalObjHdl::get_signal_value_binstr(void)
     return value_s.value.str;
 }
 
-const char* VpiSignalObjHdl::get_signal_value_str(void)
+const char* VpiSignalObjHdl::get_signal_value_str()
 {
     s_vpi_value value_s = {vpiStringVal};
 
@@ -300,7 +300,7 @@ const char* VpiSignalObjHdl::get_signal_value_str(void)
     return value_s.value.str;
 }
 
-double VpiSignalObjHdl::get_signal_value_real(void)
+double VpiSignalObjHdl::get_signal_value_real()
 {
     FENTER
     s_vpi_value value_s = {vpiRealVal};
@@ -311,7 +311,7 @@ double VpiSignalObjHdl::get_signal_value_real(void)
     return value_s.value.real;
 }
 
-long VpiSignalObjHdl::get_signal_value_long(void)
+long VpiSignalObjHdl::get_signal_value_long()
 {
     FENTER
     s_vpi_value value_s = {vpiIntVal};
@@ -419,7 +419,7 @@ VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
     cb_data.obj = m_signal->get_handle<vpiHandle>();
 }
 
-int VpiValueCbHdl::cleanup_callback(void)
+int VpiValueCbHdl::cleanup_callback()
 {
     if (m_state == GPI_FREE)
         return 0;
@@ -448,7 +448,7 @@ VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 #endif
 }
 
-int VpiStartupCbHdl::run_callback(void) {
+int VpiStartupCbHdl::run_callback() {
     s_vpi_vlog_info info;
     gpi_sim_info_t sim_info;
 
@@ -470,7 +470,7 @@ VpiShutdownCbHdl::VpiShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.reason = cbEndOfSimulation;
 }
 
-int VpiShutdownCbHdl::run_callback(void) {
+int VpiShutdownCbHdl::run_callback() {
     gpi_embed_end();
     return 0;
 }
@@ -485,7 +485,7 @@ VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCbHd
     cb_data.reason = cbAfterDelay;
 }
 
-int VpiTimedCbHdl::cleanup_callback(void)
+int VpiTimedCbHdl::cleanup_callback()
 {
     switch (m_state) {
     case GPI_PRIMED:

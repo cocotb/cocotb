@@ -38,20 +38,21 @@ else:
     simulator = None
 
 from cocotb.log import SimLog
-from cocotb.result import raise_error, ReturnValue
+from cocotb.result import ReturnValue
 from cocotb.utils import (
-    get_sim_steps, get_time_from_sim_steps, with_metaclass,
-    ParametrizedSingleton, exec_, lazy_property
+    get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,
+    lazy_property,
 )
 from cocotb import decorators
 from cocotb import outcomes
+from cocotb import _py_compat
 import cocotb
 
 
 class TriggerException(Exception):
     pass
 
-class Trigger(with_metaclass(abc.ABCMeta)):
+class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
     """Base class to derive from."""
 
     # __dict__ is needed here for the `.log` lazy_property below to work.
@@ -119,7 +120,7 @@ class Trigger(with_metaclass(abc.ABCMeta)):
 
     # Once 2.7 is dropped, this can be run unconditionally
     if sys.version_info >= (3, 3):
-        exec_(textwrap.dedent("""
+        _py_compat.exec_(textwrap.dedent("""
         def __await__(self):
             # hand the trigger back to the scheduler trampoline
             return (yield self)
@@ -174,7 +175,7 @@ class Timer(GPITrigger):
             self.cbhdl = simulator.register_timed_callback(self.sim_steps,
                                                            callback, self)
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __str__(self):
@@ -187,7 +188,7 @@ class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
     pass
 
 
-class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Fires when the current simulation timestep moves to the readonly phase.
 
     The :any:`ReadOnly` phase is entered when the current timestep no longer has any further delta steps.
@@ -208,14 +209,14 @@ class ReadOnly(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
         if self.cbhdl == 0:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(readonly)"
 
 
-class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Fires when the readwrite portion of the sim cycles is reached."""
     __slots__ = ()
 
@@ -232,14 +233,14 @@ class ReadWrite(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
             # pdb.set_trace()
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(readwritesync)"
 
 
-class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class NextTimeStep(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Fires when the next time step is started."""
     __slots__ = ()
 
@@ -254,14 +255,14 @@ class NextTimeStep(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
         if self.cbhdl == 0:
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __str__(self):
         return self.__class__.__name__ + "(nexttimestep)"
 
 
-class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class _EdgeBase(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
     """Internal base class that fires on a given edge of a signal."""
     __slots__ = ('signal',)
 
@@ -286,7 +287,7 @@ class _EdgeBase(with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
                 self.signal._handle, callback, type(self)._edge_type, self
             )
             if self.cbhdl == 0:
-                raise_error(self, "Unable set up %s Trigger" % (str(self)))
+                raise TriggerException("Unable set up %s Trigger" % (str(self)))
         super(_EdgeBase, self).prime(callback)
 
     def __str__(self):
@@ -442,7 +443,7 @@ class Lock(object):
     def release(self):
         """Release the lock."""
         if not self.locked:
-            raise_error(self, "Attempt to release an unacquired Lock %s" %
+            raise TriggerException("Attempt to release an unacquired Lock %s" %
                         (str(self)))
 
         self.locked = False
@@ -491,7 +492,7 @@ class NullTrigger(Trigger):
         return self.__class__.__name__ + "(%s)" % self.name
 
 
-class Join(with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
+class Join(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
     r"""Fires when a :func:`fork`\ ed coroutine completes
 
     The result of blocking on the trigger can be used to get the coroutine
@@ -619,7 +620,8 @@ def _wait_callback(trigger, callback):
     try:
         ret = outcomes.Value((yield trigger))
     except BaseException as exc:
-        ret = outcomes.Error(exc)
+        # hide this from the traceback
+        ret = outcomes.Error(exc).without_frames(['_wait_callback'])
     callback(ret)
 
 
@@ -696,9 +698,18 @@ class First(_AggregateWaitable):
         for w in waiters:
             w.kill()
 
-        # get the result from the first task
-        ret = completed[0]
-        raise ReturnValue(ret.get())
+        # These lines are the way they are to make tracebacks readable:
+        #  - The comment helps the user nderstand why they are seeing the
+        #    traceback, even if it is obvious top cocotb maintainers.
+        #  - Raising ReturnValue on a separate line avoids confusion about what
+        #    is actually raising the error, because seeing
+        #    `raise Exception(foo())` in a traceback when in fact `foo()` itself
+        #    raises is confusing. We can recombine once we drop python 2 support
+        #  - Using `NullTrigger` here instead of `result = completed[0].get()`
+        #    means we avoid inserting an `outcome.get` frame in the traceback
+        first_trigger = NullTrigger(outcome=completed[0])
+        result = yield first_trigger  # the first of multiple triggers that fired
+        raise ReturnValue(result)
 
 
 class ClockCycles(Waitable):

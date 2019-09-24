@@ -40,7 +40,7 @@ static FliProcessCbHdl *sim_finish_cb;
 static FliImpl         *fli_table;
 }
 
-void FliImpl::sim_end(void)
+void FliImpl::sim_end()
 {
     if (GPI_DELETE != sim_finish_cb->get_call_state()) {
         sim_finish_cb->set_call_state(GPI_DELETE);
@@ -503,7 +503,7 @@ GpiCbHdl *FliImpl::register_timed_callback(uint64_t time_ps)
 }
 
 
-GpiCbHdl *FliImpl::register_readonly_callback(void)
+GpiCbHdl *FliImpl::register_readonly_callback()
 {
     if (m_readonly_cbhdl.arm_callback()) {
         return NULL;
@@ -511,7 +511,7 @@ GpiCbHdl *FliImpl::register_readonly_callback(void)
     return &m_readonly_cbhdl;
 }
 
-GpiCbHdl *FliImpl::register_readwrite_callback(void)
+GpiCbHdl *FliImpl::register_readwrite_callback()
 {
     if (m_readwrite_cbhdl.arm_callback()) {
         return NULL;
@@ -519,7 +519,7 @@ GpiCbHdl *FliImpl::register_readwrite_callback(void)
     return &m_readwrite_cbhdl;
 }
 
-GpiCbHdl *FliImpl::register_nexttime_callback(void)
+GpiCbHdl *FliImpl::register_nexttime_callback()
 {
     if (m_nexttime_cbhdl.arm_callback()) {
         return NULL;
@@ -1008,7 +1008,7 @@ void handle_fli_callback(void *data)
     }
 };
 
-static void register_initial_callback(void)
+static void register_initial_callback()
 {
     FENTER
     sim_init_cb = new FliStartupCbHdl(fli_table);
@@ -1016,7 +1016,7 @@ static void register_initial_callback(void)
     FEXIT
 }
 
-static void register_final_callback(void)
+static void register_final_callback()
 {
     FENTER
     sim_finish_cb = new FliShutdownCbHdl(fli_table);
@@ -1024,7 +1024,7 @@ static void register_final_callback(void)
     FEXIT
 }
 
-static void register_embed(void)
+static void register_embed()
 {
     fli_table = new FliImpl("FLI");
     gpi_register_impl(fli_table);
@@ -1032,7 +1032,7 @@ static void register_embed(void)
 }
 
 
-void cocotb_init(void)
+void cocotb_init()
 {
     LOG_INFO("cocotb_init called\n");
     register_embed();

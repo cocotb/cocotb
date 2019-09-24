@@ -118,6 +118,8 @@ Environment Variables
 
     The filename where XML tests results are stored. If not provided, the default is :file:`results.xml`.
 
+    .. versionadded:: 1.3
+
 
 Additional Environment Variables
 --------------------------------
