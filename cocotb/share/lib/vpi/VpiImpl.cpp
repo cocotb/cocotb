@@ -71,6 +71,26 @@ void VpiImpl::get_sim_precision(int32_t *precision)
     *precision = vpi_get(vpiTimePrecision, NULL);
 }
 
+gpi_port_direction_t to_gpi_port_direction(int32_t vpitype)
+{
+    switch (vpitype) {
+        case vpiInput:
+            return GPI_INPUT;
+        case vpiOutput:
+            return GPI_OUTPUT;
+        case vpiInout:
+            return GPI_INOUT;
+        case vpiMixedIO:
+            return GPI_MIXEDIO;
+        case vpiNoDirection:
+            return GPI_NO_DIRECTION;
+
+        default:
+            LOG_DEBUG("Unable to map VPI type %d onto GPI type", vpitype);
+            return GPI_UNHANDLED;
+    }
+}
+
 gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 {
     switch (vpitype) {
@@ -213,10 +233,17 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             return NULL;
     }
 
-    new_obj->initialise(name, fq_name);
+    if (vpi_get(vpiType, new_hdl) == vpiPort) {
+        int dir_raw = vpi_get(vpiDirection, new_hdl);
+        gpi_port_direction_t dir = to_gpi_port_direction(dir_raw);
+        LOG_DEBUG("new_obj->initialise: is_port, port_direction=%d", dir);
+        new_obj->initialise(name, fq_name, true, dir);
+    } else {
+        new_obj->initialise(name, fq_name);
+    }
 
-    LOG_DEBUG("VPI: Created object with type was %s(%d)",
-              vpi_get_str(vpiType, new_hdl), type);
+    LOG_DEBUG("VPI: Created object '%s' with type %s(%d)",
+              vpi_get_str(vpiName, new_hdl), vpi_get_str(vpiType, new_hdl), type);
 
     return new_obj;
 }
