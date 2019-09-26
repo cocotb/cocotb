@@ -96,6 +96,8 @@ public:
     GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
                                         m_num_elems(0),
                                         m_indexable(false),
+                                        m_is_port(false),
+                                        m_port_direction(GPI_UNDEFINED),
                                         m_range_left(-1),
                                         m_range_right(-1),
                                         m_fullname("unknown"),
@@ -104,6 +106,8 @@ public:
     GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : GpiHdl(impl, hdl),
                                                                           m_num_elems(0),
                                                                           m_indexable(false),
+                                                                          m_is_port(false),
+                                                                          m_port_direction(GPI_UNDEFINED),
                                                                           m_range_left(-1),
                                                                           m_range_right(-1),
                                                                           m_fullname("unknown"),
@@ -113,6 +117,8 @@ public:
                                                                           GpiHdl(impl, hdl),
                                                                           m_num_elems(0),
                                                                           m_indexable(false),
+                                                                          m_is_port(false),
+                                                                          m_port_direction(GPI_UNDEFINED),
                                                                           m_range_left(-1),
                                                                           m_range_right(-1),
                                                                           m_fullname("unknown"),
@@ -125,6 +131,9 @@ public:
     virtual const char* get_type_str(void);
     gpi_objtype_t get_type(void) { return m_type; };
     bool get_const(void) { return m_const; };
+    bool get_is_port(void) { return m_is_port; };
+    virtual const char* get_port_direction_str(void);
+    gpi_port_direction_t get_port_direction(void) { return m_port_direction; };
     int get_num_elems(void) {
         LOG_DEBUG("%s has %d elements", m_name.c_str(), m_num_elems);
         return m_num_elems;
@@ -141,20 +150,23 @@ public:
 
     bool is_native_impl(GpiImplInterface *impl);
     virtual int initialise(std::string &name, std::string &full_name);
+    virtual int initialise(std::string &name, std::string &full_name, bool is_port, gpi_port_direction_t port_direction);
 
 protected:
-    int           m_num_elems;
-    bool          m_indexable;
-    int           m_range_left;
-    int           m_range_right;
-    std::string   m_name;
-    std::string   m_fullname;
+    int                  m_num_elems;
+    bool                 m_indexable;
+    bool                 m_is_port;
+    gpi_port_direction_t m_port_direction;
+    int                  m_range_left;
+    int                  m_range_right;
+    std::string          m_name;
+    std::string          m_fullname;
 
-    std::string   m_definition_name;
-    std::string   m_definition_file;
+    std::string          m_definition_name;
+    std::string          m_definition_file;
 
-    gpi_objtype_t m_type;
-    bool          m_const;
+    gpi_objtype_t        m_type;
+    bool                 m_const;
 };
 
 

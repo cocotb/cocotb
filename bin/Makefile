@@ -1,6 +1,5 @@
 ###############################################################################
-# Copyright (c) 2013 Potential Ventures Ltd
-# Copyright (c) 2013 SolarFlare Communications Inc
+# Copyright (c) 2015, 2018, 2019 Potential Ventures Ltd
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -11,7 +10,6 @@
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
 #     * Neither the name of Potential Ventures Ltd,
-#       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
@@ -27,21 +25,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
+DESIGN ?= avalon_module
 
-INCLUDES    +=
-# FIXME: defining SINGLETON_HANDLES is harmful for port discovery - does it hurt to remove it?
-#GXX_ARGS    += -DVPI_CHECKING -DLIB_EXT=$(LIB_EXT) -DSINGLETON_HANDLES
-GXX_ARGS    += -DVPI_CHECKING -DLIB_EXT=$(LIB_EXT)
-LIBS        := -lcocotbutils -lgpilog -lcocotb -lstdc++
-LD_PATH     := -L$(LIB_DIR)
-LIB_NAME    := libgpi
+COCOTB = ..
 
-SRCS        := GpiCbHdl.cpp GpiCommon.cpp
+include ../tests/designs/$(DESIGN)/Makefile
 
-all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
-
-clean:
-	-@rm -rf $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
-
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.rules
+MODULE=create_testbench_template
