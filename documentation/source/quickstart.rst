@@ -200,9 +200,9 @@ following:
         dut._log.info("Running test!")
         for cycle in range(10):
             dut.clk = 0
-            yield Timer(1000)
+            yield Timer(1, units='ns')
             dut.clk = 1
-            yield Timer(1000)
+            yield Timer(1, units='ns')
         dut._log.info("Running test!")
 
 This will drive a square wave clock onto the ``clk`` port of the toplevel.
@@ -292,7 +292,7 @@ Parallel and sequential execution of coroutines
     @cocotb.coroutine
     def reset_dut(reset_n, duration):
         reset_n <= 0
-        yield Timer(duration)
+        yield Timer(duration, units='ns')
         reset_n <= 1
         reset_n._log.debug("Reset complete")
 
@@ -308,7 +308,7 @@ Parallel and sequential execution of coroutines
         # Call reset_dut in parallel with this coroutine
         reset_thread = cocotb.fork(reset_dut(reset_n, 500)
 
-        yield Timer(250)
+        yield Timer(250, units='ns')
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
 
         # Wait for the other thread to complete

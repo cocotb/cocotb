@@ -95,7 +95,7 @@ and :class:`~.triggers.RisingEdge` triggers.
         dut._log.debug("Resetting DUT")
         dut.reset_n <= 0
         stream_in.bus.valid <= 0
-        yield Timer(10000)
+        yield Timer(10, units='ns')
         yield RisingEdge(dut.clk)
         dut.reset_n <= 1
         dut.stream_out_ready <= 1

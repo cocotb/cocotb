@@ -101,11 +101,11 @@ class EndianSwapperTB(object):
         self.pkts_sent += 1
 
     @cocotb.coroutine
-    def reset(self, duration=10000):
+    def reset(self, duration=10):
         self.dut._log.debug("Resetting DUT")
         self.dut.reset_n <= 0
         self.stream_in.bus.valid <= 0
-        yield Timer(duration)
+        yield Timer(duration, units='ns')
         yield RisingEdge(self.dut.clk)
         self.dut.reset_n <= 1
         self.dut._log.debug("Out of reset")
@@ -115,7 +115,7 @@ class EndianSwapperTB(object):
 def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
              backpressure_inserter=None):
 
-    cocotb.fork(Clock(dut.clk, 5000).start())
+    cocotb.fork(Clock(dut.clk, 5, units='ns').start())
     tb = EndianSwapperTB(dut)
 
     yield tb.reset()
@@ -182,7 +182,7 @@ def wavedrom_test(dut):
     """
     Generate a JSON wavedrom diagram of a trace and save it to wavedrom.json
     """
-    cocotb.fork(Clock(dut.clk,5000).start())
+    cocotb.fork(Clock(dut.clk, 5, units='ns').start())
     yield RisingEdge(dut.clk)
     tb = EndianSwapperTB(dut)
     yield tb.reset()
