@@ -798,6 +798,72 @@ static PyObject *get_const(PyObject *self, PyObject *args)
     return pyresult;
 }
 
+static PyObject *get_is_port(PyObject *self, PyObject *args)
+{
+    int result;
+    gpi_sim_hdl hdl;
+    PyObject *pyresult;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_is_port((gpi_sim_hdl)hdl);
+    pyresult = Py_BuildValue("i", result);
+
+    DROP_GIL(gstate);
+
+    return pyresult;
+}
+
+static PyObject *get_port_direction(PyObject *self, PyObject *args)
+{
+    int result;
+    gpi_sim_hdl hdl;
+    PyObject *pyresult;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_port_direction((gpi_sim_hdl)hdl);
+    pyresult = Py_BuildValue("i", result);
+
+    DROP_GIL(gstate);
+
+    return pyresult;
+}
+
+static PyObject *get_port_direction_string(PyObject *self, PyObject *args)
+{
+    const char *result;
+    gpi_sim_hdl hdl;
+    PyObject *retstr;
+
+    PyGILState_STATE gstate;
+    gstate = TAKE_GIL();
+
+    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
+        DROP_GIL(gstate);
+        return NULL;
+    }
+
+    result = gpi_get_port_direction_str((gpi_sim_hdl)hdl);
+    retstr = Py_BuildValue("s", result);
+
+    DROP_GIL(gstate);
+
+    return retstr;
+}
+
 static PyObject *get_type_string(PyObject *self, PyObject *args)
 {
     const char *result;
@@ -945,6 +1011,11 @@ static void add_module_constants(PyObject* simulator)
     rc |= PyModule_AddIntConstant(simulator, "OBJECTS",       GPI_OBJECTS);
     rc |= PyModule_AddIntConstant(simulator, "DRIVERS",       GPI_DRIVERS);
     rc |= PyModule_AddIntConstant(simulator, "LOADS",         GPI_LOADS);
+    rc |= PyModule_AddIntConstant(simulator, "UNDEFINED",     GPI_UNDEFINED);
+    rc |= PyModule_AddIntConstant(simulator, "INPUT",         GPI_INPUT);
+    rc |= PyModule_AddIntConstant(simulator, "OUTPUT",        GPI_OUTPUT);
+    rc |= PyModule_AddIntConstant(simulator, "INOUT",         GPI_INOUT);
+
 
     if (rc != 0)
         fprintf(stderr, "Failed to add module constants!\n");
