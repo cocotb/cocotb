@@ -14,8 +14,8 @@ when it occurs.  For example:
 
     @cocotb.coroutine
     def wait_10ns():
-        cocotb.log.info("About to wait for 10ns")
-        yield Timer(10000)
+        cocotb.log.info("About to wait for 10 ns")
+        yield Timer(10, units='ns')
         cocotb.log.info("Simulation time has advanced by 10 ns")
 
 Coroutines may also yield other coroutines:
@@ -59,7 +59,7 @@ execution should resume if *any* of them fires:
     @cocotb.coroutine
     def packet_with_timeout(monitor, timeout):
         """Wait for a packet but time out if nothing arrives"""
-        yield [Timer(timeout), RisingEdge(dut.ready)]
+        yield [Timer(timeout, units='ns'), RisingEdge(dut.ready)]
 
 
 The trigger that caused execution to resume is passed back to the coroutine,
@@ -70,7 +70,7 @@ allowing them to distinguish which trigger fired:
     @cocotb.coroutine
     def packet_with_timeout(monitor, timeout):
         """Wait for a packet but time out if nothing arrives"""
-        tout_trigger = Timer(timeout)
+        tout_trigger = Timer(timeout, units='ns')
         result = yield [tout_trigger, RisingEdge(dut.ready)]
         if result is tout_trigger:
             raise TestFailure("Timed out waiting for packet")
@@ -86,14 +86,14 @@ the forked code.
         """While reset is active, toggle signals"""
         tb = uart_tb(dut)
         # "Clock" is a built in class for toggling a clock signal
-        cocotb.fork(Clock(dut.clk, 1000).start())
+        cocotb.fork(Clock(dut.clk, 1, units='ns').start())
         # reset_dut is a function -
         # part of the user-generated "uart_tb" class
-        cocotb.fork(tb.reset_dut(dut.rstn, 20000))
+        cocotb.fork(tb.reset_dut(dut.rstn, 20))
 
-        yield Timer(10000)
+        yield Timer(10, units='ns')
         print("Reset is still active: %d" % dut.rstn)
-        yield Timer(15000)
+        yield Timer(15, units='ns')
         print("Reset has gone inactive: %d" % dut.rstn)
 
 
@@ -102,8 +102,8 @@ Coroutines can be joined to end parallel operation within a function.
 .. code-block:: python3
 
     @cocotb.test()
-    def test_count_edge_cycles(dut, period=1000, clocks=6):
-        cocotb.fork(Clock(dut.clk, period).start())
+    def test_count_edge_cycles(dut, period=1, clocks=6):
+        cocotb.fork(Clock(dut.clk, period, units='ns').start())
         yield RisingEdge(dut.clk)
 
         timer = Timer(period + 10)
@@ -133,10 +133,10 @@ they'd naturally end.
 
         clk_gen = cocotb.fork(clk_1mhz.start())
         start_time_ns = get_sim_time(units='ns')
-        yield Timer(1)
+        yield Timer(1, units='ns')
         yield RisingEdge(dut.clk)
         edge_time_ns = get_sim_time(units='ns')
-        # NOTE: isclose is a python 3.5+ feature
+        # NOTE: isclose is a Python 3.5+ feature
         if not isclose(edge_time_ns, start_time_ns + 1000.0):
             raise TestFailure("Expected a period of 1 us")
 
@@ -144,10 +144,10 @@ they'd naturally end.
 
         clk_gen = cocotb.fork(clk_250mhz.start())
         start_time_ns = get_sim_time(units='ns')
-        yield Timer(1)
+        yield Timer(1, units='ns')
         yield RisingEdge(dut.clk)
         edge_time_ns = get_sim_time(units='ns')
-        # NOTE: isclose is a python 3.5+ feature
+        # NOTE: isclose is a Python 3.5+ feature
         if not isclose(edge_time_ns, start_time_ns + 4.0):
             raise TestFailure("Expected a period of 4 ns")
 
@@ -164,7 +164,7 @@ syntax. For example:
     @cocotb.coroutine
     async def wait_10ns():
         cocotb.log.info("About to wait for 10 ns")
-        await Timer(10000)
+        await Timer(10, units='ns')
         cocotb.log.info("Simulation time has advanced by 10 ns")
 
 To wait on a trigger or a nested coroutine, these use :keyword:`await` instead
@@ -184,7 +184,7 @@ Async generators
 
 In Python 3.6, a ``yield`` statement within an ``async`` function has a new
 meaning (rather than being a ``SyntaxError``) which matches the typical meaning
-of ``yield`` within regular python code. It can be used to create a special
+of ``yield`` within regular Python code. It can be used to create a special
 type of generator function that can be iterated with ``async for``:
 
 .. code-block:: python3

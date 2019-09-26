@@ -11,13 +11,13 @@ from cocotb.triggers import Timer
 from cocotb.drivers.amba import AXI4LiteMaster
 from cocotb.drivers.amba import AXIProtocolError
 
-CLK_PERIOD = 10
+CLK_PERIOD_NS = 10
 
 MODULE_PATH = os.path.join(os.path.dirname(__file__), os.pardir, "hdl")
 MODULE_PATH = os.path.abspath(MODULE_PATH)
 
 def setup_dut(dut):
-    cocotb.fork(Clock(dut.clk, CLK_PERIOD).start())
+    cocotb.fork(Clock(dut.clk, CLK_PERIOD_NS, units='ns').start())
 
 # Write to address 0 and verify that value got through
 @cocotb.test(skip = False)
@@ -36,14 +36,14 @@ def write_address_0(dut):
     dut.test_id <= 0
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
     ADDRESS = 0x00
     DATA = 0xAB
 
     yield axim.write(ADDRESS, DATA)
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
 
     value = dut.dut.r_temp_0
     if value != DATA:
@@ -71,17 +71,17 @@ def read_address_1(dut):
     dut.test_id <= 1
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
-    yield Timer(CLK_PERIOD)
+    yield Timer(CLK_PERIOD_NS, units='ns')
     ADDRESS = 0x01
     DATA = 0xCD
 
     dut.dut.r_temp_1 <= DATA
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
 
     value = yield axim.read(ADDRESS)
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
 
     if value != DATA:
         # Fail
@@ -108,7 +108,7 @@ def write_and_read(dut):
     dut.test_id <= 2
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
     ADDRESS = 0x00
@@ -116,11 +116,11 @@ def write_and_read(dut):
 
     # Write to the register
     yield axim.write(ADDRESS, DATA)
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
 
     # Read back the value
     value = yield axim.read(ADDRESS)
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
 
     value = dut.dut.r_temp_0
     if value != DATA:
@@ -146,7 +146,7 @@ def write_fail(dut):
     dut.test_id <= 3
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
     ADDRESS = 0x02
@@ -154,7 +154,7 @@ def write_fail(dut):
 
     try:
         yield axim.write(ADDRESS, DATA)
-        yield Timer(CLK_PERIOD * 10)
+        yield Timer(CLK_PERIOD_NS * 10, units='ns')
     except AXIProtocolError as e:
         print("Exception: %s" % str(e))
         dut._log.info("Bus successfully raised an error")
@@ -178,7 +178,7 @@ def read_fail(dut):
     dut.test_id <= 4
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD * 10)
+    yield Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
     ADDRESS = 0x02
@@ -186,7 +186,7 @@ def read_fail(dut):
 
     try:
         yield axim.read(ADDRESS, DATA)
-        yield Timer(CLK_PERIOD * 10)
+        yield Timer(CLK_PERIOD_NS * 10, units='ns')
     except AXIProtocolError as e:
         print("Exception: %s" % str(e))
         dut._log.info("Bus Successfully Raised an Error")

@@ -85,7 +85,7 @@ def tun_tap_example_test(dut):
     must have CAP_NET_ADMIN capability.
     """
 
-    cocotb.fork(Clock(dut.clk, 5000).start())
+    cocotb.fork(Clock(dut.clk, 5, units='ns').start())
 
     stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
     stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk)
@@ -98,7 +98,7 @@ def tun_tap_example_test(dut):
     dut._log.debug("Resetting DUT")
     dut.reset_n <= 0
     stream_in.bus.valid <= 0
-    yield Timer(10000)
+    yield Timer(10, units='ns')
     yield RisingEdge(dut.clk)
     dut.reset_n <= 1
     dut.stream_out_ready <= 1
