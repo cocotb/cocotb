@@ -549,23 +549,13 @@ def remove_traceback_frames(tb_or_exc, frame_names):
 
 class SimTime():
 
+    round_func = math.ceil
+
     def __init__(self, time, unit=None):
         if isinstance(time, SimTime):
-            time = get_time_from_sim_steps(time.steps, unit)
-        self.steps = get_sim_steps(time, unit)
-        self.unit = unit
-
-    @staticmethod
-    def _gcd_time_unit(*units):
-        unit_order = [
-            None,
-            'fs',
-            'ps',
-            'ns',
-            'us',
-            'ms',
-            'sec']
-        return unit_order[min(unit_order.index(u) for u in units)]
+            self.steps = time.steps
+        else:
+            self.steps = int(self.round_func(float(time)*get_sim_steps(1, unit)))
 
     @property
     def femtoseconds(self):
@@ -599,26 +589,18 @@ class SimTime():
     def __add__(self, other):
         if not isinstance(other, SimTime):
             return NotImplemented
-        result = SimTime(self.steps + other.steps)
-        result.unit = self._gcd_time_unit(self.unit, other.unit)
-        return result
+        return SimTime(self.steps + other.steps)
 
     def __sub__(self, other):
         if not isinstance(other, SimTime):
             return NotImplemented
-        result = SimTime(self.steps - other.steps)
-        result.unit = self._gcd_time_unit(self.unit, other.unit)
-        return result
+        return SimTime(self.steps - other.steps)
 
     def __mul__(self, other):
-        result = SimTime(self.steps * other)
-        result.unit = self.unit
-        return result
+        return SimTime(self.steps * other)
 
     def __rmul__(self, other):
-        result = SimTime(self.steps * other)
-        result.unit = self.unit
-        return result
+        return SimTime(self.steps * other)
 
     def __truediv__(self, other):
         if not isinstance(other, SimTime):
@@ -626,39 +608,16 @@ class SimTime():
         return self.steps / other.steps
 
     def __floordiv__(self, other):
-        result = SimTime(self.steps // other)
-        result.unit = self.unit
-        return result
+        return SimTime(self.steps // other)
 
     def __mod__(self, other):
-        result = SimTime(self.steps % other)
-        result.unit = self.unit
-        return result
+        return SimTime(self.steps % other)
 
     def __neg__(self):
-        result = SimTime(-self.steps)
-        result.unit = self.unit
-        return result
+        return SimTime(-self.steps)
 
     def __abs__(self):
-        result = SimTime(abs(self.steps))
-        result.unit = self.unit
-        return result
-
-    def __str__(self):
-        if self.unit is None:
-            time = self.steps
-            unit = "steps"
-        else:
-            time = get_time_from_sim_steps(self.steps, self.unit)
-            unit = self.unit
-        return "{} {}".format(time, unit)
+        return SimTime(abs(self.steps))
 
     def __repr__(self):
-        if self.unit is None:
-            time = self.steps
-            unit = "None"
-        else:
-            time = get_time_from_sim_steps(self.steps, self.unit)
-            unit = "'{}'".format(self.unit)
-        return "{}({}, {})".format(self.__class__.__name__, time, unit)
+        return "{}({})".format(self.__class__.__name__, self.steps)
