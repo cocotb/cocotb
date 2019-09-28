@@ -551,7 +551,7 @@ class SimTime():
 
     def __init__(self, time, unit=None):
         if isinstance(time, SimTime):
-            tme = time.steps
+            time = get_time_from_sim_steps(time.steps, unit)
         self.steps = get_sim_steps(time, unit)
         self.unit = unit
 
@@ -592,48 +592,45 @@ class SimTime():
         return get_time_from_sim_steps(self.steps, 'sec')
 
     def __eq__(self, other):
-        if not isinstance(other, type(self)):
+        if not isinstance(other, SimTime):
             return NotImplemented
         return self.steps == other.steps
 
     def __add__(self, other):
-        if not isinstance(other, type(self)):
+        if not isinstance(other, SimTime):
             return NotImplemented
         result = SimTime(self.steps + other.steps)
         result.unit = self._gcd_time_unit(self.unit, other.unit)
         return result
 
     def __sub__(self, other):
-        if not isinstance(other, type(self)):
+        if not isinstance(other, SimTime):
             return NotImplemented
         result = SimTime(self.steps - other.steps)
         result.unit = self._gcd_time_unit(self.unit, other.unit)
         return result
 
     def __mul__(self, other):
-        if not isinstance(other, (int, float)):
-            return NotImplemented
         result = SimTime(self.steps * other)
         result.unit = self.unit
         return result
 
     def __rmul__(self, other):
-        if not isinstance(other, (int, float)):
-            return NotImplemented
         result = SimTime(self.steps * other)
         result.unit = self.unit
         return result
 
-    def __floordiv__(self, other):
-        if not isinstance(other, (int, float)):
+    def __truediv__(self, other):
+        if not isinstance(other, SimTime):
             return NotImplemented
+        return self.steps / other.steps
+
+    def __floordiv__(self, other):
         result = SimTime(self.steps // other)
         result.unit = self.unit
         return result
 
     def __mod__(self, other):
-        if not isinstance(other, (int, float)):
-            return NotImplemented
         result = SimTime(self.steps % other)
         result.unit = self.unit
         return result
