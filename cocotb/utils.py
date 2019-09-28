@@ -3,7 +3,7 @@ from __future__ import print_function
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@ from __future__ import print_function
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -162,13 +162,13 @@ def unpack(ctypes_obj, string, bytes=None):
     """Unpack a Python string into a :mod:`ctypes` structure.
 
     If the length of *string* is not the correct size for the memory
-    footprint of the ctypes structure then the *bytes* keyword argument 
+    footprint of the ctypes structure then the *bytes* keyword argument
     must be used.
 
     Args:
         ctypes_obj (ctypes.Structure): The ctypes structure to pack into.
         string (str):  String to copy over the ctypes_obj memory space.
-        bytes (int, optional): Number of bytes to copy. 
+        bytes (int, optional): Number of bytes to copy.
             Defaults to ``None``, meaning the length of *string* is used.
 
     Raises:
@@ -273,7 +273,7 @@ def hexdiffs(x, y):
 
     def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
         """Highlight with ANSI colors if possible/requested and not running in GUI."""
-        
+
         if want_color_output():
             return colour + string + ANSI.COLOR_DEFAULT
         else:
@@ -491,8 +491,8 @@ def want_color_output():
     if os.getenv("GUI", default='0') == '1':
         want_color = False
     return want_color
-        
-    
+
+
 if __name__ == "__main__":
     import random
     a = ""
@@ -545,3 +545,121 @@ def remove_traceback_frames(tb_or_exc, frame_names):
             assert tb.tb_frame.f_code.co_name == frame_name
             tb = tb.tb_next
         return tb
+
+
+class SimTime():
+
+    def __init__(self, time, unit=None):
+        self.steps = get_sim_steps(time, unit)
+        self.unit = unit
+
+    @staticmethod
+    def _gcd_time_unit(*units):
+        unit_order = [
+            None,
+            'fs',
+            'ps',
+            'ns',
+            'us',
+            'ms',
+            'sec']
+        return unit_order[min(unit_order.index(u) for u in units)]
+
+    @property
+    def femtoseconds(self):
+        return get_time_from_sim_steps(self.steps, 'fs')
+
+    @property
+    def picoseconds(self):
+        return get_time_from_sim_steps(self.steps, 'ps')
+
+    @property
+    def nanoseconds(self):
+        return get_time_from_sim_steps(self.steps, 'ns')
+
+    @property
+    def microseconds(self):
+        return get_time_from_sim_steps(self.steps, 'us')
+
+    @property
+    def milliseconds(self):
+        return get_time_from_sim_steps(self.steps, 'ms')
+
+    @property
+    def seconds(self):
+        return get_time_from_sim_steps(self.steps, 'sec')
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.steps == other.steps
+
+    def __add__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        result = SimTime(self.steps + other.steps)
+        result.unit = self._gcd_time_unit(self.unit, other.unit)
+        return result
+
+    def __sub__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        result = SimTime(self.steps - other.steps)
+        result.unit = self._gcd_time_unit(self.unit, other.unit)
+        return result
+
+    def __mul__(self, other):
+        if not isinstance(other, (int, float)):
+            return NotImplemented
+        result = SimTime(self.steps * other)
+        result.unit = self.unit
+        return result
+
+    def __rmul__(self, other):
+        if not isinstance(other, (int, float)):
+            return NotImplemented
+        result = SimTime(self.steps * other)
+        result.unit = self.unit
+        return result
+
+    def __floordiv__(self, other):
+        if not isinstance(other, (int, float)):
+            return NotImplemented
+        result = SimTime(self.steps // other)
+        result.unit = self.unit
+        return result
+
+    def __mod__(self, other):
+        if not isinstance(other, (int, float)):
+            return NotImplemented
+        result = SimTime(self.steps % other)
+        result.unit = self.unit
+        return result
+
+    def __neg__(self):
+        result = SimTime(-self.steps)
+        result.unit = self.unit
+        return result
+
+    def __abs__(self):
+        result = SimTime(abs(self.steps))
+        result.unit = self.unit
+        return result
+
+    def __str__(self):
+        if self.unit is None:
+            time = self.steps
+            unit = "steps"
+        else:
+            time = get_time_from_sim_steps(self.steps, self.unit)
+            unit = self.unit
+        return "{} {}".format(time, unit)
+
+    def __repr__(self):
+        if self.unit is None:
+            time = self.steps
+            unit = "None"
+        else:
+            time = get_time_from_sim_steps(self.steps, self.unit)
+            unit = "'{}'".format(self.unit)
+        return "{}({}, {})".format(self.__class__.__name__, time, unit)
