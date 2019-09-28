@@ -550,6 +550,8 @@ def remove_traceback_frames(tb_or_exc, frame_names):
 class SimTime():
 
     def __init__(self, time, unit=None):
+        if isinstance(time, SimTime):
+            tme = time.steps
         self.steps = get_sim_steps(time, unit)
         self.unit = unit
 
