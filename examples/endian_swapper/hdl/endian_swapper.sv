@@ -44,6 +44,8 @@ Exposes 2 32-bit registers via the Avalon-MM interface
 
 */
 
+`timescale 1ns/1ps
+
 module endian_swapper_sv #(
     parameter                              DATA_BYTES = 8
 ) (
