@@ -25,6 +25,8 @@
 // limitations under the License.
 // =============================================================================
 
+`timescale 1ns/1ps
+
 module dff (c,d,q);
    input wire c, d;
    output reg q = 1'b0;
