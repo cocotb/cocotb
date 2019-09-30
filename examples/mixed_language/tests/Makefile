@@ -29,5 +29,9 @@ endif
 
 MODULE=test_mixed_language
 
+ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+   SIM_ARGS += -v93
+endif
+
 include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
