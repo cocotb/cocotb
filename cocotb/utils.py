@@ -619,5 +619,11 @@ class SimTime():
     def __abs__(self):
         return SimTime(abs(self.steps))
 
+    def __str__(self):
+        return repr(self)
+
     def __repr__(self):
-        return "{}({})".format(self.__class__.__name__, self.steps)
+        for unit in ('fs', 'ps', 'ns', 'us', 'ms', 'sec'):
+            time = get_time_from_sim_steps(self.steps, unit)
+            if 0 <= time and time < 1000:
+                return "{}({}, '{}')".format(self.__class__.__name__, time, unit)
