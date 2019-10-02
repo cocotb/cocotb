@@ -28,6 +28,10 @@ ifeq ($(VERILATOR_TRACE),1)
   EXTRA_ARGS += --trace
 endif
 
+ifdef COCOTB_HDL_TIMEPRECISION
+  SIM_BUILD_FLAGS += -DVL_TIME_PRECISION_STR=$(COCOTB_HDL_TIMEPRECISION)
+endif
+
 COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o $(TOPLEVEL) -LDFLAGS "-L `dirname $(COCOTB_VPI_LIB)` -lvpi -lgpi -lcocotb -lgpilog -lcocotbutils"
 
 $(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp
