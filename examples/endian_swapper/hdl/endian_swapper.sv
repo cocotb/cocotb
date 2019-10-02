@@ -174,11 +174,13 @@ always @(posedge clk or negedge reset_n) begin
 end
 
 `ifdef COCOTB_SIM
+`ifndef VERILATOR
 initial begin
   $dumpfile ("waveform.vcd");
   $dumpvars (0,endian_swapper_sv);
   #1;
 end
+`endif
 `endif
 
 endmodule

@@ -150,11 +150,13 @@ always @(posedge clk or negedge reset_n) begin
 end
 
 `ifdef COCOTB_SIM
+`ifndef VERILATOR
 initial begin
   $dumpfile ("waveform.vcd");
   $dumpvars (0,icmp_reply);
   #1 $display("Sim running...");
 end
+`endif
 `endif
 
 endmodule

@@ -89,10 +89,11 @@ axi_lite_demo #(
 //asynchronus logic
 //synchronous logic
 
-initial begin
-  $dumpfile ("design.vcd");
-  $dumpvars(0, tb_axi_lite_slave);
-end
-
+`ifndef VERILATOR
+  initial begin
+    $dumpfile ("design.vcd");
+    $dumpvars(0, tb_axi_lite_slave);
+  end
+`endif
 
 endmodule
