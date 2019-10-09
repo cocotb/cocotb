@@ -20,6 +20,7 @@ Contents:
    examples
    troubleshooting
    simulator_support
+   protocol_extension
    roadmap
    release_notes
 
