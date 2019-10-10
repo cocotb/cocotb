@@ -158,7 +158,7 @@ class Monitor(object):
             self._recvQ.append(transaction)
 
         if self._event is not None:
-            self._event.set()
+            self._event.set(data=transaction)
 
         # If anyone was waiting then let them know
         if self._wait_event is not None:
