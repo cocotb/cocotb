@@ -76,11 +76,10 @@ class Monitor(object):
 
     def __init__(self, callback=None, event=None):
         self._event = event
-        self._wait_event = None
+        self._wait_event = Event()
         self._recvQ = deque()
         self._callbacks = []
         self.stats = MonitorStatistics()
-        self._wait_event = Event()
 
         # Sub-classes may already set up logging
         if not hasattr(self, "log"):
