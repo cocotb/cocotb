@@ -36,15 +36,16 @@ the transactions.
 from collections import deque
 
 import cocotb
-from cocotb.decorators import coroutine
-from cocotb.triggers import Event, Timer
 from cocotb.bus import Bus
+from cocotb.decorators import coroutine
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
+from cocotb.triggers import Event, Timer
 
 
 class MonitorStatistics(object):
     """Wrapper class for storing Monitor statistics"""
+
     def __init__(self):
         self.received_transactions = 0
 
@@ -68,8 +69,9 @@ class Monitor(object):
         callback (callable): Callback to be called with each recovered transaction
             as the argument. If the callback isn't used, received transactions will
             be placed on a queue and the event used to notify any consumers.
-        event (event): Object that supports a ``set`` method that will be called when
-            a transaction is received through the internal :any:`_recv` method.
+        event (cocotb.triggers.Event): Event that will be called when a transaction
+            is received through the internal :any:`_recv` method.
+            `Event.data` is set to the received transaction.
     """
 
     def __init__(self, callback=None, event=None):
@@ -118,10 +120,11 @@ class Monitor(object):
         and return its data.
 
         Args:
-            timeout (optional): The timeout value for :class:`~.triggers.Timer`.
+            timeout: The timeout value for :class:`~.triggers.Timer`.
                 Defaults to ``None``.
 
-        Returns: Data of received transaction.
+        Returns:
+            Data of received transaction.
         """
         if timeout:
             t = Timer(timeout)
