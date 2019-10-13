@@ -1,7 +1,7 @@
 # Override this variable to use a VHDL toplevel instead of SystemVerilog
 TOPLEVEL_LANG ?= verilog
 
-# At the moment the only simulator supporting mixed language VHPI/VPI is Aldec
+# Choose a simulator that supports mixed language VHPI/VPI
 SIM?=aldec
 
 TOPLEVEL = endian_swapper_mixed
