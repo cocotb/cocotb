@@ -34,6 +34,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <cocotb_utils.h>  // COCOTB_UNUSED
 
 typedef enum gpi_cb_state {
     GPI_FREE = 0,
@@ -229,10 +230,10 @@ protected:
 /* We would then have */
 class GpiClockHdl {
 public:
-    GpiClockHdl(GpiObjHdl *clk) { }
-    GpiClockHdl(const char *clk) { }
+    GpiClockHdl(GpiObjHdl *clk) { COCOTB_UNUSED(clk); }
+    GpiClockHdl(const char *clk) { COCOTB_UNUSED(clk); }
     ~GpiClockHdl() { }
-    int start_clock(const int period_ps) { return 0; } ; /* Do things with the GpiSignalObjHdl */
+    int start_clock(const int period_ps) { COCOTB_UNUSED(period_ps); return 0; } ; /* Do things with the GpiSignalObjHdl */
     int stop_clock() { return 0; }
 };
 
@@ -251,6 +252,7 @@ public:
     virtual ~GpiIterator() { }
 
     virtual Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl) {
+        COCOTB_UNUSED(raw_hdl);
         name = "";
         *hdl = NULL;
         return GpiIterator::END;

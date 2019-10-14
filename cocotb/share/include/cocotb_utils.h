@@ -45,6 +45,8 @@ extern int is_python_context;
 void to_python(void);
 void to_simulator(void);
 
+#define COCOTB_UNUSED(x) ((void)x)
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,6 +1,8 @@
 #ifndef _PYTHON3_COMPAT_H
 #define _PYTHON3_COMPAT_H
 
+#include <cocotb_utils.h>  // COCOTB_UNUSED
+
 struct module_state {
     PyObject *error;
 };
@@ -14,7 +16,7 @@ struct module_state {
 #define INITERROR return NULL
 #else
 
-#define GETSTATE(m) (&_state)
+#define GETSTATE(m) (COCOTB_UNUSED(m), &_state)
 #define MODULE_ENTRY_POINT initsimulator
 #define INITERROR return
 #endif
