@@ -53,24 +53,25 @@ in setup.py
 setup.py is a python configuration file that be used for packaging. An example
 is given above ::
 
-  try:
-    from setuptools import setup
-  except ImportError:
-    from distutils.core import setup
+  from setuptools import setup
 
   setup(name='cocotb_spi',
-      version='0.1',
-      py_modules=['cocotb_spi'],
-      )
+        version='0.1',
+        py_modules=['cocotb_spi'],
+        install_requires=['cocotb'],
+        classifiers=[
+          "Programming Language :: Python :: 3",
+          "License :: OSI Approved :: MIT License",
+          "Operating System :: OS Independent",
+          "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)"])
 
-With this config file, python module can be installed with ::
+With this config file, python module can be installed with::
 
-  $ python setup.py install
+  $ python -m pip install cocotb_spi
 
-or for development::
+or for development (in package directory)::
 
-  $ python setup.py develop
-
+  $ python -m pip install -e .
 
 Then module can be imported with import keyword in your testbench ::
 
