@@ -108,12 +108,6 @@ bool GpiHdl::is_this_impl(GpiImplInterface *impl)
     return impl == this->m_impl;
 }
 
-int GpiHdl::initialise(std::string &name)
-{
-    LOG_WARN("Generic initialize, doubt you should have called this");
-    return 0;
-}
-
 int GpiObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     m_name = name;
