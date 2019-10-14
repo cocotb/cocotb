@@ -343,12 +343,12 @@ void gpi_embed_end();
 void gpi_embed_event(gpi_event_t level, const char *msg);
 void gpi_load_extra_libs();
 
-typedef const void (*layer_entry_func)();
+typedef void (*layer_entry_func)();
 
 /* Use this macro in an implementation layer to define an entry point */
 #define GPI_ENTRY_POINT(NAME, func) \
     extern "C" { \
-        const void NAME##_entry_point()  \
+        void NAME##_entry_point()  \
         { \
             func(); \
         } \
