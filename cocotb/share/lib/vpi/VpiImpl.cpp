@@ -569,8 +569,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     }
 
     return rv;
-};
-
+}
 
 static void register_embed()
 {
