@@ -666,7 +666,7 @@ static int system_function_overload(char *userdata)
 
 static void register_system_functions()
 {
-    s_vpi_systf_data tfData = { vpiSysTask, vpiSysTask };
+    s_vpi_systf_data tfData = { vpiSysTask, vpiSysTask, NULL, NULL, NULL, NULL, NULL };
 
     tfData.sizetf       = NULL;
     tfData.compiletf    = system_function_compiletf;
