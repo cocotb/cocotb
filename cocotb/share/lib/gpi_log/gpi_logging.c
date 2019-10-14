@@ -187,7 +187,12 @@ void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, 
 
     // Ignore truncation
     va_start(ap, msg);
-    (void)vsnprintf(log_buff, LOG_SIZE, msg, ap);
+    {
+        int n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
+        if (n < 0 || n >= LOG_SIZE) {
+            fprintf(stderr, "Log message construction failed\n");
+        }
+    }
     va_end(ap);
 
     filename_arg = PyUnicode_FromString(pathname);      // New reference
