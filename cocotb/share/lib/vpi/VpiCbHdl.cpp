@@ -282,7 +282,7 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 const char* VpiSignalObjHdl::get_signal_value_binstr()
 {
     FENTER
-    s_vpi_value value_s = {vpiBinStrVal};
+    s_vpi_value value_s = {vpiBinStrVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
@@ -292,7 +292,7 @@ const char* VpiSignalObjHdl::get_signal_value_binstr()
 
 const char* VpiSignalObjHdl::get_signal_value_str()
 {
-    s_vpi_value value_s = {vpiStringVal};
+    s_vpi_value value_s = {vpiStringVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
@@ -303,7 +303,7 @@ const char* VpiSignalObjHdl::get_signal_value_str()
 double VpiSignalObjHdl::get_signal_value_real()
 {
     FENTER
-    s_vpi_value value_s = {vpiRealVal};
+    s_vpi_value value_s = {vpiRealVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
@@ -314,7 +314,7 @@ double VpiSignalObjHdl::get_signal_value_real()
 long VpiSignalObjHdl::get_signal_value_long()
 {
     FENTER
-    s_vpi_value value_s = {vpiIntVal};
+    s_vpi_value value_s = {vpiIntVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
