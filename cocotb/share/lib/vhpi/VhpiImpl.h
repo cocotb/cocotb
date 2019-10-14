@@ -68,6 +68,9 @@ static inline int __check_vhpi_error(const char *file, const char *func, long li
         case vhpiInternal:
             loglevel = GPICritical;
             break;
+        default:
+            loglevel = GPIInfo;
+            break;
     }
 
     gpi_log("cocotb.gpi", loglevel, file, func, line,
