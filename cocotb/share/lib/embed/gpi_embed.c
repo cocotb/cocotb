@@ -30,6 +30,7 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
+#include <unistd.h>
 #include <cocotb_utils.h>
 #include "embed.h"
 #include "../compat/python3_compat.h"
