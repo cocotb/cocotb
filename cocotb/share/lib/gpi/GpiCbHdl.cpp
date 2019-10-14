@@ -81,7 +81,7 @@ const std::string & GpiObjHdl::get_name()
 /* Genertic base clss implementations */
 char *GpiHdl::gpi_copy_name(const char *name)
 {
-    int len;
+    size_t len;
     char *result;
     const char null[] = "NULL";
 

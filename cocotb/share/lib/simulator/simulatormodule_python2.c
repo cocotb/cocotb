@@ -3,8 +3,9 @@
 char error_module[] = MODULE_NAME ".Error";
 static struct module_state _state;
 
-static PyObject *error_out(PyObject *m)
+static PyObject *error_out(PyObject *m, PyObject *args)
 {
+    (void)args;
     struct module_state *st = GETSTATE(m);
     PyErr_SetString(st->error, "something bad happened");
     return NULL;

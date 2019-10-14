@@ -778,7 +778,8 @@ static PyObject *get_name_string(PyObject *self, PyObject *args)
 
 static PyObject *get_type(PyObject *self, PyObject *args)
 {
-    int result;
+    (void)self;
+    gpi_objtype_t result;
     gpi_sim_hdl hdl;
     PyObject *pyresult;
 
@@ -787,7 +788,7 @@ static PyObject *get_type(PyObject *self, PyObject *args)
     }
 
     result = gpi_get_object_type((gpi_sim_hdl)hdl);
-    pyresult = Py_BuildValue("i", result);
+    pyresult = Py_BuildValue("i", (int)result);
 
     return pyresult;
 }

@@ -113,22 +113,21 @@ static char log_buff[LOG_SIZE];
  * If the Python logging mechanism is not initialised, dumps to `stderr`.
  *
  */
-void gpi_log(const char *name, long level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
+void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
 {
     /* We first check that the log level means this will be printed
      * before going to the expense of processing the variable
      * arguments
      */
     va_list ap;
-    int n;
 
     if (!pLogHandler) {
         if (level >= GPIInfo) {
             va_start(ap, msg);
-            n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
+            int n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
             va_end(ap);
 
-            if (n < 0) {
+            if (n < 0 || n >= LOG_SIZE) {
                fprintf(stderr, "Log message construction failed\n");
             }
 
@@ -136,9 +135,9 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
             fprintf(stdout, "%-9s", log_level(level));
             fprintf(stdout, "%-35s", name);
 
-            n = strlen(pathname);
-            if (n > 20) {
-                fprintf(stdout, "..%18s:", (pathname + (n - 18)));
+            size_t pathlen = strlen(pathname);
+            if (pathlen > 20) {
+                fprintf(stdout, "..%18s:", (pathname + (pathlen - 18)));
             } else {
                 fprintf(stdout, "%20s:", pathname);
             }
@@ -188,7 +187,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
 
     // Ignore truncation
     va_start(ap, msg);
-    n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
+    (void)vsnprintf(log_buff, LOG_SIZE, msg, ap);
     va_end(ap);
 
     filename_arg = PyUnicode_FromString(pathname);      // New reference
