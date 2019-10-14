@@ -30,7 +30,7 @@
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 INCLUDES    +=
-GCC_ARGS    += -DFILTER
+C_ARGS      += -DFILTER
 LIBS        := $(PYLIBS)
 SRCS        := gpi_logging.c
 

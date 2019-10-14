@@ -29,13 +29,13 @@
 
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
-INCLUDES	+=
-GCC_ARGS	+= -DPYTHON_SO_LIB=$(PYTHON_DYN_LIB)
-LIBS		:= $(PYLIBS) -lgpilog -lcocotbutils
-LD_PATH		:= -L$(LIB_DIR)
-SRCS		:= gpi_embed.c
+INCLUDES    +=
+C_ARGS      += -DPYTHON_SO_LIB=$(PYTHON_DYN_LIB)
+LIBS        := $(PYLIBS) -lgpilog -lcocotbutils
+LD_PATH     := -L$(LIB_DIR)
+SRCS        := gpi_embed.c
 
-LIB_NAME	:= libcocotb
+LIB_NAME    := libcocotb
 
 all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 
