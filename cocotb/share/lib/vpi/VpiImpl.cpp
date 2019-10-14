@@ -26,6 +26,7 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
+#include <cocotb_utils.h>  // COCOTB_UNUSED
 
 extern "C" {
 
@@ -597,6 +598,7 @@ static void register_final_callback()
 // Expect either no arguments or a single string
 static int system_function_compiletf(char *userdata)
 {
+    COCOTB_UNUSED(userdata);
     vpiHandle systf_handle, arg_iterator, arg_handle;
     int tfarg_type;
 

@@ -40,7 +40,7 @@ static int releases = 0;
 static int sim_ending = 0;
 
 #include "simulatormodule.h"
-#include <cocotb_utils.h>
+#include <cocotb_utils.h>     // COCOTB_UNUSED
 
 typedef int (*gpi_function_t)(const void *);
 
@@ -198,6 +198,7 @@ err:
 
 static PyObject *log_msg(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *name;
     const char *path;
     const char *msg;
@@ -218,6 +219,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
 // Remaining arguments are keyword arguments to be passed to the callback
 static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -270,6 +272,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 
 static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -322,6 +325,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 
 static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -378,6 +382,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 // Remaining arguments and keyword arguments are to be passed to the callback
 static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -440,6 +445,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 // Remaining arguments and keyword arguments are to be passed to the callback
 static PyObject *register_value_change_callback(PyObject *self, PyObject *args) //, PyObject *keywds)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -508,6 +514,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 
 static PyObject *iterate(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     int type;
     gpi_iterator_hdl result;
@@ -527,6 +534,7 @@ static PyObject *iterate(PyObject *self, PyObject *args)
 
 static PyObject *next(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_iterator_hdl hdl;
     gpi_sim_hdl result;
     PyObject *res;
@@ -558,6 +566,7 @@ static PyObject *next(PyObject *self, PyObject *args)
 
 static PyObject *get_signal_val_binstr(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     const char *result;
     PyObject *retstr;
@@ -574,6 +583,7 @@ static PyObject *get_signal_val_binstr(PyObject *self, PyObject *args)
 
 static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     const char *result;
     PyObject *retstr;
@@ -590,6 +600,7 @@ static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
 
 static PyObject *get_signal_val_real(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     double result;
     PyObject *retval;
@@ -607,6 +618,7 @@ static PyObject *get_signal_val_real(PyObject *self, PyObject *args)
 
 static PyObject *get_signal_val_long(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     long result;
     PyObject *retval;
@@ -624,6 +636,7 @@ static PyObject *get_signal_val_long(PyObject *self, PyObject *args)
 
 static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     const char *binstr;
     PyObject *res;
@@ -640,6 +653,7 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
 
 static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     double value;
     PyObject *res;
@@ -656,6 +670,7 @@ static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
 
 static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     long value;
     PyObject *res;
@@ -672,6 +687,7 @@ static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
 
 static PyObject *get_definition_name(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char* result;
     gpi_sim_hdl hdl;
     PyObject *retstr;
@@ -688,6 +704,7 @@ static PyObject *get_definition_name(PyObject *self, PyObject *args)
 
 static PyObject *get_definition_file(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char* result;
     gpi_sim_hdl hdl;
     PyObject *retstr;
@@ -704,6 +721,7 @@ static PyObject *get_definition_file(PyObject *self, PyObject *args)
 
 static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *name;
     gpi_sim_hdl hdl;
     gpi_sim_hdl result;
@@ -722,6 +740,7 @@ static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
 
 static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     int32_t index;
     gpi_sim_hdl hdl;
     gpi_sim_hdl result;
@@ -740,6 +759,7 @@ static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
 
 static PyObject *get_root_handle(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *name;
     gpi_sim_hdl result;
     PyObject *value;
@@ -762,6 +782,7 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args)
 
 static PyObject *get_name_string(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *result;
     gpi_sim_hdl hdl;
     PyObject *retstr;
@@ -778,7 +799,7 @@ static PyObject *get_name_string(PyObject *self, PyObject *args)
 
 static PyObject *get_type(PyObject *self, PyObject *args)
 {
-    (void)self;
+    COCOTB_UNUSED(self);
     gpi_objtype_t result;
     gpi_sim_hdl hdl;
     PyObject *pyresult;
@@ -795,6 +816,7 @@ static PyObject *get_type(PyObject *self, PyObject *args)
 
 static PyObject *get_const(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     int result;
     gpi_sim_hdl hdl;
     PyObject *pyresult;
@@ -811,6 +833,7 @@ static PyObject *get_const(PyObject *self, PyObject *args)
 
 static PyObject *get_type_string(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *result;
     gpi_sim_hdl hdl;
     PyObject *retstr;
@@ -831,6 +854,8 @@ static PyObject *get_type_string(PyObject *self, PyObject *args)
 // log messages with the current simulation time
 static PyObject *get_sim_time(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     struct sim_time local_time;
 
     if (is_python_context) {
@@ -848,6 +873,8 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
 
 static PyObject *get_precision(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     int32_t precision;
 
     gpi_get_sim_precision(&precision);
@@ -860,6 +887,7 @@ static PyObject *get_precision(PyObject *self, PyObject *args)
 
 static PyObject *get_num_elems(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     PyObject *retstr;
 
@@ -875,6 +903,7 @@ static PyObject *get_num_elems(PyObject *self, PyObject *args)
 
 static PyObject *get_range(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     PyObject *retstr;
 
@@ -896,6 +925,8 @@ static PyObject *get_range(PyObject *self, PyObject *args)
 
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     gpi_sim_end();
     sim_ending = 1;
     return Py_BuildValue("s", "OK!");
@@ -904,6 +935,7 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
 
 static PyObject *deregister_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     PyObject *value;
 
@@ -923,6 +955,7 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
 
 static PyObject *log_level(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     enum gpi_log_levels new_level;
     PyObject *py_level;
     PyObject *value;

@@ -1,11 +1,12 @@
 #include "simulatormodule.h"
+#include <cocotb_utils.h>     // COCOTB_UNUSED
 
 char error_module[] = MODULE_NAME ".Error";
 static struct module_state _state;
 
 static PyObject *error_out(PyObject *m, PyObject *args)
 {
-    (void)args;
+    COCOTB_UNUSED(args);
     struct module_state *st = GETSTATE(m);
     PyErr_SetString(st->error, "something bad happened");
     return NULL;
