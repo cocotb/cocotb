@@ -65,7 +65,6 @@ public:
     GpiHdl(GpiImplInterface *impl) : m_impl(impl), m_obj_hdl(NULL) { }
     GpiHdl(GpiImplInterface *impl, void *hdl) : m_impl(impl), m_obj_hdl(hdl) { }
     virtual ~GpiHdl() { }
-    virtual int initialise(std::string &name);                   // Post constructor init
 
 
     template<typename T> T get_handle() const {
