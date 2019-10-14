@@ -399,9 +399,18 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Extract the time
-    PyObject *pTime = PyTuple_GetItem(args, 0);
-    time_ps = PyLong_AsLongLong(pTime);
+    {   // Extract the time
+        PyObject *pTime = PyTuple_GetItem(args, 0);
+        long long pTime_as_longlong = PyLong_AsLongLong(pTime);
+        if (pTime_as_longlong == -1 && PyErr_Occurred()) {
+            return NULL;
+        } else if (pTime_as_longlong < 0) {
+            PyErr_SetString(PyExc_ValueError, "Timer value must be a positive integer");
+            return NULL;
+        } else {
+            time_ps = (uint64_t)pTime_as_longlong;
+        }
+    }
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 1);
