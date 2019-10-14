@@ -327,7 +327,7 @@ int VpiSignalObjHdl::set_signal_value(long value)
 {
     s_vpi_value value_s;
 
-    value_s.value.integer = value;
+    value_s.value.integer = (int)value;
     value_s.format = vpiIntVal;
 
     return set_signal_value(value_s);

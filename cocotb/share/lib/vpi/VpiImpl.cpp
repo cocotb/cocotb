@@ -651,10 +651,12 @@ static int system_function_overload(char *userdata)
         msg = argval.value.str;
     }
 
-    gpi_log("cocotb.simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
+    enum gpi_log_levels userdata_as_loglevel = (enum gpi_log_levels)*userdata;
+
+    gpi_log("cocotb.simulator", userdata_as_loglevel, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
 
     // Fail the test for critical errors
-    if (GPICritical == *userdata)
+    if (GPICritical == userdata_as_loglevel)
         gpi_embed_event(SIM_TEST_FAIL, argval.value.str);
 
     return 0;

@@ -221,7 +221,7 @@ void *gpi_get_callback_data(gpi_sim_hdl gpi_hdl);
 
 // Print out what implementations are registered. Python needs to be loaded for this,
 // Returns the number of libs
-int gpi_print_registered_impl(void);
+size_t gpi_print_registered_impl(void);
 
 #define GPI_RET(_code) \
     if (_code == 1) \
