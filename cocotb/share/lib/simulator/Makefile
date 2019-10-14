@@ -30,7 +30,7 @@
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 INCLUDES    +=
-GCC_ARGS    +=
+C_ARGS      +=
 LIBS        := -lcocotbutils -lgpi -lgpilog $(PYLIBS)
 LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libsim

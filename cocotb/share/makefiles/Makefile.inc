@@ -69,41 +69,46 @@ export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
 export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
 export INCLUDES := -I$(COCOTB_SHARE_DIR)/include -I$(PYTHON_INCLUDEDIR)
 
-LIB_EXT     := so
-PY_EXT	    := so
+LIB_EXT    := so
+PY_EXT     := so
 
-# Base GCC flags
-ifeq ($(ARCH),i686)
-GXX_ARGS    := -m32
-endif
+BASE_WARNS := -Wall -Wextra -Wconversion -Wcast-qual -Wwrite-strings -Werror
+CC_WARNS   := $(BASE_WARNS) -Wstrict-prototypes -Waggregate-return
+CXX_WARNS  := $(BASE_WARNS) -Wnon-virtual-dtor -Woverloaded-virtual
 
 ifeq ($(OS),Darwin)
-GXX_ARGS	+= -g -DDEBUG -fpic
-GCC_ARGS	:= $(GXX_ARGS)
+CXX_ARGS   := -g -DDEBUG -fpic
+C_ARGS     := $(CXX_ARGS)
 else ifeq ($(OS),Msys)
-GXX_ARGS 	+= -g -DDEBUG -shared
+CXX_ARGS   := -g -DDEBUG -shared
 ifeq ($(ARCH),x86_64)
-GXX_ARGS  += -DMS_WIN64
+CXX_ARGS   += -DMS_WIN64
 endif
-GCC_ARGS	:= $(GXX_ARGS)
-LIB_EXT		:= dll
-PY_EXT		:= pyd
+C_ARGS     := $(CXX_ARGS)
+LIB_EXT    := dll
+PY_EXT     := pyd
 else ifeq ($(OS),Linux)
-GXX_ARGS	+= -Werror -Wcast-qual -Wcast-align -Wwrite-strings \
-			-Wall -Wno-unused-parameter \
-			-fno-common -g -DDEBUG -fpic
-GCC_ARGS	:= $(GXX_ARGS) -Wstrict-prototypes -Waggregate-return
+CXX_ARGS   := -fno-common -g -DDEBUG -fpic
+C_ARGS     := $(CXX_ARGS)
 else
 $(error "Unsupported os " $(OS))
 endif
+
+ifeq ($(ARCH),i686)
+CXX_ARGS   += -m32
+C_ARGS     += -m32
+endif
+
+C_ARGS     += -std=gnu99
+CXX_ARGS   += -std=c++11
 
 ifeq ($(OS),Darwin)
 SO_LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
 else ifeq ($(OS),Linux)
 SO_LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
 else ifeq ($(OS),Msys)
-SO_LINKER_ARGS :=  -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2 \
-			-Wl,--enable-auto-import -L$(PYTHON_LIBDIR)
+SO_LINKER_ARGS := -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2 \
+                  -Wl,--enable-auto-import -L$(PYTHON_LIBDIR)
 else
 $(error "Unsupported os" $(OS))
 endif

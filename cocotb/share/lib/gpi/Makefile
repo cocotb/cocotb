@@ -30,7 +30,7 @@
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 INCLUDES    +=
-GXX_ARGS    += -DVPI_CHECKING -DLIB_EXT=$(LIB_EXT) -DSINGLETON_HANDLES
+CXX_ARGS    += -DVPI_CHECKING -DLIB_EXT=$(LIB_EXT) -DSINGLETON_HANDLES
 LIBS        := -lcocotbutils -lgpilog -lcocotb -lstdc++
 LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libgpi

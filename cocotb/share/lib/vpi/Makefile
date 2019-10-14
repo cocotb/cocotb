@@ -30,7 +30,7 @@
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 INCLUDES    +=
-GXX_ARGS    += -DVPI_CHECKING
+CXX_ARGS    += -DVPI_CHECKING
 LIBS        := $(EXTRA_LIBS) -lgpilog -lgpi -lstdc++
 LD_PATH     := $(EXTRA_LIBDIRS) -L$(LIB_DIR)
 LIB_NAME    := libvpi
@@ -41,7 +41,7 @@ CLIBS       += $(LIB_DIR)/gpivpi.vpl
 
 #temporary hack for cvc
 ifeq ($(SIM),cvc)
-    GXX_ARGS    += -DMODELSIM
+    CXX_ARGS    += -DMODELSIM
 endif
 
 # More rules such that this may be needed depending on the requirements of

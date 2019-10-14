@@ -50,14 +50,18 @@ SIM_DEFINE = IUS
 endif
 
 # Add Simulator Define for compilation
-GCC_ARGS+= -D$(SIM_DEFINE)
-GXX_ARGS+= -D$(SIM_DEFINE)
+C_ARGS   += -D$(SIM_DEFINE)
+CXX_ARGS += -D$(SIM_DEFINE)
+
+# Compiler definitions
+CC  ?= cc
+CXX ?= c++
 
 $(LIB_OBJ_DIR)/%.o: %.c
-	gcc $(GCC_ARGS) -c $(INCLUDES) -o $@ $<
+	$(CC) $(C_ARGS) $(CC_WARNS) $(CFLAGS) -c $(INCLUDES) -o $@ $<
 
 $(LIB_OBJ_DIR)/%.o: %.cpp
-	g++ $(GXX_ARGS) -c $(INCLUDES) -o $@ $<
+	$(CXX) $(CXX_ARGS) $(CXX_WARNS) $(CXXFLAGS) -c $(INCLUDES) -o $@ $<
 
 $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT): $($(LIB_NAME)_OBJS)
-	gcc $(GCC_ARGS) $(SO_LINKER_ARGS) -o $@ $($(LIB_NAME)_OBJS) $(ARS) $(LIBS) $(LD_PATH)
+	$(CC) $(C_ARGS) $(SO_LINKER_ARGS) $(LDFLAGS) -o $@ $($(LIB_NAME)_OBJS) $(ARS) $(LDLIBS) $(LIBS) $(LD_PATH)
