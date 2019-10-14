@@ -153,8 +153,10 @@ void embed_init_python(void)
        such that they can attach */
     const char *pause = getenv("COCOTB_ATTACH");
     if (pause) {
-        long sleep_time = strtol(pause, NULL, 10);
-        if (errno == ERANGE && (sleep_time == LONG_MAX || sleep_time == LONG_MIN)) {
+        unsigned long sleep_time = strtoul(pause, NULL, 10);
+        /* This should check for out-of-range parses which returns ULONG_MAX and sets errno,
+           as well as correct parses that would be sliced by the narrowing cast */
+        if (errno == ERANGE || sleep_time >= UINT_MAX) {
             LOG_ERROR("COCOTB_ATTACH only needs to be set to ~30 seconds");
             goto out;
         }
@@ -165,7 +167,7 @@ void embed_init_python(void)
         }
 
         LOG_ERROR("Waiting for %lu seconds - attach to PID %d with your debugger\n", sleep_time, getpid());
-        sleep(sleep_time);
+        sleep((unsigned int)sleep_time);
     }
 out:
     FEXIT;
