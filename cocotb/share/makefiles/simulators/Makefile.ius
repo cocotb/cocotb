@@ -62,6 +62,11 @@ else
     EXTRA_ARGS +=
 endif
 
+# IUS errors out if multiple timescales are specified on the command line.
+ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
+    $(error "Please use COCOTB_HDL_TIMESTEP and COCOTB_HDL_TIMEPRECISION to specify timescale.")
+endif
+
 # IUS loads vpi regardless of what is asked for, then VHPI if asked to
 # Which does not play nice with out multi language. So we supply vhpi
 # GPI_EXTRA if needed.
