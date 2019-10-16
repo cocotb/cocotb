@@ -56,6 +56,14 @@ jobs:
         - echo 'travis_fold:end:cocotb_py37'
 
     - stage: SimTests
+      python: 3.8
+      before_install: *travis_linx_prep
+      script:
+        - echo 'Running cocotb tests with Python 3.8 ...' && echo -en 'travis_fold:start:cocotb_py38'
+        - tox -e py38
+        - echo 'travis_fold:end:cocotb_py38'
+
+    - stage: SimTests
       python: 3.6.7
       before_install: *travis_linx_prep
       script:
