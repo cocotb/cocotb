@@ -68,6 +68,7 @@ jobs:
       language: generic
       python: 2.7
       before_install: &osx_prep
+        - brew update-reset
         - brew install icarus-verilog
         - pip install tox
       script:
