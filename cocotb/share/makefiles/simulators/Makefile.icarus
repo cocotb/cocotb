@@ -39,10 +39,10 @@ else
 CMD_BIN := iverilog
 
 ifdef ICARUS_BIN_DIR
-    CMD := $(shell which $(ICARUS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD := $(shell :; command -v $(ICARUS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
 else
     # auto-detect bin dir from system path
-    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
 endif
 
 ifeq (, $(CMD))

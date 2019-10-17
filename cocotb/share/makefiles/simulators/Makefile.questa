@@ -30,10 +30,10 @@
 CMD_BIN := vsim
 
 ifdef MODELSIM_BIN_DIR
-    CMD := $(shell which $(MODELSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
 else
     # auto-detect bin dir from system path
-    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
 endif
 
 ifeq (, $(CMD))
@@ -122,7 +122,7 @@ ifeq ($(OS),Msys)
 # we use the mingw lib used at build time and put this at the start of the path
 # before running
 
-MINGW_BIN_DIR = $(shell dirname $(shell which gcc))
+MINGW_BIN_DIR = $(shell dirname $(shell :; command -v gcc))
 
 EXTRA_LIBS := -lmtipli
 EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
