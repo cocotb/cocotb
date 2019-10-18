@@ -33,6 +33,10 @@ Make Variables
     ``SIM``
       Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/makefile.$(SIM)`
 
+    ``WAVES``
+      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators. 
+      To get wave traces in Icarus Verilog see :ref:`Simulator Support`.
+
     ``VERILOG_SOURCES``
       A list of the Verilog source files to include.
 
