@@ -7,6 +7,8 @@ This page documents any known quirks and gotchas in the various simulators.
 Icarus
 ------
 
+vector bug
+~~~~~~~~~~
 Accessing bits of a vector doesn't work:
 
 .. code-block:: python3
@@ -15,6 +17,34 @@ Accessing bits of a vector doesn't work:
 
 See ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
 
+Wavefoms
+~~~~~~~~
+
+To get waveform in vcd format some verilog code must be added in the top
+component as example below:
+
+.. code-block:: verilog
+
+    module button_deb(
+        // sync design
+        input    clk,
+        input    rst,
+        // in-out
+        input    button_in,
+    output button_valid);
+    
+    //... verilog module code here
+    
+    // the "macro" to dump signals
+    `ifdef COCOTB_SIM
+    initial begin
+      $dumpfile ("button_deb.vcd");
+      $dumpvars (0, button_deb);
+      #1;
+    end
+    `endif
+    
+    endmodule
 
 Synopsys VCS
 ------------
