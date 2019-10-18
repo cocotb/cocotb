@@ -34,8 +34,8 @@ Make Variables
       Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/makefile.$(SIM)`
 
     ``WAVES``
-      Set this to 1 to enable wave traces dump for Aldec and Questa simulator.
-      To get wave traces in Icarus verilog see Simulator Support chapter.
+      Set this to 1 to enable wave traces dump for the Aldec and Questa simulators.
+      To get wave traces in Icarus Verilog see :ref:`Simulator Support` chapter.
 
     ``VERILOG_SOURCES``
       A list of the Verilog source files to include.
