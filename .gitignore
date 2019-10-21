@@ -31,6 +31,9 @@ __pycache__
 *.orig
 *.bak
 
+# pytype workdir
+.pytype
+
 # Waveforms
 *.vcd
 

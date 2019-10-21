@@ -68,6 +68,8 @@ class XUnitReporter(object):
     def __init__(self, filename="results.xml"):
         self.results = Element("testsuites", name="results")
         self.filename = filename
+        self.last_testsuite = None
+        self.last_testcase = None
 
     def add_testsuite(self, **kwargs):
         self.last_testsuite = SubElement(self.results, "testsuite", **kwargs)
