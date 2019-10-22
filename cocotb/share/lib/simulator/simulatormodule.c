@@ -37,6 +37,8 @@
 static int takes = 0;
 static int releases = 0;
 
+static int sim_ending = 0;
+
 #include "simulatormodule.h"
 #include <cocotb_utils.h>
 
@@ -162,6 +164,7 @@ int handle_gpi_callback(void *user_data)
         }
 
         gpi_sim_end();
+        sim_ending = 1;
         ret = 0;
         goto out;
     }
@@ -183,6 +186,13 @@ out:
 
 err:
     to_simulator();
+
+    if (sim_ending) {
+        // This is the last callback of a successful run,
+        // so call the cleanup function as we'll never return
+        // to Python
+        gpi_cleanup();
+    }
     return ret;
 }
 
@@ -886,6 +896,7 @@ static PyObject *get_range(PyObject *self, PyObject *args)
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
     gpi_sim_end();
+    sim_ending = 1;
     return Py_BuildValue("s", "OK!");
 }
 
