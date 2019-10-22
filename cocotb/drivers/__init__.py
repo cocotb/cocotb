@@ -222,6 +222,9 @@ class BusDriver(Driver):
                 (untested on ``struct``/``record``, but could work here as well).
             clock (SimHandle): A handle to the clock associated with this bus.
             array_idx (int or None, optional): Optional index when signal is an array.
+            bus_separator (str, optional): Character(s) to use as separator between bus
+                name and signal name. Defaults to '_'.
+
     """
     
     _optional_signals = []
@@ -229,6 +232,7 @@ class BusDriver(Driver):
     def __init__(self, entity, name, clock, **kwargs):
         # emulate keyword-only arguments in python 2
         index = kwargs.pop("array_idx", None)
+        bus_separator = kwargs.pop("bus_separator", "_")
         reject_remaining_kwargs('__init__', kwargs)
 
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
@@ -236,7 +240,7 @@ class BusDriver(Driver):
         self.entity = entity
         self.clock = clock
         self.bus = Bus(self.entity, name, self._signals,
-                       self._optional_signals, array_idx=index)
+                       self._optional_signals, bus_separator=bus_separator, array_idx=index)
 
         # Give this instance a unique name
         self.name = name if index is None else "%s_%d" % (name, index)
