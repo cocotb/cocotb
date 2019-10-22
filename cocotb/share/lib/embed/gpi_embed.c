@@ -172,6 +172,36 @@ out:
 }
 
 /**
+ * @name    Simulator cleanup
+ * @brief   Called by the simulator on shutdown.
+ * @ingroup python_c_api
+ *
+ * GILState before calling: Not held
+ *
+ * GILState after calling: Not held
+ *
+ * Makes one call to PyGILState_Ensure and one call to Py_Finalize.
+ *
+ * Cleans up reference counts for Python objects and calls Py_Finalize function.
+ */
+void embed_sim_cleanup(void)
+{
+    // If initialization fails, this may be called twice:
+    // Before the initial callback returns and in the final callback.
+    // So we check if Python is still initialized before doing cleanup.
+    if (Py_IsInitialized()) {
+        to_python();
+        PyGILState_Ensure();    // Don't save state as we are calling Py_Finalize
+        Py_DecRef(pEventFn);
+        pEventFn = NULL;
+        clear_log_handler();
+        clear_log_filter();
+        Py_Finalize();
+        to_simulator();
+    }
+}
+
+/**
  * @name    Initialization
  * @brief   Called by the simulator on initialization. Load cocotb Python module
  * @ingroup python_c_api

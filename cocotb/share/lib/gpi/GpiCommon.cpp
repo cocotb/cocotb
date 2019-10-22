@@ -65,6 +65,17 @@ public:
         return handle_map.size();
     }
 
+    void clear() {
+        std::map<std::string, GpiObjHdl*>::iterator it;
+
+        // Delete the object handles before clearing the map
+        for (it = handle_map.begin(); it != handle_map.end(); it++)
+        {
+            delete (it->second);
+        }
+        handle_map.clear();
+    }
+
 private:
     std::map<std::string, GpiObjHdl*> handle_map;
 
@@ -73,10 +84,12 @@ private:
 static GpiHandleStore unique_handles;
 
 #define CHECK_AND_STORE(_x) unique_handles.check_and_store(_x)
+#define CLEAR_STORE() unique_handles.clear()
 
 #else
 
 #define CHECK_AND_STORE(_x) _x
+#define CLEAR_STORE() (void)0   // No-op
 
 #endif
 
@@ -116,14 +129,20 @@ void gpi_embed_init(gpi_sim_info_t *info)
 }
 
 void gpi_embed_end()
-
 {
     embed_sim_event(SIM_FAIL, "Simulator shutdown prematurely");
+    gpi_cleanup();
 }
 
 void gpi_sim_end()
 {
     registered_impls[0]->sim_end();
+}
+
+void gpi_cleanup(void)
+{
+    CLEAR_STORE();
+    embed_sim_cleanup();
 }
 
 void gpi_embed_event(gpi_event_t level, const char *msg)

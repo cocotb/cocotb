@@ -41,9 +41,21 @@ void set_log_handler(void *handler)
     pLogHandler = (PyObject *)handler;      // Note: This function steals a reference to handler.
 }
 
+void clear_log_handler(void)
+{
+    Py_XDECREF(pLogHandler);
+    pLogHandler = NULL;
+}
+
 void set_log_filter(void *filter)
 {
     pLogFilter = (PyObject *)filter;        // Note: This function steals a reference to filter.
+}
+
+void clear_log_filter(void)
+{
+    Py_XDECREF(pLogFilter);
+    pLogFilter = NULL;
 }
 
 void set_log_level(enum gpi_log_levels new_level)
