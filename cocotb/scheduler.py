@@ -775,9 +775,13 @@ class Scheduler(object):
         """Directly call into the regression manager and end test
            once we return the sim will close us so no cleanup is needed.
         """
-        self.log.debug("Issue sim closedown result to regression object")
-        self._test.abort(exc)
-        cocotb.regression_manager.handle_result(self._test)
+        # If there is an error during cocotb initialization, self._test may not
+        # have been set yet. Don't cause another Python exception here.
+
+        if self._test:
+            self.log.debug("Issue sim closedown result to regression object")
+            self._test.abort(exc)
+            cocotb.regression_manager.handle_result(self._test)
 
     def cleanup(self):
         """Clear up all our state.
