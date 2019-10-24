@@ -71,7 +71,7 @@ else
 endif
 
 # Xcelium loads VPI regardless of what is asked for, then VHPI if asked to,
-# which does not play nice with our multi language, so we supply GPI_EXTRA=vhpi if needed.
+# which does not play nice with our multi language, so we supply GPI_EXTRA=cocotbvhpi if needed.
 
 #GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
@@ -81,10 +81,11 @@ ifeq ($(TOPLEVEL_LANG),verilog)
     EXTRA_ARGS += -top $(TOPLEVEL)
     ifneq ($(VHDL_SOURCES),)
         HDL_SOURCES += $(VHDL_SOURCES)
-        GPI_EXTRA = vhpi 
+        GPI_EXTRA = cocotbvhpi
     endif
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    GPI_EXTRA = vhpi
+    # GPI_EXTRA will internally be extended to lib<GPI_EXTRA>.so
+    GPI_EXTRA = cocotbvhpi
     EXTRA_ARGS += -top $(TOPLEVEL)
     RTL_LIBRARY ?= $(TOPLEVEL)
     MAKE_LIB = -makelib $(RTL_LIBRARY)
