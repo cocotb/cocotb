@@ -963,4 +963,4 @@ void vhpi_startup_routines_bootstrap() {
 
 }
 
-GPI_ENTRY_POINT(vhpi, register_embed)
+GPI_ENTRY_POINT(cocotbvhpi, register_embed)

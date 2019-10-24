@@ -90,9 +90,9 @@ endif
 else ifeq ($(TOPLEVEL_LANG),vhdl)
 
 ifeq ($(OS),Msys)
-    VHPI_LIB = $(shell sh -c 'cd $(LIB_DIR) && pwd -W')/libvhpi
+    VHPI_LIB = $(shell sh -c 'cd $(LIB_DIR) && pwd -W')/libcocotbvhpi
 else
-    VHPI_LIB = $(LIB_DIR)/libvhpi
+    VHPI_LIB = $(LIB_DIR)/libcocotbvhpi
 endif
 
     GPI_ARGS = -loadvhpi $(VHPI_LIB):vhpi_startup_routines_bootstrap
