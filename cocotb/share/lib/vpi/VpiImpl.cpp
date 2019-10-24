@@ -612,7 +612,7 @@ static int system_function_compiletf(char *userdata)
 
     // FIXME: HACK for some reason Icarus returns a vpiRealVal type for strings?
     if (vpiStringVal != tfarg_type && vpiRealVal != tfarg_type) {
-        vpi_printf("ERROR: $[info|warning|error|fata] argument wrong type: %d\n",
+        vpi_printf("ERROR: $[info|warning|error|fatal] argument wrong type: %d\n",
                     tfarg_type);
         vpi_free_object(arg_iterator);
         vpi_control(vpiFinish, 1);

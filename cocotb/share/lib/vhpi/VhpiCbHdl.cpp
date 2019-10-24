@@ -581,7 +581,7 @@ int VhpiSignalObjHdl::set_signal_value(double value)
             break;
 
         default: {
-            LOG_ERROR("VHPI: Unable to set a Real handle this format type %s",
+            LOG_ERROR("VHPI: Unable to set a Real handle with format type %s",
                       ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
             return -1;
         }
@@ -662,7 +662,7 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr()
             int ret = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
             if (ret) {
                 check_vhpi_error();
-                LOG_ERROR("Size of m_binvalue.value.str was not large enough req=%d have=%d for type %s",
+                LOG_ERROR("Size of m_binvalue.value.str was not large enough: req=%d have=%d for type %s",
                           ret,
                           m_binvalue.bufSize,
                           ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
@@ -979,9 +979,8 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
              vhpi_get(vhpiKindP, vhpi_hdl),
              vhpi_get_str(vhpiKindStrP, vhpi_hdl));
 
-    /* On some simulators (Aldec) vhpiRootInstK is a null level of hierachy
-     * We check that something is going to come back if not we try the level
-     * down
+    /* On some simulators (Aldec) vhpiRootInstK is a null level of hierarchy.
+     * We check that something is going to come back, if not, we try the level down.
      */
     m_iter_obj = vhpi_hdl;
     m_iterator = iterator;
@@ -1010,7 +1009,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
 
     /* We want the next object in the current mapping.
      * If the end of mapping is reached then we want to
-     * try then next one until a new object is found
+     * try the next one until a new object is found.
      */
     do {
         obj = NULL;
