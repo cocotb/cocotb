@@ -101,7 +101,7 @@ int gpi_register_impl(GpiImplInterface *func_tbl)
          iter++)
     {
         if ((*iter)->get_name_s() == func_tbl->get_name_s()) {
-            LOG_WARN("%s already registered, Check GPI_EXTRA", func_tbl->get_name_c());
+            LOG_WARN("%s already registered, check GPI_EXTRA", func_tbl->get_name_c());
             return -1;
         }
     }
@@ -146,13 +146,13 @@ static void gpi_load_libs(std::vector<std::string> to_load)
 
         lib_handle = utils_dyn_open(now_loading);
         if (!lib_handle) {
-            printf("Error loading lib %s\n", now_loading);
+            printf("cocotb: Error loading shared library %s\n", now_loading);
             exit(1);
         }
         std::string sym = (*iter) + "_entry_point";
         void *entry_point = utils_dyn_sym(lib_handle, sym.c_str());
         if (!entry_point) {
-            printf("Unable to find entry point for %s\n", now_loading);
+            printf("cocotb: Unable to find entry point %s for shared library %s\n", sym.c_str(), now_loading);
             exit(1);
         }
 
@@ -168,7 +168,7 @@ void gpi_load_extra_libs()
     if (loading)
         return;
 
-    /* Lets look at what other libs we where asked to load too */
+    /* Lets look at what other libs we were asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
 
     if (lib_env) {
@@ -191,7 +191,7 @@ void gpi_load_extra_libs()
         gpi_load_libs(to_load);
     }
 
-    /* Finally embed python */
+    /* Finally embed Python */
     embed_init_python();
     gpi_print_registered_impl();
 }
@@ -224,7 +224,7 @@ gpi_sim_hdl gpi_get_root_handle(const char *name)
 
     GpiObjHdl *hdl = NULL;
 
-    LOG_DEBUG("Looking for root handle '%s' over %d impls", name, registered_impls.size());
+    LOG_DEBUG("Looking for root handle '%s' over %d implementations", name, registered_impls.size());
 
     for (iter = registered_impls.begin();
          iter != registered_impls.end();
@@ -260,17 +260,17 @@ static GpiObjHdl* __gpi_get_handle_by_name(GpiObjHdl *parent,
          iter++) {
 
         if (skip_impl && (skip_impl == (*iter))) {
-            LOG_DEBUG("Skipping %s impl", (*iter)->get_name_c());
+            LOG_DEBUG("Skipping %s implementation", (*iter)->get_name_c());
             continue;
         }
 
-        LOG_DEBUG("Checking if %s native though impl %s",
+        LOG_DEBUG("Checking if %s is native through implementation %s",
                   name.c_str(),
                   (*iter)->get_name_c());
 
         /* If the current interface is not the same as the one that we
            are going to query then append the name we are looking for to
-           the parent, such as <parent>.name. This is so that it entity can
+           the parent, such as <parent>.name. This is so that its entity can
            be seen discovered even if the parents implementation is not the same
            as the one that we are querying through */
 
@@ -300,7 +300,7 @@ static GpiObjHdl* __gpi_get_handle_by_raw(GpiObjHdl *parent,
          iter++) {
 
         if (skip_impl && (skip_impl == (*iter))) {
-            LOG_DEBUG("Skipping %s impl", (*iter)->get_name_c());
+            LOG_DEBUG("Skipping %s implementation", (*iter)->get_name_c());
             continue;
         }
 
@@ -324,7 +324,7 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
     GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
     GpiObjHdl *hdl = __gpi_get_handle_by_name(base, s_name, NULL);
     if (!hdl) {
-        LOG_DEBUG("Failed to find a hdl named %s via any registered implementation",
+        LOG_DEBUG("Failed to find a handle named %s via any registered implementation",
                  name);
     }
     return hdl;
@@ -344,13 +344,13 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index)
      * NOTE: IUS's VPI interface returned valid VHDL handles, but then couldn't
      *       use the handle properly.
      */
-    LOG_DEBUG("Checking if index %d native though impl %s ", index, intf->get_name_c());
+    LOG_DEBUG("Checking if index %d native through implementation %s ", index, intf->get_name_c());
     hdl = intf->native_check_create(index, base);
 
     if (hdl)
         return CHECK_AND_STORE(hdl);
     else {
-        LOG_WARN("Failed to find a hdl at index %d via any registered implementation", index);
+        LOG_WARN("Failed to find a handle at index %d via any registered implementation", index);
         return hdl;
     }
 }
@@ -392,7 +392,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
                 LOG_WARN("Unable to create %s via any registered implementation", name.c_str());
                 continue;
             case GpiIterator::NOT_NATIVE_NO_NAME:
-                LOG_DEBUG("Found an object but not accesbile via %s, trying others", iter->m_impl->get_name_c());
+                LOG_DEBUG("Found an object but not accessible via %s, trying others", iter->m_impl->get_name_c());
                 next = __gpi_get_handle_by_raw(parent, raw_hdl, iter->m_impl);
                 if (next) {
                     return next;

@@ -949,7 +949,7 @@ void (*vhpi_startup_routines[])() = {
     0
 };
 
-// For non-VPI compliant applications that cannot find vlog_startup_routines
+// For non-VHPI compliant applications that cannot find vhpi_startup_routines
 void vhpi_startup_routines_bootstrap() {
     void (*routine)();
     int i;

@@ -343,7 +343,7 @@ void gpi_load_extra_libs();
 
 typedef const void (*layer_entry_func)();
 
-/* Use this macro in an implementation layer to define an enty point */
+/* Use this macro in an implementation layer to define an entry point */
 #define GPI_ENTRY_POINT(NAME, func) \
     extern "C" { \
         const void NAME##_entry_point()  \
