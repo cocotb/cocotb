@@ -1289,6 +1289,29 @@ def test_timeout_func_pass(dut):
     assert res == 1
 
 
+@cocotb.test(expect_error=cocotb.result.SimTimeoutError, timeout_time=1, timeout_unit='ns')
+def test_timeout_testdec_fail(dut):
+    yield Timer(10, 'ns')
+
+
+@cocotb.test(timeout_time=100, timeout_unit='ns')
+def test_timeout_testdec_pass(dut):
+    yield Timer(10, 'ns')
+
+
+@cocotb.test(timeout_time=10, timeout_unit='ns')
+def test_timeout_testdec_simultaneous(dut):
+    try:
+        yield cocotb.triggers.with_timeout(Timer(1, 'ns'), timeout_time=1, timeout_unit='ns')
+    except cocotb.result.SimTimeoutError:
+        pass
+    else:
+        assert False, "Expected a Timeout"
+    # Whether this test fails or passes depends on the behavior of the
+    # scheduler, simulator, and the implementation of the timeout function.
+    # CAUTION: THIS MAY CHANGE
+
+
 @cocotb.test()
 def test_bad_attr(dut):
     yield cocotb.triggers.NullTrigger()

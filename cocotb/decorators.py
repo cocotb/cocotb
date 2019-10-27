@@ -409,8 +409,14 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
     Used as ``@cocotb.test(...)``.
 
     Args:
-        timeout (int, optional):
-            value representing simulation timeout (not implemented).
+        timeout_time (int, optional):
+            Value representing simulation timeout.
+
+            .. versionadded:: 1.3
+        timeout_unit (str, optional):
+            Unit of timeout value, see :class:`~cocotb.triggers.Timer` for more info.
+
+            .. versionadded:: 1.3
         expect_fail (bool, optional):
             Don't mark the result as a failure if the test fails.
         expect_error (bool or exception type or tuple of exception types, optional):
@@ -436,11 +442,27 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
         stage (int, optional)
             Order tests logically into stages, where multiple tests can share a stage.
     """
-    def __init__(self, f, timeout=None, expect_fail=False, expect_error=False,
+    def __init__(self, f, timeout_time=None, timeout_unit=None,
+                 expect_fail=False, expect_error=False,
                  skip=False, stage=None):
+
+        if timeout_time is not None:
+            co = coroutine(f)
+            @functools.wraps(f)
+            def f(*args, **kwargs):
+                running_co = co(*args, **kwargs)
+                try:
+                    res = yield cocotb.triggers.with_timeout(running_co, self.timeout_time, self.timeout_unit)
+                except cocotb.result.SimTimeoutError:
+                    running_co.kill()
+                    raise
+                else:
+                    raise ReturnValue(res)
+
         super(test, self).__init__(f)
 
-        self.timeout = timeout
+        self.timeout_time = timeout_time
+        self.timeout_unit = timeout_unit
         self.expect_fail = expect_fail
         if expect_error is True:
             expect_error = (Exception,)
