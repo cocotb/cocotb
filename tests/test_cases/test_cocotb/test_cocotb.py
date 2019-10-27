@@ -1254,6 +1254,7 @@ def test_assertion_is_failure(dut):
 class MyException(Exception):
     pass
 
+
 @cocotb.test(expect_error=MyException)
 def test_expect_particular_exception(dut):
     yield Timer(1)
@@ -1264,6 +1265,28 @@ def test_expect_particular_exception(dut):
 def test_expect_exception_list(dut):
     yield Timer(1)
     raise MyException()
+
+
+@cocotb.coroutine
+def example():
+    yield Timer(10, 'ns')
+    raise ReturnValue(1)
+
+
+@cocotb.test()
+def test_timeout_func_fail(dut):
+    try:
+        yield cocotb.triggers.with_timeout(example(), timeout_time=1, timeout_unit='ns')
+    except cocotb.result.SimTimeoutError:
+        pass
+    else:
+        assert False, "Expected a Timeout"
+
+
+@cocotb.test()
+def test_timeout_func_pass(dut):
+    res = yield cocotb.triggers.with_timeout(example(), timeout_time=100, timeout_unit='ns')
+    assert res == 1
 
 
 @cocotb.test()

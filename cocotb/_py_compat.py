@@ -137,3 +137,11 @@ class nullcontext(object):
 # https://stackoverflow.com/a/38668373
 # Backport of abc.ABC, compatible with Python 2 and 3
 abc_ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
+
+
+# source TimeoutError introduced in Python 3.3 to be used by timeout functions
+if sys.version_info < (3, 3):
+    class TimeoutError(OSError):
+        pass
+else:
+    TimeoutError = TimeoutError

@@ -75,3 +75,5 @@ These are used to synchronize coroutines with each other.
 .. autoclass:: cocotb.triggers.Lock
     :members:
     :member-order: bysource
+
+.. autofunction:: cocotb.triggers.with_timeout

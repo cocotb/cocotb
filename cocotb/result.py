@@ -29,8 +29,8 @@
 import traceback
 import sys
 import warnings
-# from StringIO import StringIO
 from io import StringIO, BytesIO
+from cocotb import _py_compat
 
 """Exceptions and functions for simulation result handling."""
 
@@ -128,4 +128,9 @@ class TestSuccess(TestComplete):
 
 class SimFailure(TestComplete):
     """Exception showing that the simulator exited unsuccessfully."""
+    pass
+
+
+class SimTimeoutError(_py_compat.TimeoutError):
+    """Exception for when a timeout, in terms of simulation time, occurs"""
     pass
