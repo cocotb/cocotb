@@ -67,7 +67,6 @@ classes used within ``cocotb``.
     :members:
     :member-order: bysource
 
-
 Testbench Structure
 ===================
 
@@ -282,3 +281,24 @@ Signal Tracer for WaveDrom
     :members:
     :member-order: bysource
     :synopsis: A signal tracer for WaveDrom.
+
+
+Developer-focused
+=================
+
+The Scheduler
+-------------
+
+.. note::
+    The scheduler object should generally not be interacted with directly - 
+    the only part of it that a user will need is encapsulated in :func:`~cocotb.fork`, 
+    everything else works behind the scenes.
+
+.. currentmodule:: cocotb.scheduler
+
+.. autodata:: cocotb.scheduler
+
+.. autoclass:: Scheduler
+    :members:
+    :member-order: bysource
+
