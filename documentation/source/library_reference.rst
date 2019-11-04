@@ -2,7 +2,6 @@
 Library Reference
 #################
 
-
 Test Results
 ============
 
@@ -50,6 +49,8 @@ Interacting with the Simulator
     :member-order: bysource
 
 .. autoclass:: cocotb.clock.Clock
+
+.. autofunction:: cocotb.fork
 
 Triggers
 --------
