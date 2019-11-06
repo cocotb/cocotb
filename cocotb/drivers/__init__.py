@@ -158,7 +158,7 @@ class Driver(object):
 
         Args:
             transaction (any): The transaction to be sent.
-            sync (boolean, optional): Synchronize the transfer by waiting for a rising edge.
+            sync (bool, optional): Synchronize the transfer by waiting for a rising edge.
             **kwargs: Additional arguments if required for protocol implemented in a sub-class.
         """
         raise NotImplementedError("Sub-classes of Driver should define a "
@@ -173,7 +173,7 @@ class Driver(object):
             callback (callable, optional): Optional function to be called 
                 when the transaction has been sent.
             event (optional): event to be set when the transaction has been sent.
-            sync (boolean, optional): Synchronize the transfer by waiting for a rising edge.
+            sync (bool, optional): Synchronize the transfer by waiting for a rising edge.
             **kwargs: Any additional arguments used in child class' 
                 :any:`_driver_send` method.
         """

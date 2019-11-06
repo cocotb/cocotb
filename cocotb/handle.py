@@ -68,8 +68,8 @@ class SimHandleBase(object):
     def __init__(self, handle, path):
         """
         Args:
-            handle (integer)    : the GPI handle to the simulator object
-            path (string)       : path to this handle, None if root
+            handle (int): The GPI handle to the simulator object.
+            path (str): Path to this handle, ``None`` if root.
         """
         self._handle = handle
         self._len = None
@@ -146,7 +146,14 @@ class SimHandleBase(object):
             return object.__getattr__(self, name)
 
 class RegionObject(SimHandleBase):
-    """Region objects don't have values, they are effectively scopes or namespaces."""
+    """A region object, such as a scope or namespace.
+
+    Region objects don't have values, they are effectively scopes or namespaces.
+
+    Args:
+        handle (int): The GPI handle to the simulator object.
+        path (str): Path to this handle, ``None`` if root.
+    """
     def __init__(self, handle, path):
         SimHandleBase.__init__(self, handle, path)
         self._discovered = False
@@ -206,7 +213,7 @@ class RegionObject(SimHandleBase):
         self._discovered = True
 
     def _child_path(self, name):
-        """Returns a string of the path of the child :any:`SimHandle` for a given name."""
+        """Returns a string of the path of the child :any:`SimHandle` for a given *name*."""
         return self._path + "." + name
 
     def _sub_handle_key(self, name):
@@ -362,7 +369,7 @@ class HierarchyArrayObject(RegionObject):
 
 class AssignmentResult(object):
     """
-    Object that exists solely to provide an error message if the caller
+    An object that exists solely to provide an error message if the caller
     is not aware of cocotb's meaning of ``<=``.
     """
     def __init__(self, signal, value):
@@ -377,12 +384,17 @@ class AssignmentResult(object):
             .format(self)
         )
 
-    # python 2
+    # Python 2
     __nonzero__ = __bool__
 
 
 class NonHierarchyObject(SimHandleBase):
-    """Common base class for all non-hierarchy objects."""
+    """Common base class for all non-hierarchy objects.
+
+    Args:
+        handle (int): The GPI handle to the simulator object.
+        path (str): Path to this handle, ``None`` if root.
+    """
 
     def __init__(self, handle, path):
         SimHandleBase.__init__(self, handle, path)
@@ -398,18 +410,19 @@ class NonHierarchyObject(SimHandleBase):
                 result.append(self[x]._getvalue())
             return result
         else:
-            raise TypeError("Not permissible to get values on object %s type %s" % (self._name, type(self)))
+            raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
 
     def setimmediatevalue(self, value):
-        raise TypeError("Not permissible to set values on object %s type %s" % (self._name, type(self)))
+        raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
 
     def _setcachedvalue(self, value):
-        raise TypeError("Not permissible to set values on object %s type %s" % (self._name, type(self)))
+        raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
 
     def __le__(self, value):
-        """Overload the less than or equal to operator to
-            provide an hdl-like shortcut
-                module.signal <= 2
+        """Overload less-than-or-equal-to operator to provide an HDL-like shortcut.
+
+        Example:
+        >>> module.signal <= 2
         """
         self.value = value
         return AssignmentResult(self, value)
@@ -438,10 +451,17 @@ class NonHierarchyObject(SimHandleBase):
         return SimHandleBase.__hash__(self)
 
 class ConstantObject(NonHierarchyObject):
-    """Constant objects have a value that can be read, but not set.
+    """An object which has a value that can be read, but not set.
 
-    We can also cache the value since it is elaboration time fixed and won't
-    change within a simulation.
+    We can also cache the value since it is fixed at elaboration time and
+    won't change within a simulation.
+
+    Args:
+        handle (int): The GPI handle to the simulator object.
+        path (str): Path to this handle, ``None`` if root.
+        handle_type: The type of the handle 
+            (``simulator.INTEGER``, ``simulator.ENUM``, 
+            ``simulator.REAL``, ``simulator.STRING``).
     """
     def __init__(self, handle, path, handle_type):
         NonHierarchyObject.__init__(self, handle, path)
@@ -473,8 +493,11 @@ class ConstantObject(NonHierarchyObject):
 
 class NonHierarchyIndexableObject(NonHierarchyObject):
     def __init__(self, handle, path):
-        """Args:
+        """A non-hierarchy indexable object.
+
+        Args:
             handle (int): FLI/VPI/VHPI handle to the simulator object.
+            path (str): Path to this handle, ``None`` if root.
         """
         NonHierarchyObject.__init__(self, handle, path)
         self._range = simulator.get_range(self._handle)
@@ -538,8 +561,11 @@ class NonConstantObject(NonHierarchyIndexableObject):
     # FIXME: what is the difference to ModifiableObject? Explain in docstring.
 
     def __init__(self, handle, path):
-        """Args:
+        """A non-constant object.
+
+        Args:
             handle (int): FLI/VPI/VHPI handle to the simulator object.
+            path (str): Path to this handle, ``None`` if root.
         """
         NonHierarchyIndexableObject.__init__(self, handle, path)
 
@@ -568,7 +594,7 @@ class ModifiableObject(NonConstantObject):
     """Base class for simulator objects whose values can be modified."""
 
     def setimmediatevalue(self, value):
-        """Set the value of the underlying simulation object to value.
+        """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
         object, e.g. net, signal or variable.
@@ -665,7 +691,7 @@ class EnumObject(ModifiableObject):
     """Specific object handle for enumeration signals and variables."""
 
     def setimmediatevalue(self, value):
-        """Set the value of the underlying simulation object to value.
+        """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
         object, e.g. net, signal or variable.
@@ -693,7 +719,7 @@ class IntegerObject(ModifiableObject):
     """Specific object handle for Integer and Enum signals and variables."""
 
     def setimmediatevalue(self, value):
-        """Set the value of the underlying simulation object to value.
+        """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
         object, e.g. net, signal or variable.
@@ -720,7 +746,7 @@ class StringObject(ModifiableObject):
     """Specific object handle for String variables."""
 
     def setimmediatevalue(self, value):
-        """Set the value of the underlying simulation object to value.
+        """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
         object, e.g. net, signal or variable.
@@ -744,7 +770,18 @@ class StringObject(ModifiableObject):
 _handle2obj = {}
 
 def SimHandle(handle, path=None):
-    """Factory function to create the correct type of :any:`SimHandle` object."""
+    """Factory function to create the correct type of `SimHandle` object.
+
+    Args:
+        handle (int): The GPI handle to the simulator object.
+        path (str): Path to this handle, ``None`` if root.
+
+    Returns:
+        The `SimHandle` object.
+
+    Raises:
+        TestError: If no matching object for GPI type could be found.
+    """
     _type2cls = {
         simulator.MODULE:      HierarchyObject,
         simulator.STRUCTURE:   HierarchyObject,

@@ -138,14 +138,17 @@ class RunningCoroutine(object):
         return str(self.__name__)
 
     def _advance(self, outcome):
-        """
-        Advance to the next yield in this coroutine
+        """Advance to the next yield in this coroutine.
 
-        :param outcome: The `outcomes.Outcome` object to resume with.
-        :returns: The object yielded from the coroutine
+        Args:
+            outcome: The :any:`outcomes.Outcome` object to resume with.
 
-        If the coroutine returns or throws an error, self._outcome is set, and
-        this throws `CoroutineComplete`.
+        Returns:
+            The object yielded from the coroutine
+
+        Raises:
+            CoroutineComplete: If the coroutine returns or throws an error, self._outcome is set, and
+           :exc:`CoroutineComplete` is thrown.
         """
         try:
             self._started = True
@@ -272,8 +275,7 @@ class RunningTest(RunningCoroutine):
 
     # like RunningCoroutine.kill(), but with a way to inject a failure
     def abort(self, exc):
-        """
-        Force this test to end early, without executing any cleanup.
+        """Force this test to end early, without executing any cleanup.
 
         This happens when a background task fails, and is consistent with
         how the behavior has always been. In future, we may want to behave
@@ -290,7 +292,7 @@ class coroutine(object):
 
     ``log`` methods will log to ``cocotb.coroutine.name``.
 
-    ``join()`` method returns an event which will fire when the coroutine exits.
+    :meth:`~cocotb.decorators.RunningCoroutine.join` method returns an event which will fire when the coroutine exits.
 
     Used as ``@cocotb.coroutine``.
     """
