@@ -68,11 +68,15 @@ copyright = u'2014-{0}, PotentialVentures'.format(datetime.datetime.now().year)
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-#
+
+version_raw = open(os.path.join(os.path.dirname(__file__), "..", "..", "version")).read()[8:].strip()
+version_elems = version_raw.split('.')
+
 # The short X.Y version.
-version = '1.1'
+version = '.'.join([version_elems[0], version_elems[1]])
+
 # The full version, including alpha/beta/rc tags.
-release = '1.1'
+release = version_raw
 
 autoclass_content = "both"
 
