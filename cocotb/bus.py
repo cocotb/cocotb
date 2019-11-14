@@ -36,10 +36,7 @@ def _build_sig_attr_dict(signals):
     if isinstance(signals, dict):
         return signals
     else:
-        sig_to_attr = {}
-        for sig in signals:
-            sig_to_attr[sig] = sig
-        return sig_to_attr
+        return {sig: sig for sig in signals}
 
 
 class Bus(object):
