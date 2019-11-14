@@ -245,8 +245,8 @@ class AvalonMemory(BusDriver):
             }
 
     def __init__(self, entity, name, clock, readlatency_min=1,
-                 readlatency_max=1, memory=None, avl_properties={}):
-        BusDriver.__init__(self, entity, name, clock)
+                 readlatency_max=1, memory=None, avl_properties={}, **kwargs):
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
 
         if avl_properties != {}:
             for key, value in self._avalon_properties.items():
