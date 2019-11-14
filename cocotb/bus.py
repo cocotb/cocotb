@@ -54,7 +54,8 @@ class Bus(object):
     TODO:
         Support for ``struct``/``record`` ports where signals are member names.
     """
-    def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", array_idx=None):
+    def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_",
+                 array_idx=None, aliases=None):
         """
         Args:
             entity (SimHandle): :any:`SimHandle` instance to the entity containing the bus.
@@ -72,12 +73,35 @@ class Bus(object):
             bus_separator (str, optional): Character(s) to use as separator between bus
                 name and signal name. Defaults to '_'.
             array_idx (int or None, optional): Optional index when signal is an array.
+            aliases (dict, optional): gives aliases for bus names so one can adopt to
+                different signal naming conventions. The index is the name of the signal
+                for the bus and the value is the name in the RTL code.
+                For example for Wishbone slave {"datrw": "dat_i", "datrd": "dat_o"}
         """
         self._entity = entity
         self._name = name
         self._signals = {}
 
-        for attr_name, sig_name in _build_sig_attr_dict(signals).items():
+        _signals = _build_sig_attr_dict(signals)
+        _optional_signals = _build_sig_attr_dict(optional_signals)
+
+        if aliases is not None:
+            if not isinstance(aliases, dict):
+                raise ValueError("aliases parameter has to be a dict")
+
+            for attr_name, port_name in aliases.items():
+                if attr_name in signals:
+                    _signals[attr_name] = port_name
+                elif attr_name in optional_signals:
+                    _optional_signals[attr_name] = port_name
+                else:
+                    raise ValueError(
+                        "'{}' not signal of bus {}".format(
+                            attr_name, self.__class__.__name__
+                        )
+                    )
+
+        for attr_name, sig_name in _signals.items():
             if name:
                 signame = name + bus_separator + sig_name
             else:
@@ -88,7 +112,7 @@ class Bus(object):
             self._add_signal(attr_name, signame)
 
         # Also support a set of optional signals that don't have to be present
-        for attr_name, sig_name in _build_sig_attr_dict(optional_signals).items():
+        for attr_name, sig_name in _optional_signals.items():
             if name:
                 signame = name + bus_separator + sig_name
             else:
