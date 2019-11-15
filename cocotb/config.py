@@ -28,11 +28,28 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+"""
+Module for querying the cocotb configuration
+
+This module provides information in module global variables and through a
+``main()`` function that is used in the cocotb-config script.
+
+Global variables:
+    share_dir: str, path where the cocotb data is stored
+    makefiles_dir: str, path where the cocotb makefiles are installed
+"""
 import os
 import sys
 import cocotb
 import argparse
 import pkg_resources
+
+
+__all__ = ["share_dir", "makefiles_dir"]
+
+
+share_dir = os.path.join(os.path.dirname(cocotb.__file__), 'share')
+makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__), 'share', 'makefiles')
 
 
 class PrintAction(argparse.Action):
@@ -46,9 +63,7 @@ class PrintAction(argparse.Action):
 
 def main():
 
-    share_dir = os.path.join(os.path.dirname(cocotb.__file__),'share')
     prefix_dir = os.path.dirname(os.path.dirname(cocotb.__file__))
-    makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__),'share', 'makefiles')
     version = pkg_resources.get_distribution('cocotb').version
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
