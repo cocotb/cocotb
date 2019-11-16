@@ -89,6 +89,10 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args);
 static PyObject *get_precision(PyObject *self, PyObject *args);
 static PyObject *deregister_callback(PyObject *self, PyObject *args);
 
+static PyObject *bfm_get_count(PyObject *self, PyObject *args);
+static PyObject *bfm_get_info(PyObject *self, PyObject *args);
+static PyObject *bfm_send_msg(PyObject *self, PyObject *args);
+
 static PyObject *log_level(PyObject *self, PyObject *args);
 
 static PyMethodDef SimulatorMethods[] = {
@@ -127,6 +131,16 @@ static PyMethodDef SimulatorMethods[] = {
     {"deregister_callback", deregister_callback, METH_VARARGS, "Deregister a callback"},
     
     {"error_out", (PyCFunction)error_out, METH_NOARGS, NULL},
+
+	// TODO: methods for interacting with BFMs
+	// - number of BFMS
+    {"bfm_get_count", bfm_get_count, METH_VARARGS, NULL},
+
+	// - (typename,instname,clsname) of BFM
+    {"bfm_get_info", bfm_get_info, METH_VARARGS, NULL},
+
+	// - Send a message to a BFM
+    {"bfm_send_msg", bfm_send_msg, METH_VARARGS, NULL},
     
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

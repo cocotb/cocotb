@@ -26,6 +26,7 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
+#include "vpi_bfm_api.h"
 
 extern "C" {
 
@@ -692,6 +693,7 @@ void (*vlog_startup_routines[])(void) = {
     register_system_functions,
     register_initial_callback,
     register_final_callback,
+	register_bfm_tf,
     0
 };
 

@@ -39,6 +39,7 @@ static int releases = 0;
 
 #include "simulatormodule.h"
 #include <cocotb_utils.h>
+#include "gpi_bfm_api.h"
 
 typedef int (*gpi_function_t)(const void *);
 
@@ -949,6 +950,54 @@ static void add_module_constants(PyObject* simulator)
     if (rc != 0)
         fprintf(stderr, "Failed to add module constants!\n");
 }
+
+/**
+ * bfm_get_count()
+ *
+ * Returns the number of BFMs registered with CoCoTB
+ */
+static PyObject *bfm_get_count(PyObject *self, PyObject *args) {
+
+	// TODO:
+	return 0;
+}
+
+/**
+ * bfm_get_info()
+ *
+ * Returns information about a specific BFM
+ */
+static PyObject *bfm_get_info(PyObject *self, PyObject *args) {
+
+	// TODO:
+	return 0;
+}
+
+/**
+ * bfm_send_msg()
+ *
+ * Sends a message to a specific BFM
+ */
+static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
+
+	// TODO:
+	return 0;
+}
+
+/**
+ * bfm_recv_msg()
+ *
+ * Receives a message from a BFM to pass on to Python
+ */
+static void bfm_recv_msg(
+		uint32_t 				bfm_id,
+		uint32_t				msg_id,
+		uint32_t				paramc,
+		gpi_bfm_msg_param_t		*paramv) {
+
+}
+
+
 
 #if PY_MAJOR_VERSION >= 3
 #include "simulatormodule_python3.c"

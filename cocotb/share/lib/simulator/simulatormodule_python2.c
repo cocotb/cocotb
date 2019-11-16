@@ -26,5 +26,9 @@ MODULE_ENTRY_POINT(void)
         INITERROR;
     }
 
+    // Register the BFM receive message callback
+    // with the BFM manager
+    gpi_bfm_set_recv_msg_f(&bfm_recv_msg);
+
     add_module_constants(simulator);
 }
