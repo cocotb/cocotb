@@ -41,6 +41,8 @@ static int releases = 0;
 #include <cocotb_utils.h>
 #include "gpi_bfm_api.h"
 
+static PyObject *bfm_call_method = 0;
+
 typedef int (*gpi_function_t)(const void *);
 
 PyGILState_STATE TAKE_GIL(void)
@@ -957,9 +959,7 @@ static void add_module_constants(PyObject* simulator)
  * Returns the number of BFMs registered with CoCoTB
  */
 static PyObject *bfm_get_count(PyObject *self, PyObject *args) {
-
-	// TODO:
-	return 0;
+	return PyLong_FromUnsignedLong(cocotb_bfm_num_registered());
 }
 
 /**
@@ -968,15 +968,26 @@ static PyObject *bfm_get_count(PyObject *self, PyObject *args) {
  * Returns information about a specific BFM
  */
 static PyObject *bfm_get_info(PyObject *self, PyObject *args) {
+	int id = 0; // TODO:
 
-	// TODO:
-	return 0;
+    if (!PyArg_ParseTuple(args, "i", &id)) {
+        return NULL;
+    }
+
+	return PyTuple_Pack(3,
+			Py_BuildValue("s", cocotb_bfm_typename(id)),
+			Py_BuildValue("s", cocotb_bfm_instname(id)),
+			Py_BuildValue("s", cocotb_bfm_clsname(id))
+			);
 }
 
 /**
  * bfm_send_msg()
  *
  * Sends a message to a specific BFM
+ * - bfm_id
+ * - param_l
+ * - type_l
  */
 static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
 
@@ -995,6 +1006,28 @@ static void bfm_recv_msg(
 		uint32_t				paramc,
 		gpi_bfm_msg_param_t		*paramv) {
 
+//	bfm_call_method = 0;
+
+}
+
+static PyObject *bfm_set_call_method(PyObject *self, PyObject *args) {
+	PyObject *temp;
+
+	if (PyArg_ParseTuple(args, "O:callback", &temp)) {
+		 if (!PyCallable_Check(temp)) {
+			 PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+			 	 return 0;
+		 }
+		 Py_XINCREF(temp);
+		 Py_XDECREF(bfm_call_method);
+		 bfm_call_method = temp;
+
+		 fprintf(stdout, "bfm_call_method=%p\n", bfm_call_method);
+
+	     return Py_BuildValue("");
+	 } else {
+		 return 0;
+	 }
 }
 
 

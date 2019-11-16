@@ -50,6 +50,7 @@ MODULE_ENTRY_POINT(void)
     gpi_bfm_set_recv_msg_f(&bfm_recv_msg);
 
     add_module_constants(simulator);
+
     return simulator;
 }
 

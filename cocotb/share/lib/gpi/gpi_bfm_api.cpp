@@ -77,3 +77,7 @@ const char *cocotb_bfm_get_str_param(int id) {
 		return 0;
 	}
 }
+
+void gpi_bfm_set_recv_msg_f(bfm_recv_msg_f	recv_msg_f) {
+	// TODO:
+}

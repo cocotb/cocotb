@@ -1,35 +1,81 @@
 #include "vpi_bfm_api.h"
 #include "vpi_user.h"
 #include "gpi_bfm_api.h"
+#include <stdio.h>
+#include <string>
 
 static void cocotb_bfm_notify(void *notify_ev) {
+	s_vpi_value val;
 
+	val.format = vpiIntVal;
+	val.value.integer = 1;
+
+	// Signal an event to cause the BFM to wake up
+	vpi_put_value((vpiHandle)notify_ev, &val, 0, vpiNoDelay);
 }
 
 static int cocotb_bfm_register_tf(char *user_data) {
 	// Obtain arguments
 	// - type_name -- passed in
-	// - inst_name -- callsite?
 	// - cls_name  -- passed in
-	const char *type_name = 0;
-	const char *inst_name = 0;
-	const char *cls_name = 0;
+	// - notify_ev -- passed in
+	// - inst_name -- from call scope
+	std::string type_name, inst_name, cls_name;
 	vpiHandle notify_ev = 0;
+	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
+	vpiHandle scope_h = vpi_handle(vpiScope, systf_h);
+	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
+	s_vpi_value val;
+	vpiHandle arg;
 	int id;
+
+	// Get the type name
+	arg = vpi_scan(arg_it);
+	val.format = vpiStringVal;
+	vpi_get_value(arg, &val);
+	type_name = val.value.str;
+
+	// Get the instance name from the context
+	inst_name = vpi_get_str(vpiFullName, scope_h);
+
+	// Get the Python class name
+	arg = vpi_scan(arg_it);
+	val.format = vpiStringVal;
+	vpi_get_value(arg, &val);
+	cls_name = val.value.str;
+
+	// Get the handle to the notify event
+	notify_ev = vpi_scan(arg_it);
+
+	vpi_free_object(arg_it);
 
 	(void)id;
 
 	id = cocotb_bfm_register(
-			type_name,
-			inst_name,
-			cls_name,
+			type_name.c_str(),
+			inst_name.c_str(),
+			cls_name.c_str(),
 			&cocotb_bfm_notify,
 			notify_ev
 			);
 
-	// TODO: set return value
+	// Set return value
+	val.format = vpiIntVal;
+	val.value.integer = id;
+	vpi_put_value(systf_h, &val, 0, vpiNoDelay);
 
+	return 0;
+}
 
+static int cocotb_bfm_claim_msg_tf(char *user_data) {
+	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
+	s_vpi_value val;
+	int msg_id = -1;
+
+	// Set return value
+	val.format = vpiIntVal;
+	val.value.integer = msg_id;
+	vpi_put_value(systf_h, &val, 0, vpiNoDelay);
 
 	return 0;
 }
@@ -37,13 +83,8 @@ static int cocotb_bfm_register_tf(char *user_data) {
 void register_bfm_tf(void) {
 	s_vpi_systf_data tf_data;
 
-	// cocotb_bfm_register
-	// cocotb_bfm_next_message
-	// cocotb_bfm_get_param_i32
-	// cocotb_bfm_get_param_ui32
-	// cocotb_bfm_get_param_i64
-	// cocotb_bfm_get_param_ui64
 
+	// cocotb_bfm_register
 	tf_data.type = vpiSysFunc;
 	tf_data.tfname = "$cocotb_bfm_register";
 	tf_data.calltf = &cocotb_bfm_register_tf;
@@ -51,5 +92,22 @@ void register_bfm_tf(void) {
 	tf_data.sizetf = 0;
 	tf_data.user_data = 0;
 	vpi_register_systf(&tf_data);
+
+	// cocotb_bfm_claim_message
+	tf_data.type = vpiSysFunc;
+	tf_data.tfname = "$cocotb_bfm_claim_msg";
+	tf_data.calltf = &cocotb_bfm_claim_msg_tf;
+	tf_data.compiletf = 0;
+	tf_data.sizetf = 0;
+	tf_data.user_data = 0;
+	vpi_register_systf(&tf_data);
+
+	// cocotb_bfm_get_param_i32
+
+	// cocotb_bfm_get_param_ui32
+
+	// cocotb_bfm_get_param_i64
+
+	// cocotb_bfm_get_param_ui64
 
 }
