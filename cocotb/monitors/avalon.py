@@ -32,6 +32,8 @@ See https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/man
 NB Currently we only support a very small subset of functionality.
 """
 
+import warnings
+
 from cocotb.utils import hexdump
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
@@ -87,7 +89,14 @@ class AvalonST(BusMonitor):
 
 
 class AvalonSTPkts(BusMonitor):
-    """Packetized Avalon-ST bus."""
+    """Packetized Avalon-ST bus.
+
+    Args:
+        entity, name, clock: see :class:`BusMonitor`
+        config (dict): bus configuration options
+        report_channel (bool): report channel with data, default is False
+            Setting to True on bus without channel signal will give an error
+    """
 
     _signals = ["valid", "data", "startofpacket", "endofpacket"]
     _optional_signals = ["error", "channel", "ready", "empty"]
@@ -102,13 +111,18 @@ class AvalonSTPkts(BusMonitor):
 
     def __init__(self, *args, **kwargs):
         config = kwargs.pop('config', {})
+        report_channel = kwargs.pop('report_channel', False)
         BusMonitor.__init__(self, *args, **kwargs)
 
         self.config = self._default_config.copy()
+        self.report_channel = report_channel
 
         # Set default config maxChannel to max value on channel bus
         if hasattr(self.bus, 'channel'):
             self.config['maxChannel'] = (2 ** len(self.bus.channel)) -1
+        else:
+            if report_channel:
+                raise ValueError("Channel reporting asked on bus without channel signal")
 
         for configoption, value in config.items():
             self.config[configoption] = value
@@ -125,9 +139,6 @@ class AvalonSTPkts(BusMonitor):
         self.config["useEmpty"] = (num_data_symbols > 1)
 
         if hasattr(self.bus, 'channel'):
-            if "channel" in self._optional_signals:
-                self.log.warning("Channel is not fully implemented in this monitor. Recommend use of AvalonSTPktsWithChannel.")
-
             if len(self.bus.channel) > 128:
                 raise AttributeError("AvalonST interface specification defines channel width as 1-128. "
                                      "%d channel width is %d" %
@@ -210,7 +221,10 @@ class AvalonSTPkts(BusMonitor):
                     self.log.info("Received a packet of %d bytes", len(pkt))
                     self.log.debug(hexdump(str((pkt))))
                     self.channel = channel
-                    self._recv(pkt)
+                    if self.report_channel:
+                        self._recv({"data": pkt, "channel": channel})
+                    else:
+                        self._recv(pkt)
                     pkt = ""
                     in_pkt = False
                     channel = None
@@ -224,18 +238,15 @@ class AvalonSTPkts(BusMonitor):
                                 invalid_cyclecount)
 
 class AvalonSTPktsWithChannel(AvalonSTPkts):
-    """Packetized AvalonST bus using channel."""
+    """Packetized AvalonST bus using channel.
 
-    _signals = ["valid", "data", "startofpacket", "endofpacket", "channel"]
-    _optional_signals = ["error", "ready", "empty"]
+    This class is deprecated. Use AvalonSTPkts(..., report_channel=True, ...)
+    """
 
     def __init__(self, *args, **kwargs):
-        AvalonSTPkts.__init__(self, *args, **kwargs)
-
-    def _recv(self, pkt):
-        """Force use of channel in recv function.
-
-        Args:
-            pkt: (string) Monitored data.
-        """
-        AvalonSTPkts._recv(self, {"data": pkt, "channel": self.channel})
+        warnings.warn(
+            "Use of AvalonSTPktsWithChannel is deprecated\n"
+            "\tUse AvalonSTPkts(..., report_channel=True, ...)",
+            DeprecationWarning, stacklevel=2
+        )
+        AvalonSTPkts.__init__(self, *args, report_channel=True, **kwargs)
