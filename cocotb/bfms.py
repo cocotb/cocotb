@@ -1,6 +1,7 @@
 
 import os
 import importlib
+from cocotb.decorators import bfm_param_int_t
 
 if "COCOTB_SIM" in os.environ:
     import simulator
@@ -24,15 +25,49 @@ def register_bfm_import_info(info):
     
 def register_bfm_export_info(info):
     global export_info_l
-    info.id = len(import_info_l)
+    info.id = len(export_info_l)
     export_info_l.append(info)
+
+class BfmMethodParamInfo():
+    
+    def __init__(self, pname, ptype):
+        self.pname = pname
+        self.ptype = ptype
 
 class BfmMethodInfo():
     
     def __init__(self, T, signature):
+        fullname = T.__qualname__
+        fi = T.__code__
+        
         self.T = T
-        self.signature = signature
+        self.signature = []
+        self.type_info = []
         self.id = -1
+
+        locals_idx = fullname.find("<locals>")
+        if locals_idx != -1:
+            fullname = fullname[locals_idx+len("<locals>."):]
+            
+        if fullname.find('.') == -1:
+            raise Exception("Attempting to register a global method as a BFM method")
+        
+        args = fi.co_varnames[1:fi.co_argcount]
+        if len(signature) != len(args):
+            raise Exception("Wrong number of parameter-type elements: expect " + str(len(args)) + " but received " + str(len(signature)))
+        
+        
+        for i in range(len(args)):
+            a = args[i]
+            t = signature[i]
+            print("Argument: " + a + "=" + str(t))
+            self.signature.append(BfmMethodParamInfo(a, t))
+            if isinstance(t, bfm_param_int_t):
+                if t.s:
+                    self.type_info.append(simulator.BFM_SI_PARAM)
+                else:
+                    self.type_info.append(simulator.BFM_UI_PARAM)
+
 
 class BfmTypeInfo():
     
@@ -109,11 +144,15 @@ class BfmMgr():
         BfmMgr.inst().load_bfms()
         
     @staticmethod
-    def call(bfm_id, method_id, params):
-        inst = BfmMgr.inst()
-        bfm = inst.bfm_l[bfm_id]
-        
-        if not hasattr(bfm, "bfm_info"):
-            raise Exception("BFM object does not contain 'bfm_info' field")
-
-        bfm.bfm_info.call_method(method_id, params)
+    def call(
+            bfm_id, 
+            method_id,
+            params):
+        print("bfms::call " + str(len(params)))
+#         inst = BfmMgr.inst()
+#         bfm = inst.bfm_l[bfm_id]
+#         
+#         if not hasattr(bfm, "bfm_info"):
+#             raise Exception("BFM object does not contain 'bfm_info' field")
+# 
+#         bfm.bfm_info.call_method(method_id, params)

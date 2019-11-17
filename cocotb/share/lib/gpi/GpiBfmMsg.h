@@ -38,9 +38,13 @@ public:
 
 	void add_param_s(const char *p);
 
-	uint32_t num_params() const { return m_param_l.size(); }
+	void add_param(const cocotb_bfm_msg_param_t *p);
+
+	uint32_t num_params() const { return m_param_l_idx; }
 
 	const cocotb_bfm_msg_param_t *get_param();
+
+	cocotb_bfm_msg_param_t *get_param_l() const { return m_param_l; }
 
 	const cocotb_bfm_msg_param_t *get_param(uint32_t idx) const;
 
@@ -54,7 +58,10 @@ protected:
 
 private:
 	uint32_t								m_id;
-	std::vector<cocotb_bfm_msg_param_t>		m_param_l;
+	cocotb_bfm_msg_param_t					*m_param_l;
+	uint32_t								m_param_l_idx;
+	uint32_t								m_param_l_max;
+
 	std::vector<std::string>				m_str_l;
 	uint32_t								m_idx;
 

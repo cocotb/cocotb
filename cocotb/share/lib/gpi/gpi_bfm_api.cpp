@@ -78,6 +78,18 @@ const char *cocotb_bfm_get_str_param(int id) {
 	}
 }
 
+void cocotb_bfm_begin_msg(uint32_t bfm_id, uint32_t msg_id) {
+	GpiBfm *bfm = GpiBfm::get_bfms().at(bfm_id);
+
+	bfm->begin_inbound_msg(msg_id);
+}
+
+void cocotb_bfm_end_msg(uint32_t bfm_id) {
+	GpiBfm *bfm = GpiBfm::get_bfms().at(bfm_id);
+
+	bfm->send_inbound_msg();
+}
+
 void cocotb_bfm_send_msg(
 		uint32_t				bfm_id,
 		uint32_t				msg_id,

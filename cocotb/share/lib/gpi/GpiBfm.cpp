@@ -13,6 +13,7 @@ GpiBfm::GpiBfm(
 		m_notify_f(notify_f),
 		m_notify_data(notify_data) {
 	m_active_msg = 0;
+	m_active_inbound_msg = 0;
 }
 
 GpiBfm::~GpiBfm() {
@@ -24,11 +25,11 @@ GpiBfm::~GpiBfm() {
 }
 
 int GpiBfm::add_bfm(GpiBfm *bfm) {
-	int ret = m_bfm_l.size();
+	bfm->m_bfm_id = m_bfm_l.size();
 
 	m_bfm_l.push_back(bfm);
 
-	return ret;
+	return bfm->m_bfm_id;
 }
 
 void GpiBfm::send_msg(GpiBfmMsg *msg) {
@@ -51,6 +52,22 @@ int GpiBfm::claim_msg() {
 	} else {
 		return -1;
 	}
+}
+
+void GpiBfm::begin_inbound_msg(uint32_t msg_id) {
+	m_active_inbound_msg = new GpiBfmMsg(msg_id);
+}
+
+void GpiBfm::send_inbound_msg() {
+	m_recv_msg_f(
+			m_bfm_id,
+			m_active_inbound_msg->id(),
+			m_active_inbound_msg->num_params(),
+			m_active_inbound_msg->get_param_l());
+
+	// Clean up
+	delete m_active_inbound_msg;
+	m_active_inbound_msg = 0;
 }
 
 std::vector<GpiBfm *> GpiBfm::m_bfm_l;

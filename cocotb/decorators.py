@@ -473,20 +473,75 @@ class bfm_export():
         self.signature = args
     
     def __call__(self, m):
-        print("bfm_export")
         cocotb.bfms.register_bfm_import_info(
             cocotb.bfms.BfmMethodInfo(m, self.signature))
         return m
 
 @public
 class bfm_import():
+    '''
+    Method that is being imported from the HDL environment
+    '''
     
     def __init__(self, *args):
         self.signature = args
-    
-    def __call__(self, m):
-        print("bfm_import")
-        cocotb.bfms.register_bfm_export_info(
-            cocotb.bfms.BfmMethodInfo(m, self.signature))
         
-        return m
+    def __call__(self, m):
+        info = cocotb.bfms.BfmMethodInfo(m, self.signature)
+        cocotb.bfms.register_bfm_export_info(info)
+        
+        def import_taskw(self, *args):
+            print("import_taskw: " + str(self))
+            import simulator
+            arg_l = []
+            for a in args:
+                arg_l.append(a)
+            simulator.bfm_send_msg(
+                self.bfm_info.id,
+                info.id,
+                arg_l,
+                info.type_info)
+    
+        return import_taskw
+    
+class bfm_param_int_t():
+    
+    sv_type_m = {
+        8 : "byte",
+        16 : "short",
+        32 : "int",
+        64 : "longint"
+    }
+    
+    def __init__(self, w, s):
+        self.w = w
+        self.s = s
+        
+    def sv_type(self):
+        if self.w in bfm_param_int_t.sv_type_m.keys():
+            ret = bfm_param_int_t.sv_type_m[self.w]
+            if not self.s:
+                ret += " unsigned"
+            return ret
+        else:
+            raise Exception("parameter-width \"" + str(self.w) + "\" not supported by SystemVerilog")
+        
+    def vl_type(self):
+        ret = "reg"
+        if self.s:
+            ret += " signed"
+        ret += "[" + str(self.w) + "-1:0]"
+        
+        return ret
+
+class bfm_int32_t(bfm_param_int_t):
+    
+    def __init__(self):
+        super().__init__(32, True)
+        
+class bfm_uint32_t(bfm_param_int_t):
+    
+    def __init__(self):
+        super().__init__(32, False)
+        
+        

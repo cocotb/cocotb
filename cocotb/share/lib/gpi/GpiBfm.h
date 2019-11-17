@@ -39,11 +39,18 @@ public:
 
 	GpiBfmMsg *active_msg() const { return m_active_msg; }
 
+	void begin_inbound_msg(uint32_t msg_id);
+
+	GpiBfmMsg *active_inbound_msg() const { return m_active_inbound_msg; }
+
+	void send_inbound_msg();
+
 	static void set_recv_msg_f(bfm_recv_msg_f f) { m_recv_msg_f = f; }
 
 protected:
 
 private:
+	uint32_t						m_bfm_id;
 	std::string						m_typename;
 	std::string						m_instname;
 	std::string						m_clsname;
@@ -51,6 +58,8 @@ private:
 	void							*m_notify_data;
 	std::vector<GpiBfmMsg *>		m_msg_queue;
 	GpiBfmMsg						*m_active_msg;
+	// Message ready to be sent to
+	GpiBfmMsg						*m_active_inbound_msg;
 
 	static bfm_recv_msg_f			m_recv_msg_f;
 	static std::vector<GpiBfm *>	m_bfm_l;

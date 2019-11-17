@@ -948,6 +948,9 @@ static void add_module_constants(PyObject* simulator)
     rc |= PyModule_AddIntConstant(simulator, "OBJECTS",       GPI_OBJECTS);
     rc |= PyModule_AddIntConstant(simulator, "DRIVERS",       GPI_DRIVERS);
     rc |= PyModule_AddIntConstant(simulator, "LOADS",         GPI_LOADS);
+    rc |= PyModule_AddIntConstant(simulator, "BFM_UI_PARAM",  GpiBfmParamType_Ui);
+    rc |= PyModule_AddIntConstant(simulator, "BFM_SI_PARAM",  GpiBfmParamType_Si);
+    rc |= PyModule_AddIntConstant(simulator, "BFM_STR_PARAM", GpiBfmParamType_Str);
 
     if (rc != 0)
         fprintf(stderr, "Failed to add module constants!\n");
@@ -995,6 +998,7 @@ static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
 	PyObject *param_l, *type_l;
 	cocotb_bfm_msg_param_t *paramv = 0;
 	int paramc = 0;
+	uint32_t i;
 
 	(void)param_l;
 	(void)type_l;
@@ -1002,6 +1006,39 @@ static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "iiOO", &bfm_id, &msg_id, &param_l, &type_l)) {
 		return 0;
 	}
+
+	paramc = PyList_Size(param_l);
+	paramv = (cocotb_bfm_msg_param_t *)malloc(
+			sizeof(cocotb_bfm_msg_param_t) * paramc);
+
+	for (i=0; i<paramc; i++) {
+		PyObject *t = PyList_GetItem(type_l, i);
+		PyObject *v = PyList_GetItem(param_l, i);
+		(void)v;
+
+		paramv[i].ptype = (cocotb_bfm_param_type_e)PyLong_AsLong(t);
+
+		switch (paramv[i].ptype) {
+		case GpiBfmParamType_Ui: {
+			paramv[i].pval.ui64 = PyLong_AsUnsignedLongLong(v);
+			fprintf(stdout, "UI: %lld\n",
+					(unsigned long long)paramv[i].pval.ui64);
+		} break;
+		case GpiBfmParamType_Si: {
+			paramv[i].pval.i64 = PyLong_AsLongLong(v);
+		} break;
+		case GpiBfmParamType_Str: {
+			fprintf(stdout, "TODO: STR param\n"); break;
+		} break;
+		default: fprintf(stdout, "Unknown param\n");
+		}
+	}
+
+	fprintf(stdout, "bfm_send_msg: param_l.size=%d type_l.size=%d\n",
+			(int)PyList_Size(param_l),
+			(int)PyList_Size(type_l)
+			);
+	fflush(stdout);
 
 	cocotb_bfm_send_msg(bfm_id, msg_id, paramc, paramv);
 
@@ -1018,8 +1055,27 @@ static void bfm_recv_msg(
 		uint32_t				msg_id,
 		uint32_t				paramc,
 		cocotb_bfm_msg_param_t	*paramv) {
+	uint32_t i;
+    PyGILState_STATE gstate;
+    PyObject *param_l;
 
-//	bfm_call_method = 0;
+
+	fprintf(stdout, "bfm_recv_msg!! paramc=%d paramv=%p\n", paramc, paramv);
+	fprintf(stdout, "bfm_call_method=%p\n", bfm_call_method);
+	fprintf(stdout, "  iscallable=%d\n", PyCallable_Check(bfm_call_method));
+	fflush(stdout);
+
+    gstate = TAKE_GIL();
+
+    param_l = PyList_New(paramc);
+    for (i=0; i<paramc; i++) {
+//    	switch (paramv[i].ptype) {
+//    	}
+    }
+
+	PyObject_CallFunction(bfm_call_method, "iiO", bfm_id, msg_id, param_l);
+
+    DROP_GIL(gstate);
 
 }
 
@@ -1031,11 +1087,12 @@ static PyObject *bfm_set_call_method(PyObject *self, PyObject *args) {
 			 PyErr_SetString(PyExc_TypeError, "parameter must be callable");
 			 	 return 0;
 		 }
-		 Py_XINCREF(temp);
+		 Py_INCREF(temp);
 		 Py_XDECREF(bfm_call_method);
 		 bfm_call_method = temp;
 
 		 fprintf(stdout, "bfm_call_method=%p\n", bfm_call_method);
+		 fprintf(stdout, "  iscallable=%d\n", PyCallable_Check(bfm_call_method));
 
 	     return Py_BuildValue("");
 	 } else {

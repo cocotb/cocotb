@@ -111,7 +111,8 @@ static int cocotb_bfm_get_param_i32_tf(char *user_data) {
 	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
 	vpiHandle arg;
 	s_vpi_value val;
-	int bfm_id, msg_id = -1;
+	int bfm_id;
+	int64_t pval;
 
 	// Get the BFM ID
 	arg = vpi_scan(arg_it);
@@ -121,12 +122,59 @@ static int cocotb_bfm_get_param_i32_tf(char *user_data) {
 
 	vpi_free_object(arg_it);
 
-	msg_id = cocotb_bfm_claim_msg(bfm_id);
+	pval = cocotb_bfm_get_si_param(bfm_id);
+	fprintf(stdout, "pval=%lld\n", (long long)pval);
 
 	// Set return value
 	val.format = vpiIntVal;
-	val.value.integer = msg_id;
+	val.value.integer = pval;
 	vpi_put_value(systf_h, &val, 0, vpiNoDelay);
+
+	return 0;
+}
+
+static int cocotb_bfm_begin_msg_tf(char *user_data) {
+	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
+	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
+	vpiHandle arg;
+	s_vpi_value val;
+	int bfm_id, msg_id;
+
+	// Get the BFM ID
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	bfm_id = val.value.integer;
+
+	// Get the msg ID
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	msg_id = val.value.integer;
+
+	vpi_free_object(arg_it);
+
+	cocotb_bfm_begin_msg(bfm_id, msg_id);
+
+	return 0;
+}
+
+static int cocotb_bfm_end_msg_tf(char *user_data) {
+	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
+	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
+	vpiHandle arg;
+	s_vpi_value val;
+	int bfm_id;
+
+	// Get the BFM ID
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	bfm_id = val.value.integer;
+
+	vpi_free_object(arg_it);
+
+	cocotb_bfm_end_msg(bfm_id);
 
 	return 0;
 }
@@ -170,8 +218,24 @@ void register_bfm_tf(void) {
 	// cocotb_bfm_get_param_ui64
 
 	// cocotb_bfm_begin_msg
+	tf_data.type = vpiSysTask;
+	tf_data.tfname = "$cocotb_bfm_begin_msg";
+	tf_data.calltf = &cocotb_bfm_begin_msg_tf;
+	tf_data.compiletf = 0;
+	tf_data.sizetf = 0;
+	tf_data.user_data = 0;
+	vpi_register_systf(&tf_data);
+
 	// cocotb_bfm_add_ui_param
 	// cocotb_bfm_add_si_param
 	// cocotb_bfm_add_str_param
+
 	// cocotb_bfm_end_msg
+	tf_data.type = vpiSysTask;
+	tf_data.tfname = "$cocotb_bfm_end_msg";
+	tf_data.calltf = &cocotb_bfm_end_msg_tf;
+	tf_data.compiletf = 0;
+	tf_data.sizetf = 0;
+	tf_data.user_data = 0;
+	vpi_register_systf(&tf_data);
 }
