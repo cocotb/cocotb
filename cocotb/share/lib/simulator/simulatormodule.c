@@ -986,13 +986,26 @@ static PyObject *bfm_get_info(PyObject *self, PyObject *args) {
  *
  * Sends a message to a specific BFM
  * - bfm_id
+ * - msg_id
  * - param_l
  * - type_l
  */
 static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
+	int bfm_id, msg_id;
+	PyObject *param_l, *type_l;
+	cocotb_bfm_msg_param_t *paramv = 0;
+	int paramc = 0;
 
-	// TODO:
-	return 0;
+	(void)param_l;
+	(void)type_l;
+
+	if (!PyArg_ParseTuple(args, "iiOO", &bfm_id, &msg_id, &param_l, &type_l)) {
+		return 0;
+	}
+
+	cocotb_bfm_send_msg(bfm_id, msg_id, paramc, paramv);
+
+	return Py_BuildValue("");
 }
 
 /**
@@ -1004,7 +1017,7 @@ static void bfm_recv_msg(
 		uint32_t 				bfm_id,
 		uint32_t				msg_id,
 		uint32_t				paramc,
-		gpi_bfm_msg_param_t		*paramv) {
+		cocotb_bfm_msg_param_t	*paramv) {
 
 //	bfm_call_method = 0;
 

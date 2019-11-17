@@ -78,6 +78,16 @@ const char *cocotb_bfm_get_str_param(int id) {
 	}
 }
 
-void gpi_bfm_set_recv_msg_f(bfm_recv_msg_f	recv_msg_f) {
-	// TODO:
+void cocotb_bfm_send_msg(
+		uint32_t				bfm_id,
+		uint32_t				msg_id,
+		uint32_t				paramc,
+		cocotb_bfm_msg_param_t	*paramv) {
+	GpiBfm *bfm = GpiBfm::get_bfms().at(bfm_id);
+	GpiBfmMsg *msg = new GpiBfmMsg(msg_id, paramc, paramv);
+	bfm->send_msg(msg);
+}
+
+void cocotb_bfm_set_recv_msg_f(bfm_recv_msg_f recv_msg_f) {
+	GpiBfm::set_recv_msg_f(recv_msg_f);
 }

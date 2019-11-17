@@ -460,3 +460,33 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
 
     def __call__(self, *args, **kwargs):
         return RunningTest(self._func(*args, **kwargs), self)
+
+@public
+def bfm(T):
+    cocotb.bfms.register_bfm_type(T)
+    return T
+
+@public
+class bfm_export():
+    
+    def __init__(self, *args):
+        self.signature = args
+    
+    def __call__(self, m):
+        print("bfm_export")
+        cocotb.bfms.register_bfm_import_info(
+            cocotb.bfms.BfmMethodInfo(m, self.signature))
+        return m
+
+@public
+class bfm_import():
+    
+    def __init__(self, *args):
+        self.signature = args
+    
+    def __call__(self, m):
+        print("bfm_import")
+        cocotb.bfms.register_bfm_export_info(
+            cocotb.bfms.BfmMethodInfo(m, self.signature))
+        
+        return m

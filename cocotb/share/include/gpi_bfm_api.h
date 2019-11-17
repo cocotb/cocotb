@@ -43,45 +43,69 @@ int64_t cocotb_bfm_get_si_param(int id);
 // Get a string parameter from the active message
 const char *cocotb_bfm_get_str_param(int id);
 
+/*
+ * Called from the simulator side to begin
+ * a message
+ */
+void cocotb_bfm_begin_msg(
+		uint32_t			bfm_id,
+		uint32_t			msg_id);
 
-// Init call to register Python module
-void cocotb_bfm_api_init(void);
+void cocotb_bfm_add_ui_param(
+		uint32_t			bfm_id,
+		uint64_t			p);
+
+void cocotb_bfm_add_si_param(
+		uint32_t			bfm_id,
+		int64_t				p);
+
+void cocotb_bfm_add_str_param(
+		uint32_t			bfm_id,
+		const char			*p);
+
+/*
+ * Called from the simulator side to complete
+ * a message and send it to the Python side
+ */
+void cocotb_bfm_end_msg(
+		uint32_t			bfm_id);
+
 
 typedef enum {
 	GpiBfmParamType_Ui,
 	GpiBfmParamType_Si,
 	GpiBfmParamType_Str
-} gpi_bfm_param_type_e;
+} cocotb_bfm_param_type_e;
 
-typedef struct gpi_bfm_msg_param_s {
-	gpi_bfm_param_type_e	ptype;
+typedef struct cocotb_bfm_msg_param_s {
+	cocotb_bfm_param_type_e	ptype;
 	union {
 		const char			*str;
 		uint64_t			ui64;
 		int64_t				i64;
 	} pval;
-} gpi_bfm_msg_param_t;
+} cocotb_bfm_msg_param_t;
 
 /**
  * Send a message to a specific BFM
  */
-void gpi_bfm_send_msg(
-		uint32_t			bfm_id,
-		uint32_t			msg_id,
-		uint32_t			paramc,
-		gpi_bfm_msg_param_t	*paramv);
+void cocotb_bfm_send_msg(
+		uint32_t				bfm_id,
+		uint32_t				msg_id,
+		uint32_t				paramc,
+		cocotb_bfm_msg_param_t	*paramv);
 
 /**
  * Callback function type to receive
  * messages from BFMs
  */
 typedef void (*bfm_recv_msg_f)(
-		uint32_t 			bfm_id,
-		uint32_t 			msg_id,
-		uint32_t			paramc,
-		gpi_bfm_msg_param_t	*paramv);
+		uint32_t 				bfm_id,
+		uint32_t 				msg_id,
+		uint32_t				paramc,
+		cocotb_bfm_msg_param_t	*paramv);
 
-void gpi_bfm_set_recv_msg_f(
+void cocotb_bfm_set_recv_msg_f(
 		bfm_recv_msg_f		recv_msg_f);
 
 #ifdef __cplusplus

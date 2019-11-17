@@ -1,4 +1,5 @@
 #include "GpiBfm.h"
+#include <stdio.h>
 
 GpiBfm::GpiBfm(
 		const std::string		&type_name,
@@ -30,6 +31,14 @@ int GpiBfm::add_bfm(GpiBfm *bfm) {
 	return ret;
 }
 
+void GpiBfm::send_msg(GpiBfmMsg *msg) {
+	m_msg_queue.push_back(msg);
+	fprintf(stdout, "GpiBfm::send_msg notify_f=%p\n", m_notify_f);
+	if (m_notify_f) {
+		m_notify_f(m_notify_data);
+	}
+}
+
 int GpiBfm::claim_msg() {
 	if (m_active_msg) {
 		delete m_active_msg;
@@ -45,5 +54,5 @@ int GpiBfm::claim_msg() {
 }
 
 std::vector<GpiBfm *> GpiBfm::m_bfm_l;
-bfm_recv_msg_f *GpiBfm::m_recv_msg_f = 0;
+bfm_recv_msg_f GpiBfm::m_recv_msg_f = 0;
 

@@ -26,7 +26,7 @@ public:
 	GpiBfmMsg(
 			uint32_t 				id,
 			int32_t					paramc=-1,
-			gpi_bfm_msg_param_t		*paramv=0);
+			cocotb_bfm_msg_param_t	*paramv=0);
 
 	virtual ~GpiBfmMsg();
 
@@ -40,9 +40,9 @@ public:
 
 	uint32_t num_params() const { return m_param_l.size(); }
 
-	const gpi_bfm_msg_param_t *get_param();
+	const cocotb_bfm_msg_param_t *get_param();
 
-	const gpi_bfm_msg_param_t *get_param(uint32_t idx) const;
+	const cocotb_bfm_msg_param_t *get_param(uint32_t idx) const;
 
 	uint64_t get_param_ui();
 
@@ -54,7 +54,7 @@ protected:
 
 private:
 	uint32_t								m_id;
-	std::vector<gpi_bfm_msg_param_t>		m_param_l;
+	std::vector<cocotb_bfm_msg_param_t>		m_param_l;
 	std::vector<std::string>				m_str_l;
 	uint32_t								m_idx;
 

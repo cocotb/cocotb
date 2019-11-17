@@ -33,11 +33,13 @@ public:
 
 	const std::string &get_clsname() const { return m_clsname; }
 
+	void send_msg(GpiBfmMsg *msg);
+
 	int claim_msg();
 
 	GpiBfmMsg *active_msg() const { return m_active_msg; }
 
-	static void set_recv_msg_f(bfm_recv_msg_f *f) { m_recv_msg_f = f; }
+	static void set_recv_msg_f(bfm_recv_msg_f f) { m_recv_msg_f = f; }
 
 protected:
 
@@ -50,7 +52,7 @@ private:
 	std::vector<GpiBfmMsg *>		m_msg_queue;
 	GpiBfmMsg						*m_active_msg;
 
-	static bfm_recv_msg_f			*m_recv_msg_f;
+	static bfm_recv_msg_f			m_recv_msg_f;
 	static std::vector<GpiBfm *>	m_bfm_l;
 
 

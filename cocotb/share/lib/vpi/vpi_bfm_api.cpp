@@ -4,6 +4,14 @@
 #include <stdio.h>
 #include <string>
 
+/**
+ * cocotb_bfm_notify()
+ *
+ * Callback function called by the BFM to notify that
+ * there is a message to be received. In the VPI
+ * implementation, this callback notifies the event
+ * that the BFM is waiting on.
+ */
 static void cocotb_bfm_notify(void *notify_ev) {
 	s_vpi_value val;
 
@@ -14,6 +22,12 @@ static void cocotb_bfm_notify(void *notify_ev) {
 	vpi_put_value((vpiHandle)notify_ev, &val, 0, vpiNoDelay);
 }
 
+/**
+ * cocotb_bfm_register_tf()
+ *
+ * Implementation for the $cocotb_bfm_register system function.
+ * Registers a new BFM with the system
+ */
 static int cocotb_bfm_register_tf(char *user_data) {
 	// Obtain arguments
 	// - type_name -- passed in
@@ -69,8 +83,20 @@ static int cocotb_bfm_register_tf(char *user_data) {
 
 static int cocotb_bfm_claim_msg_tf(char *user_data) {
 	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
+	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
+	vpiHandle arg;
 	s_vpi_value val;
-	int msg_id = -1;
+	int bfm_id, msg_id = -1;
+
+	// Get the BFM ID
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	bfm_id = val.value.integer;
+
+	vpi_free_object(arg_it);
+
+	msg_id = cocotb_bfm_claim_msg(bfm_id);
 
 	// Set return value
 	val.format = vpiIntVal;
@@ -79,6 +105,32 @@ static int cocotb_bfm_claim_msg_tf(char *user_data) {
 
 	return 0;
 }
+
+static int cocotb_bfm_get_param_i32_tf(char *user_data) {
+	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
+	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
+	vpiHandle arg;
+	s_vpi_value val;
+	int bfm_id, msg_id = -1;
+
+	// Get the BFM ID
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	bfm_id = val.value.integer;
+
+	vpi_free_object(arg_it);
+
+	msg_id = cocotb_bfm_claim_msg(bfm_id);
+
+	// Set return value
+	val.format = vpiIntVal;
+	val.value.integer = msg_id;
+	vpi_put_value(systf_h, &val, 0, vpiNoDelay);
+
+	return 0;
+}
+
 
 void register_bfm_tf(void) {
 	s_vpi_systf_data tf_data;
@@ -103,6 +155,13 @@ void register_bfm_tf(void) {
 	vpi_register_systf(&tf_data);
 
 	// cocotb_bfm_get_param_i32
+	tf_data.type = vpiSysFunc;
+	tf_data.tfname = "$cocotb_bfm_get_param_i32";
+	tf_data.calltf = &cocotb_bfm_get_param_i32_tf;
+	tf_data.compiletf = 0;
+	tf_data.sizetf = 0;
+	tf_data.user_data = 0;
+	vpi_register_systf(&tf_data);
 
 	// cocotb_bfm_get_param_ui32
 
@@ -110,4 +169,9 @@ void register_bfm_tf(void) {
 
 	// cocotb_bfm_get_param_ui64
 
+	// cocotb_bfm_begin_msg
+	// cocotb_bfm_add_ui_param
+	// cocotb_bfm_add_si_param
+	// cocotb_bfm_add_str_param
+	// cocotb_bfm_end_msg
 }
