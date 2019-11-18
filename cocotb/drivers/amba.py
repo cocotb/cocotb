@@ -51,8 +51,8 @@ class AXI4LiteMaster(BusDriver):
                 "ARVALID", "ARADDR", "ARREADY",        # Read address channel
                 "RVALID", "RREADY", "RRESP", "RDATA"]  # Read data channel
 
-    def __init__(self, entity, name, clock):
-        BusDriver.__init__(self, entity, name, clock)
+    def __init__(self, entity, name, clock, **kwargs):
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
 
         # Drive some sensible defaults (setimmediatevalue to avoid x asserts)
         self.bus.AWVALID.setimmediatevalue(0)
@@ -237,9 +237,9 @@ class AXI4Slave(BusDriver):
     ]
 
     def __init__(self, entity, name, clock, memory, callback=None, event=None,
-                 big_endian=False):
+                 big_endian=False, **kwargs):
 
-        BusDriver.__init__(self, entity, name, clock)
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.clock = clock
 
         self.big_endian = big_endian
