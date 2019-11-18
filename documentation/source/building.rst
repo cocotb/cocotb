@@ -52,10 +52,10 @@ Make Variables
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
 
     ``COCOTB_HDL_TIMESTEP``
-      The default timestep that should be assumed for simulation when not specified by modules in the design. If this isn't specified then it is assumed to be 1ns.
+      The default timestep that should be assumed for simulation when not specified by modules in the design. If this isn't specified then it is assumed to be ``1ns``. Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
 
     ``COCOTB_HDL_TIMEPRECISION``
-      The default time precision that should be assumed for simulation when not specified by modules in the design. If this isn't specified then it is assumed to be 1ps.
+      The default time precision that should be assumed for simulation when not specified by modules in the design. If this isn't specified then it is assumed to be ``1ps``. Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
 
     ``CUSTOM_COMPILE_DEPS``
       Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :term:`VERILOG_SOURCES` or :term:`VHDL_SOURCES`.
