@@ -1069,8 +1069,17 @@ static void bfm_recv_msg(
 
     param_l = PyList_New(paramc);
     for (i=0; i<paramc; i++) {
-//    	switch (paramv[i].ptype) {
-//    	}
+    	switch (paramv[i].ptype) {
+    	case GpiBfmParamType_Ui: {
+    		PyList_SetItem(param_l, i, PyLong_FromUnsignedLongLong(paramv[i].pval.ui64));
+    	} break;
+    	case GpiBfmParamType_Si: {
+    		PyList_SetItem(param_l, i, PyLong_FromLongLong(paramv[i].pval.ui64));
+    	} break;
+    	case GpiBfmParamType_Str: {
+    		PyList_SetItem(param_l, i, PyUnicode_FromString(paramv[i].pval.str));
+    	}
+    	}
     }
 
 	PyObject_CallFunction(bfm_call_method, "iiO", bfm_id, msg_id, param_l);

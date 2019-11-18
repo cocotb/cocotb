@@ -1,19 +1,46 @@
+###############################################################################
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# Copyright (c) 2019 Matthew Ballance
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
 
 import os
 import importlib
 from cocotb.decorators import bfm_param_int_t
+import argparse
 
-if "COCOTB_SIM" in os.environ:
-    import simulator
-    
 import_info_l = []
 export_info_l = []
 
-def register_bfm_type(T):
+def register_bfm_type(T, hdl):
     global import_info_l
     global export_info_l
-    print("register_bfm_type: " + str(T))
-    type_info = BfmTypeInfo(import_info_l.copy(), export_info_l.copy())
+    
+    type_info = BfmTypeInfo(T, hdl, import_info_l.copy(), export_info_l.copy())
     BfmMgr.inst().add_type_info(T, type_info)
     import_info_l = []
     export_info_l = []
@@ -27,14 +54,27 @@ def register_bfm_export_info(info):
     global export_info_l
     info.id = len(export_info_l)
     export_info_l.append(info)
+    
+def bfm_hdl_path(py_file, template):
+    return os.path.join(
+        os.path.dirname(os.path.abspath(py_file)),
+        template)
 
 class BfmMethodParamInfo():
+    '''
+    Information about a single BFM-method parameter
+    '''
     
     def __init__(self, pname, ptype):
         self.pname = pname
         self.ptype = ptype
 
 class BfmMethodInfo():
+    '''
+    Information about a single BFM method
+    - Method type
+    - User-specified parameter signature
+    '''
     
     def __init__(self, T, signature):
         fullname = T.__qualname__
@@ -60,29 +100,41 @@ class BfmMethodInfo():
         for i in range(len(args)):
             a = args[i]
             t = signature[i]
-            print("Argument: " + a + "=" + str(t))
             self.signature.append(BfmMethodParamInfo(a, t))
-            if isinstance(t, bfm_param_int_t):
-                if t.s:
-                    self.type_info.append(simulator.BFM_SI_PARAM)
-                else:
-                    self.type_info.append(simulator.BFM_UI_PARAM)
+            try:
+                import simulator
+                if isinstance(t, bfm_param_int_t):
+                    if t.s:
+                        self.type_info.append(simulator.BFM_SI_PARAM)
+                    else:
+                        self.type_info.append(simulator.BFM_UI_PARAM)
+            except Exception:
+                # When we're not running in simulation, don't 
+                # worry about being able to access constants from simulation
+                self.type_info.append(None)
+                pass
 
 
 class BfmTypeInfo():
     
-    def __init__(self, import_info, export_info):
+    def __init__(self, T, hdl, import_info, export_info):
+        self.T = T
+        self.hdl = hdl
         self.import_info = import_info
         self.export_info = export_info
 
 class BfmInfo():
     
-    def __init__(self, id, type_info):
+    def __init__(self, bfm, id, type_info):
+        self.bfm = bfm
         self.id = id
         self.type_info = type_info
         
     def call_method(self, method_id, params):
-        self.type_info.export_import[method_id].T(*params)
+        print("--> call_method " + str(method_id))
+        self.type_info.export_info[method_id].T(
+            self.bfm, *params)
+        print("<-- call_method " + str(method_id))
 
 class BfmMgr():
     
@@ -94,6 +146,7 @@ class BfmMgr():
         pass
     
     def add_type_info(self, T, type_info):
+        print("add_type_info: " + str(T) + " self=" + str(self))
         self.bfm_type_info_m[T] = type_info
     
     @staticmethod
@@ -108,6 +161,7 @@ class BfmMgr():
         return BfmMgr.m_inst
    
     def load_bfms(self):
+        import simulator
         n_bfms = simulator.bfm_get_count()
         print("n_bfms: " + str(n_bfms))
         for i in range(n_bfms):
@@ -130,9 +184,9 @@ class BfmMgr():
             bfmcls = getattr(pkg, clsleaf)
             
             type_info = self.bfm_type_info_m[bfmcls]
-            bfm_info = BfmInfo(len(self.bfm_l), type_info)
             
             bfm = bfmcls()
+            bfm_info = BfmInfo(bfm, len(self.bfm_l), type_info)
             # Add 
             setattr(bfm, "bfm_info", bfm_info)
             
@@ -140,6 +194,7 @@ class BfmMgr():
     
     @staticmethod    
     def init():
+        import simulator
         simulator.bfm_set_call_method(BfmMgr.call)
         BfmMgr.inst().load_bfms()
         
@@ -149,10 +204,12 @@ class BfmMgr():
             method_id,
             params):
         print("bfms::call " + str(len(params)))
-#         inst = BfmMgr.inst()
-#         bfm = inst.bfm_l[bfm_id]
-#         
-#         if not hasattr(bfm, "bfm_info"):
-#             raise Exception("BFM object does not contain 'bfm_info' field")
-# 
-#         bfm.bfm_info.call_method(method_id, params)
+        inst = BfmMgr.inst()
+        bfm = inst.bfm_l[bfm_id]
+         
+        if not hasattr(bfm, "bfm_info"):
+            raise Exception("BFM object does not contain 'bfm_info' field")
+ 
+        bfm.bfm_info.call_method(method_id, params)
+
+    

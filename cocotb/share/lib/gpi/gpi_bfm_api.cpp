@@ -1,6 +1,7 @@
 /****************************************************************************
  * gpi_bfm_api.cpp
  ****************************************************************************/
+#include <stdio.h>
 #include "gpi_bfm_api.h"
 #include "GpiBfm.h"
 
@@ -82,6 +83,23 @@ void cocotb_bfm_begin_msg(uint32_t bfm_id, uint32_t msg_id) {
 	GpiBfm *bfm = GpiBfm::get_bfms().at(bfm_id);
 
 	bfm->begin_inbound_msg(msg_id);
+}
+
+void cocotb_bfm_add_ui_param(uint32_t bfm_id, uint64_t pval) {
+	fprintf(stdout, "--> add_ui_param %d\n", bfm_id);
+	fflush(stdout);
+	GpiBfm *bfm = GpiBfm::get_bfms().at(bfm_id);
+	GpiBfmMsg *msg = bfm->active_inbound_msg();
+
+	fprintf(stdout, "  msg=%p\n", msg);
+
+	if (msg) {
+		msg->add_param_ui(pval);
+	} else {
+		fprintf(stdout, "Error: attempting to add an unsigned parameter to a NULL message\n");
+	}
+	fprintf(stdout, "<-- add_ui_param\n");
+	fflush(stdout);
 }
 
 void cocotb_bfm_end_msg(uint32_t bfm_id) {

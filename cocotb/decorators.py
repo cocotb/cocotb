@@ -462,9 +462,16 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
         return RunningTest(self._func(*args, **kwargs), self)
 
 @public
-def bfm(T):
-    cocotb.bfms.register_bfm_type(T)
-    return T
+class bfm():
+    '''
+    Decorator to identify a BFM type. 
+    '''
+    def __init__(self, hdl):
+        self.hdl = hdl
+    
+    def __call__(self, T):
+        cocotb.bfms.register_bfm_type(T, self.hdl)
+        return T
 
 @public
 class bfm_export():
@@ -473,7 +480,7 @@ class bfm_export():
         self.signature = args
     
     def __call__(self, m):
-        cocotb.bfms.register_bfm_import_info(
+        cocotb.bfms.register_bfm_export_info(
             cocotb.bfms.BfmMethodInfo(m, self.signature))
         return m
 
@@ -488,7 +495,7 @@ class bfm_import():
         
     def __call__(self, m):
         info = cocotb.bfms.BfmMethodInfo(m, self.signature)
-        cocotb.bfms.register_bfm_export_info(info)
+        cocotb.bfms.register_bfm_import_info(info)
         
         def import_taskw(self, *args):
             print("import_taskw: " + str(self))
@@ -534,14 +541,9 @@ class bfm_param_int_t():
         
         return ret
 
-class bfm_int32_t(bfm_param_int_t):
-    
-    def __init__(self):
-        super().__init__(32, True)
-        
-class bfm_uint32_t(bfm_param_int_t):
-    
-    def __init__(self):
-        super().__init__(32, False)
+bfm_int32_t = bfm_param_int_t(32, True)
+bfm_uint32_t = bfm_param_int_t(32, False)
+
+bfm_vlog = "verilog"
         
         

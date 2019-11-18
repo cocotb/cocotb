@@ -46,7 +46,8 @@ from cocotb.regression import RegressionManager
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
 from cocotb.decorators import bfm, bfm_import, bfm_export
-from cocotb.decorators import bfm_uint32_t, bfm_int32_t
+from cocotb.decorators import bfm_uint32_t, bfm_int32_t, bfm_vlog
+from cocotb.bfms import bfm_hdl_path
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference

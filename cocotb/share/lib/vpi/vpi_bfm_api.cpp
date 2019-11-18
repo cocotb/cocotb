@@ -30,7 +30,6 @@ static void cocotb_bfm_notify(void *notify_ev) {
  */
 static int cocotb_bfm_register_tf(char *user_data) {
 	// Obtain arguments
-	// - type_name -- passed in
 	// - cls_name  -- passed in
 	// - notify_ev -- passed in
 	// - inst_name -- from call scope
@@ -42,12 +41,6 @@ static int cocotb_bfm_register_tf(char *user_data) {
 	s_vpi_value val;
 	vpiHandle arg;
 	int id;
-
-	// Get the type name
-	arg = vpi_scan(arg_it);
-	val.format = vpiStringVal;
-	vpi_get_value(arg, &val);
-	type_name = val.value.str;
 
 	// Get the instance name from the context
 	inst_name = vpi_get_str(vpiFullName, scope_h);
@@ -66,7 +59,7 @@ static int cocotb_bfm_register_tf(char *user_data) {
 	(void)id;
 
 	id = cocotb_bfm_register(
-			type_name.c_str(),
+			"XXXX",
 			inst_name.c_str(),
 			cls_name.c_str(),
 			&cocotb_bfm_notify,
@@ -159,6 +152,33 @@ static int cocotb_bfm_begin_msg_tf(char *user_data) {
 	return 0;
 }
 
+static int cocotb_bfm_add_ui_param_tf(char *user_data) {
+	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
+	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
+	vpiHandle arg;
+	s_vpi_value val;
+	int bfm_id;
+	uint64_t pval = 0;
+
+	// Get the BFM ID
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	bfm_id = val.value.integer;
+
+	// Get the parameter value
+//	arg = vpi_scan(arg_it);
+//	val.format = vpiIntVal;
+//	vpi_get_value(arg, &val);
+//	msg_id = val.value.integer;
+
+	vpi_free_object(arg_it);
+
+	cocotb_bfm_add_ui_param(bfm_id, pval);
+
+	return 0;
+}
+
 static int cocotb_bfm_end_msg_tf(char *user_data) {
 	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
 	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
@@ -227,6 +247,13 @@ void register_bfm_tf(void) {
 	vpi_register_systf(&tf_data);
 
 	// cocotb_bfm_add_ui_param
+	tf_data.type = vpiSysTask;
+	tf_data.tfname = "$cocotb_bfm_add_ui_param";
+	tf_data.calltf = &cocotb_bfm_add_ui_param_tf;
+	tf_data.compiletf = 0;
+	tf_data.sizetf = 0;
+	tf_data.user_data = 0;
+	vpi_register_systf(&tf_data);
 	// cocotb_bfm_add_si_param
 	// cocotb_bfm_add_str_param
 
