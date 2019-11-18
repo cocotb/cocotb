@@ -55,9 +55,9 @@ class AvalonST(BusMonitor):
 
     _default_config = {"firstSymbolInHighOrderBits": True}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, entity, name, clock, **kwargs):
         config = kwargs.pop('config', {})
-        BusMonitor.__init__(self, *args, **kwargs)
+        BusMonitor.__init__(self, entity, name, clock, **kwargs)
 
         self.config = self._default_config.copy()
 
@@ -109,10 +109,10 @@ class AvalonSTPkts(BusMonitor):
         "invalidTimeout"                : 0,
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, entity, name, clock, **kwargs):
         config = kwargs.pop('config', {})
         report_channel = kwargs.pop('report_channel', False)
-        BusMonitor.__init__(self, *args, **kwargs)
+        BusMonitor.__init__(self, entity, name , clock, **kwargs)
 
         self.config = self._default_config.copy()
         self.report_channel = report_channel
@@ -243,10 +243,10 @@ class AvalonSTPktsWithChannel(AvalonSTPkts):
     This class is deprecated. Use AvalonSTPkts(..., report_channel=True, ...)
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, entity, name, clock, **kwargs):
         warnings.warn(
             "Use of AvalonSTPktsWithChannel is deprecated\n"
             "\tUse AvalonSTPkts(..., report_channel=True, ...)",
             DeprecationWarning, stacklevel=2
         )
-        AvalonSTPkts.__init__(self, *args, report_channel=True, **kwargs)
+        AvalonSTPkts.__init__(self, entity, name, clock, report_channel=True, **kwargs)
