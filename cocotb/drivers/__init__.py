@@ -37,7 +37,6 @@ from cocotb.triggers import (Event, RisingEdge, ReadOnly, NextTimeStep,
                              Edge)
 from cocotb.bus import Bus
 from cocotb.log import SimLog
-from cocotb.utils import reject_remaining_kwargs
 
 
 class BitDriver(object):
@@ -215,32 +214,30 @@ class BusDriver(Driver):
         * a name
         * an entity
 
-        Args:
-            entity (SimHandle): A handle to the simulator entity.
-            name (str or None): Name of this bus. ``None`` for a nameless bus, e.g.
-                bus-signals in an interface or a ``modport``.
-                (untested on ``struct``/``record``, but could work here as well).
-            clock (SimHandle): A handle to the clock associated with this bus.
-            array_idx (int or None, optional): Optional index when signal is an array.
-            bus_separator (str, optional): Character(s) to use as separator between bus
-                name and signal name. Defaults to '_'.
+    Args:
+        entity (SimHandle): A handle to the simulator entity.
+        name (str or None): Name of this bus. ``None`` for a nameless bus, e.g.
+            bus-signals in an interface or a ``modport``.
+            (untested on ``struct``/``record``, but could work here as well).
+        clock (SimHandle): A handle to the clock associated with this bus.
+        **kwargs (dict): Keyword arguments forwarded to :class:`cocotb.Bus`,
+            see docs for that class for more information.
 
     """
     
     _optional_signals = []
 
     def __init__(self, entity, name, clock, **kwargs):
-        # emulate keyword-only arguments in python 2
-        index = kwargs.pop("array_idx", None)
-        bus_separator = kwargs.pop("bus_separator", "_")
-        reject_remaining_kwargs('__init__', kwargs)
+        index = kwargs.get("array_idx", None)
 
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         Driver.__init__(self)
         self.entity = entity
         self.clock = clock
-        self.bus = Bus(self.entity, name, self._signals,
-                       self._optional_signals, bus_separator=bus_separator, array_idx=index)
+        self.bus = Bus(
+            self.entity, name, self._signals, optional_signals=self._optional_signals,
+            **kwargs
+        )
 
         # Give this instance a unique name
         self.name = name if index is None else "%s_%d" % (name, index)
