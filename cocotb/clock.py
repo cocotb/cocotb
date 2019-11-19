@@ -48,7 +48,7 @@ class BaseClock(object):
 
 
 class Clock(BaseClock):
-    """Simple 50:50 duty cycle clock driver.
+    r"""Simple 50:50 duty cycle clock driver.
 
     Instances of this class should call its :meth:`start` method and :func:`fork` the
     result.  This will create a clocking thread that drives the signal at the
