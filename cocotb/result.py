@@ -28,6 +28,7 @@
 # TODO: Could use cStringIO?
 import traceback
 import sys
+import warnings
 # from StringIO import StringIO
 from io import StringIO, BytesIO
 
@@ -36,12 +37,24 @@ from io import StringIO, BytesIO
 def raise_error(obj, msg):
     """Creates a :exc:`TestError` exception and raises it after printing a traceback.
 
+    .. deprecated:: 1.3
+        Use ``raise TestError(msg)`` instead of this function. A stacktrace will
+        be printed by cocotb automatically if the exception is unhandled.
+
     Args:
         obj: Object with a log method.
         msg (str): The log message.
     """
+    warnings.warn(
+        "``raise_error`` is deprecated - use ``raise TestError(msg)`` (or any "
+        "other exception type) instead",
+        DeprecationWarning, stacklevel=2)
+    _raise_error(obj, msg)
+
+
+def _raise_error(obj, msg):
     exc_info = sys.exc_info()
-    # 2.6 cannot use named access
+    # Python 2.6 cannot use named access
     if sys.version_info[0] >= 3:
         buff = StringIO()
         traceback.print_exception(*exc_info, file=buff)
@@ -59,12 +72,20 @@ def create_error(obj, msg):
     """Like :func:`raise_error`, but return the exception rather than raise it, 
     simply to avoid too many levels of nested `try/except` blocks.
 
+    .. deprecated:: 1.3
+        Use ``TestError(msg)`` directly instead of this function.
+
     Args:
         obj: Object with a log method.
         msg (str): The log message.
     """
+    warnings.warn(
+        "``create_error`` is deprecated - use ``TestError(msg)`` (or any other "
+        "exception type) instead",
+        DeprecationWarning, stacklevel=2)
     try:
-        raise_error(obj, msg)
+        # use the private version to avoid multiple warnings
+        _raise_error(obj, msg)
     except TestError as error:
         return error
     return TestError("Creating error traceback failed")
@@ -95,7 +116,7 @@ class TestError(TestComplete):
     pass
 
 
-class TestFailure(TestComplete):
+class TestFailure(TestComplete, AssertionError):
     """Exception showing that test was completed with severity Failure."""
     pass
 

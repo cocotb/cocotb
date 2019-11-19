@@ -13,7 +13,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.std_logic_unsigned.all;
 
 library dec_viterbi;
 use dec_viterbi.pkg_helper.all;
@@ -80,9 +79,9 @@ begin
 	if rising_edge(clk) then
 		if en = '1' then
 			if wen =  '1' then
-				sp_ram(conv_integer(a)) <= d;
+				sp_ram(to_integer(unsigned(a))) <= d;
 			else
-				q <= sp_ram(conv_integer(a));
+				q <= sp_ram(to_integer(unsigned(a)));
 			end if;
 		end if;
 	end if;

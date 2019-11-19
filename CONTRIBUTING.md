@@ -1,5 +1,5 @@
-Cococtb Contribution Guidelines
-===============================
+Cocotb Contribution Guidelines
+==============================
 
 Welcome to the cocotb development!
 We are an inclusive community with the common goal of improving the cocotb, a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
@@ -131,6 +131,7 @@ Most maintainers are experts in part of the cocotb codebase, and are primarily r
 - Stuart Hodgson (@stuarthodgson).
   Founder of cocotb.
 - Philipp Wagner (@imphil)
+- Eric Wieser (@eric-wieser)
 
 Code of Conduct
 ---------------

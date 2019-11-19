@@ -50,55 +50,22 @@ Interacting with the Simulator
 
 .. autoclass:: cocotb.clock.Clock
 
+.. autofunction:: cocotb.fork
 
 Triggers
 --------
+See :ref:`simulator-triggers` for a list of sub-classes. Below are the internal
+classes used within ``cocotb``.
 
-Triggers are used to indicate when the scheduler should resume coroutine execution.
-Typically a coroutine will :keyword:`yield` a trigger or a list of triggers.
+.. currentmodule:: cocotb.triggers
 
-.. autoclass:: cocotb.triggers.Trigger
-
-Simulation Timing
-~~~~~~~~~~~~~~~~~
-
-.. autoclass:: cocotb.triggers.Timer
-
-.. autoclass:: cocotb.triggers.ReadOnly
-
-.. autoclass:: cocotb.triggers.NextTimeStep
-
-.. autoclass:: cocotb.triggers.ClockCycles
-
-Signal related
-~~~~~~~~~~~~~~
-
-.. autoclass:: cocotb.triggers.Edge
-
-.. autoclass:: cocotb.triggers.RisingEdge
-
-.. autoclass:: cocotb.triggers.FallingEdge
-
-
-Python Triggers
-~~~~~~~~~~~~~~~
-
-.. autoclass:: cocotb.triggers.Combine
+.. autoclass:: Trigger
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.Event
+.. autoclass:: GPITrigger
     :members:
     :member-order: bysource
-
-.. autoclass:: cocotb.triggers.Lock
-    :members:
-    :member-order: bysource
-
-.. autoclass:: cocotb.triggers.Join
-    :members:
-    :member-order: bysource
-
 
 Testbench Structure
 ===================
@@ -118,6 +85,12 @@ Driver
     :private-members:
 
 .. autoclass:: cocotb.drivers.BusDriver
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+    :private-members:
+
+.. autoclass:: cocotb.drivers.ValidatedBusDriver
     :members:
     :member-order: bysource
     :show-inheritance:
@@ -297,3 +270,35 @@ XGMII
     :members:
     :member-order: bysource
     :show-inheritance:
+
+Miscellaneous
+=============
+
+Signal Tracer for WaveDrom
+--------------------------
+
+.. automodule:: cocotb.wavedrom
+    :members:
+    :member-order: bysource
+    :synopsis: A signal tracer for WaveDrom.
+
+
+Developer-focused
+=================
+
+The Scheduler
+-------------
+
+.. note::
+    The scheduler object should generally not be interacted with directly - 
+    the only part of it that a user will need is encapsulated in :func:`~cocotb.fork`, 
+    everything else works behind the scenes.
+
+.. currentmodule:: cocotb.scheduler
+
+.. autodata:: cocotb.scheduler
+
+.. autoclass:: Scheduler
+    :members:
+    :member-order: bysource
+

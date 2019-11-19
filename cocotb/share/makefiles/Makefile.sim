@@ -38,6 +38,8 @@ export SIM_BUILD
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
 
+COCOTB_RESULTS_FILE ?= results.xml
+
 # Maintain backwards compatibility by supporting upper and lower case SIM variable
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
 
@@ -75,11 +77,11 @@ $(SIM_BUILD):
 
 # Regression rule uses Make dependencies to determine whether to run the simulation
 .PHONY: regression
-regression: results.xml
+regression: $(COCOTB_RESULTS_FILE)
 
 # Default sim rule will force a re-run of the simulation (though the cocotb library
 # and RTL compilation phases are still evaluated by makefile dependencies)
 .PHONY: sim
 sim:
-	-@rm -f results.xml
-	$(MAKE) results.xml
+	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(MAKE) $(COCOTB_RESULTS_FILE)

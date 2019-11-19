@@ -36,10 +36,7 @@ def _build_sig_attr_dict(signals):
     if isinstance(signals, dict):
         return signals
     else:
-        sig_to_attr = {}
-        for sig in signals:
-            sig_to_attr[sig] = sig
-        return sig_to_attr
+        return {sig: sig for sig in signals}
 
 
 class Bus(object):
@@ -52,13 +49,14 @@ class Bus(object):
     the default separator '_').
 
     TODO:
-        Support for struct/record ports where signals are member names.
+        Support for ``struct``/``record`` ports where signals are member names.
     """
     def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", array_idx=None):
-        """Args:
-            entity (SimHandle): SimHandle instance to the entity containing the bus.
+        """
+        Args:
+            entity (SimHandle): :any:`SimHandle` instance to the entity containing the bus.
             name (str): Name of the bus. ``None`` for nameless bus, e.g. bus-signals
-                in an interface or a modport (untested on struct/record, 
+                in an interface or a ``modport`` (untested on ``struct``/``record``,
                 but could work here as well).
             signals (list/dict): In the case of an obj (passed to drive/capture) that
                 has the same attribute names as the signal names of the bus,

@@ -33,8 +33,12 @@ VERILOG_SOURCES =   $(SRC_BASE)/verilog/baud_gen.v \
                     $(SRC_BASE)/verilog/uart_top.v \
                     $(SRC_BASE)/verilog/uart2bus_top.v
 
-VERILOG_SOURCES += $(SRC_BASE)/top/verilog_toplevel.v
+VERILOG_SOURCES += $(SRC_BASE)/top/verilog_toplevel.sv
 TOPLEVEL = verilog_toplevel
+
+ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+    SIM_ARGS += -v93
+endif
 
 include $(COCOTB)/makefiles/Makefile.inc
 include $(COCOTB)/makefiles/Makefile.sim

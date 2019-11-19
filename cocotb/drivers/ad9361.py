@@ -3,9 +3,7 @@
 # @author: msnook
 
 import cocotb
-from cocotb.triggers import Timer, RisingEdge, ReadOnly, Lock, Event
-from cocotb.bus import Bus
-from cocotb.result import ReturnValue
+from cocotb.triggers import Timer, RisingEdge, Event
 from cocotb.drivers import BusDriver
 from cocotb.binary import BinaryValue, BinaryRepresentation
 
@@ -202,7 +200,7 @@ class AD9361(BusDriver):
                 self.dut.rx_data_in_n <= ~q_bin_val[5:0]
 
     def ad9361_tx_to_rx_loopback(self):
-        """Create loopback from tx to rx.
+        """Create loopback from ``tx`` to ``rx``.
 
         Forks a coroutine doing the actual task.
         """

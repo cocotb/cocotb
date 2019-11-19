@@ -7,7 +7,7 @@ What is cocotb?
 
 **cocotb** is a *COroutine* based *COsimulation* *TestBench* environment for verifying VHDL/Verilog RTL using `Python <https://www.python.org>`_.
 
-cocotb is completely free, open source (under the `BSD License <https://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_(%22BSD_License_2.0%22,_%22Revised_BSD_License%22,_%22New_BSD_License%22,_or_%22Modified_BSD_License%22)>`_) and hosted on `GitHub <https://github.com/potentialventures/cocotb>`_.
+cocotb is completely free, open source (under the `BSD License <https://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_(%22BSD_License_2.0%22,_%22Revised_BSD_License%22,_%22New_BSD_License%22,_or_%22Modified_BSD_License%22)>`_) and hosted on `GitHub <https://github.com/cocotb/cocotb>`_.
 
 cocotb requires a simulator to simulate the RTL. Simulators that have been tested and known to work with cocotb:
 
@@ -18,13 +18,13 @@ Linux Platforms
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
 * `Synopsys <https://www.synopsys.com/>`_ VCS
 * `Cadence <https://www.cadence.com/>`_ Incisive
-* `Mentor <https://www.mentor.com/>`_ Modelsim (DE and SE)
+* `Mentor <https://www.mentor.com/>`_ ModelSim (DE and SE)
 
 Windows Platform
 
 * `Icarus Verilog <http://iverilog.icarus.com/>`_
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
-* `Mentor <https://www.mentor.com/>`_ Modelsim (DE and SE)
+* `Mentor <https://www.mentor.com/>`_ ModelSim (DE and SE)
 
 A (possibly older) version of cocotb can be used live in a web-browser using `EDA Playground <https://www.edaplayground.com>`_.
 
@@ -34,9 +34,9 @@ How is cocotb different?
 ========================
 
 
-cocotb encourages the same philosophy of design re-use and randomised testing as UVM, however is implemented in Python rather than SystemVerilog.
+cocotb encourages the same philosophy of design re-use and randomized testing as UVM, however is implemented in Python rather than SystemVerilog.
 
-In cocotb, VHDL/Verilog/SystemVerilog are only used for the synthesisable design.
+With cocotb, VHDL/Verilog/SystemVerilog are normally only used for the design itself, not the testbench.
 
 cocotb has built-in support for integrating with the `Jenkins <https://jenkins.io/>`_ continuous integration system.
 
@@ -75,11 +75,15 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
 Contributors
 ============
 
+.. spelling::
+   McGregor
+   Grimwood
+
 cocotb was developed by `Potential Ventures <https://potential.ventures>`_ with the support of
 `Solarflare Communications Ltd <https://www.solarflare.com/>`_
 and contributions from Gordon McGregor and Finn Grimwood
-(see `contributers <https://github.com/potentialventures/cocotb/graphs/contributors>`_ for the full list of contributions).
+(see `contributers <https://github.com/cocotb/cocotb/graphs/contributors>`_ for the full list of contributions).
 
-We also have a list of talks and papers, libraries and examples at our wiki page
-`Further Resources <https://github.com/potentialventures/cocotb/wiki/Further-Resources>`_.
+We also have a list of talks and papers, libraries and examples at our Wiki page
+`Further Resources <https://github.com/cocotb/cocotb/wiki/Further-Resources>`_.
 Feel free to add links to cocotb-related content that we are still missing!

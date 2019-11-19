@@ -150,12 +150,12 @@ int handle_gpi_callback(void *user_data)
 
     // If the return value is NULL a Python exception has occurred
     // The best thing to do here is shutdown as any subsequent
-    // calls will go back to python which is now in an unknown state
+    // calls will go back to Python which is now in an unknown state
     if (pValue == NULL)
     {
         fprintf(stderr, "ERROR: called callback function returned NULL\n");
         if (PyErr_Occurred()) {
-            fprintf(stderr, "Failed to execute callback due to python exception\n");
+            fprintf(stderr, "Failed to execute callback due to Python exception\n");
             PyErr_Print();
         } else {
             fprintf(stderr, "Failed to execute callback\n");
@@ -203,7 +203,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
 }
 
 
-// Register a callback for read only state of sim
+// Register a callback for read-only state of sim
 // First argument is the function to call
 // Remaining arguments are keyword arguments to be passed to the callback
 static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
@@ -219,14 +219,14 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
-        fprintf(stderr, "Attempt to register ReadOnly callback with!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register ReadOnly callback without enough arguments!\n");
         return NULL;
     }
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
-        fprintf(stderr, "Attempt to register ReadOnly without supplying a callback!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register ReadOnly without supplying a callback!\n");
         return NULL;
     }
     Py_INCREF(function);
@@ -242,7 +242,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -271,14 +271,14 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
-        fprintf(stderr, "Attempt to register ReadWrite callback with!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register ReadWrite callback without enough arguments!\n");
         return NULL;
     }
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
-        fprintf(stderr, "Attempt to register ReadWrite without supplying a callback!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register ReadWrite without supplying a callback!\n");
         return NULL;
     }
     Py_INCREF(function);
@@ -294,7 +294,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -323,14 +323,14 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
-        fprintf(stderr, "Attempt to register NextStep callback with!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register NextStep callback without enough arguments!\n");
         return NULL;
     }
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
-        fprintf(stderr, "Attempt to register NextStep without supplying a callback!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register NextStep without supplying a callback!\n");
         return NULL;
     }
     Py_INCREF(function);
@@ -346,7 +346,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -380,7 +380,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 2) {
-        fprintf(stderr, "Attempt to register timed callback without enough arguments!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register timed callback without enough arguments!\n");
         return NULL;
     }
 
@@ -391,7 +391,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     // Extract the callback function
     function = PyTuple_GetItem(args, 1);
     if (!PyCallable_Check(function)) {
-        fprintf(stderr, "Attempt to register timed callback without passing a callable callback!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register timed callback without passing a callable callback!\n");
         return NULL;
     }
     Py_INCREF(function);
@@ -407,7 +407,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     callback_data_p->_saved_thread_state = PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;
     callback_data_p->function = function;
@@ -443,7 +443,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 3) {
-        fprintf(stderr, "Attempt to register value change callback without enough arguments!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register value change callback without enough arguments!\n");
         return NULL;
     }
 
@@ -455,7 +455,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     // Extract the callback function
     function = PyTuple_GetItem(args, 1);
     if (!PyCallable_Check(function)) {
-        fprintf(stderr, "Attempt to register value change callback without passing a callable callback!\n");
+        PyErr_SetString(PyExc_TypeError, "Attempt to register value change callback without passing a callable callback!\n");
         return NULL;
     }
     Py_INCREF(function);
@@ -475,7 +475,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
         return PyErr_NoMemory();
     }
 
-    // Set up the user data (no more python API calls after this!)
+    // Set up the user data (no more Python API calls after this!)
     // Causes segfault?
     callback_data_p->_saved_thread_state = PyThreadState_Get();//PyThreadState_Get();
     callback_data_p->id_value = COCOTB_ACTIVE_ID;

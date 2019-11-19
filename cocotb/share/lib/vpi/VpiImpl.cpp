@@ -418,6 +418,8 @@ GpiObjHdl *VpiImpl::get_root_handle(const char* name)
     }
 
     for (root = vpi_scan(iterator); root != NULL; root = vpi_scan(iterator)) {
+        if (to_gpi_objtype(vpi_get(vpiType, root)) != GPI_MODULE)
+            continue;
 
         if (name == NULL || !strcmp(name, vpi_get_str(vpiFullName, root)))
             break;
@@ -489,7 +491,7 @@ GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
     return hdl;
 }
 
-GpiCbHdl *VpiImpl::register_readwrite_callback(void)
+GpiCbHdl *VpiImpl::register_readwrite_callback()
 {
     if (m_read_write.arm_callback())
         return NULL;
@@ -497,7 +499,7 @@ GpiCbHdl *VpiImpl::register_readwrite_callback(void)
     return &m_read_write;
 }
 
-GpiCbHdl *VpiImpl::register_readonly_callback(void)
+GpiCbHdl *VpiImpl::register_readonly_callback()
 {
     if (m_read_only.arm_callback())
         return NULL;
@@ -505,7 +507,7 @@ GpiCbHdl *VpiImpl::register_readonly_callback(void)
     return &m_read_only;
 }
 
-GpiCbHdl *VpiImpl::register_nexttime_callback(void)
+GpiCbHdl *VpiImpl::register_nexttime_callback()
 {
     if (m_next_phase.arm_callback())
         return NULL;
@@ -521,7 +523,7 @@ int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 
 // If the Python world wants things to shut down then unregister
 // the callback for end of sim
-void VpiImpl::sim_end(void)
+void VpiImpl::sim_end()
 {
     /* Some sims do not seem to be able to deregister the end of sim callback
      * so we need to make sure we have tracked this and not call the handler
@@ -570,7 +572,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 };
 
 
-static void register_embed(void)
+static void register_embed()
 {
     vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
@@ -578,13 +580,13 @@ static void register_embed(void)
 }
 
 
-static void register_initial_callback(void)
+static void register_initial_callback()
 {
     sim_init_cb = new VpiStartupCbHdl(vpi_table);
     sim_init_cb->arm_callback();
 }
 
-static void register_final_callback(void)
+static void register_final_callback()
 {
     sim_finish_cb = new VpiShutdownCbHdl(vpi_table);
     sim_finish_cb->arm_callback();
@@ -610,7 +612,7 @@ static int system_function_compiletf(char *userdata)
 
     // FIXME: HACK for some reason Icarus returns a vpiRealVal type for strings?
     if (vpiStringVal != tfarg_type && vpiRealVal != tfarg_type) {
-        vpi_printf("ERROR: $[info|warning|error|fata] argument wrong type: %d\n",
+        vpi_printf("ERROR: $[info|warning|error|fatal] argument wrong type: %d\n",
                     tfarg_type);
         vpi_free_object(arg_iterator);
         vpi_control(vpiFinish, 1);
@@ -659,7 +661,7 @@ static int system_function_overload(char *userdata)
     return 0;
 }
 
-static void register_system_functions(void)
+static void register_system_functions()
 {
     s_vpi_systf_data tfData = { vpiSysTask, vpiSysTask };
 
@@ -685,7 +687,7 @@ static void register_system_functions(void)
 
 }
 
-void (*vlog_startup_routines[])(void) = {
+void (*vlog_startup_routines[])() = {
     register_embed,
     register_system_functions,
     register_initial_callback,
@@ -695,8 +697,8 @@ void (*vlog_startup_routines[])(void) = {
 
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines symbol
-void vlog_startup_routines_bootstrap(void) {
-    void (*routine)(void);
+void vlog_startup_routines_bootstrap() {
+    void (*routine)();
     int i;
     routine = vlog_startup_routines[0];
     for (i = 0, routine = vlog_startup_routines[i];

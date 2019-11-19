@@ -40,7 +40,7 @@ MODULE = issue_253
 
 all: empty_top_level no_top_level notset_top_level
 
-results.xml:
+$(COCOTB_RESULTS_FILE):
 	@echo "Skipping"
 
 notset_top_level: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)

@@ -28,7 +28,7 @@
 
 ifneq ($(VERILOG_SOURCES),)
 
-results.xml:
+$(COCOTB_RESULTS_FILE):
 	@echo "Skipping simulation as Verilog is not supported on simulator=$(SIM)"
 clean::
 
@@ -60,11 +60,11 @@ GHDL_ARGS += $(EXTRA_ARGS)
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
 	cd $(SIM_BUILD) && \
 	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), \
-		$(CMD) -a $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(SOURCES_VAR:VHDL_SOURCES_%=%) $($(SOURCES_VAR)) && ) \
-	$(CMD) -a $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && \
-	$(CMD) -e $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL)
+		$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(SOURCES_VAR:VHDL_SOURCES_%=%) $($(SOURCES_VAR)) && ) \
+	$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && \
+	$(CMD) -m $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL)
 
-results.xml: analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+$(COCOTB_RESULTS_FILE): analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	cd $(SIM_BUILD); \
 	PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \

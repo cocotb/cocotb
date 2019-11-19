@@ -72,15 +72,15 @@ Register Map
 
 The endian swapper has a very simple register map:
 
-+-------------+-------------+------+--------+------------+
-| Byte Offset | Register    | Bits | Access | Description|
-+=============+=============+======+========+============+
-|0            | CONTROL     |  0   | R/W    | Enable     |
-|             |             +------+--------+------------+
-|             |             | 31:1 | N/A    | Reserved   |
-+-------------+-------------+------+--------+------------+
-|4            |PACKET_COUNT | 31:0 | RO     | Num Packets|
-+-------------+-------------+------+--------+------------+
++-------------+-------------+------+--------+------------------+
+| Byte Offset | Register    | Bits | Access | Description      |
++=============+=============+======+========+==================+
+|0            | CONTROL     |  0   | R/W    | Enable           |
+|             |             +------+--------+------------------+
+|             |             | 31:1 | N/A    | Reserved         |
++-------------+-------------+------+--------+------------------+
+|4            |PACKET_COUNT | 31:0 | RO     | Number of Packets|
++-------------+-------------+------+--------+------------------+
 
 
 HAL
@@ -143,7 +143,7 @@ These are then passed to the `IO Module`_:
     io_module.set_read_function(read)
 
 
-We can then initialise the HAL and call functions, using the :class:`cocotb.external`
+We can then initialize the HAL and call functions, using the :class:`cocotb.external`
 decorator to turn the normal function into a blocking coroutine that we can
 ``yield``:
 

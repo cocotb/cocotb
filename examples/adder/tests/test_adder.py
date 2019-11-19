@@ -9,14 +9,14 @@ import random
 @cocotb.test()
 def adder_basic_test(dut):
     """Test for 5 + 10"""
-    yield Timer(2)
+    yield Timer(2, units='ns')
     A = 5
     B = 10
 
     dut.A = A
     dut.B = B
 
-    yield Timer(2)
+    yield Timer(2, units='ns')
 
     if int(dut.X) != adder_model(A, B):
         raise TestFailure(
@@ -28,7 +28,7 @@ def adder_basic_test(dut):
 @cocotb.test()
 def adder_randomised_test(dut):
     """Test for adding 2 random numbers multiple times"""
-    yield Timer(2)
+    yield Timer(2, units='ns')
 
     for i in range(10):
         A = random.randint(0, 15)
@@ -37,7 +37,7 @@ def adder_randomised_test(dut):
         dut.A = A
         dut.B = B
 
-        yield Timer(2)
+        yield Timer(2, units='ns')
 
         if int(dut.X) != adder_model(A, B):
             raise TestFailure(

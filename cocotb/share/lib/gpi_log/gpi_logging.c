@@ -100,7 +100,7 @@ static char log_buff[LOG_SIZE];
  *
  * Makes one call to PyGILState_Ensure and one call to PyGILState_Release
  *
- * If the Python logging mechanism is not initialised, dumps to stderr.
+ * If the Python logging mechanism is not initialised, dumps to `stderr`.
  *
  */
 void gpi_log(const char *name, long level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
@@ -137,6 +137,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
             fprintf(stdout, " in %-31s ", funcname);
             fprintf(stdout, "%s", log_buff);
             fprintf(stdout, "\n");
+            fflush(stdout);
         }
         return;
     }
@@ -151,16 +152,27 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
 
     PyObject *check_args = PyTuple_New(1);
     PyTuple_SetItem(check_args, 0, PyLong_FromLong(level));
-    PyObject *retuple = PyObject_CallObject(pLogFilter, check_args);
 
-    if (retuple != Py_True) {
-        Py_DECREF(check_args);
+    PyObject *filter_ret = PyObject_CallObject(pLogFilter, check_args);
+    Py_DECREF(check_args);
+    if (filter_ret == NULL) {
+        PyErr_Print();
+        PyGILState_Release(gstate);
+        return;
+    }
+    int is_enabled = PyObject_IsTrue(filter_ret);
+    Py_DECREF(filter_ret);
+    if (is_enabled < 0) {
+        /* A python exception occured while converting `filter_ret` to bool */
+        PyErr_Print();
         PyGILState_Release(gstate);
         return;
     }
 
-    Py_DECREF(retuple);
-    Py_DECREF(check_args);
+    if (!is_enabled) {
+        PyGILState_Release(gstate);
+        return;
+    }
 
     va_start(ap, msg);
     n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
@@ -173,15 +185,14 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     PyTuple_SetItem(call_args, 3, PyUnicode_FromString(log_buff));   // Note: This function steals a reference.
     PyTuple_SetItem(call_args, 4, PyUnicode_FromString(funcname));
 
-    retuple = PyObject_CallObject(pLogHandler, call_args);
-
-    if (retuple != Py_True) {
+    PyObject *handler_ret = PyObject_CallObject(pLogHandler, call_args);
+    Py_DECREF(call_args);
+    if (handler_ret == NULL){
+        PyErr_Print();
         PyGILState_Release(gstate);
         return;
     }
-
-    Py_DECREF(call_args);
-    Py_DECREF(retuple);
+    Py_DECREF(handler_ret);
 
     PyGILState_Release(gstate);
 }

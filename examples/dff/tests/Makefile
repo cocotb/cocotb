@@ -15,13 +15,17 @@ else
   $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
-TOPLEVEL=dff
-MODULE=$(TOPLEVEL)_cocotb
+TOPLEVEL = dff
+MODULE := $(TOPLEVEL)_cocotb
 
 CUSTOM_SIM_DEPS=$(CWD)/Makefile
 
 ifeq ($(SIM),questa)
-SIM_ARGS=-t 1ps
+    SIM_ARGS=-t 1ps
+endif
+
+ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+    SIM_ARGS += -v93
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.inc
