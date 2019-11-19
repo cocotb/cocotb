@@ -57,15 +57,6 @@ CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
 include $(COCOTB_SHARE_DIR)/lib/Makefile
 include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 
-ifeq ($(COCOTB_INSTALL_METHOD),srctree)
-  # cocotb is used from the source tree
-  include $(COCOTB_SHARE_DIR)/../../version
-else
-  # cocotb has been installed from a Python package
-  VERSION=$(shell $(PYTHON_BIN) -c 'import pkg_resources; print(pkg_resources.get_distribution("cocotb").version)')
-endif
-export VERSION
-
 # Append directory containing the cocotb Python package to PYTHONPATH
 # XXX: This is only needed if cocotb is not installed into the default
 # Python search path.
