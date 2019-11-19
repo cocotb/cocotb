@@ -3,7 +3,6 @@ Sphinx>=2.1
 sphinx-rtd-theme
 cairosvg
 breathe
-sphinxcontrib-trio
 sphinxcontrib-makedomain
 sphinxcontrib-spelling
 pyenchant
