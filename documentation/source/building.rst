@@ -26,43 +26,56 @@ Make Variables
 --------------
 
 .. make:var:: GUI
+
       Set this to 1 to enable the GUI mode in the simulator (if supported).
 
 .. make:var:: SIM
+
       Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/makefile.$(SIM)`
 
 .. make:var:: WAVES
+
       Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators. 
       To get wave traces in Icarus Verilog see :ref:`Simulator Support`.
 
 .. make:var:: VERILOG_SOURCES
+
       A list of the Verilog source files to include.
 
 .. make:var:: VHDL_SOURCES
+
       A list of the VHDL source files to include.
 
 .. make:var:: VHDL_SOURCES_lib
+
       A list of the VHDL source files to include in the VHDL library *lib* (currently GHDL only).
 
 .. make:var:: COMPILE_ARGS
+
       Any arguments or flags to pass to the compile stage of the simulation.
 
 .. make:var:: SIM_ARGS
+
       Any arguments or flags to pass to the execution of the compiled simulation.
 
 .. make:var:: EXTRA_ARGS
+
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
 
 .. make:var:: CUSTOM_COMPILE_DEPS
+
       Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :term:`VERILOG_SOURCES` or :term:`VHDL_SOURCES`.
 
 .. make:var:: CUSTOM_SIM_DEPS
+
       Use to add additional dependencies to the simulation target.
 
 .. make:var:: COCOTB_NVC_TRACE
+
       Set this to 1 to enable display of VHPI traces when using the NVC VHDL simulator.
 
 .. make:var:: SIM_BUILD
+
       Use to define a scratch directory for use by the simulator. The path is relative to the Makefile location.
       If not provided, the default scratch directory is :file:`sim_build`.
 
