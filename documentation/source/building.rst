@@ -64,7 +64,7 @@ Make Variables
 
 .. make:var:: CUSTOM_COMPILE_DEPS
 
-      Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :term:`VERILOG_SOURCES` or :term:`VHDL_SOURCES`.
+      Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :make:var:`VERILOG_SOURCES` or :make:var:`VHDL_SOURCES`.
 
 .. make:var:: CUSTOM_SIM_DEPS
 
