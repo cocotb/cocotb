@@ -52,4 +52,7 @@ endif
 PYLIBS:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; import os; print("-l"+os.path.splitext(sysconfig.get_config_var("LDLIBRARY"))[0][3:])')
 
 PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())')
-PYTHON_DYN_LIB:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY"))')
+
+# Some Python installations can return a static Python library (libpython*.a) even if a shared Python library (libpython*.so) is
+# also present in a Python installation library path. The Python replace function is harmless for a Python dynamic installation
+PYTHON_DYN_LIB:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LDLIBRARY").replace(".a", ".so"))')

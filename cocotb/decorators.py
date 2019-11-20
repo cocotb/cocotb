@@ -30,7 +30,6 @@ import sys
 import time
 import logging
 import functools
-import threading
 import inspect
 import textwrap
 import os
@@ -138,14 +137,17 @@ class RunningCoroutine(object):
         return str(self.__name__)
 
     def _advance(self, outcome):
-        """
-        Advance to the next yield in this coroutine
+        """Advance to the next yield in this coroutine.
 
-        :param outcome: The `outcomes.Outcome` object to resume with.
-        :returns: The object yielded from the coroutine
+        Args:
+            outcome: The :any:`outcomes.Outcome` object to resume with.
 
-        If the coroutine returns or throws an error, self._outcome is set, and
-        this throws `CoroutineComplete`.
+        Returns:
+            The object yielded from the coroutine
+
+        Raises:
+            CoroutineComplete: If the coroutine returns or throws an error, self._outcome is set, and
+           :exc:`CoroutineComplete` is thrown.
         """
         try:
             self._started = True
@@ -272,8 +274,7 @@ class RunningTest(RunningCoroutine):
 
     # like RunningCoroutine.kill(), but with a way to inject a failure
     def abort(self, exc):
-        """
-        Force this test to end early, without executing any cleanup.
+        """Force this test to end early, without executing any cleanup.
 
         This happens when a background task fails, and is consistent with
         how the behavior has always been. In future, we may want to behave
@@ -290,7 +291,7 @@ class coroutine(object):
 
     ``log`` methods will log to ``cocotb.coroutine.name``.
 
-    ``join()`` method returns an event which will fire when the coroutine exits.
+    :meth:`~cocotb.decorators.RunningCoroutine.join` method returns an event which will fire when the coroutine exits.
 
     Used as ``@cocotb.coroutine``.
     """
@@ -327,35 +328,19 @@ class function(object):
     externally appear to yield.
     """
     def __init__(self, func):
-        self._func = func
+        self._coro = cocotb.coroutine(func)
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.function.%s" % self._func.__name__, id(self))
+        return SimLog("cocotb.function.%s" % self._coro.__name__, id(self))
 
     def __call__(self, *args, **kwargs):
-
-        @coroutine
-        def execute_function(self, event):
-            coro = cocotb.coroutine(self._func)(*args, **kwargs)
-            try:
-                _outcome = outcomes.Value((yield coro))
-            except BaseException as e:
-                _outcome = outcomes.Error(e)
-            event.outcome = _outcome
-            event.set()
-
-        event = threading.Event()
-        waiter = cocotb.scheduler.queue_function(execute_function(self, event))
-        # This blocks the calling external thread until the coroutine finishes
-        event.wait()
-        waiter.thread_resume()
-        return event.outcome.get()
+        return cocotb.scheduler.queue_function(self._coro(*args, **kwargs))
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
             and standalone functions"""
-        return self.__class__(self._func.__get__(obj, type))
+        return self.__class__(self._coro._func.__get__(obj, type))
 
 @public
 class external(object):
@@ -368,16 +353,7 @@ class external(object):
         self._log = SimLog("cocotb.external.%s" % self._func.__name__, id(self))
 
     def __call__(self, *args, **kwargs):
-
-        @coroutine
-        def wrapper():
-            ext = cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
-            yield ext.event.wait()
-
-            ret = ext.result  # raises if there was an exception
-            raise ReturnValue(ret)
-
-        return wrapper()
+        return cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
