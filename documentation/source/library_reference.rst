@@ -162,21 +162,6 @@ Implemented Testbench Structures
 Drivers
 -------
 
-AD9361
-~~~~~~
-
-Analog Devices AD9361 RF Transceiver.
-
-.. currentmodule:: cocotb.drivers.ad9361
-
-.. autoclass:: AD9361
-
-    .. automethod:: send_data(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
-    .. automethod:: rx_data_to_ad9361(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
-    .. automethod:: ad9361_tx_to_rx_loopback()
-    .. automethod:: tx_data_from_ad9361()
-
-
 AMBA
 ~~~~
 
