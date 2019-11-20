@@ -9,7 +9,7 @@ from cocotb.binary import BinaryValue, BinaryRepresentation
 from collections import deque
 
 
-class AD9361:
+class AD9361(object):
     """Driver for the AD9361 RF Transceiver."""
 
     def __init__(self, dut, rx_channels=1, tx_channels=1,
