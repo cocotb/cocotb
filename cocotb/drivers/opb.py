@@ -47,8 +47,8 @@ class OPBMaster(BusDriver):
     _optional_signals = ["seqAddr"]
     _max_cycles = 16
 
-    def __init__(self, entity, name, clock):
-        BusDriver.__init__(self, entity, name, clock)
+    def __init__(self, entity, name, clock, **kwargs):
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.bus.select.setimmediatevalue(0)
         self.log.debug("OPBMaster created")
         self.busy_event = Event("%s_busy" % name)

@@ -87,6 +87,8 @@ if "COCOTB_SIM" in os.environ:
 
 
 scheduler = Scheduler()
+"""The global scheduler instance."""
+
 regression_manager = None
 
 plusargs = {}

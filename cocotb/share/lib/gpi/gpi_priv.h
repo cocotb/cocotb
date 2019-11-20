@@ -337,6 +337,7 @@ private:
 int gpi_register_impl(GpiImplInterface *func_tbl);
 
 void gpi_embed_init(gpi_sim_info_t *info);
+void gpi_cleanup();
 void gpi_embed_end();
 void gpi_embed_event(gpi_event_t level, const char *msg);
 void gpi_load_extra_libs();

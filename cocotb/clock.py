@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -48,9 +48,9 @@ class BaseClock(object):
 
 
 class Clock(BaseClock):
-    """Simple 50:50 duty cycle clock driver.
+    r"""Simple 50:50 duty cycle clock driver.
 
-    Instances of this class should call its :meth:`start` method and fork the
+    Instances of this class should call its :meth:`start` method and :func:`fork` the
     result.  This will create a clocking thread that drives the signal at the
     desired period/frequency.
 
@@ -65,12 +65,51 @@ class Clock(BaseClock):
         signal: The clock pin/signal to be driven.
         period (int): The clock period. Must convert to an even number of
             timesteps.
-        units (str, optional): One of 
+        units (str, optional): One of
             ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
             When no *units* is given (``None``) the timestep is determined by
             the simulator.
+
+
+    If you need more features like a phase shift and an asymmetric duty cycle,
+    it is simple to create your own clock generator (that you then :func:`fork`):
+
+    .. code-block:: python
+
+        @cocotb.coroutine
+        def custom_clock():
+            # pre-construct triggers for performance
+            high_time = Timer(high_delay, units="ns")
+            low_time = Timer(low_delay, units="ns")
+            yield Timer(initial_delay, units="ns")
+            while True:
+                dut.clk <= 1
+                yield high_time
+                dut.clk <= 0
+                yield low_time
+
+    If you also want to change the timing during simulation,
+    use this slightly more inefficient example instead where 
+    the :class:`Timer`\ s inside the while loop are created with 
+    current delay values:
+
+    .. code-block:: python
+
+        @cocotb.coroutine
+        def custom_clock():
+            while True:
+                dut.clk <= 1
+                yield Timer(high_delay, units="ns")
+                dut.clk <= 0
+                yield Timer(low_delay, units="ns")
+
+        high_delay = low_delay = 100
+        cocotb.fork(custom_clock())
+        yield Timer(1000, units="ns")
+        high_delay = low_delay = 10  # change the clock speed
+        yield Timer(1000, units="ns")
     """
-    
+
     def __init__(self, signal, period, units=None):
         BaseClock.__init__(self, signal)
         self.period = get_sim_steps(period, units)
@@ -83,12 +122,12 @@ class Clock(BaseClock):
 
     @cocotb.coroutine
     def start(self, cycles=None, start_high=True):
-        """Clocking coroutine.  Start driving your clock by forking a 
+        r"""Clocking coroutine.  Start driving your clock by :func:`fork`\ ing a
         call to this.
 
         Args:
             cycles (int, optional): Cycle the clock *cycles* number of times,
-                or if ``None`` then cycle the clock forever. 
+                or if ``None`` then cycle the clock forever.
                 Note: ``0`` is not the same as ``None``, as ``0`` will cycle no times.
             start_high (bool, optional): Whether to start the clock with a ``1``
                 for the first half of the period.

@@ -108,6 +108,8 @@ typedef void * gpi_iterator_hdl;
 // Stop the simulator
 void gpi_sim_end(void);
 
+// Cleanup GPI resources during sim shutdown
+void gpi_cleanup(void);
 
 // Returns simulation time as two uints. Units are default sim units
 void gpi_get_sim_time(uint32_t *high, uint32_t *low);
