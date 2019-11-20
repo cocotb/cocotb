@@ -125,7 +125,7 @@ def _initialise_testbench(root_name):
     if exec_path is None:
         exec_path = 'Unknown'
 
-    log.info("Running tests with Cocotb v%s from %s" %
+    log.info("Running tests with cocotb v%s from %s" %
              (__version__, exec_path))
 
     # Create the base handle type
