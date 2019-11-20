@@ -4,13 +4,12 @@
 
 import cocotb
 from cocotb.triggers import Timer, RisingEdge, Event
-from cocotb.drivers import BusDriver
 from cocotb.binary import BinaryValue, BinaryRepresentation
 
 from collections import deque
 
 
-class AD9361(BusDriver):
+class AD9361:
     """Driver for the AD9361 RF Transceiver."""
 
     def __init__(self, dut, rx_channels=1, tx_channels=1,
