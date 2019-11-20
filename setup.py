@@ -61,6 +61,7 @@ setup(
     entry_points={
         'console_scripts': [
             'cocotb-config=cocotb.config:main',
+            'cocotb-bfmgen=cocotb.bfmgen:main',
         ]
     },
     platforms='any',
