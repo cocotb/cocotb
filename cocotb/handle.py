@@ -130,7 +130,7 @@ class SimHandleBase(object):
     def __setattr__(self, name, value):
         if name in self._compat_mapping:
             if name not in _deprecation_warned:
-                warnings.warn("Use of %s attribute is deprecated" % name)
+                warnings.warn("Use of attribute %r is deprecated, use %r instead" % (name, self._compat_mapping[name]))
                 _deprecation_warned[name] = True
             return setattr(self, self._compat_mapping[name], value)
         else:
@@ -139,7 +139,7 @@ class SimHandleBase(object):
     def __getattr__(self, name):
         if name in self._compat_mapping:
             if name not in _deprecation_warned:
-                warnings.warn("Use of %s attribute is deprecated" % name)
+                warnings.warn("Use of attribute %r is deprecated, use %r instead" % (name, self._compat_mapping[name]))
                 _deprecation_warned[name] = True
             return getattr(self, self._compat_mapping[name])
         else:
