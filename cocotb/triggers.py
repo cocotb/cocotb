@@ -157,12 +157,6 @@ class GPITrigger(Trigger):
         self.cbhdl = 0
         Trigger.unprime(self)
 
-    def __del__(self):
-        """Remove knowledge of the trigger."""
-        if self.cbhdl != 0:
-            self.unprime()
-        Trigger.__del__(self)
-
 
 class Timer(GPITrigger):
     """Fires after the specified simulation time period has elapsed."""
