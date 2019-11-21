@@ -500,7 +500,7 @@ class Scheduler(object):
                 # throws an error if the background coroutine errored
                 # and no one was monitoring it
                 coro._outcome.get()
-            except TestComplete as e:
+            except (TestComplete, AssertionError) as e:
                 coro.log.info("Test stopped by this forked coroutine")
                 outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
                 self._test._force_outcome(outcome)
