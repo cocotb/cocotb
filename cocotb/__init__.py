@@ -51,6 +51,8 @@ from cocotb.decorators import test, coroutine, hook, function, external  # noqa:
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
 
+from ._version import __version__
+
 # GPI logging instance
 if "COCOTB_SIM" in os.environ:
     import simulator
@@ -125,12 +127,8 @@ def _initialise_testbench(root_name):
     if exec_path is None:
         exec_path = 'Unknown'
 
-    version = os.getenv('VERSION')
-    if version is None:
-        log.info("Unable to determine Cocotb version from %s" % exec_path)
-    else:
-        log.info("Running tests with Cocotb v%s from %s" %
-                 (version, exec_path))
+    log.info("Running tests with cocotb v%s from %s" %
+             (__version__, exec_path))
 
     # Create the base handle type
 

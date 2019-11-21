@@ -203,7 +203,3 @@ Additional Environment Variables
 .. envvar:: COCOTB_SHARE_DIR
 
     Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories ``lib``, ``include``, and ``makefiles``.
-
-.. envvar:: VERSION
-
-    The version of the Cocotb installation. You probably don't want to modify this.

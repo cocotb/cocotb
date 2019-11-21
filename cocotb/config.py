@@ -42,7 +42,6 @@ import os
 import sys
 import cocotb
 import argparse
-import pkg_resources
 
 
 __all__ = ["share_dir", "makefiles_dir"]
@@ -64,7 +63,7 @@ class PrintAction(argparse.Action):
 def main():
 
     prefix_dir = os.path.dirname(os.path.dirname(cocotb.__file__))
-    version = pkg_resources.get_distribution('cocotb').version
+    version = cocotb.__version__
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--prefix', help='echos the package-prefix of cocotb', action=PrintAction, text=prefix_dir)

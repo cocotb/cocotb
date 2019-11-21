@@ -30,7 +30,6 @@
 all: test
 
 include cocotb/share/makefiles/Makefile.inc
-include version
 
 clean:
 	-@rm -rf $(BUILD_DIR)

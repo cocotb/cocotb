@@ -20,6 +20,9 @@ sys.path.insert(0, os.path.abspath('../..'))
 # Add in-tree extensions to path
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 
+import cocotb
+from distutils.version import LooseVersion
+
 os.environ["SPHINX_BUILD"] = "1"
 
 # -- General configuration -----------------------------------------------------
@@ -70,10 +73,11 @@ copyright = u'2014-{0}, PotentialVentures'.format(datetime.datetime.now().year)
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-# The short X.Y version.
-version = '1.1'
 # The full version, including alpha/beta/rc tags.
-release = '1.1'
+release = cocotb.__version__
+# The short X.Y version.
+v_major, v_minor = LooseVersion(release).version[:2]
+version = '{}.{}'.format(v_major, v_minor)
 
 autoclass_content = "both"
 

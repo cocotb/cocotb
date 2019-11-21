@@ -42,11 +42,12 @@ def package_files(directory):
             paths.append(path.join('..', fpath, filename))
     return paths
 
-version = read_file('version')[8:].strip()
+# this sets the __version__ variable
+exec(read_file(path.join('cocotb', '_version.py')))
 
 setup(
     name='cocotb',
-    version=version,
+    version=__version__,  # noqa: F821
     description='cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.',
     url='https://github.com/potentialventures/cocotb',
     license='BSD',
