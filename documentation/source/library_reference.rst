@@ -30,7 +30,6 @@ Writing and Generating tests
     :members:
     :member-order: bysource
 
-
 Interacting with the Simulator
 ==============================
 
@@ -51,6 +50,10 @@ Interacting with the Simulator
 .. autoclass:: cocotb.clock.Clock
 
 .. autofunction:: cocotb.fork
+
+.. autofunction:: cocotb.decorators.RunningCoroutine.join
+
+.. autofunction:: cocotb.decorators.RunningCoroutine.kill
 
 Triggers
 --------

@@ -55,17 +55,17 @@ class Bus(object):
         """
         Args:
             entity (SimHandle): :any:`SimHandle` instance to the entity containing the bus.
-            name (str): Name of the bus. ``None`` for nameless bus, e.g. bus-signals
+            name (str): Name of the bus. ``None`` for a nameless bus, e.g. bus-signals
                 in an interface or a ``modport`` (untested on ``struct``/``record``,
                 but could work here as well).
-            signals (list/dict): In the case of an obj (passed to drive/capture) that
-                has the same attribute names as the signal names of the bus,
-                the signals argument can be a list of those names.
-                When obj has different attribute names, the signals arg should be
-                a dict that maps bus attribute names to obj signal names.
-            optional_signals (list/dict, optional): Signals that don't have to be present
+            signals (list or dict): In the case of an object (passed to :func:`drive`/:func:`capture`) 
+                that has the same attribute names as the signal names of the bus,
+                the *signals* argument can be a list of those names.
+                When the object has different attribute names, the *signals* argument should be
+                a dict that maps bus attribute names to object signal names.
+            optional_signals (list or dict, optional): Signals that don't have to be present
                 on the interface. 
-                See ``signals`` argument above for details.
+                See the *signals* argument above for details.
             bus_separator (str, optional): Character(s) to use as separator between bus
                 name and signal name. Defaults to '_'.
             array_idx (int or None, optional): Optional index when signal is an array.

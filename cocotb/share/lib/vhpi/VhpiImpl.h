@@ -163,7 +163,7 @@ public:
     VhpiArrayObjHdl(GpiImplInterface *impl,
                     vhpiHandleT hdl,
                     gpi_objtype_t objtype) : GpiObjHdl(impl, hdl, objtype) { }
-    virtual ~VhpiArrayObjHdl() { }
+    virtual ~VhpiArrayObjHdl();
 
     int initialise(std::string &name, std::string &fq_name);
 };
@@ -173,7 +173,7 @@ public:
     VhpiObjHdl(GpiImplInterface *impl,
                vhpiHandleT hdl,
                gpi_objtype_t objtype) : GpiObjHdl(impl, hdl, objtype) { }
-    virtual ~VhpiObjHdl() { }
+    virtual ~VhpiObjHdl();
 
     int initialise(std::string &name, std::string &fq_name);
 };

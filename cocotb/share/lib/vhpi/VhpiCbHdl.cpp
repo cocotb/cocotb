@@ -30,6 +30,20 @@
 
 extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 
+VhpiArrayObjHdl::~VhpiArrayObjHdl()
+{
+    LOG_DEBUG("Releasing VhpiArrayObjHdl handle at %p\n", (void *)get_handle<vhpiHandleT>());
+    if (vhpi_release_handle(get_handle<vhpiHandleT>()))
+        check_vhpi_error();
+}
+
+VhpiObjHdl::~VhpiObjHdl()
+{
+    LOG_DEBUG("Releasing VhpiObjHdl handle at %p\n", (void *)get_handle<vhpiHandleT>());
+    if (vhpi_release_handle(get_handle<vhpiHandleT>()))
+        check_vhpi_error();
+}
+
 VhpiSignalObjHdl::~VhpiSignalObjHdl()
 {
     switch (m_value.format) {
@@ -43,6 +57,10 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl()
 
     if (m_binvalue.value.str)
         free(m_binvalue.value.str);
+
+    LOG_DEBUG("Releasing VhpiSignalObjHdl handle at %p\n", (void *)get_handle<vhpiHandleT>());
+    if (vhpi_release_handle(get_handle<vhpiHandleT>()))
+        check_vhpi_error();
 }
 
 bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
