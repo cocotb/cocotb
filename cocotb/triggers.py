@@ -152,10 +152,14 @@ class GPITrigger(Trigger):
 
     def unprime(self):
         """Disable a primed trigger, can be re-primed."""
-        if self.cbhdl != 0:
+        # Due to race condition in object global object we rely on may have been
+        # deleted. This will happen only right before exit so just skip over the
+        # action.
+        if self.cbhdl != 0 and simulator is not None:
             simulator.deregister_callback(self.cbhdl)
         self.cbhdl = 0
-        Trigger.unprime(self)
+        if Trigger is not None:
+            Trigger.unprime(self)
 
 
 class Timer(GPITrigger):
