@@ -68,9 +68,7 @@ class AXI4LiteMaster(BusDriver):
 
     @cocotb.coroutine
     def _send_write_address(self, address, delay=0):
-        """
-        Send the write address, with optional delay (in clocks)
-        """
+        """Send the write address, with optional delay (in clocks)."""
         yield self.write_address_busy.acquire()
         for cycle in range(delay):
             yield RisingEdge(self.clock)
@@ -89,7 +87,7 @@ class AXI4LiteMaster(BusDriver):
 
     @cocotb.coroutine
     def _send_write_data(self, data, delay=0, byte_enable=0xF):
-        """Send the write address, with optional delay (in clocks)."""
+        """Send the write data, with optional delay (in clocks) and byte enable."""
         yield self.write_data_busy.acquire()
         for cycle in range(delay):
             yield RisingEdge(self.clock)
@@ -146,11 +144,11 @@ class AXI4LiteMaster(BusDriver):
 
         # Wait for the response
         while True:
-            yield ReadOnly()
             if self.bus.BVALID.value and self.bus.BREADY.value:
                 result = self.bus.BRESP.value
                 break
             yield RisingEdge(self.clock)
+            yield ReadOnly()
 
         yield RisingEdge(self.clock)
 
@@ -159,6 +157,23 @@ class AXI4LiteMaster(BusDriver):
                                % (address, int(result)))
 
         raise ReturnValue(result)
+
+    @cocotb.coroutine
+    def _send_read_address(self, address):
+        """Send the read address."""
+        yield self.read_address_busy.acquire()
+
+        self.bus.ARADDR <= address
+        self.bus.ARVALID <= 1
+
+        while True:
+            yield ReadOnly()
+            if self.bus.ARREADY.value:
+                break
+            yield RisingEdge(self.clock)
+        yield RisingEdge(self.clock)
+        self.bus.ARVALID <= 0
+        self.read_address_busy.release()
 
     @cocotb.coroutine
     def read(self, address, sync=True):
@@ -178,25 +193,18 @@ class AXI4LiteMaster(BusDriver):
         if sync:
             yield RisingEdge(self.clock)
 
-        self.bus.ARADDR <= address
-        self.bus.ARVALID <= 1
+        yield self._send_read_address(address)
 
+        # Wait for the response
         while True:
-            yield ReadOnly()
-            if self.bus.ARREADY.value:
-                break
-            yield RisingEdge(self.clock)
-
-        yield RisingEdge(self.clock)
-        self.bus.ARVALID <= 0
-
-        while True:
-            yield ReadOnly()
             if self.bus.RVALID.value and self.bus.RREADY.value:
                 data = self.bus.RDATA.value
                 result = self.bus.RRESP.value
                 break
             yield RisingEdge(self.clock)
+            yield ReadOnly()
+
+        yield RisingEdge(self.clock)
 
         if int(result):
             raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d" %
