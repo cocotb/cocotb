@@ -113,15 +113,6 @@ class Monitor(object):
                        callback.__name__)
         self._callbacks.append(callback)
 
-    def log_transaction(self, transaction):
-        """Helper to easily log a received transaction.
-
-        Typical usage: ``moni_obj.add_callback(moni_obj.log_transaction)``
-        
-        .. versionadded:: 1.3
-        """
-        self.log.info("Transaction received: {!r}".format(transaction))
-
     @coroutine
     def wait_for_recv(self, timeout=None):
         """With *timeout*, :meth:`.wait` for transaction to arrive on monitor

@@ -24,7 +24,11 @@ class AvalonSTTB(object):
 
         self.stream_in = AvalonSTDriver(self.dut, "asi", dut.clk)
         self.stream_out = AvalonSTMonitor(self.dut, "aso", dut.clk)
-        self.stream_out.add_callback(self.stream_out.log_transaction)
+        self.stream_out.add_callback(
+            lambda transaction: self.stream_out.log.info(
+                "Transaction received {!r}".format(transaction)
+            )
+        )
         self.scoreboard = Scoreboard(self.dut, fail_immediately=True)
 
         self.expected_output = []
