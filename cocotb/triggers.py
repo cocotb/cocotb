@@ -495,7 +495,7 @@ class Join(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, PythonTrigge
 
         @cocotb.coroutine()
         def coro_inner():
-            yield Timer(1)
+            yield Timer(1, units='ns')
             raise ReturnValue("Hello world")
 
         task = cocotb.fork(coro_inner())
@@ -508,7 +508,7 @@ class Join(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, PythonTrigge
 
         @cocotb.coroutine()
         async def coro_inner():
-            await Timer(1)
+            await Timer(1, units='ns')
             return "Hello world"
 
         task = cocotb.fork(coro_inner())
