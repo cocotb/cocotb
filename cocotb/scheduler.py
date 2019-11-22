@@ -580,19 +580,29 @@ class Scheduler(object):
 
         @cocotb.coroutine
         def wrapper():
+            # This function runs in the scheduler thread
             try:
                 _outcome = outcomes.Value((yield coro))
             except BaseException as e:
                 _outcome = outcomes.Error(e)
             event.outcome = _outcome
+            # Notify the current (scheduler) thread that we are about to wake
+            # up the background (`@external`) thread, making sure to do so
+            # before the background thread gets a chance to go back to sleep by
+            # calling thread_suspend.
+            # We need to do this here in the scheduler thread so that no more
+            # coroutines run until the background thread goes back to sleep.
+            t.thread_resume()
             event.set()
 
         event = threading.Event()
-        t.thread_suspend()
         self._pending_coros.append(wrapper())
-        # This blocks the calling external thread until the coroutine finishes
+        # The scheduler thread blocks in `thread_wait`, and is woken when we
+        # call `thread_suspend` - so we need to make sure the coroutine is
+        # queued before that.
+        t.thread_suspend()
+        # This blocks the calling `@external` thread until the coroutine finishes
         event.wait()
-        t.thread_resume()
         return event.outcome.get()
 
     def run_in_executor(self, func, *args, **kwargs):
