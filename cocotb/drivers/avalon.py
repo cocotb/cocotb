@@ -36,7 +36,7 @@ import random
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, FallingEdge, ReadOnly, NextTimeStep, Event
+from cocotb.triggers import RisingEdge, FallingEdge, readonly, nexttimestep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -166,7 +166,7 @@ class AvalonMaster(AvalonMM):
 
         if hasattr(self.bus, "readdatavalid"):
             while True:
-                yield ReadOnly()
+                yield readonly
                 if int(self.bus.readdatavalid):
                     break
                 yield RisingEdge(self.clock)
@@ -174,7 +174,7 @@ class AvalonMaster(AvalonMM):
             # Assume readLatency = 1 if no readdatavalid
             # FIXME need to configure this,
             # should take a dictionary of Avalon properties.
-            yield ReadOnly()
+            yield readonly
 
         # Get the data
         data = self.bus.readdata.value
@@ -379,7 +379,7 @@ class AvalonMemory(BusDriver):
                     self.bus.waitrequest <= 1
                     yield RisingEdge(self.clock)
             else:
-                yield NextTimeStep()
+                yield nexttimestep
 
             self.bus.waitrequest <= 0
 
@@ -392,7 +392,7 @@ class AvalonMemory(BusDriver):
             yield edge
             self._do_response()
 
-            yield ReadOnly()
+            yield readonly
 
             if self._readable and self.bus.read.value:
                 if not self._burstread:
@@ -425,7 +425,7 @@ class AvalonMemory(BusDriver):
 
                     # toggle waitrequest
                     # TODO: configure waitrequest time with Avalon properties
-                    yield NextTimeStep()  # can't write during read-only phase
+                    yield nexttimestep  # can't write during read-only phase
                     self.bus.waitrequest <= 1
                     yield edge
                     yield edge
@@ -490,7 +490,7 @@ class AvalonMemory(BusDriver):
 
                     for count in range(burstcount):
                         while self.bus.write.value == 0:
-                            yield NextTimeStep()
+                            yield nexttimestep
                         # self._mem is aligned on 8 bits words
                         yield self._writing_byte_value(addr + count*self.dataByteSize)
                         self.log.debug("writing %016X @ %08X",
@@ -536,10 +536,10 @@ class AvalonST(ValidatedBusDriver):
 
             FIXME assumes readyLatency of 0
         """
-        yield ReadOnly()
+        yield readonly
         while not self.bus.ready.value:
             yield RisingEdge(self.clock)
-            yield ReadOnly()
+            yield readonly
 
     @coroutine
     def _driver_send(self, value, sync=True):
@@ -669,10 +669,10 @@ class AvalonSTPkts(ValidatedBusDriver):
 
             FIXME assumes readyLatency of 0
         """
-        yield ReadOnly()
+        yield readonly
         while not self.bus.ready.value:
             yield RisingEdge(self.clock)
-            yield ReadOnly()
+            yield readonly
 
     @coroutine
     def _send_string(self, string, sync=True, channel=None):

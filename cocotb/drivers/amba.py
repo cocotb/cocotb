@@ -27,7 +27,7 @@
 """Drivers for Advanced Microcontroller Bus Architecture."""
 
 import cocotb
-from cocotb.triggers import RisingEdge, ReadOnly, Lock
+from cocotb.triggers import RisingEdge, readonly, Lock
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
@@ -79,7 +79,7 @@ class AXI4LiteMaster(BusDriver):
         self.bus.AWVALID <= 1
 
         while True:
-            yield ReadOnly()
+            yield readonly
             if self.bus.AWREADY.value:
                 break
             yield RisingEdge(self.clock)
@@ -99,7 +99,7 @@ class AXI4LiteMaster(BusDriver):
         self.bus.WSTRB <= byte_enable
 
         while True:
-            yield ReadOnly()
+            yield readonly
             if self.bus.WREADY.value:
                 break
             yield RisingEdge(self.clock)
@@ -146,7 +146,7 @@ class AXI4LiteMaster(BusDriver):
 
         # Wait for the response
         while True:
-            yield ReadOnly()
+            yield readonly
             if self.bus.BVALID.value and self.bus.BREADY.value:
                 result = self.bus.BRESP.value
                 break
@@ -182,7 +182,7 @@ class AXI4LiteMaster(BusDriver):
         self.bus.ARVALID <= 1
 
         while True:
-            yield ReadOnly()
+            yield readonly
             if self.bus.ARREADY.value:
                 break
             yield RisingEdge(self.clock)
@@ -191,7 +191,7 @@ class AXI4LiteMaster(BusDriver):
         self.bus.ARVALID <= 0
 
         while True:
-            yield ReadOnly()
+            yield readonly
             if self.bus.RVALID.value and self.bus.RREADY.value:
                 data = self.bus.RDATA.value
                 result = self.bus.RRESP.value
@@ -268,13 +268,13 @@ class AXI4Slave(BusDriver):
         while True:
             while True:
                 self.bus.WREADY <= 0
-                yield ReadOnly()
+                yield readonly
                 if self.bus.AWVALID.value:
                     self.bus.WREADY <= 1
                     break
                 yield clock_re
 
-            yield ReadOnly()
+            yield readonly
             _awaddr = int(self.bus.AWADDR)
             _awlen = int(self.bus.AWLEN)
             _awsize = int(self.bus.AWSIZE)
@@ -316,12 +316,12 @@ class AXI4Slave(BusDriver):
 
         while True:
             while True:
-                yield ReadOnly()
+                yield readonly
                 if self.bus.ARVALID.value:
                     break
                 yield clock_re
 
-            yield ReadOnly()
+            yield readonly
             _araddr = int(self.bus.ARADDR)
             _arlen = int(self.bus.ARLEN)
             _arsize = int(self.bus.ARSIZE)
@@ -348,7 +348,7 @@ class AXI4Slave(BusDriver):
 
             while True:
                 self.bus.RVALID <= 1
-                yield ReadOnly()
+                yield readonly
                 if self.bus.RREADY.value:
                     _burst_diff = burst_length - burst_count
                     _st = _araddr + (_burst_diff * bytes_in_beat)

@@ -729,3 +729,10 @@ class ClockCycles(Waitable):
         for _ in range(self.num_cycles):
             yield trigger
         raise ReturnValue(self)
+
+
+# Global objects to allow using Triggers that don't have parameters to be used without
+# constructing/construction for each use.
+readonly = ReadOnly()
+readwrite = ReadWrite()
+nexttimestep = NextTimeStep()

@@ -37,7 +37,7 @@ import warnings
 from cocotb.utils import hexdump
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
-from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge, readonly
 from cocotb.binary import BinaryValue
 
 class AvalonProtocolError(Exception):
@@ -71,7 +71,6 @@ class AvalonST(BusMonitor):
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
-        rdonly = ReadOnly()
 
         def valid():
             if hasattr(self.bus, "ready"):
@@ -81,7 +80,7 @@ class AvalonST(BusMonitor):
         # NB could yield on valid here more efficiently?
         while True:
             yield clkedge
-            yield rdonly
+            yield readonly
             if valid():
                 vec = self.bus.data.value
                 vec.big_endian = self.config["firstSymbolInHighOrderBits"]
@@ -155,7 +154,6 @@ class AvalonSTPkts(BusMonitor):
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
-        rdonly = ReadOnly()
         pkt = ""
         in_pkt = False
         invalid_cyclecount = 0
@@ -168,7 +166,7 @@ class AvalonSTPkts(BusMonitor):
 
         while True:
             yield clkedge
-            yield rdonly
+            yield readonly
 
             if self.in_reset:
                 continue

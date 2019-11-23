@@ -75,3 +75,17 @@ These are used to synchronize coroutines with each other.
 .. autoclass:: cocotb.triggers.Lock
     :members:
     :member-order: bysource
+
+
+Convenience objects
+-------------------
+
+``cocotb.triggers`` provides some convenience global objects. These are object for Triggers
+that don't take any parameters:
+
+* ``cocotb.triggers.readonly``: ``cocotb.triggers.ReadOnly()``
+* ``cocotb.triggers.readwrite``: ``cocotb.triggers.ReadWrite()``
+* ``cocotb.triggers.nexttimestep``: ``cocotb.triggers.NextTimeStep()``
+
+It allows to avoid constructing/destructing these objects throughout your code;
+e.g. one can for example replace ``yield ReadOnly()`` with ``yield readonly``.

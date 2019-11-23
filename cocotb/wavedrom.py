@@ -28,7 +28,7 @@ from collections import OrderedDict, defaultdict
 
 import cocotb
 from cocotb.bus import Bus
-from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge, readonly
 from cocotb.utils import reject_remaining_kwargs
 
 
@@ -149,7 +149,7 @@ class trace(object):
         self._clocks = 0
         while True:
             yield RisingEdge(self._clock)
-            yield ReadOnly()
+            yield readonly
             if not self._enabled:
                 continue
             self._clocks += 1

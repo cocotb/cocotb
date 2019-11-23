@@ -31,7 +31,7 @@ NOTE: Currently we only support a very small subset of functionality.
 """
 
 import cocotb
-from cocotb.triggers import RisingEdge, ReadOnly, Event
+from cocotb.triggers import RisingEdge, readonly, Event
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 
@@ -95,7 +95,7 @@ class OPBMaster(BusDriver):
         count = 0
         while not int(self.bus.xferAck.value):
             yield RisingEdge(self.clock)
-            yield ReadOnly()
+            yield readonly
             if int(self.bus.toutSup.value):
                 count = 0
             else:
@@ -136,7 +136,7 @@ class OPBMaster(BusDriver):
         count = 0
         while not int(self.bus.xferAck.value):
             yield RisingEdge(self.clock)
-            yield ReadOnly()
+            yield readonly
             if int(self.bus.toutSup.value):
                 count = 0
             else:

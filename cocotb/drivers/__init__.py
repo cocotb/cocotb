@@ -33,7 +33,7 @@ from collections import deque
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import (Event, RisingEdge, ReadOnly, NextTimeStep,
+from cocotb.triggers import (Event, RisingEdge, readonly, nexttimestep,
                              Edge)
 from cocotb.bus import Bus
 from cocotb.log import SimLog
@@ -262,11 +262,11 @@ class BusDriver(Driver):
         to move to :class:`~cocotb.triggers.NextTimeStep` before
         registering more callbacks can occur.
         """
-        yield ReadOnly()
+        yield readonly
         while signal.value.integer != 1:
             yield RisingEdge(signal)
-            yield ReadOnly()
-        yield NextTimeStep()
+            yield readonly
+        yield nexttimestep
 
     @coroutine
     def _wait_for_nsignal(self, signal):
@@ -276,11 +276,11 @@ class BusDriver(Driver):
         to move to :class:`~cocotb.triggers.NextTimeStep` before
         registering more callbacks can occur.
         """
-        yield ReadOnly()
+        yield readonly
         while signal.value.integer != 0:
             yield Edge(signal)
-            yield ReadOnly()
-        yield NextTimeStep()
+            yield readonly
+        yield nexttimestep
 
     def __str__(self):
         """Provide the name of the bus"""

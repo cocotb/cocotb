@@ -59,8 +59,8 @@ else:
 
 import cocotb
 import cocotb.decorators
-from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
-                             NextTimeStep, ReadWrite, Event, Join, NullTrigger)
+from cocotb.triggers import (Trigger, GPITrigger, Timer, readonly,
+                             nexttimestep, readwrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
 from cocotb.result import TestComplete, ReturnValue
 from cocotb import _py_compat
@@ -211,9 +211,6 @@ class Scheduler(object):
     _MODE_TERM     = 4  # noqa
 
     # Singleton events, recycled to avoid spurious object creation
-    _next_time_step = NextTimeStep()
-    _read_write = ReadWrite()
-    _read_only = ReadOnly()
     _timer1 = Timer(1)
 
     def __init__(self):
@@ -257,9 +254,9 @@ class Scheduler(object):
         while True:
             yield self._writes_pending.wait()
             if self._mode != Scheduler._MODE_NORMAL:
-                yield self._next_time_step
+                yield nexttimestep
 
-            yield self._read_write
+            yield readwrite
 
             while self._writes:
                 handle, value = self._writes.popitem()
@@ -381,7 +378,7 @@ class Scheduler(object):
                                    str(trigger))
                 return
 
-            if trigger is self._read_only:
+            if trigger is readonly:
                 self._mode = Scheduler._MODE_READONLY
             # Only GPI triggers affect the simulator scheduling mode
             elif isinstance(trigger, GPITrigger):
