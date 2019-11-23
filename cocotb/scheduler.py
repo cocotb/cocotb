@@ -39,6 +39,7 @@ import os
 import sys
 import logging
 import threading
+import warnings
 
 # Debug mode controlled by environment variables
 if "COCOTB_ENABLE_PROFILING" in os.environ:
@@ -212,6 +213,15 @@ class Scheduler(object):
 
     # Singleton events, recycled to avoid spurious object creation
     _timer1 = Timer(1)
+
+    @property
+    def _read_only(self):
+        warnings.warn(
+            "Use of Scheduler._read_only is deprecated\n"
+            "\tUse cocotb.triggers.readonly instead",
+            DeprecationWarning, stacklevel=2
+        )
+        return readonly
 
     def __init__(self):
 
