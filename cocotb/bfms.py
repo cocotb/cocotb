@@ -30,8 +30,8 @@
 
 import os
 import importlib
+import re
 from cocotb.decorators import bfm_param_int_t
-import argparse
 
 import_info_l = []
 export_info_l = []
@@ -125,16 +125,15 @@ class BfmTypeInfo():
 
 class BfmInfo():
     
-    def __init__(self, bfm, id, type_info):
+    def __init__(self, bfm, id, inst_name, type_info):
         self.bfm = bfm
         self.id = id
+        self.inst_name = inst_name
         self.type_info = type_info
         
     def call_method(self, method_id, params):
-        print("--> call_method " + str(method_id))
         self.type_info.export_info[method_id].T(
             self.bfm, *params)
-        print("<-- call_method " + str(method_id))
 
 class BfmMgr():
     
@@ -146,12 +145,25 @@ class BfmMgr():
         pass
     
     def add_type_info(self, T, type_info):
-        print("add_type_info: " + str(T) + " self=" + str(self))
         self.bfm_type_info_m[T] = type_info
     
     @staticmethod
     def get_bfms():
         return BfmMgr.inst().bfm_l
+
+    @staticmethod    
+    def find_bfm(path_pattern):
+        inst = BfmMgr.inst()
+        bfm = None
+       
+        path_pattern_re = re.compile(path_pattern)
+        
+        for b in inst.bfm_l:
+            if path_pattern_re.match(b.bfm_info.inst_name):
+                bfm = b
+                break
+        
+        return bfm
    
     @staticmethod
     def inst():
@@ -163,10 +175,10 @@ class BfmMgr():
     def load_bfms(self):
         import simulator
         n_bfms = simulator.bfm_get_count()
-        print("n_bfms: " + str(n_bfms))
         for i in range(n_bfms):
             info = simulator.bfm_get_info(i)
             typename = info[0]
+            instname = info[1]
             clsname = info[2]
             if clsname.find('.') == -1:
                 raise Exception("Incorrectly-formatted BFM class name \"" + clsname + "\"")
@@ -186,7 +198,11 @@ class BfmMgr():
             type_info = self.bfm_type_info_m[bfmcls]
             
             bfm = bfmcls()
-            bfm_info = BfmInfo(bfm, len(self.bfm_l), type_info)
+            bfm_info = BfmInfo(
+                bfm, 
+                len(self.bfm_l), 
+                instname,
+                type_info)
             # Add 
             setattr(bfm, "bfm_info", bfm_info)
             
@@ -203,7 +219,6 @@ class BfmMgr():
             bfm_id, 
             method_id,
             params):
-        print("bfms::call " + str(len(params)))
         inst = BfmMgr.inst()
         bfm = inst.bfm_l[bfm_id]
          

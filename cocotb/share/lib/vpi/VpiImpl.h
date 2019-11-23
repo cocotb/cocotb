@@ -139,6 +139,8 @@ public:
         return 0;
     }
     virtual ~VpiStartupCbHdl() { }
+private:
+    int						m_phase;
 };
 
 class VpiShutdownCbHdl : public VpiCbHdl {

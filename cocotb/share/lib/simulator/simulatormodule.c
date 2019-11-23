@@ -1021,8 +1021,6 @@ static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
 		switch (paramv[i].ptype) {
 		case GpiBfmParamType_Ui: {
 			paramv[i].pval.ui64 = PyLong_AsUnsignedLongLong(v);
-			fprintf(stdout, "UI: %lld\n",
-					(unsigned long long)paramv[i].pval.ui64);
 		} break;
 		case GpiBfmParamType_Si: {
 			paramv[i].pval.i64 = PyLong_AsLongLong(v);
@@ -1033,12 +1031,6 @@ static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
 		default: fprintf(stdout, "Unknown param\n");
 		}
 	}
-
-	fprintf(stdout, "bfm_send_msg: param_l.size=%d type_l.size=%d\n",
-			(int)PyList_Size(param_l),
-			(int)PyList_Size(type_l)
-			);
-	fflush(stdout);
 
 	cocotb_bfm_send_msg(bfm_id, msg_id, paramc, paramv);
 
@@ -1059,12 +1051,6 @@ static void bfm_recv_msg(
     PyGILState_STATE gstate;
     PyObject *param_l;
 
-
-	fprintf(stdout, "bfm_recv_msg!! paramc=%d paramv=%p\n", paramc, paramv);
-	fprintf(stdout, "bfm_call_method=%p\n", bfm_call_method);
-	fprintf(stdout, "  iscallable=%d\n", PyCallable_Check(bfm_call_method));
-	fflush(stdout);
-
     gstate = TAKE_GIL();
 
     param_l = PyList_New(paramc);
@@ -1074,7 +1060,7 @@ static void bfm_recv_msg(
     		PyList_SetItem(param_l, i, PyLong_FromUnsignedLongLong(paramv[i].pval.ui64));
     	} break;
     	case GpiBfmParamType_Si: {
-    		PyList_SetItem(param_l, i, PyLong_FromLongLong(paramv[i].pval.ui64));
+    		PyList_SetItem(param_l, i, PyLong_FromLongLong(paramv[i].pval.i64));
     	} break;
     	case GpiBfmParamType_Str: {
     		PyList_SetItem(param_l, i, PyUnicode_FromString(paramv[i].pval.str));
@@ -1099,9 +1085,6 @@ static PyObject *bfm_set_call_method(PyObject *self, PyObject *args) {
 		 Py_INCREF(temp);
 		 Py_XDECREF(bfm_call_method);
 		 bfm_call_method = temp;
-
-		 fprintf(stdout, "bfm_call_method=%p\n", bfm_call_method);
-		 fprintf(stdout, "  iscallable=%d\n", PyCallable_Check(bfm_call_method));
 
 	     return Py_BuildValue("");
 	 } else {

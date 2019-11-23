@@ -498,7 +498,6 @@ class bfm_import():
         cocotb.bfms.register_bfm_import_info(info)
         
         def import_taskw(self, *args):
-            print("import_taskw: " + str(self))
             import simulator
             arg_l = []
             for a in args:

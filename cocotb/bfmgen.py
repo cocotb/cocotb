@@ -20,16 +20,39 @@ def process_template_vl(template, info):
     for i in range(len(info.import_info)):
         imp = info.import_info[i]
         bfm_import_calls += "              " + str(i) + ": begin\n"
-        bfm_import_calls += "                  " + imp.T.__name__  + "\n"
+        bfm_import_calls += "                  " + imp.T.__name__  + "(\n"
+        for pi in range(len(imp.signature)):
+            p = imp.signature[pi]
+            if p.ptype.s:
+                bfm_import_calls += "                      $cocotb_bfm_get_param_i32(bfm_id)"
+            else:
+                bfm_import_calls += "                      $cocotb_bfm_get_param_ui32(bfm_id)"
+            
+            if i+1 < len(imp.signature):
+                bfm_import_calls += ","
+            bfm_import_calls += "\n"
+        bfm_import_calls += "                      );\n"
         bfm_import_calls += "              end\n"
         
     bfm_export_tasks = ""
     for i in range(len(info.export_info)):
         exp = info.export_info[i]
         bfm_export_tasks += "    task " + exp.T.__name__ + "("
+        print("Signature: " + str(len(exp.signature)))
+        for j in range(len(exp.signature)):
+            p = exp.signature[j]
+            bfm_export_tasks += p.ptype.vl_type() + " " + p.pname
+            if j+1 < len(exp.signature):
+                bfm_export_tasks += ", "
         bfm_export_tasks += ");\n"
         bfm_export_tasks += "    begin\n"
         bfm_export_tasks += "        $cocotb_bfm_begin_msg(bfm_id, " + str(i) + ");\n"
+        for p in exp.signature:
+            if p.ptype.s:
+                bfm_export_tasks += "        $cocotb_bfm_add_param_si(bfm_id, " + p.pname + ");\n"
+            else:
+                bfm_export_tasks += "        $cocotb_bfm_add_param_ui(bfm_id, " + p.pname + ");\n"
+            
         bfm_export_tasks += "        $cocotb_bfm_end_msg(bfm_id);\n"
         bfm_export_tasks += "    end\n"
         bfm_export_tasks += "    endtask\n"
@@ -54,7 +77,7 @@ ${bfm_export_tasks}
       while (1) begin
           bfm_msg_id = $cocotb_bfm_claim_msg(bfm_id);
           
-          case (bfm_id)
+          case (bfm_msg_id)
 ${bfm_import_calls}
               -1: begin
                   @(bfm_ev);
@@ -146,7 +169,7 @@ def main():
     # Ensure the BfmMgr is created
     BfmMgr.inst()
     
-    if hasattr(args, 'm'):
+    if hasattr(args, 'm') and args.m is not None:
         bfm_load_modules(args.m)
         
     args.func(args)

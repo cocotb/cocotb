@@ -34,7 +34,6 @@ int GpiBfm::add_bfm(GpiBfm *bfm) {
 
 void GpiBfm::send_msg(GpiBfmMsg *msg) {
 	m_msg_queue.push_back(msg);
-	fprintf(stdout, "GpiBfm::send_msg notify_f=%p\n", m_notify_f);
 	if (m_notify_f) {
 		m_notify_f(m_notify_data);
 	}

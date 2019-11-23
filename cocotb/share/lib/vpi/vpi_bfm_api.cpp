@@ -116,10 +116,36 @@ static int cocotb_bfm_get_param_i32_tf(char *user_data) {
 	vpi_free_object(arg_it);
 
 	pval = cocotb_bfm_get_si_param(bfm_id);
-	fprintf(stdout, "pval=%lld\n", (long long)pval);
 
 	// Set return value
 	val.format = vpiIntVal;
+	val.value.integer = pval;
+	vpi_put_value(systf_h, &val, 0, vpiNoDelay);
+
+	return 0;
+}
+
+static int cocotb_bfm_get_param_ui32_tf(char *user_data) {
+	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
+	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
+	vpiHandle arg;
+	s_vpi_value val;
+	int bfm_id;
+	int64_t pval;
+
+	// Get the BFM ID
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	bfm_id = val.value.integer;
+
+	vpi_free_object(arg_it);
+
+	pval = cocotb_bfm_get_ui_param(bfm_id);
+
+	// Set return value
+	val.format = vpiIntVal;
+	// TODO: should really use reg?
 	val.value.integer = pval;
 	vpi_put_value(systf_h, &val, 0, vpiNoDelay);
 
@@ -152,7 +178,34 @@ static int cocotb_bfm_begin_msg_tf(char *user_data) {
 	return 0;
 }
 
-static int cocotb_bfm_add_ui_param_tf(char *user_data) {
+static int cocotb_bfm_add_param_si_tf(char *user_data) {
+	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
+	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
+	vpiHandle arg;
+	s_vpi_value val;
+	int bfm_id;
+	int64_t pval = 0;
+
+	// Get the BFM ID
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	bfm_id = val.value.integer;
+
+	// Get the parameter value
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	pval = val.value.integer;
+
+	vpi_free_object(arg_it);
+
+	cocotb_bfm_add_ui_param(bfm_id, pval);
+
+	return 0;
+}
+
+static int cocotb_bfm_add_param_ui_tf(char *user_data) {
 	vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
 	vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
 	vpiHandle arg;
@@ -167,10 +220,10 @@ static int cocotb_bfm_add_ui_param_tf(char *user_data) {
 	bfm_id = val.value.integer;
 
 	// Get the parameter value
-//	arg = vpi_scan(arg_it);
-//	val.format = vpiIntVal;
-//	vpi_get_value(arg, &val);
-//	msg_id = val.value.integer;
+	arg = vpi_scan(arg_it);
+	val.format = vpiIntVal;
+	vpi_get_value(arg, &val);
+	pval = (uint32_t)val.value.integer;
 
 	vpi_free_object(arg_it);
 
@@ -232,6 +285,13 @@ void register_bfm_tf(void) {
 	vpi_register_systf(&tf_data);
 
 	// cocotb_bfm_get_param_ui32
+	tf_data.type = vpiSysFunc;
+	tf_data.tfname = "$cocotb_bfm_get_param_ui32";
+	tf_data.calltf = &cocotb_bfm_get_param_ui32_tf;
+	tf_data.compiletf = 0;
+	tf_data.sizetf = 0;
+	tf_data.user_data = 0;
+	vpi_register_systf(&tf_data);
 
 	// cocotb_bfm_get_param_i64
 
@@ -248,13 +308,22 @@ void register_bfm_tf(void) {
 
 	// cocotb_bfm_add_ui_param
 	tf_data.type = vpiSysTask;
-	tf_data.tfname = "$cocotb_bfm_add_ui_param";
-	tf_data.calltf = &cocotb_bfm_add_ui_param_tf;
+	tf_data.tfname = "$cocotb_bfm_add_param_ui";
+	tf_data.calltf = &cocotb_bfm_add_param_ui_tf;
 	tf_data.compiletf = 0;
 	tf_data.sizetf = 0;
 	tf_data.user_data = 0;
 	vpi_register_systf(&tf_data);
+
 	// cocotb_bfm_add_si_param
+	tf_data.type = vpiSysTask;
+	tf_data.tfname = "$cocotb_bfm_add_param_si";
+	tf_data.calltf = &cocotb_bfm_add_param_si_tf;
+	tf_data.compiletf = 0;
+	tf_data.sizetf = 0;
+	tf_data.user_data = 0;
+	vpi_register_systf(&tf_data);
+
 	// cocotb_bfm_add_str_param
 
 	// cocotb_bfm_end_msg

@@ -47,7 +47,7 @@ from cocotb.regression import RegressionManager
 from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
 from cocotb.decorators import bfm, bfm_import, bfm_export
 from cocotb.decorators import bfm_uint32_t, bfm_int32_t, bfm_vlog
-from cocotb.bfms import bfm_hdl_path
+from cocotb.bfms import bfm_hdl_path, BfmMgr
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference
@@ -175,6 +175,9 @@ def _initialise_testbench(root_name):
     if modules is None or len(modules) == 0:
         raise ImportError("Environment variables defining the module(s) to " +
                           "execute not defined.  MODULE=\"%s\"" % (modules))
+
+    # Initialize BFMs
+    BfmMgr.init()
 
     global regression_manager
 
