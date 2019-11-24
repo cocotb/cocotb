@@ -142,7 +142,7 @@ class BfmMgr():
     def __init__(self):
         self.bfm_l = []
         self.bfm_type_info_m = {}
-        pass
+        self.m_initialized = False
     
     def add_type_info(self, T, type_info):
         self.bfm_type_info_m[T] = type_info
@@ -173,6 +173,9 @@ class BfmMgr():
         return BfmMgr.m_inst
    
     def load_bfms(self):
+        '''
+        Obtain the list of BFMs from the native layer
+        '''
         import simulator
         n_bfms = simulator.bfm_get_count()
         for i in range(n_bfms):
@@ -211,8 +214,11 @@ class BfmMgr():
     @staticmethod    
     def init():
         import simulator
-        simulator.bfm_set_call_method(BfmMgr.call)
-        BfmMgr.inst().load_bfms()
+        inst = BfmMgr.inst()
+        if not inst.m_initialized:
+            simulator.bfm_set_call_method(BfmMgr.call)
+            BfmMgr.inst().load_bfms()
+            inst.m_initialized = True
         
     @staticmethod
     def call(

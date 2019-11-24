@@ -1,9 +1,12 @@
 
+import os
 import argparse
 import importlib
+from string import Template
+
 import cocotb
 from cocotb.bfms import BfmMgr
-from string import Template
+
 
 def bfm_load_modules(module_l): 
     for m in module_l:
@@ -28,7 +31,7 @@ def process_template_vl(template, info):
             else:
                 bfm_import_calls += "                      $cocotb_bfm_get_param_ui32(bfm_id)"
             
-            if i+1 < len(imp.signature):
+            if pi+1 < len(imp.signature):
                 bfm_import_calls += ","
             bfm_import_calls += "\n"
         bfm_import_calls += "                      );\n"
@@ -117,7 +120,170 @@ def bfm_generate_vl(args):
         out.write(process_template_vl(template, info))
         
     out.close()
+
+def process_template_sv(template, bfm_name, info):
         
+    t = Template(template)
+    
+    bfm_import_calls = ""
+    for i in range(len(info.import_info)):
+        imp = info.import_info[i]
+        bfm_import_calls += "              " + str(i) + ": begin\n"
+        bfm_import_calls += "                  " + imp.T.__name__  + "(\n"
+        for pi in range(len(imp.signature)):
+            p = imp.signature[pi]
+            if p.ptype.s:
+                bfm_import_calls += "                      gpi_bfm_get_param_i32(bfm_id)"
+            else:
+                bfm_import_calls += "                      gpi_bfm_get_param_ui32(bfm_id)"
+            
+            if pi+1 < len(imp.signature):
+                bfm_import_calls += ","
+            bfm_import_calls += "\n"
+        bfm_import_calls += "                      );\n"
+        bfm_import_calls += "              end\n"
+        
+    bfm_export_tasks = ""
+    for i in range(len(info.export_info)):
+        exp = info.export_info[i]
+        bfm_export_tasks += "    task " + exp.T.__name__ + "("
+        for j in range(len(exp.signature)):
+            p = exp.signature[j]
+            bfm_export_tasks += p.ptype.vl_type() + " " + p.pname
+            if j+1 < len(exp.signature):
+                bfm_export_tasks += ", "
+        bfm_export_tasks += ");\n"
+        bfm_export_tasks += "    begin\n"
+        bfm_export_tasks += "        gpi_bfm_begin_msg(bfm_id, " + str(i) + ");\n"
+        for p in exp.signature:
+            if p.ptype.s:
+                bfm_export_tasks += "        gpi_bfm_add_param_si(bfm_id, " + p.pname + ");\n"
+            else:
+                bfm_export_tasks += "        gpi_bfm_add_param_ui(bfm_id, " + p.pname + ");\n"
+            
+        bfm_export_tasks += "        gpi_bfm_end_msg(bfm_id);\n"
+        bfm_export_tasks += "    end\n"
+        bfm_export_tasks += "    endtask\n"
+        
+    
+    impl_param_m = {
+        "bfm_name" : bfm_name,
+        "bfm_classname" : info.T.__module__ + "." + info.T.__qualname__,
+        "bfm_import_calls" : bfm_import_calls,
+        "bfm_export_tasks" : bfm_export_tasks
+        }
+    
+    cocotb_bfm_api_impl = '''
+    int          bfm_id;
+    
+    import "DPI-C" context function int gpi_bfm_claim_msg(int bfm_id);
+    import "DPI-C" context function longint gpi_bfm_get_param_i32(int bfm_id);
+    import "DPI-C" context function longint unsigned gpi_bfm_get_param_ui32(int bfm_id);
+    import "DPI-C" context function void gpi_bfm_begin_msg(int bfm_id, int msg_id);
+    import "DPI-C" context function void gpi_bfm_add_param_si(int bfm_id, longint v);
+    import "DPI-C" context function void gpi_bfm_add_param_ui(int bfm_id, longint unsigned v);
+    import "DPI-C" context function void gpi_bfm_end_msg(int bfm_id);
+    
+    task automatic ${bfm_name}_process_msg();
+        int msg_id = gpi_bfm_claim_msg(bfm_id);
+        case (msg_id)
+${bfm_import_calls}
+        default: begin
+            $display("Error: BFM %m received unsupported message with id %0d", msg_id);
+            $finish();
+        end
+        endcase
+    endtask
+    export "DPI-C" task ${bfm_name}_process_msg;
+    import "DPI-C" context function int ${bfm_name}_register(string inst_name);
+    
+${bfm_export_tasks}
+    
+    initial begin
+      bfm_id = ${bfm_name}_register($sformatf("%m"));
+    end
+    '''
+   
+    param_m = {
+        "cocotb_bfm_api_impl" : Template(cocotb_bfm_api_impl).safe_substitute(impl_param_m)
+        }
+    
+    
+    return t.safe_substitute(param_m)
+
+def generate_dpi_c(bfm_name, info):
+    template_p = {
+        "bfm_name" : bfm_name
+        }
+    
+    template = '''
+extern int ${bfm_name}_process_msg();
+
+static void ${bfm_name}_notify_cb(void *user_data) {
+    svSetScope(user_data);
+    ${bfm_name}_process_msg();
+}
+
+int ${bfm_name}_register(const char *inst_name) {
+
+}
+'''
+    
+    return Template(template).safe_substitute(template_p)
+       
+def bfm_generate_sv(args):
+    inst = BfmMgr.inst()
+   
+    filename_c = args.o
+    if filename_c.find('.') != -1:
+        filename_c = os.path.splitext(filename_c)[0]
+    filename_c += ".c"
+    
+    out_sv = open(args.o, "w")
+    out_sv.write("//***************************************************************************\n")
+    out_sv.write("//* BFMs file for CocoTB. \n")
+    out_sv.write("//* Note: This file is generated. Do Not Edit\n")
+    out_sv.write("//***************************************************************************\n")
+
+    print("filename_c=" + filename_c)    
+    out_c = open(filename_c, "w")
+    out_c.write("//***************************************************************************\n")
+    out_c.write("//* BFMs DPI interface file for CocoTB. \n")
+    out_c.write("//* Note: This file is generated. Do Not Edit\n")
+    out_c.write("//***************************************************************************\n")
+    out_c.write("#ifdef __cplusplus\n")
+    out_c.write("extern \"C\" {\n")
+    out_c.write("#endif\n")
+    out_c.write("\n")
+    out_c.write("#include \"svdpi.h\"\n")
+#    out_c.write("void *svGetScope();\n")
+#    out_c.write("void svSetScope(void *);\n");
+
+    for t in inst.bfm_type_info_m.keys():
+        info = inst.bfm_type_info_m[t]
+        
+        if cocotb.bfm_vlog not in info.hdl.keys():
+            raise Exception("BFM \"" + t.__name__ + "\" does not support Verilog")
+        
+        template_f = open(info.hdl[cocotb.bfm_sv], "r")
+        template = template_f.read()
+        template_f.close()
+        
+        bfm_name = os.path.basename(info.hdl[cocotb.bfm_sv])
+    
+        if bfm_name.find('.') != -1:
+            bfm_name = os.path.splitext(bfm_name)[0]
+        
+        out_sv.write(process_template_sv(template, bfm_name, info))
+        out_c.write(generate_dpi_c(bfm_name, info))
+        
+    out_c.write("#ifdef __cplusplus\n")
+    out_c.write("}\n")
+    out_c.write("#endif\n")
+    
+    out_sv.close() 
+    out_c.close()
+
 def bfm_generate(args):
     '''
     Generates BFM files required for simulation
@@ -135,7 +301,7 @@ def bfm_generate(args):
     if args.language == "vlog":
         bfm_generate_vl(args)
     elif args.language == "sv":
-        args.o = "cocotb_bfms.sv"
+        bfm_generate_sv(args)
     elif args.language == "vhdl":
         args.o = "cocotb_bfms.vhdl"
             

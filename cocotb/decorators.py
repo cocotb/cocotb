@@ -544,5 +544,6 @@ bfm_int32_t = bfm_param_int_t(32, True)
 bfm_uint32_t = bfm_param_int_t(32, False)
 
 bfm_vlog = "verilog"
+bfm_sv = "systemverilog"
         
         
