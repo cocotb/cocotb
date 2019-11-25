@@ -1014,7 +1014,6 @@ static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
 	for (i=0; i<paramc; i++) {
 		PyObject *t = PyList_GetItem(type_l, i);
 		PyObject *v = PyList_GetItem(param_l, i);
-		(void)v;
 
 		paramv[i].ptype = (cocotb_bfm_param_type_e)PyLong_AsLong(t);
 
@@ -1033,6 +1032,7 @@ static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
 	}
 
 	cocotb_bfm_send_msg(bfm_id, msg_id, paramc, paramv);
+	free(paramv);
 
 	return Py_BuildValue("");
 }

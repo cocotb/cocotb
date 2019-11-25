@@ -85,6 +85,17 @@ void cocotb_bfm_begin_msg(uint32_t bfm_id, uint32_t msg_id) {
 	bfm->begin_inbound_msg(msg_id);
 }
 
+void cocotb_bfm_add_si_param(uint32_t bfm_id, int64_t pval) {
+	GpiBfm *bfm = GpiBfm::get_bfms().at(bfm_id);
+	GpiBfmMsg *msg = bfm->active_inbound_msg();
+
+	if (msg) {
+		msg->add_param_si(pval);
+	} else {
+		fprintf(stdout, "Error: attempting to add an signed parameter to a NULL message\n");
+	}
+}
+
 void cocotb_bfm_add_ui_param(uint32_t bfm_id, uint64_t pval) {
 	GpiBfm *bfm = GpiBfm::get_bfms().at(bfm_id);
 	GpiBfmMsg *msg = bfm->active_inbound_msg();

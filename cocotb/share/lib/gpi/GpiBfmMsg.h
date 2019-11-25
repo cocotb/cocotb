@@ -34,7 +34,7 @@ public:
 
 	void add_param_ui(uint64_t p);
 
-	void add_param_i(int64_t p);
+	void add_param_si(int64_t p);
 
 	void add_param_s(const char *p);
 

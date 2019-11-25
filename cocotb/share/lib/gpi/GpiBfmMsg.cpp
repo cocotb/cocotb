@@ -1,6 +1,7 @@
 
 #include "GpiBfmMsg.h"
 #include <string.h>
+#include <stdio.h>
 
 GpiBfmMsg::GpiBfmMsg(
 		uint32_t 				id,
@@ -37,7 +38,7 @@ void GpiBfmMsg::add_param_ui(uint64_t p) {
 	add_param(&param);
 }
 
-void GpiBfmMsg::add_param_i(int64_t p) {
+void GpiBfmMsg::add_param_si(int64_t p) {
 	cocotb_bfm_msg_param_t param;
 	param.ptype = GpiBfmParamType_Si;
 	param.pval.i64 = p;
@@ -87,6 +88,8 @@ uint64_t GpiBfmMsg::get_param_ui() {
 	if (m_idx < m_param_l_idx) {
 		ret = m_param_l[m_idx].pval.ui64;
 		m_idx++;
+	} else {
+		fprintf(stdout, "Error: Out-of-bound request\n");
 	}
 	return ret;
 }

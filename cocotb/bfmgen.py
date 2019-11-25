@@ -41,7 +41,6 @@ def process_template_vl(template, info):
     for i in range(len(info.export_info)):
         exp = info.export_info[i]
         bfm_export_tasks += "    task " + exp.T.__name__ + "("
-        print("Signature: " + str(len(exp.signature)))
         for j in range(len(exp.signature)):
             p = exp.signature[j]
             bfm_export_tasks += p.ptype.vl_type() + " " + p.pname
@@ -129,13 +128,25 @@ def process_template_sv(template, bfm_name, info):
     for i in range(len(info.import_info)):
         imp = info.import_info[i]
         bfm_import_calls += "              " + str(i) + ": begin\n"
-        bfm_import_calls += "                  " + imp.T.__name__  + "(\n"
+        # Verilator doesn't evaluate expressions in the order that
+        # they appear in the argument list. Consequently, we need 
+        # to create temporary variables to ensure the order is correct.
         for pi in range(len(imp.signature)):
             p = imp.signature[pi]
             if p.ptype.s:
-                bfm_import_calls += "                      gpi_bfm_get_param_i32(bfm_id)"
+                bfm_import_calls += "                  longint p" + str(pi) + " = cocotb_bfm_get_si_param(bfm_id);\n"
             else:
-                bfm_import_calls += "                      gpi_bfm_get_param_ui32(bfm_id)"
+                bfm_import_calls += "                  longint unsigned p" + str(pi) + " = cocotb_bfm_get_ui_param(bfm_id);\n"
+                
+        bfm_import_calls += "                  " + imp.T.__name__  + "(\n"
+        for pi in range(len(imp.signature)):
+            p = imp.signature[pi]
+            bfm_import_calls += "                      p" + str(pi)
+            
+#             if p.ptype.s:
+#                 bfm_import_calls += "                      cocotb_bfm_get_si_param(bfm_id)"
+#             else:
+#                 bfm_import_calls += "                      cocotb_bfm_get_ui_param(bfm_id)"
             
             if pi+1 < len(imp.signature):
                 bfm_import_calls += ","
@@ -154,14 +165,14 @@ def process_template_sv(template, bfm_name, info):
                 bfm_export_tasks += ", "
         bfm_export_tasks += ");\n"
         bfm_export_tasks += "    begin\n"
-        bfm_export_tasks += "        gpi_bfm_begin_msg(bfm_id, " + str(i) + ");\n"
+        bfm_export_tasks += "        cocotb_bfm_begin_msg(bfm_id, " + str(i) + ");\n"
         for p in exp.signature:
             if p.ptype.s:
-                bfm_export_tasks += "        gpi_bfm_add_param_si(bfm_id, " + p.pname + ");\n"
+                bfm_export_tasks += "        cocotb_bfm_add_si_param(bfm_id, " + p.pname + ");\n"
             else:
-                bfm_export_tasks += "        gpi_bfm_add_param_ui(bfm_id, " + p.pname + ");\n"
+                bfm_export_tasks += "        cocotb_bfm_add_ui_param(bfm_id, " + p.pname + ");\n"
             
-        bfm_export_tasks += "        gpi_bfm_end_msg(bfm_id);\n"
+        bfm_export_tasks += "        cocotb_bfm_end_msg(bfm_id);\n"
         bfm_export_tasks += "    end\n"
         bfm_export_tasks += "    endtask\n"
         
@@ -176,16 +187,16 @@ def process_template_sv(template, bfm_name, info):
     cocotb_bfm_api_impl = '''
     int          bfm_id;
     
-    import "DPI-C" context function int gpi_bfm_claim_msg(int bfm_id);
-    import "DPI-C" context function longint gpi_bfm_get_param_i32(int bfm_id);
-    import "DPI-C" context function longint unsigned gpi_bfm_get_param_ui32(int bfm_id);
-    import "DPI-C" context function void gpi_bfm_begin_msg(int bfm_id, int msg_id);
-    import "DPI-C" context function void gpi_bfm_add_param_si(int bfm_id, longint v);
-    import "DPI-C" context function void gpi_bfm_add_param_ui(int bfm_id, longint unsigned v);
-    import "DPI-C" context function void gpi_bfm_end_msg(int bfm_id);
+    import "DPI-C" context function int cocotb_bfm_claim_msg(int bfm_id);
+    import "DPI-C" context function longint cocotb_bfm_get_si_param(int bfm_id);
+    import "DPI-C" context function longint unsigned cocotb_bfm_get_ui_param(int bfm_id);
+    import "DPI-C" context function void cocotb_bfm_begin_msg(int bfm_id, int msg_id);
+    import "DPI-C" context function void cocotb_bfm_add_si_param(int bfm_id, longint v);
+    import "DPI-C" context function void cocotb_bfm_add_ui_param(int bfm_id, longint unsigned v);
+    import "DPI-C" context function void cocotb_bfm_end_msg(int bfm_id);
     
     task automatic ${bfm_name}_process_msg();
-        int msg_id = gpi_bfm_claim_msg(bfm_id);
+        int msg_id = cocotb_bfm_claim_msg(bfm_id);
         case (msg_id)
 ${bfm_import_calls}
         default: begin
@@ -213,7 +224,8 @@ ${bfm_export_tasks}
 
 def generate_dpi_c(bfm_name, info):
     template_p = {
-        "bfm_name" : bfm_name
+        "bfm_name" : bfm_name,
+        "bfm_classname" : info.T.__module__ + "." + info.T.__qualname__,
         }
     
     template = '''
@@ -225,7 +237,12 @@ static void ${bfm_name}_notify_cb(void *user_data) {
 }
 
 int ${bfm_name}_register(const char *inst_name) {
-
+    return cocotb_bfm_register(
+        \"XXXX\", 
+        inst_name, 
+        \"${bfm_classname}\", 
+        &${bfm_name}_notify_cb, 
+        svGetScope());
 }
 '''
     
@@ -245,17 +262,19 @@ def bfm_generate_sv(args):
     out_sv.write("//* Note: This file is generated. Do Not Edit\n")
     out_sv.write("//***************************************************************************\n")
 
-    print("filename_c=" + filename_c)    
     out_c = open(filename_c, "w")
     out_c.write("//***************************************************************************\n")
     out_c.write("//* BFMs DPI interface file for CocoTB. \n")
     out_c.write("//* Note: This file is generated. Do Not Edit\n")
     out_c.write("//***************************************************************************\n")
+    out_c.write("#include <stdio.h>\n")
     out_c.write("#ifdef __cplusplus\n")
     out_c.write("extern \"C\" {\n")
     out_c.write("#endif\n")
     out_c.write("\n")
     out_c.write("#include \"svdpi.h\"\n")
+    out_c.write("typedef void (*cocotb_bfm_notify_f)(void *);\n")
+    out_c.write("int cocotb_bfm_register(const char *, const char *, const char *, cocotb_bfm_notify_f, void *);\n")
 #    out_c.write("void *svGetScope();\n")
 #    out_c.write("void svSetScope(void *);\n");
 
@@ -288,7 +307,6 @@ def bfm_generate(args):
     '''
     Generates BFM files required for simulation
     '''
-    print("bfm_generate")
     
     if args.o is None:
         if args.language == "vlog":

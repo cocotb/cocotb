@@ -58,11 +58,17 @@ void GpiBfm::begin_inbound_msg(uint32_t msg_id) {
 }
 
 void GpiBfm::send_inbound_msg() {
-	m_recv_msg_f(
+	if (m_recv_msg_f) {
+		m_recv_msg_f(
 			m_bfm_id,
 			m_active_inbound_msg->id(),
 			m_active_inbound_msg->num_params(),
 			m_active_inbound_msg->get_param_l());
+	} else {
+		fprintf(stdout, "Error: Attempting to send a message (%d) before initialization\n",
+				m_active_inbound_msg->id());
+		fflush(stdout);
+	}
 
 	// Clean up
 	delete m_active_inbound_msg;

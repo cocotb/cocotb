@@ -462,6 +462,7 @@ int VpiStartupCbHdl::run_callback(void) {
     	vpi_time.type = vpiSimTime;
     	cb_data.reason = cbAfterDelay;
 
+    	m_obj_hdl = 0;
     	arm_callback();
 
     	m_phase++;
