@@ -40,7 +40,7 @@ else:
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
 from cocotb.utils import (
-    get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,
+    get_sim_steps, get_time_from_sim_steps, Singleton, ParametrizedSingleton,
     lazy_property,
 )
 from cocotb import decorators
@@ -179,11 +179,14 @@ class Timer(GPITrigger):
 
 # This is needed to make our custom metaclass work with abc.ABCMeta used in the
 # `Trigger` base class.
+class _SingletonAndABC(Singleton, abc.ABCMeta):
+    pass
+
 class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
     pass
 
 
-class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class ReadOnly(_py_compat.with_metaclass(_SingletonAndABC, GPITrigger)):
     """Fires when the current simulation timestep moves to the read-only phase.
 
     The read-only phase is entered when the current timestep no longer has any further delta steps.
@@ -211,7 +214,7 @@ class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigg
         return self.__class__.__name__ + "(readonly)"
 
 
-class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class ReadWrite(_py_compat.with_metaclass(_SingletonAndABC, GPITrigger)):
     """Fires when the read-write portion of the sim cycles is reached."""
     __slots__ = ()
 
@@ -235,7 +238,7 @@ class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrig
         return self.__class__.__name__ + "(readwritesync)"
 
 
-class NextTimeStep(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class NextTimeStep(_py_compat.with_metaclass(_SingletonAndABC, GPITrigger)):
     """Fires when the next time step is started."""
     __slots__ = ()
 

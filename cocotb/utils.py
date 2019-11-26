@@ -408,6 +408,23 @@ def hexdiffs(x, y):
     return rs
 
 
+class Singleton(type):
+    """A metaclass that allows class construction to reuse an existing instance.
+
+    We use this so that :class:`ReadOnly() <cocotb.triggers.ReadOnly>` always returns
+    the same instance, rather than creating new copies. This is an optimized version
+    of :class:`ParametrizedSingleton`, to avoid a lookup parameters - which gives a 1-2%
+    speedup. The object will also be created at class init so it will be available
+    all the time.
+    """
+
+    def __init__(cls, name, bases, dict):
+        # Generate an object during class init and return that later on when called.
+        super(Singleton, cls).__init__(name, bases, dict)
+        cls.__instance_ref = super(Singleton, cls).__call__()
+
+    def __call__(cls):
+        return cls.__instance_ref
 
 
 class ParametrizedSingleton(type):
