@@ -36,7 +36,7 @@ LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libgpi
 
 SRCS        := GpiCbHdl.cpp GpiCommon.cpp GpiBfm.cpp GpiBfmMsg.cpp \
-               gpi_bfm_api.cpp
+               cocotb_bfm_api.cpp
 
 all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 
