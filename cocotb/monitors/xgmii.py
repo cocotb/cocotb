@@ -118,11 +118,10 @@ class XGMII(Monitor):
 
     @cocotb.coroutine
     def _monitor_recv(self):
-        clk = RisingEdge(self.clock)
         self._pkt = ""
 
         while True:
-            yield clk
+            yield RisingEdge(self.clock)
             ctrl, bytes = self._get_bytes()
 
             if ctrl[0] and bytes[0] == _XGMII_START:
@@ -130,7 +129,7 @@ class XGMII(Monitor):
                 ctrl, bytes = ctrl[1:], bytes[1:]
 
                 while self._add_payload(ctrl, bytes):
-                    yield clk
+                    yield RisingEdge(self.clock)
                     ctrl, bytes = self._get_bytes()
 
             elif self.bytes == 8 :
@@ -139,7 +138,7 @@ class XGMII(Monitor):
                     ctrl, bytes = ctrl[5:], bytes[5:]
 
                     while self._add_payload(ctrl, bytes):
-                        yield clk
+                        yield RisingEdge(self.clock)
                         ctrl, bytes = self._get_bytes()
 
             if self._pkt:

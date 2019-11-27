@@ -187,9 +187,8 @@ class XGMII(Driver):
         self.log.debug("Sending packet of length %d bytes" % len(pkt))
         self.log.debug(hexdump(pkt))
 
-        clkedge = RisingEdge(self.clock)
         if sync:
-            yield clkedge
+            yield RisingEdge(self.clock)
 
         self.bus[0] = (_XGMII_START, True)
 
@@ -198,7 +197,7 @@ class XGMII(Driver):
 
         pkt = pkt[len(self.bus)-1:]
         self.signal <= self.bus.value
-        yield clkedge
+        yield RisingEdge(self.clock)
 
         done = False
 
@@ -213,14 +212,14 @@ class XGMII(Driver):
                 self.bus[i] = (pkt[i], False)
 
             self.signal <= self.bus.value
-            yield clkedge
+            yield RisingEdge(self.clock)
             pkt = pkt[len(self.bus):]
 
         if not done:
             self.terminate(0)
             self.signal <= self.bus.value
-            yield clkedge
+            yield RisingEdge(self.clock)
 
         self.idle()
-        yield clkedge
+        yield RisingEdge(self.clock)
         self.log.debug("Successfully sent packet")

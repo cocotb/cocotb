@@ -263,8 +263,6 @@ class AXI4Slave(BusDriver):
 
     @cocotb.coroutine
     def _write_data(self):
-        clock_re = RisingEdge(self.clock)
-
         while True:
             while True:
                 self.bus.WREADY <= 0
@@ -272,7 +270,7 @@ class AXI4Slave(BusDriver):
                 if self.bus.AWVALID.value:
                     self.bus.WREADY <= 1
                     break
-                yield clock_re
+                yield RisingEdge(self.clock)
 
             yield ReadOnly()
             _awaddr = int(self.bus.AWADDR)
@@ -295,7 +293,7 @@ class AXI4Slave(BusDriver):
 
             burst_count = burst_length
 
-            yield clock_re
+            yield RisingEdge(self.clock)
 
             while True:
                 if self.bus.WVALID.value:
@@ -308,18 +306,16 @@ class AXI4Slave(BusDriver):
                     burst_count -= 1
                     if burst_count == 0:
                         break
-                yield clock_re
+                yield RisingEdge(self.clock)
 
     @cocotb.coroutine
     def _read_data(self):
-        clock_re = RisingEdge(self.clock)
-
         while True:
             while True:
                 yield ReadOnly()
                 if self.bus.ARVALID.value:
                     break
-                yield clock_re
+                yield RisingEdge(self.clock)
 
             yield ReadOnly()
             _araddr = int(self.bus.ARADDR)
@@ -344,7 +340,7 @@ class AXI4Slave(BusDriver):
 
             burst_count = burst_length
 
-            yield clock_re
+            yield RisingEdge(self.clock)
 
             while True:
                 self.bus.RVALID <= 1
@@ -357,7 +353,7 @@ class AXI4Slave(BusDriver):
                     self.bus.RDATA <= word
                     if burst_count == 1:
                         self.bus.RLAST <= 1
-                yield clock_re
+                yield RisingEdge(self.clock)
                 burst_count -= 1
                 self.bus.RLAST <= 0
                 if burst_count == 0:

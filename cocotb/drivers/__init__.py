@@ -76,17 +76,15 @@ class BitDriver(object):
         if generator is not None:
             self._generator = generator
 
-        edge = RisingEdge(self._clk)
-
         # Actual thread
         while True:
             on, off = next(self._generator)
             self._signal <= 1
             for _ in range(on):
-                yield edge
+                yield RisingEdge(self._clk)
             self._signal <= 0
             for _ in range(off):
-                yield edge
+                yield RisingEdge(self._clk)
 
 
 class Driver(object):
