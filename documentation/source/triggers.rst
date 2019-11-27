@@ -38,6 +38,10 @@ Signals
 
 .. autoclass:: cocotb.triggers.ClockCycles
 
+.. autoclass:: cocotb.triggers.StableCondition
+
+.. autoclass:: cocotb.triggers.StableValue
+
 
 Timing
 ~~~~~~

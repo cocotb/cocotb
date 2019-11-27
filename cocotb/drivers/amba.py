@@ -27,7 +27,7 @@
 """Drivers for Advanced Microcontroller Bus Architecture."""
 
 import cocotb
-from cocotb.triggers import RisingEdge, ReadOnly, Lock
+from cocotb.triggers import RisingEdge, ReadOnly, Lock, StableCondition, StableValue
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
@@ -78,12 +78,8 @@ class AXI4LiteMaster(BusDriver):
         self.bus.AWADDR <= address
         self.bus.AWVALID <= 1
 
-        while True:
-            yield ReadOnly()
-            if self.bus.AWREADY.value:
-                break
-            yield RisingEdge(self.clock)
-        yield RisingEdge(self.clock)
+        yield StableValue(self.bus.AWREADY, 1, event=RisingEdge(self.clock),
+                          extra_event=True)
         self.bus.AWVALID <= 0
         self.write_address_busy.release()
 
@@ -98,12 +94,8 @@ class AXI4LiteMaster(BusDriver):
         self.bus.WVALID <= 1
         self.bus.WSTRB <= byte_enable
 
-        while True:
-            yield ReadOnly()
-            if self.bus.WREADY.value:
-                break
-            yield RisingEdge(self.clock)
-        yield RisingEdge(self.clock)
+        yield StableValue(self.bus.WREADY, 1, event=RisingEdge(self.clock),
+                          extra_event=True)
         self.bus.WVALID <= 0
         self.write_data_busy.release()
 
@@ -145,19 +137,14 @@ class AXI4LiteMaster(BusDriver):
             yield c_data.join()
 
         # Wait for the response
-        while True:
-            yield ReadOnly()
-            if self.bus.BVALID.value and self.bus.BREADY.value:
-                result = self.bus.BRESP.value
-                break
-            yield RisingEdge(self.clock)
-
-        yield RisingEdge(self.clock)
-
-        if int(result):
+        yield StableCondition(
+            lambda: self.bus.BVALID.value and self.bus.BREADY.value,
+            event=RisingEdge(self.clock), extra_event=True
+        )
+        result = self.bus.BRESP.value.integer
+        if result:
             raise AXIProtocolError("Write to address 0x%08x failed with BRESP: %d"
-                               % (address, int(result)))
-
+                                   % (address, result))
         raise ReturnValue(result)
 
     @cocotb.coroutine
@@ -181,22 +168,16 @@ class AXI4LiteMaster(BusDriver):
         self.bus.ARADDR <= address
         self.bus.ARVALID <= 1
 
-        while True:
-            yield ReadOnly()
-            if self.bus.ARREADY.value:
-                break
-            yield RisingEdge(self.clock)
-
-        yield RisingEdge(self.clock)
+        yield StableValue(self.bus.ARREADY, 1, event=RisingEdge(self.clock),
+                          extra_event=True)
         self.bus.ARVALID <= 0
 
-        while True:
-            yield ReadOnly()
-            if self.bus.RVALID.value and self.bus.RREADY.value:
-                data = self.bus.RDATA.value
-                result = self.bus.RRESP.value
-                break
-            yield RisingEdge(self.clock)
+        yield StableCondition(
+            lambda: self.bus.RVALID.value and self.bus.RREADY.value,
+            event=RisingEdge(self.clock)
+        )
+        data = self.bus.RDATA.value
+        result = self.bus.RRESP.value
 
         if int(result):
             raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d" %
@@ -266,13 +247,9 @@ class AXI4Slave(BusDriver):
         clock_re = RisingEdge(self.clock)
 
         while True:
-            while True:
-                self.bus.WREADY <= 0
-                yield ReadOnly()
-                if self.bus.AWVALID.value:
-                    self.bus.WREADY <= 1
-                    break
-                yield clock_re
+            self.bus.WREADY <= 0
+            yield StableValue(self.bus.AWVALID, 1, event=clock_re)
+            self.bus.WREADY <= 1
 
             yield ReadOnly()
             _awaddr = int(self.bus.AWADDR)
@@ -293,33 +270,26 @@ class AXI4Slave(BusDriver):
                     "BURST_LENGTH %d\n" % burst_length +
                     "Bytes in beat %d\n" % bytes_in_beat)
 
-            burst_count = burst_length
 
             yield clock_re
 
-            while True:
-                if self.bus.WVALID.value:
-                    word = self.bus.WDATA.value
-                    word.big_endian = self.big_endian
-                    _burst_diff = burst_length - burst_count
-                    _st = _awaddr + (_burst_diff * bytes_in_beat)  # start
-                    _end = _awaddr + ((_burst_diff + 1) * bytes_in_beat)  # end
-                    self._memory[_st:_end] = array.array('B', word.get_buff())
-                    burst_count -= 1
-                    if burst_count == 0:
-                        break
-                yield clock_re
+            burst_count = burst_length
+            while burst_count > 0:
+                yield StableValue(self.bus.WVALID, 1, event=clock_re)
+                word = self.bus.WDATA.value
+                word.big_endian = self.big_endian
+                _burst_diff = burst_length - burst_count
+                _st = _awaddr + (_burst_diff * bytes_in_beat)  # start
+                _end = _awaddr + ((_burst_diff + 1) * bytes_in_beat)  # end
+                self._memory[_st:_end] = array.array('B', word.get_buff())
+                burst_count -= 1
 
     @cocotb.coroutine
     def _read_data(self):
         clock_re = RisingEdge(self.clock)
 
         while True:
-            while True:
-                yield ReadOnly()
-                if self.bus.ARVALID.value:
-                    break
-                yield clock_re
+            yield StableValue(self.bus.ARVALID, 1, event=clock_re)
 
             yield ReadOnly()
             _araddr = int(self.bus.ARADDR)
@@ -342,23 +312,18 @@ class AXI4Slave(BusDriver):
                     "BURST_LENGTH %d\n" % burst_length +
                     "Bytes in beat %d\n" % bytes_in_beat)
 
-            burst_count = burst_length
-
             yield clock_re
 
-            while True:
-                self.bus.RVALID <= 1
-                yield ReadOnly()
-                if self.bus.RREADY.value:
-                    _burst_diff = burst_length - burst_count
-                    _st = _araddr + (_burst_diff * bytes_in_beat)
-                    _end = _araddr + ((_burst_diff + 1) * bytes_in_beat)
-                    word.buff = self._memory[_st:_end].tostring()
-                    self.bus.RDATA <= word
-                    if burst_count == 1:
-                        self.bus.RLAST <= 1
-                yield clock_re
+            burst_count = burst_length
+            self.bus.RVALID <= 1
+            while burst_count > 0:
+                yield StableValue(self.bus.RREADY, 1, event=clock_re)
+                _burst_diff = burst_length - burst_count
+                _st = _araddr + (_burst_diff * bytes_in_beat)
+                _end = _araddr + ((_burst_diff + 1) * bytes_in_beat)
+                word.buff = self._memory[_st:_end].tostring()
+                self.bus.RDATA <= word
+                if burst_count == 1:
+                    self.bus.RLAST <= 1
                 burst_count -= 1
-                self.bus.RLAST <= 0
-                if burst_count == 0:
-                    break
+            self.bus.RLAST <= 0

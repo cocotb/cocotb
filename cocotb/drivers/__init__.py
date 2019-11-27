@@ -30,11 +30,11 @@
 """Set of common driver base classes."""
 
 from collections import deque
+import warnings
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import (Event, RisingEdge, ReadOnly, NextTimeStep,
-                             Edge)
+from cocotb.triggers import Event, RisingEdge, NextTimeStep, StableValue
 from cocotb.bus import Bus
 from cocotb.log import SimLog
 
@@ -262,10 +262,12 @@ class BusDriver(Driver):
         to move to :class:`~cocotb.triggers.NextTimeStep` before
         registering more callbacks can occur.
         """
-        yield ReadOnly()
-        while signal.value.integer != 1:
-            yield RisingEdge(signal)
-            yield ReadOnly()
+        warnings.warn(
+            "Use of BusDriver._wait_for_signal() is deprecated\n"
+            "\tPlease, use cocotb.trigggers.StableValue instead",
+            DeprecationWarning, stacklevel=2
+        )
+        yield StableValue(signal, 1)
         yield NextTimeStep()
 
     @coroutine
@@ -276,10 +278,12 @@ class BusDriver(Driver):
         to move to :class:`~cocotb.triggers.NextTimeStep` before
         registering more callbacks can occur.
         """
-        yield ReadOnly()
-        while signal.value.integer != 0:
-            yield Edge(signal)
-            yield ReadOnly()
+        warnings.warn(
+            "Use of BusDriver._wait_for_signal() is deprecated\n"
+            "\tPlease, use cocotb.triggers.StableValue instead",
+            DeprecationWarning, stacklevel=2
+        )
+        yield StableValue(signal, 0)
         yield NextTimeStep()
 
     def __str__(self):

@@ -36,7 +36,8 @@ import random
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import RisingEdge, FallingEdge, ReadOnly, NextTimeStep, Event
+from cocotb.triggers import (RisingEdge, FallingEdge, ReadOnly, NextTimeStep, Event,
+                             StableValue)
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
@@ -151,7 +152,7 @@ class AvalonMaster(AvalonMM):
 
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
-            yield self._wait_for_nsignal(self.bus.waitrequest)
+            yield StableValue(self.bus.waitrequest, 0, extra_event=True)
         yield RisingEdge(self.clock)
 
         # Deassert read
@@ -165,11 +166,7 @@ class AvalonMaster(AvalonMM):
         self.bus.address <= v
 
         if hasattr(self.bus, "readdatavalid"):
-            while True:
-                yield ReadOnly()
-                if int(self.bus.readdatavalid):
-                    break
-                yield RisingEdge(self.clock)
+            yield StableValue(self.bus.readdatavalid, 1, event=RisingEdge(self.clock))
         else:
             # Assume readLatency = 1 if no readdatavalid
             # FIXME need to configure this,
@@ -212,7 +209,7 @@ class AvalonMaster(AvalonMM):
 
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
-            count = yield self._wait_for_nsignal(self.bus.waitrequest)
+            yield StableValue(self.bus.waitrequest, 0, event=RisingEdge(self.clock))
 
         # Deassert write
         yield RisingEdge(self.clock)

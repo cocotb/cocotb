@@ -37,7 +37,7 @@ import warnings
 from cocotb.utils import hexdump
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
-from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge, ReadOnly, StableCondition
 from cocotb.binary import BinaryValue
 
 class AvalonProtocolError(Exception):
@@ -78,14 +78,12 @@ class AvalonST(BusMonitor):
                 return self.bus.valid.value and self.bus.ready.value
             return self.bus.valid.value
 
-        # NB could yield on valid here more efficiently?
         while True:
             yield clkedge
-            yield rdonly
-            if valid():
-                vec = self.bus.data.value
-                vec.big_endian = self.config["firstSymbolInHighOrderBits"]
-                self._recv(vec.buff)
+            yield StableCondition(valid, event=clkedge)
+            vec = self.bus.data.value
+            vec.big_endian = self.config["firstSymbolInHighOrderBits"]
+            self._recv(vec.buff)
 
 
 class AvalonSTPkts(BusMonitor):
