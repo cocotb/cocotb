@@ -540,8 +540,15 @@ class bfm_param_int_t():
         
         return ret
 
+# Constants for use in specifying BFM API signatures
+bfm_int8_t = bfm_param_int_t(32, True)
+bfm_uint8_t = bfm_param_int_t(32, False)
+bfm_int16_t = bfm_param_int_t(32, True)
+bfm_uint16_t = bfm_param_int_t(32, False)
 bfm_int32_t = bfm_param_int_t(32, True)
 bfm_uint32_t = bfm_param_int_t(32, False)
+bfm_int64_t = bfm_param_int_t(64, True)
+bfm_uint64_t = bfm_param_int_t(64, False)
 
 bfm_vlog = "verilog"
 bfm_sv = "systemverilog"

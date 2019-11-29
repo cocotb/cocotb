@@ -257,7 +257,11 @@ def generate_dpi_c(bfm_name, info):
         }
     
     template = '''
-extern int ${bfm_name}_process_msg();
+int ${bfm_name}_process_msg() __attribute__((weak));
+
+// Stub definition to handle the case where a referenced
+// BFM type isn't instanced
+int ${bfm_name}_process_msg() { }
 
 static void ${bfm_name}_notify_cb(void *user_data) {
     svSetScope(user_data);
@@ -303,8 +307,6 @@ def bfm_generate_sv(args):
     out_c.write("#include \"svdpi.h\"\n")
     out_c.write("typedef void (*cocotb_bfm_notify_f)(void *);\n")
     out_c.write("int cocotb_bfm_register(const char *, const char *, const char *, cocotb_bfm_notify_f, void *);\n")
-#    out_c.write("void *svGetScope();\n")
-#    out_c.write("void svSetScope(void *);\n");
 
     for t in inst.bfm_type_info_m.keys():
         info = inst.bfm_type_info_m[t]

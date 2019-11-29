@@ -39,7 +39,7 @@ static int releases = 0;
 
 #include "simulatormodule.h"
 #include <cocotb_utils.h>
-#include "gpi_bfm_api.h"
+#include "cocotb_bfm_api.h"
 
 static PyObject *bfm_call_method = 0;
 
