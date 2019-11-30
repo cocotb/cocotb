@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,7 +30,6 @@ import sys
 import time
 import logging
 import functools
-import threading
 import inspect
 import textwrap
 import os
@@ -69,8 +68,8 @@ public(public)  # Emulate decorating ourself
 @public
 class CoroutineComplete(Exception):
     """To ensure that a coroutine has completed before we fire any triggers
-    that are blocked waiting for the coroutine to end, we create a subclass
-    exception that the Scheduler catches and the callbacks are attached
+    that are blocked waiting for the coroutine to end, we create a sub-class
+    exception that the scheduler catches and the callbacks are attached
     here.
     """
     def __init__(self, text=""):
@@ -138,14 +137,17 @@ class RunningCoroutine(object):
         return str(self.__name__)
 
     def _advance(self, outcome):
-        """
-        Advance to the next yield in this coroutine
+        """Advance to the next yield in this coroutine.
 
-        :param outcome: The `outcomes.Outcome` object to resume with.
-        :returns: The object yielded from the coroutine
+        Args:
+            outcome: The :any:`outcomes.Outcome` object to resume with.
 
-        If the coroutine returns or throws an error, self._outcome is set, and
-        this throws `CoroutineComplete`.
+        Returns:
+            The object yielded from the coroutine
+
+        Raises:
+            CoroutineComplete: If the coroutine returns or throws an error, self._outcome is set, and
+           :exc:`CoroutineComplete` is thrown.
         """
         try:
             self._started = True
@@ -272,8 +274,7 @@ class RunningTest(RunningCoroutine):
 
     # like RunningCoroutine.kill(), but with a way to inject a failure
     def abort(self, exc):
-        """
-        Force this test to end early, without executing any cleanup.
+        """Force this test to end early, without executing any cleanup.
 
         This happens when a background task fails, and is consistent with
         how the behavior has always been. In future, we may want to behave
@@ -290,7 +291,7 @@ class coroutine(object):
 
     ``log`` methods will log to ``cocotb.coroutine.name``.
 
-    ``join()`` method returns an event which will fire when the coroutine exits.
+    :meth:`~cocotb.decorators.RunningCoroutine.join` method returns an event which will fire when the coroutine exits.
 
     Used as ``@cocotb.coroutine``.
     """
@@ -327,35 +328,19 @@ class function(object):
     externally appear to yield.
     """
     def __init__(self, func):
-        self._func = func
+        self._coro = cocotb.coroutine(func)
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.function.%s" % self._func.__name__, id(self))
+        return SimLog("cocotb.function.%s" % self._coro.__name__, id(self))
 
     def __call__(self, *args, **kwargs):
-
-        @coroutine
-        def execute_function(self, event):
-            coro = cocotb.coroutine(self._func)(*args, **kwargs)
-            try:
-                _outcome = outcomes.Value((yield coro))
-            except BaseException as e:
-                _outcome = outcomes.Error(e)
-            event.outcome = _outcome
-            event.set()
-
-        event = threading.Event()
-        waiter = cocotb.scheduler.queue_function(execute_function(self, event))
-        # This blocks the calling external thread until the coroutine finishes
-        event.wait()
-        waiter.thread_resume()
-        return event.outcome.get()
+        return cocotb.scheduler.queue_function(self._coro(*args, **kwargs))
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
             and standalone functions"""
-        return self.__class__(self._func.__get__(obj, type))
+        return self.__class__(self._coro._func.__get__(obj, type))
 
 @public
 class external(object):
@@ -368,16 +353,7 @@ class external(object):
         self._log = SimLog("cocotb.external.%s" % self._func.__name__, id(self))
 
     def __call__(self, *args, **kwargs):
-
-        @coroutine
-        def wrapper():
-            ext = cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
-            yield ext.event.wait()
-
-            ret = ext.result  # raises if there was an exception
-            raise ReturnValue(ret)
-
-        return wrapper()
+        return cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
 
     def __get__(self, obj, type=None):
         """Permit the decorator to be used on class methods
@@ -437,10 +413,24 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
             value representing simulation timeout (not implemented).
         expect_fail (bool, optional):
             Don't mark the result as a failure if the test fails.
-        expect_error (bool, optional):
-            Don't mark the result as an error if an error is raised.
-            This is for cocotb internal regression use 
-            when a simulator error is expected.
+        expect_error (bool or exception type or tuple of exception types, optional):
+            If ``True``, consider this test passing if it raises *any* :class:`Exception`, and failing if it does not.
+            If given an exception type or tuple of exception types, catching *only* a listed exception type is considered passing.
+            This is primarily for cocotb internal regression use for when a simulator error is expected.
+
+            Users are encouraged to use the following idiom instead::
+
+                @cocotb.test()
+                def my_test(dut):
+                    try:
+                        yield thing_that_should_fail()
+                    except ExceptionIExpect:
+                        pass
+                    else:
+                        assert False, "Exception did not occur"
+
+            .. versionchanged:: 1.3
+                Specific exception types can be expected
         skip (bool, optional):
             Don't execute this test as part of the regression.
         stage (int, optional)
@@ -452,6 +442,10 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
 
         self.timeout = timeout
         self.expect_fail = expect_fail
+        if expect_error is True:
+            expect_error = (Exception,)
+        elif expect_error is False:
+            expect_error = ()
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage

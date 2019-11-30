@@ -48,7 +48,7 @@ $(LIB_DIR)/libcocotb.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/embed/gpi_embed.c | $(L
 $(LIB_DIR)/libvpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/vpi/VpiImpl.cpp $(COCOTB_SHARE_DIR)/lib/vpi/VpiCbHdl.cpp | $(LIB_DIR)
 	make -C $(COCOTB_SHARE_DIR)/lib/vpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
-$(LIB_DIR)/libvhpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/vhpi/VhpiImpl.cpp $(COCOTB_SHARE_DIR)/lib/vhpi/VhpiCbHdl.cpp | $(LIB_DIR)
+$(LIB_DIR)/libcocotbvhpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/vhpi/VhpiImpl.cpp $(COCOTB_SHARE_DIR)/lib/vhpi/VhpiCbHdl.cpp | $(LIB_DIR)
 	make -C $(COCOTB_SHARE_DIR)/lib/vhpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
 
 $(LIB_DIR)/libgpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/gpi/GpiCommon.cpp $(COCOTB_SHARE_DIR)/lib/gpi/GpiCbHdl.cpp | $(LIB_DIR)
@@ -71,7 +71,7 @@ COCOTB_LIBS := $(LIB_DIR)/libcocotbutils.$(LIB_EXT) \
 
 COCOTB_VPI_LIB := $(LIB_DIR)/libvpi.$(LIB_EXT)
 
-COCOTB_VHPI_LIB := $(LIB_DIR)/libvhpi.$(LIB_EXT)
+COCOTB_VHPI_LIB := $(LIB_DIR)/libcocotbvhpi.$(LIB_EXT)
 
 COCOTB_FLI_LIB := $(LIB_DIR)/libfli.$(LIB_EXT)
 

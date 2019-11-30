@@ -25,42 +25,57 @@ Typically the makefiles provided with Cocotb for various simulators use a separa
 Make Variables
 --------------
 
-.. glossary::
+.. make:var:: GUI
 
-    ``GUI``
       Set this to 1 to enable the GUI mode in the simulator (if supported).
 
-    ``SIM``
+.. make:var:: SIM
+
       Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/makefile.$(SIM)`
 
-    ``VERILOG_SOURCES``
+.. make:var:: WAVES
+
+      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators. 
+      To get wave traces in Icarus Verilog see :ref:`Simulator Support`.
+
+.. make:var:: VERILOG_SOURCES
+
       A list of the Verilog source files to include.
 
-    ``VHDL_SOURCES``
+.. make:var:: VHDL_SOURCES
+
       A list of the VHDL source files to include.
 
-    ``VHDL_SOURCES_lib``
+.. make:var:: VHDL_SOURCES_lib
+
       A list of the VHDL source files to include in the VHDL library *lib* (currently GHDL only).
 
-    ``COMPILE_ARGS``
+.. make:var:: COMPILE_ARGS
+
       Any arguments or flags to pass to the compile stage of the simulation.
 
-    ``SIM_ARGS``
+.. make:var:: SIM_ARGS
+
       Any arguments or flags to pass to the execution of the compiled simulation.
 
-    ``EXTRA_ARGS``
+.. make:var:: EXTRA_ARGS
+
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
 
-    ``CUSTOM_COMPILE_DEPS``
-      Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :term:`VERILOG_SOURCES` or :term:`VHDL_SOURCES`.
+.. make:var:: CUSTOM_COMPILE_DEPS
 
-    ``CUSTOM_SIM_DEPS``
+      Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :make:var:`VERILOG_SOURCES` or :make:var:`VHDL_SOURCES`.
+
+.. make:var:: CUSTOM_SIM_DEPS
+
       Use to add additional dependencies to the simulation target.
 
-    ``COCOTB_NVC_TRACE``
-      Set this to 1 to enable display of VHPI traces when using the nvc VHDL simulator.
+.. make:var:: COCOTB_NVC_TRACE
 
-    ``SIM_BUILD``
+      Set this to 1 to enable display of VHPI traces when using the NVC VHDL simulator.
+
+.. make:var:: SIM_BUILD
+
       Use to define a scratch directory for use by the simulator. The path is relative to the Makefile location.
       If not provided, the default scratch directory is :file:`sim_build`.
 
@@ -91,12 +106,12 @@ Environment Variables
 
 .. envvar:: COCOTB_ANSI_OUTPUT
 
-    Use this to override the default behaviour of annotating Cocotb output with
-    ANSI colour codes if the output is a terminal (``isatty()``).
+    Use this to override the default behavior of annotating cocotb output with
+    ANSI color codes if the output is a terminal (``isatty()``).
 
-    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type stdout
+    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type of ``stdout``
 
-    ``COCOTB_ANSI_OUTPUT=0`` supresses the ANSI output in the log messages
+    ``COCOTB_ANSI_OUTPUT=0`` suppresses the ANSI output in the log messages
 
 .. envvar:: COCOTB_REDUCED_LOG_FMT
 
@@ -116,7 +131,7 @@ Environment Variables
 
 .. envvar:: COCOTB_RESULTS_FILE
 
-    The filename where XML tests results are stored. If not provided, the default is :file:`results.xml`.
+    The file name where XML tests results are stored. If not provided, the default is :file:`results.xml`.
 
     .. versionadded:: 1.3
 
@@ -188,7 +203,3 @@ Additional Environment Variables
 .. envvar:: COCOTB_SHARE_DIR
 
     Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories ``lib``, ``include``, and ``makefiles``.
-
-.. envvar:: VERSION
-
-    The version of the Cocotb installation. You probably don't want to modify this.

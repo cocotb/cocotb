@@ -30,7 +30,6 @@ Writing and Generating tests
     :members:
     :member-order: bysource
 
-
 Interacting with the Simulator
 ==============================
 
@@ -50,9 +49,15 @@ Interacting with the Simulator
 
 .. autoclass:: cocotb.clock.Clock
 
+.. autofunction:: cocotb.fork
+
+.. autofunction:: cocotb.decorators.RunningCoroutine.join
+
+.. autofunction:: cocotb.decorators.RunningCoroutine.kill
+
 Triggers
 --------
-See :ref:`simulator-triggers` for a list of subclasses. Below are the internal
+See :ref:`simulator-triggers` for a list of sub-classes. Below are the internal
 classes used within ``cocotb``.
 
 .. currentmodule:: cocotb.triggers
@@ -64,7 +69,6 @@ classes used within ``cocotb``.
 .. autoclass:: GPITrigger
     :members:
     :member-order: bysource
-
 
 Testbench Structure
 ===================
@@ -157,21 +161,6 @@ Implemented Testbench Structures
 
 Drivers
 -------
-
-AD9361
-~~~~~~
-
-Analog Devices AD9361 RF Transceiver.
-
-.. currentmodule:: cocotb.drivers.ad9361
-
-.. autoclass:: AD9361
-
-    .. automethod:: send_data(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
-    .. automethod:: rx_data_to_ad9361(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
-    .. automethod:: ad9361_tx_to_rx_loopback()
-    .. automethod:: tx_data_from_ad9361()
-
 
 AMBA
 ~~~~
@@ -269,3 +258,35 @@ XGMII
     :members:
     :member-order: bysource
     :show-inheritance:
+
+Miscellaneous
+=============
+
+Signal Tracer for WaveDrom
+--------------------------
+
+.. automodule:: cocotb.wavedrom
+    :members:
+    :member-order: bysource
+    :synopsis: A signal tracer for WaveDrom.
+
+
+Developer-focused
+=================
+
+The Scheduler
+-------------
+
+.. note::
+    The scheduler object should generally not be interacted with directly - 
+    the only part of it that a user will need is encapsulated in :func:`~cocotb.fork`, 
+    everything else works behind the scenes.
+
+.. currentmodule:: cocotb.scheduler
+
+.. autodata:: cocotb.scheduler
+
+.. autoclass:: Scheduler
+    :members:
+    :member-order: bysource
+

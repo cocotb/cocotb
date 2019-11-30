@@ -1,4 +1,7 @@
 // Adder DUT
+
+`timescale 1ns/1ps
+
 module adder #(
     parameter   DATA_WIDTH = 4
 ) (

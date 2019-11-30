@@ -37,6 +37,8 @@
 static int takes = 0;
 static int releases = 0;
 
+static int sim_ending = 0;
+
 #include "simulatormodule.h"
 #include <cocotb_utils.h>
 #include "cocotb_bfm_api.h"
@@ -153,7 +155,7 @@ int handle_gpi_callback(void *user_data)
 
     // If the return value is NULL a Python exception has occurred
     // The best thing to do here is shutdown as any subsequent
-    // calls will go back to python which is now in an unknown state
+    // calls will go back to Python which is now in an unknown state
     if (pValue == NULL)
     {
         fprintf(stderr, "ERROR: called callback function returned NULL\n");
@@ -165,6 +167,7 @@ int handle_gpi_callback(void *user_data)
         }
 
         gpi_sim_end();
+        sim_ending = 1;
         ret = 0;
         goto out;
     }
@@ -186,6 +189,13 @@ out:
 
 err:
     to_simulator();
+
+    if (sim_ending) {
+        // This is the last callback of a successful run,
+        // so call the cleanup function as we'll never return
+        // to Python
+        gpi_cleanup();
+    }
     return ret;
 }
 
@@ -206,7 +216,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
 }
 
 
-// Register a callback for read only state of sim
+// Register a callback for read-only state of sim
 // First argument is the function to call
 // Remaining arguments are keyword arguments to be passed to the callback
 static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
@@ -889,6 +899,7 @@ static PyObject *get_range(PyObject *self, PyObject *args)
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
     gpi_sim_end();
+    sim_ending = 1;
     return Py_BuildValue("s", "OK!");
 }
 

@@ -36,15 +36,16 @@ the transactions.
 from collections import deque
 
 import cocotb
-from cocotb.decorators import coroutine
-from cocotb.triggers import Event, Timer
 from cocotb.bus import Bus
+from cocotb.decorators import coroutine
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
+from cocotb.triggers import Event, Timer
 
 
 class MonitorStatistics(object):
     """Wrapper class for storing Monitor statistics"""
+
     def __init__(self):
         self.received_transactions = 0
 
@@ -54,7 +55,7 @@ class Monitor(object):
 
     Monitors are passive 'listening' objects that monitor pins going in or out of a DUT.
     This class should not be used
-    directly, but should be subclassed and the internal :any:`_monitor_recv` method
+    directly, but should be sub-classed and the internal :any:`_monitor_recv` method
     should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
     method should capture some behavior of the pins, form a transaction, and
     pass this transaction to the internal :any:`_recv` method.  The :any:`_monitor_recv`
@@ -68,19 +69,19 @@ class Monitor(object):
         callback (callable): Callback to be called with each recovered transaction
             as the argument. If the callback isn't used, received transactions will
             be placed on a queue and the event used to notify any consumers.
-        event (event): Object that supports a ``set`` method that will be called when
-            a transaction is received through the internal :any:`_recv` method.
+        event (cocotb.triggers.Event): Event that will be called when a transaction
+            is received through the internal :any:`_recv` method.
+            `Event.data` is set to the received transaction.
     """
 
     def __init__(self, callback=None, event=None):
         self._event = event
-        self._wait_event = None
+        self._wait_event = Event()
         self._recvQ = deque()
         self._callbacks = []
         self.stats = MonitorStatistics()
-        self._wait_event = Event()
 
-        # Subclasses may already set up logging
+        # Sub-classes may already set up logging
         if not hasattr(self, "log"):
             self.log = SimLog("cocotb.monitor.%s" % (self.__class__.__name__))
 
@@ -118,10 +119,11 @@ class Monitor(object):
         and return its data.
 
         Args:
-            timeout (optional): The timeout value for :class:`~.triggers.Timer`.
+            timeout: The timeout value for :class:`~.triggers.Timer`.
                 Defaults to ``None``.
 
-        Returns: Data of received transaction.
+        Returns:
+            Data of received transaction.
         """
         if timeout:
             t = Timer(timeout)
@@ -138,7 +140,7 @@ class Monitor(object):
     def _monitor_recv(self):
         """Actual implementation of the receiver.
 
-        Subclasses should override this method to implement the actual receive
+        Sub-classes should override this method to implement the actual receive
         routine and call :any:`_recv` with the recovered transaction.
         """
         raise NotImplementedError("Attempt to use base monitor class without "
@@ -158,7 +160,7 @@ class Monitor(object):
             self._recvQ.append(transaction)
 
         if self._event is not None:
-            self._event.set()
+            self._event.set(data=transaction)
 
         # If anyone was waiting then let them know
         if self._wait_event is not None:
@@ -167,7 +169,7 @@ class Monitor(object):
 
 
 class BusMonitor(Monitor):
-    """Wrapper providing common functionality for monitoring busses."""
+    """Wrapper providing common functionality for monitoring buses."""
     _signals = []
     _optional_signals = []
 

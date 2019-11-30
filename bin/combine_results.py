@@ -52,7 +52,7 @@ def main():
     for fname in find_all("results.xml", args.directory):
         if args.debug : print("Reading file %s" % fname)
         tree = ET.parse(fname)
-        for ts in tree.getiterator("testsuite"):
+        for ts in tree.iter("testsuite"):
             if args.debug : print("Ts name : %s, package : %s" % ( ts.get('name'), ts.get('package')))
             use_element = None
             for existing in result:

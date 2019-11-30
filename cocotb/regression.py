@@ -307,7 +307,7 @@ class RegressionManager(object):
             result_pass = False
 
         elif isinstance(result, SimFailure):
-            if test.expect_error:
+            if isinstance(result, test.expect_error):
                 self.log.info("Test errored as expected: " + _result_was())
             else:
                 self.log.error("Test error has lead to simulator shutting us "
@@ -318,7 +318,12 @@ class RegressionManager(object):
                 return
 
         elif test.expect_error:
-            self.log.info("Test errored as expected: " + _result_was())
+            if isinstance(result, test.expect_error):
+                self.log.info("Test errored as expected: " + _result_was())
+            else:
+                self.log.info("Test errored with unexpected type: " + _result_was())
+                self._add_failure(result)
+                result_pass = False
 
         else:
             self.log.error("Test Failed: " + _result_was(), exc_info=exc_info)
@@ -460,7 +465,19 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
 
 
 class TestFactory(object):
-    """Used to automatically generate tests.
+    """Factory to automatically generate tests.
+
+    Args:
+        test_function: The function that executes a test.
+            Must take *dut* as the first argument.
+        *args: Remaining arguments are passed directly to the test function.
+            Note that these arguments are not varied. An argument that
+            varies with each test must be a keyword argument to the
+            test function.
+        **kwargs: Remaining keyword arguments are passed directly to the test function.
+            Note that these arguments are not varied. An argument that
+            varies with each test must be a keyword argument to the
+            test function.
 
     Assuming we have a common test function that will run a test. This test
     function will take keyword arguments (for example generators for each of
@@ -472,13 +489,14 @@ class TestFactory(object):
     For example if we have a module that takes backpressure and idles and
     have some packet generation routines ``gen_a`` and ``gen_b``:
 
-    >>> tf = TestFactory(run_test)
-    >>> tf.add_option('data_in', [gen_a, gen_b])
+    >>> tf = TestFactory(test_function=run_test)
+    >>> tf.add_option(name='data_in', optionlist=[gen_a, gen_b])
     >>> tf.add_option('backpressure', [None, random_backpressure])
     >>> tf.add_option('idles', [None, random_idles])
     >>> tf.generate_tests()
 
     We would get the following tests:
+
         * ``gen_a`` with no backpressure and no idles
         * ``gen_a`` with no backpressure and ``random_idles``
         * ``gen_a`` with ``random_backpressure`` and no idles
@@ -495,20 +513,6 @@ class TestFactory(object):
     """
 
     def __init__(self, test_function, *args, **kwargs):
-        """
-        Args:
-            test_function (function): the function that executes a test.
-                                      Must take 'dut' as the first argument.
-
-            *args: Remaining args are passed directly to the test function.
-                   Note that these arguments are not varied. An argument that
-                   varies with each test must be a keyword argument to the
-                   test function.
-            *kwargs: Remaining kwargs are passed directly to the test function.
-                   Note that these arguments are not varied. An argument that
-                   varies with each test must be a keyword argument to the
-                   test function.
-        """
         if not isinstance(test_function, cocotb.coroutine):
             raise TypeError("TestFactory requires a cocotb coroutine")
         self.test_function = test_function
@@ -523,16 +527,16 @@ class TestFactory(object):
         """Add a named option to the test.
 
         Args:
-           name (str): Name of the option. Passed to test as a keyword
-                          argument.
+            name (str): Name of the option. Passed to test as a keyword
+                argument.
 
-           optionlist (list): A list of possible options for this test knob.
+            optionlist (list): A list of possible options for this test knob.
         """
         self.kwargs[name] = optionlist
 
     def generate_tests(self, prefix="", postfix=""):
         """
-        Generates exhaustive set of tests using the cartesian product of the
+        Generate an exhaustive set of tests using the cartesian product of the
         possible keyword arguments.
 
         The generated tests are appended to the namespace of the calling

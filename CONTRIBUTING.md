@@ -131,6 +131,7 @@ Most maintainers are experts in part of the cocotb codebase, and are primarily r
 - Stuart Hodgson (@stuarthodgson).
   Founder of cocotb.
 - Philipp Wagner (@imphil)
+- Eric Wieser (@eric-wieser)
 
 Code of Conduct
 ---------------

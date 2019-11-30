@@ -42,11 +42,12 @@ def package_files(directory):
             paths.append(path.join('..', fpath, filename))
     return paths
 
-version = read_file('version')[8:].strip()
+# this sets the __version__ variable
+exec(read_file(path.join('cocotb', '_version.py')))
 
 setup(
     name='cocotb',
-    version=version,
+    version=__version__,  # noqa: F821
     description='cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.',
     url='https://github.com/potentialventures/cocotb',
     license='BSD',
@@ -55,6 +56,7 @@ setup(
     author='Chris Higgs, Stuart Hodgson',
     author_email='cocotb@potentialventures.com',
     install_requires=[],
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
     packages=find_packages(),
     include_package_data=True,
     package_data={'cocotb': package_files('cocotb/share')},
