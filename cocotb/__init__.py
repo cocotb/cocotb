@@ -123,12 +123,8 @@ def _initialise_testbench(root_name):
         modules that should be executed before the first test.
     """
     _rlock.acquire()
-    
-    # Initialize plusargs first so we can reference them
-    # for initialization
-    process_plusargs()
 
-    memcheck_port = get_option('MEMCHECK', 'cocotb.memcheck')
+    memcheck_port = os.getenv('MEMCHECK')
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
@@ -141,15 +137,14 @@ def _initialise_testbench(root_name):
 
     # Create the base handle type
 
+    process_plusargs()
 
     # Seed the Python random number generator to make this repeatable
     global RANDOM_SEED
     RANDOM_SEED = os.getenv('RANDOM_SEED')
 
     if RANDOM_SEED is None:
-        if 'cocotb.seed' in plusargs:
-            RANDOM_SEED = eval(plusargs['cocotb.seed'])
-        elif 'ntb_random_seed' in plusargs:
+        if 'ntb_random_seed' in plusargs:
             RANDOM_SEED = eval(plusargs['ntb_random_seed'])
         elif 'seed' in plusargs:
             RANDOM_SEED = eval(plusargs['seed'])
@@ -161,22 +156,16 @@ def _initialise_testbench(root_name):
         log.info("Seeding Python random module with supplied seed %d" % (RANDOM_SEED))
     random.seed(RANDOM_SEED)
 
-    modules = get_option('MODULE', 'cocotb.module', is_list=True)
-    test_str = get_option('TESTCASE', 'cocotb.testcase')
-    hooks = get_option('COCOTB_HOOKS', 'cocotb.hooks', [], is_list=True)
-    
-    module_path = get_option('COCOTB_PYPATH', 'cocotb.pypath', is_list=True)
-    
-    if module_path is not None:
-        seen = {}
-        for p in module_path:
-            if p not in seen:
-                sys.path.append(p)
-                seen[p] = 1
+    module_str = os.getenv('MODULE')
+    test_str = os.getenv('TESTCASE')
+    hooks_str = os.getenv('COCOTB_HOOKS', '')
 
-    if modules is None or len(modules) == 0:
+    if not module_str:
         raise ImportError("Environment variables defining the module(s) to " +
-                          "execute not defined.  MODULE=\"%s\"" % (modules))
+                          "execute not defined.  MODULE=\"%s\"" % (module_str))
+
+    modules = module_str.split(',')
+    hooks = hooks_str.split(',') if hooks_str else []
 
     # Initialize BFMs
     BfmMgr.init()
@@ -190,35 +179,6 @@ def _initialise_testbench(root_name):
     _rlock.release()
     return True
 
-def get_option(env_var, plusarg, default=None, is_list=False):
-    '''
-    Check for an option, looking first in an environment variable,
-    next in a plusarg, and finally applying a default
-    '''
-    
-    is_plusarg = False
-    
-    val = os.getenv(env_var)
-    
-    if val is None and plusarg in plusargs.keys():
-        val = plusargs[plusarg]
-        is_plusarg = True
-        
-    if val is None:
-        val = default
-        
-    if is_list and val is not None:
-        # Convert to a list if it isn't already
-        if is_plusarg:
-            if not isinstance(val, list):
-                val = [val]
-        else:
-            # We split environment-variable values to form lists
-            if not isinstance(val, list):
-                val = val.split(',')
-       
-    return val
-    
 
 def _sim_event(level, message):
     """Function that can be called externally to signal an event"""
@@ -254,12 +214,6 @@ def process_plusargs():
         if option.startswith('+'):
             if option.find('=') != -1:
                 (name, value) = option[1:].split('=')
-                if name in plusargs.keys():
-                    if isinstance(plusargs[name], list):
-                        plusargs[name].append(value)
-                    else:
-                        plusargs[name] = [plusargs[name], value]
-                else:
-                    plusargs[name] = value
+                plusargs[name] = value
             else:
                 plusargs[option[1:]] = True
