@@ -107,3 +107,12 @@ SO_LINKER_ARGS :=  -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2
 else
 $(error "Unsupported os" $(OS))
 endif
+
+# Add required files for BFMs
+ifneq (,$(COCOTB_BFM_MODULES))
+ifeq (verilog,$(TOPLEVEL_LANG))
+COCOTB_BFM_SOURCES = $(SIM_BUILD)/cocotb_bfms.v
+else
+$(error "Unsupported top-level language for BFMS: $(TOPLEVEL_LANG)")
+endif
+endif

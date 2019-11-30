@@ -135,7 +135,7 @@ void embed_init_python(void)
         return;
 
     // Before loading Python, ensure that COCOTB_SIM is set
-    if (!getenv("COCOTB_SIM") || !getenv("COCOTB_SiM")[0]) {
+    if (!getenv("COCOTB_SIM") || !getenv("COCOTB_SIM")[0]) {
     	setenv("COCOTB_SIM", "1", 1);
     }
 

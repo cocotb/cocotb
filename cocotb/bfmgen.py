@@ -68,13 +68,18 @@ def process_template_vl(template, info):
     bfm_export_tasks = ""
     for i in range(len(info.export_info)):
         exp = info.export_info[i]
-        bfm_export_tasks += "    task " + exp.T.__name__ + "("
-        for j in range(len(exp.signature)):
-            p = exp.signature[j]
-            bfm_export_tasks += p.ptype.vl_type() + " " + p.pname
-            if j+1 < len(exp.signature):
-                bfm_export_tasks += ", "
-        bfm_export_tasks += ");\n"
+        bfm_export_tasks += "    task " + exp.T.__name__ 
+        
+        if len(exp.signature) > 0:
+            bfm_export_tasks += "("
+            for j in range(len(exp.signature)):
+                p = exp.signature[j]
+                bfm_export_tasks += p.ptype.vl_type() + " " + p.pname
+                if j+1 < len(exp.signature):
+                    bfm_export_tasks += ", "
+            bfm_export_tasks += ");\n"
+        else:
+            bfm_export_tasks += ";\n"
         bfm_export_tasks += "    begin\n"
         bfm_export_tasks += "        $cocotb_bfm_begin_msg(bfm_id, " + str(i) + ");\n"
         for p in exp.signature:

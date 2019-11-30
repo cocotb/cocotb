@@ -152,8 +152,19 @@ The code snippet above shows typical use within a test. The ``find_bfm``
 method is used to find a BFM with the expected instance path. Then,
 methods on the BFM object are called to send data via the BFM.
 
-Generating BFM Interface Files
-==============================
+Cocotb Makefile Interface
+=========================
+If you are using the Cocotb Makefiles, simply append the BFM packages
+used by your testbench to the COCOTB_BFM_MODULES variable
+
+.. code-block:: make
+    COCOTB_BFM_MODULES += rv_bfms
+    
+The Makefiles will automatically generate and compile the interface
+files along with the rest of your testbench.
+
+Manually Generating BFM Interface Files
+=======================================
 The interface code that allows Cocotb to call HDL tasks, and to enable
 HDL to call Python methods is auto-generated. This ensures that the 
 HDL interface is always up-to-date with the Python definition of the
