@@ -27,7 +27,7 @@ GpiBfm::~GpiBfm() {
         m_active_msg = 0;
     }
     if (m_active_inbound_msg) {
-    	delete m_active_inbound_msg;
+    	  delete m_active_inbound_msg;
     }
 }
 
@@ -84,4 +84,3 @@ void GpiBfm::send_inbound_msg() {
 
 std::vector<GpiBfm *> GpiBfm::m_bfm_l;
 bfm_recv_msg_f GpiBfm::m_recv_msg_f = 0;
-
