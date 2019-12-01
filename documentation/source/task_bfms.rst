@@ -11,7 +11,7 @@ Python, Verilog, and SystemVerilog (VHDL is TBD).
 BFM Implementation (Python)
 ===========================
 
-The Python aspect of a BFM is captured as a Python class with the @cocotb.bfm 
+The Python aspect of a BFM is captured as a Python class with the :class:`cocotb.bfm`
 decorator. The Python class provides both the user-facing and implementation
 API. In addition to identifying the class as a BFM class, the @cocotb.bfm
 decorator associates HDL template files with the BFM class.
