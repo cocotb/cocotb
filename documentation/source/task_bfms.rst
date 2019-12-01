@@ -16,8 +16,8 @@ decorator. The Python class provides both the user-facing and implementation
 API. In addition to identifying the class as a BFM class, the @cocotb.bfm
 decorator associates HDL template files with the BFM class.
 
-
 .. code-block:: python3
+
         @cocotb.bfm(hdl={
             cocotb.bfm_vlog : cocotb.bfm_hdl_path(__file__, "hdl/rv_data_out_bfm.v"),
             cocotb.bfm_sv   : cocotb.bfm_hdl_path(__file__, "hdl/rv_data_out_bfm.v")
@@ -76,6 +76,7 @@ implementations for the ``import`` tasks. Implementations of the
 the HDL code. 
 
 .. code-block:: verilog
+
       module rv_data_out_bfm #(
             parameter DATA_WIDTH = 8
             ) (
@@ -141,6 +142,7 @@ Static methods provide access to the list of available BFMs, and the
 on its HDL instance path.
 
 .. code-block:: python3
+
     @cocotb.coroutine
     def run_c(self):
         out_bfm = BfmMgr.find_bfm(".*u_bfm")
@@ -158,6 +160,7 @@ If you are using the Cocotb Makefiles, simply append the BFM packages
 used by your testbench to the :make:var:`COCOTB_BFM_MODULES` variable
 
 .. code-block:: make
+
     COCOTB_BFM_MODULES += rv_bfms
     
 The Makefiles will automatically generate and compile the interface
@@ -174,12 +177,13 @@ The :command:`cocotb-bfmgen` script generates the appropriate BFM interface
 files based on the BFMs required for a given testbench.
 
 The ``cocotb-bfmgen`` script accepts the following options:
+
 - -m <module> -- Specifies a Python module to load. Typically, this will
-be a BFM package.
+  be a BFM package.
 - -language <target> -- Specifies the target testbench language. ``vlog`` and ``sv`` 
-are currently accepted.
+  are currently accepted.
 - -o <file> -- Specifies the output file. By default, the name will 
-be cocotb_bfms.v.
+  be cocotb_bfms.v.
 
 For pure-Verilog (VPI) targets, a single Verilog file is generated that contains
 all available BFM modules. For SystemVerilog (DPI) targets, a C file is also 

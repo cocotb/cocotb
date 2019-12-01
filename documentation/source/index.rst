@@ -12,6 +12,7 @@ Contents:
    coroutines
    triggers
    testbench_tools
+   task_bfms
    library_reference
    library_reference_c
    endian_swapper
