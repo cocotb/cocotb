@@ -155,7 +155,7 @@ methods on the BFM object are called to send data via the BFM.
 Cocotb Makefile Interface
 =========================
 If you are using the Cocotb Makefiles, simply append the BFM packages
-used by your testbench to the COCOTB_BFM_MODULES variable
+used by your testbench to the :make:var:`COCOTB_BFM_MODULES` variable
 
 .. code-block:: make
     COCOTB_BFM_MODULES += rv_bfms
