@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 #include "vpi_bfm_api.h"
+#include <stdint.h>
 #include "vpi_user.h"
 #include "cocotb_bfm_api.h"
 #include <stdio.h>
