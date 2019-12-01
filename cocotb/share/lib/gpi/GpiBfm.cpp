@@ -1,3 +1,8 @@
+/******************************************************************************
+ * Copyright cocotb contributors
+ * Licensed under the Revised BSD License, see LICENSE for details.
+ * SPDX-License-Identifier: BSD-3-Clause
+ ******************************************************************************/
 #include "GpiBfm.h"
 #include <stdio.h>
 
@@ -21,7 +26,6 @@ GpiBfm::~GpiBfm() {
 		delete m_active_msg;
 		m_active_msg = 0;
 	}
-
 }
 
 int GpiBfm::add_bfm(GpiBfm *bfm) {

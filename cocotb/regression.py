@@ -123,11 +123,12 @@ class RegressionManager(object):
 
         self._dut = cocotb.handle.SimHandle(handle) if handle else None
 
+        # Verilator without full VPI support (<= 4.022) will report that
+        # it cannot obtain a root handle. This is okay, as long as the 
+        # user doesn't need to directly-access signals 
         if self._dut is None:
-             print("Note: Can not find Root Handle (%s)" % 
-                 self._root_name)
-#            raise AttributeError("Can not find Root Handle (%s)" %
-#                                 self._root_name)
+            print("Note: Can not find Root Handle (%s). Design hierarchy will not be accessible" % 
+                self._root_name)
 
         # Auto discovery
         for module_name in self._modules:

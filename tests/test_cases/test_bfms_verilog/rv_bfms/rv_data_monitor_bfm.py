@@ -1,3 +1,7 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
 '''
 Created on Oct 6, 2019
 
