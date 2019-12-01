@@ -170,7 +170,7 @@ HDL to call Python methods is auto-generated. This ensures that the
 HDL interface is always up-to-date with the Python definition of the
 BFM API.
 
-The ``cocotb-bfmgen`` script generates the appropriate BFM interface
+The :command:`cocotb-bfmgen` script generates the appropriate BFM interface
 files based on the BFMs required for a given testbench.
 
 The ``cocotb-bfmgen`` script accepts the following options:
