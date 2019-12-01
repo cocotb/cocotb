@@ -1,7 +1,7 @@
 ###############
 Task-Based BFMs
 ###############
-
+.. versionadded:: 1.3
 Overview
 ========
 
@@ -11,7 +11,7 @@ Python, Verilog, and SystemVerilog (VHDL is TBD).
 BFM Implementation (Python)
 ===========================
 
-The Python aspect of a BFM is captured as a Python class with the @cocotb.bfm 
+The Python aspect of a BFM is captured as a Python class with the :class:`cocotb.bfm`
 decorator. The Python class provides both the user-facing and implementation
 API. In addition to identifying the class as a BFM class, the @cocotb.bfm
 decorator associates HDL template files with the BFM class.
@@ -53,7 +53,7 @@ decorator associates HDL template files with the BFM class.
 
 Python methods that will result in task calls in the HDL are 
 decorated with the @cocotb.bfm_import decorator, while 
-Python methods that will be called from the HDL are decoarated
+Python methods that will be called from the HDL are decorated
 with the @cocotb.bfm_export decorator. 
 
 The types of method parameters for import and export methods
@@ -135,9 +135,9 @@ starts.
 
 Using BFMs from Python
 ======================
-Available BFM instances are registered with the ``cocotb.BfmMgr`` class. 
+Available BFM instances are registered with the :class:`cocotb.BfmMgr` class. 
 Static methods provide access to the list of available BFMs, and the
-``find_bfm`` method accepts a regular expression to find a BFM based
+:meth:`~cocotb.BfmMgr.find_bfm` method accepts a regular expression to find a BFM based
 on its HDL instance path.
 
 .. code-block:: python3
@@ -148,14 +148,14 @@ on its HDL instance path.
         for i in range(1,101):
             yield out_bfm.write_c(i)
 
-The code snippet above shows typical use within a test. The ``find_bfm``
+The code snippet above shows typical use within a test. The :meth:`~cocotb.BfmMgr.find_bfm`
 method is used to find a BFM with the expected instance path. Then,
 methods on the BFM object are called to send data via the BFM.
 
 Cocotb Makefile Interface
 =========================
 If you are using the Cocotb Makefiles, simply append the BFM packages
-used by your testbench to the COCOTB_BFM_MODULES variable
+used by your testbench to the :make:var:`COCOTB_BFM_MODULES` variable
 
 .. code-block:: make
     COCOTB_BFM_MODULES += rv_bfms
@@ -170,7 +170,7 @@ HDL to call Python methods is auto-generated. This ensures that the
 HDL interface is always up-to-date with the Python definition of the
 BFM API.
 
-The ``cocotb-bfmgen`` script generates the appropriate BFM interface
+The :command:`cocotb-bfmgen` script generates the appropriate BFM interface
 files based on the BFMs required for a given testbench.
 
 The ``cocotb-bfmgen`` script accepts the following options:
