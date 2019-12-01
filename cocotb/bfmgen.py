@@ -149,14 +149,8 @@ def process_template_sv(template, bfm_name, info):
                 
         bfm_import_calls += "                  " + imp.T.__name__  + "(\n"
         for pi in range(len(imp.signature)):
-            p = imp.signature[pi]
             bfm_import_calls += "                      p" + str(pi)
-            
-#             if p.ptype.s:
-#                 bfm_import_calls += "                      cocotb_bfm_get_si_param(bfm_id)"
-#             else:
-#                 bfm_import_calls += "                      cocotb_bfm_get_ui_param(bfm_id)"
-            
+
             if pi+1 < len(imp.signature):
                 bfm_import_calls += ","
             bfm_import_calls += "\n"

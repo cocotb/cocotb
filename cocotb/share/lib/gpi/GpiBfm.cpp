@@ -26,6 +26,9 @@ GpiBfm::~GpiBfm() {
         delete m_active_msg;
         m_active_msg = 0;
     }
+    if (m_active_inbound_msg) {
+    	delete m_active_inbound_msg;
+    }
 }
 
 int GpiBfm::add_bfm(GpiBfm *bfm) {

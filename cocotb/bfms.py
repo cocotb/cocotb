@@ -88,7 +88,6 @@ class BfmMethodInfo():
                 # When we're not running in simulation, don't 
                 # worry about being able to access constants from simulation
                 self.type_info.append(None)
-                pass
 
 
 class BfmTypeInfo():
@@ -156,7 +155,6 @@ class BfmMgr():
         n_bfms = simulator.bfm_get_count()
         for i in range(n_bfms):
             info = simulator.bfm_get_info(i)
-            typename = info[0]
             instname = info[1]
             clsname = info[2]
             if clsname.find('.') == -1:
