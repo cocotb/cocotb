@@ -160,7 +160,7 @@ class BfmMgr():
             instname = info[1]
             clsname = info[2]
             if clsname.find('.') == -1:
-                raise Exception("Incorrectly-formatted BFM class name {!r}".format(clsname)
+                raise Exception("Incorrectly-formatted BFM class name {!r}".format(clsname))
             pkgname = clsname[:clsname.rfind('.')]
             clsleaf = clsname[clsname.rfind('.')+1:]
           
