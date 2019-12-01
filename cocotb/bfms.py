@@ -22,12 +22,10 @@ def register_bfm_type(T, hdl):
     export_info_l = []
     
 def register_bfm_import_info(info):
-    global import_info_l
     info.id = len(import_info_l)
     import_info_l.append(info)
     
 def register_bfm_export_info(info):
-    global export_info_l
     info.id = len(export_info_l)
     export_info_l.append(info)
     
