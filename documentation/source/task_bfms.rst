@@ -135,7 +135,7 @@ starts.
 
 Using BFMs from Python
 ======================
-Available BFM instances are registered with the ``cocotb.BfmMgr`` class. 
+Available BFM instances are registered with the :class:`cocotb.BfmMgr` class. 
 Static methods provide access to the list of available BFMs, and the
 ``find_bfm`` method accepts a regular expression to find a BFM based
 on its HDL instance path.
