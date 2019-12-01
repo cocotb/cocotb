@@ -53,7 +53,7 @@ decorator associates HDL template files with the BFM class.
 
 Python methods that will result in task calls in the HDL are 
 decorated with the @cocotb.bfm_import decorator, while 
-Python methods that will be called from the HDL are decoarated
+Python methods that will be called from the HDL are decorated
 with the @cocotb.bfm_export decorator. 
 
 The types of method parameters for import and export methods
