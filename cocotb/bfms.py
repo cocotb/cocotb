@@ -143,7 +143,7 @@ class BfmMgr():
    
     @staticmethod
     def inst():
-        if BfmMgr.m_inst == None:
+        if BfmMgr.m_inst is None:
             BfmMgr.m_inst = BfmMgr()
             
         return BfmMgr.m_inst
@@ -208,5 +208,3 @@ class BfmMgr():
             raise Exception("BFM object does not contain 'bfm_info' field")
  
         bfm.bfm_info.call_method(method_id, params)
-
-    
