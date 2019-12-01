@@ -148,7 +148,7 @@ on its HDL instance path.
         for i in range(1,101):
             yield out_bfm.write_c(i)
 
-The code snippet above shows typical use within a test. The ``find_bfm``
+The code snippet above shows typical use within a test. The :meth:`~cocotb.BfmMgr.find_bfm`
 method is used to find a BFM with the expected instance path. Then,
 methods on the BFM object are called to send data via the BFM.
 
