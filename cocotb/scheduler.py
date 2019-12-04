@@ -259,9 +259,9 @@ class Scheduler(object):
         while True:
             yield self._writes_pending.wait()
             if self._mode != Scheduler._MODE_NORMAL:
-                yield self._next_time_step
+                yield Scheduler._next_time_step
 
-            yield self._read_write
+            yield Scheduler._read_write
 
             while self._writes:
                 handle, value = self._writes.popitem()
@@ -383,7 +383,7 @@ class Scheduler(object):
                                    str(trigger))
                 return
 
-            if trigger is self._read_only:
+            if trigger is Scheduler._read_only:
                 self._mode = Scheduler._MODE_READONLY
             # Only GPI triggers affect the simulator scheduling mode
             elif isinstance(trigger, GPITrigger):
