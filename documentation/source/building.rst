@@ -119,7 +119,10 @@ Environment Variables
     time, message type (``INFO``, ``WARNING``, ``ERROR``) and log message.
 
 .. envvar:: COCOTB_FILE_LOGGER
-    If defined, A log file named results.log is generated. The folder in which the log file is generated can be controlled by setting the RESULT_PATH environment variable to the appropriate folder.
+
+    If defined, A log file named results.log is generated. The folder in which
+    the log file is generated can be controlled by setting the ``RESULT_PATH``
+    environment variable to the appropriate folder.
 
 .. envvar:: MODULE
 
