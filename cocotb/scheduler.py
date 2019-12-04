@@ -210,10 +210,12 @@ class Scheduler(object):
     _MODE_WRITE    = 3  # noqa
     _MODE_TERM     = 4  # noqa
 
-    # Singleton events, recycled to avoid spurious object creation
+    # Singleton events, cached to avoid need for calling __init__() method
+    # when using the event.
     _next_time_step = NextTimeStep()
     _read_write = ReadWrite()
     _read_only = ReadOnly()
+
     _timer1 = Timer(1)
 
     def __init__(self):
