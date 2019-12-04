@@ -34,6 +34,8 @@ import sys
 import logging
 import warnings
 
+from logging.handlers import RotatingFileHandler
+
 from cocotb.utils import get_sim_time, want_color_output
 
 import cocotb.ANSI as ANSI
@@ -67,6 +69,15 @@ class SimBaseLog(logging.getLoggerClass()):
 
         self.propagate = False
         self.addHandler(hdlr)
+
+        want_filelogger=os.getenv("COCOTB_FILE_LOGGER")
+        if want_filelogger is not None:
+            logfile=os.path.join(os.getenv("RESULT_PATH"),"results.log")
+            file_handler = RotatingFileHandler(
+                        logfile, maxBytes=(1048576*5), backupCount=4
+                        )
+            file_handler.setFormatter(SimLogFormatter())
+            self.addHandler(file_handler)
 
     def _logFromC(self, level, filename, lineno, msg, function):
         """
