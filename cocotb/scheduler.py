@@ -158,6 +158,12 @@ class external_waiter(object):
 
         return self.state
 
+# Singleton events, cached to avoid need for calling __init__() method
+# when using the event.
+_next_time_step = NextTimeStep()
+_read_write = ReadWrite()
+_read_only = ReadOnly()
+
 class Scheduler(object):
     """The main scheduler.
 
@@ -210,12 +216,6 @@ class Scheduler(object):
     _MODE_WRITE    = 3  # noqa
     _MODE_TERM     = 4  # noqa
 
-    # Singleton events, cached to avoid need for calling __init__() method
-    # when using the event.
-    _next_time_step = NextTimeStep()
-    _read_write = ReadWrite()
-    _read_only = ReadOnly()
-
     _timer1 = Timer(1)
 
     def __init__(self):
@@ -259,9 +259,9 @@ class Scheduler(object):
         while True:
             yield self._writes_pending.wait()
             if self._mode != Scheduler._MODE_NORMAL:
-                yield Scheduler._next_time_step
+                yield _next_time_step
 
-            yield Scheduler._read_write
+            yield _read_write
 
             while self._writes:
                 handle, value = self._writes.popitem()
@@ -383,7 +383,7 @@ class Scheduler(object):
                                    str(trigger))
                 return
 
-            if trigger is Scheduler._read_only:
+            if trigger is _read_only:
                 self._mode = Scheduler._MODE_READONLY
             # Only GPI triggers affect the simulator scheduling mode
             elif isinstance(trigger, GPITrigger):
