@@ -39,7 +39,12 @@ import time
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
-from cocotb.log import SimBaseLog, SimLog
+try:
+    import cocotb_custom.log
+except ImportError:
+    from cocotb.log import SimLog
+else:
+    SimLog = cocotb_custom.log.SimLog
 from cocotb.regression import RegressionManager
 
 
@@ -53,8 +58,6 @@ from cocotb.decorators import test, coroutine, hook, function, external  # noqa:
 
 from ._version import __version__
 
-logging.basicConfig()
-logging.setLoggerClass(SimBaseLog)
 log = SimLog('cocotb')
 level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
 try:
