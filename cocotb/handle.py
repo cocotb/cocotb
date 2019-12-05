@@ -143,7 +143,7 @@ class SimHandleBase(object):
                 _deprecation_warned[name] = True
             return getattr(self, self._compat_mapping[name])
         else:
-            return object.__getattr__(self, name)
+            return object.__getattribute__(self, name)
 
 class RegionObject(SimHandleBase):
     """A region object, such as a scope or namespace.
