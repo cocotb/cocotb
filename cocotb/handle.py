@@ -31,6 +31,11 @@
 
 import ctypes
 import warnings
+import sys
+if sys.version_info.major < 3:
+    import collections as collections_abc
+else:
+    import collections.abc as collections_abc
 
 import os
 
@@ -548,6 +553,19 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
                 left = left + 1
 
 
+class _SimIterator(collections_abc.Iterator):
+    """Iterator over simulator objects. For internal use only."""
+
+    def __init__(self, handle, mode):
+        self._iter = simulator.iterate(handle, mode)
+
+    def __next__(self):
+        return simulator.next(self._iter)
+
+    if sys.version_info.major < 3:
+        next = __next__
+
+
 class NonConstantObject(NonHierarchyIndexableObject):
     # FIXME: what is the difference to ModifiableObject? Explain in docstring.
 
@@ -562,17 +580,11 @@ class NonConstantObject(NonHierarchyIndexableObject):
 
     def drivers(self):
         """An iterator for gathering all drivers for a signal."""
-        iterator = simulator.iterate(self._handle, simulator.DRIVERS)
-        while True:
-            # Path is left as the default None since handles are not derived from the hierarchy
-            yield SimHandle(simulator.next(iterator))
+        return _SimIterator(self._handle, simulator.DRIVERS)
 
     def loads(self):
         """An iterator for gathering all loads on a signal."""
-        iterator = simulator.iterate(self._handle, simulator.LOADS)
-        while True:
-            # Path is left as the default None since handles are not derived from the hierarchy
-            yield SimHandle(simulator.next(iterator))
+        return _SimIterator(self._handle, simulator.LOADS)
 
 
 class ModifiableObject(NonConstantObject):
