@@ -160,24 +160,21 @@ class RegionObject(SimHandleBase):
 
     def __iter__(self):
         """Iterate over all known objects in this layer of hierarchy."""
-        try:
-            if not self._discovered:
-                self._discover_all()
+        if not self._discovered:
+            self._discover_all()
 
-            for name, handle in self._sub_handles.items():
-                if isinstance(handle, list):
-                    self._log.debug("Found index list length %d", len(handle))
-                    for subindex, subhdl in enumerate(handle):
-                        if subhdl is None:
-                            self._log.warning("Index %d doesn't exist in %s.%s", subindex, self._name, name)
-                            continue
-                        self._log.debug("Yielding index %d from %s (%s)", subindex, name, type(subhdl))
-                        yield subhdl
-                else:
-                    self._log.debug("Yielding %s (%s)", name, handle)
-                    yield handle
-        except GeneratorExit:
-            pass
+        for name, handle in self._sub_handles.items():
+            if isinstance(handle, list):
+                self._log.debug("Found index list length %d", len(handle))
+                for subindex, subhdl in enumerate(handle):
+                    if subhdl is None:
+                        self._log.warning("Index %d doesn't exist in %s.%s", subindex, self._name, name)
+                        continue
+                    self._log.debug("Yielding index %d from %s (%s)", subindex, name, type(subhdl))
+                    yield subhdl
+            else:
+                self._log.debug("Yielding %s (%s)", name, handle)
+                yield handle
 
     def _discover_all(self):
         """When iterating or performing tab completion, we run through ahead of
@@ -459,8 +456,8 @@ class ConstantObject(NonHierarchyObject):
     Args:
         handle (int): The GPI handle to the simulator object.
         path (str): Path to this handle, ``None`` if root.
-        handle_type: The type of the handle 
-            (``simulator.INTEGER``, ``simulator.ENUM``, 
+        handle_type: The type of the handle
+            (``simulator.INTEGER``, ``simulator.ENUM``,
             ``simulator.REAL``, ``simulator.STRING``).
     """
     def __init__(self, handle, path, handle_type):
@@ -529,33 +526,27 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         return self._sub_handles[index]
 
     def __iter__(self):
-        try:
-            if self._range is None:
-                return
+        if self._range is None:
+            return
 
-            self._log.debug("Iterating with range [%d:%d]", self._range[0], self._range[1])
-            for i in self._range_iter(self._range[0], self._range[1]):
-                try:
-                    result = self[i]
-                    yield result
-                except IndexError:
-                    continue
-        except GeneratorExit:
-            pass
-
+        self._log.debug("Iterating with range [%d:%d]", self._range[0], self._range[1])
+        for i in self._range_iter(self._range[0], self._range[1]):
+            try:
+                result = self[i]
+                yield result
+            except IndexError:
+                continue
 
     def _range_iter(self, left, right):
-        try:
-            if left > right:
-                while left >= right:
-                    yield left
-                    left = left - 1
-            else:
-                while left <= right:
-                    yield left
-                    left = left + 1
-        except GeneratorExit:
-            pass
+        if left > right:
+            while left >= right:
+                yield left
+                left = left - 1
+        else:
+            while left <= right:
+                yield left
+                left = left + 1
+
 
 class NonConstantObject(NonHierarchyIndexableObject):
     # FIXME: what is the difference to ModifiableObject? Explain in docstring.
@@ -571,23 +562,17 @@ class NonConstantObject(NonHierarchyIndexableObject):
 
     def drivers(self):
         """An iterator for gathering all drivers for a signal."""
-        try:
-            iterator = simulator.iterate(self._handle, simulator.DRIVERS)
-            while True:
-                # Path is left as the default None since handles are not derived from the hierarchy
-                yield SimHandle(simulator.next(iterator))
-        except GeneratorExit:
-            pass
+        iterator = simulator.iterate(self._handle, simulator.DRIVERS)
+        while True:
+            # Path is left as the default None since handles are not derived from the hierarchy
+            yield SimHandle(simulator.next(iterator))
 
     def loads(self):
         """An iterator for gathering all loads on a signal."""
-        try:
-            iterator = simulator.iterate(self._handle, simulator.LOADS)
-            while True:
-                # Path is left as the default None since handles are not derived from the hierarchy
-                yield SimHandle(simulator.next(iterator))
-        except GeneratorExit:
-            pass
+        iterator = simulator.iterate(self._handle, simulator.LOADS)
+        while True:
+            # Path is left as the default None since handles are not derived from the hierarchy
+            yield SimHandle(simulator.next(iterator))
 
 
 class ModifiableObject(NonConstantObject):
