@@ -53,20 +53,21 @@ from cocotb.decorators import test, coroutine, hook, function, external  # noqa:
 
 from ._version import __version__
 
+logging.basicConfig()
+logging.setLoggerClass(SimBaseLog)
+log = SimLog('cocotb')
+level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
+try:
+    _default_log = getattr(logging, level)
+except AttributeError:
+    log.error("Unable to set loging level to %s" % level)
+    _default_log = logging.INFO
+log.setLevel(_default_log)
+loggpi = SimLog('cocotb.gpi')
+
 # GPI logging instance
 if "COCOTB_SIM" in os.environ:
     import simulator
-    logging.basicConfig()
-    logging.setLoggerClass(SimBaseLog)
-    log = SimLog('cocotb')
-    level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
-    try:
-        _default_log = getattr(logging, level)
-    except AttributeError as e:
-        log.error("Unable to set loging level to %s" % level)
-        _default_log = logging.INFO
-    log.setLevel(_default_log)
-    loggpi = SimLog('cocotb.gpi')
     # Notify GPI of log level
     simulator.log_level(_default_log)
 
