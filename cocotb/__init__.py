@@ -36,6 +36,7 @@ import logging
 import threading
 import random
 import time
+import warnings
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
@@ -85,6 +86,11 @@ if "COCOTB_SIM" in os.environ:
         log.warning("Failed to ensure that stdout/stderr are line buffered: %s", e)
         log.warning("Some stack traces may not appear because of this.")
 
+    # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
+    # If the user doesn't want to see these, they can always change the global
+    # warning settings in their test module.
+    if not sys.warnoptions:
+        warnings.simplefilter("default")
 
 scheduler = Scheduler()
 """The global scheduler instance."""
