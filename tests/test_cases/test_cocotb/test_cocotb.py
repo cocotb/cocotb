@@ -1266,5 +1266,16 @@ def test_expect_exception_list(dut):
     raise MyException()
 
 
+@cocotb.test()
+def test_bad_attr(dut):
+    yield cocotb.triggers.NullTrigger()
+    try:
+        _ = dut.stream_in_data.whoops
+    except AttributeError as e:
+        assert 'whoops' in str(e)
+    else:
+        assert False, "Expected AttributeError"
+
+
 if sys.version_info[:2] >= (3, 5):
     from test_cocotb_35 import *

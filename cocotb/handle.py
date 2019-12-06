@@ -31,6 +31,11 @@
 
 import ctypes
 import warnings
+import sys
+if sys.version_info.major < 3:
+    import collections as collections_abc
+else:
+    import collections.abc as collections_abc
 
 import os
 
@@ -145,7 +150,7 @@ class SimHandleBase(object):
                 _deprecation_warned[name] = True
             return getattr(self, self._compat_mapping[name])
         else:
-            return object.__getattr__(self, name)
+            return object.__getattribute__(self, name)
 
 
 class RegionObject(SimHandleBase):
@@ -159,24 +164,21 @@ class RegionObject(SimHandleBase):
 
     def __iter__(self):
         """Iterate over all known objects in this layer of hierarchy."""
-        try:
-            if not self._discovered:
-                self._discover_all()
+        if not self._discovered:
+            self._discover_all()
 
-            for name, handle in self._sub_handles.items():
-                if isinstance(handle, list):
-                    self._log.debug("Found index list length %d", len(handle))
-                    for subindex, subhdl in enumerate(handle):
-                        if subhdl is None:
-                            self._log.warning("Index %d doesn't exist in %s.%s", subindex, self._name, name)
-                            continue
-                        self._log.debug("Yielding index %d from %s (%s)", subindex, name, type(subhdl))
-                        yield subhdl
-                else:
-                    self._log.debug("Yielding %s (%s)", name, handle)
-                    yield handle
-        except GeneratorExit:
-            pass
+        for name, handle in self._sub_handles.items():
+            if isinstance(handle, list):
+                self._log.debug("Found index list length %d", len(handle))
+                for subindex, subhdl in enumerate(handle):
+                    if subhdl is None:
+                        self._log.warning("Index %d doesn't exist in %s.%s", subindex, self._name, name)
+                        continue
+                    self._log.debug("Yielding index %d from %s (%s)", subindex, name, type(subhdl))
+                    yield subhdl
+            else:
+                self._log.debug("Yielding %s (%s)", name, handle)
+                yield handle
 
     def _discover_all(self):
         """When iterating or performing tab completion, we run through ahead of
@@ -453,8 +455,8 @@ class ConstantObject(NonHierarchyObject):
         Args:
             handle (int): The GPI handle to the simulator object.
             path (str): Path to this handle, ``None`` if root.
-            handle_type: The type of the handle 
-                (``simulator.INTEGER``, ``simulator.ENUM``, 
+            handle_type: The type of the handle
+                (``simulator.INTEGER``, ``simulator.ENUM``,
                 ``simulator.REAL``, ``simulator.STRING``).
         """
         NonHierarchyObject.__init__(self, handle, path)
@@ -518,33 +520,40 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         return self._sub_handles[index]
 
     def __iter__(self):
-        try:
-            if self._range is None:
-                return
+        if self._range is None:
+            return
 
-            self._log.debug("Iterating with range [%d:%d]", self._range[0], self._range[1])
-            for i in self._range_iter(self._range[0], self._range[1]):
-                try:
-                    result = self[i]
-                    yield result
-                except IndexError:
-                    continue
-        except GeneratorExit:
-            pass
-
+        self._log.debug("Iterating with range [%d:%d]", self._range[0], self._range[1])
+        for i in self._range_iter(self._range[0], self._range[1]):
+            try:
+                result = self[i]
+                yield result
+            except IndexError:
+                continue
 
     def _range_iter(self, left, right):
-        try:
-            if left > right:
-                while left >= right:
-                    yield left
-                    left = left - 1
-            else:
-                while left <= right:
-                    yield left
-                    left = left + 1
-        except GeneratorExit:
-            pass
+        if left > right:
+            while left >= right:
+                yield left
+                left = left - 1
+        else:
+            while left <= right:
+                yield left
+                left = left + 1
+
+
+class _SimIterator(collections_abc.Iterator):
+    """Iterator over simulator objects. For internal use only."""
+
+    def __init__(self, handle, mode):
+        self._iter = simulator.iterate(handle, mode)
+
+    def __next__(self):
+        return simulator.next(self._iter)
+
+    if sys.version_info.major < 3:
+        next = __next__
+
 
 
 class NonConstantObject(NonHierarchyIndexableObject):
@@ -553,23 +562,11 @@ class NonConstantObject(NonHierarchyIndexableObject):
 
     def drivers(self):
         """An iterator for gathering all drivers for a signal."""
-        try:
-            iterator = simulator.iterate(self._handle, simulator.DRIVERS)
-            while True:
-                # Path is left as the default None since handles are not derived from the hierarchy
-                yield SimHandle(simulator.next(iterator))
-        except GeneratorExit:
-            pass
+        return _SimIterator(self._handle, simulator.DRIVERS)
 
     def loads(self):
         """An iterator for gathering all loads on a signal."""
-        try:
-            iterator = simulator.iterate(self._handle, simulator.LOADS)
-            while True:
-                # Path is left as the default None since handles are not derived from the hierarchy
-                yield SimHandle(simulator.next(iterator))
-        except GeneratorExit:
-            pass
+        return _SimIterator(self._handle, simulator.LOADS)
 
 
 class ModifiableObject(NonConstantObject):
