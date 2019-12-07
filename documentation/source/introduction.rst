@@ -17,8 +17,9 @@ Linux Platforms
 * `GHDL <https://ghdl.free.fr/>`_
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
 * `Synopsys <https://www.synopsys.com/>`_ VCS
-* `Cadence <https://www.cadence.com/>`_ Incisive
+* `Cadence <https://www.cadence.com/>`_ Incisive and Xcelium
 * `Mentor <https://www.mentor.com/>`_ ModelSim (DE and SE)
+* `Verilator <https://verilator.com>`_
 
 Windows Platform
 
