@@ -72,6 +72,8 @@ class SimHandleBase(object):
 
     def __init__(self, handle, path):
         """
+        .. Constructor. This RST comment works around sphinx-doc/sphinx#6885
+
         Args:
             handle (int): The GPI handle to the simulator object.
             path (str): Path to this handle, ``None`` if root.
@@ -150,14 +152,11 @@ class SimHandleBase(object):
         else:
             return object.__getattribute__(self, name)
 
+
 class RegionObject(SimHandleBase):
     """A region object, such as a scope or namespace.
 
     Region objects don't have values, they are effectively scopes or namespaces.
-
-    Args:
-        handle (int): The GPI handle to the simulator object.
-        path (str): Path to this handle, ``None`` if root.
     """
     def __init__(self, handle, path):
         SimHandleBase.__init__(self, handle, path)
@@ -391,15 +390,7 @@ class AssignmentResult(object):
 
 
 class NonHierarchyObject(SimHandleBase):
-    """Common base class for all non-hierarchy objects.
-
-    Args:
-        handle (int): The GPI handle to the simulator object.
-        path (str): Path to this handle, ``None`` if root.
-    """
-
-    def __init__(self, handle, path):
-        SimHandleBase.__init__(self, handle, path)
+    """Common base class for all non-hierarchy objects."""
 
     def __iter__(self):
         return iter(())
@@ -452,20 +443,22 @@ class NonHierarchyObject(SimHandleBase):
     def __hash__(self):
         return SimHandleBase.__hash__(self)
 
+
 class ConstantObject(NonHierarchyObject):
     """An object which has a value that can be read, but not set.
 
     We can also cache the value since it is fixed at elaboration time and
     won't change within a simulation.
-
-    Args:
-        handle (int): The GPI handle to the simulator object.
-        path (str): Path to this handle, ``None`` if root.
-        handle_type: The type of the handle
-            (``simulator.INTEGER``, ``simulator.ENUM``,
-            ``simulator.REAL``, ``simulator.STRING``).
     """
     def __init__(self, handle, path, handle_type):
+        """
+        Args:
+            handle (int): The GPI handle to the simulator object.
+            path (str): Path to this handle, ``None`` if root.
+            handle_type: The type of the handle
+                (``simulator.INTEGER``, ``simulator.ENUM``,
+                ``simulator.REAL``, ``simulator.STRING``).
+        """
         NonHierarchyObject.__init__(self, handle, path)
         if handle_type in [simulator.INTEGER, simulator.ENUM]:
             self._value = simulator.get_signal_val_long(self._handle)
@@ -493,14 +486,10 @@ class ConstantObject(NonHierarchyObject):
     def __str__(self):
         return str(self.value)
 
-class NonHierarchyIndexableObject(NonHierarchyObject):
-    def __init__(self, handle, path):
-        """A non-hierarchy indexable object.
 
-        Args:
-            handle (int): FLI/VPI/VHPI handle to the simulator object.
-            path (str): Path to this handle, ``None`` if root.
-        """
+class NonHierarchyIndexableObject(NonHierarchyObject):
+    """ A non-hierarchy indexable object. """
+    def __init__(self, handle, path):
         NonHierarchyObject.__init__(self, handle, path)
         self._range = simulator.get_range(self._handle)
 
@@ -566,17 +555,10 @@ class _SimIterator(collections_abc.Iterator):
         next = __next__
 
 
+
 class NonConstantObject(NonHierarchyIndexableObject):
+    """ A non-constant object"""
     # FIXME: what is the difference to ModifiableObject? Explain in docstring.
-
-    def __init__(self, handle, path):
-        """A non-constant object.
-
-        Args:
-            handle (int): FLI/VPI/VHPI handle to the simulator object.
-            path (str): Path to this handle, ``None`` if root.
-        """
-        NonHierarchyIndexableObject.__init__(self, handle, path)
 
     def drivers(self):
         """An iterator for gathering all drivers for a signal."""
@@ -656,6 +638,7 @@ class ModifiableObject(NonConstantObject):
     def __str__(self):
         return str(self.value)
 
+
 class RealObject(ModifiableObject):
     """Specific object handle for Real signals and variables."""
 
@@ -683,6 +666,7 @@ class RealObject(ModifiableObject):
 
     def __float__(self):
         return float(self.value)
+
 
 class EnumObject(ModifiableObject):
     """Specific object handle for enumeration signals and variables."""
@@ -738,6 +722,7 @@ class IntegerObject(ModifiableObject):
 
     def _getvalue(self):
         return simulator.get_signal_val_long(self._handle)
+
 
 class StringObject(ModifiableObject):
     """Specific object handle for String variables."""
