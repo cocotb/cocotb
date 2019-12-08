@@ -148,6 +148,9 @@ Utilities
 Simulation Object Handles
 =========================
 
+.. inheritance-diagram:: cocotb.handle
+   :parts: 1
+
 .. currentmodule:: cocotb.handle
 
 .. automodule:: cocotb.handle
