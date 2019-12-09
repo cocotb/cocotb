@@ -368,7 +368,7 @@ class HierarchyArrayObject(RegionObject):
         raise TypeError("Not permissible to set %s at index %d" % (self._name, index))
 
 
-class AssignmentResult(object):
+class _AssignmentResult(object):
     """
     An object that exists solely to provide an error message if the caller
     is not aware of cocotb's meaning of ``<=``.
@@ -418,7 +418,7 @@ class NonHierarchyObject(SimHandleBase):
         >>> module.signal <= 2
         """
         self.value = value
-        return AssignmentResult(self, value)
+        return _AssignmentResult(self, value)
 
     def __eq__(self, other):
         if isinstance(other, SimHandleBase):

@@ -30,7 +30,7 @@
 """Common bus related functionality.
 A bus is simply defined as a collection of signals.
 """
-from cocotb.handle import AssignmentResult
+from cocotb.handle import _AssignmentResult
 
 def _build_sig_attr_dict(signals):
     if isinstance(signals, dict):
@@ -194,4 +194,4 @@ class Bus(object):
     def __le__(self, value):
         """Overload the less than or equal to operator for value assignment"""
         self.drive(value)
-        return AssignmentResult(self, value)
+        return _AssignmentResult(self, value)
