@@ -72,7 +72,7 @@ endif
 
 # Xcelium errors out if multiple timescales are specified on the command line.
 ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
-    $(error "Please use COCOTB_HDL_TIMESTEP and COCOTB_HDL_TIMEPRECISION to specify timescale.")
+    $(error "Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.")
 endif
 
 # Xcelium loads VPI regardless of what is asked for, then VHPI if asked to,
