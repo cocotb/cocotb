@@ -10,10 +10,10 @@ extension for cocotb.
 Naming convention
 -----------------
 
-A cocotb extension module must begin by `cocotb_` and terminate with protocol
+A cocotb extension module must begin by `cocotbext.` and terminate with protocol
 name.
 
-For exemple, with spi the module extension is `cocotb_spi`.
+For exemple, with spi the module extension is `cocotbext.spi`.
 
 Bus driver
 ----------
@@ -33,9 +33,10 @@ TODO: give an example.
 Bus Monitor
 -----------
 
-A Bus monitor is mainly a passive class that will monitor the bus.
+A Bus monitor is mainly a passive class that will monitor the bus. A bus monitor
+will record some values on the bus and emit errors if wrong state occur.
 
-TODO: explain monitor
+TODO: give an example.
 
 Handling Errors
 ---------------
@@ -59,8 +60,9 @@ Python module
 
 The module file hierarchy should be as following ::
 
-  ├── cocotb_spi/
-  │   └── __init__.py
+  ├── cocotbext/
+  │   └── spi/
+  │       └── __init__.py
   ├── README.md
   └── setup.py
 
@@ -72,10 +74,16 @@ is given above ::
 
   from setuptools import setup
 
-  setup(name='cocotb_spi',
+  setup(name='cocotbext.spi',
+        use_scm_version={
+            "relative_to": __file__,
+            "write_to": "cocotbext/spi/version.py",
+        },
         version='0.1',
-        py_modules=['cocotb_spi'],
         install_requires=['cocotb'],
+        setup_requires=[
+            'setuptools_scm',
+        ],
         classifiers=[
           "Programming Language :: Python :: 3",
           "License :: OSI Approved :: MIT License",
@@ -84,7 +92,7 @@ is given above ::
 
 With this config file, python module can be installed with::
 
-  $ python -m pip install cocotb_spi
+  $ python -m pip install cocotbext-spi
 
 or for development (in package directory)::
 
@@ -92,7 +100,7 @@ or for development (in package directory)::
 
 Then module can be imported with import keyword in your testbench ::
 
-  import cocotb_spi
+  import cocotbext.spi
 
 Documentation
 -------------
