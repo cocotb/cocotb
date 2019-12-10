@@ -175,7 +175,7 @@ def access_integer(dut):
         raise TestFailure("Access into an integer should be invalid")
 
     length = len(test_int)
-    if length is not 1:
+    if length != 1:
         raise TestFailure("Length should be 1 not %d" % length)
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
@@ -352,7 +352,7 @@ def access_boolean(dut):
         raise TestFailure("Access into an integer should be invalid")
 
     length = len(boolean)
-    if length is not 1:
+    if length != 1:
         raise TestFailure("Length should be 1 not %d" % length)
 
     tlog.info("Value of %s is %d" % (boolean, boolean))

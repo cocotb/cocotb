@@ -1,31 +1,32 @@
 #!/usr/bin/env python
 
-''' Copyright (c) 2013, 2018 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013, 2018 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import contextlib
 import logging
 import re
@@ -33,6 +34,8 @@ import sys
 import textwrap
 import traceback
 import warnings
+from fractions import Fraction
+from decimal import Decimal
 
 """
 A set of tests that demonstrate cocotb functionality
@@ -314,6 +317,19 @@ def test_timer_with_units(dut):
     if get_sim_time(units='fs') != time_fs+1000000000.0:
         raise TestFailure("Expected a delay of 1 us")
 
+@cocotb.test()
+def test_timer_with_rational_units(dut):
+    """ Test that rounding errors are not introduced in exact values """
+    # now with fractions
+    time_fs = get_sim_time(units='fs')
+    yield Timer(Fraction(1, int(1e9)), units='sec')
+    assert get_sim_time(units='fs') == time_fs + 1000000.0, "Expected a delay of 1 ns"
+
+    # now with decimals
+    time_fs = get_sim_time(units='fs')
+    yield Timer(Decimal('1e-9'), units='sec')
+    assert get_sim_time(units='fs') == time_fs + 1000000.0, "Expected a delay of 1 ns"
+
 
 @cocotb.test(expect_fail=False)
 def test_anternal_clock(dut):
@@ -321,7 +337,7 @@ def test_anternal_clock(dut):
     function"""
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     count = 0
-    while count is not 100:
+    while count != 100:
         yield RisingEdge(dut.clk)
         count += 1
     clk_gen.kill()
@@ -422,7 +438,7 @@ def test_afterdelay_in_readonly_valid(dut):
 @cocotb.coroutine
 def clock_one(dut):
     count = 0
-    while count is not 50:
+    while count != 50:
         yield RisingEdge(dut.clk)
         yield Timer(1000)
         count += 1
@@ -431,7 +447,7 @@ def clock_one(dut):
 @cocotb.coroutine
 def clock_two(dut):
     count = 0
-    while count is not 50:
+    while count != 50:
         yield RisingEdge(dut.clk)
         yield Timer(10000)
         count += 1
@@ -570,32 +586,32 @@ def test_either_edge(dut):
     yield Timer(1)
     dut.clk <= 1
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 1:
+    if dut.clk.value.integer != 1:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 0
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 0:
+    if dut.clk.value.integer != 0:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 1
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 1:
+    if dut.clk.value.integer != 1:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 0
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 0:
+    if dut.clk.value.integer != 0:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 1
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 1:
+    if dut.clk.value.integer != 1:
         raise TestError("Value should be 0")
     yield Timer(10)
     dut.clk <= 0
     yield Edge(dut.clk)
-    if dut.clk.value.integer is not 0:
+    if dut.clk.value.integer != 0:
         raise TestError("Value should be 0")
 
 
@@ -1233,6 +1249,32 @@ def test_raise_error_deprecated(dut):
 def test_assertion_is_failure(dut):
     yield Timer(1)
     assert False
+
+
+class MyException(Exception):
+    pass
+
+@cocotb.test(expect_error=MyException)
+def test_expect_particular_exception(dut):
+    yield Timer(1)
+    raise MyException()
+
+
+@cocotb.test(expect_error=(MyException, ValueError))
+def test_expect_exception_list(dut):
+    yield Timer(1)
+    raise MyException()
+
+
+@cocotb.test()
+def test_bad_attr(dut):
+    yield cocotb.triggers.NullTrigger()
+    try:
+        _ = dut.stream_in_data.whoops
+    except AttributeError as e:
+        assert 'whoops' in str(e)
+    else:
+        assert False, "Expected AttributeError"
 
 
 if sys.version_info[:2] >= (3, 5):

@@ -37,11 +37,11 @@ import io_module
 
 
 @cocotb.coroutine
-def reset(dut, duration=10000):
+def reset(dut, duration=10):
     dut._log.debug("Resetting DUT")
     dut.reset_n = 0
     dut.stream_in_valid = 0
-    yield Timer(duration)
+    yield Timer(duration, units='ns')
     yield RisingEdge(dut.clk)
     dut.reset_n = 1
     dut._log.debug("Out of reset")
@@ -51,7 +51,7 @@ def reset(dut, duration=10000):
 def initial_hal_test(dut, debug=True):
     """Example of using the software HAL against cosim testbench"""
 
-    cocotb.fork(Clock(dut.clk, 5000).start())
+    cocotb.fork(Clock(dut.clk, 5, units='ns').start())
     yield reset(dut)
 
     # Create the avalon master and direct our HAL calls to that

@@ -20,6 +20,9 @@ sys.path.insert(0, os.path.abspath('../..'))
 # Add in-tree extensions to path
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 
+import cocotb
+from distutils.version import LooseVersion
+
 os.environ["SPHINX_BUILD"] = "1"
 
 # -- General configuration -----------------------------------------------------
@@ -38,6 +41,9 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
+    'sphinxcontrib.makedomain',
+    'sphinx.ext.autosectionlabel',
+    'sphinx.ext.inheritance_diagram',
     'cairosvgconverter',
     'breathe',
     'sphinx_issues',
@@ -68,10 +74,11 @@ copyright = u'2014-{0}, PotentialVentures'.format(datetime.datetime.now().year)
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-# The short X.Y version.
-version = '1.1'
 # The full version, including alpha/beta/rc tags.
-release = '1.1'
+release = cocotb.__version__
+# The short X.Y version.
+v_major, v_minor = LooseVersion(release).version[:2]
+version = '{}.{}'.format(v_major, v_minor)
 
 autoclass_content = "both"
 
@@ -325,3 +332,7 @@ spelling_word_list_filename = ["spelling_wordlist.txt", "c_symbols.txt"]
 spelling_ignore_pypi_package_names = False
 spelling_ignore_wiki_words = False
 spelling_show_suggestions = True
+
+# -- Setup for inheritance_diagram directive which uses graphviz ---------------
+
+graphviz_output_format = 'svg'

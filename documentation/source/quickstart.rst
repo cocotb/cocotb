@@ -59,7 +59,7 @@ Debian/Ubuntu-based
 
     $> sudo apt-get install git make gcc g++ swig python-dev
 
-RedHat-based
+Red Hat-based
 
 .. code-block:: bash
 
@@ -89,8 +89,8 @@ The following packages need selecting by checking the tick box and selecting
 From the Installation menu then select "Apply Changes", in the next dialog
 select "Apply".
 
-When installed a shell can be opened using the "msys.bat" file located under
-the <install_dir>/msys/1.0/
+When installed a shell can be opened using the :file:`msys.bat` file located under
+the :file:`<install_dir>/msys/1.0/`
 
 Python can be downloaded from https://www.python.org/downloads/windows/.
 Run the installer and download to your chosen location.
@@ -200,9 +200,9 @@ following:
         dut._log.info("Running test!")
         for cycle in range(10):
             dut.clk = 0
-            yield Timer(1000)
+            yield Timer(1, units='ns')
             dut.clk = 1
-            yield Timer(1000)
+            yield Timer(1, units='ns')
         dut._log.info("Running test!")
 
 This will drive a square wave clock onto the ``clk`` port of the toplevel.
@@ -211,7 +211,7 @@ This will drive a square wave clock onto the ``clk`` port of the toplevel.
 Accessing the design
 --------------------
 
-When cocotb initialises it finds the top-level instantiation in the simulator
+When cocotb initializes it finds the top-level instantiation in the simulator
 and creates a handle called ``dut``. Top-level signals can be accessed using the
 "dot" notation used for accessing object attributes in Python. The same mechanism
 can be used to access signals inside the design.
@@ -292,7 +292,7 @@ Parallel and sequential execution of coroutines
     @cocotb.coroutine
     def reset_dut(reset_n, duration):
         reset_n <= 0
-        yield Timer(duration)
+        yield Timer(duration, units='ns')
         reset_n <= 1
         reset_n._log.debug("Reset complete")
 
@@ -308,7 +308,7 @@ Parallel and sequential execution of coroutines
         # Call reset_dut in parallel with this coroutine
         reset_thread = cocotb.fork(reset_dut(reset_n, 500)
 
-        yield Timer(250)
+        yield Timer(250, units='ns')
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
 
         # Wait for the other thread to complete

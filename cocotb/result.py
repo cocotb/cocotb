@@ -35,7 +35,7 @@ from io import StringIO, BytesIO
 """Exceptions and functions for simulation result handling."""
 
 def raise_error(obj, msg):
-    """Creates a :exc:`TestError` exception and raises it after printing a traceback.
+    """Create a :exc:`TestError` exception and raise it after printing a traceback.
 
     .. deprecated:: 1.3
         Use ``raise TestError(msg)`` instead of this function. A stacktrace will
@@ -98,7 +98,7 @@ class ReturnValue(Exception):
 
 
 class TestComplete(Exception):
-    """Exception showing that test was completed. Sub-exceptions detail the exit status."""
+    """Exception showing that the test was completed. Sub-exceptions detail the exit status."""
     def __init__(self, *args, **kwargs):
         super(TestComplete, self).__init__(*args, **kwargs)
         self.stdout = StringIO()
@@ -112,20 +112,20 @@ class ExternalException(Exception):
 
 
 class TestError(TestComplete):
-    """Exception showing that test was completed with severity Error."""
+    """Exception showing that the test was completed with severity Error."""
     pass
 
 
 class TestFailure(TestComplete, AssertionError):
-    """Exception showing that test was completed with severity Failure."""
+    """Exception showing that the test was completed with severity Failure."""
     pass
 
 
 class TestSuccess(TestComplete):
-    """Exception showing that test was completed successfully."""
+    """Exception showing that the test was completed successfully."""
     pass
 
 
 class SimFailure(TestComplete):
-    """Exception showing that simulator exited unsuccessfully."""
+    """Exception showing that the simulator exited unsuccessfully."""
     pass

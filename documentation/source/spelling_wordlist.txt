@@ -51,6 +51,7 @@ endianness
 gotchas
 hexdump
 instantiation
+installable
 libs
 loopback
 macOS
@@ -70,6 +71,7 @@ runtime
 scoreboarded
 scoreboarding
 simulatormodule
+stacktrace
 subclassed
 subdirectories
 subdirectory
@@ -83,5 +85,8 @@ timestep
 timesteps
 toplevel
 trimmable
+tuple
+tuples
+unhandled
 utils
 packetized

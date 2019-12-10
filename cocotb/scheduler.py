@@ -62,7 +62,7 @@ import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
-from cocotb.result import TestComplete
+from cocotb.result import TestComplete, ReturnValue
 from cocotb import _py_compat
 
 # On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
@@ -111,7 +111,7 @@ class external_waiter(object):
     def result(self):
         return self._outcome.get()
 
-    def _propogate_state(self, new_state):
+    def _propagate_state(self, new_state):
         with self.cond:
             if _debug:
                 self._log.debug("Changing state from %d -> %d from %s" % (self.state, new_state, threading.current_thread()))
@@ -121,21 +121,21 @@ class external_waiter(object):
     def thread_done(self):
         if _debug:
             self._log.debug("Thread finished from %s" % (threading.current_thread()))
-        self._propogate_state(external_state.EXITED)
+        self._propagate_state(external_state.EXITED)
 
     def thread_suspend(self):
-        self._propogate_state(external_state.PAUSED)
+        self._propagate_state(external_state.PAUSED)
 
     def thread_start(self):
         if self.state > external_state.INIT:
             return
 
         if not self.thread.is_alive():
-            self._propogate_state(external_state.RUNNING)
+            self._propagate_state(external_state.RUNNING)
             self.thread.start()
 
     def thread_resume(self):
-        self._propogate_state(external_state.RUNNING)
+        self._propagate_state(external_state.RUNNING)
 
     def thread_wait(self):
         if _debug:
@@ -500,7 +500,7 @@ class Scheduler(object):
                 # throws an error if the background coroutine errored
                 # and no one was monitoring it
                 coro._outcome.get()
-            except TestComplete as e:
+            except (TestComplete, AssertionError) as e:
                 coro.log.info("Test stopped by this forked coroutine")
                 outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
                 self._test._force_outcome(outcome)
@@ -561,7 +561,7 @@ class Scheduler(object):
         """Queue a coroutine for execution"""
         self._pending_coros.append(coroutine)
 
-    def queue_function(self, coroutine):
+    def queue_function(self, coro):
         """Queue a coroutine for execution and move the containing thread
         so that it does not block execution of the main thread any longer.
         """
@@ -578,9 +578,22 @@ class Scheduler(object):
         # each entry always has a unique thread.
         t, = matching_threads
 
+        @cocotb.coroutine
+        def wrapper():
+            try:
+                _outcome = outcomes.Value((yield coro))
+            except BaseException as e:
+                _outcome = outcomes.Error(e)
+            event.outcome = _outcome
+            event.set()
+
+        event = threading.Event()
         t.thread_suspend()
-        self._pending_coros.append(coroutine)
-        return t
+        self._pending_coros.append(wrapper())
+        # This blocks the calling external thread until the coroutine finishes
+        event.wait()
+        t.thread_resume()
+        return event.outcome.get()
 
     def run_in_executor(self, func, *args, **kwargs):
         """Run the coroutine in a separate execution thread
@@ -598,15 +611,22 @@ class Scheduler(object):
                 self.log.debug("Execution of external routine done %s" % threading.current_thread())
             _waiter.thread_done()
 
-        waiter = external_waiter()
-        thread = threading.Thread(group=None, target=execute_external,
-                                  name=func.__name__ + "_thread",
-                                  args=([func, waiter]), kwargs={})
+        @cocotb.coroutine
+        def wrapper():
+            waiter = external_waiter()
+            thread = threading.Thread(group=None, target=execute_external,
+                                      name=func.__name__ + "_thread",
+                                      args=([func, waiter]), kwargs={})
 
-        waiter.thread = thread
-        self._pending_threads.append(waiter)
+            waiter.thread = thread
+            self._pending_threads.append(waiter)
 
-        return waiter
+            yield waiter.event.wait()
+
+            ret = waiter.result  # raises if there was an exception
+            raise ReturnValue(ret)
+
+        return wrapper()
 
     def add(self, coroutine):
         """Add a new coroutine.
@@ -775,9 +795,13 @@ class Scheduler(object):
         """Directly call into the regression manager and end test
            once we return the sim will close us so no cleanup is needed.
         """
-        self.log.debug("Issue sim closedown result to regression object")
-        self._test.abort(exc)
-        cocotb.regression_manager.handle_result(self._test)
+        # If there is an error during cocotb initialization, self._test may not
+        # have been set yet. Don't cause another Python exception here.
+
+        if self._test:
+            self.log.debug("Issue sim closedown result to regression object")
+            self._test.abort(exc)
+            cocotb.regression_manager.handle_result(self._test)
 
     def cleanup(self):
         """Clear up all our state.
