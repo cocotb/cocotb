@@ -39,7 +39,7 @@ def _build_sig_attr_dict(signals, name_map=None):
     if isinstance(signals, dict):
         return signals
     else:
-        return {sig: (name_map[sig] if sig in name_map else sig)
+        return {sig: name_map.get(sig, sig)
                 for sig in signals}
 
 
