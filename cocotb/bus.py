@@ -32,11 +32,15 @@ A bus is simply defined as a collection of signals.
 """
 from cocotb.handle import AssignmentResult
 
-def _build_sig_attr_dict(signals):
+
+def _build_sig_attr_dict(signals, name_map=None):
+    if name_map is None:
+        name_map = {}
     if isinstance(signals, dict):
         return signals
     else:
-        return {sig: sig for sig in signals}
+        return {sig: (name_map[sig] if sig in name_map else sig)
+                for sig in signals}
 
 
 class Bus(object):
@@ -51,7 +55,8 @@ class Bus(object):
     TODO:
         Support for ``struct``/``record`` ports where signals are member names.
     """
-    def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", array_idx=None):
+    def __init__(self, entity, name, signals, optional_signals=[],
+                 bus_separator="_", array_idx=None, **kwargs):
         """
         Args:
             entity (SimHandle): :any:`SimHandle` instance to the entity containing the bus.
@@ -73,8 +78,11 @@ class Bus(object):
         self._entity = entity
         self._name = name
         self._signals = {}
+        self._name_map = kwargs.pop('name_map', None)
 
-        for attr_name, sig_name in _build_sig_attr_dict(signals).items():
+        def _sig_attrs(sigs):
+            return _build_sig_attr_dict(sigs, self._name_map).items()
+        for attr_name, sig_name in _sig_attrs(signals):
             if name:
                 signame = name + bus_separator + sig_name
             else:
@@ -85,7 +93,7 @@ class Bus(object):
             self._add_signal(attr_name, signame)
 
         # Also support a set of optional signals that don't have to be present
-        for attr_name, sig_name in _build_sig_attr_dict(optional_signals).items():
+        for attr_name, sig_name in _sig_attrs(optional_signals):
             if name:
                 signame = name + bus_separator + sig_name
             else:
