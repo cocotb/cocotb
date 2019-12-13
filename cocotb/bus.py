@@ -74,6 +74,8 @@ class Bus(object):
             bus_separator (str, optional): Character(s) to use as separator between bus
                 name and signal name. Defaults to '_'.
             array_idx (int or None, optional): Optional index when signal is an array.
+            name_map (dict or None, optional): Optional dictionary mapping
+                logical bus port names to physical port names.
         """
         self._entity = entity
         self._name = name
