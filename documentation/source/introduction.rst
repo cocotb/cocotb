@@ -69,7 +69,7 @@ cocotb drives stimulus onto the inputs to the DUT (or further down the hierarchy
 
 A test is simply a Python function.
 At any given time either the simulator is advancing time or the Python code is executing.
-The ``yield`` keyword is used to indicate when to pass control of execution back to the simulator.
+The :keyword:`yield` keyword is used to indicate when to pass control of execution back to the simulator.
 A test can spawn multiple coroutines, allowing for independent flows of execution.
 
 
