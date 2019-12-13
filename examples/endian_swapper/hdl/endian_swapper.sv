@@ -177,7 +177,7 @@ always @(posedge clk or negedge reset_n) begin
 end
 
 `ifdef COCOTB_SIM
-`ifndef VERILATOR
+`ifndef VERILATOR // traced differently
 initial begin
   $dumpfile ("waveform.vcd");
   $dumpvars (0,endian_swapper_sv);
