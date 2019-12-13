@@ -89,7 +89,7 @@ axi_lite_demo #(
 //asynchronus logic
 //synchronous logic
 
-`ifndef VERILATOR
+`ifndef VERILATOR // traced differently
   initial begin
     $dumpfile ("design.vcd");
     $dumpvars(0, tb_axi_lite_slave);

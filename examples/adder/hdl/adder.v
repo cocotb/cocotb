@@ -14,7 +14,7 @@ module adder #(
     X = A + B;
   end
 
-`ifndef VERILATOR
+`ifndef VERILATOR // traced differently
   // Dump waves
   initial begin
     $dumpfile("dump.vcd");
