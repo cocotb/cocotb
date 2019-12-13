@@ -60,10 +60,8 @@ class SimBaseLog(logging.getLoggerClass()):
 
         if want_color_output():
             hdlr.setFormatter(SimColourLogFormatter())
-            self.colour = True
         else:
             hdlr.setFormatter(SimLogFormatter())
-            self.colour = False
 
         self.propagate = False
         self.addHandler(hdlr)
@@ -91,8 +89,16 @@ class SimBaseLog(logging.getLoggerClass()):
         warnings.warn(
             "the .logger attribute should not be used now that `SimLog` "
             "returns a native logger instance directly.",
-            DeprecationWarning)
+            DeprecationWarning, stacklevel=2)
         return self
+
+    @property
+    def colour(self):
+        warnings.warn(
+            "the .colour attribute may be removed in future, use the "
+            "equivalent `cocotb.utils.want_color_output()` instead",
+            DeprecationWarning, stacklevel=2)
+        return want_color_output()
 
 
 # this used to be a class, hence the unusual capitalization
