@@ -360,7 +360,7 @@ def access_boolean(dut):
     curr_val = int(boolean)
     output_bool = dut.stream_out_bool
 
-    tlog.info("Before  %d After = %d" % (curr_val, (not curr_val)))
+    tlog.info("Before = %d, After = %d" % (curr_val, (not curr_val)))
 
     boolean.setimmediatevalue(not curr_val)
 
@@ -368,7 +368,7 @@ def access_boolean(dut):
 
     tlog.info("Value of %s is now %d" % (output_bool, output_bool))
     if (int(curr_val) == int(output_bool)):
-        raise TestFailure("Value did not propogate")
+        raise TestFailure("Value did not propagate")
 
 @cocotb.test()
 def access_internal_register_array(dut):

@@ -20,6 +20,13 @@ jobs:
       install: pip install flake8
       script: flake8
 
+    - stage: Formatter
+      os: linux
+      python: 3.8
+      install: pip install tox
+      env: BUILD_NAME=py38-fmt
+      script: PY_COLORS=1 tox -e $BUILD_NAME -- --check
+
     - stage: SimTests
       os: linux
       python: 2.7
