@@ -94,7 +94,7 @@ void cocotb_bfm_add_si_param(uint32_t bfm_id, int64_t pval) {
     if (msg) {
         msg->add_param_si(pval);
     } else {
-        fprintf(stdout, "Error: attempting to add an signed parameter to a NULL message\n");
+        fprintf(stdout, "Error: attempting to add a signed parameter to a NULL message\n");
     }
 }
 
