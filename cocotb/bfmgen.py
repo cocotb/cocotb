@@ -342,7 +342,7 @@ def main():
     generate_cmd = subparser.add_parser("generate")
     generate_cmd.set_defaults(func=bfm_generate)
     generate_cmd.add_argument("-m", action='append')
-    generate_cmd.add_argument("-language", default="vlog")
+    generate_cmd.add_argument("-l", "--language", default="vlog")
     generate_cmd.add_argument("-o", default=None)
     
 #     list_cmd = subparser.add_parser("list")
