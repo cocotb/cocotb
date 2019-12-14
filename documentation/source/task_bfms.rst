@@ -180,7 +180,7 @@ The ``cocotb-bfmgen`` script accepts the following options:
 
 - -m <module> -- Specifies a Python module to load. Typically, this will
   be a BFM package.
-- -language <target> -- Specifies the target testbench language. ``vlog`` and ``sv`` 
+- -l,--language <target> -- Specifies the target testbench language. ``vlog`` and ``sv`` 
   are currently accepted.
 - -o <file> -- Specifies the output file. By default, the name will 
   be cocotb_bfms.v.
