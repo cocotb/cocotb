@@ -183,7 +183,7 @@ The ``cocotb-bfmgen`` script accepts the following options:
 - -language <target> -- Specifies the target testbench language. ``vlog`` and ``sv`` 
   are currently accepted.
 - -o <file> -- Specifies the output file. By default, the name will 
-  be cocotb_bfms.v.
+  be ``cocotb_bfms.v``.
 
 For pure-Verilog (VPI) targets, a single Verilog file is generated that contains
 all available BFM modules. For SystemVerilog (DPI) targets, a C file is also 
