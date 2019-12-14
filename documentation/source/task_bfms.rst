@@ -52,9 +52,9 @@ decorator associates HDL template files with the BFM class.
                 self.ack_ev.set()
 
 Python methods that will result in task calls in the HDL are 
-decorated with the @cocotb.bfm_import decorator, while 
+decorated with the :class:`cocotb.bfm_import` decorator, while 
 Python methods that will be called from the HDL are decorated
-with the @cocotb.bfm_export decorator. 
+with the :class:`cocotb.bfm_export` decorator. 
 
 The types of method parameters for import and export methods
 are specified via the decorator. In the example above, the
@@ -183,7 +183,7 @@ The ``cocotb-bfmgen`` script accepts the following options:
 - -l,--language <target> -- Specifies the target testbench language. ``vlog`` and ``sv`` 
   are currently accepted.
 - -o <file> -- Specifies the output file. By default, the name will 
-  be cocotb_bfms.v.
+  be ``cocotb_bfms.v``.
 
 For pure-Verilog (VPI) targets, a single Verilog file is generated that contains
 all available BFM modules. For SystemVerilog (DPI) targets, a C file is also 

@@ -124,7 +124,7 @@ def bfm_generate_vl(args):
             info = inst.bfm_type_info_m[t]
         
             if cocotb.bfm_vlog not in info.hdl.keys():
-                raise Exception("BFM \"" + t.__name__ + "\" does not support Verilog")
+                raise Exception("BFM {!r} does not support Verilog".format(t.__name__))
         
             with open(info.hdl[cocotb.bfm_vlog], "r") as template_f:
                 template = template_f.read()

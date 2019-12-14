@@ -322,7 +322,7 @@ void register_bfm_tf(void) {
     tf_data.user_data = 0;
     vpi_register_systf(&tf_data);
 
-    // cocotb_bfm_add_si_param
+    // cocotb_bfm_add_param_si
     tf_data.type = vpiSysTask;
     tf_data.tfname = "$cocotb_bfm_add_param_si";
     tf_data.calltf = &cocotb_bfm_add_param_si_tf;
@@ -331,7 +331,7 @@ void register_bfm_tf(void) {
     tf_data.user_data = 0;
     vpi_register_systf(&tf_data);
 
-    // cocotb_bfm_add_str_param
+    // cocotb_bfm_add_param_str
 
     // cocotb_bfm_end_msg
     tf_data.type = vpiSysTask;
