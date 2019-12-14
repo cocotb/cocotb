@@ -21,6 +21,11 @@ def bfm_load_modules(module_l):
             raise e
 
 def process_template_vl(template, info):
+    """Process a single BFM-HDL template file string (template), 
+    substituting generated interface tasks and task-call demux
+    based on BFM task declarations (info). Returns complete
+    BFM Verilog module as a string"""
+
     t = Template(template)
     
     bfm_import_calls = ""
@@ -75,7 +80,7 @@ def process_template_vl(template, info):
         "bfm_export_tasks" : bfm_export_tasks
         }
     
-    cocotb_bfm_api_impl = '''
+    cocotb_bfm_api_impl = """
     reg signed[31:0]      bfm_id;
     event                 bfm_ev;
     reg signed[31:0]      bfm_msg_id;
@@ -97,7 +102,7 @@ ${bfm_import_calls}
           
       end
     end
-    '''
+    """
    
     param_m = {
         "cocotb_bfm_api_impl" : Template(cocotb_bfm_api_impl).safe_substitute(impl_param_m)
@@ -127,6 +132,10 @@ def bfm_generate_vl(args):
             out.write(process_template_vl(template, info))
         
 def process_template_sv(template, bfm_name, info):
+    """Process a single BFM-HDL template file string (template), 
+    substituting generated interface tasks and task-call demux
+    based on BFM task declarations (info). Returns complete
+    BFM SystemVerilog module as a string"""
         
     t = Template(template)
     
@@ -184,7 +193,7 @@ def process_template_sv(template, bfm_name, info):
         "bfm_export_tasks" : bfm_export_tasks
         }
     
-    cocotb_bfm_api_impl = '''
+    cocotb_bfm_api_impl = """
     int          bfm_id;
     
     import "DPI-C" context function int cocotb_bfm_claim_msg(int bfm_id);
@@ -213,7 +222,7 @@ ${bfm_export_tasks}
     initial begin
       bfm_id = ${bfm_name}_register($sformatf("%m"));
     end
-    '''
+    """
    
     param_m = {
         "cocotb_bfm_api_impl" : Template(cocotb_bfm_api_impl).safe_substitute(impl_param_m)
@@ -228,7 +237,7 @@ def generate_dpi_c(bfm_name, info):
         "bfm_classname" : info.T.__module__ + "." + info.T.__qualname__,
         }
     
-    template = '''
+    template = """
 int ${bfm_name}_process_msg() __attribute__((weak));
 
 // Stub definition to handle the case where a referenced
@@ -248,7 +257,7 @@ int ${bfm_name}_register(const char *inst_name) {
         &${bfm_name}_notify_cb, 
         svGetScope());
 }
-'''
+"""
     
     return Template(template).safe_substitute(template_p)
        
@@ -302,9 +311,7 @@ def bfm_generate_sv(args):
             out_c.write("#endif\n")
 
 def bfm_generate(args):
-    '''
-    Generate BFM files required for simulation
-    '''
+    """Generate BFM files required for simulation"""
     
     if args.o is None:
         if args.language == "vlog":
