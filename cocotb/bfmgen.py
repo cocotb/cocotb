@@ -272,12 +272,12 @@ def bfm_generate_sv(args):
     with open(args.o, "w") as out_sv:
         with open(filename_c, "w") as out_c:
             out_sv.write("//***************************************************************************\n")
-            out_sv.write("//* BFMs file for CocoTB. \n")
+            out_sv.write("//* BFMs file for cocotb. \n")
             out_sv.write("//* Note: This file is generated. Do Not Edit\n")
             out_sv.write("//***************************************************************************\n")
 
             out_c.write("//***************************************************************************\n")
-            out_c.write("//* BFMs DPI interface file for CocoTB. \n")
+            out_c.write("//* BFMs DPI interface file for cocotb. \n")
             out_c.write("//* Note: This file is generated. Do Not Edit\n")
             out_c.write("//***************************************************************************\n")
             out_c.write("#include <stdio.h>\n")
