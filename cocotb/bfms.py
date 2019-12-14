@@ -153,8 +153,8 @@ class BfmMgr():
         n_bfms = simulator.bfm_get_count()
         for i in range(n_bfms):
             info = simulator.bfm_get_info(i)
-            instname = info[1]
-            clsname = info[2]
+            instname = info[0]
+            clsname = info[1]
             if clsname.find('.') == -1:
                 raise Exception("Incorrectly-formatted BFM class name {!r}".format(clsname))
             pkgname = clsname[:clsname.rfind('.')]

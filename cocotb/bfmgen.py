@@ -251,7 +251,6 @@ static void ${bfm_name}_notify_cb(void *user_data) {
 
 int ${bfm_name}_register(const char *inst_name) {
     return cocotb_bfm_register(
-        \"XXXX\", 
         inst_name, 
         \"${bfm_classname}\", 
         &${bfm_name}_notify_cb, 

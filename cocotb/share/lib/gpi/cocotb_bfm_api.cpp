@@ -8,14 +8,12 @@
 #include "GpiBfm.h"
 
 int cocotb_bfm_register(
-        const char                *type_name,
         const char                *inst_name,
         const char                *cls_name,
         cocotb_bfm_notify_f        notify_f,
         void                    *notify_data) {
 
     return GpiBfm::add_bfm(new GpiBfm(
-            type_name,
             inst_name,
             cls_name,
             notify_f,
@@ -26,11 +24,6 @@ int cocotb_bfm_register(
 // Returns the number of registered BFMs
 int cocotb_bfm_num_registered(void) {
     return GpiBfm::get_bfms().size();
-}
-
-// Returns the type name of the specified BFM
-const char *cocotb_bfm_typename(int id) {
-    return GpiBfm::get_bfms().at(id)->get_typename().c_str();
 }
 
 // Returns the instance name of the specified BFM

@@ -7,12 +7,10 @@
 #include <stdio.h>
 
 GpiBfm::GpiBfm(
-        const std::string        &type_name,
         const std::string        &inst_name,
         const std::string        &cls_name,
-        cocotb_bfm_notify_f        notify_f,
+        cocotb_bfm_notify_f      notify_f,
         void                    *notify_data) :
-        m_typename(type_name),
         m_instname(inst_name),
         m_clsname(cls_name),
         m_notify_f(notify_f),

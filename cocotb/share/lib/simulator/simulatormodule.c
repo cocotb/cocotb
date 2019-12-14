@@ -982,17 +982,16 @@ static PyObject *bfm_get_count(PyObject *self, PyObject *args) {
  * Returns information about a specific BFM
  */
 static PyObject *bfm_get_info(PyObject *self, PyObject *args) {
-	int id = 0; // TODO:
+    int id;
 
     if (!PyArg_ParseTuple(args, "i", &id)) {
         return NULL;
     }
 
-	return PyTuple_Pack(3,
-			Py_BuildValue("s", cocotb_bfm_typename(id)),
-			Py_BuildValue("s", cocotb_bfm_instname(id)),
-			Py_BuildValue("s", cocotb_bfm_clsname(id))
-			);
+    return Py_BuildValue("ss",
+        cocotb_bfm_instname(id),
+        cocotb_bfm_clsname(id)
+    );
 }
 
 /**

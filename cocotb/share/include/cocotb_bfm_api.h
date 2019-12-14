@@ -16,7 +16,6 @@ extern "C" {
 typedef void (*cocotb_bfm_notify_f)(void *);
 
 int cocotb_bfm_register(
-        const char                *type_name,
         const char                *inst_name,
         const char                *cls_name,
         cocotb_bfm_notify_f        notify_f,
@@ -24,9 +23,6 @@ int cocotb_bfm_register(
 
 // Returns the number of registered BFMs
 int cocotb_bfm_num_registered(void);
-
-// Returns the type name of the specified BFM
-const char *cocotb_bfm_typename(int id);
 
 // Returns the instance name of the specified BFM
 const char *cocotb_bfm_instname(int id);

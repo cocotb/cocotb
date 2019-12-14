@@ -18,7 +18,6 @@ class GpiBfm {
 public:
 
     GpiBfm(
-            const std::string        &type_name,
             const std::string        &inst_name,
             const std::string        &cls_name,
             cocotb_bfm_notify_f        notify_f,
@@ -30,8 +29,6 @@ public:
     static int add_bfm(GpiBfm *bfm);
 
     static const std::vector<GpiBfm *> &get_bfms() { return m_bfm_l; }
-
-    const std::string &get_typename() const { return m_typename; }
 
     const std::string &get_instname() const { return m_instname; }
 
@@ -54,18 +51,59 @@ public:
 protected:
 
 private:
-    uint32_t                         m_bfm_id;
-    std::string                      m_typename;
-    std::string                      m_instname;
+    /**
+     * Index (ID) of the BFM. Used in routing messages
+     * to the appropriate BFM in Python
+     */
+    uint32_t                         m_bfm_id; 
+    /**
+     * Instance name of the BFM from simulation
+     */
+    std::string                      m_instname; 
+    /**
+     * Python class typename used for this BFM
+     */
     std::string                      m_clsname;
+
+    /**
+     * Callback function that the BFM calls when
+     * an outbound (Python->HDL) message is available
+     */
     cocotb_bfm_notify_f              m_notify_f;
+    /**
+     * User data passed to the notify callback function
+     */
     void                             *m_notify_data;
+    /**
+     * List of queued output (Python->HDL) messages
+     */
     std::vector<GpiBfmMsg *>         m_msg_queue;
+
+    /**
+     * The HDL tasks used for processing messages
+     * work on a single message at a time. This is
+     * the message currently being processed
+     */
     GpiBfmMsg                        *m_active_msg;
-    // Message ready to be sent to
+
+    /**
+     * The HDL tasks used to build an inbound 
+     * (HDL->Python) build up a message iteratively.
+     * This is a pointer to the message currently 
+     * being built.
+     */
     GpiBfmMsg                        *m_active_inbound_msg;
 
+    /**
+     * Callback function to handle inbound (HDL->Python)
+     * messages. This function is called by the BFM
+     * whenever the HDL BFM sends a message
+     */
     static bfm_recv_msg_f            m_recv_msg_f;
+
+    /**
+     * List of BFM class instances.
+     */
     static std::vector<GpiBfm *>     m_bfm_l;
 
 

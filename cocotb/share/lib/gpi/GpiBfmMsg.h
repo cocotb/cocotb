@@ -61,12 +61,40 @@ public:
 protected:
 
 private:
+    /**
+     * Identifies the index of the inbound or outbound
+     * task to call. An outbound (Python->HDL) message
+     * with id=0 will call the first (0th) task marked
+     * with the cocotb.bfm_import decorator.
+     */
     uint32_t                                m_id;
+    /**
+     * List of message parameters.
+     */
     cocotb_bfm_msg_param_t                  *m_param_l;
+    /**
+     * Insert index into the parameter list. Adding
+     * new parameters to the message increases _idx
+     */
     uint32_t                                m_param_l_idx;
+    /**
+     * Maximum size of the parameter list. The parameter
+     * list is expanded when _idx >= _max
+     */
     uint32_t                                m_param_l_max;
 
+    /**
+     * The value of string parameters is stored in this
+     * list. The parameter-list entry holds a pointer
+     * to an element in this list.
+     */
     std::vector<std::string>                m_str_l;
+
+    /**
+     * Read index into the parameter list. _idx is
+     * increased when the BFM reads a parameter from
+     * the message.
+     */
     uint32_t                                m_idx;
 
 };

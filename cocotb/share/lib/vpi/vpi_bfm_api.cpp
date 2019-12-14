@@ -40,7 +40,7 @@ static int cocotb_bfm_register_tf(char *user_data) {
     // - cls_name  -- passed in
     // - notify_ev -- passed in
     // - inst_name -- from call scope
-    std::string type_name, inst_name, cls_name;
+    std::string inst_name, cls_name;
     vpiHandle notify_ev = 0;
     vpiHandle systf_h = vpi_handle(vpiSysTfCall, 0);
     vpiHandle scope_h = vpi_handle(vpiScope, systf_h);
@@ -66,7 +66,6 @@ static int cocotb_bfm_register_tf(char *user_data) {
     (void)id;
 
     id = cocotb_bfm_register(
-            "XXXX",
             inst_name.c_str(),
             cls_name.c_str(),
             &cocotb_bfm_notify,
