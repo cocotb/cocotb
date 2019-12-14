@@ -273,7 +273,7 @@ void register_bfm_tf(void) {
     tf_data.user_data = 0;
     vpi_register_systf(&tf_data);
 
-    // cocotb_bfm_claim_message
+    // cocotb_bfm_claim_msg
     tf_data.type = vpiSysFunc;
     tf_data.tfname = "$cocotb_bfm_claim_msg";
     tf_data.calltf = &cocotb_bfm_claim_msg_tf;
