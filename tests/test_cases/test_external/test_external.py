@@ -44,8 +44,8 @@ from cocotb.decorators import external
 from cocotb.utils import get_sim_time
 
 
-
 # Tests relating to calling convention and operation
+
 
 def return_two(dut):
     # dut._log.info("Sleeping")
@@ -70,11 +70,12 @@ def print_sim_time(dut, base_time):
     # We are not calling out here so time should not advance
     # And should also remain consistent
     for _ in range(5):
-        _t = get_sim_time('ns')
+        _t = get_sim_time("ns")
         dut._log.info("Time reported = %d", _t)
         if _t != base_time:
-            raise TestFailure("Time reported does not match base_time %f != %f" %
-                              (_t, base_time))
+            raise TestFailure(
+                "Time reported does not match base_time %f != %f" % (_t, base_time)
+            )
     dut._log.info("external function has ended")
 
 
@@ -86,20 +87,21 @@ def clock_monitor(dut):
         yield Timer(1000)
         count += 1
 
+
 @cocotb.test()
 def test_time_in_external(dut):
     """Test that the simulation time does not advance if the wrapped external
     routine does not itself yield"""
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-    yield Timer(10, 'ns')
-    time = get_sim_time('ns')
+    yield Timer(10, "ns")
+    time = get_sim_time("ns")
     dut._log.info("Time at start of test = %d" % time)
     for i in range(100):
         dut._log.info("Loop call %d" % i)
         yield external(print_sim_time)(dut, time)
 
-    time_now = get_sim_time('ns')
-    yield Timer(10, 'ns')
+    time_now = get_sim_time("ns")
+    yield Timer(10, "ns")
 
     if time != time_now:
         raise TestFailure("Time has elapsed over external call")
@@ -113,6 +115,7 @@ def test_ext_call_return(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     value = yield external(return_two)(dut)
     assert value == 2
+
 
 @cocotb.test()
 def test_multiple_externals(dut):
@@ -136,12 +139,14 @@ def test_external_from_readonly(dut):
     value = yield external(return_two)(dut)
     assert value == 2
 
+
 @cocotb.test()
 def test_external_that_yields(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
     value = yield external(calls_cocotb_function)(dut)
     assert value == 2
+
 
 @cocotb.test()
 def test_external_and_continue(dut):
@@ -153,10 +158,12 @@ def test_external_and_continue(dut):
     yield Timer(10, "ns")
     yield RisingEdge(dut.clk)
 
+
 @cocotb.coroutine
 def run_external(dut):
     value = yield external(calls_cocotb_function)(dut)
     raise ReturnValue(value)
+
 
 @cocotb.test()
 def test_external_from_fork(dut):
@@ -167,6 +174,7 @@ def test_external_from_fork(dut):
     assert value == 2
 
     dut._log.info("Back from join")
+
 
 @cocotb.test(expect_fail=True, skip=True)
 def test_ext_exit_error(dut):
@@ -191,7 +199,8 @@ def test_external_raised_exception(dut):
     except ValueError:
         pass
     else:
-        raise TestFailure('Exception was not thrown')
+        raise TestFailure("Exception was not thrown")
+
 
 @cocotb.test()
 def test_external_returns_exception(dut):
@@ -206,10 +215,11 @@ def test_external_returns_exception(dut):
     try:
         result = yield func()
     except ValueError:
-        raise TestFailure('Exception should not have been thrown')
+        raise TestFailure("Exception should not have been thrown")
 
     if not isinstance(result, ValueError):
-        raise TestFailure('Exception was not returned')
+        raise TestFailure("Exception was not returned")
+
 
 @cocotb.test()
 def test_function_raised_exception(dut):
@@ -231,7 +241,8 @@ def test_function_raised_exception(dut):
     except ValueError:
         pass
     else:
-        raise TestFailure('Exception was not thrown')
+        raise TestFailure("Exception was not thrown")
+
 
 @cocotb.test()
 def test_function_returns_exception(dut):
@@ -252,10 +263,11 @@ def test_function_returns_exception(dut):
     try:
         result = yield ext()
     except ValueError:
-        raise TestFailure('Exception should not have been thrown')
+        raise TestFailure("Exception should not have been thrown")
 
     if not isinstance(result, ValueError):
-        raise TestFailure('Exception was not returned')
+        raise TestFailure("Exception was not returned")
+
 
 @cocotb.test()
 def test_function_from_weird_thread_fails(dut):
@@ -301,6 +313,7 @@ def test_function_from_weird_thread_fails(dut):
     assert vals.raised, "No exception was raised to warn the user"
 
     yield task.join()
+
 
 @cocotb.test()
 def test_function_called_in_parallel(dut):

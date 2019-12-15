@@ -42,7 +42,8 @@ else:
 if sys.version_info.major == 3:
     # this has to not be a syntax error in py2
     import builtins
-    exec_ = getattr(builtins, 'exec')
+
+    exec_ = getattr(builtins, "exec")
 else:
     # this has to not be a syntax error in py3
     def exec_(_code_, _globs_=None, _locs_=None):
@@ -81,34 +82,39 @@ def with_metaclass(meta, *bases):
     # metaclass for one level of class instantiation that replaces itself with
     # the actual metaclass.
     class metaclass(type):
-
         def __new__(cls, name, this_bases, d):
             return meta(name, bases, d)
 
         @classmethod
         def __prepare__(cls, name, this_bases):
             return meta.__prepare__(name, bases)
-    return type.__new__(metaclass, 'temporary_class', (), {})
+
+    return type.__new__(metaclass, "temporary_class", (), {})
 
 
 # this is six.raise_from
 if sys.version_info[:2] == (3, 2):
-    exec_("""def raise_from(value, from_value):
+    exec_(
+        """def raise_from(value, from_value):
     try:
         if from_value is None:
             raise value
         raise value from from_value
     finally:
         value = None
-    """)
+    """
+    )
 elif sys.version_info[:2] > (3, 2):
-    exec_("""def raise_from(value, from_value):
+    exec_(
+        """def raise_from(value, from_value):
     try:
         raise value from from_value
     finally:
         value = None
-    """)
+    """
+    )
 else:
+
     def raise_from(value, from_value):
         raise value
 
@@ -136,4 +142,4 @@ class nullcontext(object):
 
 # https://stackoverflow.com/a/38668373
 # Backport of abc.ABC, compatible with Python 2 and 3
-abc_ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
+abc_ABC = abc.ABCMeta("ABC", (object,), {"__slots__": ()})

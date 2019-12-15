@@ -1,6 +1,6 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -11,7 +11,7 @@
 #     * Neither the name of Potential Ventures Ltd nor the names of its
 #       contributors may be used to endorse or promote products derived from this
 #       software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,6 +28,7 @@
 # By default cast to scapy packets, otherwise we pass the string of bytes
 try:
     from scapy.all import Ether
+
     _have_scapy = True
 except ImportError:
     _have_scapy = False
@@ -40,8 +41,8 @@ from cocotb.utils import hexdump
 from cocotb.monitors import Monitor
 from cocotb.triggers import RisingEdge
 
-_XGMII_IDLE      = "\x07"  # noqa
-_XGMII_START     = "\xFB"  # noqa
+_XGMII_IDLE = "\x07"  # noqa
+_XGMII_START = "\xFB"  # noqa
 _XGMII_TERMINATE = "\xFD"  # noqa
 
 _PREAMBLE_SFD = "\x55\x55\x55\x55\x55\x55\xD5"
@@ -55,8 +56,7 @@ class XGMII(Monitor):
     If interleaved is ``True`` then the control bits are adjacent to the bytes.
     """
 
-    def __init__(self, signal, clock, interleaved=True, callback=None,
-                 event=None):
+    def __init__(self, signal, clock, interleaved=True, callback=None, event=None):
         """Args:
             signal (SimHandle): The XGMII data bus.
             clock (SimHandle): The associated clock (assumed to be
@@ -94,7 +94,7 @@ class XGMII(Monitor):
             ctrl_inc = 9
 
         for i in range(self.bytes):
-            bytes.append(chr((value >> (i * byte_shift)) & 0xff))
+            bytes.append(chr((value >> (i * byte_shift)) & 0xFF))
             ctrls.append(bool(value & (1 << ctrl_base)))
             ctrl_base += ctrl_inc
 
@@ -106,10 +106,10 @@ class XGMII(Monitor):
             if ctrl[index]:
                 if byte != _XGMII_TERMINATE:
                     self.log.error("Got control character in XGMII payload")
-                    self.log.info("data = :" +
-                                  " ".join(["%02X" % ord(b) for b in bytes]))
-                    self.log.info("ctrl = :" +
-                                  " ".join(["%s" % str(c) for c in ctrl]))
+                    self.log.info(
+                        "data = :" + " ".join(["%02X" % ord(b) for b in bytes])
+                    )
+                    self.log.info("ctrl = :" + " ".join(["%s" % str(c) for c in ctrl]))
                     self._pkt = ""
                 return False
 
@@ -133,7 +133,7 @@ class XGMII(Monitor):
                     yield clk
                     ctrl, bytes = self._get_bytes()
 
-            elif self.bytes == 8 :
+            elif self.bytes == 8:
                 if ctrl[4] and bytes[4] == _XGMII_START:
 
                     ctrl, bytes = ctrl[5:], bytes[5:]
@@ -163,8 +163,7 @@ class XGMII(Monitor):
                     self._pkt = ""
                     continue
 
-                expected_crc = struct.pack("<I",
-                                           (zlib.crc32(payload) & 0xFFFFFFFF))
+                expected_crc = struct.pack("<I", (zlib.crc32(payload) & 0xFFFFFFFF))
 
                 if crc32 != expected_crc:
                     self.log.error("Incorrect CRC on received packet")

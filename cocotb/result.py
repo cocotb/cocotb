@@ -29,10 +29,12 @@
 import traceback
 import sys
 import warnings
+
 # from StringIO import StringIO
 from io import StringIO, BytesIO
 
 """Exceptions and functions for simulation result handling."""
+
 
 def raise_error(obj, msg):
     """Create a :exc:`TestError` exception and raise it after printing a traceback.
@@ -48,7 +50,9 @@ def raise_error(obj, msg):
     warnings.warn(
         "``raise_error`` is deprecated - use ``raise TestError(msg)`` (or any "
         "other exception type) instead",
-        DeprecationWarning, stacklevel=2)
+        DeprecationWarning,
+        stacklevel=2,
+    )
     _raise_error(obj, msg)
 
 
@@ -82,7 +86,9 @@ def create_error(obj, msg):
     warnings.warn(
         "``create_error`` is deprecated - use ``TestError(msg)`` (or any other "
         "exception type) instead",
-        DeprecationWarning, stacklevel=2)
+        DeprecationWarning,
+        stacklevel=2,
+    )
     try:
         # use the private version to avoid multiple warnings
         _raise_error(obj, msg)
@@ -93,12 +99,14 @@ def create_error(obj, msg):
 
 class ReturnValue(Exception):
     """Helper exception needed for Python versions prior to 3.3."""
+
     def __init__(self, retval):
         self.retval = retval
 
 
 class TestComplete(Exception):
     """Exception showing that the test was completed. Sub-exceptions detail the exit status."""
+
     def __init__(self, *args, **kwargs):
         super(TestComplete, self).__init__(*args, **kwargs)
         self.stdout = StringIO()
@@ -107,25 +115,30 @@ class TestComplete(Exception):
 
 class ExternalException(Exception):
     """Exception thrown by external functions."""
+
     def __init__(self, exception):
         self.exception = exception
 
 
 class TestError(TestComplete):
     """Exception showing that the test was completed with severity Error."""
+
     pass
 
 
 class TestFailure(TestComplete, AssertionError):
     """Exception showing that the test was completed with severity Failure."""
+
     pass
 
 
 class TestSuccess(TestComplete):
     """Exception showing that the test was completed successfully."""
+
     pass
 
 
 class SimFailure(TestComplete):
     """Exception showing that the simulator exited unsuccessfully."""
+
     pass

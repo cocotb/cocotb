@@ -40,6 +40,7 @@ from scapy.all import Ether, IP, UDP
 
 # Supress SCAPY warning messages
 import logging
+
 logging.getLogger("scapy").setLevel(logging.ERROR)
 
 from cocotb.decorators import public

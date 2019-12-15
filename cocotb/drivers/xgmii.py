@@ -1,6 +1,6 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -11,7 +11,7 @@
 #     * Neither the name of Potential Ventures Ltd nor the names of its
 #       contributors may be used to endorse or promote products derived from this
 #       software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,8 +34,8 @@ from cocotb.drivers import Driver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
 
-_XGMII_IDLE      = b"\x07"  # noqa
-_XGMII_START     = b"\xFB"  # noqa
+_XGMII_IDLE = b"\x07"  # noqa
+_XGMII_START = b"\xFB"  # noqa
 _XGMII_TERMINATE = b"\xFD"  # noqa
 
 # Preamble is technically supposed to be 7 bytes of 0x55 but it seems that it's
@@ -72,7 +72,7 @@ class _XGMIIBus(object):
                 byte plus a control bit per byte in the MSBs.
         """
 
-        self._value = BinaryValue(n_bits=nbytes*9, bigEndian=False)
+        self._value = BinaryValue(n_bits=nbytes * 9, bigEndian=False)
         self._integer = 0
         self._interleaved = interleaved
         self._nbytes = nbytes
@@ -88,15 +88,16 @@ class _XGMIIBus(object):
             byte = ord(byte)
 
         if index >= self._nbytes:
-            raise IndexError("Attempt to access byte %d of a %d byte bus" % (
-                index, self._nbytes))
+            raise IndexError(
+                "Attempt to access byte %d of a %d byte bus" % (index, self._nbytes)
+            )
 
         if self._interleaved:
-            self._integer |= (byte << (index * 9))
-            self._integer |= (int(ctrl) << (9*index + 8))
+            self._integer |= byte << (index * 9)
+            self._integer |= int(ctrl) << (9 * index + 8)
         else:
-            self._integer |= (byte << (index * 8))
-            self._integer |= (int(ctrl) << (self._nbytes*8 + index))
+            self._integer |= byte << (index * 8)
+            self._integer |= int(ctrl) << (self._nbytes * 8 + index)
 
         self._value.integer = self._integer
 
@@ -135,7 +136,7 @@ class XGMII(Driver):
         self.log = signal._log
         self.signal = signal
         self.clock = clock
-        self.bus = _XGMIIBus(len(signal)//9, interleaved=interleaved)
+        self.bus = _XGMIIBus(len(signal) // 9, interleaved=interleaved)
         Driver.__init__(self)
 
     @staticmethod
@@ -153,8 +154,9 @@ class XGMII(Driver):
         if len(packet) < 60:
             padding = b"\x00" * (60 - len(packet))
             packet += padding
-        return (_PREAMBLE_SFD + packet +
-                struct.pack("<I", zlib.crc32(packet) & 0xFFFFFFFF))
+        return (
+            _PREAMBLE_SFD + packet + struct.pack("<I", zlib.crc32(packet) & 0xFFFFFFFF)
+        )
 
     def idle(self):
         """Helper function to set bus to IDLE state."""
@@ -194,9 +196,9 @@ class XGMII(Driver):
         self.bus[0] = (_XGMII_START, True)
 
         for i in range(1, len(self.bus)):
-            self.bus[i] = (pkt[i-1], False)
+            self.bus[i] = (pkt[i - 1], False)
 
-        pkt = pkt[len(self.bus)-1:]
+        pkt = pkt[len(self.bus) - 1 :]
         self.signal <= self.bus.value
         yield clkedge
 
@@ -214,7 +216,7 @@ class XGMII(Driver):
 
             self.signal <= self.bus.value
             yield clkedge
-            pkt = pkt[len(self.bus):]
+            pkt = pkt[len(self.bus) :]
 
         if not done:
             self.terminate(0)

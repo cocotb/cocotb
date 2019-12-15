@@ -10,13 +10,13 @@
 # License:
 # ==============================================================================
 # Copyright 2016 Technische Universitaet Dresden - Germany
-#		 Chair for VLSI-Design, Diagnostics and Architecture
+# 		 Chair for VLSI-Design, Diagnostics and Architecture
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#		http://www.apache.org/licenses/LICENSE-2.0
+# 		http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,8 +46,10 @@ from cocotb.result import TestFailure, TestSuccess
 #  --|>c    |
 #    |______|
 
+
 class BitMonitor(Monitor):
     """Observe a single-bit input or output of the DUT."""
+
     def __init__(self, name, signal, clk, callback=None, event=None):
         self.name = name
         self.signal = signal
@@ -93,14 +95,15 @@ class DFF_TB(object):
         self.output_mon = BitMonitor(name="output", signal=dut.q, clk=dut.c)
 
         # Create a scoreboard on the outputs
-        self.expected_output = [ init_val ]  # a list with init_val as the first element
+        self.expected_output = [init_val]  # a list with init_val as the first element
         self.scoreboard = Scoreboard(dut)
         self.scoreboard.add_interface(self.output_mon, self.expected_output)
 
         # Use the input monitor to reconstruct the transactions from the pins
         # and send them to our 'model' of the design.
-        self.input_mon = BitMonitor(name="input", signal=dut.d, clk=dut.c,
-                                    callback=self.model)
+        self.input_mon = BitMonitor(
+            name="input", signal=dut.d, clk=dut.c, callback=self.model
+        )
 
     def model(self, transaction):
         """Model the DUT based on the input *transaction*.
@@ -134,7 +137,7 @@ class DFF_TB(object):
 def run_test(dut):
     """Setup testbench and run a test."""
 
-    cocotb.fork(Clock(dut.c, 10, 'us').start(start_high=False))
+    cocotb.fork(Clock(dut.c, 10, "us").start(start_high=False))
 
     tb = DFF_TB(dut, init_val=BinaryValue(0))
 

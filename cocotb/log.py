@@ -44,10 +44,10 @@ else:
     _suppress = False
 
 # Column alignment
-_LEVEL_CHARS    = len("CRITICAL")  # noqa
-_RECORD_CHARS   = 35  # noqa
+_LEVEL_CHARS = len("CRITICAL")  # noqa
+_RECORD_CHARS = 35  # noqa
 _FILENAME_CHARS = 20  # noqa
-_LINENO_CHARS   = 4  # noqa
+_LINENO_CHARS = 4  # noqa
 _FUNCNAME_CHARS = 31  # noqa
 
 
@@ -73,14 +73,7 @@ class SimBaseLog(logging.getLoggerClass()):
         """
         if self.isEnabledFor(level):
             record = self.makeRecord(
-                self.name,
-                level,
-                filename,
-                lineno,
-                msg,
-                None,
-                None,
-                function
+                self.name, level, filename, lineno, msg, None, None, function
             )
             self.handle(record)
 
@@ -89,7 +82,9 @@ class SimBaseLog(logging.getLoggerClass()):
         warnings.warn(
             "the .logger attribute should not be used now that `SimLog` "
             "returns a native logger instance directly.",
-            DeprecationWarning, stacklevel=2)
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self
 
     @property
@@ -97,7 +92,9 @@ class SimBaseLog(logging.getLoggerClass()):
         warnings.warn(
             "the .colour attribute may be removed in future, use the "
             "equivalent `cocotb.utils.want_color_output()` instead",
-            DeprecationWarning, stacklevel=2)
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return want_color_output()
 
 
@@ -116,24 +113,29 @@ class SimLogFormatter(logging.Formatter):
     @staticmethod
     def ljust(string, chars):
         if len(string) > chars:
-            return ".." + string[(chars - 2) * -1:]
+            return ".." + string[(chars - 2) * -1 :]
         return string.ljust(chars)
 
     @staticmethod
     def rjust(string, chars):
         if len(string) > chars:
-            return ".." + string[(chars - 2) * -1:]
+            return ".." + string[(chars - 2) * -1 :]
         return string.rjust(chars)
 
     def _format(self, level, record, msg, coloured=False):
-        time_ns = get_sim_time('ns')
+        time_ns = get_sim_time("ns")
         simtime = "%6.2fns" % (time_ns)
-        prefix = simtime.rjust(11) + ' ' + level + ' '
+        prefix = simtime.rjust(11) + " " + level + " "
         if not _suppress:
-            prefix += self.ljust(record.name, _RECORD_CHARS) + \
-                      self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
-                      ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
-                      ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
+            prefix += (
+                self.ljust(record.name, _RECORD_CHARS)
+                + self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS)
+                + ":"
+                + self.ljust(str(record.lineno), _LINENO_CHARS)
+                + " in "
+                + self.ljust(str(record.funcName), _FUNCNAME_CHARS)
+                + " "
+            )
 
         # these lines are copied from the builtin logger
         if record.exc_info:
@@ -148,9 +150,9 @@ class SimLogFormatter(logging.Formatter):
 
         prefix_len = len(prefix)
         if coloured:
-            prefix_len -= (len(level) - _LEVEL_CHARS)
+            prefix_len -= len(level) - _LEVEL_CHARS
         pad = "\n" + " " * (prefix_len)
-        return prefix + pad.join(msg.split('\n'))
+        return prefix + pad.join(msg.split("\n"))
 
     def format(self, record):
         """Prettify the log output, annotate with simulation time"""
@@ -167,13 +169,13 @@ class SimLogFormatter(logging.Formatter):
 
 class SimColourLogFormatter(SimLogFormatter):
     """Log formatter to provide consistent log message handling."""
-    
+
     loglevel2colour = {
-        logging.DEBUG   :       "%s",
-        logging.INFO    :       ANSI.COLOR_INFO + "%s" + ANSI.COLOR_DEFAULT,
-        logging.WARNING :       ANSI.COLOR_WARNING + "%s" + ANSI.COLOR_DEFAULT,
-        logging.ERROR   :       ANSI.COLOR_ERROR + "%s" + ANSI.COLOR_DEFAULT,
-        logging.CRITICAL:       ANSI.COLOR_CRITICAL + "%s" + ANSI.COLOR_DEFAULT,
+        logging.DEBUG: "%s",
+        logging.INFO: ANSI.COLOR_INFO + "%s" + ANSI.COLOR_DEFAULT,
+        logging.WARNING: ANSI.COLOR_WARNING + "%s" + ANSI.COLOR_DEFAULT,
+        logging.ERROR: ANSI.COLOR_ERROR + "%s" + ANSI.COLOR_DEFAULT,
+        logging.CRITICAL: ANSI.COLOR_CRITICAL + "%s" + ANSI.COLOR_DEFAULT,
     }
 
     def format(self, record):
@@ -185,8 +187,14 @@ class SimColourLogFormatter(SimLogFormatter):
             msg = record.msg
 
         # Need to colour each line in case coloring is applied in the message
-        msg = '\n'.join([SimColourLogFormatter.loglevel2colour[record.levelno] % line for line in msg.split('\n')])
-        level = (SimColourLogFormatter.loglevel2colour[record.levelno] %
-                 record.levelname.ljust(_LEVEL_CHARS))
+        msg = "\n".join(
+            [
+                SimColourLogFormatter.loglevel2colour[record.levelno] % line
+                for line in msg.split("\n")
+            ]
+        )
+        level = SimColourLogFormatter.loglevel2colour[
+            record.levelno
+        ] % record.levelname.ljust(_LEVEL_CHARS)
 
         return self._format(level, record, msg, coloured=True)

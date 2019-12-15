@@ -37,14 +37,13 @@ from cocotb.utils import get_sim_steps, get_time_from_sim_steps, lazy_property
 
 class BaseClock(object):
     """Base class to derive from."""
+
     def __init__(self, signal):
         self.signal = signal
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.%s.%s" % (
-            self.__class__.__name__, self.signal._name
-        ))
+        return SimLog("cocotb.%s.%s" % (self.__class__.__name__, self.signal._name))
 
 
 class Clock(BaseClock):
@@ -114,7 +113,7 @@ class Clock(BaseClock):
         BaseClock.__init__(self, signal)
         self.period = get_sim_steps(period, units)
         self.half_period = get_sim_steps(period / 2.0, units)
-        self.frequency = 1.0 / get_time_from_sim_steps(self.period, units='us')
+        self.frequency = 1.0 / get_time_from_sim_steps(self.period, units="us")
         self.hdl = None
         self.signal = signal
         self.coro = None

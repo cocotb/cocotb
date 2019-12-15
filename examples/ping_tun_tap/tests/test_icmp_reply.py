@@ -42,19 +42,19 @@ from cocotb.monitors.avalon import AvalonSTPkts as AvalonSTMonitor
 
 def create_tun(name="tun0", ip="192.168.255.1"):
     cocotb.log.info("Attempting to create interface %s (%s)" % (name, ip))
-    TUNSETIFF = 0x400454ca
+    TUNSETIFF = 0x400454CA
     TUNSETOWNER = TUNSETIFF + 2
     IFF_TUN = 0x0001
     IFF_NO_PI = 0x1000
-    tun = open('/dev/net/tun', 'r+b')
-    tun_num = int(name.split('tun')[-1])
+    tun = open("/dev/net/tun", "r+b")
+    tun_num = int(name.split("tun")[-1])
 
     # Try and create tun device until we find a name not in use
     # eg. tun0, tun1, tun2...
     while True:
         try:
-            name = 'tun{}'.format(tun_num)
-            ifr = struct.pack('16sH', name, IFF_TUN | IFF_NO_PI)
+            name = "tun{}".format(tun_num)
+            ifr = struct.pack("16sH", name, IFF_TUN | IFF_NO_PI)
             cocotb.log.info(name)
             fcntl.ioctl(tun, TUNSETIFF, ifr)
             break
@@ -62,13 +62,14 @@ def create_tun(name="tun0", ip="192.168.255.1"):
             # Errno 16 if tun device already exists, otherwise this
             # failed for different reason.
             if e.errno != 16:
-               raise e
+                raise e
 
         tun_num += 1
-            
+
     fcntl.ioctl(tun, TUNSETOWNER, 1000)
-    subprocess.check_call('ifconfig %s %s up pointopoint 192.168.255.2 up' %
-                          (name, ip), shell=True)
+    subprocess.check_call(
+        "ifconfig %s %s up pointopoint 192.168.255.2 up" % (name, ip), shell=True
+    )
     cocotb.log.info("Created interface %s (%s)" % (name, ip))
     return tun
 
@@ -85,7 +86,7 @@ def tun_tap_example_test(dut):
     must have CAP_NET_ADMIN capability.
     """
 
-    cocotb.fork(Clock(dut.clk, 5, units='ns').start())
+    cocotb.fork(Clock(dut.clk, 5, units="ns").start())
 
     stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
     stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk)
@@ -98,7 +99,7 @@ def tun_tap_example_test(dut):
     dut._log.debug("Resetting DUT")
     dut.reset_n <= 0
     stream_in.bus.valid <= 0
-    yield Timer(10, units='ns')
+    yield Timer(10, units="ns")
     yield RisingEdge(dut.clk)
     dut.reset_n <= 1
     dut.stream_out_ready <= 1
@@ -109,7 +110,7 @@ def tun_tap_example_test(dut):
     fd = tun.fileno()
 
     # Kick off a ping...
-    subprocess.check_call('ping -c 5 192.168.255.2 &', shell=True)
+    subprocess.check_call("ping -c 5 192.168.255.2 &", shell=True)
 
     # Respond to 5 pings, then quit
     pingcounter = 0
@@ -118,7 +119,7 @@ def tun_tap_example_test(dut):
         packet = os.read(fd, 2048)
         cocotb.log.info("Received a packet!")
 
-        if packet[9] == '\x01' and packet[20] == '\x08':
+        if packet[9] == "\x01" and packet[20] == "\x08":
             cocotb.log.debug("Packet is an ICMP echo request")
             pingcounter += 1
         else:

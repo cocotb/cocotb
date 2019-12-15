@@ -29,15 +29,15 @@ import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 
+
 @cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog"])
 def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
-    if cocotb.SIM_NAME.lower().startswith(("modelsim",
-                                           "ncsim",
-                                           "xmsim",
-                                           "chronologic simulation vcs")):
+    if cocotb.SIM_NAME.lower().startswith(
+        ("modelsim", "ncsim", "xmsim", "chronologic simulation vcs")
+    ):
         # vpiAlways does not show up
         pass_total = 259
     else:
@@ -45,6 +45,7 @@ def recursive_discovery(dut):
 
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
+
     def dump_all_the_things(parent):
         count = 0
         for thing in parent:
@@ -52,10 +53,12 @@ def recursive_discovery(dut):
             tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
             count += dump_all_the_things(thing)
         return count
+
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
     if total != pass_total:
         raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
+
 
 @cocotb.coroutine
 def iteration_loop(dut):
@@ -63,10 +66,10 @@ def iteration_loop(dut):
         thing._log.info("Found something: %s" % thing._fullname)
         yield Timer(1)
 
+
 @cocotb.test()
 def dual_iteration(dut):
     loop_one = cocotb.fork(iteration_loop(dut))
     loop_two = cocotb.fork(iteration_loop(dut))
 
     yield [loop_one.join(), loop_two.join()]
-

@@ -42,6 +42,7 @@ from cocotb.generators import *
 if sys.version_info.major < 3:
     # zip is not lazy on python 2, so use itertools
     import itertools
+
     izip = itertools.izip
 else:
     izip = zip
@@ -96,5 +97,4 @@ def wave(on_ampl=30, on_freq=200, off_ampl=10, off_freq=100):
     TODO:
         Adjust args so we just specify a repeat duration and overall throughput
     """
-    return bit_toggler(sine_wave(on_ampl, on_freq),
-                       sine_wave(off_ampl, off_freq))
+    return bit_toggler(sine_wave(on_ampl, on_freq), sine_wave(off_ampl, off_freq))

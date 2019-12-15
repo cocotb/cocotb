@@ -10,10 +10,9 @@ from cairosvg import svg2pdf
 
 logger = logging.getLogger(__name__)
 
+
 class CairoSvgConverter(ImageConverter):
-    conversion_rules = [
-        ('image/svg+xml', 'application/pdf'),
-    ]
+    conversion_rules = [("image/svg+xml", "application/pdf")]
 
     def is_available(self):
         # type: () -> bool
@@ -32,7 +31,7 @@ def setup(app):
     app.add_post_transform(CairoSvgConverter)
 
     return {
-        'version': 'builtin',
-        'parallel_read_safe': True,
-        'parallel_write_safe': True,
+        "version": "builtin",
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
     }

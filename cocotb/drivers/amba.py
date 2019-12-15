@@ -44,12 +44,26 @@ class AXI4LiteMaster(BusDriver):
 
     TODO: Kill all pending transactions if reset is asserted.
     """
-    
-    _signals = ["AWVALID", "AWADDR", "AWREADY",        # Write address channel
-                "WVALID", "WREADY", "WDATA", "WSTRB",  # Write data channel
-                "BVALID", "BREADY", "BRESP",           # Write response channel
-                "ARVALID", "ARADDR", "ARREADY",        # Read address channel
-                "RVALID", "RREADY", "RRESP", "RDATA"]  # Read data channel
+
+    _signals = [
+        "AWVALID",
+        "AWADDR",
+        "AWREADY",  # Write address channel
+        "WVALID",
+        "WREADY",
+        "WDATA",
+        "WSTRB",  # Write data channel
+        "BVALID",
+        "BREADY",
+        "BRESP",  # Write response channel
+        "ARVALID",
+        "ARADDR",
+        "ARREADY",  # Read address channel
+        "RVALID",
+        "RREADY",
+        "RRESP",
+        "RDATA",
+    ]  # Read data channel
 
     def __init__(self, entity, name, clock, **kwargs):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
@@ -108,8 +122,15 @@ class AXI4LiteMaster(BusDriver):
         self.write_data_busy.release()
 
     @cocotb.coroutine
-    def write(self, address, value, byte_enable=0xf, address_latency=0,
-              data_latency=0, sync=True):
+    def write(
+        self,
+        address,
+        value,
+        byte_enable=0xF,
+        address_latency=0,
+        data_latency=0,
+        sync=True,
+    ):
         """Write a value to an address.
 
         Args:
@@ -133,11 +154,10 @@ class AXI4LiteMaster(BusDriver):
         if sync:
             yield RisingEdge(self.clock)
 
-        c_addr = cocotb.fork(self._send_write_address(address,
-                                                      delay=address_latency))
-        c_data = cocotb.fork(self._send_write_data(value,
-                                                   byte_enable=byte_enable,
-                                                   delay=data_latency))
+        c_addr = cocotb.fork(self._send_write_address(address, delay=address_latency))
+        c_data = cocotb.fork(
+            self._send_write_data(value, byte_enable=byte_enable, delay=data_latency)
+        )
 
         if c_addr:
             yield c_addr.join()
@@ -155,8 +175,9 @@ class AXI4LiteMaster(BusDriver):
         yield RisingEdge(self.clock)
 
         if int(result):
-            raise AXIProtocolError("Write to address 0x%08x failed with BRESP: %d"
-                               % (address, int(result)))
+            raise AXIProtocolError(
+                "Write to address 0x%08x failed with BRESP: %d" % (address, int(result))
+            )
 
         raise ReturnValue(result)
 
@@ -199,45 +220,83 @@ class AXI4LiteMaster(BusDriver):
             yield RisingEdge(self.clock)
 
         if int(result):
-            raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d" %
-                               (address, int(result)))
+            raise AXIProtocolError(
+                "Read address 0x%08x failed with RRESP: %d" % (address, int(result))
+            )
 
         raise ReturnValue(data)
 
     def __len__(self):
-        return 2**len(self.bus.ARADDR)
+        return 2 ** len(self.bus.ARADDR)
+
 
 class AXI4Slave(BusDriver):
-    '''
+    """
     AXI4 Slave
 
     Monitors an internal memory and handles read and write requests.
-    '''
+    """
+
     _signals = [
-        "ARREADY", "ARVALID", "ARADDR",             # Read address channel
-        "ARLEN",   "ARSIZE",  "ARBURST", "ARPROT",
-
-        "RREADY",  "RVALID",  "RDATA",   "RLAST",   # Read response channel
-
-        "AWREADY", "AWADDR",  "AWVALID",            # Write address channel
-        "AWPROT",  "AWSIZE",  "AWBURST", "AWLEN",
-
-        "WREADY",  "WVALID",  "WDATA",
-
+        "ARREADY",
+        "ARVALID",
+        "ARADDR",  # Read address channel
+        "ARLEN",
+        "ARSIZE",
+        "ARBURST",
+        "ARPROT",
+        "RREADY",
+        "RVALID",
+        "RDATA",
+        "RLAST",  # Read response channel
+        "AWREADY",
+        "AWADDR",
+        "AWVALID",  # Write address channel
+        "AWPROT",
+        "AWSIZE",
+        "AWBURST",
+        "AWLEN",
+        "WREADY",
+        "WVALID",
+        "WDATA",
     ]
 
     # Not currently supported by this driver
     _optional_signals = [
-        "WLAST",   "WSTRB",
-        "BVALID",  "BREADY",  "BRESP",   "RRESP",
-        "RCOUNT",  "WCOUNT",  "RACOUNT", "WACOUNT",
-        "ARLOCK",  "AWLOCK",  "ARCACHE", "AWCACHE",
-        "ARQOS",   "AWQOS",   "ARID",    "AWID",
-        "BID",     "RID",     "WID"
+        "WLAST",
+        "WSTRB",
+        "BVALID",
+        "BREADY",
+        "BRESP",
+        "RRESP",
+        "RCOUNT",
+        "WCOUNT",
+        "RACOUNT",
+        "WACOUNT",
+        "ARLOCK",
+        "AWLOCK",
+        "ARCACHE",
+        "AWCACHE",
+        "ARQOS",
+        "AWQOS",
+        "ARID",
+        "AWID",
+        "BID",
+        "RID",
+        "WID",
     ]
 
-    def __init__(self, entity, name, clock, memory, callback=None, event=None,
-                 big_endian=False, **kwargs):
+    def __init__(
+        self,
+        entity,
+        name,
+        clock,
+        memory,
+        callback=None,
+        event=None,
+        big_endian=False,
+        **kwargs
+    ):
 
         BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.clock = clock
@@ -286,12 +345,13 @@ class AXI4Slave(BusDriver):
 
             if __debug__:
                 self.log.debug(
-                    "AWADDR  %d\n" % _awaddr +
-                    "AWLEN   %d\n" % _awlen +
-                    "AWSIZE  %d\n" % _awsize +
-                    "AWBURST %d\n" % _awburst +
-                    "BURST_LENGTH %d\n" % burst_length +
-                    "Bytes in beat %d\n" % bytes_in_beat)
+                    "AWADDR  %d\n" % _awaddr
+                    + "AWLEN   %d\n" % _awlen
+                    + "AWSIZE  %d\n" % _awsize
+                    + "AWBURST %d\n" % _awburst
+                    + "BURST_LENGTH %d\n" % burst_length
+                    + "Bytes in beat %d\n" % bytes_in_beat
+                )
 
             burst_count = burst_length
 
@@ -304,7 +364,7 @@ class AXI4Slave(BusDriver):
                     _burst_diff = burst_length - burst_count
                     _st = _awaddr + (_burst_diff * bytes_in_beat)  # start
                     _end = _awaddr + ((_burst_diff + 1) * bytes_in_beat)  # end
-                    self._memory[_st:_end] = array.array('B', word.get_buff())
+                    self._memory[_st:_end] = array.array("B", word.get_buff())
                     burst_count -= 1
                     if burst_count == 0:
                         break
@@ -331,16 +391,17 @@ class AXI4Slave(BusDriver):
             burst_length = _arlen + 1
             bytes_in_beat = self._size_to_bytes_in_beat(_arsize)
 
-            word = BinaryValue(n_bits=bytes_in_beat*8, bigEndian=self.big_endian)
+            word = BinaryValue(n_bits=bytes_in_beat * 8, bigEndian=self.big_endian)
 
             if __debug__:
                 self.log.debug(
-                    "ARADDR  %d\n" % _araddr +
-                    "ARLEN   %d\n" % _arlen +
-                    "ARSIZE  %d\n" % _arsize +
-                    "ARBURST %d\n" % _arburst +
-                    "BURST_LENGTH %d\n" % burst_length +
-                    "Bytes in beat %d\n" % bytes_in_beat)
+                    "ARADDR  %d\n" % _araddr
+                    + "ARLEN   %d\n" % _arlen
+                    + "ARSIZE  %d\n" % _arsize
+                    + "ARBURST %d\n" % _arburst
+                    + "BURST_LENGTH %d\n" % burst_length
+                    + "Bytes in beat %d\n" % bytes_in_beat
+                )
 
             burst_count = burst_length
 

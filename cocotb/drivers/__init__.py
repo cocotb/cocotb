@@ -3,7 +3,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,8 +33,7 @@ from collections import deque
 
 import cocotb
 from cocotb.decorators import coroutine
-from cocotb.triggers import (Event, RisingEdge, ReadOnly, NextTimeStep,
-                             Edge)
+from cocotb.triggers import Event, RisingEdge, ReadOnly, NextTimeStep, Edge
 from cocotb.bus import Bus
 from cocotb.log import SimLog
 
@@ -44,6 +43,7 @@ class BitDriver(object):
 
     Useful for exercising ready/valid flags.
     """
+
     def __init__(self, signal, clk, generator=None):
         self._signal = signal
         self._clk = clk
@@ -95,6 +95,7 @@ class Driver(object):
     The driver is responsible for serializing transactions onto the physical
     pins of the interface.  This may consume simulation time.
     """
+
     def __init__(self):
         """Constructor for a driver instance."""
         self._pending = Event(name="Driver._pending")
@@ -160,8 +161,9 @@ class Driver(object):
             sync (bool, optional): Synchronize the transfer by waiting for a rising edge.
             **kwargs: Additional arguments if required for protocol implemented in a sub-class.
         """
-        raise NotImplementedError("Sub-classes of Driver should define a "
-                                  "_driver_send coroutine")
+        raise NotImplementedError(
+            "Sub-classes of Driver should define a " "_driver_send coroutine"
+        )
 
     @coroutine
     def _send(self, transaction, callback, event, sync=True, **kwargs):
@@ -200,8 +202,9 @@ class Driver(object):
             while self._sendQ:
                 transaction, callback, event, kwargs = self._sendQ.popleft()
                 self.log.debug("Sending queued packet...")
-                yield self._send(transaction, callback, event,
-                                 sync=not synchronised, **kwargs)
+                yield self._send(
+                    transaction, callback, event, sync=not synchronised, **kwargs
+                )
                 synchronised = True
 
 
@@ -224,7 +227,7 @@ class BusDriver(Driver):
             see docs for that class for more information.
 
     """
-    
+
     _optional_signals = []
 
     def __init__(self, entity, name, clock, **kwargs):
@@ -235,7 +238,10 @@ class BusDriver(Driver):
         self.entity = entity
         self.clock = clock
         self.bus = Bus(
-            self.entity, name, self._signals, optional_signals=self._optional_signals,
+            self.entity,
+            name,
+            self._signals,
+            optional_signals=self._optional_signals,
             **kwargs
         )
 
@@ -320,12 +326,13 @@ class ValidatedBusDriver(BusDriver):
                 except StopIteration:
                     # If the generator runs out stop inserting non-valid cycles
                     self.on = True
-                    self.log.info("Valid generator exhausted, not inserting "
-                                  "non-valid cycles anymore")
+                    self.log.info(
+                        "Valid generator exhausted, not inserting "
+                        "non-valid cycles anymore"
+                    )
                     return
 
-            self.log.debug("Will be on for %d cycles, off for %s" %
-                           (self.on, self.off))
+            self.log.debug("Will be on for %d cycles, off for %s" % (self.on, self.off))
         else:
             # Valid every clock cycle
             self.on, self.off = True, False
@@ -344,6 +351,7 @@ def polled_socket_attachment(driver, sock):
     """
     import socket
     import errno
+
     sock.setblocking(False)
     driver.log.info("Listening for data from %s" % repr(sock))
     while True:

@@ -1,4 +1,4 @@
-'''
+"""
 Copyright (c) 2013 Potential Ventures Ltd
 All rights reserved.
 
@@ -22,7 +22,7 @@ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. """
 
 import logging
 
@@ -41,7 +41,7 @@ def reset(dut, duration=10):
     dut._log.debug("Resetting DUT")
     dut.reset_n = 0
     dut.stream_in_valid = 0
-    yield Timer(duration, units='ns')
+    yield Timer(duration, units="ns")
     yield RisingEdge(dut.clk)
     dut.reset_n = 1
     dut._log.debug("Out of reset")
@@ -51,7 +51,7 @@ def reset(dut, duration=10):
 def initial_hal_test(dut, debug=True):
     """Example of using the software HAL against cosim testbench"""
 
-    cocotb.fork(Clock(dut.clk, 5, units='ns').start())
+    cocotb.fork(Clock(dut.clk, 5, units="ns").start())
     yield reset(dut)
 
     # Create the avalon master and direct our HAL calls to that
@@ -86,7 +86,8 @@ def initial_hal_test(dut, debug=True):
     yield cocotb.external(hal.endian_swapper_enable)(state)
 
     if not dut.byteswapping.value:
-        raise TestFailure("Byteswapping wasn't enabled after calling "
-                          "endian_swapper_enable")
+        raise TestFailure(
+            "Byteswapping wasn't enabled after calling " "endian_swapper_enable"
+        )
 
     dut._log.info("HAL call endian_swapper_enable successfully enabled the DUT")

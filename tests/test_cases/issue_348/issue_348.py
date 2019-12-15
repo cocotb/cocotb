@@ -5,6 +5,7 @@ from cocotb.result import TestFailure, ReturnValue
 
 import sys
 
+
 @cocotb.coroutine
 def clock_gen(signal, num):
     for x in range(num):
@@ -12,6 +13,7 @@ def clock_gen(signal, num):
         yield Timer(500)
         signal <= 1
         yield Timer(500)
+
 
 @cocotb.coroutine
 def signal_mon(signal, idx, edge):
@@ -25,6 +27,7 @@ def signal_mon(signal, idx, edge):
         edges += 1
 
     raise ReturnValue(edges)
+
 
 class DualMonitor:
     def __init__(self, edge, signal):
@@ -54,16 +57,17 @@ class DualMonitor:
                 raise TestFailure("Monitor saw nothing")
 
 
-
 @cocotb.test()
 def issue_348_rising(dut):
     """ Start two monitors on RisingEdge """
     yield DualMonitor(RisingEdge, dut.clk).start()
 
+
 @cocotb.test()
 def issue_348_falling(dut):
     """ Start two monitors on FallingEdge """
     yield DualMonitor(FallingEdge, dut.clk).start()
+
 
 @cocotb.test()
 def issue_348_either(dut):

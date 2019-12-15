@@ -26,9 +26,16 @@
 import logging
 
 import cocotb
-from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, IntegerObject, ConstantObject
+from cocotb.handle import (
+    HierarchyObject,
+    ModifiableObject,
+    RealObject,
+    IntegerObject,
+    ConstantObject,
+)
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
+
 
 @cocotb.test()
 def port_not_hierarchy(dut):
@@ -42,8 +49,10 @@ def port_not_hierarchy(dut):
 
     def check_instance(obj, objtype):
         if not isinstance(obj, objtype):
-            tlog.error("Expected %s to be of type %s but got %s" % (
-                obj._fullname, objtype.__name__, obj.__class__.__name__))
+            tlog.error(
+                "Expected %s to be of type %s but got %s"
+                % (obj._fullname, objtype.__name__, obj.__class__.__name__)
+            )
             return 1
         tlog.info("%s is %s" % (obj._fullname, obj.__class__.__name__))
         return 0

@@ -57,10 +57,11 @@ def public(f):
     * Improved via a suggestion by Dave Angel:
     http://groups.google.com/group/comp.lang.python/msg/3d400fb22d8a42e1
     """
-    all = sys.modules[f.__module__].__dict__.setdefault('__all__', [])
+    all = sys.modules[f.__module__].__dict__.setdefault("__all__", [])
     if f.__name__ not in all:  # Prevent duplicates if run from an IDE.
         all.append(f.__name__)
     return f
+
 
 public(public)  # Emulate decorating ourself
 
@@ -72,6 +73,7 @@ class CoroutineComplete(Exception):
     exception that the scheduler catches and the callbacks are attached
     here.
     """
+
     def __init__(self, text=""):
         Exception.__init__(self, text)
 
@@ -87,6 +89,7 @@ class RunningCoroutine(object):
         coro.kill() will destroy a coroutine instance (and cause any Join
         triggers to fire.
     """
+
     def __init__(self, inst, parent):
         if hasattr(inst, "__name__"):
             self.__name__ = "%s" % inst.__name__
@@ -156,11 +159,11 @@ class RunningCoroutine(object):
             self._outcome = outcomes.Value(e.retval)
             raise CoroutineComplete()
         except StopIteration as e:
-            retval = getattr(e, 'value', None)  # for python >=3.3
+            retval = getattr(e, "value", None)  # for python >=3.3
             self._outcome = outcomes.Value(retval)
             raise CoroutineComplete()
         except BaseException as e:
-            self._outcome = outcomes.Error(e).without_frames(['_advance', 'send'])
+            self._outcome = outcomes.Error(e).without_frames(["_advance", "send"])
             raise CoroutineComplete()
 
     def send(self, value):
@@ -199,7 +202,9 @@ class RunningCoroutine(object):
 
     # Once 2.7 is dropped, this can be run unconditionally
     if sys.version_info >= (3, 3):
-        _py_compat.exec_(textwrap.dedent("""
+        _py_compat.exec_(
+            textwrap.dedent(
+                """
         def __await__(self):
             # It's tempting to use `return (yield from self._coro)` here,
             # which bypasses the scheduler. Unfortunately, this means that
@@ -210,7 +215,9 @@ class RunningCoroutine(object):
 
             # Hand the coroutine back to the scheduler trampoline.
             return (yield self)
-        """))
+        """
+            )
+        )
 
     __bool__ = __nonzero__
 
@@ -219,6 +226,7 @@ class RunningCoroutine(object):
             return "%s.%s" % (self.module, self.funcname)
         else:
             return "%s.%d.%s" % (self.module, self.stage, self.funcname)
+
 
 class RunningTest(RunningCoroutine):
     """Add some useful Test functionality to a RunningCoroutine."""
@@ -249,10 +257,11 @@ class RunningTest(RunningCoroutine):
     def _advance(self, outcome):
         if not self.started:
             self.error_messages = []
-            self.log.info("Starting test: \"%s\"\nDescription: %s" %
-                          (self.funcname, self.__doc__))
+            self.log.info(
+                'Starting test: "%s"\nDescription: %s' % (self.funcname, self.__doc__)
+            )
             self.start_time = time.time()
-            self.start_sim_time = get_sim_time('ns')
+            self.start_sim_time = get_sim_time("ns")
             self.started = True
         return super(RunningTest, self)._advance(outcome)
 
@@ -327,6 +336,7 @@ class function(object):
     This allows a function to internally block while
     externally appear to yield.
     """
+
     def __init__(self, func):
         self._coro = cocotb.coroutine(func)
 
@@ -342,12 +352,14 @@ class function(object):
             and standalone functions"""
         return self.__class__(self._coro._func.__get__(obj, type))
 
+
 @public
 class external(object):
     """Decorator to apply to an external function to enable calling from cocotb.
     This currently creates a new execution context for each function that is
     called. Scope for this to be streamlined to a queue in future.
     """
+
     def __init__(self, func):
         self._func = func
         self._log = SimLog("cocotb.external.%s" % self._func.__name__, id(self))
@@ -376,11 +388,13 @@ class _decorator_helper(type):
 
         MyClass.__init__(this_is_passed_as_f, construction, args='go here')
     """
+
     def __call__(cls, *args, **kwargs):
         def decorator(f):
             # fall back to the normal way of constructing an object, now that
             # we have all the arguments
             return type.__call__(cls, f, *args, **kwargs)
+
         return decorator
 
 
@@ -392,6 +406,7 @@ class hook(_py_compat.with_metaclass(_decorator_helper, coroutine)):
 
     All hooks are run at the beginning of a cocotb test suite, prior to any
     test code being run."""
+
     def __init__(self, f):
         super(hook, self).__init__(f)
         self.im_hook = True
@@ -436,8 +451,16 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
         stage (int, optional)
             Order tests logically into stages, where multiple tests can share a stage.
     """
-    def __init__(self, f, timeout=None, expect_fail=False, expect_error=False,
-                 skip=False, stage=None):
+
+    def __init__(
+        self,
+        f,
+        timeout=None,
+        expect_fail=False,
+        expect_error=False,
+        skip=False,
+        stage=None,
+    ):
         super(test, self).__init__(f)
 
         self.timeout = timeout
@@ -449,7 +472,7 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
         self.expect_error = expect_error
         self.skip = skip
         self.stage = stage
-        self.im_test = True    # For auto-regressions
+        self.im_test = True  # For auto-regressions
         self.name = self._func.__name__
 
     def __call__(self, *args, **kwargs):

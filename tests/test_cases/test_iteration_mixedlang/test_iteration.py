@@ -82,9 +82,14 @@ def recursive_discovery(dut):
     else:
         tlog.info("Found a total of %d things", total)
 
-    if not isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject):
+    if not isinstance(
+        dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject
+    ):
         tlog.error("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable")
-        tlog.error("but it was %s" % dut.i_verilog.uart1.baud_gen_1.baud_freq.__class__.__name__)
+        tlog.error(
+            "but it was %s"
+            % dut.i_verilog.uart1.baud_gen_1.baud_freq.__class__.__name__
+        )
         raise TestFailure()
 
 
@@ -104,4 +109,3 @@ def recursive_discovery_boundary(dut):
     tlog.info("Found a total of %d things", total)
     if total != pass_total:
         raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
-

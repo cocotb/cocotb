@@ -12,6 +12,7 @@ from cocotb.result import TestFailure
 
 class produce:
     """ Test helpers that produce a value / exception in different ways """
+
     @staticmethod
     @cocotb.coroutine
     def coro(outcome):
@@ -32,6 +33,7 @@ class produce:
 
 class SomeException(Exception):
     """ Custom exception to test for that can't be thrown by internals """
+
     pass
 
 

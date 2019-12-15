@@ -3,7 +3,7 @@ from __future__ import print_function, division
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@ from __future__ import print_function, division
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,6 +39,7 @@ import warnings
 
 if "COCOTB_SIM" in os.environ:
     import simulator
+
     _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
 else:
     simulator = None
@@ -48,8 +49,10 @@ else:
 def get_python_integer_types():
     warnings.warn(
         "This is an internal cocotb function, use six.integer_types instead",
-        DeprecationWarning)
+        DeprecationWarning,
+    )
     from cocotb import _py_compat
+
     return _py_compat.integer_types
 
 
@@ -67,7 +70,7 @@ def get_sim_time(units=None):
     """
     timeh, timel = simulator.get_sim_time()
 
-    result = (timeh << 32 | timel)
+    result = timeh << 32 | timel
 
     if units is not None:
         result = get_time_from_sim_steps(result, units)
@@ -122,9 +125,10 @@ def get_sim_steps(time, units=None):
     result_rounded = math.floor(result)
 
     if result_rounded != result:
-        raise ValueError("Unable to accurately represent {0}({1}) with the "
-                         "simulator precision of 1e{2}".format(
-                             time, units, _LOG_SIM_PRECISION))
+        raise ValueError(
+            "Unable to accurately represent {0}({1}) with the "
+            "simulator precision of 1e{2}".format(time, units, _LOG_SIM_PRECISION)
+        )
 
     return int(result_rounded)
 
@@ -139,19 +143,14 @@ def _get_log_time_scale(units):
     Returns:
         The the ``log10()`` of the scale factor for the time unit.
     """
-    scale = {
-        'fs' :    -15,
-        'ps' :    -12,
-        'ns' :     -9,
-        'us' :     -6,
-        'ms' :     -3,
-        'sec':      0}
+    scale = {"fs": -15, "ps": -12, "ns": -9, "us": -6, "ms": -3, "sec": 0}
 
     units_lwr = units.lower()
     if units_lwr not in scale:
         raise ValueError("Invalid unit ({0}) provided".format(units))
     else:
         return scale[units_lwr]
+
 
 # Ctypes helper functions
 
@@ -165,8 +164,7 @@ def pack(ctypes_obj):
     Returns:
         New Python string containing the bytes from memory holding *ctypes_obj*.
     """
-    return ctypes.string_at(ctypes.addressof(ctypes_obj),
-                            ctypes.sizeof(ctypes_obj))
+    return ctypes.string_at(ctypes.addressof(ctypes_obj), ctypes.sizeof(ctypes_obj))
 
 
 def unpack(ctypes_obj, string, bytes=None):
@@ -189,13 +187,19 @@ def unpack(ctypes_obj, string, bytes=None):
     """
     if bytes is None:
         if len(string) != ctypes.sizeof(ctypes_obj):
-            raise ValueError("Attempt to unpack a string of size %d into a \
-                struct of size %d" % (len(string), ctypes.sizeof(ctypes_obj)))
+            raise ValueError(
+                "Attempt to unpack a string of size %d into a \
+                struct of size %d"
+                % (len(string), ctypes.sizeof(ctypes_obj))
+            )
         bytes = len(string)
 
     if bytes > ctypes.sizeof(ctypes_obj):
-        raise MemoryError("Attempt to unpack %d bytes over an object \
-                        of size %d" % (bytes, ctypes.sizeof(ctypes_obj)))
+        raise MemoryError(
+            "Attempt to unpack %d bytes over an object \
+                        of size %d"
+            % (bytes, ctypes.sizeof(ctypes_obj))
+        )
 
     ctypes.memmove(ctypes.addressof(ctypes_obj), string, bytes)
 
@@ -244,7 +248,7 @@ def hexdump(x):
             if j % 16 == 7:
                 rs += ""
         rs += "  "
-        rs += _sane_color(x[i:i + 16]) + "\n"
+        rs += _sane_color(x[i : i + 16]) + "\n"
         i += 16
     return rs
 
@@ -284,7 +288,7 @@ def hexdiffs(x, y):
 
     def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
         """Highlight with ANSI colors if possible/requested and not running in GUI."""
-        
+
         if want_color_output():
             return colour + string + ANSI.COLOR_DEFAULT
         else:
@@ -305,9 +309,11 @@ def hexdiffs(x, y):
 
     for j in range(len(y)):
         for i in range(len(x)):
-            d[i, j] = min((d[i-1, j-1][0] + SUBST*(x[i] != y[j]), (i-1, j-1)),
-                          (d[i - 1, j][0] + INSERT, (i - 1, j)),
-                          (d[i, j - 1][0] + INSERT, (i, j - 1)))
+            d[i, j] = min(
+                (d[i - 1, j - 1][0] + SUBST * (x[i] != y[j]), (i - 1, j - 1)),
+                (d[i - 1, j][0] + INSERT, (i - 1, j)),
+                (d[i, j - 1][0] + INSERT, (i, j - 1)),
+            )
 
     backtrackx = []
     backtracky = []
@@ -315,22 +321,20 @@ def hexdiffs(x, y):
     j = len(y) - 1
     while not (i == j == -1):
         i2, j2 = d[i, j][1]
-        backtrackx.append(x[i2+1:i+1])
-        backtracky.append(y[j2+1:j+1])
+        backtrackx.append(x[i2 + 1 : i + 1])
+        backtracky.append(y[j2 + 1 : j + 1])
         i, j = i2, j2
 
     x = y = i = 0
-    colorize = { 0: lambda x: x,  # noqa
-                -1: lambda x: x,  # noqa
-                 1: lambda x: x}  # noqa
+    colorize = {0: lambda x: x, -1: lambda x: x, 1: lambda x: x}  # noqa  # noqa  # noqa
 
     dox = 1
     doy = 0
     l = len(backtrackx)
     while i < l:
         separate = 0
-        linex = backtrackx[i:i+16]
-        liney = backtracky[i:i+16]
+        linex = backtrackx[i : i + 16]
+        liney = backtracky[i : i + 16]
         xx = sum(len(k) for k in linex)
         yy = sum(len(k) for k in liney)
         if dox and not xx:
@@ -375,16 +379,19 @@ def hexdiffs(x, y):
             if i + j < l:
                 if line[j]:
                     if linex[j] != liney[j]:
-                        rs += highlight("%02X" % ord(line[j]),
-                                        colour=ANSI.COLOR_HILITE_HEXDIFF_2)
+                        rs += highlight(
+                            "%02X" % ord(line[j]), colour=ANSI.COLOR_HILITE_HEXDIFF_2
+                        )
                     else:
                         rs += "%02X" % ord(line[j])
                     if linex[j] == liney[j]:
-                        cl += highlight(_sane_color(line[j]),
-                                        colour=ANSI.COLOR_HILITE_HEXDIFF_3)
+                        cl += highlight(
+                            _sane_color(line[j]), colour=ANSI.COLOR_HILITE_HEXDIFF_3
+                        )
                     else:
-                        cl += highlight(sane(line[j]),
-                                        colour=ANSI.COLOR_HILITE_HEXDIFF_4)
+                        cl += highlight(
+                            sane(line[j]), colour=ANSI.COLOR_HILITE_HEXDIFF_4
+                        )
                 else:
                     rs += "  "
                     cl += " "
@@ -393,7 +400,7 @@ def hexdiffs(x, y):
             if j == 7:
                 rs += " "
 
-        rs += " " + cl + '\n'
+        rs += " " + cl + "\n"
 
         if doy or not yy:
             doy = 0
@@ -406,8 +413,6 @@ def hexdiffs(x, y):
             else:
                 i += 16
     return rs
-
-
 
 
 class ParametrizedSingleton(type):
@@ -464,7 +469,7 @@ def reject_remaining_kwargs(name, kwargs):
         # match the error message to what Python 3 produces
         bad_arg = next(iter(kwargs))
         raise TypeError(
-            '{}() got an unexpected keyword argument {!r}'.format(name, bad_arg)
+            "{}() got an unexpected keyword argument {!r}".format(name, bad_arg)
         )
 
 
@@ -478,6 +483,7 @@ class lazy_property(object):
     This should be used for expensive members of objects that are not always
     used.
     """
+
     def __init__(self, fget):
         self.fget = fget
 
@@ -496,28 +502,29 @@ class lazy_property(object):
 def want_color_output():
     """Return ``True`` if colored output is possible/requested and not running in GUI."""
     want_color = sys.stdout.isatty()  # default to color for TTYs
-    if os.getenv("COCOTB_ANSI_OUTPUT", default='0') == '1':
+    if os.getenv("COCOTB_ANSI_OUTPUT", default="0") == "1":
         want_color = True
-    if os.getenv("GUI", default='0') == '1':
+    if os.getenv("GUI", default="0") == "1":
         want_color = False
     return want_color
-        
-    
+
+
 if __name__ == "__main__":
     import random
+
     a = ""
     for char in range(random.randint(250, 500)):
         a += chr(random.randint(0, 255))
     b = a
     for error in range(random.randint(2, 9)):
         offset = random.randint(0, len(a))
-        b = b[:offset] + chr(random.randint(0, 255)) + b[offset+1:]
+        b = b[:offset] + chr(random.randint(0, 255)) + b[offset + 1 :]
 
     diff = hexdiffs(a, b)
     print(diff)
 
-    space = '\n' + (" " * 20)
-    print(space.join(diff.split('\n')))
+    space = "\n" + (" " * 20)
+    print(space.join(diff.split("\n")))
 
 
 def remove_traceback_frames(tb_or_exc, frame_names):
@@ -539,7 +546,8 @@ def remove_traceback_frames(tb_or_exc, frame_names):
         if sys.version_info < (3,):
             raise RuntimeError(
                 "Cannot use remove_traceback_frames on exceptions in python 2. "
-                "Call it directly on the traceback object instead.")
+                "Call it directly on the traceback object instead."
+            )
 
         return exc.with_traceback(
             remove_traceback_frames(exc.__traceback__, frame_names)

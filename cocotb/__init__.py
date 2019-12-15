@@ -57,9 +57,10 @@ from ._version import __version__
 # GPI logging instance
 if "COCOTB_SIM" in os.environ:
     import simulator
+
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)
-    log = SimLog('cocotb')
+    log = SimLog("cocotb")
     level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
     try:
         _default_log = getattr(logging, level)
@@ -67,7 +68,7 @@ if "COCOTB_SIM" in os.environ:
         log.error("Unable to set loging level to %s" % level)
         _default_log = logging.INFO
     log.setLevel(_default_log)
-    loggpi = SimLog('cocotb.gpi')
+    loggpi = SimLog("cocotb.gpi")
     # Notify GPI of log level
     simulator.log_level(_default_log)
 
@@ -77,10 +78,10 @@ if "COCOTB_SIM" in os.environ:
     # appear. Continue silently if this fails.
     try:
         if not sys.stdout.isatty():
-            sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 1)
+            sys.stdout = os.fdopen(sys.stdout.fileno(), "w", 1)
             log.debug("Reopened stdout with line buffering")
         if not sys.stderr.isatty():
-            sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 1)
+            sys.stderr = os.fdopen(sys.stderr.fileno(), "w", 1)
             log.debug("Reopened stderr with line buffering")
     except Exception as e:
         log.warning("Failed to ensure that stdout/stderr are line buffered: %s", e)
@@ -108,6 +109,7 @@ _rlock = threading.RLock()
 
 def mem_debug(port):
     import cocotb.memdebug
+
     cocotb.memdebug.start(port)
 
 
@@ -125,16 +127,15 @@ def _initialise_testbench(root_name):
     """
     _rlock.acquire()
 
-    memcheck_port = os.getenv('MEMCHECK')
+    memcheck_port = os.getenv("MEMCHECK")
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-    exec_path = os.getenv('COCOTB_PY_DIR')
+    exec_path = os.getenv("COCOTB_PY_DIR")
     if exec_path is None:
-        exec_path = 'Unknown'
+        exec_path = "Unknown"
 
-    log.info("Running tests with cocotb v%s from %s" %
-             (__version__, exec_path))
+    log.info("Running tests with cocotb v%s from %s" % (__version__, exec_path))
 
     # Create the base handle type
 
@@ -142,13 +143,13 @@ def _initialise_testbench(root_name):
 
     # Seed the Python random number generator to make this repeatable
     global RANDOM_SEED
-    RANDOM_SEED = os.getenv('RANDOM_SEED')
+    RANDOM_SEED = os.getenv("RANDOM_SEED")
 
     if RANDOM_SEED is None:
-        if 'ntb_random_seed' in plusargs:
-            RANDOM_SEED = eval(plusargs['ntb_random_seed'])
-        elif 'seed' in plusargs:
-            RANDOM_SEED = eval(plusargs['seed'])
+        if "ntb_random_seed" in plusargs:
+            RANDOM_SEED = eval(plusargs["ntb_random_seed"])
+        elif "seed" in plusargs:
+            RANDOM_SEED = eval(plusargs["seed"])
         else:
             RANDOM_SEED = int(time.time())
         log.info("Seeding Python random module with %d" % (RANDOM_SEED))
@@ -157,20 +158,24 @@ def _initialise_testbench(root_name):
         log.info("Seeding Python random module with supplied seed %d" % (RANDOM_SEED))
     random.seed(RANDOM_SEED)
 
-    module_str = os.getenv('MODULE')
-    test_str = os.getenv('TESTCASE')
-    hooks_str = os.getenv('COCOTB_HOOKS', '')
+    module_str = os.getenv("MODULE")
+    test_str = os.getenv("TESTCASE")
+    hooks_str = os.getenv("COCOTB_HOOKS", "")
 
     if not module_str:
-        raise ImportError("Environment variables defining the module(s) to " +
-                          "execute not defined.  MODULE=\"%s\"" % (module_str))
+        raise ImportError(
+            "Environment variables defining the module(s) to "
+            + 'execute not defined.  MODULE="%s"' % (module_str)
+        )
 
-    modules = module_str.split(',')
-    hooks = hooks_str.split(',') if hooks_str else []
+    modules = module_str.split(",")
+    hooks = hooks_str.split(",") if hooks_str else []
 
     global regression_manager
 
-    regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=RANDOM_SEED, hooks=hooks)
+    regression_manager = RegressionManager(
+        root_name, modules, tests=test_str, seed=RANDOM_SEED, hooks=hooks
+    )
     regression_manager.initialise()
     regression_manager.execute()
 
@@ -187,13 +192,14 @@ def _sim_event(level, message):
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
-        scheduler.finish_test(TestFailure("Failure from external source: %s" %
-                              message))
+        scheduler.finish_test(TestFailure("Failure from external source: %s" % message))
     elif level is SIM_FAIL:
         # We simply return here as the simulator will exit
         # so no cleanup is needed
-        msg = ("Failing test at simulator request before test run completion: "
-               "%s" % message)
+        msg = (
+            "Failing test at simulator request before test run completion: "
+            "%s" % message
+        )
         scheduler.log.error(msg)
         scheduler.finish_scheduler(SimFailure(msg))
     else:
@@ -209,9 +215,9 @@ def process_plusargs():
     plusargs = {}
 
     for option in cocotb.argv:
-        if option.startswith('+'):
-            if option.find('=') != -1:
-                (name, value) = option[1:].split('=')
+        if option.startswith("+"):
+            if option.find("=") != -1:
+                (name, value) = option[1:].split("=")
                 plusargs[name] = value
             else:
                 plusargs[option[1:]] = True

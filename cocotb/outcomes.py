@@ -53,6 +53,7 @@ class _ErrorBase(Outcome):
 
 
 if sys.version_info.major >= 3:
+
     class Error(_ErrorBase):
         def send(self, gen):
             return gen.throw(self.error)
@@ -64,6 +65,7 @@ if sys.version_info.major >= 3:
         # just for convenience writing code that works on both versions
         def without_frames(self, frame_names):
             return Error(remove_traceback_frames(self.error, frame_names))
+
 
 else:
     # Python 2 needs extra work to preserve tracebacks
@@ -91,12 +93,14 @@ else:
         # We need a wrapper function to ensure the traceback is the same
         # depth as on Python 3 - `raise type, val, tb` is not included in the
         # stack trace in Python 2.
-        _py_compat.exec_("""def _get(self):
+        _py_compat.exec_(
+            """def _get(self):
             try:
                 raise self.error_type, self.error, self.error_tb
             finally:
                 del self
-        """)
+        """
+        )
 
         def get(self):
             return self._get()

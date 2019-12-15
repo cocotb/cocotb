@@ -14,7 +14,7 @@ CLK_PERIOD_NS = 100
 
 class StreamBusMonitor(BusMonitor):
     """Streaming bus monitor."""
-    
+
     _signals = ["valid", "data"]
 
     @cocotb.coroutine
@@ -32,9 +32,9 @@ class StreamBusMonitor(BusMonitor):
 def clock_gen(signal, period=10):
     while True:
         signal <= 0
-        yield Timer(period/2, units='ns')
+        yield Timer(period / 2, units="ns")
         signal <= 1
-        yield Timer(period/2, units='ns')
+        yield Timer(period / 2, units="ns")
 
 
 @cocotb.coroutine
@@ -43,10 +43,9 @@ def value_test(dut, num):
 
     data_width = int(dut.DATA_WIDTH.value)
     bus_width = int(dut.BUS_WIDTH.value)
-    dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
-                 (data_width, bus_width))
+    dut._log.info("Detected DATA_WIDTH = %d, BUS_WIDTH = %d" % (data_width, bus_width))
 
-    cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units='ns'))
+    cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units="ns"))
 
     dut.rst <= 1
     for i in range(bus_width):
@@ -65,8 +64,7 @@ def value_test(dut, num):
     got = int(dut.o_data.value)
 
     if got != num:
-        raise TestFailure(
-            'Mismatch detected: got %d, exp %d!' % (got, num))
+        raise TestFailure("Mismatch detected: got %d, exp %d!" % (got, num))
 
 
 @cocotb.test()
@@ -79,7 +77,7 @@ def mean_basic_test(dut):
 def mean_overflow_test(dut):
     """Test for overflow n*max_val/n = max_val"""
     data_width = int(dut.DATA_WIDTH.value)
-    yield value_test(dut, 2**data_width - 1)
+    yield value_test(dut, 2 ** data_width - 1)
 
 
 @cocotb.test()
@@ -98,10 +96,9 @@ def mean_randomised_test(dut):
 
     data_width = int(dut.DATA_WIDTH.value)
     bus_width = int(dut.BUS_WIDTH.value)
-    dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
-                 (data_width, bus_width))
+    dut._log.info("Detected DATA_WIDTH = %d, BUS_WIDTH = %d" % (data_width, bus_width))
 
-    cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units='ns'))
+    cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units="ns"))
 
     dut.rst <= 1
     for i in range(bus_width):
@@ -114,7 +111,7 @@ def mean_randomised_test(dut):
     for j in range(10):
         nums = []
         for i in range(bus_width):
-            x = random.randint(0, 2**data_width - 1)
+            x = random.randint(0, 2 ** data_width - 1)
             dut.i_data[i] = x
             nums.append(x)
         dut.i_valid <= 1

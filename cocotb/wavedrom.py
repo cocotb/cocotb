@@ -1,6 +1,6 @@
 # Copyright (c) 2014 Potential Ventures Ltd
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -11,7 +11,7 @@
 #     * Neither the name of Potential Ventures Ltd, nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,6 +34,7 @@ from cocotb.utils import reject_remaining_kwargs
 
 class Wavedrom(object):
     """Base class for a WaveDrom compatible tracer."""
+
     def __init__(self, obj):
 
         self._hdls = OrderedDict()
@@ -50,7 +51,7 @@ class Wavedrom(object):
         """Record a sample of the signal value at this point in time."""
 
         def _lastval(samples):
-            for x in range(len(samples)-1, -1, -1):
+            for x in range(len(samples) - 1, -1, -1):
                 if samples[x] not in "=.|":
                     return samples[x]
             return None
@@ -69,9 +70,11 @@ class Wavedrom(object):
             elif "z" in valstr:
                 char = "z"
             else:
-                if (len(self._data[name]) and
-                        self._data[name][-1] == int(val) and
-                        self._samples[name][-1] in "=."):
+                if (
+                    len(self._data[name])
+                    and self._data[name][-1] == int(val)
+                    and self._samples[name][-1] in "=."
+                ):
                     char = "."
                 else:
                     char = "="
@@ -109,7 +112,7 @@ class Wavedrom(object):
 
         if add_clock:
             tracelen = len(traces[-1]["wave"])
-            siglist.insert(0, {"name": "clk", "wave": "p" + "."*(tracelen-1)})
+            siglist.insert(0, {"name": "clk", "wave": "p" + "." * (tracelen - 1)})
 
         return siglist
 
@@ -132,7 +135,7 @@ class trace(object):
     def __init__(self, *args, **kwargs):
         # emulate keyword-only arguments in python 2
         self._clock = kwargs.pop("clk", None)
-        reject_remaining_kwargs('__init__', kwargs)
+        reject_remaining_kwargs("__init__", kwargs)
 
         self._signals = []
         for arg in args:
@@ -188,7 +191,8 @@ class trace(object):
     def dumpj(self, header="", footer="", config=""):
         trace = {"signal": []}
         trace["signal"].append(
-            {"name": "clock", "wave": "p" + "."*(self._clocks-1)})
+            {"name": "clock", "wave": "p" + "." * (self._clocks - 1)}
+        )
         for sig in self._signals:
             trace["signal"].extend(sig.get(add_clock=False))
         if header:

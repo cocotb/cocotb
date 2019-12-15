@@ -3,7 +3,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,6 +31,7 @@
 A bus is simply defined as a collection of signals.
 """
 from cocotb.handle import _AssignmentResult
+
 
 def _build_sig_attr_dict(signals):
     if isinstance(signals, dict):
@@ -51,7 +52,16 @@ class Bus(object):
     TODO:
         Support for ``struct``/``record`` ports where signals are member names.
     """
-    def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", array_idx=None):
+
+    def __init__(
+        self,
+        entity,
+        name,
+        signals,
+        optional_signals=[],
+        bus_separator="_",
+        array_idx=None,
+    ):
         """
         Args:
             entity (SimHandle): :any:`SimHandle` instance to the entity containing the bus.
@@ -100,8 +110,10 @@ class Bus(object):
             if entity.__hasattr__(signame):
                 self._add_signal(attr_name, signame)
             else:
-                self._entity._log.debug("Ignoring optional missing signal "
-                                        "%s on bus %s" % (sig_name, name))
+                self._entity._log.debug(
+                    "Ignoring optional missing signal "
+                    "%s on bus %s" % (sig_name, name)
+                )
 
     def _add_signal(self, attr_name, signame):
         self._entity._log.debug("Signal name {}".format(signame))
@@ -121,11 +133,15 @@ class Bus(object):
         for attr_name, hdl in self._signals.items():
             if not hasattr(obj, attr_name):
                 if strict:
-                    msg = ("Unable to drive onto {0}.{1} because {2} is missing "
-                           "attribute {3}".format(self._entity._name,
-                                                  self._name,
-                                                  obj.__class__.__name__,
-                                                  attr_name))
+                    msg = (
+                        "Unable to drive onto {0}.{1} because {2} is missing "
+                        "attribute {3}".format(
+                            self._entity._name,
+                            self._name,
+                            obj.__class__.__name__,
+                            attr_name,
+                        )
+                    )
                     raise AttributeError(msg)
                 else:
                     continue
@@ -142,18 +158,19 @@ class Bus(object):
             RuntimeError: If signal not present in bus,
                 or attempt to modify a bus capture.
         """
+
         class _Capture(dict):
             def __getattr__(self, name):
                 if name in self:
                     return self[name]
                 else:
-                    raise RuntimeError('Signal {} not present in bus'.format(name))
+                    raise RuntimeError("Signal {} not present in bus".format(name))
 
             def __setattr__(self, name, value):
-                raise RuntimeError('Modifying a bus capture is not supported')
+                raise RuntimeError("Modifying a bus capture is not supported")
 
             def __delattr__(self, name):
-                raise RuntimeError('Modifying a bus capture is not supported')
+                raise RuntimeError("Modifying a bus capture is not supported")
 
         _capture = _Capture()
         for attr_name, hdl in self._signals.items():
@@ -175,11 +192,15 @@ class Bus(object):
         for attr_name, hdl in self._signals.items():
             if not hasattr(obj, attr_name):
                 if strict:
-                    msg = ("Unable to sample from {0}.{1} because {2} is missing "
-                           "attribute {3}".format(self._entity._name,
-                                                  self._name,
-                                                  obj.__class__.__name__,
-                                                  attr_name))
+                    msg = (
+                        "Unable to sample from {0}.{1} because {2} is missing "
+                        "attribute {3}".format(
+                            self._entity._name,
+                            self._name,
+                            obj.__class__.__name__,
+                            attr_name,
+                        )
+                    )
                     raise AttributeError(msg)
                 else:
                     continue

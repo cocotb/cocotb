@@ -94,7 +94,7 @@ def sine_wave(amplitude, w, offset=0):
     twoPiF_DIV_sampleRate = math.pi * 2
     while True:
         for idx in (i / float(w) for i in range(int(w))):
-            yield amplitude*math.sin(twoPiF_DIV_sampleRate * idx) + offset
+            yield amplitude * math.sin(twoPiF_DIV_sampleRate * idx) + offset
 
 
 def get_generators(module):

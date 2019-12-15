@@ -16,27 +16,56 @@ def find_all(name, path):
         if name in files:
             yield os.path.join(root, name)
 
+
 def get_parser():
     """Return the cmdline parser"""
-    parser = argparse.ArgumentParser(description=__doc__,
-                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
-    parser.add_argument("--directory", dest="directory", type=str, required=False,
-                        default=".",
-                        help="Name of base directory to search from")
+    parser.add_argument(
+        "--directory",
+        dest="directory",
+        type=str,
+        required=False,
+        default=".",
+        help="Name of base directory to search from",
+    )
 
-    parser.add_argument("--output_file", dest="output_file", type=str, required=False,
-                        default="combined_results.xml",
-                        help="Name of output file")
-    parser.add_argument("--testsuites_name", dest="testsuites_name", type=str, required=False,
-                        default="results",
-                        help="Name value for testsuites tag")
-    parser.add_argument("--verbose", dest="debug", action='store_const', required=False,
-                        const=True, default=False,
-                        help="Verbose/debug output")
-    parser.add_argument("--suppress_rc", dest="set_rc", action='store_const', required=False,
-                        const=False, default=True,
-                        help="Suppress return code if failures found")
+    parser.add_argument(
+        "--output_file",
+        dest="output_file",
+        type=str,
+        required=False,
+        default="combined_results.xml",
+        help="Name of output file",
+    )
+    parser.add_argument(
+        "--testsuites_name",
+        dest="testsuites_name",
+        type=str,
+        required=False,
+        default="results",
+        help="Name value for testsuites tag",
+    )
+    parser.add_argument(
+        "--verbose",
+        dest="debug",
+        action="store_const",
+        required=False,
+        const=True,
+        default=False,
+        help="Verbose/debug output",
+    )
+    parser.add_argument(
+        "--suppress_rc",
+        dest="set_rc",
+        action="store_const",
+        required=False,
+        const=False,
+        default=True,
+        help="Suppress return code if failures found",
+    )
 
     return parser
 
@@ -45,37 +74,56 @@ def main():
 
     parser = get_parser()
     args = parser.parse_args()
-    rc = 0;
+    rc = 0
 
-    result = ET.Element("testsuites", name=args.testsuites_name);
+    result = ET.Element("testsuites", name=args.testsuites_name)
 
     for fname in find_all("results.xml", args.directory):
-        if args.debug : print("Reading file %s" % fname)
+        if args.debug:
+            print("Reading file %s" % fname)
         tree = ET.parse(fname)
         for ts in tree.iter("testsuite"):
-            if args.debug : print("Ts name : %s, package : %s" % ( ts.get('name'), ts.get('package')))
+            if args.debug:
+                print(
+                    "Ts name : %s, package : %s" % (ts.get("name"), ts.get("package"))
+                )
             use_element = None
             for existing in result:
-                if ((existing.get('name') == ts.get('name') and (existing.get('package') == ts.get('package')))):
-                    if args.debug : print("Already found")
-                    use_element=existing
+                if existing.get("name") == ts.get("name") and (
+                    existing.get("package") == ts.get("package")
+                ):
+                    if args.debug:
+                        print("Already found")
+                    use_element = existing
                     break
             if use_element is None:
                 result.append(ts)
             else:
-                #for tc in ts.getiterator("testcase"):
-                use_element.extend(list(ts));
+                # for tc in ts.getiterator("testcase"):
+                use_element.extend(list(ts))
 
-    if args.debug : ET.dump(result)
+    if args.debug:
+        ET.dump(result)
 
-    for testsuite_count, testsuite in enumerate(result.iter('testsuite'),1):
-        for testcase_count, testcase in enumerate(testsuite.iter('testcase'),1):
-            for failure in testcase.iter('failure'):
-                if args.set_rc: rc=1
-                print("Failure in testsuite: '%s' classname: '%s' testcase: '%s' with parameters '%s'" % (testsuite.get('name'), testcase.get('classname'), testcase.get('name'), testsuite.get('package')))
+    for testsuite_count, testsuite in enumerate(result.iter("testsuite"), 1):
+        for testcase_count, testcase in enumerate(testsuite.iter("testcase"), 1):
+            for failure in testcase.iter("failure"):
+                if args.set_rc:
+                    rc = 1
+                print(
+                    "Failure in testsuite: '%s' classname: '%s' testcase: '%s' with parameters '%s'"
+                    % (
+                        testsuite.get("name"),
+                        testcase.get("classname"),
+                        testcase.get("name"),
+                        testsuite.get("package"),
+                    )
+                )
 
-    print("Ran a total of %d TestSuites and %d TestCases" % (testsuite_count, testcase_count))
-
+    print(
+        "Ran a total of %d TestSuites and %d TestCases"
+        % (testsuite_count, testcase_count)
+    )
 
     ET.ElementTree(result).write(args.output_file, encoding="UTF-8")
     return rc

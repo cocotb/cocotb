@@ -9,6 +9,7 @@ from cocotb.binary import BinaryValue
 # This will cause the sim to exit but we want to do this nicely
 # If this was in another module then the remaining tests would also fail
 
+
 @cocotb.test(expect_error=True)
 def typosyntax_error():
     yield Timer(100)a

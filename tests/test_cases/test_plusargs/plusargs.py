@@ -47,8 +47,12 @@ def plusargs_test(dut):
 
     for name in cocotb.plusargs:
         print("COCOTB:", name, cocotb.plusargs[name])
-    
-    if cocotb.plusargs['foo'] != 'bar':
-        raise TestFailure("plusargs 'foo' value '{}' does not match expected 'bar'".format(cocotb.plusargs['foo']))
+
+    if cocotb.plusargs["foo"] != "bar":
+        raise TestFailure(
+            "plusargs 'foo' value '{}' does not match expected 'bar'".format(
+                cocotb.plusargs["foo"]
+            )
+        )
 
     yield Timer(10000)
