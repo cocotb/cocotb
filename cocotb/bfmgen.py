@@ -286,7 +286,7 @@ def bfm_generate_sv(args):
             out_c.write("\n")
             out_c.write("#include \"svdpi.h\"\n")
             out_c.write("typedef void (*cocotb_bfm_notify_f)(void *);\n")
-            out_c.write("int cocotb_bfm_register(const char *, const char *, const char *, cocotb_bfm_notify_f, void *);\n")
+            out_c.write("int cocotb_bfm_register(const char *, const char *, cocotb_bfm_notify_f, void *);\n")
 
             for t in inst.bfm_type_info_m.keys():
                 info = inst.bfm_type_info_m[t]
