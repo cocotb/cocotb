@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     Verilated::traceEverOn(true);
 
     std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
-    top->trace(tfp, 99);
+    top->trace(tfp.get(), 99);
     tfp->open("dump.vcd");
 #endif
 
