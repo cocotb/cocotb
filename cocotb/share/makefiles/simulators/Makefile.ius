@@ -62,6 +62,11 @@ else
     EXTRA_ARGS +=
 endif
 
+# IUS errors out if multiple timescales are specified on the command line.
+ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
+    $(error "Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.")
+endif
+
 # IUS loads vpi regardless of what is asked for, then VHPI if asked to
 # Which does not play nice with out multi language. So we supply vhpi
 # GPI_EXTRA if needed.
@@ -97,7 +102,8 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUS
 	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	set -o pipefail; \
-	$(CMD) $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
+	$(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
+	$(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 clean::
 	@rm -rf $(SIM_BUILD)

@@ -35,7 +35,7 @@ Make Variables
 
 .. make:var:: WAVES
 
-      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators. 
+      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators.
       To get wave traces in Icarus Verilog see :ref:`Simulator Support`.
 
 .. make:var:: VERILOG_SOURCES
@@ -61,6 +61,24 @@ Make Variables
 .. make:var:: EXTRA_ARGS
 
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
+
+.. make:var:: COCOTB_HDL_TIMEUNIT
+
+      The default time unit that should be assumed for simulation when not specified by modules in the design.
+      If this isn't specified then it is assumed to be ``1ns``.
+      Allowed values are 1, 10, and 100.
+      Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
+
+      .. versionadded:: 1.3
+
+.. make:var:: COCOTB_HDL_TIMEPRECISION
+
+      The default time precision that should be assumed for simulation when not specified by modules in the design.
+      If this isn't specified then it is assumed to be ``1ps``.
+      Allowed values are 1, 10, and 100.
+      Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
+
+      .. versionadded:: 1.3
 
 .. make:var:: CUSTOM_COMPILE_DEPS
 

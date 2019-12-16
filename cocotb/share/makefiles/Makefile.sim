@@ -39,6 +39,8 @@ export SIM_BUILD
 SIM ?= icarus
 
 COCOTB_RESULTS_FILE ?= results.xml
+COCOTB_HDL_TIMEUNIT ?= 1ns
+COCOTB_HDL_TIMEPRECISION ?= 1ps
 
 # Maintain backwards compatibility by supporting upper and lower case SIM variable
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
