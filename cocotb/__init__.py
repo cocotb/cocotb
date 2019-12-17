@@ -98,6 +98,7 @@ scheduler = Scheduler()
 regression_manager = None
 
 plusargs = {}
+"""A dictionary of "plusargs" handed to the simulation."""
 
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
