@@ -140,6 +140,8 @@ Clock
 Utilities
 =========
 
+.. autodata:: cocotb.plusargs
+
 .. automodule:: cocotb.utils
     :members:
     :member-order: bysource
