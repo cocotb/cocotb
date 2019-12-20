@@ -49,3 +49,29 @@ initial begin
 end
 
 endmodule : avalon_streaming
+
+module avalon_streaming_renamed (
+    input wire clk,
+    input wire reset,
+
+    input wire logic asi_VLD,
+    input wire logic[7:0] asi_DAT,
+    output logic asi_RDY,
+
+    output logic aso_VLD,
+    output logic[7:0] aso_DAT,
+    input wire logic aso_RDY
+);
+
+avalon_streaming inner (
+  .clk(clk),
+  .reset(reset),
+  .asi_valid(asi_VLD),
+  .asi_data(asi_DAT),
+  .asi_ready(asi_RDY),
+  .aso_valid(aso_VLD),
+  .aso_data(aso_DAT),
+  .aso_ready(aso_RDY)
+);
+
+endmodule : avalon_streaming_renamed

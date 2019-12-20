@@ -35,6 +35,7 @@ NB Currently we only support a very small subset of functionality
 import random
 
 import cocotb
+from cocotb.avalon import AvalonMMBus, AvalonSTBus, AvalonSTPktBus
 from cocotb.decorators import coroutine
 from cocotb.triggers import RisingEdge, FallingEdge, ReadOnly, NextTimeStep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
@@ -53,11 +54,8 @@ class AvalonMM(BusDriver):
     future as well.
     Posted responses from a slave are not supported.
     """
-    _signals = ["address"]
-    _optional_signals = ["readdata", "read", "write", "waitrequest",
-                         "writedata", "readdatavalid", "byteenable",
-                         "cs"]
 
+    _bus_type = AvalonMMBus
 
     def __init__(self, entity, name, clock, **kwargs):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
@@ -233,9 +231,7 @@ class AvalonMaster(AvalonMM):
 
 class AvalonMemory(BusDriver):
     """Emulate a memory, with back-door access."""
-    _signals = ["address"]
-    _optional_signals = ["write", "read", "writedata", "readdatavalid",
-                         "readdata", "waitrequest", "burstcount", "byteenable"]
+    _bus_type = AvalonMMBus
     _avalon_properties = {
             "burstCountUnits": "symbols",  # symbols or words
             "addressUnits": "symbols",     # symbols or words
@@ -507,9 +503,7 @@ class AvalonMemory(BusDriver):
 class AvalonST(ValidatedBusDriver):
     """Avalon Streaming Interface (Avalon-ST) Driver"""
 
-    _signals = ["valid", "data"]
-    _optional_signals = ["ready"]
-
+    _bus_type = AvalonSTBus
     _default_config = {"firstSymbolInHighOrderBits" : True}
 
     def __init__(self, entity, name, clock, **kwargs):
@@ -595,9 +589,7 @@ class AvalonST(ValidatedBusDriver):
 class AvalonSTPkts(ValidatedBusDriver):
     """Avalon Streaming Interface (Avalon-ST) Driver, packetized."""
 
-    _signals = ["valid", "data", "startofpacket", "endofpacket"]
-    _optional_signals = ["error", "channel", "ready", "empty"]
-
+    _bus_type = AvalonSTPktBus
     _default_config = {
         "dataBitsPerSymbol"             : 8,
         "firstSymbolInHighOrderBits"    : True,

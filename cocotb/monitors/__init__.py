@@ -36,7 +36,7 @@ the transactions.
 from collections import deque
 
 import cocotb
-from cocotb.bus import Bus
+from cocotb.bus import TypedBus
 from cocotb.decorators import coroutine
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
@@ -170,18 +170,23 @@ class Monitor(object):
 
 class BusMonitor(Monitor):
     """Wrapper providing common functionality for monitoring buses."""
-    _signals = []
-    _optional_signals = []
 
     def __init__(self, entity, name, clock, reset=None, reset_n=None,
-                 callback=None, event=None, bus_separator="_", array_idx=None):
+                 callback=None, event=None, bus_separator="_", array_idx=None,
+                 **kwargs):
+        if self._bus_type is None:
+            class _AnonymousBus(TypedBus):
+                _optional_signals = getattr(self, '_optional_signals', [])
+                _signals = getattr(self, '_signals', [])
+            self._bus_type = _AnonymousBus
+
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         self.entity = entity
         self.name = name
         self.clock = clock
-        self.bus = Bus(self.entity, self.name, self._signals,
-                       optional_signals=self._optional_signals,
-                       bus_separator=bus_separator, array_idx=array_idx)
+        self.bus = self._bus_type(self.entity, self.name,
+                                  bus_separator=bus_separator,
+                                  array_idx=array_idx, **kwargs)
         self._reset = reset
         self._reset_n = reset_n
         Monitor.__init__(self, callback=callback, event=event)

@@ -35,7 +35,7 @@ import cocotb
 from cocotb.decorators import coroutine
 from cocotb.triggers import (Event, RisingEdge, ReadOnly, NextTimeStep,
                              Edge)
-from cocotb.bus import Bus
+from cocotb.bus import TypedBus
 from cocotb.log import SimLog
 
 
@@ -224,20 +224,22 @@ class BusDriver(Driver):
             see docs for that class for more information.
 
     """
-    
-    _optional_signals = []
+    _bus_type = None
 
     def __init__(self, entity, name, clock, **kwargs):
+        if self._bus_type is None:
+            class _AnonymousBus(TypedBus):
+                _optional_signals = getattr(self, '_optional_signals', [])
+                _signals = getattr(self, '_signals', [])
+            self._bus_type = _AnonymousBus
+
         index = kwargs.get("array_idx", None)
 
         self.log = SimLog("cocotb.%s.%s" % (entity._name, name))
         Driver.__init__(self)
         self.entity = entity
         self.clock = clock
-        self.bus = Bus(
-            self.entity, name, self._signals, optional_signals=self._optional_signals,
-            **kwargs
-        )
+        self.bus = self._bus_type(self.entity, name, **kwargs)
 
         # Give this instance a unique name
         self.name = name if index is None else "%s_%d" % (name, index)

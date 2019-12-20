@@ -195,3 +195,25 @@ class Bus(object):
         """Overload the less than or equal to operator for value assignment"""
         self.drive(value)
         return _AssignmentResult(self, value)
+
+
+class TypedBus(Bus):
+    """A bus with a set of known signal names baked in."""
+    # override in subclass
+    _signals = []
+    _optional_signals = []
+
+    def __init__(self, entity, name, **kwargs):
+        def _map_names(sig, kwargs):
+            return {s: kwargs.pop(s, s) for s in sig}
+        if not isinstance(self._signals, dict):
+            self._signals = _map_names(self._signals, kwargs)
+        if not isinstance(self._optional_signals, dict):
+            self._optional_signals = _map_names(self._optional_signals, kwargs)
+        bus_separator = kwargs.pop("bus_separator", "_")
+        array_idx = kwargs.pop("array_idx", None)
+        Bus.__init__(self, entity, name,
+                     signals=self._signals,
+                     optional_signals=self._optional_signals,
+                     bus_separator=bus_separator,
+                     array_idx=array_idx, **kwargs)

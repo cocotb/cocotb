@@ -8,7 +8,7 @@ clean::
 
 else
 
-TOPLEVEL := avalon_streaming
+TOPLEVEL ?= avalon_streaming
 
 ifeq ($(OS),Msys)
 WPWD=$(shell sh -c 'pwd -W')

@@ -27,6 +27,7 @@
 """Drivers for Advanced Microcontroller Bus Architecture."""
 
 import cocotb
+from cocotb.amba import AXI4Bus, AXI4LiteBus
 from cocotb.triggers import RisingEdge, ReadOnly, Lock
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
@@ -44,12 +45,7 @@ class AXI4LiteMaster(BusDriver):
 
     TODO: Kill all pending transactions if reset is asserted.
     """
-    
-    _signals = ["AWVALID", "AWADDR", "AWREADY",        # Write address channel
-                "WVALID", "WREADY", "WDATA", "WSTRB",  # Write data channel
-                "BVALID", "BREADY", "BRESP",           # Write response channel
-                "ARVALID", "ARADDR", "ARREADY",        # Read address channel
-                "RVALID", "RREADY", "RRESP", "RDATA"]  # Read data channel
+    _bus_type = AXI4LiteBus
 
     def __init__(self, entity, name, clock, **kwargs):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
@@ -213,28 +209,7 @@ class AXI4Slave(BusDriver):
 
     Monitors an internal memory and handles read and write requests.
     '''
-    _signals = [
-        "ARREADY", "ARVALID", "ARADDR",             # Read address channel
-        "ARLEN",   "ARSIZE",  "ARBURST", "ARPROT",
-
-        "RREADY",  "RVALID",  "RDATA",   "RLAST",   # Read response channel
-
-        "AWREADY", "AWADDR",  "AWVALID",            # Write address channel
-        "AWPROT",  "AWSIZE",  "AWBURST", "AWLEN",
-
-        "WREADY",  "WVALID",  "WDATA",
-
-    ]
-
-    # Not currently supported by this driver
-    _optional_signals = [
-        "WLAST",   "WSTRB",
-        "BVALID",  "BREADY",  "BRESP",   "RRESP",
-        "RCOUNT",  "WCOUNT",  "RACOUNT", "WACOUNT",
-        "ARLOCK",  "AWLOCK",  "ARCACHE", "AWCACHE",
-        "ARQOS",   "AWQOS",   "ARID",    "AWID",
-        "BID",     "RID",     "WID"
-    ]
+    _bus_type = AXI4Bus
 
     def __init__(self, entity, name, clock, memory, callback=None, event=None,
                  big_endian=False, **kwargs):

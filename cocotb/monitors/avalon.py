@@ -34,6 +34,7 @@ NB Currently we only support a very small subset of functionality.
 
 import warnings
 
+from cocotb.avalon import AvalonSTBus, AvalonSTPktBus
 from cocotb.utils import hexdump
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
@@ -50,9 +51,7 @@ class AvalonST(BusMonitor):
     Non-packetized so each valid word is a separate transaction.
     """
 
-    _signals = ["valid", "data"]
-    _optional_signals = ["ready"]
-
+    _bus_type = AvalonSTBus
     _default_config = {"firstSymbolInHighOrderBits": True}
 
     def __init__(self, entity, name, clock, **kwargs):
@@ -98,8 +97,7 @@ class AvalonSTPkts(BusMonitor):
             Setting to True on bus without channel signal will give an error
     """
 
-    _signals = ["valid", "data", "startofpacket", "endofpacket"]
-    _optional_signals = ["error", "channel", "ready", "empty"]
+    _bus_type = AvalonSTPktBus
 
     _default_config = {
         "dataBitsPerSymbol"             : 8,
