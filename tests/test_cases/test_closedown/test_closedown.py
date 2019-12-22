@@ -34,7 +34,7 @@ Also used a regression test of cocotb capabilities
 """
 
 import cocotb
-from cocotb.triggers import Timer, Join, RisingEdge
+from cocotb.triggers import Timer, RisingEdge
 from cocotb.clock import Clock
 
 
@@ -56,11 +56,13 @@ def clock_mon(dut):
     yield RisingEdge(dut.clk)
 
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_fail=True,
+             expect_error=cocotb.SIM_NAME.lower().startswith(("modelsim",  # $fail_test() fails hard on Questa
+                                                              )))
 def test_failure_from_system_task(dut):
     """Allow the dut to call $fail_test() from verilog"""
     clock = Clock(dut.clk, 100)
     clock.start()
-    coro = cocotb.fork(clock_mon(dut))
-    extern = cocotb.fork(run_external(dut))
+    cocotb.fork(clock_mon(dut))
+    cocotb.fork(run_external(dut))
     yield Timer(10000000)
