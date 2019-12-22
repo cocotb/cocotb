@@ -38,6 +38,7 @@ import os
 import sys
 import logging
 import threading
+import inspect
 
 # Debug mode controlled by environment variables
 if "COCOTB_ENABLE_PROFILING" in os.environ:
@@ -653,6 +654,9 @@ class Scheduler(object):
                 "decorator?"
                 .format(coroutine)
             )
+
+        if inspect.iscoroutine(coroutine):
+            return self.add(cocotb.decorators.RunningTask(coroutine))
 
         elif not isinstance(coroutine, cocotb.decorators.RunningTask):
             raise TypeError(
