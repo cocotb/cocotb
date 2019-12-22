@@ -116,3 +116,16 @@ async def test_await_causes_start(dut):
     assert not coro.has_started()
     await coro
     assert coro.has_started()
+
+
+@cocotb.test()
+def test_undecorated_coroutine_fork(dut):
+    ran = False
+
+    async def example():
+        nonlocal ran
+        await cocotb.triggers.Timer(1, 'ns')
+        ran = True
+
+    yield cocotb.fork(example()).join()
+    assert ran
