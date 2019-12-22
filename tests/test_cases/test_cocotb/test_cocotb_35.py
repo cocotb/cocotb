@@ -129,3 +129,15 @@ def test_undecorated_coroutine_fork(dut):
 
     yield cocotb.fork(example()).join()
     assert ran
+
+@cocotb.test()
+def test_undecorated_coroutine_yield(dut):
+    ran = False
+
+    async def example():
+        nonlocal ran
+        await cocotb.triggers.Timer(1, 'ns')
+        ran = True
+
+    yield example()
+    assert ran
