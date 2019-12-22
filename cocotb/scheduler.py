@@ -710,6 +710,9 @@ class Scheduler(object):
             else:
                 return self._trigger_from_started_coro(result)
 
+        if sys.version_info >= (3, 5) and inspect.iscoroutine(result):
+            return self._trigger_from_unstarted_coro(cocotb.decorators.RunningTask(result))
+
         if isinstance(result, list):
             return self._trigger_from_list(result)
 
