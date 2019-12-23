@@ -76,18 +76,18 @@ class CoroutineComplete(Exception):
         Exception.__init__(self, text)
 
 
-class RunningCoroutine(object):
-    """Per instance wrapper around an function to turn it into a coroutine.
+class RunningTask(object):
+    """Per instance wrapper around a running generator.
 
     Provides the following:
 
-        coro.join() creates a Trigger that will fire when this coroutine
+        task.join() creates a Trigger that will fire when this coroutine
         completes.
 
-        coro.kill() will destroy a coroutine instance (and cause any Join
+        task.kill() will destroy a coroutine instance (and cause any Join
         triggers to fire.
     """
-    def __init__(self, inst, parent):
+    def __init__(self, inst):
         if hasattr(inst, "__name__"):
             self.__name__ = "%s" % inst.__name__
 
@@ -99,10 +99,6 @@ class RunningCoroutine(object):
             self._coro = inst
         self._started = False
         self._callbacks = []
-        self._parent = parent
-        self.__doc__ = parent._func.__doc__
-        self.module = parent._func.__module__
-        self.funcname = parent._func.__name__
         self._outcome = None
 
         if not hasattr(self._coro, "send"):
@@ -215,6 +211,20 @@ class RunningCoroutine(object):
     __bool__ = __nonzero__
 
 
+class RunningCoroutine(RunningTask):
+    r"""
+    A compatibility wrapper for running :class:`coroutine`\ s.
+
+    All this class does is provide some extra attributes
+    """
+    def __init__(self, inst, parent):
+        RunningTask.__init__(inst)
+        self._parent = parent
+        self.__doc__ = parent._func.__doc__
+        self.module = parent._func.__module__
+        self.funcname = parent._func.__name__
+
+
 class RunningTest(RunningCoroutine):
     """Add some useful Test functionality to a RunningCoroutine."""
 
@@ -267,7 +277,7 @@ class RunningTest(RunningCoroutine):
         self._outcome = outcome
         cocotb.scheduler.unschedule(self)
 
-    # like RunningCoroutine.kill(), but with a way to inject a failure
+    # like RunningTask.kill(), but with a way to inject a failure
     def abort(self, exc):
         """Force this test to end early, without executing any cleanup.
 
@@ -292,7 +302,7 @@ class coroutine(object):
 
     ``log`` methods will log to ``cocotb.coroutine.name``.
 
-    :meth:`~cocotb.decorators.RunningCoroutine.join` method returns an event which will fire when the coroutine exits.
+    :meth:`~cocotb.decorators.RunningTask.join` method returns an event which will fire when the coroutine exits.
 
     Used as ``@cocotb.coroutine``.
     """

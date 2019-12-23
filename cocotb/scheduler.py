@@ -642,7 +642,7 @@ class Scheduler(object):
                 .format(coroutine)
             )
 
-        elif not isinstance(coroutine, cocotb.decorators.RunningCoroutine):
+        elif not isinstance(coroutine, cocotb.decorators.RunningTask):
             raise TypeError(
                 "Attempt to add a object of type {} to the scheduler, which "
                 "isn't a coroutine: {!r}\n"
@@ -666,19 +666,19 @@ class Scheduler(object):
 
     # This collection of functions parses a trigger out of the object
     # that was yielded by a coroutine, converting `list` -> `Waitable`,
-    # `Waitable` -> `RunningCoroutine`, `RunningCoroutine` -> `Trigger`.
+    # `Waitable` -> `RunningTask`, `RunningTask` -> `Trigger`.
     # Doing them as separate functions allows us to avoid repeating unencessary
     # `isinstance` checks.
 
     def _trigger_from_started_coro(self, result):
-        # type: (cocotb.decorators.RunningCoroutine) -> Trigger
+        # type: (cocotb.decorators.RunningTask) -> Trigger
         if _debug:
             self.log.debug("Joining to already running coroutine: %s" %
                            result.__name__)
         return result.join()
 
     def _trigger_from_unstarted_coro(self, result):
-        # type: (cocotb.decorators.RunningCoroutine) -> Trigger
+        # type: (cocotb.decorators.RunningTask) -> Trigger
         self.queue(result)
         if _debug:
             self.log.debug("Scheduling nested coroutine: %s" %
@@ -700,7 +700,7 @@ class Scheduler(object):
         if isinstance(result, Trigger):
             return result
 
-        if isinstance(result, cocotb.decorators.RunningCoroutine):
+        if isinstance(result, cocotb.decorators.RunningTask):
             if not result.has_started():
                 return self._trigger_from_unstarted_coro(result)
             else:
