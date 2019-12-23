@@ -54,7 +54,7 @@ import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
 from cocotb.result import TestSuccess, SimFailure
-from cocotb.utils import get_sim_time, remove_traceback_frames
+from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
 from cocotb import _py_compat
 
@@ -337,7 +337,7 @@ class RegressionManager(object):
         if self._running_test:
             start = ''
             end   = ''
-            if self.log.colour:
+            if want_color_output():
                 start = ANSI.COLOR_TEST
                 end   = ANSI.COLOR_DEFAULT
             # Want this to stand out a little bit
@@ -386,7 +386,7 @@ class RegressionManager(object):
                 pass_fail_str = "PASS"
             else:
                 pass_fail_str = "FAIL"
-                if self.log.colour:
+                if want_color_output():
                     hilite = ANSI.COLOR_HILITE_SUMMARY
 
             summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
