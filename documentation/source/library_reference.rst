@@ -51,9 +51,9 @@ Interacting with the Simulator
 
 .. autofunction:: cocotb.fork
 
-.. autofunction:: cocotb.decorators.RunningCoroutine.join
+.. autofunction:: cocotb.decorators.RunningTask.join
 
-.. autofunction:: cocotb.decorators.RunningCoroutine.kill
+.. autofunction:: cocotb.decorators.RunningTask.kill
 
 Triggers
 --------
