@@ -214,11 +214,6 @@ class RunningCoroutine(object):
 
     __bool__ = __nonzero__
 
-    def sort_name(self):
-        if self.stage is None:
-            return "%s.%s" % (self.module, self.funcname)
-        else:
-            return "%s.%d.%s" % (self.module, self.stage, self.funcname)
 
 class RunningTest(RunningCoroutine):
     """Add some useful Test functionality to a RunningCoroutine."""
@@ -280,6 +275,12 @@ class RunningTest(RunningCoroutine):
         aborting.
         """
         return self._force_outcome(outcomes.Error(exc))
+
+    def sort_name(self):
+        if self.stage is None:
+            return "%s.%s" % (self.module, self.funcname)
+        else:
+            return "%s.%d.%s" % (self.module, self.stage, self.funcname)
 
 
 class coroutine(object):
