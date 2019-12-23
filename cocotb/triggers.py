@@ -635,7 +635,7 @@ class _AggregateWaitable(Waitable):
 
         # Do some basic type-checking up front, rather than waiting until we
         # yield them.
-        allowed_types = (Trigger, Waitable, decorators.RunningCoroutine)
+        allowed_types = (Trigger, Waitable, decorators.RunningTask)
         for trigger in self.triggers:
             if not isinstance(trigger, allowed_types):
                 raise TypeError(
