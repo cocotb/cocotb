@@ -167,6 +167,11 @@ of :keyword:`yield`. Provided they are decorated with ``@cocotb.coroutine``,
 is determined by which type of function it appears in, not by the
 sub-coroutine being called.
 
+.. versionadded:: 1.4
+    The :any:`cocotb.coroutine` decorator is no longer necessary for ``async def`` coroutines.
+    ``async def`` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
+    including :keyword:`yield` statements and :any:`cocotb.fork`.
+
 .. note::
     It is not legal to ``await`` a list of triggers as can be done in
     ``yield``-based coroutine with ``yield [trig1, trig2]``. Use
