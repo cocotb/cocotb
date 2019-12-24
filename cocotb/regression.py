@@ -108,6 +108,9 @@ class RegressionManager(object):
         self.skipped = 0
         self.failures = 0
 
+        # Setup XUnit
+        ###################
+
         results_filename = os.getenv('COCOTB_RESULTS_FILE', "results.xml")
         suite_name = os.getenv('RESULT_TESTSUITE', "all")
         package_name = os.getenv('RESULT_TESTPACKAGE', "all")
@@ -118,12 +121,18 @@ class RegressionManager(object):
                                  package=package_name)
 
         if (self._seed is not None):
-            self.xunit.add_property(name="random_seed", value=("%d"%self._seed))
+            self.xunit.add_property(name="random_seed", value=("%d" % self._seed))
+
+        # Setup Coverage
+        ####################
 
         if coverage is not None:
             self.log.info("Enabling coverage collection of Python code")
             self._cov = coverage.coverage(branch=True, omit=["*cocotb*"])
             self._cov.start()
+
+        # Setup DUT object
+        #######################
 
         handle = simulator.get_root_handle(self._root_name)
 
@@ -133,7 +142,9 @@ class RegressionManager(object):
             raise AttributeError("Can not find Root Handle (%s)" %
                                  self._root_name)
 
-        # Auto discovery
+        # Test Discovery
+        ####################
+
         for module_name in self._modules:
             try:
                 self.log.debug("Python Path: " + ",".join(sys.path))
@@ -148,7 +159,7 @@ class RegressionManager(object):
 
             if self._functions:
 
-                # Specific functions specified, don't auto discover
+                # Specific functions specified, don't auto-discover
                 for test in self._functions.rsplit(','):
                     try:
                         _test = getattr(module, test)
@@ -158,35 +169,18 @@ class RegressionManager(object):
                         _py_compat.raise_from(err, None)  # discard nested traceback
 
                     if not hasattr(_test, "im_test"):
-                        self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine", test, module_name)
+                        self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
+                                       test, module_name)
                         raise ImportError("Failed to find requested test %s" % test)
-                    self._queue.append(_test(self._dut))
-                    self.ntests += 1
+                    self._init_test(_test)
+
+                # only look in first module for all functions and don't complain if all functions are not found
                 break
 
+            # auto-discover
             for thing in vars(module).values():
                 if hasattr(thing, "im_test"):
-                    try:
-                        test = thing(self._dut)
-                        skip = test.skip
-                    except Exception:
-                        skip = True
-                        self.log.warning("Failed to initialize test %s" %
-                                         thing.name, exc_info=True)
-
-                    if skip:
-                        self.log.info("Skipping test %s" % thing.name)
-                        self.xunit.add_testcase(name=thing.name,
-                                                classname=module_name,
-                                                time="0.0",
-                                                sim_time_ns="0.0",
-                                                ratio_time="0.0")
-                        self.xunit.add_skipped()
-                        self.skipped += 1
-                        self._store_test_result(module_name, thing.name, None, 0.0, 0.0, 0.0)
-                    else:
-                        self._queue.append(test)
-                        self.ntests += 1
+                    self._init_test(thing)
 
         self._queue.sort(key=lambda test: test.sort_name())
 
@@ -195,8 +189,11 @@ class RegressionManager(object):
                           (valid_tests.module,
                            valid_tests.funcname))
 
+        # Process Hooks
+        ###################
+
         for module_name in self._hooks:
-            self.log.info("Loading hook from module '"+module_name+"'")
+            self.log.info("Loading hook from module '" + module_name + "'")
             module = _my_import(module_name)
 
             for thing in vars(module).values():
@@ -208,25 +205,29 @@ class RegressionManager(object):
                     else:
                         cocotb.scheduler.add(test)
 
-
     def tear_down(self):
-        """It's the end of the world as we know it"""
+
+        # Write out final log messages
         if self.failures:
             self.log.error("Failed %d out of %d tests (%d skipped)" %
                            (self.failures, self.count - 1, self.skipped))
         else:
             self.log.info("Passed %d tests (%d skipped)" %
                           (self.count - 1, self.skipped))
+        if len(self.test_results) > 0:
+            self._log_test_summary()
+        self._log_sim_summary()
+        self.log.info("Shutting down...")
+
+        # Generate output reports
+        self.xunit.write()
         if self._cov:
             self._cov.stop()
             self.log.info("Writing coverage data")
             self._cov.save()
             self._cov.html_report()
-        if len(self.test_results) > 0:
-            self._log_test_summary()
-        self._log_sim_summary()
-        self.log.info("Shutting down...")
-        self.xunit.write()
+
+        # Setup simulator finalization
         simulator.stop_simulator()
 
     def next_test(self):
@@ -235,25 +236,19 @@ class RegressionManager(object):
             return None
         return self._queue.pop(0)
 
-    def _add_failure(self, result):
-        self.xunit.add_failure(stdout=repr(str(result)),
-                               stderr="\n".join(self._running_test.error_messages),
-                               message="Test failed with random_seed={}".format(self._seed))
-        self.failures += 1
-
     def handle_result(self, test):
         """Handle a test completing.
 
-        Dump result to XML and schedule the next test (if any).
+        Dump result to XML and schedule the next test (if any). Entered by the scheduler.
 
         Args:
             test: The test that completed
         """
         assert test is self._running_test
 
-        real_time   = time.time() - test.start_time
+        real_time = time.time() - test.start_time
         sim_time_ns = get_sim_time('ns') - test.start_sim_time
-        ratio_time  = self._safe_divide(sim_time_ns, real_time)
+        ratio_time = self._safe_divide(sim_time_ns, real_time)
 
         self.xunit.add_testcase(name=test.funcname,
                                 classname=test.module,
@@ -261,37 +256,106 @@ class RegressionManager(object):
                                 sim_time_ns=repr(sim_time_ns),
                                 ratio_time=repr(ratio_time))
 
+        # score test
+        result_pass, sim_failed = self._score_test(test, test._outcome)
+
+        # stop capturing log output
+        cocotb.log.removeHandler(test.handler)
+
+        # Save results
+        self._store_test_result(test.__module__, test.__name__, result_pass, sim_time_ns, real_time, ratio_time)
+        if not result_pass:
+            self.xunit.add_failure()
+            self.failures += 1
+
+        # Fail if required
+        if sim_failed:
+            self.tear_down()
+            return
+
+        self.execute()
+
+    def _init_test(self, test_func):
+        """
+        Initializes a test.
+
+        Records outcome if the initialization fails.
+        Records skip if the test is skipped.
+        Saves the initialized test if it successfully initializes.
+        """
+        test_init_outcome = cocotb.outcomes.capture(test_func, self._dut)
+
+        if isinstance(test_init_outcome, cocotb.outcomes.Error):
+            self.log.error("Failed to initialize test %s" % test_func.name, exc_info=True)
+            self.xunit.add_testcase(name=test_func.name,
+                                    classname=test_func.__module__,
+                                    time="0.0",
+                                    sim_time_ns="0.0",
+                                    ratio_time="0.0")
+            result_pass, sim_failed = self._score_test(test_func, test_init_outcome.without_frames(['capture']))
+            # Save results
+            self._store_test_result(test_func.__module__, test_func.__name__, result_pass, 0.0, 0.0, 0.0)
+            if not result_pass:
+                self.xunit.add_failure()
+                self.failures += 1
+            # Fail if required
+            if sim_failed:
+                self.tear_down()
+                raise SimFailure("Test initialization caused a simulator failure. Shutting down.")
+
+        else:
+            test = test_init_outcome.get()
+            if test.skip:
+                self.log.info("Skipping test %s" % test_func.name)
+                self.xunit.add_testcase(name=test_func.name,
+                                        classname=test.module,
+                                        time="0.0",
+                                        sim_time_ns="0.0",
+                                        ratio_time="0.0")
+                self.xunit.add_skipped()
+                self.skipped += 1
+                self._store_test_result(test.module, test_func.name, None, 0.0, 0.0, 0.0)
+            else:
+                self._queue.append(test)
+                self.ntests += 1
+
+    def _score_test(self, test, outcome):
+        """
+        Given a test and the test's outcome, determine if the test met expectations and log pertinent information
+        """
+
         # Helper for logging result
         def _result_was():
             result_was = ("{} (result was {})".format
-                          (test.funcname, result.__class__.__name__))
+                          (test.__name__, result.__class__.__name__))
             return result_was
 
+        # scoring outcomes
         result_pass = True
+        sim_failed = False
 
-        # check what exception the test threw
         try:
-            test._outcome.get()
+            outcome.get()
         except Exception as e:
             if sys.version_info >= (3, 5):
-                result = remove_traceback_frames(e, ['handle_result', 'get'])
+                result = remove_traceback_frames(e, ['_score_test', 'get'])
                 # newer versions of the `logging` module accept plain exception objects
                 exc_info = result
             elif sys.version_info >= (3,):
-                result = remove_traceback_frames(e, ['handle_result', 'get'])
+                result = remove_traceback_frames(e, ['_score_test', 'get'])
                 # newer versions of python have Exception.__traceback__
                 exc_info = (type(result), result, result.__traceback__)
             else:
                 # Python 2
                 result = e
-                exc_info = remove_traceback_frames(sys.exc_info(), ['handle_result', 'get'])
+                exc_info = remove_traceback_frames(sys.exc_info(), ['_score_test', 'get'])
         else:
             result = TestSuccess()
 
         if (isinstance(result, TestSuccess) and
                 not test.expect_fail and
                 not test.expect_error):
-            self.log.info("Test Passed: %s" % test.funcname)
+            self.log.info("Test Passed: %s" % test.__name__)
 
         elif (isinstance(result, AssertionError) and
                 test.expect_fail):
@@ -301,13 +365,11 @@ class RegressionManager(object):
               test.expect_error):
             self.log.error("Test passed but we expected an error: " +
                            _result_was())
-            self._add_failure(result)
             result_pass = False
 
         elif isinstance(result, TestSuccess):
             self.log.error("Test passed but we expected a failure: " +
                            _result_was())
-            self._add_failure(result)
             result_pass = False
 
         elif isinstance(result, SimFailure):
@@ -316,36 +378,28 @@ class RegressionManager(object):
             else:
                 self.log.error("Test error has lead to simulator shutting us "
                                "down", exc_info=exc_info)
-                self._add_failure(result)
-                self._store_test_result(test.module, test.funcname, False, sim_time_ns, real_time, ratio_time)
-                self.tear_down()
-                return
+                result_pass = False
+                sim_failed = True
 
         elif test.expect_error:
             if isinstance(result, test.expect_error):
                 self.log.info("Test errored as expected: " + _result_was())
             else:
-                self.log.info("Test errored with unexpected type: " + _result_was())
-                self._add_failure(result)
+                self.log.error("Test errored with unexpected type: " + _result_was(), exc_info=exc_info)
                 result_pass = False
 
         else:
             self.log.error("Test Failed: " + _result_was(), exc_info=exc_info)
+            result_pass = False
+
             if _pdb_on_exception:
                 if sys.version_info >= (3, 5):
                     traceback = exc_info.__traceback__
                 else:
                     traceback = exc_info[2]
                 pdb.post_mortem(traceback)
-            self._add_failure(result)
-            result_pass = False
 
-        # stop capturing log output
-        cocotb.log.removeHandler(test.handler)
-
-        self._store_test_result(test.module, test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
-
-        self.execute()
+        return result_pass, sim_failed
 
     def execute(self):
         self._running_test = cocotb.regression_manager.next_test()
