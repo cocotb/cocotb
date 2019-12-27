@@ -51,20 +51,51 @@ _LINENO_CHARS   = 4  # noqa
 _FUNCNAME_CHARS = 31  # noqa
 
 
+def default_config():
+    """ Apply the default cocotb log formatting to the root logger.
+
+    This hooks up the logger to write to stdout, using either
+    :class:`SimColourLogFormatter` or :class:`SimLogFormatter` depending
+    on whether colored output is requested.
+
+    The logging level for cocotb logs is set based on the
+    :envvar:`COCOTB_LOG_LEVEL` environment variable, which defaults to ``INFO``.
+
+    If desired, this logging configuration can be overwritten by calling
+    ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards), or by
+    manually resetting the root logger instance, for which examples can be
+    found online.
+    """
+    # construct an appropriate handler
+    hdlr = logging.StreamHandler(sys.stdout)
+    if want_color_output():
+        hdlr.setFormatter(SimColourLogFormatter())
+    else:
+        hdlr.setFormatter(SimLogFormatter())
+
+    logging.setLoggerClass(SimBaseLog)  # For backwards compatibility
+    logging.basicConfig()
+    logging.getLogger().handlers = [hdlr]  # overwrite default handlers
+
+    # apply level settings for cocotb
+    log = logging.getLogger('cocotb')
+    level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
+    try:
+        _default_log = getattr(logging, level)
+    except AttributeError:
+        log.error("Unable to set logging level to %r" % level)
+        _default_log = logging.INFO
+    log.setLevel(_default_log)
+
+    # Notify GPI of log level, which it uses as an optimization to avoid
+    # calling into Python.
+    if "COCOTB_SIM" in os.environ:
+        import simulator
+        simulator.log_level(_default_log)
+
+
 class SimBaseLog(logging.getLoggerClass()):
-    def __init__(self, name):
-        super(SimBaseLog, self).__init__(name)
-
-        # customizations of the defaults
-        hdlr = logging.StreamHandler(sys.stdout)
-
-        if want_color_output():
-            hdlr.setFormatter(SimColourLogFormatter())
-        else:
-            hdlr.setFormatter(SimLogFormatter())
-
-        self.propagate = False
-        self.addHandler(hdlr)
+    """ This class only exists for backwards compatibility """
 
     @property
     def logger(self):
