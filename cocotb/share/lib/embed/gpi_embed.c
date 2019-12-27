@@ -215,8 +215,6 @@ void embed_sim_cleanup(void)
  * Loads the Python module called cocotb and calls the _initialise_testbench function
  */
 
-#define COCOTB_MODULE "cocotb"
-
 int get_module_ref(const char *modname, PyObject **mod)
 {
     PyObject *pModule = PyImport_ImportModule(modname);
@@ -259,37 +257,32 @@ int embed_sim_init(gpi_sim_info_t *info)
     }
 
     PyObject *cocotb_module, *cocotb_init, *cocotb_retval;
-    PyObject *simlog_obj, *simlog_func;
+    PyObject *cocotb_log_module = NULL;
+    PyObject *simlog_func;
     PyObject *argv_list;
 
     cocotb_module = NULL;
-    simlog_obj = NULL;
 
     // Ensure that the current thread is ready to call the Python C API
     PyGILState_STATE gstate = PyGILState_Ensure();
     to_python();
 
-    if (get_module_ref(COCOTB_MODULE, &cocotb_module))
+    if (get_module_ref("cocotb", &cocotb_module))
         goto cleanup;
 
-    // Obtain the loggpi logger object
-    simlog_obj = PyObject_GetAttrString(cocotb_module, "loggpi");       // New reference
-
-    if (simlog_obj == NULL) {
-        PyErr_Print();
-        LOG_ERROR("Failed to get simlog object from loggpi\n");
+    if (get_module_ref("cocotb.log", &cocotb_log_module)) {
         goto cleanup;
     }
 
     // Obtain the function to use when logging from C code
-    simlog_func = PyObject_GetAttrString(simlog_obj, "_logFromC");      // New reference
+    simlog_func = PyObject_GetAttrString(cocotb_log_module, "_log_from_c");      // New reference
     if (simlog_func == NULL) {
         PyErr_Print();
-        LOG_ERROR("Failed to get the _logFromC method");
+        LOG_ERROR("Failed to get the _log_from_c function");
         goto cleanup;
     }
     if (!PyCallable_Check(simlog_func)) {
-        LOG_ERROR("_logFromC is not callable");
+        LOG_ERROR("_log_from_c is not callable");
         Py_DECREF(simlog_func);
         goto cleanup;
     }
@@ -297,14 +290,14 @@ int embed_sim_init(gpi_sim_info_t *info)
     set_log_handler(simlog_func);                                       // Note: This function steals a reference to simlog_func.
 
     // Obtain the function to check whether to call log function
-    simlog_func = PyObject_GetAttrString(simlog_obj, "isEnabledFor");   // New reference
+    simlog_func = PyObject_GetAttrString(cocotb_log_module, "_filter_from_c");   // New reference
     if (simlog_func == NULL) {
         PyErr_Print();
-        LOG_ERROR("Failed to get the isEnabledFor method");
+        LOG_ERROR("Failed to get the _filter_from_c method");
         goto cleanup;
     }
     if (!PyCallable_Check(simlog_func)) {
-        LOG_ERROR("isEnabledFor is not callable");
+        LOG_ERROR("_filter_from_c is not callable");
         Py_DECREF(simlog_func);
         goto cleanup;
     }
@@ -440,7 +433,7 @@ cleanup:
     ret = -1;
 ok:
     Py_XDECREF(cocotb_module);
-    Py_XDECREF(simlog_obj);
+    Py_XDECREF(cocotb_log_module);
 
     PyGILState_Release(gstate);
     to_simulator();
