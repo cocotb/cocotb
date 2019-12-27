@@ -211,7 +211,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
         goto error;
     }
 
-    // Log function args are level, filename, lineno, msg, function
+    // Log function args are logger_name, level, filename, lineno, msg, function
     PyObject *handler_ret = PyObject_CallFunctionObjArgs(pLogHandler, logger_name_arg, level_arg, filename_arg, lineno_arg, msg_arg, function_arg, NULL);
     if (handler_ret == NULL) {
         goto error;
