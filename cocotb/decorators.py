@@ -243,21 +243,17 @@ class RunningTest(RunningCoroutine):
         self.skip = parent.skip
         self.stage = parent.stage
 
-        self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
-        cocotb.log.addHandler(self.handler)
+        # make sure not to create a circular reference here
+        self.handler = RunningTest.ErrorLogHandler(self.error_messages.append)
 
     def _advance(self, outcome):
         if not self.started:
-            self.error_messages = []
             self.log.info("Starting test: \"%s\"\nDescription: %s" %
                           (self.funcname, self.__doc__))
             self.start_time = time.time()
             self.start_sim_time = get_sim_time('ns')
             self.started = True
         return super(RunningTest, self)._advance(outcome)
-
-    def _handle_error_message(self, msg):
-        self.error_messages.append(msg)
 
     def _force_outcome(self, outcome):
         """

@@ -340,6 +340,9 @@ class RegressionManager(object):
             self._add_failure(result)
             result_pass = False
 
+        # stop capturing log output
+        cocotb.log.removeHandler(test.handler)
+
         self._store_test_result(test.module, test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
 
         self.execute()
@@ -358,6 +361,9 @@ class RegressionManager(object):
                            self.count, self.ntests,
                            end,
                            self._running_test.funcname))
+
+            # start capturing log output
+            cocotb.log.addHandler(self._running_test.handler)
 
             cocotb.scheduler.add_test(self._running_test)
             self.count += 1
