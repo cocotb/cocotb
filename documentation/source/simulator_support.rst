@@ -17,10 +17,10 @@ Accessing bits of a vector doesn't work:
 
 See ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
 
-Wavefoms
-~~~~~~~~
+Waveforms
+~~~~~~~~~
 
-To get waveform in VCD format some Verilog code must be added in the top component as example below:
+To get waveforms in VCD format some Verilog code must be added to the top component as shown in the example below:
 
 .. code-block:: verilog
 
