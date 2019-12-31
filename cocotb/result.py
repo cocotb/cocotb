@@ -80,8 +80,8 @@ def create_error(obj, msg):
         msg (str): The log message.
     """
     warnings.warn(
-        "``create_error`` is deprecated - use ``TestError(msg)`` (or any other "
-        "exception type) instead",
+        "``create_error`` is deprecated - use ``TestError(msg)`` directly "
+        "(or any other exception type) instead",
         DeprecationWarning, stacklevel=2)
     try:
         # use the private version to avoid multiple warnings
