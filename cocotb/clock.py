@@ -132,6 +132,8 @@ class Clock(BaseClock):
             start_high (bool, optional): Whether to start the clock with a ``1``
                 for the first half of the period.
                 Default is ``True``.
+
+                .. versionadded:: 1.3
         """
         t = Timer(self.half_period)
         if cycles is None:

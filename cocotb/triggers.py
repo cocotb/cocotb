@@ -161,11 +161,48 @@ class GPITrigger(Trigger):
 class Timer(GPITrigger):
     """Fires after the specified simulation time period has elapsed."""
     def __init__(self, time_ps, units=None):
+        """
+        Args:
+           time_ps (numbers.Real or decimal.Decimal): The time value. 
+               Note that despite the name this is not actually in picoseconds
+               but depends on the *units* argument.
+           units (str or None, optional): One of
+               ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
+               When no *units* is given (``None``) the timestep is determined by
+               the simulator.
+
+        Examples:
+
+            >>> yield Timer(100, units='ps')
+    
+            The time can also be a ``float``:
+    
+            >>> yield Timer(100e-9, units='sec')
+    
+            which is particularly convenient when working with frequencies:
+    
+            >>> freq = 10e6  # 10 MHz
+            >>> yield Timer(1 / freq, units='sec')
+    
+            Other builtin exact numeric types can be used too:
+    
+            >>> from fractions import Fraction
+            >>> yield Timer(Fraction(1, 10), units='ns')
+    
+            >>> from decimal import Decimal
+            >>> yield Timer(Decimal('100e-9'), units='sec')
+    
+            These are most useful when using computed durations while
+            avoiding floating point inaccuracies.
+
+        See Also:
+            :func:`~cocotb.utils.get_sim_steps`
+        """
         GPITrigger.__init__(self)
         self.sim_steps = get_sim_steps(time_ps, units)
 
     def prime(self, callback):
-        """Register for a timed callback"""
+        """Register for a timed callback."""
         if self.cbhdl == 0:
             self.cbhdl = simulator.register_timed_callback(self.sim_steps,
                                                            callback, self)
@@ -418,7 +455,7 @@ class Lock(object):
         self._pending_unprimed = []
         self._pending_primed = []
         self.name = name
-        self.locked = False  #: True if the lock is held
+        self.locked = False  #: ``True`` if the lock is held.
 
     def _prime_trigger(self, trigger, callback):
         self._pending_unprimed.remove(trigger)
@@ -694,7 +731,7 @@ class First(_AggregateWaitable):
             w.kill()
 
         # These lines are the way they are to make tracebacks readable:
-        #  - The comment helps the user nderstand why they are seeing the
+        #  - The comment helps the user understand why they are seeing the
         #    traceback, even if it is obvious top cocotb maintainers.
         #  - Raising ReturnValue on a separate line avoids confusion about what
         #    is actually raising the error, because seeing
@@ -708,13 +745,14 @@ class First(_AggregateWaitable):
 
 
 class ClockCycles(Waitable):
-    """
-    Fires after *num_cycles* transitions of *signal* from ``0`` to ``1``.
-    """
+    """Fires after *num_cycles* transitions of *signal* from ``0`` to ``1``."""
     def __init__(self, signal, num_cycles, rising=True):
         """
-        :param rising: If true, the default, count rising edges. Otherwise,
-            count falling edges
+        Args:
+            signal: The signal to monitor.
+            num_cycles (int): The number of cycles to count.
+            rising (bool, optional): If ``True``, the default, count rising edges.
+                Otherwise, count falling edges.
         """
         self.signal = signal
         self.num_cycles = num_cycles
@@ -734,7 +772,7 @@ class ClockCycles(Waitable):
 @decorators.coroutine
 def with_timeout(triggers, timeout_time, timeout_unit=None):
     """
-    Waits on triggers, throws an exception if it waits longer than the given time
+    Waits on triggers, throws an exception if it waits longer than the given time.
 
     Usage:
 
@@ -747,16 +785,16 @@ def with_timeout(triggers, timeout_time, timeout_unit=None):
         triggers (cocotb_yield_expr):
             Any expression that could be right of a :keyword:`yield`
             (or :keyword:`await` in Python 3) expression in cocotb.
-        timeout_time (int):
-            Time duration
-        timeout_unit (str, optional):
-            Units of duration, accepts any values that :class:`~cocotb.triggers.Timer` does
+        timeout_time (numbers.Real or decimal.Decimal):
+            Time duration.
+        timeout_unit (str or None, optional):
+            Units of duration, accepts any values that :class:`~cocotb.triggers.Timer` does.
 
     Returns:
         First trigger that completed if timeout did not occur.
 
     Raises:
-        :exc:`SimTimeoutError`: If timeout occurs
+        :exc:`SimTimeoutError`: If timeout occurs.
 
     .. versionadded:: 1.3
     """
