@@ -25,7 +25,7 @@ ifeq ($(VERILATOR_SIM_DEBUG), 1)
 endif
 
 ifeq ($(VERILATOR_TRACE),1)
-  EXTRA_ARGS += --trace
+  EXTRA_ARGS += --trace --trace-structs
 endif
 
 ifdef COCOTB_HDL_TIMEPRECISION
