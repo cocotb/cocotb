@@ -316,7 +316,7 @@ The following example shows these in action:
         dut._log.debug("After reset")
 
         # Call reset_dut in parallel with the 250 ns timer
-         reset_thread = cocotb.fork(reset_dut(reset_n, 500))
+        reset_thread = cocotb.fork(reset_dut(reset_n, 500))
 
         yield Timer(250, units='ns')
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
