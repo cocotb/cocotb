@@ -70,6 +70,11 @@ classes used within ``cocotb``.
     :members:
     :member-order: bysource
 
+.. autoclass:: Waitable
+    :members:
+    :member-order: bysource
+    :private-members:
+
 Testbench Structure
 ===================
 
@@ -139,6 +144,8 @@ Clock
 
 Utilities
 =========
+
+.. autodata:: cocotb.plusargs
 
 .. automodule:: cocotb.utils
     :members:

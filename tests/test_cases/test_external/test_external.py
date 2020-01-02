@@ -104,6 +104,29 @@ def test_time_in_external(dut):
     if time != time_now:
         raise TestFailure("Time has elapsed over external call")
 
+@cocotb.function
+def wait_cycles(dut, n):
+    for _ in range(n):
+        yield RisingEdge(dut.clk)
+
+def wait_cycles_wrapper(dut, n):
+    return wait_cycles(dut, n)
+
+@cocotb.test()
+def test_time_in_external_yield(dut):
+    """Test that an external function calling back into a cocotb function
+    takes the expected amount of time"""
+    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+    yield Timer(10, 'ns')
+    for n in range(5):
+        for i in range(20):
+            yield RisingEdge(dut.clk)
+            time = get_sim_time()
+            expected_after = time + 100*n
+            yield external(wait_cycles_wrapper)(dut, n)
+            time_after = get_sim_time()
+            if expected_after != time_after:
+                raise TestFailure("Wrong time elapsed in external call")
 
 @cocotb.test()
 def test_ext_call_return(dut):

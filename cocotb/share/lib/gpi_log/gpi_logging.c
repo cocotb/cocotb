@@ -158,14 +158,19 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     PyGILState_STATE gstate = PyGILState_Ensure();
 
     // Declared here in order to be initialized before any goto statements and refcount cleanup
-    PyObject *filename_arg = NULL, *lineno_arg = NULL, *msg_arg = NULL, *function_arg = NULL;
+    PyObject *logger_name_arg = NULL, *filename_arg = NULL, *lineno_arg = NULL, *msg_arg = NULL, *function_arg = NULL;
 
     PyObject *level_arg = PyLong_FromLong(level);                  // New reference
     if (level_arg == NULL) {
         goto error;
     }
 
-    PyObject *filter_ret = PyObject_CallFunctionObjArgs(pLogFilter, level_arg, NULL);
+    logger_name_arg = PyUnicode_FromString(name);      // New reference
+    if (logger_name_arg == NULL) {
+        goto error;
+    }
+
+    PyObject *filter_ret = PyObject_CallFunctionObjArgs(pLogFilter, logger_name_arg, level_arg, NULL);
     if (filter_ret == NULL) {
         goto error;
     }
@@ -206,8 +211,8 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
         goto error;
     }
 
-    // Log function args are level, filename, lineno, msg, function
-    PyObject *handler_ret = PyObject_CallFunctionObjArgs(pLogHandler, level_arg, filename_arg, lineno_arg, msg_arg, function_arg, NULL);
+    // Log function args are logger_name, level, filename, lineno, msg, function
+    PyObject *handler_ret = PyObject_CallFunctionObjArgs(pLogHandler, logger_name_arg, level_arg, filename_arg, lineno_arg, msg_arg, function_arg, NULL);
     if (handler_ret == NULL) {
         goto error;
     }
@@ -218,6 +223,7 @@ error:
     PyErr_Print();
     LOG_ERROR("Error calling Python logging function from C");
 ok:
+    Py_XDECREF(logger_name_arg);
     Py_XDECREF(level_arg);
     Py_XDECREF(filename_arg);
     Py_XDECREF(lineno_arg);

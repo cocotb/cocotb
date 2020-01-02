@@ -62,6 +62,17 @@ Make Variables
 
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
 
+.. make:var:: PLUSARGS
+
+      "Plusargs" are options that are starting with a plus (``+``) sign. 
+      They are passed to the simulator and are also available within cocotb as :data:`cocotb.plusargs`.
+      In the simulator, they can be read by the Verilog/SystemVerilog system functions 
+      ``$test$plusargs`` and ``$value$plusargs``.
+
+      The special plusargs ``+ntb_random_seed`` and ``+seed``, if present, are evaluated
+      to set the random seed value if :envvar:`RANDOM_SEED` is not set.
+      If both ``+ntb_random_seed`` and ``+seed`` are set, ``+ntb_random_seed`` is used.
+
 .. make:var:: COCOTB_HDL_TIMEUNIT
 
       The default time unit that should be assumed for simulation when not specified by modules in the design.
@@ -121,6 +132,8 @@ Environment Variables
     .. code-block:: bash
 
        make RANDOM_SEED=1377424946
+
+    See also: :envvar:`PLUSARGS`
 
 .. envvar:: COCOTB_ANSI_OUTPUT
 

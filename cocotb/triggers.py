@@ -729,3 +729,40 @@ class ClockCycles(Waitable):
         for _ in range(self.num_cycles):
             yield trigger
         raise ReturnValue(self)
+
+
+@decorators.coroutine
+def with_timeout(triggers, timeout_time, timeout_unit=None):
+    """
+    Waits on triggers, throws an exception if it waits longer than the given time
+
+    Usage:
+
+    .. code-block:: python
+
+        yield with_timeout(coro, 100, 'ns')
+        yield with_timeout([coro, event.wait(), ...], 100, 'ns')
+
+    Args:
+        triggers (cocotb_yield_expr):
+            Any expression that could be right of a :keyword:`yield`
+            (or :keyword:`await` in Python 3) expression in cocotb.
+        timeout_time (int):
+            Time duration
+        timeout_unit (str, optional):
+            Units of duration, accepts any values that :class:`~cocotb.triggers.Timer` does
+
+    Returns:
+        First trigger that completed if timeout did not occur.
+
+    Raises:
+        :exc:`SimTimeoutError`: If timeout occurs
+
+    .. versionadded:: 1.3
+    """
+    timeout_timer = cocotb.triggers.Timer(timeout_time, timeout_unit)
+    res = yield [timeout_timer, triggers]
+    if res is timeout_timer:
+        raise cocotb.result.SimTimeoutError
+    else:
+        raise ReturnValue(res)

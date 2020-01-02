@@ -652,7 +652,7 @@ static int system_function_overload(char *userdata)
         msg = argval.value.str;
     }
 
-    gpi_log("simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
+    gpi_log("cocotb.simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
 
     // Fail the test for critical errors
     if (GPICritical == *userdata)
