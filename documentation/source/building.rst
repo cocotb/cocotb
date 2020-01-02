@@ -219,7 +219,7 @@ Additional Environment Variables
 
     Enable to report Python coverage data. For some simulators, this will also report HDL coverage.
 
-    This needs the :mod:`coverage` Python module installed.
+    This needs the :mod:`coverage` Python module to be installed.
 
 .. envvar:: MEMCHECK
 
