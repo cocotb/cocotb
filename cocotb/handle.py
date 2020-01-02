@@ -432,8 +432,9 @@ class NonHierarchyObject(SimHandleBase):
         return self.value == other
 
     def __ne__(self, other):
-        return not self.__eq__(other)
-
+        if isinstance(other, SimHandleBase):
+            return SimHandleBase.__ne__(self, other)
+        return self.value != other
 
     # We want to maintain compatibility with python 2.5 so we can't use @property with a setter
     value = property(fget=lambda self: self._getvalue(),
