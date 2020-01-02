@@ -11,7 +11,7 @@ architecture impl of tb_top is
 begin
     process
     begin
-        wait for 10ns;
+        wait for 10 ns;
         dummy_sig <= '1';
     end process;
 end architecture;
