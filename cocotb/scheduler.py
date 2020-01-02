@@ -29,7 +29,6 @@
 
 """Coroutine scheduler.
 
-
 FIXME: We have a problem here.  If a coroutine schedules a read-only but we
 also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
@@ -168,8 +167,11 @@ class Scheduler(object):
     trigger that caused the callback as the first argument.
 
     We look up a list of coroutines to schedule (indexed by the trigger) and
-    schedule them in turn. NB implementors should not depend on the scheduling
-    order!
+    schedule them in turn.
+
+    .. attention::
+
+       Implementors should not depend on the scheduling order!
 
     Some additional management is required since coroutines can return a list
     of triggers, to be scheduled when any one of the triggers fires.  To
@@ -184,14 +186,14 @@ class Scheduler(object):
         - Any pending writes are cached and do not happen immediately
 
     ReadOnly mode
-        - Corresponds to cbReadOnlySynch (VPI) or vhpiCbLastKnownDeltaCycle
+        - Corresponds to :any:`cbReadOnlySynch` (VPI) or :any:`vhpiCbLastKnownDeltaCycle`
           (VHPI).  In this state we are not allowed to perform writes.
 
     Write mode
-        - Corresponds to cbReadWriteSynch (VPI) or vhpiCbEndOfProcesses (VHPI)
+        - Corresponds to :any:`cbReadWriteSynch` (VPI) or :c:macro:`vhpiCbEndOfProcesses` (VHPI)
           In this mode we play back all the cached write updates.
 
-    We can legally transition from normal->write by registering a ReadWrite
+    We can legally transition from Normal to Write by registering a :class:`~cocotb.triggers.ReadWrite`
     callback, however usually once a simulator has entered the ReadOnly phase
     of a given timestep then we must move to a new timestep before performing
     any writes.  The mechanism for moving to a new timestep may not be
@@ -677,7 +679,7 @@ class Scheduler(object):
     # This collection of functions parses a trigger out of the object
     # that was yielded by a coroutine, converting `list` -> `Waitable`,
     # `Waitable` -> `RunningCoroutine`, `RunningCoroutine` -> `Trigger`.
-    # Doing them as separate functions allows us to avoid repeating unencessary
+    # Doing them as separate functions allows us to avoid repeating unnecessary
     # `isinstance` checks.
 
     def _trigger_from_started_coro(self, result):

@@ -106,7 +106,7 @@ class TestComplete(Exception):
 
 
 class ExternalException(Exception):
-    """Exception thrown by external functions."""
+    """Exception thrown by :class:`cocotb.external` functions."""
     def __init__(self, exception):
         self.exception = exception
 

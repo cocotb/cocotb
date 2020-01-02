@@ -20,7 +20,8 @@ See ``access_single_bit`` test in :file:`examples/functionality/tests/test_disco
 Waveforms
 ~~~~~~~~~
 
-To get waveforms in VCD format some Verilog code must be added to the top component as shown in the example below:
+To get waveforms in VCD format some Verilog code must be added 
+to the top component as shown in the example below:
 
 .. code-block:: verilog
 
@@ -30,7 +31,7 @@ To get waveforms in VCD format some Verilog code must be added to the top compon
         input  button_in,
         output button_valid);
 
-    //... verilog module code here
+    //... Verilog module code here
 
     // the "macro" to dump signals
     `ifdef COCOTB_SIM
@@ -66,7 +67,7 @@ Synopsys VCS
 
 Aldec Riviera-PRO
 -----------------
-The ``$LICENSE_QUEUE`` environment variable can be used for this simulator –
+The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
 Mentor Questa

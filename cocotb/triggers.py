@@ -488,7 +488,7 @@ class NullTrigger(Trigger):
 
 
 class Join(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
-    r"""Fires when a :func:`~cocotb.fork`\ ed coroutine completes
+    r"""Fires when a :func:`~cocotb.fork`\ ed coroutine completes.
 
     The result of blocking on the trigger can be used to get the coroutine
     result::

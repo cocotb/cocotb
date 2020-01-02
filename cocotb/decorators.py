@@ -324,8 +324,10 @@ class coroutine(object):
 class function(object):
     """Decorator class that allows a function to block.
 
-    This allows a function to internally block while
-    externally appear to yield.
+    This allows a coroutine that consumes simulation time
+    to be called by a thread started with :class:`cocotb.external`;
+    in other words, to internally block while externally
+    appear to yield.
     """
     def __init__(self, func):
         self._coro = cocotb.coroutine(func)
@@ -345,8 +347,11 @@ class function(object):
 @public
 class external(object):
     """Decorator to apply to an external function to enable calling from cocotb.
-    This currently creates a new execution context for each function that is
-    called. Scope for this to be streamlined to a queue in future.
+
+    This turns a normal function that isn't a coroutine into a blocking coroutine.
+    Currently, this creates a new execution thread for each function that is
+    called. 
+    Scope for this to be streamlined to a queue in future.
     """
     def __init__(self, func):
         self._func = func
