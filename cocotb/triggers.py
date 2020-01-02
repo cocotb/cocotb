@@ -163,7 +163,7 @@ class Timer(GPITrigger):
     def __init__(self, time_ps, units=None):
         """
         Args:
-           time_ps (numbers.Real or decimal.Decimal): The time value. 
+           time_ps (numbers.Real or decimal.Decimal): The time value.
                Note that despite the name this is not actually in picoseconds
                but depends on the *units* argument.
            units (str or None, optional): One of
@@ -174,24 +174,24 @@ class Timer(GPITrigger):
         Examples:
 
             >>> yield Timer(100, units='ps')
-    
+
             The time can also be a ``float``:
-    
+
             >>> yield Timer(100e-9, units='sec')
-    
+
             which is particularly convenient when working with frequencies:
-    
+
             >>> freq = 10e6  # 10 MHz
             >>> yield Timer(1 / freq, units='sec')
-    
+
             Other builtin exact numeric types can be used too:
-    
+
             >>> from fractions import Fraction
             >>> yield Timer(Fraction(1, 10), units='ns')
-    
+
             >>> from decimal import Decimal
             >>> yield Timer(Decimal('100e-9'), units='sec')
-    
+
             These are most useful when using computed durations while
             avoiding floating point inaccuracies.
 
@@ -770,7 +770,7 @@ class ClockCycles(Waitable):
 
 
 @decorators.coroutine
-def with_timeout(triggers, timeout_time, timeout_unit=None):
+def with_timeout(trigger, timeout_time, timeout_unit=None):
     """
     Waits on triggers, throws an exception if it waits longer than the given time.
 
@@ -779,11 +779,11 @@ def with_timeout(triggers, timeout_time, timeout_unit=None):
     .. code-block:: python
 
         yield with_timeout(coro, 100, 'ns')
-        yield with_timeout([coro, event.wait(), ...], 100, 'ns')
+        yield with_timeout(First(coro, event.wait()), 100, 'ns')
 
     Args:
-        triggers (cocotb_yield_expr):
-            Any expression that could be right of a :keyword:`yield`
+        trigger (cocotb_waitable):
+            A single object that could be right of a :keyword:`yield`
             (or :keyword:`await` in Python 3) expression in cocotb.
         timeout_time (numbers.Real or decimal.Decimal):
             Time duration.
@@ -799,7 +799,7 @@ def with_timeout(triggers, timeout_time, timeout_unit=None):
     .. versionadded:: 1.3
     """
     timeout_timer = cocotb.triggers.Timer(timeout_time, timeout_unit)
-    res = yield [timeout_timer, triggers]
+    res = yield [timeout_timer, trigger]
     if res is timeout_timer:
         raise cocotb.result.SimTimeoutError
     else:
