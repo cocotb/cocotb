@@ -77,6 +77,12 @@ and
 
       Any arguments or flags to pass to the execution of the compiled simulation.
 
+.. make:var:: RUN_ARGS
+
+      Any argument to be passed to the "first" invocation of a simulator that runs via a TCL script.
+      One motivating usage is to pass `-noautoldlibpath` to Questa to prevent it from loading the out-of-date libraries it ships with.
+      Used by Aldec Riviera-PRO and Mentor Graphics Questa simulator.
+
 .. make:var:: EXTRA_ARGS
 
       Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
