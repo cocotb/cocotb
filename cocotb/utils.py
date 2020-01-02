@@ -104,7 +104,7 @@ def get_sim_steps(time, units=None):
     """Calculates the number of simulation time steps for a given amount of *time*.
 
     Args:
-        time (numbers.Number):  The value to convert to simulation time steps.
+        time (numbers.Real or decimal.Decimal):  The value to convert to simulation time steps.
         units (str or None, optional):  String specifying the units of the result
             (one of ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
             ``None`` means time is already in simulation time steps.

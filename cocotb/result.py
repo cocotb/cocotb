@@ -132,5 +132,5 @@ class SimFailure(TestComplete):
 
 
 class SimTimeoutError(_py_compat.TimeoutError):
-    """Exception for when a timeout, in terms of simulation time, occurs"""
+    """Exception for when a timeout, in terms of simulation time, occurs."""
     pass
