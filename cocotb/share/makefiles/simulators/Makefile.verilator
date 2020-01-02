@@ -1,0 +1,73 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+ifneq ($(VHDL_SOURCES),)
+
+results.xml:
+	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
+debug: results.xml
+clean::
+
+else
+
+CMD := verilator
+
+ifeq ($(shell which $(CMD) 2>/dev/null),)
+# Verilator is not in PATH, lets start searching for it
+$(error Cannot find verilator.)
+endif
+
+ifeq ($(VERILATOR_SIM_DEBUG), 1)
+  COMPILE_ARGS += --debug
+  PLUSARGS += +verilator+debug
+  SIM_BUILD_FLAGS += -DVL_DEBUG
+endif
+
+ifeq ($(VERILATOR_TRACE),1)
+  EXTRA_ARGS += --trace --trace-structs
+endif
+
+ifdef COCOTB_HDL_TIMEPRECISION
+  SIM_BUILD_FLAGS += -DVL_TIME_PRECISION_STR=$(COCOTB_HDL_TIMEPRECISION)
+endif
+
+SIM_BUILD_FLAGS += -std=c++11
+
+COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o $(TOPLEVEL) -LDFLAGS "-L `dirname $(COCOTB_VPI_LIB)` -lvpi -lgpi -lcocotb -lgpilog -lcocotbutils"
+
+$(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp
+	$(CMD) -cc --exe -Mdir $(SIM_BUILD) -DCOCOTB_SIM=1 --top-module $(TOPLEVEL) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp
+
+# Compilation phase
+$(SIM_BUILD)/$(TOPLEVEL): $(SIM_BUILD)/Vtop.mk $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	CPPFLAGS="$(SIM_BUILD_FLAGS)" make -C $(SIM_BUILD) -f Vtop.mk
+
+ifeq ($(OS),Msys)
+
+OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
+LIB_LOAD = PATH=$(OLD_PATH):$(LIB_DIR)
+NEW_PYTHONPATH:=$(shell python -c "import sys, os; print(':'.join(['/'+dir.replace(os.sep,'/').replace(':','') for dir in sys.path]))")
+PWD = $(shell pwd)
+
+else
+LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
+NEW_PYTHONPATH := $(PYTHONPATH)
+endif
+
+results.xml: $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) $(LIB_LOAD) MODULE=$(MODULE) \
+        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
+        $< $(PLUSARGS)
+
+debug: $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) $(LIB_LOAD) MODULE=$(MODULE) \
+        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
+        gdb --args $< $(PLUSARGS)
+
+
+clean::
+	@rm -rf $(SIM_BUILD)
+	@rm -f dump.vcd
+
+endif

@@ -30,7 +30,6 @@ Writing and Generating tests
     :members:
     :member-order: bysource
 
-
 Interacting with the Simulator
 ==============================
 
@@ -50,55 +49,31 @@ Interacting with the Simulator
 
 .. autoclass:: cocotb.clock.Clock
 
+.. autofunction:: cocotb.fork
+
+.. autofunction:: cocotb.decorators.RunningCoroutine.join
+
+.. autofunction:: cocotb.decorators.RunningCoroutine.kill
 
 Triggers
 --------
+See :ref:`simulator-triggers` for a list of sub-classes. Below are the internal
+classes used within ``cocotb``.
 
-Triggers are used to indicate when the scheduler should resume coroutine execution.
-Typically a coroutine will :keyword:`yield` a trigger or a list of triggers.
+.. currentmodule:: cocotb.triggers
 
-.. autoclass:: cocotb.triggers.Trigger
-
-Simulation Timing
-~~~~~~~~~~~~~~~~~
-
-.. autoclass:: cocotb.triggers.Timer
-
-.. autoclass:: cocotb.triggers.ReadOnly
-
-.. autoclass:: cocotb.triggers.NextTimeStep
-
-.. autoclass:: cocotb.triggers.ClockCycles
-
-Signal related
-~~~~~~~~~~~~~~
-
-.. autoclass:: cocotb.triggers.Edge
-
-.. autoclass:: cocotb.triggers.RisingEdge
-
-.. autoclass:: cocotb.triggers.FallingEdge
-
-
-Python Triggers
-~~~~~~~~~~~~~~~
-
-.. autoclass:: cocotb.triggers.Combine
+.. autoclass:: Trigger
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.Event
+.. autoclass:: GPITrigger
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.triggers.Lock
+.. autoclass:: Waitable
     :members:
     :member-order: bysource
-
-.. autoclass:: cocotb.triggers.Join
-    :members:
-    :member-order: bysource
-
+    :private-members:
 
 Testbench Structure
 ===================
@@ -118,6 +93,12 @@ Driver
     :private-members:
 
 .. autoclass:: cocotb.drivers.BusDriver
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+    :private-members:
+
+.. autoclass:: cocotb.drivers.ValidatedBusDriver
     :members:
     :member-order: bysource
     :show-inheritance:
@@ -164,6 +145,8 @@ Clock
 Utilities
 =========
 
+.. autodata:: cocotb.plusargs
+
 .. automodule:: cocotb.utils
     :members:
     :member-order: bysource
@@ -171,6 +154,9 @@ Utilities
 
 Simulation Object Handles
 =========================
+
+.. inheritance-diagram:: cocotb.handle
+   :parts: 1
 
 .. currentmodule:: cocotb.handle
 
@@ -185,21 +171,6 @@ Implemented Testbench Structures
 
 Drivers
 -------
-
-AD9361
-~~~~~~
-
-Analog Devices AD9361 RF Transceiver.
-
-.. currentmodule:: cocotb.drivers.ad9361
-
-.. autoclass:: AD9361
-
-    .. automethod:: send_data(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
-    .. automethod:: rx_data_to_ad9361(i_data, q_data, i_data2=None, q_data2=None, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
-    .. automethod:: ad9361_tx_to_rx_loopback()
-    .. automethod:: tx_data_from_ad9361()
-
 
 AMBA
 ~~~~
@@ -297,3 +268,35 @@ XGMII
     :members:
     :member-order: bysource
     :show-inheritance:
+
+Miscellaneous
+=============
+
+Signal Tracer for WaveDrom
+--------------------------
+
+.. automodule:: cocotb.wavedrom
+    :members:
+    :member-order: bysource
+    :synopsis: A signal tracer for WaveDrom.
+
+
+Developer-focused
+=================
+
+The Scheduler
+-------------
+
+.. note::
+    The scheduler object should generally not be interacted with directly - 
+    the only part of it that a user will need is encapsulated in :func:`~cocotb.fork`, 
+    everything else works behind the scenes.
+
+.. currentmodule:: cocotb.scheduler
+
+.. autodata:: cocotb.scheduler
+
+.. autoclass:: Scheduler
+    :members:
+    :member-order: bysource
+

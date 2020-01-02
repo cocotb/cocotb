@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,6 +32,8 @@ See https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/man
 NB Currently we only support a very small subset of functionality.
 """
 
+import warnings
+
 from cocotb.utils import hexdump
 from cocotb.decorators import coroutine
 from cocotb.monitors import BusMonitor
@@ -45,25 +47,23 @@ class AvalonProtocolError(Exception):
 class AvalonST(BusMonitor):
     """Avalon-ST bus.
 
-    Non-packetised so each valid word is a separate transaction.
+    Non-packetized so each valid word is a separate transaction.
     """
-    
+
     _signals = ["valid", "data"]
     _optional_signals = ["ready"]
 
-    _default_config = {
-            "firstSymbolInHighOrderBits" : True
-            }
+    _default_config = {"firstSymbolInHighOrderBits": True}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, entity, name, clock, **kwargs):
         config = kwargs.pop('config', {})
-        BusMonitor.__init__(self, *args, **kwargs)
+        BusMonitor.__init__(self, entity, name, clock, **kwargs)
 
         self.config = self._default_config.copy()
 
         for configoption, value in config.items():
             self.config[configoption] = value
-            self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
+            self.log.debug("Setting config option %s to %s", configoption, str(value))
 
     @coroutine
     def _monitor_recv(self):
@@ -89,8 +89,15 @@ class AvalonST(BusMonitor):
 
 
 class AvalonSTPkts(BusMonitor):
-    """Packetised Avalon-ST bus."""
-    
+    """Packetized Avalon-ST bus.
+
+    Args:
+        entity, name, clock: see :class:`BusMonitor`
+        config (dict): bus configuration options
+        report_channel (bool): report channel with data, default is False
+            Setting to True on bus without channel signal will give an error
+    """
+
     _signals = ["valid", "data", "startofpacket", "endofpacket"]
     _optional_signals = ["error", "channel", "ready", "empty"]
 
@@ -102,20 +109,25 @@ class AvalonSTPkts(BusMonitor):
         "invalidTimeout"                : 0,
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, entity, name, clock, **kwargs):
         config = kwargs.pop('config', {})
-        BusMonitor.__init__(self, *args, **kwargs)
+        report_channel = kwargs.pop('report_channel', False)
+        BusMonitor.__init__(self, entity, name , clock, **kwargs)
 
         self.config = self._default_config.copy()
+        self.report_channel = report_channel
 
         # Set default config maxChannel to max value on channel bus
         if hasattr(self.bus, 'channel'):
             self.config['maxChannel'] = (2 ** len(self.bus.channel)) -1
+        else:
+            if report_channel:
+                raise ValueError("Channel reporting asked on bus without channel signal")
 
         for configoption, value in config.items():
             self.config[configoption] = value
-            self.log.debug("Setting config option %s to %s" %
-                           (configoption, str(value)))
+            self.log.debug("Setting config option %s to %s",
+                           configoption, str(value))
 
         num_data_symbols = (len(self.bus.data) /
                             self.config["dataBitsPerSymbol"])
@@ -127,19 +139,15 @@ class AvalonSTPkts(BusMonitor):
         self.config["useEmpty"] = (num_data_symbols > 1)
 
         if hasattr(self.bus, 'channel'):
-            if "channel" in self._optional_signals:
-                self.log.warning("Channel is not fully implemented in this monitor. Recommend use of AvalonSTPktsWithChannel.")
-
             if len(self.bus.channel) > 128:
-                raise AttributeError(
-                        "AvalonST interface specification defines channel width as 1-128. %d channel width is %d" %
-                        (self.name, len(self.bus.channel))
-                        )
+                raise AttributeError("AvalonST interface specification defines channel width as 1-128. "
+                                     "%d channel width is %d" %
+                                     (self.name, len(self.bus.channel)))
             maxChannel = (2 ** len(self.bus.channel)) -1
             if self.config['maxChannel'] > maxChannel:
-                raise AttributeError(
-                        "%s has maxChannel=%d, but can only support a maximum channel of (2**channel_width)-1=%d, channel_width=%d" %
-                        (self.name,self.config['maxChannel'],maxChannel,len(self.bus.channel)))
+                raise AttributeError("%s has maxChannel=%d, but can only support a maximum channel of "
+                                     "(2**channel_width)-1=%d, channel_width=%d" %
+                                     (self.name, self.config['maxChannel'], maxChannel, len(self.bus.channel)))
 
     @coroutine
     def _monitor_recv(self):
@@ -170,9 +178,8 @@ class AvalonSTPkts(BusMonitor):
 
                 if self.bus.startofpacket.value:
                     if pkt:
-                        raise AvalonProtocolError(
-                            "Duplicate start-of-packet received on %s" % (
-                                str(self.bus.startofpacket)))
+                        raise AvalonProtocolError("Duplicate start-of-packet received on %s" %
+                                                  str(self.bus.startofpacket))
                     pkt = ""
                     in_pkt = True
 
@@ -194,7 +201,9 @@ class AvalonSTPkts(BusMonitor):
                             value = value[empty:]
                     vec.assign(value)
                     if not vec.is_resolvable:
-                        raise AvalonProtocolError("After empty masking value is still bad?  Had empty {:d}, got value {:s}".format(empty, self.bus.data.value.get_binstr()))
+                        raise AvalonProtocolError("After empty masking value is still bad?  "
+                                                  "Had empty {:d}, got value {:s}".format(empty,
+                                                                                          self.bus.data.value.get_binstr()))
 
                 vec.big_endian = self.config['firstSymbolInHighOrderBits']
                 pkt += vec.buff
@@ -203,40 +212,41 @@ class AvalonSTPkts(BusMonitor):
                     if channel is None:
                         channel = self.bus.channel.value.integer
                         if channel > self.config["maxChannel"]:
-                            raise AvalonProtocolError("Channel value (%d) is greater than maxChannel (%d)" % (channel,self.config["maxChannel"]))
+                            raise AvalonProtocolError("Channel value (%d) is greater than maxChannel (%d)" %
+                                                      (channel, self.config["maxChannel"]))
                     elif self.bus.channel.value.integer != channel:
                         raise AvalonProtocolError("Channel value changed during packet")
 
                 if self.bus.endofpacket.value:
-                    self.log.info("Received a packet of %d bytes" % len(pkt))
+                    self.log.info("Received a packet of %d bytes", len(pkt))
                     self.log.debug(hexdump(str((pkt))))
                     self.channel = channel
-                    self._recv(pkt)
+                    if self.report_channel:
+                        self._recv({"data": pkt, "channel": channel})
+                    else:
+                        self._recv(pkt)
                     pkt = ""
                     in_pkt = False
                     channel = None
-            else :
-                if in_pkt :
+            else:
+                if in_pkt:
                     invalid_cyclecount += 1
-                    if self.config["invalidTimeout"] :
-                        if invalid_cyclecount >= self.config["invalidTimeout"] :
+                    if self.config["invalidTimeout"]:
+                        if invalid_cyclecount >= self.config["invalidTimeout"]:
                             raise AvalonProtocolError(
                                 "In-Packet Timeout. Didn't receive any valid data for %d cycles!" %
                                 invalid_cyclecount)
 
 class AvalonSTPktsWithChannel(AvalonSTPkts):
-    """Packetised AvalonST bus using channel."""
-    
-    _signals = ["valid", "data", "startofpacket", "endofpacket", "channel"]
-    _optional_signals = ["error", "ready", "empty"]
+    """Packetized AvalonST bus using channel.
 
-    def __init__(self, *args, **kwargs):
-        AvalonSTPkts.__init__(self, *args, **kwargs)
+    This class is deprecated. Use AvalonSTPkts(..., report_channel=True, ...)
+    """
 
-    def _recv(self,pkt):
-        """Force use of channel in recv function.
-
-        Args:
-            pkt: (string) Monitored data.
-        """
-        AvalonSTPkts._recv(self,{"data":pkt,"channel":self.channel})
+    def __init__(self, entity, name, clock, **kwargs):
+        warnings.warn(
+            "Use of AvalonSTPktsWithChannel is deprecated\n"
+            "\tUse AvalonSTPkts(..., report_channel=True, ...)",
+            DeprecationWarning, stacklevel=2
+        )
+        AvalonSTPkts.__init__(self, entity, name, clock, report_channel=True, **kwargs)

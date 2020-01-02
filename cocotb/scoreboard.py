@@ -30,7 +30,6 @@
 """Common scoreboarding capability."""
 
 import logging
-import cocotb
 
 from cocotb.utils import hexdump, hexdiffs
 from cocotb.log import SimLog
@@ -102,7 +101,7 @@ class Scoreboard(object):
     def compare(self, got, exp, log, strict_type=True):
         """Common function for comparing two transactions.
 
-        Can be re-implemented by a subclass.
+        Can be re-implemented by a sub-class.
         
         Args:
             got: The received transaction.
@@ -148,7 +147,7 @@ class Scoreboard(object):
                 try:
                     for word in exp:
                         log.info(str(word))
-                except:
+                except Exception:
                     pass
             if not strict_type:
                 log.info("Received:\n" + hexdump(strgot))
@@ -158,7 +157,7 @@ class Scoreboard(object):
                 try:
                     for word in got:
                         log.info(str(word))
-                except:
+                except Exception:
                     pass
             log.warning("Difference:\n%s" % hexdiffs(strexp, strgot))
             if self._imm:
@@ -171,7 +170,7 @@ class Scoreboard(object):
                 log.debug("Received expected transaction %d bytes" %
                           (len(got)))
                 log.debug(repr(got))
-            except:
+            except Exception:
                 pass
 
     def add_interface(self, monitor, expected_output, compare_fn=None,

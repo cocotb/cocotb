@@ -169,7 +169,7 @@ extern "C" {
 #ifndef IUS
         size_t bufSize;  /* the size in bytes of the value buffer; this is set by the user */
 #else
-        int32_t bufSize;  /* IUS defines this as 32-bits, even when running in 64-bit mode */
+        int32_t bufSize;  /* IUS/Xcelium defines this as 32-bits, even when running in 64-bit mode */
 #endif
         int32_t numElems;
         /* different meanings depending on the format:
@@ -627,7 +627,7 @@ typedef enum
     vhpiUnitNameP               = 1317,
     vhpiSaveRestartLocationP    = 1318,
 
-    /* Cadence IUS */
+    /* Cadence IUS/Xcelium */
     vhpiFullVlogNameP = 1500,       /* Full path name (VHDL names are Verilogized) */
     vhpiFullVHDLNameP = 1501,       /* Full path name (Verilog names are vhdlized) */
     vhpiFullLSNameP = 1502,         /* Full path name (Upper case) using ':' and '.' separators */

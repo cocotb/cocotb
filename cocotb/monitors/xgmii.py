@@ -38,7 +38,7 @@ import zlib
 import cocotb
 from cocotb.utils import hexdump
 from cocotb.monitors import Monitor
-from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge
 
 _XGMII_IDLE      = "\x07"  # noqa
 _XGMII_START     = "\xFB"  # noqa
@@ -73,7 +73,7 @@ class XGMII(Monitor):
         self.log = signal._log
         self.clock = clock
         self.signal = signal
-        self.bytes = len(self.signal) / 9
+        self.bytes = len(self.signal) // 9
         self.interleaved = interleaved
         Monitor.__init__(self, callback=callback, event=event)
 
@@ -132,6 +132,15 @@ class XGMII(Monitor):
                 while self._add_payload(ctrl, bytes):
                     yield clk
                     ctrl, bytes = self._get_bytes()
+
+            elif self.bytes == 8 :
+                if ctrl[4] and bytes[4] == _XGMII_START:
+
+                    ctrl, bytes = ctrl[5:], bytes[5:]
+
+                    while self._add_payload(ctrl, bytes):
+                        yield clk
+                        ctrl, bytes = self._get_bytes()
 
             if self._pkt:
 

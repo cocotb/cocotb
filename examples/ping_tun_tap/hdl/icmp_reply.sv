@@ -59,7 +59,7 @@ parameter S_MODIFY_PACKET = 3'b010;
 parameter S_SEND_PACKET = 3'b011;
 
 reg [2:0]       state;
-reg [31:0]      packet_buffer [63:0];
+reg [31:0]      packet_buffer [31:0];
 
 reg [4:0]       rx_word_ptr, tx_word_ptr;
 reg [1:0]       empty_saved;
@@ -104,7 +104,7 @@ always @(posedge clk or negedge reset_n) begin
             // synthesise as a RAM - code not intended for actual use
             S_MODIFY_PACKET: begin
 
-                // Swap src/destination addresses 
+                // Swap src/destination addresses
                 packet_buffer[3]        <= packet_buffer[4];
                 packet_buffer[4]        <= packet_buffer[3];
 
@@ -126,7 +126,7 @@ always @(posedge clk or negedge reset_n) begin
                 if (stream_out_ready) begin
                     tx_word_ptr                 <= tx_word_ptr + 1;
 
-                    if (tx_word_ptr)
+                    if (tx_word_ptr > 0)
                         stream_out_startofpacket<= 1'b0;
 
                     if (tx_word_ptr == rx_word_ptr - 1) begin
@@ -144,17 +144,21 @@ always @(posedge clk or negedge reset_n) begin
 
                 end
             end
-
+          default: begin
+             state <= S_IDLE;
+          end
         endcase
     end
 end
 
 `ifdef COCOTB_SIM
+`ifndef VERILATOR // traced differently
 initial begin
   $dumpfile ("waveform.vcd");
   $dumpvars (0,icmp_reply);
   #1 $display("Sim running...");
 end
+`endif
 `endif
 
 endmodule

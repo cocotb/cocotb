@@ -32,10 +32,10 @@
 CMD_BIN := irun
 
 ifdef IUS_BIN_DIR
-    CMD := $(shell which $(IUS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD := $(shell :; command -v $(IUS_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
 else
     # auto-detect bin dir from system path
-    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
 endif
 
 ifeq (, $(CMD))
@@ -62,6 +62,11 @@ else
     EXTRA_ARGS +=
 endif
 
+# IUS errors out if multiple timescales are specified on the command line.
+ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
+    $(error "Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.")
+endif
+
 # IUS loads vpi regardless of what is asked for, then VHPI if asked to
 # Which does not play nice with out multi language. So we supply vhpi
 # GPI_EXTRA if needed.
@@ -80,7 +85,8 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_EXTRA = vhpi
     EXTRA_ARGS += -v93
     EXTRA_ARGS += -top $(TOPLEVEL)
-    MAKE_LIB = -makelib $(TOPLEVEL)
+    RTL_LIBRARY ?= $(TOPLEVEL)
+    MAKE_LIB = -makelib $(RTL_LIBRARY)
     HDL_SOURCES = $(VHDL_SOURCES)
 ifneq ($(VERILOG_SOURCES),)
     HDL_SOURCES += $(VERILOG_SOURCES)
@@ -91,12 +97,13 @@ endif
 
 GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
 
-results.xml: $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(GPI_LIB)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(GPI_LIB)
 	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) \
 	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	set -o pipefail; \
-	$(CMD) $(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
+	$(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
+	$(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 clean::
 	@rm -rf $(SIM_BUILD)

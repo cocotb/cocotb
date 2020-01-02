@@ -32,20 +32,30 @@
 #include <gpi_logging.h>
 
 // Used to log using the standard python mechanism
-static PyObject *pLogHandler;
-static PyObject *pLogFilter;
+static PyObject *pLogHandler = NULL;
+static PyObject *pLogFilter = NULL;
 static enum gpi_log_levels local_level = GPIInfo;
 
 void set_log_handler(void *handler)
 {
-    pLogHandler = (PyObject *)handler;
-    Py_INCREF(pLogHandler);
+    pLogHandler = (PyObject *)handler;      // Note: This function steals a reference to handler.
+}
+
+void clear_log_handler(void)
+{
+    Py_XDECREF(pLogHandler);
+    pLogHandler = NULL;
 }
 
 void set_log_filter(void *filter)
 {
-    pLogFilter = (PyObject *)filter;
-    Py_INCREF(pLogFilter);
+    pLogFilter = (PyObject *)filter;        // Note: This function steals a reference to filter.
+}
+
+void clear_log_filter(void)
+{
+    Py_XDECREF(pLogFilter);
+    pLogFilter = NULL;
 }
 
 void set_log_level(enum gpi_log_levels new_level)
@@ -100,7 +110,7 @@ static char log_buff[LOG_SIZE];
  *
  * Makes one call to PyGILState_Ensure and one call to PyGILState_Release
  *
- * If the Python logging mechanism is not initialised, dumps to stderr.
+ * If the Python logging mechanism is not initialised, dumps to `stderr`.
  *
  */
 void gpi_log(const char *name, long level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
@@ -137,6 +147,7 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
             fprintf(stdout, " in %-31s ", funcname);
             fprintf(stdout, "%s", log_buff);
             fprintf(stdout, "\n");
+            fflush(stdout);
         }
         return;
     }
@@ -144,44 +155,79 @@ void gpi_log(const char *name, long level, const char *pathname, const char *fun
     if (level < local_level)
         return;
 
-    // Ignore truncation
-    // calling args is level, filename, lineno, msg, function
-    //
     PyGILState_STATE gstate = PyGILState_Ensure();
 
-    PyObject *check_args = PyTuple_New(1);
-    PyTuple_SetItem(check_args, 0, PyLong_FromLong(level));
-    PyObject *retuple = PyObject_CallObject(pLogFilter, check_args);
+    // Declared here in order to be initialized before any goto statements and refcount cleanup
+    PyObject *logger_name_arg = NULL, *filename_arg = NULL, *lineno_arg = NULL, *msg_arg = NULL, *function_arg = NULL;
 
-    if (retuple != Py_True) {
-        Py_DECREF(check_args);
-        PyGILState_Release(gstate);
-        return;
+    PyObject *level_arg = PyLong_FromLong(level);                  // New reference
+    if (level_arg == NULL) {
+        goto error;
     }
 
-    Py_DECREF(retuple);
-    Py_DECREF(check_args);
+    logger_name_arg = PyUnicode_FromString(name);      // New reference
+    if (logger_name_arg == NULL) {
+        goto error;
+    }
 
+    PyObject *filter_ret = PyObject_CallFunctionObjArgs(pLogFilter, logger_name_arg, level_arg, NULL);
+    if (filter_ret == NULL) {
+        goto error;
+    }
+
+    int is_enabled = PyObject_IsTrue(filter_ret);
+    Py_DECREF(filter_ret);
+    if (is_enabled < 0) {
+        /* A python exception occured while converting `filter_ret` to bool */
+        goto error;
+    }
+
+    if (!is_enabled) {
+        goto ok;
+    }
+
+    // Ignore truncation
     va_start(ap, msg);
     n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
     va_end(ap);
 
-    PyObject *call_args = PyTuple_New(5);
-    PyTuple_SetItem(call_args, 0, PyLong_FromLong(level));           // Note: This function steals a reference.
-    PyTuple_SetItem(call_args, 1, PyUnicode_FromString(pathname));   // Note: This function steals a reference.
-    PyTuple_SetItem(call_args, 2, PyLong_FromLong(lineno));          // Note: This function steals a reference.
-    PyTuple_SetItem(call_args, 3, PyUnicode_FromString(log_buff));   // Note: This function steals a reference.
-    PyTuple_SetItem(call_args, 4, PyUnicode_FromString(funcname));
-
-    retuple = PyObject_CallObject(pLogHandler, call_args);
-
-    if (retuple != Py_True) {
-        PyGILState_Release(gstate);
-        return;
+    filename_arg = PyUnicode_FromString(pathname);      // New reference
+    if (filename_arg == NULL) {
+        goto error;
     }
 
-    Py_DECREF(call_args);
-    Py_DECREF(retuple);
+    lineno_arg = PyLong_FromLong(lineno);               // New reference
+    if (lineno_arg == NULL) {
+        goto error;
+    }
 
+    msg_arg = PyUnicode_FromString(log_buff);           // New reference
+    if (msg_arg == NULL) {
+        goto error;
+    }
+
+    function_arg = PyUnicode_FromString(funcname);      // New reference
+    if (function_arg == NULL) {
+        goto error;
+    }
+
+    // Log function args are logger_name, level, filename, lineno, msg, function
+    PyObject *handler_ret = PyObject_CallFunctionObjArgs(pLogHandler, logger_name_arg, level_arg, filename_arg, lineno_arg, msg_arg, function_arg, NULL);
+    if (handler_ret == NULL) {
+        goto error;
+    }
+    Py_DECREF(handler_ret);
+
+    goto ok;
+error:
+    PyErr_Print();
+    LOG_ERROR("Error calling Python logging function from C");
+ok:
+    Py_XDECREF(logger_name_arg);
+    Py_XDECREF(level_arg);
+    Py_XDECREF(filename_arg);
+    Py_XDECREF(lineno_arg);
+    Py_XDECREF(msg_arg);
+    Py_XDECREF(function_arg);
     PyGILState_Release(gstate);
 }

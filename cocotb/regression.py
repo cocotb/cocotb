@@ -28,7 +28,6 @@
 """All things relating to regression capabilities."""
 
 import time
-import logging
 import inspect
 from itertools import product
 import sys
@@ -54,9 +53,10 @@ if "COVERAGE" in os.environ:
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
-from cocotb.result import TestError, TestFailure, TestSuccess, SimFailure
-from cocotb.utils import get_sim_time, raise_from
+from cocotb.result import TestSuccess, SimFailure
+from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
+from cocotb import _py_compat
 
 
 def _my_import(name):
@@ -101,10 +101,12 @@ class RegressionManager(object):
         self.count = 1
         self.skipped = 0
         self.failures = 0
-        self.xunit = XUnitReporter()
 
-        suite_name = os.getenv('RESULT_TESTSUITE') if os.getenv('RESULT_TESTSUITE') else "all"
-        package_name = os.getenv('RESULT_TESTPACKAGE') if os.getenv('RESULT_TESTPACKAGE') else "all"
+        results_filename = os.getenv('COCOTB_RESULTS_FILE', "results.xml")
+        suite_name = os.getenv('RESULT_TESTSUITE', "all")
+        package_name = os.getenv('RESULT_TESTPACKAGE', "all")
+        
+        self.xunit = XUnitReporter(filename=results_filename)
 
         self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
                                  package=package_name)
@@ -147,7 +149,7 @@ class RegressionManager(object):
                     except AttributeError:
                         self.log.error("Requested test %s wasn't found in module %s", test, module_name)
                         err = AttributeError("Test %s doesn't exist in %s" % (test, module_name))
-                        raise_from(err, None)  # discard nested traceback
+                        _py_compat.raise_from(err, None)  # discard nested traceback
 
                     if not hasattr(_test, "im_test"):
                         self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine", test, module_name)
@@ -161,10 +163,10 @@ class RegressionManager(object):
                     try:
                         test = thing(self._dut)
                         skip = test.skip
-                    except TestError:
+                    except Exception:
                         skip = True
                         self.log.warning("Failed to initialize test %s" %
-                                         thing.name)
+                                         thing.name, exc_info=True)
 
                     if skip:
                         self.log.info("Skipping test %s" % thing.name)
@@ -195,8 +197,8 @@ class RegressionManager(object):
                 if hasattr(thing, "im_hook"):
                     try:
                         test = thing(self._dut)
-                    except TestError:
-                        self.log.warning("Failed to initialize hook %s" % thing.name)
+                    except Exception:
+                        self.log.warning("Failed to initialize hook %s" % thing.name, exc_info=True)
                     else:
                         cocotb.scheduler.add(test)
 
@@ -233,50 +235,64 @@ class RegressionManager(object):
                                message="Test failed with random_seed={}".format(self._seed))
         self.failures += 1
 
-    def handle_result(self, result):
-        """Handle a test result.
+    def handle_result(self, test):
+        """Handle a test completing.
 
         Dump result to XML and schedule the next test (if any).
 
         Args:
-            result: The sub-exception of TestComplete to raise.
+            test: The test that completed
         """
-        real_time   = time.time() - self._running_test.start_time
-        sim_time_ns = get_sim_time('ns') - self._running_test.start_sim_time
-        try:
-            ratio_time  = sim_time_ns / real_time
-        except ZeroDivisionError:
-            if round(sim_time_ns, 2) == 0:
-                ratio_time = float('nan')
-            else:
-                ratio_time = float('inf')
-        self.xunit.add_testcase(name=self._running_test.funcname,
-                                classname=self._running_test.module,
+        assert test is self._running_test
+
+        real_time   = time.time() - test.start_time
+        sim_time_ns = get_sim_time('ns') - test.start_sim_time
+        ratio_time  = self._safe_divide(sim_time_ns, real_time)
+        
+        self.xunit.add_testcase(name=test.funcname,
+                                classname=test.module,
                                 time=repr(real_time),
                                 sim_time_ns=repr(sim_time_ns),
                                 ratio_time=repr(ratio_time))
 
-        running_test_funcname = self._running_test.funcname
-
         # Helper for logging result
         def _result_was():
-            result_was = ("%s (result was %s)" %
-                          (running_test_funcname, result.__class__.__name__))
+            result_was = ("{} (result was {})".format
+                          (test.funcname, result.__class__.__name__))
             return result_was
 
         result_pass = True
 
-        if (isinstance(result, TestSuccess) and
-                not self._running_test.expect_fail and
-                not self._running_test.expect_error):
-            self.log.info("Test Passed: %s" % running_test_funcname)
+        # check what exception the test threw
+        try:
+            test._outcome.get()
+        except Exception as e:
+            if sys.version_info >= (3, 5):
+                result = remove_traceback_frames(e, ['handle_result', 'get'])
+                # newer versions of the `logging` module accept plain exception objects
+                exc_info = result
+            elif sys.version_info >= (3,):
+                result = remove_traceback_frames(e, ['handle_result', 'get'])
+                # newer versions of python have Exception.__traceback__
+                exc_info = (type(result), result, result.__traceback__)
+            else:
+                # Python 2
+                result = e
+                exc_info = remove_traceback_frames(sys.exc_info(), ['handle_result', 'get'])
+        else:
+            result = TestSuccess()
 
-        elif (isinstance(result, TestFailure) and
-                self._running_test.expect_fail):
+        if (isinstance(result, TestSuccess) and
+                not test.expect_fail and
+                not test.expect_error):
+            self.log.info("Test Passed: %s" % test.funcname)
+
+        elif (isinstance(result, AssertionError) and
+                test.expect_fail):
             self.log.info("Test failed as expected: " + _result_was())
 
         elif (isinstance(result, TestSuccess) and
-              self._running_test.expect_error):
+              test.expect_error):
             self.log.error("Test passed but we expected an error: " +
                            _result_was())
             self._add_failure(result)
@@ -288,26 +304,31 @@ class RegressionManager(object):
             self._add_failure(result)
             result_pass = False
 
-        elif isinstance(result, TestError) and self._running_test.expect_error:
-            self.log.info("Test errored as expected: " + _result_was())
-
         elif isinstance(result, SimFailure):
-            if self._running_test.expect_error:
+            if isinstance(result, test.expect_error):
                 self.log.info("Test errored as expected: " + _result_was())
             else:
                 self.log.error("Test error has lead to simulator shutting us "
-                               "down")
+                               "down", exc_info=exc_info)
                 self._add_failure(result)
-                self._store_test_result(self._running_test.module, self._running_test.funcname, False, sim_time_ns, real_time, ratio_time)
+                self._store_test_result(test.module, test.funcname, False, sim_time_ns, real_time, ratio_time)
                 self.tear_down()
                 return
 
+        elif test.expect_error:
+            if isinstance(result, test.expect_error):
+                self.log.info("Test errored as expected: " + _result_was())
+            else:
+                self.log.info("Test errored with unexpected type: " + _result_was())
+                self._add_failure(result)
+                result_pass = False
+
         else:
-            self.log.error("Test Failed: " + _result_was())
+            self.log.error("Test Failed: " + _result_was(), exc_info=exc_info)
             self._add_failure(result)
             result_pass = False
 
-        self._store_test_result(self._running_test.module, self._running_test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
+        self._store_test_result(test.module, test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
 
         self.execute()
 
@@ -316,7 +337,7 @@ class RegressionManager(object):
         if self._running_test:
             start = ''
             end   = ''
-            if self.log.colour:
+            if want_color_output():
                 start = ANSI.COLOR_TEST
                 end   = ANSI.COLOR_DEFAULT
             # Want this to stand out a little bit
@@ -325,10 +346,8 @@ class RegressionManager(object):
                            self.count, self.ntests,
                            end,
                            self._running_test.funcname))
-            if self.count is 1:
-                test = cocotb.scheduler.add(self._running_test)
-            else:
-                test = cocotb.scheduler.new_test(self._running_test)
+
+            cocotb.scheduler.add_test(self._running_test)
             self.count += 1
         else:
             self.tear_down()
@@ -367,7 +386,7 @@ class RegressionManager(object):
                 pass_fail_str = "PASS"
             else:
                 pass_fail_str = "FAIL"
-                if self.log.colour:
+                if want_color_output():
                     hilite = ANSI.COLOR_HILITE_SUMMARY
 
             summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
@@ -383,7 +402,7 @@ class RegressionManager(object):
     def _log_sim_summary(self):
         real_time   = time.time() - self.start_time
         sim_time_ns = get_sim_time('ns')
-        ratio_time  = sim_time_ns / real_time
+        ratio_time  = self._safe_divide(sim_time_ns, real_time)
 
         summary = ""
 
@@ -396,7 +415,17 @@ class RegressionManager(object):
         summary += "*************************************************************************************\n"
 
         self.log.info(summary)
-
+    
+    @staticmethod
+    def _safe_divide(a, b):
+        try:
+            return a / b
+        except ZeroDivisionError:
+            if a == 0:
+                return float('nan')
+            else:
+                return float('inf')
+    
     def _store_test_result(self, module_name, test_name, result_pass, sim_time, real_time, ratio):
         result = {
             'test'  : '.'.join([module_name, test_name]),
@@ -434,7 +463,19 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
 
 
 class TestFactory(object):
-    """Used to automatically generate tests.
+    """Factory to automatically generate tests.
+
+    Args:
+        test_function: The function that executes a test.
+            Must take *dut* as the first argument.
+        *args: Remaining arguments are passed directly to the test function.
+            Note that these arguments are not varied. An argument that
+            varies with each test must be a keyword argument to the
+            test function.
+        **kwargs: Remaining keyword arguments are passed directly to the test function.
+            Note that these arguments are not varied. An argument that
+            varies with each test must be a keyword argument to the
+            test function.
 
     Assuming we have a common test function that will run a test. This test
     function will take keyword arguments (for example generators for each of
@@ -446,13 +487,14 @@ class TestFactory(object):
     For example if we have a module that takes backpressure and idles and
     have some packet generation routines ``gen_a`` and ``gen_b``:
 
-    >>> tf = TestFactory(run_test)
-    >>> tf.add_option('data_in', [gen_a, gen_b])
+    >>> tf = TestFactory(test_function=run_test)
+    >>> tf.add_option(name='data_in', optionlist=[gen_a, gen_b])
     >>> tf.add_option('backpressure', [None, random_backpressure])
     >>> tf.add_option('idles', [None, random_idles])
     >>> tf.generate_tests()
 
     We would get the following tests:
+
         * ``gen_a`` with no backpressure and no idles
         * ``gen_a`` with no backpressure and ``random_idles``
         * ``gen_a`` with ``random_backpressure`` and no idles
@@ -469,20 +511,6 @@ class TestFactory(object):
     """
 
     def __init__(self, test_function, *args, **kwargs):
-        """
-        Args:
-            test_function (function): the function that executes a test.
-                                      Must take 'dut' as the first argument.
-
-            *args: Remaining args are passed directly to the test function.
-                   Note that these arguments are not varied. An argument that
-                   varies with each test must be a keyword argument to the
-                   test function.
-            *kwargs: Remaining kwargs are passed directly to the test function.
-                   Note that these arguments are not varied. An argument that
-                   varies with each test must be a keyword argument to the
-                   test function.
-        """
         if not isinstance(test_function, cocotb.coroutine):
             raise TypeError("TestFactory requires a cocotb coroutine")
         self.test_function = test_function
@@ -497,16 +525,16 @@ class TestFactory(object):
         """Add a named option to the test.
 
         Args:
-           name (str): Name of the option. Passed to test as a keyword
-                          argument.
+            name (str): Name of the option. Passed to test as a keyword
+                argument.
 
-           optionlist (list): A list of possible options for this test knob.
+            optionlist (list): A list of possible options for this test knob.
         """
         self.kwargs[name] = optionlist
 
     def generate_tests(self, prefix="", postfix=""):
         """
-        Generates exhaustive set of tests using the cartesian product of the
+        Generate an exhaustive set of tests using the cartesian product of the
         possible keyword arguments.
 
         The generated tests are appended to the namespace of the calling

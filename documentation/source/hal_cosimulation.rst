@@ -57,7 +57,7 @@ together to achieve the required functionality.  The :class:`cocotb.external`
 decorator turns a normal function that isn't a coroutine into a blocking
 coroutine (by running the function in a separate thread).
 The :class:`cocotb.function` decorator allows a `coroutine` that consumes
-simulation time to be called by a normal thread.
+simulation time to be called by a thread started with :class:`cocotb.external`.
 The call sequence looks like this:
 
 .. image:: diagrams/svg/hal_cosimulation.svg
@@ -72,15 +72,15 @@ Register Map
 
 The endian swapper has a very simple register map:
 
-+-------------+-------------+------+--------+------------+
-| Byte Offset | Register    | Bits | Access | Description|
-+=============+=============+======+========+============+
-|0            | CONTROL     |  0   | R/W    | Enable     |
-|             |             +------+--------+------------+
-|             |             | 31:1 | N/A    | Reserved   |
-+-------------+-------------+------+--------+------------+
-|4            |PACKET_COUNT | 31:0 | RO     | Num Packets|
-+-------------+-------------+------+--------+------------+
++-------------+-------------+------+--------+------------------+
+| Byte Offset | Register    | Bits | Access | Description      |
++=============+=============+======+========+==================+
+|0            | CONTROL     |  0   | R/W    | Enable           |
+|             |             +------+--------+------------------+
+|             |             | 31:1 | N/A    | Reserved         |
++-------------+-------------+------+--------+------------------+
+|4            |PACKET_COUNT | 31:0 | RO     | Number of Packets|
++-------------+-------------+------+--------+------------------+
 
 
 HAL
@@ -116,7 +116,7 @@ instance.
 Testbench
 ~~~~~~~~~
 
-First of all we set up a clock, create an  :class:`Avalon Master <cocotb.drivers.avalon.AvalonMaster>`
+First of all we set up a clock, create an :class:`Avalon Master <cocotb.drivers.avalon.AvalonMaster>`
 interface and reset the DUT.
 Then we create two functions that are wrapped with the :class:`cocotb.function` decorator
 to be called when the HAL attempts to perform a read or write.
@@ -143,9 +143,9 @@ These are then passed to the `IO Module`_:
     io_module.set_read_function(read)
 
 
-We can then initialise the HAL and call functions, using the :class:`cocotb.external`
+We can then initialize the HAL and call functions, using the :class:`cocotb.external`
 decorator to turn the normal function into a blocking coroutine that we can
-``yield``:
+:keyword:`yield`:
 
 .. code-block:: python3
 
@@ -164,9 +164,9 @@ and control will return to the testbench when the function returns.
 Further Work
 ------------
 
-In future tutorials we'll consider co-simulating unmodified drivers written
-using ``mmap`` (for example built upon the `UIO framework`_) and consider
-interfacing with emulators like `QEMU`_ to allow us to co-simulate when the
+You may also consider co-simulating unmodified drivers written
+using ``mmap`` (for example built upon the `UIO framework`_), or
+interfacing with emulators like `QEMU`_ to co-simulate when the
 software needs to execute on a different processor architecture.
 
 

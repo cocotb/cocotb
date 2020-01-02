@@ -2,7 +2,6 @@
 Quickstart Guide
 ################
 
-
 Installing cocotb
 =================
 
@@ -11,98 +10,72 @@ Pre-requisites
 
 Cocotb has the following requirements:
 
-* Python 2.7+
+* Python 2.7, Python 3.5+ (recommended)
 * Python-dev packages
-* GCC and associated development packages
+* GCC 4.8.1+ and associated development packages
 * GNU Make
-* A Verilog or VHDL simulator, depending on your source RTL code
+* A Verilog or VHDL simulator, depending on your RTL source code
 
-Internal development is performed on Linux Mint 17 (x64). We also use RedHat
-6.5(x64). Other RedHat and Ubuntu based distributions (x32 and x64) should work
-too but due fragmented nature of Linux we can not test everything. Instructions
-are provided for the main distributions we use.
+Installation via PIP
+--------------------
 
-Linux native arch installation
-------------------------------
+.. versionadded:: 1.2
 
-Ubuntu based installation
+Cocotb can be installed by running
 
 .. code-block:: bash
 
-    $> sudo apt-get install git make gcc g++ swig python-dev
+    pip3 install cocotb
 
-This will allow building of the cocotb libs for use with a 64-bit native
-simulator. If a 32-bit simulator is being used then additional steps to install
-32-bit development libraries and Python are needed.
-
-RedHat based installation
+or
 
 .. code-block:: bash
 
-    $> sudo yum install gcc gcc-c++ libstdc++-devel swig python-devel
+    pip install cocotb
 
-This will allow building of the cocotb libs for use with a 64-bit native
-simulator. If a 32-bit simulator is being used then additional steps to install
-32-bit development libraries and Python are needed.
+For user local installation follow the
+`pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
 
-
-32-bit Python
--------------
-
-Additional development libraries are needed for building 32-bit Python on 64-bit
-systems.
-
-Ubuntu based installation
+To install the development version of cocotb:
 
 .. code-block:: bash
 
-    $> sudo apt-get install libx32gcc1 gcc-4.8-multilib lib32stdc++-4.8-dev
-
-Replace 4.8 with the version of GCC that was installed on the system in the step
-above. Unlike on RedHat where 32-bit Python can co-exist with native Python,
-Ubuntu requires the source to be downloaded and built.
-
-RedHat based installation
-
-.. code-block:: bash
-
-    $> sudo yum install glibc.i686 glibc-devel.i386 libgcc.i686 libstdc++-devel.i686
+    git clone https://github.com/cocotb/cocotb
+    pip install -e ./cocotb
 
 
-Specific releases can be downloaded from https://www.python.org/downloads/ .
+Native Linux Installation
+-------------------------
 
-.. code-block:: bash
+The following instructions will allow building of the cocotb libraries
+for use with a 64-bit native simulator.
 
-    $> wget https://www.python.org/ftp/python/2.7.9/Python-2.7.9.tgz
-    $> tar xvf Python-2.7.9.tgz
-    $> cd Python-2.7.9
-    $> export PY32_DIR=/opt/pym32
-    $> ./configure CC="gcc -m32" LDFLAGS="-L/lib32 -L/usr/lib32 -Lpwd/lib32 -Wl,-rpath,/lib32 -Wl,-rpath,$PY32_DIR/lib" --prefix=$PY32_DIR --enable-shared
-    $> make
-    $> sudo make install
+If a 32-bit simulator is being used then additional steps are needed, please see
+`our Wiki <https://github.com/cocotb/cocotb/wiki/Tier-2-Setup-Instructions>`_.
 
-Cocotb can now be built against 32-bit Python by setting the architecture and
-placing the 32-bit Python ahead of the native version in the path when running a
-test.
+Debian/Ubuntu-based
+~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-    $> export PATH=/opt/pym32/bin
-    $> cd <cocotb_dir>
-    $> ARCH=i686 make
+    sudo apt-get install git make gcc g++ swig python-dev
 
-Windows 7 installation
-----------------------
+Red Hat-based
+~~~~~~~~~~~~~
 
-Work has been done with the support of the cocotb community to enable
-Windows support using the MinGW/Msys environment. Download the MinGQ installer
-from.
+.. code-block:: bash
 
-https://sourceforge.net/projects/mingw/files/latest/download?source=files .
+    sudo yum install gcc gcc-c++ libstdc++-devel swig python-devel
+
+
+Windows Installation
+--------------------
+
+Download the MinGW installer from https://osdn.net/projects/mingw/releases/.
 
 Run the GUI installer and specify a directory you would like the environment
 installed in. The installer will retrieve a list of possible packages, when this
-is done press continue. The MinGW Installation Manager is then launched.
+is done press "Continue". The MinGW Installation Manager is then launched.
 
 The following packages need selecting by checking the tick box and selecting
 "Mark for installation"
@@ -118,12 +91,11 @@ The following packages need selecting by checking the tick box and selecting
 From the Installation menu then select "Apply Changes", in the next dialog
 select "Apply".
 
-When installed a shell can be opened using the "msys.bat" file located under
-the <install_dir>/msys/1.0/
+When installed a shell can be opened using the :file:`msys.bat` file located under
+the :file:`<install_dir>/msys/1.0/`
 
-Python can be downloaded from https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi,
-other versions of Python can be used as well. Run the installer and download to
-your chosen location.
+Python can be downloaded from https://www.python.org/downloads/windows/.
+Run the installer and download to your chosen location.
 
 It is beneficial to add the path to Python to the Windows system ``PATH`` variable
 so it can be used easily from inside Msys.
@@ -140,50 +112,30 @@ Installing a package manager really helps things out here.
 
 .. code-block:: bash
 
-    $> brew install python icarus-verilog gtkwave
+    brew install python icarus-verilog gtkwave
 
-Installing cocotb
-=================
 
-Cocotb can be installed by running (recommended Python3)
+Running your first Example
+==========================
 
-.. code-block:: bash
-
-    $> pip3 install cocotb
-
-or
+Assuming you have installed the prerequisites as above,
+the following lines are all you need to run a first simulation with cocotb:
 
 .. code-block:: bash
 
-    $> pip install cocotb
+    git clone https://github.com/cocotb/cocotb
+    cd cocotb/examples/endian_swapper/tests
+    make
 
-*\*For user local install follow* `pip User Guide <https://https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
-
-For development version:
-
-.. code-block:: bash
-
-    $> git clone https://github.com/potentialventures/cocotb
-    $> pip install -e ./cocotb
-
-Running an example
-------------------
+Selecting a different simulator is as easy as:
 
 .. code-block:: bash
 
-    $> git clone https://github.com/potentialventures/cocotb
-    $> cd cocotb/examples/endian_swapper/tests
-    $> make
-
-To run a test using a different simulator:
-
-.. code-block:: bash
-
-    $> make SIM=vcs
+    make SIM=vcs
 
 
-Running a VHDL example
-----------------------
+Running the same example as VHDL
+--------------------------------
 
 The ``endian_swapper`` example includes both a VHDL and a Verilog RTL implementation.
 The cocotb testbench can execute against either implementation using VPI for
@@ -193,13 +145,13 @@ be used):
 
 .. code-block:: bash
 
-    $> make SIM=ghdl TOPLEVEL_LANG=vhdl
+    make SIM=ghdl TOPLEVEL_LANG=vhdl
 
 
 Using cocotb
 ============
 
-A typical cocotb testbench requires no additional RTL code.
+A typical cocotb testbench requires no additional HDL code (though nothing prevents you from adding testbench helper code).
 The Design Under Test (DUT) is instantiated as the toplevel in the simulator
 without any wrapper code.
 Cocotb drives stimulus onto the inputs to the DUT and monitors the outputs
@@ -214,11 +166,14 @@ rules which make it easy to get started.  We simply inform cocotb of the
 source files we need compiling, the toplevel entity to instantiate and the
 Python test script to load.
 
-.. code-block:: bash
+.. code-block:: makefile
 
     VERILOG_SOURCES = $(PWD)/submodule.sv $(PWD)/my_design.sv
-    TOPLEVEL=my_design  # the module name in your Verilog or VHDL file
-    MODULE=test_my_design  # the name of the Python test file
+    # TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file:
+    TOPLEVEL=my_design
+    # MODULE is the name of the Python test file:
+    MODULE=test_my_design
+
     include $(shell cocotb-config --makefiles)/Makefile.inc
     include $(shell cocotb-config --makefiles)/Makefile.sim
 
@@ -247,9 +202,9 @@ following:
         dut._log.info("Running test!")
         for cycle in range(10):
             dut.clk = 0
-            yield Timer(1000)
+            yield Timer(1, units='ns')
             dut.clk = 1
-            yield Timer(1000)
+            yield Timer(1, units='ns')
         dut._log.info("Running test!")
 
 This will drive a square wave clock onto the ``clk`` port of the toplevel.
@@ -258,7 +213,7 @@ This will drive a square wave clock onto the ``clk`` port of the toplevel.
 Accessing the design
 --------------------
 
-When cocotb initialises it finds the top-level instantiation in the simulator
+When cocotb initializes it finds the top-level instantiation in the simulator
 and creates a handle called ``dut``. Top-level signals can be accessed using the
 "dot" notation used for accessing object attributes in Python. The same mechanism
 can be used to access signals inside the design.
@@ -294,7 +249,7 @@ or using direct assignment while traversing the hierarchy.
 
 
 The syntax ``sig <= new_value`` is a short form of ``sig.value = new_value``.
-It not only resembles HDL-syntax, but also has the same semantics:
+It not only resembles HDL syntax, but also has the same semantics:
 writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 (see :meth:`~cocotb.handle.ModifiableObject.setimmediatevalue`).
@@ -331,15 +286,23 @@ We can also cast the signal handle directly to an integer:
 
 
 
-Parallel and sequential execution of coroutines
------------------------------------------------
+Parallel and sequential execution
+---------------------------------
+
+A :keyword:`yield` will run a function (that must be marked as a "coroutine", see :ref:`Coroutines`)
+sequentially, i.e. wait for it to complete.
+If a coroutine should be run "in the background", i.e. in parallel to other coroutines,
+the way to do this is to :func:`~cocotb.fork` it.
+The end of such a forked coroutine can be waited on by using :meth:`~cocotb.decorators.RunningCoroutine.join`.
+
+The following example shows these in action:
 
 .. code-block:: python3
 
     @cocotb.coroutine
     def reset_dut(reset_n, duration):
         reset_n <= 0
-        yield Timer(duration)
+        yield Timer(duration, units='ns')
         reset_n <= 1
         reset_n._log.debug("Reset complete")
 
@@ -352,13 +315,12 @@ Parallel and sequential execution of coroutines
         yield reset_dut(reset_n, 500)
         dut._log.debug("After reset")
 
-        # Call reset_dut in parallel with this coroutine
-        reset_thread = cocotb.fork(reset_dut(reset_n, 500)
+        # Call reset_dut in parallel with the 250 ns timer
+        reset_thread = cocotb.fork(reset_dut(reset_n, 500))
 
-        yield Timer(250)
+        yield Timer(250, units='ns')
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
 
         # Wait for the other thread to complete
         yield reset_thread.join()
         dut._log.debug("After reset")
-

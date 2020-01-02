@@ -1,7 +1,9 @@
 # Python dependencies to build the documentation
-Sphinx>=2.0
+Sphinx>=2.1
 sphinx-rtd-theme
 cairosvg
 breathe
-sphinxcontrib-trio
+sphinxcontrib-makedomain
+sphinxcontrib-spelling
+pyenchant
 sphinx-issues

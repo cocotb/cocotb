@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -47,7 +47,7 @@ class AvalonMM(BusDriver):
     """Avalon Memory Mapped Interface (Avalon-MM) Driver.
 
     Currently we only support the mode required to communicate with SF
-    avalon_mapper which is a limited subset of all the signals.
+    ``avalon_mapper`` which is a limited subset of all the signals.
 
     Blocking operation is all that is supported at the moment, and for the near
     future as well.
@@ -94,7 +94,7 @@ class AvalonMM(BusDriver):
 
 
 class AvalonMaster(AvalonMM):
-    """Avalon Memory Mapped Interface (Avalon-MM) Master"""
+    """Avalon Memory Mapped Interface (Avalon-MM) Master."""
     def __init__(self, entity, name, clock, **kwargs):
         AvalonMM.__init__(self, entity, name, clock, **kwargs)
         self.log.debug("AvalonMaster created")
@@ -117,18 +117,19 @@ class AvalonMaster(AvalonMM):
 
     @coroutine
     def read(self, address, sync=True):
-        """Issue a request to the bus and block until this
-        comes back. Simulation time still progresses
+        """Issue a request to the bus and block until this comes back.
+
+        Simulation time still progresses
         but syntactically it blocks.
-        
+
         Args:
             address (int): The address to read from.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
-            
+
         Returns:
             BinaryValue: The read data value.
-            
+
         Raises:
             :any:`TestError`: If master is write-only.
         """
@@ -236,16 +237,16 @@ class AvalonMemory(BusDriver):
     _optional_signals = ["write", "read", "writedata", "readdatavalid",
                          "readdata", "waitrequest", "burstcount", "byteenable"]
     _avalon_properties = {
-            "burstCountUnits": "symbols", # symbols or words
-            "addressUnits": "symbols",    # symbols or words
+            "burstCountUnits": "symbols",  # symbols or words
+            "addressUnits": "symbols",     # symbols or words
             "readLatency": 1,    # number of cycles
             "WriteBurstWaitReq": True,  # generate random waitrequest
             "MaxWaitReqLen": 4,  # maximum value of waitrequest
             }
 
     def __init__(self, entity, name, clock, readlatency_min=1,
-                 readlatency_max=1, memory=None, avl_properties={}):
-        BusDriver.__init__(self, entity, name, clock)
+                 readlatency_max=1, memory=None, avl_properties={}, **kwargs):
+        BusDriver.__init__(self, entity, name, clock, **kwargs)
 
         if avl_properties != {}:
             for key, value in self._avalon_properties.items():
@@ -398,12 +399,12 @@ class AvalonMemory(BusDriver):
                     self._pad()
                     addr = self.bus.address.value.integer
                     if addr not in self._mem:
-                        self.log.warning("Attempt to read from uninitialised "
-                                         "address 0x%x" % addr)
+                        self.log.warning("Attempt to read from uninitialized "
+                                         "address 0x%x", addr)
                         self._responses.append(True)
                     else:
-                        self.log.debug("Read from address 0x%x returning 0x%x" %
-                                       (addr, self._mem[addr]))
+                        self.log.debug("Read from address 0x%x returning 0x%x",
+                                       addr, self._mem[addr])
                         self._responses.append(self._mem[addr])
                 else:
                     addr = self.bus.address.value.integer
@@ -423,7 +424,7 @@ class AvalonMemory(BusDriver):
                         self.log.error("Burstcount must be 1 at least")
 
                     # toggle waitrequest
-                    # TODO: configure waitrequest time with avalon properties
+                    # TODO: configure waitrequest time with Avalon properties
                     yield NextTimeStep()  # can't write during read-only phase
                     self.bus.waitrequest <= 1
                     yield edge
@@ -435,18 +436,17 @@ class AvalonMemory(BusDriver):
                         yield edge
                     for count in range(burstcount):
                         if (addr + count)*self.dataByteSize not in self._mem:
-                            self.log.warning(
-                                   "Attempt to burst read from uninitialised " +
-                                   "address 0x%x (addr 0x%x count 0x%x)" %
-                                    ((addr + count)*self.dataByteSize, addr, count) )
+                            self.log.warning("Attempt to burst read from uninitialized "
+                                             "address 0x%x (addr 0x%x count 0x%x)",
+                                             (addr + count) * self.dataByteSize, addr, count)
                             self._responses.append(True)
                         else:
                             value = 0
                             for i in range(self.dataByteSize):
                                 rvalue = self._mem[(addr + count)*self.dataByteSize + i]
                                 value += rvalue << i*8
-                            self.log.debug("Read from address 0x%x returning 0x%x" %
-                                           ((addr + count)*self.dataByteSize, value))
+                            self.log.debug("Read from address 0x%x returning 0x%x",
+                                           (addr + count) * self.dataByteSize, value)
                             self._responses.append(value)
                         yield edge
                         self._do_response()
@@ -460,26 +460,26 @@ class AvalonMemory(BusDriver):
                         mask = 0
                         oldmask = 0
                         olddata = 0
-                        if (addr in self._mem):
+                        if addr in self._mem:
                             olddata = self._mem[addr]
-                        self.log.debug("Old Data  : %x" % olddata)
-                        self.log.debug("Data in   : %x" % data)
-                        self.log.debug("Width     : %d" % self._width)
-                        self.log.debug("Byteenable: %x" % byteenable)
-                        for i in range(self._width/8):
-                            if (byteenable & 2**i):
+                        self.log.debug("Old Data  : %x", olddata)
+                        self.log.debug("Data in   : %x", data)
+                        self.log.debug("Width     : %d", self._width)
+                        self.log.debug("Byteenable: %x", byteenable)
+                        for i in range(self._width//8):
+                            if byteenable & 2**i:
                                 mask |= 0xFF << (8*i)
                             else:
                                 oldmask |= 0xFF << (8*i)
 
-                        self.log.debug("Data mask : %x" % mask)
-                        self.log.debug("Old mask  : %x" % oldmask)
+                        self.log.debug("Data mask : %x", mask)
+                        self.log.debug("Old mask  : %x", oldmask)
 
                         data = (data & mask) | (olddata & oldmask)
 
-                        self.log.debug("Data out  : %x" % data)
+                        self.log.debug("Data out  : %x", data)
 
-                    self.log.debug("Write to address 0x%x -> 0x%x" % (addr, data))
+                    self.log.debug("Write to address 0x%x -> 0x%x", addr, data)
                     self._mem[addr] = data
                 else:
                     self.log.debug("writing burst")
@@ -488,15 +488,14 @@ class AvalonMemory(BusDriver):
 
                     addr, byteenable, burstcount = self._write_burst_addr()
 
-                    count = 0
                     for count in range(burstcount):
                         while self.bus.write.value == 0:
                             yield NextTimeStep()
                         # self._mem is aligned on 8 bits words
                         yield self._writing_byte_value(addr + count*self.dataByteSize)
-                        self.log.debug("writing %016X @ %08X"%(
-                            self.bus.writedata.value.integer,
-                            addr + count*self.dataByteSize))
+                        self.log.debug("writing %016X @ %08X",
+                                       self.bus.writedata.value.integer,
+                                       addr + count * self.dataByteSize)
                         yield edge
                         # generate waitrequest randomly
                         yield self._waitrequest()
@@ -511,21 +510,20 @@ class AvalonST(ValidatedBusDriver):
     _signals = ["valid", "data"]
     _optional_signals = ["ready"]
 
-    _default_config = {
-            "firstSymbolInHighOrderBits" : True
-            }
+    _default_config = {"firstSymbolInHighOrderBits" : True}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, entity, name, clock, **kwargs):
         config = kwargs.pop('config', {})
-        ValidatedBusDriver.__init__(self, *args, **kwargs)
+        ValidatedBusDriver.__init__(self, entity, name, clock, **kwargs)
 
         self.config = AvalonST._default_config.copy()
 
         for configoption, value in config.items():
             self.config[configoption] = value
-            self.log.debug("Setting config option %s to %s" % (configoption, str(value)))
+            self.log.debug("Setting config option %s to %s", configoption, str(value))
 
-        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=self.config['firstSymbolInHighOrderBits'])
+        word = BinaryValue(n_bits=len(self.bus.data), bigEndian=self.config["firstSymbolInHighOrderBits"],
+                           value="x" * len(self.bus.data))
 
         self.bus.valid  <= 0
         self.bus.data   <= word
@@ -550,7 +548,7 @@ class AvalonST(ValidatedBusDriver):
         Args:
             value: data to drive onto the bus.
         """
-        self.log.debug("Sending Avalon transmission: %r" % value)
+        self.log.debug("Sending Avalon transmission: %r", value)
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -566,7 +564,7 @@ class AvalonST(ValidatedBusDriver):
         # Insert a gap where valid is low
         if not self.on:
             self.bus.valid <= 0
-            for i in range(self.off):
+            for _ in range(self.off):
                 yield clkedge
 
             # Grab the next set of on/off values
@@ -588,14 +586,14 @@ class AvalonST(ValidatedBusDriver):
 
         yield clkedge
         self.bus.valid <= 0
-        word.binstr   = ("x"*len(self.bus.data))
+        word.binstr   = "x" * len(self.bus.data)
         self.bus.data <= word
 
-        self.log.debug("Successfully sent Avalon transmission: %r" % value)
+        self.log.debug("Successfully sent Avalon transmission: %r", value)
 
 
 class AvalonSTPkts(ValidatedBusDriver):
-    """Avalon Streaming Interface (Avalon-ST) Driver, packetised."""
+    """Avalon Streaming Interface (Avalon-ST) Driver, packetized."""
 
     _signals = ["valid", "data", "startofpacket", "endofpacket"]
     _optional_signals = ["error", "channel", "ready", "empty"]
@@ -607,9 +605,9 @@ class AvalonSTPkts(ValidatedBusDriver):
         "readyLatency"                  : 0
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, entity, name, clock, **kwargs):
         config = kwargs.pop('config', {})
-        ValidatedBusDriver.__init__(self, *args, **kwargs)
+        ValidatedBusDriver.__init__(self, entity, name, clock, **kwargs)
 
         self.config = AvalonSTPkts._default_config.copy()
 
@@ -619,8 +617,8 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         for configoption, value in config.items():
             self.config[configoption] = value
-            self.log.debug("Setting config option %s to %s" %
-                           (configoption, str(value)))
+            self.log.debug("Setting config option %s to %s",
+                           configoption, str(value))
 
         num_data_symbols = (len(self.bus.data) /
                             self.config["dataBitsPerSymbol"])
@@ -632,13 +630,13 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.use_empty = (num_data_symbols > 1)
         self.config["useEmpty"] = self.use_empty
 
-        word   = BinaryValue(n_bits=len(self.bus.data),
-                             bigEndian=self.config['firstSymbolInHighOrderBits'])
+        word = BinaryValue(n_bits=len(self.bus.data),
+                           bigEndian=self.config["firstSymbolInHighOrderBits"])
 
         single = BinaryValue(n_bits=1, bigEndian=False)
 
-        word.binstr   = ("x"*len(self.bus.data))
-        single.binstr = ("x")
+        word.binstr   = "x" * len(self.bus.data)
+        single.binstr = "x"
 
         self.bus.valid <= 0
         self.bus.data <= word
@@ -646,23 +644,21 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.endofpacket <= single
 
         if self.use_empty:
-            empty = BinaryValue(n_bits=len(self.bus.empty), bigEndian=False)
-            empty.binstr  = ("x"*len(self.bus.empty))
+            empty = BinaryValue(n_bits=len(self.bus.empty), bigEndian=False,
+                                value="x" * len(self.bus.empty))
             self.bus.empty <= empty
 
         if hasattr(self.bus, 'channel'):
             if len(self.bus.channel) > 128:
-                raise AttributeError(
-                        "Avalon-ST interface specification defines channel width as 1-128. %d channel width is %d" %
-                        (self.name, len(self.bus.channel))
-                        )
+                raise AttributeError("Avalon-ST interface specification defines channel width as 1-128. "
+                                     "%d channel width is %d" % (self.name, len(self.bus.channel)))
             maxChannel = (2 ** len(self.bus.channel)) -1
             if self.config['maxChannel'] > maxChannel:
-                raise AttributeError(
-                        "%s has maxChannel=%d, but can only support a maximum channel of (2**channel_width)-1=%d, channel_width=%d" %
-                        (self.name,self.config['maxChannel'],maxChannel,len(self.bus.channel)))
-            channel = BinaryValue(n_bits=len(self.bus.channel), bigEndian=False)
-            channel.binstr = ("x"*len(self.bus.channel))
+                raise AttributeError("%s has maxChannel=%d, but can only support a maximum channel of "
+                                     "(2**channel_width)-1=%d, channel_width=%d" %
+                                     (self.name, self.config['maxChannel'], maxChannel, len(self.bus.channel)))
+            channel = BinaryValue(n_bits=len(self.bus.channel), bigEndian=False,
+                                  value="x" * len(self.bus.channel))
             self.bus.channel <= channel
 
     @coroutine
@@ -688,11 +684,11 @@ class AvalonSTPkts(ValidatedBusDriver):
         clkedge = RisingEdge(self.clock)
         firstword = True
 
-        # FIXME busses that aren't integer numbers of bytes
+        # FIXME: buses that aren't an integer numbers of bytes
         bus_width = int(len(self.bus.data) / 8)
 
         word = BinaryValue(n_bits=len(self.bus.data),
-                           bigEndian=self.config['firstSymbolInHighOrderBits'])
+                           bigEndian=self.config["firstSymbolInHighOrderBits"])
 
         single = BinaryValue(n_bits=1, bigEndian=False)
         if self.use_empty:
@@ -719,7 +715,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             # Insert a gap where valid is low
             if not self.on:
                 self.bus.valid <= 0
-                for i in range(self.off):
+                for _ in range(self.off):
                     yield clkedge
 
                 # Grab the next set of on/off values
@@ -734,9 +730,8 @@ class AvalonSTPkts(ValidatedBusDriver):
                 if channel is None:
                     self.bus.channel <= 0
                 elif channel > self.config['maxChannel'] or channel < 0:
-                    raise TestError(
-                            "%s: Channel value %d is outside range 0-%d" %
-                            (self.name,channel,self.config['maxChannel']))
+                    raise TestError("%s: Channel value %d is outside range 0-%d" %
+                                    (self.name, channel, self.config['maxChannel']))
                 else:
                     self.bus.channel <= channel
 
@@ -768,18 +763,18 @@ class AvalonSTPkts(ValidatedBusDriver):
         yield clkedge
         self.bus.valid <= 0
         self.bus.endofpacket <= 0
-        word.binstr   = ("x"*len(self.bus.data))
-        single.binstr = ("x")
+        word.binstr   = "x" * len(self.bus.data)
+        single.binstr = "x"
         self.bus.data <= word
         self.bus.startofpacket <= single
         self.bus.endofpacket <= single
 
         if self.use_empty:
-            empty.binstr  = ("x"*len(self.bus.empty))
+            empty.binstr = "x" * len(self.bus.empty)
             self.bus.empty <= empty
         if hasattr(self.bus, 'channel'):
-            channel_value = BinaryValue(n_bits=len(self.bus.channel), bigEndian=False)
-            channel_value.binstr = ("x"*len(self.bus.channel))
+            channel_value = BinaryValue(n_bits=len(self.bus.channel), bigEndian=False,
+                                        value="x" * len(self.bus.channel))
             self.bus.channel <= channel_value
 
     @coroutine
@@ -800,7 +795,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             # Insert a gap where valid is low
             if not self.on:
                 self.bus.valid <= 0
-                for i in range(self.off):
+                for _ in range(self.off):
                     yield clkedge
 
                 # Grab the next set of on/off values
@@ -811,7 +806,7 @@ class AvalonSTPkts(ValidatedBusDriver):
                 self.on -= 1
 
             if not hasattr(word, "valid"):
-               self.bus.valid <= 1
+                self.bus.valid <= 1
             else:
                 self.bus <= word
 
@@ -833,17 +828,17 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         If ``pkt`` is a string, we simply send it word by word
 
-        If ``pkt`` is an iterable, it's assumed to yield objects with 
+        If ``pkt`` is an iterable, it's assumed to yield objects with
         attributes matching the signal names.
         """
 
         # Avoid spurious object creation by recycling
         if isinstance(pkt, str):
-            self.log.debug("Sending packet of length %d bytes" % len(pkt))
+            self.log.debug("Sending packet of length %d bytes", len(pkt))
             self.log.debug(hexdump(pkt))
             yield self._send_string(pkt, sync=sync, channel=channel)
-            self.log.debug("Successfully sent packet of length %d bytes" % len(pkt))
+            self.log.debug("Successfully sent packet of length %d bytes", len(pkt))
         else:
             if channel is not None:
-                self.log.warning("%s is ignoring channel=%d because pkt is an iterable" % (self.name, channel))
+                self.log.warning("%s is ignoring channel=%d because pkt is an iterable", self.name, channel)
             yield self._send_iterable(pkt, sync=sync)

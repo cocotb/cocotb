@@ -27,3 +27,11 @@
 
 include ../../designs/viterbi_decoder_axi4s/Makefile
 MODULE = test_iteration
+
+ifeq ($(SIM),$(filter $(SIM), ius xcelium))
+    SIM_ARGS += -notimezeroasrtmsg
+endif
+
+ifeq ($(SIM),$(filter $(SIM), ghdl))
+    SIM_ARGS += --ieee-asserts=disable-at-0
+endif
