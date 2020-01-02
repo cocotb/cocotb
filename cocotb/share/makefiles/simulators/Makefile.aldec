@@ -176,7 +176,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) -do runsim.tcl | tee sim.log
+	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) $(RUN_ARGS) -do runsim.tcl | tee sim.log
 
 	# check that the file was actually created
 	test -f $(COCOTB_RESULTS_FILE)
