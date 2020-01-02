@@ -44,6 +44,11 @@ ifeq ($(SIM_DEFINE),QUESTA)
 SIM_DEFINE = MODELSIM
 endif
 
+# Use a common define for Xcelium and IUS
+ifeq ($(SIM_DEFINE),XCELIUM)
+SIM_DEFINE = IUS
+endif
+
 # Add Simulator Define for compilation
 GCC_ARGS+= -D$(SIM_DEFINE)
 GXX_ARGS+= -D$(SIM_DEFINE)

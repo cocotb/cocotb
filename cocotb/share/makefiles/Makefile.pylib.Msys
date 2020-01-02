@@ -31,7 +31,7 @@
 
 # if not explicitly set, auto-detect python dir from system path
 ifeq ($(PYTHON_DIR),)
-	PYTHON_DIR ?= $(shell dirname $(shell which python))
+	PYTHON_DIR ?= $(shell dirname $(shell :; command -v python))
 endif
 
 # make sure python dir was set properly
@@ -44,7 +44,10 @@ PYTHON_BIN?=$(PYTHON_DIR)/python.exe
 # We might work with other Python versions
 LOCAL_PYTHON_VERSION?=$(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print( distutils.sysconfig.get_python_version() )')
 PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from distutils import sysconfig; print( sysconfig.get_config_var("DESTSHARED") )')
-PYTHON_LIBDIR=$(PYTHON_DIR)/libs
+PYTHON_LIBDIR:=$(shell $(PYTHON_BIN) -c 'from distutils import sysconfig; print( sysconfig.get_config_var("LIBDIR") )')
+ifeq ($(PYTHON_LIBDIR),None)
+    PYTHON_LIBDIR=$(PYTHON_DIR)/libs
+endif
 
 period := .
 empty :=

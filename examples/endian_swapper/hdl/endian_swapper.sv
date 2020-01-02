@@ -44,6 +44,8 @@ Exposes 2 32-bit registers via the Avalon-MM interface
 
 */
 
+`timescale 1ns/1ps
+
 module endian_swapper_sv #(
     parameter                              DATA_BYTES = 8
 ) (
@@ -107,6 +109,9 @@ always @(posedge clk or negedge reset_n) begin
         flush_pipe       <= 1'b0;
         in_packet        <= 1'b0;
         packet_count     <= 32'd0;
+
+        stream_out_startofpacket <= 1'b1;
+        stream_out_endofpacket   <= 1'b1;
     end else begin
 
         if (flush_pipe & stream_out_ready)
@@ -172,11 +177,13 @@ always @(posedge clk or negedge reset_n) begin
 end
 
 `ifdef COCOTB_SIM
+`ifndef VERILATOR // traced differently
 initial begin
   $dumpfile ("waveform.vcd");
   $dumpvars (0,endian_swapper_sv);
   #1;
 end
+`endif
 `endif
 
 endmodule

@@ -9,7 +9,7 @@ from cocotb.scoreboard import Scoreboard
 
 import random
 
-clock_period = 100
+CLK_PERIOD_NS = 100
 
 
 class StreamBusMonitor(BusMonitor):
@@ -29,12 +29,12 @@ class StreamBusMonitor(BusMonitor):
 
 
 @cocotb.coroutine
-def clock_gen(signal, period=10000):
+def clock_gen(signal, period=10):
     while True:
         signal <= 0
-        yield Timer(period/2)
+        yield Timer(period/2, units='ns')
         signal <= 1
-        yield Timer(period/2)
+        yield Timer(period/2, units='ns')
 
 
 @cocotb.coroutine
@@ -46,7 +46,7 @@ def value_test(dut, num):
     dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
                  (data_width, bus_width))
 
-    cocotb.fork(clock_gen(dut.clk, period=clock_period))
+    cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units='ns'))
 
     dut.rst <= 1
     for i in range(bus_width):
@@ -101,7 +101,7 @@ def mean_randomised_test(dut):
     dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
                  (data_width, bus_width))
 
-    cocotb.fork(clock_gen(dut.clk, period=clock_period))
+    cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units='ns'))
 
     dut.rst <= 1
     for i in range(bus_width):

@@ -29,6 +29,7 @@
 
 #include <cocotb_utils.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <dlfcn.h>
@@ -37,7 +38,26 @@
 #endif
 
 // Tracks if we are in the context of Python or Simulator
-int context = 0;
+int is_python_context = 0;
+
+void to_python(void) {
+    if (is_python_context) {
+        fprintf(stderr, "FATAL: We are calling up again\n");
+        exit(1);
+    }
+    ++is_python_context;
+    //fprintf(stderr, "INFO: Calling up to python %d\n", is_python_context);
+}
+
+void to_simulator(void) {
+    if (!is_python_context) {
+        fprintf(stderr, "FATAL: We have returned twice from python\n");
+        exit(1);
+    }
+
+    --is_python_context;
+    //fprintf(stderr, "INFO: Returning back to simulator %d\n", is_python_context);
+}
 
 void* utils_dyn_open(const char* lib_name)
 {
@@ -46,7 +66,18 @@ void* utils_dyn_open(const char* lib_name)
     SetErrorMode(0);
     ret = LoadLibrary(lib_name);
     if (!ret) {
-        printf("Unable to open lib %s\n", lib_name);
+        printf("Unable to open lib %s", lib_name);
+        LPSTR msg_ptr;
+        if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
+                           FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL,
+                           GetLastError(),
+                           MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT),
+                           (LPSTR)&msg_ptr, 255, NULL)) {
+            printf(": %s", msg_ptr);
+            LocalFree(msg_ptr);
+        } else {
+            printf("\n");
+        }
     }
 #else
     /* Clear status */
@@ -66,7 +97,18 @@ void* utils_dyn_sym(void *handle, const char* sym_name)
 #if ! defined(__linux__) && ! defined(__APPLE__)
     entry_point = GetProcAddress(handle, sym_name);
     if (!entry_point) {
-        printf("Unable to find symbol %s\n", sym_name);
+        printf("Unable to find symbol %s", sym_name);
+        LPSTR msg_ptr;
+        if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
+                           FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL,
+                           GetLastError(),
+                           MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT),
+                           (LPSTR)&msg_ptr, 255, NULL)) {
+            printf(": %s", msg_ptr);
+            LocalFree(msg_ptr);
+        } else {
+            printf("\n");
+        }
     }
 #else
     entry_point = dlsym(handle, sym_name);

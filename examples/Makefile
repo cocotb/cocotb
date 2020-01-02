@@ -27,10 +27,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-
 EXAMPLES := adder/tests \
-	    endian_swapper/tests \
             axi_lite_slave/tests \
+            dff/tests \
+            endian_swapper/tests \
+            mean/tests \
+            mixed_language/tests
+# requires root permissions: ping_tun_tap/tests
 
 .PHONY: $(EXAMPLES)
 
@@ -43,3 +46,6 @@ $(EXAMPLES):
 .PHONY: clean
 clean:
 	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) clean;)
+
+regression:
+	$(foreach TEST, $(EXAMPLES), $(MAKE) -C $(TEST) regression;)

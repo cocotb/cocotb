@@ -1,5 +1,5 @@
 """
-Failing case for https://github.com/potentialventures/cocotb/issues/768.
+Failing case.
 
 Note that the bug only occurred if the test in question runs first - so
 no more tests can be added to this file.

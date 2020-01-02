@@ -1,29 +1,29 @@
-''' Copyright (c) 2013 Potential Ventures Ltd
-Copyright (c) 2013 SolarFlare Communications Inc
-All rights reserved.
+# Copyright (c) 2013 Potential Ventures Ltd
+# Copyright (c) 2013 SolarFlare Communications Inc
+# All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of Potential Ventures Ltd,
-      SolarFlare Communications Inc nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Potential Ventures Ltd,
+#       SolarFlare Communications Inc nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 Cocotb is a coroutine, cosimulation framework for writing testbenches in Python.
@@ -36,20 +36,23 @@ import logging
 import threading
 import random
 import time
+import warnings
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
-from cocotb.log import SimLogFormatter, SimBaseLog, SimLog
+from cocotb.log import SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
 
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine, hook, function, external
+from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
+
+from ._version import __version__
 
 # GPI logging instance
 if "COCOTB_SIM" in os.environ:
@@ -83,11 +86,19 @@ if "COCOTB_SIM" in os.environ:
         log.warning("Failed to ensure that stdout/stderr are line buffered: %s", e)
         log.warning("Some stack traces may not appear because of this.")
 
+    # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
+    # If the user doesn't want to see these, they can always change the global
+    # warning settings in their test module.
+    if not sys.warnoptions:
+        warnings.simplefilter("default")
 
 scheduler = Scheduler()
+"""The global scheduler instance."""
+
 regression_manager = None
 
 plusargs = {}
+"""A dictionary of "plusargs" handed to the simulation."""
 
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
@@ -102,16 +113,16 @@ def mem_debug(port):
 
 
 def _initialise_testbench(root_name):
-    """
+    """Initialize testbench.
+
     This function is called after the simulator has elaborated all
     entities and is ready to run the test.
 
-    The test must be defined by the environment variables
-        MODULE
-        TESTCASE
+    The test must be defined by the environment variables 
+    :envvar:`MODULE` and :envvar:`TESTCASE`. 
 
-    The environment variable COCOTB_HOOKS contains a comma-separated list of
-        modules that should be executed before the first test.
+    The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a 
+    comma-separated list of modules to be executed before the first test.
     """
     _rlock.acquire()
 
@@ -123,32 +134,29 @@ def _initialise_testbench(root_name):
     if exec_path is None:
         exec_path = 'Unknown'
 
-    version = os.getenv('VERSION')
-    if version is None:
-        log.info("Unable to determine Cocotb version from %s" % exec_path)
-    else:
-        log.info("Running tests with Cocotb v%s from %s" %
-                 (version, exec_path))
+    log.info("Running tests with cocotb v%s from %s" %
+             (__version__, exec_path))
 
     # Create the base handle type
 
     process_plusargs()
 
     # Seed the Python random number generator to make this repeatable
-    seed = os.getenv('RANDOM_SEED')
+    global RANDOM_SEED
+    RANDOM_SEED = os.getenv('RANDOM_SEED')
 
-    if seed is None:
+    if RANDOM_SEED is None:
         if 'ntb_random_seed' in plusargs:
-            seed = eval(plusargs['ntb_random_seed'])
+            RANDOM_SEED = eval(plusargs['ntb_random_seed'])
         elif 'seed' in plusargs:
-            seed = eval(plusargs['seed'])
+            RANDOM_SEED = eval(plusargs['seed'])
         else:
-            seed = int(time.time())
-        log.info("Seeding Python random module with %d" % (seed))
+            RANDOM_SEED = int(time.time())
+        log.info("Seeding Python random module with %d" % (RANDOM_SEED))
     else:
-        seed = int(seed)
-        log.info("Seeding Python random module with supplied seed %d" % (seed))
-    random.seed(seed)
+        RANDOM_SEED = int(RANDOM_SEED)
+        log.info("Seeding Python random module with supplied seed %d" % (RANDOM_SEED))
+    random.seed(RANDOM_SEED)
 
     module_str = os.getenv('MODULE')
     test_str = os.getenv('TESTCASE')
@@ -163,7 +171,7 @@ def _initialise_testbench(root_name):
 
     global regression_manager
 
-    regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=seed, hooks=hooks)
+    regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=RANDOM_SEED, hooks=hooks)
     regression_manager.initialise()
     regression_manager.execute()
 
@@ -172,7 +180,7 @@ def _initialise_testbench(root_name):
 
 
 def _sim_event(level, message):
-    """Function that can be called externally to signal an event"""
+    """Function that can be called externally to signal an event."""
     SIM_INFO = 0
     SIM_TEST_FAIL = 1
     SIM_FAIL = 2

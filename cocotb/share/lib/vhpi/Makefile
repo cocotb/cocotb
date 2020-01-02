@@ -33,7 +33,7 @@ INCLUDES    +=
 GXX_ARGS    += -DVHPI_CHECKING
 LIBS        := $(EXTRA_LIBS) -lgpilog -lgpi -lstdc++
 LD_PATH     := $(EXTRA_LIBDIRS) -L$(LIB_DIR)
-LIB_NAME    := libvhpi
+LIB_NAME    := libcocotbvhpi
 
 SRCS        := VhpiImpl.cpp VhpiCbHdl.cpp
 

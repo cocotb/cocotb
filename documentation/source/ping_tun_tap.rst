@@ -22,7 +22,7 @@ Architecture
 ------------
 
 We have a simple RTL block that takes ICMP echo requests and generates an ICMP
-echo response.  To verify this behaviour we want to run the `ping`_ utility
+echo response.  To verify this behavior we want to run the `ping`_ utility
 against our RTL running in the simulator.
 
 In order to achieve this we need to capture the packets that are created by
@@ -47,7 +47,7 @@ we write a function that will create our virtual interface:
 .. code-block:: python3
 
     import subprocess, fcntl, struct
-    
+
     def create_tun(name="tun0", ip="192.168.255.1"):
         TUNSETIFF = 0x400454ca
         TUNSETOWNER = TUNSETIFF + 2
@@ -72,14 +72,14 @@ the log level to ``logging.DEBUG``.
     from cocotb.clock import Clock
     from cocotb.drivers.avalon import AvalonSTPkts as AvalonSTDriver
     from cocotb.monitors.avalon import AvalonSTPkts as AvalonSTMonitor
-    
+
     @cocotb.test()
     def tun_tap_example_test(dut):
         cocotb.fork(Clock(dut.clk, 5000).start())
-    
+
         stream_in  = AvalonSTDriver(dut, "stream_in", dut.clk)
         stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk)
-   
+
         # Enable verbose logging on the streaming interfaces
         stream_in.log.setLevel(logging.DEBUG)
         stream_out.log.setLevel(logging.DEBUG)
@@ -95,7 +95,7 @@ and :class:`~.triggers.RisingEdge` triggers.
         dut._log.debug("Resetting DUT")
         dut.reset_n <= 0
         stream_in.bus.valid <= 0
-        yield Timer(10000)
+        yield Timer(10, units='ns')
         yield RisingEdge(dut.clk)
         dut.reset_n <= 1
         dut.stream_out_ready <= 1
@@ -116,20 +116,20 @@ write the received packet back to the TUN file descriptor.
     # Create our interface (destroyed at the end of the test)
     tun = create_tun()
     fd = tun.fileno()
-    
+
     # Kick off a ping...
     subprocess.check_call('ping -c 5 192.168.255.2 &', shell=True)
-   
+
     # Respond to 5 pings, then quit
     for i in range(5):
-    
+
         cocotb.log.info("Waiting for packets on tun interface")
         packet = os.read(fd, 2048)
         cocotb.log.info("Received a packet!")
-    
+
         stream_in.append(packet)
         result = yield stream_out.wait_for_recv()
-    
+
         os.write(fd, str(result))
 
 

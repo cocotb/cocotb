@@ -115,25 +115,25 @@ int FliValueObjHdl::initialise(std::string &name, std::string &fq_name)
     return FliSignalObjHdl::initialise(name, fq_name);
 }
 
-const char* FliValueObjHdl::get_signal_value_binstr(void)
+const char* FliValueObjHdl::get_signal_value_binstr()
 {
     LOG_ERROR("Getting signal/variable value as binstr not supported for %s of type %d", m_fullname.c_str(), m_type);
     return NULL;
 }
 
-const char* FliValueObjHdl::get_signal_value_str(void)
+const char* FliValueObjHdl::get_signal_value_str()
 {
     LOG_ERROR("Getting signal/variable value as str not supported for %s of type %d", m_fullname.c_str(), m_type);
     return NULL;
 }
 
-double FliValueObjHdl::get_signal_value_real(void)
+double FliValueObjHdl::get_signal_value_real()
 {
     LOG_ERROR("Getting signal/variable value as double not supported for %s of type %d", m_fullname.c_str(), m_type);
     return -1;
 }
 
-long FliValueObjHdl::get_signal_value_long(void)
+long FliValueObjHdl::get_signal_value_long()
 {
     LOG_ERROR("Getting signal/variable value as long not supported for %s of type %d", m_fullname.c_str(), m_type);
     return -1;
@@ -192,7 +192,7 @@ int FliEnumObjHdl::initialise(std::string &name, std::string &fq_name)
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
-const char* FliEnumObjHdl::get_signal_value_str(void)
+const char* FliEnumObjHdl::get_signal_value_str()
 {
     if (m_is_var) {
         return m_value_enum[mti_GetVarValue(get_handle<mtiVariableIdT>())];
@@ -201,7 +201,7 @@ const char* FliEnumObjHdl::get_signal_value_str(void)
     }
 }
 
-long FliEnumObjHdl::get_signal_value_long(void)
+long FliEnumObjHdl::get_signal_value_long()
 {
     if (m_is_var) {
         return (long)mti_GetVarValue(get_handle<mtiVariableIdT>());
@@ -270,7 +270,7 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
-const char* FliLogicObjHdl::get_signal_value_binstr(void)
+const char* FliLogicObjHdl::get_signal_value_binstr()
 {
     switch (m_fli_type) {
         case MTI_TYPE_ENUM:
@@ -382,7 +382,7 @@ int FliIntObjHdl::initialise(std::string &name, std::string &fq_name)
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
-const char* FliIntObjHdl::get_signal_value_binstr(void)
+const char* FliIntObjHdl::get_signal_value_binstr()
 {
     mtiInt32T val;
 
@@ -399,7 +399,7 @@ const char* FliIntObjHdl::get_signal_value_binstr(void)
     return m_val_buff;
 }
 
-long FliIntObjHdl::get_signal_value_long(void)
+long FliIntObjHdl::get_signal_value_long()
 {
     mtiInt32T value;
 
@@ -437,7 +437,7 @@ int FliRealObjHdl::initialise(std::string &name, std::string &fq_name)
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
-double FliRealObjHdl::get_signal_value_real(void)
+double FliRealObjHdl::get_signal_value_real()
 {
     if (m_is_var) {
         mti_GetVarValueIndirect(get_handle<mtiVariableIdT>(), m_mti_buff);
@@ -486,7 +486,7 @@ int FliStringObjHdl::initialise(std::string &name, std::string &fq_name)
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
-const char* FliStringObjHdl::get_signal_value_str(void)
+const char* FliStringObjHdl::get_signal_value_str()
 {
     if (m_is_var) {
         mti_GetArrayVarValue(get_handle<mtiVariableIdT>(), m_mti_buff);

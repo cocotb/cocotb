@@ -349,6 +349,7 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
         case vhpiRootInstK:
         case vhpiIfGenerateK:
         case vhpiForGenerateK:
+        case vhpiBlockStmtK:
         case vhpiCompInstStmtK: {
             std::string hdl_name = vhpi_get_str(vhpiCaseNameP, new_hdl);
 
@@ -609,7 +610,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
             if (indices.size() == num_dim) {
 #ifdef IUS
-                /* IUS does not appear to set the vhpiIsUnconstrainedP property.  IUS Docs say will return
+                /* IUS/Xcelium does not appear to set the vhpiIsUnconstrainedP property.  IUS Docs say will return
                  * -1 if unconstrained, but with vhpiIntT being unsigned, the value returned is below.
                  */
                 const vhpiIntT UNCONSTRAINED = 2147483647;
@@ -620,7 +621,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
                 /* All necessary indices are available, need to iterate over dimension constraints to
                  * determine the index into the zero-based flattened array.
                  *
-                 * Check the constraints on the base type first. (always works for Aldec, but not unconstrained types in IUS)
+                 * Check the constraints on the base type first. (always works for Aldec, but not unconstrained types in IUS/Xcelium)
                  * If the base type fails, then try the sub-type.  (sub-type is listed as deprecated for Aldec)
                  */
                 vhpiHandleT it, constraint;
@@ -655,7 +656,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
                         if (it != NULL) {
                             while ((constraint = vhpi_scan(it)) != NULL) {
-                                /* IUS only sets the vhpiIsUnconstrainedP incorrectly on the base type */
+                                /* IUS/Xcelium only sets the vhpiIsUnconstrainedP incorrectly on the base type */
                                 if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
                                     vhpi_release_handle(it);
                                     break;
@@ -850,7 +851,7 @@ GpiCbHdl *VhpiImpl::register_timed_callback(uint64_t time_ps)
     return hdl;
 }
 
-GpiCbHdl *VhpiImpl::register_readwrite_callback(void)
+GpiCbHdl *VhpiImpl::register_readwrite_callback()
 {
     if (m_read_write.arm_callback())
         return NULL;
@@ -858,7 +859,7 @@ GpiCbHdl *VhpiImpl::register_readwrite_callback(void)
     return &m_read_write;
 }
 
-GpiCbHdl *VhpiImpl::register_readonly_callback(void)
+GpiCbHdl *VhpiImpl::register_readonly_callback()
 {
     if (m_read_only.arm_callback())
         return NULL;
@@ -866,7 +867,7 @@ GpiCbHdl *VhpiImpl::register_readonly_callback(void)
     return &m_read_only;
 }
 
-GpiCbHdl *VhpiImpl::register_nexttime_callback(void)
+GpiCbHdl *VhpiImpl::register_nexttime_callback()
 {
     if (m_next_phase.arm_callback())
         return NULL;
@@ -880,7 +881,7 @@ int VhpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
     return 0;
 }
 
-void VhpiImpl::sim_end(void)
+void VhpiImpl::sim_end()
 {
     sim_finish_cb->set_call_state(GPI_DELETE);
     vhpi_control(vhpiFinish);
@@ -917,7 +918,7 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data)
     return;
 };
 
-static void register_initial_callback(void)
+static void register_initial_callback()
 {
     FENTER
     sim_init_cb = new VhpiStartupCbHdl(vhpi_table);
@@ -925,7 +926,7 @@ static void register_initial_callback(void)
     FEXIT
 }
 
-static void register_final_callback(void)
+static void register_final_callback()
 {
     FENTER
     sim_finish_cb = new VhpiShutdownCbHdl(vhpi_table);
@@ -933,7 +934,7 @@ static void register_final_callback(void)
     FEXIT
 }
 
-static void register_embed(void)
+static void register_embed()
 {
     vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
@@ -941,16 +942,16 @@ static void register_embed(void)
 }
 
 // pre-defined VHPI registration table
-void (*vhpi_startup_routines[])(void) = {
+void (*vhpi_startup_routines[])() = {
     register_embed,
     register_initial_callback,
     register_final_callback,
     0
 };
 
-// For non-VPI compliant applications that cannot find vlog_startup_routines
-void vhpi_startup_routines_bootstrap(void) {
-    void (*routine)(void);
+// For non-VHPI compliant applications that cannot find vhpi_startup_routines
+void vhpi_startup_routines_bootstrap() {
+    void (*routine)();
     int i;
     routine = vhpi_startup_routines[0];
     for (i = 0, routine = vhpi_startup_routines[i];
@@ -962,4 +963,4 @@ void vhpi_startup_routines_bootstrap(void) {
 
 }
 
-GPI_ENTRY_POINT(vhpi, register_embed)
+GPI_ENTRY_POINT(cocotbvhpi, register_embed)

@@ -16,18 +16,19 @@ BUILDDIR      = build
 help: .venv
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.venv:
-	echo Creating Python venv for Sphinx build
+.venv: requirements.txt
+	@echo Creating Python venv for Sphinx build
 	python3 -m venv .venv
 	.venv/bin/pip -q install --upgrade pip
 	.venv/bin/pip -q install -r requirements.txt
 
+.PHONY: clean
 clean: .venv Makefile
 	@$(SPHINXBUILD) -M clean "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
+.PHONY: distclean
 distclean:
 	-rm -rf .venv build sphinxext/__pycache__
-
 
 .PHONY: help Makefile
 

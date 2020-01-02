@@ -35,17 +35,17 @@ however to encourage code re-use it is good practice to create a distinct class.
 .. code-block:: python3
 
     class EndianSwapperTB(object):
-    
+
         def __init__(self, dut):
             self.dut = dut
             self.stream_in  = AvalonSTDriver(dut, "stream_in", dut.clk)
             self.stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk)
             self.csr = AvalonMaster(dut, "csr", dut.clk)
-    
+
             self.expected_output = []
             self.scoreboard = Scoreboard(dut)
             self.scoreboard.add_interface(self.stream_out, self.expected_output)
-    
+
             # Reconstruct the input transactions from the pins and send them to our 'model'
             self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk, callback=self.model)
 
@@ -96,7 +96,7 @@ We do the same to create the :class:`monitor <cocotb.monitors.avalon.AvalonSTPkt
             self.scoreboard.add_interface(self.stream_out, self.expected_output)
 
 The above lines create a :class:`.Scoreboard` instance and attach it to the ``stream_out`` monitor instance.
-The scoreboard is used to check that the DUT behaviour is correct.
+The scoreboard is used to check that the DUT behavior is correct.
 The call to :meth:`.add_interface()` takes a Monitor instance as the first argument and
 the second argument is a mechanism for describing the expected output for that interface.
 This could be a callable function but in this example a simple list of expected transactions is sufficient.
@@ -126,7 +126,7 @@ Our model function is quite straightforward in this case - we simply append the 
 Test Function
 ~~~~~~~~~~~~~
 
-There are various 'knobs' we can tweak on this testbench to vary the behaviour:
+There are various 'knobs' we can tweak on this testbench to vary the behavior:
 
 * Packet size
 * Backpressure on the ``stream_out`` interface
@@ -140,13 +140,13 @@ To generate backpressure on the ``stream_out`` interface we use the :class:`.Bit
 
     @cocotb.coroutine
     def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None, backpressure_inserter=None):
-        
+
         cocotb.fork(Clock(dut.clk, 5000).start())
         tb = EndianSwapperTB(dut)
-        
+
         yield tb.reset()
         dut.stream_out_ready <= 1
-        
+
         # Start off any optional coroutines
         if config_coroutine is not None:
             cocotb.fork(config_coroutine(tb.csr))
@@ -154,25 +154,25 @@ To generate backpressure on the ``stream_out`` interface we use the :class:`.Bit
             tb.stream_in.set_valid_generator(idle_inserter())
         if backpressure_inserter is not None:
             tb.backpressure.start(backpressure_inserter())
-        
+
         # Send in the packets
         for transaction in data_in():
             yield tb.stream_in.send(transaction)
-        
+
         # Wait at least 2 cycles where output ready is low before ending the test
         for i in range(2):
             yield RisingEdge(dut.clk)
             while not dut.stream_out_ready.value:
                 yield RisingEdge(dut.clk)
-        
+
         pkt_count = yield tb.csr.read(1)
-        
+
         if pkt_count.integer != tb.pkts_sent:
             raise TestFailure("DUT recorded %d packets but tb counted %d" % (
                             pkt_count.integer, tb.pkts_sent))
         else:
             dut._log.info("DUT correctly counted %d packets" % pkt_count.integer)
-        
+
         raise tb.scoreboard.result
 
 We can see that this test function creates an instance of the testbench,
@@ -198,4 +198,4 @@ Having defined a test function we can now auto-generate different permutations o
     factory.generate_tests()
 
 This will generate 32 tests (named ``run_test_001`` to ``run_test_032``) with all possible permutations of the options provided for each argument.
-Note that we utilise some of the built-in generators to toggle backpressure and insert idle cycles.
+Note that we utilize some of the built-in generators to toggle backpressure and insert idle cycles.

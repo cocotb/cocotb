@@ -30,10 +30,10 @@
 CMD_BIN := vsim
 
 ifdef MODELSIM_BIN_DIR
-    CMD := $(shell which $(MODELSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
+    CMD := $(shell :; command -v $(MODELSIM_BIN_DIR)/$(CMD_BIN) 2>/dev/null)
 else
     # auto-detect bin dir from system path
-    CMD := $(shell which $(CMD_BIN) 2>/dev/null)
+    CMD := $(shell :; command -v $(CMD_BIN) 2>/dev/null)
 endif
 
 ifeq (, $(CMD))
@@ -47,10 +47,8 @@ RTL_LIBRARY ?= work
 
 TOPLEVEL := "$(RTL_LIBRARY).$(TOPLEVEL)"
 
-ifdef VLOG_ARGS
-VLOG_ARGS = $(VLOG_ARGS)
-else
-VLOG_ARGS = -timescale 1ns/100ps -mfcu +acc=rmb
+ifndef VLOG_ARGS
+VLOG_ARGS = -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) -mfcu +acc=rmb
 endif
 ifdef VERILOG_INCLUDE_DIRS
 VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
@@ -124,7 +122,7 @@ ifeq ($(OS),Msys)
 # we use the mingw lib used at build time and put this at the start of the path
 # before running
 
-MINGW_BIN_DIR = $(shell dirname $(shell which gcc))
+MINGW_BIN_DIR = $(shell dirname $(shell :; command -v gcc))
 
 EXTRA_LIBS := -lmtipli
 EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
@@ -145,7 +143,7 @@ endif
 
 # Depending on the version of modelsim the interfaces that it supports can change
 # Append or remove values to INT_LIBS depenending on your license
-results.xml: $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
 	set -o pipefail; cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) \
 	$(CMD) $(PLUSARGS) -do runsim.do 2>&1 | tee sim.log

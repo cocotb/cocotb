@@ -28,20 +28,33 @@
 # TODO: Could use cStringIO?
 import traceback
 import sys
-# from StringIO import StringIO
+import warnings
 from io import StringIO, BytesIO
+from cocotb import _py_compat
 
 """Exceptions and functions for simulation result handling."""
 
 def raise_error(obj, msg):
-    """Creates a :exc:`TestError` exception and raises it after printing a traceback.
+    """Create a :exc:`TestError` exception and raise it after printing a traceback.
+
+    .. deprecated:: 1.3
+        Use ``raise TestError(msg)`` instead of this function. A stacktrace will
+        be printed by cocotb automatically if the exception is unhandled.
 
     Args:
         obj: Object with a log method.
         msg (str): The log message.
     """
+    warnings.warn(
+        "``raise_error`` is deprecated - use ``raise TestError(msg)`` (or any "
+        "other exception type) instead",
+        DeprecationWarning, stacklevel=2)
+    _raise_error(obj, msg)
+
+
+def _raise_error(obj, msg):
     exc_info = sys.exc_info()
-    # 2.6 cannot use named access
+    # Python 2.6 cannot use named access
     if sys.version_info[0] >= 3:
         buff = StringIO()
         traceback.print_exception(*exc_info, file=buff)
@@ -59,12 +72,20 @@ def create_error(obj, msg):
     """Like :func:`raise_error`, but return the exception rather than raise it, 
     simply to avoid too many levels of nested `try/except` blocks.
 
+    .. deprecated:: 1.3
+        Use ``TestError(msg)`` directly instead of this function.
+
     Args:
         obj: Object with a log method.
         msg (str): The log message.
     """
+    warnings.warn(
+        "``create_error`` is deprecated - use ``TestError(msg)`` directly "
+        "(or any other exception type) instead",
+        DeprecationWarning, stacklevel=2)
     try:
-        raise_error(obj, msg)
+        # use the private version to avoid multiple warnings
+        _raise_error(obj, msg)
     except TestError as error:
         return error
     return TestError("Creating error traceback failed")
@@ -77,7 +98,7 @@ class ReturnValue(Exception):
 
 
 class TestComplete(Exception):
-    """Exception showing that test was completed. Sub-exceptions detail the exit status."""
+    """Exception showing that the test was completed. Sub-exceptions detail the exit status."""
     def __init__(self, *args, **kwargs):
         super(TestComplete, self).__init__(*args, **kwargs)
         self.stdout = StringIO()
@@ -85,26 +106,31 @@ class TestComplete(Exception):
 
 
 class ExternalException(Exception):
-    """Exception thrown by external functions."""
+    """Exception thrown by :class:`cocotb.external` functions."""
     def __init__(self, exception):
         self.exception = exception
 
 
 class TestError(TestComplete):
-    """Exception showing that test was completed with severity Error."""
+    """Exception showing that the test was completed with severity Error."""
     pass
 
 
-class TestFailure(TestComplete):
-    """Exception showing that test was completed with severity Failure."""
+class TestFailure(TestComplete, AssertionError):
+    """Exception showing that the test was completed with severity Failure."""
     pass
 
 
 class TestSuccess(TestComplete):
-    """Exception showing that test was completed successfully."""
+    """Exception showing that the test was completed successfully."""
     pass
 
 
 class SimFailure(TestComplete):
-    """Exception showing that simulator exited unsuccessfully."""
+    """Exception showing that the simulator exited unsuccessfully."""
+    pass
+
+
+class SimTimeoutError(_py_compat.TimeoutError):
+    """Exception for when a timeout, in terms of simulation time, occurs."""
     pass

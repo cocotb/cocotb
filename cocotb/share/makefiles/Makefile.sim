@@ -38,6 +38,10 @@ export SIM_BUILD
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
 
+COCOTB_RESULTS_FILE ?= results.xml
+COCOTB_HDL_TIMEUNIT ?= 1ns
+COCOTB_HDL_TIMEPRECISION ?= 1ps
+
 # Maintain backwards compatibility by supporting upper and lower case SIM variable
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
 
@@ -55,15 +59,6 @@ CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
 include $(COCOTB_SHARE_DIR)/lib/Makefile
 include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 
-ifeq ($(COCOTB_INSTALL_METHOD),srctree)
-  # cocotb is used from the source tree
-  include $(COCOTB_SHARE_DIR)/../../version
-else
-  # cocotb has been installed from a Python package
-  VERSION=$(shell $(PYTHON_BIN) -c 'import pkg_resources; print(pkg_resources.get_distribution("cocotb").version)')
-endif
-export VERSION
-
 # Append directory containing the cocotb Python package to PYTHONPATH
 # XXX: This is only needed if cocotb is not installed into the default
 # Python search path.
@@ -75,11 +70,11 @@ $(SIM_BUILD):
 
 # Regression rule uses Make dependencies to determine whether to run the simulation
 .PHONY: regression
-regression: results.xml
+regression: $(COCOTB_RESULTS_FILE)
 
 # Default sim rule will force a re-run of the simulation (though the cocotb library
 # and RTL compilation phases are still evaluated by makefile dependencies)
 .PHONY: sim
 sim:
-	-@rm -f results.xml
-	$(MAKE) results.xml
+	-@rm -f $(COCOTB_RESULTS_FILE)
+	$(MAKE) $(COCOTB_RESULTS_FILE)
