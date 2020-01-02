@@ -119,7 +119,7 @@ def _initialise_testbench(root_name):
     entities and is ready to run the test.
 
     The test must be defined by the environment variables 
-    :envvar:MODULE` and :envvar:TESTCASE`. 
+    :envvar:`MODULE` and :envvar:`TESTCASE`. 
 
     The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a 
     comma-separated list of modules to be executed before the first test.
