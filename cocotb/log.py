@@ -149,7 +149,7 @@ class SimLogFormatter(logging.Formatter):
 
 class SimColourLogFormatter(SimLogFormatter):
     """Log formatter to provide consistent log message handling."""
-    
+
     loglevel2colour = {
         logging.DEBUG   :       "%s",
         logging.INFO    :       ANSI.COLOR_INFO + "%s" + ANSI.COLOR_DEFAULT,

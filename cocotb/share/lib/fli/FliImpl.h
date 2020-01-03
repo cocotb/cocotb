@@ -308,7 +308,7 @@ public:
                    bool is_const,
                    int acc_type,
                    int acc_full_type,
-                   bool is_var, 
+                   bool is_var,
                    mtiTypeIdT valType,
                    mtiTypeKindT typeKind) :
                        FliValueObjHdl(impl,

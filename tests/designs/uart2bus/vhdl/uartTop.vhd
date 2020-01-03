@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------------
--- uart top level module  
+-- uart top level module
 --
 -----------------------------------------------------------------------------------------
 library ieee;
@@ -24,7 +24,7 @@ entity uartTop is
          -- baud rate configuration register - see baudGen.vhd for details
          baudFreq  : in  std_logic_vector(11 downto 0); -- baud rate setting registers - see header description
          baudLimit : in  std_logic_vector(15 downto 0); -- baud rate setting registers - see header description
-         baudClk   : out std_logic);                    -- 
+         baudClk   : out std_logic);                    --
 end uartTop;
 
 architecture Behavioral of uartTop is

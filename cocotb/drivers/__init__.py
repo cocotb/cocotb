@@ -3,7 +3,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -55,7 +55,7 @@ class BitDriver(object):
         Args:
             generator (generator, optional): Generator yielding data.
                 The generator should yield tuples ``(on, off)``
-                with the number of cycles to be on, 
+                with the number of cycles to be on,
                 followed by the number of cycles to be off.
                 Typically the generator should go on forever.
 
@@ -121,11 +121,11 @@ class Driver(object):
 
         Args:
             transaction (any): The transaction to be sent.
-            callback (callable, optional): Optional function to be called 
+            callback (callable, optional): Optional function to be called
                 when the transaction has been sent.
             event (optional): :class:`~cocotb.triggers.Event` to be set
                 when the transaction has been sent.
-            **kwargs: Any additional arguments used in child class' 
+            **kwargs: Any additional arguments used in child class'
                 :any:`_driver_send` method.
         """
         self._sendQ.append((transaction, callback, event, kwargs))
@@ -152,7 +152,7 @@ class Driver(object):
     def _driver_send(self, transaction, sync=True, **kwargs):
         """Actual implementation of the send.
 
-        Sub-classes should override this method to implement the actual 
+        Sub-classes should override this method to implement the actual
         :meth:`~cocotb.drivers.Driver.send` routine.
 
         Args:
@@ -169,11 +169,11 @@ class Driver(object):
 
         Args:
             transaction (any): The transaction to be sent.
-            callback (callable, optional): Optional function to be called 
+            callback (callable, optional): Optional function to be called
                 when the transaction has been sent.
             event (optional): event to be set when the transaction has been sent.
             sync (bool, optional): Synchronize the transfer by waiting for a rising edge.
-            **kwargs: Any additional arguments used in child class' 
+            **kwargs: Any additional arguments used in child class'
                 :any:`_driver_send` method.
         """
         yield self._driver_send(transaction, sync=sync, **kwargs)
@@ -224,7 +224,7 @@ class BusDriver(Driver):
             see docs for that class for more information.
 
     """
-    
+
     _optional_signals = []
 
     def __init__(self, entity, name, clock, **kwargs):
@@ -257,7 +257,7 @@ class BusDriver(Driver):
     @coroutine
     def _wait_for_signal(self, signal):
         """This method will return when the specified signal
-        has hit logic ``1``. The state will be in the 
+        has hit logic ``1``. The state will be in the
         :class:`~cocotb.triggers.ReadOnly` phase so sim will need
         to move to :class:`~cocotb.triggers.NextTimeStep` before
         registering more callbacks can occur.
@@ -271,7 +271,7 @@ class BusDriver(Driver):
     @coroutine
     def _wait_for_nsignal(self, signal):
         """This method will return when the specified signal
-        has hit logic ``0``. The state will be in the 
+        has hit logic ``0``. The state will be in the
         :class:`~cocotb.triggers.ReadOnly` phase so sim will need
         to move to :class:`~cocotb.triggers.NextTimeStep` before
         registering more callbacks can occur.

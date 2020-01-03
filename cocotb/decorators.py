@@ -350,7 +350,7 @@ class external(object):
 
     This turns a normal function that isn't a coroutine into a blocking coroutine.
     Currently, this creates a new execution thread for each function that is
-    called. 
+    called.
     Scope for this to be streamlined to a queue in future.
     """
     def __init__(self, func):

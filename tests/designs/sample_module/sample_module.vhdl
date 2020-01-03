@@ -127,5 +127,5 @@ isample_module1 : component sample_module_1
   stream_out_data_valid => open
   );
 
-   
+
 end architecture;

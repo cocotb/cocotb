@@ -105,7 +105,7 @@ class RegressionManager(object):
         results_filename = os.getenv('COCOTB_RESULTS_FILE', "results.xml")
         suite_name = os.getenv('RESULT_TESTSUITE', "all")
         package_name = os.getenv('RESULT_TESTPACKAGE', "all")
-        
+
         self.xunit = XUnitReporter(filename=results_filename)
 
         self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
@@ -248,7 +248,7 @@ class RegressionManager(object):
         real_time   = time.time() - test.start_time
         sim_time_ns = get_sim_time('ns') - test.start_sim_time
         ratio_time  = self._safe_divide(sim_time_ns, real_time)
-        
+
         self.xunit.add_testcase(name=test.funcname,
                                 classname=test.module,
                                 time=repr(real_time),
@@ -415,7 +415,7 @@ class RegressionManager(object):
         summary += "*************************************************************************************\n"
 
         self.log.info(summary)
-    
+
     @staticmethod
     def _safe_divide(a, b):
         try:
@@ -425,7 +425,7 @@ class RegressionManager(object):
                 return float('nan')
             else:
                 return float('inf')
-    
+
     def _store_test_result(self, module_name, test_name, result_pass, sim_time, real_time, ratio):
         result = {
             'test'  : '.'.join([module_name, test_name]),

@@ -1,6 +1,6 @@
 # Copyright (c) 2015 Potential Ventures Ltd
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -70,15 +70,15 @@ class OPBMaster(BusDriver):
         """Issue a request to the bus and block until this comes back.
 
         Simulation time still progresses but syntactically it blocks.
-        
+
         Args:
             address (int): The address to read from.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
-            
+
         Returns:
             BinaryValue: The read data value.
-            
+
         Raises:
             OPBException: If read took longer than 16 cycles.
         """
@@ -113,13 +113,13 @@ class OPBMaster(BusDriver):
     @cocotb.coroutine
     def write(self, address, value, sync=True):
         """Issue a write to the given address with the specified value.
-        
+
         Args:
             address (int): The address to read from.
             value (int): The data value to write.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
-            
+
         Raises:
             OPBException: If write took longer than 16 cycles.
         """

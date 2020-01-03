@@ -40,7 +40,7 @@ end;
 
 architecture impl of endian_swapper_mixed is begin
 
-i_swapper_sv : entity work.endian_swapper_sv 
+i_swapper_sv : entity work.endian_swapper_sv
     generic map (
         DATA_BYTES              =>      DATA_BYTES
     ) port map (

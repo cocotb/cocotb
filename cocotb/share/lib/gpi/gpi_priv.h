@@ -164,7 +164,7 @@ protected:
 // value of the signal (which doesn't apply to non signal items in the hierarchy
 class GpiSignalObjHdl : public GpiObjHdl {
 public:
-    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype, bool is_const) : 
+    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype, bool is_const) :
                                                          GpiObjHdl(impl, hdl, objtype, is_const),
                                                          m_length(0) { }
     virtual ~GpiSignalObjHdl() { }
@@ -188,7 +188,7 @@ public:
 
 /* GPI Callback handle */
 // To set a callback it needs the signal to do this on,
-// vpiHandle/vhpiHandleT for instance. The 
+// vpiHandle/vhpiHandleT for instance. The
 class GpiCbHdl : public GpiHdl {
 public:
     GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),

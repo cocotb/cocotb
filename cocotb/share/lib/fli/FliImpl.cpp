@@ -191,7 +191,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
                             }
                             break;
                         default:
-                            new_obj = new FliValueObjHdl(this, hdl, GPI_ARRAY, false, accType, accFullType, is_var, valType, typeKind);// array of (array, Integer, Real, Record, etc.) 
+                            new_obj = new FliValueObjHdl(this, hdl, GPI_ARRAY, false, accType, accFullType, is_var, valType, typeKind);// array of (array, Integer, Real, Record, etc.)
                     }
                 }
                 break;
@@ -661,13 +661,13 @@ FliIterator::FliIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
     }
 
     if (m_iterator == m_currentHandles->end()) {
-        LOG_DEBUG("fli_iterator return NULL for all relationships on %s (%d) kind:%s", 
+        LOG_DEBUG("fli_iterator return NULL for all relationships on %s (%d) kind:%s",
                   m_parent->get_name_str(), type, acc_fetch_type_str(type));
         selected = NULL;
         return;
     }
 
-    LOG_DEBUG("Created iterator working from scope %d", 
+    LOG_DEBUG("Created iterator working from scope %d",
               *one2many);
 }
 

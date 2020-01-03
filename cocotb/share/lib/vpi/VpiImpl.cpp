@@ -261,7 +261,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     }
 
     /* Generate Loops have inconsistent behavior across vpi tools.  A "name"
-     * without an index, i.e. dut.loop vs dut.loop[0], will find a handle to vpiGenScopeArray, 
+     * without an index, i.e. dut.loop vs dut.loop[0], will find a handle to vpiGenScopeArray,
      * but not all tools support iterating over the vpiGenScopeArray.  We don't want to create
      * a GpiObjHdl to this type of vpiHandle.
      *

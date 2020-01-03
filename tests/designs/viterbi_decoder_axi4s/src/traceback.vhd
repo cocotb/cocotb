@@ -71,7 +71,7 @@ begin
 			current_node               <= (others => '0');
 		else
 
-			if m_axis_output_tready = '1' then	
+			if m_axis_output_tready = '1' then
 				m_axis_output_tvalid_int <= '0';
 			end if;
 

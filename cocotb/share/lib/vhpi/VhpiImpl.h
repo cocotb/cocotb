@@ -25,8 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#ifndef COCOTB_VHPI_IMPL_H_ 
-#define COCOTB_VHPI_IMPL_H_ 
+#ifndef COCOTB_VHPI_IMPL_H_
+#define COCOTB_VHPI_IMPL_H_
 
 #include "../gpi/gpi_priv.h"
 #include <vhpi_user.h>
@@ -84,7 +84,7 @@ static inline int __check_vhpi_error(const char *file, const char *func, long li
 
 class VhpiCbHdl : public virtual GpiCbHdl {
 public:
-    VhpiCbHdl(GpiImplInterface *impl); 
+    VhpiCbHdl(GpiImplInterface *impl);
     virtual ~VhpiCbHdl() { }
 
     virtual int arm_callback();

@@ -20,7 +20,7 @@ See ``access_single_bit`` test in :file:`examples/functionality/tests/test_disco
 Waveforms
 ~~~~~~~~~
 
-To get waveforms in VCD format some Verilog code must be added 
+To get waveforms in VCD format some Verilog code must be added
 to the top component as shown in the example below:
 
 .. code-block:: verilog

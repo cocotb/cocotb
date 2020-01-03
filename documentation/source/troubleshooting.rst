@@ -5,7 +5,7 @@ Troubleshooting
 Simulation Hangs
 ================
 
-Did you directly call a function that is decorated as a :class:`~cocotb.coroutine`, 
+Did you directly call a function that is decorated as a :class:`~cocotb.coroutine`,
 i.e. without using :keyword:`await` or :keyword:`yield`?
 
 

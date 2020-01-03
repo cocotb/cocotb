@@ -89,8 +89,8 @@ class Clock(BaseClock):
                 yield low_time
 
     If you also want to change the timing during simulation,
-    use this slightly more inefficient example instead where 
-    the :class:`Timer`\ s inside the while loop are created with 
+    use this slightly more inefficient example instead where
+    the :class:`Timer`\ s inside the while loop are created with
     current delay values:
 
     .. code-block:: python
