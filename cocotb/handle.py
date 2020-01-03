@@ -85,6 +85,8 @@ class SimHandleBase(object):
 
         self._name = simulator.get_name_string(self._handle)
         self._type = simulator.get_type_string(self._handle)
+        self._is_port = simulator.get_is_port(self._handle)
+        self._port_direction_string = simulator.get_port_direction_string(self._handle)
         self._fullname = self._name + "(%s)" % self._type
         self._path = self._name if path is None else path
         self._log = SimLog("cocotb.%s" % self._name)

@@ -48,6 +48,7 @@ public:
         const std::string &name = hdl->get_fullname();
 
         LOG_DEBUG("Checking %s exists", name.c_str());
+        LOG_DEBUG("%s is port: %d, direction %d", name.c_str(), hdl->get_is_port(), hdl->get_port_direction());
 
         it = handle_map.find(name);
         if (it == handle_map.end()) {
@@ -397,7 +398,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
 
         switch (ret) {
             case GpiIterator::NATIVE:
-                LOG_DEBUG("Create a native handle");
+                LOG_DEBUG("Creating a native handle");
                 return CHECK_AND_STORE(next);
             case GpiIterator::NATIVE_NO_NAME:
                 LOG_DEBUG("Unable to fully setup handle, skipping");
@@ -493,6 +494,41 @@ int gpi_is_indexable(gpi_sim_hdl sig_hdl)
     if (obj_hdl->get_indexable())
         return 1;
     return 0;
+}
+
+int gpi_is_port(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    if (obj_hdl->get_is_port())
+        return 1;
+    return 0;
+}
+
+const char *gpi_get_port_direction_str(gpi_port_direction_t port_direction)
+{
+#define CASE_OPTION(_X) \
+    case _X: \
+        ret = #_X; \
+        break
+
+    const char *ret;
+
+    switch (port_direction) {
+        CASE_OPTION(GPI_UNDEFINED);
+        CASE_OPTION(GPI_INPUT);
+        CASE_OPTION(GPI_OUTPUT);
+        CASE_OPTION(GPI_INOUT);
+        default:
+            ret = "unknown";
+    }
+
+    return ret;
+}
+
+gpi_port_direction_t gpi_port_direction(gpi_sim_hdl sig_hdl)
+{
+    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
+    return obj_hdl->get_port_direction();
 }
 
 void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value)

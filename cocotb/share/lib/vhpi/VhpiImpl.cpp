@@ -83,6 +83,26 @@ const char *VhpiImpl::reason_to_string(int reason)
 
 #undef CASE_STR
 
+gpi_port_direction_t to_gpi_port_direction(vhpiIntT vhpitype)
+{
+    switch (vhpitype) {
+        case vhpiInMode:
+            return GPI_INPUT;
+        case vhpiOutMode:
+            return GPI_OUTPUT;
+        case vhpiInoutMode:
+            return GPI_INOUT;
+        case vhpiBufferMode:
+            return GPI_BUFFER;
+        case vhpiLinkageMode:
+            return GPI_LINKAGE;
+
+        default:
+            LOG_DEBUG("Unable to map VHPI type %d onto GPI type", vhpitype);
+            return GPI_UNHANDLED;
+    }
+}
+
 void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
 {
     vhpiTimeT vhpi_time_s;
@@ -383,10 +403,11 @@ GpiObjHdl *VhpiImpl::create_gpi_obj_from_handle(vhpiHandleT new_hdl,
     }
 
 create:
-    LOG_DEBUG("Creating %s of type %d (%s)",
+    LOG_DEBUG("Creating %s of type %d (%s) -- %s",
               vhpi_get_str(vhpiFullCaseNameP, new_hdl),
               gpi_type,
-              vhpi_get_str(vhpiKindStrP, query_hdl));
+              vhpi_get_str(vhpiKindStrP, query_hdl),
+              vhpi_get_str(vhpiKindStrP, new_hdl));
 
     if (gpi_type != GPI_ARRAY && gpi_type != GPI_GENARRAY && gpi_type != GPI_MODULE && gpi_type != GPI_STRUCTURE) {
         if (gpi_type == GPI_REGISTER)
@@ -399,9 +420,19 @@ create:
         new_obj = new VhpiObjHdl(this, new_hdl, gpi_type);
     }
 
-    if (new_obj->initialise(name, fq_name)) {
-        delete new_obj;
-        new_obj = NULL;
+    if (vhpiPortDeclK == vhpi_get(vhpiKindP, new_hdl)) {
+        int dir_raw = vhpi_get(vhpiModeP, new_hdl);
+        gpi_port_direction_t dir = to_gpi_port_direction(dir_raw);
+        LOG_DEBUG("new_obj->initialise: is_port, port_direction=%d", dir);
+        if (new_obj->initialise(name, fq_name, true, dir)) {
+            delete new_obj;
+            new_obj = NULL;
+        }
+    } else {
+        if (new_obj->initialise(name, fq_name)) {
+            delete new_obj;
+            new_obj = NULL;
+        }
     }
 
 out:
