@@ -70,8 +70,14 @@ Notable changes and bug fixes
 - The documentation was cleaned up, improved and extended in various places, making it more consistent and complete.
 - Tab completion in newer versions of IPython is fixed. (:pr:`825`)
 - Python 2.6 is officially not supported any more. cocotb supports Python 2.7 and Python 3.5+.
-- The cocotb GitHub project moved from ``potentialventures/cocotb`` to ``cocotb/cocotb``. 
+- The cocotb GitHub project moved from ``potentialventures/cocotb`` to ``cocotb/cocotb``.
   Redirects for old URLs are in place.
+
+Deprecations
+------------
+- The `bits` argument to :class:`~cocotb.binary.BinaryValue`, which is now called `n_bits`.
+- The `logger` attribute of log objects like ``cocotb.log`` or ``some_coro.log``, which is now just an alias for ``self``.
+- The ``cocotb.utils.get_python_integer_types`` function, which was intended to be private.
 
 Known issues
 ------------
