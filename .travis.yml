@@ -16,6 +16,10 @@ jobs:
   include:
     - stage: PythonLint
       os: linux
+      script: "[[ -z \"$(git ls-files | xargs egrep -l '\\s+$')\" ]]"
+
+    - stage: PythonLint
+      os: linux
       python: 3.5
       install: pip install flake8
       script: flake8
