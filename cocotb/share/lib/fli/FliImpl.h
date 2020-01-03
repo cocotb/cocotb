@@ -255,7 +255,8 @@ public:
 
     virtual int set_signal_value(const long value);
     virtual int set_signal_value(const double value);
-    virtual int set_signal_value(std::string &value);
+    virtual int set_signal_value_binstr(std::string &value);
+    virtual int set_signal_value_str(std::string &value);
 
     virtual void *get_sub_hdl(int index);
 
@@ -333,7 +334,7 @@ public:
     const char* get_signal_value_binstr();
 
     int set_signal_value(const long value);
-    int set_signal_value(std::string &value);
+    int set_signal_value_binstr(std::string &value);
 
     int initialise(std::string &name, std::string &fq_name);
 
@@ -418,7 +419,7 @@ public:
 
     const char* get_signal_value_str();
 
-    int set_signal_value(std::string &value);
+    int set_signal_value_str(std::string &value);
 
     int initialise(std::string &name, std::string &fq_name);
 

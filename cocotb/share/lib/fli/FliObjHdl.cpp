@@ -145,7 +145,13 @@ int FliValueObjHdl::set_signal_value(const long value)
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value(std::string &value)
+int FliValueObjHdl::set_signal_value_binstr(std::string &value)
+{
+    LOG_ERROR("Setting signal/variable value via string not supported for %s of type %d", m_fullname.c_str(), m_type);
+    return -1;
+}
+
+int FliValueObjHdl::set_signal_value_str(std::string &value)
 {
     LOG_ERROR("Setting signal/variable value via string not supported for %s of type %d", m_fullname.c_str(), m_type);
     return -1;
@@ -330,7 +336,7 @@ int FliLogicObjHdl::set_signal_value(const long value)
     return 0;
 }
 
-int FliLogicObjHdl::set_signal_value(std::string &value)
+int FliLogicObjHdl::set_signal_value_binstr(std::string &value)
 {
     if (m_fli_type == MTI_TYPE_ENUM) {
         mtiInt32T enumVal = m_enum_map[value.c_str()[0]];
@@ -501,7 +507,7 @@ const char* FliStringObjHdl::get_signal_value_str()
     return m_val_buff;
 }
 
-int FliStringObjHdl::set_signal_value(std::string &value)
+int FliStringObjHdl::set_signal_value_str(std::string &value)
 {
     strncpy(m_mti_buff, value.c_str(), m_num_elems);
 
