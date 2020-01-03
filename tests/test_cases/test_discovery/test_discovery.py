@@ -370,7 +370,7 @@ def access_boolean(dut):
     if (int(curr_val) == int(output_bool)):
         raise TestFailure("Value did not propogate")
 
-@cocotb.test()
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
 def access_internal_register_array(dut):
     """Test access to an internal register array"""
 
