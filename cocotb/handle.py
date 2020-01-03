@@ -625,7 +625,7 @@ class ModifiableObject(NonConstantObject):
             self._log.critical("Unsupported type for value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
-        simulator.set_signal_val_str(self._handle, value.binstr)
+        simulator.set_signal_val_binstr(self._handle, value.binstr)
 
     @NonConstantObject.value.getter
     def value(self):

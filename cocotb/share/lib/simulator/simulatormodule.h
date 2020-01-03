@@ -63,6 +63,7 @@ static PyObject *get_signal_val_binstr(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_long(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_real(PyObject *self, PyObject *args);
 static PyObject *set_signal_val_str(PyObject *self, PyObject *args);
+static PyObject *set_signal_val_binstr(PyObject *self, PyObject *args);
 static PyObject *get_definition_name(PyObject *self, PyObject *args);
 static PyObject *get_definition_file(PyObject *self, PyObject *args);
 static PyObject *get_handle_by_name(PyObject *self, PyObject *args);
@@ -97,7 +98,8 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_signal_val_binstr", get_signal_val_binstr, METH_VARARGS, "Get the value of a signal as a binary string"},
     {"get_signal_val_real", get_signal_val_real, METH_VARARGS, "Get the value of a signal as a double precision float"},
     {"set_signal_val_long", set_signal_val_long, METH_VARARGS, "Set the value of a signal using a long"},
-    {"set_signal_val_str", set_signal_val_str, METH_VARARGS, "Set the value of a signal using a binary string"},
+    {"set_signal_val_str", set_signal_val_str, METH_VARARGS, "Set the value of a signal using an NUL-terminated 8-bit string"},
+    {"set_signal_val_binstr", set_signal_val_binstr, METH_VARARGS, "Set the value of a signal using a string with a character per bit"},
     {"set_signal_val_real", set_signal_val_real, METH_VARARGS, "Set the value of a signal using a double precision float"},
     {"get_definition_name", get_definition_name, METH_VARARGS, "Get the name of a GPI object's definition"},
     {"get_definition_file", get_definition_file, METH_VARARGS, "Get the file that sources the object's definition"},

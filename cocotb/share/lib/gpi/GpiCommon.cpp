@@ -499,11 +499,18 @@ void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value)
     obj_hdl->set_signal_value(value);
 }
 
+void gpi_set_signal_value_binstr(gpi_sim_hdl sig_hdl, const char *binstr)
+{
+    std::string value = binstr;
+    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    obj_hdl->set_signal_value_binstr(value);
+}
+
 void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str)
 {
     std::string value = str;
     GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
-    obj_hdl->set_signal_value(value);
+    obj_hdl->set_signal_value_str(value);
 }
 
 void gpi_set_signal_value_real(gpi_sim_hdl sig_hdl, double value)

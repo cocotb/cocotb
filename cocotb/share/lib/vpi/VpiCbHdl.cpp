@@ -344,7 +344,7 @@ int VpiSignalObjHdl::set_signal_value(double value)
     return set_signal_value(value_s);
 }
 
-int VpiSignalObjHdl::set_signal_value(std::string &value)
+int VpiSignalObjHdl::set_signal_value_binstr(std::string &value)
 {
     s_vpi_value value_s;
 
@@ -353,6 +353,19 @@ int VpiSignalObjHdl::set_signal_value(std::string &value)
 
     value_s.value.str = &writable[0];
     value_s.format = vpiBinStrVal;
+
+    return set_signal_value(value_s);
+}
+
+int VpiSignalObjHdl::set_signal_value_str(std::string &value)
+{
+    s_vpi_value value_s;
+
+    std::vector<char> writable(value.begin(), value.end());
+    writable.push_back('\0');
+
+    value_s.value.str = &writable[0];
+    value_s.format = vpiStringVal;
 
     return set_signal_value(value_s);
 }
