@@ -379,7 +379,8 @@ class RegressionManager(object):
                 self.log.error("Test error has lead to simulator shutting us "
                                "down", exc_info=exc_info)
                 result_pass = False
-                sim_failed = True
+            # whether we expected it or not, the simulation has failed unrecoverably
+            sim_failed = True
 
         elif test.expect_error:
             if isinstance(result, test.expect_error):
