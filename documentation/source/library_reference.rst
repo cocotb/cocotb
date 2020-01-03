@@ -62,9 +62,14 @@ classes used within ``cocotb``.
 
 .. currentmodule:: cocotb.triggers
 
+.. autoclass:: TriggerHelper
+    :members:
+    :member-order: bysource
+
 .. autoclass:: Trigger
     :members:
     :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: GPITrigger
     :members:
@@ -73,6 +78,7 @@ classes used within ``cocotb``.
 .. autoclass:: Waitable
     :members:
     :member-order: bysource
+    :show-inheritance:
     :private-members:
 
 Testbench Structure

@@ -38,6 +38,8 @@ Signals
 
 .. autoclass:: cocotb.triggers.ClockCycles
 
+.. autoclass:: cocotb.triggers.WaitCondition
+
 
 Timing
 ~~~~~~

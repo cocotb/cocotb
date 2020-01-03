@@ -71,21 +71,17 @@ class AvalonST(BusMonitor):
 
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
-        rdonly = ReadOnly()
 
         def valid():
             if hasattr(self.bus, "ready"):
                 return self.bus.valid.value and self.bus.ready.value
             return self.bus.valid.value
 
-        # NB could yield on valid here more efficiently?
         while True:
-            yield clkedge
-            yield rdonly
-            if valid():
-                vec = self.bus.data.value
-                vec.big_endian = self.config["firstSymbolInHighOrderBits"]
-                self._recv(vec.buff)
+            yield clkedge.do_until(valid)
+            vec = self.bus.data.value
+            vec.big_endian = self.config["firstSymbolInHighOrderBits"]
+            self._recv(vec.buff)
 
 
 class AvalonSTPkts(BusMonitor):

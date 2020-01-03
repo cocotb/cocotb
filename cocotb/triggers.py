@@ -41,7 +41,7 @@ from cocotb.log import SimLog
 from cocotb.result import ReturnValue
 from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,
-    lazy_property,
+    lazy_property, reject_remaining_kwargs
 )
 from cocotb import decorators
 from cocotb import outcomes
@@ -52,7 +52,94 @@ import cocotb
 class TriggerException(Exception):
     pass
 
-class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
+
+class TriggerHelper(object):
+    """
+    A base class with common methods for event type classes.
+
+    .. note::
+        :class:`TriggerHelper` is experimental. Syntax and use of :meth:`until`, :meth:`until_after`,
+        :meth:`do_until` and :meth:`do_until_after` may change in the future.
+    """
+
+    def until(self, condition, readonly=True):
+        """
+        Wait on itself until the condition is met.
+
+        Args:
+            condition (callable): output of ``condition()`` is checked to be equivalent to logic
+                ``True`` for condition to be met. If ``condition()`` output evaluates to ``True``
+                at start no wait on itself is performed.
+            readonly (bool, optional): whether to check ``condition()`` in :class:`ReadOnly` state;
+                defaults to ``True``.
+
+        .. versionaddedexperimental:: 1.3
+        """
+        return WaitCondition(condition, event=self, readonly=readonly, before=False, after=False)
+
+    def until_after(self, condition, readonly=True):
+        """
+        Wait on itself until the condition is met. After condition is met a tail wait on itself
+        is done.
+
+        Typical use case is to check a condition synchronous to a clock edge and then advance to the
+        next clock edge.
+
+        Args:
+            condition (callable): output of ``condition()`` is checked to be equivalent to logic
+                ``True`` for condition to be met. If ``condition()`` returns ``True`` at start just
+                the tail wait on itself will be performed.
+            readonly (bool, optional): whether to check ``condition()`` in :class:`ReadOnly` state;
+                defaults to ``True``. No :class:`ReadOnly` will be done after the tail wait.
+
+        Example:
+
+            Go to begin of next cycle after a ready cycle
+
+            .. code-block:: python3
+
+                yield RisingEdge(clk).until_after(bus.ready)
+
+        .. versionaddedexperimental:: 1.3
+        """
+        return WaitCondition(condition, event=self, readonly=readonly, before=False, after=True)
+
+    def do_until(self, condition, readonly=True):
+        """
+        Wait on itself until the condition is met.
+
+        Args:
+            condition (callable): output of ``condition()`` is checked to be equivalent to logic
+                ``True`` for condition to be met. A wait on itself will de done before first check of
+                ``condition()``.
+            readonly (bool, optional): whether to check ``condition()`` in :class:`ReadOnly` state;
+                defaults to ``True``.
+
+        .. versionaddedexperimental:: 1.3
+        """
+        return WaitCondition(condition, event=self, readonly=readonly, before=True, after=False)
+
+    def do_until_after(self, condition, readonly=True):
+        """
+        Wait on itself until the condition is met. After condition is met a tail wait on itself
+        is done.
+
+        Typical use case is to check a condition after a clock edge and then advance to the
+        next clock edge.
+
+        Args:
+            condition (callable): output of ``condition()`` is checked to be equivalent to logic
+                ``True`` for condition to be met. A wait on itself will de done before first check of
+                ``condition()``.
+            readonly (bool, optional): whether to check ``condition()`` in :class:`ReadOnly` state;
+                defaults to ``True``. No :class:`ReadOnly` will be done after the tail wait.
+
+        .. versionaddedexperimental:: 1.3
+        """
+        return WaitCondition(condition, event=self, readonly=readonly, before=True, after=True)
+
+
+class Trigger(_py_compat.abc_ABC, TriggerHelper):
     """Base class to derive from."""
 
     # __dict__ is needed here for the `.log` lazy_property below to work.
@@ -600,7 +687,7 @@ class Join(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, PythonTrigge
         return self.__class__.__name__ + "(%s)" % self._coroutine.__name__
 
 
-class Waitable(object):
+class Waitable(TriggerHelper):
     """
     Compatibility layer that emulates `collections.abc.Awaitable`.
 
@@ -767,6 +854,78 @@ class ClockCycles(Waitable):
         for _ in range(self.num_cycles):
             yield trigger
         raise ReturnValue(self)
+
+
+class WaitCondition(Waitable):
+    """
+    Wait until a given condition is True state.
+
+    Normally this class won't be used directly but through :meth:`TriggerHelper.until`,
+    :meth:`TriggerHelper.until_after`, :meth:`TriggerHelper.do_until` and
+    :meth:`TriggerHelper.do_until_after`
+
+    Args:
+        condition (callable): Output of ``condition()`` is checked to be equivalent to logic
+            ``True`` for condition to be met.
+        event (Trigger or Waitable, optional): event after which to check the condition; defaults to
+            :class:`NextTimeStep`.
+        readonly (bool, optional): whether to do check in :class:`ReadOnly` state;
+            defaults to ``True``.
+        before (bool, optional): whether to do the event once before doing first check;
+            defaults to ``False``.
+        after (bool, optional): whether to wait for an extra event after condition
+            is met; defaults to ``False``.
+
+    Examples:
+
+        Wait for ack on a synchronous bus
+
+        .. code-block:: python
+
+            yield WaitCondition(
+                lambda: bus.cycle.integer and bus.ack.integer,
+                event=RisingEdge(dut.clk)
+            )
+
+        Wait for asynchronous ack
+
+        .. code-block:: python
+
+            yield WaitCondition(lambda: bus.ack.integer, Edge(bus.ack))
+
+    .. note::
+        :class:`WaitCondition` is experimental. Syntax and use may change in the future.
+    """
+    def __init__(self, condition, **kwargs):
+        self.condition = condition
+        self.event = kwargs.pop('event', NextTimeStep())
+        self.readonly = kwargs.pop('readonly', True)
+        self.before = kwargs.pop('before', False)
+        self.after = kwargs.pop('after', False)
+        reject_remaining_kwargs('WaitCondition.__init__', kwargs)
+
+        if not isinstance(self.event, (Trigger, Waitable)):
+            raise ValueError("event has to be a Trigger or Waitable object")
+
+    @decorators.coroutine
+    def _wait(self):
+        if self.before:
+            yield self.event
+        while True:
+            if self.readonly:
+                yield ReadOnly()
+            if self.condition():
+                break
+            yield self.event
+        if self.after:
+            yield self.event
+
+        raise ReturnValue(self.event)
+
+    def __repr__(self):
+        return '{}({!r}, event={!r}, readonly={!r}, before={!r}, after={!r})'.format(
+            self.__class__.__name__, self.event, self.readonly, self.before, self.after
+        )
 
 
 @decorators.coroutine

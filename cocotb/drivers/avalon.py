@@ -149,9 +149,13 @@ class AvalonMaster(AvalonMM):
         if hasattr(self.bus, "cs"):
             self.bus.cs <= 1
 
-        # Wait for waitrequest to be low
-        if hasattr(self.bus, "waitrequest"):
-            yield self._wait_for_nsignal(self.bus.waitrequest)
+        # Wait for waitrequest to be low if the bus has that signal
+        try:
+            handle = self.bus.waitrequest
+        except AttributeError:
+            pass
+        else:
+            yield FallingEdge(handle).until(lambda: not handle.value.integer)
         yield RisingEdge(self.clock)
 
         # Deassert read
@@ -164,17 +168,15 @@ class AvalonMaster(AvalonMM):
         v.binstr = "x" * len(self.bus.address)
         self.bus.address <= v
 
-        if hasattr(self.bus, "readdatavalid"):
-            while True:
-                yield ReadOnly()
-                if int(self.bus.readdatavalid):
-                    break
-                yield RisingEdge(self.clock)
-        else:
+        try:
+            handle = self.bus.readdatavalid
+        except AttributeError:
             # Assume readLatency = 1 if no readdatavalid
             # FIXME need to configure this,
             # should take a dictionary of Avalon properties.
             yield ReadOnly()
+        else:
+            yield RisingEdge(self.clock).until(lambda: handle.value.integer)
 
         # Get the data
         data = self.bus.readdata.value
@@ -211,8 +213,12 @@ class AvalonMaster(AvalonMM):
             self.bus.cs <= 1
 
         # Wait for waitrequest to be low
-        if hasattr(self.bus, "waitrequest"):
-            count = yield self._wait_for_nsignal(self.bus.waitrequest)
+        try:
+            handle = self.bus.waitrequest
+        except AttributeError:
+            pass
+        else:
+            yield RisingEdge(self.clock).until(lambda: not handle.value.integer)
 
         # Deassert write
         yield RisingEdge(self.clock)
