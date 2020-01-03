@@ -243,7 +243,8 @@ public:
 
     int set_signal_value(long value) override;
     int set_signal_value(double value) override;
-    int set_signal_value(std::string &value) override;
+    int set_signal_value_binstr(std::string &value) override;
+    int set_signal_value_str(std::string &value) override;
 
     void *get_sub_hdl(int index);
 
@@ -322,7 +323,7 @@ public:
 
     using FliValueObjHdl::set_signal_value;
     int set_signal_value(long value) override;
-    int set_signal_value(std::string &value) override;
+    int set_signal_value_binstr(std::string &value) override;
 
     int initialise(std::string &name, std::string &fq_name) override;
 
@@ -409,7 +410,7 @@ public:
     const char* get_signal_value_str() override;
 
     using FliValueObjHdl::set_signal_value;
-    int set_signal_value(std::string &value) override;
+    int set_signal_value_str(std::string &value) override;
 
     int initialise(std::string &name, std::string &fq_name) override;
 

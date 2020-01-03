@@ -197,7 +197,8 @@ int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 // Functions for setting the properties of a handle
 void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value);
 void gpi_set_signal_value_long(gpi_sim_hdl gpi_hdl, long value);
-void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
+void gpi_set_signal_value_binstr(gpi_sim_hdl gpi_hdl, const char *str); // String of binary char(s) [1, 0, x, z]
+void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of ASCII char(s)
 
 typedef enum gpi_edge {
     GPI_RISING = 1,

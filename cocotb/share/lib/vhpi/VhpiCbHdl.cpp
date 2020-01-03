@@ -507,7 +507,7 @@ int VhpiLogicSignalObjHdl::set_signal_value(long value)
     return 0;
 }
 
-int VhpiLogicSignalObjHdl::set_signal_value(std::string &value)
+int VhpiLogicSignalObjHdl::set_signal_value_binstr(std::string &value)
 {
     switch (m_value.format) {
         case vhpiEnumVal:
@@ -639,7 +639,7 @@ int VhpiSignalObjHdl::set_signal_value(double value)
     return 0;
 }
 
-int VhpiSignalObjHdl::set_signal_value(std::string &value)
+int VhpiSignalObjHdl::set_signal_value_binstr(std::string &value)
 {
     switch (m_value.format) {
         case vhpiEnumVal:
@@ -669,6 +669,25 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
 
             break;
         }
+
+        default: {
+            LOG_ERROR("VHPI: Unable to handle this format type %s",
+                      ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
+            return -1;
+        }
+    }
+
+    if (vhpi_put_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value, vhpiDepositPropagate)) {
+        check_vhpi_error();
+        return -1;
+    }
+
+    return 0;
+}
+
+int VhpiSignalObjHdl::set_signal_value_str(std::string &value)
+{
+    switch (m_value.format) {
 
         case vhpiStrVal: {
             std::vector<char> writable(value.begin(), value.end());

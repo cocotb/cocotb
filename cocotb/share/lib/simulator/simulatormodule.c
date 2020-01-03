@@ -648,8 +648,7 @@ static PyObject *get_signal_val_long(PyObject *self, PyObject *args)
     return retval;
 }
 
-
-static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
+static PyObject *set_signal_val_binstr(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
@@ -660,7 +659,24 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    gpi_set_signal_value_str(hdl, binstr);
+    gpi_set_signal_value_binstr(hdl, binstr);
+    res = Py_BuildValue("s", "OK!");
+
+    return res;
+}
+
+static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
+{
+    COCOTB_UNUSED(self);
+    gpi_sim_hdl hdl;
+    const char *str;
+    PyObject *res;
+
+    if (!PyArg_ParseTuple(args, "O&s", gpi_sim_hdl_converter, &hdl, &str)) {
+        return NULL;
+    }
+
+    gpi_set_signal_value_str(hdl, str);
     res = Py_BuildValue("s", "OK!");
 
     return res;
