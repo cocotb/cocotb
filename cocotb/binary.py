@@ -29,27 +29,61 @@
 
 import os
 import random
+import re
 import warnings
 
+
+_RESOLVE_TO_0      = "-lL"
+_RESOLVE_TO_1      = "hH"
+_RESOLVE_TO_CHOICE = "xXzZuUwW"
 resolve_x_to = os.getenv('COCOTB_RESOLVE_X', "VALUE_ERROR")
 
 
-def resolve(string):
-    for char in BinaryValue._resolve_to_0:
-        string = string.replace(char, "0")
-    for char in BinaryValue._resolve_to_1:
-        string = string.replace(char, "1")
-    for char in BinaryValue._resolve_to_error:
-        if resolve_x_to == "VALUE_ERROR" and char in string:
-            raise ValueError("Unable to resolve to binary >%s<" % string)
+class _ResolveTable(dict):
+    """Translation table class for resolving binary strings.
+
+    For use with :func:`str.translate()`, which indexes into table with Unicode ordinals.
+    """
+    def __init__(self):
+        self.update({ord("0"): ord("0"), ord("1"): ord("1")})
+        self.update({ord(k): ord("0") for k in _RESOLVE_TO_0})
+        self.update({ord(k): ord("1") for k in _RESOLVE_TO_1})
+
+        # Do not resolve if resolve_x_to is not set to one of the supported values
+        def no_resolve(key):
+            return key
+        self.resolve_x = no_resolve
+
+        if resolve_x_to == "VALUE_ERROR":
+            def resolve_error(key):
+                raise ValueError("Unresolvable bit in binary string: '{}'".format(chr(key)))
+            self.resolve_x = resolve_error
         elif resolve_x_to == "ZEROS":
-            string = string.replace(char, "0")
+            self.update({ord(k): ord("0") for k in _RESOLVE_TO_CHOICE})
         elif resolve_x_to == "ONES":
-            string = string.replace(char, "1")
+            self.update({ord(k): ord("1") for k in _RESOLVE_TO_CHOICE})
         elif resolve_x_to == "RANDOM":
-            bits = "{0:b}".format(random.getrandbits(1))
-            string = string.replace(char, bits)
-    return string
+            def resolve_random(key):
+                # convert to correct Unicode ordinal:
+                # ord('0') = 48
+                # ord('1') = 49
+                return random.getrandbits(1) + 48
+            self.resolve_x = resolve_random
+
+        self._resolve_to_choice = {ord(c) for c in _RESOLVE_TO_CHOICE}
+
+    def __missing__(self, key):
+        if key in self._resolve_to_choice:
+            return self.resolve_x(key)
+        else:
+            return key
+
+
+_resolve_table = _ResolveTable()
+
+
+def resolve(string):
+    return string.translate(_resolve_table)
 
 
 def _clog2(val):
@@ -89,10 +123,7 @@ class BinaryValue:
     b'*'
 
     """
-    _resolve_to_0     = "-lL"  # noqa
-    _resolve_to_1     = "hH"  # noqa
-    _resolve_to_error = "xXzZuUwW"  # Resolve to a ValueError() since these usually mean something is wrong
-    _permitted_chars  = _resolve_to_0 +_resolve_to_1 + _resolve_to_error + "01"  # noqa
+    _permitted_chars  = _RESOLVE_TO_0 +_RESOLVE_TO_1 + _RESOLVE_TO_CHOICE + "01"  # noqa
 
     def __init__(self, value=None, n_bits=None, bigEndian=True,
                  binaryRepresentation=BinaryRepresentation.UNSIGNED,
@@ -197,10 +228,10 @@ class BinaryValue:
         return binstr
 
     def _convert_from_unsigned(self, x):
-        return int(resolve(x), 2)
+        return int(x.translate(_resolve_table), 2)
 
     def _convert_from_signed_mag(self, x):
-        rv = int(resolve(self._str[1:]), 2)
+        rv = int(self._str[1:].translate(_resolve_table), 2)
         if self._str[0] == '1':
             rv = rv * -1
         return rv
@@ -213,7 +244,7 @@ class BinaryValue:
             if x[0] == '1':
                 rv = rv * -1
         else:
-            rv = int(resolve(x), 2)
+            rv = int(x.translate(_resolve_table), 2)
         return rv
 
     def _invert(self, x):
@@ -312,7 +343,7 @@ class BinaryValue:
     @property
     def signed_integer(self):
         """The signed integer representation of the underlying vector."""
-        ival = int(resolve(self._str), 2)
+        ival = int(self._str.translate(_resolve_table), 2)
         bits = len(self._str)
         signbit = (1 << (bits - 1))
         if (ival & signbit) == 0:
@@ -337,7 +368,7 @@ class BinaryValue:
         This is similar to the SystemVerilog Assertion ``$isunknown`` system function
         or the VHDL function ``is_x`` (with an inverted meaning).
         """
-        return not any(char in self._str for char in BinaryValue._resolve_to_error)
+        return not any(char in self._str for char in _RESOLVE_TO_CHOICE)
 
     @property
     def buff(self) -> bytes:
@@ -351,7 +382,7 @@ class BinaryValue:
             Note that for older versions used with Python 2 these types were
             indistinguishable.
         """
-        bits = resolve(self._str)
+        bits = self._str.translate(_resolve_table)
 
         if len(bits) % 8:
             bits = "0" * (8 - len(bits) % 8) + bits
