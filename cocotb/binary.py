@@ -157,17 +157,9 @@ class BinaryValue:
 
         self._n_bits = n_bits
 
-        self._convert_to = {
-            BinaryRepresentation.UNSIGNED         : self._convert_to_unsigned   ,
-            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_to_signed_mag ,
-            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_to_twos_comp  ,
-        }
+        self._convert_to = self._convert_to_map[self.binaryRepresentation].__get__(self, self.__class__)
 
-        self._convert_from = {
-            BinaryRepresentation.UNSIGNED         : self._convert_from_unsigned   ,
-            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_from_signed_mag ,
-            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_from_twos_comp  ,
-        }
+        self._convert_from = self._convert_from_map[self.binaryRepresentation].__get__(self, self.__class__)
 
         if value is not None:
             self.assign(value)
@@ -247,6 +239,18 @@ class BinaryValue:
             rv = int(x.translate(_resolve_table), 2)
         return rv
 
+    _convert_to_map = {
+        BinaryRepresentation.UNSIGNED         : _convert_to_unsigned,
+        BinaryRepresentation.SIGNED_MAGNITUDE : _convert_to_signed_mag,
+        BinaryRepresentation.TWOS_COMPLEMENT  : _convert_to_twos_comp,
+    }
+
+    _convert_from_map = {
+        BinaryRepresentation.UNSIGNED         : _convert_from_unsigned,
+        BinaryRepresentation.SIGNED_MAGNITUDE : _convert_from_signed_mag,
+        BinaryRepresentation.TWOS_COMPLEMENT  : _convert_from_twos_comp,
+    }
+
     def _invert(self, x):
         inverted = ''
         for bit in x:
@@ -322,11 +326,11 @@ class BinaryValue:
     @property
     def integer(self):
         """The integer representation of the underlying vector."""
-        return self._convert_from[self.binaryRepresentation](self._str)
+        return self._convert_from(self._str)
 
     @integer.setter
     def integer(self, val):
-        self._str = self._convert_to[self.binaryRepresentation](val)
+        self._str = self._convert_to(val)
 
     @property
     def value(self):
