@@ -448,6 +448,9 @@ class BinaryValue:
     get_binstr = binstr.fget
     set_binstr = binstr.fset
 
+    def _set_trusted_binstr(self, string):
+        self._str = string
+
     @property
     def n_bits(self):
         """The number of bits of the binary value."""
