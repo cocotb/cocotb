@@ -745,7 +745,9 @@ class ModifiableObject(NonConstantObject):
     @NonConstantObject.value.getter
     def value(self) -> BinaryValue:
         binstr = self._handle.get_signal_val_binstr()
-        result = BinaryValue(binstr, len(binstr))
+        # Skip BinaryValue.assign() as we know we are using a binstr
+        result = BinaryValue(n_bits=len(binstr))
+        result.binstr = binstr
         return result
 
     def __int__(self):
