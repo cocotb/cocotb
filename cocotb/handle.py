@@ -747,7 +747,8 @@ class ModifiableObject(NonConstantObject):
         binstr = self._handle.get_signal_val_binstr()
         # Skip BinaryValue.assign() as we know we are using a binstr
         result = BinaryValue(n_bits=len(binstr))
-        result.binstr = binstr
+        # Skip the permitted characters check as we trust the simulator
+        result._set_trusted_binstr(binstr)
         return result
 
     def __int__(self):
