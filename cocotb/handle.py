@@ -405,14 +405,7 @@ class NonHierarchyObject(SimHandleBase):
     @property
     def value(self):
         "A reference to the value"
-        if type(self) is NonHierarchyIndexableObject:
-            # need to iterate over the sub-object
-            result = []
-            for x in range(len(self)):
-                result.append(self[x].value)
-            return result
-        else:
-            raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
+        raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
 
     def setimmediatevalue(self, value):
         raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
@@ -548,6 +541,14 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
             while left <= right:
                 yield left
                 left = left + 1
+
+    @NonHierarchyObject.value.getter
+    def value(self):
+        # need to iterate over the sub-object
+        result = []
+        for x in range(len(self)):
+            result.append(self[x].value)
+        return result
 
 
 class _SimIterator(collections_abc.Iterator):
