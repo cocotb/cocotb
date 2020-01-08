@@ -4,8 +4,10 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
-cocotb 1.3
-==========
+cocotb 1.3.0
+============
+
+Released on 08 January 2020
 
 This will likely be the last release to support Python 2.7.
 
