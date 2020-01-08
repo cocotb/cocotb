@@ -233,8 +233,7 @@ class BinaryValue:
             binstr = x[1:]
             binstr = self._invert(binstr)
             rv = int(binstr, 2) + 1
-            if x[0] == '1':
-                rv = rv * -1
+            rv = rv * -1
         else:
             rv = int(x.translate(_resolve_table), 2)
         return rv
@@ -251,16 +250,10 @@ class BinaryValue:
         BinaryRepresentation.TWOS_COMPLEMENT  : _convert_from_twos_comp,
     }
 
+    _invert_table = str.maketrans({'0': '1', '1': '0'})
+
     def _invert(self, x):
-        inverted = ''
-        for bit in x:
-            if bit == '0':
-                inverted = inverted + '1'
-            elif bit == '1':
-                inverted = inverted + '0'
-            else:
-                inverted = inverted + bit
-        return inverted
+        return x.translate(self._invert_table)
 
     def _adjust_unsigned(self, x):
         if self._n_bits is None:
@@ -404,12 +397,9 @@ class BinaryValue:
 
     @buff.setter
     def buff(self, val: bytes):
-        self._str = ""
-        for char in val:
-            if self.big_endian:
-                self._str += "{0:08b}".format(char)
-            else:
-                self._str = "{0:08b}".format(char) + self._str
+        if not self.big_endian:
+            val = reversed(val)
+        self._str = ''.join([format(char, "08b") for char in val])
         self._adjust()
 
     def _adjust(self):
@@ -436,12 +426,14 @@ class BinaryValue:
         """ The binary representation stored as a string of ``0``, ``1``, and possibly ``x``, ``z``, and other states. """
         return self._str
 
+    _non_permitted_regex = re.compile("[^{}]".format(_permitted_chars))
+
     @binstr.setter
     def binstr(self, string):
-        for char in string:
-            if char not in BinaryValue._permitted_chars:
-                raise ValueError("Attempting to assign character %s to a %s" %
-                                 (char, type(self).__qualname__))
+        match = self._non_permitted_regex.search(string)
+        if match:
+            raise ValueError("Attempting to assign character %s to a %s" %
+                             (match.group(), self.__class__.__name__))
         self._str = string
         self._adjust()
 
