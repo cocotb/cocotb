@@ -439,7 +439,7 @@ class NonHierarchyObject(SimHandleBase):
             return SimHandleBase.__ne__(self, other)
         return self.value != other
 
-    # Re-define hash because Python 3 has issues when using the above property
+    # Re-define hash because we defined __eq__
     def __hash__(self):
         return SimHandleBase.__hash__(self)
 
