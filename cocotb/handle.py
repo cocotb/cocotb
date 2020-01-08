@@ -259,7 +259,8 @@ class HierarchyObject(RegionObject):
                     sub[idx] = value[idx]
                 return
             else:
-                return sub._setcachedvalue(value)
+                sub.value = value
+                return
         if name in self._compat_mapping:
             return SimHandleBase.__setattr__(self, name, value)
         raise AttributeError("Attempt to access %s which isn't present in %s" %(
@@ -401,12 +402,14 @@ class NonHierarchyObject(SimHandleBase):
     def __iter__(self):
         return iter(())
 
-    def _getvalue(self):
+    @property
+    def value(self):
+        "A reference to the value"
         if type(self) is NonHierarchyIndexableObject:
             # need to iterate over the sub-object
             result = []
             for x in range(len(self)):
-                result.append(self[x]._getvalue())
+                result.append(self[x].value)
             return result
         else:
             raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
@@ -414,7 +417,8 @@ class NonHierarchyObject(SimHandleBase):
     def setimmediatevalue(self, value):
         raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
 
-    def _setcachedvalue(self, value):
+    @value.setter
+    def value(self, value):
         raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
 
     def __le__(self, value):
@@ -441,12 +445,6 @@ class NonHierarchyObject(SimHandleBase):
         if isinstance(other, SimHandleBase):
             return SimHandleBase.__ne__(self, other)
         return self.value != other
-
-    # We want to maintain compatibility with python 2.5 so we can't use @property with a setter
-    value = property(fget=lambda self: self._getvalue(),
-                     fset=lambda self, v: self._setcachedvalue(v),
-                     fdel=None,
-                     doc="A reference to the value")
 
     # Re-define hash because Python 3 has issues when using the above property
     def __hash__(self):
@@ -489,7 +487,8 @@ class ConstantObject(NonHierarchyObject):
     def __float__(self):
         return float(self.value)
 
-    def _getvalue(self):
+    @NonHierarchyObject.value.getter
+    def value(self):
         return self._value
 
     def __str__(self):
@@ -627,12 +626,14 @@ class ModifiableObject(NonConstantObject):
 
         simulator.set_signal_val_str(self._handle, value.binstr)
 
-    def _getvalue(self):
+    @NonConstantObject.value.getter
+    def value(self):
         binstr = simulator.get_signal_val_binstr(self._handle)
         result = BinaryValue(binstr, len(binstr))
         return result
 
-    def _setcachedvalue(self, value):
+    @value.setter
+    def value(self, value):
         """Intercept the store of a value and hold in cache.
 
         This operation is to enable all of the scheduled callbacks to complete
@@ -673,7 +674,8 @@ class RealObject(ModifiableObject):
 
         simulator.set_signal_val_real(self._handle, value)
 
-    def _getvalue(self):
+    @ModifiableObject.value.getter
+    def value(self):
         return simulator.get_signal_val_real(self._handle)
 
     def __float__(self):
@@ -704,7 +706,8 @@ class EnumObject(ModifiableObject):
 
         simulator.set_signal_val_long(self._handle, value)
 
-    def _getvalue(self):
+    @ModifiableObject.value.getter
+    def value(self):
         return simulator.get_signal_val_long(self._handle)
 
 
@@ -732,7 +735,8 @@ class IntegerObject(ModifiableObject):
 
         simulator.set_signal_val_long(self._handle, value)
 
-    def _getvalue(self):
+    @ModifiableObject.value.getter
+    def value(self):
         return simulator.get_signal_val_long(self._handle)
 
 
@@ -758,7 +762,8 @@ class StringObject(ModifiableObject):
 
         simulator.set_signal_val_str(self._handle, value)
 
-    def _getvalue(self):
+    @ModifiableObject.value.getter
+    def value(self):
         return simulator.get_signal_val_str(self._handle)
 
 _handle2obj = {}
