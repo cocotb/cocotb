@@ -48,8 +48,8 @@ Other news
 
 - cocotb is now packaged for Fedora Linux and available as `python-cocotb <https://apps.fedoraproject.org/packages/python-cocotb>`_. (`Fedora bug #1747574 <https://bugzilla.redhat.com/show_bug.cgi?id=1747574>`_) (thanks Ben Rosser)
 
-cocotb 1.2
-==========
+cocotb 1.2.0
+============
 
 Released on 24 July 2019
 
