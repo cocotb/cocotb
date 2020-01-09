@@ -31,7 +31,7 @@ Make Variables
 
 .. make:var:: SIM
 
-      Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/makefile.$(SIM)`
+      Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/simulators/makefile.$(SIM)`
 
 .. make:var:: WAVES
 
