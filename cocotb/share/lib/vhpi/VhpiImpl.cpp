@@ -500,7 +500,7 @@ GpiObjHdl *VhpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     }
 
     /* Generate Loops have inconsistent behavior across vhpi.  A "name"
-     * without an index, i.e. dut.loop vs dut.loop(0), may or may not map to 
+     * without an index, i.e. dut.loop vs dut.loop(0), may or may not map to
      * to the start index.  If it doesn't then it won't find anything.
      *
      * If this unique case is hit, we need to create the Pseudo-region, with the handle

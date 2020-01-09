@@ -118,10 +118,10 @@ def _initialise_testbench(root_name):
     This function is called after the simulator has elaborated all
     entities and is ready to run the test.
 
-    The test must be defined by the environment variables 
-    :envvar:`MODULE` and :envvar:`TESTCASE`. 
+    The test must be defined by the environment variables
+    :envvar:`MODULE` and :envvar:`TESTCASE`.
 
-    The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a 
+    The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
     comma-separated list of modules to be executed before the first test.
     """
     _rlock.acquire()

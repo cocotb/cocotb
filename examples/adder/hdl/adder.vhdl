@@ -16,9 +16,9 @@ end adder;
 architecture RTL of adder is
 begin
 
-    process(A, B)   
+    process(A, B)
     begin
-	  X <= resize(A, X'length) + B; 
-    end process;	
+	  X <= resize(A, X'length) + B;
+    end process;
 
-end RTL; 
+end RTL;

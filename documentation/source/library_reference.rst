@@ -288,8 +288,8 @@ The Scheduler
 -------------
 
 .. note::
-    The scheduler object should generally not be interacted with directly - 
-    the only part of it that a user will need is encapsulated in :func:`~cocotb.fork`, 
+    The scheduler object should generally not be interacted with directly -
+    the only part of it that a user will need is encapsulated in :func:`~cocotb.fork`,
     everything else works behind the scenes.
 
 .. currentmodule:: cocotb.scheduler

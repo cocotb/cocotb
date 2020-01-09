@@ -126,7 +126,7 @@ always @(posedge clk or negedge reset_n) begin
 
             if (!byteswapping)
                 stream_out_data      <= stream_in_data;
-            else 
+            else
                 stream_out_data      <= byteswap(stream_in_data);
 
             if (stream_in_startofpacket && stream_in_valid) begin

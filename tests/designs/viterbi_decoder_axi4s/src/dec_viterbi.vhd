@@ -177,7 +177,7 @@ begin
 			s_axis_input_tdata   => input,
 			s_axis_input_tlast   => buffer_tlast,
 			s_axis_input_tready  => branch_tready(i),
-	
+
 			m_axis_output_tvalid => branch_tvalid(i),
 			m_axis_output_tdata  => branch_tdata(i),
 			m_axis_output_tlast  => branch_tlast(i),
@@ -214,16 +214,16 @@ begin
 			s_axis_inbranch_tdata_high => inbranch_tdata_high,
 			s_axis_inbranch_tlast      => branch_tlast(0),
 			s_axis_inbranch_tready     => acs_tready(i),
-	
+
 			s_axis_inprev_tvalid     => '1',
 			s_axis_inprev_tdata_low  => inprev_tdata_low,
 			s_axis_inprev_tdata_high => inprev_tdata_high,
 			s_axis_inprev_tready     => open,
-	
+
 			m_axis_outprob_tvalid  => open,
 			m_axis_outprob_tdata   => acs_prob_tdata(i),
 			m_axis_outprob_tready  => '1',
-	
+
 			m_axis_outdec_tvalid   => acs_tvalid(i),
 			m_axis_outdec_tdata    => acs_dec_tdata(i),
 			m_axis_outdec_tlast    => acs_tlast(i),
@@ -265,14 +265,14 @@ begin
 		port map(
 			clk => clk,
 			rst => rst,
-	
+
 			s_axis_input_tvalid       => ram_tvalid(i),
 			s_axis_input_tdata        => ram_tdata(i),
 			s_axis_input_tlast        => ram_tlast(i),
 			s_axis_input_tready       => traceback_tready(i),
 			s_axis_input_window_tuser => ram_window_tuser(i),
 			s_axis_input_last_tuser   => ram_last_tuser(i),
-	
+
 			m_axis_output_tvalid     => traceback_tvalid(i),
 			m_axis_output_tdata      => traceback_tdata(i),
 			m_axis_output_tlast      => traceback_tlast(i),
@@ -292,13 +292,13 @@ begin
 		port map(
 			clk => clk,
 			rst => rst,
-	
+
 			s_axis_input_tvalid     => traceback_tvalid(i),
 			s_axis_input_tdata      => traceback_tdata(i),
 			s_axis_input_tlast      => traceback_tlast(i),
 			s_axis_input_last_tuser => traceback_last_tuser(i),
 			s_axis_input_tready     => reorder_tready(i),
-	
+
 			m_axis_output_tvalid     => reorder_tvalid(i),
 			m_axis_output_tdata      => reorder_tdata(i),
 			m_axis_output_tlast      => reorder_tlast(i),
@@ -322,12 +322,12 @@ begin
 		port map(
 			clk => clk,
 			rst => rst,
-	
+
 			s_axis_input_tvalid     => reorder_recursion_tvalid,
 			s_axis_input_tdata      => reorder_recursion_tdata,
 			s_axis_input_tlast      => reorder_recursion_tlast,
 			s_axis_input_tready     => recursion_tready,
-	
+
 			m_axis_output_tvalid     => m_axis_output_tvalid,
 			m_axis_output_tdata      => m_axis_output_tdata,
 			m_axis_output_tlast      => m_axis_output_tlast,

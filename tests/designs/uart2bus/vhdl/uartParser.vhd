@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------------
--- uart parser module  
+-- uart parser module
 --
 -----------------------------------------------------------------------------------------
 library ieee;
@@ -7,9 +7,9 @@ use ieee.std_logic_1164.ALL;
 use ieee.std_logic_unsigned.ALL;
 
 entity uartParser is
-  generic ( -- parameters 
+  generic ( -- parameters
             AW : integer := 8);
-  port ( -- global signals 
+  port ( -- global signals
          clr        : in  std_logic;                         -- global reset input
          clk        : in  std_logic;                         -- global clock input
 	 -- transmit and receive internal interface signals from uart interface
@@ -18,9 +18,9 @@ entity uartParser is
          newRxData  : in  std_logic;                         -- signs that a new byte was received
          txData     : out std_logic_vector(7 downto 0);      -- data byte to transmit
          newTxData  : out std_logic;                         -- asserted to indicate that there is a new data byte for transmission
-	 -- internal bus to register file 
-         intReq     : out std_logic;                         -- 
-         intGnt     : in  std_logic;                         -- 
+	 -- internal bus to register file
+         intReq     : out std_logic;                         --
+         intGnt     : in  std_logic;                         --
          intRdData  : in  std_logic_vector(7 downto 0);      -- data read from register file
          intAddress : out std_logic_vector(AW - 1 downto 0); -- address bus to register file
          intWrData  : out std_logic_vector(7 downto 0);      -- write data to register file
@@ -30,7 +30,7 @@ end uartParser;
 
 architecture Behavioral of uartParser is
 
-  -- internal constants 
+  -- internal constants
   -- main (receive) state machine states
   signal   mainSm         : std_logic_vector(3 downto 0); -- main state machine
   constant mainIdle       : std_logic_vector(mainSm'range) := "0000";
@@ -45,7 +45,7 @@ architecture Behavioral of uartParser is
   constant mainBinAdrl    : std_logic_vector(mainSm'range) := "1010";
   constant mainBinLen     : std_logic_vector(mainSm'range) := "1011";
   constant mainBinData    : std_logic_vector(mainSm'range) := "1100";
-  
+
   -- transmit state machine
   signal   txSm           : std_logic_vector(2 downto 0); -- transmit state machine
   constant txIdle         : std_logic_vector(txSm'range) := "000";
@@ -91,7 +91,7 @@ architecture Behavioral of uartParser is
   constant binCmdNop      : std_logic_vector(1 downto 0) := "00";
   constant binCmdRead     : std_logic_vector(1 downto 0) := "01";
   constant binCmdWrite    : std_logic_vector(1 downto 0) := "10";
-  
+
   signal   dataInHexRange : std_logic;                          -- indicates that the received data is in the range of hex number
   signal   binLastByte    : std_logic;                          -- last byte flag indicates that the current byte in the command is the last
   signal   txEndP         : std_logic;                          -- transmission end pulse
@@ -106,14 +106,14 @@ architecture Behavioral of uartParser is
   signal   addrParam      : std_logic_vector(15 downto 0);      -- operation address parameter
   signal   addrNibble     : std_logic_vector(3 downto 0);       -- data nibble from received character
   signal   binByteCount   : std_logic_vector(7 downto 0);       -- binary mode byte counter
-  signal   iIntAddress    : std_logic_vector(intAddress'range); -- 
-  signal   iWriteReq      : std_logic;                          -- 
-  signal   iIntWrite      : std_logic;                          -- 
+  signal   iIntAddress    : std_logic_vector(intAddress'range); --
+  signal   iWriteReq      : std_logic;                          --
+  signal   iIntWrite      : std_logic;                          --
   signal   readDone       : std_logic;                          -- internally generated read done flag
   signal   readDoneS      : std_logic;                          -- sampled read done
   signal   readDataS      : std_logic_vector(7 downto 0);       -- sampled read data
-  signal   iReadReq       : std_logic;                          -- 
-  signal   iIntRead       : std_logic;                          -- 
+  signal   iReadReq       : std_logic;                          --
+  signal   iIntRead       : std_logic;                          --
   signal   txChar         : std_logic_vector(7 downto 0);       -- transmit byte from nibble to character conversion
   signal   sTxBusy        : std_logic;                          -- sampled tx_busy for falling edge detection
   signal   txNibble       : std_logic_vector(3 downto 0);       -- nibble value for transmission
@@ -129,7 +129,7 @@ architecture Behavioral of uartParser is
         if (newRxData = '1') then
           case mainSm is
             -- wait for a read ('r') or write ('w') command
-            -- binary extension - an all zeros byte enabled binary commands 
+            -- binary extension - an all zeros byte enabled binary commands
             when mainIdle =>
               -- check received character
               if (rxData = charNul) then
@@ -148,7 +148,7 @@ architecture Behavioral of uartParser is
                 -- any other character wait to end of line (EOL)
                 mainSm <= mainEol;
               end if;
-            -- wait for white spaces till first data nibble 
+            -- wait for white spaces till first data nibble
             when mainWhite1 =>
               -- wait in this case until any white space character is received. in any
               -- valid character for data value switch to data state. a new line or carriage
@@ -268,7 +268,7 @@ architecture Behavioral of uartParser is
           else
             readOp <= '0';
           end if;
-          -- the write operation flag is set when a write command is received in idle state and cleared 
+          -- the write operation flag is set when a write command is received in idle state and cleared
           -- if any other character is received during that state.
           if ((rxData = charWLow) or (rxData = charWHigh)) then
             writeOp <= '1';
@@ -349,7 +349,7 @@ architecture Behavioral of uartParser is
         if ((mainSm = mainBinLen) and (newRxData = '1')) then
           binByteCount <= rxData;
         elsif (((mainSm = mainBinData) and (binWriteOp = '1') and (newRxData = '1')) or ((binReadOp = '1') and (txEndP = '1'))) then
-          -- byte counter is updated on every new data received in write operations and for every 
+          -- byte counter is updated on every new data received in write operations and for every
           -- byte transmitted for read operations.
           binByteCount <= binByteCount - 1;
         end if;

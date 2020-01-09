@@ -64,9 +64,9 @@ Make Variables
 
 .. make:var:: PLUSARGS
 
-      "Plusargs" are options that are starting with a plus (``+``) sign. 
+      "Plusargs" are options that are starting with a plus (``+``) sign.
       They are passed to the simulator and are also available within cocotb as :data:`cocotb.plusargs`.
-      In the simulator, they can be read by the Verilog/SystemVerilog system functions 
+      In the simulator, they can be read by the Verilog/SystemVerilog system functions
       ``$test$plusargs`` and ``$value$plusargs``.
 
       The special plusargs ``+ntb_random_seed`` and ``+seed``, if present, are evaluated
@@ -235,6 +235,6 @@ Additional Environment Variables
 
 .. envvar:: COCOTB_SHARE_DIR
 
-    Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories 
+    Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories
     :file:`lib`, :file:`include`, and :file:`makefiles`.
     You don't normally need to modify this.

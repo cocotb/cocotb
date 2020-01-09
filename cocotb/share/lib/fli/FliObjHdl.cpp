@@ -63,7 +63,7 @@ GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
 int FliObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     bool is_signal = (get_acc_type() == accSignal || get_acc_full_type() == accAliasSignal);
-    mtiTypeIdT typeId; 
+    mtiTypeIdT typeId;
     char * str;
 
     switch (get_type()) {
@@ -317,7 +317,7 @@ int FliLogicObjHdl::set_signal_value(const long value)
         for (int i = 0, idx = m_num_elems-1; i < m_num_elems; i++, idx--) {
             mtiInt32T enumVal = value&(1L<<i) ? m_enum_map['1'] : m_enum_map['0'];
 
-            m_mti_buff[idx] = (char)enumVal; 
+            m_mti_buff[idx] = (char)enumVal;
         }
 
         if (m_is_var) {
@@ -341,7 +341,7 @@ int FliLogicObjHdl::set_signal_value(std::string &value)
             mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
         }
     } else {
-        
+
         if ((int)value.length() != m_num_elems) {
             LOG_ERROR("FLI: Unable to set logic vector due to the string having incorrect length.  Length of %d needs to be %d", value.length(), m_num_elems);
             return -1;
@@ -355,7 +355,7 @@ int FliLogicObjHdl::set_signal_value(std::string &value)
 
         for (valIter = value.begin(); (valIter != value.end()) && (i < m_num_elems); valIter++, i++) {
             enumVal = m_enum_map[*valIter];
-            m_mti_buff[i] = (char)enumVal; 
+            m_mti_buff[i] = (char)enumVal;
         }
 
         if (m_is_var) {
@@ -378,7 +378,7 @@ int FliIntObjHdl::initialise(std::string &name, std::string &fq_name)
         return -1;
     }
     m_val_buff[m_num_elems] = '\0';
- 
+
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
@@ -433,7 +433,7 @@ int FliRealObjHdl::initialise(std::string &name, std::string &fq_name)
         LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
         return -1;
     }
- 
+
     return FliValueObjHdl::initialise(name, fq_name);
 }
 
@@ -482,7 +482,7 @@ int FliStringObjHdl::initialise(std::string &name, std::string &fq_name)
         return -1;
     }
     m_val_buff[m_num_elems] = '\0';
- 
+
     return FliValueObjHdl::initialise(name, fq_name);
 }
 

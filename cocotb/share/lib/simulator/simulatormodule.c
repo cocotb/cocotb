@@ -852,7 +852,7 @@ static PyObject *get_precision(PyObject *self, PyObject *args)
     gpi_get_sim_precision(&precision);
 
     PyObject *retint = Py_BuildValue("i", precision);
-   
+
 
     return retint;
 }

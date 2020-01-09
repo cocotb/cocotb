@@ -52,7 +52,7 @@ architecture rtl of generic_sp_ram is
 			return "block";
 		end if;
 	end function;
-	
+
 	function get_ram_style_altera(dist_ram : in boolean) return string is
 	begin
 		if dist_ram then
