@@ -26,21 +26,12 @@ jobs:
 
     - stage: SimTests
       os: linux
-      python: 2.7
+      python: 3.5
       before_install: &docker_prep
         - docker build -t cocotb .
         - docker images -a
         - docker run -d --name cocotb cocotb tail -f /dev/null
         - docker ps -a
-      script:
-        - echo 'Running cocotb tests with Python 2.7 ...' && echo 'travis_fold:start:cocotb_py27'
-        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py27'
-        - echo -e 'travis_fold:end:cocotb_py27'
-
-    - stage: SimTests
-      os: linux
-      python: 3.5
-      before_install: *docker_prep
       script:
         - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
         - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py35'
@@ -76,17 +67,6 @@ jobs:
         - echo 'travis_fold:end:cocotb_py36'
 
     - stage: SimTests
-      os: osx
-      language: generic
-      python: 2.7
-      before_install: &osx_prep
-        - brew update-reset
-        - brew install icarus-verilog
-        - pip install tox
-      script:
-        - tox -e py27
-
-    - stage: SimTests
       python: 3.7
       os: windows
       language: shell
@@ -100,7 +80,10 @@ jobs:
       osx_image: xcode11.2
       language: shell
       python: 3.7
-      before_install: *osx_prep
+      before_install: &osx_prep
+        - brew update-reset
+        - brew install icarus-verilog
+        - pip install tox
       script:
         - tox -e py37
 
