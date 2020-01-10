@@ -88,24 +88,20 @@ class RunningTask(object):
         triggers to fire.
     """
     def __init__(self, inst):
-        if hasattr(inst, "__name__"):
-            self.__name__ = "%s" % inst.__name__
 
         if inspect.iscoroutine(inst):
             self._natively_awaitable = True
             self._coro = inst.__await__()
-        else:
+        elif inspect.isgenerator(inst):
             self._natively_awaitable = False
             self._coro = inst
+        else:
+            raise TypeError(
+                "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)
+        self.__name__ = "%s" % inst.__name__
         self._started = False
         self._callbacks = []
         self._outcome = None
-
-        if not hasattr(self._coro, "send"):
-            raise TypeError(
-                "%s isn't a valid coroutine! Did you use the yield "
-                "keyword?" % self.funcname
-            )
 
     @lazy_property
     def log(self):
