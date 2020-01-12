@@ -232,22 +232,6 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
     if (pEventFn)
         return ret;
 
-    // Find the simulation root
-    const char *dut = getenv("TOPLEVEL");
-
-    if (dut != NULL) {
-        if (!strcmp("", dut)) {
-            /* Empty string passed in, treat as NULL */
-            dut = NULL;
-        } else {
-            // Skip any library component of the toplevel
-            const char *dot = strchr(dut, '.');
-            if (dot != NULL) {
-                dut += (dot - dut + 1);
-            }
-        }
-    }
-
     PyObject *cocotb_module, *cocotb_init, *cocotb_retval;
     PyObject *cocotb_log_module = NULL;
     PyObject *simlog_func;
@@ -359,21 +343,7 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
         goto cleanup;
     }
 
-    PyObject *dut_arg;
-    if (dut == NULL) {
-        Py_INCREF(Py_None);
-        dut_arg = Py_None;
-    } else {
-        dut_arg = PyUnicode_FromString(dut);                            // New reference
-    }
-    if (dut_arg == NULL) {
-        PyErr_Print();
-        LOG_ERROR("Unable to create Python object for dut argument of _initialise_testbench");
-        goto cleanup;
-    }
-
-    cocotb_retval = PyObject_CallFunctionObjArgs(cocotb_init, dut_arg, NULL);
-    Py_DECREF(dut_arg);
+    cocotb_retval = PyObject_CallFunctionObjArgs(cocotb_init, NULL);
     Py_DECREF(cocotb_init);
 
     if (cocotb_retval != NULL) {
