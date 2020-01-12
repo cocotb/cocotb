@@ -334,30 +334,6 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
         goto cleanup;
     }
 
-    // Set language in use as an attribute to cocotb module, or None if not provided
-    {
-        const char *lang = getenv("TOPLEVEL_LANG");
-        PyObject *PyLang;
-        if (lang) {
-            PyLang = PyUnicode_FromString(lang);                            // New reference
-        } else {
-            Py_INCREF(Py_None);
-            PyLang = Py_None;
-        }
-        if (PyLang == NULL) {
-            PyErr_Print();
-            LOG_ERROR("Unable to create Python object for cocotb.LANGUAGE");
-            goto cleanup;
-        }
-        if (-1 == PyObject_SetAttrString(cocotb_module, "LANGUAGE", PyLang)) {
-            PyErr_Print();
-            LOG_ERROR("Unable to set LANGUAGE");
-            Py_DECREF(PyLang);
-            goto cleanup;
-        }
-        Py_DECREF(PyLang);
-    }
-
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");     // New reference
     if (pEventFn == NULL) {
         PyErr_Print();
