@@ -117,6 +117,8 @@ fork = scheduler.add
 # FIXME is this really required?
 _rlock = threading.RLock()
 
+LANGUAGE = os.getenv("TOPLEVEL_LANG")
+
 
 def mem_debug(port):
     import cocotb.memdebug
