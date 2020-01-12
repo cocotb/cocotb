@@ -14,11 +14,13 @@ services:
 
 jobs:
   include:
-    - stage: PythonLint
+    - stage: Lint
+      name: whitespace
       os: linux
       script: "[[ -z \"$(git ls-files | xargs egrep -l '\\s+$')\" ]]"
 
-    - stage: PythonLint
+    - stage: Lint
+      name: flake8
       os: linux
       python: 3.5
       install: pip install flake8
