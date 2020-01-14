@@ -38,7 +38,7 @@ extern "C" {
 #define vpiRealNet           526
 #define vpiInterconnectNet   533
 #define vpiInterconnectArray 534
- 
+
 #ifdef  __cplusplus
 }
 #endif

@@ -12,7 +12,7 @@ end entity dut;
 architecture single of dut is begin
 
     report_p : process begin
-        report "this is dut(single)"; 
+        report "this is dut(single)";
         wait;
     end process;
 
@@ -29,7 +29,7 @@ architecture double of dut is
 begin
 
     report_p : process begin
-        report "this is dut(double)"; 
+        report "this is dut(double)";
         wait;
     end process;
 

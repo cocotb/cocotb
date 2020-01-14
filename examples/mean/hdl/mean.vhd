@@ -26,29 +26,29 @@ architecture RTL of mean is
   signal s_sum : unsigned(DATA_WIDTH + clog2(BUS_WIDTH-1)-1 downto 0) := (others => '0');  -- introduce bug
 --  signal s_sum : unsigned(DATA_WIDTH + clog2(BUS_WIDTH)-1 downto 0) := (others => '0');
   signal s_valid : std_logic := '0';
-  
+
 begin
 
-  assert BUS_WIDTH = 2**(clog2(BUS_WIDTH)) 
+  assert BUS_WIDTH = 2**(clog2(BUS_WIDTH))
     report LF & "   BUS_WIDTH = " & integer'image(BUS_WIDTH) & " , should be a power of 2!"
     severity Failure;
-  
-  
+
+
   process(clk)
     variable v_sum : unsigned(s_sum'range);
   begin
     if rising_edge(clk) then
       s_valid <= i_valid;
-      
+
       if i_valid = '1' then
         v_sum := (others => '0');
         for i in i_data'range loop
           v_sum := v_sum + resize(i_data(i), v_sum'length);
         end loop;
-        
+
         s_sum <= v_sum;
       end if;
-      
+
       if rst = '1' then
         s_sum <= (others => '0');
         s_valid <= '0';
@@ -56,7 +56,7 @@ begin
     end if;
   end process;
 
-  o_valid <= s_valid; 
+  o_valid <= s_valid;
   o_data <= resize(shift_right(s_sum, clog2(BUS_WIDTH)), o_data'length);
-  
+
 end rtl;

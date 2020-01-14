@@ -27,6 +27,9 @@
 
 include ../makefiles/Makefile.inc
 
+# distutils warnings are caused by an old version of virtualenv in travis
+export PYTHONWARNINGS = error,ignore::DeprecationWarning:distutils
+
 REGRESSIONS :=  $(shell ls test_cases/)
 
 .PHONY: $(REGRESSIONS)

@@ -125,9 +125,9 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as an int tuple"},
     {"get_precision", get_precision, METH_VARARGS, "Get the precision of the simulator"},
     {"deregister_callback", deregister_callback, METH_VARARGS, "De-register a callback"},
-    
+
     {"error_out", (PyCFunction)error_out, METH_NOARGS, NULL},
-    
+
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

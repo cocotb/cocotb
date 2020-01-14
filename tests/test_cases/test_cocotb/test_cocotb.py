@@ -715,7 +715,7 @@ def test_binary_value(dut):
         raise TestFailure("Expecting our BinaryValue object to have the value 0.")
 
     dut._log.info("Checking single index assignment works as expected on a Little Endian BinaryValue.")
-    vec = BinaryValue(value=0, bits=16, bigEndian=False)
+    vec = BinaryValue(value=0, n_bits=16, bigEndian=False)
     if vec.big_endian:
         raise TestFailure("Our BinaryValue object is reporting it is Big Endian - was expecting Little Endian.")
     for x in range(vec.n_bits):
@@ -751,7 +751,9 @@ def test_binary_value_compat(dut):
     """
 
     dut._log.info("Checking the renaming of bits -> n_bits")
-    vec = BinaryValue(value=0, bits=16)
+    with assert_deprecated():
+        vec = BinaryValue(value=0, bits=16)
+
     if vec.n_bits != 16:
         raise TestFailure("n_bits is not set correctly - expected %d, got %d" % (16, vec.n_bits))
 
@@ -765,10 +767,6 @@ def test_binary_value_compat(dut):
         pass
     else:
         raise TestFailure("Expected TypeError when using bits and n_bits at the same time.")
-
-    # Test for the DeprecationWarning when using |bits|
-    with assert_deprecated():
-        vec = BinaryValue(value=0, bits=16)
 
     yield Timer(100)  # Make it do something with time
 

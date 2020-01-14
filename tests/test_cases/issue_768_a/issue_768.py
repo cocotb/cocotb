@@ -1,5 +1,5 @@
 """
-Control case for https://github.com/potentialventures/cocotb/issues/768.
+Control case.
 
 This passed before the bug fix, and should continue to pass
 

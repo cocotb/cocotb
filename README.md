@@ -18,17 +18,17 @@ Cocotb can be installed by running `pip install cocotb`.
 
     # Install pre-requisites (waveform viewer optional)
     sudo yum install -y iverilog python-devel gtkwave
-    
+
     # Checkout git repositories
     git clone https://github.com/cocotb/cocotb.git
-    
+
     # Install cocotb
     pip install ./cocotb
-    
+
     # Run the tests...
     cd cocotb/examples/endian_swapper/tests
     make
-    
+
     # View the waveform
     gtkwave waveform.vcd
 

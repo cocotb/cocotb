@@ -111,15 +111,21 @@ class SimHandleBase(object):
         return self._len
 
     def __eq__(self, other):
+        """Equality comparator for handles
 
-        # Permits comparison of handles i.e. if clk == dut.clk
-        if isinstance(other, SimHandleBase):
-            if self._handle == other._handle:
-                return 0
-            return 1
+        Example usage::
+
+            if clk == dut.clk:
+                do_something()
+        """
+        if not isinstance(other, SimHandleBase):
+            return NotImplemented
+        return self._handle == other._handle
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        if not isinstance(other, SimHandleBase):
+            return NotImplemented
+        return self._handle != other._handle
 
     def __repr__(self):
         desc = self._path
@@ -421,17 +427,20 @@ class NonHierarchyObject(SimHandleBase):
         return _AssignmentResult(self, value)
 
     def __eq__(self, other):
-        if isinstance(other, SimHandleBase):
-            if self._handle == other._handle:
-                return 0
-            return 1
+        """Equality comparator for non-hierarchy objects
 
-        # Use the comparison method of the other object against our value
+        If ``other`` is not a :class:`SimHandleBase` instance the comparision
+        uses the comparison method of the ``other`` object against our
+        ``.value``.
+        """
+        if isinstance(other, SimHandleBase):
+            return SimHandleBase.__eq__(self, other)
         return self.value == other
 
     def __ne__(self, other):
-        return not self.__eq__(other)
-
+        if isinstance(other, SimHandleBase):
+            return SimHandleBase.__ne__(self, other)
+        return self.value != other
 
     # We want to maintain compatibility with python 2.5 so we can't use @property with a setter
     value = property(fget=lambda self: self._getvalue(),

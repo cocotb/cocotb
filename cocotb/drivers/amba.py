@@ -119,10 +119,10 @@ class AXI4LiteMaster(BusDriver):
                 Default is no delay.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
-            
+
         Returns:
             BinaryValue: The write response value.
-            
+
         Raises:
             AXIProtocolError: If write response from AXI is not ``OKAY``.
         """
@@ -159,15 +159,15 @@ class AXI4LiteMaster(BusDriver):
     @cocotb.coroutine
     def read(self, address, sync=True):
         """Read from an address.
-        
+
         Args:
             address (int): The address to read from.
             sync (bool, optional): Wait for rising edge on clock initially.
                 Defaults to True.
-            
+
         Returns:
             BinaryValue: The read data value.
-            
+
         Raises:
             AXIProtocolError: If read response from AXI is not ``OKAY``.
         """

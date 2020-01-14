@@ -486,7 +486,7 @@ typedef PLI_UINT32 *vpiHandle;
 #define vpiHexConst                5   /* hexadecimal integer */
 #define vpiStringConst             6   /* string literal */
 #define vpiIntConst                7   /* HDL integer constant (1364-2001) */
-#define vpiTimeConst			   8   /* time constant */ 
+#define vpiTimeConst			   8   /* time constant */
 
 #define vpiBlocking              41   /* blocking assignment (boolean) */
 #define vpiCaseType              42   /* case statement subtypes: */
@@ -916,7 +916,7 @@ XXTERN void		  vpi_get_value_array PROTO_PARAMS((vpiHandle expr,
 												   PLI_INT32 *index_p,
 												   PLI_UINT32 num));
 
-XXTERN void		  vpi_put_value_array PROTO_PARAMS((vpiHandle object, 
+XXTERN void		  vpi_put_value_array PROTO_PARAMS((vpiHandle object,
 												   p_vpi_arrayvalue arrayvalue_p,
 												   PLI_INT32 *index_p,
 												   PLI_UINT32 num));

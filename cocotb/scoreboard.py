@@ -3,7 +3,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -47,10 +47,10 @@ class Scoreboard(object):
 
     TODO:
         Statistics for end-of-test summary etc.
-        
+
     Args:
         dut (SimHandle): Handle to the DUT.
-        reorder_depth (int, optional): Consider up to `reorder_depth` elements 
+        reorder_depth (int, optional): Consider up to `reorder_depth` elements
             of the expected result list as passing matches.
             Default is 0, meaning only the first element in the expected result list
             is considered for a passing match.
@@ -58,7 +58,7 @@ class Scoreboard(object):
             immediately when something is wrong instead of just
             recording an error. Default is ``True``.
     """
-    
+
     def __init__(self, dut, reorder_depth=0, fail_immediately=True):  # FIXME: reorder_depth needed here?
         self.dut = dut
         self.log = SimLog("cocotb.scoreboard.%s" % self.dut._name)
@@ -69,9 +69,9 @@ class Scoreboard(object):
     @property
     def result(self):
         """Determine the test result, do we have any pending data remaining?
-        
+
         Returns:
-            :any:`TestFailure`: If not all expected output was received or 
+            :any:`TestFailure`: If not all expected output was received or
             error were recorded during the test.
         """
         fail = False
@@ -102,7 +102,7 @@ class Scoreboard(object):
         """Common function for comparing two transactions.
 
         Can be re-implemented by a sub-class.
-        
+
         Args:
             got: The received transaction.
             exp: The expected transaction.
@@ -181,12 +181,12 @@ class Scoreboard(object):
         transactions.
 
         Simply check against the expected output.
-        
+
         Args:
             monitor: The monitor object.
             expected_output: Queue of expected outputs.
             compare_fn (callable, optional): Function doing the actual comparison.
-            reorder_depth (int, optional): Consider up to *reorder_depth* elements 
+            reorder_depth (int, optional): Consider up to *reorder_depth* elements
                 of the expected result list as passing matches.
                 Default is 0, meaning only the first element in the expected result list
                 is considered for a passing match.

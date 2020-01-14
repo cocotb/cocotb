@@ -66,24 +66,6 @@ class SimBaseLog(logging.getLoggerClass()):
         self.propagate = False
         self.addHandler(hdlr)
 
-    def _logFromC(self, level, filename, lineno, msg, function):
-        """
-        This is for use from the C world, and allows us to insert C stack
-        information.
-        """
-        if self.isEnabledFor(level):
-            record = self.makeRecord(
-                self.name,
-                level,
-                filename,
-                lineno,
-                msg,
-                None,
-                None,
-                function
-            )
-            self.handle(record)
-
     @property
     def logger(self):
         warnings.warn(
@@ -167,7 +149,7 @@ class SimLogFormatter(logging.Formatter):
 
 class SimColourLogFormatter(SimLogFormatter):
     """Log formatter to provide consistent log message handling."""
-    
+
     loglevel2colour = {
         logging.DEBUG   :       "%s",
         logging.INFO    :       ANSI.COLOR_INFO + "%s" + ANSI.COLOR_DEFAULT,
@@ -190,3 +172,27 @@ class SimColourLogFormatter(SimLogFormatter):
                  record.levelname.ljust(_LEVEL_CHARS))
 
         return self._format(level, record, msg, coloured=True)
+
+
+def _filter_from_c(logger_name, level):
+    return logging.getLogger(logger_name).isEnabledFor(level)
+
+
+def _log_from_c(logger_name, level, filename, lineno, msg, function_name):
+    """
+    This is for use from the C world, and allows us to insert C stack
+    information.
+    """
+    logger = logging.getLogger(logger_name)
+    if logger.isEnabledFor(level):
+        record = logger.makeRecord(
+            logger.name,
+            level,
+            filename,
+            lineno,
+            msg,
+            None,
+            None,
+            function_name
+        )
+        logger.handle(record)

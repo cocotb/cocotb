@@ -14,7 +14,7 @@ CLK_PERIOD_NS = 100
 
 class StreamBusMonitor(BusMonitor):
     """Streaming bus monitor."""
-    
+
     _signals = ["valid", "data"]
 
     @cocotb.coroutine

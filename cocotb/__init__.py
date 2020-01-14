@@ -98,6 +98,7 @@ scheduler = Scheduler()
 regression_manager = None
 
 plusargs = {}
+"""A dictionary of "plusargs" handed to the simulation."""
 
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
@@ -112,16 +113,16 @@ def mem_debug(port):
 
 
 def _initialise_testbench(root_name):
-    """
+    """Initialize testbench.
+
     This function is called after the simulator has elaborated all
     entities and is ready to run the test.
 
     The test must be defined by the environment variables
-        MODULE
-        TESTCASE
+    :envvar:`MODULE` and :envvar:`TESTCASE`.
 
-    The environment variable COCOTB_HOOKS contains a comma-separated list of
-        modules that should be executed before the first test.
+    The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
+    comma-separated list of modules to be executed before the first test.
     """
     _rlock.acquire()
 
@@ -179,7 +180,7 @@ def _initialise_testbench(root_name):
 
 
 def _sim_event(level, message):
-    """Function that can be called externally to signal an event"""
+    """Function that can be called externally to signal an event."""
     SIM_INFO = 0
     SIM_TEST_FAIL = 1
     SIM_FAIL = 2

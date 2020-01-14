@@ -54,7 +54,7 @@ package pkg_components is
 			s_axis_input_tdata  : in  t_input_block;
 			s_axis_input_tlast  : in  std_logic;
 			s_axis_input_tready : out std_logic;
-	
+
 			m_axis_output_tvalid : out std_logic;
 			m_axis_output_tdata  : out std_logic_vector(BW_BRANCH_RESULT - 1 downto 0);
 			m_axis_output_tlast  : out std_logic;
@@ -76,16 +76,16 @@ package pkg_components is
 			s_axis_inbranch_tdata_high : in  std_logic_vector(BW_BRANCH_RESULT - 1 downto 0);
 			s_axis_inbranch_tlast      : in  std_logic;
 			s_axis_inbranch_tready     : out std_logic;
-	
+
 			s_axis_inprev_tvalid     : in  std_logic;
 			s_axis_inprev_tdata_low  : in  std_logic_vector(BW_MAX_PROBABILITY - 1 downto 0);
 			s_axis_inprev_tdata_high : in  std_logic_vector(BW_MAX_PROBABILITY - 1 downto 0);
 			s_axis_inprev_tready     : out std_logic;
-	
+
 			m_axis_outprob_tvalid  : out std_logic;
 			m_axis_outprob_tdata   : out std_logic_vector(BW_MAX_PROBABILITY - 1 downto 0);
 			m_axis_outprob_tready  : in  std_logic;
-	
+
 			m_axis_outdec_tvalid   : out std_logic;
 			m_axis_outdec_tdata    : out std_logic;
 			m_axis_outdec_tlast    : out std_logic;
@@ -97,7 +97,7 @@ package pkg_components is
 		port(
 			clk       : in std_logic;
 			rst       : in std_logic;
-		
+
 			s_axis_input_tvalid : in  std_logic;
 			s_axis_input_tdata  : in  std_logic_vector(NUMBER_TRELLIS_STATES - 1 downto 0);
 			s_axis_input_tlast  : in  std_logic;
@@ -125,10 +125,10 @@ package pkg_components is
 		port(
 			clk : in std_logic;
 			rst : in std_logic;
-	
+
 			wen : in std_logic;
 			en  : in std_logic;
-	
+
 			a   : in std_logic_vector(BW_MAX_WINDOW_LENGTH - 1 downto 0);
 			d   : in  std_logic_vector(BITWIDTH - 1 downto 0 );
 			q   : out std_logic_vector(BITWIDTH - 1 downto 0)
@@ -159,13 +159,13 @@ package pkg_components is
 		port(
 			clk : in std_logic;
 			rst : in std_logic;
-	
+
 			s_axis_input_tvalid     : in  std_logic;
 			s_axis_input_tdata      : in  std_logic;
 			s_axis_input_tlast      : in  std_logic;
 			s_axis_input_last_tuser : in  std_logic;
 			s_axis_input_tready     : out std_logic;
-		
+
 			m_axis_output_tvalid     : out std_logic;
 			m_axis_output_tdata      : out std_logic;
 			m_axis_output_tlast      : out std_logic;
@@ -178,12 +178,12 @@ package pkg_components is
 		port(
 			clk : in std_logic;
 			rst : in std_logic;
-	
+
 			s_axis_input_tvalid     : in  std_logic;
 			s_axis_input_tdata      : in  std_logic;
 			s_axis_input_tlast      : in  std_logic;
 			s_axis_input_tready     : out std_logic;
-		
+
 			m_axis_output_tvalid     : out std_logic;
 			m_axis_output_tdata      : out std_logic;
 			m_axis_output_tlast      : out std_logic;

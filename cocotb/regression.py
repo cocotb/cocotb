@@ -54,7 +54,7 @@ import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
 from cocotb.result import TestSuccess, SimFailure
-from cocotb.utils import get_sim_time, remove_traceback_frames
+from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
 from cocotb import _py_compat
 
@@ -105,7 +105,7 @@ class RegressionManager(object):
         results_filename = os.getenv('COCOTB_RESULTS_FILE', "results.xml")
         suite_name = os.getenv('RESULT_TESTSUITE', "all")
         package_name = os.getenv('RESULT_TESTPACKAGE', "all")
-        
+
         self.xunit = XUnitReporter(filename=results_filename)
 
         self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
@@ -248,7 +248,7 @@ class RegressionManager(object):
         real_time   = time.time() - test.start_time
         sim_time_ns = get_sim_time('ns') - test.start_sim_time
         ratio_time  = self._safe_divide(sim_time_ns, real_time)
-        
+
         self.xunit.add_testcase(name=test.funcname,
                                 classname=test.module,
                                 time=repr(real_time),
@@ -337,7 +337,7 @@ class RegressionManager(object):
         if self._running_test:
             start = ''
             end   = ''
-            if self.log.colour:
+            if want_color_output():
                 start = ANSI.COLOR_TEST
                 end   = ANSI.COLOR_DEFAULT
             # Want this to stand out a little bit
@@ -386,7 +386,7 @@ class RegressionManager(object):
                 pass_fail_str = "PASS"
             else:
                 pass_fail_str = "FAIL"
-                if self.log.colour:
+                if want_color_output():
                     hilite = ANSI.COLOR_HILITE_SUMMARY
 
             summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
@@ -415,7 +415,7 @@ class RegressionManager(object):
         summary += "*************************************************************************************\n"
 
         self.log.info(summary)
-    
+
     @staticmethod
     def _safe_divide(a, b):
         try:
@@ -425,7 +425,7 @@ class RegressionManager(object):
                 return float('nan')
             else:
                 return float('inf')
-    
+
     def _store_test_result(self, module_name, test_name, result_pass, sim_time, real_time, ratio):
         result = {
             'test'  : '.'.join([module_name, test_name]),

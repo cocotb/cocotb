@@ -96,7 +96,7 @@ def check_objects(dut):
 def port_not_hierarchy(dut):
     """
     Test for issue raised by Luke - iteration causes a toplevel port type to
-    change from from ModifiableObject to HierarchyObject
+    change from ModifiableObject to HierarchyObject
     """
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)

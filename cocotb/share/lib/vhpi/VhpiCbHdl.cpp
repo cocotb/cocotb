@@ -216,7 +216,7 @@ int VhpiObjHdl::initialise(std::string &name, std::string &fq_name) {
                 str = vhpi_get_str(vhpiNameP, pu_handle);
                 if (str != NULL)
                     m_definition_name = str;
-      
+
                 str = vhpi_get_str(vhpiFileNameP, pu_handle);
                 if (str != NULL)
                     m_definition_file = str;
@@ -791,7 +791,7 @@ int VhpiStartupCbHdl::run_callback() {
     int i = 0;
 
     tool = vhpi_handle(vhpiTool, NULL);
-    
+
     sim_info.product = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiNameP, tool)));
     sim_info.version = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiToolVersionP, tool)));
 
@@ -836,7 +836,7 @@ VhpiTimedCbHdl::VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCb
                                                                            VhpiCbHdl(impl)
 {
     vhpi_time.high = (uint32_t)(time_ps>>32);
-    vhpi_time.low  = (uint32_t)(time_ps); 
+    vhpi_time.low  = (uint32_t)(time_ps);
 
     cb_data.reason = vhpiCbAfterDelay;
     cb_data.time = &vhpi_time;
@@ -993,7 +993,7 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
         return;
     }
 
-    LOG_DEBUG("Created iterator working from scope %d (%s)", 
+    LOG_DEBUG("Created iterator working from scope %d (%s)",
              vhpi_get(vhpiKindP, vhpi_hdl),
              vhpi_get_str(vhpiKindStrP, vhpi_hdl));
 

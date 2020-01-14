@@ -4,8 +4,54 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
-cocotb 1.2
-==========
+cocotb 1.3.0
+============
+
+Released on 08 January 2020
+
+This will likely be the last release to support Python 2.7.
+
+New features
+------------
+- Initial support for the :ref:`Verilator` simulator (version 4.020 and above).
+  The integration of Verilator into cocotb is not yet as fast or as powerful as it is for other simulators.
+  Please use the latest version of Verilator, and `report bugs <https://github.com/cocotb/cocotb/issues/new>`_ if you experience problems.
+- New makefile variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` for setting the default time unit and precision that should be assumed for simulation when not specified by modules in the design. (:pr:`1113`)
+- New ``timeout_time`` and ``timeout_unit`` arguments to :func:`cocotb.test`, for adding test timeouts. (:pr:`1119`)
+- :func:`cocotb.triggers.with_timeout`, for a shorthand for waiting for a trigger with a timeout. (:pr:`1119`)
+- The ``expect_error`` argument to :func:`cocotb.test` now accepts a specific exception type. (:pr:`1116`)
+- New environment variable :envvar:`COCOTB_RESULTS_FILE`, to allow configuration of the xunit XML output filename.  (:pr:`1053`)
+- A new ``bus_separator`` argument to :class:`cocotb.drivers.BusDriver`. (:pr:`1160`)
+- A new ``start_high`` argument to :meth:`cocotb.clock.Clock.start`. (:pr:`1036`)
+- A new :data:`cocotb.__version__` constant, which contains the version number of the running cocotb. (:pr:`1196`)
+
+Notable changes and bug fixes
+-----------------------------
+- ``DeprecationWarning``\ s are now shown in the output by default.
+- Tracebacks are now preserved correctly for exceptions in Python 2.
+  The tracebacks in all Python versions are now a little shorter.
+- :func:`cocotb.external` and :func:`cocotb.function` now work more reliably and with fewer race conditions.
+- A failing ``assert`` will be considered a test failure. Previously, it was considered a test *error*.
+- :meth:`~cocotb.handle.NonConstantObject.drivers` and :meth:`~cocotb.handle.NonConstantObject.loads` now also work correctly in Python 3.7 onwards.
+- :class:`cocotb.triggers.Timer` can now be used with :class:`decimal.Decimal` instances, allowing constructs like ``Timer(Decimal('1e-9'), units='sec')`` as an alternate spelling for ``Timer(100, units='us')``. (:pr:`1114`)
+- Many (editorial) documentation improvements.
+
+Deprecations
+------------
+- ``cocotb.result.raise_error`` and ``cocotb.result.create_error`` are deprecated in favor of using Python exceptions directly.
+  :class:`~cocotb.result.TestError` can still be used if the same exception type is desired. (:pr:`1109`)
+- The ``AvalonSTPktsWithChannel`` type is deprecated.
+  Use the ``report_channel`` argument to :class:`~cocotb.monitors.avalon.AvalonSTPkts` instead.
+- The ``colour`` attribute of log objects like ``cocotb.log`` or ``some_coro.log`` is deprecated.
+  Use :func:`cocotb.utils.want_color_output` instead. (:pr:`1231`)
+
+Other news
+----------
+
+- cocotb is now packaged for Fedora Linux and available as `python-cocotb <https://apps.fedoraproject.org/packages/python-cocotb>`_. (`Fedora bug #1747574 <https://bugzilla.redhat.com/show_bug.cgi?id=1747574>`_) (thanks Ben Rosser)
+
+cocotb 1.2.0
+============
 
 Released on 24 July 2019
 
@@ -26,8 +72,14 @@ Notable changes and bug fixes
 - The documentation was cleaned up, improved and extended in various places, making it more consistent and complete.
 - Tab completion in newer versions of IPython is fixed. (:pr:`825`)
 - Python 2.6 is officially not supported any more. cocotb supports Python 2.7 and Python 3.5+.
-- The cocotb GitHub project moved from ``potentialventures/cocotb`` to ``cocotb/cocotb``. 
+- The cocotb GitHub project moved from ``potentialventures/cocotb`` to ``cocotb/cocotb``.
   Redirects for old URLs are in place.
+
+Deprecations
+------------
+- The `bits` argument to :class:`~cocotb.binary.BinaryValue`, which is now called `n_bits`.
+- The `logger` attribute of log objects like ``cocotb.log`` or ``some_coro.log``, which is now just an alias for ``self``.
+- The ``cocotb.utils.get_python_integer_types`` function, which was intended to be private.
 
 Known issues
 ------------

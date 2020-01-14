@@ -53,7 +53,7 @@ ifneq ($(ARCH),i686)
     EXTRA_ARGS += -64
 endif
 
-EXTRA_ARGS += -xmlibdirpath $(SIM_BUILD) 
+EXTRA_ARGS += -xmlibdirpath $(SIM_BUILD)
 ifeq ($(DEBUG),1)
     EXTRA_ARGS += -pliverbose
     EXTRA_ARGS += -messages
