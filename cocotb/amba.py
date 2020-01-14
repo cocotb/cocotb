@@ -29,6 +29,7 @@ from cocotb.bus import TypedBus
 
 
 class AXI4LiteBus(TypedBus):
+    """An AXI4-Lite bus"""
     _signals = ["AWVALID", "AWADDR", "AWREADY",        # Write address channel
                 "WVALID", "WREADY", "WDATA", "WSTRB",  # Write data channel
                 "BVALID", "BREADY", "BRESP",           # Write response channel
@@ -37,6 +38,7 @@ class AXI4LiteBus(TypedBus):
 
 
 class AXI4Bus(TypedBus):
+    """An AXI-4 bus"""
     _signals = [
         "ARREADY", "ARVALID", "ARADDR",             # Read address channel
         "ARLEN",   "ARSIZE",  "ARBURST", "ARPROT",

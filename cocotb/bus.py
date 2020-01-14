@@ -204,6 +204,20 @@ class TypedBus(Bus):
     _optional_signals = []
 
     def __init__(self, entity, name, **kwargs):
+        """
+        Args:
+            entity (SimHandle): :any:`SimHandle` instance to the entity containing the bus.
+            name (str): Name of the bus. ``None`` for a nameless bus, e.g. bus-signals
+                in an interface or a ``modport`` (untested on ``struct``/``record``,
+                but could work here as well).
+            bus_separator (str, optional): Character(s) to use as separator between bus
+                name and signal name. Defaults to '_'.
+            array_idx (int or None, optional): Optional index when signal is an array.
+
+            **kwargs (str, optional): Override default signal names.
+                If ``a`` is a signal in ``_signals`` or ``_optional_signals``, setting
+                ``a="b"`` makes the bus use the port named ``b`` in the RTL for ``a``.
+        """
         def _map_names(sig, kwargs):
             return {s: kwargs.pop(s, s) for s in sig}
         if not isinstance(self._signals, dict):

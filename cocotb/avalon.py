@@ -32,6 +32,7 @@ from cocotb.bus import TypedBus
 
 
 class AvalonMMBus(TypedBus):
+    """A memory-mapped Avalon bus"""
     _signals = ["address"]
     _optional_signals = ["readdata", "read", "write", "waitrequest",
                          "writedata", "readdatavalid", "byteenable",
@@ -39,10 +40,12 @@ class AvalonMMBus(TypedBus):
 
 
 class AvalonSTBus(TypedBus):
+    """A streaming Avalon bus"""
     _signals = ["valid", "data"]
     _optional_signals = ["ready"]
 
 
 class AvalonSTPktBus(TypedBus):
+    """A packetized streaming Avalon bus"""
     _signals = ["valid", "data", "startofpacket", "endofpacket"]
     _optional_signals = ["error", "channel", "ready", "empty"]
