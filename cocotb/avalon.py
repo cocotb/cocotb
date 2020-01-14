@@ -37,21 +37,12 @@ class AvalonMMBus(TypedBus):
                          "writedata", "readdatavalid", "byteenable",
                          "cs", "burstcount"]
 
-    def __init__(self, entity, name, **kwargs):
-        TypedBus.__init__(self, entity, name, **kwargs)
-
 
 class AvalonSTBus(TypedBus):
     _signals = ["valid", "data"]
     _optional_signals = ["ready"]
 
-    def __init__(self, entity, name, **kwargs):
-        TypedBus.__init__(self, entity, name, **kwargs)
-
 
 class AvalonSTPktBus(TypedBus):
     _signals = ["valid", "data", "startofpacket", "endofpacket"]
     _optional_signals = ["error", "channel", "ready", "empty"]
-
-    def __init__(self, entity, name, **kwargs):
-        TypedBus.__init__(self, entity, name, **kwargs)

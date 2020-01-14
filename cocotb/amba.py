@@ -35,9 +35,6 @@ class AXI4LiteBus(TypedBus):
                 "ARVALID", "ARADDR", "ARREADY",        # Read address channel
                 "RVALID", "RREADY", "RRESP", "RDATA"]  # Read data channel
 
-    def __init__(self, entity, name, **kwargs):
-        TypedBus.__init__(self, entity, name, **kwargs)
-
 
 class AXI4Bus(TypedBus):
     _signals = [
@@ -60,6 +57,3 @@ class AXI4Bus(TypedBus):
         "ARQOS",   "AWQOS",   "ARID",    "AWID",
         "BID",     "RID",     "WID"
     ]
-
-    def __init__(self, entity, name, **kwargs):
-        TypedBus.__init__(self, entity, name, **kwargs)

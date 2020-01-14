@@ -34,6 +34,3 @@ class OPBMasterBus(TypedBus):
     _signals = ["xferAck", "errAck", "toutSup", "retry", "DBus_out", "select",
                 "RNW", "BE", "ABus", "DBus_in"]
     _optional_signals = ["seqAddr"]
-
-    def __init__(self, entity, name, clock, **kwargs):
-        TypedBus.__init__(self, entity, name, clock, **kwargs)
