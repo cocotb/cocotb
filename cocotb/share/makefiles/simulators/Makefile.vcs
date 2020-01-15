@@ -75,6 +75,8 @@ $(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(COCOTB
 	-timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
 	$(EXTRA_ARGS) -debug -load libvpi.so $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
+PWD := $(shell pwd)
+
 # Execution phase
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(PYTHON_FILES) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
