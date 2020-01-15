@@ -130,6 +130,7 @@ Most maintainers are experts in part of the cocotb codebase, and are primarily r
   Founder of cocotb.
 - Stuart Hodgson (@stuarthodgson).
   Founder of cocotb.
+- Colin Marquardt (@cmarqu)
 - Philipp Wagner (@imphil)
 - Eric Wieser (@eric-wieser)
 
