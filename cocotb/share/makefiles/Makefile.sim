@@ -56,6 +56,8 @@ endif
 # recompilation of the simulation if cocotb is updated.
 CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
 
+PWD := $(shell pwd)
+
 include $(COCOTB_SHARE_DIR)/lib/Makefile
 include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 

@@ -57,7 +57,6 @@ ifeq ($(CVC_ITERP),1)
     CVC_ARGS    += +interp
 endif
 
-PWD := $(shell pwd)
 
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)

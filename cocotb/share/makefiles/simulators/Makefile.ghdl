@@ -56,7 +56,6 @@ GHDL_ARGS += $(EXTRA_ARGS)
 
 .PHONY: analyse
 
-PWD := $(shell pwd)
 
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
