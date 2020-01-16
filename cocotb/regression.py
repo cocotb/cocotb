@@ -33,6 +33,12 @@ from itertools import product
 import sys
 import os
 import traceback
+import pdb
+
+if "COCOTB_PDB_ON_EXCEPTION" in os.environ:
+    _pdb_on_exception = True
+else:
+    _pdb_on_exception = False
 
 if "COCOTB_SIM" in os.environ:
     import simulator
@@ -325,6 +331,12 @@ class RegressionManager(object):
 
         else:
             self.log.error("Test Failed: " + _result_was(), exc_info=exc_info)
+            if _pdb_on_exception:
+                if sys.version_info >= (3, 5):
+                    traceback = exc_info.__traceback__
+                else:
+                    traceback = exc_info[2]
+                pdb.post_mortem(traceback)
             self._add_failure(result)
             result_pass = False
 

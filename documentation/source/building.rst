@@ -149,6 +149,10 @@ Environment Variables
     If defined, log lines displayed in the terminal will be shorter. It will print only
     time, message type (``INFO``, ``WARNING``, ``ERROR``, ...) and the log message itself.
 
+.. envvar:: COCOTB_PDB_ON_EXCEPTION
+
+   If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
+
 .. envvar:: MODULE
 
     The name of the module(s) to search for test functions.  Multiple modules can be specified using a comma-separated list.
