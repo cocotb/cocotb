@@ -54,18 +54,26 @@ else
     $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
-MODULE=test_endian_swapper
+MODULE := test_endian_swapper
 
-CUSTOM_COMPILE_DEPS = hal
-
-LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
+ifeq ($(OS),Linux)
+    # TODO: work out how to build the extension module on windows
+    MODULE := $(MODULE),test_endian_swapper_hal
+    CUSTOM_COMPILE_DEPS = hal
+    LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
+endif
 
 include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
+ifeq ($(OS),Linux)
 .PHONY: hal
 hal:
 	-cd ../cosim && make
+
+clean::
+	-cd ../cosim && make clean
+endif
 
 # Stuff below is useful for profiling
 # Need gprof2dot from https://github.com/jrfonseca/gprof2dot
@@ -82,5 +90,4 @@ profile:
 clean::
 	-rm -rf test_profile.pstat
 	-rm -rf callgraph.svg
-	-cd ../cosim && make clean
 
