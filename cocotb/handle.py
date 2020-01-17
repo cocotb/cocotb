@@ -93,10 +93,10 @@ class SimHandleBase(object):
         self._def_file = simulator.get_definition_file(self._handle)
 
     def get_definition_name(self):
-        return object.__getattribute__(self, "_def_name")
+        return self._def_name
 
     def get_definition_file(self):
-        return object.__getattribute__(self, "_def_file")
+        return self._def_file
 
     def __hash__(self):
         return self._handle
@@ -129,10 +129,10 @@ class SimHandleBase(object):
 
     def __repr__(self):
         desc = self._path
-        defname = object.__getattribute__(self, "_def_name")
+        defname = self._def_name
         if defname:
             desc += " with definition "+defname
-            deffile = object.__getattribute__(self, "_def_file")
+            deffile = self._def_file
             if deffile:
                 desc += " (at "+deffile+")"
         return type(self).__name__ + "(" + desc + ")"
