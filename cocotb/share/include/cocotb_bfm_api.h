@@ -18,8 +18,8 @@ typedef void (*cocotb_bfm_notify_f)(void *);
 int cocotb_bfm_register(
         const char                *inst_name,
         const char                *cls_name,
-        cocotb_bfm_notify_f        notify_f,
-        void                    *notify_data);
+        cocotb_bfm_notify_f       notify_f,
+        void                      *notify_data);
 
 // Returns the number of registered BFMs
 int cocotb_bfm_num_registered(void);
@@ -47,28 +47,19 @@ const char *cocotb_bfm_get_str_param(int id);
  * Called from the simulator side to begin
  * a message
  */
-void cocotb_bfm_begin_msg(
-        uint32_t            bfm_id,
-        uint32_t            msg_id);
+void cocotb_bfm_begin_msg(uint32_t bfm_id, uint32_t msg_id);
 
-void cocotb_bfm_add_ui_param(
-        uint32_t            bfm_id,
-        uint64_t            p);
+void cocotb_bfm_add_ui_param(uint32_t bfm_id, uint64_t p);
 
-void cocotb_bfm_add_si_param(
-        uint32_t            bfm_id,
-        int64_t                p);
+void cocotb_bfm_add_si_param(uint32_t bfm_id, int64_t p);
 
-void cocotb_bfm_add_str_param(
-        uint32_t            bfm_id,
-        const char            *p);
+void cocotb_bfm_add_str_param(uint32_t bfm_id, const char *p);
 
 /*
  * Called from the simulator side to complete
  * a message and send it to the Python side
  */
-void cocotb_bfm_end_msg(
-        uint32_t            bfm_id);
+void cocotb_bfm_end_msg(uint32_t bfm_id);
 
 
 typedef enum {
@@ -78,11 +69,11 @@ typedef enum {
 } cocotb_bfm_param_type_e;
 
 typedef struct cocotb_bfm_msg_param_s {
-    cocotb_bfm_param_type_e    ptype;
+    cocotb_bfm_param_type_e   ptype;
     union {
         const char            *str;
-        uint64_t            ui64;
-        int64_t                i64;
+        uint64_t              ui64;
+        int64_t               i64;
     } pval;
 } cocotb_bfm_msg_param_t;
 
@@ -93,7 +84,7 @@ void cocotb_bfm_send_msg(
         uint32_t                bfm_id,
         uint32_t                msg_id,
         uint32_t                paramc,
-        cocotb_bfm_msg_param_t    *paramv);
+        cocotb_bfm_msg_param_t  *paramv);
 
 /**
  * Callback function type to receive
@@ -102,11 +93,10 @@ void cocotb_bfm_send_msg(
 typedef void (*bfm_recv_msg_f)(
         uint32_t                 bfm_id,
         uint32_t                 msg_id,
-        uint32_t                paramc,
-        cocotb_bfm_msg_param_t    *paramv);
+        uint32_t                 paramc,
+        cocotb_bfm_msg_param_t   *paramv);
 
-void cocotb_bfm_set_recv_msg_f(
-        bfm_recv_msg_f        recv_msg_f);
+void cocotb_bfm_set_recv_msg_f(bfm_recv_msg_f recv_msg_f);
 
 #ifdef __cplusplus
 }
