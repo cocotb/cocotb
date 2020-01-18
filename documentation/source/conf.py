@@ -47,6 +47,7 @@ extensions = [
     'cairosvgconverter',
     'breathe',
     'sphinx_issues',
+    'sphinxarg.ext',
     ]
 
 intersphinx_mapping = {'https://docs.python.org/3': None}

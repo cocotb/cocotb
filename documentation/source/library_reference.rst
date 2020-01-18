@@ -300,3 +300,11 @@ The Scheduler
     :members:
     :member-order: bysource
 
+
+The ``cocotb-config`` script
+----------------------------
+
+.. argparse::
+    :module: cocotb.config
+    :func: get_parser
+    :prog: cocotb-config
