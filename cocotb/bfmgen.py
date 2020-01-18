@@ -318,8 +318,7 @@ def bfm_generate(args):
     elif args.language == "vhdl":
         raise Exception("VHDL currently unsupported")
 
-    
-def main():
+def get_parser():
     parser = argparse.ArgumentParser(prog="cocotb-bfmgen")
     
     subparser = parser.add_subparsers()
@@ -330,6 +329,11 @@ def main():
     generate_cmd.add_argument("-m", action='append')
     generate_cmd.add_argument("-l", "--language", default="vlog")
     generate_cmd.add_argument("-o", default=None)
+
+    return parser
+    
+def main():
+    parser = get_parser()
     
     args = parser.parse_args()
  
