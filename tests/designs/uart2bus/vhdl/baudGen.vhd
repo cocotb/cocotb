@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------------
--- baud rate generator for uart 
+-- baud rate generator for uart
 --
 -- this module has been changed to receive the baud rate dividing counter from registers.
 -- the two registers should be calculated as follows:
 -- first register:
 --              baud_freq = 16*baud_rate / gcd(global_clock_freq, 16*baud_rate)
 -- second register:
---              baud_limit = (global_clock_freq / gcd(global_clock_freq, 16*baud_rate)) - baud_freq 
+--              baud_limit = (global_clock_freq / gcd(global_clock_freq, 16*baud_rate)) - baud_freq
 --
 -----------------------------------------------------------------------------------------
 library ieee;

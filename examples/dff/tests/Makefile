@@ -17,6 +17,7 @@ endif
 
 TOPLEVEL = dff
 MODULE := $(TOPLEVEL)_cocotb
+COCOTB_HDL_TIMEPRECISION=1us
 
 CUSTOM_SIM_DEPS=$(CWD)/Makefile
 

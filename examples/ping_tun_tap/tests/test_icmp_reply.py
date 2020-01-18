@@ -65,7 +65,7 @@ def create_tun(name="tun0", ip="192.168.255.1"):
                raise e
 
         tun_num += 1
-            
+
     fcntl.ioctl(tun, TUNSETOWNER, 1000)
     subprocess.check_call('ifconfig %s %s up pointopoint 192.168.255.2 up' %
                           (name, ip), shell=True)

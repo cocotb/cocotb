@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,8 +29,8 @@
 import traceback
 import sys
 import warnings
-# from StringIO import StringIO
 from io import StringIO, BytesIO
+from cocotb import _py_compat
 
 """Exceptions and functions for simulation result handling."""
 
@@ -69,7 +69,7 @@ def _raise_error(obj, msg):
 
 
 def create_error(obj, msg):
-    """Like :func:`raise_error`, but return the exception rather than raise it, 
+    """Like :func:`raise_error`, but return the exception rather than raise it,
     simply to avoid too many levels of nested `try/except` blocks.
 
     .. deprecated:: 1.3
@@ -80,8 +80,8 @@ def create_error(obj, msg):
         msg (str): The log message.
     """
     warnings.warn(
-        "``create_error`` is deprecated - use ``TestError(msg)`` (or any other "
-        "exception type) instead",
+        "``create_error`` is deprecated - use ``TestError(msg)`` directly "
+        "(or any other exception type) instead",
         DeprecationWarning, stacklevel=2)
     try:
         # use the private version to avoid multiple warnings
@@ -106,7 +106,7 @@ class TestComplete(Exception):
 
 
 class ExternalException(Exception):
-    """Exception thrown by external functions."""
+    """Exception thrown by :class:`cocotb.external` functions."""
     def __init__(self, exception):
         self.exception = exception
 
@@ -128,4 +128,9 @@ class TestSuccess(TestComplete):
 
 class SimFailure(TestComplete):
     """Exception showing that the simulator exited unsuccessfully."""
+    pass
+
+
+class SimTimeoutError(_py_compat.TimeoutError):
+    """Exception for when a timeout, in terms of simulation time, occurs."""
     pass

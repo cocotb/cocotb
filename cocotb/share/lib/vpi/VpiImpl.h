@@ -25,8 +25,8 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#ifndef COCOTB_VPI_IMPL_H_ 
-#define COCOTB_VPI_IMPL_H_ 
+#ifndef COCOTB_VPI_IMPL_H_
+#define COCOTB_VPI_IMPL_H_
 
 #include "../gpi/gpi_priv.h"
 #include <vpi_user_ext.h>

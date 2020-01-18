@@ -1,7 +1,7 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -13,7 +13,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -80,7 +80,7 @@ def ipython_embed_kernel(dut):
     ###############################################################################""".format(os.getpid())))
     IPython.embed_kernel()
 
-    
+
 @cocotb.test(expect_error=True)
 def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
@@ -286,7 +286,7 @@ def access_const_string_verilog(dut):
         raise TestFailure("STRING_CONST was not StringObject")
     if string_const != "TESTING_CONST":
         raise TestFailure("STRING_CONST was not == \'TESTING_CONST\'")
-    
+
     tlog.info("Modifying const string")
     string_const <= "MODIFIED"
     yield Timer(10)
@@ -294,7 +294,7 @@ def access_const_string_verilog(dut):
     if string_const != "TESTING_CONST":
         raise TestFailure("STRING_CONST was not still \'TESTING_CONST\'")
 
-    
+
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
              expect_error=cocotb.SIM_NAME.lower().startswith("icarus"))
 def access_var_string_verilog(dut):
@@ -308,7 +308,7 @@ def access_var_string_verilog(dut):
         raise TestFailure("STRING_VAR was not StringObject")
     if string_var != "TESTING_VAR":
         raise TestFailure("STRING_VAR was not == \'TESTING_VAR\'")
-    
+
     tlog.info("Modifying var string")
     string_var <= "MODIFIED"
     yield Timer(10)
@@ -378,7 +378,7 @@ def access_internal_register_array(dut):
         raise TestFailure("Failed to access internal register array value")
 
     dut.register_array[1].setimmediatevalue(4)
-    
+
     yield Timer(1)
 
     if (dut.register_array[1].value != 4):

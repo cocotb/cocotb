@@ -70,6 +70,11 @@ classes used within ``cocotb``.
     :members:
     :member-order: bysource
 
+.. autoclass:: Waitable
+    :members:
+    :member-order: bysource
+    :private-members:
+
 Testbench Structure
 ===================
 
@@ -140,6 +145,8 @@ Clock
 Utilities
 =========
 
+.. autodata:: cocotb.plusargs
+
 .. automodule:: cocotb.utils
     :members:
     :member-order: bysource
@@ -147,6 +154,9 @@ Utilities
 
 Simulation Object Handles
 =========================
+
+.. inheritance-diagram:: cocotb.handle
+   :parts: 1
 
 .. currentmodule:: cocotb.handle
 
@@ -278,8 +288,8 @@ The Scheduler
 -------------
 
 .. note::
-    The scheduler object should generally not be interacted with directly - 
-    the only part of it that a user will need is encapsulated in :func:`~cocotb.fork`, 
+    The scheduler object should generally not be interacted with directly -
+    the only part of it that a user will need is encapsulated in :func:`~cocotb.fork`,
     everything else works behind the scenes.
 
 .. currentmodule:: cocotb.scheduler

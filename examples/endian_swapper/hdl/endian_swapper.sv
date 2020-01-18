@@ -109,6 +109,9 @@ always @(posedge clk or negedge reset_n) begin
         flush_pipe       <= 1'b0;
         in_packet        <= 1'b0;
         packet_count     <= 32'd0;
+
+        stream_out_startofpacket <= 1'b1;
+        stream_out_endofpacket   <= 1'b1;
     end else begin
 
         if (flush_pipe & stream_out_ready)
@@ -123,7 +126,7 @@ always @(posedge clk or negedge reset_n) begin
 
             if (!byteswapping)
                 stream_out_data      <= stream_in_data;
-            else 
+            else
                 stream_out_data      <= byteswap(stream_in_data);
 
             if (stream_in_startofpacket && stream_in_valid) begin
@@ -174,11 +177,13 @@ always @(posedge clk or negedge reset_n) begin
 end
 
 `ifdef COCOTB_SIM
+`ifndef VERILATOR // traced differently
 initial begin
   $dumpfile ("waveform.vcd");
   $dumpvars (0,endian_swapper_sv);
   #1;
 end
+`endif
 `endif
 
 endmodule

@@ -3,7 +3,7 @@
 # Copyright (c) 2013, 2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -15,7 +15,7 @@
 #       SolarFlare Communications Inc nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,7 +28,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """Coroutine scheduler.
-
 
 FIXME: We have a problem here.  If a coroutine schedules a read-only but we
 also have pending writes we have to schedule the ReadWrite callback before
@@ -168,8 +167,11 @@ class Scheduler(object):
     trigger that caused the callback as the first argument.
 
     We look up a list of coroutines to schedule (indexed by the trigger) and
-    schedule them in turn. NB implementors should not depend on the scheduling
-    order!
+    schedule them in turn.
+
+    .. attention::
+
+       Implementors should not depend on the scheduling order!
 
     Some additional management is required since coroutines can return a list
     of triggers, to be scheduled when any one of the triggers fires.  To
@@ -184,14 +186,14 @@ class Scheduler(object):
         - Any pending writes are cached and do not happen immediately
 
     ReadOnly mode
-        - Corresponds to cbReadOnlySynch (VPI) or vhpiCbLastKnownDeltaCycle
+        - Corresponds to :any:`cbReadOnlySynch` (VPI) or :any:`vhpiCbLastKnownDeltaCycle`
           (VHPI).  In this state we are not allowed to perform writes.
 
     Write mode
-        - Corresponds to cbReadWriteSynch (VPI) or vhpiCbEndOfProcesses (VHPI)
+        - Corresponds to :any:`cbReadWriteSynch` (VPI) or :c:macro:`vhpiCbEndOfProcesses` (VHPI)
           In this mode we play back all the cached write updates.
 
-    We can legally transition from normal->write by registering a ReadWrite
+    We can legally transition from Normal to Write by registering a :class:`~cocotb.triggers.ReadWrite`
     callback, however usually once a simulator has entered the ReadOnly phase
     of a given timestep then we must move to a new timestep before performing
     any writes.  The mechanism for moving to a new timestep may not be
@@ -580,19 +582,29 @@ class Scheduler(object):
 
         @cocotb.coroutine
         def wrapper():
+            # This function runs in the scheduler thread
             try:
                 _outcome = outcomes.Value((yield coro))
             except BaseException as e:
                 _outcome = outcomes.Error(e)
             event.outcome = _outcome
+            # Notify the current (scheduler) thread that we are about to wake
+            # up the background (`@external`) thread, making sure to do so
+            # before the background thread gets a chance to go back to sleep by
+            # calling thread_suspend.
+            # We need to do this here in the scheduler thread so that no more
+            # coroutines run until the background thread goes back to sleep.
+            t.thread_resume()
             event.set()
 
         event = threading.Event()
-        t.thread_suspend()
         self._pending_coros.append(wrapper())
-        # This blocks the calling external thread until the coroutine finishes
+        # The scheduler thread blocks in `thread_wait`, and is woken when we
+        # call `thread_suspend` - so we need to make sure the coroutine is
+        # queued before that.
+        t.thread_suspend()
+        # This blocks the calling `@external` thread until the coroutine finishes
         event.wait()
-        t.thread_resume()
         return event.outcome.get()
 
     def run_in_executor(self, func, *args, **kwargs):
@@ -667,7 +679,7 @@ class Scheduler(object):
     # This collection of functions parses a trigger out of the object
     # that was yielded by a coroutine, converting `list` -> `Waitable`,
     # `Waitable` -> `RunningCoroutine`, `RunningCoroutine` -> `Trigger`.
-    # Doing them as separate functions allows us to avoid repeating unencessary
+    # Doing them as separate functions allows us to avoid repeating unnecessary
     # `isinstance` checks.
 
     def _trigger_from_started_coro(self, result):
@@ -752,20 +764,20 @@ class Scheduler(object):
         # chaining
         if coro_completed:
             self.unschedule(coroutine)
-            return
 
         # Don't handle the result if we're shutting down
         if self._terminate:
             return
 
-        try:
-            result = self._trigger_from_any(result)
-        except TypeError as exc:
-            # restart this coroutine with an exception object telling it that
-            # it wasn't allowed to yield that
-            result = NullTrigger(outcome=outcomes.Error(exc))
+        if not coro_completed:
+            try:
+                result = self._trigger_from_any(result)
+            except TypeError as exc:
+                # restart this coroutine with an exception object telling it that
+                # it wasn't allowed to yield that
+                result = NullTrigger(outcome=outcomes.Error(exc))
 
-        self._coroutine_yielded(coroutine, result)
+            self._coroutine_yielded(coroutine, result)
 
         # We do not return from here until pending threads have completed, but only
         # from the main thread, this seems like it could be problematic in cases

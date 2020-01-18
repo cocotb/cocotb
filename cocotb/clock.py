@@ -89,8 +89,8 @@ class Clock(BaseClock):
                 yield low_time
 
     If you also want to change the timing during simulation,
-    use this slightly more inefficient example instead where 
-    the :class:`Timer`\ s inside the while loop are created with 
+    use this slightly more inefficient example instead where
+    the :class:`Timer`\ s inside the while loop are created with
     current delay values:
 
     .. code-block:: python
@@ -132,6 +132,8 @@ class Clock(BaseClock):
             start_high (bool, optional): Whether to start the clock with a ``1``
                 for the first half of the period.
                 Default is ``True``.
+
+                .. versionadded:: 1.3
         """
         t = Timer(self.half_period)
         if cycles is None:

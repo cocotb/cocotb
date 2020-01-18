@@ -634,7 +634,7 @@ class BinaryValue(object):
                 _binstr = self.binstr[index]
             else:
                 _binstr = self.binstr[self._n_bits-1-index]
-        rv = BinaryValue(bits=len(_binstr), bigEndian=self.big_endian,
+        rv = BinaryValue(n_bits=len(_binstr), bigEndian=self.big_endian,
                          binaryRepresentation=self.binaryRepresentation)
         rv.set_binstr(_binstr)
         return rv

@@ -36,6 +36,7 @@ import logging
 import threading
 import random
 import time
+import warnings
 
 import cocotb.handle
 from cocotb.scheduler import Scheduler
@@ -90,6 +91,11 @@ if "COCOTB_SIM" in os.environ:
         log.warning("Failed to ensure that stdout/stderr are line buffered: %s", e)
         log.warning("Some stack traces may not appear because of this.")
 
+    # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
+    # If the user doesn't want to see these, they can always change the global
+    # warning settings in their test module.
+    if not sys.warnoptions:
+        warnings.simplefilter("default")
 
 scheduler = Scheduler()
 """The global scheduler instance."""
@@ -97,6 +103,7 @@ scheduler = Scheduler()
 regression_manager = None
 
 plusargs = {}
+"""A dictionary of "plusargs" handed to the simulation."""
 
 # To save typing provide an alias to scheduler.add
 fork = scheduler.add
@@ -111,16 +118,16 @@ def mem_debug(port):
 
 
 def _initialise_testbench(root_name):
-    """
+    """Initialize testbench.
+
     This function is called after the simulator has elaborated all
     entities and is ready to run the test.
 
     The test must be defined by the environment variables
-        MODULE
-        TESTCASE
+    :envvar:`MODULE` and :envvar:`TESTCASE`.
 
-    The environment variable COCOTB_HOOKS contains a comma-separated list of
-        modules that should be executed before the first test.
+    The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
+    comma-separated list of modules to be executed before the first test.
     """
     _rlock.acquire()
 
@@ -181,7 +188,7 @@ def _initialise_testbench(root_name):
 
 
 def _sim_event(level, message):
-    """Function that can be called externally to signal an event"""
+    """Function that can be called externally to signal an event."""
     SIM_INFO = 0
     SIM_TEST_FAIL = 1
     SIM_FAIL = 2

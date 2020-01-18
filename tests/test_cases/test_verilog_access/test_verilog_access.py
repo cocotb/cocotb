@@ -34,7 +34,7 @@ from cocotb.result import TestError, TestFailure
 def port_not_hierarchy(dut):
     """
     Test for issue raised by Luke - iteration causes a toplevel port type to
-    change from from ModifiableObject to HierarchyObject
+    change from ModifiableObject to HierarchyObject
     """
     fails = 0
     tlog = logging.getLogger("cocotb.test")

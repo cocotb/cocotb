@@ -262,7 +262,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     }
 
     /* Generate Loops have inconsistent behavior across vpi tools.  A "name"
-     * without an index, i.e. dut.loop vs dut.loop[0], will find a handle to vpiGenScopeArray, 
+     * without an index, i.e. dut.loop vs dut.loop[0], will find a handle to vpiGenScopeArray,
      * but not all tools support iterating over the vpiGenScopeArray.  We don't want to create
      * a GpiObjHdl to this type of vpiHandle.
      *
@@ -653,7 +653,7 @@ static int system_function_overload(char *userdata)
         msg = argval.value.str;
     }
 
-    gpi_log("simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
+    gpi_log("cocotb.simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
 
     // Fail the test for critical errors
     if (GPICritical == *userdata)

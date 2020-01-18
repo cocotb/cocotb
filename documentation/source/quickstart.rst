@@ -25,23 +25,23 @@ Cocotb can be installed by running
 
 .. code-block:: bash
 
-    $> pip3 install cocotb
+    pip3 install cocotb
 
 or
 
 .. code-block:: bash
 
-    $> pip install cocotb
+    pip install cocotb
 
 For user local installation follow the
-`pip User Guide <https://https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
+`pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
 
 To install the development version of cocotb:
 
 .. code-block:: bash
 
-    $> git clone https://github.com/cocotb/cocotb
-    $> pip install -e ./cocotb
+    git clone https://github.com/cocotb/cocotb
+    pip install -e ./cocotb
 
 
 Native Linux Installation
@@ -54,16 +54,18 @@ If a 32-bit simulator is being used then additional steps are needed, please see
 `our Wiki <https://github.com/cocotb/cocotb/wiki/Tier-2-Setup-Instructions>`_.
 
 Debian/Ubuntu-based
+~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-    $> sudo apt-get install git make gcc g++ swig python-dev
+    sudo apt-get install git make gcc g++ swig python-dev
 
 Red Hat-based
+~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-    $> sudo yum install gcc gcc-c++ libstdc++-devel swig python-devel
+    sudo yum install gcc gcc-c++ libstdc++-devel swig python-devel
 
 
 Windows Installation
@@ -110,7 +112,7 @@ Installing a package manager really helps things out here.
 
 .. code-block:: bash
 
-    $> brew install python icarus-verilog gtkwave
+    brew install python icarus-verilog gtkwave
 
 
 Running your first Example
@@ -121,15 +123,15 @@ the following lines are all you need to run a first simulation with cocotb:
 
 .. code-block:: bash
 
-    $> git clone https://github.com/cocotb/cocotb
-    $> cd cocotb/examples/endian_swapper/tests
-    $> make
+    git clone https://github.com/cocotb/cocotb
+    cd cocotb/examples/endian_swapper/tests
+    make
 
 Selecting a different simulator is as easy as:
 
 .. code-block:: bash
 
-    $> make SIM=vcs
+    make SIM=vcs
 
 
 Running the same example as VHDL
@@ -143,7 +145,7 @@ be used):
 
 .. code-block:: bash
 
-    $> make SIM=ghdl TOPLEVEL_LANG=vhdl
+    make SIM=ghdl TOPLEVEL_LANG=vhdl
 
 
 Using cocotb
@@ -247,7 +249,7 @@ or using direct assignment while traversing the hierarchy.
 
 
 The syntax ``sig <= new_value`` is a short form of ``sig.value = new_value``.
-It not only resembles HDL-syntax, but also has the same semantics:
+It not only resembles HDL syntax, but also has the same semantics:
 writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 (see :meth:`~cocotb.handle.ModifiableObject.setimmediatevalue`).
@@ -284,8 +286,16 @@ We can also cast the signal handle directly to an integer:
 
 
 
-Parallel and sequential execution of coroutines
------------------------------------------------
+Parallel and sequential execution
+---------------------------------
+
+A :keyword:`yield` will run a function (that must be marked as a "coroutine", see :ref:`Coroutines`)
+sequentially, i.e. wait for it to complete.
+If a coroutine should be run "in the background", i.e. in parallel to other coroutines,
+the way to do this is to :func:`~cocotb.fork` it.
+The end of such a forked coroutine can be waited on by using :meth:`~cocotb.decorators.RunningCoroutine.join`.
+
+The following example shows these in action:
 
 .. code-block:: python3
 
@@ -305,8 +315,8 @@ Parallel and sequential execution of coroutines
         yield reset_dut(reset_n, 500)
         dut._log.debug("After reset")
 
-        # Call reset_dut in parallel with this coroutine
-        reset_thread = cocotb.fork(reset_dut(reset_n, 500)
+        # Call reset_dut in parallel with the 250 ns timer
+        reset_thread = cocotb.fork(reset_dut(reset_n, 500))
 
         yield Timer(250, units='ns')
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)

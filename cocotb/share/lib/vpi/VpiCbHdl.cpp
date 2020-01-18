@@ -54,7 +54,7 @@ int VpiCbHdl::arm_callback() {
 
     if (m_state == GPI_PRIMED) {
         fprintf(stderr,
-                "Attempt to prime an already primed trigger for %s!\n", 
+                "Attempt to prime an already primed trigger for %s!\n",
                 m_impl->reason_to_string(cb_data.reason));
     }
 
@@ -78,7 +78,7 @@ int VpiCbHdl::arm_callback() {
     } else {
         m_state = GPI_PRIMED;
     }
-    
+
     m_obj_hdl = new_hdl;
 
     return 0;
@@ -406,7 +406,7 @@ GpiCbHdl * VpiSignalObjHdl::value_change_cb(unsigned int edge)
 
 VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
                              VpiSignalObjHdl *sig,
-                             int edge) :GpiCbHdl(impl), 
+                             int edge) :GpiCbHdl(impl),
                                         VpiCbHdl(impl),
                                         GpiValueCbHdl(impl,sig,edge)
 {

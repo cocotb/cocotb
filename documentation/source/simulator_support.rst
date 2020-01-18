@@ -17,10 +17,11 @@ Accessing bits of a vector doesn't work:
 
 See ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
 
-Wavefoms
-~~~~~~~~
+Waveforms
+~~~~~~~~~
 
-To get waveform in VCD format some Verilog code must be added in the top component as example below:
+To get waveforms in VCD format some Verilog code must be added
+to the top component as shown in the example below:
 
 .. code-block:: verilog
 
@@ -30,7 +31,7 @@ To get waveform in VCD format some Verilog code must be added in the top compone
         input  button_in,
         output button_valid);
 
-    //... verilog module code here
+    //... Verilog module code here
 
     // the "macro" to dump signals
     `ifdef COCOTB_SIM
@@ -42,12 +43,31 @@ To get waveform in VCD format some Verilog code must be added in the top compone
     `endif
     endmodule
 
+Verilator
+---------
+
+cocotb supports Verilator 4.020 and above.
+Verilator converts Verilog code to C++ code that is compiled.
+It does not support VHDL.
+One major limitation compared to standard Verilog simulators is that it does not support delayed assignments.
+
+To run cocotb with Verilator, you need ``verilator`` in your PATH.
+
+Finally, cocotb currently generates a Verilator toplevel C++ simulation loop which is timed at the highest precision.
+If your design's clocks vary in precision, the performance of the simulation can be improved in the same order of magnitude by adjusting the precision in the Makefile, e.g.,
+
+.. code-block:: makefile
+
+    COCOTB_HDL_TIMEPRECISION = 1us # Set precision to 10^-6s
+
+.. versionadded:: 1.3
+
 Synopsys VCS
 ------------
 
 Aldec Riviera-PRO
 -----------------
-The ``$LICENSE_QUEUE`` environment variable can be used for this simulator –
+The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
 Mentor Questa

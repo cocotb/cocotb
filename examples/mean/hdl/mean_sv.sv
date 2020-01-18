@@ -1,27 +1,27 @@
 //-----------------------------------------------------------------------------
 //  sv wrapper for mean.vhd
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
 import mean_pkg::*;
 
 
 module mean_sv #(
-  parameter  BUS_WIDTH=2) 
-  ( 
+  parameter  BUS_WIDTH=2)
+  (
   input  logic        clk,
   input  logic        rst,
   input  logic        i_valid,
   input  t_data_array i_data [0:BUS_WIDTH-1],
-  output logic        o_valid,  
+  output logic        o_valid,
   output t_data       o_data
   );
 
 
-// make constant from package visible  
+// make constant from package visible
 parameter DATA_WIDTH = data_width;
-  
-// VHDL DUT 
+
+// VHDL DUT
   mean #(
-    .BUS_WIDTH (BUS_WIDTH)) 
+    .BUS_WIDTH (BUS_WIDTH))
   mean (
     .clk      (clk),
     .rst      (rst),
@@ -31,5 +31,5 @@ parameter DATA_WIDTH = data_width;
     .o_data   (o_data)
     );
 
-    
+
 endmodule

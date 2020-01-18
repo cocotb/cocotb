@@ -3,8 +3,8 @@ FROM ubuntu:16.04
 # travis-ci only provides 2
 ARG MAKE_JOBS=-j2
 
-# Simulation 
-ARG ICARUS_VERILOG_VERSION=10_2 
+# Simulation
+ARG ICARUS_VERILOG_VERSION=10_2
 
 RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
        wget \
@@ -26,8 +26,8 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
     && pip install --upgrade pip \
     && g++ --version
 
-# Icarus Verilog 
-ENV ICARUS_VERILOG_VERSION=${ICARUS_VERILOG_VERSION} 
+# Icarus Verilog
+ENV ICARUS_VERILOG_VERSION=${ICARUS_VERILOG_VERSION}
 WORKDIR /usr/src/iverilog
 RUN git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v${ICARUS_VERILOG_VERSION} . \
     && sh autoconf.sh \

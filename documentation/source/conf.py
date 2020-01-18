@@ -33,16 +33,17 @@ os.environ["SPHINX_BUILD"] = "1"
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-    'sphinx.ext.autodoc', 
-    'sphinx.ext.doctest', 
-    'sphinx.ext.todo', 
-    'sphinx.ext.coverage', 
-    'sphinx.ext.imgmath', 
+    'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.imgmath',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinxcontrib.makedomain',
     'sphinx.ext.autosectionlabel',
+    'sphinx.ext.inheritance_diagram',
     'cairosvgconverter',
     'breathe',
     'sphinx_issues',
@@ -331,3 +332,7 @@ spelling_word_list_filename = ["spelling_wordlist.txt", "c_symbols.txt"]
 spelling_ignore_pypi_package_names = False
 spelling_ignore_wiki_words = False
 spelling_show_suggestions = True
+
+# -- Setup for inheritance_diagram directive which uses graphviz ---------------
+
+graphviz_output_format = 'svg'

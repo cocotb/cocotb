@@ -49,7 +49,7 @@ setup(
     name='cocotb',
     version=__version__,  # noqa: F821
     description='cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.',
-    url='https://github.com/potentialventures/cocotb',
+    url='https://github.com/cocotb/cocotb',
     license='BSD',
     long_description=read_file('README.md'),
     long_description_content_type='text/markdown',

@@ -80,7 +80,7 @@ begin
 
 				-- convolve with feedback polynomial with the output register.
 				v_bit := '0';
-				v_recursion_state := (s_axis_input_tdata & recursion_sreg(ENCODER_MEMORY_DEPTH downto 1)) and 
+				v_recursion_state := (s_axis_input_tdata & recursion_sreg(ENCODER_MEMORY_DEPTH downto 1)) and
 				                     ('1' & to_unsigned(FEEDBACK_POLYNOMIAL, ENCODER_MEMORY_DEPTH));
 				for i in ENCODER_MEMORY_DEPTH downto 0 loop
 					v_bit := v_bit xor v_recursion_state(i);

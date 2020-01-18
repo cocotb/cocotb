@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------------
--- uart to internal bus top module 
+-- uart to internal bus top module
 --
 -----------------------------------------------------------------------------------------
 library ieee;
@@ -29,7 +29,7 @@ end uart2BusTop;
 architecture Behavioral of uart2BusTop is
 
   -- baud rate configuration, see baudGen.vhd for more details.
-  -- baud rate generator parameters for 115200 baud on 25MHz clock 
+  -- baud rate generator parameters for 115200 baud on 25MHz clock
   constant baudFreq     : std_logic_vector(11 downto 0) := x"480";
   constant baudLimit    : std_logic_vector(15 downto 0) := x"3889";
   signal   txData       : std_logic_vector(7 downto 0); -- data byte to transmit
@@ -37,7 +37,7 @@ architecture Behavioral of uart2BusTop is
   signal   txBusy       : std_logic;                    -- signs that transmitter is busy
   signal   rxData       : std_logic_vector(7 downto 0); -- data byte received
   signal   newRxData    : std_logic;                    -- signs that a new byte was received
-  
+
   begin
     -- uart top module instance
     ut : uartTop
@@ -56,7 +56,7 @@ architecture Behavioral of uart2BusTop is
         baudClk => open);
     -- uart parser instance
     up : uartParser
-      generic map ( 
+      generic map (
         AW => AW)
       port map (
         clr => clr,

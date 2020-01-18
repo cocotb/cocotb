@@ -27,7 +27,7 @@
 --
 --
 -- Endian swapping module.
--- 
+--
 -- Simple example with Avalon streaming interfaces and a CSR bus
 --
 -- Avalon-ST has readyLatency of 0

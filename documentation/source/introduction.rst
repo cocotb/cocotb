@@ -17,8 +17,9 @@ Linux Platforms
 * `GHDL <https://ghdl.free.fr/>`_
 * `Aldec <https://www.aldec.com/>`_ Riviera-PRO
 * `Synopsys <https://www.synopsys.com/>`_ VCS
-* `Cadence <https://www.cadence.com/>`_ Incisive
+* `Cadence <https://www.cadence.com/>`_ Incisive and Xcelium
 * `Mentor <https://www.mentor.com/>`_ ModelSim (DE and SE)
+* `Verilator <https://verilator.com>`_
 
 Windows Platform
 
@@ -68,7 +69,7 @@ cocotb drives stimulus onto the inputs to the DUT (or further down the hierarchy
 
 A test is simply a Python function.
 At any given time either the simulator is advancing time or the Python code is executing.
-The ``yield`` keyword is used to indicate when to pass control of execution back to the simulator.
+The :keyword:`yield` keyword is used to indicate when to pass control of execution back to the simulator.
 A test can spawn multiple coroutines, allowing for independent flows of execution.
 
 
