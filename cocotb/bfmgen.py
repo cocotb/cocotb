@@ -29,8 +29,7 @@ def process_template_vl(template, info):
     t = Template(template)
     
     bfm_import_calls = ""
-    for i in range(len(info.import_info)):
-        imp = info.import_info[i]
+    for i,imp in enumerate(info.import_info):
         bfm_import_calls += "              " + str(i) + ": begin\n"
         bfm_import_calls += "                  " + imp.T.__name__  + "(\n"
         for pi in range(len(imp.signature)):
@@ -47,8 +46,7 @@ def process_template_vl(template, info):
         bfm_import_calls += "              end\n"
         
     bfm_export_tasks = ""
-    for i in range(len(info.export_info)):
-        exp = info.export_info[i]
+    for i,exp in enumerate(info.export_info):
         bfm_export_tasks += "    task " + exp.T.__name__ 
         
         if len(exp.signature) > 0:
@@ -163,8 +161,7 @@ def process_template_sv(template, bfm_name, info):
         bfm_import_calls += "              end\n"
         
     bfm_export_tasks = ""
-    for i in range(len(info.export_info)):
-        exp = info.export_info[i]
+    for i,exp in enumerate(info.export_info):
         bfm_export_tasks += "    task " + exp.T.__name__ + "("
         for j in range(len(exp.signature)):
             p = exp.signature[j]
