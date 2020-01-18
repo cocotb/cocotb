@@ -308,3 +308,11 @@ The ``cocotb-bfmgen`` script
      :func: get_parser
      :prog: cocotb-bfmgen
 
+The ``cocotb-config`` script
+----------------------------
+
+.. argparse::
+    :module: cocotb.config
+    :func: get_parser
+    :prog: cocotb-config
+

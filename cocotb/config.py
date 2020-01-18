@@ -60,8 +60,8 @@ class PrintAction(argparse.Action):
         print(self.text)
         parser.exit()
 
-def main():
 
+def get_parser():
     prefix_dir = os.path.dirname(os.path.dirname(cocotb.__file__))
     version = cocotb.__version__
 
@@ -70,6 +70,11 @@ def main():
     parser.add_argument('--share', help='echos the package-share of cocotb', action=PrintAction, text=share_dir)
     parser.add_argument('--makefiles', help='echos the package-makefiles of cocotb', action=PrintAction, text=makefiles_dir)
     parser.add_argument('-v', '--version', help='echos version of cocotb', action=PrintAction, text=version)
+    return parser
+
+
+def main():
+    parser = get_parser()
 
     if len(sys.argv)==1:
         parser.print_help(sys.stderr)
