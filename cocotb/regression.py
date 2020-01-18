@@ -131,11 +131,11 @@ class RegressionManager(object):
 
         if self._dut is None:
             # Verilator without full VPI support (<= 4.022) will report that
-            # it cannot obtain a root handle. This is okay, as long as the 
-            # user doesn't need to directly-access signals 
+            # it cannot obtain a root handle. This is okay, as long as the
+            # user doesn't need to directly-access signals
             global SIM_NAME
             if SIM_NAME == "Verilator":
-                self.log.info("Can not find Root Handle (%s). Design hierarchy will not be accessible" % 
+                self.log.info("Can not find Root Handle (%s). Design hierarchy will not be accessible" %
                       self._root_name)
             else:
                 raise AttributeError("Can not find Root Handle (%s)" %

@@ -79,7 +79,7 @@ sim:
 	-@rm -f $(COCOTB_RESULTS_FILE)
 	$(MAKE) $(COCOTB_RESULTS_FILE)
 
-.PHONY: cocotb_bfms.v	
-$(SIM_BUILD)/cocotb_bfms.v: 
+.PHONY: cocotb_bfms.v
+$(SIM_BUILD)/cocotb_bfms.v:
 	$(PYTHON_BIN) -m cocotb.bfmgen generate --language vlog \
 		$(foreach m,$(COCOTB_BFM_MODULES),-m $(m)) -o $@

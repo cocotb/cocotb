@@ -55,11 +55,11 @@ private:
      * Index (ID) of the BFM. Used in routing messages
      * to the appropriate BFM in Python
      */
-    uint32_t                         m_bfm_id; 
+    uint32_t                         m_bfm_id;
     /**
      * Instance name of the BFM from simulation
      */
-    std::string                      m_instname; 
+    std::string                      m_instname;
     /**
      * Python class typename used for this BFM
      */
@@ -87,9 +87,9 @@ private:
     GpiBfmMsg                        *m_active_msg;
 
     /**
-     * The HDL tasks used to build an inbound 
+     * The HDL tasks used to build an inbound
      * (HDL->Python) build up a message iteratively.
-     * This is a pointer to the message currently 
+     * This is a pointer to the message currently
      * being built.
      */
     GpiBfmMsg                        *m_active_inbound_msg;

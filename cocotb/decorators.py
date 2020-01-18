@@ -485,21 +485,21 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
 @public
 class bfm():
     '''
-    Decorator to identify a BFM type. 
+    Decorator to identify a BFM type.
     '''
     def __init__(self, hdl):
         self.hdl = hdl
-    
+
     def __call__(self, T):
         cocotb.bfms.register_bfm_type(T, self.hdl)
         return T
 
 @public
 class bfm_export():
-    
+
     def __init__(self, *args):
         self.signature = args
-    
+
     def __call__(self, m):
         cocotb.bfms.register_bfm_export_info(
             cocotb.bfms.BfmMethodInfo(m, self.signature))
@@ -510,14 +510,14 @@ class bfm_import():
     '''
     Method that is being imported from the HDL environment
     '''
-    
+
     def __init__(self, *args):
         self.signature = args
-        
+
     def __call__(self, m):
         info = cocotb.bfms.BfmMethodInfo(m, self.signature)
         cocotb.bfms.register_bfm_import_info(info)
-        
+
         def import_taskw(self, *args):
             import simulator
             arg_l = []
@@ -528,22 +528,22 @@ class bfm_import():
                 info.id,
                 arg_l,
                 info.type_info)
-    
+
         return import_taskw
-    
+
 class bfm_param_int_t():
-    
+
     sv_type_m = {
         8 : "byte",
         16 : "short",
         32 : "int",
         64 : "longint"
     }
-    
+
     def __init__(self, w, s):
         self.w = w
         self.s = s
-        
+
     def sv_type(self):
         if self.w in bfm_param_int_t.sv_type_m.keys():
             ret = bfm_param_int_t.sv_type_m[self.w]
@@ -552,13 +552,13 @@ class bfm_param_int_t():
             return ret
         else:
             raise Exception("parameter-width \"" + str(self.w) + "\" not supported by SystemVerilog")
-        
+
     def vl_type(self):
         ret = "reg"
         if self.s:
             ret += " signed"
         ret += "[" + str(self.w) + "-1:0]"
-        
+
         return ret
 
 # Constants for use in specifying BFM API signatures

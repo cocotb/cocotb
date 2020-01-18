@@ -144,7 +144,7 @@ static PyMethodDef SimulatorMethods[] = {
 
 	// - Sets the call-method function
     {"bfm_set_call_method", bfm_set_call_method, METH_VARARGS, NULL},
-    
+
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
