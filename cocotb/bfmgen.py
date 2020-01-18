@@ -179,7 +179,7 @@ def process_template_sv(template, bfm_name, info):
             if p.ptype.s:
                 bfm_export_tasks += "        cocotb_bfm_add_si_param(bfm_id, " + p.pname + ");\n"
             else:
-                bfm_export_tasks += "        cocotb_bfm_add_ui_param(bfm_id, " + p.pname + ");\n"
+                bfm_export_tasks += "        cocotb_bfm_add_ui_param(bfm_id, {});\n".format(p.pname)
             
         bfm_export_tasks += "        cocotb_bfm_end_msg(bfm_id);\n"
         bfm_export_tasks += "    end\n"
