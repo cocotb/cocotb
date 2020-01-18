@@ -140,8 +140,7 @@ def process_template_sv(template, bfm_name, info):
     t = Template(template)
     
     bfm_import_calls = ""
-    for i in range(len(info.import_info)):
-        imp = info.import_info[i]
+    for i,imp in enumerate(info.import_info):
         bfm_import_calls += "              " + str(i) + ": begin\n"
         # Verilator doesn't evaluate expressions in the order that
         # they appear in the argument list. Consequently, we need 
