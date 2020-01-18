@@ -163,7 +163,7 @@ class BfmMgr():
             try: 
                 pkg = importlib.import_module(pkgname)
             except Exception as e:
-                raise Exception("Failed to import BFM package \"" + pkgname + "\"")
+                raise Exception("Failed to import BFM package {!r}".format(pkgname))
        
             if not hasattr(pkg, clsleaf):
                 raise Exception("Failed to find BFM class \"" + clsleaf + "\" in package \"" + pkgname + "\"") 
