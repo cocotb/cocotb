@@ -7,3 +7,4 @@ sphinxcontrib-makedomain
 sphinxcontrib-spelling
 pyenchant
 sphinx-issues
+sphinx-argparse
