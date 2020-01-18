@@ -70,23 +70,21 @@ class BfmMethodInfo():
         if len(signature) != len(args):
             raise Exception("Wrong number of parameter-type elements: expect " + str(len(args)) + " but received " + str(len(signature)))
         
-        
-        for i in range(len(args)):
-            a = args[i]
-            t = signature[i]
+
+        for a,t in zip(args, signature):        
             self.signature.append(BfmMethodParamInfo(a, t))
             try:
                 import simulator
+            except Exception:
+                # When we're not running in simulation, don't 
+                # worry about being able to access constants from simulation
+                self.type_info.append(None)
+            else:
                 if isinstance(t, bfm_param_int_t):
                     if t.s:
                         self.type_info.append(simulator.BFM_SI_PARAM)
                     else:
                         self.type_info.append(simulator.BFM_UI_PARAM)
-            except Exception:
-                # When we're not running in simulation, don't 
-                # worry about being able to access constants from simulation
-                self.type_info.append(None)
-
 
 class BfmTypeInfo():
     
@@ -110,7 +108,7 @@ class BfmInfo():
 
 class BfmMgr():
     
-    m_inst = None
+    _inst = None
     
     def __init__(self):
         self.bfm_l = []
@@ -130,20 +128,22 @@ class BfmMgr():
         bfm = None
        
         path_pattern_re = re.compile(path_pattern)
+
+        # Find the BFM instance that matches the specified pattern
+        matches = (
+            b
+            for b in inst.bfm_l
+            if path_pattern_re.match(b.bfm_info.inst_name)
+        )        
         
-        for b in inst.bfm_l:
-            if path_pattern_re.match(b.bfm_info.inst_name):
-                bfm = b
-                break
-        
-        return bfm
+        return next(matches, None)
    
     @staticmethod
     def inst():
-        if BfmMgr.m_inst is None:
-            BfmMgr.m_inst = BfmMgr()
+        if BfmMgr._inst is None:
+            BfmMgr._inst = BfmMgr()
             
-        return BfmMgr.m_inst
+        return BfmMgr._inst
    
     def load_bfms(self):
         '''
@@ -155,14 +155,14 @@ class BfmMgr():
             info = simulator.bfm_get_info(i)
             instname = info[0]
             clsname = info[1]
-            if clsname.find('.') == -1:
+            try:
+                pkgname, clsleaf = clsname.rsplit('.',1)
+            except ValueError:
                 raise Exception("Incorrectly-formatted BFM class name {!r}".format(clsname))
-            pkgname = clsname[:clsname.rfind('.')]
-            clsleaf = clsname[clsname.rfind('.')+1:]
           
             try: 
                 pkg = importlib.import_module(pkgname)
-            except Exception as e:
+            except Exception:
                 raise Exception("Failed to import BFM package {!r}".format(pkgname))
        
             if not hasattr(pkg, clsleaf):
@@ -201,6 +201,6 @@ class BfmMgr():
         bfm = inst.bfm_l[bfm_id]
          
         if not hasattr(bfm, "bfm_info"):
-            raise Exception("BFM object does not contain 'bfm_info' field")
+            raise AttributeError("BFM object does not contain 'bfm_info' field")
  
         bfm.bfm_info.call_method(method_id, params)
