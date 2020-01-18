@@ -16,11 +16,7 @@ from cocotb.bfms import BfmMgr
 
 def bfm_load_modules(module_l):
     for m in module_l:
-        try:
-            importlib.import_module(m)
-        except Exception as e:
-            print("Error: failed to load module \"" + str(m) + "\": " + str(e))
-            raise e
+        importlib.import_module(m)
 
 def process_template_vl(template, info):
     """Process a single BFM-HDL template file string (template),
