@@ -129,7 +129,7 @@ class RegressionManager(object):
             # user doesn't need to directly-access signals 
             global SIM_NAME
             if SIM_NAME == "Verilator":
-                print("Note: Can not find Root Handle (%s). Design hierarchy will not be accessible" % 
+                self.log.info("Can not find Root Handle (%s). Design hierarchy will not be accessible" % 
                       self._root_name)
             else:
                 raise AttributeError("Can not find Root Handle (%s)" %
