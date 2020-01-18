@@ -5,7 +5,7 @@
 ###############################################################################
 
 TOPLEVEL_LANG ?= verilog
-COCOTB_BFM_MODULES += rv_bfms foobar
+COCOTB_BFM_MODULES += rv_bfms
 
 ifneq ($(TOPLEVEL_LANG),verilog)
 
