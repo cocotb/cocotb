@@ -19,11 +19,11 @@ module rv_bfm_top;
 			reset_cnt <= reset_cnt + 1;
 		end
 	end
-	
+
 	wire[31:0]			data;
 	wire				data_valid;
 	wire				data_ready;
-	
+
 	rv_data_out_bfm #(32) u_dut (
 			.clock(clock),
 			.reset(reset),
@@ -31,7 +31,7 @@ module rv_bfm_top;
 			.data_valid(data_valid),
 			.data_ready(data_ready)
 		);
-	
+
 	rv_data_monitor_bfm #(32) u_mon (
 			.clock(clock),
 			.reset(reset),
@@ -43,7 +43,7 @@ module rv_bfm_top;
 	reg[7:0]			delay_count;
 	reg[1:0]			state;
 	assign data_ready = (state == 1 && delay_count == 0);
-	
+
 	always @(posedge clock) begin
 		if (reset) begin
 			delay_count <= 0;

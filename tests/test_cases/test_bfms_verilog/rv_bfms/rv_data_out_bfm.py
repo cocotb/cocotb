@@ -28,7 +28,7 @@ class ReadyValidDataOutBFM():
         '''
         Writes the specified data word to the interface
         '''
-        
+
         yield self.busy.acquire()
         self.write_req(data)
 
@@ -41,7 +41,7 @@ class ReadyValidDataOutBFM():
     @cocotb.bfm_import(cocotb.bfm_uint32_t)
     def write_req(self, d):
         pass
-    
+
     @cocotb.bfm_export()
     def write_ack(self):
         self.ack_ev.set()

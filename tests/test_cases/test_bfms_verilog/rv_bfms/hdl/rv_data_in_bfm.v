@@ -6,7 +6,7 @@
 
 /**
  * Module: rv_data_in_bfm
- * 
+ *
  * TODO: Add module documentation
  */
 module rv_data_in_bfm #(
@@ -18,7 +18,7 @@ module rv_data_in_bfm #(
 			input						data_valid,
 			output						data_ready
 		);
-	
+
 	// Auto-generated code to implement the BFM API
 ${cocotb_bfm_api_impl}
 

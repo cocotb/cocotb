@@ -4,7 +4,7 @@
 
 import cocotb
 from cocotb.triggers import Timer
-from rv_bfms import * 
+from rv_bfms import *
 
 class BfmTest(ReadyValidDataMonitorIF):
 

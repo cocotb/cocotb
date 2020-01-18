@@ -21,8 +21,8 @@ class ReadyValidDataMonitorBFM():
 
     def __init__(self):
         self.listener_l = []
-        
-    
+
+
     def add_listener(self, l):
         self.listener_l.append(l)
 
@@ -30,4 +30,4 @@ class ReadyValidDataMonitorBFM():
     def data_recv(self, d):
         for l in self.listener_l:
             l.data_recv(d)
-    
+
