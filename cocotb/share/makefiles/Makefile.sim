@@ -98,9 +98,6 @@ endif
 SIM_BUILD ?= sim_build
 export SIM_BUILD
 
-# Default to Icarus if no simulator is defined
-SIM ?= icarus
-
 COCOTB_RESULTS_FILE ?= results.xml
 COCOTB_HDL_TIMEUNIT ?= 1ns
 COCOTB_HDL_TIMEPRECISION ?= 1ps
@@ -121,7 +118,7 @@ CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
 
 PWD := $(shell pwd)
 
-include $(COCOTB_SHARE_DIR)/lib/Makefile
+#include $(COCOTB_SHARE_DIR)/lib/Makefile
 include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 
 # Append directory containing the cocotb Python package to PYTHONPATH
