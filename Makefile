@@ -30,7 +30,7 @@
 .PHONY: all
 all: test
 
-include cocotb/share/makefiles/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.inc
 
 .PHONY: clean
 clean:

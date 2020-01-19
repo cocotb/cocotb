@@ -61,3 +61,6 @@ bpad_*.err
 .bpad/
 .simvision/
 waves.shm/
+
+# Interface libraries built on setup
+cocotb/libs
