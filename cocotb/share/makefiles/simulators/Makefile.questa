@@ -69,13 +69,13 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),vhdl)
-    VSIM_ARGS += -foreign \"cocotb_init libfli.$(LIB_EXT)\"
+    VSIM_ARGS += -foreign \"cocotb_init $(LIB_DIR)/libfli.$(LIB_EXT)\"
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = vpi
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
-    VSIM_ARGS += -pli libvpi.$(LIB_EXT)
+    VSIM_ARGS += -pli $(LIB_DIR)/libvpi.$(LIB_EXT)
 ifneq ($(VHDL_SOURCES),)
     GPI_EXTRA = fli
 endif

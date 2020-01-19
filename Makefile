@@ -29,7 +29,7 @@
 
 all: test
 
-include cocotb/share/makefiles/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.inc
 
 clean:
 	-@rm -rf $(BUILD_DIR)

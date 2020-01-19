@@ -34,7 +34,7 @@ endif
 
 SIM_BUILD_FLAGS += -std=c++11
 
-COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o $(TOPLEVEL) -LDFLAGS "-L `dirname $(COCOTB_VPI_LIB)` -lvpi -lgpi -lcocotb -lgpilog -lcocotbutils"
+COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o $(TOPLEVEL) -LDFLAGS "-L$(LIB_DIR) -lvpi -lgpi -lcocotb -lgpilog -lcocotbutils"
 
 $(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp
 	$(CMD) -cc --exe -Mdir $(SIM_BUILD) -DCOCOTB_SIM=1 --top-module $(TOPLEVEL) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp

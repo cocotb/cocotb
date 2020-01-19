@@ -37,18 +37,6 @@
 $(LIB_NAME)_OBJS:= $(patsubst %.c,$(LIB_OBJ_DIR)/%.o,$(filter %.c,$(SRCS)))
 $(LIB_NAME)_OBJS+= $(patsubst %.cpp,$(LIB_OBJ_DIR)/%.o,$(filter %.cpp,$(SRCS)))
 
-SIM_DEFINE := $(shell echo $(SIM) | tr a-z A-Z)
-
-# Use a common define for Questa and Modelsim
-ifeq ($(SIM_DEFINE),QUESTA)
-SIM_DEFINE = MODELSIM
-endif
-
-# Use a common define for Xcelium and IUS
-ifeq ($(SIM_DEFINE),XCELIUM)
-SIM_DEFINE = IUS
-endif
-
 # Add Simulator Define for compilation
 C_ARGS   += -D$(SIM_DEFINE)
 CXX_ARGS += -D$(SIM_DEFINE)

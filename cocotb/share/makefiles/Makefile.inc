@@ -65,7 +65,22 @@ export OS
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.paths
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
 
-export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
+# Default to Icarus if no simulator is defined
+SIM ?= icarus
+
+SIM_DEFINE := $(shell echo $(SIM) | tr a-z A-Z)
+
+# Use a common define for Questa and Modelsim and cvc
+ifeq ($(SIM_DEFINE),$(filter $(SIM_DEFINE),QUESTA CVC))
+SIM_DEFINE = MODELSIM
+endif
+
+# Use a common define for Xcelium and IUS
+ifeq ($(SIM_DEFINE),XCELIUM)
+SIM_DEFINE = IUS
+endif
+
+export LIB_DIR=$(COCOTB_PY_DIR)/cocotb/libs/$(shell echo $(SIM_DEFINE) | tr A-Z a-z)
 export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
 export INCLUDES := -I$(COCOTB_SHARE_DIR)/include -I$(PYTHON_INCLUDEDIR)
 
