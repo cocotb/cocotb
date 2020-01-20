@@ -141,7 +141,6 @@ ifneq ($(ARCH),i686)
 CMD += -64
 endif
 
-
 # Depending on the version of modelsim the interfaces that it supports can change
 # Append or remove values to INT_LIBS depenending on your license
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)

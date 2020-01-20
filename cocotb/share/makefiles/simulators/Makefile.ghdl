@@ -56,7 +56,6 @@ GHDL_ARGS += $(EXTRA_ARGS)
 
 .PHONY: analyse
 
-
 # Compilation phase
 analyse: $(VHDL_SOURCES) $(SIM_BUILD)
 	cd $(SIM_BUILD) && \
