@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 import logging
 
 import cocotb
-from cocotb.triggers import RisingEdge, Timer
+from cocotb.triggers import RisingEdge, Timer, ReadOnly
 from cocotb.clock import Clock
 from cocotb.drivers.avalon import AvalonMaster
 from cocotb.result import ReturnValue, TestFailure
@@ -84,6 +84,8 @@ def initial_hal_test(dut, debug=True):
         raise TestFailure("Byteswapping is enabled but haven't configured DUT")
 
     yield cocotb.external(hal.endian_swapper_enable)(state)
+
+    yield ReadOnly()
 
     if not dut.byteswapping.value:
         raise TestFailure("Byteswapping wasn't enabled after calling "
