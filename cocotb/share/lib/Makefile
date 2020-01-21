@@ -40,28 +40,28 @@ $(LIB_DIR): $(LIB_OBJ_DIR)
 	mkdir -p $@
 
 $(LIB_DIR)/libgpilog.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/gpi_log/gpi_logging.c | $(LIB_DIR)
-	make -C $(COCOTB_SHARE_DIR)/lib/gpi_log SIM=$(SIM)
+	make -C $(COCOTB_SHARE_DIR)/lib/gpi_log SIM=$(SIM) PYTHON_BIN=$(PYTHON_BIN)
 
 $(LIB_DIR)/libcocotb.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/embed/gpi_embed.c | $(LIB_DIR)
-	make -C $(COCOTB_SHARE_DIR)/lib/embed SIM=$(SIM)
+	make -C $(COCOTB_SHARE_DIR)/lib/embed SIM=$(SIM) PYTHON_BIN=$(PYTHON_BIN)
 
 $(LIB_DIR)/libvpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/vpi/VpiImpl.cpp $(COCOTB_SHARE_DIR)/lib/vpi/VpiCbHdl.cpp | $(LIB_DIR)
-	make -C $(COCOTB_SHARE_DIR)/lib/vpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
+	make -C $(COCOTB_SHARE_DIR)/lib/vpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM) PYTHON_BIN=$(PYTHON_BIN)
 
 $(LIB_DIR)/libcocotbvhpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/vhpi/VhpiImpl.cpp $(COCOTB_SHARE_DIR)/lib/vhpi/VhpiCbHdl.cpp | $(LIB_DIR)
-	make -C $(COCOTB_SHARE_DIR)/lib/vhpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
+	make -C $(COCOTB_SHARE_DIR)/lib/vhpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM) PYTHON_BIN=$(PYTHON_BIN)
 
 $(LIB_DIR)/libgpi.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/gpi/GpiCommon.cpp $(COCOTB_SHARE_DIR)/lib/gpi/GpiCbHdl.cpp | $(LIB_DIR)
-	make -C $(COCOTB_SHARE_DIR)/lib/gpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
+	make -C $(COCOTB_SHARE_DIR)/lib/gpi EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM) PYTHON_BIN=$(PYTHON_BIN)
 
 $(LIB_DIR)/libfli.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/fli/FliImpl.cpp $(COCOTB_SHARE_DIR)/lib/fli/FliCbHdl.cpp $(COCOTB_SHARE_DIR)/lib/fli/FliObjHdl.cpp | $(LIB_DIR)
-	make -C $(COCOTB_SHARE_DIR)/lib/fli EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM)
+	make -C $(COCOTB_SHARE_DIR)/lib/fli EXTRA_LIBS=$(EXTRA_LIBS) EXTRA_LIBDIRS=$(EXTRA_LIBDIRS) SIM=$(SIM) PYTHON_BIN=$(PYTHON_BIN)
 
 $(LIB_DIR)/libsim.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/simulator/simulatormodule.c | $(LIB_DIR)
-	make -C $(COCOTB_SHARE_DIR)/lib/simulator SIM=$(SIM)
+	make -C $(COCOTB_SHARE_DIR)/lib/simulator SIM=$(SIM) PYTHON_BIN=$(PYTHON_BIN)
 
 $(LIB_DIR)/libcocotbutils.$(LIB_EXT): $(COCOTB_SHARE_DIR)/lib/utils/cocotb_utils.c | $(LIB_DIR)
-	make -C $(COCOTB_SHARE_DIR)/lib/utils SIM=$(SIM)
+	make -C $(COCOTB_SHARE_DIR)/lib/utils SIM=$(SIM) PYTHON_BIN=$(PYTHON_BIN)
 
 COCOTB_LIBS := $(LIB_DIR)/libcocotbutils.$(LIB_EXT) \
 	       $(LIB_DIR)/libgpilog.$(LIB_EXT) \
