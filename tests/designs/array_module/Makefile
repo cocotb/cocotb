@@ -42,6 +42,9 @@ COCOTB?=$(WPWD)/../../..
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(COCOTB)/tests/designs/array_module/array_module.sv
 else ifeq ($(TOPLEVEL_LANG),vhdl)
+    ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+        SIM_ARGS += -v93
+    endif
 ifeq ($(shell echo $(SIM) | tr A-Z a-z),aldec)
     VHDL_SOURCES =  $(COCOTB)/tests/designs/array_module/array_module_pack.vhd $(COCOTB)/tests/designs/array_module/array_module_aldec.vhd
 else
