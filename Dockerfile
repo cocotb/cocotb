@@ -21,6 +21,7 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
        python3 \
        virtualenv \
        python3-venv \
+       swig \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && pip install --upgrade pip \
