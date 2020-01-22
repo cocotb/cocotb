@@ -144,9 +144,15 @@ endif
 # Depending on the version of modelsim the interfaces that it supports can change
 # Append or remove values to INT_LIBS depenending on your license
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
+	-@rm -f $(COCOTB_RESULTS_FILE)
+
 	set -o pipefail; cd $(SIM_BUILD) && $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) \
 	$(CMD) $(PLUSARGS) -do runsim.do 2>&1 | tee sim.log
+
+	# check that the file was actually created, since we can't set an exit code from cocotb
+	test -f $(COCOTB_RESULTS_FILE)
+
 # Potential fix for buffered stdout, YMMV
 # STDOUT=$(SIM_BUILD)/sim.log stdbuf --output=0 $(CMD) -do runsim.do 2>&1 && stdbuf --output=0 --input=0 tail -f sim.log && exit $${PIPESTATUS[0]}
 
