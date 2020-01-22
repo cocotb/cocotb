@@ -11,16 +11,24 @@ The common Makefile :file:`cocotb/share/makefiles/Makefile.sim` includes the app
 Make Targets
 ------------
 
-Makefiles define two targets, ``regression`` and ``sim``, the default target is ``sim``.
+Makefiles defines the targets ``regression`` and ``sim``, the default target is ``sim``.
 
-Both rules create a results file with the name taken from :envvar:`COCOTB_RESULTS_FILE`, defaulting to ``results.xml``.  This file is a JUnit-compatible output file suitable for use with `Jenkins <https://jenkins.io/>`_. The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
+Both rules create a results file with the name taken from :envvar:`COCOTB_RESULTS_FILE`, defaulting to ``results.xml``.
+This file is a JUnit-compatible output file suitable for use with e.g. `Jenkins <https://jenkins.io/>`_.
+The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
+
+In addition, the target ``clean`` can be used to remove build and simulation artefacts.
+The target ``help`` lists these available targets and the variables described below.
 
 Make Phases
 -----------
 
-Typically the makefiles provided with cocotb for various simulators use a separate ``compile`` and ``run`` target.  This allows for a rapid re-running of a simulator if none of the RTL source files have changed and therefore the simulator does not need to recompile the RTL.
+Typically the makefiles provided with cocotb for various simulators use a separate ``compile`` and ``run`` target.
+This allows for a rapid re-running of a simulator if none of the RTL source files have changed and therefore the simulator does not need to recompile the RTL.
 
 
+..
+  If you edit the following sections, please also update the "helpmsg" text in cocotb/share/makefiles/Makefile.sim
 
 Make Variables
 --------------

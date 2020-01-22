@@ -32,6 +32,68 @@
 
 all: sim
 
+# NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
+# Also keep it at 80 chars.
+define helpmsg =
+Targets
+-------
+sim                       Unconditionally re-run the simulator (default)
+regression                Run simulator when dependencies have changes
+clean                     Remove build and simulation artefacts
+help                      This help text
+
+Make Variables
+--------------
+GUI                       Set this to 1 to enable the GUI mode in the simulator
+SIM                       Selects which simulator Makefile to use
+WAVES                     Enable wave traces dump for Riviera-PRO and Questa
+VERILOG_SOURCES           A list of the Verilog source files to include
+VHDL_SOURCES              A list of the VHDL source files to include
+VHDL_SOURCES_<lib>        VHDL source files to include in *lib* (GHDL only)
+COMPILE_ARGS              Arguments to pass to compile stage of simulation
+SIM_ARGS                  Arguments to pass to execution of compiled simulation
+EXTRA_ARGS                Arguments for compile and execute phases
+PLUSARGS                  Plusargs to pass to the simulator
+COCOTB_HDL_TIMEUNIT       Default time unit for simulation
+COCOTB_HDL_TIMEPRECISION  Default time precision for simulation
+CUSTOM_COMPILE_DEPS       Add additional dependencies to the compilation target
+CUSTOM_SIM_DEPS           Add additional dependencies to the simulation target
+COCOTB_NVC_TRACE          Set this to 1 to enable display of VHPI traces for NVC
+SIM_BUILD                 Define a scratch directory for use by the simulator
+
+Environment Variables
+---------------------
+TOPLEVEL                  Instance in the hierarchy to use as the DUT
+RANDOM_SEED               Random seed, to recreate a previous test stimulus
+COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
+COCOTB_REDUCED_LOG_FMT    Display log lines shorter
+COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
+MODULE                    Modules to search for test functions (comma-separated)
+TESTCASE                  Test function(s) to run (comma-separated list)
+COCOTB_RESULTS_FILE       File name for xUnit XML tests results
+
+Additional Environment Variables
+--------------------------------
+COCOTB_ATTACH             Pause time value in seconds before the simulator start
+COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
+COCOTB_HOOKS              Comma-separated module list to be executed before test
+COCOTB_LOG_LEVEL          Default logging level (default INFO)
+COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion
+COCOTB_SCHEDULER_DEBUG    Enable additional output of coroutine scheduler
+COVERAGE                  Report Python coverage (also HDL for some simulators)
+MEMCHECK                  HTTP port to use for debugging Python memory usage
+
+    For details, see https://cocotb.readthedocs.io/en/latest/building.html
+
+endef
+
+# this cannot be a regular target because of the way Makefile.$(SIM) is included
+ifeq ($(MAKECMDGOALS),help)
+$(info $(helpmsg))
+# is there a cleaner way to exit here?
+$(error "Stopping after printing help")
+endif
+
 SIM_BUILD ?= sim_build
 export SIM_BUILD
 
