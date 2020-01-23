@@ -108,30 +108,32 @@ static char log_buff[LOG_SIZE];
  */
 static void gpi_log_native_v(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, va_list argp)
 {
-    if (level >= GPIInfo) {
-        int n = vsnprintf(log_buff, LOG_SIZE, msg, argp);
-
-        if (n < 0 || n >= LOG_SIZE) {
-            fprintf(stderr, "Log message construction failed\n");
-        }
-
-        fprintf(stdout, "     -.--ns ");
-        fprintf(stdout, "%-9s", log_level(level));
-        fprintf(stdout, "%-35s", name);
-
-        size_t pathlen = strlen(pathname);
-        if (pathlen > 20) {
-            fprintf(stdout, "..%18s:", (pathname + (pathlen - 18)));
-        } else {
-            fprintf(stdout, "%20s:", pathname);
-        }
-
-        fprintf(stdout, "%-4ld", lineno);
-        fprintf(stdout, " in %-31s ", funcname);
-        fprintf(stdout, "%s", log_buff);
-        fprintf(stdout, "\n");
-        fflush(stdout);
+    if (level < GPIInfo) {
+        return;
     }
+
+    int n = vsnprintf(log_buff, LOG_SIZE, msg, argp);
+
+    if (n < 0 || n >= LOG_SIZE) {
+        fprintf(stderr, "Log message construction failed\n");
+    }
+
+    fprintf(stdout, "     -.--ns ");
+    fprintf(stdout, "%-9s", log_level(level));
+    fprintf(stdout, "%-35s", name);
+
+    size_t pathlen = strlen(pathname);
+    if (pathlen > 20) {
+        fprintf(stdout, "..%18s:", (pathname + (pathlen - 18)));
+    } else {
+        fprintf(stdout, "%20s:", pathname);
+    }
+
+    fprintf(stdout, "%-4ld", lineno);
+    fprintf(stdout, " in %-31s ", funcname);
+    fprintf(stdout, "%s", log_buff);
+    fprintf(stdout, "\n");
+    fflush(stdout);
 }
 
 static void gpi_log_native(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
