@@ -108,8 +108,13 @@ class SimLogFormatter(logging.Formatter):
         return string.rjust(chars)
 
     def _format(self, level, record, msg, coloured=False):
-        time_ns = get_sim_time('ns')
-        simtime = "%6.2fns" % (time_ns)
+        try:
+            time_ns = get_sim_time('ns')
+            simtime = "%6.2fns" % (time_ns)
+        except RecursionError:
+            # get_sim_time might have failed and tried to log - if this
+            # happens, better to discard the timestamp than skip the message
+            simtime = "  -.--ns"
         prefix = simtime.rjust(11) + ' ' + level + ' '
         if not _suppress:
             prefix += self.ljust(record.name, _RECORD_CHARS) + \
