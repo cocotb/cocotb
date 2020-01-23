@@ -99,6 +99,49 @@ const char *log_level(long level)
 #define LOG_SIZE    512
 static char log_buff[LOG_SIZE];
 
+
+/**
+ * Log without going through the python hook.
+ *
+ * This is needed for both when the hook isn't connected yet, and for when a
+ * python exception occurs while trying to use the hook.
+ */
+static void gpi_log_native_v(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, va_list argp)
+{
+    if (level >= GPIInfo) {
+        int n = vsnprintf(log_buff, LOG_SIZE, msg, argp);
+
+        if (n < 0 || n >= LOG_SIZE) {
+            fprintf(stderr, "Log message construction failed\n");
+        }
+
+        fprintf(stdout, "     -.--ns ");
+        fprintf(stdout, "%-9s", log_level(level));
+        fprintf(stdout, "%-35s", name);
+
+        size_t pathlen = strlen(pathname);
+        if (pathlen > 20) {
+            fprintf(stdout, "..%18s:", (pathname + (pathlen - 18)));
+        } else {
+            fprintf(stdout, "%20s:", pathname);
+        }
+
+        fprintf(stdout, "%-4ld", lineno);
+        fprintf(stdout, " in %-31s ", funcname);
+        fprintf(stdout, "%s", log_buff);
+        fprintf(stdout, "\n");
+        fflush(stdout);
+    }
+}
+
+static void gpi_log_native(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
+{
+    va_list argp;
+    va_start(argp, msg);
+    gpi_log_native_v(name, level, pathname, funcname, lineno, msg, argp);
+    va_end(argp);
+}
+
 /**
  * @name    GPI logging
  * @brief   Write a log message using cocotb SimLog class
@@ -118,32 +161,8 @@ static void gpi_log_v(const char *name, enum gpi_log_levels level, const char *p
     /* We first check that the log level means this will be printed
      * before going to the expense of formatting the variable arguments
      */
-
     if (!pLogHandler) {
-        if (level >= GPIInfo) {
-            int n = vsnprintf(log_buff, LOG_SIZE, msg, argp);
-
-            if (n < 0 || n >= LOG_SIZE) {
-               fprintf(stderr, "Log message construction failed\n");
-            }
-
-            fprintf(stdout, "     -.--ns ");
-            fprintf(stdout, "%-9s", log_level(level));
-            fprintf(stdout, "%-35s", name);
-
-            size_t pathlen = strlen(pathname);
-            if (pathlen > 20) {
-                fprintf(stdout, "..%18s:", (pathname + (pathlen - 18)));
-            } else {
-                fprintf(stdout, "%20s:", pathname);
-            }
-
-            fprintf(stdout, "%-4ld", lineno);
-            fprintf(stdout, " in %-31s ", funcname);
-            fprintf(stdout, "%s", log_buff);
-            fprintf(stdout, "\n");
-            fflush(stdout);
-        }
+        gpi_log_native_v(name, level, pathname, funcname, lineno, msg, argp);
         return;
     }
 
@@ -218,8 +237,10 @@ static void gpi_log_v(const char *name, enum gpi_log_levels level, const char *p
 
     goto ok;
 error:
+    /* Note: don't call the LOG_ERROR macro because that might recurse */
+    gpi_log_native_v(name, level, pathname, funcname, lineno, msg, argp);
+    gpi_log_native("cocotb.gpi", GPIError, __FILE__, __func__, __LINE__, "Error calling Python logging function from C while logging the above");
     PyErr_Print();
-    LOG_ERROR("Error calling Python logging function from C");
 ok:
     Py_XDECREF(logger_name_arg);
     Py_XDECREF(level_arg);
