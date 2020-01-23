@@ -113,19 +113,15 @@ static char log_buff[LOG_SIZE];
  * If the Python logging mechanism is not initialised, dumps to `stderr`.
  *
  */
-void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
+static void gpi_log_v(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, va_list argp)
 {
     /* We first check that the log level means this will be printed
-     * before going to the expense of processing the variable
-     * arguments
+     * before going to the expense of formatting the variable arguments
      */
-    va_list ap;
 
     if (!pLogHandler) {
         if (level >= GPIInfo) {
-            va_start(ap, msg);
-            int n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
-            va_end(ap);
+            int n = vsnprintf(log_buff, LOG_SIZE, msg, argp);
 
             if (n < 0 || n >= LOG_SIZE) {
                fprintf(stderr, "Log message construction failed\n");
@@ -186,14 +182,12 @@ void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, 
     }
 
     // Ignore truncation
-    va_start(ap, msg);
     {
-        int n = vsnprintf(log_buff, LOG_SIZE, msg, ap);
+        int n = vsnprintf(log_buff, LOG_SIZE, msg, argp);
         if (n < 0 || n >= LOG_SIZE) {
             fprintf(stderr, "Log message construction failed\n");
         }
     }
-    va_end(ap);
 
     filename_arg = PyUnicode_FromString(pathname);      // New reference
     if (filename_arg == NULL) {
@@ -234,4 +228,12 @@ ok:
     Py_XDECREF(msg_arg);
     Py_XDECREF(function_arg);
     PyGILState_Release(gstate);
+}
+
+void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
+{
+    va_list argp;
+    va_start(argp, msg);
+    gpi_log_v(name, level, pathname, funcname, lineno, msg, argp);
+    va_end(argp);
 }
