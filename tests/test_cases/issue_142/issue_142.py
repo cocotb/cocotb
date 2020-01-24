@@ -7,7 +7,8 @@ from cocotb.result import TestFailure
 from cocotb.binary import BinaryValue
 
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def issue_142_overflow_error(dut):
     """Tranparently convert ints too long to pass
        through the GPI interface natively into BinaryValues"""

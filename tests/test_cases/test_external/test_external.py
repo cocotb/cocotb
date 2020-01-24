@@ -112,7 +112,8 @@ def wait_cycles(dut, n):
 def wait_cycles_wrapper(dut, n):
     return wait_cycles(dut, n)
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_time_in_external_yield(dut):
     """Test that an external function calling back into a cocotb function
     takes the expected amount of time"""
@@ -128,7 +129,8 @@ def test_time_in_external_yield(dut):
             if expected_after != time_after:
                 raise TestFailure("Wrong time elapsed in external call")
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_ext_call_return(dut):
     """Test ability to yield on an external non cocotb coroutine decorated
     function"""
@@ -159,14 +161,16 @@ def test_external_from_readonly(dut):
     value = yield external(return_two)(dut)
     assert value == 2
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_external_that_yields(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
     value = yield external(calls_cocotb_function)(dut)
     assert value == 2
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_external_and_continue(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
@@ -181,7 +185,8 @@ def run_external(dut):
     value = yield external(calls_cocotb_function)(dut)
     return value
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_external_from_fork(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
