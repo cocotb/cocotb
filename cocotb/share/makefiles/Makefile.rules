@@ -58,10 +58,10 @@ CC  ?= cc
 CXX ?= c++
 
 $(LIB_OBJ_DIR)/%.o: %.c
-	$(CC) $(C_ARGS) $(CC_WARNS) $(CFLAGS) -c $(INCLUDES) -o $@ $<
+	$(CC) $(C_ARGS) $(CC_WARNS) $(CPPFLAGS) $(CFLAGS) -c $(INCLUDES) -o $@ $<
 
 $(LIB_OBJ_DIR)/%.o: %.cpp
-	$(CXX) $(CXX_ARGS) $(CXX_WARNS) $(CXXFLAGS) -c $(INCLUDES) -o $@ $<
+	$(CXX) $(CXX_ARGS) $(CXX_WARNS) $(CPPFLAGS) $(CXXFLAGS) -c $(INCLUDES) -o $@ $<
 
 $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT): $($(LIB_NAME)_OBJS)
 	$(CC) $(C_ARGS) $(SO_LINKER_ARGS) $(LDFLAGS) -o $@ $($(LIB_NAME)_OBJS) $(ARS) $(LDLIBS) $(LIBS) $(LD_PATH)
