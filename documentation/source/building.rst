@@ -25,6 +25,15 @@ Typically the makefiles provided with cocotb for various simulators use a separa
 Make Variables
 --------------
 
+In addition to the below variables, one may pass additional options to the build process using the `conventional variables <https://www.gnu.org/software/make/manual/html_node/Catalogue-of-Rules.html>`_ for C and C++ compilation and linking:
+`CXXFLAGS`,
+`CFLAGS`,
+`CPPFLAGS`,
+`LDFLAGS`,
+and
+`LDLIBS`
+.
+
 .. make:var:: GUI
 
       Set this to 1 to enable the GUI mode in the simulator (if supported).
