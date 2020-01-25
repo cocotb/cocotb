@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import traceback
 
 # Copyright (c) 2013, 2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
@@ -325,7 +326,10 @@ class Scheduler(object):
                 self.log.debug("Issue test result to regression object")
 
             # this may scheduler another test
-            cocotb.regression_manager.handle_result(test)
+            # Note: the regression_manager will be None when cocotb is 
+            # running in 'standalone' (no-simulator) mode
+            if cocotb.regression_manager is not None:
+                cocotb.regression_manager.handle_result(test)
 
             # if it did, make sure we handle the test completing
             self._check_termination()
@@ -508,6 +512,7 @@ class Scheduler(object):
                 self._test._force_outcome(outcome)
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
+                coro.log.exception(e)
                 outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
                 self._test._force_outcome(outcome)
 

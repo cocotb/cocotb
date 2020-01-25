@@ -32,11 +32,6 @@ import sys
 import textwrap
 import abc
 
-if "COCOTB_SIM" in os.environ:
-    import simulator
-else:
-    simulator = None
-
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
 from cocotb.utils import (
@@ -146,14 +141,14 @@ class GPITrigger(Trigger):
 
         # Required to ensure documentation can build
         # if simulator is not None:
-        #    self.cbhdl = simulator.create_callback(self)
+        #    self.cbhdl = cocotb.simulator.create_callback(self)
         # else:
         self.cbhdl = 0
 
     def unprime(self):
         """Disable a primed trigger, can be re-primed."""
         if self.cbhdl != 0:
-            simulator.deregister_callback(self.cbhdl)
+            cocotb.simulator.deregister_callback(self.cbhdl)
         self.cbhdl = 0
         Trigger.unprime(self)
 
@@ -169,7 +164,7 @@ class Timer(GPITrigger):
            units (str or None, optional): One of
                ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
                When no *units* is given (``None``) the timestep is determined by
-               the simulator.
+               the cocotb.simulator.
 
         Examples:
 
@@ -204,7 +199,7 @@ class Timer(GPITrigger):
     def prime(self, callback):
         """Register for a timed callback."""
         if self.cbhdl == 0:
-            self.cbhdl = simulator.register_timed_callback(self.sim_steps,
+            self.cbhdl = cocotb.simulator.register_timed_callback(self.sim_steps,
                                                            callback, self)
             if self.cbhdl == 0:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
@@ -239,7 +234,7 @@ class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigg
 
     def prime(self, callback):
         if self.cbhdl == 0:
-            self.cbhdl = simulator.register_readonly_callback(callback, self)
+            self.cbhdl = cocotb.simulator.register_readonly_callback(callback, self)
             if self.cbhdl == 0:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
@@ -263,7 +258,7 @@ class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrig
         if self.cbhdl == 0:
             # import pdb
             # pdb.set_trace()
-            self.cbhdl = simulator.register_rwsynch_callback(callback, self)
+            self.cbhdl = cocotb.simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl == 0:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
@@ -285,7 +280,7 @@ class NextTimeStep(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPIT
 
     def prime(self, callback):
         if self.cbhdl == 0:
-            self.cbhdl = simulator.register_nextstep_callback(callback, self)
+            self.cbhdl = cocotb.simulator.register_nextstep_callback(callback, self)
             if self.cbhdl == 0:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
@@ -315,7 +310,7 @@ class _EdgeBase(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrig
     def prime(self, callback):
         """Register notification of a value change via a callback"""
         if self.cbhdl == 0:
-            self.cbhdl = simulator.register_value_change_callback(
+            self.cbhdl = cocotb.simulator.register_value_change_callback(
                 self.signal._handle, callback, type(self)._edge_type, self
             )
             if self.cbhdl == 0:

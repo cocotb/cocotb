@@ -1,4 +1,5 @@
 from __future__ import print_function, division
+import cocotb
 
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
@@ -37,13 +38,7 @@ import weakref
 import functools
 import warnings
 
-if "COCOTB_SIM" in os.environ:
-    import simulator
-    _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
-else:
-    simulator = None
-    _LOG_SIM_PRECISION = -15
-
+_LOG_SIM_PRECISION = None
 
 def get_python_integer_types():
     warnings.warn(
@@ -65,7 +60,7 @@ def get_sim_time(units=None):
     Returns:
         The simulation time in the specified units.
     """
-    timeh, timel = simulator.get_sim_time()
+    timeh, timel = cocotb.simulator.get_sim_time()
 
     result = (timeh << 32 | timel)
 
@@ -73,6 +68,11 @@ def get_sim_time(units=None):
         result = get_time_from_sim_steps(result, units)
 
     return result
+
+def get_precision():
+    if _LOG_SIM_PRECISION is None:
+        _LOG_SIM_PRECISION = cocotb.simulator.get_precision()  # request once and cache
+    return _LOG_SIM_PRECISION
 
 
 def _ldexp10(frac, exp):
@@ -97,7 +97,7 @@ def get_time_from_sim_steps(steps, units):
     Returns:
         The simulation time in the specified units.
     """
-    return _ldexp10(steps, _LOG_SIM_PRECISION - _get_log_time_scale(units))
+    return _ldexp10(steps, get_precision() - _get_log_time_scale(units))
 
 
 def get_sim_steps(time, units=None):
@@ -117,14 +117,14 @@ def get_sim_steps(time, units=None):
     """
     result = time
     if units is not None:
-        result = _ldexp10(result, _get_log_time_scale(units) - _LOG_SIM_PRECISION)
+        result = _ldexp10(result, _get_log_time_scale(units) - get_precision())
 
     result_rounded = math.floor(result)
 
     if result_rounded != result:
         raise ValueError("Unable to accurately represent {0}({1}) with the "
                          "simulator precision of 1e{2}".format(
-                             time, units, _LOG_SIM_PRECISION))
+                             time, units, get_precision()))
 
     return int(result_rounded)
 

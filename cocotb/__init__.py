@@ -1,6 +1,8 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
+from cocotb.env_info import EnvInfo
+from cocotb.exec_context import ExecContext
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -54,11 +56,97 @@ from cocotb.decorators import test, coroutine, hook, function, external  # noqa:
 
 from ._version import __version__
 
-# GPI logging instance
-if "COCOTB_SIM" in os.environ:
-    import simulator
+scheduler = None
+"""The global scheduler instance."""
+
+simulator = None
+"""The global simulator handle."""
+
+log = None
+
+regression_manager = None
+
+plusargs = {}
+"""A dictionary of "plusargs" handed to the simulation."""
+
+# To save typing provide an alias to scheduler.add
+fork = None
+
+loggpi = None
+
+# FIXME is this really required?
+_rlock = threading.RLock()
+
+
+def mem_debug(port):
+    import cocotb.memdebug
+    cocotb.memdebug.start(port)
+    
+def initialize_exec_context(info, sim):
+    """Initializes the cocotb execution context.
+    
+    This may be called by the simulator, via the _initialize_testbench
+    method. Or, it may be called directly by user code to initialize
+    cocotb in standalone (no-simulator) mode
+    
+    The 'info' parameter is of type EnvInfo, and the sim parameter
+    must provide the methods defined in SimulatorBase.
+    
+    Returns an ExecContext object containing the execution context
+    for cocotb
+    """
+    
+    global simulator
+    simulator = sim
+
+    # Propagate the simulation name and version to 
+    # package-global variables for backward compatibility    
+    global SIM_NAME, SIM_VERSION, argv
+    SIM_NAME = info.sim_name
+    SIM_VERSION = info.sim_version
+    argv = info.argv
+
+    # process_plusargs depends on cocotb.argv    
+    process_plusargs()
+    
+    exec_ctxt = ExecContext(info, sim)
+    
+    global scheduler, fork
+    scheduler = exec_ctxt.scheduler
+    fork = scheduler.add
+
+    return exec_ctxt
+
+
+def _initialise_testbench(root_name):
+    """Initialize testbench.
+
+    This function is called after the simulator has elaborated all
+    entities and is ready to run the test.
+
+    The test must be defined by the environment variables
+    :envvar:`MODULE` and :envvar:`TESTCASE`.
+
+    The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
+    comma-separated list of modules to be executed before the first test.
+    """
+    _rlock.acquire()
+    
+    # Import the simulator module, since we know we 
+    # are running under a simulator
+    import simulator as sim
+    
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)
+    
+    # The simulator will have already set some global
+    # variables that we need to store in EnvInfo
+    info = EnvInfo()
+    info.sim_name = SIM_NAME
+    info.sim_version = SIM_VERSION
+    info.argv = argv
+    
+    global log
     log = SimLog('cocotb')
     level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
     try:
@@ -67,7 +155,13 @@ if "COCOTB_SIM" in os.environ:
         log.error("Unable to set loging level to %s" % level)
         _default_log = logging.INFO
     log.setLevel(_default_log)
+    
+    global loggpi
     loggpi = SimLog('cocotb.gpi')
+
+    # Initialize the core execution context    
+    initialize_exec_context(info, sim)
+    
     # Notify GPI of log level
     simulator.log_level(_default_log)
 
@@ -92,39 +186,6 @@ if "COCOTB_SIM" in os.environ:
     if not sys.warnoptions:
         warnings.simplefilter("default")
 
-scheduler = Scheduler()
-"""The global scheduler instance."""
-
-regression_manager = None
-
-plusargs = {}
-"""A dictionary of "plusargs" handed to the simulation."""
-
-# To save typing provide an alias to scheduler.add
-fork = scheduler.add
-
-# FIXME is this really required?
-_rlock = threading.RLock()
-
-
-def mem_debug(port):
-    import cocotb.memdebug
-    cocotb.memdebug.start(port)
-
-
-def _initialise_testbench(root_name):
-    """Initialize testbench.
-
-    This function is called after the simulator has elaborated all
-    entities and is ready to run the test.
-
-    The test must be defined by the environment variables
-    :envvar:`MODULE` and :envvar:`TESTCASE`.
-
-    The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
-    comma-separated list of modules to be executed before the first test.
-    """
-    _rlock.acquire()
 
     memcheck_port = os.getenv('MEMCHECK')
     if memcheck_port is not None:
@@ -139,7 +200,6 @@ def _initialise_testbench(root_name):
 
     # Create the base handle type
 
-    process_plusargs()
 
     # Seed the Python random number generator to make this repeatable
     global RANDOM_SEED
