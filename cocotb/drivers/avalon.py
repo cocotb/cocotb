@@ -512,8 +512,7 @@ class AvalonST(ValidatedBusDriver):
 
     _default_config = {"firstSymbolInHighOrderBits" : True}
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
+    def __init__(self, entity, name, clock, *, config={}, **kwargs):
         ValidatedBusDriver.__init__(self, entity, name, clock, **kwargs)
 
         self.config = AvalonST._default_config.copy()
@@ -605,8 +604,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         "readyLatency"                  : 0
     }
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
+    def __init__(self, entity, name, clock, *, config={}, **kwargs):
         ValidatedBusDriver.__init__(self, entity, name, clock, **kwargs)
 
         self.config = AvalonSTPkts._default_config.copy()

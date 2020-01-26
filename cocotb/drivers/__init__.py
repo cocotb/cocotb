@@ -299,8 +299,7 @@ class ValidatedBusDriver(BusDriver):
             ``(valid, invalid)`` cycles to insert.
     """
 
-    def __init__(self, entity, name, clock, **kwargs):
-        valid_generator = kwargs.pop("valid_generator", None)
+    def __init__(self, entity, name, clock, *, valid_generator=None, **kwargs):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.set_valid_generator(valid_generator=valid_generator)
 

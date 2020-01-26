@@ -29,7 +29,6 @@ from collections import OrderedDict, defaultdict
 import cocotb
 from cocotb.bus import Bus
 from cocotb.triggers import RisingEdge, ReadOnly
-from cocotb.utils import reject_remaining_kwargs
 
 
 class Wavedrom(object):
@@ -129,11 +128,8 @@ class trace(object):
             j = waves.dumpj()
     """
 
-    def __init__(self, *args, **kwargs):
-        # emulate keyword-only arguments in python 2
-        self._clock = kwargs.pop("clk", None)
-        reject_remaining_kwargs('__init__', kwargs)
-
+    def __init__(self, *args, clk=None):
+        self._clock = clk
         self._signals = []
         for arg in args:
             self._signals.append(Wavedrom(arg))
