@@ -55,8 +55,7 @@ class AvalonST(BusMonitor):
 
     _default_config = {"firstSymbolInHighOrderBits": True}
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
+    def __init__(self, entity, name, clock, *, config={}, **kwargs):
         BusMonitor.__init__(self, entity, name, clock, **kwargs)
 
         self.config = self._default_config.copy()
@@ -109,9 +108,7 @@ class AvalonSTPkts(BusMonitor):
         "invalidTimeout"                : 0,
     }
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
-        report_channel = kwargs.pop('report_channel', False)
+    def __init__(self, entity, name, clock, *, config={}, report_channel=False, **kwargs):
         BusMonitor.__init__(self, entity, name , clock, **kwargs)
 
         self.config = self._default_config.copy()
