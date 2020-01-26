@@ -334,6 +334,15 @@ spelling_ignore_pypi_package_names = False
 spelling_ignore_wiki_words = False
 spelling_show_suggestions = True
 
-# -- Setup for inheritance_diagram directive which uses graphviz ---------------
+# -- Extra setup for inheritance_diagram directive which uses graphviz ---------
 
 graphviz_output_format = 'svg'
+
+# -- Extra setup for towncrier -------------------------------------------------
+# see also https://towncrier.readthedocs.io/en/actual-freaking-docs/
+
+in_progress_notes = subprocess.check_output(['towncrier', '--draft'],
+                                            cwd='../..',
+                                            universal_newlines=True)
+with open('generated/master-notes.rst', 'w') as f:
+    f.write(in_progress_notes)

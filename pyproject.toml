@@ -1,0 +1,32 @@
+[tool.towncrier]
+    package = "cocotb"
+    directory = "documentation/source/newsfragments"
+    filename = "documentation/source/release_notes.rst"
+    issue_format = ":pr:`{issue}`"
+    underlines = '=-^"'  # the full list is '#*=-^"' but the two highest levels are not handled by towncrier
+    all_bullets = false
+
+    [[tool.towncrier.type]]
+        directory = "feature"
+        name = "Features"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "bugfix"
+        name = "Bugfixes"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "doc"
+        name = "Improved Documentation"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "removal"
+        name = "Deprecations and Removals"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "change"
+        name = "Changes"
+        showcontent = true
