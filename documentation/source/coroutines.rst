@@ -150,7 +150,33 @@ they'd naturally end.
         # NOTE: isclose is a Python 3.5+ feature
         if not isclose(edge_time_ns, start_time_ns + 4.0):
             raise TestFailure("Expected a period of 4 ns")
+            
+The currently-running coroutine can always be accessed via the ``active`` 
+member of the RunningCoroutine class.
 
+.. code-block:: python3
+
+    @cocotb.test()
+    def test_count_edge_cycles(dut, period=1, clocks=6):
+        print("Note: the active coroutine is: %s" % str(RunningCoroutine.active))
+        cocotb.fork(Clock(dut.clk, period, units='ns').start())
+        yield RisingEdge(dut.clk)
+
+        timer = Timer(period + 10)
+        task = cocotb.fork(count_edges_cycles(dut.clk, clocks))
+        count = 0
+        expect = clocks - 1
+
+        while True:
+            result = yield [timer, task.join()]
+            if count > expect:
+                raise TestFailure("Task didn't complete in expected time")
+            if result is timer:
+                dut._log.info("Count %d: Task still running" % count)
+                count += 1
+            else:
+                break
+            
 .. _async_functions:
 
 Async functions

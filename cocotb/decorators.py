@@ -86,7 +86,12 @@ class RunningCoroutine(object):
 
         coro.kill() will destroy a coroutine instance (and cause any Join
         triggers to fire.
+        
+        RunningCoroutine.active -- currently-running coroutine
     """
+    
+    active = None # RunningCoroutine
+
     def __init__(self, inst, parent):
         if hasattr(inst, "__name__"):
             self.__name__ = "%s" % inst.__name__
@@ -149,6 +154,9 @@ class RunningCoroutine(object):
             CoroutineComplete: If the coroutine returns or throws an error, self._outcome is set, and
            :exc:`CoroutineComplete` is thrown.
         """
+
+        RunningCoroutine.active = self
+        
         try:
             self._started = True
             return outcome.send(self._coro)
