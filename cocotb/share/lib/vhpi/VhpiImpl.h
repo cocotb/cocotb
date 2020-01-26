@@ -109,9 +109,6 @@ public:
     }
 private:
     std::string initial_value;
-    bool rising;
-    bool falling;
-    VhpiSignalObjHdl *signal;
 };
 
 class VhpiTimedCbHdl : public VhpiCbHdl {
@@ -197,9 +194,9 @@ public:
     virtual double get_signal_value_real();
     virtual long get_signal_value_long();
 
-
-    virtual int set_signal_value(const long value);
-    virtual int set_signal_value(const double value);
+    using GpiSignalObjHdl::set_signal_value;
+    virtual int set_signal_value(long value);
+    virtual int set_signal_value(double value);
     virtual int set_signal_value(std::string &value);
 
     /* Value change callback accessor */
@@ -207,7 +204,7 @@ public:
     virtual int initialise(std::string &name, std::string &fq_name);
 
 protected:
-    const vhpiEnumT chr2vhpi(const char value);
+    vhpiEnumT chr2vhpi(char value);
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
     VhpiValueCbHdl m_rising_cb;
@@ -224,7 +221,8 @@ public:
 
     virtual ~VhpiLogicSignalObjHdl() { }
 
-    int set_signal_value(const long value);
+    using GpiSignalObjHdl::set_signal_value;
+    int set_signal_value(long value);
     int set_signal_value(std::string &value);
 
     int initialise(std::string &name, std::string &fq_name);
