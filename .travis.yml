@@ -26,6 +26,25 @@ jobs:
       install: pip install flake8
       script: flake8
 
+    - stage: BuildLibsTests
+      name: gcc
+      python: 3.7
+      before_install:
+        - pip install tox
+        - pyenv global system $TRAVIS_PYTHON_VERSION
+      script:
+        - CC=gcc CPPFLAGS=-Werror tox -e buildonly
+
+    - stage: BuildLibsTests
+      name: clang
+      python: 3.7
+      before_install:
+        - sudo apt-get install clang
+        - pip install tox
+        - pyenv global system $TRAVIS_PYTHON_VERSION
+      script:
+        - CC=clang CPPFLAGS=-Werror tox -e buildonly
+
     - stage: SimTests
       os: linux
       python: 3.5
@@ -128,3 +147,7 @@ jobs:
     - stage: SimTests
       python: 3.7
       env: SIM=ghdl
+    - stage: BuildLibsTests
+      name: gcc
+    - stage: BuildLibsTests
+      name: clang
