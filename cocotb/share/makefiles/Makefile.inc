@@ -72,7 +72,7 @@ export INCLUDES := -I$(COCOTB_SHARE_DIR)/include -I$(PYTHON_INCLUDEDIR)
 LIB_EXT    := so
 PY_EXT     := so
 
-BASE_WARNS := -Wall -Wextra -Wconversion -Wcast-qual -Wwrite-strings -Werror
+BASE_WARNS := -Wall -Wextra -Wconversion -Wcast-qual -Wwrite-strings
 CC_WARNS   := $(BASE_WARNS) -Wstrict-prototypes -Waggregate-return
 CXX_WARNS  := $(BASE_WARNS) -Wnon-virtual-dtor -Woverloaded-virtual
 
