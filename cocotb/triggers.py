@@ -24,6 +24,7 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import traceback
 
 """A collections of triggers which a testbench can yield."""
 
@@ -379,6 +380,7 @@ class Event(object):
 
     def set(self, data=None):
         """Wake up all coroutines blocked on this event."""
+            
         self.fired = True
         self.data = data
 

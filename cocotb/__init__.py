@@ -111,9 +111,10 @@ def initialize_exec_context(info, sim):
     
     exec_ctxt = ExecContext(info, sim)
     
-    global scheduler, fork
+    global scheduler, fork, log
     scheduler = exec_ctxt.scheduler
     fork = scheduler.add
+    log = exec_ctxt.log
 
     return exec_ctxt
 
