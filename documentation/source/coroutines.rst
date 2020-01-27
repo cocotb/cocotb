@@ -28,18 +28,11 @@ Coroutines may also yield other coroutines:
             yield wait_10ns()
 
 Coroutines can return a value, so that they can be used by other coroutines.
-Before Python 3.3, this requires a :any:`ReturnValue` to be raised.
 
 .. code-block:: python3
 
     @cocotb.coroutine
     def get_signal(clk, signal):
-        yield RisingEdge(clk)
-        raise ReturnValue(signal.value)
-
-    @cocotb.coroutine
-    def get_signal_python_33(clk, signal):
-        # newer versions of Python can use return normally
         yield RisingEdge(clk)
         return signal.value
 
