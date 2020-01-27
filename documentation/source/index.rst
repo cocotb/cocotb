@@ -21,6 +21,7 @@ Contents:
    examples
    troubleshooting
    simulator_support
+   extensions
    roadmap
    release_notes
 
