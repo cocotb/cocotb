@@ -28,7 +28,6 @@
 ******************************************************************************/
 
 #include <Python.h>
-#include "../compat/python3_compat.h"
 #include <gpi_logging.h>
 
 // Used to log using the standard python mechanism
