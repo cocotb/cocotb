@@ -84,7 +84,7 @@ GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
     GPI_ARGS = -pli libvpi
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = vhpi
+    GPI_EXTRA = cocotbvhpi
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
