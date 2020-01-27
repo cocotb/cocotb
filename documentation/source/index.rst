@@ -9,6 +9,7 @@ Contents:
    introduction
    quickstart
    building
+   writing_testbenches
    coroutines
    triggers
    testbench_tools
