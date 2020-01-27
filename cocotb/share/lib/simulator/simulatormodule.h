@@ -31,7 +31,6 @@
 #define _SIMULATOR_MODULE_H
 
 #include <Python.h>
-#include "../compat/python3_compat.h"
 #include "gpi_logging.h"
 #include "gpi.h"
 

@@ -42,6 +42,12 @@ static int sim_ending = 0;
 #include "simulatormodule.h"
 #include <cocotb_utils.h>     // COCOTB_UNUSED
 
+struct module_state {
+    PyObject *error;
+};
+
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+
 typedef int (*gpi_function_t)(const void *);
 
 PyGILState_STATE TAKE_GIL(void)
@@ -1034,20 +1040,20 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyMODINIT_FUNC
-MODULE_ENTRY_POINT(void)
+PyMODINIT_FUNC PyInit_simulator(void)
 {
     PyObject* simulator;
 
     simulator = PyModule_Create(&moduledef);
 
-    if (simulator == NULL) INITERROR;
+    if (simulator == NULL)
+        return NULL;
     struct module_state *st = GETSTATE(simulator);
 
     st->error = PyErr_NewException(MODULE_NAME ".Error", NULL, NULL);
     if (st->error == NULL) {
         Py_DECREF(simulator);
-        INITERROR;
+        return NULL;
     }
 
     add_module_constants(simulator);
