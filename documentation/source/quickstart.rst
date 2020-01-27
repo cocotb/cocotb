@@ -10,11 +10,13 @@ Pre-requisites
 
 Cocotb has the following requirements:
 
-* Python 2.7, Python 3.5+ (recommended)
+* Python 3.5+
 * Python-dev packages
 * GCC 4.8.1+ or Clang 3.3+ and associated development packages
 * GNU Make
 * A Verilog or VHDL simulator, depending on your RTL source code
+
+.. versionchanged:: 1.4 Dropped Python 2 support
 
 Installation via PIP
 --------------------
@@ -27,12 +29,6 @@ Cocotb can be installed by running
 
     pip3 install cocotb
 
-or
-
-.. code-block:: bash
-
-    pip install cocotb
-
 For user local installation follow the
 `pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
 
@@ -41,7 +37,7 @@ To install the development version of cocotb:
 .. code-block:: bash
 
     git clone https://github.com/cocotb/cocotb
-    pip install -e ./cocotb
+    pip3 install -e ./cocotb
 
 
 Native Linux Installation
