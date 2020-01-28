@@ -5,13 +5,76 @@
 ###############################################################################
 
 from unittest.case import TestCase
-from cocotb.simulator_standalone import SimulatorStandalone
-from cocotb.env_info import EnvInfo
 import cocotb
 from cocotb.triggers import Event, Timer
 from cocotb.utils import get_sim_time
 
 class TestSimStandalone(TestCase):
+
+    class SimulatorStub():
+        """Implements minimum of the simulator API
+
+           The API is sufficient for the cocotb scheduler to be run standalone
+           without being within a real HDL simulator
+        """
+
+        def __init__(self):
+            self.timewheel = [] # list of time,callback,id tuples
+            self.time_ps = 0
+            self.cb_id = 1
+
+        def register_timed_callback(self, sim_steps, callback, *args):
+            ret = self.cb_id
+            inserted = False
+        
+            for i in range(len(self.timewheel)):
+                if (sim_steps > self.timewheel[i][0]):
+                    sim_steps -= self.timewheel[i][0]
+                elif i+1 < len(self.timewheel) and self.timewheel[i+1][0] > sim_steps:
+                    offset = self.timewheel[i][0]
+                    offset -= sim_steps
+                    self.timewheel[i][0] = offset
+                    self.timewheel.insert(i, [sim_steps, callback, args, ret])
+                    inserted = True
+                    break
+            
+            if not inserted:
+                self.timewheel.append([sim_steps, callback, args, ret])
+                
+            self.cb_id += 1
+        
+            return ret
+
+        def deregister_callback(self, hndl):
+            for i in range(len(self.timewheel)):
+                if self.timewheel[i][3] == hndl:
+                    self.timewheel.pop(i)
+                    break
+
+        def run(self):
+            base_time = -1
+            ret = len(self.timewheel) > 0
+        
+            if ret:
+                base_time = self.timewheel[0][0]
+                self.time_ps += base_time
+            
+            while len(self.timewheel) > 0:
+                top = self.timewheel.pop(0)
+                top[1](*top[2])
+                
+                if len(self.timewheel) > 0 and self.timewheel[0][0] > 0:
+                    # Reached the end of the current timestep
+                    break
+
+            return ret
+
+        def get_precision(self):
+            return -12 # pS
+    
+        def get_sim_time(self):
+            return (self.time_ps >> 32, self.time_ps & 0xFFFFFFFF)
+
     class MB():
         def __init__(self):
             self.p2c_ev = Event()
@@ -52,7 +115,7 @@ class TestSimStandalone(TestCase):
                 yield mb.get_p2c()
                 mb.send_c2p()
 
-        @cocotb.coroutine
+        @cocotb.test()
         def test_main():
             mb = TestSimStandalone.MB()
             t_c1 = cocotb.fork(producer(mb))
@@ -61,13 +124,11 @@ class TestSimStandalone(TestCase):
             self.assertEqual(mb.p2c, 16)
             self.assertEqual(mb.c2p, 16)
         
-        sim = SimulatorStandalone()
-        info = EnvInfo()
+        sim = TestSimStandalone.SimulatorStub()
         
-        exec_ctxt = cocotb.initialize_exec_context(info, sim)
-        exec_ctxt.start_test(test_main())
+        scheduler = cocotb.initialize_standalone(sim)
+        scheduler.add_test(test_main())
 
-        self.assertEqual(get_sim_time(), 0)
         # This will run the test-completed callback
         sim.run()
         
@@ -89,7 +150,7 @@ class TestSimStandalone(TestCase):
                 mb.send_c2p()
                 yield Timer(20)
 
-        @cocotb.coroutine
+        @cocotb.test()
         def test_main(mb):
             t_c1 = cocotb.fork(producer(mb))
             t_c2 = cocotb.fork(consumer(mb))
@@ -97,12 +158,11 @@ class TestSimStandalone(TestCase):
             self.assertEqual(mb.p2c, 16)
             self.assertEqual(mb.c2p, 16)
         
-        sim = SimulatorStandalone()
-        info = EnvInfo()
-        
         mb = TestSimStandalone.MB()
-        exec_ctxt = cocotb.initialize_exec_context(info, sim)
-        exec_ctxt.start_test(test_main(mb))
+        sim = TestSimStandalone.SimulatorStub()
+        
+        scheduler = cocotb.initialize_standalone(sim)
+        scheduler.add_test(test_main(mb))
        
         # The consumer and producer wait after each transfer.
         # Consequently, only the first will be complete 

@@ -1,9 +1,6 @@
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
-from cocotb.env_info import EnvInfo
-from cocotb.exec_context import ExecContext
-
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -82,18 +79,16 @@ def mem_debug(port):
     import cocotb.memdebug
     cocotb.memdebug.start(port)
     
-def initialize_exec_context(info, sim):
-    """Initializes the cocotb execution context.
+def initialize_standalone(sim, args=None, sim_name="unknown", sim_version="unknown"):
+    """Initializes cocotb for standalone use of the scheduler.
     
-    This may be called by the simulator, via the _initialize_testbench
-    method. Or, it may be called directly by user code to initialize
-    cocotb in standalone (no-simulator) mode
+    Parameters:
+    - sim -- Object that implements the API provided by the ``simulator`` module
+    - args -- List of simulator command-line arguments
+    - sim_name - Product name of the simulator
+    - sim_version - Version of the simulator
     
-    The 'info' parameter is of type EnvInfo, and the sim parameter
-    must provide the methods defined in SimulatorBase.
-    
-    Returns an ExecContext object containing the execution context
-    for cocotb
+    Returns: the cocotb scheduler
     """
     
     global simulator
@@ -102,21 +97,22 @@ def initialize_exec_context(info, sim):
     # Propagate the simulation name and version to 
     # package-global variables for backward compatibility    
     global SIM_NAME, SIM_VERSION, argv
-    SIM_NAME = info.sim_name
-    SIM_VERSION = info.sim_version
-    argv = info.argv
+    SIM_NAME = sim_name
+    SIM_VERSION = sim_version
+    if args is not None:
+        argv = args
+    else:
+        argv = []
 
     # process_plusargs depends on cocotb.argv    
     process_plusargs()
     
-    exec_ctxt = ExecContext(info, sim)
-    
     global scheduler, fork, log
-    scheduler = exec_ctxt.scheduler
+    scheduler = Scheduler()
     fork = scheduler.add
-    log = exec_ctxt.log
+    log = SimLog('cocotb')
 
-    return exec_ctxt
+    return scheduler
 
 
 def _initialise_testbench(root_name):
@@ -135,17 +131,12 @@ def _initialise_testbench(root_name):
     
     # Import the simulator module, since we know we 
     # are running under a simulator
+    global simulator
     import simulator as sim
+    simulator = sim
     
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)
-    
-    # The simulator will have already set some global
-    # variables that we need to store in EnvInfo
-    info = EnvInfo()
-    info.sim_name = SIM_NAME
-    info.sim_version = SIM_VERSION
-    info.argv = argv
     
     global log
     log = SimLog('cocotb')
@@ -160,9 +151,6 @@ def _initialise_testbench(root_name):
     global loggpi
     loggpi = SimLog('cocotb.gpi')
 
-    # Initialize the core execution context    
-    initialize_exec_context(info, sim)
-    
     # Notify GPI of log level
     simulator.log_level(_default_log)
 
@@ -187,6 +175,8 @@ def _initialise_testbench(root_name):
     if not sys.warnoptions:
         warnings.simplefilter("default")
 
+    global scheduler
+    scheduler = Scheduler()
 
     memcheck_port = os.getenv('MEMCHECK')
     if memcheck_port is not None:
