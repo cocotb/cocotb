@@ -175,8 +175,10 @@ def _initialise_testbench(root_name):
     if not sys.warnoptions:
         warnings.simplefilter("default")
 
-    global scheduler
+    global scheduler, fork
     scheduler = Scheduler()
+
+    fork = scheduler.add
 
     memcheck_port = os.getenv('MEMCHECK')
     if memcheck_port is not None:
