@@ -27,6 +27,11 @@
 
 #include <assert.h>
 #include "VhpiImpl.h"
+#include <limits>
+
+namespace {
+    using bufSize_type = decltype(vhpiValueT::bufSize);
+}
 
 extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 
@@ -268,7 +273,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         case vhpiStrVal: {
             m_indexable = true;
             m_num_elems = vhpi_get(vhpiSizeP, handle);
-            m_value.bufSize = (m_num_elems)*sizeof(vhpiCharT) + 1;
+            m_value.bufSize = (m_num_elems)*static_cast<bufSize_type>(sizeof(vhpiCharT) + 1);
             m_value.value.str = (vhpiCharT *)malloc(m_value.bufSize);
             m_value.numElems = m_num_elems;
             if (!m_value.value.str) {
@@ -290,7 +295,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     }
 
     if (m_num_elems) {
-        m_binvalue.bufSize = m_num_elems*sizeof(vhpiCharT) + 1;
+        m_binvalue.bufSize = m_num_elems*static_cast<bufSize_type>(sizeof(vhpiCharT)) + 1;
         m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, sizeof(vhpiCharT));
 
         if (!m_binvalue.value.str) {
@@ -338,7 +343,7 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     if (vhpi_get(vhpiKindP, query_hdl) == vhpiArrayTypeDeclK) {
         m_indexable = true;
         m_value.format = vhpiLogicVecVal;
-        m_value.bufSize = m_num_elems*sizeof(vhpiEnumT);
+        m_value.bufSize = m_num_elems*static_cast<bufSize_type>(sizeof(vhpiEnumT));
         m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize + 1);
         if (!m_value.value.enumvs) {
             LOG_CRITICAL("Unable to alloc mem for write buffer: ABORTING");
@@ -350,7 +355,7 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     }
 
     if (m_num_elems) {
-        m_binvalue.bufSize = m_num_elems*sizeof(vhpiCharT) + 1;
+        m_binvalue.bufSize = m_num_elems*static_cast<bufSize_type>(sizeof(vhpiCharT) + 1);
         m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, sizeof(vhpiCharT));
 
         if (!m_binvalue.value.str) {
@@ -442,7 +447,7 @@ error:
 }
 
 // Value related functions
-const vhpiEnumT VhpiSignalObjHdl::chr2vhpi(const char value)
+vhpiEnumT VhpiSignalObjHdl::chr2vhpi(const char value)
 {
     switch (value) {
         case '0':
@@ -550,7 +555,7 @@ int VhpiSignalObjHdl::set_signal_value(long value)
         case vhpiLogicVecVal: {
             int i;
             for (i=0; i<m_num_elems; i++)
-                m_value.value.enumvs[m_num_elems-i-1] = value&(1L<<i);
+                m_value.value.enumvs[m_num_elems-i-1] = value&(1L<<i) ? vhpi1 : vhpi0;
 
             // Since we may not get the numElems correctly from the sim and have to infer it
             // we also need to set it here as well each time.
@@ -561,17 +566,32 @@ int VhpiSignalObjHdl::set_signal_value(long value)
 
         case vhpiLogicVal:
         case vhpiEnumVal: {
-            m_value.value.enumv = value;
+            using EnumLimits = std::numeric_limits<vhpiEnumT>;
+            if ((value > EnumLimits::max()) || (value < EnumLimits::min())) {
+                LOG_ERROR("Data loss detected");
+                return -1;
+            }
+            m_value.value.enumv = static_cast<vhpiEnumT>(value);
             break;
         }
 
         case vhpiIntVal: {
-            m_value.value.intg = value;
+            using IntLimits = std::numeric_limits<vhpiIntT>;
+            if ((value > IntLimits::max()) || (value < IntLimits::min())) {
+                LOG_ERROR("Data loss detected");
+                return -1;
+            }
+            m_value.value.intg = static_cast<vhpiIntT>(value);
             break;
         }
 
         case vhpiCharVal: {
-            m_value.value.ch = value;
+            using CharLimits = std::numeric_limits<vhpiCharT>;
+            if ((value > CharLimits::max()) || (value < CharLimits::min())) {
+                LOG_ERROR("Data loss detected");
+                return -1;
+            }
+            m_value.value.ch = static_cast<vhpiCharT>(value);
             break;
         }
 
