@@ -92,6 +92,9 @@ if "COCOTB_SIM" in os.environ:
     if not sys.warnoptions:
         warnings.simplefilter("default")
 
+InternalError = scheduler.InternalError
+"""InternalError should be accessible outside scheduler."""
+
 scheduler = Scheduler()
 """The global scheduler instance."""
 

@@ -262,7 +262,8 @@ class RunningTest(RunningCoroutine):
         should be inlined into `abort` below, and the call in `unschedule`
         replaced with `abort(outcome.error)`.
         """
-        assert self._outcome is None
+        if self._outcome is not None:
+            raise cocotb.InternalError("Outcome already has a value, but is being set again.")
         if _debug:
             self.log.debug("outcome forced to {}".format(outcome))
         self._outcome = outcome
