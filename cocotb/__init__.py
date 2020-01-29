@@ -56,8 +56,10 @@ from ._version import __version__
 scheduler = None
 """The global scheduler instance."""
 
-# To save typing provide an alias to scheduler.add
-fork = None
+def fork(coro):
+    """Start a new coroutine"""
+    global scheduler
+    return scheduler.add(coro)
 
 simulator = None
 """The global simulator handle."""
@@ -82,10 +84,6 @@ SIM_VERSION = None
 
 loggpi = None
 
-# FIXME is this really required?
-_rlock = threading.RLock()
-
-
 def mem_debug(port):
     import cocotb.memdebug
     cocotb.memdebug.start(port)
@@ -102,6 +100,9 @@ def _initialise_testbench(root_name):
     The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
     comma-separated list of modules to be executed before the first test.
     """
+    
+    # FIXME is this really required?
+    _rlock = threading.RLock()
     _rlock.acquire()
     
     # Import the simulator module, since we know we 
@@ -150,10 +151,6 @@ def _initialise_testbench(root_name):
     if not sys.warnoptions:
         warnings.simplefilter("default")
 
-    global scheduler, fork
-    scheduler = Scheduler()
-
-    fork = scheduler.add
 
     memcheck_port = os.getenv('MEMCHECK')
     if memcheck_port is not None:
@@ -202,6 +199,10 @@ def _initialise_testbench(root_name):
     global regression_manager
 
     regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=RANDOM_SEED, hooks=hooks)
+    
+    global scheduler
+    scheduler = Scheduler(regression_manager.handle_result)
+    
     regression_manager.initialise()
     regression_manager.execute()
 

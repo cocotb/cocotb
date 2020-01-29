@@ -219,7 +219,7 @@ class Scheduler(object):
     _read_only = ReadOnly()
     _timer1 = Timer(1)
 
-    def __init__(self):
+    def __init__(self, handle_result=None):
 
         self.log = SimLog("cocotb.scheduler")
         if _debug:
@@ -244,6 +244,8 @@ class Scheduler(object):
         self._pending_triggers = []
         self._pending_threads = []
         self._pending_events = []   # Events we need to call set on once we've unwound
+        
+        self._handle_result = handle_result
 
         self._terminate = False
         self._test = None
@@ -326,10 +328,8 @@ class Scheduler(object):
                 self.log.debug("Issue test result to regression object")
 
             # this may scheduler another test
-            # Note: the regression_manager will be None when cocotb is 
-            # running in 'standalone' (no-simulator) mode
-            if cocotb.regression_manager is not None:
-                cocotb.regression_manager.handle_result(test)
+            if self._handle_result is not None:
+                self._handle_result(test)
 
             # if it did, make sure we handle the test completing
             self._check_termination()
@@ -818,7 +818,8 @@ class Scheduler(object):
         if self._test:
             self.log.debug("Issue sim closedown result to regression object")
             self._test.abort(exc)
-            cocotb.regression_manager.handle_result(self._test)
+            if self._handle_result is not None:
+                self._handle_result(self._test)
 
     def cleanup(self):
         """Clear up all our state.

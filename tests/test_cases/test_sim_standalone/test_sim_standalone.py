@@ -130,7 +130,6 @@ class TestSimStandalone(TestCase):
         sim = TestSimStandalone.SimulatorStub()
         cocotb.simulator = sim
         cocotb.scheduler = Scheduler()
-        cocotb.fork = cocotb.scheduler.add
         cocotb.log = SimLog("cocotb")
         cocotb.argv = []
         cocotb.process_plusargs()
