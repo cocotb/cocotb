@@ -17,9 +17,8 @@ jobs:
     - stage: Lint
       name: whitespace
       os: linux
-      script: 
+      script:
         - echo 'Checking for trailing whitespace'
-        - git ls-files | xargs egrep -l '\\s+$'
         - "[[ -z \"$(git ls-files | xargs egrep -l '\\s+$')\" ]]"
 
     - stage: Lint
