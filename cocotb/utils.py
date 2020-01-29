@@ -71,7 +71,7 @@ def get_sim_time(units=None):
 
 def get_precision():
     global _LOG_SIM_PRECISION
-    
+
     if _LOG_SIM_PRECISION is None:
         _LOG_SIM_PRECISION = cocotb.simulator.get_precision()  # request once and cache
     return _LOG_SIM_PRECISION

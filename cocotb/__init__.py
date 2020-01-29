@@ -87,7 +87,7 @@ loggpi = None
 def mem_debug(port):
     import cocotb.memdebug
     cocotb.memdebug.start(port)
-    
+
 def _initialise_testbench(root_name):
     """Initialize testbench.
 
@@ -100,20 +100,20 @@ def _initialise_testbench(root_name):
     The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
     comma-separated list of modules to be executed before the first test.
     """
-    
+
     # FIXME is this really required?
     _rlock = threading.RLock()
     _rlock.acquire()
-    
-    # Import the simulator module, since we know we 
+
+    # Import the simulator module, since we know we
     # are running under a simulator
     global simulator
     import simulator as sim
     simulator = sim
-    
+
     logging.basicConfig()
     logging.setLoggerClass(SimBaseLog)
-    
+
     global log
     log = SimLog('cocotb')
     level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
@@ -123,7 +123,7 @@ def _initialise_testbench(root_name):
         log.error("Unable to set loging level to %s" % level)
         _default_log = logging.INFO
     log.setLevel(_default_log)
-    
+
     global loggpi
     loggpi = SimLog('cocotb.gpi')
 
@@ -164,7 +164,7 @@ def _initialise_testbench(root_name):
              (__version__, exec_path))
 
     # Create the base handle type
-    
+
     process_plusargs()
 
 
@@ -199,10 +199,10 @@ def _initialise_testbench(root_name):
     global regression_manager
 
     regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=RANDOM_SEED, hooks=hooks)
-    
+
     global scheduler
     scheduler = Scheduler(regression_manager.handle_result)
-    
+
     regression_manager.initialise()
     regression_manager.execute()
 

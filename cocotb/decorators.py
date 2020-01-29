@@ -86,10 +86,10 @@ class RunningCoroutine(object):
 
         coro.kill() will destroy a coroutine instance (and cause any Join
         triggers to fire.
-        
+
         RunningCoroutine.active -- currently-running coroutine
     """
-    
+
     active = None # RunningCoroutine
 
     def __init__(self, inst, parent):
@@ -156,7 +156,7 @@ class RunningCoroutine(object):
         """
 
         RunningCoroutine.active = self
-        
+
         try:
             self._started = True
             return outcome.send(self._coro)

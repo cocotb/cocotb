@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import traceback
 
 # Copyright (c) 2013, 2018 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
@@ -244,7 +243,7 @@ class Scheduler(object):
         self._pending_triggers = []
         self._pending_threads = []
         self._pending_events = []   # Events we need to call set on once we've unwound
-        
+
         self._handle_result = handle_result
 
         self._terminate = False
