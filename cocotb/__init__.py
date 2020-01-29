@@ -56,18 +56,29 @@ from ._version import __version__
 scheduler = None
 """The global scheduler instance."""
 
+# To save typing provide an alias to scheduler.add
+fork = None
+
 simulator = None
 """The global simulator handle."""
 
 log = None
+"""The global log handle."""
 
 regression_manager = None
+"""The global regression-manager handle."""
 
 plusargs = {}
 """A dictionary of "plusargs" handed to the simulation."""
 
-# To save typing provide an alias to scheduler.add
-fork = None
+argv = []
+"""Simulator command-line arguments"""
+
+SIM_NAME = None
+"""Simulator product name"""
+
+SIM_VERSION = None
+"""Simulator version"""
 
 loggpi = None
 
@@ -79,42 +90,6 @@ def mem_debug(port):
     import cocotb.memdebug
     cocotb.memdebug.start(port)
     
-def initialize_standalone(sim, args=None, sim_name="unknown", sim_version="unknown"):
-    """Initializes cocotb for standalone use of the scheduler.
-    
-    Parameters:
-    - sim -- Object that implements the API provided by the ``simulator`` module
-    - args -- List of simulator command-line arguments
-    - sim_name - Product name of the simulator
-    - sim_version - Version of the simulator
-    
-    Returns: the cocotb scheduler
-    """
-    
-    global simulator
-    simulator = sim
-
-    # Propagate the simulation name and version to 
-    # package-global variables for backward compatibility    
-    global SIM_NAME, SIM_VERSION, argv
-    SIM_NAME = sim_name
-    SIM_VERSION = sim_version
-    if args is not None:
-        argv = args
-    else:
-        argv = []
-
-    # process_plusargs depends on cocotb.argv    
-    process_plusargs()
-    
-    global scheduler, fork, log
-    scheduler = Scheduler()
-    fork = scheduler.add
-    log = SimLog('cocotb')
-
-    return scheduler
-
-
 def _initialise_testbench(root_name):
     """Initialize testbench.
 
@@ -192,6 +167,8 @@ def _initialise_testbench(root_name):
              (__version__, exec_path))
 
     # Create the base handle type
+    
+    process_plusargs()
 
 
     # Seed the Python random number generator to make this repeatable

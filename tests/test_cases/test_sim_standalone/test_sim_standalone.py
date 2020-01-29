@@ -6,7 +6,10 @@
 
 from unittest.case import TestCase
 import cocotb
+import logging
+from cocotb.log import SimLog
 from cocotb.triggers import Event, Timer
+from cocotb.scheduler import Scheduler
 from cocotb.utils import get_sim_time
 
 class TestSimStandalone(TestCase):
@@ -125,9 +128,15 @@ class TestSimStandalone(TestCase):
             self.assertEqual(mb.c2p, 16)
         
         sim = TestSimStandalone.SimulatorStub()
+        cocotb.simulator = sim
+        cocotb.scheduler = Scheduler()
+        cocotb.fork = cocotb.scheduler.add
+        cocotb.log = SimLog("cocotb")
+        cocotb.argv = []
+        cocotb.process_plusargs()
+        cocotb.log.setLevel(logging.INFO)        
         
-        scheduler = cocotb.initialize_standalone(sim)
-        scheduler.add_test(test_main())
+        cocotb.scheduler.add_test(test_main())
 
         # This will run the test-completed callback
         sim.run()
@@ -161,8 +170,15 @@ class TestSimStandalone(TestCase):
         mb = TestSimStandalone.MB()
         sim = TestSimStandalone.SimulatorStub()
         
-        scheduler = cocotb.initialize_standalone(sim)
-        scheduler.add_test(test_main(mb))
+        cocotb.simulator = sim
+        cocotb.scheduler = Scheduler()
+        cocotb.fork = cocotb.scheduler.add
+        cocotb.log = SimLog("cocotb")
+        cocotb.argv = []
+        cocotb.process_plusargs()
+        cocotb.log.setLevel(logging.INFO)                
+        
+        cocotb.scheduler.add_test(test_main(mb))
        
         # The consumer and producer wait after each transfer.
         # Consequently, only the first will be complete 
