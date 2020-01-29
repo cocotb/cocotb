@@ -6,5 +6,5 @@ PYTHONPATH:=$(COCOTB_DIR):$(PYTHONPATH)
 export PYTHONPATH
 
 all :
-	python3 -m unittest
+	python -m unittest
 
