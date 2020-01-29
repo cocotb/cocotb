@@ -253,8 +253,8 @@ public:
     virtual double get_signal_value_real();
     virtual long get_signal_value_long();
 
-    virtual int set_signal_value(const long value);
-    virtual int set_signal_value(const double value);
+    virtual int set_signal_value(long value);
+    virtual int set_signal_value(double value);
     virtual int set_signal_value(std::string &value);
 
     virtual void *get_sub_hdl(int index);
@@ -291,7 +291,8 @@ public:
     const char* get_signal_value_str();
     long get_signal_value_long();
 
-    int set_signal_value(const long value);
+    using FliValueObjHdl::set_signal_value;
+    int set_signal_value(long value);
 
     int initialise(std::string &name, std::string &fq_name);
 
@@ -332,7 +333,8 @@ public:
 
     const char* get_signal_value_binstr();
 
-    int set_signal_value(const long value);
+    using FliValueObjHdl::set_signal_value;
+    int set_signal_value(long value);
     int set_signal_value(std::string &value);
 
     int initialise(std::string &name, std::string &fq_name);
@@ -363,7 +365,8 @@ public:
     const char* get_signal_value_binstr();
     long get_signal_value_long();
 
-    int set_signal_value(const long value);
+    using FliValueObjHdl::set_signal_value;
+    int set_signal_value(long value);
 
     int initialise(std::string &name, std::string &fq_name);
 };
@@ -389,7 +392,8 @@ public:
 
     double get_signal_value_real();
 
-    int set_signal_value(const double value);
+    using FliValueObjHdl::set_signal_value;
+    int set_signal_value(double value);
 
     int initialise(std::string &name, std::string &fq_name);
 
@@ -418,6 +422,7 @@ public:
 
     const char* get_signal_value_str();
 
+    using FliValueObjHdl::set_signal_value;
     int set_signal_value(std::string &value);
 
     int initialise(std::string &name, std::string &fq_name);
