@@ -148,7 +148,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
 
 	set -o pipefail; $(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) \
-	$(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.do 2>&1 | tee $(SIM_BUILD)/sim.log
+	$(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.do $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 	# check that the file was actually created, since we can't set an exit code from cocotb
 	test -f $(COCOTB_RESULTS_FILE)
