@@ -285,14 +285,14 @@ def access_const_string_verilog(dut):
     tlog.info("%r is %s" % (string_const, str(string_const)))
     if not isinstance(string_const, StringObject):
         raise TestFailure("STRING_CONST was not StringObject")
-    if string_const != "TESTING_CONST":
+    if string_const != b"TESTING_CONST":
         raise TestFailure("STRING_CONST was not == \'TESTING_CONST\'")
 
     tlog.info("Modifying const string")
-    string_const <= "MODIFIED"
+    string_const <= b"MODIFIED"
     yield Timer(10)
     string_const = dut.STRING_CONST;
-    if string_const != "TESTING_CONST":
+    if string_const != b"TESTING_CONST":
         raise TestFailure("STRING_CONST was not still \'TESTING_CONST\'")
 
 
@@ -307,14 +307,14 @@ def access_var_string_verilog(dut):
     tlog.info("%r is %s" % (string_var, str(string_var)))
     if not isinstance(string_var, StringObject):
         raise TestFailure("STRING_VAR was not StringObject")
-    if string_var != "TESTING_VAR":
+    if string_var != b"TESTING_VAR":
         raise TestFailure("STRING_VAR was not == \'TESTING_VAR\'")
 
     tlog.info("Modifying var string")
-    string_var <= "MODIFIED"
+    string_var <= b"MODIFIED"
     yield Timer(10)
     string_var = dut.STRING_VAR;
-    if string_var != "MODIFIED":
+    if string_var != b"MODIFIED":
         raise TestFailure("STRING_VAR was not == \'MODIFIED\'")
 
 
