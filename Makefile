@@ -27,10 +27,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+.PHONY: all
 all: test
 
 include cocotb/share/makefiles/Makefile.inc
 
+.PHONY: clean
 clean:
 	-@rm -rf $(BUILD_DIR)
 	-@find . -name "obj" | xargs rm -rf
@@ -45,8 +47,9 @@ do_tests::
 do_tests::
 	$(MAKE) -k -C examples
 
-# For jenkins we use the exit code to detect compile errors or catestrphic
-# failures and the xml to track test results
+# For Jenkins we use the exit code to detect compile errors or catastrophic
+# failures and the XML to track test results
+.PHONY: jenkins
 jenkins: do_tests
 	./bin/combine_results.py --suppress_rc --testsuites_name=cocotb_regression
 
@@ -55,6 +58,7 @@ jenkins: do_tests
 test:
 	$(MAKE) do_tests; ret=$$?; ./bin/combine_results.py; exit $$ret
 
+.PHONY: help
 help:
 	@echo -e "\nCocotb make help\n\nall\t- Build libaries for native"
 	@echo -e "clean\t- Clean the build dir"
