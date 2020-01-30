@@ -39,8 +39,10 @@ clean:
 	$(MAKE) -C examples clean
 	$(MAKE) -C tests clean
 
-do_tests:
+.PHONY: do_tests
+do_tests::
 	$(MAKE) -k -C tests
+do_tests::
 	$(MAKE) -k -C examples
 
 # For jenkins we use the exit code to detect compile errors or catestrphic
@@ -49,8 +51,9 @@ jenkins: do_tests
 	./bin/combine_results.py --suppress_rc --testsuites_name=cocotb_regression
 
 # By default want the exit code to indicate the test results
-test: do_tests
-	./bin/combine_results.py
+.PHONY: test
+test:
+	$(MAKE) do_tests; ret=$$?; ./bin/combine_results.py; exit $$ret
 
 help:
 	@echo -e "\nCocotb make help\n\nall\t- Build libaries for native"
