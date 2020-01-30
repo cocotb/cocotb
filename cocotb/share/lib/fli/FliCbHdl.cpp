@@ -26,6 +26,9 @@
 ******************************************************************************/
 
 #include "FliImpl.h"
+#include "mti.h"
+#include "tcl.h"
+#include <limits>
 
 /**
  * @name    cleanup callback
@@ -140,6 +143,53 @@ int FliStartupCbHdl::arm_callback()
     return 0;
 }
 
+
+static std::vector<std::string> get_argv()
+{
+    /*  Necessary to implement PLUSARGS
+        There is no function available on the FLI to obtain argc+argv directly from the
+        simulator. To work around this we use the TCL interpreter that ships with Questa,
+        some TCL commands, and the TCL variable `argv` to obtain the simulator argc+argv.
+    */
+    std::vector<std::string> argv;
+
+    // obtain a reference to TCL interpreter
+    Tcl_Interp* interp = reinterpret_cast<Tcl_Interp*>(mti_Interp());
+
+    // get argv TCL variable
+    if (mti_Cmd("return -level 0 $argv") != TCL_OK) {
+        const char* errmsg = Tcl_GetStringResult(interp);
+        LOG_WARN("Failed to get reference to argv: %s", errmsg);
+        Tcl_ResetResult(interp);
+        return argv;
+    }
+    Tcl_Obj* result = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(result);
+    Tcl_ResetResult(interp);
+
+    // split TCL list into length and element array
+    int argc;
+    Tcl_Obj** tcl_argv;
+    if (Tcl_ListObjGetElements(interp, result, &argc, &tcl_argv) != TCL_OK) {
+        const char* errmsg = Tcl_GetStringResult(interp);
+        LOG_WARN("Failed to get argv elements: %s", errmsg);
+        Tcl_DecrRefCount(result);
+        Tcl_ResetResult(interp);
+        return argv;
+    }
+    Tcl_ResetResult(interp);
+
+    // get each argv arg and copy into internal storage
+    for (int i = 0; i < argc; i++) {
+        const char* arg = Tcl_GetString(tcl_argv[i]);
+        argv.push_back(arg);
+    }
+    Tcl_DecrRefCount(result);
+
+    return argv;
+}
+
+
 int FliStartupCbHdl::run_callback()
 {
     gpi_sim_info_t sim_info;
@@ -166,12 +216,16 @@ int FliStartupCbHdl::run_callback()
     product.push_back('\0');
     version.push_back('\0');
 
-
-    // copy in sim_info.product
-    sim_info.argc = 0;
-    sim_info.argv = NULL;
     sim_info.product = &product[0];
     sim_info.version = &version[0];
+
+    std::vector<std::string> argv = get_argv();
+    std::vector<char*> argv_cstr;
+    for (const auto& arg : argv) {
+        argv_cstr.push_back(const_cast<char*>(arg.c_str()));
+    }
+    sim_info.argc = static_cast<int>(argv.size());
+    sim_info.argv = argv_cstr.data();
 
     gpi_embed_init(&sim_info);
 
