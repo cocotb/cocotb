@@ -231,7 +231,7 @@ public:
 
     ~FliValueObjHdl() override {
         if (m_val_buff != NULL)
-            free(m_val_buff);
+            delete [] m_val_buff;
         if (m_sub_hdls != NULL)
             mti_VsimFree(m_sub_hdls);
     }
@@ -315,7 +315,7 @@ public:
 
     ~FliLogicObjHdl() override {
         if (m_mti_buff != NULL)
-            free(m_mti_buff);
+            delete [] m_mti_buff;
     }
 
     const char* get_signal_value_binstr() override;
@@ -373,7 +373,7 @@ public:
 
     ~FliRealObjHdl() override {
         if (m_mti_buff != NULL)
-            free(m_mti_buff);
+            delete m_mti_buff;
     }
 
     double get_signal_value_real() override;
@@ -403,7 +403,7 @@ public:
 
     ~FliStringObjHdl() override {
         if (m_mti_buff != NULL)
-            free(m_mti_buff);
+            delete [] m_mti_buff;
     }
 
     const char* get_signal_value_str() override;
