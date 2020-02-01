@@ -125,9 +125,9 @@ int FliSimPhaseCbHdl::arm_callback()
 
 FliSignalCbHdl::FliSignalCbHdl(GpiImplInterface *impl,
                                FliSignalObjHdl *sig_hdl,
-                               unsigned int edge) : GpiCbHdl(impl),
-                                                    FliProcessCbHdl(impl),
-                                                    GpiValueCbHdl(impl, sig_hdl, edge)
+                               int edge) : GpiCbHdl(impl),
+                                           FliProcessCbHdl(impl),
+                                           GpiValueCbHdl(impl, sig_hdl, edge)
 {
     m_sig_hdl = m_signal->get_handle<mtiSignalIdT>();
 }

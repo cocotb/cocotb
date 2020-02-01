@@ -380,7 +380,7 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s)
     return 0;
 }
 
-GpiCbHdl * VpiSignalObjHdl::value_change_cb(unsigned int edge)
+GpiCbHdl * VpiSignalObjHdl::value_change_cb(int edge)
 {
     VpiValueCbHdl *cb = NULL;
 

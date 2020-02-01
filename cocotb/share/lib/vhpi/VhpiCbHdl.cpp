@@ -766,7 +766,7 @@ long VhpiSignalObjHdl::get_signal_value_long()
 }
 
 
-GpiCbHdl * VhpiSignalObjHdl::value_change_cb(unsigned int edge)
+GpiCbHdl * VhpiSignalObjHdl::value_change_cb(int edge)
 {
     VhpiValueCbHdl *cb = NULL;
 

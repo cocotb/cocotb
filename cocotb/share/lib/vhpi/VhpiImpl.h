@@ -192,7 +192,7 @@ public:
     int set_signal_value(std::string &value) override;
 
     /* Value change callback accessor */
-    GpiCbHdl *value_change_cb(unsigned int edge) override;
+    GpiCbHdl *value_change_cb(int edge) override;
     int initialise(std::string &name, std::string &fq_name) override;
 
 protected:

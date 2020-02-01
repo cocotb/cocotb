@@ -206,7 +206,7 @@ typedef enum gpi_edge {
 
 // The callback registering functions
 gpi_sim_hdl gpi_register_timed_callback                  (int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
-gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, unsigned int edge);
+gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
 gpi_sim_hdl gpi_register_readonly_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
 gpi_sim_hdl gpi_register_nexttime_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
 gpi_sim_hdl gpi_register_readwrite_callback              (int (*gpi_function)(const void *), void *gpi_cb_data);

@@ -467,7 +467,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     PyObject *function;
     gpi_sim_hdl sig_hdl;
     gpi_sim_hdl hdl;
-    unsigned int edge;
+    int edge;
 
     p_callback_data callback_data_p;
 
@@ -492,7 +492,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     Py_INCREF(function);
 
     PyObject *pedge = PyTuple_GetItem(args, 2);
-    edge = (unsigned int)PyLong_AsLong(pedge);
+    edge = (int)PyLong_AsLong(pedge);
 
     // Remaining args for function
     fArgs = PyTuple_GetSlice(args, 3, numargs);   // New reference
