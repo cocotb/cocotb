@@ -425,8 +425,8 @@ const char *FliImpl::reason_to_string(int reason)
  */
 void FliImpl::get_sim_time(uint32_t *high, uint32_t *low)
 {
-    *high = mti_NowUpper();
-    *low = mti_Now();
+    *high = static_cast<uint32_t>(mti_NowUpper());  // these functions return a int32_t for some reason
+    *low = static_cast<uint32_t>(mti_Now());
 }
 
 void FliImpl::get_sim_precision(int32_t *precision)
