@@ -72,7 +72,7 @@ static void set_program_name_in_venv(void)
         return;
     }
 
-    strncpy(venv_path, venv_path_home, sizeof(venv_path));
+    strncpy(venv_path, venv_path_home, sizeof(venv_path)-1);
     if (venv_path[sizeof(venv_path) - 1]) {
         LOG_ERROR("Unable to set Python Program Name using virtual environment. Path to virtual environment too long");
         return;
