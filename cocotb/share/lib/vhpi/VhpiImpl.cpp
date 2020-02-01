@@ -585,7 +585,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
         }
 
         vhpiIntT    num_dim  = vhpi_get(vhpiNumDimensionsP, base_hdl);
-        uint32_t    idx      = 0;
+        int         idx      = 0;
 
         /* Need to translate the index into a zero-based flattened array index */
         if (num_dim > 1) {
@@ -683,9 +683,9 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
                         int raw_idx = indices.back();
                         constraint  = constraints.back();
 
-                        vhpiIntT left  = vhpi_get(vhpiLeftBoundP, constraint);
-                        vhpiIntT right = vhpi_get(vhpiRightBoundP, constraint);
-                        vhpiIntT len   = 0;
+                        int left  = static_cast<int>(vhpi_get(vhpiLeftBoundP, constraint));
+                        int right = static_cast<int>(vhpi_get(vhpiRightBoundP, constraint));
+                        int len   = 0;
 
                         if (left > right) {
                             idx += (scale * (left - raw_idx));
@@ -726,7 +726,7 @@ GpiObjHdl *VhpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
                 vhpiHandleT iter = vhpi_iterator(vhpiIndexedNames, vhpi_hdl);
                 if (iter != NULL) {
-                    uint32_t curr_index = 0;
+                    int curr_index = 0;
                     while ((new_hdl = vhpi_scan(iter)) != NULL) {
                         if (idx == curr_index) {
                             vhpi_release_handle(iter);
