@@ -533,7 +533,7 @@ int gpi_get_range_right(gpi_sim_hdl sig_hdl)
 gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),
                                                void *gpi_cb_data,
                                                gpi_sim_hdl sig_hdl,
-                                               unsigned int edge)
+                                               int edge)
 {
 
     GpiSignalObjHdl *signal_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);

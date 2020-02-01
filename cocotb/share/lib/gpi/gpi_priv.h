@@ -182,7 +182,7 @@ public:
     //virtual GpiCbHdl monitor_value(bool rising_edge) = 0; this was for the triggers
     // but the explicit ones are probably better
 
-    virtual GpiCbHdl *value_change_cb(unsigned int edge) = 0;
+    virtual GpiCbHdl *value_change_cb(int edge) = 0;
 };
 
 

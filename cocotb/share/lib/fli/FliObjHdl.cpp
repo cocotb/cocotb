@@ -31,7 +31,7 @@
 #include "FliImpl.h"
 #include "acc_vhdl.h"
 
-GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
+GpiCbHdl *FliSignalObjHdl::value_change_cb(int edge)
 {
     FliSignalCbHdl *cb = NULL;
 

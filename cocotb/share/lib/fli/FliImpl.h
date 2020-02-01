@@ -65,7 +65,7 @@ class FliSignalCbHdl : public FliProcessCbHdl, public GpiValueCbHdl {
 public:
     FliSignalCbHdl(GpiImplInterface *impl,
                    FliSignalObjHdl *sig_hdl,
-                   unsigned int edge);
+                   int edge);
 
     int arm_callback() override;
     int cleanup_callback() override {
@@ -200,7 +200,7 @@ public:
                         m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
 
 
-    GpiCbHdl *value_change_cb(unsigned int edge) override;
+    GpiCbHdl *value_change_cb(int edge) override;
     int initialise(std::string &name, std::string &fq_name) override;
 
     bool is_var() { return m_is_var; }
