@@ -27,7 +27,8 @@
 
 #include <assert.h>
 #include "VhpiImpl.h"
-#include <limits>
+#include <limits>     // numeric_limits
+#include <cinttypes>  // fixed-size int types and format strings
 
 namespace {
     using bufSize_type = decltype(vhpiValueT::bufSize);
@@ -55,13 +56,13 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl()
         case vhpiIntVecVal:
         case vhpiEnumVecVal:
         case vhpiLogicVecVal:
-            free(m_value.value.enumvs);
+            delete [] m_value.value.enumvs;
         default:
             break;
     }
 
     if (m_binvalue.value.str)
-        free(m_binvalue.value.str);
+        delete [] m_binvalue.value.str;
 
     LOG_DEBUG("Releasing VhpiSignalObjHdl handle at %p\n", (void *)get_handle<vhpiHandleT>());
     if (vhpi_release_handle(get_handle<vhpiHandleT>()))
@@ -107,8 +108,8 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
                     if (vhpi_get(vhpiIsUnconstrainedP, constraint)) {
 #endif
                         error = false;
-                        *left  = l_rng;
-                        *right = r_rng;
+                        *left  = static_cast<int>(l_rng);
+                        *right = static_cast<int>(r_rng);
                     }
                     break;
                 }
@@ -134,8 +135,8 @@ bool get_range(vhpiHandleT hdl, vhpiIntT dim, int *left, int *right) {
                         /* IUS/Xcelium only sets the vhpiIsUnconstrainedP incorrectly on the base type */
                         if (!vhpi_get(vhpiIsUnconstrainedP, constraint)) {
                             error = false;
-                            *left  = vhpi_get(vhpiLeftBoundP, constraint);
-                            *right = vhpi_get(vhpiRightBoundP, constraint);
+                            *left  = static_cast<int>(vhpi_get(vhpiLeftBoundP, constraint));
+                            *right = static_cast<int>(vhpi_get(vhpiRightBoundP, constraint));
                         }
                         break;
                     }
@@ -272,9 +273,10 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 
         case vhpiStrVal: {
             m_indexable = true;
-            m_num_elems = vhpi_get(vhpiSizeP, handle);
-            m_value.bufSize = (m_num_elems)*static_cast<bufSize_type>(sizeof(vhpiCharT) + 1);
-            m_value.value.str = (vhpiCharT *)malloc(m_value.bufSize);
+            m_num_elems = static_cast<int>(vhpi_get(vhpiSizeP, handle));
+            int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
+            m_value.bufSize = static_cast<bufSize_type>(bufSize);
+            m_value.value.str = new vhpiCharT[bufSize];
             m_value.numElems = m_num_elems;
             if (!m_value.value.str) {
                 LOG_CRITICAL("Unable to alloc mem for write buffer");
@@ -295,8 +297,9 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     }
 
     if (m_num_elems) {
-        m_binvalue.bufSize = m_num_elems*static_cast<bufSize_type>(sizeof(vhpiCharT)) + 1;
-        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, sizeof(vhpiCharT));
+        int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
+        m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
+        m_binvalue.value.str = new vhpiCharT[bufSize];
 
         if (!m_binvalue.value.str) {
             LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
@@ -333,7 +336,7 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 
     vhpiHandleT query_hdl = (base_hdl != NULL) ? base_hdl : handle;
 
-    m_num_elems = vhpi_get(vhpiSizeP, handle);
+    m_num_elems = static_cast<int>(vhpi_get(vhpiSizeP, handle));
 
     if (m_num_elems == 0) {
         LOG_DEBUG("Null vector... Delete object")
@@ -343,8 +346,9 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     if (vhpi_get(vhpiKindP, query_hdl) == vhpiArrayTypeDeclK) {
         m_indexable = true;
         m_value.format = vhpiLogicVecVal;
-        m_value.bufSize = m_num_elems*static_cast<bufSize_type>(sizeof(vhpiEnumT));
-        m_value.value.enumvs = (vhpiEnumT *)malloc(m_value.bufSize + 1);
+        int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiEnumT));
+        m_value.bufSize = static_cast<bufSize_type>(bufSize);
+        m_value.value.enumvs = new vhpiEnumT[bufSize];
         if (!m_value.value.enumvs) {
             LOG_CRITICAL("Unable to alloc mem for write buffer: ABORTING");
         }
@@ -355,8 +359,9 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     }
 
     if (m_num_elems) {
-        m_binvalue.bufSize = m_num_elems*static_cast<bufSize_type>(sizeof(vhpiCharT) + 1);
-        m_binvalue.value.str = (vhpiCharT *)calloc(m_binvalue.bufSize, sizeof(vhpiCharT));
+        int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
+        m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
+        m_binvalue.value.str = new vhpiCharT[bufSize];
 
         if (!m_binvalue.value.str) {
             LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
@@ -668,7 +673,7 @@ int VhpiSignalObjHdl::set_signal_value(std::string &value)
         case vhpiStrVal: {
             std::vector<char> writable(value.begin(), value.end());
             writable.push_back('\0');
-            strncpy(m_value.value.str, &writable[0], m_value.numElems);
+            strncpy(m_value.value.str, &writable[0], static_cast<size_t>(m_value.numElems));
             m_value.value.str[m_value.numElems] = '\0';
             break;
         }
@@ -807,7 +812,7 @@ int VhpiStartupCbHdl::run_callback() {
     vhpiHandleT tool, argv_iter, argv_hdl;
     gpi_sim_info_t sim_info;
     char **tool_argv = NULL;
-    uint32_t tool_argc = 0;
+    int tool_argc = 0;
     int i = 0;
 
     tool = vhpi_handle(vhpiTool, NULL);
@@ -816,8 +821,8 @@ int VhpiStartupCbHdl::run_callback() {
     sim_info.version = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiToolVersionP, tool)));
 
     if (tool) {
-        tool_argc = vhpi_get(vhpiArgcP, tool);
-        tool_argv = (char **)malloc(sizeof(char *) * tool_argc);
+        tool_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
+        tool_argv = new char*[tool_argc];
         assert(tool_argv);
 
         argv_iter = vhpi_iterator(vhpiArgvs, tool);
@@ -835,7 +840,7 @@ int VhpiStartupCbHdl::run_callback() {
     }
 
     gpi_embed_init(&sim_info);
-    free(tool_argv);
+    delete [] tool_argv;
 
     return 0;
 }
@@ -1116,14 +1121,14 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
 
     const char *c_name = vhpi_get_str(vhpiCaseNameP, obj);
     if (!c_name) {
-        int type = vhpi_get(vhpiKindP, obj);
+        vhpiIntT type = vhpi_get(vhpiKindP, obj);
 
         if (type < VHPI_TYPE_MIN) {
             *raw_hdl = (void*)obj;
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
 
-        LOG_DEBUG("Unable to get the name for this object of type %d", type);
+        LOG_DEBUG("Unable to get the name for this object of type " PRIu32, type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }
