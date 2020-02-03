@@ -315,12 +315,41 @@ int embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
     for (i = 0; i < info->argc; i++) {
-        PyObject *argv_item = PyString_FromString(info->argv[i]);       // New reference
-        if (argv_item == NULL) {
+        PyObject *argv_item_raw = PyBytes_FromString(info->argv[i]);       // New reference
+        if (argv_item_raw == NULL) {
             PyErr_Print();
-            LOG_ERROR("Unable to create Python string from argv[%d] = \"%s\"", i, info->argv[i]);
+            LOG_ERROR("Unable to create argv item");
             Py_DECREF(argv_list);
             goto cleanup;
+        }
+        // decode
+        PyObject *argv_item = PyUnicode_FromEncodedObject(argv_item_raw, NULL, NULL);
+        if (argv_item == NULL) {
+            // use python formatting to escape the raw bytes
+            PyObject *err_msg = PyUnicode_FromFormat(
+                "Unable to decode argv[%d] = %R as utf8, leaving undecoded as bytes",
+                i, argv_item_raw);
+            if (err_msg == NULL) {
+                Py_DECREF(argv_item_raw);
+                goto failed_msg_construction;
+            }
+            char const *c_msg = PyUnicode_AsUTF8(err_msg);
+            if (c_msg == NULL) {
+                Py_DECREF(err_msg);
+                Py_DECREF(argv_item_raw);
+                goto failed_msg_construction;
+            }
+            LOG_WARN("%s", c_msg);
+            Py_DECREF(err_msg);
+
+            // Pass the bytes object instead of attempting to decode it
+            argv_item = argv_item_raw;
+
+            if (false) {
+            failed_msg_construction:
+                LOG_ERROR("Unable to create error message while failing to decode argv");
+                goto cleanup;
+            }
         }
         PyList_SET_ITEM(argv_list, i, argv_item);                       // Note: This function steals the reference to argv_item
     }
@@ -360,7 +389,7 @@ int embed_sim_init(gpi_sim_info_t *info)
     const char *lang = getenv("TOPLEVEL_LANG");
     PyObject *PyLang;
     if (lang) {
-        PyLang = PyString_FromString(lang);                             // New reference
+        PyLang = PyUnicode_FromString(lang);                             // New reference
     } else {
         Py_INCREF(Py_None);
         PyLang = Py_None;
@@ -408,7 +437,7 @@ int embed_sim_init(gpi_sim_info_t *info)
         Py_INCREF(Py_None);
         dut_arg = Py_None;
     } else {
-        dut_arg = PyString_FromString(dut);                             // New reference
+        dut_arg = PyUnicode_FromString(dut);                             // New reference
     }
     if (dut_arg == NULL) {
         PyErr_Print();

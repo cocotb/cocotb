@@ -210,6 +210,10 @@ def process_plusargs():
     plusargs = {}
 
     for option in cocotb.argv:
+        # gh-1234: Sometimes we get non-strings in argv, just skip them
+        if not isinstance(option, str):
+            continue
+
         if option.startswith('+'):
             if option.find('=') != -1:
                 (name, value) = option[1:].split('=')
