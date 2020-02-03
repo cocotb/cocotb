@@ -230,7 +230,13 @@ class RunningTest(RunningCoroutine):
             logging.Handler.__init__(self, level=logging.DEBUG)
 
         def handle(self, record):
-            self.fn(self.format(record))
+            # For historical reasons, only logs sent directly to the `cocotb`
+            # logger are recorded - logs to `cocotb.scheduler` for instance
+            # are not recorded. Changing this behavior may have significant
+            # memory usage implications, so should not be done without some
+            # thought.
+            if record.name == 'cocotb':
+                self.fn(self.format(record))
 
     def __init__(self, inst, parent):
         self.error_messages = []

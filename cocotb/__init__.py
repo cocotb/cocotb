@@ -39,8 +39,8 @@ import time
 import warnings
 
 import cocotb.handle
+import cocotb.log
 from cocotb.scheduler import Scheduler
-from cocotb.log import SimBaseLog, SimLog
 from cocotb.regression import RegressionManager
 
 
@@ -56,35 +56,41 @@ from ._version import __version__
 
 # GPI logging instance
 if "COCOTB_SIM" in os.environ:
-    import simulator
-    logging.basicConfig()
-    logging.setLoggerClass(SimBaseLog)
-    log = SimLog('cocotb')
-    level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
-    try:
-        _default_log = getattr(logging, level)
-    except AttributeError as e:
-        log.error("Unable to set loging level to %s" % level)
-        _default_log = logging.INFO
-    log.setLevel(_default_log)
-    loggpi = SimLog('cocotb.gpi')
-    # Notify GPI of log level
-    simulator.log_level(_default_log)
+
+    def _reopen_stream_with_buffering(stream_name):
+        try:
+            if not getattr(sys, stream_name).isatty():
+                setattr(sys, stream_name, os.fdopen(getattr(sys, stream_name).fileno(), 'w', 1))
+                return True
+            return False
+        except Exception as e:
+            return e
 
     # If stdout/stderr are not TTYs, Python may not have opened them with line
     # buffering. In that case, try to reopen them with line buffering
     # explicitly enabled. This ensures that prints such as stack traces always
     # appear. Continue silently if this fails.
-    try:
-        if not sys.stdout.isatty():
-            sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 1)
-            log.debug("Reopened stdout with line buffering")
-        if not sys.stderr.isatty():
-            sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 1)
-            log.debug("Reopened stderr with line buffering")
-    except Exception as e:
-        log.warning("Failed to ensure that stdout/stderr are line buffered: %s", e)
+    _stdout_buffer_result = _reopen_stream_with_buffering('stdout')
+    _stderr_buffer_result = _reopen_stream_with_buffering('stderr')
+
+    # Don't set the logging up until we've attempted to fix the standard IO,
+    # otherwise it will end up connected to the unfixed IO.
+    cocotb.log.default_config()
+    log = logging.getLogger(__name__)
+
+    # we can't log these things until the logging is set up!
+    if _stderr_buffer_result is True:
+        log.debug("Reopened stderr with line buffering")
+    if _stdout_buffer_result is True:
+        log.debug("Reopened stdout with line buffering")
+    if isinstance(_stdout_buffer_result, Exception) or isinstance(_stderr_buffer_result, Exception):
+        if isinstance(_stdout_buffer_result, Exception):
+            log.warning("Failed to ensure that stdout is line buffered", exc_info=_stdout_buffer_result)
+        if isinstance(_stderr_buffer_result, Exception):
+            log.warning("Failed to ensure that stderr is line buffered", exc_info=_stderr_buffer_result)
         log.warning("Some stack traces may not appear because of this.")
+
+    del _stderr_buffer_result, _stdout_buffer_result
 
     # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
     # If the user doesn't want to see these, they can always change the global
