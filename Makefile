@@ -60,12 +60,17 @@ test:
 
 .PHONY: help
 help:
-	@echo -e "\nCocotb make help\n\nall\t- Build libaries for native"
-	@echo -e "clean\t- Clean the build dir"
-	@echo -e "debug\t- Dump out some useful debug info\n\n"
-	@echo -e "To build natively just run make.\nTo build for 32bit on a 64 bit system set ARCH=i686\n"
-	@echo -e "Default simulator is Icarus. To use another set environment variable SIM as below\n"
-	@for X in $(shell ls makefiles/simulators/); do \
+	@echo ""
+	@echo "This cocotb makefile has the following targets"
+	@echo ""
+	@echo "all, test - run regression producing combined_results.xml"
+	@echo "            (return error code produced by sub-makes)"
+	@echo "jenkins   - run regression producing combined_results.xml"
+	@echo "            (return error code 1 if any failure was found)"
+	@echo "clean     - remove build directory and all simulation artefacts"
+	@echo ""
+	@echo "Default simulator is Icarus. To use another set environment variable SIM as below"
+	@for X in $(shell ls cocotb/share/makefiles/simulators/); do \
 		echo $$X | sed 's/^[^.]*./export SIM=/';\
 	done
-	@echo -e "\n\n"
+	@echo ""
