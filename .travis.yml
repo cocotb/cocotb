@@ -73,9 +73,17 @@ jobs:
       os: windows
       language: shell
       before_install:
-        - docker build -t cocotb -f Dockerfile.windows .
+        - powershell "Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe"
+        - powershell "Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait"
+
+        - powershell "Invoke-WebRequest -Uri http://bleyer.org/icarus/iverilog-v11-20190809-x64_setup.exe -OutFile iverilog-x64_setup.exe"
+        - powershell "Start-Process .\iverilog-x64_setup -ArgumentList '/VERYSILENT' -Wait"
+
+        - export CONDA_PATH="\$env:Path = ';C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin;C:\iverilog\bin;' + \$env:Path"
+        - powershell "$CONDA_PATH; conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython"
+        - powershell "$CONDA_PATH; pip install tox"
       script:
-        - docker run cocotb powershell 'python setup.py install ; make test'
+        - powershell "$CONDA_PATH; tox -e py3"
 
     - stage: SimTests
       os: osx
