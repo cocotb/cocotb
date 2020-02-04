@@ -84,10 +84,9 @@ class VpiReadOnlyCbHdl;
 class VpiCbHdl : public virtual GpiCbHdl {
 public:
     VpiCbHdl(GpiImplInterface *impl);
-    virtual ~VpiCbHdl() { }
 
-    virtual int arm_callback();
-    virtual int cleanup_callback();
+    int arm_callback() override;
+    int cleanup_callback() override;
 
 protected:
     s_cb_data cb_data;
@@ -99,8 +98,7 @@ class VpiSignalObjHdl;
 class VpiValueCbHdl : public VpiCbHdl, public GpiValueCbHdl {
 public:
     VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig, int edge);
-    virtual ~VpiValueCbHdl() { }
-    int cleanup_callback();
+    int cleanup_callback() override;
 private:
     s_vpi_value m_vpi_value;
 };
@@ -108,66 +106,58 @@ private:
 class VpiTimedCbHdl : public VpiCbHdl {
 public:
     VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
-    virtual ~VpiTimedCbHdl() { }
-    int cleanup_callback();
+    int cleanup_callback() override;
 };
 
 class VpiReadOnlyCbHdl : public VpiCbHdl {
 public:
     VpiReadOnlyCbHdl(GpiImplInterface *impl);
-    virtual ~VpiReadOnlyCbHdl() { }
 };
 
 class VpiNextPhaseCbHdl : public VpiCbHdl {
 public:
     VpiNextPhaseCbHdl(GpiImplInterface *impl);
-    virtual ~VpiNextPhaseCbHdl() { }
 };
 
 class VpiReadwriteCbHdl : public VpiCbHdl {
 public:
     VpiReadwriteCbHdl(GpiImplInterface *impl);
-    virtual ~VpiReadwriteCbHdl() { }
 };
 
 class VpiStartupCbHdl : public VpiCbHdl {
 public:
     VpiStartupCbHdl(GpiImplInterface *impl);
-    int run_callback();
-    int cleanup_callback() {
+    int run_callback() override;
+    int cleanup_callback() override {
         /* Too many sims get upset with this so we override to do nothing */
         return 0;
     }
-    virtual ~VpiStartupCbHdl() { }
 };
 
 class VpiShutdownCbHdl : public VpiCbHdl {
 public:
     VpiShutdownCbHdl(GpiImplInterface *impl);
-    int run_callback();
-    int cleanup_callback() {
+    int run_callback() override;
+    int cleanup_callback() override{
         /* Too many sims get upset with this so we override to do nothing */
         return 0;
     }
-    virtual ~VpiShutdownCbHdl() { }
 };
 
 class VpiArrayObjHdl : public GpiObjHdl {
 public:
     VpiArrayObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype) :
                                                              GpiObjHdl(impl, hdl, objtype) { }
-    virtual ~VpiArrayObjHdl() { }
 
-    int initialise(std::string &name, std::string &fq_name);
+    int initialise(std::string &name, std::string &fq_name) override;
 };
 
 class VpiObjHdl : public GpiObjHdl {
 public:
     VpiObjHdl(GpiImplInterface *impl, vpiHandle hdl, gpi_objtype_t objtype) :
                                                              GpiObjHdl(impl, hdl, objtype) { }
-    virtual ~VpiObjHdl() { }
 
-    int initialise(std::string &name, std::string &fq_name);
+    int initialise(std::string &name, std::string &fq_name) override;
 };
 
 class VpiSignalObjHdl : public GpiSignalObjHdl {
@@ -177,20 +167,19 @@ public:
                                                              m_rising_cb(impl, this, GPI_RISING),
                                                              m_falling_cb(impl, this, GPI_FALLING),
                                                              m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
-    virtual ~VpiSignalObjHdl() { }
 
-    const char* get_signal_value_binstr();
-    const char* get_signal_value_str();
-    double get_signal_value_real();
-    long get_signal_value_long();
+    const char* get_signal_value_binstr() override;
+    const char* get_signal_value_str() override;
+    double get_signal_value_real() override;
+    long get_signal_value_long() override;
 
-    int set_signal_value(const long value);
-    int set_signal_value(const double value);
-    int set_signal_value(std::string &value);
+    int set_signal_value(const long value) override;
+    int set_signal_value(const double value) override;
+    int set_signal_value(std::string &value) override;
 
     /* Value change callback accessor */
-    GpiCbHdl *value_change_cb(unsigned int edge);
-    int initialise(std::string &name, std::string &fq_name);
+    GpiCbHdl *value_change_cb(unsigned int edge) override;
+    int initialise(std::string &name, std::string &fq_name) override;
 
 private:
     int set_signal_value(s_vpi_value value);
@@ -205,9 +194,9 @@ class VpiIterator : public GpiIterator {
 public:
     VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl);
 
-    virtual ~VpiIterator();
+    ~VpiIterator() override;
 
-    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl);
+    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl) override;
 
 private:
     vpiHandle m_iterator;
@@ -233,8 +222,7 @@ public:
         }
     }
 
-    virtual ~VpiSingleIterator() { }
-    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl);
+    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl) override;
 
 protected:
     vpiHandle m_iterator;
@@ -249,25 +237,25 @@ public:
                                        m_read_only(this) { }
 
      /* Sim related */
-    void sim_end();
-    void get_sim_time(uint32_t *high, uint32_t *low);
-    void get_sim_precision(int32_t *precision);
+    void sim_end(void) override;
+    void get_sim_time(uint32_t *high, uint32_t *low) override;
+    void get_sim_precision(int32_t *precision) override;
 
     /* Hierarchy related */
-    GpiObjHdl *get_root_handle(const char *name);
-    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type);
+    GpiObjHdl *get_root_handle(const char *name) override;
+    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) override;
     GpiObjHdl *next_handle(GpiIterator *iter);
 
     /* Callback related, these may (will) return the same handle*/
-    GpiCbHdl *register_timed_callback(uint64_t time_ps);
-    GpiCbHdl *register_readonly_callback();
-    GpiCbHdl *register_nexttime_callback();
-    GpiCbHdl *register_readwrite_callback();
-    int deregister_callback(GpiCbHdl *obj_hdl);
-    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
-    GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent);
-    GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *parent);
-    const char * reason_to_string(int reason);
+    GpiCbHdl *register_timed_callback(uint64_t time_ps) override;
+    GpiCbHdl *register_readonly_callback() override;
+    GpiCbHdl *register_nexttime_callback() override;
+    GpiCbHdl *register_readwrite_callback() override;
+    int deregister_callback(GpiCbHdl *obj_hdl) override;
+    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) override;
+    GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent) override;
+    GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *parent) override;
+    const char * reason_to_string(int reason) override;
     GpiObjHdl* create_gpi_obj_from_handle(vpiHandle new_hdl,
                                           std::string &name,
                                           std::string &fq_name);
