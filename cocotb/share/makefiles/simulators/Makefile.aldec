@@ -45,7 +45,7 @@ endif
 ifeq (, $(CMD))
     $(error "Unable to locate command >$(CMD_BIN)<")
 else
-	ALDEC_BIN_DIR := $(shell dirname $(CMD))
+    ALDEC_BIN_DIR := $(shell dirname $(CMD))
     export ALDEC_BIN_DIR
 endif
 

@@ -46,7 +46,7 @@ endif
 ifeq (, $(CMD))
     $(error "Unable to locate command >$(CMD_BIN)<")
 else
-	GHDL_BIN_DIR := $(shell dirname $(CMD))
+    GHDL_BIN_DIR := $(shell dirname $(CMD))
     export GHDL_BIN_DIR
 endif
 

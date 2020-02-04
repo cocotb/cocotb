@@ -49,7 +49,7 @@ HAVE_SIMULATOR = $(shell if [ -f $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefi
 AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.*)))
 
 ifeq ($(HAVE_SIMULATOR),0)
-$(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simulators: $(AVAILABLE_SIMULATORS)")
+    $(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simulators: $(AVAILABLE_SIMULATORS)")
 endif
 
 # Depend on all Python from the cocotb package. This triggers a

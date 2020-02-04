@@ -39,7 +39,7 @@ endif
 ifeq (, $(CMD))
     $(error "Unable to locate command >$(CMD_BIN)<")
 else
-	MODELSIM_BIN_DIR := $(shell dirname $(CMD))
+    MODELSIM_BIN_DIR := $(shell dirname $(CMD))
     export MODELSIM_BIN_DIR
 endif
 

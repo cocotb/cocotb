@@ -9,7 +9,7 @@ clean::
 else
 
 ifeq ($(COCOTB_NVC_TRACE), 1)
-	TRACE :=--vhpi-trace
+    TRACE :=--vhpi-trace
 endif
 
 CMD_BIN := nvc
@@ -24,7 +24,7 @@ endif
 ifeq (, $(CMD))
     $(error "Unable to locate command >$(CMD_BIN)<")
 else
-	NVC_BIN_DIR := $(shell dirname $(CMD))
+    NVC_BIN_DIR := $(shell dirname $(CMD))
     export NVC_BIN_DIR
 endif
 

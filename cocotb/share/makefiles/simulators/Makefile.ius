@@ -41,7 +41,7 @@ endif
 ifeq (, $(CMD))
     $(error "Unable to locate command >$(CMD_BIN)<")
 else
-	IUS_BIN_DIR := $(shell dirname $(CMD))
+    IUS_BIN_DIR := $(shell dirname $(CMD))
     export IUS_BIN_DIR
 endif
 
