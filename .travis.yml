@@ -83,7 +83,8 @@ jobs:
         - powershell "$CONDA_PATH; conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython"
         - powershell "$CONDA_PATH; pip install tox"
       script:
-        - powershell "$CONDA_PATH; tox -e py3"
+        # TODO[gh-1372]: the default compiler on windows, msvc, is not supported
+        - powershell "$CONDA_PATH; tox -e py3_mingw"
 
     - stage: SimTests
       os: osx

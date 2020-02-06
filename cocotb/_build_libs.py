@@ -126,6 +126,7 @@ def _get_python_lib():
 
     return python_lib
 
+# TODO [gh-1372]: make this work for MSVC which has a different flag syntax
 # TODO Add "-Wconversion" to _base_warns when fixed
 _base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings"]
 _cc_warns = _base_warns + ["-Wstrict-prototypes", "-Waggregate-return"]
