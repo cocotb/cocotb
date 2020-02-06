@@ -84,7 +84,8 @@ jobs:
         - powershell "$CONDA_PATH; conda install --yes virtualenv"
         - powershell "$CONDA_PATH; pip install tox"
       script:
-        - powershell "$CONDA_PATH; tox -e py3"
+        # TODO[gh-1372]: the default compiler on windows, msvc, is not supported
+        - powershell "$CONDA_PATH; tox -e py3_mingw"
 
     - stage: SimTests
       os: osx
