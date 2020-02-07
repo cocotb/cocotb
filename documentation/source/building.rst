@@ -89,6 +89,8 @@ and
       Allowed values are 1, 10, and 100.
       Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
 
+      NOTE: Icarus Verilog does not support this variable
+
       .. versionadded:: 1.3
 
 .. make:var:: COCOTB_HDL_TIMEPRECISION
@@ -97,6 +99,8 @@ and
       If this isn't specified then it is assumed to be ``1ps``.
       Allowed values are 1, 10, and 100.
       Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
+
+      NOTE: Icarus Verilog does not support this variable
 
       .. versionadded:: 1.3
 
