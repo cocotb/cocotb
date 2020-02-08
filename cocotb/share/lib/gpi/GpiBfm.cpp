@@ -30,7 +30,7 @@ GpiBfm::~GpiBfm() {
 }
 
 int GpiBfm::add_bfm(GpiBfm *bfm) {
-    bfm->m_bfm_id = m_bfm_l.size();
+    bfm->m_bfm_id = static_cast<uint32_t>(m_bfm_l.size());
 
     m_bfm_l.push_back(bfm);
 

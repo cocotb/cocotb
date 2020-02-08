@@ -22,7 +22,7 @@ int cocotb_bfm_register(
         void                      *notify_data);
 
 // Returns the number of registered BFMs
-int cocotb_bfm_num_registered(void);
+uint32_t cocotb_bfm_num_registered(void);
 
 // Returns the instance name of the specified BFM
 const char *cocotb_bfm_instname(int id);

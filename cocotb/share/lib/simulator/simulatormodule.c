@@ -1022,7 +1022,9 @@ static void add_module_constants(PyObject* simulator)
  * Returns the number of BFMs registered with CoCoTB
  */
 static PyObject *bfm_get_count(PyObject *self, PyObject *args) {
-	return PyLong_FromUnsignedLong(cocotb_bfm_num_registered());
+    (void)self;
+    (void)args;
+    return PyLong_FromUnsignedLong(cocotb_bfm_num_registered());
 }
 
 /**
@@ -1032,6 +1034,8 @@ static PyObject *bfm_get_count(PyObject *self, PyObject *args) {
  */
 static PyObject *bfm_get_info(PyObject *self, PyObject *args) {
     int id;
+
+    (void)self;
 
     if (!PyArg_ParseTuple(args, "i", &id)) {
         return NULL;
@@ -1053,47 +1057,46 @@ static PyObject *bfm_get_info(PyObject *self, PyObject *args) {
  * - type_l
  */
 static PyObject *bfm_send_msg(PyObject *self, PyObject *args) {
-	int bfm_id, msg_id;
-	PyObject *param_l, *type_l;
-	cocotb_bfm_msg_param_t *paramv = 0;
-	int paramc = 0;
-	uint32_t i;
+    uint32_t bfm_id, msg_id;
+    PyObject *param_l, *type_l;
+    cocotb_bfm_msg_param_t *paramv = 0;
+    uint32_t paramc = 0;
+    uint32_t i;
 
-	(void)param_l;
-	(void)type_l;
+    (void)self;
 
-	if (!PyArg_ParseTuple(args, "iiOO", &bfm_id, &msg_id, &param_l, &type_l)) {
-		return NULL;
-	}
+    if (!PyArg_ParseTuple(args, "iiOO", &bfm_id, &msg_id, &param_l, &type_l)) {
+        return NULL;
+    }
 
-	paramc = PyList_Size(param_l);
-	paramv = (cocotb_bfm_msg_param_t *)malloc(
-			sizeof(cocotb_bfm_msg_param_t) * paramc);
+    paramc = (uint32_t)PyList_Size(param_l);
+    paramv = (cocotb_bfm_msg_param_t *)malloc(
+        sizeof(cocotb_bfm_msg_param_t) * paramc);
 
-	for (i=0; i<paramc; i++) {
-		PyObject *t = PyList_GetItem(type_l, i);
-		PyObject *v = PyList_GetItem(param_l, i);
+    for (i=0; i<paramc; i++) {
+        PyObject *t = PyList_GetItem(type_l, i);
+        PyObject *v = PyList_GetItem(param_l, i);
 
-		paramv[i].ptype = (cocotb_bfm_param_type_e)PyLong_AsLong(t);
+        paramv[i].ptype = (cocotb_bfm_param_type_e)PyLong_AsLong(t);
 
-		switch (paramv[i].ptype) {
-		case GpiBfmParamType_Ui: {
-			paramv[i].pval.ui64 = PyLong_AsUnsignedLongLong(v);
-		} break;
-		case GpiBfmParamType_Si: {
-			paramv[i].pval.i64 = PyLong_AsLongLong(v);
-		} break;
-		case GpiBfmParamType_Str: {
-			fprintf(stdout, "TODO: STR param\n"); break;
-		} break;
-		default: fprintf(stdout, "Unknown param\n");
-		}
-	}
+        switch (paramv[i].ptype) {
+            case GpiBfmParamType_Ui: {
+                paramv[i].pval.ui64 = PyLong_AsUnsignedLongLong(v);
+            } break;
+            case GpiBfmParamType_Si: {
+                paramv[i].pval.i64 = PyLong_AsLongLong(v);
+            } break;
+            case GpiBfmParamType_Str: {
+                fprintf(stdout, "TODO: STR param\n"); break;
+            } break;
+            default: fprintf(stdout, "Unknown param\n");
+        }
+    }
 
-	cocotb_bfm_send_msg(bfm_id, msg_id, paramc, paramv);
-	free(paramv);
+    cocotb_bfm_send_msg(bfm_id, msg_id, paramc, paramv);
+    free(paramv);
 
-	return Py_BuildValue("");
+    return Py_BuildValue("");
 }
 
 /**
@@ -1106,7 +1109,7 @@ static void bfm_recv_msg(
 		uint32_t				msg_id,
 		uint32_t				paramc,
 		cocotb_bfm_msg_param_t	*paramv) {
-	uint32_t i;
+    uint32_t i;
     PyGILState_STATE gstate;
     PyObject *param_l;
 
@@ -1127,28 +1130,30 @@ static void bfm_recv_msg(
     	}
     }
 
-	PyObject_CallFunction(bfm_call_method, "iiO", bfm_id, msg_id, param_l);
+    PyObject_CallFunction(bfm_call_method, "iiO", bfm_id, msg_id, param_l);
 
     DROP_GIL(gstate);
 
 }
 
 static PyObject *bfm_set_call_method(PyObject *self, PyObject *args) {
-	PyObject *temp;
+    PyObject *temp;
 
-	if (PyArg_ParseTuple(args, "O:callback", &temp)) {
-		 if (!PyCallable_Check(temp)) {
-			 PyErr_SetString(PyExc_TypeError, "parameter must be callable");
-			 	 return 0;
-		 }
-		 Py_INCREF(temp);
-		 Py_XDECREF(bfm_call_method);
-		 bfm_call_method = temp;
+    (void)self;
 
-	     return Py_BuildValue("");
-	 } else {
-		 return 0;
-	 }
+    if (PyArg_ParseTuple(args, "O:callback", &temp)) {
+        if (!PyCallable_Check(temp)) {
+            PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+            return 0;
+        }
+        Py_INCREF(temp);
+        Py_XDECREF(bfm_call_method);
+        bfm_call_method = temp;
+
+        return Py_BuildValue("");
+    } else {
+        return 0;
+    }
 }
 
 static PyObject *error_out(PyObject *m, PyObject *args)

@@ -22,8 +22,8 @@ int cocotb_bfm_register(
 }
 
 // Returns the number of registered BFMs
-int cocotb_bfm_num_registered(void) {
-    return GpiBfm::get_bfms().size();
+uint32_t cocotb_bfm_num_registered(void) {
+    return static_cast<uint32_t>(GpiBfm::get_bfms().size());
 }
 
 // Returns the instance name of the specified BFM

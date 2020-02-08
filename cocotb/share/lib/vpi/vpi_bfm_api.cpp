@@ -49,6 +49,8 @@ static int cocotb_bfm_register_tf(char *user_data) {
     vpiHandle arg;
     int id;
 
+    (void)user_data;
+
     // Get the instance name from the context
     inst_name = vpi_get_str(vpiFullName, scope_h);
 
@@ -62,8 +64,6 @@ static int cocotb_bfm_register_tf(char *user_data) {
     notify_ev = vpi_scan(arg_it);
 
     vpi_free_object(arg_it);
-
-    (void)id;
 
     id = cocotb_bfm_register(
             inst_name.c_str(),
@@ -86,6 +86,8 @@ static int cocotb_bfm_claim_msg_tf(char *user_data) {
     vpiHandle arg;
     s_vpi_value val;
     int bfm_id, msg_id = -1;
+
+    (void)user_data;
 
     // Get the BFM ID
     arg = vpi_scan(arg_it);
@@ -113,6 +115,8 @@ static int cocotb_bfm_get_param_i32_tf(char *user_data) {
     int bfm_id;
     int64_t pval;
 
+    (void)user_data;
+
     // Get the BFM ID
     arg = vpi_scan(arg_it);
     val.format = vpiIntVal;
@@ -125,7 +129,7 @@ static int cocotb_bfm_get_param_i32_tf(char *user_data) {
 
     // Set return value
     val.format = vpiIntVal;
-    val.value.integer = pval;
+    val.value.integer = (int32_t)pval;
     vpi_put_value(systf_h, &val, 0, vpiNoDelay);
 
     return 0;
@@ -138,6 +142,8 @@ static int cocotb_bfm_get_param_ui32_tf(char *user_data) {
     s_vpi_value val;
     int bfm_id;
     int64_t pval;
+
+    (void)user_data;
 
     // Get the BFM ID
     arg = vpi_scan(arg_it);
@@ -152,7 +158,7 @@ static int cocotb_bfm_get_param_ui32_tf(char *user_data) {
     // Set return value
     val.format = vpiIntVal;
     // TODO: should really use reg?
-    val.value.integer = pval;
+    val.value.integer = (int32_t)pval;
     vpi_put_value(systf_h, &val, 0, vpiNoDelay);
 
     return 0;
@@ -164,6 +170,8 @@ static int cocotb_bfm_begin_msg_tf(char *user_data) {
     vpiHandle arg;
     s_vpi_value val;
     int bfm_id, msg_id;
+
+    (void)user_data;
 
     // Get the BFM ID
     arg = vpi_scan(arg_it);
@@ -192,6 +200,8 @@ static int cocotb_bfm_add_param_si_tf(char *user_data) {
     int bfm_id;
     int64_t pval = 0;
 
+    (void)user_data;
+
     // Get the BFM ID
     arg = vpi_scan(arg_it);
     val.format = vpiIntVal;
@@ -219,6 +229,8 @@ static int cocotb_bfm_add_param_ui_tf(char *user_data) {
     int bfm_id;
     uint64_t pval = 0;
 
+    (void)user_data;
+
     // Get the BFM ID
     arg = vpi_scan(arg_it);
     val.format = vpiIntVal;
@@ -244,6 +256,8 @@ static int cocotb_bfm_end_msg_tf(char *user_data) {
     vpiHandle arg;
     s_vpi_value val;
     int bfm_id;
+
+    (void)user_data;
 
     // Get the BFM ID
     arg = vpi_scan(arg_it);

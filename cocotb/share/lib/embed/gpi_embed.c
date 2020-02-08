@@ -122,15 +122,6 @@ void embed_init_python(void)
     if (gtstate)
         return;
 
-    // Before loading Python, ensure that COCOTB_SIM is set
-    if (!getenv("COCOTB_SIM") || !getenv("COCOTB_SIM")[0]) {
-#if defined(_WIN32)
-        SetEnvironmentVariable("COCOTB_SIM", "1");
-#else
-        setenv("COCOTB_SIM", "1", 1);
-#endif
-    }
-
     void * lib_handle = utils_dyn_open(PY_SO_LIB);
     if (!lib_handle) {
         LOG_ERROR("Failed to find Python shared library\n");
