@@ -1,21 +1,17 @@
-import os
-import logging
-
 import cocotb
 from cocotb import triggers, outcomes
-from cocotb_test import run
-
-logger = logging.getLogger(__name__)
 
 
 @cocotb.coroutine
-async def clock(clock_signal, period=2, units='ns'):
-    assert period % 2 == 0
+async def clock(clock_signal):
     while True:
-        clock_signal <= 0
-        await triggers.Timer(period//2, units=units)
-        clock_signal <= 1
-        await triggers.Timer(period//2, units=units)
+        try:
+            clock_signal <= 0
+            await triggers.Timer(1, units='ns')
+            clock_signal <= 1
+            await triggers.Timer(1, units='ns')
+        except outcomes.KilledError:
+            pass
 
 
 @cocotb.coroutine
@@ -30,6 +26,15 @@ async def killable(dut, state):
     finally:
         # We expect this to run after the coroutine is killed.
         state['cleanup'] = True
+
+
+@cocotb.coroutine
+async def unkillable(dut):
+    while True:
+        try:
+            await triggers.RisingEdge(dut.clk)
+        except outcomes.KilledError:
+            pass
 
 @cocotb.coroutine
 async def killer(dut, killable_task):
@@ -47,6 +52,7 @@ async def allow_kill(coro):
 @cocotb.test()
 async def test(dut):
     cocotb.fork(clock(dut.clk))
+    cocotb.fork(unkillable(dut))
     state = {}
     pB = killable(dut, state)
     pA = killer(dut, pB)
