@@ -43,6 +43,12 @@ to the top component as shown in the example below:
     `endif
     endmodule
 
+Time unit and precision
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Setting the time unit and time precision is not possible from the command-line,
+and therefore make variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` are ignored.
+
 Verilator
 ---------
 
