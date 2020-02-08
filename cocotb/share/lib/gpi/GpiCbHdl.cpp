@@ -79,30 +79,6 @@ const std::string & GpiObjHdl::get_name()
 }
 
 /* Genertic base clss implementations */
-char *GpiHdl::gpi_copy_name(const char *name)
-{
-    size_t len;
-    char *result;
-    const char null[] = "NULL";
-
-    if (name)
-        len = strlen(name) + 1;
-    else {
-        LOG_WARN("GPI: attempt to use NULL from impl");
-        len = strlen(null);
-        name = null;
-    }
-
-    result = (char *)malloc(len + 1);
-    if (result == NULL) {
-        LOG_CRITICAL("GPI: Attempting allocate string buffer failed!");
-    }
-
-    snprintf(result, len, "%s", name);
-
-    return result;
-}
-
 bool GpiHdl::is_this_impl(GpiImplInterface *impl)
 {
     return impl == this->m_impl;
