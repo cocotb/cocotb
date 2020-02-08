@@ -114,7 +114,7 @@ void cocotb_bfm_send_msg(
         uint32_t                paramc,
         cocotb_bfm_msg_param_t    *paramv) {
     GpiBfm *bfm = GpiBfm::get_bfms().at(bfm_id);
-    GpiBfmMsg *msg = new GpiBfmMsg(msg_id, paramc, paramv);
+    GpiBfmMsg *msg = new GpiBfmMsg(msg_id, static_cast<uint32_t>(paramc), paramv);
     bfm->send_msg(msg);
 }
 
