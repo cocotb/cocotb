@@ -7,7 +7,7 @@
 #include "cocotb_bfm_api.h"
 #include "GpiBfm.h"
 
-int cocotb_bfm_register(
+uint32_t cocotb_bfm_register(
         const char                *inst_name,
         const char                *cls_name,
         cocotb_bfm_notify_f        notify_f,
@@ -27,21 +27,21 @@ uint32_t cocotb_bfm_num_registered(void) {
 }
 
 // Returns the instance name of the specified BFM
-const char *cocotb_bfm_instname(int id) {
+const char *cocotb_bfm_instname(uint32_t id) {
     return GpiBfm::get_bfms().at(id)->get_instname().c_str();
 }
 
 // Returns the class name of the specified BFM
-const char *cocotb_bfm_clsname(int id) {
+const char *cocotb_bfm_clsname(uint32_t id) {
     return GpiBfm::get_bfms().at(id)->get_clsname().c_str();
 }
 
 //
-int cocotb_bfm_claim_msg(int id) {
+int cocotb_bfm_claim_msg(uint32_t id) {
     return GpiBfm::get_bfms().at(id)->claim_msg();
 }
 
-uint64_t cocotb_bfm_get_ui_param(int id) {
+uint64_t cocotb_bfm_get_ui_param(uint32_t id) {
     GpiBfm *bfm = GpiBfm::get_bfms().at(id);
     GpiBfmMsg *msg = bfm->active_msg();
 
@@ -52,7 +52,7 @@ uint64_t cocotb_bfm_get_ui_param(int id) {
     }
 }
 
-int64_t cocotb_bfm_get_si_param(int id) {
+int64_t cocotb_bfm_get_si_param(uint32_t id) {
     GpiBfm *bfm = GpiBfm::get_bfms().at(id);
     GpiBfmMsg *msg = bfm->active_msg();
 
@@ -63,7 +63,7 @@ int64_t cocotb_bfm_get_si_param(int id) {
     }
 }
 
-const char *cocotb_bfm_get_str_param(int id) {
+const char *cocotb_bfm_get_str_param(uint32_t id) {
     GpiBfm *bfm = GpiBfm::get_bfms().at(id);
     GpiBfmMsg *msg = bfm->active_msg();
 

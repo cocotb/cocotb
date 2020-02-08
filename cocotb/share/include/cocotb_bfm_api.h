@@ -15,7 +15,7 @@ extern "C" {
 // implementation when a message is available
 typedef void (*cocotb_bfm_notify_f)(void *);
 
-int cocotb_bfm_register(
+uint32_t cocotb_bfm_register(
         const char                *inst_name,
         const char                *cls_name,
         cocotb_bfm_notify_f       notify_f,
@@ -25,23 +25,23 @@ int cocotb_bfm_register(
 uint32_t cocotb_bfm_num_registered(void);
 
 // Returns the instance name of the specified BFM
-const char *cocotb_bfm_instname(int id);
+const char *cocotb_bfm_instname(uint32_t id);
 
 // Returns the class name of the specified BFM
-const char *cocotb_bfm_clsname(int id);
+const char *cocotb_bfm_clsname(uint32_t id);
 
 // Claims the next message in the queue.
 // If none is available, returns -1
-int cocotb_bfm_claim_msg(int id);
+int cocotb_bfm_claim_msg(uint32_t id);
 
 // Get an unsigned-integer parameter from the active message
-uint64_t cocotb_bfm_get_ui_param(int id);
+uint64_t cocotb_bfm_get_ui_param(uint32_t id);
 
 // Get an signed-integer parameter from the active message
-int64_t cocotb_bfm_get_si_param(int id);
+int64_t cocotb_bfm_get_si_param(uint32_t id);
 
 // Get a string parameter from the active message
-const char *cocotb_bfm_get_str_param(int id);
+const char *cocotb_bfm_get_str_param(uint32_t id);
 
 /*
  * Called from the simulator side to begin

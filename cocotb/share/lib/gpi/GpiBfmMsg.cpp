@@ -15,8 +15,8 @@ GpiBfmMsg::GpiBfmMsg(
     m_idx = 0;
     if (paramc != -1) {
         m_param_l = new cocotb_bfm_msg_param_t[paramc];
-        m_param_l_idx = paramc;
-        m_param_l_max = paramc;
+        m_param_l_idx = static_cast<uint32_t>(paramc);
+        m_param_l_max = static_cast<uint32_t>(paramc);
         for (int i=0; i<paramc; i++) {
             m_param_l[i] = paramv[i];
             if (paramv[i].ptype == GpiBfmParamType_Str) {

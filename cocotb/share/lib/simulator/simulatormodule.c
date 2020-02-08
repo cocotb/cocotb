@@ -1033,7 +1033,7 @@ static PyObject *bfm_get_count(PyObject *self, PyObject *args) {
  * Returns information about a specific BFM
  */
 static PyObject *bfm_get_info(PyObject *self, PyObject *args) {
-    int id;
+    uint32_t id;
 
     (void)self;
 

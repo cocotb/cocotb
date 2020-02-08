@@ -29,7 +29,7 @@ GpiBfm::~GpiBfm() {
     }
 }
 
-int GpiBfm::add_bfm(GpiBfm *bfm) {
+uint32_t GpiBfm::add_bfm(GpiBfm *bfm) {
     bfm->m_bfm_id = static_cast<uint32_t>(m_bfm_l.size());
 
     m_bfm_l.push_back(bfm);
@@ -52,7 +52,7 @@ int GpiBfm::claim_msg() {
     if (m_msg_queue.size() > 0) {
         m_active_msg = m_msg_queue.at(0);
         m_msg_queue.erase(m_msg_queue.begin());
-        return m_active_msg->id();
+        return static_cast<int32_t>(m_active_msg->id());
     } else {
         return -1;
     }

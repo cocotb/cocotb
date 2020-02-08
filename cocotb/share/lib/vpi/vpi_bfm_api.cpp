@@ -47,7 +47,7 @@ static int cocotb_bfm_register_tf(char *user_data) {
     vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
     s_vpi_value val;
     vpiHandle arg;
-    int id;
+    uint32_t id;
 
     (void)user_data;
 
@@ -74,7 +74,7 @@ static int cocotb_bfm_register_tf(char *user_data) {
 
     // Set return value
     val.format = vpiIntVal;
-    val.value.integer = id;
+    val.value.integer = (int32_t)id;
     vpi_put_value(systf_h, &val, 0, vpiNoDelay);
 
     return 0;
@@ -85,7 +85,8 @@ static int cocotb_bfm_claim_msg_tf(char *user_data) {
     vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
     vpiHandle arg;
     s_vpi_value val;
-    int bfm_id, msg_id = -1;
+    uint32_t bfm_id;
+    int32_t msg_id = -1;
 
     (void)user_data;
 
@@ -93,7 +94,7 @@ static int cocotb_bfm_claim_msg_tf(char *user_data) {
     arg = vpi_scan(arg_it);
     val.format = vpiIntVal;
     vpi_get_value(arg, &val);
-    bfm_id = val.value.integer;
+    bfm_id = (uint32_t)val.value.integer;
 
     vpi_free_object(arg_it);
 
@@ -112,7 +113,7 @@ static int cocotb_bfm_get_param_i32_tf(char *user_data) {
     vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
     vpiHandle arg;
     s_vpi_value val;
-    int bfm_id;
+    uint32_t bfm_id;
     int64_t pval;
 
     (void)user_data;
@@ -121,7 +122,7 @@ static int cocotb_bfm_get_param_i32_tf(char *user_data) {
     arg = vpi_scan(arg_it);
     val.format = vpiIntVal;
     vpi_get_value(arg, &val);
-    bfm_id = val.value.integer;
+    bfm_id = (uint32_t)val.value.integer;
 
     vpi_free_object(arg_it);
 
@@ -140,7 +141,7 @@ static int cocotb_bfm_get_param_ui32_tf(char *user_data) {
     vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
     vpiHandle arg;
     s_vpi_value val;
-    int bfm_id;
+    uint32_t bfm_id;
     int64_t pval;
 
     (void)user_data;
@@ -149,7 +150,7 @@ static int cocotb_bfm_get_param_ui32_tf(char *user_data) {
     arg = vpi_scan(arg_it);
     val.format = vpiIntVal;
     vpi_get_value(arg, &val);
-    bfm_id = val.value.integer;
+    bfm_id = (uint32_t)val.value.integer;
 
     vpi_free_object(arg_it);
 
@@ -169,7 +170,7 @@ static int cocotb_bfm_begin_msg_tf(char *user_data) {
     vpiHandle arg_it = vpi_iterate(vpiArgument, systf_h);
     vpiHandle arg;
     s_vpi_value val;
-    int bfm_id, msg_id;
+    uint32_t bfm_id, msg_id;
 
     (void)user_data;
 
@@ -177,13 +178,13 @@ static int cocotb_bfm_begin_msg_tf(char *user_data) {
     arg = vpi_scan(arg_it);
     val.format = vpiIntVal;
     vpi_get_value(arg, &val);
-    bfm_id = val.value.integer;
+    bfm_id = (uint32_t)val.value.integer;
 
     // Get the msg ID
     arg = vpi_scan(arg_it);
     val.format = vpiIntVal;
     vpi_get_value(arg, &val);
-    msg_id = val.value.integer;
+    msg_id = (uint32_t)val.value.integer;
 
     vpi_free_object(arg_it);
 
@@ -198,7 +199,7 @@ static int cocotb_bfm_add_param_si_tf(char *user_data) {
     vpiHandle arg;
     s_vpi_value val;
     int bfm_id;
-    int64_t pval = 0;
+    uint64_t pval = 0;
 
     (void)user_data;
 
@@ -212,7 +213,7 @@ static int cocotb_bfm_add_param_si_tf(char *user_data) {
     arg = vpi_scan(arg_it);
     val.format = vpiIntVal;
     vpi_get_value(arg, &val);
-    pval = val.value.integer;
+    pval = (uint64_t)val.value.integer;
 
     vpi_free_object(arg_it);
 

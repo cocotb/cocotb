@@ -26,7 +26,7 @@ public:
 
     virtual ~GpiBfm();
 
-    static int add_bfm(GpiBfm *bfm);
+    static uint32_t add_bfm(GpiBfm *bfm);
 
     static const std::vector<GpiBfm *> &get_bfms() { return m_bfm_l; }
 
