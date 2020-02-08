@@ -114,15 +114,24 @@ int IOWR(unsigned int base, unsigned int address, unsigned int value)
 }
 
 #if PY_MAJOR_VERSION >= 3
-    #define MOD_RETVAL(x) x
-    #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
+static struct PyModuleDef io_module =
+{
+    PyModuleDef_HEAD_INIT,
+    "io_module", // name
+    "", // documentation
+    -1, // amount of memory to allocate for module when using sub-interpreters,
+        // -1 means module has a global state
+    io_module_methods
+};
+
+PyMODINIT_FUNC PyInit_io_module(void)
+{
+    return PyModule_Create(&io_module);
+}
 #else
-    #define MOD_RETVAL(x)
-    #define MOD_INIT(name) PyMODINIT_FUNC init##name(void)
+PyMODINIT_FUNC initio_module(void)
+{
+    Py_InitModule("io_module", io_module_methods);
+}
 #endif
 
-MOD_INIT(io_module) {
-    PyObject* io_module;
-    io_module = Py_InitModule("io_module", io_module_methods);
-    return MOD_RETVAL(io_module);
-}

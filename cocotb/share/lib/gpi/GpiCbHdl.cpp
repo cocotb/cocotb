@@ -81,7 +81,7 @@ const std::string & GpiObjHdl::get_name()
 /* Genertic base clss implementations */
 char *GpiHdl::gpi_copy_name(const char *name)
 {
-    int len;
+    size_t len;
     char *result;
     const char null[] = "NULL";
 
@@ -106,12 +106,6 @@ char *GpiHdl::gpi_copy_name(const char *name)
 bool GpiHdl::is_this_impl(GpiImplInterface *impl)
 {
     return impl == this->m_impl;
-}
-
-int GpiHdl::initialise(std::string &name)
-{
-    LOG_WARN("Generic initialize, doubt you should have called this");
-    return 0;
 }
 
 int GpiObjHdl::initialise(std::string &name, std::string &fq_name)

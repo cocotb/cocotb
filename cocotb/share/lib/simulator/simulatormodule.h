@@ -31,7 +31,6 @@
 #define _SIMULATOR_MODULE_H
 
 #include <Python.h>
-#include "../compat/python3_compat.h"
 #include "gpi_logging.h"
 #include "gpi.h"
 
@@ -52,7 +51,7 @@ typedef struct t_callback_data {
     gpi_sim_hdl cb_hdl;
 } s_callback_data, *p_callback_data;
 
-static PyObject *error_out(PyObject *m);
+static PyObject *error_out(PyObject *m, PyObject *args);
 static PyObject *log_msg(PyObject *self, PyObject *args);
 
 // Raise an exception on failure
@@ -130,8 +129,7 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as an int tuple"},
     {"get_precision", get_precision, METH_VARARGS, "Get the precision of the simulator"},
     {"deregister_callback", deregister_callback, METH_VARARGS, "De-register a callback"},
-
-    {"error_out", (PyCFunction)error_out, METH_NOARGS, NULL},
+    {"error_out", error_out, METH_NOARGS, NULL},
 
     // Note: methods for interacting with BFMs
     {"bfm_get_count", bfm_get_count, METH_VARARGS, NULL},

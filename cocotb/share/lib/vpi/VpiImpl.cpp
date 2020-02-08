@@ -27,6 +27,7 @@
 
 #include "VpiImpl.h"
 #include "vpi_bfm_api.h"
+#include <cocotb_utils.h>  // COCOTB_UNUSED
 
 extern "C" {
 
@@ -82,6 +83,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiMemoryWord:
             return GPI_REGISTER;
 
+        case vpiRealNet:
         case vpiRealVar:
             return GPI_REAL;
 
@@ -570,8 +572,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     }
 
     return rv;
-};
-
+}
 
 static void register_embed()
 {
@@ -599,6 +600,7 @@ static void register_final_callback()
 // Expect either no arguments or a single string
 static int system_function_compiletf(char *userdata)
 {
+    COCOTB_UNUSED(userdata);
     vpiHandle systf_handle, arg_iterator, arg_handle;
     int tfarg_type;
 
@@ -653,10 +655,12 @@ static int system_function_overload(char *userdata)
         msg = argval.value.str;
     }
 
-    gpi_log("cocotb.simulator", *userdata, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
+    enum gpi_log_levels userdata_as_loglevel = (enum gpi_log_levels)*userdata;
+
+    gpi_log("cocotb.simulator", userdata_as_loglevel, vpi_get_str(vpiFile, systfref), "", (long)vpi_get(vpiLineNo, systfref), "%s", msg );
 
     // Fail the test for critical errors
-    if (GPICritical == *userdata)
+    if (GPICritical == userdata_as_loglevel)
         gpi_embed_event(SIM_TEST_FAIL, argval.value.str);
 
     return 0;
@@ -664,7 +668,7 @@ static int system_function_overload(char *userdata)
 
 static void register_system_functions()
 {
-    s_vpi_systf_data tfData = { vpiSysTask, vpiSysTask };
+    s_vpi_systf_data tfData = { vpiSysTask, vpiSysTask, NULL, NULL, NULL, NULL, NULL };
 
     tfData.sizetf       = NULL;
     tfData.compiletf    = system_function_compiletf;

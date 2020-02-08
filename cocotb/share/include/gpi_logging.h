@@ -73,7 +73,7 @@ void set_log_filter(void *filter);
 void clear_log_filter(void);
 void set_log_level(enum gpi_log_levels new_level);
 
-void gpi_log(const char *name, long level, const char *pathname, const char *funcname, long lineno, const char *msg, ...);
+void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...);
 
 EXTERN_C_END
 

@@ -40,10 +40,16 @@ static int releases = 0;
 static int sim_ending = 0;
 
 #include "simulatormodule.h"
-#include <cocotb_utils.h>
+#include <cocotb_utils.h>     // COCOTB_UNUSED
 #include "cocotb_bfm_api.h"
 
 static PyObject *bfm_call_method = 0;
+
+struct module_state {
+    PyObject *error;
+};
+
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
 
 typedef int (*gpi_function_t)(const void *);
 
@@ -201,6 +207,7 @@ err:
 
 static PyObject *log_msg(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *name;
     const char *path;
     const char *msg;
@@ -221,6 +228,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
 // Remaining arguments are keyword arguments to be passed to the callback
 static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -273,6 +281,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 
 static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -325,6 +334,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 
 static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -381,6 +391,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 // Remaining arguments and keyword arguments are to be passed to the callback
 static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -397,9 +408,18 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Extract the time
-    PyObject *pTime = PyTuple_GetItem(args, 0);
-    time_ps = PyLong_AsLongLong(pTime);
+    {   // Extract the time
+        PyObject *pTime = PyTuple_GetItem(args, 0);
+        long long pTime_as_longlong = PyLong_AsLongLong(pTime);
+        if (pTime_as_longlong == -1 && PyErr_Occurred()) {
+            return NULL;
+        } else if (pTime_as_longlong < 0) {
+            PyErr_SetString(PyExc_ValueError, "Timer value must be a positive integer");
+            return NULL;
+        } else {
+            time_ps = (uint64_t)pTime_as_longlong;
+        }
+    }
 
     // Extract the callback function
     function = PyTuple_GetItem(args, 1);
@@ -443,6 +463,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 // Remaining arguments and keyword arguments are to be passed to the callback
 static PyObject *register_value_change_callback(PyObject *self, PyObject *args) //, PyObject *keywds)
 {
+    COCOTB_UNUSED(self);
     FENTER
 
     PyObject *fArgs;
@@ -511,6 +532,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 
 static PyObject *iterate(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     int type;
     gpi_iterator_hdl result;
@@ -530,6 +552,7 @@ static PyObject *iterate(PyObject *self, PyObject *args)
 
 static PyObject *next(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_iterator_hdl hdl;
     gpi_sim_hdl result;
     PyObject *res;
@@ -561,6 +584,7 @@ static PyObject *next(PyObject *self, PyObject *args)
 
 static PyObject *get_signal_val_binstr(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     const char *result;
     PyObject *retstr;
@@ -577,6 +601,7 @@ static PyObject *get_signal_val_binstr(PyObject *self, PyObject *args)
 
 static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     const char *result;
     PyObject *retstr;
@@ -593,6 +618,7 @@ static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
 
 static PyObject *get_signal_val_real(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     double result;
     PyObject *retval;
@@ -610,6 +636,7 @@ static PyObject *get_signal_val_real(PyObject *self, PyObject *args)
 
 static PyObject *get_signal_val_long(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     long result;
     PyObject *retval;
@@ -627,6 +654,7 @@ static PyObject *get_signal_val_long(PyObject *self, PyObject *args)
 
 static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     const char *binstr;
     PyObject *res;
@@ -643,6 +671,7 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
 
 static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     double value;
     PyObject *res;
@@ -659,6 +688,7 @@ static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
 
 static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     long value;
     PyObject *res;
@@ -675,6 +705,7 @@ static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
 
 static PyObject *get_definition_name(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char* result;
     gpi_sim_hdl hdl;
     PyObject *retstr;
@@ -691,6 +722,7 @@ static PyObject *get_definition_name(PyObject *self, PyObject *args)
 
 static PyObject *get_definition_file(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char* result;
     gpi_sim_hdl hdl;
     PyObject *retstr;
@@ -707,6 +739,7 @@ static PyObject *get_definition_file(PyObject *self, PyObject *args)
 
 static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *name;
     gpi_sim_hdl hdl;
     gpi_sim_hdl result;
@@ -725,6 +758,7 @@ static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
 
 static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     int32_t index;
     gpi_sim_hdl hdl;
     gpi_sim_hdl result;
@@ -743,6 +777,7 @@ static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
 
 static PyObject *get_root_handle(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *name;
     gpi_sim_hdl result;
     PyObject *value;
@@ -765,6 +800,7 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args)
 
 static PyObject *get_name_string(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *result;
     gpi_sim_hdl hdl;
     PyObject *retstr;
@@ -781,7 +817,8 @@ static PyObject *get_name_string(PyObject *self, PyObject *args)
 
 static PyObject *get_type(PyObject *self, PyObject *args)
 {
-    int result;
+    COCOTB_UNUSED(self);
+    gpi_objtype_t result;
     gpi_sim_hdl hdl;
     PyObject *pyresult;
 
@@ -790,13 +827,14 @@ static PyObject *get_type(PyObject *self, PyObject *args)
     }
 
     result = gpi_get_object_type((gpi_sim_hdl)hdl);
-    pyresult = Py_BuildValue("i", result);
+    pyresult = Py_BuildValue("i", (int)result);
 
     return pyresult;
 }
 
 static PyObject *get_const(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     int result;
     gpi_sim_hdl hdl;
     PyObject *pyresult;
@@ -813,6 +851,7 @@ static PyObject *get_const(PyObject *self, PyObject *args)
 
 static PyObject *get_type_string(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     const char *result;
     gpi_sim_hdl hdl;
     PyObject *retstr;
@@ -833,6 +872,8 @@ static PyObject *get_type_string(PyObject *self, PyObject *args)
 // log messages with the current simulation time
 static PyObject *get_sim_time(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     struct sim_time local_time;
 
     if (is_python_context) {
@@ -850,6 +891,8 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
 
 static PyObject *get_precision(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     int32_t precision;
 
     gpi_get_sim_precision(&precision);
@@ -862,6 +905,7 @@ static PyObject *get_precision(PyObject *self, PyObject *args)
 
 static PyObject *get_num_elems(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     PyObject *retstr;
 
@@ -877,6 +921,7 @@ static PyObject *get_num_elems(PyObject *self, PyObject *args)
 
 static PyObject *get_range(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     PyObject *retstr;
 
@@ -898,6 +943,8 @@ static PyObject *get_range(PyObject *self, PyObject *args)
 
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     gpi_sim_end();
     sim_ending = 1;
     return Py_BuildValue("s", "OK!");
@@ -906,6 +953,7 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
 
 static PyObject *deregister_callback(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     PyObject *value;
 
@@ -925,6 +973,7 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
 
 static PyObject *log_level(PyObject *self, PyObject *args)
 {
+    COCOTB_UNUSED(self);
     enum gpi_log_levels new_level;
     PyObject *py_level;
     PyObject *value;
@@ -1102,10 +1151,56 @@ static PyObject *bfm_set_call_method(PyObject *self, PyObject *args) {
 	 }
 }
 
+static PyObject *error_out(PyObject *m, PyObject *args)
+{
+    COCOTB_UNUSED(args);
+    struct module_state *st = GETSTATE(m);
+    PyErr_SetString(st->error, "something bad happened");
+    return NULL;
+}
 
+static int simulator_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(GETSTATE(m)->error);
+    return 0;
+}
 
-#if PY_MAJOR_VERSION >= 3
-#include "simulatormodule_python3.c"
-#else
-#include "simulatormodule_python2.c"
-#endif
+static int simulator_clear(PyObject *m) {
+    Py_CLEAR(GETSTATE(m)->error);
+    return 0;
+}
+
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    MODULE_NAME,
+    NULL,
+    sizeof(struct module_state),
+    SimulatorMethods,
+    NULL,
+    simulator_traverse,
+    simulator_clear,
+    NULL
+};
+
+PyMODINIT_FUNC PyInit_simulator(void)
+{
+    PyObject* simulator;
+
+    simulator = PyModule_Create(&moduledef);
+
+    if (simulator == NULL)
+        return NULL;
+    struct module_state *st = GETSTATE(simulator);
+
+    st->error = PyErr_NewException(MODULE_NAME ".Error", NULL, NULL);
+    if (st->error == NULL) {
+        Py_DECREF(simulator);
+        return NULL;
+    }
+
+    // Register the BFM receive message callback
+    // with the BFM manager
+    cocotb_bfm_set_recv_msg_f(&bfm_recv_msg);
+
+    add_module_constants(simulator);
+    return simulator;
+}

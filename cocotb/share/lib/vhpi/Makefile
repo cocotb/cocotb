@@ -30,7 +30,7 @@
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
 
 INCLUDES    +=
-GXX_ARGS    += -DVHPI_CHECKING
+CXX_ARGS    += -DVHPI_CHECKING
 LIBS        := $(EXTRA_LIBS) -lgpilog -lgpi -lstdc++
 LD_PATH     := $(EXTRA_LIBDIRS) -L$(LIB_DIR)
 LIB_NAME    := libcocotbvhpi

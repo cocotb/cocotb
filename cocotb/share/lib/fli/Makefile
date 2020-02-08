@@ -35,7 +35,7 @@ ifeq (,$(MODELSIM_BIN_DIR))
 endif
 
 INCLUDES    += -I$(MODELSIM_BIN_DIR)/../include
-GXX_ARGS    += -DFLI_CHECKING -DUSE_CACHE
+CXX_ARGS    += -DFLI_CHECKING -DUSE_CACHE
 LIBS        := $(EXTRA_LIBS) -lgpilog -lgpi -lstdc++
 LD_PATH     := -L$(LIB_DIR) $(EXTRA_LIBDIRS)
 LIB_NAME    := libfli

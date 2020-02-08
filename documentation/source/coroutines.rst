@@ -28,18 +28,11 @@ Coroutines may also yield other coroutines:
             yield wait_10ns()
 
 Coroutines can return a value, so that they can be used by other coroutines.
-Before Python 3.3, this requires a :any:`ReturnValue` to be raised.
 
 .. code-block:: python3
 
     @cocotb.coroutine
     def get_signal(clk, signal):
-        yield RisingEdge(clk)
-        raise ReturnValue(signal.value)
-
-    @cocotb.coroutine
-    def get_signal_python_33(clk, signal):
-        # newer versions of Python can use return normally
         yield RisingEdge(clk)
         return signal.value
 
@@ -173,6 +166,11 @@ of :keyword:`yield`. Provided they are decorated with ``@cocotb.coroutine``,
 :keyword:`yield` can be used interchangeable - the appropriate keyword to use
 is determined by which type of function it appears in, not by the
 sub-coroutine being called.
+
+.. versionadded:: 1.4
+    The :any:`cocotb.coroutine` decorator is no longer necessary for ``async def`` coroutines.
+    ``async def`` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
+    including :keyword:`yield` statements and :any:`cocotb.fork`.
 
 .. note::
     It is not legal to ``await`` a list of triggers as can be done in

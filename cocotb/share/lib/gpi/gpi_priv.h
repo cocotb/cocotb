@@ -34,6 +34,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <cocotb_utils.h>  // COCOTB_UNUSED
 
 typedef enum gpi_cb_state {
     GPI_FREE = 0,
@@ -64,8 +65,7 @@ class GpiHdl {
 public:
     GpiHdl(GpiImplInterface *impl) : m_impl(impl), m_obj_hdl(NULL) { }
     GpiHdl(GpiImplInterface *impl, void *hdl) : m_impl(impl), m_obj_hdl(hdl) { }
-    virtual ~GpiHdl() { }
-    virtual int initialise(std::string &name);                   // Post constructor init
+    virtual ~GpiHdl() = default;
 
 
     template<typename T> T get_handle() const {
@@ -118,7 +118,7 @@ public:
                                                                           m_fullname("unknown"),
                                                                           m_type(objtype),
                                                                           m_const(is_const) { }
-    virtual ~GpiObjHdl() { }
+    virtual ~GpiObjHdl() = default;
 
     virtual const char* get_name_str();
     virtual const char* get_fullname_str();
@@ -167,7 +167,7 @@ public:
     GpiSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype, bool is_const) :
                                                          GpiObjHdl(impl, hdl, objtype, is_const),
                                                          m_length(0) { }
-    virtual ~GpiSignalObjHdl() { }
+    virtual ~GpiSignalObjHdl() = default;
     // Provide public access to the implementation (composition vs inheritance)
     virtual const char* get_signal_value_binstr() = 0;
     virtual const char* get_signal_value_str() = 0;
@@ -218,9 +218,7 @@ protected:
 class GpiValueCbHdl : public virtual GpiCbHdl {
 public:
     GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal, int edge);
-    virtual ~GpiValueCbHdl() { }
-    virtual int run_callback();
-    virtual int cleanup_callback() = 0;
+    int run_callback() override;
 
 protected:
     std::string required_value;
@@ -230,10 +228,10 @@ protected:
 /* We would then have */
 class GpiClockHdl {
 public:
-    GpiClockHdl(GpiObjHdl *clk) { }
-    GpiClockHdl(const char *clk) { }
+    GpiClockHdl(GpiObjHdl *clk) { COCOTB_UNUSED(clk); }
+    GpiClockHdl(const char *clk) { COCOTB_UNUSED(clk); }
     ~GpiClockHdl() { }
-    int start_clock(const int period_ps) { return 0; } ; /* Do things with the GpiSignalObjHdl */
+    int start_clock(const int period_ps) { COCOTB_UNUSED(period_ps); return 0; } ; /* Do things with the GpiSignalObjHdl */
     int stop_clock() { return 0; }
 };
 
@@ -249,9 +247,10 @@ public:
 
     GpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiHdl(impl),
                                                           m_parent(hdl) { }
-    virtual ~GpiIterator() { }
+    virtual ~GpiIterator() = default;
 
     virtual Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl) {
+        COCOTB_UNUSED(raw_hdl);
         name = "";
         *hdl = NULL;
         return GpiIterator::END;
@@ -305,7 +304,7 @@ public:
     GpiImplInterface(const std::string& name) : m_name(name) { }
     const char *get_name_c();
     const std::string& get_name_s();
-    virtual ~GpiImplInterface() { }
+    virtual ~GpiImplInterface() = default;
 
     /* Sim related */
     virtual void sim_end() = 0;
@@ -342,12 +341,12 @@ void gpi_embed_end();
 void gpi_embed_event(gpi_event_t level, const char *msg);
 void gpi_load_extra_libs();
 
-typedef const void (*layer_entry_func)();
+typedef void (*layer_entry_func)();
 
 /* Use this macro in an implementation layer to define an entry point */
 #define GPI_ENTRY_POINT(NAME, func) \
     extern "C" { \
-        const void NAME##_entry_point()  \
+        void NAME##_entry_point()  \
         { \
             func(); \
         } \

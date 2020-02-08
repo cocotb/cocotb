@@ -221,7 +221,8 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     int32_t type = vpi_get(vpiType, GpiObjHdl::get_handle<vpiHandle>());
     if ((vpiIntVar == type) ||
         (vpiIntegerVar == type) ||
-        (vpiIntegerNet == type )) {
+        (vpiIntegerNet == type ) ||
+        (vpiRealNet == type)) {
         m_num_elems = 1;
     } else {
         m_num_elems = vpi_get(vpiSize, GpiObjHdl::get_handle<vpiHandle>());
@@ -282,7 +283,7 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 const char* VpiSignalObjHdl::get_signal_value_binstr()
 {
     FENTER
-    s_vpi_value value_s = {vpiBinStrVal};
+    s_vpi_value value_s = {vpiBinStrVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
@@ -292,7 +293,7 @@ const char* VpiSignalObjHdl::get_signal_value_binstr()
 
 const char* VpiSignalObjHdl::get_signal_value_str()
 {
-    s_vpi_value value_s = {vpiStringVal};
+    s_vpi_value value_s = {vpiStringVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
@@ -303,7 +304,7 @@ const char* VpiSignalObjHdl::get_signal_value_str()
 double VpiSignalObjHdl::get_signal_value_real()
 {
     FENTER
-    s_vpi_value value_s = {vpiRealVal};
+    s_vpi_value value_s = {vpiRealVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
@@ -314,7 +315,7 @@ double VpiSignalObjHdl::get_signal_value_real()
 long VpiSignalObjHdl::get_signal_value_long()
 {
     FENTER
-    s_vpi_value value_s = {vpiIntVal};
+    s_vpi_value value_s = {vpiIntVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
     check_vpi_error();
@@ -327,7 +328,7 @@ int VpiSignalObjHdl::set_signal_value(long value)
 {
     s_vpi_value value_s;
 
-    value_s.value.integer = value;
+    value_s.value.integer = (int)value;
     value_s.format = vpiIntVal;
 
     return set_signal_value(value_s);
@@ -553,6 +554,7 @@ void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
         vpiMemory,
         vpiIntegerVar,
         vpiRealVar,
+        vpiRealNet,
         vpiStructVar,
         vpiStructNet,
         //vpiVariables          // Aldec SEGV on plain Verilog
@@ -692,9 +694,10 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
         return;
     }
 
-    LOG_DEBUG("Created iterator working from type %d %s",
+    LOG_DEBUG("Created iterator working from type %d %s (%s)",
               *one2many,
-              vpi_get_str(vpiFullName, vpi_hdl));
+              vpi_get_str(vpiFullName, vpi_hdl),
+              vpi_get_str(vpiType, vpi_hdl));
 
     m_iterator = iterator;
 }

@@ -82,7 +82,7 @@ def assert_raises(exc_type):
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_error=TypeError)
 def test_not_a_coroutine(dut):
     """Example of a failing to use the yield keyword in a test"""
     dut._log.warning("This test will fail because we don't yield anything")
@@ -176,11 +176,6 @@ def clock_yield(generator):
     global test_flag
     yield Join(generator)
     test_flag = True
-
-
-@cocotb.test(expect_fail=True)
-def test_duplicate_yield(dut):
-    """A trigger can not be yielded on twice"""
 
 
 @cocotb.test(expect_fail=False)
@@ -670,6 +665,12 @@ def test_logging_with_args(dut):
 
     dut._log.info("%s", counter)
     assert counter.str_counter == 1
+
+    # now try again on the root cocotb logger, which unlike nested loggers
+    # is captured
+    counter = StrCallCounter()
+    cocotb.log.info("%s", counter)
+    assert counter.str_counter == 2  # once for stdout, once for captured logs
 
     dut._log.info("No substitution")
 

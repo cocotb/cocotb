@@ -48,7 +48,7 @@ endif
 ifeq (, $(CMD))
     $(error "Unable to locate command >$(CMD_BIN)<")
 else
-	ICARUS_BIN_DIR := $(shell dirname $(CMD))
+    ICARUS_BIN_DIR := $(shell dirname $(CMD))
     export ICARUS_BIN_DIR
 endif
 
@@ -69,7 +69,6 @@ EXTRA_LIBDIRS := -L$(ICARUS_BIN_DIR)/../lib
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 LIB_LOAD = PATH=$(OLD_PATH):$(LIB_DIR)
 NEW_PYTHONPATH:=$(shell python -c "import sys, os; print(':'.join(['/'+dir.replace(os.sep,'/').replace(':','') for dir in sys.path]))")
-PWD = $(shell pwd)
 
 else
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
@@ -77,14 +76,24 @@ NEW_PYTHONPATH := $(PYTHONPATH)
 endif
 
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+	-@rm -f $(COCOTB_RESULTS_FILE)
+
 	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
         $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
+	# check that the file was actually created, since we can't set an exit code from cocotb
+	test -f $(COCOTB_RESULTS_FILE)
+
 debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
+	-@rm -f $(COCOTB_RESULTS_FILE)
+
 	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
         gdb --args $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m gpivpi $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
+
+	# check that the file was actually created, since we can't set an exit code from cocotb
+	test -f $(COCOTB_RESULTS_FILE)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

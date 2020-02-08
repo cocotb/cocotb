@@ -47,7 +47,7 @@ def recursive_discovery(dut):
         count = 0
         for thing in parent:
             count += 1
-            tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+            tlog.debug("Found %s.%s (%s)", parent._name, thing._name, type(thing))
             count += dump_all_the_things(thing)
         return count
     total = dump_all_the_things(dut)

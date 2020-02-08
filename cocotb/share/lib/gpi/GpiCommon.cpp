@@ -94,7 +94,7 @@ static GpiHandleStore unique_handles;
 #endif
 
 
-int gpi_print_registered_impl()
+size_t gpi_print_registered_impl()
 {
     vector<GpiImplInterface*>::iterator iter;
     for (iter = registered_impls.begin();
@@ -351,8 +351,6 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
 
 gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index)
 {
-    vector<GpiImplInterface*>::iterator iter;
-
     GpiObjHdl *hdl         = NULL;
     GpiObjHdl *base        = sim_to_hdl<GpiObjHdl*>(parent);
     GpiImplInterface *intf = base->m_impl;

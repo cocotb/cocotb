@@ -40,6 +40,7 @@ def _check_real(tlog, hdl, expected):
     else:
         tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, float(hdl)))
 
+# NOTE: simulator-specific handling is done in this test itself, not via expect_error in the decorator
 @cocotb.test()
 def test_read_write(dut):
     """Test handle inheritance"""
@@ -175,7 +176,7 @@ def test_read_write(dut):
         _check_logic(tlog, dut.sig_t6[0][2][7], 0)
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        _check_str(tlog, dut.port_str_out, "Testing")
+        _check_str(tlog, dut.port_str_out, "TEsting")  # the uppercase "E" from a few lines before
 
         _check_logic(tlog, dut.port_rec_out.b[1]     , 0xA3)
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)

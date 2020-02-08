@@ -30,10 +30,10 @@
 # All common python related rules
 
 ifneq ($(COCOTB_PYTHON_DEBUG),)
-	DBG_PYTHON_VERSION=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
-	PYTHON_BIN?=python$(DBG_PYTHON_VERSION)-dbg
+    DBG_PYTHON_VERSION=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
+    PYTHON_BIN?=python$(DBG_PYTHON_VERSION)-dbg
 else
-	PYTHON_BIN?=python
+    PYTHON_BIN?=python
 endif
 
 NATIVE_ARCH=$(shell uname -m)
@@ -45,8 +45,8 @@ PYTHON_DYNLIBDIR:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_functio
 # Nasty hack but there's no way in Python properly get the directories for 32-bit Python on a 64-bit system
 # TODO: Under OSX we can use "export VERSIONER_PYTHON_PREFER_32_BIT=yes", no Linux equivalent though
 ifneq ($(NATIVE_ARCH),$(ARCH))
-	PYTHON_LIBDIR:=$(subst 64,,$(PYTHON_LIBDIR))
-	PYTHON_DYNLIBDIR:=$(subst 64,,$(PYTHON_DYNLIBDIR))
+    PYTHON_LIBDIR:=$(subst 64,,$(PYTHON_LIBDIR))
+    PYTHON_DYNLIBDIR:=$(subst 64,,$(PYTHON_DYNLIBDIR))
 endif
 
 PYLIBS:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; import os; print("-l"+os.path.splitext(sysconfig.get_config_var("LDLIBRARY"))[0][3:])')

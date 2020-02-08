@@ -220,6 +220,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
 
 GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 {
+    COCOTB_UNUSED(parent);
     LOG_DEBUG("Trying to convert a raw handle to an FLI Handle.");
 
     const char * c_name     = acc_fetch_name(raw_hdl);
@@ -411,6 +412,7 @@ GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
 const char *FliImpl::reason_to_string(int reason)
 {
+    COCOTB_UNUSED(reason);
     return "Who can explain it, who can tell you why?";
 }
 
@@ -752,8 +754,8 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     }
 
     char *c_name;
-    PLI_INT32 accType = 0;
-    PLI_INT32 accFullType = 0;
+    PLI_INT32 accType;
+    PLI_INT32 accFullType;
     switch (*one2many) {
         case FliIterator::OTM_CONSTANTS:
         case FliIterator::OTM_VARIABLE_SUB_ELEMENTS:
@@ -776,6 +778,9 @@ GpiIterator::Status FliIterator::next_handle(std::string &name, GpiObjHdl **hdl,
             accFullType = acc_fetch_fulltype(obj);
             break;
         default:
+            c_name = NULL;
+            accType = 0;
+            accFullType = 0;
             LOG_WARN("Unhandled OneToMany Type (%d)", *one2many);
     }
 

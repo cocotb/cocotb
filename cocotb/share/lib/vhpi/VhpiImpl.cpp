@@ -92,13 +92,22 @@ void VhpiImpl::get_sim_time(uint32_t *high, uint32_t *low)
     *low = vhpi_time_s.low;
 }
 
+static int32_t log10int(uint64_t v)
+{
+    int32_t i = -1;
+    do {
+        v /= 10;
+        i += 1;
+    } while (v);
+    return i;
+}
+
 void VhpiImpl::get_sim_precision(int32_t *precision)
 {
     /* The value returned is in number of femtoseconds */
     vhpiPhysT prec = vhpi_get_phys(vhpiResolutionLimitP, NULL);
     uint64_t femtoseconds = ((uint64_t)prec.high << 32) | prec.low;
-    double base = 1e-15 * femtoseconds;
-    *precision = (int32_t)log10(base);
+    *precision = log10int(femtoseconds) - 15;
 }
 
 // Determine whether a VHPI object type is a constant or not

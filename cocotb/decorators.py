@@ -76,40 +76,32 @@ class CoroutineComplete(Exception):
         Exception.__init__(self, text)
 
 
-class RunningCoroutine(object):
-    """Per instance wrapper around an function to turn it into a coroutine.
+class RunningTask(object):
+    """Per instance wrapper around a running generator.
 
     Provides the following:
 
-        coro.join() creates a Trigger that will fire when this coroutine
+        task.join() creates a Trigger that will fire when this coroutine
         completes.
 
-        coro.kill() will destroy a coroutine instance (and cause any Join
+        task.kill() will destroy a coroutine instance (and cause any Join
         triggers to fire.
     """
-    def __init__(self, inst, parent):
-        if hasattr(inst, "__name__"):
-            self.__name__ = "%s" % inst.__name__
+    def __init__(self, inst):
 
-        if sys.version_info[:2] >= (3, 5) and inspect.iscoroutine(inst):
+        if inspect.iscoroutine(inst):
             self._natively_awaitable = True
             self._coro = inst.__await__()
-        else:
+        elif inspect.isgenerator(inst):
             self._natively_awaitable = False
             self._coro = inst
+        else:
+            raise TypeError(
+                "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)
+        self.__name__ = "%s" % inst.__name__
         self._started = False
         self._callbacks = []
-        self._parent = parent
-        self.__doc__ = parent._func.__doc__
-        self.module = parent._func.__module__
-        self.funcname = parent._func.__name__
         self._outcome = None
-
-        if not hasattr(self._coro, "send"):
-            raise TypeError(
-                "%s isn't a valid coroutine! Did you use the yield "
-                "keyword?" % self.funcname
-            )
 
     @lazy_property
     def log(self):
@@ -214,11 +206,20 @@ class RunningCoroutine(object):
 
     __bool__ = __nonzero__
 
-    def sort_name(self):
-        if self.stage is None:
-            return "%s.%s" % (self.module, self.funcname)
-        else:
-            return "%s.%d.%s" % (self.module, self.stage, self.funcname)
+
+class RunningCoroutine(RunningTask):
+    """
+    The result of calling a :any:`cocotb.coroutine` decorated coroutine.
+
+    All this class does is provide some extra attributes.
+    """
+    def __init__(self, inst, parent):
+        RunningTask.__init__(self, inst)
+        self._parent = parent
+        self.__doc__ = parent._func.__doc__
+        self.module = parent._func.__module__
+        self.funcname = parent._func.__name__
+
 
 class RunningTest(RunningCoroutine):
     """Add some useful Test functionality to a RunningCoroutine."""
@@ -229,7 +230,13 @@ class RunningTest(RunningCoroutine):
             logging.Handler.__init__(self, level=logging.DEBUG)
 
         def handle(self, record):
-            self.fn(self.format(record))
+            # For historical reasons, only logs sent directly to the `cocotb`
+            # logger are recorded - logs to `cocotb.scheduler` for instance
+            # are not recorded. Changing this behavior may have significant
+            # memory usage implications, so should not be done without some
+            # thought.
+            if record.name == 'cocotb':
+                self.fn(self.format(record))
 
     def __init__(self, inst, parent):
         self.error_messages = []
@@ -243,21 +250,17 @@ class RunningTest(RunningCoroutine):
         self.skip = parent.skip
         self.stage = parent.stage
 
-        self.handler = RunningTest.ErrorLogHandler(self._handle_error_message)
-        cocotb.log.addHandler(self.handler)
+        # make sure not to create a circular reference here
+        self.handler = RunningTest.ErrorLogHandler(self.error_messages.append)
 
     def _advance(self, outcome):
         if not self.started:
-            self.error_messages = []
             self.log.info("Starting test: \"%s\"\nDescription: %s" %
                           (self.funcname, self.__doc__))
             self.start_time = time.time()
             self.start_sim_time = get_sim_time('ns')
             self.started = True
         return super(RunningTest, self)._advance(outcome)
-
-    def _handle_error_message(self, msg):
-        self.error_messages.append(msg)
 
     def _force_outcome(self, outcome):
         """
@@ -272,7 +275,7 @@ class RunningTest(RunningCoroutine):
         self._outcome = outcome
         cocotb.scheduler.unschedule(self)
 
-    # like RunningCoroutine.kill(), but with a way to inject a failure
+    # like RunningTask.kill(), but with a way to inject a failure
     def abort(self, exc):
         """Force this test to end early, without executing any cleanup.
 
@@ -285,13 +288,19 @@ class RunningTest(RunningCoroutine):
         """
         return self._force_outcome(outcomes.Error(exc))
 
+    def sort_name(self):
+        if self.stage is None:
+            return "%s.%s" % (self.module, self.funcname)
+        else:
+            return "%s.%d.%s" % (self.module, self.stage, self.funcname)
+
 
 class coroutine(object):
     """Decorator class that allows us to provide common coroutine mechanisms:
 
     ``log`` methods will log to ``cocotb.coroutine.name``.
 
-    :meth:`~cocotb.decorators.RunningCoroutine.join` method returns an event which will fire when the coroutine exits.
+    :meth:`~cocotb.decorators.RunningTask.join` method returns an event which will fire when the coroutine exits.
 
     Used as ``@cocotb.coroutine``.
     """
