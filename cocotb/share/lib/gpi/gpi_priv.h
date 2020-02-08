@@ -77,7 +77,6 @@ private:
 
 public:
     GpiImplInterface *m_impl;                  // VPI/VHPI/FLI routines
-    char *gpi_copy_name(const char *name);     // Might not be needed
     bool is_this_impl(GpiImplInterface *impl); // Is the passed interface the one this object uses?
 
 protected:
