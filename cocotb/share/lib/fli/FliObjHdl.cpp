@@ -249,7 +249,7 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
                 m_value_enum  = mti_GetEnumValues(elemType);
                 m_num_enum    = mti_TickLength(elemType);
 
-                m_mti_buff    = new char[m_num_elems];
+                m_mti_buff    = new char[m_num_elems+1];
                 if (!m_mti_buff) {
                     LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
                     return -1;
