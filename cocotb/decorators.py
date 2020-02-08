@@ -166,15 +166,9 @@ class RunningTask(object):
 
     def kill(self):
         """Kill a coroutine."""
-        if self._outcome is not None:
-            # already finished, nothing to kill
-            return
-
         if _debug:
             self.log.debug("kill() called on coroutine")
-        # todo: probably better to throw an exception for anyone waiting on the coroutine
-        self._outcome = outcomes.Value(None)
-        cocotb.scheduler.unschedule(self)
+        cocotb.scheduler.kill(self)
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits."""

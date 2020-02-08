@@ -44,6 +44,14 @@ class Value(Outcome):
         return "Value({!r})".format(self.value)
 
 
+class KilledError(Exception):
+    """
+    This exception is thrown in a coroutine which has been explicity killed and
+    can then bubble up into coroutines that were awaiting that coroutine.
+    """
+    pass
+
+
 class _ErrorBase(Outcome):
     def __init__(self, error):
         self.error = error

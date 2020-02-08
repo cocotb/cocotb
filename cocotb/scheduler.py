@@ -241,6 +241,7 @@ class Scheduler(object):
         self._writes = _ordered_dict()
 
         self._pending_coros = []
+        self._pending_kills = []
         self._pending_triggers = []
         self._pending_threads = []
         self._pending_events = []   # Events we need to call set on once we've unwound
@@ -456,6 +457,16 @@ class Scheduler(object):
                                        (str(self._pending_events[0])))
                     self._pending_events.pop(0).set()
 
+                # Schedule may have created some pending kills.
+                while self._pending_kills:
+                    if _debug:
+                        self.log.debug("Killing coro %s" %
+                                       (str(self._pending_kills[0])))
+                    coro = self._pending_kills.pop(0)
+                    self.schedule(coro, kill=True)
+                    if _debug:
+                        self.log.debug("Killed coroutine %s" % (coro.__name__))
+
                 # remove our reference to the objects at the end of each loop,
                 # to try and avoid them being destroyed at a weird time (as
                 # happened in gh-957)
@@ -468,6 +479,10 @@ class Scheduler(object):
             if _debug:
                 self.log.debug("All coroutines scheduled, handing control back"
                                " to simulator")
+
+
+    def kill(self, coro):
+        self._pending_kills.append(coro)
 
 
     def unschedule(self, coro):
@@ -738,7 +753,7 @@ class Scheduler(object):
             .format(type(result), result)
         )
 
-    def schedule(self, coroutine, trigger=None):
+    def schedule(self, coroutine, trigger=None, kill=False):
         """Schedule a coroutine by calling the send method.
 
         Args:
@@ -746,7 +761,11 @@ class Scheduler(object):
             trigger (cocotb.triggers.Trigger): The trigger that caused this
                 coroutine to be scheduled.
         """
-        if trigger is None:
+        if kill:
+            # Make a fake outcome, that just lets the coro know that
+            # its been killed.  It raises a KilledError.
+            send_outcome = outcomes.Error(outcomes.KilledError)
+        elif trigger is None:
             send_outcome = outcomes.Value(None)
         else:
             send_outcome = trigger._outcome
