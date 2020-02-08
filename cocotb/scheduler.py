@@ -480,12 +480,10 @@ class Scheduler(object):
                 self.log.debug("All coroutines scheduled, handing control back"
                                " to simulator")
 
-
     def kill(self, coro):
         self._pending_kills.append(coro)
 
-
-    def unschedule(self, coro):
+    def unschedule(self, coro, cleaning_up=False):
         """Unschedule a coroutine.  Unprime any pending triggers"""
 
         # Unprime the trigger this coroutine is waiting on
@@ -522,6 +520,13 @@ class Scheduler(object):
                 coro.log.info("Test stopped by this forked coroutine")
                 outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
                 self._test._force_outcome(outcome)
+            except outcomes.KilledError as e:
+                if cleaning_up:
+                    pass
+                else:
+                    coro.log.error("Exception raised by this forked coroutine")
+                    outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
+                    self._test._force_outcome(outcome)
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
                 outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
@@ -753,7 +758,7 @@ class Scheduler(object):
             .format(type(result), result)
         )
 
-    def schedule(self, coroutine, trigger=None, kill=False):
+    def schedule(self, coroutine, trigger=None, kill=False, cleaning_up=False):
         """Schedule a coroutine by calling the send method.
 
         Args:
@@ -789,7 +794,7 @@ class Scheduler(object):
         # this can't go in the else above, as that causes unwanted exception
         # chaining
         if coro_completed:
-            self.unschedule(coroutine)
+            self.unschedule(coroutine, cleaning_up=cleaning_up)
 
         # Don't handle the result if we're shutting down
         if self._terminate:
@@ -854,8 +859,11 @@ class Scheduler(object):
         for trigger, waiting in items[::-1]:
             for coro in waiting:
                 if _debug:
-                    self.log.debug("Killing %s" % str(coro))
-                coro.kill()
+                    self.log.debug("Cleanup killing %s" % str(coro))
+                try:
+                    self.schedule(coro, kill=True, cleaning_up=True)
+                except outcomes.KilledError:
+                    pass
 
         if self._main_thread is not threading.current_thread():
             raise Exception("Cleanup() called outside of the main thread")
