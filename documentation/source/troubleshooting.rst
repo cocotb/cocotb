@@ -22,7 +22,7 @@ one.
 Attaching a Debugger
 ====================
 
-C-Code
+C and C++
 ------
 
 In order to give yourself time to attach a debugger to the simulator process before it starts to run,
