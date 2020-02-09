@@ -27,10 +27,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+.PHONY: all
 all: test
 
 include cocotb/share/makefiles/Makefile.inc
 
+.PHONY: clean
 clean:
 	-@rm -rf $(BUILD_DIR)
 	-@find . -name "obj" | xargs rm -rf
@@ -39,26 +41,36 @@ clean:
 	$(MAKE) -C examples clean
 	$(MAKE) -C tests clean
 
-do_tests:
+.PHONY: do_tests
+do_tests::
 	$(MAKE) -k -C tests
+do_tests::
 	$(MAKE) -k -C examples
 
-# For jenkins we use the exit code to detect compile errors or catestrphic
-# failures and the xml to track test results
+# For Jenkins we use the exit code to detect compile errors or catastrophic
+# failures and the XML to track test results
+.PHONY: jenkins
 jenkins: do_tests
 	./bin/combine_results.py --suppress_rc --testsuites_name=cocotb_regression
 
 # By default want the exit code to indicate the test results
-test: do_tests
-	./bin/combine_results.py
+.PHONY: test
+test:
+	$(MAKE) do_tests; ret=$$?; ./bin/combine_results.py; exit $$ret
 
+.PHONY: help
 help:
-	@echo -e "\nCocotb make help\n\nall\t- Build libaries for native"
-	@echo -e "clean\t- Clean the build dir"
-	@echo -e "debug\t- Dump out some useful debug info\n\n"
-	@echo -e "To build natively just run make.\nTo build for 32bit on a 64 bit system set ARCH=i686\n"
-	@echo -e "Default simulator is Icarus. To use another set environment variable SIM as below\n"
-	@for X in $(shell ls makefiles/simulators/); do \
+	@echo ""
+	@echo "This cocotb makefile has the following targets"
+	@echo ""
+	@echo "all, test - run regression producing combined_results.xml"
+	@echo "            (return error code produced by sub-makes)"
+	@echo "jenkins   - run regression producing combined_results.xml"
+	@echo "            (return error code 1 if any failure was found)"
+	@echo "clean     - remove build directory and all simulation artefacts"
+	@echo ""
+	@echo "Default simulator is Icarus. To use another set environment variable SIM as below"
+	@for X in $(shell ls cocotb/share/makefiles/simulators/); do \
 		echo $$X | sed 's/^[^.]*./export SIM=/';\
 	done
-	@echo -e "\n\n"
+	@echo ""
