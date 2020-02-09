@@ -15,8 +15,8 @@ Increasing Verbosity
 If things fail in the VPI/VHPI/FLI area, check your simulator's documentation to see if it has options to
 increase its verbosity about what may be wrong. You can then set these options on the :command:`make` command line
 as :make:var:`COMPILE_ARGS`, :make:var:`SIM_ARGS` or :make:var:`EXTRA_ARGS` (see :doc:`building` for details).
-Moreover the scheduler activity can be enhanced by setting the variable :make:var:`COCOTB_SCHEDULER_DEBUG` to
-one.
+If things fail from within python, or coroutines aren't being called when you expect, the
+:make:var:`COCOTB_SCHEDULER_DEBUG` variable can be used to (greatly) increase the verbosity of the scheduler.
 
 
 Attaching a Debugger
