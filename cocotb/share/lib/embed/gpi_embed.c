@@ -307,7 +307,7 @@ int embed_sim_init(gpi_sim_info_t *info)
         PyObject *argv_item = PyUnicode_DecodeLocale(info->argv[i], "surrogateescape");  // New reference
         if (argv_item == NULL) {
             PyErr_Print();
-            LOG_ERROR("Unable to decode argv item");
+            LOG_ERROR("Unable to convert command line argument %d to Unicode string.", i);
             Py_DECREF(argv_list);
             goto cleanup;
         }
