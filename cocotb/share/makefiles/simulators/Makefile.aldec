@@ -54,7 +54,7 @@ ifeq ($(GUI),1)
 endif
 
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
-ALOG_ARGS += $(COMPILE_ARGS)
+ALOG_ARGS += -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) $(COMPILE_ARGS)
 ACOM_ARGS += $(COMPILE_ARGS)
 ASIM_ARGS += $(SIM_ARGS)
 
