@@ -182,7 +182,7 @@ class RegressionManager(object):
                 if hasattr(thing, "im_test"):
                     self._init_test(thing)
 
-        self._queue.sort(key=lambda test: test.sort_name())
+        self._queue.sort(key=lambda test: (test.stage, test._id))
 
         for valid_tests in self._queue:
             self.log.info("Found test %s.%s" %
