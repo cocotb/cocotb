@@ -302,17 +302,9 @@ int embed_sim_init(gpi_sim_info_t *info)
         goto cleanup;
     }
     for (i = 0; i < info->argc; i++) {
-        PyObject *argv_item_raw = PyBytes_FromString(info->argv[i]);       // New reference
-        if (argv_item_raw == NULL) {
-            PyErr_Print();
-            LOG_ERROR("Unable to create argv item");
-            Py_DECREF(argv_list);
-            goto cleanup;
-        }
         // Decode, embedding non-decodable bytes using PEP-383. This can only
         // fail with MemoryError or similar.
-        PyObject *argv_item = PyUnicode_FromEncodedObject(argv_item_raw, NULL, "surrogateescape");
-        Py_DECREF(argv_item_raw);
+        PyObject *argv_item = PyUnicode_DecodeLocale(info->argv[i], "surrogateescape");  // New reference
         if (argv_item == NULL) {
             PyErr_Print();
             LOG_ERROR("Unable to decode argv item");
