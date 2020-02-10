@@ -249,6 +249,7 @@ class RunningTest(RunningCoroutine):
         self.expect_error = parent.expect_error
         self.skip = parent.skip
         self.stage = parent.stage
+        self._id = parent._id
 
         # make sure not to create a circular reference here
         self.handler = RunningTest.ErrorLogHandler(self.error_messages.append)
@@ -456,12 +457,19 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
         stage (int, optional)
             Order tests logically into stages, where multiple tests can share a stage.
     """
+
+    _id_count = 0  # used by the RegressionManager to sort tests in definition order
+
     def __init__(self, f, timeout_time=None, timeout_unit=None,
                  expect_fail=False, expect_error=False,
                  skip=False, stage=None):
 
+        self._id = self._id_count
+        type(self)._id_count += 1
+
         if timeout_time is not None:
             co = coroutine(f)
+
             @functools.wraps(f)
             def f(*args, **kwargs):
                 running_co = co(*args, **kwargs)
