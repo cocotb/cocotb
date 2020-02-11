@@ -141,3 +141,29 @@ def test_undecorated_coroutine_yield(dut):
 
     yield example()
     assert ran
+
+
+# these tests should run in definition order, not lexicographic order
+last_ordered_test = None
+
+
+@cocotb.test()
+async def test_ordering_3(dut):
+    global last_ordered_test
+    val, last_ordered_test = last_ordered_test, 3
+    assert val is None
+
+
+@cocotb.test()
+async def test_ordering_2(dut):
+    global last_ordered_test
+    val, last_ordered_test = last_ordered_test, 2
+    assert val == 3
+
+
+@cocotb.test()
+async def test_ordering_1(dut):
+    global last_ordered_test
+    val, last_ordered_test = last_ordered_test, 1
+    assert val == 2
+
