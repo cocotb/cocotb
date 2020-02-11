@@ -206,6 +206,21 @@ class RegressionManager(object):
                         cocotb.scheduler.add(test)
 
     def tear_down(self):
+        # fail remaining tests
+        while True:
+            test = self.next_test()
+            if test is None:
+                break
+            self.xunit.add_testcase(name=test.funcname,
+                                    classname=test.module,
+                                    time=repr(0),
+                                    sim_time_ns=repr(0),
+                                    ratio_time=repr(0))
+            result_pass, _ = self._score_test(test, cocotb.outcomes.Error(SimFailure()))
+            self._store_test_result(test.__module__, test.__name__, result_pass, 0, 0, 0)
+            if not result_pass:
+                self.xunit.add_failure()
+                self.failures += 1
 
         # Write out final log messages
         if self.failures:
