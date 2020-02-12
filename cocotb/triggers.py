@@ -49,6 +49,17 @@ from cocotb import _py_compat
 import cocotb
 
 
+def _pointer_str(obj):
+    """
+    Get the memory address of *obj* as used in :meth:`object.__repr__`.
+
+    This is equivalent to ``sprintf("%p", id(obj))``, but python does not
+    support ``%p``.
+    """
+    full_repr = object.__repr__(obj)  # gives "<{type} object at {address}>"
+    return full_repr.rsplit(' ', 1)[1][:-1]
+
+
 class TriggerException(Exception):
     pass
 
@@ -105,9 +116,6 @@ class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
     def __del__(self):
         # Ensure if a trigger drops out of scope we remove any pending callbacks
         self.unprime()
-
-    def __str__(self):
-        return self.__class__.__name__
 
     @property
     def _outcome(self):
@@ -210,8 +218,12 @@ class Timer(GPITrigger):
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
-    def __str__(self):
-        return self.__class__.__name__ + "(%1.2fps)" % get_time_from_sim_steps(self.sim_steps, units='ps')
+    def __repr__(self):
+        return "<{} of {:1.2f}ps at {}>".format(
+            type(self).__name__,
+            get_time_from_sim_steps(self.sim_steps, units='ps'),
+            _pointer_str(self)
+        )
 
 
 # This is needed to make our custom metaclass work with abc.ABCMeta used in the
@@ -244,8 +256,8 @@ class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigg
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
-    def __str__(self):
-        return self.__class__.__name__ + "(readonly)"
+    def __repr__(self):
+        return "{}()".format(type(self).__name__)
 
 
 class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
@@ -268,8 +280,8 @@ class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrig
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
-    def __str__(self):
-        return self.__class__.__name__ + "(readwritesync)"
+    def __repr__(self):
+        return "{}()".format(type(self).__name__)
 
 
 class NextTimeStep(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
@@ -290,8 +302,8 @@ class NextTimeStep(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPIT
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
-    def __str__(self):
-        return self.__class__.__name__ + "(nexttimestep)"
+    def __repr__(self):
+        return "{}()".format(type(self).__name__)
 
 
 class _EdgeBase(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
@@ -322,8 +334,8 @@ class _EdgeBase(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrig
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         super(_EdgeBase, self).prime(callback)
 
-    def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.signal._name
+    def __repr__(self):
+        return "{}({!r})".format(type(self).__name__, self.signal)
 
 
 class RisingEdge(_EdgeBase):
@@ -365,6 +377,9 @@ class _Event(PythonTrigger):
     def __call__(self):
         self._callback(self)
 
+    def __repr__(self):
+        return "<{!r}.wait() at {}>".format(self.parent, _pointer_str(self))
+
 
 class Event(object):
     """Event to permit synchronization between two coroutines.
@@ -373,7 +388,7 @@ class Event(object):
     :meth:`set()` is called somewhere else.
     """
 
-    def __init__(self, name=""):
+    def __init__(self, name=None):
         self._pending = []
         self.name = name
         self.fired = False
@@ -413,8 +428,12 @@ class Event(object):
         :meth:`~cocotb.triggers.Event.set` is called again."""
         self.fired = False
 
-    def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.name
+    def __repr__(self):
+        if self.name is None:
+            fmt = "<{0} at {2}>"
+        else:
+            fmt = "<{0} for {1} at {2}>"
+        return fmt.format(type(self).__name__, self.name, _pointer_str(self))
 
 
 class _Lock(PythonTrigger):
@@ -438,6 +457,9 @@ class _Lock(PythonTrigger):
     def __call__(self):
         self._callback(self)
 
+    def __repr__(self):
+        return "<{!r}.acquire() at {}>".format(self.parent, _pointer_str(self))
+
 
 class Lock(object):
     """Lock primitive (not re-entrant).
@@ -451,7 +473,7 @@ class Lock(object):
             lock.release()
     """
 
-    def __init__(self, name=""):
+    def __init__(self, name=None):
         self._pending_unprimed = []
         self._pending_primed = []
         self.name = name
@@ -488,10 +510,15 @@ class Lock(object):
         self.locked = True
         trigger()
 
-    def __str__(self):
-        return "%s(%s) [%s waiting]" % (str(self.__class__.__name__),
-                                        self.name,
-                                        len(self._pending_primed))
+    def __repr__(self):
+        if self.name is None:
+            fmt = "<{0} [{2} waiting] at {3}>"
+        else:
+            fmt = "<{0} for {1} [{2} waiting] at {3}>"
+        return fmt.format(
+            type(self).__name__, self.name, len(self._pending_primed),
+            _pointer_str(self)
+        )
 
     def __nonzero__(self):
         """Provide boolean of a Lock"""
@@ -505,7 +532,7 @@ class NullTrigger(Trigger):
 
     Primarily for internal scheduler use.
     """
-    def __init__(self, name="", outcome=None):
+    def __init__(self, name=None, outcome=None):
         super(NullTrigger, self).__init__()
         self._callback = None
         self.name = name
@@ -520,8 +547,12 @@ class NullTrigger(Trigger):
     def prime(self, callback):
         callback(self)
 
-    def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self.name
+    def __repr__(self):
+        if self.name is None:
+            fmt = "<{0} at {2}>"
+        else:
+            fmt = "<{0} for {1} at {2}>"
+        return fmt.format(type(self).__name__, self.name, _pointer_str(self))
 
 
 class Join(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
@@ -596,8 +627,8 @@ class Join(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, PythonTrigge
         else:
             super(Join, self).prime(callback)
 
-    def __str__(self):
-        return self.__class__.__name__ + "(%s)" % self._coroutine.__name__
+    def __repr__(self):
+        return "{}({!r})".format(type(self).__name__, self._coroutine)
 
 
 class Waitable(object):
@@ -642,6 +673,13 @@ class _AggregateWaitable(Waitable):
                     "All triggers must be instances of Trigger! Got: {}"
                     .format(type(trigger).__name__)
                 )
+
+    def __repr__(self):
+        # no _pointer_str here, since this is not a trigger, so identity
+        # doesn't matter.
+        return "{}({})".format(
+            type(self).__name__, ", ".join(repr(t) for t in self.triggers)
+        )
 
 
 @decorators.coroutine
@@ -767,6 +805,15 @@ class ClockCycles(Waitable):
         for _ in range(self.num_cycles):
             yield trigger
         raise ReturnValue(self)
+
+    def __repr__(self):
+        # no _pointer_str here, since this is not a trigger, so identity
+        # doesn't matter.
+        if self._type is RisingEdge:
+            fmt = "{}({!r}, {!r})"
+        else:
+            fmt = "{}({!r}, {!r}, rising=False)"
+        return fmt.format(type(self).__name__, self.signal, self.num_cycles)
 
 
 @decorators.coroutine
