@@ -30,6 +30,7 @@
 # This is a simple wrapper Makefile to pull in the appropriate Makefile for
 # the desired simulator and set up common paths for the sims to use to build with
 
+.PHONY: all
 all: sim
 
 # NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
