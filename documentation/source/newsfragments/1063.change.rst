@@ -1,0 +1,1 @@
+Questa now interprets relative paths to source files as relative to the Makefile, the same behavior used by other simulators.
