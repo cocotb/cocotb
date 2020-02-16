@@ -84,12 +84,19 @@ COCOTB_SCHEDULER_DEBUG    Enable additional output of coroutine scheduler
 COVERAGE                  Report Python coverage (also HDL for some simulators)
 MEMCHECK                  HTTP port to use for debugging Python memory usage
 
-    For details, see https://cocotb.readthedocs.io/en/latest/building.html
+    For details, see $(DOCLINK)
 
 endef
 
 # this cannot be a regular target because of the way Makefile.$(SIM) is included
 ifeq ($(MAKECMDGOALS),help)
+_VERSION := $(shell cocotb-config -v)
+# for non-intuitive use of ifneq see https://www.gnu.org/software/make/manual/make.html#Testing-Flags
+ifneq (,$(findstring dev,$(_VERSION)))
+DOCLINK := https://cocotb.readthedocs.io/en/latest/building.html
+else
+DOCLINK := https://cocotb.readthedocs.io/en/v$(_VERSION)/building.html
+endif
 $(info $(helpmsg))
 # is there a cleaner way to exit here?
 $(error "Stopping after printing help")
