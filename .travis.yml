@@ -36,7 +36,7 @@ jobs:
         - docker ps -a
       script:
         - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
-        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip install tox; cd /src; tox -e py35'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -e py35'
         - echo 'travis_fold:end:cocotb_py35'
 
     - stage: SimTests
@@ -94,7 +94,7 @@ jobs:
       before_install: &osx_prep
         - brew update-reset
         - brew install icarus-verilog
-        - pip install tox
+        - pip3 install tox
       script:
         - tox -e py37
 
