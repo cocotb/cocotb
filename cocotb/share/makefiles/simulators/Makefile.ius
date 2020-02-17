@@ -67,12 +67,13 @@ ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
     $(error "Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.")
 endif
 
-# IUS loads VPI regardless of what is asked for, then VHPI if asked to,
-# which does not play nice with our multi language, so we supply GPI_EXTRA=cocotbvhpi if needed.
+# Loading the VHPI library causes an error, so we always load the VPI library and supply
+# GPI_EXTRA=cocotbvhpi if needed.
 
-GPI_EXTRA:=
+# Xcelium will use default vlog_startup_routines symbol only if vpi library name is libvpi.so
+GPI_ARGS = -loadvpi $(LIB_DIR)/libcocotbvpi:vlog_startup_routines_bootstrap
+
 ifeq ($(TOPLEVEL_LANG),verilog)
-    GPI_ARGS = -loadvpi $(LIB_DIR)/libvpi
     EXTRA_ARGS += -v93
     HDL_SOURCES = $(VERILOG_SOURCES)
     ROOT_LEVEL = $(TOPLEVEL)

@@ -713,4 +713,4 @@ void vlog_startup_routines_bootstrap() {
 
 }
 
-GPI_ENTRY_POINT(vpi, register_embed)
+GPI_ENTRY_POINT(cocotbvpi, register_embed)

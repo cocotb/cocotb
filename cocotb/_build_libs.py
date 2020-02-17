@@ -61,10 +61,10 @@ class build_ext(_build_ext):
 
         filename_short = os.path.join(head, tail_split[0] + "." + _get_lib_ext_name())
 
-        # icarus requires vpl extension, gpivpi is default in Makefiles
+        # icarus requires vpl extension
         if "icarus" in filename:
-            filename_short = filename_short.replace("libvpi.so", "gpivpi.vpl")
-            filename_short = filename_short.replace("libvpi.dll", "gpivpi.vpl")
+            filename_short = filename_short.replace("libcocotbvpi.so", "libcocotbvpi.vpl")
+            filename_short = filename_short.replace("libcocotbvpi.dll", "libcocotbvpi.vpl")
 
         return filename_short
 
@@ -250,8 +250,8 @@ def _get_common_lib_ext(include_dir, share_lib_dir, sim_define):
 def _get_vpi_lib_ext(
     include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
-    libvpi = Extension(
-        os.path.join("cocotb", "libs", sim_define.lower(), "libvpi"),
+    libcocotbvpi = Extension(
+        os.path.join("cocotb", "libs", sim_define.lower(), "libcocotbvpi"),
         define_macros=[("VPI_CHECKING", "1")] + [(sim_define, "")],
         include_dirs=[include_dir],
         libraries=["gpi", "gpilog"] + extra_lib,
@@ -264,7 +264,7 @@ def _get_vpi_lib_ext(
         extra_compile_args=_extra_cxx_compile_args,
     )
 
-    return libvpi
+    return libcocotbvpi
 
 
 def _get_vhpi_lib_ext(

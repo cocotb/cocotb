@@ -82,7 +82,7 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
-    GPI_ARGS = -pli $(LIB_DIR)/libvpi
+    GPI_ARGS = -pli $(LIB_DIR)/libcocotbvpi
 ifneq ($(VHDL_SOURCES),)
     GPI_EXTRA = cocotbvhpi
 endif
@@ -97,7 +97,7 @@ endif
 
     GPI_ARGS = -loadvhpi $(VHPI_LIB):vhpi_startup_routines_bootstrap
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = vpi
+    GPI_EXTRA = cocotbvpi
 endif
 
 else
