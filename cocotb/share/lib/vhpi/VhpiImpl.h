@@ -189,7 +189,7 @@ public:
     using GpiSignalObjHdl::set_signal_value;
     int set_signal_value(long value) override;
     int set_signal_value(double value) override;
-    int set_signal_value_binst(std::string &value) override;
+    int set_signal_value_binstr(std::string &value) override;
     int set_signal_value_str(std::string &value) override;
 
     /* Value change callback accessor */
