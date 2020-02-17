@@ -64,8 +64,6 @@ $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
 
 ifeq ($(OS),Msys)
 
-EXTRA_LIBS := -lvpi
-EXTRA_LIBDIRS := -L$(ICARUS_BIN_DIR)/../lib
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 LIB_LOAD = PATH=$(OLD_PATH):$(LIB_DIR)
 NEW_PYTHONPATH:=$(shell python -c "import sys, os; print(':'.join(['/'+dir.replace(os.sep,'/').replace(':','') for dir in sys.path]))")
