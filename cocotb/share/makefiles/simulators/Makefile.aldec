@@ -84,28 +84,27 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
-    GPI_ARGS = -pli $(LIB_DIR)/libcocotbvpi
+    GPI_ARGS = -pli $(LIB_DIR)/libcocotbvpi_aldec
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = cocotbvhpi
+    GPI_EXTRA = cocotbvhpi_aldec:cocotbvhpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
 
 ifeq ($(OS),Msys)
-    VHPI_LIB = $(shell sh -c 'cd $(LIB_DIR) && pwd -W')/libcocotbvhpi
+    VHPI_LIB = $(shell sh -c 'cd $(LIB_DIR) && pwd -W')/libcocotbvhpi_aldec
 else
-    VHPI_LIB = $(LIB_DIR)/libcocotbvhpi
+    VHPI_LIB = $(LIB_DIR)/libcocotbvhpi_aldec
 endif
 
     GPI_ARGS = -loadvhpi $(VHPI_LIB):vhpi_startup_routines_bootstrap
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = cocotbvpi
+    GPI_EXTRA = cocotbvpi_aldec:cocotbvpi_entry_point
 endif
 
 else
    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
-
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
 $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
@@ -160,7 +159,7 @@ OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/
 LIB_LOAD = PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
 NEW_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
 else
-LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
+LIB_LOAD :=
 NEW_PYTHONPATH := $(PYTHONPATH)
 endif
 
@@ -169,7 +168,7 @@ endif
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
-	set -o pipefail; cd $(SIM_BUILD) && PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	set -o pipefail; cd $(SIM_BUILD) && PYTHONPATH=$(PWD):$(NEW_PYTHONPATH) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) $(RUN_ARGS) -do runsim.tcl | tee sim.log
 
 	# check that the file was actually created
@@ -177,4 +176,3 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB
 
 clean::
 	@rm -rf $(SIM_BUILD)
-

@@ -36,7 +36,7 @@ import collections.abc
 import os
 
 if "COCOTB_SIM" in os.environ:
-    import simulator
+    from cocotb import simulator
 else:
     simulator = None
 

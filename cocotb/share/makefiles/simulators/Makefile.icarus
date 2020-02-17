@@ -52,8 +52,6 @@ else
     export ICARUS_BIN_DIR
 endif
 
-BUILD_VPI=1
-
 COMPILE_ARGS += -g2012 # Default to latest SystemVerilog standard
 
 # Compilation phase
@@ -69,16 +67,16 @@ LIB_LOAD = PATH=$(OLD_PATH):$(LIB_DIR)
 NEW_PYTHONPATH:=$(shell python -c "import sys, os; print(':'.join(['/'+dir.replace(os.sep,'/').replace(':','') for dir in sys.path]))")
 
 else
-LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
+LIB_LOAD :=
 NEW_PYTHONPATH := $(PYTHONPATH)
 endif
 
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
-	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	PYTHONPATH=$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
-        $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(PLUSARGS)
+        $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi_icarus $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(PLUSARGS)
 
 	# check that the file was actually created, since we can't set an exit code from cocotb
 	test -f $(COCOTB_RESULTS_FILE)
@@ -86,9 +84,9 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $
 debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
-	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	PYTHONPATH=$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
-        gdb --args $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(PLUSARGS)
+        gdb --args $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi_icarus $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
 	# check that the file was actually created, since we can't set an exit code from cocotb
 	test -f $(COCOTB_RESULTS_FILE)

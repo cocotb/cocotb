@@ -61,6 +61,7 @@ ifeq ($(OS),Linux)
     MODULE := $(MODULE),test_endian_swapper_hal
     CUSTOM_COMPILE_DEPS = hal
     LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
+    export LD_LIBRARY_PATH
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.inc
