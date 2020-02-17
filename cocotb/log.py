@@ -34,7 +34,9 @@ import sys
 import logging
 import warnings
 
-from cocotb.utils import get_sim_time, want_color_output
+from cocotb.utils import (
+    get_sim_time, get_time_from_sim_steps, want_color_output
+)
 
 import cocotb.ANSI as ANSI
 
@@ -56,7 +58,9 @@ def default_config():
 
     This hooks up the logger to write to stdout, using either
     :class:`SimColourLogFormatter` or :class:`SimLogFormatter` depending
-    on whether colored output is requested.
+    on whether colored output is requested. It also adds a
+    :class:`SimTimeContextFilter` filter so that
+    :attr:`~logging.LogRecord.created_sim_time` is available to the formatter.
 
     The logging level for cocotb logs is set based on the
     :envvar:`COCOTB_LOG_LEVEL` environment variable, which defaults to ``INFO``.
@@ -73,9 +77,12 @@ def default_config():
     else:
         hdlr.setFormatter(SimLogFormatter())
 
+    filter = SimTimeContextFilter()
+
     logging.setLoggerClass(SimBaseLog)  # For backwards compatibility
     logging.basicConfig()
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
+    logging.getLogger().filters = [filter]
 
     # apply level settings for cocotb
     log = logging.getLogger('cocotb')
@@ -122,8 +129,37 @@ def SimLog(name, ident=None):
     return logging.getLogger(name)
 
 
+class SimTimeContextFilter(logging.Filter):
+    """
+    A filter to inject simulator times into the log records.
+
+    This uses the approach described in the :ref:`Python logging cookbook <python:filters-contextual>`.
+
+    This adds the :attr:`~logging.LogRecord.created_sim_time` attribute.
+    """
+
+    # needed to make our docs render well
+    def __init__(self, *args, **kwargs):
+        """ See :class:`logging.Filter` for argument descriptions """
+        super().__init__(*args, **kwargs)
+
+    def filter(self, record):
+        try:
+            record.created_sim_time = get_sim_time()
+        except RecursionError:
+            # get_sim_time may try to log - if that happens, we can't
+            # attach a simulator time to this message.
+            record.created_sim_time = None
+        return True
+
+
 class SimLogFormatter(logging.Formatter):
-    """Log formatter to provide consistent log message handling."""
+    """Log formatter to provide consistent log message handling.
+
+    This will only add simulator timestamps if the logger object has a
+    :class:`SimTimeContextFilter` filter attached, which cocotb ensures by
+    default.
+    """
 
     # Removes the arguments from the base class. Docstring needed to make
     # sphinx happy.
@@ -145,9 +181,13 @@ class SimLogFormatter(logging.Formatter):
         return string.rjust(chars)
 
     def _format(self, level, record, msg, coloured=False):
-        time_ns = get_sim_time('ns')
-        simtime = "%6.2fns" % (time_ns)
-        prefix = simtime.rjust(11) + ' ' + level + ' '
+        sim_time = getattr(record, 'created_sim_time', None)
+        if sim_time is None:
+            sim_time_str = "  -.--ns"
+        else:
+            time_ns = get_time_from_sim_steps(sim_time, 'ns')
+            sim_time_str = "{:6.2f}ns".format(time_ns)
+        prefix = sim_time_str.rjust(11) + ' ' + level + ' '
         if not _suppress:
             prefix += self.ljust(record.name, _RECORD_CHARS) + \
                       self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
