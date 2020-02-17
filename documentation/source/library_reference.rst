@@ -300,6 +300,13 @@ The Scheduler
     :members:
     :member-order: bysource
 
+The ``cocotb-bfmgen`` script
+----------------------------
+
+.. argparse::
+     :module: cocotb.bfmgen
+     :func: get_parser
+     :prog: cocotb-bfmgen
 
 The ``cocotb-config`` script
 ----------------------------
@@ -308,3 +315,4 @@ The ``cocotb-config`` script
     :module: cocotb.config
     :func: get_parser
     :prog: cocotb-config
+

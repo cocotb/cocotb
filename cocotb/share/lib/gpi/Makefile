@@ -35,7 +35,8 @@ LIBS        := -lcocotbutils -lgpilog -lcocotb -lstdc++
 LD_PATH     := -L$(LIB_DIR)
 LIB_NAME    := libgpi
 
-SRCS        := GpiCbHdl.cpp GpiCommon.cpp
+SRCS        := GpiCbHdl.cpp GpiCommon.cpp GpiBfm.cpp GpiBfmMsg.cpp \
+               cocotb_bfm_api.cpp
 
 all: $(LIB_DIR)/$(LIB_NAME).$(LIB_EXT)
 

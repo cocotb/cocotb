@@ -452,6 +452,7 @@ int VpiValueCbHdl::cleanup_callback()
 VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                            VpiCbHdl(impl)
 {
+	m_phase = 0;
 #ifndef IUS
     cb_data.reason = cbStartOfSimulation;
 #else
@@ -466,14 +467,29 @@ int VpiStartupCbHdl::run_callback() {
     s_vpi_vlog_info info;
     gpi_sim_info_t sim_info;
 
-    vpi_get_vlog_info(&info);
+    if (m_phase == 0) {
+    	// We need to delay by a delta delay before starting up the Python
+    	// side to allow BFMs to register, since BFMs register in the
+    	// initial block
+    	vpi_time.high = (uint32_t)(0);
+    	vpi_time.low  = (uint32_t)(0);
+    	vpi_time.type = vpiSimTime;
+    	cb_data.reason = cbAfterDelay;
 
-    sim_info.argc = info.argc;
-    sim_info.argv = info.argv;
-    sim_info.product = info.product;
-    sim_info.version = info.version;
+    	m_obj_hdl = 0;
+    	arm_callback();
 
-    gpi_embed_init(&sim_info);
+    	m_phase++;
+    } else {
+    	vpi_get_vlog_info(&info);
+
+    	sim_info.argc = info.argc;
+    	sim_info.argv = info.argv;
+    	sim_info.product = info.product;
+    	sim_info.version = info.version;
+
+    	gpi_embed_init(&sim_info);
+    }
 
     return 0;
 }

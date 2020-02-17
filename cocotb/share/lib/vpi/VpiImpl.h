@@ -132,6 +132,8 @@ public:
         /* Too many sims get upset with this so we override to do nothing */
         return 0;
     }
+private:
+    int						m_phase;
 };
 
 class VpiShutdownCbHdl : public VpiCbHdl {

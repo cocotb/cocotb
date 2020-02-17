@@ -500,3 +500,95 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
 
     def __call__(self, *args, **kwargs):
         return RunningTest(self._func(*args, **kwargs), self)
+
+@public
+class bfm():
+    '''
+    Decorator to identify a BFM type.
+    '''
+    def __init__(self, hdl):
+        self.hdl = hdl
+
+    def __call__(self, T):
+        cocotb.bfms.register_bfm_type(T, self.hdl)
+        return T
+
+@public
+class bfm_export():
+
+    def __init__(self, *args):
+        self.signature = args
+
+    def __call__(self, m):
+        cocotb.bfms.register_bfm_export_info(
+            cocotb.bfms.BfmMethodInfo(m, self.signature))
+        return m
+
+@public
+class bfm_import():
+    '''
+    Method that is being imported from the HDL environment
+    '''
+
+    def __init__(self, *args):
+        self.signature = args
+
+    def __call__(self, m):
+        info = cocotb.bfms.BfmMethodInfo(m, self.signature)
+        cocotb.bfms.register_bfm_import_info(info)
+
+        def import_taskw(self, *args):
+            import simulator
+            arg_l = []
+            for a in args:
+                arg_l.append(a)
+            simulator.bfm_send_msg(
+                self.bfm_info.id,
+                info.id,
+                arg_l,
+                info.type_info)
+
+        return import_taskw
+
+class bfm_param_int_t():
+
+    sv_type_m = {
+        8 : "byte",
+        16 : "short",
+        32 : "int",
+        64 : "longint"
+    }
+
+    def __init__(self, w, s):
+        self.w = w
+        self.s = s
+
+    def sv_type(self):
+        if self.w in bfm_param_int_t.sv_type_m.keys():
+            ret = bfm_param_int_t.sv_type_m[self.w]
+            if not self.s:
+                ret += " unsigned"
+            return ret
+        else:
+            raise Exception("parameter-width \"" + str(self.w) + "\" not supported by SystemVerilog")
+
+    def vl_type(self):
+        ret = "reg"
+        if self.s:
+            ret += " signed"
+        ret += "[" + str(self.w) + "-1:0]"
+
+        return ret
+
+# Constants for use in specifying BFM API signatures
+bfm_int8_t = bfm_param_int_t(8, True)
+bfm_uint8_t = bfm_param_int_t(8, False)
+bfm_int16_t = bfm_param_int_t(16, True)
+bfm_uint16_t = bfm_param_int_t(16, False)
+bfm_int32_t = bfm_param_int_t(32, True)
+bfm_uint32_t = bfm_param_int_t(32, False)
+bfm_int64_t = bfm_param_int_t(64, True)
+bfm_uint64_t = bfm_param_int_t(64, False)
+
+bfm_vlog = "verilog"
+bfm_sv = "systemverilog"

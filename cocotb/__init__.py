@@ -46,6 +46,11 @@ from cocotb.regression import RegressionManager
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
+from cocotb.decorators import bfm, bfm_import, bfm_export   # noqa: F401
+from cocotb.decorators import bfm_vlog, bfm_sv   # noqa: F401
+from cocotb.decorators import bfm_uint8_t, bfm_int8_t, bfm_uint16_t, bfm_int16_t   # noqa: F401
+from cocotb.decorators import bfm_uint32_t, bfm_int32_t, bfm_uint64_t, bfm_int64_t   # noqa: F401
+from cocotb.bfms import bfm_hdl_path, BfmMgr   # noqa: F401
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference
@@ -174,6 +179,9 @@ def _initialise_testbench(root_name):
 
     modules = module_str.split(',')
     hooks = hooks_str.split(',') if hooks_str else []
+
+    # Initialize BFMs
+    BfmMgr.init()
 
     global regression_manager
 
