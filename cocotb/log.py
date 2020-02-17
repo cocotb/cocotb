@@ -125,6 +125,12 @@ def SimLog(name, ident=None):
 class SimLogFormatter(logging.Formatter):
     """Log formatter to provide consistent log message handling."""
 
+    # Removes the arguments from the base class. Docstring needed to make
+    # sphinx happy.
+    def __init__(self):
+        """ Takes no arguments. """
+        super().__init__()
+
     # Justify and truncate
     @staticmethod
     def ljust(string, chars):

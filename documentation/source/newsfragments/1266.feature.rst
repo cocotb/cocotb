@@ -1,4 +1,4 @@
-The cocotb log configuration is now less intrusive, and only configures the root logger instance, ``logging.getLogger()`` (:pr:`1266`).
+The cocotb log configuration is now less intrusive, and only configures the root logger instance, ``logging.getLogger()``, as part of :func:`cocotb.log.default_config` (:pr:`1266`).
 
 As such, it is now possible to override the default cocotb logging behavior with something like::
 
