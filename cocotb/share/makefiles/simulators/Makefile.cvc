@@ -61,7 +61,7 @@ endif
 $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
 	TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
-        $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=libvpi:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+        $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=libcocotbvpi:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 ifeq ($(CVC_ITERP),1)
@@ -78,7 +78,7 @@ ifeq ($(CVC_ITERP),1)
     debug:  $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
-        gdb --args $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=libvpi:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+        gdb --args $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=libcocotbvpi:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 else
     debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
