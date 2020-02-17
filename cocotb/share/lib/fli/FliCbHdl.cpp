@@ -26,10 +26,6 @@
 ******************************************************************************/
 
 #include "FliImpl.h"
-#include "mti.h"
-#undef DLLEXPORT  // redefinition in tcl.h causes warning
-#include "tcl.h"
-#include <limits>
 
 /**
  * @name    cleanup callback
@@ -144,55 +140,6 @@ int FliStartupCbHdl::arm_callback()
     return 0;
 }
 
-
-static void get_args(gpi_sim_info_t *info)
-{
-    /*  Necessary to implement PLUSARGS
-        There is no function available on the FLI to obtain argc+argv directly from the
-        simulator. To work around this we use the TCL interpreter that ships with Questa,
-        some TCL commands, and the TCL variable `argv` to obtain the simulator argc/argv.
-    */
-    info->argc = 0;
-    info->argv = NULL;
-
-    Tcl_Interp* interp = reinterpret_cast<Tcl_Interp*>(mti_Interp());
-
-    // get argc
-    if (mti_Cmd("llength $argv") != TCL_OK) {
-        return;
-    }
-    unsigned long argc_u = strtoul(interp->result, NULL, 10);
-    Tcl_ResetResult(interp);
-    if (argc_u > std::numeric_limits<int>::max()) {
-        return;
-    }
-    int argc = static_cast<int>(argc_u);
-    if (argc_u == 0) {
-        return;
-    }
-
-    // allocate storage for argv
-    char** argv = new char*[argc];
-
-    // get each argv and copy into internal storage
-    for (int i = 0; i < argc; i++) {
-        std::string cmd = "lindex $argv " + std::to_string(i);
-        if (mti_Cmd(cmd.c_str()) != TCL_OK) {
-            return;
-        }
-        argv[i] = new char[strlen(interp->result)+1];
-        strcpy(argv[i], interp->result);
-        Tcl_ResetResult(interp);
-    }
-
-    // set only if all operations succeed
-    info->argc = argc;
-    info->argv = argv;
-
-    // argv storage leaks here
-}
-
-
 int FliStartupCbHdl::run_callback()
 {
     gpi_sim_info_t sim_info;
@@ -221,7 +168,8 @@ int FliStartupCbHdl::run_callback()
 
 
     // copy in sim_info.product
-    get_args(&sim_info);
+    sim_info.argc = 0;
+    sim_info.argv = NULL;
     sim_info.product = &product[0];
     sim_info.version = &version[0];
 
