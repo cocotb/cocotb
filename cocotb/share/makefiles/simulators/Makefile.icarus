@@ -60,7 +60,7 @@ $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
 
 # Execution phase
 
-$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) \
@@ -69,7 +69,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $
 
 	$(call check_for_results_file)
 
-debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
+debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) \

@@ -95,9 +95,7 @@ else
    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
-GPI_LIB = $(COCOTB_VPI_LIB) $(COCOTB_VHPI_LIB)
-
-$(COCOTB_RESULTS_FILE): $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(GPI_LIB)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; \

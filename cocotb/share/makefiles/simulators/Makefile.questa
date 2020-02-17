@@ -114,15 +114,11 @@ else
 	@echo "quit" >> $@
 endif
 
-INT_LIBS := $(COCOTB_VPI_LIB) $(COCOTB_FLI_LIB)
-
 ifneq ($(ARCH),i686)
 CMD += -64
 endif
 
-# Depending on the version of modelsim the interfaces that it supports can change
-# Append or remove values to INT_LIBS depending on your license
-$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
