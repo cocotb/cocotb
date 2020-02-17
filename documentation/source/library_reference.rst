@@ -152,6 +152,24 @@ Utilities
     :member-order: bysource
     :synopsis: Various utilities for testbench writers.
 
+.. _logging-reference-section:
+
+Logging
+-------
+
+.. currentmodule:: cocotb.log
+
+.. autofunction:: default_config
+
+.. autoclass:: SimLogFormatter
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: SimColourLogFormatter
+    :show-inheritance:
+    :no-members:
+
+
 Simulation Object Handles
 =========================
 

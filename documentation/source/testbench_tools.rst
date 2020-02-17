@@ -5,11 +5,9 @@ Testbench Tools
 Logging
 =======
 
-Cocotb extends the Python logging library. Each DUT, monitor, driver, and
-scoreboard (as well as any other function using the coroutine decorator)
-implements its own :class:`logging` object, and each can be set to its own
-logging level. Within a DUT, each hierarchical object can also have individual
-logging levels set.
+Cocotb uses the builtin :mod:`logging` library, with some configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
+Each DUT, monitor, driver, and scoreboard (as well as any other function using the coroutine decorator) holds a :class:`logging.Logger`, and each can be set to its own logging level.
+Within a DUT, each hierarchical object can also have individual logging levels set.
 
 When logging HDL objects, beware that ``_log`` is the preferred way to use
 logging. This helps minimize the change of name collisions with an HDL log
