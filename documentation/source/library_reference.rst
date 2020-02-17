@@ -169,6 +169,20 @@ Logging
     :show-inheritance:
     :no-members:
 
+.. autoclass:: SimTimeContextFilter
+    :show-inheritance:
+    :no-members:
+
+.. currentmodule:: None
+
+.. attribute:: logging.LogRecord.created_sim_time
+
+    The result of :func:`get_sim_time` at the point the log was created
+    (in simulator units). The formatter is responsible for converting this
+    to something like nanoseconds via :func:`~cocotb.utils.get_time_from_sim_steps`.
+
+    This is added by :class:`cocotb.log.SimTimeContextFilter`.
+
 
 Simulation Object Handles
 =========================
