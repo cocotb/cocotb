@@ -178,7 +178,9 @@ Environment Variables
 
 .. envvar:: MODULE
 
-    The name of the module(s) to search for test functions.  Multiple modules can be specified using a comma-separated list.
+    The name of the module(s) to search for test functions.
+    Multiple modules can be specified using a comma-separated list.
+    All tests will be run from each specified module in order of the module's appearance in this list.
 
 .. envvar:: TESTCASE
 
