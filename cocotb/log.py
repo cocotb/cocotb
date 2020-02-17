@@ -167,12 +167,8 @@ class SimLogFormatter(logging.Formatter):
 
     def format(self, record):
         """Prettify the log output, annotate with simulation time"""
-        if record.args:
-            msg = record.msg % record.args
-        else:
-            msg = record.msg
 
-        msg = str(msg)
+        msg = record.getMessage()
         level = record.levelname.ljust(_LEVEL_CHARS)
 
         return self._format(level, record, msg)
@@ -192,10 +188,7 @@ class SimColourLogFormatter(SimLogFormatter):
     def format(self, record):
         """Prettify the log output, annotate with simulation time"""
 
-        if record.args:
-            msg = record.msg % record.args
-        else:
-            msg = record.msg
+        msg = record.getMessage()
 
         # Need to colour each line in case coloring is applied in the message
         msg = '\n'.join([SimColourLogFormatter.loglevel2colour[record.levelno] % line for line in msg.split('\n')])
