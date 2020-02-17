@@ -124,8 +124,6 @@ ifeq ($(OS),Msys)
 
 MINGW_BIN_DIR = $(shell dirname $(shell :; command -v gcc))
 
-EXTRA_LIBS := -lmtipli
-EXTRA_LIBDIRS := -L$(MODELSIM_BIN_DIR)
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 
 LIB_LOAD := PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)

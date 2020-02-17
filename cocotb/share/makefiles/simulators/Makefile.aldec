@@ -154,18 +154,10 @@ ifeq ($(OS),Msys)
 
 MINGW_BIN_DIR = $(shell dirname $(shell :; command -v gcc))
 
-EXTRA_LIBS := -laldecpli
-EXTRA_LIBDIRS := -L$(ALDEC_BIN_DIR)
 OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
 LIB_LOAD = PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
 NEW_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
 else
-EXTRA_LIBS = -laldecpli
-ifeq ($(ARCH),i686)
-EXTRA_LIBDIRS = -L$(ALDEC_BIN_DIR)/Linux
-else
-EXTRA_LIBDIRS = -L$(ALDEC_BIN_DIR)/Linux64
-endif
 LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
 NEW_PYTHONPATH := $(PYTHONPATH)
 endif
