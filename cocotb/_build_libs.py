@@ -148,16 +148,6 @@ def _get_python_lib_link():
     return python_lib_link
 
 
-def _get_python_lib():
-    """ Get the library for embedded the python interpreter """
-
-    if os.name == "nt":
-        python_lib = _get_python_lib_link() + "." + _get_lib_ext_name()
-    else:
-        python_lib = "lib" + _get_python_lib_link() + "." + _get_lib_ext_name()
-
-    return python_lib
-
 # TODO [gh-1372]: make this work for MSVC which has a different flag syntax
 _base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings", "-Wconversion"]
 _cc_warns = _base_warns + ["-Wstrict-prototypes", "-Waggregate-return"]
@@ -207,7 +197,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir, sim_define):
     #
     libcocotb = Extension(
         os.path.join("cocotb", "libs", sim_define.lower(), "libcocotb"),
-        define_macros=[("PYTHON_SO_LIB", _get_python_lib())],
         include_dirs=[include_dir],
         libraries=[_get_python_lib_link(), "gpilog", "cocotbutils"],
         library_dirs=python_lib_dirs,
