@@ -421,6 +421,8 @@ class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
     some common reporting etc., a test timeout and allows
     us to mark tests as expected failures.
 
+    Tests are evaluated in the order they are defined in a test module.
+
     Used as ``@cocotb.test(...)``.
 
     Args:
