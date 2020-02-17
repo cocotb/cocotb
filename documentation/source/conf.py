@@ -50,7 +50,7 @@ extensions = [
     'sphinxarg.ext',
     ]
 
-intersphinx_mapping = {'https://docs.python.org/3': None}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # Github repo
 issues_github_path = "cocotb/cocotb"
