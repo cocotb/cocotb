@@ -112,9 +112,20 @@ void embed_init_python(void)
 {
     FENTER;
 
+#ifndef PYTHON_SO_LIB
+#error "Python version needs passing in with -DPYTHON_SO_VERSION=libpython<ver>.so"
+#else
+#define PY_SO_LIB xstr(PYTHON_SO_LIB)
+#endif
+
     // Don't initialize Python if already running
     if (gtstate)
         return;
+
+    void * lib_handle = utils_dyn_open(PY_SO_LIB);
+    if (!lib_handle) {
+        LOG_ERROR("Failed to find Python shared library\n");
+    }
 
     to_python();
     set_program_name_in_venv();
