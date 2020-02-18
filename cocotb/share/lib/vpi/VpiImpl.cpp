@@ -705,7 +705,7 @@ void (*vlog_startup_routines[])() = {
 // For non-VPI compliant applications that cannot find vlog_startup_routines symbol
 void vlog_startup_routines_bootstrap() {
     // call each routine in turn like VPI would
-    for (auto it = &log_startup_routines[0]; *it != nullptr; it++) {
+    for (auto it = &vlog_startup_routines[0]; *it != nullptr; it++) {
         auto routine = *it;
         routine();
     }
