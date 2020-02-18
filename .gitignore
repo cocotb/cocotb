@@ -38,6 +38,9 @@ __pycache__
 results.xml
 combined_results.xml
 
+# Debuggers
+.gdb_history
+
 # VCS files
 *.tab
 sim_build
