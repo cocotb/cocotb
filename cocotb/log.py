@@ -139,9 +139,9 @@ class SimTimeContextFilter(logging.Filter):
     """
 
     # needed to make our docs render well
-    def __init__(self, *args, **kwargs):
-        """ See :class:`logging.Filter` for argument descriptions """
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        """ Takes no arguments """
+        super().__init__()
 
     def filter(self, record):
         try:
