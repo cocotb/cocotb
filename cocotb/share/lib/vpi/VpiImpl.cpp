@@ -698,18 +698,15 @@ void (*vlog_startup_routines[])() = {
     register_system_functions,
     register_initial_callback,
     register_final_callback,
-    0
+    nullptr
 };
 
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines symbol
 void vlog_startup_routines_bootstrap() {
-    void (*routine)();
-    int i;
-    routine = vlog_startup_routines[0];
-    for (i = 0, routine = vlog_startup_routines[i];
-         routine;
-         routine = vlog_startup_routines[++i]) {
+    // call each routine in turn like VPI would
+    for (auto it = &log_startup_routines[0]; *it != nullptr; it++) {
+        auto routine = *it;
         routine();
     }
 }
