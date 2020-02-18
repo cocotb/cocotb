@@ -72,17 +72,16 @@ def default_config():
     """
     # construct an appropriate handler
     hdlr = logging.StreamHandler(sys.stdout)
+    hdlr.addFilter(SimTimeContextFilter())
     if want_color_output():
         hdlr.setFormatter(SimColourLogFormatter())
     else:
         hdlr.setFormatter(SimLogFormatter())
 
-    filter = SimTimeContextFilter()
 
     logging.setLoggerClass(SimBaseLog)  # For backwards compatibility
     logging.basicConfig()
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers
-    logging.getLogger().filters = [filter]
 
     # apply level settings for cocotb
     log = logging.getLogger('cocotb')
@@ -156,9 +155,9 @@ class SimTimeContextFilter(logging.Filter):
 class SimLogFormatter(logging.Formatter):
     """Log formatter to provide consistent log message handling.
 
-    This will only add simulator timestamps if the logger object has a
-    :class:`SimTimeContextFilter` filter attached, which cocotb ensures by
-    default.
+    This will only add simulator timestamps if the handler object this
+    formatter is attached to has a :class:`SimTimeContextFilter` filter
+    attached, which cocotb ensures by default.
     """
 
     # Removes the arguments from the base class. Docstring needed to make
