@@ -67,3 +67,10 @@ waves.shm/
 
 # Interface libraries built on setup
 cocotb/libs
+
+# Mentor Modelsim/Questa
+tests/test_cases/*/modelsim.ini
+tests/test_cases/*/transcript
+examples/*/tests/modelsim.ini
+examples/*/tests/transcript
+*.wlf
