@@ -67,6 +67,7 @@ waves.shm/
 
 # Interface libraries built on setup
 cocotb/libs
+pip-wheel-metadata/
 
 # Mentor Modelsim/Questa
 tests/test_cases/*/modelsim.ini
