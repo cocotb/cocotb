@@ -478,7 +478,15 @@ def reject_remaining_kwargs(name, kwargs):
 
         def func(x1, *, a=1, b=2):
             ...
+
+    .. deprecated:: 1.4
+        Since the minimum supported Python version is now 3.5, this function
+        is not needed.
     """
+    warnings.warn(
+        "reject_remaining_kwargs is deprecated and will be removed, use "
+        "Python 3 keyword-only arguments directly.", DeprecationWarning,
+        stacklevel=2)
     if kwargs:
         # match the error message to what Python 3 produces
         bad_arg = next(iter(kwargs))
