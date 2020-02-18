@@ -41,7 +41,7 @@ from cocotb.log import SimLog
 from cocotb.result import ReturnValue
 from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,
-    lazy_property,
+    lazy_property, remove_traceback_frames,
 )
 from cocotb import decorators
 from cocotb import outcomes
@@ -691,7 +691,7 @@ def _wait_callback(trigger, callback):
         ret = outcomes.Value((yield trigger))
     except BaseException as exc:
         # hide this from the traceback
-        ret = outcomes.Error(exc).without_frames(['_wait_callback'])
+        ret = outcomes.Error(remove_traceback_frames(exc, ['_wait_callback']))
     callback(ret)
 
 

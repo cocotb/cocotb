@@ -539,11 +539,6 @@ def remove_traceback_frames(tb_or_exc, frame_names):
     # self-invoking overloads
     if isinstance(tb_or_exc, BaseException):
         exc = tb_or_exc
-        if sys.version_info < (3,):
-            raise RuntimeError(
-                "Cannot use remove_traceback_frames on exceptions in python 2. "
-                "Call it directly on the traceback object instead.")
-
         return exc.with_traceback(
             remove_traceback_frames(exc.__traceback__, frame_names)
         )

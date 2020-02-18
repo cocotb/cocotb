@@ -307,7 +307,7 @@ class RegressionManager(object):
                                     time="0.0",
                                     sim_time_ns="0.0",
                                     ratio_time="0.0")
-            result_pass, sim_failed = self._score_test(test_func, test_init_outcome.without_frames(['capture']))
+            result_pass, sim_failed = self._score_test(test_func, test_init_outcome)
             # Save results
             self._store_test_result(test_func.__module__, test_func.__name__, result_pass, 0.0, 0.0, 0.0)
             if not result_pass:
@@ -352,18 +352,7 @@ class RegressionManager(object):
         try:
             outcome.get()
         except Exception as e:
-            if sys.version_info >= (3, 5):
-                result = remove_traceback_frames(e, ['_score_test', 'get'])
-                # newer versions of the `logging` module accept plain exception objects
-                exc_info = result
-            elif sys.version_info >= (3,):
-                result = remove_traceback_frames(e, ['_score_test', 'get'])
-                # newer versions of python have Exception.__traceback__
-                exc_info = (type(result), result, result.__traceback__)
-            else:
-                # Python 2
-                result = e
-                exc_info = remove_traceback_frames(sys.exc_info(), ['_score_test', 'get'])
+            result = remove_traceback_frames(e, ['_score_test', 'get'])
         else:
             result = TestSuccess()
 
@@ -392,7 +381,7 @@ class RegressionManager(object):
                 self.log.info("Test errored as expected: " + _result_was())
             else:
                 self.log.error("Test error has lead to simulator shutting us "
-                               "down", exc_info=exc_info)
+                               "down", exc_info=result)
                 result_pass = False
             # whether we expected it or not, the simulation has failed unrecoverably
             sim_failed = True
@@ -401,19 +390,15 @@ class RegressionManager(object):
             if isinstance(result, test.expect_error):
                 self.log.info("Test errored as expected: " + _result_was())
             else:
-                self.log.error("Test errored with unexpected type: " + _result_was(), exc_info=exc_info)
+                self.log.error("Test errored with unexpected type: " + _result_was(), exc_info=result)
                 result_pass = False
 
         else:
-            self.log.error("Test Failed: " + _result_was(), exc_info=exc_info)
+            self.log.error("Test Failed: " + _result_was(), exc_info=result)
             result_pass = False
 
             if _pdb_on_exception:
-                if sys.version_info >= (3, 5):
-                    traceback = exc_info.__traceback__
-                else:
-                    traceback = exc_info[2]
-                pdb.post_mortem(traceback)
+                pdb.post_mortem(result.__traceback__)
 
         return result_pass, sim_failed
 

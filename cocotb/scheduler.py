@@ -63,6 +63,7 @@ from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
 from cocotb.result import TestComplete, ReturnValue
+from cocotb.utils import remove_traceback_frames
 from cocotb import _py_compat
 
 # On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
@@ -505,11 +506,11 @@ class Scheduler(object):
                 coro._outcome.get()
             except (TestComplete, AssertionError) as e:
                 coro.log.info("Test stopped by this forked coroutine")
-                outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
+                outcome = outcomes.Error(remove_traceback_frames(e, ['unschedule', 'get']))
                 self._test._force_outcome(outcome)
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
-                outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
+                outcome = outcomes.Error(remove_traceback_frames(e, ['unschedule', 'get']))
                 self._test._force_outcome(outcome)
 
     def save_write(self, handle, value):

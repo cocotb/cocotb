@@ -37,7 +37,7 @@ import os
 import cocotb
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
-from cocotb.utils import get_sim_time, lazy_property
+from cocotb.utils import get_sim_time, lazy_property, remove_traceback_frames
 from cocotb import outcomes
 from cocotb import _py_compat
 
@@ -152,7 +152,7 @@ class RunningTask(object):
             self._outcome = outcomes.Value(retval)
             raise CoroutineComplete()
         except BaseException as e:
-            self._outcome = outcomes.Error(e).without_frames(['_advance', 'send'])
+            self._outcome = outcomes.Error(remove_traceback_frames(e, ['_advance', 'send']))
             raise CoroutineComplete()
 
     def send(self, value):
