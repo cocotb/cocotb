@@ -148,13 +148,13 @@ class GPITrigger(Trigger):
         # if simulator is not None:
         #    self.cbhdl = simulator.create_callback(self)
         # else:
-        self.cbhdl = 0
+        self.cbhdl = None
 
     def unprime(self):
         """Disable a primed trigger, can be re-primed."""
-        if self.cbhdl != 0:
+        if self.cbhdl is not None:
             simulator.deregister_callback(self.cbhdl)
-        self.cbhdl = 0
+        self.cbhdl = None
         Trigger.unprime(self)
 
 
@@ -203,10 +203,10 @@ class Timer(GPITrigger):
 
     def prime(self, callback):
         """Register for a timed callback."""
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_timed_callback(self.sim_steps,
                                                            callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
@@ -242,9 +242,9 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
@@ -264,11 +264,11 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             # import pdb
             # pdb.set_trace()
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
@@ -288,9 +288,9 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
@@ -318,11 +318,11 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_value_change_callback(
                 self.signal._handle, callback, type(self)._edge_type, self
             )
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         super(_EdgeBase, self).prime(callback)
 

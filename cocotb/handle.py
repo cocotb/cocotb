@@ -94,7 +94,7 @@ class SimHandleBase:
         return self._def_file
 
     def __hash__(self):
-        return self._handle
+        return hash(self._handle)
 
     def __len__(self):
         """Returns the 'length' of the underlying object.
