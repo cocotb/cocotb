@@ -216,7 +216,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
 
     gpi_log(name, GPIInfo, path, funcname, lineno, msg);
 
-    return Py_BuildValue("s", "OK!");
+    Py_RETURN_NONE;
 }
 
 
@@ -653,16 +653,13 @@ static PyObject *set_signal_val_binstr(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     const char *binstr;
-    PyObject *res;
 
     if (!PyArg_ParseTuple(args, "O&s", gpi_sim_hdl_converter, &hdl, &binstr)) {
         return NULL;
     }
 
     gpi_set_signal_value_binstr(hdl, binstr);
-    res = Py_BuildValue("s", "OK!");
-
-    return res;
+    Py_RETURN_NONE;
 }
 
 static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
@@ -670,16 +667,13 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     const char *str;
-    PyObject *res;
 
     if (!PyArg_ParseTuple(args, "O&s", gpi_sim_hdl_converter, &hdl, &str)) {
         return NULL;
     }
 
     gpi_set_signal_value_str(hdl, str);
-    res = Py_BuildValue("s", "OK!");
-
-    return res;
+    Py_RETURN_NONE;
 }
 
 static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
@@ -687,16 +681,13 @@ static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     double value;
-    PyObject *res;
 
     if (!PyArg_ParseTuple(args, "O&d", gpi_sim_hdl_converter, &hdl, &value)) {
         return NULL;
     }
 
     gpi_set_signal_value_real(hdl, value);
-    res = Py_BuildValue("s", "OK!");
-
-    return res;
+    Py_RETURN_NONE;
 }
 
 static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
@@ -704,16 +695,13 @@ static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
     long value;
-    PyObject *res;
 
     if (!PyArg_ParseTuple(args, "O&l", gpi_sim_hdl_converter, &hdl, &value)) {
         return NULL;
     }
 
     gpi_set_signal_value_long(hdl, value);
-    res = Py_BuildValue("s", "OK!");
-
-    return res;
+    Py_RETURN_NONE;
 }
 
 static PyObject *get_definition_name(PyObject *self, PyObject *args)
@@ -960,7 +948,7 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
     COCOTB_UNUSED(args);
     gpi_sim_end();
     sim_ending = 1;
-    return Py_BuildValue("s", "OK!");
+    Py_RETURN_NONE;
 }
 
 
@@ -968,7 +956,6 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
     gpi_sim_hdl hdl;
-    PyObject *value;
 
     FENTER
 
@@ -978,10 +965,8 @@ static PyObject *deregister_callback(PyObject *self, PyObject *args)
 
     gpi_deregister_callback(hdl);
 
-    value = Py_BuildValue("s", "OK!");
-
     FEXIT
-    return value;
+    Py_RETURN_NONE;
 }
 
 static PyObject *log_level(PyObject *self, PyObject *args)
@@ -989,16 +974,13 @@ static PyObject *log_level(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     enum gpi_log_levels new_level;
     PyObject *py_level;
-    PyObject *value;
 
     py_level = PyTuple_GetItem(args, 0);
     new_level = (enum gpi_log_levels)PyLong_AsLong(py_level);
 
     set_log_level(new_level);
 
-    value = Py_BuildValue("s", "OK!");
-
-    return value;
+    Py_RETURN_NONE;
 }
 
 static void add_module_constants(PyObject* simulator)
