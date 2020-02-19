@@ -289,6 +289,8 @@ public:
     virtual void sim_end() = 0;
     virtual void get_sim_time(uint32_t *high, uint32_t *low) = 0;
     virtual void get_sim_precision(int32_t *precision) = 0;
+    virtual const char* get_simulator_product() = 0;
+    virtual const char* get_simulator_version() = 0;
 
     /* Hierarchy related */
     virtual GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) = 0;
@@ -309,12 +311,15 @@ public:
 
 private:
     std::string m_name;
+protected:
+    std::string m_product;
+    std::string m_version;
 };
 
 /* Called from implementation layers back up the stack */
 int gpi_register_impl(GpiImplInterface *func_tbl);
 
-void gpi_embed_init(gpi_sim_info_t *info);
+void gpi_embed_init(int argc, char const* const* argv);
 void gpi_cleanup();
 void gpi_embed_end();
 void gpi_embed_event(gpi_event_t level, const char *msg);

@@ -124,9 +124,9 @@ int gpi_register_impl(GpiImplInterface *func_tbl)
     return 0;
 }
 
-void gpi_embed_init(gpi_sim_info_t *info)
+void gpi_embed_init(int argc, char const* const* argv)
 {
-    if (embed_sim_init(info))
+    if (embed_sim_init(argc, argv))
         gpi_embed_end();
 }
 
@@ -256,6 +256,16 @@ void gpi_get_sim_precision(int32_t *precision)
 
     *precision = val;
 
+}
+
+const char *gpi_get_simulator_product()
+{
+    return registered_impls[0]->get_simulator_product();
+}
+
+const char *gpi_get_simulator_version()
+{
+    return registered_impls[0]->get_simulator_version();
 }
 
 gpi_sim_hdl gpi_get_root_handle(const char *name)

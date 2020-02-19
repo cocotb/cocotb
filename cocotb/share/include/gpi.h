@@ -111,15 +111,6 @@ typedef enum gpi_event_e {
     SIM_FAIL = 2,
 } gpi_event_t;
 
-typedef struct gpi_sim_info_s
-{
-    int32_t   argc;
-    char      **argv;
-    char      *product;
-    char      *version;
-    int32_t   *reserved[4];
-} gpi_sim_info_t;
-
 // Functions for controlling/querying the simulation state
 
 // Stop the simulator
@@ -132,6 +123,19 @@ void gpi_cleanup(void);
 void gpi_get_sim_time(uint32_t *high, uint32_t *low);
 void gpi_get_sim_precision(int32_t *precision);
 
+/**
+ * Returns a string with the running simulator product information
+ *
+ * @return simulator product string
+ */
+const char *gpi_get_simulator_product(void);
+
+/**
+ * Returns a string with the running simulator version
+ *
+ * @return simulator version string
+ */
+const char *gpi_get_simulator_version(void);
 
 // Functions for extracting a gpi_sim_hdl to an object
 // Returns a handle to the root simulation object,

@@ -64,6 +64,8 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args);
 
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
 static PyObject *get_precision(PyObject *self, PyObject *args);
+static PyObject *get_simulator_product(PyObject *self, PyObject *args);
+static PyObject *get_simulator_version(PyObject *self, PyObject *args);
 
 static PyObject *log_level(PyObject *self, PyObject *args);
 
@@ -80,6 +82,8 @@ static PyMethodDef SimulatorMethods[] = {
 
     {"get_sim_time", get_sim_time, METH_NOARGS, "Get the current simulation time as an int tuple"},
     {"get_precision", get_precision, METH_NOARGS, "Get the precision of the simulator"},
+    {"get_simulator_product", get_simulator_product, METH_NOARGS, "Simulator product information"},
+    {"get_simulator_version", get_simulator_version, METH_NOARGS, "Simulator product version information"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
