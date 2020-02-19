@@ -1,0 +1,3 @@
+cosim/endian_swapper_hal_wrap.c
+cosim/hal.py
+tests/wavedrom.json
