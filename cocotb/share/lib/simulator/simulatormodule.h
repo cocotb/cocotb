@@ -87,6 +87,8 @@ static PyObject *next(PyObject *self, PyObject *args);
 
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
 static PyObject *get_precision(PyObject *self, PyObject *args);
+static PyObject *get_sim_product(PyObject *self, PyObject *args);
+static PyObject *get_sim_version(PyObject *self, PyObject *args);
 static PyObject *deregister_callback(PyObject *self, PyObject *args);
 
 static PyObject *log_level(PyObject *self, PyObject *args);
@@ -127,6 +129,8 @@ static PyMethodDef SimulatorMethods[] = {
     {"get_precision", get_precision, METH_VARARGS, "Get the precision of the simulator"},
     {"deregister_callback", deregister_callback, METH_VARARGS, "De-register a callback"},
     {"error_out", error_out, METH_NOARGS, NULL},
+    {"product", get_sim_product, METH_NOARGS, "Simulator product information"},
+    {"version", get_sim_version, METH_NOARGS, "Simulator product version information"},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

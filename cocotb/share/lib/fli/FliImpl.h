@@ -472,6 +472,8 @@ public:
     void sim_end() override;
     void get_sim_time(uint32_t *high, uint32_t *low) override;
     void get_sim_precision(int32_t *precision) override;
+    const char *get_sim_product() override;
+    const char *get_sim_version() override;
 
     /* Hierachy related */
     GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) override;
@@ -508,6 +510,8 @@ private:
     FliReadOnlyCbHdl  m_readonly_cbhdl;
     FliNextPhaseCbHdl m_nexttime_cbhdl;
     FliReadWriteCbHdl m_readwrite_cbhdl;
+    std::vector<char> m_product;
+    std::vector<char> m_version;
 };
 
 #endif /*COCOTB_FLI_IMPL_H_ */

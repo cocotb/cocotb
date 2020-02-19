@@ -56,6 +56,7 @@ from ._version import __version__
 
 # GPI logging instance
 if "COCOTB_SIM" in os.environ:
+    import simulator
 
     def _reopen_stream_with_buffering(stream_name):
         try:
@@ -134,9 +135,14 @@ def _initialise_testbench(argv_):
     """
     _rlock.acquire()
 
-    global argc, argv
+    global argc, argv, SIM_NAME, SIM_VERSION
     argv = argv_
     argc = len(argv)
+    SIM_NAME = simulator.product()
+    SIM_VERSION = simulator.version()
+
+    cocotb.log.info("Running on {} version {}".format(SIM_NAME, SIM_VERSION))
+    cocotb.log.info("Python interpreter initialized and cocotb loaded!")
 
     root_name = os.getenv("TOPLEVEL", None)
     if root_name is not None:

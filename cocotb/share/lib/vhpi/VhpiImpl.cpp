@@ -110,6 +110,30 @@ void VhpiImpl::get_sim_precision(int32_t *precision)
     *precision = log10int(femtoseconds) - 15;
 }
 
+const char *VhpiImpl::get_sim_product()
+{
+    if (!m_product) {
+        vhpiHandleT tool = vhpi_handle(vhpiTool, NULL);
+        if (tool) {
+            m_product = static_cast<const char*>(vhpi_get_str(vhpiNameP, tool));
+            vhpi_release_handle(tool);
+        }
+    }
+    return m_product;
+}
+
+const char *VhpiImpl::get_sim_version()
+{
+    if (!m_version) {
+        vhpiHandleT tool = vhpi_handle(vhpiTool, NULL);
+        if (tool) {
+            m_version = static_cast<const char*>(vhpi_get_str(vhpiToolVersionP, tool));
+            vhpi_release_handle(tool);
+        }
+    }
+    return m_version;
+}
+
 // Determine whether a VHPI object type is a constant or not
 bool is_const(vhpiHandleT hdl)
 {

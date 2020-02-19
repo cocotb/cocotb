@@ -219,7 +219,8 @@ int get_module_ref(const char *modname, PyObject **mod)
     return 0;
 }
 
-int embed_sim_init(gpi_sim_info_t *info)
+
+int embed_sim_init(int argc, char const* const* argv)
 {
     FENTER
 
@@ -278,22 +279,6 @@ int embed_sim_init(gpi_sim_info_t *info)
 
     set_log_filter(simlog_func);                                        // Note: This function steals a reference to simlog_func.
 
-    LOG_INFO("Running on %s version %s", info->product, info->version);
-    LOG_INFO("Python interpreter initialized and cocotb loaded!");
-
-    // Now that logging has been set up ok, we initialize the testbench
-    if (-1 == PyModule_AddStringConstant(cocotb_module, "SIM_NAME", info->product)) {
-        PyErr_Print();
-        LOG_ERROR("Unable to set SIM_NAME");
-        goto cleanup;
-    }
-
-    if (-1 == PyModule_AddStringConstant(cocotb_module, "SIM_VERSION", info->version)) {
-        PyErr_Print();
-        LOG_ERROR("Unable to set SIM_VERSION");
-        goto cleanup;
-    }
-
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");     // New reference
     if (pEventFn == NULL) {
         PyErr_Print();
@@ -320,16 +305,16 @@ int embed_sim_init(gpi_sim_info_t *info)
     }
 
     // Build argv for cocotb module
-    argv_list = PyList_New(info->argc);                                 // New reference
+    argv_list = PyList_New(argc);                                       // New reference
     if (argv_list == NULL) {
         PyErr_Print();
         LOG_ERROR("Unable to create argv list");
         goto cleanup;
     }
-    for (i = 0; i < info->argc; i++) {
+    for (i = 0; i < argc; i++) {
         // Decode, embedding non-decodable bytes using PEP-383. This can only
         // fail with MemoryError or similar.
-        PyObject *argv_item = PyUnicode_DecodeLocale(info->argv[i], "surrogateescape");  // New reference
+        PyObject *argv_item = PyUnicode_DecodeLocale(argv[i], "surrogateescape");   // New reference
         if (argv_item == NULL) {
             PyErr_Print();
             LOG_ERROR("Unable to convert command line argument %d to Unicode string.", i);

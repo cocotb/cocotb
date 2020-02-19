@@ -72,6 +72,20 @@ void VpiImpl::get_sim_precision(int32_t *precision)
     *precision = vpi_get(vpiTimePrecision, NULL);
 }
 
+const char *VpiImpl::get_sim_product()
+{
+    s_vpi_vlog_info info;
+    vpi_get_vlog_info(&info);
+    return info.product;
+}
+
+const char *VpiImpl::get_sim_version()
+{
+    s_vpi_vlog_info info;
+    vpi_get_vlog_info(&info);
+    return info.version;
+}
+
 gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 {
     switch (vpitype) {

@@ -241,12 +241,16 @@ public:
     VhpiImpl(const std::string& name) : GpiImplInterface(name),
                                         m_read_write(this),
                                         m_next_phase(this),
-                                        m_read_only(this) { }
+                                        m_read_only(this),
+                                        m_product(NULL),
+                                        m_version(NULL) { }
 
      /* Sim related */
     void sim_end() override;
     void get_sim_time(uint32_t *high, uint32_t *low) override;
     void get_sim_precision(int32_t *precision) override;
+    const char *get_sim_product() override;
+    const char *get_sim_version() override;
 
     /* Hierachy related */
     GpiObjHdl *get_root_handle(const char *name) override;
@@ -273,6 +277,8 @@ private:
     VhpiReadwriteCbHdl m_read_write;
     VhpiNextPhaseCbHdl m_next_phase;
     VhpiReadOnlyCbHdl m_read_only;
+    const char *m_product;
+    const char *m_version;
 };
 
 #endif /*COCOTB_VHPI_IMPL_H_  */

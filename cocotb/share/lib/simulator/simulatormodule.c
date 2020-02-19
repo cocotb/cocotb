@@ -1020,6 +1020,24 @@ static PyObject *error_out(PyObject *m, PyObject *args)
     return NULL;
 }
 
+static PyObject *get_sim_product(PyObject *m, PyObject *args)
+{
+    COCOTB_UNUSED(m);
+    COCOTB_UNUSED(args);
+    const char *product_string = gpi_get_sim_product();
+    PyObject *result = Py_BuildValue("s", product_string);
+    return result;
+}
+
+static PyObject *get_sim_version(PyObject *m, PyObject *args)
+{
+    COCOTB_UNUSED(m);
+    COCOTB_UNUSED(args);
+    const char *version_string = gpi_get_sim_version();
+    PyObject *result = Py_BuildValue("s", version_string);
+    return result;
+}
+
 static int simulator_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(GETSTATE(m)->error);
     return 0;
