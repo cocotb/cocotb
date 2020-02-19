@@ -49,17 +49,6 @@ class GpiImplInterface;
 class GpiIterator;
 class GpiCbHdl;
 
-template<class To>
-inline To sim_to_hdl(gpi_sim_hdl input)
-{
-    To result = static_cast<To>(input);
-    if (!result) {
-        LOG_CRITICAL("GPI: Handle passed down is not valid gpi_sim_hdl");
-    }
-
-    return result;
-}
-
 /* Base GPI class others are derived from */
 class GpiHdl {
 public:

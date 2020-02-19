@@ -72,7 +72,32 @@ we have to create a process with the signal on the sensitivity list to imitate a
 # define __attribute__(x)
 #endif
 
-
+/*
+ * Declare the handle types.
+ *
+ * We want these handles to be opaque pointers, since their layout is not
+ * exposed to C. We do this by using incomplete types. The assumption being
+ * made here is that `sizeof(some_cpp_class*) == sizeof(some_c_struct*)`, which
+ * is true on all reasonable platforms.
+ */
+#ifdef __cplusplus
+    /* In C++, we use forward-declarations of the types in gpi_priv.h as our
+     * incomplete types, as this avoids the need for any casting in GpiCommon.cpp.
+     */
+    class GpiObjHdl;
+    class GpiIterator;
+    typedef GpiObjHdl *gpi_sim_hdl;
+    typedef GpiIterator *gpi_iterator_hdl;
+#else
+    /* In C, we declare some incomplete struct types that we never complete.
+     * The names of these are irrelevant, but for simplicity they match the C++
+     * names.
+     */
+    struct GpiObjHdl;
+    struct GpiIterator;
+    typedef struct GpiObjHdl *gpi_sim_hdl;
+    typedef struct GpiIterator *gpi_iterator_hdl;
+#endif
 
 EXTERN_C_START
 
@@ -90,12 +115,6 @@ typedef struct gpi_sim_info_s
     char      *version;
     int32_t   *reserved[4];
 } gpi_sim_info_t;
-
-// Define a type for our simulation handle.
-typedef void * gpi_sim_hdl;
-
-// Define a handle type for iterators
-typedef void * gpi_iterator_hdl;
 
 // Functions for controlling/querying the simulation state
 
