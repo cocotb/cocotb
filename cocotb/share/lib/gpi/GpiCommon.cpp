@@ -355,10 +355,9 @@ static GpiObjHdl* __gpi_get_handle_by_raw(GpiObjHdl *parent,
     }
 }
 
-gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
+gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl base, const char *name)
 {
     std::string s_name = name;
-    GpiObjHdl *base = sim_to_hdl<GpiObjHdl*>(parent);
     GpiObjHdl *hdl = __gpi_get_handle_by_name(base, s_name, NULL);
     if (!hdl) {
         LOG_DEBUG("Failed to find a handle named %s via any registered implementation",
@@ -367,10 +366,9 @@ gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name)
     return hdl;
 }
 
-gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index)
+gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl base, int32_t index)
 {
     GpiObjHdl *hdl         = NULL;
-    GpiObjHdl *base        = sim_to_hdl<GpiObjHdl*>(parent);
     GpiImplInterface *intf = base->m_impl;
 
     /* Shouldn't need to iterate over interfaces because indexing into a handle shouldn't
@@ -390,20 +388,18 @@ gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index)
     }
 }
 
-gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base, gpi_iterator_sel_t type)
+gpi_iterator_hdl gpi_iterate(gpi_sim_hdl obj_hdl, gpi_iterator_sel_t type)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(base);
     GpiIterator *iter = obj_hdl->m_impl->iterate_handle(obj_hdl, type);
     if (!iter) {
         return NULL;
     }
-    return (gpi_iterator_hdl)iter;
+    return iter;
 }
 
-gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
+gpi_sim_hdl gpi_next(gpi_iterator_hdl iter)
 {
     std::string name;
-    GpiIterator *iter = sim_to_hdl<GpiIterator*>(iterator);
     GpiObjHdl *parent = iter->get_parent();
 
     while (true) {
@@ -441,71 +437,65 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator)
     }
 }
 
-const char* gpi_get_definition_name(gpi_sim_hdl sig_hdl)
+const char* gpi_get_definition_name(gpi_sim_hdl obj_hdl)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_definition_name();
 }
 
-const char* gpi_get_definition_file(gpi_sim_hdl sig_hdl)
+const char* gpi_get_definition_file(gpi_sim_hdl obj_hdl)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_definition_file();
 }
 
 const char *gpi_get_signal_value_binstr(gpi_sim_hdl sig_hdl)
 {
-    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
     return obj_hdl->get_signal_value_binstr();
 }
 
 const char *gpi_get_signal_value_str(gpi_sim_hdl sig_hdl)
 {
-    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
     return obj_hdl->get_signal_value_str();
 }
 
 double gpi_get_signal_value_real(gpi_sim_hdl sig_hdl)
 {
-    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
     return obj_hdl->get_signal_value_real();
 }
 
 long gpi_get_signal_value_long(gpi_sim_hdl sig_hdl)
 {
-    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
     return obj_hdl->get_signal_value_long();
 }
 
 const char *gpi_get_signal_name_str(gpi_sim_hdl sig_hdl)
 {
-    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
     return obj_hdl->get_name_str();
 }
 
-const char *gpi_get_signal_type_str(gpi_sim_hdl sig_hdl)
+const char *gpi_get_signal_type_str(gpi_sim_hdl obj_hdl)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_type_str();
 }
 
-gpi_objtype_t gpi_get_object_type(gpi_sim_hdl sig_hdl)
+gpi_objtype_t gpi_get_object_type(gpi_sim_hdl obj_hdl)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_type();
 }
 
-int gpi_is_constant(gpi_sim_hdl sig_hdl)
+int gpi_is_constant(gpi_sim_hdl obj_hdl)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     if (obj_hdl->get_const())
         return 1;
     return 0;
 }
 
-int gpi_is_indexable(gpi_sim_hdl sig_hdl)
+int gpi_is_indexable(gpi_sim_hdl obj_hdl)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     if (obj_hdl->get_indexable())
         return 1;
     return 0;
@@ -513,7 +503,7 @@ int gpi_is_indexable(gpi_sim_hdl sig_hdl)
 
 void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value, gpi_set_action_t action)
 {
-    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
 
     obj_hdl->set_signal_value(value, action);
 }
@@ -521,38 +511,35 @@ void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value, gpi_set_action_t
 void gpi_set_signal_value_binstr(gpi_sim_hdl sig_hdl, const char *binstr, gpi_set_action_t action)
 {
     std::string value = binstr;
-    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
     obj_hdl->set_signal_value_binstr(value, action);
 }
 
 void gpi_set_signal_value_str(gpi_sim_hdl sig_hdl, const char *str, gpi_set_action_t action)
 {
     std::string value = str;
-    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
     obj_hdl->set_signal_value_str(value, action);
 }
 
 void gpi_set_signal_value_real(gpi_sim_hdl sig_hdl, double value, gpi_set_action_t action)
 {
-    GpiSignalObjHdl *obj_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
     obj_hdl->set_signal_value(value, action);
 }
 
-int gpi_get_num_elems(gpi_sim_hdl sig_hdl)
+int gpi_get_num_elems(gpi_sim_hdl obj_hdl)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_num_elems();
 }
 
-int gpi_get_range_left(gpi_sim_hdl sig_hdl)
+int gpi_get_range_left(gpi_sim_hdl obj_hdl)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_range_left();
 }
 
-int gpi_get_range_right(gpi_sim_hdl sig_hdl)
+int gpi_get_range_right(gpi_sim_hdl obj_hdl)
 {
-    GpiObjHdl *obj_hdl = sim_to_hdl<GpiObjHdl*>(sig_hdl);
     return obj_hdl->get_range_right();
 }
 
@@ -562,7 +549,7 @@ gpi_sim_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *)
                                                int edge)
 {
 
-    GpiSignalObjHdl *signal_hdl = sim_to_hdl<GpiSignalObjHdl*>(sig_hdl);
+    GpiSignalObjHdl *signal_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
 
     /* Do something based on int & GPI_RISING | GPI_FALLING */
     GpiCbHdl *gpi_hdl = signal_hdl->value_change_cb(edge);
@@ -637,7 +624,8 @@ gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(const void *),
 
 void gpi_deregister_callback(gpi_sim_hdl hdl)
 {
-    GpiCbHdl *cb_hdl = sim_to_hdl<GpiCbHdl*>(hdl);
+    // TODO: Why are we pretending this is one type when it is another?
+    GpiCbHdl *cb_hdl = reinterpret_cast<GpiCbHdl*>(hdl);
     cb_hdl->m_impl->deregister_callback(cb_hdl);
 }
 
