@@ -486,16 +486,14 @@ VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 
 int VpiStartupCbHdl::run_callback() {
     s_vpi_vlog_info info;
-    gpi_sim_info_t sim_info;
 
-    vpi_get_vlog_info(&info);
+    if (!vpi_get_vlog_info(&info)) {
+        LOG_WARN("Unable to get argv and argc from simulator");
+        info.argc = 0;
+        info.argv = nullptr;
+    }
 
-    sim_info.argc = info.argc;
-    sim_info.argv = info.argv;
-    sim_info.product = info.product;
-    sim_info.version = info.version;
-
-    gpi_embed_init(&sim_info);
+    gpi_embed_init(info.argc, info.argv);
 
     return 0;
 }

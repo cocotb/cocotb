@@ -192,42 +192,16 @@ static std::vector<std::string> get_argv()
 
 int FliStartupCbHdl::run_callback()
 {
-    gpi_sim_info_t sim_info;
 
-    char *c_info       = mti_GetProductVersion();      // Returned pointer must not be freed
-    std::string info   = c_info;
-    std::string search = " Version ";
-    std::size_t found  = info.find(search);
-
-    std::string product_str = c_info;
-    std::string version_str = c_info;
-
-    if (found != std::string::npos) {
-        product_str = info.substr(0,found);
-        version_str = info.substr(found+search.length());
-
-        LOG_DEBUG("Found Version string at %d", found);
-        LOG_DEBUG("   product: %s", product_str.c_str());
-        LOG_DEBUG("   version: %s", version_str.c_str());
+    std::vector<std::string> const argv_storage = get_argv();
+    std::vector<const char*> argv_cstr;
+    for (const auto& arg : argv_storage) {
+        argv_cstr.push_back(arg.c_str());
     }
+    int argc = static_cast<int>(argv_storage.size());
+    const char** argv = argv_cstr.data();
 
-    std::vector<char> product(product_str.begin(), product_str.end());
-    std::vector<char> version(version_str.begin(), version_str.end());
-    product.push_back('\0');
-    version.push_back('\0');
-
-    sim_info.product = &product[0];
-    sim_info.version = &version[0];
-
-    std::vector<std::string> argv = get_argv();
-    std::vector<char*> argv_cstr;
-    for (const auto& arg : argv) {
-        argv_cstr.push_back(const_cast<char*>(arg.c_str()));
-    }
-    sim_info.argc = static_cast<int>(argv.size());
-    sim_info.argv = argv_cstr.data();
-
-    gpi_embed_init(&sim_info);
+    gpi_embed_init(argc, argv);
 
     return 0;
 }

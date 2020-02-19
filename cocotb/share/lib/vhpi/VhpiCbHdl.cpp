@@ -833,16 +833,11 @@ VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 
 int VhpiStartupCbHdl::run_callback() {
     vhpiHandleT tool, argv_iter, argv_hdl;
-    gpi_sim_info_t sim_info;
     char **tool_argv = NULL;
     int tool_argc = 0;
     int i = 0;
 
     tool = vhpi_handle(vhpiTool, NULL);
-
-    sim_info.product = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiNameP, tool)));
-    sim_info.version = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiToolVersionP, tool)));
-
     if (tool) {
         tool_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
         tool_argv = new char*[tool_argc];
@@ -856,13 +851,11 @@ int VhpiStartupCbHdl::run_callback() {
             }
             vhpi_release_handle(argv_iter);
         }
-        sim_info.argc = tool_argc;
-        sim_info.argv = tool_argv;
 
         vhpi_release_handle(tool);
     }
 
-    gpi_embed_init(&sim_info);
+    gpi_embed_init(tool_argc, tool_argv);
     delete [] tool_argv;
 
     return 0;

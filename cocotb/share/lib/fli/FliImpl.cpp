@@ -434,6 +434,30 @@ void FliImpl::get_sim_precision(int32_t *precision)
     *precision = mti_GetResolutionLimit();
 }
 
+const char *FliImpl::get_simulator_product()
+{
+    if (m_product.empty() && m_version.empty()) {
+        const std::string info = mti_GetProductVersion(); // Returned pointer must not be freed, does not fail
+        const std::string search = " Version ";
+        const std::size_t found = info.find(search);
+
+        if (found != std::string::npos) {
+            m_product = info.substr(0, found);
+            m_version = info.substr(found + search.length());
+        } else {
+            m_product = info;
+            m_version = "UNKNOWN";
+        }
+    }
+    return m_product.c_str();
+}
+
+const char *FliImpl::get_simulator_version()
+{
+    get_simulator_product();
+    return m_version.c_str();
+}
+
 /**
  * @name    Find the root handle
  * @brief   Find the root handle using an optional name
