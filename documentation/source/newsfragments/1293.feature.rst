@@ -1,0 +1,1 @@
+Added :envvar:`COCOTB_ENTRY`, a custom entry point from C into Python. This allows the user to enter into any arbitrary module or function to extend or replace the default regression manager entry point. See :ref:`custom-entry-point` for more details.

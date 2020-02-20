@@ -73,6 +73,7 @@ MODULE                    Modules to search for test functions (comma-separated)
 TESTCASE                  Test function(s) to run (comma-separated list)
 COCOTB_RESULTS_FILE       File name for xUnit XML tests results
 SCRIPT_FILE               Simulator script to run (for e.g. wave traces)
+COCOTB_ENTRY              Python entry point (default: cocotb._initialise_testbench)
 
 Additional Environment Variables
 --------------------------------

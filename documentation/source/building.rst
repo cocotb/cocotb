@@ -207,6 +207,16 @@ Environment Variables
     You can usually write out such a file from the simulator's GUI.
     This is currently supported for the Mentor Questa, Mentor ModelSim and Aldec Riviera simulators.
 
+.. envvar:: COCOTB_ENTRY
+
+        The Python framework entry point from the GPI.
+        The entry point is specified as the module to load and the function in that module to run at initialization.
+        The format is ``entry.module.name:entry_function_name``.
+        By default this is ``cocotb._initialize_testbench``; this starts the cocotb regression manager.
+        Entry modules and functions have certain requirements, see :ref:`custom-entry-point`.
+
+        .. versionadded:: 1.4
+
 
 Additional Environment Variables
 --------------------------------

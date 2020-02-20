@@ -242,10 +242,6 @@ int embed_sim_init(int argc, char const* const* argv)
     PyGILState_STATE gstate = PyGILState_Ensure();
     to_python();
 
-    if (get_module_ref("cocotb", &cocotb_module)) {
-        goto cleanup;
-    }
-
     if (get_module_ref("cocotb._gpi_embed", &cocotb_gpi_module)) {
         goto cleanup;
     }
@@ -270,19 +266,22 @@ int embed_sim_init(int argc, char const* const* argv)
 
     set_log_filter(simlog_func);                                        // Note: This function steals a reference to simlog_func.
 
-    pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");     // New reference
-    if (pEventFn == NULL) {
+    PyObject* entry_tuple = PyObject_CallMethod(cocotb_gpi_module, "_load_entry", NULL);
+    if (entry_tuple == NULL) {
         PyErr_Print();
-        LOG_ERROR("Failed to get the _sim_event method");
+        LOG_ERROR("Unable to load entry point");
         goto cleanup;
     }
-
-    cocotb_init = PyObject_GetAttrString(cocotb_module, "_initialise_testbench");   // New reference
-    if (cocotb_init == NULL) {
+    if (!PyArg_ParseTuple(entry_tuple, "OOO", &cocotb_module, &cocotb_init, &pEventFn)) {
         PyErr_Print();
-        LOG_ERROR("Failed to get the _initialise_testbench method");
+        LOG_ERROR("Bad output from cocotb._gpi_embed._load_entry: should return (entry module, entry function, sim event callback)");
+        Py_DECREF(entry_tuple);
         goto cleanup;
     }
+    Py_INCREF(cocotb_module);
+    Py_INCREF(cocotb_init);
+    Py_INCREF(pEventFn);
+    Py_DECREF(entry_tuple);
 
     // Build argv for cocotb module
     argv_list = PyList_New(argc);                                       // New reference
