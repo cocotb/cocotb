@@ -260,11 +260,6 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
         LOG_ERROR("Failed to get the _log_from_c function");
         goto cleanup;
     }
-    if (!PyCallable_Check(simlog_func)) {
-        LOG_ERROR("_log_from_c is not callable");
-        Py_DECREF(simlog_func);
-        goto cleanup;
-    }
 
     set_log_handler(simlog_func);                                       // Note: This function steals a reference to simlog_func.
 
@@ -273,11 +268,6 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
     if (simlog_func == NULL) {
         PyErr_Print();
         LOG_ERROR("Failed to get the _filter_from_c method");
-        goto cleanup;
-    }
-    if (!PyCallable_Check(simlog_func)) {
-        LOG_ERROR("_filter_from_c is not callable");
-        Py_DECREF(simlog_func);
         goto cleanup;
     }
 
@@ -289,22 +279,11 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
         LOG_ERROR("Failed to get the _sim_event method");
         goto cleanup;
     }
-    if (!PyCallable_Check(pEventFn)) {
-        LOG_ERROR("cocotb._sim_event is not callable");
-        Py_DECREF(pEventFn);
-        pEventFn = NULL;
-        goto cleanup;
-    }
 
     cocotb_init = PyObject_GetAttrString(cocotb_module, "_initialise_testbench");   // New reference
     if (cocotb_init == NULL) {
         PyErr_Print();
         LOG_ERROR("Failed to get the _initialise_testbench method");
-        goto cleanup;
-    }
-    if (!PyCallable_Check(cocotb_init)) {
-        LOG_ERROR("cocotb._initialise_testbench is not callable");
-        Py_DECREF(cocotb_init);
         goto cleanup;
     }
 
