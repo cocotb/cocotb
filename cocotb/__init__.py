@@ -120,7 +120,7 @@ def mem_debug(port):
     cocotb.memdebug.start(port)
 
 
-def _initialise_testbench():
+def _initialise_testbench(argv_):
     """Initialize testbench.
 
     This function is called after the simulator has elaborated all
@@ -133,6 +133,10 @@ def _initialise_testbench():
     comma-separated list of modules to be executed before the first test.
     """
     _rlock.acquire()
+
+    global argc, argv
+    argv = argv_
+    argc = len(argv)
 
     root_name = os.getenv("TOPLEVEL", None)
     if root_name is not None:
