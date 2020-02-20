@@ -31,7 +31,6 @@
 
 import ctypes
 import warnings
-import collections.abc
 
 import os
 
@@ -190,7 +189,7 @@ class RegionObject(SimHandleBase):
         if self._discovered:
             return
         self._log.debug("Discovering all on %s", self._name)
-        for thing in _SimIterator(self._handle, simulator.OBJECTS):
+        for thing in simulator.iterate(self._handle, simulator.OBJECTS):
             name = simulator.get_name_string(thing)
             try:
                 hdl = SimHandle(thing, self._child_path(name))
@@ -559,27 +558,17 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
             self[self_idx].value = value[val_idx]
 
 
-class _SimIterator(collections.abc.Iterator):
-    """Iterator over simulator objects. For internal use only."""
-
-    def __init__(self, handle, mode):
-        self._iter = simulator.iterate(handle, mode)
-
-    def __next__(self):
-        return simulator.next(self._iter)
-
-
 class NonConstantObject(NonHierarchyIndexableObject):
     """ A non-constant object"""
     # FIXME: what is the difference to ModifiableObject? Explain in docstring.
 
     def drivers(self):
         """An iterator for gathering all drivers for a signal."""
-        return _SimIterator(self._handle, simulator.DRIVERS)
+        return simulator.iterate(self._handle, simulator.DRIVERS)
 
     def loads(self):
         """An iterator for gathering all loads on a signal."""
-        return _SimIterator(self._handle, simulator.LOADS)
+        return simulator.iterate(self._handle, simulator.LOADS)
 
 class _SetAction:
     """Base class representing the type of action used while write-accessing a handle."""
