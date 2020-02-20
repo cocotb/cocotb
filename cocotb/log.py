@@ -241,27 +241,3 @@ class SimColourLogFormatter(SimLogFormatter):
                  record.levelname.ljust(_LEVEL_CHARS))
 
         return self._format(level, record, msg, coloured=True)
-
-
-def _filter_from_c(logger_name, level):
-    return logging.getLogger(logger_name).isEnabledFor(level)
-
-
-def _log_from_c(logger_name, level, filename, lineno, msg, function_name):
-    """
-    This is for use from the C world, and allows us to insert C stack
-    information.
-    """
-    logger = logging.getLogger(logger_name)
-    if logger.isEnabledFor(level):
-        record = logger.makeRecord(
-            logger.name,
-            level,
-            filename,
-            lineno,
-            msg,
-            None,
-            None,
-            function_name
-        )
-        logger.handle(record)
