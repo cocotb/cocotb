@@ -26,29 +26,49 @@
 
 """Drivers for Advanced Microcontroller Bus Architecture."""
 
-import cocotb
-from cocotb.triggers import RisingEdge, ReadOnly, Lock
-from cocotb.drivers import BusDriver
-from cocotb.binary import BinaryValue
-
 import array
+import collections.abc
+import enum
+
+import cocotb
+from cocotb.binary import BinaryValue
+from cocotb.drivers import BusDriver
+from cocotb.triggers import ClockCycles, Combine, Lock, ReadOnly, RisingEdge
 
 
 class AXIProtocolError(Exception):
     pass
 
 
-class AXI4LiteMaster(BusDriver):
-    """AXI4-Lite Master.
+class AXIBurst(enum.IntEnum):
+    FIXED = 0b00
+    INCR = 0b01
+    WRAP = 0b10
+
+
+class AXIxRESP(enum.IntEnum):
+    OKAY = 0b00
+    EXOKAY = 0b01
+    SLVERR = 0b10
+    DECERR = 0b11
+
+
+class AXI4Master(BusDriver):
+    """AXI4 Master
 
     TODO: Kill all pending transactions if reset is asserted.
     """
 
-    _signals = ["AWVALID", "AWADDR", "AWREADY",        # Write address channel
-                "WVALID", "WREADY", "WDATA", "WSTRB",  # Write data channel
-                "BVALID", "BREADY", "BRESP",           # Write response channel
-                "ARVALID", "ARADDR", "ARREADY",        # Read address channel
-                "RVALID", "RREADY", "RRESP", "RDATA"]  # Read data channel
+    _signals = [
+        "AWVALID", "AWADDR", "AWREADY", "AWID", "AWLEN", "AWSIZE", "AWBURST",
+        "WVALID", "WREADY", "WDATA", "WSTRB",
+        "BVALID", "BREADY", "BRESP", "BID",
+        "ARVALID", "ARADDR", "ARREADY", "ARID", "ARLEN", "ARSIZE", "ARBURST",
+        "RVALID", "RREADY", "RRESP", "RDATA", "RID", "RLAST"]
+
+    _optional_signals = ["AWREGION", "AWLOCK", "AWCACHE", "AWPROT", "AWQOS",
+                         "WLAST",
+                         "ARREGION", "ARLOCK", "ARCACHE", "ARPROT", "ARQOS"]
 
     def __init__(self, entity, name, clock, **kwargs):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
@@ -60,22 +80,88 @@ class AXI4LiteMaster(BusDriver):
         self.bus.BREADY.setimmediatevalue(1)
         self.bus.RREADY.setimmediatevalue(1)
 
+        # Set the default value (0) for the unsupported signals, which
+        # translate to:
+        #  * Transaction IDs to 0
+        #  * Region identifier to 0
+        #  * Normal (non-exclusive) access
+        #  * Device non-bufferable access
+        #  * Unprivileged, secure data access
+        #  * No QoS
+        unsupported_signals = [
+            "AWID", "AWREGION", "AWLOCK", "AWCACHE", "AWPROT", "AWQOS",
+            "ARID", "ARREGION", "ARLOCK", "ARCACHE", "ARPROT", "ARQOS"]
+        for signal in unsupported_signals:
+            try:
+                getattr(self.bus, signal).setimmediatevalue(0)
+            except AttributeError:
+                pass
+
         # Mutex for each channel that we master to prevent contention
         self.write_address_busy = Lock("%s_wabusy" % name)
         self.read_address_busy = Lock("%s_rabusy" % name)
         self.write_data_busy = Lock("%s_wbusy" % name)
 
-    async def _send_write_address(self, address, delay=0):
+    @staticmethod
+    def _check_length(length, burst):
+        """Check that the provided burst length is valid."""
+        if length <= 0:
+            raise ValueError("Burst length must be a positive integer")
+
+        if burst is AXIBurst.INCR:
+            if length > 256:
+                raise ValueError("Maximum burst length for INCR bursts is 256")
+        elif burst is AXIBurst.WRAP:
+            if length not in (1, 2, 4, 8, 16):
+                raise ValueError("Burst length for WRAP bursts must be 1, 2, "
+                                 "4, 8 or 16")
+        else:
+            if length > 16:
+                raise ValueError("Maximum burst length for FIXED bursts is 16")
+
+    @staticmethod
+    def _check_size(size, data_bus_width):
+        """Check that the provided transfer size is valid."""
+        if size > data_bus_width:
+            raise ValueError("Beat size ({} B) is larger than the bus width "
+                             "({} B)".format(size, data_bus_width))
+        elif size <= 0 or size & (size - 1) != 0:
+            raise ValueError("Beat size must be a positive power of 2")
+
+    @staticmethod
+    def _check_4kB_boundary_crossing(address, burst, size, length):
+        """Check that the provided burst does not cross a 4kB boundary."""
+        if burst is AXIBurst.INCR:
+            last_address = address + size * (length - 1)
+            if address & ~0xfff != last_address & ~0xfff:
+                raise ValueError(
+                    "INCR burst with start address {:#x} and last address "
+                    "{:#x} crosses the 4kB boundary {:#x}, which is forbidden "
+                    "in a single burst"
+                    .format(address, last_address,
+                            (address & ~0xfff) + 0x1000))
+
+    async def _send_write_address(self, address, length, burst, size, delay):
         """
         Send the write address, with optional delay (in clocks)
         """
         await self.write_address_busy.acquire()
-        for cycle in range(delay):
-            await RisingEdge(self.clock)
+        await ClockCycles(self.clock, delay)
 
+        # Set the address and, if present on the bus, burst, length and size
         self.bus.AWADDR <= address
         self.bus.AWVALID <= 1
 
+        if hasattr(self.bus, "AWBURST"):
+            self.bus.AWBURST <= burst.value
+
+        if hasattr(self.bus, "AWLEN"):
+            self.bus.AWLEN <= length - 1
+
+        if hasattr(self.bus, "AWSIZE"):
+            self.bus.AWSIZE <= size.bit_length() - 1
+
+        # Wait until acknowledged
         while True:
             await ReadOnly()
             if self.bus.AWREADY.value:
@@ -85,24 +171,213 @@ class AXI4LiteMaster(BusDriver):
         self.bus.AWVALID <= 0
         self.write_address_busy.release()
 
-    async def _send_write_data(self, data, delay=0, byte_enable=0xF):
-        """Send the write address, with optional delay (in clocks)."""
+    async def _send_write_data(self, data, delay, byte_enable):
+        """Send the write data, with optional delay (in clocks)."""
         await self.write_data_busy.acquire()
-        for cycle in range(delay):
+
+        byte_enable_iterator = iter(byte_enable)
+
+        for i, word in enumerate(data):
+            await ClockCycles(self.clock, delay)
+
+            self.bus.WDATA <= word
+            self.bus.WVALID <= 1
+
+            try:
+                self.bus.WSTRB <= next(byte_enable_iterator)
+            except StopIteration:
+                # Do not update WSTRB if we have reached the end of the iter
+                pass
+
+            if hasattr(self.bus, "WLAST"):
+                if i == len(data) - 1:
+                    self.bus.WLAST <= 1
+                else:
+                    self.bus.WLAST <= 0
+
+            while True:
+                await RisingEdge(self.clock)
+                if self.bus.WREADY.value:
+                    break
+
+            if i == len(data) - 1:
+                self.bus.WVALID <= 0
+
+        self.write_data_busy.release()
+
+    @cocotb.coroutine
+    async def write(self, address, value, *, size=None, burst=AXIBurst.INCR,
+                    byte_enable=0xf, address_latency=0, data_latency=0,
+                    sync=True):
+        """Write a value to an address.
+
+        Args:
+            address: The address to write to.
+            value: The data value(s) to write.
+            size: The size (in bytes) of each beat. Defaults to None (width of
+                the data bus).
+            burst: The burst type, either ``FIXED``, ``INCR`` or ``WRAP``.
+                Defaults to ``INCR``.
+            byte_enable: Which bytes in value to actually write. Default is to
+                write all bytes.
+            address_latency: Delay before setting the address (in clock
+                cycles). Default is no delay.
+            data_latency: Delay before setting the data value (in clock
+                cycles).
+                Default is no delay.
+            sync: Wait for rising edge on clock initially.
+                Defaults to True.
+
+        Raises:
+            ValueError: If any of the input parameters is invalid.
+            AXIProtocolError: If write response from AXI is not ``OKAY``.
+        """
+
+        if not isinstance(value, collections.abc.Sequence):
+            value = (value,)    # If value is not a sequence, make it
+
+        if not isinstance(byte_enable, collections.abc.Sequence):
+            byte_enable = (byte_enable,)    # Same for byte_enable
+
+        if size is None:
+            size = len(self.bus.WDATA) // 8
+        else:
+            AXI4Master._check_size(size, len(self.bus.WDATA) // 8)
+
+        AXI4Master._check_length(len(value), burst)
+        AXI4Master._check_4kB_boundary_crossing(address, burst, size,
+                                                len(value))
+
+        if sync:
             await RisingEdge(self.clock)
 
-        self.bus.WDATA <= data
-        self.bus.WVALID <= 1
-        self.bus.WSTRB <= byte_enable
+        write_address = self._send_write_address(address, len(value), burst,
+                                                 size, address_latency)
+
+        write_data = self._send_write_data(value, data_latency, byte_enable)
+
+        await Combine(cocotb.fork(write_address), cocotb.fork(write_data))
+
+        # Wait for the response
+        while True:
+            await ReadOnly()
+            if self.bus.BVALID.value and self.bus.BREADY.value:
+                result = AXIxRESP(self.bus.BRESP.value.integer)
+                break
+            await RisingEdge(self.clock)
+
+        await RisingEdge(self.clock)
+
+        if result is not AXIxRESP.OKAY:
+            err_msg = "Write to address {0:#x}"
+            if len(value) != 1:
+                err_msg += " ({1} beats, {2} burst)"
+            err_msg += " failed with BRESP: {3} ({4})"
+
+            raise AXIProtocolError(
+                err_msg.format(address, len(value), burst.name, result.value,
+                               result.name))
+
+    @cocotb.coroutine
+    async def read(self, address, length=1, *, size=None, burst=AXIBurst.INCR,
+                   sync=True):
+        """Read from an address.
+
+        Args:
+            address: The address to read from.
+            length: Number of words to transfer. Defaults to 1.
+            size: The size (in bytes) of each beat. Defaults to None (width of
+                the data bus).
+            burst: The burst type, either ``FIXED``, ``INCR`` or ``WRAP``.
+                Defaults to ``INCR``.
+            sync: Wait for rising edge on clock initially. Defaults to True.
+
+        Returns:
+            The read data values.
+
+        Raises:
+            ValueError: If any of the input parameters is invalid.
+            AXIProtocolError: If read response from AXI is not ``OKAY``.
+        """
+
+        if size is None:
+            size = len(self.bus.RDATA) // 8
+        else:
+            AXI4Master._check_size(size, len(self.bus.RDATA) // 8)
+
+        AXI4Master._check_length(length, burst)
+        AXI4Master._check_4kB_boundary_crossing(address, burst, size, length)
+
+        if sync:
+            await RisingEdge(self.clock)
+
+        self.bus.ARADDR <= address
+        self.bus.ARVALID <= 1
+
+        if hasattr(self.bus, "ARLEN"):
+            self.bus.ARLEN <= length - 1
+
+        if hasattr(self.bus, "ARSIZE"):
+            self.bus.ARSIZE <= size.bit_length() - 1
+
+        if hasattr(self.bus, "ARBURST"):
+            self.bus.ARBURST <= burst.value
 
         while True:
             await ReadOnly()
-            if self.bus.WREADY.value:
+            if self.bus.ARREADY.value:
                 break
             await RisingEdge(self.clock)
+
         await RisingEdge(self.clock)
-        self.bus.WVALID <= 0
-        self.write_data_busy.release()
+        self.bus.ARVALID <= 0
+
+        data = []
+        rresp = []
+
+        while True:
+            while True:
+                await ReadOnly()
+                if self.bus.RVALID.value and self.bus.RREADY.value:
+                    data.append(self.bus.RDATA.value)
+                    rresp.append(AXIxRESP(self.bus.RRESP.value.integer))
+                    break
+                await RisingEdge(self.clock)
+
+            if not hasattr(self.bus, "RLAST") or self.bus.RLAST.value:
+                break
+
+            await RisingEdge(self.clock)
+
+        for beat_number, beat_result in enumerate(rresp):
+            if beat_result is not AXIxRESP.OKAY:
+                err_msg = "Read on address {0:#x}"
+                if length != 1:
+                    err_msg += " (beat {1} of {2}, {3} burst)"
+                err_msg += " failed with RRESP: {4} ({5})"
+
+                err_msg = err_msg.format(
+                    address, beat_number + 1, length, burst,
+                    beat_result.value, beat_result.name)
+
+                raise AXIProtocolError(err_msg)
+
+        return data
+
+    def __len__(self):
+        return 2**len(self.bus.ARADDR)
+
+
+class AXI4LiteMaster(AXI4Master):
+    """AXI4-Lite Master"""
+
+    _signals = ["AWVALID", "AWADDR", "AWREADY",        # Write address channel
+                "WVALID", "WREADY", "WDATA", "WSTRB",  # Write data channel
+                "BVALID", "BREADY", "BRESP",           # Write response channel
+                "ARVALID", "ARADDR", "ARREADY",        # Read address channel
+                "RVALID", "RREADY", "RRESP", "RDATA"]  # Read data channel
+
+    _optional_signals = []
 
     @cocotb.coroutine
     async def write(
@@ -114,50 +389,32 @@ class AXI4LiteMaster(BusDriver):
         Args:
             address: The address to write to.
             value: The data value to write.
-            byte_enable: Which bytes in value to actually write.
-                Default is to write all bytes.
-            address_latency: Delay before setting the address (in clock cycles).
-                Default is no delay.
-            data_latency: Delay before setting the data value (in clock cycles).
-                Default is no delay.
-            sync: Wait for rising edge on clock initially.
-                Defaults to True.
+            byte_enable: Which bytes in value to actually write. Default is to
+                write all bytes.
+            address_latency: Delay before setting the address (in clock
+                cycles). Default is no delay.
+            data_latency: Delay before setting the data value (in clock
+                cycles). Default is no delay.
+            sync: Wait for rising edge on clock initially. Defaults to True.
 
-        Returns:
-            The write response value.
+            Returns:
+                The write response value.
 
-        Raises:
-            AXIProtocolError: If write response from AXI is not ``OKAY``.
+            Raises:
+                ValueError: If any of the input parameters is invalid.
+                AXIProtocolError: If write response from AXI is not ``OKAY``.
         """
-        if sync:
-            await RisingEdge(self.clock)
 
-        c_addr = cocotb.fork(self._send_write_address(address,
-                                                      delay=address_latency))
-        c_data = cocotb.fork(self._send_write_data(value,
-                                                   byte_enable=byte_enable,
-                                                   delay=data_latency))
+        if isinstance(value, collections.abc.Sequence):
+            raise ValueError("AXI4-Lite does not support burst transfers")
 
-        if c_addr:
-            await c_addr.join()
-        if c_data:
-            await c_data.join()
+        await super().write(
+            address=address, value=value, size=None, burst=AXIBurst.INCR,
+            byte_enable=byte_enable, address_latency=address_latency,
+            data_latency=data_latency, sync=sync)
 
-        # Wait for the response
-        while True:
-            await ReadOnly()
-            if self.bus.BVALID.value and self.bus.BREADY.value:
-                result = self.bus.BRESP.value
-                break
-            await RisingEdge(self.clock)
-
-        await RisingEdge(self.clock)
-
-        if int(result):
-            raise AXIProtocolError("Write to address 0x%08x failed with BRESP: %d"
-                                   % (address, int(result)))
-
-        return result
+        # Needed for backwards compatibility
+        return BinaryValue(value=AXIxRESP.OKAY.value, n_bits=2)
 
     @cocotb.coroutine
     async def read(self, address: int, sync: bool = True) -> BinaryValue:
@@ -165,8 +422,8 @@ class AXI4LiteMaster(BusDriver):
 
         Args:
             address: The address to read from.
-            sync: Wait for rising edge on clock initially.
-                Defaults to True.
+            length: Number of words to transfer
+            sync: Wait for rising edge on clock initially. Defaults to True.
 
         Returns:
             The read data value.
@@ -174,37 +431,10 @@ class AXI4LiteMaster(BusDriver):
         Raises:
             AXIProtocolError: If read response from AXI is not ``OKAY``.
         """
-        if sync:
-            await RisingEdge(self.clock)
 
-        self.bus.ARADDR <= address
-        self.bus.ARVALID <= 1
-
-        while True:
-            await ReadOnly()
-            if self.bus.ARREADY.value:
-                break
-            await RisingEdge(self.clock)
-
-        await RisingEdge(self.clock)
-        self.bus.ARVALID <= 0
-
-        while True:
-            await ReadOnly()
-            if self.bus.RVALID.value and self.bus.RREADY.value:
-                data = self.bus.RDATA.value
-                result = self.bus.RRESP.value
-                break
-            await RisingEdge(self.clock)
-
-        if int(result):
-            raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d" %
-                                   (address, int(result)))
-
-        return data
-
-    def __len__(self):
-        return 2**len(self.bus.ARADDR)
+        ret = await super().read(address=address, length=1, size=None,
+                                 burst=AXIBurst.INCR, sync=sync)
+        return ret[0]
 
 
 class AXI4Slave(BusDriver):
