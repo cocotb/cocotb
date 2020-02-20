@@ -128,26 +128,14 @@ namespace {
         return type;
     }
 
+    // these will be initialized later, once the members are all defined
     template<>
-    PyTypeObject gpi_hdl_Object<gpi_sim_hdl>::py_type = []() -> PyTypeObject {
-        auto type = fill_common_slots<gpi_sim_hdl>();
-        type.tp_name = "gpi_sim_hdl";
-        return type;
-    }();
+    PyTypeObject gpi_hdl_Object<gpi_sim_hdl>::py_type;
+    template<>
+    PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type;
+    template<>
+    PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type;
 
-    template<>
-    PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type = []() -> PyTypeObject {
-        auto type = fill_common_slots<gpi_iterator_hdl>();
-        type.tp_name = "gpi_iterator_hdl";
-        return type;
-    }();
-
-    template<>
-    PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
-        auto type = fill_common_slots<gpi_cb_hdl>();
-        type.tp_name = "gpi_cb_hdl";
-        return type;
-    }();
 
     // get the python type corresponding to the static type of a PyObject pointer
     template<typename gpi_hdl_Object_ptr>
@@ -632,18 +620,9 @@ static PyObject *iterate(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *next(PyObject *self, PyObject *args)
+static PyObject *next(gpi_hdl_Object<gpi_iterator_hdl> *self)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_iterator_hdl>* hdl_obj;
-    gpi_sim_hdl result;
-    PyObject *res;
-
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_next(hdl_obj->hdl);
+    gpi_sim_hdl result = gpi_next(self->hdl);
 
     // Raise StopIteration when we're done
     if (!result) {
@@ -651,9 +630,7 @@ static PyObject *next(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    res = gpi_hdl_New(result);
-
-    return res;
+    return gpi_hdl_New(result);
 }
 
 
@@ -1150,3 +1127,28 @@ PyMODINIT_FUNC PyInit_simulator(void)
     add_module_constants(simulator);
     return simulator;
 }
+
+
+// putting these at the bottom means that all the functions above are accessible
+template<>
+PyTypeObject gpi_hdl_Object<gpi_sim_hdl>::py_type = []() -> PyTypeObject {
+    auto type = fill_common_slots<gpi_sim_hdl>();
+    type.tp_name = "gpi_sim_hdl";
+    return type;
+}();
+
+template<>
+PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type = []() -> PyTypeObject {
+    auto type = fill_common_slots<gpi_iterator_hdl>();
+    type.tp_name = "gpi_iterator_hdl";
+    type.tp_iter = PyObject_SelfIter;
+    type.tp_iternext = (iternextfunc)next;
+    return type;
+}();
+
+template<>
+PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
+    auto type = fill_common_slots<gpi_cb_hdl>();
+    type.tp_name = "gpi_cb_hdl";
+    return type;
+}();
