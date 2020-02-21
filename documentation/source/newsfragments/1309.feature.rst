@@ -1,0 +1,1 @@
+The colored output can now be disabled by the :envvar:`NO_COLOR` environment variable.
