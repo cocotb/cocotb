@@ -37,7 +37,15 @@ typedef signed __int8 int8_t;
 #elif defined(__MINGW32__)
 #include <stdint.h>
 #elif defined(__linux)
+/* If included first, the <inttypes.h> header causes the <cinttypes> header to
+ * behave incorrectly on RHEL6, failing to define the formatting macros.
+ * We need to ensure other cpp files which include both this file and
+ * <cinttypes> get the macros they expect. See [gh-1422] */
+#ifdef __cplusplus
+#include <cinttypes>
+#else
 #include <inttypes.h>
+#endif
 #else
 #include <sys/types.h>
 #endif
