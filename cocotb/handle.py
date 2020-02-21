@@ -195,13 +195,7 @@ class RegionObject(SimHandleBase):
         if self._discovered:
             return
         self._log.debug("Discovering all on %s", self._name)
-        iterator = simulator.iterate(self._handle, simulator.OBJECTS)
-        while True:
-            try:
-                thing = simulator.next(iterator)
-            except StopIteration:
-                # Iterator is cleaned up internally in GPI
-                break
+        for thing in _SimIterator(self._handle, simulator.OBJECTS):
             name = simulator.get_name_string(thing)
             try:
                 hdl = SimHandle(thing, self._child_path(name))
