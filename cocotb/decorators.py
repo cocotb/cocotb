@@ -31,7 +31,6 @@ import time
 import logging
 import functools
 import inspect
-import textwrap
 import os
 
 import cocotb
@@ -39,7 +38,6 @@ from cocotb.log import SimLog
 from cocotb.result import ReturnValue
 from cocotb.utils import get_sim_time, lazy_property, remove_traceback_frames
 from cocotb import outcomes
-from cocotb import _py_compat
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
@@ -189,20 +187,16 @@ class RunningTask(object):
             otherwise return true"""
         return not self._finished
 
-    # Once 2.7 is dropped, this can be run unconditionally
-    if sys.version_info >= (3, 3):
-        _py_compat.exec_(textwrap.dedent("""
-        def __await__(self):
-            # It's tempting to use `return (yield from self._coro)` here,
-            # which bypasses the scheduler. Unfortunately, this means that
-            # we can't keep track of the result or state of the coroutine,
-            # things which we expose in our public API. If you want the
-            # efficiency of bypassing the scheduler, remove the `@coroutine`
-            # decorator from your `async` functions.
+    def __await__(self):
+        # It's tempting to use `return (yield from self._coro)` here,
+        # which bypasses the scheduler. Unfortunately, this means that
+        # we can't keep track of the result or state of the coroutine,
+        # things which we expose in our public API. If you want the
+        # efficiency of bypassing the scheduler, remove the `@coroutine`
+        # decorator from your `async` functions.
 
-            # Hand the coroutine back to the scheduler trampoline.
-            return (yield self)
-        """))
+        # Hand the coroutine back to the scheduler trampoline.
+        return (yield self)
 
     __bool__ = __nonzero__
 
@@ -400,7 +394,7 @@ class _decorator_helper(type):
 
 
 @public
-class hook(_py_compat.with_metaclass(_decorator_helper, coroutine)):
+class hook(coroutine, metaclass=_decorator_helper):
     """Decorator to mark a function as a hook for cocotb.
 
     Used as ``@cocotb.hook()``.
@@ -414,7 +408,7 @@ class hook(_py_compat.with_metaclass(_decorator_helper, coroutine)):
 
 
 @public
-class test(_py_compat.with_metaclass(_decorator_helper, coroutine)):
+class test(coroutine, metaclass=_decorator_helper):
     """Decorator to mark a function as a test.
 
     All tests are coroutines.  The test decorator provides

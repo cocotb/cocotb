@@ -6,7 +6,6 @@ or `asyncio.Future`, but without being tied to a particular task model.
 """
 import abc
 
-from cocotb import _py_compat
 from cocotb.utils import remove_traceback_frames
 
 
@@ -19,7 +18,7 @@ def capture(fn, *args, **kwargs):
         return Error(e)
 
 
-class Outcome(_py_compat.abc_ABC):
+class Outcome(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def send(self, gen):
         """ Send or throw this outcome into a generator """

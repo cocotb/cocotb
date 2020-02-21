@@ -31,11 +31,7 @@
 
 import ctypes
 import warnings
-import sys
-if sys.version_info.major < 3:
-    import collections as collections_abc
-else:
-    import collections.abc as collections_abc
+import collections.abc
 
 import os
 
@@ -48,7 +44,6 @@ import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
-from cocotb import _py_compat
 
 # Only issue a warning for each deprecated attribute access
 _deprecation_warned = {}
@@ -545,7 +540,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         return result
 
 
-class _SimIterator(collections_abc.Iterator):
+class _SimIterator(collections.abc.Iterator):
     """Iterator over simulator objects. For internal use only."""
 
     def __init__(self, handle, mode):
@@ -553,10 +548,6 @@ class _SimIterator(collections_abc.Iterator):
 
     def __next__(self):
         return simulator.next(self._iter)
-
-    if sys.version_info.major < 3:
-        next = __next__
-
 
 
 class NonConstantObject(NonHierarchyIndexableObject):
@@ -623,12 +614,12 @@ class ModifiableObject(NonConstantObject):
         """
         value, set_action = self._check_for_set_action(value)
 
-        if isinstance(value, _py_compat.integer_types) and value < 0x7fffffff and len(self) <= 32:
+        if isinstance(value, int) and value < 0x7fffffff and len(self) <= 32:
             simulator.set_signal_val_long(self._handle, set_action, value)
             return
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
-        elif isinstance(value, _py_compat.integer_types):
+        elif isinstance(value, int):
             value = BinaryValue(value=value, n_bits=len(self), bigEndian=False)
         elif isinstance(value, dict):
             # We're given a dictionary with a list of values and a bit size...
@@ -734,7 +725,7 @@ class EnumObject(ModifiableObject):
 
         if isinstance(value, BinaryValue):
             value = int(value)
-        elif not isinstance(value, _py_compat.integer_types):
+        elif not isinstance(value, int):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
@@ -765,7 +756,7 @@ class IntegerObject(ModifiableObject):
 
         if isinstance(value, BinaryValue):
             value = int(value)
-        elif not isinstance(value, _py_compat.integer_types):
+        elif not isinstance(value, int):
             self._log.critical("Unsupported type for integer value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 

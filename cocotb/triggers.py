@@ -28,8 +28,6 @@
 """A collections of triggers which a testbench can yield."""
 
 import os
-import sys
-import textwrap
 import abc
 
 if "COCOTB_SIM" in os.environ:
@@ -45,7 +43,6 @@ from cocotb.utils import (
 )
 from cocotb import decorators
 from cocotb import outcomes
-from cocotb import _py_compat
 import cocotb
 
 
@@ -63,7 +60,7 @@ def _pointer_str(obj):
 class TriggerException(Exception):
     pass
 
-class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
+class Trigger(metaclass=abc.ABCMeta):
     """Base class to derive from."""
 
     # __dict__ is needed here for the `.log` lazy_property below to work.
@@ -126,13 +123,9 @@ class Trigger(_py_compat.with_metaclass(abc.ABCMeta)):
         """
         return outcomes.Value(self)
 
-    # Once Python 2.7 support is dropped, this can be run unconditionally
-    if sys.version_info >= (3, 3):
-        _py_compat.exec_(textwrap.dedent("""
-        def __await__(self):
-            # hand the trigger back to the scheduler trampoline
-            return (yield self)
-        """))
+    def __await__(self):
+        # hand the trigger back to the scheduler trampoline
+        return (yield self)
 
 
 class PythonTrigger(Trigger):
@@ -232,7 +225,7 @@ class _ParameterizedSingletonAndABC(ParametrizedSingleton, abc.ABCMeta):
     pass
 
 
-class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     """Fires when the current simulation timestep moves to the read-only phase.
 
     The read-only phase is entered when the current timestep no longer has any further delta steps.
@@ -260,7 +253,7 @@ class ReadOnly(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigg
         return "{}()".format(type(self).__name__)
 
 
-class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     """Fires when the read-write portion of the sim cycles is reached."""
     __slots__ = ()
 
@@ -284,7 +277,7 @@ class ReadWrite(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrig
         return "{}()".format(type(self).__name__)
 
 
-class NextTimeStep(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     """Fires when the next time step is started."""
     __slots__ = ()
 
@@ -306,7 +299,7 @@ class NextTimeStep(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPIT
         return "{}()".format(type(self).__name__)
 
 
-class _EdgeBase(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, GPITrigger)):
+class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
     """Internal base class that fires on a given edge of a signal."""
     __slots__ = ('signal',)
 
@@ -555,7 +548,7 @@ class NullTrigger(Trigger):
         return fmt.format(type(self).__name__, self.name, _pointer_str(self))
 
 
-class Join(_py_compat.with_metaclass(_ParameterizedSingletonAndABC, PythonTrigger)):
+class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
     r"""Fires when a :func:`~cocotb.fork`\ ed coroutine completes.
 
     The result of blocking on the trigger can be used to get the coroutine
@@ -650,9 +643,8 @@ class Waitable(object):
         raise NotImplementedError
         yield
 
-    if sys.version_info >= (3, 3):
-        def __await__(self):
-            return self._wait().__await__()
+    def __await__(self):
+        return self._wait().__await__()
 
 
 class _AggregateWaitable(Waitable):
