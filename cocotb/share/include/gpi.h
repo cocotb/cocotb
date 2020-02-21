@@ -59,12 +59,6 @@ we have to create a process with the signal on the sensitivity list to imitate a
 
 #include <gpi_logging.h>
 
-#if defined(__MINGW32__) || defined (__CYGWIN32__)
-#  define DLLEXPORT __declspec(dllexport)
-#else
-#  define DLLEXPORT
-#endif
-
 #ifdef __cplusplus
 # define EXTERN_C_START extern "C" {
 # define EXTERN_C_END }
