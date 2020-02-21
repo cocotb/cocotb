@@ -54,7 +54,6 @@ from cocotb.result import (
 from cocotb.utils import get_sim_time
 
 from cocotb.binary import BinaryValue
-from cocotb import _py_compat
 
 
 @contextlib.contextmanager
@@ -909,24 +908,19 @@ def test_tests_are_tests(dut):
     assert isinstance(test_tests_are_tests, cocotb.test)
 
 
-if sys.version_info[:2] >= (3, 3):
-    # this would be a syntax error in older python, so we do the whole
-    # thing inside exec
-    _py_compat.exec_(textwrap.dedent('''
-    @cocotb.test()
-    def test_coroutine_return(dut):
-        """ Test that the Python 3.3 syntax for returning from generators works """
-        @cocotb.coroutine
-        def return_it(x):
-            return x
+@cocotb.test()
+def test_coroutine_return(dut):
+    """ Test that the Python 3.3 syntax for returning from generators works """
+    @cocotb.coroutine
+    def return_it(x):
+        return x
 
-            # this makes `return_it` a coroutine
-            yield
+        # this makes `return_it` a coroutine
+        yield
 
-        ret = yield return_it(42)
-        if ret != 42:
-            raise TestFailure("Return statement did not work")
-    '''))
+    ret = yield return_it(42)
+    if ret != 42:
+        raise TestFailure("Return statement did not work")
 
 
 @cocotb.coroutine
@@ -1322,5 +1316,4 @@ def test_bad_attr(dut):
         assert False, "Expected AttributeError"
 
 
-if sys.version_info[:2] >= (3, 5):
-    from test_cocotb_35 import *
+from test_cocotb_35 import *

@@ -62,7 +62,6 @@ from cocotb.log import SimLog
 from cocotb.result import TestSuccess, SimFailure
 from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
-from cocotb import _py_compat
 
 
 def _my_import(name):
@@ -166,7 +165,7 @@ class RegressionManager(object):
                     except AttributeError:
                         self.log.error("Requested test %s wasn't found in module %s", test, module_name)
                         err = AttributeError("Test %s doesn't exist in %s" % (test, module_name))
-                        _py_compat.raise_from(err, None)  # discard nested traceback
+                        raise err from None  # discard nested traceback
 
                     if not hasattr(_test, "im_test"):
                         self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",

@@ -28,89 +28,7 @@ Backports and compatibility shims for newer python features.
 These are for internal use - users should use a third party library like `six`
 if they want to use these shims in their own code
 """
-import abc
 import sys
-
-# This is six.integer_types
-if sys.version_info.major >= 3:
-    integer_types = (int,)
-else:
-    integer_types = (int, long)  # noqa
-
-
-# This is essentially six.exec_
-if sys.version_info.major == 3:
-    # this has to not be a syntax error in py2
-    import builtins
-    exec_ = getattr(builtins, 'exec')
-else:
-    # this has to not be a syntax error in py3
-    def exec_(_code_, _globs_=None, _locs_=None):
-        """Execute code in a namespace."""
-        if _globs_ is None:
-            frame = sys._getframe(1)
-            _globs_ = frame.f_globals
-            if _locs_ is None:
-                _locs_ = frame.f_locals
-            del frame
-        elif _locs_ is None:
-            _locs_ = _globs_
-        exec("""exec _code_ in _globs_, _locs_""")
-
-
-# this is six.with_metaclass, with a clearer docstring
-def with_metaclass(meta, *bases):
-    """This provides:
-
-    .. code-block:: python
-
-        class Foo(with_metaclass(Meta, Base1, Base2)): pass
-
-    which is a unifying syntax for:
-
-    .. code-block:: python
-
-        # Python 3
-        class Foo(Base1, Base2, metaclass=Meta): pass
-
-        # Python 2
-        class Foo(Base1, Base2):
-            __metaclass__ = Meta
-    """
-    # This requires a bit of explanation: the basic idea is to make a dummy
-    # metaclass for one level of class instantiation that replaces itself with
-    # the actual metaclass.
-    class metaclass(type):
-
-        def __new__(cls, name, this_bases, d):
-            return meta(name, bases, d)
-
-        @classmethod
-        def __prepare__(cls, name, this_bases):
-            return meta.__prepare__(name, bases)
-    return type.__new__(metaclass, 'temporary_class', (), {})
-
-
-# this is six.raise_from
-if sys.version_info[:2] == (3, 2):
-    exec_("""def raise_from(value, from_value):
-    try:
-        if from_value is None:
-            raise value
-        raise value from from_value
-    finally:
-        value = None
-    """)
-elif sys.version_info[:2] > (3, 2):
-    exec_("""def raise_from(value, from_value):
-    try:
-        raise value from from_value
-    finally:
-        value = None
-    """)
-else:
-    def raise_from(value, from_value):
-        raise value
 
 
 # backport of Python 3.7's contextlib.nullcontext
@@ -133,15 +51,11 @@ class nullcontext(object):
     def __exit__(self, *excinfo):
         pass
 
-
-# https://stackoverflow.com/a/38668373
-# Backport of abc.ABC, compatible with Python 2 and 3
-abc_ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
-
-
-# source TimeoutError introduced in Python 3.3 to be used by timeout functions
-if sys.version_info < (3, 3):
-    class TimeoutError(OSError):
-        pass
+# On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
+# Since `OrderedDict` is a little slower that `dict`, we prefer the latter
+# when possible.
+if sys.version_info[:2] >= (3, 7):
+    insertion_ordered_dict = dict
 else:
-    TimeoutError = TimeoutError
+    import collections
+    insertion_ordered_dict = collections.OrderedDict

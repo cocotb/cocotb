@@ -49,8 +49,7 @@ def get_python_integer_types():
     warnings.warn(
         "This is an internal cocotb function, use six.integer_types instead",
         DeprecationWarning)
-    from cocotb import _py_compat
-    return _py_compat.integer_types
+    return (int,)
 
 
 # Simulator helper functions
