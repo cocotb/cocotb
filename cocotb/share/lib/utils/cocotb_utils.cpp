@@ -40,7 +40,7 @@
 // Tracks if we are in the context of Python or Simulator
 int is_python_context = 0;
 
-void to_python(void) {
+extern "C" void to_python(void) {
     if (is_python_context) {
         fprintf(stderr, "FATAL: We are calling up again\n");
         exit(1);
@@ -49,7 +49,7 @@ void to_python(void) {
     //fprintf(stderr, "INFO: Calling up to python %d\n", is_python_context);
 }
 
-void to_simulator(void) {
+extern "C" void to_simulator(void) {
     if (!is_python_context) {
         fprintf(stderr, "FATAL: We have returned twice from python\n");
         exit(1);
@@ -59,12 +59,12 @@ void to_simulator(void) {
     //fprintf(stderr, "INFO: Returning back to simulator %d\n", is_python_context);
 }
 
-void* utils_dyn_open(const char* lib_name)
+extern "C" void* utils_dyn_open(const char* lib_name)
 {
     void *ret = NULL;
 #if ! defined(__linux__) && ! defined(__APPLE__)
     SetErrorMode(0);
-    ret = LoadLibrary(lib_name);
+    ret = static_cast<void*>(LoadLibrary(lib_name));
     if (!ret) {
         printf("Unable to open lib %s", lib_name);
         LPSTR msg_ptr;
@@ -91,11 +91,11 @@ void* utils_dyn_open(const char* lib_name)
     return ret;
 }
 
-void* utils_dyn_sym(void *handle, const char* sym_name)
+extern "C" void* utils_dyn_sym(void *handle, const char* sym_name)
 {
     void *entry_point;
 #if ! defined(__linux__) && ! defined(__APPLE__)
-    entry_point = GetProcAddress(handle, sym_name);
+    entry_point = reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(handle), sym_name));
     if (!entry_point) {
         printf("Unable to find symbol %s", sym_name);
         LPSTR msg_ptr;

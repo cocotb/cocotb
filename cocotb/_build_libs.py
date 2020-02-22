@@ -183,9 +183,9 @@ def _get_common_lib_ext(include_dir, share_lib_dir, sim_define):
     libcocotbutils = Extension(
         os.path.join("cocotb", "libs", sim_define.lower(), "libcocotbutils"),
         include_dirs=[include_dir],
-        sources=[os.path.join(share_lib_dir, "utils", "cocotb_utils.c")],
+        sources=[os.path.join(share_lib_dir, "utils", "cocotb_utils.cpp")],
         extra_link_args=_extra_link_args("libcocotbutils"),
-        extra_compile_args=_extra_cc_compile_args,
+        extra_compile_args=_extra_cxx_compile_args,
     )
 
     #
