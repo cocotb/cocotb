@@ -1,0 +1,1 @@
+Cocotb must now be :ref:`installed <installation_via_pip>` before it can be used.

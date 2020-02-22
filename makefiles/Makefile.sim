@@ -27,13 +27,14 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##############################################################################
 
-# Backwards-compatibility wrapper for people using
-# "include $COCOTB/makefiles/Makefile.sim" in their Makefile.
+COCOTB_CONFIG_CMD := $(shell :; command -v cocotb-config)
+ifeq ($(COCOTB_CONFIG_CMD),)
+    $(error 'Cocotb is not installed (cocotb-config not found). \
+             Please refer to https://cocotb.readthedocs.io/en/latest/quickstart.html#installing-cocotb \
+             for installation instructions.')
+endif
 
-# COCOTB_INSTALL_METHOD should already have been set in Makefile.inc, but
-# better be safe than sorry to cover unusual ways of people using cocotb.
-COCOTB_INSTALL_METHOD = srctree
-export COCOTB_INSTALL_METHOD
-
-_NEW_SHARE_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))/../cocotb/share
-include $(_NEW_SHARE_DIR)/makefiles/Makefile.sim
+$(error 'Deprecated cocotb file structure detected. \
+         Use "include $$(shell cocotb-config --makefile)/Makefile.sim" instead. \
+         Please refer to https://cocotb.readthedocs.io/en/latest/quickstart.html#creating-a-makefile \
+         for instructions.')

@@ -29,20 +29,12 @@
 
 # Common makefile included by everything
 
-# Directory containing the cocotb Python module
-ifeq ($(COCOTB_PY_DIR),)
-export COCOTB_PY_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST)))/../../..)
-endif
+# Directory containing the cocotb Python module (realpath for Windows compatibility)
+COCOTB_PY_DIR := $(realpath $(shell cocotb-config --prefix))
 
 # Directory containing all support files required to build cocotb-based
 # simulations: Makefile fragments, and the simulator libraries.
-ifeq ($(COCOTB_SHARE_DIR),)
-export COCOTB_SHARE_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
-endif
-
-ifeq ($(COCOTB_PY_DIR),$(COCOTB_SHARE_DIR))
-$(warning 'Deprecated cocotb file structure detected. Please use "include $$(shell cocotb-config --makefile)/Makefile.inc" in Makefiles')
-endif
+COCOTB_SHARE_DIR := $(COCOTB_PY_DIR)/cocotb/share
 
 ifeq ($(USER_DIR),)
 export USER_DIR:=$(realpath $(dir $(firstword $(MAKEFILE_LIST))))
