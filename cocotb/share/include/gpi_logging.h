@@ -68,7 +68,6 @@ enum gpi_log_levels {
 
 void set_log_handler(void *handler);
 void clear_log_handler(void);
-void set_make_record(void *makerecord);
 void set_log_filter(void *filter);
 void clear_log_filter(void);
 void set_log_level(enum gpi_log_levels new_level);

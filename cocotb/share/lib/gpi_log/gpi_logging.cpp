@@ -35,29 +35,29 @@ static PyObject *pLogHandler = NULL;
 static PyObject *pLogFilter = NULL;
 static enum gpi_log_levels local_level = GPIInfo;
 
-void set_log_handler(void *handler)
+extern "C" void set_log_handler(void *handler)
 {
     pLogHandler = (PyObject *)handler;      // Note: This function steals a reference to handler.
 }
 
-void clear_log_handler(void)
+extern "C" void clear_log_handler(void)
 {
     Py_XDECREF(pLogHandler);
     pLogHandler = NULL;
 }
 
-void set_log_filter(void *filter)
+extern "C" void set_log_filter(void *filter)
 {
     pLogFilter = (PyObject *)filter;        // Note: This function steals a reference to filter.
 }
 
-void clear_log_filter(void)
+extern "C" void clear_log_filter(void)
 {
     Py_XDECREF(pLogFilter);
     pLogFilter = NULL;
 }
 
-void set_log_level(enum gpi_log_levels new_level)
+extern "C" void set_log_level(enum gpi_log_levels new_level)
 {
     local_level = new_level;
 }
@@ -185,20 +185,23 @@ static void gpi_log_v(const char *name, enum gpi_log_levels level, const char *p
         goto error;
     }
 
-    PyObject *filter_ret = PyObject_CallFunctionObjArgs(pLogFilter, logger_name_arg, level_arg, NULL);
-    if (filter_ret == NULL) {
-        goto error;
-    }
+    {
+        // check if log level is enabled
+        PyObject *filter_ret = PyObject_CallFunctionObjArgs(pLogFilter, logger_name_arg, level_arg, NULL);
+        if (filter_ret == NULL) {
+            goto error;
+        }
 
-    int is_enabled = PyObject_IsTrue(filter_ret);
-    Py_DECREF(filter_ret);
-    if (is_enabled < 0) {
-        /* A python exception occured while converting `filter_ret` to bool */
-        goto error;
-    }
+        int is_enabled = PyObject_IsTrue(filter_ret);
+        Py_DECREF(filter_ret);
+        if (is_enabled < 0) {
+            /* A python exception occured while converting `filter_ret` to bool */
+            goto error;
+        }
 
-    if (!is_enabled) {
-        goto ok;
+        if (!is_enabled) {
+            goto ok;
+        }
     }
 
     // Ignore truncation
@@ -229,12 +232,14 @@ static void gpi_log_v(const char *name, enum gpi_log_levels level, const char *p
         goto error;
     }
 
-    // Log function args are logger_name, level, filename, lineno, msg, function
-    PyObject *handler_ret = PyObject_CallFunctionObjArgs(pLogHandler, logger_name_arg, level_arg, filename_arg, lineno_arg, msg_arg, function_arg, NULL);
-    if (handler_ret == NULL) {
-        goto error;
+    {
+        // Log function args are logger_name, level, filename, lineno, msg, function
+        PyObject *handler_ret = PyObject_CallFunctionObjArgs(pLogHandler, logger_name_arg, level_arg, filename_arg, lineno_arg, msg_arg, function_arg, NULL);
+        if (handler_ret == NULL) {
+            goto error;
+        }
+        Py_DECREF(handler_ret);
     }
-    Py_DECREF(handler_ret);
 
     goto ok;
 error:
@@ -252,7 +257,7 @@ ok:
     PyGILState_Release(gstate);
 }
 
-void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
+extern "C" void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...)
 {
     va_list argp;
     va_start(argp, msg);
