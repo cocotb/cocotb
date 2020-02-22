@@ -496,12 +496,12 @@ class Scheduler(object):
                 coro._outcome.get()
             except (TestComplete, AssertionError) as e:
                 coro.log.info("Test stopped by this forked coroutine")
-                outcome = outcomes.Error(remove_traceback_frames(e, ['unschedule', 'get']))
-                self._test._force_outcome(outcome)
+                e = remove_traceback_frames(e, ['unschedule', 'get'])
+                self._test.abort(e)
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
-                outcome = outcomes.Error(remove_traceback_frames(e, ['unschedule', 'get']))
-                self._test._force_outcome(outcome)
+                e = remove_traceback_frames(e, ['unschedule', 'get'])
+                self._test.abort(e)
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:
