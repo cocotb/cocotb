@@ -36,7 +36,6 @@ else:
     simulator = None
 
 from cocotb.log import SimLog
-from cocotb.result import ReturnValue
 from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,
     lazy_property, remove_traceback_frames,
@@ -557,7 +556,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
         @cocotb.coroutine()
         def coro_inner():
             yield Timer(1, units='ns')
-            raise ReturnValue("Hello world")
+            return "Hello world"
 
         task = cocotb.fork(coro_inner())
         result = yield Join(task)
@@ -713,7 +712,7 @@ class Combine(_AggregateWaitable):
 
         # wait for the last waiter to complete
         yield e.wait()
-        raise ReturnValue(self)
+        return self
 
 
 class First(_AggregateWaitable):
@@ -763,15 +762,10 @@ class First(_AggregateWaitable):
         # These lines are the way they are to make tracebacks readable:
         #  - The comment helps the user understand why they are seeing the
         #    traceback, even if it is obvious top cocotb maintainers.
-        #  - Raising ReturnValue on a separate line avoids confusion about what
-        #    is actually raising the error, because seeing
-        #    `raise Exception(foo())` in a traceback when in fact `foo()` itself
-        #    raises is confusing. We can recombine once we drop python 2 support
         #  - Using `NullTrigger` here instead of `result = completed[0].get()`
         #    means we avoid inserting an `outcome.get` frame in the traceback
         first_trigger = NullTrigger(outcome=completed[0])
-        result = yield first_trigger  # the first of multiple triggers that fired
-        raise ReturnValue(result)
+        return (yield first_trigger)  # the first of multiple triggers that fired
 
 
 class ClockCycles(Waitable):
@@ -796,7 +790,7 @@ class ClockCycles(Waitable):
         trigger = self._type(self.signal)
         for _ in range(self.num_cycles):
             yield trigger
-        raise ReturnValue(self)
+        return self
 
     def __repr__(self):
         # no _pointer_str here, since this is not a trigger, so identity
@@ -842,4 +836,4 @@ def with_timeout(trigger, timeout_time, timeout_unit=None):
     if res is timeout_timer:
         raise cocotb.result.SimTimeoutError
     else:
-        raise ReturnValue(res)
+        return res

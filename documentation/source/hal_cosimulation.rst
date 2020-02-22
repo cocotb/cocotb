@@ -131,7 +131,7 @@ These are then passed to the `IO Module`_:
         master.log.debug("External source: reading address 0x%08X" % address)
         value = yield master.read(address)
         master.log.debug("Reading complete: got value 0x%08x" % value)
-        raise ReturnValue(value)
+        return value
 
     @cocotb.function
     def write(address, value):

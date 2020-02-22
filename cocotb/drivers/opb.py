@@ -33,7 +33,6 @@ NOTE: Currently we only support a very small subset of functionality.
 import cocotb
 from cocotb.triggers import RisingEdge, ReadOnly, Event
 from cocotb.drivers import BusDriver
-from cocotb.result import ReturnValue
 
 
 class OPBException(Exception):
@@ -108,7 +107,7 @@ class OPBMaster(BusDriver):
         self.bus.select <= 0
         self._release_lock()
         self.log.info("Read of address 0x%x returned 0x%08x" % (address, data))
-        raise ReturnValue(data)
+        return data
 
     @cocotb.coroutine
     def write(self, address, value, sync=True):

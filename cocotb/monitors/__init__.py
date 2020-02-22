@@ -39,7 +39,6 @@ import cocotb
 from cocotb.bus import Bus
 from cocotb.decorators import coroutine
 from cocotb.log import SimLog
-from cocotb.result import ReturnValue
 from cocotb.triggers import Event, Timer
 
 
@@ -129,12 +128,11 @@ class Monitor(object):
             t = Timer(timeout)
             fired = yield [self._wait_event.wait(), t]
             if fired is t:
-                raise ReturnValue(None)
+                return None
         else:
             yield self._wait_event.wait()
 
-        pkt = self._wait_event.data
-        raise ReturnValue(pkt)
+        return self._wait_event.data
 
     @coroutine
     def _monitor_recv(self):

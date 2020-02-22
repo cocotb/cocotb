@@ -60,7 +60,7 @@ import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
-from cocotb.result import TestComplete, ReturnValue
+from cocotb.result import TestComplete
 from cocotb.utils import remove_traceback_frames
 from cocotb import _py_compat
 
@@ -627,8 +627,7 @@ class Scheduler(object):
 
             yield waiter.event.wait()
 
-            ret = waiter.result  # raises if there was an exception
-            raise ReturnValue(ret)
+            return waiter.result  # raises if there was an exception
 
         return wrapper()
 

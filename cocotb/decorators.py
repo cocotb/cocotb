@@ -146,8 +146,7 @@ class RunningTask(object):
             self._outcome = outcomes.Value(e.retval)
             raise CoroutineComplete()
         except StopIteration as e:
-            retval = getattr(e, 'value', None)  # for python >=3.3
-            self._outcome = outcomes.Value(retval)
+            self._outcome = outcomes.Value(e.value)
             raise CoroutineComplete()
         except BaseException as e:
             self._outcome = outcomes.Error(remove_traceback_frames(e, ['_advance', 'send']))
@@ -475,7 +474,7 @@ class test(coroutine, metaclass=_decorator_helper):
                     running_co.kill()
                     raise
                 else:
-                    raise ReturnValue(res)
+                    return res
 
         super(test, self).__init__(f)
 
