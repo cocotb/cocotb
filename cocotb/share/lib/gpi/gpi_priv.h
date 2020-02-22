@@ -225,16 +225,6 @@ protected:
     GpiSignalObjHdl *m_signal;
 };
 
-/* We would then have */
-class GpiClockHdl {
-public:
-    GpiClockHdl(GpiObjHdl *clk) { COCOTB_UNUSED(clk); }
-    GpiClockHdl(const char *clk) { COCOTB_UNUSED(clk); }
-    ~GpiClockHdl() { }
-    int start_clock(const int period_ps) { COCOTB_UNUSED(period_ps); return 0; } ; /* Do things with the GpiSignalObjHdl */
-    int stop_clock() { return 0; }
-};
-
 class GpiIterator : public GpiHdl {
 public:
     enum Status {

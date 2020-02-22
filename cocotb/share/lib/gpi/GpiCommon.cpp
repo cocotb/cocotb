@@ -617,21 +617,6 @@ gpi_sim_hdl gpi_register_readwrite_callback(int (*gpi_function)(const void *),
     return (gpi_sim_hdl)gpi_hdl;
 }
 
-gpi_sim_hdl gpi_create_clock(gpi_sim_hdl clk_signal, const int period)
-{
-    GpiObjHdl *clk_hdl = sim_to_hdl<GpiObjHdl*>(clk_signal);
-    GpiClockHdl *clock = new GpiClockHdl(clk_hdl);
-    clock->start_clock(period);
-    return (gpi_sim_hdl)clock;
-}
-
-void gpi_stop_clock(gpi_sim_hdl clk_object)
-{
-    GpiClockHdl *clock = sim_to_hdl<GpiClockHdl*>(clk_object);
-    clock->stop_clock();
-    delete(clock);
-}
-
 void gpi_deregister_callback(gpi_sim_hdl hdl)
 {
     GpiCbHdl *cb_hdl = sim_to_hdl<GpiCbHdl*>(hdl);
