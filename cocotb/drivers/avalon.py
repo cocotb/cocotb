@@ -40,7 +40,7 @@ from cocotb.triggers import RisingEdge, FallingEdge, ReadOnly, NextTimeStep, Eve
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
-from cocotb.result import ReturnValue, TestError
+from cocotb.result import TestError
 
 
 class AvalonMM(BusDriver):
@@ -180,7 +180,7 @@ class AvalonMaster(AvalonMM):
         data = self.bus.readdata.value
 
         self._release_lock()
-        raise ReturnValue(data)
+        return data
 
     @coroutine
     def write(self, address, value):

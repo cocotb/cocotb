@@ -29,7 +29,6 @@
 import cocotb
 from cocotb.triggers import RisingEdge, ReadOnly, Lock
 from cocotb.drivers import BusDriver
-from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
 
 import array
@@ -158,7 +157,7 @@ class AXI4LiteMaster(BusDriver):
             raise AXIProtocolError("Write to address 0x%08x failed with BRESP: %d"
                                % (address, int(result)))
 
-        raise ReturnValue(result)
+        return result
 
     @cocotb.coroutine
     def read(self, address, sync=True):
@@ -202,7 +201,7 @@ class AXI4LiteMaster(BusDriver):
             raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d" %
                                (address, int(result)))
 
-        raise ReturnValue(data)
+        return data
 
     def __len__(self):
         return 2**len(self.bus.ARADDR)
