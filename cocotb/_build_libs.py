@@ -160,10 +160,7 @@ def _get_python_lib():
 
 # TODO [gh-1372]: make this work for MSVC which has a different flag syntax
 _base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings", "-Wconversion"]
-_cc_warns = _base_warns + ["-Wstrict-prototypes", "-Waggregate-return"]
 _ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
-
-_extra_cc_compile_args = ["-std=gnu99"] + _cc_warns
 _extra_cxx_compile_args = ["-std=c++11"] + _ccx_warns
 
 # Make PRI* format macros available with C++11 compiler but older libc, e.g. on RHEL6.
