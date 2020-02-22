@@ -108,7 +108,7 @@ static void set_program_name_in_venv(void)
  * Stores the thread state for cocotb in static variable gtstate
  */
 
-void embed_init_python(void)
+extern "C" void embed_init_python(void)
 {
     FENTER;
 
@@ -174,7 +174,7 @@ out:
  *
  * Cleans up reference counts for Python objects and calls Py_Finalize function.
  */
-void embed_sim_cleanup(void)
+extern "C" void embed_sim_cleanup(void)
 {
     // If initialization fails, this may be called twice:
     // Before the initial callback returns and in the final callback.
@@ -219,7 +219,7 @@ int get_module_ref(const char *modname, PyObject **mod)
     return 0;
 }
 
-int embed_sim_init(gpi_sim_info_t *info)
+extern "C" int embed_sim_init(gpi_sim_info_t *info)
 {
     FENTER
 
@@ -239,7 +239,7 @@ int embed_sim_init(gpi_sim_info_t *info)
             dut = NULL;
         } else {
             // Skip any library component of the toplevel
-            char *dot = strchr(dut, '.');
+            const char *dot = strchr(dut, '.');
             if (dot != NULL) {
                 dut += (dot - dut + 1);
             }
@@ -346,26 +346,28 @@ int embed_sim_init(gpi_sim_info_t *info)
     }
 
     // Set language in use as an attribute to cocotb module, or None if not provided
-    const char *lang = getenv("TOPLEVEL_LANG");
-    PyObject *PyLang;
-    if (lang) {
-        PyLang = PyUnicode_FromString(lang);                            // New reference
-    } else {
-        Py_INCREF(Py_None);
-        PyLang = Py_None;
-    }
-    if (PyLang == NULL) {
-        PyErr_Print();
-        LOG_ERROR("Unable to create Python object for cocotb.LANGUAGE");
-        goto cleanup;
-    }
-    if (-1 == PyObject_SetAttrString(cocotb_module, "LANGUAGE", PyLang)) {
-        PyErr_Print();
-        LOG_ERROR("Unable to set LANGUAGE");
+    {
+        const char *lang = getenv("TOPLEVEL_LANG");
+        PyObject *PyLang;
+        if (lang) {
+            PyLang = PyUnicode_FromString(lang);                            // New reference
+        } else {
+            Py_INCREF(Py_None);
+            PyLang = Py_None;
+        }
+        if (PyLang == NULL) {
+            PyErr_Print();
+            LOG_ERROR("Unable to create Python object for cocotb.LANGUAGE");
+            goto cleanup;
+        }
+        if (-1 == PyObject_SetAttrString(cocotb_module, "LANGUAGE", PyLang)) {
+            PyErr_Print();
+            LOG_ERROR("Unable to set LANGUAGE");
+            Py_DECREF(PyLang);
+            goto cleanup;
+        }
         Py_DECREF(PyLang);
-        goto cleanup;
     }
-    Py_DECREF(PyLang);
 
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");     // New reference
     if (pEventFn == NULL) {
@@ -433,7 +435,7 @@ ok:
     return ret;
 }
 
-void embed_sim_event(gpi_event_t level, const char *msg)
+extern "C" void embed_sim_event(gpi_event_t level, const char *msg)
 {
     FENTER
     /* Indicate to the upper layer a sim event occurred */
