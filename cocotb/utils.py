@@ -426,8 +426,7 @@ class ParametrizedSingleton(type):
         """Convert the construction arguments into a normalized representation that
         uniquely identifies this singleton.
         """
-        # Once we drop Python 2, we can implement a default like the following,
-        # which will work in 99% of cases:
+        # Could default to something like this, but it would be slow
         # return tuple(inspect.Signature(cls).bind(*args, **kwargs).arguments.items())
         raise NotImplementedError
 

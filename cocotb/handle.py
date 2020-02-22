@@ -381,9 +381,6 @@ class _AssignmentResult(object):
             .format(self)
         )
 
-    # Python 2
-    __nonzero__ = __bool__
-
 
 class NonHierarchyObject(SimHandleBase):
     """Common base class for all non-hierarchy objects."""

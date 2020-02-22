@@ -256,19 +256,6 @@ class RunningTest(RunningCoroutine):
             self.started = True
         return super(RunningTest, self)._advance(outcome)
 
-    def _force_outcome(self, outcome):
-        """
-        This method exists as a workaround for preserving tracebacks on
-        python 2, and is called in unschedule. Once Python 2 is dropped, this
-        should be inlined into `abort` below, and the call in `unschedule`
-        replaced with `abort(outcome.error)`.
-        """
-        assert self._outcome is None
-        if _debug:
-            self.log.debug("outcome forced to {}".format(outcome))
-        self._outcome = outcome
-        cocotb.scheduler.unschedule(self)
-
     # like RunningTask.kill(), but with a way to inject a failure
     def abort(self, exc):
         """Force this test to end early, without executing any cleanup.
@@ -280,7 +267,12 @@ class RunningTest(RunningCoroutine):
         `exc` is the exception that the test should report as its reason for
         aborting.
         """
-        return self._force_outcome(outcomes.Error(exc))
+        assert self._outcome is None
+        outcome = outcomes.Error(exc)
+        if _debug:
+            self.log.debug("outcome forced to {}".format(outcome))
+        self._outcome = outcome
+        cocotb.scheduler.unschedule(self)
 
     def sort_name(self):
         if self.stage is None:
