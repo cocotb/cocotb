@@ -18,6 +18,8 @@ Cocotb has the following requirements:
 
 .. versionchanged:: 1.4 Dropped Python 2 support
 
+.. _installation_via_pip:
+
 Installation via PIP
 --------------------
 

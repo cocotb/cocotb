@@ -30,8 +30,6 @@
 .PHONY: all
 all: test
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
-
 .PHONY: clean
 clean:
 	-@rm -rf $(BUILD_DIR)

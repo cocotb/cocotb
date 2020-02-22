@@ -1,5 +1,5 @@
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.pylib
 
 PYTHON_LIBDIR ?= /usr/lib64
 SWIG ?= swig
