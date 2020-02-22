@@ -243,8 +243,8 @@ def _get_common_lib_ext(include_dir, share_lib_dir, sim_define):
         include_dirs=[include_dir],
         libraries=[_get_python_lib_link(), "cocotbutils", "gpilog", "gpi"],
         library_dirs=python_lib_dirs,
-        sources=[os.path.join(share_lib_dir, "simulator", "simulatormodule.c")],
-        extra_compile_args=_extra_cc_compile_args,
+        sources=[os.path.join(share_lib_dir, "simulator", "simulatormodule.cpp")],
+        extra_compile_args=_extra_cxx_compile_args,
     )
 
     return [libcocotbutils, libgpilog, libcocotb, libgpi, libsim]
