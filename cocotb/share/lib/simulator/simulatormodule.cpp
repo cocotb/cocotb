@@ -169,30 +169,32 @@ int handle_gpi_callback(void *user_data)
         goto out;
     }
 
-    // Call the callback
-    PyObject *pValue = PyObject_Call(callback_data_p->function, callback_data_p->args, callback_data_p->kwargs);
-
-    // If the return value is NULL a Python exception has occurred
-    // The best thing to do here is shutdown as any subsequent
-    // calls will go back to Python which is now in an unknown state
-    if (pValue == NULL)
     {
-        fprintf(stderr, "ERROR: called callback function returned NULL\n");
-        if (PyErr_Occurred()) {
-            fprintf(stderr, "Failed to execute callback due to Python exception\n");
-            PyErr_Print();
-        } else {
-            fprintf(stderr, "Failed to execute callback\n");
+        // Call the callback
+        PyObject *pValue = PyObject_Call(callback_data_p->function, callback_data_p->args, callback_data_p->kwargs);
+
+        // If the return value is NULL a Python exception has occurred
+        // The best thing to do here is shutdown as any subsequent
+        // calls will go back to Python which is now in an unknown state
+        if (pValue == NULL)
+        {
+            fprintf(stderr, "ERROR: called callback function returned NULL\n");
+            if (PyErr_Occurred()) {
+                fprintf(stderr, "Failed to execute callback due to Python exception\n");
+                PyErr_Print();
+            } else {
+                fprintf(stderr, "Failed to execute callback\n");
+            }
+
+            gpi_sim_end();
+            sim_ending = 1;
+            ret = 0;
+            goto out;
         }
 
-        gpi_sim_end();
-        sim_ending = 1;
-        ret = 0;
-        goto out;
+        // Free up our mess
+        Py_DECREF(pValue);
     }
-
-    // Free up our mess
-    Py_DECREF(pValue);
 
     // Callbacks may have been re-enabled
     if (callback_data_p->id_value == COCOTB_INACTIVE_ID) {
