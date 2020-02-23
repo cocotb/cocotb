@@ -34,8 +34,10 @@ else
 endif
 VHDL_SOURCES += $(COCOTB)/tests/designs/vhdl_configurations/configurations.vhd
 
-ifeq ($(SIM),$(filter $(SIM),ius xcelium))
-    SIM_ARGS += -v93
+ifneq (,$(SIM))
+    ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+        SIM_ARGS += -v93
+    endif
 endif
 
 include $(COCOTB)/makefiles/Makefile.inc
