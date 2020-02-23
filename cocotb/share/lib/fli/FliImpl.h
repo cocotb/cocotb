@@ -353,7 +353,7 @@ public:
     long get_signal_value_long() override;
 
     using FliValueObjHdl::set_signal_value;
-    int set_signal_value(long value) override;
+    int set_signal_value(long value, gpi_set_action_t action) override;
 
     int initialise(std::string &name, std::string &fq_name) override;
 };
