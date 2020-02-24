@@ -40,6 +40,10 @@ class AXIProtocolError(Exception):
     pass
 
 
+class AXIReadBurstLengthMismatch(Exception):
+    pass
+
+
 class AXIBurst(enum.IntEnum):
     FIXED = 0b00
     INCR = 0b01
@@ -301,7 +305,9 @@ class AXI4Master(BusDriver):
         Raises:
             ValueError: If any of the input parameters is invalid.
             AXIProtocolError: If read response from AXI is not ``OKAY`` and
-                *return_rresp* is False.
+                *return_rresp* is False
+            AXIReadBurstLengthMismatch: If the received number of words does
+                not match the requested one.
         """
 
         if size is None:
@@ -352,6 +358,13 @@ class AXI4Master(BusDriver):
                 break
 
             await RisingEdge(self.clock)
+
+        if len(data) != length:
+            raise AXIReadBurstLengthMismatch(
+                "AXI4 slave returned {} data than expected (requested {} "
+                "words, received {})"
+                .format("more" if len(data) > length else "less",
+                        length, len(data)))
 
         if return_rresp:
             return list(zip(data, rresp))
