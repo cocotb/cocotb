@@ -56,7 +56,7 @@ jenkins: do_tests
 # By default want the exit code to indicate the test results
 .PHONY: test
 test:
-	$(MAKE) do_tests; ret=$$?; ./bin/combine_results.py; exit $$ret
+	$(MAKE) do_tests; ret=$$?; ./bin/combine_results.py && exit $$ret
 
 .PHONY: help
 help:
