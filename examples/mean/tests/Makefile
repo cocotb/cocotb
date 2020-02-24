@@ -30,8 +30,8 @@ VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
 
 MODULE := test_mean
 
-ifeq ($(SIM),$(filter $(SIM),ius xcelium))
-   SIM_ARGS += -v93
+ifneq ($(filter $(SIM),ius xcelium),)
+    SIM_ARGS += -v93
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.inc

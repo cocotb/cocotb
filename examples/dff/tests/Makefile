@@ -26,7 +26,7 @@ ifeq ($(SIM),questa)
     SIM_ARGS=-t 1ps
 endif
 
-ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+ifneq ($(filter $(SIM),ius xcelium),)
     SIM_ARGS += -v93
 endif
 

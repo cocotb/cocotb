@@ -47,7 +47,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES = $(WPWD)/../hdl/endian_swapper.vhdl
     TOPLEVEL = endian_swapper_vhdl
-    ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+    ifneq ($(filter $(SIM),ius xcelium),)
         SIM_ARGS += -v93
     endif
 else
