@@ -971,15 +971,15 @@ static void register_embed()
 {
     vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
-    gpi_load_extra_libs();
 }
 
 // pre-defined VHPI registration table
 void (*vhpi_startup_routines[])() = {
     register_embed,
+    gpi_load_extra_libs,
     register_initial_callback,
     register_final_callback,
-    0
+    nullptr
 };
 
 // For non-VHPI compliant applications that cannot find vhpi_startup_routines

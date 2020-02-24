@@ -33,6 +33,7 @@
 #include <cocotb_utils.h>
 #include "embed.h"
 #include "locale.h"
+#include <cassert>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -119,9 +120,7 @@ extern "C" void embed_init_python(void)
 #define PY_SO_LIB xstr(PYTHON_SO_LIB)
 #endif
 
-    // Don't initialize Python if already running
-    if (gtstate)
-        return;
+    assert(!gtstate);  // this function should not be called twice
 
     void * lib_handle = utils_dyn_open(PY_SO_LIB);
     if (!lib_handle) {
