@@ -44,7 +44,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES =  $(COCOTB)/tests/designs/sample_module/sample_module_pack.vhdl $(COCOTB)/tests/designs/sample_module/sample_module_1.vhdl $(COCOTB)/tests/designs/sample_module/sample_module.vhdl
 
-    ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+    ifneq ($(filter $(SIM),ius xcelium),)
         SIM_ARGS += -v93
     endif
 else
