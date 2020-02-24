@@ -28,6 +28,8 @@
 #ifndef COCOTB_VHPI_IMPL_H_
 #define COCOTB_VHPI_IMPL_H_
 
+// Ensure that format macros are provided
+#define __STDC_FORMAT_MACROS
 #include "../gpi/gpi_priv.h"
 #include <vhpi_user.h>
 #include <vector>
