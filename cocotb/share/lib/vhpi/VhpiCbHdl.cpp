@@ -28,6 +28,7 @@
 #include <assert.h>
 #include "VhpiImpl.h"
 #include <limits>     // numeric_limits
+#define __STDC_FORMAT_MACROS
 #include <cinttypes>  // fixed-size int types and format strings
 
 namespace {
