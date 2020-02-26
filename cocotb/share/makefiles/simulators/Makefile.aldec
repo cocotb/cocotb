@@ -53,7 +53,7 @@ ifeq ($(GUI),1)
     CMD += -nosplash
 endif
 
-ALOG_ARGS += -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) 
+ALOG_ARGS += -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
 ALOG_ARGS += $(COMPILE_ARGS)
