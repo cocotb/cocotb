@@ -62,8 +62,6 @@ OS=Msys
 endif
 export OS
 
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
-
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
 
@@ -79,7 +77,14 @@ ifeq ($(SIM_DEFINE),XCELIUM)
 SIM_DEFINE = IUS
 endif
 
-export LIB_DIR=$(COCOTB_PY_DIR)/cocotb/libs/$(shell echo $(SIM_DEFINE) | tr A-Z a-z)
+LIB_DIR := $(COCOTB_PY_DIR)/cocotb/libs/$(shell echo $(SIM_DEFINE) | tr A-Z a-z)
+
+PWD := $(shell pwd)
+
+# Add path to simulator module
+PYTHONPATH := $(PWD):$(LIB_DIR):$(PYTHONPATH)
+
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
 
 ifeq ($(OS),Msys)
 LIB_EXT    := dll

@@ -59,6 +59,9 @@ class build_ext(_build_ext):
         head, tail = os.path.split(filename)
         tail_split = tail.split(".")
 
+        # mingw on msys2 uses `-` as seperator
+        tail_split = tail_split[0].split("-")
+
         filename_short = os.path.join(head, tail_split[0] + "." + _get_lib_ext_name())
 
         # icarus requires vpl extension

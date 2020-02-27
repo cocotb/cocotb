@@ -47,3 +47,20 @@ ifeq ($(PYTHON_LIBDIR),None)
 endif
 
 PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print( distutils.sysconfig.get_python_inc() )')
+
+# For tcl scripts purpose source files paths in form of C:/User/..
+ifneq ($(VERILOG_SOURCES),)
+    VERILOG_SOURCES := $(shell cygpath -m $(VERILOG_SOURCES))
+endif
+ifneq ($(VHDL_SOURCES),)
+    VHDL_SOURCES := $(shell cygpath -m $(VHDL_SOURCES))
+endif
+
+# On Windows there is no support for @rpath so we need to set PATH to find cocotb libraries
+export PATH := $(LIB_DIR):$(PATH)
+
+# Set PYTHONHOME to properly populate sys.path in embedded python interpreter
+export PYTHONHOME := $(shell $(PYTHON_BIN) -c "from distutils.sysconfig import get_config_var; print(get_config_var('prefix'))")
+
+# For tcl scripts the path to dll has to be in form of C:/User/..
+export LIB_DIR := $(shell cygpath -m $(LIB_DIR))
