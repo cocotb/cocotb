@@ -15,7 +15,7 @@ Increasing Verbosity
 If things fail in the VPI/VHPI/FLI area, check your simulator's documentation to see if it has options to
 increase its verbosity about what may be wrong. You can then set these options on the :command:`make` command line
 as :make:var:`COMPILE_ARGS`, :make:var:`SIM_ARGS` or :make:var:`EXTRA_ARGS` (see :doc:`building` for details).
-If things fail from within python, or coroutines aren't being called when you expect, the
+If things fail from within Python, or coroutines aren't being called when you expect, the
 :make:var:`COCOTB_SCHEDULER_DEBUG` variable can be used to (greatly) increase the verbosity of the scheduler.
 
 
@@ -23,7 +23,7 @@ Attaching a Debugger
 ====================
 
 C and C++
-------
+---------
 
 In order to give yourself time to attach a debugger to the simulator process before it starts to run,
 you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time value in seconds.
@@ -36,10 +36,11 @@ Python
 ------
 
 When executing the Makefile to run a cocotb test, a python shell interpreter is called from within the
-VPI/VHPI/FLI library. Hence it is not possible to directly attach a python debugger to the python process being
-part of the simulator that uses the aforementioned library.
+VPI/VHPI/FLI library.
+Hence it is not possible to directly attach a Python debugger to the Python process being part of the simulator that uses the aforementioned library.
+Using ``import pdb; pdb.set_trace()`` directly is also frequently not possible, due to the way that simulators interfere with stdin.
 
-To successfully debug your python code use the `remote_pdb`_ python package to create a :command:`pdb` instance
+To successfully debug your Python code use the `remote_pdb`_ Python package to create a :command:`pdb` instance
 accessible via a TCP socket:
 
 .. _remote_pdb: https://pypi.org/project/remote-pdb/
