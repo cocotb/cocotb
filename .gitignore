@@ -2,6 +2,7 @@
 
 # C extensions
 *.so
+cocotb/share/def/*.a
 
 # C objects
 *.o
