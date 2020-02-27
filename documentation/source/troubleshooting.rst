@@ -35,7 +35,7 @@ For the GNU debugger GDB, the command is :command:`attach <process-id>`.
 Python
 ------
 
-When executing the Makefile to run a cocotb test, a python shell interpreter is called from within the
+When executing the Makefile to run a cocotb test, a Python shell interpreter is called from within the
 VPI/VHPI/FLI library.
 Hence it is not possible to directly attach a Python debugger to the Python process being part of the simulator that uses the aforementioned library.
 Using ``import pdb; pdb.set_trace()`` directly is also frequently not possible, due to the way that simulators interfere with stdin.
