@@ -252,7 +252,7 @@ Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 
 In addition to regular value assignments (deposits), signals can be forced
 to a predetermined value or frozen at their current value. To achieve this,
-the various actions described in :ref:`assignment-methods-section` can be used.
+the various actions described in :ref:`Assignment Methods <assignment-methods>` can be used.
 
 .. code-block:: python3
 
