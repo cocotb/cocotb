@@ -95,7 +95,14 @@ autoclass_content = "both"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = [
+    # these are compiled into a single file at build-time,
+    # so there is no need to build them separately:
+    "newsfragments/*.rst",
+    # unused outputs from breathe:
+    "generated/namespacelist.rst",
+    "generated/namespace/*.rst",
+    ]
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
