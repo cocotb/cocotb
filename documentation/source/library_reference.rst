@@ -198,7 +198,8 @@ Simulation Object Handles
     :show-inheritance:
     :synopsis: Classes for simulation objects.
 
-.. assigment-methods-section
+
+.. _assignment-methods:
 
 Assignment Methods
 ------------------
@@ -212,6 +213,7 @@ Assignment Methods
 .. autoclass:: Freeze
 
 .. autoclass:: Release
+
 
 Implemented Testbench Structures
 ================================
