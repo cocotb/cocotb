@@ -1,14 +1,15 @@
-#################
+*****************
 Simulator Support
-#################
+*****************
 
 This page documents any known quirks and gotchas in the various simulators.
 
 Icarus
-------
+======
 
 Accessing bits in a vector
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
+
 Accessing bits of a vector doesn't work:
 
 .. code-block:: python3
@@ -18,7 +19,7 @@ Accessing bits of a vector doesn't work:
 See ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
 
 Waveforms
-~~~~~~~~~
+---------
 
 To get waveforms in VCD format some Verilog code must be added
 to the top component as shown in the example below:
@@ -44,13 +45,13 @@ to the top component as shown in the example below:
     endmodule
 
 Time unit and precision
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 Setting the time unit and time precision is not possible from the command-line,
 and therefore make variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` are ignored.
 
 Verilator
----------
+=========
 
 cocotb supports Verilator 4.020 and above.
 Verilator converts Verilog code to C++ code that is compiled.
@@ -69,18 +70,21 @@ If your design's clocks vary in precision, the performance of the simulation can
 .. versionadded:: 1.3
 
 Synopsys VCS
-------------
+============
+
 
 Aldec Riviera-PRO
------------------
+=================
+
 The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
 Mentor Questa
--------------
+=============
+
 
 Mentor ModelSim
----------------
+===============
 
 Any ModelSim PE or ModelSim PE derivative (like ModelSim Microsemi, Intel, Lattice Edition) does not support the VHDL FLI feature.
 If you try to run with FLI enabled, you will see a ``vsim-FLI-3155`` error:
@@ -92,9 +96,11 @@ If you try to run with FLI enabled, you will see a ``vsim-FLI-3155`` error:
 ModelSim DE and SE (and Questa, of course) supports the FLI.
 
 Cadence Incisive, Cadence Xcelium
----------------------------------
+=================================
+
 
 GHDL
-----
+====
+
 Support is preliminary.
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.

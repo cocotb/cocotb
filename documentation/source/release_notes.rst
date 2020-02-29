@@ -1,6 +1,6 @@
-#############
+*************
 Release Notes
-#############
+*************
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
@@ -17,6 +17,7 @@ This will likely be the last release to support Python 2.7.
 
 New features
 ------------
+
 - Initial support for the :ref:`Verilator` simulator (version 4.020 and above).
   The integration of Verilator into cocotb is not yet as fast or as powerful as it is for other simulators.
   Please use the latest version of Verilator, and `report bugs <https://github.com/cocotb/cocotb/issues/new>`_ if you experience problems.
@@ -31,6 +32,7 @@ New features
 
 Notable changes and bug fixes
 -----------------------------
+
 - ``DeprecationWarning``\ s are now shown in the output by default.
 - Tracebacks are now preserved correctly for exceptions in Python 2.
   The tracebacks in all Python versions are now a little shorter.
@@ -42,6 +44,7 @@ Notable changes and bug fixes
 
 Deprecations
 ------------
+
 - ``cocotb.result.raise_error`` and ``cocotb.result.create_error`` are deprecated in favor of using Python exceptions directly.
   :class:`~cocotb.result.TestError` can still be used if the same exception type is desired. (:pr:`1109`)
 - The ``AvalonSTPktsWithChannel`` type is deprecated.
@@ -81,6 +84,7 @@ Notable changes and bug fixes
 
 Deprecations
 ------------
+
 - The `bits` argument to :class:`~cocotb.binary.BinaryValue`, which is now called `n_bits`.
 - The `logger` attribute of log objects like ``cocotb.log`` or ``some_coro.log``, which is now just an alias for ``self``.
 - The ``cocotb.utils.get_python_integer_types`` function, which was intended to be private.
@@ -126,6 +130,7 @@ Released on 25 February 2014.
 
 New features
 ------------
+
 - Issue :issue:`101`: Implement Lock primitive to support mutex
 - Issue :issue:`105`: Compatibility with Aldec Riviera-Pro
 - Issue :issue:`109`: Combine multiple :file:`results.xml` into a single results file
@@ -143,6 +148,7 @@ Bugs fixed
 
 New examples
 ------------
+
 - Issue :issue:`106`: TUN/TAP example using ping
 
 
@@ -161,6 +167,7 @@ Released on 19 July 2013.
 
 New features
 ------------
+
 - Release 0.2 supports more simulators and increases robustness over 0.1.
 - A centralized installation is now supported (see documentation) with supporting libraries build when the simulation is run for the first time.
 

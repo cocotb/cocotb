@@ -1,6 +1,6 @@
-#############
+*************
 More Examples
-#############
+*************
 
 Apart from the examples covered with full tutorials in the previous sections,
 the directory :file:`cocotb/examples/` contains some more smaller modules you may want to take a look at.

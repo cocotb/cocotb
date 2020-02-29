@@ -1,8 +1,9 @@
+*******************
 Writing Testbenches
-===================
+*******************
 
 Handling Errors
----------------
+===============
 
 It may not be clear when to raise an exception and when to use ``log.error()``.
 

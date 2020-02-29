@@ -1,5 +1,6 @@
+*****************************
 Tutorial: Driver Cosimulation
-=============================
+*****************************
 
 Cocotb was designed to provide a common platform for hardware and software
 developers to interact.  By integrating systems early, ideally at the
@@ -22,7 +23,7 @@ run this example from a fresh checkout:
 
 
 Difficulties with Driver Co-simulation
---------------------------------------
+======================================
 
 Co-simulating *un-modified* production software against a block-level
 testbench is not trivial – there are a couple of significant obstacles to
@@ -30,7 +31,7 @@ overcome.
 
 
 Calling the HAL from a test
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 Typically the software component (often referred to as a Hardware Abstraction
 Layer or HAL) is written in C.  We need to call this software from our test
@@ -39,7 +40,7 @@ this tutorial we'll use `SWIG`_ to generate Python bindings for our HAL.
 
 
 Blocking in the driver
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 Another difficulty to overcome is the fact that the HAL is expecting to call
 a low-level function to access the hardware, often something like ``ioread32``.
@@ -50,7 +51,7 @@ in turn call into cocotb and perform the relevant access on the DUT.
 
 
 Cocotb infrastructure
----------------------
+=====================
 
 There are two decorators provided to enable this flow, which are typically used
 together to achieve the required functionality.  The :class:`cocotb.external`
@@ -64,11 +65,11 @@ The call sequence looks like this:
 
 
 Implementation
---------------
+==============
 
 
 Register Map
-~~~~~~~~~~~~
+------------
 
 The endian swapper has a very simple register map:
 
@@ -84,7 +85,7 @@ The endian swapper has a very simple register map:
 
 
 HAL
-~~~
+---
 
 To keep things simple we use the same RTL from the :doc:`endian_swapper`. We
 write a simplistic HAL which provides the following functions:
@@ -101,7 +102,7 @@ NIOS framework.
 
 
 IO Module
-~~~~~~~~~
+---------
 
 This module acts as the bridge between the C HAL and the Python testbench.  It
 exposes the ``IORD`` and ``IOWR`` calls to link the HAL against, but also
@@ -114,7 +115,7 @@ instance.
 
 
 Testbench
-~~~~~~~~~
+---------
 
 First of all we set up a clock, create an :class:`Avalon Master <cocotb.drivers.avalon.AvalonMaster>`
 interface and reset the DUT.
@@ -162,7 +163,7 @@ and control will return to the testbench when the function returns.
 
 
 Further Work
-------------
+============
 
 You may also consider co-simulating unmodified drivers written
 using ``mmap`` (for example built upon the `UIO framework`_), or

@@ -1,6 +1,6 @@
-########################
+************************
 C Code Library Reference
-########################
+************************
 
 Cocotb contains a library called ``GPI`` (in directory :file:`cocotb/share/lib/gpi/`) written in C++
 that is an abstraction layer for the VPI, VHPI, and FLI simulator interfaces.

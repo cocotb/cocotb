@@ -1,5 +1,6 @@
+********
 Triggers
-========
+********
 
 Triggers are used to indicate when the cocotb scheduler should resume coroutine execution.
 To use a trigger, a coroutine should :keyword:`await` or :keyword:`yield` it.
@@ -25,10 +26,10 @@ Or using the syntax in Python 3.5 onwards:
 .. _simulator-triggers:
 
 Simulator Triggers
-------------------
+==================
 
 Signals
-~~~~~~~
+-------
 
 .. autoclass:: cocotb.triggers.Edge
 
@@ -40,7 +41,7 @@ Signals
 
 
 Timing
-~~~~~~
+------
 
 .. autoclass:: cocotb.triggers.Timer
 
@@ -52,7 +53,7 @@ Timing
 
 
 Python Triggers
----------------
+===============
 
 .. autoclass:: cocotb.triggers.Combine
 
@@ -63,7 +64,7 @@ Python Triggers
 
 
 Synchronization
-~~~~~~~~~~~~~~~
+---------------
 
 These are not :class:`Trigger`\ s themselves, but contain methods that can be used as triggers.
 These are used to synchronize coroutines with each other.

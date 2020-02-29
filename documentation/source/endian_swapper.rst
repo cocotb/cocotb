@@ -1,5 +1,6 @@
+************************
 Tutorial: Endian Swapper
-========================
+************************
 
 In this tutorial we'll use some of the built-in features of cocotb to quickly create a complex testbench.
 
@@ -13,7 +14,7 @@ You can run this example from a fresh checkout::
 
 
 Design
-------
+======
 
 We have a relatively simplistic RTL block called the ``endian_swapper``.
 The DUT has three interfaces, all conforming to the Avalon standard:
@@ -25,7 +26,7 @@ For every packet arriving on the ``stream_in`` interface the entire packet will 
 if the configuration bit is set, otherwise the entire packet will pass through unmodified.
 
 Testbench
----------
+=========
 
 To begin with we create a class to encapsulate all the common code for the testbench.
 It is possible to write directed tests without using a testbench class
@@ -124,7 +125,7 @@ Our model function is quite straightforward in this case - we simply append the 
 
 
 Test Function
-~~~~~~~~~~~~~
+-------------
 
 There are various 'knobs' we can tweak on this testbench to vary the behavior:
 
@@ -184,7 +185,7 @@ If any transactions didn't match the expected output then this member would be a
 
 
 Test permutations
-~~~~~~~~~~~~~~~~~
+-----------------
 
 Having defined a test function we can now auto-generate different permutations of tests using the :class:`.TestFactory` class:
 
