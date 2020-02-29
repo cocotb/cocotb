@@ -47,6 +47,7 @@ extensions = [
     'breathe',
     'sphinx_issues',
     'sphinxarg.ext',
+    'sphinxcontrib.spelling',
     ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
@@ -315,12 +316,6 @@ breathe_domain_by_extension = {
 breathe_show_define_initializer = True
 
 # -- Extra setup for spelling check --------------------------------------------
-
-# Spelling check needs an additional module that is not installed by default.
-# Add it only if spelling check is requested so docs can be generated without it.
-
-if 'spelling' in sys.argv:
-    extensions.append("sphinxcontrib.spelling")
 
 # Spelling language.
 spelling_lang = 'en_US'
