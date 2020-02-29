@@ -294,7 +294,6 @@ static callback_data *callback_data_new(PyObject *func, PyObject *args, PyObject
 static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
-    FENTER
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -325,7 +324,6 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     gpi_cb_hdl hdl = gpi_register_readonly_callback((gpi_function_t)handle_gpi_callback, cb_data);
 
     PyObject *rv = gpi_hdl_New(hdl);
-    FEXIT
 
     return rv;
 }
@@ -334,7 +332,6 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
-    FENTER
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -366,7 +363,6 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
         (gpi_function_t)handle_gpi_callback, cb_data);
 
     PyObject *rv = gpi_hdl_New(hdl);
-    FEXIT
 
     return rv;
 }
@@ -375,7 +371,6 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
-    FENTER
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -407,7 +402,6 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
         (gpi_function_t)handle_gpi_callback, cb_data);
 
     PyObject *rv = gpi_hdl_New(hdl);
-    FEXIT
 
     return rv;
 }
@@ -420,7 +414,6 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
-    FENTER
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -467,7 +460,6 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 
     // Check success
     PyObject *rv = gpi_hdl_New(hdl);
-    FEXIT
 
     return rv;
 }
@@ -480,7 +472,6 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 static PyObject *register_value_change_callback(PyObject *self, PyObject *args) //, PyObject *keywds)
 {
     COCOTB_UNUSED(self);
-    FENTER
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -523,7 +514,6 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 
     // Check success
     PyObject *rv = gpi_hdl_New(hdl);
-    FEXIT
 
     return rv;
 }
@@ -811,11 +801,9 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
 static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *args)
 {
     COCOTB_UNUSED(args);
-    FENTER
 
     gpi_deregister_callback(self->hdl);
 
-    FEXIT
     Py_RETURN_NONE;
 }
 
