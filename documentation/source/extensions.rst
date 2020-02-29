@@ -1,5 +1,6 @@
+*************************
 Writing cocotb extensions
-=========================
+*************************
 
 This guide explains how to write cocotb extensions, with a focus on the conventions that should be followed.
 
@@ -14,7 +15,7 @@ Technically, cocotb extensions are normal Python packages, and all standard Pyth
 Additionally, the cocotb community has agreed on a set of conventions to make extensions easier to use and to discover.
 
 Naming conventions
-------------------
+==================
 
 Cocotb extensions are normal Python modules which follow these naming conventions.
 
@@ -28,13 +29,13 @@ An SPI bus extension might be packaged as ``cocotbext-spi``, and its functionali
 The module can then be installed with ``pip3 install cocotbext-spi``, and used with ``import cocotbext.spi``.
 
 Types of cocotb extensions
---------------------------
+==========================
 
 For some types of cocotb extensions we have developed conventions which go beyond naming.
 These conventions help to achieve a consistent behavior across extensions of the same type.
 
 Bus extensions
-~~~~~~~~~~~~~~
+--------------
 
 A cocotb extension which interacts with a bus or an interface (such as SPI or AXI) should build on top of a common set of classes to provide a uniform interface for its users.
 Typically, a bus extension provides three pieces of functionality:
@@ -49,7 +50,7 @@ Bus drivers should inherit from the :any:`cocotb.drivers.BusDriver` class.
 Bus monitors should inherit from the :any:`cocotb.monitors.BusMonitor` class.
 
 Packaging extensions
---------------------
+====================
 
 To package a cocotb extension as Python package follow the :ref:`naming conventions <Naming conventions>`, and the `normal Python packaging rules <https://packaging.python.org/tutorials/packaging-projects/>`_.
 Extensions namespaced packages, implemented using the `native namespacing <https://packaging.python.org/guides/packaging-namespace-packages/#native-namespace-packages>`_ approach discussed in :pep:`420`.
@@ -103,7 +104,7 @@ To use the functionality in the extension module, import it into your testbench.
   from cocotbext.EXTNAME import MyVerificationClass
 
 Code hosting
-------------
+============
 
 The source code of cocotb extensions can be hosted anywhere.
 If authors wish to do so, extensions can also be hosted on GitHub in the `cocotb GitHub organization <https://github.com/cocotb>`_ (e.g. ``github.com/cocotb/cocotbext-EXTNAME``).

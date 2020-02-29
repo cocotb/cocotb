@@ -1,5 +1,6 @@
+**********
 Coroutines
-==========
+**********
 
 Testbenches built using cocotb use coroutines. While the coroutine is executing
 the simulation is paused. The coroutine uses the :keyword:`yield` keyword to
@@ -147,7 +148,7 @@ they'd naturally end.
 .. _async_functions:
 
 Async functions
----------------
+===============
 
 Python 3.5 introduces :keyword:`async` functions, which provide an alternative
 syntax. For example:
@@ -178,7 +179,7 @@ sub-coroutine being called.
     ``await First(trig1, trig2)`` instead.
 
 Async generators
-~~~~~~~~~~~~~~~~
+----------------
 
 In Python 3.6, a ``yield`` statement within an ``async`` function has a new
 meaning (rather than being a ``SyntaxError``) which matches the typical meaning

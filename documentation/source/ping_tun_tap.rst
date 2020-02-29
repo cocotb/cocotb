@@ -1,5 +1,6 @@
+**************
 Tutorial: Ping
-==============
+**************
 
 One of the benefits of Python is the ease with which interfacing is possible.
 In this tutorial we'll look at interfacing the standard GNU `ping`_ command
@@ -19,7 +20,7 @@ run this example from a fresh checkout:
 
 
 Architecture
-------------
+============
 
 We have a simple RTL block that takes ICMP echo requests and generates an ICMP
 echo response.  To verify this behavior we want to run the `ping`_ utility
@@ -37,7 +38,7 @@ communicating with our simulation rather than a remote network endpoint.
 
 
 Implementation
---------------
+==============
 
 First of all we need to work out how to create a virtual interface. Python has
 a huge developer base and a quick search of the web reveals a `TUN example`_
@@ -137,7 +138,7 @@ That's it - simple!
 
 
 Further work
-------------
+============
 
 This example is deliberately simplistic to focus on the fundamentals of
 interfacing to the simulator using TUN/TAP. As an exercise for the reader a

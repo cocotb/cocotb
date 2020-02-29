@@ -1,6 +1,6 @@
-################
+****************
 Quickstart Guide
-################
+****************
 
 Installing cocotb
 =================
@@ -50,14 +50,14 @@ If a 32-bit simulator is being used then additional steps are needed, please see
 `our Wiki <https://github.com/cocotb/cocotb/wiki/Tier-2-Setup-Instructions>`_.
 
 Debian/Ubuntu-based
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
     sudo apt-get install git make gcc g++ swig python-dev
 
 Red Hat-based
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 .. code-block:: bash
 

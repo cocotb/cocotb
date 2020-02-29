@@ -3,7 +3,9 @@
     directory = "documentation/source/newsfragments"
     filename = "documentation/source/release_notes.rst"
     issue_format = ":pr:`{issue}`"
-    underlines = '=-^"'  # the full list is '#*=-^"' but the two highest levels are not handled by towncrier
+    # The first underline is used for the version/date header,
+    # the second underline for the subcategories (like 'Features')
+    underlines = ["=", "-"]
     all_bullets = false
 
     [[tool.towncrier.type]]

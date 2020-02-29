@@ -1,6 +1,6 @@
-#######
+*******
 Roadmap
-#######
+*******
 
 cocotb is in active development.
 

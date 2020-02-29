@@ -1,6 +1,6 @@
-#################
+*****************
 Library Reference
-#################
+*****************
 
 Test Results
 ============
@@ -222,7 +222,7 @@ Drivers
 -------
 
 AMBA
-~~~~
+^^^^
 
 Advanced Microcontroller Bus Architecture.
 
@@ -240,7 +240,7 @@ Advanced Microcontroller Bus Architecture.
 
 
 Avalon
-~~~~~~
+^^^^^^
 
 .. currentmodule:: cocotb.drivers.avalon
 
@@ -272,7 +272,7 @@ Avalon
 
 
 OPB
-~~~
+^^^
 
 .. currentmodule:: cocotb.drivers.opb
 
@@ -283,7 +283,7 @@ OPB
 
 
 XGMII
-~~~~~
+^^^^^
 
 .. currentmodule:: cocotb.drivers.xgmii
 
@@ -296,7 +296,7 @@ Monitors
 --------
 
 Avalon
-~~~~~~
+^^^^^^
 
 .. currentmodule:: cocotb.monitors.avalon
 
@@ -311,7 +311,7 @@ Avalon
     :show-inheritance:
 
 XGMII
-~~~~~
+^^^^^
 
 .. autoclass:: cocotb.monitors.xgmii.XGMII
     :members:
