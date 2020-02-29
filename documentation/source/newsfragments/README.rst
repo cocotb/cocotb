@@ -1,7 +1,8 @@
 :orphan:
 
-Release Notes
-=============
+*********************
+Writing Release Notes
+*********************
 
 We are using `towncrier <https://pypi.org/project/towncrier/>`_ to handle
 our release notes, and this directory contains the input for it -
@@ -27,11 +28,11 @@ if you refer to added classes, methods etc.
 
 An example file could consist of the content between the marks:
 
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<
 Summary of a new feature.
 
 This is a second paragraph.
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8
 
 Note that the last paragraph should be a normal sentence and not e.g. code,
 because the issue number is appended there.
