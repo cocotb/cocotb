@@ -36,7 +36,8 @@ jobs:
         - docker ps -a
       script:
         - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
-        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -e py35'
+        # - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -e py35'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install importlib-resources==1.0.2 tox; cd /src; tox -e py35'  # remove once gh-1469's upstream bug is resolved
         - echo 'travis_fold:end:cocotb_py35'
 
     - stage: SimTests
