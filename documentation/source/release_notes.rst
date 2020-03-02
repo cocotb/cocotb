@@ -18,7 +18,7 @@ This will likely be the last release to support Python 2.7.
 New features
 ------------
 
-- Initial support for the :ref:`Verilator` simulator (version 4.020 and above).
+- Initial support for the :ref:`sim-verilator` simulator (version 4.020 and above).
   The integration of Verilator into cocotb is not yet as fast or as powerful as it is for other simulators.
   Please use the latest version of Verilator, and `report bugs <https://github.com/cocotb/cocotb/issues/new>`_ if you experience problems.
 - New makefile variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` for setting the default time unit and precision that should be assumed for simulation when not specified by modules in the design. (:pr:`1113`)

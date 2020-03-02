@@ -42,7 +42,6 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinxcontrib.makedomain',
-    'sphinx.ext.autosectionlabel',
     'sphinx.ext.inheritance_diagram',
     'cairosvgconverter',
     'breathe',

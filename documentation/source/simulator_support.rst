@@ -1,11 +1,18 @@
+.. _simulator-support:
+
 *****************
 Simulator Support
 *****************
 
 This page documents any known quirks and gotchas in the various simulators.
 
+
+.. _sim-icarus:
+
 Icarus
 ======
+
+.. _sim-icarus-accessing-bits:
 
 Accessing bits in a vector
 --------------------------
@@ -17,6 +24,8 @@ Accessing bits of a vector doesn't work:
     dut.stream_in_data[2] <= 1
 
 See ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
+
+.. _sim-icarus-waveforms:
 
 Waveforms
 ---------
@@ -44,11 +53,16 @@ to the top component as shown in the example below:
     `endif
     endmodule
 
+.. _sim-icarus-time:
+
 Time unit and precision
 -----------------------
 
 Setting the time unit and time precision is not possible from the command-line,
 and therefore make variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` are ignored.
+
+
+.. _sim-verilator:
 
 Verilator
 =========
@@ -69,9 +83,14 @@ If your design's clocks vary in precision, the performance of the simulation can
 
 .. versionadded:: 1.3
 
+
+.. _sim-vcs:
+
 Synopsys VCS
 ============
 
+
+.. _sim-aldec:
 
 Aldec Riviera-PRO
 =================
@@ -79,9 +98,15 @@ Aldec Riviera-PRO
 The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
+
+.. _sim-questa:
+
 Mentor Questa
 =============
 
+
+
+.. _sim-modelsim:
 
 Mentor ModelSim
 ===============
@@ -95,9 +120,20 @@ If you try to run with FLI enabled, you will see a ``vsim-FLI-3155`` error:
 
 ModelSim DE and SE (and Questa, of course) supports the FLI.
 
-Cadence Incisive, Cadence Xcelium
-=================================
 
+.. _sim-incisive:
+
+Cadence Incisive
+================
+
+
+.. _sim-xcelium:
+
+Cadence Xcelium
+===============
+
+
+.. _sim-ghdl:
 
 GHDL
 ====

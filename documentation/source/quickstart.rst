@@ -252,7 +252,7 @@ Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 
 In addition to regular value assignments (deposits), signals can be forced
 to a predetermined value or frozen at their current value. To achieve this,
-the various actions described in :ref:`Assignment Methods <assignment-methods>` can be used.
+the various actions described in :ref:`assignment-methods` can be used.
 
 .. code-block:: python3
 
@@ -303,7 +303,7 @@ We can also cast the signal handle directly to an integer:
 Parallel and sequential execution
 ---------------------------------
 
-A :keyword:`yield` will run a function (that must be marked as a "coroutine", see :ref:`Coroutines`)
+A :keyword:`yield` will run a function (that must be marked as a "coroutine", see :ref:`coroutines`)
 sequentially, i.e. wait for it to complete.
 If a coroutine should be run "in the background", i.e. in parallel to other coroutines,
 the way to do this is to :func:`~cocotb.fork` it.
