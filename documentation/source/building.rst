@@ -201,6 +201,12 @@ Environment Variables
 
     .. versionadded:: 1.3
 
+.. envvar:: SCRIPT_FILE
+
+    The name of a simulator script that is run as part of the simulation, e.g. for setting up wave traces.
+    You can usually write out such a file from the simulator's GUI.
+    This is currently supported for the Mentor Questa, Mentor ModelSim and Aldec Riviera simulators.
+
 
 Additional Environment Variables
 --------------------------------
