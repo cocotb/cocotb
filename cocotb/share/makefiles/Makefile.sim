@@ -72,6 +72,7 @@ COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
 MODULE                    Modules to search for test functions (comma-separated)
 TESTCASE                  Test function(s) to run (comma-separated list)
 COCOTB_RESULTS_FILE       File name for xUnit XML tests results
+SCRIPT_FILE               Simulator script to run (for e.g. wave traces)
 
 Additional Environment Variables
 --------------------------------
