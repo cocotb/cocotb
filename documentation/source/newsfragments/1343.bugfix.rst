@@ -1,0 +1,2 @@
+The Makefiles for the Aldec Riviera and Cadence IUS simulators have been fixed to use the correct name of the VHPI library (``libcocotbvhpi``).
+The bug prevented VHDL designs from being simulated, and was a regression in 1.3.0.
