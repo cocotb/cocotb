@@ -84,5 +84,9 @@ int main(int argc, char** argv) {
     tfp->close();
 #endif
 
+#if VM_COVERAGE
+    VerilatedCov::write("coverage.dat");
+#endif
+    
     return 0;
 }
