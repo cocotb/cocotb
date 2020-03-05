@@ -16,6 +16,8 @@ Welcome to Cocotb's documentation!
 
    introduction
 
+.. todo::
+   Move "Contributors" section to "Development & Community"
 
 #########
 Tutorials
@@ -44,9 +46,9 @@ Tutorials
    examples
 
 
-#######
-How-tos
-#######
+#############
+How-to Guides
+#############
 
 ..
    How-To Guides - guides that take the reader through the steps required to solve a common problem
@@ -68,6 +70,37 @@ How-tos
    triggers
    testbench_tools
 
+.. todo::
+   - Add WaveDrom, IPython sections
+   - How to deal with existing Verification IP?
+   - Point to https://github.com/cocotb/cocotb/wiki/Code-Examples
+
+
+##########
+Key topics
+##########
+
+..
+   Explanation (Background, Discussions) - discussions that clarify and illuminate a particular topic
+   (Example: history of cooking; understanding-oriented)
+
+   - giving context
+   - explaining why
+   - multiple examples, alternative approaches
+   - making connections
+   - no instruction or technical description
+
+.. toctree::
+   :maxdepth: 1
+
+   troubleshooting
+
+.. todo::
+   - Add some info from :doc:`coroutines`
+   - Add GPI section
+   - Explain ReadOnly/ReadWrite/... phases
+   - Add pitfall from https://github.com/cocotb/cocotb/issues/526#issuecomment-300371629 to troubleshooting
+
 
 #########
 Reference
@@ -86,38 +119,40 @@ Reference
    :maxdepth: 1
 
    building
-   library_reference
-   library_reference_c
+   Python Code Library Reference <library_reference>
+   C/C++ Code Library Reference <library_reference_c>
    simulator_support
+   extensions
 
+.. todo::
+   - *Maybe* add a glossary (Coroutine, Driver, Monitor, Scoreboard, HDL, RTL, GPI, V(H)PI, FLI, VIP, UVM, MDV, DUT/DUV)
 
-##########
-Background
-##########
-
-..
-   Explanation (Background, Discussions) - discussions that clarify and illuminate a particular topic
-   (Example: history of cooking; understanding-oriented)
-
-   - giving context
-   - explaining why
-   - multiple examples, alternative approaches
-   - making connections
-   - no instruction or technical description
+#######################
+Development & Community
+#######################
 
 .. toctree::
    :maxdepth: 1
 
-   troubleshooting
-   extensions
    roadmap
+
+.. todo::
+   Add "Join us online" and "Contributing"
+
+
+#############
+Release Notes
+#############
+
+.. toctree::
+   :maxdepth: 1
+
    release_notes
 
 
-##################
-Indices and tables
-##################
+#######
+Indices
+#######
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+* :ref:`Index of Classes, Methods, Variables etc.<genindex>`
+* :ref:`Index of Python Modules <modindex>`
