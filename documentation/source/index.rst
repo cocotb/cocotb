@@ -38,6 +38,7 @@ Tutorials
 
 .. toctree::
    :maxdepth: 1
+   :caption: Tutorials
 
    quickstart
    endian_swapper
@@ -64,6 +65,7 @@ How-to Guides
 
 .. toctree::
    :maxdepth: 1
+   :caption: How-to Guides
 
    writing_testbenches
    coroutines
@@ -92,6 +94,7 @@ Key topics
 
 .. toctree::
    :maxdepth: 1
+   :caption: Key topics
 
    troubleshooting
 
@@ -117,6 +120,7 @@ Reference
 
 .. toctree::
    :maxdepth: 1
+   :caption: Reference
 
    building
    Python Code Library Reference <library_reference>
@@ -133,6 +137,7 @@ Development & Community
 
 .. toctree::
    :maxdepth: 1
+   :caption: Development & Community
 
    roadmap
 
@@ -146,6 +151,7 @@ Release Notes
 
 .. toctree::
    :maxdepth: 1
+   :caption: Release Notes
 
    release_notes
 
