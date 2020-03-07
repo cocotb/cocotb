@@ -17,11 +17,8 @@ Welcome to Cocotb's documentation!
    introduction
 
 .. todo::
-   Move "Contributors" section to "Development & Community"
-
-#########
-Tutorials
-#########
+   - Move "Contributors" section to "Development & Community"
+   - Move "Installation" section to here
 
 ..
    Tutorials - lessons that take the reader by the hand through a series of steps to complete a project
@@ -39,6 +36,7 @@ Tutorials
 .. toctree::
    :maxdepth: 1
    :caption: Tutorials
+   :name: tutorials
 
    quickstart
    endian_swapper
@@ -46,10 +44,6 @@ Tutorials
    hal_cosimulation
    examples
 
-
-#############
-How-to Guides
-#############
 
 ..
    How-To Guides - guides that take the reader through the steps required to solve a common problem
@@ -66,6 +60,7 @@ How-to Guides
 .. toctree::
    :maxdepth: 1
    :caption: How-to Guides
+   :name: howto_guides
 
    writing_testbenches
    coroutines
@@ -77,10 +72,6 @@ How-to Guides
    - How to deal with existing Verification IP?
    - Point to https://github.com/cocotb/cocotb/wiki/Code-Examples
 
-
-##########
-Key topics
-##########
 
 ..
    Explanation (Background, Discussions) - discussions that clarify and illuminate a particular topic
@@ -95,6 +86,7 @@ Key topics
 .. toctree::
    :maxdepth: 1
    :caption: Key topics
+   :name: key_topics
 
    troubleshooting
 
@@ -104,10 +96,6 @@ Key topics
    - Explain ReadOnly/ReadWrite/... phases
    - Add pitfall from https://github.com/cocotb/cocotb/issues/526#issuecomment-300371629 to troubleshooting
 
-
-#########
-Reference
-#########
 
 ..
    Reference - technical descriptions of the machinery and its operation
@@ -121,6 +109,7 @@ Reference
 .. toctree::
    :maxdepth: 1
    :caption: Reference
+   :name: reference
 
    building
    Python Code Library Reference <library_reference>
@@ -131,29 +120,18 @@ Reference
 .. todo::
    - *Maybe* add a glossary (Coroutine, Driver, Monitor, Scoreboard, HDL, RTL, GPI, V(H)PI, FLI, VIP, UVM, MDV, DUT/DUV)
 
-#######################
-Development & Community
-#######################
-
 .. toctree::
    :maxdepth: 1
    :caption: Development & Community
+   :name: development_community
 
    roadmap
+   release_notes
 
 .. todo::
    Add "Join us online" and "Contributing"
 
 
-#############
-Release Notes
-#############
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Release Notes
-
-   release_notes
 
 
 #######
