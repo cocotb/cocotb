@@ -91,6 +91,7 @@ Welcome to Cocotb's documentation!
    troubleshooting
 
 .. todo::
+   - Move section "How does cocotb work?" from Introduction to here
    - Add some info from :doc:`coroutines`
    - Add GPI section
    - Explain ReadOnly/ReadWrite/... phases
@@ -129,8 +130,8 @@ Welcome to Cocotb's documentation!
    release_notes
 
 .. todo::
-   Add "Join us online" and "Contributing"
-
+   - Add "Join us online" and "Contributing"
+   - In Contributing, add explanation on how to provide a PR, how to test existing PRs, etc.
 
 
 
