@@ -36,6 +36,7 @@ import traceback
 import warnings
 from fractions import Fraction
 from decimal import Decimal
+from math import isclose
 
 """
 A set of tests that demonstrate cocotb functionality
@@ -205,14 +206,6 @@ def test_adding_a_coroutine_without_starting(dut):
     else:
         raise TestFailure
 
-def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
-    """
-    Polyfill for math.isclose() (Python 3.5+): floating-point "equal"
-
-    Implementation taken from
-    https://www.python.org/dev/peps/pep-0485/#proposed-implementation
-    """
-    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 @cocotb.test(expect_fail=False)
 def test_clock_with_units(dut):
