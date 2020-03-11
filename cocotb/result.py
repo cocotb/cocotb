@@ -85,8 +85,18 @@ def create_error(obj, msg):
 
 
 class ReturnValue(Exception):
-    """Helper exception needed for Python versions prior to 3.3."""
+    """
+    Helper exception needed for Python versions prior to 3.3.
+
+    .. deprecated:: 1.4
+        Use a :keyword:`return` statement instead; this works in all supported versions of Python.
+    """
+
     def __init__(self, retval):
+        warnings.warn(
+            "``ReturnValue`` is deprecated, use a normal return statement instead.",
+            DeprecationWarning,
+            stacklevel=2)
         self.retval = retval
 
 
