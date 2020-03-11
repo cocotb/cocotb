@@ -1,7 +1,7 @@
 import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Timer, Edge, RisingEdge, FallingEdge, Join
-from cocotb.result import TestFailure, ReturnValue
+from cocotb.result import TestFailure
 
 import sys
 
@@ -24,7 +24,7 @@ def signal_mon(signal, idx, edge):
         yield edge(signal)
         edges += 1
 
-    raise ReturnValue(edges)
+    return edges
 
 class DualMonitor:
     def __init__(self, edge, signal):

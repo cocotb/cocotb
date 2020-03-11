@@ -50,7 +50,7 @@ from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              NullTrigger, Combine, Event, First, Trigger)
 from cocotb.clock import Clock
 from cocotb.result import (
-    ReturnValue, TestFailure, TestError, TestSuccess, raise_error, create_error
+    TestFailure, TestError, TestSuccess, raise_error, create_error
 )
 from cocotb.utils import get_sim_time
 from cocotb.outcomes import Value, Error
@@ -518,7 +518,7 @@ def count_edges_cycles(signal, edges):
         yield edge
         signal._log.info("Rising edge %d detected" % i)
     signal._log.info("Finished, returning %d" % edges)
-    raise ReturnValue(edges)
+    return edges
 
 
 @cocotb.coroutine
@@ -776,7 +776,7 @@ def join_finished(dut):
     @cocotb.coroutine
     def some_coro():
         yield Timer(1)
-        raise ReturnValue(retval)
+        return retval
 
     coro = cocotb.fork(some_coro())
 
@@ -801,7 +801,7 @@ def consistent_join(dut):
         rising_edge = RisingEdge(clk)
         for _ in range(cycles):
             yield rising_edge
-        raise ReturnValue(3)
+        return 3
 
     cocotb.fork(Clock(dut.clk, 2000, 'ps').start())
 
@@ -1053,7 +1053,7 @@ def test_immediate_coro(dut):
     """
     @cocotb.coroutine
     def immediate_value():
-        raise ReturnValue(42)
+        return 42
         yield
 
     @cocotb.coroutine
@@ -1256,7 +1256,7 @@ def test_expect_exception_list(dut):
 @cocotb.coroutine
 def example():
     yield Timer(10, 'ns')
-    raise ReturnValue(1)
+    return 1
 
 
 @cocotb.test()
