@@ -30,7 +30,7 @@ import cocotb
 from cocotb.triggers import RisingEdge, Timer, ReadOnly
 from cocotb.clock import Clock
 from cocotb.drivers.avalon import AvalonMaster
-from cocotb.result import ReturnValue, TestFailure
+from cocotb.result import TestFailure
 
 import hal
 import io_module
@@ -64,7 +64,7 @@ def initial_hal_test(dut, debug=True):
         master.log.debug("External source: reading address 0x%08X" % address)
         value = yield master.read(address)
         master.log.debug("Reading complete: got value 0x%08x" % value)
-        raise ReturnValue(value)
+        return value
 
     @cocotb.function
     def write(address, value):

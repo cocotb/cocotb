@@ -37,7 +37,7 @@ import threading
 import time
 import cocotb
 import pdb
-from cocotb.result import ReturnValue, TestFailure
+from cocotb.result import TestFailure
 from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge, ReadWrite
 from cocotb.clock import Clock
 from cocotb.decorators import external
@@ -59,7 +59,7 @@ def yield_to_readwrite(dut):
     yield RisingEdge(dut.clk)
     dut._log.info("Returning from yield_to_readwrite")
     yield Timer(1, "ns")
-    raise ReturnValue(2)
+    return 2
 
 
 def calls_cocotb_function(dut):
@@ -179,7 +179,7 @@ def test_external_and_continue(dut):
 @cocotb.coroutine
 def run_external(dut):
     value = yield external(calls_cocotb_function)(dut)
-    raise ReturnValue(value)
+    return value
 
 @cocotb.test()
 def test_external_from_fork(dut):
@@ -264,8 +264,7 @@ def test_function_returns_exception(dut):
 
     @cocotb.function
     def func():
-        # avoid using `return` syntax here since that requires Python >= 3.3
-        raise ReturnValue(ValueError())
+        return ValueError()
         yield
 
     @external
@@ -338,7 +337,7 @@ def test_function_called_in_parallel(dut):
     @cocotb.function
     def function(x):
         yield Timer(1)
-        raise ReturnValue(x)
+        return x
 
     @cocotb.external
     def call_function(x):
