@@ -29,4 +29,4 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE = test_cocotb
+MODULE = test_cocotb,test_deprecated
