@@ -62,6 +62,7 @@ OS=Msys
 endif
 export OS
 
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
 
 # Default to Icarus if no simulator is defined

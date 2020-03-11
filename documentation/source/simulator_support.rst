@@ -150,3 +150,10 @@ GHDL
 
 Support is preliminary.
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.
+
+.. _sim-nvc:
+
+NVC
+===
+
+To enable display of VHPI traces, use ``SIM_ARGS=--vhpi-trace make ...``.
