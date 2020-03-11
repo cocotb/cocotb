@@ -9,26 +9,11 @@ What is cocotb?
 
 cocotb is completely free, open source (under the `BSD License <https://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_(%22BSD_License_2.0%22,_%22Revised_BSD_License%22,_%22New_BSD_License%22,_or_%22Modified_BSD_License%22)>`_) and hosted on `GitHub <https://github.com/cocotb/cocotb>`_.
 
-cocotb requires a simulator to simulate the RTL. Simulators that have been tested and known to work with cocotb:
-
-Linux Platforms
-
-* `Icarus Verilog <http://iverilog.icarus.com/>`_
-* `GHDL <https://ghdl.free.fr/>`_
-* `Aldec <https://www.aldec.com/>`_ Riviera-PRO
-* `Synopsys <https://www.synopsys.com/>`_ VCS
-* `Cadence <https://www.cadence.com/>`_ Incisive and Xcelium
-* `Mentor <https://www.mentor.com/>`_ ModelSim (DE and SE)
-* `Verilator <https://verilator.com>`_
-
-Windows Platform
-
-* `Icarus Verilog <http://iverilog.icarus.com/>`_
-* `Aldec <https://www.aldec.com/>`_ Riviera-PRO
-* `Mentor <https://www.mentor.com/>`_ ModelSim (DE and SE)
+cocotb requires a simulator to simulate the HDL design
+and has been used with a variety of simulators on Linux, Windows and Mac OS.
+Please check the :ref:``simulator_support`` page for specifics.
 
 A (possibly older) version of cocotb can be used live in a web-browser using `EDA Playground <https://www.edaplayground.com>`_.
-
 
 
 How is cocotb different?
