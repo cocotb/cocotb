@@ -1373,7 +1373,7 @@ async def test_annotated_async_from_async(dut):
 
 
 @cocotb.test()
-async def test_annotated_async_from_async(dut):
+async def test_async_from_async(dut):
     """ Test that async coroutines are able to call raw async functions """
     v = await produce.async_(Value(1))
     assert v == 1
