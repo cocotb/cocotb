@@ -303,12 +303,35 @@ class BinaryValue(object):
         """Does the value contain any ``X``'s?  Inquiring minds want to know."""
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
 
-    value = property(get_value, set_value, None,
-                     "Integer access to the value. **deprecated**")
-    integer = property(get_value, set_value, None,
-                       "The integer representation of the underlying vector.")
-    signed_integer = property(get_value_signed, set_value, None,
-                              "The signed integer representation of the underlying vector.")
+    @property
+    def value(self):
+        "Integer access to the value. **deprecated**"
+        return self.get_value()
+
+    @value.setter
+    def value(self, val):
+        "Integer access to the value. **deprecated**"
+        self.set_value(val)
+
+    @property
+    def integer(self):
+        "The integer representation of the underlying vector."
+        return self.get_value()
+
+    @integer.setter
+    def integer(self, val):
+        "The integer representation of the underlying vector."
+        self.set_value(val)
+
+    @property
+    def signed_integer(self):
+        "The signed integer representation of the underlying vector."
+        return self.get_value_signed()
+
+    @signed_integer.setter
+    def signed_integer(self, val):
+        "The signed integer representation of the underlying vector."
+        self.set_value(val)
 
     def get_buff(self):
         """Attribute :attr:`buff` represents the value as a binary string buffer.
@@ -361,8 +384,15 @@ class BinaryValue(object):
                   "(%d -> %d)" % (l, self._n_bits))
             self._str = self._str[l - self._n_bits:]
 
-    buff = property(get_buff, set_buff, None,
-                    "Access to the value as a buffer.")
+    @property
+    def buff(self):
+        "Access to the value as a buffer."
+        return self.get_buff()
+
+    @buff.setter
+    def buff(self, val):
+        "Access to the value as a buffer."
+        self.set_buff(val)
 
     def get_binstr(self):
         """Attribute :attr:`binstr` is the binary representation stored as
@@ -377,15 +407,20 @@ class BinaryValue(object):
         self._str = string
         self._adjust()
 
-    binstr = property(get_binstr, set_binstr, None,
-                      "Access to the binary string.")
+    @property
+    def binstr(self):
+        "Access to the binary string."
+        return self.get_binstr()
 
-    def _get_n_bits(self):
+    @binstr.setter
+    def binstr(self, val):
+        "Access to the binary string."
+        self.set_binstr(val)
+
+    @property
+    def n_bits(self):
         """The number of bits of the binary value."""
         return self._n_bits
-
-    n_bits = property(_get_n_bits, None, None,
-                      "Access to the number of bits of the binary value.")
 
     def hex(self):
         try:
