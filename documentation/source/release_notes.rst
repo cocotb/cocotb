@@ -8,6 +8,16 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+cocotb 1.3.1
+============
+
+Released on 15 March 2020
+
+Notable changes and bug fixes
+-----------------------------
+- The Makefiles for the Aldec Riviera and Cadence Incisive simulators have been fixed to use the correct name of the VHPI library (``libcocotbvhpi``).
+  This bug prevented VHDL designs from being simulated, and was a regression in 1.3.0. (:pr:`1472`)
+
 cocotb 1.3.0
 ============
 
