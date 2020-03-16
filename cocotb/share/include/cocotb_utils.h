@@ -30,6 +30,8 @@
 #ifndef COCOTB_UTILS_H_
 #define COCOTB_UTILS_H_
 
+#include <gpi_logging.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,8 +44,26 @@ extern void* utils_dyn_sym(void *handle, const char* sym_name);
 
 extern int is_python_context;
 
-void to_python(void);
-void to_simulator(void);
+// to_python and to_simulator are implemented as macros instead of functions so
+// that the logs reference the user's lineno and filename
+
+#define to_python() do { \
+    if (is_python_context) { \
+        LOG_ERROR("FATAL: We are calling up again"); \
+        exit(1); \
+    } \
+    ++is_python_context; \
+    LOG_DEBUG("Returning to Python"); \
+} while (0)
+
+#define to_simulator() do { \
+    if (!is_python_context) { \
+        LOG_ERROR("FATAL: We have returned twice from python\n"); \
+        exit(1); \
+    } \
+    --is_python_context; \
+    LOG_DEBUG("Returning to simulator"); \
+} while (0)
 
 #define COCOTB_UNUSED(x) ((void)x)
 
