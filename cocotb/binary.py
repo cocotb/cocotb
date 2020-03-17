@@ -285,16 +285,6 @@ class BinaryValue(object):
         """Return the integer representation of the underlying vector."""
         return self._convert_from[self.binaryRepresentation](self._str)
 
-    def get_value_signed(self):
-        """Return the signed integer representation of the underlying vector."""
-        ival = int(resolve(self._str), 2)
-        bits = len(self._str)
-        signbit = (1 << (bits - 1))
-        if (ival & signbit) == 0:
-            return ival
-        else:
-            return -1 * (1 + (int(~ival) & (signbit - 1)))
-
     def set_value(self, integer):
         self._str = self._convert_to[self.binaryRepresentation](integer)
 
@@ -325,7 +315,15 @@ class BinaryValue(object):
     @property
     def signed_integer(self):
         "The signed integer representation of the underlying vector."
-        return self.get_value_signed()
+        ival = int(resolve(self._str), 2)
+        bits = len(self._str)
+        signbit = (1 << (bits - 1))
+        if (ival & signbit) == 0:
+            return ival
+        else:
+            return -1 * (1 + (int(~ival) & (signbit - 1)))
+
+    get_value_signed = signed_integer.fget
 
     @signed_integer.setter
     def signed_integer(self, val):
