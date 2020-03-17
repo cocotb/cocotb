@@ -281,13 +281,6 @@ class BinaryValue(object):
             rv = x
         return rv
 
-    def get_value(self):
-        """Return the integer representation of the underlying vector."""
-        return self._convert_from[self.binaryRepresentation](self._str)
-
-    def set_value(self, integer):
-        self._str = self._convert_to[self.binaryRepresentation](integer)
-
     @property
     def is_resolvable(self):
         """Does the value contain any ``X``'s?  Inquiring minds want to know."""
@@ -297,20 +290,23 @@ class BinaryValue(object):
     def value(self):
         "Integer access to the value"
         warnings.warn("deprecated", DeprecationWarning)
-        return self.get_value()
+        return self.integer
 
     @value.setter
     def value(self, val):
-        self.set_value(val)
+        self.integer = val
 
     @property
     def integer(self):
         "The integer representation of the underlying vector."
-        return self.get_value()
+        return self._convert_from[self.binaryRepresentation](self._str)
 
     @integer.setter
     def integer(self, val):
-        self.set_value(val)
+        self._str = self._convert_to[self.binaryRepresentation](val)
+
+    get_value = integer.fget
+    set_value = integer.fset
 
     @property
     def signed_integer(self):
@@ -327,9 +323,30 @@ class BinaryValue(object):
 
     @signed_integer.setter
     def signed_integer(self, val):
-        self.set_value(val)
+        self.integer = val
 
-    def get_buff(self):
+    def get_hex_buff(self):
+        bstr = self.buff
+        hstr = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
+        return hstr
+
+    def _adjust(self):
+        """Pad/truncate the bit string to the correct length."""
+        if self._n_bits is None:
+            return
+        l = len(self._str)
+        if l < self._n_bits:
+            if self.big_endian:
+                self._str = self._str + "0" * (self._n_bits - l)
+            else:
+                self._str = "0" * (self._n_bits - l) + self._str
+        elif l > self._n_bits:
+            print("WARNING: truncating value to match requested number of bits "
+                  "(%d -> %d)" % (l, self._n_bits))
+            self._str = self._str[l - self._n_bits:]
+
+    @property
+    def buff(self):
         """Attribute :attr:`buff` represents the value as a binary string buffer.
 
         >>> "0100000100101111".buff == "\x41\x2F"
@@ -351,51 +368,26 @@ class BinaryValue(object):
                 buff = chr(val) + buff
         return buff
 
-    def get_hex_buff(self):
-        bstr = self.get_buff()
-        hstr = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
-        return hstr
-
-    def set_buff(self, buff):
+    @buff.setter
+    def buff(self, val):
         self._str = ""
-        for char in buff:
+        for char in val:
             if self.big_endian:
                 self._str += "{0:08b}".format(ord(char))
             else:
                 self._str = "{0:08b}".format(ord(char)) + self._str
         self._adjust()
 
-    def _adjust(self):
-        """Pad/truncate the bit string to the correct length."""
-        if self._n_bits is None:
-            return
-        l = len(self._str)
-        if l < self._n_bits:
-            if self.big_endian:
-                self._str = self._str + "0" * (self._n_bits - l)
-            else:
-                self._str = "0" * (self._n_bits - l) + self._str
-        elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
-            self._str = self._str[l - self._n_bits:]
+    get_buff = buff.fget
+    set_buff = buff.fset
 
     @property
-    def buff(self):
-        "Access to the value as a buffer."
-        return self.get_buff()
-
-    @buff.setter
-    def buff(self, val):
-        "Access to the value as a buffer."
-        self.set_buff(val)
-
-    def get_binstr(self):
-        """Attribute :attr:`binstr` is the binary representation stored as
-        a string of ``1`` and ``0``."""
+    def binstr(self):
+        "Access to the binary string."
         return self._str
 
-    def set_binstr(self, string):
+    @binstr.setter
+    def binstr(self, string):
         for char in string:
             if char not in BinaryValue._permitted_chars:
                 raise ValueError("Attempting to assign character %s to a %s" %
@@ -403,15 +395,8 @@ class BinaryValue(object):
         self._str = string
         self._adjust()
 
-    @property
-    def binstr(self):
-        "Access to the binary string."
-        return self.get_binstr()
-
-    @binstr.setter
-    def binstr(self, val):
-        "Access to the binary string."
-        self.set_binstr(val)
+    get_binstr = binstr.fget
+    set_binstr = binstr.fset
 
     @property
     def n_bits(self):
@@ -420,7 +405,7 @@ class BinaryValue(object):
 
     def hex(self):
         try:
-            return hex(self.get_value())
+            return hex(self.integer)
         except Exception:
             return hex(int(self.binstr, 2))
 
@@ -666,7 +651,7 @@ class BinaryValue(object):
                 _binstr = self.binstr[self._n_bits-1-index]
         rv = BinaryValue(n_bits=len(_binstr), bigEndian=self.big_endian,
                          binaryRepresentation=self.binaryRepresentation)
-        rv.set_binstr(_binstr)
+        rv.binstr = _binstr
         return rv
 
     def __setitem__(self, key, val):
