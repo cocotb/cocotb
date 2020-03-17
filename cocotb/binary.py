@@ -305,12 +305,12 @@ class BinaryValue(object):
 
     @property
     def value(self):
-        "Integer access to the value. **deprecated**"
+        "Integer access to the value"
+        warnings.warn("deprecated", DeprecationWarning)
         return self.get_value()
 
     @value.setter
     def value(self, val):
-        "Integer access to the value. **deprecated**"
         self.set_value(val)
 
     @property
@@ -320,7 +320,6 @@ class BinaryValue(object):
 
     @integer.setter
     def integer(self, val):
-        "The integer representation of the underlying vector."
         self.set_value(val)
 
     @property
@@ -330,7 +329,6 @@ class BinaryValue(object):
 
     @signed_integer.setter
     def signed_integer(self, val):
-        "The signed integer representation of the underlying vector."
         self.set_value(val)
 
     def get_buff(self):
