@@ -46,7 +46,7 @@ from cocotb.log import SimLog
 from cocotb.result import TestError
 
 # Only issue a warning for each deprecated attribute access
-_deprecation_warned = {}
+_deprecation_warned = set()
 
 
 class SimHandleBase(object):
@@ -76,7 +76,7 @@ class SimHandleBase(object):
         self._handle = handle
         self._len = None
         self._sub_handles = {}  # Dictionary of children
-        self._invalid_sub_handles = {}  # Dictionary of invalid queries
+        self._invalid_sub_handles = set()  # Set of invalid queries
 
         self._name = simulator.get_name_string(self._handle)
         self._type = simulator.get_type_string(self._handle)
@@ -139,7 +139,7 @@ class SimHandleBase(object):
         if name in self._compat_mapping:
             if name not in _deprecation_warned:
                 warnings.warn("Use of attribute %r is deprecated, use %r instead" % (name, self._compat_mapping[name]))
-                _deprecation_warned[name] = True
+                _deprecation_warned.add(name)
             return setattr(self, self._compat_mapping[name], value)
         else:
             return object.__setattr__(self, name, value)
@@ -148,7 +148,7 @@ class SimHandleBase(object):
         if name in self._compat_mapping:
             if name not in _deprecation_warned:
                 warnings.warn("Use of attribute %r is deprecated, use %r instead" % (name, self._compat_mapping[name]))
-                _deprecation_warned[name] = True
+                _deprecation_warned.add(name)
             return getattr(self, self._compat_mapping[name])
         else:
             return object.__getattribute__(self, name)
@@ -285,7 +285,7 @@ class HierarchyObject(RegionObject):
         if new_handle:
             self._sub_handles[name] = SimHandle(new_handle, self._child_path(name))
         else:
-            self._invalid_sub_handles[name] = None
+            self._invalid_sub_handles.add(name)
         return new_handle
 
     def _id(self, name, extended=True):
