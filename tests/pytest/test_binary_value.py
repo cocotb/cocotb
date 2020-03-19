@@ -94,11 +94,9 @@ def test_init_little_endian_twos_comp():
     temp_bin = BinaryValue(value="11111111111111111111110000101100", bigEndian=False,
                            binaryRepresentation=BinaryRepresentation.UNSIGNED)
 
-    # Silently fails to set value when another BinaryValue object is passed in
-    bin6 = BinaryValue(value=temp_bin, n_bits=32, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
-    assert bin6._str == ""
-    assert bin6.binstr == ""
-    assert bin6.n_bits == 32
+    # Illegal to construct from another BinaryValue (used to silently fail)
+    with pytest.raises(TypeError):
+        BinaryValue(value=temp_bin, n_bits=32, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
 
     bin7 = BinaryValue(value=temp_bin.binstr, n_bits=32,
                        bigEndian=False, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)

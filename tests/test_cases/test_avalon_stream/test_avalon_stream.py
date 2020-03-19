@@ -43,7 +43,6 @@ class AvalonSTTB(object):
     @cocotb.coroutine
     def send_data(self, data):
         exp_data = struct.pack("B",data)
-        exp_data = exp_data.decode('ascii')
         self.expected_output.append(exp_data)
         yield self.stream_in.send(data)
 
