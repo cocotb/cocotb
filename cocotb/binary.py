@@ -282,15 +282,6 @@ class BinaryValue(object):
         return rv
 
     @property
-    def value(self):
-        """Integer access to the value. **deprecated**"""
-        return self.integer
-
-    @value.setter
-    def value(self, val):
-        self.integer = val
-
-    @property
     def integer(self):
         """The integer representation of the underlying vector."""
         return self._convert_from[self.binaryRepresentation](self._str)
@@ -298,6 +289,15 @@ class BinaryValue(object):
     @integer.setter
     def integer(self, val):
         self._str = self._convert_to[self.binaryRepresentation](val)
+
+    @property
+    def value(self):
+        """Integer access to the value. **deprecated**"""
+        return self.integer
+
+    @value.setter
+    def value(self, val):
+        self.integer = val
 
     get_value = value.fget
     set_value = value.fset
