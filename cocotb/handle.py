@@ -225,6 +225,28 @@ class RegionObject(SimHandleBase):
 class HierarchyObject(RegionObject):
     """Hierarchy objects are namespace/scope objects."""
 
+    def __get_sub_handle_by_name(self, name):
+        try:
+            return self._sub_handles[name]
+        except KeyError:
+            pass
+
+        # Cache to avoid a call to the simulator if we already know the name is
+        # invalid. Unclear if we care, but we had this before.
+        if name in self._invalid_sub_handles:
+            return None
+
+        new_handle = simulator.get_handle_by_name(self._handle, name)
+
+        if not new_handle:
+            self._invalid_sub_handles.add(name)
+            return None
+
+        sub_handle = SimHandle(new_handle, self._child_path(name))
+        self._sub_handles[name] = sub_handle
+        return sub_handle
+
+
     def __setattr__(self, name, value):
         """Provide transparent access to signals via the hierarchy.
 
@@ -233,60 +255,36 @@ class HierarchyObject(RegionObject):
         Raise an :exc:`AttributeError` if users attempt to create new members which
         don't exist in the design.
         """
+
+        # private attributes pass through directly
         if name.startswith("_"):
             return SimHandleBase.__setattr__(self, name, value)
-        if self.__hasattr__(name) is not None:
-            sub = self.__getattr__(name)
+
+        # then try handles
+        sub = self.__get_sub_handle_by_name(name)
+        if sub is not None:
             sub.value = value
             return
+
+        # compat behavior
         if name in self._compat_mapping:
             return SimHandleBase.__setattr__(self, name, value)
-        raise AttributeError("Attempt to access %s which isn't present in %s" %(
-            name, self._name))
+
+        raise AttributeError("%s contains no object named %s" % (self._name, name))
 
     def __getattr__(self, name):
         """Query the simulator for a object with the specified name
         and cache the result to build a tree of objects.
         """
-        try:
-            return self._sub_handles[name]
-        except KeyError:
-            pass
 
-        if name.startswith("_"):
+        handle = self.__get_sub_handle_by_name(name)
+        if handle is not None:
+            return handle
+
+        if name in self._compat_mapping:
             return SimHandleBase.__getattr__(self, name)
 
-        new_handle = simulator.get_handle_by_name(self._handle, name)
-
-        if not new_handle:
-            if name in self._compat_mapping:
-                return SimHandleBase.__getattr__(self, name)
-            raise AttributeError("%s contains no object named %s" % (self._name, name))
-
-        sub_handle = SimHandle(new_handle, self._child_path(name))
-        self._sub_handles[name] = sub_handle
-        return sub_handle
-
-    def __hasattr__(self, name):
-        """Since calling ``hasattr(handle, "something")`` will print out a
-        backtrace to the log (since usually attempting to access a
-        non-existent member is an error) we provide a 'peek' function.
-
-        We still add the found handle to our dictionary to prevent leaking
-        handles.
-        """
-        if name in self._sub_handles:
-            return self._sub_handles[name]
-
-        if name in self._invalid_sub_handles:
-            return None
-
-        new_handle = simulator.get_handle_by_name(self._handle, name)
-        if new_handle:
-            self._sub_handles[name] = SimHandle(new_handle, self._child_path(name))
-        else:
-            self._invalid_sub_handles.add(name)
-        return new_handle
+        raise AttributeError("%s contains no object named %s" % (self._name, name))
 
     def _id(self, name, extended=True):
         """Query the simulator for a object with the specified name,
@@ -296,9 +294,12 @@ class HierarchyObject(RegionObject):
         if extended:
             name = "\\"+name+"\\"
 
-        if self.__hasattr__(name) is not None:
-            return getattr(self, name)
+        handle = self.__get_sub_handle_by_name(name)
+        if handle is not None:
+            return handle
+
         raise AttributeError("%s contains no object named %s" % (self._name, name))
+
 
 class HierarchyArrayObject(RegionObject):
     """Hierarchy Arrays are containers of Hierarchy Objects."""
