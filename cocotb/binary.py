@@ -347,11 +347,6 @@ class BinaryValue(object):
                 buff = chr(val) + buff
         return buff
 
-    def get_hex_buff(self):
-        bstr = self.buff
-        hstr = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
-        return hstr
-
     @buff.setter
     def buff(self, val):
         self._str = ""
