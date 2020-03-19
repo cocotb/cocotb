@@ -675,7 +675,7 @@ class AvalonSTPkts(ValidatedBusDriver):
     @coroutine
     def _send_string(self, string, sync=True, channel=None):
         """Args:
-            string (str): A string of bytes to send over the bus.
+            string (bytes): A string of bytes to send over the bus.
             channel (int): Channel to send the data on.
         """
         # Avoid spurious object creation by recycling
@@ -747,7 +747,7 @@ class AvalonSTPkts(ValidatedBusDriver):
                 self.bus.endofpacket <= 1
                 if self.use_empty:
                     self.bus.empty <= bus_width - len(string)
-                string = ""
+                string = b""
             else:
                 string = string[bus_width:]
 
@@ -831,11 +831,13 @@ class AvalonSTPkts(ValidatedBusDriver):
         """
 
         # Avoid spurious object creation by recycling
-        if isinstance(pkt, str):
+        if isinstance(pkt, bytes):
             self.log.debug("Sending packet of length %d bytes", len(pkt))
             self.log.debug(hexdump(pkt))
             yield self._send_string(pkt, sync=sync, channel=channel)
             self.log.debug("Successfully sent packet of length %d bytes", len(pkt))
+        elif isinstance(pkt, str):
+            raise TypeError("pkt must be a bytestring, not a unicode string")
         else:
             if channel is not None:
                 self.log.warning("%s is ignoring channel=%d because pkt is an iterable", self.name, channel)

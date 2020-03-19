@@ -84,8 +84,8 @@ class BinaryValue:
     >>> vec.integer = 42
     >>> print(vec.binstr)
     101010
-    >>> print(repr(vec.buff))
-    '*'
+    >>> print(vec.buff)
+    b'*'
 
     """
     _resolve_to_0     = "-lL"  # noqa
@@ -143,22 +143,30 @@ class BinaryValue:
     def assign(self, value):
         """Decides how best to assign the value to the vector.
 
-        We possibly try to be a bit too clever here by first of
-        all trying to assign the raw string as a :attr:`BinaryValue.binstr`,
-        however if the string contains any characters that aren't
-        ``0``, ``1``, ``X`` or ``Z``
-        then we interpret the string as a binary buffer.
+        Picks from the type of its argument whether to set :attr:`integer`,
+        :attr:`binstr`, or :attr:`buff`.
 
         Args:
-            value (str or int or long): The value to assign.
+            value (str or int or bytes): The value to assign.
+
+        .. versionchanged:: 1.4
+
+            This no longer falls back to setting :attr:`buff` if a :class:`str`
+            containining any characters that aren't ``0``, ``1``, ``X`` or ``Z``
+            is used, since :attr:`buff` now accepts only :class:`bytes`. Instead,
+            an error is raised.
         """
         if isinstance(value, int):
-            self.value = value
+            self.integer = value
         elif isinstance(value, str):
-            try:
-                self.binstr = value
-            except ValueError:
-                self.buff = value
+            self.binstr = value
+        elif isinstance(value, bytes):
+            self.buff = value
+        else:
+            raise TypeError(
+                "value must be int, str, or bytes, not {!r}"
+                .format(type(value).__name__)
+            )
 
     def _convert_to_unsigned(self, x):
         x = bin(x)
@@ -323,36 +331,41 @@ class BinaryValue:
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
 
     @property
-    def buff(self):
-        """Attribute :attr:`buff` represents the value as a binary string buffer.
+    def buff(self) -> bytes:
+        r"""The value as a binary string buffer.
 
-        >>> BinaryValue("0100000100101111").buff == "\x41\x2F"
+        >>> BinaryValue("01000001" + "00101111").buff == b"\x41\x2F"
         True
+
+        .. versionchanged:: 1.4
+            This changed from :class:`str` to :class:`bytes`.
+            Note that for older versions used with Python 2 these types were
+            indistinguishable.
         """
         bits = resolve(self._str)
 
         if len(bits) % 8:
             bits = "0" * (8 - len(bits) % 8) + bits
 
-        buff = ""
+        buff = []
         while bits:
             byte = bits[:8]
             bits = bits[8:]
             val = int(byte, 2)
             if self.big_endian:
-                buff += chr(val)
+                buff += [val]
             else:
-                buff = chr(val) + buff
-        return buff
+                buff = [val] + buff
+        return bytes(buff)
 
     @buff.setter
-    def buff(self, val):
+    def buff(self, val: bytes):
         self._str = ""
         for char in val:
             if self.big_endian:
-                self._str += "{0:08b}".format(ord(char))
+                self._str += "{0:08b}".format(char)
             else:
-                self._str = "{0:08b}".format(ord(char)) + self._str
+                self._str = "{0:08b}".format(char) + self._str
         self._adjust()
 
     def _adjust(self):
