@@ -42,6 +42,7 @@ Interacting with the Simulator
 .. autoclass:: BinaryValue
     :members:
     :member-order: bysource
+    :exclude-members: get_value, get_buff, get_binstr, get_value_signed
 
 .. autoclass:: cocotb.bus.Bus
     :members:
