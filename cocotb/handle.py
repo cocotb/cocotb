@@ -198,13 +198,13 @@ class RegionObject(SimHandleBase):
                 self._log.debug("%s", e)
                 continue
 
-            key = self._sub_handle_key(name)
-
-            if key is not None:
-                self._sub_handles[key] = hdl
-            else:
+            try:
+                key = self._sub_handle_key(name)
+            except ValueError:
                 self._log.debug("Unable to translate handle >%s< to a valid _sub_handle key", hdl._name)
                 continue
+
+            self._sub_handles[key] = hdl
 
         self._discovered = True
 
@@ -320,8 +320,7 @@ class HierarchyArrayObject(RegionObject):
         if result:
             return int(result.group("index"))
         else:
-            self._log.error("Unable to match an index pattern: %s", name)
-            return None
+            raise ValueError("Unable to match an index pattern: {}".format(name))
 
     def __len__(self):
         """Returns the 'length' of the generate block."""
@@ -646,8 +645,6 @@ class ModifiableObject(NonConstantObject):
             vallist = list(value["values"])
             vallist.reverse()
             if len(vallist) * value["bits"] != len(self):
-                self._log.critical("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long",
-                                   len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self))
                 raise TypeError("Unable to set with array length %d of %d bit entries = %d total, target is only %d bits long" %
                                 (len(value["values"]), value["bits"], len(value["values"]) * value["bits"], len(self)))
 
@@ -656,8 +653,9 @@ class ModifiableObject(NonConstantObject):
             value = BinaryValue(value=num, n_bits=len(self), bigEndian=False)
 
         elif not isinstance(value, BinaryValue):
-            self._log.critical("Unsupported type for value assignment: %s (%s)", type(value), repr(value))
-            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+            raise TypeError(
+                "Unsupported type for value assignment: {} ({!r})"
+                .format(type(value), value))
 
         simulator.set_signal_val_binstr(self._handle, set_action, value.binstr)
 
@@ -716,9 +714,9 @@ class RealObject(ModifiableObject):
         try:
             value = float(value)
         except ValueError:
-            self._log.critical("Unsupported type for real value assignment: %s (%s)" %
-                               (type(value), repr(value)))
-            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+            raise TypeError(
+                "Unsupported type for real value assignment: {} ({!r})"
+                .format(type(value), value))
 
         simulator.set_signal_val_real(self._handle, set_action, value)
 
@@ -751,8 +749,9 @@ class EnumObject(ModifiableObject):
         if isinstance(value, BinaryValue):
             value = int(value)
         elif not isinstance(value, int):
-            self._log.critical("Unsupported type for integer value assignment: %s (%s)", type(value), repr(value))
-            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+            raise TypeError(
+                "Unsupported type for enum value assignment: {} ({!r})"
+                .format(type(value), value))
 
         simulator.set_signal_val_long(self._handle, set_action, value)
 
@@ -782,8 +781,9 @@ class IntegerObject(ModifiableObject):
         if isinstance(value, BinaryValue):
             value = int(value)
         elif not isinstance(value, int):
-            self._log.critical("Unsupported type for integer value assignment: %s (%s)", type(value), repr(value))
-            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+            raise TypeError(
+                "Unsupported type for integer value assignment: {} ({!r})"
+                .format(type(value), value))
 
         simulator.set_signal_val_long(self._handle, set_action, value)
 
@@ -824,8 +824,9 @@ class StringObject(ModifiableObject):
             value = value.encode('ascii')  # may throw UnicodeEncodeError
 
         if not isinstance(value, bytes):
-            self._log.critical("Unsupported type for string value assignment: %s (%s)", type(value), repr(value))
-            raise TypeError("Unable to set simulator value with type %s" % (type(value)))
+            raise TypeError(
+                "Unsupported type for string value assignment: {} ({!r})"
+                .format(type(value), value))
 
         simulator.set_signal_val_str(self._handle, set_action, value)
 
