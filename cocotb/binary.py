@@ -313,16 +313,16 @@ class BinaryValue(object):
         else:
             return -1 * (1 + (int(~ival) & (signbit - 1)))
 
+    @signed_integer.setter
+    def signed_integer(self, val):
+        self.integer = val
+
     get_value_signed = signed_integer.fget
 
     @property
     def is_resolvable(self):
         """Does the value contain any ``X``'s?  Inquiring minds want to know."""
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
-
-    @signed_integer.setter
-    def signed_integer(self, val):
-        self.integer = val
 
     @property
     def buff(self):
