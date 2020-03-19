@@ -281,12 +281,30 @@ class BinaryValue(object):
             rv = x
         return rv
 
-    def get_value(self):
-        """Return the integer representation of the underlying vector."""
+    @property
+    def integer(self):
+        """The integer representation of the underlying vector."""
         return self._convert_from[self.binaryRepresentation](self._str)
 
-    def get_value_signed(self):
-        """Return the signed integer representation of the underlying vector."""
+    @integer.setter
+    def integer(self, val):
+        self._str = self._convert_to[self.binaryRepresentation](val)
+
+    @property
+    def value(self):
+        """Integer access to the value. **deprecated**"""
+        return self.integer
+
+    @value.setter
+    def value(self, val):
+        self.integer = val
+
+    get_value = value.fget
+    set_value = value.fset
+
+    @property
+    def signed_integer(self):
+        """The signed integer representation of the underlying vector."""
         ival = int(resolve(self._str), 2)
         bits = len(self._str)
         signbit = (1 << (bits - 1))
@@ -295,22 +313,19 @@ class BinaryValue(object):
         else:
             return -1 * (1 + (int(~ival) & (signbit - 1)))
 
-    def set_value(self, integer):
-        self._str = self._convert_to[self.binaryRepresentation](integer)
+    @signed_integer.setter
+    def signed_integer(self, val):
+        self.integer = val
+
+    get_value_signed = signed_integer.fget
 
     @property
     def is_resolvable(self):
         """Does the value contain any ``X``'s?  Inquiring minds want to know."""
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
 
-    value = property(get_value, set_value, None,
-                     "Integer access to the value. **deprecated**")
-    integer = property(get_value, set_value, None,
-                       "The integer representation of the underlying vector.")
-    signed_integer = property(get_value_signed, set_value, None,
-                              "The signed integer representation of the underlying vector.")
-
-    def get_buff(self):
+    @property
+    def buff(self):
         """Attribute :attr:`buff` represents the value as a binary string buffer.
 
         >>> "0100000100101111".buff == "\x41\x2F"
@@ -333,13 +348,14 @@ class BinaryValue(object):
         return buff
 
     def get_hex_buff(self):
-        bstr = self.get_buff()
+        bstr = self.buff
         hstr = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
         return hstr
 
-    def set_buff(self, buff):
+    @buff.setter
+    def buff(self, val):
         self._str = ""
-        for char in buff:
+        for char in val:
             if self.big_endian:
                 self._str += "{0:08b}".format(ord(char))
             else:
@@ -361,15 +377,16 @@ class BinaryValue(object):
                   "(%d -> %d)" % (l, self._n_bits))
             self._str = self._str[l - self._n_bits:]
 
-    buff = property(get_buff, set_buff, None,
-                    "Access to the value as a buffer.")
+    get_buff = buff.fget
+    set_buff = buff.fset
 
-    def get_binstr(self):
-        """Attribute :attr:`binstr` is the binary representation stored as
-        a string of ``1`` and ``0``."""
+    @property
+    def binstr(self):
+        """ The binary representation stored as a string of ``0``, ``1``, and possibly ``x``, ``z``, and other states. """
         return self._str
 
-    def set_binstr(self, string):
+    @binstr.setter
+    def binstr(self, string):
         for char in string:
             if char not in BinaryValue._permitted_chars:
                 raise ValueError("Attempting to assign character %s to a %s" %
@@ -377,19 +394,17 @@ class BinaryValue(object):
         self._str = string
         self._adjust()
 
-    binstr = property(get_binstr, set_binstr, None,
-                      "Access to the binary string.")
+    get_binstr = binstr.fget
+    set_binstr = binstr.fset
 
-    def _get_n_bits(self):
+    @property
+    def n_bits(self):
         """The number of bits of the binary value."""
         return self._n_bits
 
-    n_bits = property(_get_n_bits, None, None,
-                      "Access to the number of bits of the binary value.")
-
     def hex(self):
         try:
-            return hex(self.get_value())
+            return hex(self.integer)
         except Exception:
             return hex(int(self.binstr, 2))
 
@@ -635,7 +650,7 @@ class BinaryValue(object):
                 _binstr = self.binstr[self._n_bits-1-index]
         rv = BinaryValue(n_bits=len(_binstr), bigEndian=self.big_endian,
                          binaryRepresentation=self.binaryRepresentation)
-        rv.set_binstr(_binstr)
+        rv.binstr = _binstr
         return rv
 
     def __setitem__(self, key, val):
