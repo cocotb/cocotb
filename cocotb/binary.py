@@ -282,14 +282,8 @@ class BinaryValue(object):
         return rv
 
     @property
-    def is_resolvable(self):
-        """Does the value contain any ``X``'s?  Inquiring minds want to know."""
-        return not any(char in self._str for char in BinaryValue._resolve_to_error)
-
-    @property
     def value(self):
-        "Integer access to the value"
-        warnings.warn("deprecated", DeprecationWarning)
+        "Integer access to the value. **deprecated**"
         return self.integer
 
     @value.setter
@@ -321,6 +315,11 @@ class BinaryValue(object):
 
     get_value_signed = signed_integer.fget
 
+    @property
+    def is_resolvable(self):
+        """Does the value contain any ``X``'s?  Inquiring minds want to know."""
+        return not any(char in self._str for char in BinaryValue._resolve_to_error)
+
     @signed_integer.setter
     def signed_integer(self, val):
         self.integer = val
@@ -329,21 +328,6 @@ class BinaryValue(object):
         bstr = self.buff
         hstr = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
         return hstr
-
-    def _adjust(self):
-        """Pad/truncate the bit string to the correct length."""
-        if self._n_bits is None:
-            return
-        l = len(self._str)
-        if l < self._n_bits:
-            if self.big_endian:
-                self._str = self._str + "0" * (self._n_bits - l)
-            else:
-                self._str = "0" * (self._n_bits - l) + self._str
-        elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
-            self._str = self._str[l - self._n_bits:]
 
     @property
     def buff(self):
@@ -377,6 +361,21 @@ class BinaryValue(object):
             else:
                 self._str = "{0:08b}".format(ord(char)) + self._str
         self._adjust()
+
+    def _adjust(self):
+        """Pad/truncate the bit string to the correct length."""
+        if self._n_bits is None:
+            return
+        l = len(self._str)
+        if l < self._n_bits:
+            if self.big_endian:
+                self._str = self._str + "0" * (self._n_bits - l)
+            else:
+                self._str = "0" * (self._n_bits - l) + self._str
+        elif l > self._n_bits:
+            print("WARNING: truncating value to match requested number of bits "
+                  "(%d -> %d)" % (l, self._n_bits))
+            self._str = self._str[l - self._n_bits:]
 
     get_buff = buff.fget
     set_buff = buff.fset
