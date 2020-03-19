@@ -283,7 +283,7 @@ class BinaryValue(object):
 
     @property
     def value(self):
-        "Integer access to the value. **deprecated**"
+        """Integer access to the value. **deprecated**"""
         return self.integer
 
     @value.setter
@@ -292,19 +292,19 @@ class BinaryValue(object):
 
     @property
     def integer(self):
-        "The integer representation of the underlying vector."
+        """The integer representation of the underlying vector."""
         return self._convert_from[self.binaryRepresentation](self._str)
 
     @integer.setter
     def integer(self, val):
         self._str = self._convert_to[self.binaryRepresentation](val)
 
-    get_value = integer.fget
-    set_value = integer.fset
+    get_value = value.fget
+    set_value = value.fset
 
     @property
     def signed_integer(self):
-        "The signed integer representation of the underlying vector."
+        """The signed integer representation of the underlying vector."""
         ival = int(resolve(self._str), 2)
         bits = len(self._str)
         signbit = (1 << (bits - 1))
@@ -323,11 +323,6 @@ class BinaryValue(object):
     @signed_integer.setter
     def signed_integer(self, val):
         self.integer = val
-
-    def get_hex_buff(self):
-        bstr = self.buff
-        hstr = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
-        return hstr
 
     @property
     def buff(self):
@@ -351,6 +346,11 @@ class BinaryValue(object):
             else:
                 buff = chr(val) + buff
         return buff
+
+    def get_hex_buff(self):
+        bstr = self.buff
+        hstr = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
+        return hstr
 
     @buff.setter
     def buff(self, val):
@@ -382,7 +382,7 @@ class BinaryValue(object):
 
     @property
     def binstr(self):
-        "Access to the binary string."
+        """ The binary representation stored as a string of ``0``, ``1``, and possibly ``x``, ``z``, and other states. """
         return self._str
 
     @binstr.setter
