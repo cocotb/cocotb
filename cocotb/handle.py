@@ -237,19 +237,8 @@ class HierarchyObject(RegionObject):
             return SimHandleBase.__setattr__(self, name, value)
         if self.__hasattr__(name) is not None:
             sub = self.__getattr__(name)
-            if type(sub) is NonHierarchyIndexableObject:
-                if type(value) is not list:
-                    raise AttributeError("Attempting to set %s which is a NonHierarchyIndexableObject to something other than a list?" % (name))
-
-                if len(sub) != len(value):
-                    raise IndexError("Attempting to set %s with list length %d but target has length %d" % (
-                        name, len(value), len(sub)))
-                for idx in range(len(value)):
-                    sub[idx] = value[idx]
-                return
-            else:
-                sub.value = value
-                return
+            sub.value = value
+            return
         if name in self._compat_mapping:
             return SimHandleBase.__setattr__(self, name, value)
         raise AttributeError("Attempt to access %s which isn't present in %s" %(
@@ -482,15 +471,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
 
     def __setitem__(self, index, value):
         """Provide transparent assignment to indexed array handles."""
-        if type(value) is list:
-            if len(value) != len(self.__getitem__(index)):
-                raise IndexError("Assigning list of length %d to object %s of length %d" % (
-                    len(value), self.__getitem__(index)._fullname, len(self.__getitem__(index))))
-            self._log.info("Setting item %s to %s", self.__getitem__(index)._fullname, value)
-            for idx in range(len(value)):
-                self.__getitem__(index).__setitem__(idx, value[idx])
-        else:
-            self.__getitem__(index).value = value
+        self[index].value = value
 
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -530,11 +511,52 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
 
     @NonHierarchyObject.value.getter
     def value(self):
-        # need to iterate over the sub-object
-        result = []
-        for x in range(len(self)):
-            result.append(self[x].value)
-        return result
+        """A list of each value within this simulation object.
+
+        Getting and setting the current value of an array is done
+        by iterating through sub-handles in left-to-right order.
+
+        Given an HDL array ``arr``:
+
+        +--------------+---------------------+--------------------------------------------------------------+
+        | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
+        +==============+=====================+==============================================================+
+        | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
+        +--------------+---------------------+--------------------------------------------------------------+
+        | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
+        +--------------+---------------------+--------------------------------------------------------------+
+
+        When setting this property as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
+
+        .. note::
+            When setting this property, the values will be cached as explained in :attr:`ModifiableObject.value`.
+
+        .. warning::
+            Assigning a value to a sub-handle:
+
+            - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
+            - **Correct**: ``dut.some_array[0].value = 1``
+        """
+        # Don't use self.__iter__, because it has an unwanted `except IndexError`
+        return [
+            self[i].value
+            for i in self._range_iter(self._range[0], self._range[1])
+        ]
+
+    @value.setter
+    def value(self, value):
+        """Assign value from a list of same length to an array in left-to-right order.
+        Index 0 of the list maps to the left-most index in the array.
+
+        See the docstring for :attr:`value` above.
+        """
+        if type(value) is not list:
+            raise TypeError("Assigning non-list value to object %s of type %s" % (self._name, type(self)))
+        if len(value) != len(self):
+            raise ValueError("Assigning list of length %d to object %s of length %d" % (
+                len(value), self._name, len(self)))
+        for val_idx, self_idx in enumerate(self._range_iter(self._range[0], self._range[1])):
+            self[self_idx].value = value[val_idx]
 
 
 class _SimIterator(collections.abc.Iterator):

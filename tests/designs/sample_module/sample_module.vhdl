@@ -98,6 +98,15 @@ end afunc;
   signal cosLut1, sinLut1 : lutType;
   signal cosLut,  sinLut  : lutType;
 
+  type unsignedArrayType is array (natural range <>) of unsigned(7 downto 0);
+  signal array_7_downto_4 : unsignedArrayType(7 downto 4);
+  signal array_4_to_7     : unsignedArrayType(4 to 7);
+  signal array_3_downto_0 : unsignedArrayType(3 downto 0);
+  signal array_0_to_3     : unsignedArrayType(0 to 3);
+
+  type twoDimArrayType is array (natural range <>) of unsignedArrayType(31 downto 28);
+  signal array_2d         : twoDimArrayType(0 to 1);
+
 begin
 
 process (clk) begin
@@ -126,6 +135,5 @@ isample_module1 : component sample_module_1
   stream_out_data_registered => open,
   stream_out_data_valid => open
   );
-
 
 end architecture;
