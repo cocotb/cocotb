@@ -29,4 +29,8 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE = test_cocotb,test_deprecated
+MODULE := test_cocotb,test_deprecated
+
+ifeq ($(shell python -c "import sys; print(sys.version_info >= (3, 6))"), "True")
+MODULE += ,test_async_generators
+endif
