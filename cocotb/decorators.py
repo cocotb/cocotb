@@ -85,12 +85,18 @@ class RunningTask(object):
         task.kill() will destroy a coroutine instance (and cause any Join
         triggers to fire.
     """
+
     def __init__(self, inst):
 
         if inspect.iscoroutine(inst):
             self._natively_awaitable = True
         elif inspect.isgenerator(inst):
             self._natively_awaitable = False
+        elif sys.version_info >= (3, 6) and inspect.isasyncgen(inst):
+            raise TypeError(
+                "{} is an async generator, not a coroutine. "
+                "You likely used the yield keyword instead of await.".format(
+                    inst.__qualname__))
         else:
             raise TypeError(
                 "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)

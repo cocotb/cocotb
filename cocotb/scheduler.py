@@ -34,6 +34,7 @@ also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
 import os
+import sys
 import logging
 import threading
 import inspect
@@ -648,6 +649,12 @@ class Scheduler(object):
         if inspect.iscoroutine(coroutine):
             return self.add(cocotb.decorators.RunningTask(coroutine))
 
+        elif sys.version_info >= (3, 6) and inspect.isasyncgen(coroutine):
+            raise TypeError(
+                "{} is an async generator, not a coroutine. "
+                "You likely used the yield keyword instead of await.".format(
+                    coroutine.__qualname__))
+
         elif not isinstance(coroutine, cocotb.decorators.RunningTask):
             raise TypeError(
                 "Attempt to add a object of type {} to the scheduler, which "
@@ -720,6 +727,12 @@ class Scheduler(object):
 
         if isinstance(result, cocotb.triggers.Waitable):
             return self._trigger_from_waitable(result)
+
+        if sys.version_info >= (3, 6) and inspect.isasyncgen(result):
+            raise TypeError(
+                "{} is an async generator, not a coroutine. "
+                "You likely used the yield keyword instead of await.".format(
+                    result.__qualname__))
 
         raise TypeError(
             "Coroutine yielded an object of type {}, which the scheduler can't "
