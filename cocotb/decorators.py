@@ -89,13 +89,12 @@ class RunningTask(object):
 
         if inspect.iscoroutine(inst):
             self._natively_awaitable = True
-            self._coro = inst.__await__()
         elif inspect.isgenerator(inst):
             self._natively_awaitable = False
-            self._coro = inst
         else:
             raise TypeError(
                 "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)
+        self._coro = inst
         self.__name__ = "%s" % inst.__name__
         self._started = False
         self._callbacks = []
