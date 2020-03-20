@@ -379,7 +379,6 @@ class NonHierarchyObject(SimHandleBase):
 
     @property
     def value(self):
-        "A reference to the value"
         raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
 
     def setimmediatevalue(self, value):
@@ -422,8 +421,8 @@ class NonHierarchyObject(SimHandleBase):
 class ConstantObject(NonHierarchyObject):
     """An object which has a value that can be read, but not set.
 
-    We can also cache the value since it is fixed at elaboration time and
-    won't change within a simulation.
+    The value is cached in the class since it is fixed at elaboration
+    time and won't change within a simulation.
     """
     def __init__(self, handle, path, handle_type):
         """
@@ -457,6 +456,7 @@ class ConstantObject(NonHierarchyObject):
 
     @NonHierarchyObject.value.getter
     def value(self):
+        """The value of this simulation object."""
         return self._value
 
     def __str__(self):
@@ -668,17 +668,23 @@ class ModifiableObject(NonConstantObject):
 
     @NonConstantObject.value.getter
     def value(self):
+        """The value of this simulation object.
+
+        .. note::
+            When setting this property, the value is stored by the :class:`~cocotb.scheduler.Scheduler`
+            and all stored values are written at the same time at the end of the current simulator time step.
+
+            Use :meth:`setimmediatevalue` to set the value immediately.
+        """
         binstr = simulator.get_signal_val_binstr(self._handle)
         result = BinaryValue(binstr, len(binstr))
         return result
 
     @value.setter
     def value(self, value):
-        """Intercept the store of a value and hold in cache.
+        """Assign value to this simulation object.
 
-        This operation is to enable all of the scheduled callbacks to complete
-        with the same read data and for the writes to occur on the next
-        sim time.
+        See the docstring for :attr:`value` above.
         """
         cocotb.scheduler.save_write(self, value)
 
