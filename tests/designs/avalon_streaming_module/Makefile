@@ -20,7 +20,7 @@ COCOTB?=$(WPWD)/../../..
 
 VERILOG_SOURCES = $(COCOTB)/tests/designs/avalon_streaming_module/avalon_streaming.sv
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif

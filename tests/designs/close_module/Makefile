@@ -50,8 +50,8 @@ COCOTB?=$(WPWD)/../../..
 VERILOG_SOURCES = $(COCOTB)/tests/designs/close_module/close_module.v
 
 ifneq ($(SIM),vcs)
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 else
 all:
 	@echo "Skipping test as system call overrides seqfault VCS"
