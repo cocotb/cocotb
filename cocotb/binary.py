@@ -328,7 +328,7 @@ class BinaryValue(object):
     def buff(self):
         """Attribute :attr:`buff` represents the value as a binary string buffer.
 
-        >>> "0100000100101111".buff == "\x41\x2F"
+        >>> BinaryValue("0100000100101111").buff == "\x41\x2F"
         True
         """
         bits = resolve(self._str)
