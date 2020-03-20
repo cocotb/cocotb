@@ -1,4 +1,4 @@
-New methods for setting the value of an :class:`~cocotb.handle.NonHierarchyIndexableObject` (HDL arrays). (:pr:`1507`)
+New methods for setting the value of a :class:`~cocotb.handle.NonHierarchyIndexableObject` (HDL arrays). (:pr:`1507`)
 
 .. code-block:: python3
 
