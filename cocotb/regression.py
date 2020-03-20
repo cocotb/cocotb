@@ -216,7 +216,7 @@ class RegressionManager(object):
                                     sim_time_ns=repr(0),
                                     ratio_time=repr(0))
             result_pass, _ = self._score_test(test, cocotb.outcomes.Error(SimFailure()))
-            self._store_test_result(test.__module__, test.__name__, result_pass, 0, 0, 0)
+            self._store_test_result(test.module, test.funcname, result_pass, 0, 0, 0)
             if not result_pass:
                 self.xunit.add_failure()
                 self.failures += 1
@@ -277,7 +277,7 @@ class RegressionManager(object):
         cocotb.log.removeHandler(test.handler)
 
         # Save results
-        self._store_test_result(test.__module__, test.__name__, result_pass, sim_time_ns, real_time, ratio_time)
+        self._store_test_result(test.module, test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
         if not result_pass:
             self.xunit.add_failure()
             self.failures += 1
