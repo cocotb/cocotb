@@ -50,7 +50,7 @@ COCOTB?=$(WPWD)/../../..
 VERILOG_SOURCES = $(COCOTB)/tests/designs/multi_dimension_array/cocotb_array_pkg.sv \
                   $(COCOTB)/tests/designs/multi_dimension_array/cocotb_array.sv
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif
