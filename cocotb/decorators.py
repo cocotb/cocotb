@@ -30,8 +30,9 @@ import sys
 import time
 import logging
 import functools
-import inspect
+import collections.abc
 import os
+import types
 
 import cocotb
 from cocotb.log import SimLog
@@ -75,7 +76,7 @@ class CoroutineComplete(Exception):
 
 
 class RunningTask(object):
-    """Per instance wrapper around a running generator.
+    """Per instance wrapper around a running coroutine.
 
     Provides the following:
 
@@ -85,13 +86,8 @@ class RunningTask(object):
         task.kill() will destroy a coroutine instance (and cause any Join
         triggers to fire.
     """
-    def __init__(self, inst):
-
-        if inspect.iscoroutine(inst):
-            self._natively_awaitable = True
-        elif inspect.isgenerator(inst):
-            self._natively_awaitable = False
-        else:
+    def __init__(self, inst: collections.abc.Coroutine):
+        if not isinstance(inst, collections.abc.Coroutine):
             raise TypeError(
                 "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)
         self._coro = inst
@@ -186,14 +182,14 @@ class RunningTask(object):
         return not self._finished
 
     def __await__(self):
-        # It's tempting to use `return (yield from self._coro)` here,
+        # It's tempting to use `return self._coro.__await__()` here,
         # which bypasses the scheduler. Unfortunately, this means that
         # we can't keep track of the result or state of the coroutine,
         # things which we expose in our public API. If you want the
         # efficiency of bypassing the scheduler, remove the `@coroutine`
         # decorator from your `async` functions.
 
-        # Hand the coroutine back to the scheduler trampoline.
+        # Hand the task back to the scheduler trampoline.
         return (yield self)
 
     __bool__ = __nonzero__
@@ -291,6 +287,7 @@ class coroutine(object):
     """
 
     def __init__(self, func):
+        func = types.coroutine(func)
         self._func = func
         self.__name__ = self._func.__name__
         functools.update_wrapper(self, func)
