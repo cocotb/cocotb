@@ -940,7 +940,11 @@ def test_exceptions_first(dut):
       File ".*test_cocotb\.py", line \d+, in raise_soon
         yield cocotb\.triggers\.First\(raise_inner\(\)\)
       File ".*triggers\.py", line \d+, in _wait
-        return \(yield first_trigger\)[^\n]*
+        return await first_trigger[^\n]*
+      File ".*triggers.py", line \d+, in __await__
+        return \(yield self\)
+      File ".*triggers.py", line \d+, in __await__
+        return \(yield self\)
       File ".*test_cocotb\.py", line \d+, in raise_inner
         raise ValueError\('It is soon now'\)
     ValueError: It is soon now""").strip()

@@ -246,15 +246,14 @@ class Scheduler(object):
         self._write_coro_inst = None
         self._writes_pending = Event()
 
-    @cocotb.decorators.coroutine
-    def _do_writes(self):
+    async def _do_writes(self):
         """ An internal coroutine that performs pending writes """
         while True:
-            yield self._writes_pending.wait()
+            await self._writes_pending.wait()
             if self._mode != Scheduler._MODE_NORMAL:
-                yield self._next_time_step
+                await self._next_time_step
 
-            yield self._read_write
+            await self._read_write
 
             while self._writes:
                 handle, value = self._writes.popitem()
@@ -511,8 +510,7 @@ class Scheduler(object):
         # TODO: we should be able to better keep track of when this needs to
         # be scheduled
         if self._write_coro_inst is None:
-            self._write_coro_inst = self._do_writes()
-            self.schedule(self._write_coro_inst)
+            self._write_coro_inst = self.add(self._do_writes())
 
         self._writes[handle] = value
         self._writes_pending.set()
@@ -573,11 +571,10 @@ class Scheduler(object):
         # each entry always has a unique thread.
         t, = matching_threads
 
-        @cocotb.coroutine
-        def wrapper():
+        async def wrapper():
             # This function runs in the scheduler thread
             try:
-                _outcome = outcomes.Value((yield coro))
+                _outcome = outcomes.Value(await coro)
             except BaseException as e:
                 _outcome = outcomes.Error(e)
             event.outcome = _outcome
@@ -591,7 +588,7 @@ class Scheduler(object):
             event.set()
 
         event = threading.Event()
-        self._pending_coros.append(wrapper())
+        self._pending_coros.append(cocotb.decorators.RunningTask(wrapper()))
         # The scheduler thread blocks in `thread_wait`, and is woken when we
         # call `thread_suspend` - so we need to make sure the coroutine is
         # queued before that.
@@ -602,11 +599,11 @@ class Scheduler(object):
 
     def run_in_executor(self, func, *args, **kwargs):
         """Run the coroutine in a separate execution thread
-        and return a yieldable object for the caller.
+        and return an awaitable object for the caller.
         """
         # Create a thread
         # Create a trigger that is called as a result of the thread finishing
-        # Create an Event object that the caller can yield on
+        # Create an Event object that the caller can await on
         # Event object set when the thread finishes execution, this blocks the
         #   calling coroutine (but not the thread) until the external completes
 
@@ -616,8 +613,7 @@ class Scheduler(object):
                 self.log.debug("Execution of external routine done %s" % threading.current_thread())
             _waiter.thread_done()
 
-        @cocotb.coroutine
-        def wrapper():
+        async def wrapper():
             waiter = external_waiter()
             thread = threading.Thread(group=None, target=execute_external,
                                       name=func.__name__ + "_thread",
@@ -626,7 +622,7 @@ class Scheduler(object):
             waiter.thread = thread
             self._pending_threads.append(waiter)
 
-            yield waiter.event.wait()
+            await waiter.event.wait()
 
             return waiter.result  # raises if there was an exception
 
@@ -697,7 +693,7 @@ class Scheduler(object):
         return result.join()
 
     def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
-        return self._trigger_from_unstarted_coro(result._wait())
+        return self._trigger_from_unstarted_coro(cocotb.decorators.RunningTask(result._wait()))
 
     def _trigger_from_list(self, result: list) -> Trigger:
         return self._trigger_from_waitable(cocotb.triggers.First(*result))

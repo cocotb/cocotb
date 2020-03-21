@@ -140,12 +140,11 @@ class trace(object):
         if self._clock is None:
             raise ValueError("Trace requires a clock to sample")
 
-    @cocotb.coroutine
-    def _monitor(self):
+    async def _monitor(self):
         self._clocks = 0
         while True:
-            yield RisingEdge(self._clock)
-            yield ReadOnly()
+            await RisingEdge(self._clock)
+            await ReadOnly()
             if not self._enabled:
                 continue
             self._clocks += 1

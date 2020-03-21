@@ -525,8 +525,8 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
     Returns:
         Decorated test function
     """
-    def _my_test(dut):
-        yield function(dut, *args, **kwargs)
+    async def _my_test(dut):
+        await function(dut, *args, **kwargs)
 
     _my_test.__name__ = name
     _my_test.__doc__ = documentation
