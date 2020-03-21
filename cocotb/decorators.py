@@ -434,9 +434,9 @@ class test(coroutine, metaclass=_decorator_helper):
             Users are encouraged to use the following idiom instead::
 
                 @cocotb.test()
-                def my_test(dut):
+                async def my_test(dut):
                     try:
-                        yield thing_that_should_fail()
+                        await thing_that_should_fail()
                     except ExceptionIExpect:
                         pass
                     else:
@@ -463,10 +463,11 @@ class test(coroutine, metaclass=_decorator_helper):
             co = coroutine(f)
 
             @functools.wraps(f)
-            def f(*args, **kwargs):
+            async def f(*args, **kwargs):
                 running_co = co(*args, **kwargs)
+
                 try:
-                    res = yield cocotb.triggers.with_timeout(running_co, self.timeout_time, self.timeout_unit)
+                    res = await cocotb.triggers.with_timeout(running_co, self.timeout_time, self.timeout_unit)
                 except cocotb.result.SimTimeoutError:
                     running_co.kill()
                     raise

@@ -29,7 +29,6 @@
 
 import itertools
 
-import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps, lazy_property
@@ -76,17 +75,16 @@ class Clock(BaseClock):
 
     .. code-block:: python
 
-        @cocotb.coroutine
-        def custom_clock():
+        async def custom_clock():
             # pre-construct triggers for performance
             high_time = Timer(high_delay, units="ns")
             low_time = Timer(low_delay, units="ns")
-            yield Timer(initial_delay, units="ns")
+            await Timer(initial_delay, units="ns")
             while True:
                 dut.clk <= 1
-                yield high_time
+                await high_time
                 dut.clk <= 0
-                yield low_time
+                await low_time
 
     If you also want to change the timing during simulation,
     use this slightly more inefficient example instead where
@@ -95,19 +93,18 @@ class Clock(BaseClock):
 
     .. code-block:: python
 
-        @cocotb.coroutine
-        def custom_clock():
+        async def custom_clock():
             while True:
                 dut.clk <= 1
-                yield Timer(high_delay, units="ns")
+                await Timer(high_delay, units="ns")
                 dut.clk <= 0
-                yield Timer(low_delay, units="ns")
+                await Timer(low_delay, units="ns")
 
         high_delay = low_delay = 100
         cocotb.fork(custom_clock())
-        yield Timer(1000, units="ns")
+        await Timer(1000, units="ns")
         high_delay = low_delay = 10  # change the clock speed
-        yield Timer(1000, units="ns")
+        await Timer(1000, units="ns")
     """
 
     def __init__(self, signal, period, units=None):
@@ -120,8 +117,7 @@ class Clock(BaseClock):
         self.coro = None
         self.mcoro = None
 
-    @cocotb.coroutine
-    def start(self, cycles=None, start_high=True):
+    async def start(self, cycles=None, start_high=True):
         r"""Clocking coroutine.  Start driving your clock by :func:`fork`\ ing a
         call to this.
 
@@ -145,15 +141,15 @@ class Clock(BaseClock):
         if start_high:
             for _ in it:
                 self.signal <= 1
-                yield t
+                await t
                 self.signal <= 0
-                yield t
+                await t
         else:
             for _ in it:
                 self.signal <= 0
-                yield t
+                await t
                 self.signal <= 1
-                yield t
+                await t
 
     def __str__(self):
         return self.__class__.__name__ + "(%3.1f MHz)" % self.frequency
