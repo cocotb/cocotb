@@ -683,30 +683,26 @@ class Scheduler(object):
     # Doing them as separate functions allows us to avoid repeating unencessary
     # `isinstance` checks.
 
-    def _trigger_from_started_coro(self, result):
-        # type: (cocotb.decorators.RunningTask) -> Trigger
+    def _trigger_from_started_coro(self, result: cocotb.decorators.RunningTask) -> Trigger:
         if _debug:
             self.log.debug("Joining to already running coroutine: %s" %
                            result.__name__)
         return result.join()
 
-    def _trigger_from_unstarted_coro(self, result):
-        # type: (cocotb.decorators.RunningTask) -> Trigger
+    def _trigger_from_unstarted_coro(self, result: cocotb.decorators.RunningTask) -> Trigger:
         self.queue(result)
         if _debug:
             self.log.debug("Scheduling nested coroutine: %s" %
                            result.__name__)
         return result.join()
 
-    def _trigger_from_waitable(self, result):
-        # type: (cocotb.triggers.Waitable) -> Trigger
+    def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
         return self._trigger_from_unstarted_coro(result._wait())
 
-    def _trigger_from_list(self, result):
-        # type: (list) -> Trigger
+    def _trigger_from_list(self, result: list) -> Trigger:
         return self._trigger_from_waitable(cocotb.triggers.First(*result))
 
-    def _trigger_from_any(self, result):
+    def _trigger_from_any(self, result) -> Trigger:
         """Convert a yielded object into a Trigger instance"""
         # note: the order of these can significantly impact performance
 
