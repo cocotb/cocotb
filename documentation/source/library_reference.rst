@@ -50,6 +50,10 @@ Interacting with the Simulator
 
 .. autoclass:: cocotb.clock.Clock
 
+.. autofunction:: cocotb.run_task
+
+.. autofunction:: cocotb.fire_and_forget
+
 .. autofunction:: cocotb.fork
 
 .. autofunction:: cocotb.decorators.RunningTask.join

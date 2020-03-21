@@ -1,0 +1,2 @@
+Added new :function:`~cocotb.run_task` and :function:`~cocotb.fire_and_forget` functions that run coroutines concurrently.
+The intent is to replicate :function:`~cocotb.fork`'s functionality with new interfaces that have easier to reason about semantics.

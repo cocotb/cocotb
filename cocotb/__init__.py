@@ -106,8 +106,88 @@ regression_manager = None
 plusargs = {}
 """A dictionary of "plusargs" handed to the simulation."""
 
-# To save typing provide an alias to scheduler.add
-fork = scheduler.add
+
+def run_task(coro):
+    """
+    Run a coroutine concurrently.
+
+    The result can be awaited at any point to block until a result is available.
+
+    .. versionadded:: 1.4
+    """
+    return scheduler.add(coro)
+
+
+def fire_and_forget(coro):
+    """
+    Run a coroutine concurrently that is never meant to be awaited.
+
+    This will end the test if an exception occurs.
+
+    .. versionadded:: 1.4
+    """
+    co = cocotb.decorators.make_task(coro)
+
+    class FireAndForgetCoroutine(cocotb.decorators.RunningTask):
+
+        def __init__(self, co):
+
+            async def watcher():
+                return await co
+
+            super().__init__(watcher())
+
+        def _advance(self, outcome):
+            try:
+                return super()._advance(outcome)
+            except cocotb.decorators.CoroutineComplete:
+                if isinstance(self._outcome, cocotb.outcomes.Error):
+                    cocotb.utils.remove_traceback_frames(self._outcome.error, ['watcher', '__await__'])
+                    self.log.warning("Ending test; fire-and-forget coroutine resulted in an exception.")
+                    scheduler.finish_test(self._outcome.error)
+                else:
+                    self.log.info("Fire-and-forget coroutine resulted in {}.".format(self._outcome))
+                raise
+
+    return run_task(FireAndForgetCoroutine(co))
+
+
+def fork(coro):
+    """
+    Runs a coroutine concurrently. Will end the current test *if* the coroutine results in an exception *before* being
+    joined.
+
+    Preserved for legacy, use :func:`~cocotb.run_task` or :func:`~cocotb.fire_and_forget` instead.
+    """
+    co = cocotb.decorators.make_task(coro)
+
+    class ForkedCoroutine(cocotb.decorators.RunningTask):
+
+        def __init__(self, co):
+
+            async def watcher():
+                return await co
+
+            super().__init__(watcher())
+
+        def _advance(self, outcome):
+            try:
+                return super()._advance(outcome)
+            except cocotb.decorators.CoroutineComplete:
+                if isinstance(self._outcome, cocotb.outcomes.Error):
+                    cocotb.utils.remove_traceback_frames(self._outcome.error, ['watcher', '__await__'])
+                    if cocotb.triggers.Join(self) not in scheduler._trigger2coros:
+                        self.log.warning(
+                            "If you intend to run a task that should end the test if it encounters an error,"
+                            " prefer cocotb.fire_and_forget")
+                        scheduler.finish_test(self._outcome.error)
+                    else:
+                        self.log.warning(
+                            "If you intend to run a task and retrieve the outcome later, perfer cocotb.run_task")
+                raise
+
+    return run_task(ForkedCoroutine(co))
+
 
 # FIXME is this really required?
 _rlock = threading.RLock()

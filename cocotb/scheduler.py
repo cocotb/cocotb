@@ -61,8 +61,6 @@ import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
-from cocotb.result import TestComplete
-from cocotb.utils import remove_traceback_frames
 from cocotb import _py_compat
 
 
@@ -461,7 +459,6 @@ class Scheduler(object):
                 self.log.debug("All coroutines scheduled, handing control back"
                                " to simulator")
 
-
     def unschedule(self, coro):
         """Unschedule a coroutine.  Unprime any pending triggers"""
 
@@ -490,19 +487,6 @@ class Scheduler(object):
 
         elif Join(coro) in self._trigger2coros:
             self.react(Join(coro))
-        else:
-            try:
-                # throws an error if the background coroutine errored
-                # and no one was monitoring it
-                coro._outcome.get()
-            except (TestComplete, AssertionError) as e:
-                coro.log.info("Test stopped by this forked coroutine")
-                e = remove_traceback_frames(e, ['unschedule', 'get'])
-                self._test.abort(e)
-            except Exception as e:
-                coro.log.error("Exception raised by this forked coroutine")
-                e = remove_traceback_frames(e, ['unschedule', 'get'])
-                self._test.abort(e)
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:

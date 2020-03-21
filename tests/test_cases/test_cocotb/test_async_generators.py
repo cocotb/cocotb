@@ -18,6 +18,26 @@ def test_yielding_accidental_async_generator(dut):
 
 
 @cocotb.test()
+async def test_run_task_accidental_async_generator(dut):
+    try:
+        cocotb.run_task(whoops_async_generator())
+    except TypeError as e:
+        assert "async generator" in str(e)
+    else:
+        assert False, "should have thrown"
+
+
+@cocotb.test()
+async def test_fire_and_forget_accidental_async_generator(dut):
+    try:
+        cocotb.fire_and_forget(whoops_async_generator())
+    except TypeError as e:
+        assert "async generator" in str(e)
+    else:
+        assert False, "should have thrown"
+
+
+@cocotb.test()
 async def test_forking_accidental_async_generator(dut):
     try:
         cocotb.fork(whoops_async_generator())
