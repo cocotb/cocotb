@@ -1094,6 +1094,30 @@ def test_nested_first(dut):
 
 
 @cocotb.test()
+async def test_first_does_not_kill(dut):
+    """ Test that `First` does not kill coroutines that did not finish first """
+    ran = False
+
+    # decorating `async def` is required to use `First`
+    @cocotb.coroutine
+    async def coro():
+        nonlocal ran
+        await Timer(2, units='ns')
+        ran = True
+
+    # Coroutine runs for 2ns, so we expect the timer to fire first
+    timer = Timer(1, units='ns')
+    t = await First(timer, coro())
+    assert t is timer
+    assert not ran
+
+    # the background routine is still running, but should finish after 1ns
+    await Timer(2, units='ns')
+
+    assert ran
+
+
+@cocotb.test()
 def test_readwrite(dut):
     """ Test that ReadWrite can be waited on """
     # gh-759
