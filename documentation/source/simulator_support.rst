@@ -81,6 +81,15 @@ If your design's clocks vary in precision, the performance of the simulation can
 
     COCOTB_HDL_TIMEPRECISION = 1us # Set precision to 10^-6s
 
+Coverage
+--------
+
+ To enable coverage add Verilators coverage option(s) to the :make:var:`EXTRA_ARGS` make variable, for example:
+
+ .. code-block:: make
+
+     EXTRA_ARGS += --coverage
+
 .. versionadded:: 1.3
 
 
