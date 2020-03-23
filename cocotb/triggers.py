@@ -518,6 +518,12 @@ class Lock(object):
 
     __bool__ = __nonzero__
 
+    async def __aenter__(self):
+        return await self.acquire()
+
+    async def __aexit__(self, exc_type, exc, tb):
+        self.release()
+
 
 class NullTrigger(Trigger):
     """Fires immediately.
