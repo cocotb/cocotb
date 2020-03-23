@@ -36,8 +36,8 @@ jobs:
         - docker ps -a
       script:
         - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
-        # - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -e py35'
-        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install importlib-resources==1.0.2 tox; cd /src; tox -e py35'  # remove once gh-1469's upstream bug is resolved
+        # - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -vv -e py35'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install importlib-resources==1.0.2 tox; cd /src; tox -vv -e py35'  # remove once gh-1469's upstream bug is resolved
         - echo 'travis_fold:end:cocotb_py35'
 
     - stage: SimTests
@@ -50,7 +50,7 @@ jobs:
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
         - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
-        - tox -e py37
+        - tox -vv -e py37
         - echo 'travis_fold:end:cocotb_py37'
 
     - stage: SimTests
@@ -58,7 +58,7 @@ jobs:
       before_install: *travis_linx_prep
       script:
         - echo 'Running cocotb tests with Python 3.8 ...' && echo -en 'travis_fold:start:cocotb_py38'
-        - tox -e py38
+        - tox -vv -e py38
         - echo 'travis_fold:end:cocotb_py38'
 
     - stage: SimTests
@@ -66,7 +66,7 @@ jobs:
       before_install: *travis_linx_prep
       script:
         - echo 'Running cocotb tests with Python 3.6.7 ...' && echo -en 'travis_fold:start:cocotb_py36'
-        - tox -e py36
+        - tox -vv -e py36
         - echo 'travis_fold:end:cocotb_py36'
 
     - stage: SimTests
@@ -98,7 +98,7 @@ jobs:
         - brew install icarus-verilog
         - pip3 install tox
       script:
-        - tox -e py37
+        - tox -vv -e py37
 
     - stage: SimTests
       python: 3.7
@@ -110,7 +110,7 @@ jobs:
         - pip install tox
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
-        - tox -e py37
+        - tox -vv -e py37
 
     - stage: DeployPyPI
       python: 3.7
