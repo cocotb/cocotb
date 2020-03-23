@@ -47,6 +47,9 @@ combined_results.xml
 sim_build
 ucli.key
 
+# Pytest
+.pytest_cache
+
 # Cadence Incisive/Xcelium
 *.elog
 irun.log
