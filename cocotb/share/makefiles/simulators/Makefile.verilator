@@ -28,10 +28,6 @@ ifeq ($(VERILATOR_TRACE),1)
   EXTRA_ARGS += --trace --trace-structs
 endif
 
-ifeq ($(VERILATOR_COV),1)
-  EXTRA_ARGS += --coverage
-endif
-
 ifdef COCOTB_HDL_TIMEPRECISION
   SIM_BUILD_FLAGS += -DVL_TIME_PRECISION_STR=$(COCOTB_HDL_TIMEPRECISION)
 endif
