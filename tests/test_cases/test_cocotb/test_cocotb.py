@@ -1475,25 +1475,27 @@ async def test_trigger_lock(dut):
     resource value is checked at certain points if it equals the expected
     amount, which is easily predictable if the context management is working.
     """
-    resource = [0]
+    resource = 0
     lock = Lock()
 
-    cocotb.fork(co(resource, lock))
-    async with lock:
-        for i in range(4):
-            resource[0] += 1
-            await Timer(10, "ns")
-    assert resource[0]==4
-    await Timer(10, "ns")
-    async with lock:
-        assert resource[0]==8
+    async def co():
+        nonlocal resource
+        nonlocal lock
+        await Timer(10, "ns")
+        async with lock:
+            for i in range(4):
+                resource += 1
+                await Timer(10, "ns")
 
-async def co(resource, lock):
-    await Timer(10, "ns")
+    cocotb.fork(co())
     async with lock:
         for i in range(4):
-            resource[0] += 1
+            resource += 1
             await Timer(10, "ns")
+    assert resource==4
+    await Timer(10, "ns")
+    async with lock:
+        assert resource==8
 
 
 @cocotb.test(timeout_time=100, timeout_unit="ns")
@@ -1505,8 +1507,8 @@ async def test_except_lock(dut):
     lock = Lock()
     try:
         async with lock:
-            assert False
-    except AssertionError:
+            raise RuntimeError()
+    except RuntimeError:
         pass
     async with lock:
-        assert True
+        pass
