@@ -465,6 +465,7 @@ class Lock(object):
             lock.release()
 
     .. versionchanged:: 1.4
+
         The lock can be used as an asynchronous context manager in an
         :keyword:`async with` statement::
 
