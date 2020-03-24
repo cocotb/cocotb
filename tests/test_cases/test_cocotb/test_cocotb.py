@@ -1483,8 +1483,8 @@ async def test_trigger_lock(dut):
         await Timer(10, "ns")
         async with lock:
             for i in range(4):
-                resource += 1
                 await Timer(10, "ns")
+                resource += 1
 
     cocotb.fork(co())
     async with lock:
