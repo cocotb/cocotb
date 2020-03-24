@@ -464,10 +464,8 @@ class Lock(object):
         finally:
             lock.release()
 
-    The lock can be used as an asynchronous
-    context manager in a :keyword:`with`,
-    statement, provided Python 3.5 or newer is
-    used::
+    The lock can be used as an asynchronous context manager in an
+    :keyword:`async with` statement::
 
         async with lock:
             # do some stuff
