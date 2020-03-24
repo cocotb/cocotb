@@ -1492,10 +1492,10 @@ async def test_trigger_lock(dut):
         for i in range(4):
             resource += 1
             await Timer(10, "ns")
-    assert resource==4
+    assert resource == 4
     await Timer(10, "ns")
     async with lock:
-        assert resource==8
+        assert resource == 8
 
 
 @cocotb.test(timeout_time=100, timeout_unit="ns")

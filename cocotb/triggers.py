@@ -456,13 +456,19 @@ class _Lock(PythonTrigger):
 class Lock(object):
     """Lock primitive (not re-entrant).
 
-    This should be used as::
+    This can be used as::
 
-        yield lock.acquire()
+        await lock.acquire()
         try:
             # do some stuff
         finally:
             lock.release()
+
+    Alternatively, the lock can be used
+    in an asynchronous context::
+
+        async with lock:
+            # do some stuff
     """
 
     def __init__(self, name=None):
