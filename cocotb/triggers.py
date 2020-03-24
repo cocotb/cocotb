@@ -464,8 +464,9 @@ class Lock(object):
         finally:
             lock.release()
 
-    Alternatively, the lock can be used
-    in an asynchronous context::
+    The lock can be used as an asynchronous
+    context manager in a :keyword:`with`,
+    statement::
 
         async with lock:
             # do some stuff
