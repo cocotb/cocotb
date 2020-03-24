@@ -89,6 +89,6 @@ int main(int argc, char** argv) {
 #if VM_COVERAGE
     VerilatedCov::write("coverage.dat");
 #endif
-    
+
     return 0;
 }
