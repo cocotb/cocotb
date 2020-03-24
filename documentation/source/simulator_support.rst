@@ -84,7 +84,7 @@ If your design's clocks vary in precision, the performance of the simulation can
 Coverage
 --------
 
- To enable coverage add Verilators coverage option(s) to the :make:var:`EXTRA_ARGS` make variable, for example:
+To enable HDL code coverage, add Verilator's coverage option(s) to the :make:var:`EXTRA_ARGS` make variable, for example:
 
  .. code-block:: make
 
