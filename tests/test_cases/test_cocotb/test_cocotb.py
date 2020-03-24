@@ -1480,7 +1480,6 @@ async def test_trigger_lock(dut):
 
     async def co():
         nonlocal resource
-        nonlocal lock
         await Timer(10, "ns")
         async with lock:
             for i in range(4):
