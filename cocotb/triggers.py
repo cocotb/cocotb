@@ -464,11 +464,12 @@ class Lock(object):
         finally:
             lock.release()
 
-    The lock can be used as an asynchronous context manager in an
-    :keyword:`async with` statement::
+    .. versionchanged:: 1.4
+        The lock can be used as an asynchronous context manager in an
+        :keyword:`async with` statement::
 
-        async with lock:
-            # do some stuff
+            async with lock:
+                # do some stuff
     """
 
     def __init__(self, name=None):
