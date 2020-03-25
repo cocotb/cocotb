@@ -81,6 +81,8 @@ If your design's clocks vary in precision, the performance of the simulation can
 
     COCOTB_HDL_TIMEPRECISION = 1us # Set precision to 10^-6s
 
+.. versionadded:: 1.3
+
 Coverage
 --------
 
@@ -88,10 +90,9 @@ To enable HDL code coverage, add Verilator's coverage option(s) to the :make:var
 
  .. code-block:: make
 
-     EXTRA_ARGS += --coverage
+    EXTRA_ARGS += --coverage
 
-.. versionadded:: 1.3
-
+This will result in coverage data being written to ``coverage.dat``.
 
 .. _sim-vcs:
 
