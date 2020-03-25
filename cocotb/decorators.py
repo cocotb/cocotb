@@ -490,3 +490,39 @@ class test(coroutine, metaclass=_decorator_helper):
 
     def __call__(self, *args, **kwargs):
         return RunningTest(self._func(*args, **kwargs), self)
+
+
+def make_task(coro):
+    """
+    Turn the given object into a task.
+
+    Perform type checking, convert compatible types into :class:`~cocotb.decorators.RunningTask`,
+    and report common gotchas.
+
+    .. versionadded:: 1.4
+    """
+
+    if isinstance(coro, RunningTask):
+        return coro
+
+    if inspect.iscoroutine(coro):
+        return RunningTask(coro)
+
+    if isinstance(coro, coroutine):
+        raise TypeError(
+            "Attempt to convert a cocotb.coroutine object ({}) into a task.\n"
+            "Did you forget to call the cocotb.coroutine-decorated function?"
+            .format(coro)
+        )
+
+    if sys.version_info >= (3, 6) and inspect.isasyncgen(coro):
+        raise TypeError(
+            "{} is an async generator, not a coroutine. "
+            "You likely used the yield keyword instead of await.".format(
+                coro.__qualname__))
+
+    raise TypeError(
+        "Attempt to convert an incompatible object of type {} into a task: {!r}\n"
+        "Did you forget to use the @cocotb.coroutine decorator, or async/await?"
+        .format(type(coro), coro)
+    )

@@ -129,7 +129,7 @@ def test_function_not_decorated_fork(dut):
     try:
         cocotb.fork(normal_function(dut))
     except TypeError as exc:
-        assert "isn't a coroutine" in str(exc)
+        assert "@cocotb.coroutine" in str(exc)
     else:
         raise TestFailure()
 
@@ -202,7 +202,7 @@ def test_adding_a_coroutine_without_starting(dut):
     try:
         forked = cocotb.fork(clock_gen)
     except TypeError as exc:
-        assert "a coroutine that hasn't started" in str(exc)
+        assert "forget to call" in str(exc)
     else:
         raise TestFailure
 

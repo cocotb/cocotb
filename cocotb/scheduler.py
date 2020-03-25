@@ -638,30 +638,7 @@ class Scheduler(object):
         Just a wrapper around self.schedule which provides some debug and
         useful error messages in the event of common gotchas.
         """
-        if isinstance(coroutine, cocotb.decorators.coroutine):
-            raise TypeError(
-                "Attempt to schedule a coroutine that hasn't started: {}.\n"
-                "Did you forget to add parentheses to the @cocotb.test() "
-                "decorator?"
-                .format(coroutine)
-            )
-
-        if inspect.iscoroutine(coroutine):
-            return self.add(cocotb.decorators.RunningTask(coroutine))
-
-        elif sys.version_info >= (3, 6) and inspect.isasyncgen(coroutine):
-            raise TypeError(
-                "{} is an async generator, not a coroutine. "
-                "You likely used the yield keyword instead of await.".format(
-                    coroutine.__qualname__))
-
-        elif not isinstance(coroutine, cocotb.decorators.RunningTask):
-            raise TypeError(
-                "Attempt to add a object of type {} to the scheduler, which "
-                "isn't a coroutine: {!r}\n"
-                "Did you forget to use the @cocotb.coroutine decorator?"
-                .format(type(coroutine), coroutine)
-            )
+        coroutine = cocotb.decorators.make_task(coroutine)
 
         if _debug:
             self.log.debug("Adding new coroutine %s" % coroutine.__name__)
