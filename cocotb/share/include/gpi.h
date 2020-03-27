@@ -85,8 +85,10 @@ we have to create a process with the signal on the sensitivity list to imitate a
      * incomplete types, as this avoids the need for any casting in GpiCommon.cpp.
      */
     class GpiObjHdl;
+    class GpiCbHdl;
     class GpiIterator;
     typedef GpiObjHdl *gpi_sim_hdl;
+    typedef GpiCbHdl *gpi_cb_hdl;
     typedef GpiIterator *gpi_iterator_hdl;
 #else
     /* In C, we declare some incomplete struct types that we never complete.
@@ -94,8 +96,10 @@ we have to create a process with the signal on the sensitivity list to imitate a
      * names.
      */
     struct GpiObjHdl;
+    struct GpiCbHdl;
     struct GpiIterator;
     typedef struct GpiObjHdl *gpi_sim_hdl;
+    typedef struct GpiCbHdl *gpi_cb_hdl;
     typedef struct GpiIterator *gpi_iterator_hdl;
 #endif
 
@@ -224,19 +228,19 @@ typedef enum gpi_edge {
 } gpi_edge_e;
 
 // The callback registering functions
-gpi_sim_hdl gpi_register_timed_callback                  (int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
-gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
-gpi_sim_hdl gpi_register_readonly_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_nexttime_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_readwrite_callback              (int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_timed_callback                  (int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
+gpi_cb_hdl gpi_register_value_change_callback           (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
+gpi_cb_hdl gpi_register_readonly_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_nexttime_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_readwrite_callback              (int (*gpi_function)(const void *), void *gpi_cb_data);
 
 // Calling convention is that 0 = success and negative numbers a failure
 // For implementers of GPI the provided macro GPI_RET(x) is provided
-void gpi_deregister_callback(gpi_sim_hdl gpi_hdl);
+void gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
 
 // Because the internal structures may be different for different implementations
 // of GPI we provide a convenience function to extract the callback data
-void *gpi_get_callback_data(gpi_sim_hdl gpi_hdl);
+void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
 
 // Print out what implementations are registered. Python needs to be loaded for this,
 // Returns the number of libs
