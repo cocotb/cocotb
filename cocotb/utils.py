@@ -210,7 +210,7 @@ import cocotb.ANSI as ANSI
 # by changing "binary" strings from `"\x12\x34"` to `b"\x12\x34"`.
 
 
-def _sane_color(x: bytes) -> str:
+def _sane(x: bytes) -> str:
     r = ""
     for j in x:
         if (j < 32) or (j >= 127):
@@ -260,7 +260,7 @@ def hexdump(x: bytes) -> str:
             if j % 16 == 7:
                 rs += ""
         rs += "  "
-        rs += _sane_color(x[i:i + 16]) + "\n"
+        rs += _sane(x[i:i + 16]) + "\n"
         i += 16
     return rs
 
@@ -288,15 +288,6 @@ def hexdiffs(x: bytes, y: bytes) -> str:
         <BLANKLINE>
     """
     # adapted from scapy.utils.hexdiff
-
-    def sane(x: bytes) -> str:
-        r = ""
-        for j in x:
-            if (j < 32) or (j >= 127):
-                r = r + "."
-            else:
-                r = r + chr(j)
-        return r
 
     def highlight(string: str, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT) -> str:
         """Highlight with ANSI colors if possible/requested and not running in GUI."""
@@ -409,10 +400,10 @@ def hexdiffs(x: bytes, y: bytes) -> str:
                     else:
                         rs += "%02X" % char_j
                     if linex[j] == liney[j]:
-                        cl += highlight(_sane_color(line[j]),
+                        cl += highlight(_sane(line[j]),
                                         colour=ANSI.COLOR_HILITE_HEXDIFF_3)
                     else:
-                        cl += highlight(sane(line[j]),
+                        cl += highlight(_sane(line[j]),
                                         colour=ANSI.COLOR_HILITE_HEXDIFF_4)
                 else:
                     rs += "  "
