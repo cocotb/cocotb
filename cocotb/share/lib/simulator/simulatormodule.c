@@ -86,6 +86,22 @@ static int gpi_sim_hdl_converter(PyObject *o, gpi_sim_hdl *data)
     return 1;
 }
 
+// Same as above, for a callback handle.
+static int gpi_cb_hdl_converter(PyObject *o, gpi_cb_hdl *data)
+{
+    void *p = PyLong_AsVoidPtr(o);
+    if ((p == NULL) && PyErr_Occurred()) {
+        return 0;
+    }
+    if (p == NULL) {
+        PyErr_SetString(PyExc_ValueError, "handle cannot be 0");
+        return 0;
+    }
+    *data = (gpi_cb_hdl)p;
+    return 1;
+}
+
+
 // Same as above, for an iterator handle.
 static int gpi_iterator_hdl_converter(PyObject *o, gpi_iterator_hdl *data)
 {
@@ -230,7 +246,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    gpi_sim_hdl hdl;
+    gpi_cb_hdl hdl;
 
     p_callback_data callback_data_p;
 
@@ -283,7 +299,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    gpi_sim_hdl hdl;
+    gpi_cb_hdl hdl;
 
     p_callback_data callback_data_p;
 
@@ -336,7 +352,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    gpi_sim_hdl hdl;
+    gpi_cb_hdl hdl;
 
     p_callback_data callback_data_p;
 
@@ -393,7 +409,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 
     PyObject *fArgs;
     PyObject *function;
-    gpi_sim_hdl hdl;
+    gpi_cb_hdl hdl;
     uint64_t time_ps;
 
     p_callback_data callback_data_p;
@@ -466,7 +482,7 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     PyObject *fArgs;
     PyObject *function;
     gpi_sim_hdl sig_hdl;
-    gpi_sim_hdl hdl;
+    gpi_cb_hdl hdl;
     int edge;
 
     p_callback_data callback_data_p;
@@ -959,11 +975,11 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
 static PyObject *deregister_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
-    gpi_sim_hdl hdl;
+    gpi_cb_hdl hdl;
 
     FENTER
 
-    if (!PyArg_ParseTuple(args, "O&", gpi_sim_hdl_converter, &hdl)) {
+    if (!PyArg_ParseTuple(args, "O&", gpi_cb_hdl_converter, &hdl)) {
         return NULL;
     }
 
