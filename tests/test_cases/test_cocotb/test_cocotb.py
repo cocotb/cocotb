@@ -47,7 +47,7 @@ Also used as regression test of cocotb capabilities
 import cocotb
 from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite, ClockCycles, NextTimeStep,
-                             NullTrigger, Combine, Event, First, Trigger)
+                             NullTrigger, Combine, Event, First, Trigger, Lock)
 from cocotb.clock import Clock
 from cocotb.result import (
     TestFailure, TestError, TestSuccess, raise_error, create_error
@@ -1391,3 +1391,48 @@ async def test_ordering_1(dut):
     global last_ordered_test
     val, last_ordered_test = last_ordered_test, 1
     assert val == 2
+
+
+@cocotb.test()
+async def test_trigger_lock(dut):
+    """
+    Simple test that checks to see if context management is kept. The
+    resource value is checked at certain points if it equals the expected
+    amount, which is easily predictable if the context management is working.
+    """
+    resource = 0
+    lock = Lock()
+
+    async def co():
+        nonlocal resource
+        await Timer(10, "ns")
+        async with lock:
+            for i in range(4):
+                await Timer(10, "ns")
+                resource += 1
+
+    cocotb.fork(co())
+    async with lock:
+        for i in range(4):
+            resource += 1
+            await Timer(10, "ns")
+    assert resource == 4
+    await Timer(10, "ns")
+    async with lock:
+        assert resource == 8
+
+
+@cocotb.test(timeout_time=100, timeout_unit="ns")
+async def test_except_lock(dut):
+    """
+    Checks to see if exceptions cause the lock to be
+    released.
+    """
+    lock = Lock()
+    try:
+        async with lock:
+            raise RuntimeError()
+    except RuntimeError:
+        pass
+    async with lock:
+        pass
