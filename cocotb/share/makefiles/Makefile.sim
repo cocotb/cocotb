@@ -30,6 +30,9 @@
 # This is a simple wrapper Makefile to pull in the appropriate Makefile for
 # the desired simulator and set up common paths for the sims to use to build with
 
+# Make sure to use bash for the pipefail option used in many simulator Makefiles
+SHELL := bash
+
 .PHONY: all
 all: sim
 
