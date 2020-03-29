@@ -40,11 +40,11 @@ from cocotb.utils import hexdump
 from cocotb.monitors import Monitor
 from cocotb.triggers import RisingEdge
 
-_XGMII_IDLE      = "\x07"  # noqa
-_XGMII_START     = "\xFB"  # noqa
-_XGMII_TERMINATE = "\xFD"  # noqa
+_XGMII_IDLE      = 0x07  # noqa
+_XGMII_START     = 0xFB  # noqa
+_XGMII_TERMINATE = 0xFD  # noqa
 
-_PREAMBLE_SFD = "\x55\x55\x55\x55\x55\x55\xD5"
+_PREAMBLE_SFD = b"\x55\x55\x55\x55\x55\x55\xD5"
 
 
 class XGMII(Monitor):
@@ -53,6 +53,10 @@ class XGMII(Monitor):
     Assumes a single vector, either 4 or 8 bytes plus control bit for each byte.
 
     If interleaved is ``True`` then the control bits are adjacent to the bytes.
+
+    .. versionchanged:: 1.4.0
+        This now emits packets of type :class:`bytes` rather than :class:`str`,
+        which matches the behavior of :class:`cocotb.drivers.xgmii.XGMII`.
     """
 
     def __init__(self, signal, clock, interleaved=True, callback=None,
@@ -94,7 +98,7 @@ class XGMII(Monitor):
             ctrl_inc = 9
 
         for i in range(self.bytes):
-            bytes.append(chr((value >> (i * byte_shift)) & 0xff))
+            bytes.append((value >> (i * byte_shift)) & 0xff)
             ctrls.append(bool(value & (1 << ctrl_base)))
             ctrl_base += ctrl_inc
 
@@ -107,19 +111,19 @@ class XGMII(Monitor):
                 if byte != _XGMII_TERMINATE:
                     self.log.error("Got control character in XGMII payload")
                     self.log.info("data = :" +
-                                  " ".join(["%02X" % ord(b) for b in bytes]))
+                                  " ".join(["%02X" % b for b in bytes]))
                     self.log.info("ctrl = :" +
                                   " ".join(["%s" % str(c) for c in ctrl]))
-                    self._pkt = ""
+                    self._pkt = b""
                 return False
 
-            self._pkt += byte
+            self._pkt.append(byte)
         return True
 
     @cocotb.coroutine
     def _monitor_recv(self):
         clk = RisingEdge(self.clock)
-        self._pkt = ""
+        self._pkt = b""
 
         while True:
             yield clk
@@ -150,7 +154,7 @@ class XGMII(Monitor):
                     self.log.error("Received a runt frame!")
                 if len(self._pkt) < 12:
                     self.log.error("No data to extract")
-                    self._pkt = ""
+                    self._pkt = b""
                     continue
 
                 preamble_sfd = self._pkt[0:7]
@@ -160,7 +164,7 @@ class XGMII(Monitor):
                 if preamble_sfd != _PREAMBLE_SFD:
                     self.log.error("Got a frame with unknown preamble/SFD")
                     self.log.error(hexdump(preamble_sfd))
-                    self._pkt = ""
+                    self._pkt = b""
                     continue
 
                 expected_crc = struct.pack("<I",
@@ -179,4 +183,4 @@ class XGMII(Monitor):
                     p = payload
 
                 self._recv(p)
-                self._pkt = ""
+                self._pkt = b""
