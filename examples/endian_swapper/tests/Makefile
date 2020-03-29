@@ -69,7 +69,7 @@ include $(shell cocotb-config --makefiles)/Makefile.sim
 ifeq ($(OS),Linux)
 .PHONY: hal
 hal:
-	-cd ../cosim && make
+	cd ../cosim && make
 
 clean::
 	-cd ../cosim && make clean
