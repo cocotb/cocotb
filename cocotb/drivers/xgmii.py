@@ -34,9 +34,9 @@ from cocotb.drivers import Driver
 from cocotb.utils import hexdump
 from cocotb.binary import BinaryValue
 
-_XGMII_IDLE      = b"\x07"  # noqa
-_XGMII_START     = b"\xFB"  # noqa
-_XGMII_TERMINATE = b"\xFD"  # noqa
+_XGMII_IDLE      = 0x07  # noqa
+_XGMII_START     = 0xFB  # noqa
+_XGMII_TERMINATE = 0xFD  # noqa
 
 # Preamble is technically supposed to be 7 bytes of 0x55 but it seems that it's
 # permissible for the start byte to replace one of the preamble bytes
