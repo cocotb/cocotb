@@ -303,7 +303,7 @@ class AXI4Slave(BusDriver):
                     _burst_diff = burst_length - burst_count
                     _st = _awaddr + (_burst_diff * bytes_in_beat)  # start
                     _end = _awaddr + ((_burst_diff + 1) * bytes_in_beat)  # end
-                    self._memory[_st:_end] = array.array('B', word.get_buff())
+                    self._memory[_st:_end] = array.array('B', word.buff)
                     burst_count -= 1
                     if burst_count == 0:
                         break
