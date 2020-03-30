@@ -352,7 +352,7 @@ class AXI4Slave(BusDriver):
                     _burst_diff = burst_length - burst_count
                     _st = _araddr + (_burst_diff * bytes_in_beat)
                     _end = _araddr + ((_burst_diff + 1) * bytes_in_beat)
-                    word.buff = self._memory[_st:_end].tostring()
+                    word.buff = self._memory[_st:_end].tobytes()
                     self.bus.RDATA <= word
                     if burst_count == 1:
                         self.bus.RLAST <= 1
