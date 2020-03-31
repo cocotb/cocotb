@@ -57,14 +57,14 @@ GHDL_ARGS += $(EXTRA_ARGS)
 .PHONY: analyse
 
 # Compilation phase
-analyse: $(VHDL_SOURCES) $(SIM_BUILD)
+analyse: $(VHDL_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
 	cd $(SIM_BUILD) && \
 	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), \
 		$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(SOURCES_VAR:VHDL_SOURCES_%=%) $($(SOURCES_VAR)) && ) \
 	$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && \
 	$(CMD) -m $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL)
 
-$(COCOTB_RESULTS_FILE): analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+$(COCOTB_RESULTS_FILE): analyse $(COCOTB_LIBS) $(COCOTB_VPI_LIB) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	cd $(SIM_BUILD); \
