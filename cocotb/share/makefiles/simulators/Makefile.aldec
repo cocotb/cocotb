@@ -165,7 +165,7 @@ endif
 
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
-$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_SIM_DEPS)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; cd $(SIM_BUILD) && PYTHONPATH=$(PWD):$(NEW_PYTHONPATH) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
