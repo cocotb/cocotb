@@ -154,7 +154,7 @@ def access_single_bit_erroneous(dut):
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
 
-@cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("icarus")),
+@cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("icarus", "chronologic simulation vcs")),
              expect_fail=cocotb.SIM_NAME.lower().startswith(("riviera")) and cocotb.LANGUAGE in ["verilog"])
 def access_integer(dut):
     """Integer should show as an IntegerObject"""
@@ -274,8 +274,7 @@ def access_string_vhdl(dut):
 # TODO: add tests for Verilog "string_input_port" and "STRING_LOCALPARAM" (see issue #802)
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"] or cocotb.SIM_NAME.lower().startswith("icarus"),
-             expect_fail=cocotb.SIM_NAME.lower().startswith("modelsim"),
-             expect_error=cocotb.SIM_NAME.startswith(("xmsim", "ncsim")))
+             expect_error=cocotb.result.TestFailure if cocotb.SIM_NAME.lower().startswith(("xmsim", "ncsim", "modelsim", "chronologic simulation vcs")) else False)
 def access_const_string_verilog(dut):
     """Access to a const Verilog string."""
     tlog = logging.getLogger("cocotb.test")
