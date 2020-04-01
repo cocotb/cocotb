@@ -163,15 +163,15 @@ def access_integer(dut):
     yield Timer(10)
     test_int = dut.stream_in_int
     if not isinstance(test_int, IntegerObject):
-        raise TestFailure("dut.stream_in_int is not an integer")
+        raise TestFailure("dut.stream_in_int is not an integer but {} instead".format(type(test_int)))
 
     try:
         bit = test_int[3]
     except IndexError as e:
         tlog.info("Access to bit is an error as expected")
-        bitFail = True
+        bitfail = True
 
-    if not bitFail:
+    if not bitfail:
         raise TestFailure("Access into an integer should be invalid")
 
     length = len(test_int)
@@ -205,7 +205,7 @@ def access_string_vhdl(dut):
     """Access to a string, both constant and signal."""
     tlog = logging.getLogger("cocotb.test")
     yield Timer(10)
-    constant_string = dut.isample_module1.EXAMPLE_STRING;
+    constant_string = dut.isample_module1.EXAMPLE_STRING
     tlog.info("%r is %s" % (constant_string, str(constant_string)))
     if not isinstance(constant_string, ConstantObject):
         raise TestFailure("EXAMPLE_STRING was not constant")
@@ -265,7 +265,7 @@ def access_string_vhdl(dut):
 
     test_string = test_string.upper()
 
-    result = str(variable_string);
+    result = str(variable_string)
     tlog.info("After setting bytes of string value is %s" % result)
     if variable_string != test_string:
         raise TestFailure("%r %s != '%s'" % (variable_string, result, test_string))
@@ -278,21 +278,20 @@ def access_string_vhdl(dut):
 def access_const_string_verilog(dut):
     """Access to a const Verilog string."""
     tlog = logging.getLogger("cocotb.test")
+    string_const = dut.STRING_CONST
 
-    yield Timer(10)
-    string_const = dut.STRING_CONST;
+    yield Timer(10, 'ns')
     tlog.info("%r is %s" % (string_const, str(string_const)))
     if not isinstance(string_const, StringObject):
         raise TestFailure("STRING_CONST was not StringObject")
     if string_const != b"TESTING_CONST":
-        raise TestFailure("STRING_CONST was not == \'TESTING_CONST\'")
+        raise TestFailure("Initial value of STRING_CONST was not == b\'TESTING_CONST\' but {} instead".format(string_const))
 
     tlog.info("Modifying const string")
     string_const <= b"MODIFIED"
-    yield Timer(10)
-    string_const = dut.STRING_CONST;
+    yield Timer(10, 'ns')
     if string_const != b"TESTING_CONST":
-        raise TestFailure("STRING_CONST was not still \'TESTING_CONST\'")
+        raise TestFailure("STRING_CONST was not still b\'TESTING_CONST\' after modification but {} instead".format(string_const))
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
@@ -300,21 +299,20 @@ def access_const_string_verilog(dut):
 def access_var_string_verilog(dut):
     """Access to a var Verilog string."""
     tlog = logging.getLogger("cocotb.test")
+    string_var = dut.STRING_VAR
 
-    yield Timer(10)
-    string_var = dut.STRING_VAR;
+    yield Timer(10, 'ns')
     tlog.info("%r is %s" % (string_var, str(string_var)))
     if not isinstance(string_var, StringObject):
         raise TestFailure("STRING_VAR was not StringObject")
     if string_var != b"TESTING_VAR":
-        raise TestFailure("STRING_VAR was not == \'TESTING_VAR\'")
+        raise TestFailure("Initial value of STRING_VAR was not == b\'TESTING_VAR\' but {} instead".format(string_var))
 
     tlog.info("Modifying var string")
     string_var <= b"MODIFIED"
-    yield Timer(10)
-    string_var = dut.STRING_VAR;
+    yield Timer(10, 'ns')
     if string_var != b"MODIFIED":
-        raise TestFailure("STRING_VAR was not == \'MODIFIED\'")
+        raise TestFailure("STRING_VAR was not == b\'MODIFIED\' after modification but {} instead".format(string_var))
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
@@ -346,9 +344,9 @@ def access_boolean(dut):
         bit = boolean[3]
     except TestError as e:
         tlog.info("Access to bit is an error as expected")
-        bitFail = True
+        bitfail = True
 
-    if not bitFail:
+    if not bitfail:
         raise TestFailure("Access into an integer should be invalid")
 
     length = len(boolean)
@@ -368,7 +366,7 @@ def access_boolean(dut):
 
     tlog.info("Value of %s is now %d" % (output_bool, output_bool))
     if (int(curr_val) == int(output_bool)):
-        raise TestFailure("Value did not propogate")
+        raise TestFailure("Value did not propagate")
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
 def access_internal_register_array(dut):
