@@ -1,3 +1,8 @@
+**Your input is needed!** Please help out by taking 10 minutes to fill out this year’s cocotb user survey. This survey gives the development community important feedback to steer the future of cocotb into the right direction for your use case.
+[**Take the cocotb user survey now**](https://docs.google.com/forms/d/e/1FAIpQLSfD36PldzszbuZjysss3AMvxkf6XCtSbDTVh9qVNNYDaHTZ_w/viewform).
+
+---
+
 **cocotb** is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 
 [![Documentation Status](https://readthedocs.org/projects/cocotb/badge/?version=latest)](http://cocotb.readthedocs.org/en/latest/)
