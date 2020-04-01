@@ -45,33 +45,40 @@ else
     export XCELIUM_BIN_DIR
 endif
 
-EXTRA_ARGS += $(COMPILE_ARGS)
-EXTRA_ARGS += $(SIM_ARGS)
-EXTRA_ARGS += -licqueue
+# Do not directly append to COMPILE_ARGS, SIM_ARGS, EXTRA_ARGS etc.,
+# because if a user sets these variables on the make command line,
+# only the user's variable values will be seen.
+# Instead, append to local variables.
+_XRUN_ARGS += $(COMPILE_ARGS)
+_XRUN_ARGS += $(SIM_ARGS)
+_XRUN_ARGS += $(EXTRA_ARGS)
+_XRUN_ARGS += $(PLUSARGS)
+
+#_XRUN_ARGS += -licqueue
 
 ifneq ($(ARCH),i686)
-    EXTRA_ARGS += -64
+    _XRUN_ARGS += -64
 endif
 
-EXTRA_ARGS += -xmlibdirpath $(SIM_BUILD)
+_XRUN_ARGS += -xmlibdirpath $(SIM_BUILD)
 ifeq ($(DEBUG),1)
-    EXTRA_ARGS += -pliverbose
-    EXTRA_ARGS += -messages
-    EXTRA_ARGS += -plidebug             # Enhance the profile output with PLI info
-    EXTRA_ARGS += -plierr_verbose       # Expand handle info in PLI/VPI/VHPI messages
-    EXTRA_ARGS += -vpicompat 1800v2005  #  <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
+    _XRUN_ARGS += -pliverbose
+    _XRUN_ARGS += -messages
+    _XRUN_ARGS += -plidebug             # Enhance the profile output with PLI info
+    _XRUN_ARGS += -plierr_verbose       # Expand handle info in PLI/VPI/VHPI messages
+    _XRUN_ARGS += -vpicompat 1800v2005  #  <1364v1995|1364v2001|1364v2005|1800v2005> Specify the IEEE VPI
 else
-    EXTRA_ARGS += -plinowarn
+    _XRUN_ARGS += -plinowarn
 endif
 
 ifeq ($(GUI),1)
-    EXTRA_ARGS += -gui
+    _XRUN_ARGS += -gui
 else
-    EXTRA_ARGS +=
+    _XRUN_ARGS +=
 endif
 
 # Xcelium errors out if multiple timescales are specified on the command line.
-ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
+ifneq (,$(findstring timescale,$(_XRUN_ARGS)))
     $(error "Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.")
 endif
 
@@ -83,7 +90,7 @@ GPI_ARGS = -loadvpi $(LIB_DIR)/libcocotbvpi:vlog_startup_routines_bootstrap
 ifeq ($(TOPLEVEL_LANG),verilog)
     HDL_SOURCES = $(VERILOG_SOURCES)
     ROOT_LEVEL = $(TOPLEVEL)
-    EXTRA_ARGS += -top $(TOPLEVEL)
+    _XRUN_ARGS += -top $(TOPLEVEL)
     ifneq ($(VHDL_SOURCES),)
         HDL_SOURCES += $(VHDL_SOURCES)
         GPI_EXTRA = cocotbvhpi
@@ -91,7 +98,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     # GPI_EXTRA will internally be extended to lib<GPI_EXTRA>.so
     GPI_EXTRA = cocotbvhpi
-    EXTRA_ARGS += -top $(TOPLEVEL)
+    _XRUN_ARGS += -top $(TOPLEVEL)
     RTL_LIBRARY ?= $(TOPLEVEL)
     MAKE_LIB = -makelib $(RTL_LIBRARY)
     HDL_SOURCES = $(VHDL_SOURCES)
@@ -113,7 +120,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUS
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	\
 	$(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
-	$(EXTRA_ARGS) $(GPI_ARGS) $(INCDIRS) -access +rwc -createdebugdb $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
+	$(_XRUN_ARGS) $(GPI_ARGS) $(INCDIRS) -access +rwc -createdebugdb $(MAKE_LIB) $(HDL_SOURCES) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 	# check that the file was actually created, since we can't set an exit code from cocotb
 	test -f $(COCOTB_RESULTS_FILE)

@@ -54,11 +54,20 @@ endif
 
 BUILD_VPI=1
 
-COMPILE_ARGS += -g2012 # Default to latest SystemVerilog standard
+# Do not directly append to COMPILE_ARGS, SIM_ARGS, EXTRA_ARGS etc.,
+# because if a user sets these variables on the make command line,
+# only the user's variable values will be seen.
+# Instead, append to local variables.
+_COMPILE_ARGS += $(COMPILE_ARGS)
+_SIM_ARGS     += $(SIM_ARGS)
+_EXTRA_ARGS   += $(EXTRA_ARGS)
+_PLUSARGS     += $(PLUSARGS)
+
+_COMPILE_ARGS += -g2012 # Default to latest SystemVerilog standard
 
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
-	$(CMD) -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 -s $(TOPLEVEL) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+	$(CMD) -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 -s $(TOPLEVEL) $(_COMPILE_ARGS) $(_EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 
@@ -78,7 +87,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $
 
 	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
-        $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(PLUSARGS)
+        $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi $(_SIM_ARGS) $(_EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(_PLUSARGS)
 
 	# check that the file was actually created, since we can't set an exit code from cocotb
 	test -f $(COCOTB_RESULTS_FILE)
@@ -88,7 +97,7 @@ debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 
 	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
-        gdb --args $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(PLUSARGS)
+        gdb --args $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi $(_SIM_ARGS) $(_EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(_PLUSARGS)
 
 	# check that the file was actually created, since we can't set an exit code from cocotb
 	test -f $(COCOTB_RESULTS_FILE)

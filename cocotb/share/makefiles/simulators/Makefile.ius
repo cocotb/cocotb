@@ -45,25 +45,32 @@ else
     export IUS_BIN_DIR
 endif
 
-EXTRA_ARGS += $(COMPILE_ARGS)
-EXTRA_ARGS += $(SIM_ARGS)
-EXTRA_ARGS += -licqueue
+# Do not directly append to COMPILE_ARGS, SIM_ARGS, EXTRA_ARGS etc.,
+# because if a user sets these variables on the make command line,
+# only the user's variable values will be seen.
+# Instead, append to local variables.
+_IRUN_ARGS += $(COMPILE_ARGS)
+_IRUN_ARGS += $(SIM_ARGS)
+_IRUN_ARGS += $(EXTRA_ARGS)
+_IRUN_ARGS += $(PLUSARGS)
+
+_IRUN_ARGS += -licqueue
 
 ifneq ($(ARCH),i686)
-EXTRA_ARGS += -64
+_IRUN_ARGS += -64
 endif
 
-EXTRA_ARGS += -nclibdirpath $(SIM_BUILD)
-EXTRA_ARGS += -plinowarn
+_IRUN_ARGS += -nclibdirpath $(SIM_BUILD)
+_IRUN_ARGS += -plinowarn
 
 ifeq ($(GUI),1)
-    EXTRA_ARGS += -gui
+    _IRUN_ARGS += -gui
 else
-    EXTRA_ARGS +=
+    _IRUN_ARGS +=
 endif
 
 # IUS errors out if multiple timescales are specified on the command line.
-ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
+ifneq (,$(findstring timescale,$(_IRUN_ARGS)))
     $(error "Please use COCOTB_HDL_TIMEUNIT and COCOTB_HDL_TIMEPRECISION to specify timescale.")
 endif
 
@@ -74,7 +81,7 @@ endif
 GPI_ARGS = -loadvpi $(LIB_DIR)/libcocotbvpi:vlog_startup_routines_bootstrap
 
 ifeq ($(TOPLEVEL_LANG),verilog)
-    EXTRA_ARGS += -v93
+    _IRUN_ARGS += -v93
     HDL_SOURCES = $(VERILOG_SOURCES)
     ROOT_LEVEL = $(TOPLEVEL)
 ifneq ($(VHDL_SOURCES),)
@@ -83,8 +90,8 @@ ifneq ($(VHDL_SOURCES),)
 endif
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_EXTRA = cocotbvhpi
-    EXTRA_ARGS += -v93
-    EXTRA_ARGS += -top $(TOPLEVEL)
+    _IRUN_ARGS += -v93
+    _IRUN_ARGS += -top $(TOPLEVEL)
     RTL_LIBRARY ?= $(TOPLEVEL)
     MAKE_LIB = -makelib $(RTL_LIBRARY)
     HDL_SOURCES = $(VHDL_SOURCES)
@@ -106,7 +113,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUS
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	\
 	$(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
-	$(EXTRA_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
+	$(_IRUN_ARGS) $(GPI_ARGS) +access+rwc $(MAKE_LIB) $(HDL_SOURCES) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 	# check that the file was actually created, since we can't set an exit code from cocotb
 	test -f $(COCOTB_RESULTS_FILE)
