@@ -1,3 +1,5 @@
+.. _building:
+
 ***************************************
 Build options and Environment Variables
 ***************************************
@@ -73,9 +75,19 @@ and
 
       Any arguments or flags to pass to the compile stage of the simulation.
 
+   .. note::
+      For use on the command line, set this as an environment variable:
+      ``COMPILE_ARGS="..." make`` (for fish and csh: ``env COMPILE_ARGS="..." make``).
+      See :ref:`troubleshooting-make-vars` for details.
+
 .. make:var:: SIM_ARGS
 
       Any arguments or flags to pass to the execution of the compiled simulation.
+
+   .. note::
+      For use on the command line, set this as an environment variable:
+      ``SIM_ARGS="..." make`` (for fish and csh: ``env SIM_ARGS="..." make``).
+      See :ref:`troubleshooting-make-vars` for details.
 
 .. make:var:: RUN_ARGS
 
@@ -85,7 +97,13 @@ and
 
 .. make:var:: EXTRA_ARGS
 
-      Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
+      Passed to both the compile and execute phases of simulators with two rules,
+      or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
+
+   .. note::
+      For use on the command line, set this as an environment variable:
+      ``EXTRA_ARGS="..." make`` (for fish and csh: ``env EXTRA_ARGS="..." make``).
+      See :ref:`troubleshooting-make-vars` for details.
 
 .. make:var:: PLUSARGS
 
@@ -97,6 +115,11 @@ and
       The special plusargs ``+ntb_random_seed`` and ``+seed``, if present, are evaluated
       to set the random seed value if :envvar:`RANDOM_SEED` is not set.
       If both ``+ntb_random_seed`` and ``+seed`` are set, ``+ntb_random_seed`` is used.
+
+   .. note::
+      For use on the command line, set this as an environment variable:
+      ``PLUSARGS="..." make`` (for fish and csh: ``env PLUSARGS="..." make``).
+      See :ref:`troubleshooting-make-vars` for details.
 
 .. make:var:: COCOTB_HDL_TIMEUNIT
 

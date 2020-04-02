@@ -80,3 +80,24 @@ A prebuilt test is included to easily launch an IPython shell in an existing des
 To embed a shell within an existing test, where it can inspect local variables, the :func:`embed` function can be used.
 
 .. autofunction:: embed
+
+
+.. _troubleshooting-make-vars:
+
+Setting make variables on the command line
+==========================================
+
+When trying to set one of the make variables listed in :ref:`building` from the command line,
+it is strongly recommended to use an environment variable, i.e.
+``EXTRA_ARGS="..." make`` (for the fish and csh shells: ``env EXTRA_ARGS="..." make``)
+and *not* ``make EXTRA_ARGS=...``.
+
+This is because in the case of the disrecommended ``make EXTRA_ARGS=...``,
+if one of the involved Makefiles contains lines to assign (``=``) or append (``+=``) to ``EXTRA_ARGS`` internally,
+such lines will be ignored.
+These lines are needed for the operation of cocotb however,
+and having them ignored is likely to lead to strange errors.
+
+As a side note,
+when you need to *clear* a Makefile variable from the command line,
+use the syntax ``make EXTRA_ARGS=``.
