@@ -44,7 +44,8 @@ from io import StringIO
 from cocotb._build_libs import get_ext, build_ext
 
 def read_file(fname):
-    return open(path.join(path.dirname(__file__), fname)).read()
+    with open(path.join(path.dirname(__file__), fname), encoding='utf8') as f:
+        return f.read()
 
 def package_files(directory):
     paths = []
