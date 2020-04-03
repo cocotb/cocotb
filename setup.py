@@ -30,7 +30,22 @@
 
 import sys
 if sys.version_info[:2] < (3, 5):
-    raise RuntimeError("Python version >= 3.5 required.")
+    msg = [
+        "This version of cocotb requires at least Python 3.5,",
+        "you are running Python %d.%d.%d." % (
+            sys.version_info[0], sys.version_info[1], sys.version_info[2])
+    ]
+    if sys.version_info[0] == 2:
+        msg += [
+            "If you have Python 3 installed on your machine try ",
+            "using 'python3 -m pip' instead of 'pip' to install cocotb."
+        ]
+    msg += [
+        "For more information please refer to the documentation at ",
+        "https://cocotb.readthedocs.io."
+    ]
+
+    raise SystemExit("\n".join(msg))
 
 import logging
 from setuptools import setup
