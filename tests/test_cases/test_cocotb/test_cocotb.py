@@ -1436,3 +1436,13 @@ async def test_except_lock(dut):
         pass
     async with lock:
         pass
+
+
+# strings are not supported on Icarus
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+async def test_string_handle_takes_bytes(dut):
+    dut.string_input_port.value = b"bytes"
+    await cocotb.triggers.Timer(10, 'ns')
+    val = dut.string_input_port.value
+    assert isinstance(val, bytes)
+    assert val == b"bytes"

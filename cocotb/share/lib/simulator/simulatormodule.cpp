@@ -626,7 +626,7 @@ static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
     }
 
     result = gpi_get_signal_value_str(hdl);
-    retstr = Py_BuildValue("s", result);
+    retstr = PyBytes_FromString(result);
 
     return retstr;
 }
@@ -688,7 +688,7 @@ static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
     gpi_set_action_t action;
     const char *str;
 
-    if (!PyArg_ParseTuple(args, "O&is", gpi_sim_hdl_converter, &hdl, &action, &str)) {
+    if (!PyArg_ParseTuple(args, "O&iy", gpi_sim_hdl_converter, &hdl, &action, &str)) {
         return NULL;
     }
 

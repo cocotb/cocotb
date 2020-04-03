@@ -802,15 +802,28 @@ class StringObject(ModifiableObject):
         object, e.g. net, signal or variable.
 
         Args:
-            value (str): The value to drive onto the simulator object.
+            value (bytes): The value to drive onto the simulator object.
 
         Raises:
             TypeError: If target has an unsupported type for
                  string value assignment.
+
+        .. versionchanged:: 1.4
+            Takes :class:`bytes` instead of :class:`str`.
+            Users are now expected to choose an encoding when using these objects.
+            As a convenience, when assigning :class:`str` values, ASCII encoding will be used as a safe default.
+
         """
         value, set_action = self._check_for_set_action(value)
 
-        if not isinstance(value, str):
+        if isinstance(value, str):
+            warnings.warn(
+                "Handles on string objects will soon not accept `str` objects. "
+                "Please use a bytes object by encoding the string as you see fit. "
+                "`str.encode('ascii')` is typically sufficient.", DeprecationWarning, stacklevel=2)
+            value = value.encode('ascii')  # may throw UnicodeEncodeError
+
+        if not isinstance(value, bytes):
             self._log.critical("Unsupported type for string value assignment: %s (%s)", type(value), repr(value))
             raise TypeError("Unable to set simulator value with type %s" % (type(value)))
 
