@@ -148,8 +148,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(COCOTB_LIBS) $(INT_LIBS)
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) PYTHONPATH=$(PWD):$(NEW_PYTHONPATH) \
 	$(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.do $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
-	# check that the file was actually created, since we can't set an exit code from cocotb
-	test -f $(COCOTB_RESULTS_FILE)
+	$(call check_for_results_file)
 
 # Potential fix for buffered stdout, YMMV
 # STDOUT=$(SIM_BUILD)/sim.log stdbuf --output=0 $(CMD) -do runsim.do 2>&1 && stdbuf --output=0 --input=0 tail -f sim.log && exit $${PIPESTATUS[0]}
