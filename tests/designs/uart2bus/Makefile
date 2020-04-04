@@ -8,13 +8,9 @@ clean::
 
 else
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 SRC_BASE = $(COCOTB)/tests/designs/uart2bus
 
