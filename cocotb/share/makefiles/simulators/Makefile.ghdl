@@ -68,9 +68,9 @@ $(COCOTB_RESULTS_FILE): analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	cd $(SIM_BUILD); \
-	PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
+	PYTHONPATH=$(PWD):$(PYTHONPATH) MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
-	$(CMD) -r $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(LIB_DIR)/libcocotbvpi.$(LIB_EXT) $(SIM_ARGS) $(PLUSARGS)
+	$(CMD) -r $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(LIB_DIR)/libcocotbvpi_ghdl.$(LIB_EXT) $(SIM_ARGS) $(PLUSARGS)
 
 	# check that the file was actually created, since we can't set an exit code from cocotb
 	test -f $(COCOTB_RESULTS_FILE)

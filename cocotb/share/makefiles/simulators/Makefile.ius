@@ -71,7 +71,7 @@ endif
 # GPI_EXTRA=cocotbvhpi if needed.
 
 # Xcelium will use default vlog_startup_routines symbol only if vpi library name is libvpi.so
-GPI_ARGS = -loadvpi $(LIB_DIR)/libcocotbvpi:vlog_startup_routines_bootstrap
+GPI_ARGS = -loadvpi $(LIB_DIR)/libcocotbvpi_ius:vlog_startup_routines_bootstrap
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     EXTRA_ARGS += -v93
@@ -79,10 +79,10 @@ ifeq ($(TOPLEVEL_LANG),verilog)
     ROOT_LEVEL = $(TOPLEVEL)
 ifneq ($(VHDL_SOURCES),)
     HDL_SOURCES += $(VHDL_SOURCES)
-    GPI_EXTRA = cocotbvhpi
+    GPI_EXTRA = cocotbvhpi_ius:cocotbvhpi_entry_point
 endif
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    GPI_EXTRA = cocotbvhpi
+    GPI_EXTRA = cocotbvhpi_ius:cocotbvhpi_entry_point
     EXTRA_ARGS += -v93
     EXTRA_ARGS += -top $(TOPLEVEL)
     RTL_LIBRARY ?= $(TOPLEVEL)
@@ -101,8 +101,8 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD) $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUS
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; \
-	LD_RUN_PATH=$(PYTHON_LIBDIR):$(LD_RUN_PATH) PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) \
-	LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
+	PYTHONPATH=$(PWD):$(PYTHONPATH) \
+	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 \
 	GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	\
 	$(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \

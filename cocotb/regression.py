@@ -41,7 +41,7 @@ else:
     _pdb_on_exception = False
 
 if "COCOTB_SIM" in os.environ:
-    import simulator
+    from cocotb import simulator
 else:
     simulator = None
 

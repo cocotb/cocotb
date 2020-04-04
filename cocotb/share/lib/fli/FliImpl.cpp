@@ -1047,5 +1047,5 @@ void cocotb_init()
 
 } // extern "C"
 
-GPI_ENTRY_POINT(fli, register_embed);
+GPI_ENTRY_POINT(cocotbfli, register_embed);
 

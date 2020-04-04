@@ -38,7 +38,7 @@ import functools
 import warnings
 
 if "COCOTB_SIM" in os.environ:
-    import simulator
+    from cocotb import simulator
     _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
 else:
     simulator = None

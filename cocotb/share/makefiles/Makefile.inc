@@ -80,7 +80,7 @@ ifeq ($(SIM_DEFINE),XCELIUM)
 SIM_DEFINE = IUS
 endif
 
-export LIB_DIR=$(COCOTB_PY_DIR)/cocotb/libs/$(shell echo $(SIM_DEFINE) | tr A-Z a-z)
+export LIB_DIR=$(COCOTB_PY_DIR)/cocotb/libs
 
 ifeq ($(OS),Msys)
 LIB_EXT    := dll
