@@ -72,8 +72,7 @@ $(COCOTB_RESULTS_FILE): analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
 	$(CMD) -r $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(LIB_DIR)/libcocotbvpi_ghdl.$(LIB_EXT) $(SIM_ARGS) $(PLUSARGS)
 
-	# check that the file was actually created, since we can't set an exit code from cocotb
-	test -f $(COCOTB_RESULTS_FILE)
+	$(call check_for_results_file)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

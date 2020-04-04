@@ -78,8 +78,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
         $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi_icarus $(SIM_ARGS) $(EXTRA_ARGS) $(SIM_BUILD)/sim.vvp $(PLUSARGS)
 
-	# check that the file was actually created, since we can't set an exit code from cocotb
-	test -f $(COCOTB_RESULTS_FILE)
+	$(call check_for_results_file)
 
 debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
@@ -88,8 +87,7 @@ debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS)
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
         gdb --args $(ICARUS_BIN_DIR)/vvp -M $(LIB_DIR) -m libcocotbvpi_icarus $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 
-	# check that the file was actually created, since we can't set an exit code from cocotb
-	test -f $(COCOTB_RESULTS_FILE)
+	$(call check_for_results_file)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

@@ -46,8 +46,7 @@ $(COCOTB_RESULTS_FILE): analyse $(COCOTB_LIBS) $(COCOTB_VHPI_LIB)
 		TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
 		$(CMD) $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS) --work=$(RTL_LIBRARY) -r --load $(LIB_DIR)/libcocotbvhpi_ius.$(LIB_EXT) $(TRACE) $(TOPLEVEL)
 
-	# check that the file was actually created, since we can't set an exit code from cocotb
-	test -f $(COCOTB_RESULTS_FILE)
+	$(call check_for_results_file)
 
 clean::
 	-@rm -rf $(SIM_BUILD)
