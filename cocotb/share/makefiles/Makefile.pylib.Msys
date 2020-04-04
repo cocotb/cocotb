@@ -48,7 +48,7 @@ endif
 
 PYTHON_INCLUDEDIR := $(shell $(PYTHON_BIN) -c 'import distutils.sysconfig; print( distutils.sysconfig.get_python_inc() )')
 
-# For tcl scripts purpose source files paths in form of C:/User/..
+# For Tcl script purposes, generate source file paths in the form of C:/User/...
 ifneq ($(VERILOG_SOURCES),)
     VERILOG_SOURCES := $(shell cygpath -m $(VERILOG_SOURCES))
 endif
