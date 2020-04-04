@@ -16,13 +16,9 @@ else
 
 TOPLEVEL = testbench
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 VHDL_SOURCES = $(COCOTB)/tests/designs/vhdl_configurations/dut.vhd
 ifeq ($(TOPLEVEL_LANG),verilog)

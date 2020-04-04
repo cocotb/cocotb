@@ -38,12 +38,6 @@ else
 
 TOPLEVEL = icmp_reply
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
-
 PWD=$(shell pwd)
 
 VERILOG_SOURCES = $(PWD)/../hdl/icmp_reply.sv
