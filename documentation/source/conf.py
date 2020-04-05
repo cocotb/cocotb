@@ -68,8 +68,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'cocotb'
-copyright = u'2014-{0}, PotentialVentures'.format(datetime.datetime.now().year)
+project = 'cocotb'
+copyright = '2014-{0}, PotentialVentures'.format(datetime.datetime.now().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -241,8 +241,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'cocotb.tex', u'cocotb Documentation',
-   u'PotentialVentures', 'manual'),
+  ('index', 'cocotb.tex', 'cocotb Documentation',
+   'PotentialVentures', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -271,8 +271,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'cocotb', u'cocotb Documentation',
-     [u'PotentialVentures'], 1)
+    ('index', 'cocotb', 'cocotb Documentation',
+     ['PotentialVentures'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -285,8 +285,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'cocotb', u'cocotb Documentation',
-   u'PotentialVentures', 'cocotb', 'Coroutine Cosimulation TestBench \
+  ('index', 'cocotb', 'cocotb Documentation',
+   'PotentialVentures', 'cocotb', 'Coroutine Cosimulation TestBench \
      environment for efficient verification of RTL using Python.',
    'Miscellaneous'),
 ]
