@@ -411,9 +411,6 @@ class BinaryValue:
         return self.__str__()
 
     def __bool__(self):
-        return self.__nonzero__()
-
-    def __nonzero__(self):
         """Provide boolean testing of a :attr:`binstr`.
 
         >>> val = BinaryValue("0000")

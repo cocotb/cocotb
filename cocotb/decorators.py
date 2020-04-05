@@ -184,7 +184,7 @@ class RunningTask:
     def has_started(self):
         return self._started
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Provide boolean testing
             if the coroutine has finished return false
             otherwise return true"""
@@ -200,8 +200,6 @@ class RunningTask:
 
         # Hand the coroutine back to the scheduler trampoline.
         return (yield self)
-
-    __bool__ = __nonzero__
 
 
 class RunningCoroutine(RunningTask):
