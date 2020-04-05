@@ -71,7 +71,7 @@ class InternalError(RuntimeError):
     pass
 
 
-class profiling_context(object):
+class profiling_context:
     """ Context manager that profiles its contents """
     def __enter__(self):
         _profile.enable()
@@ -82,14 +82,14 @@ class profiling_context(object):
 
 from cocotb import outcomes
 
-class external_state(object):
+class external_state:
     INIT = 0
     RUNNING = 1
     PAUSED = 2
     EXITED = 3
 
 @cocotb.decorators.public
-class external_waiter(object):
+class external_waiter:
 
     def __init__(self):
         self._outcome = None
@@ -150,7 +150,7 @@ class external_waiter(object):
 
         return self.state
 
-class Scheduler(object):
+class Scheduler:
     """The main scheduler.
 
     Here we accept callbacks from the simulator and schedule the appropriate

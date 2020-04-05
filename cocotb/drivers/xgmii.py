@@ -44,7 +44,7 @@ _XGMII_TERMINATE = 0xFD  # noqa
 _PREAMBLE_SFD = b"\x55\x55\x55\x55\x55\x55\xD5"
 
 
-class _XGMIIBus(object):
+class _XGMIIBus:
     r"""Helper object for abstracting the underlying bus format.
 
     Index bytes directly on this object, pass a tuple of ``(value, ctrl)`` to

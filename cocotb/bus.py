@@ -39,7 +39,7 @@ def _build_sig_attr_dict(signals):
         return {sig: sig for sig in signals}
 
 
-class Bus(object):
+class Bus:
     """Wraps up a collection of signals.
 
     Assumes we have a set of signals/nets named ``entity.<bus_name><separator><signal>``.
