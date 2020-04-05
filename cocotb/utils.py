@@ -1,5 +1,3 @@
-from __future__ import print_function, division
-
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
