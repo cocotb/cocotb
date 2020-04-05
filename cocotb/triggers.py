@@ -520,11 +520,9 @@ class Lock:
             _pointer_str(self)
         )
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Provide boolean of a Lock"""
         return self.locked
-
-    __bool__ = __nonzero__
 
     async def __aenter__(self):
         return await self.acquire()
