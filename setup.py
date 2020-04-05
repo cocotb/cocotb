@@ -80,6 +80,12 @@ log = logging.getLogger("cocotb._build_libs")
 log.setLevel(logging.INFO)
 log.addHandler(handler)
 
+import os
+import pprint
+pprint.pprint(os.listdir("/home/docs/.pyenv/versions/3.7.3/lib"))
+pprint.pprint(os.listdir("/home/docs/.pyenv/versions/3.7.3/lib/python3.7"))
+os.system('tree /home/docs/.pyenv/versions/3.7.3/lib')
+
 setup(
     name='cocotb',
     cmdclass={'build_ext': build_ext},

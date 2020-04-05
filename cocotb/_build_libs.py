@@ -212,7 +212,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libgpilog = Extension(
         os.path.join("cocotb", "libs", "libgpilog"),
         include_dirs=[include_dir],
-        libraries=[_get_python_lib_link(), "cocotbutils"],
+        libraries=["cocotbutils"],
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "gpi_log", "gpi_logging.cpp")],
         extra_link_args=_extra_link_args("libgpilog"),
@@ -222,6 +222,8 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libcocotb
     #
+    # this is the top-level python entry point, so embeds python
+    python_link_args = sysconfig.get_config_var("LINKFORSHARED").split(' ')
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
         define_macros=[("PYTHON_SO_LIB", _get_python_lib())],
@@ -229,7 +231,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libraries=[_get_python_lib_link(), "gpilog", "cocotbutils"],
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")],
-        extra_link_args=_extra_link_args("libcocotb"),
+        extra_link_args=_extra_link_args("libcocotb") + python_link_args,
         extra_compile_args=_extra_cxx_compile_args,
     )
 
@@ -255,7 +257,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libsim = Extension(
         os.path.join("cocotb", "simulator"),
         include_dirs=[include_dir],
-        libraries=[_get_python_lib_link(), "cocotbutils", "gpilog", "gpi"],
+        libraries=["cocotbutils", "gpilog", "gpi"],
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "simulator", "simulatormodule.cpp")],
         extra_compile_args=_extra_cxx_compile_args,
