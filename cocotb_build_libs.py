@@ -226,7 +226,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         os.path.join("cocotb", "libs", "libcocotb"),
         define_macros=[("PYTHON_SO_LIB", _get_python_lib())],
         include_dirs=[include_dir],
-        libraries=[_get_python_lib_link(), "gpilog", "cocotbutils"],
+        libraries=["gpilog", "cocotbutils"],
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")],
         extra_link_args=_extra_link_args("libcocotb"),
