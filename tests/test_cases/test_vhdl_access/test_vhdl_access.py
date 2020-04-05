@@ -53,9 +53,9 @@ def check_objects(dut):
     def check_instance(obj, objtype):
         if not isinstance(obj, objtype):
             tlog.error("Expected %s to be of type %s but got %s" % (
-                obj._fullname, objtype.__name__, obj.__class__.__name__))
+                obj._fullname, objtype.__name__, type(obj).__name__))
             return 1
-        tlog.info("%s is %s" % (obj._fullname, obj.__class__.__name__))
+        tlog.info("%s is %s" % (obj._fullname, type(obj).__name__))
         return 0
 
     # Hierarchy checks
@@ -101,12 +101,12 @@ def port_not_hierarchy(dut):
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
     if not isinstance(dut.aclk, ModifiableObject):
-        tlog.error("dut.aclk should be ModifiableObject but got %s", dut.aclk.__class__.__name__)
+        tlog.error("dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__)
     else:
         tlog.info("dut.aclk is ModifiableObject")
     for _ in dut:
         pass
     if not isinstance(dut.aclk, ModifiableObject):
-        tlog.error("dut.aclk should be ModifiableObject but got %s", dut.aclk.__class__.__name__)
+        tlog.error("dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__)
     else:
         tlog.info("dut.aclk is ModifiableObject")
