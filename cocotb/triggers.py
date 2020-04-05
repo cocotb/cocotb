@@ -78,7 +78,7 @@ class Trigger(Awaitable):
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
+        return SimLog("cocotb.%s" % (type(self).__name__), id(self))
 
     @abc.abstractmethod
     def prime(self, callback):

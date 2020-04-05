@@ -84,7 +84,7 @@ def recursive_discovery(dut):
 
     if not isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject):
         tlog.error("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable")
-        tlog.error("but it was %s" % dut.i_verilog.uart1.baud_gen_1.baud_freq.__class__.__name__)
+        tlog.error("but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__)
         raise TestFailure()
 
 

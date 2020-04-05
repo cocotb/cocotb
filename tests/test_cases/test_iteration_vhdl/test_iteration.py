@@ -84,7 +84,7 @@ def dual_iteration(dut):
 
 @cocotb.test()
 def get_clock(dut):
-    dut._log.info("dut.aclk is %s", dut.aclk.__class__.__name__)
+    dut._log.info("dut.aclk is %s", type(dut.aclk).__name__)
     dut.aclk <= 0
     yield Timer(1)
     dut.aclk <= 1

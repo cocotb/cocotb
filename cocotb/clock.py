@@ -42,7 +42,7 @@ class BaseClock:
     @lazy_property
     def log(self):
         return SimLog("cocotb.%s.%s" % (
-            self.__class__.__name__, self.signal._name
+            type(self).__name__, self.signal._name
         ))
 
 
@@ -152,4 +152,4 @@ class Clock(BaseClock):
                 await t
 
     def __str__(self):
-        return self.__class__.__name__ + "(%3.1f MHz)" % self.frequency
+        return type(self).__name__ + "(%3.1f MHz)" % self.frequency

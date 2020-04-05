@@ -341,7 +341,7 @@ class RegressionManager:
         # Helper for logging result
         def _result_was():
             result_was = ("{} (result was {})".format
-                          (test.__name__, result.__class__.__name__))
+                          (test.__name__, type(result).__name__))
             return result_was
 
         # scoring outcomes

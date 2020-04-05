@@ -305,10 +305,10 @@ class coroutine:
     def __call__(self, *args, **kwargs):
         return RunningCoroutine(self._func(*args, **kwargs), self)
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
             and standalone functions"""
-        return self.__class__(self._func.__get__(obj, type))
+        return type(self)(self._func.__get__(obj, owner))
 
     def __iter__(self):
         return self
@@ -336,10 +336,10 @@ class function:
     def __call__(self, *args, **kwargs):
         return cocotb.scheduler.queue_function(self._coro(*args, **kwargs))
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
             and standalone functions"""
-        return self.__class__(self._coro._func.__get__(obj, type))
+        return type(self)(self._coro._func.__get__(obj, owner))
 
 @public
 class external:
@@ -357,10 +357,10 @@ class external:
     def __call__(self, *args, **kwargs):
         return cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
             and standalone functions"""
-        return self.__class__(self._func.__get__(obj, type))
+        return type(self)(self._func.__get__(obj, owner))
 
 
 class _decorator_helper(type):

@@ -383,7 +383,7 @@ class BinaryValue:
         for char in string:
             if char not in BinaryValue._permitted_chars:
                 raise ValueError("Attempting to assign character %s to a %s" %
-                                 (char, self.__class__.__name__))
+                                 (char, type(self).__name__))
         self._str = string
         self._adjust()
 

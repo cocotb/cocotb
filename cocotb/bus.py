@@ -124,7 +124,7 @@ class Bus:
                     msg = ("Unable to drive onto {0}.{1} because {2} is missing "
                            "attribute {3}".format(self._entity._name,
                                                   self._name,
-                                                  obj.__class__.__name__,
+                                                  type(obj).__name__,
                                                   attr_name))
                     raise AttributeError(msg)
                 else:
@@ -178,7 +178,7 @@ class Bus:
                     msg = ("Unable to sample from {0}.{1} because {2} is missing "
                            "attribute {3}".format(self._entity._name,
                                                   self._name,
-                                                  obj.__class__.__name__,
+                                                  type(obj).__name__,
                                                   attr_name))
                     raise AttributeError(msg)
                 else:

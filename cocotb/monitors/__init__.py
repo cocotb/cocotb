@@ -82,7 +82,7 @@ class Monitor:
 
         # Sub-classes may already set up logging
         if not hasattr(self, "log"):
-            self.log = SimLog("cocotb.monitor.%s" % (self.__class__.__name__))
+            self.log = SimLog("cocotb.monitor.%s" % (type(self).__name__))
 
         if callback is not None:
             self.add_callback(callback)
@@ -194,4 +194,4 @@ class BusMonitor(Monitor):
         return False
 
     def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.name)
+        return "%s(%s)" % (type(self).__name__, self.name)
