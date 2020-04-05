@@ -37,11 +37,12 @@ import weakref
 import functools
 import warnings
 
+from cocotb import simulator
+
 if "COCOTB_SIM" in os.environ:
-    from cocotb import simulator
+    # this segfaults if a simulator is not present
     _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
 else:
-    simulator = None
     _LOG_SIM_PRECISION = -15
 
 

@@ -16,7 +16,7 @@ from distutils.file_util import copy_file
 
 
 logger = logging.getLogger(__name__)
-cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "share"))
+cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
 
 
 def _get_lib_ext_name():

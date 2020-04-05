@@ -8,6 +8,8 @@ python:
   version: 3.7
   install:
     - requirements: documentation/requirements.txt
+    - method: pip
+      path: .
 
 sphinx:
   configuration: documentation/source/conf.py

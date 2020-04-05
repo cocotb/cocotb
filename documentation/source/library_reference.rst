@@ -358,3 +358,14 @@ The ``cocotb-config`` script
     :module: cocotb.config
     :func: get_parser
     :prog: cocotb-config
+
+The ``cocotb.simulator`` module
+-------------------------------
+
+This module is the interface to the GPI interface.
+It should not be considered public API, but is documented here for developers
+of cocotb.
+
+.. automodule:: cocotb.simulator
+    :members:
+    :undoc-members:

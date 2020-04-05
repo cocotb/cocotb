@@ -33,12 +33,7 @@ import ctypes
 import warnings
 import collections.abc
 
-import os
-
-if "COCOTB_SIM" in os.environ:
-    from cocotb import simulator
-else:
-    simulator = None
+from cocotb import simulator
 
 import cocotb
 from cocotb.binary import BinaryValue

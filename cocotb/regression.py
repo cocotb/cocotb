@@ -40,10 +40,7 @@ if "COCOTB_PDB_ON_EXCEPTION" in os.environ:
 else:
     _pdb_on_exception = False
 
-if "COCOTB_SIM" in os.environ:
-    from cocotb import simulator
-else:
-    simulator = None
+from cocotb import simulator
 
 # Optional support for coverage collection of testbench files
 coverage = None
