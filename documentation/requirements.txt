@@ -1,5 +1,10 @@
 # Python dependencies to build the documentation
-Sphinx>=2.1
+
+# Pinned below 3 until https://github.com/sphinx-contrib/domaintools/pull/9 is
+# merged and released.
+Sphinx~=2.1
+
+# other dependencies
 sphinx-rtd-theme
 cairosvg
 breathe
