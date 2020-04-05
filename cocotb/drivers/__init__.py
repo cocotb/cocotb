@@ -39,7 +39,7 @@ from cocotb.bus import Bus
 from cocotb.log import SimLog
 
 
-class BitDriver(object):
+class BitDriver:
     """Drives a signal onto a single bit.
 
     Useful for exercising ready/valid flags.
@@ -89,7 +89,7 @@ class BitDriver(object):
                 yield edge
 
 
-class Driver(object):
+class Driver:
     """Class defining the standard interface for a driver within a testbench.
 
     The driver is responsible for serializing transactions onto the physical

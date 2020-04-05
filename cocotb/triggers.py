@@ -373,7 +373,7 @@ class _Event(PythonTrigger):
         return "<{!r}.wait() at {}>".format(self.parent, _pointer_str(self))
 
 
-class Event(object):
+class Event:
     """Event to permit synchronization between two coroutines.
 
     Awaiting :meth:`wait()` from one coroutine will block the coroutine until
@@ -453,7 +453,7 @@ class _Lock(PythonTrigger):
         return "<{!r}.acquire() at {}>".format(self.parent, _pointer_str(self))
 
 
-class Lock(object):
+class Lock:
     """Lock primitive (not re-entrant).
 
     This can be used as::

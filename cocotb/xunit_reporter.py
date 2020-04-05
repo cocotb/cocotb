@@ -63,7 +63,7 @@ class File(StringIO):
         return line_list[-lines_2find:]
 
 
-class XUnitReporter(object):
+class XUnitReporter:
 
     def __init__(self, filename="results.xml"):
         self.results = Element("testsuites", name="results")

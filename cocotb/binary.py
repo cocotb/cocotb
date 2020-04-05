@@ -61,13 +61,13 @@ def _clog2(val):
         exp += 1
 
 
-class BinaryRepresentation():  # noqa
+class BinaryRepresentation:  # noqa
     UNSIGNED         = 0  #: Unsigned format
     SIGNED_MAGNITUDE = 1  #: Sign and magnitude format
     TWOS_COMPLEMENT  = 2  #: Two's complement format
 
 
-class BinaryValue(object):
+class BinaryValue:
     """Representation of values in binary format.
 
     The underlying value can be set or accessed using these aliasing attributes:

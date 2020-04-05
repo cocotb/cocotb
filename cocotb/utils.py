@@ -493,7 +493,7 @@ def reject_remaining_kwargs(name, kwargs):
         )
 
 
-class lazy_property(object):
+class lazy_property:
     """
     A property that is executed the first time, then cached forever.
 

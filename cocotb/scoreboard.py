@@ -37,7 +37,7 @@ from cocotb.monitors import Monitor
 from cocotb.result import TestFailure, TestSuccess
 
 
-class Scoreboard(object):
+class Scoreboard:
     """Generic scoreboarding class.
 
     We can add interfaces by providing a monitor and an expected output queue.

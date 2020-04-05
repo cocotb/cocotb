@@ -31,7 +31,7 @@ from cocotb.bus import Bus
 from cocotb.triggers import RisingEdge, ReadOnly
 
 
-class Wavedrom(object):
+class Wavedrom:
     """Base class for a WaveDrom compatible tracer."""
     def __init__(self, obj):
 
@@ -113,7 +113,7 @@ class Wavedrom(object):
         return siglist
 
 
-class trace(object):
+class trace:
     """Context manager to enable tracing of signals.
 
     Arguments are an arbitrary number of signals or buses to trace.

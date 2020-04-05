@@ -42,14 +42,14 @@ from cocotb.log import SimLog
 from cocotb.triggers import Event, Timer
 
 
-class MonitorStatistics(object):
+class MonitorStatistics:
     """Wrapper class for storing Monitor statistics"""
 
     def __init__(self):
         self.received_transactions = 0
 
 
-class Monitor(object):
+class Monitor:
     """Base class for Monitor objects.
 
     Monitors are passive 'listening' objects that monitor pins going in or out of a DUT.

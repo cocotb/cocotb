@@ -49,7 +49,7 @@ from cocotb.result import TestError
 _deprecation_warned = set()
 
 
-class SimHandleBase(object):
+class SimHandleBase:
     """Base class for all simulation objects.
 
     We maintain a handle which we can use for GPI calls.
@@ -352,7 +352,7 @@ class HierarchyArrayObject(RegionObject):
         raise TypeError("Not permissible to set %s at index %d" % (self._name, index))
 
 
-class _AssignmentResult(object):
+class _AssignmentResult:
     """
     An object that exists solely to provide an error message if the caller
     is not aware of cocotb's meaning of ``<=``.

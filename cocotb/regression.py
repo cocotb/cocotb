@@ -72,7 +72,7 @@ def _my_import(name):
     return mod
 
 
-class RegressionManager(object):
+class RegressionManager:
     """Encapsulates all regression capability into a single place"""
 
     def __init__(self, root_name, modules, tests=None, seed=None, hooks=[]):
@@ -534,7 +534,7 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
     return cocotb.test()(_my_test)
 
 
-class TestFactory(object):
+class TestFactory:
     """Factory to automatically generate tests.
 
     Args:

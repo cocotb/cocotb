@@ -73,7 +73,7 @@ class CoroutineComplete(Exception):
         Exception.__init__(self, text)
 
 
-class RunningTask(object):
+class RunningTask:
     """Per instance wrapper around a running generator.
 
     Provides the following:
@@ -285,7 +285,7 @@ class RunningTest(RunningCoroutine):
             return "%s.%d.%s" % (self.module, self.stage, self.funcname)
 
 
-class coroutine(object):
+class coroutine:
     """Decorator class that allows us to provide common coroutine mechanisms:
 
     ``log`` methods will log to ``cocotb.coroutine.name``.
@@ -320,7 +320,7 @@ class coroutine(object):
 
 
 @public
-class function(object):
+class function:
     """Decorator class that allows a function to block.
 
     This allows a coroutine that consumes simulation time
@@ -344,7 +344,7 @@ class function(object):
         return self.__class__(self._coro._func.__get__(obj, type))
 
 @public
-class external(object):
+class external:
     """Decorator to apply to an external function to enable calling from cocotb.
 
     This turns a normal function that isn't a coroutine into a blocking coroutine.

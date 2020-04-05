@@ -34,7 +34,7 @@ from cocotb.triggers import Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps, lazy_property
 
 
-class BaseClock(object):
+class BaseClock:
     """Base class to derive from."""
     def __init__(self, signal):
         self.signal = signal
