@@ -136,12 +136,8 @@ def _initialise_testbench(root_name):
     if memcheck_port is not None:
         mem_debug(int(memcheck_port))
 
-    exec_path = os.getenv('COCOTB_PY_DIR')
-    if exec_path is None:
-        exec_path = 'Unknown'
-
     log.info("Running tests with cocotb v%s from %s" %
-             (__version__, exec_path))
+             (__version__, os.path.dirname(__file__)))
 
     # Create the base handle type
 
