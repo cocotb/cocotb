@@ -27,13 +27,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import contextlib
 import logging
 import re
-import sys
 import textwrap
 import traceback
-import warnings
 from fractions import Fraction
 from decimal import Decimal
 from math import isclose
@@ -49,34 +46,9 @@ from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
                              ReadOnly, ReadWrite, ClockCycles, NextTimeStep,
                              NullTrigger, Combine, Event, First, Trigger, Lock)
 from cocotb.clock import Clock
-from cocotb.result import (
-    TestFailure, TestError, TestSuccess, raise_error, create_error
-)
+from cocotb.result import TestFailure, TestError
 from cocotb.utils import get_sim_time
 from cocotb.outcomes import Value, Error
-from cocotb.binary import BinaryValue
-
-
-@contextlib.contextmanager
-def assert_deprecated():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        yield
-        if len(w) == 1 and issubclass(w[-1].category, DeprecationWarning):
-            return
-        raise AssertionError(
-            "Expected exactly one DeprecationWarning, got {}".format(w)
-        )
-
-
-@contextlib.contextmanager
-def assert_raises(exc_type):
-    try:
-        yield
-    except exc_type:
-        pass
-    else:
-        raise AssertionError("{} was not raised".format(exc_type.__name__))
 
 
 # Tests relating to providing meaningful errors if we forget to use the
@@ -1167,21 +1139,6 @@ def test_trigger_with_failing_prime(dut):
         assert "oops" in str(exc)
     else:
         raise TestFailure
-
-
-@cocotb.test()
-def test_create_error_deprecated(dut):
-    yield Timer(1)
-    with assert_deprecated():
-        e = create_error(Timer(1), "A test exception")
-
-
-@cocotb.test()
-def test_raise_error_deprecated(dut):
-    yield Timer(1)
-    with assert_deprecated():
-        with assert_raises(TestError):
-            raise_error(Timer(1), "A test exception")
 
 
 @cocotb.test(expect_fail=True)
