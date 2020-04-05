@@ -310,38 +310,38 @@ We can also cast the signal handle directly to an integer:
 Parallel and sequential execution
 ---------------------------------
 
-A :keyword:`yield` will run a function (that must be marked as a "coroutine", see :ref:`coroutines`)
-sequentially, i.e. wait for it to complete.
-If a coroutine should be run "in the background", i.e. in parallel to other coroutines,
-the way to do this is to :func:`~cocotb.fork` it.
-The end of such a forked coroutine can be waited on by using :meth:`~cocotb.decorators.RunningCoroutine.join`.
+An :keyword:`await` will run an :keyword:`async` coroutine and wait for it to complete.
+The called coroutine "blocks" the execution of the current coroutine.
+Wrapping the call in :func:`~cocotb.fork` runs the coroutine concurrently, allowing the current coroutine to continue executing.
+At any time you can :keyword:`await` the result of the forked coroutine, which will block until the forked coroutine finishes.
 
 The following example shows these in action:
 
 .. code-block:: python3
 
-    @cocotb.coroutine
-    def reset_dut(reset_n, duration):
+    async def reset_dut(reset_n, duration_ns):
         reset_n <= 0
-        yield Timer(duration, units='ns')
+        await Timer(duration_ns, units='ns')
         reset_n <= 1
         reset_n._log.debug("Reset complete")
 
     @cocotb.test()
-    def parallel_example(dut):
+    async def parallel_example(dut):
         reset_n = dut.reset
 
-        # This will call reset_dut sequentially
         # Execution will block until reset_dut has completed
-        yield reset_dut(reset_n, 500)
+        await reset_dut(reset_n, 500)
         dut._log.debug("After reset")
 
-        # Call reset_dut in parallel with the 250 ns timer
-        reset_thread = cocotb.fork(reset_dut(reset_n, 500))
+        # Run reset_dut concurrently
+        reset_thread = cocotb.fork(reset_dut(reset_n, duration_ns=500))
 
-        yield Timer(250, units='ns')
+        # This timer will complete before the timer in the concurrently executing "reset_thread"
+        await Timer(250, units='ns')
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
 
         # Wait for the other thread to complete
-        yield reset_thread.join()
+        await reset_thread
         dut._log.debug("After reset")
+
+See :ref:`coroutines` for more examples of what can be done with coroutines.

@@ -3,21 +3,12 @@ Triggers
 ********
 
 Triggers are used to indicate when the cocotb scheduler should resume coroutine execution.
-To use a trigger, a coroutine should :keyword:`await` or :keyword:`yield` it.
+To use a trigger, a coroutine should :keyword:`await` it.
 This will cause execution of the current coroutine to pause.
 When the trigger fires, execution of the paused coroutine will resume::
 
-    @cocotb.coroutine
-    def coro():
-        print("Some time before the edge")
-        yield RisingEdge(clk)
-        print("Immediately after the edge")
-
-Or using the syntax in Python 3.5 onwards:
-
 .. code-block:: python3
 
-    @cocotb.coroutine
     async def coro():
         print("Some time before the edge")
         await RisingEdge(clk)

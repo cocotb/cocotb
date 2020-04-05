@@ -724,7 +724,7 @@ class First(_AggregateWaitable):
             t_ret = await First(t1, t2)
 
     .. note::
-        When using the old-style :keyword:`yield`-based coroutines, ``t = yield [a, b]`` was another spelling of
+        In the old-style :ref:`generator-based coroutines <yield-syntax>`, ``t = yield [a, b]`` was another spelling of
         ``t = yield First(a, b)``. This spelling is no longer available when using :keyword:`await`-based
         coroutines.
     """
