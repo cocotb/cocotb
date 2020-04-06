@@ -443,12 +443,6 @@ class BinaryValue(object):
             other = other.value
         return self.value != other
 
-    def __cmp__(self, other):
-        """Comparison against other values"""
-        if isinstance(other, BinaryValue):
-            other = other.value
-        return self.value.__cmp__(other)
-
     def __int__(self):
         return self.integer
 
