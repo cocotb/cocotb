@@ -100,3 +100,16 @@ mti_TickLeft
 mti_TickLength
 mti_TickRight
 mti_VsimFree
+mti_Interp
+mti_Cmd
+Tcl_GetStringResult
+Tcl_ResetResult
+Tcl_GetObjResult
+Tcl_ResetResult
+Tcl_ListObjGetElements
+Tcl_GetStringResult
+TclFreeObj
+Tcl_ResetResult
+Tcl_ResetResult
+Tcl_GetString
+TclFreeObj
