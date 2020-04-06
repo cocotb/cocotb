@@ -5,11 +5,11 @@
 
 **cocotb** is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 
-[![Documentation Status](https://readthedocs.org/projects/cocotb/badge/?version=latest)](http://cocotb.readthedocs.org/en/latest/)
+[![Documentation Status](https://readthedocs.org/projects/cocotb/badge/?version=latest)](https://docs.cocotb.org/en/latest/)
 [![Build Status](https://travis-ci.org/cocotb/cocotb.svg?branch=master)](https://travis-ci.org/cocotb/cocotb)
 [![PyPI](https://img.shields.io/pypi/dm/cocotb.svg?label=PyPI%20downloads)](https://pypi.org/project/cocotb/)
 
-* Read the [documentation](http://cocotb.readthedocs.org)
+* Read the [documentation](https://docs.cocotb.org)
 * Get involved:
   * [Raise a bug / request an enhancement](https://github.com/cocotb/cocotb/issues/new) (Requires a GitHub account)
   * [Join the mailing list](https://lists.librecores.org/listinfo/cocotb)
@@ -40,6 +40,6 @@ Cocotb can be installed by running `pip install cocotb`.
 
 ## Tutorials and examples
 
-* [Endian Swapper tutorial](https://cocotb.readthedocs.org/en/latest/endian_swapper.html)
-* [Ping using TUN/TAP tutorial](https://cocotb.readthedocs.org/en/latest/ping_tun_tap.html)
+* [Endian Swapper tutorial](https://docs.cocotb.org/en/latest/endian_swapper.html)
+* [Ping using TUN/TAP tutorial](https://docs.cocotb.org/en/latest/ping_tun_tap.html)
 * [OpenCores JPEG Encoder example](https://github.com/chiggs/oc_jpegencode/)

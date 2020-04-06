@@ -28,7 +28,7 @@
 """
 Cocotb is a coroutine, cosimulation framework for writing testbenches in Python.
 
-See http://cocotb.readthedocs.org for full documentation
+See https://docs.cocotb.org for full documentation
 """
 import os
 import sys
