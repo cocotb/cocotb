@@ -54,6 +54,9 @@ OS=Msys
 endif
 export OS
 
+# this ensures we use the same python as the one cocotb was installed into
+PYTHON_BIN ?= $(shell cocotb-config --python-bin)
+
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
 

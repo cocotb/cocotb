@@ -29,13 +29,6 @@
 
 # All common python related rules
 
-ifneq ($(COCOTB_PYTHON_DEBUG),)
-    DBG_PYTHON_VERSION=$(shell python -c 'from __future__ import print_function; import distutils.sysconfig; print(distutils.sysconfig.get_python_version())')
-    PYTHON_BIN?=python$(DBG_PYTHON_VERSION)-dbg
-else
-    PYTHON_BIN?=python
-endif
-
 PYTHON_LIBDIR:=$(shell $(PYTHON_BIN) -c 'from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
 
 # Nasty hack but there's no way in Python properly get the directories for 32-bit Python on a 64-bit system
