@@ -205,7 +205,7 @@ extern "C" void embed_sim_cleanup(void)
  * Loads the Python module called cocotb and calls the _initialise_testbench function
  */
 
-int get_module_ref(const char *modname, PyObject **mod)
+static int get_module_ref(const char *modname, PyObject **mod)
 {
     PyObject *pModule = PyImport_ImportModule(modname);
 
