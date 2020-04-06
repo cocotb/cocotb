@@ -136,11 +136,7 @@ define check_for_results_file
     @test -f $(COCOTB_RESULTS_FILE) || (echo "ERROR: $(COCOTB_RESULTS_FILE) was not written by the simulation!" >&2 && exit 1)
 endef
 
-# Append directory containing the cocotb Python package to PYTHONPATH
-# XXX: This is only needed if cocotb is not installed into the default
-# Python search path.
-PYTHONPATH := $(COCOTB_PY_DIR):$(PYTHONPATH)
-export PYTHONPATH
+PYTHONPATH := $(PYTHONPATH):$(PWD)
 
 $(SIM_BUILD):
 	mkdir -p $@

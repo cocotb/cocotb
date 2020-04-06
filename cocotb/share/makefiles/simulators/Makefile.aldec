@@ -90,14 +90,7 @@ ifneq ($(VHDL_SOURCES),)
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-
-ifeq ($(OS),Msys)
-    VHPI_LIB = $(shell sh -c 'cd $(LIB_DIR) && pwd -W')/libcocotbvhpi_aldec
-else
-    VHPI_LIB = $(LIB_DIR)/libcocotbvhpi_aldec
-endif
-
-    GPI_ARGS = -loadvhpi $(VHPI_LIB):vhpi_startup_routines_bootstrap
+    GPI_ARGS = -loadvhpi $(LIB_DIR)/libcocotbvhpi_aldec:vhpi_startup_routines_bootstrap
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_aldec:cocotbvpi_entry_point
 endif
@@ -145,30 +138,12 @@ ifeq ($(COVERAGE),1)
 endif
 endif
 
-ifeq ($(OS),Msys)
-
-# Windows allows the situation where the libstc++ used at link time as
-# specified by -L can be different to the one that is used at runtime which
-# comes from the first libstdc++ that it finds in the path. As such
-# we use the mingw lib used at build time and put this at the start of the path
-# before running
-
-MINGW_BIN_DIR = $(shell dirname $(shell :; command -v gcc))
-
-OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
-LIB_LOAD = PATH=$(MINGW_BIN_DIR):$(OLD_PATH):$(LIB_DIR)
-NEW_PYTHONPATH := $(shell echo "$(PYTHONPATH)" | sed -e 's/\\/\//g' -e 's/\([a-zA-Z]\):\//\/\1\//g' -e 's/;/:/g')
-else
-LIB_LOAD :=
-NEW_PYTHONPATH := $(PYTHONPATH)
-endif
-
 # Note it's the redirection of the output rather than the 'do' command
 # that turns on batch mode (i.e. exit on completion/error)
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
-	set -o pipefail; cd $(SIM_BUILD) && PYTHONPATH=$(PWD):$(NEW_PYTHONPATH) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	set -o pipefail; cd $(SIM_BUILD) && PYTHONPATH=$(PYTHONPATH) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) $(RUN_ARGS) -do runsim.tcl | tee sim.log
 
 	$(call check_for_results_file)
