@@ -38,7 +38,7 @@ else
     WPWD=$(PWD)
 endif
 
-PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
+export PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv

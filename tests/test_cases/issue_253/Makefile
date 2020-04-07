@@ -44,19 +44,19 @@ $(COCOTB_RESULTS_FILE):
 	@echo "Skipping"
 
 notset_top_level: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	PYTHONPATH=$(PYTHONPATH) MODULE=$(MODULE) \
+	MODULE=$(MODULE) \
 	COCOTB_SIM=1 TESTCASE=issue_253_notset TOPLEVEL= \
 	vvp -M $(LIB_DIR) -m libcocotbvpi_icarus $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 	mkdir -p $@_result && mv results.xml $@_result/
 
 empty_top_level: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	PYTHONPATH=$(PYTHONPATH) MODULE=$(MODULE) \
+	MODULE=$(MODULE) \
 	COCOTB_SIM=1 TESTCASE=issue_253_empty TOPLEVEL="" \
 	vvp -M $(LIB_DIR) -m libcocotbvpi_icarus $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 	mkdir -p $@_result && mv results.xml $@_result/
 
 no_top_level: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
-	PYTHONPATH=$(PYTHONPATH) $(LIB_LOAD) MODULE=$(MODULE) \
+	$(LIB_LOAD) MODULE=$(MODULE) \
 	COCOTB_SIM=1 TESTCASE=issue_253_none \
 	vvp -M $(LIB_DIR) -m libcocotbvpi_icarus $(SIM_BUILD)/sim.vvp $(SIM_ARGS) $(EXTRA_ARGS) $(PLUSARGS)
 	mkdir -p $@_result && mv results.xml $@_result/

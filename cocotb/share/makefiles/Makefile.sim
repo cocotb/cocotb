@@ -136,8 +136,6 @@ define check_for_results_file
     @test -f $(COCOTB_RESULTS_FILE) || (echo "ERROR: $(COCOTB_RESULTS_FILE) was not written by the simulation!" >&2 && exit 1)
 endef
 
-PYTHONPATH := $(PYTHONPATH):$(PWD)
-
 $(SIM_BUILD):
 	mkdir -p $@
 
