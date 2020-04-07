@@ -36,6 +36,7 @@ MODULE := "\
 	test_synchronization_primitives,\
 	test_concurrency_primitives,\
 	test_tests,\
+	test_generator_coroutines,\
 	"
 
 ifeq ($(shell python -c "import sys; print(sys.version_info >= (3, 6))"), "True")
