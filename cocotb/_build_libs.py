@@ -64,7 +64,7 @@ class build_ext(_build_ext):
     def get_ext_filename(self, ext_name):
         """
         Like the base class method, but for libraries that are not python extension:
-         - removes the ``.cpython-36m-x86_64-linux-gnu.`` part before the extension
+         - removes the ``.cpython-36m-x86_64-linux-gnu.`` or ``-cpython-36m.`` part before the extension
          - replaces ``.pyd`` with ``.dll`` on windows.
         """
 
@@ -76,6 +76,9 @@ class build_ext(_build_ext):
 
         head, tail = os.path.split(filename)
         tail_split = tail.split(".")
+
+        # mingw on msys2 uses `-` as seperator
+        tail_split = tail_split[0].split("-")
 
         filename_short = os.path.join(head, tail_split[0] + "." + _get_lib_ext_name())
 

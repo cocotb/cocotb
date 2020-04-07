@@ -30,16 +30,15 @@
 # Default to verilog
 TOPLEVEL_LANG ?= verilog
 
-WPWD=$(shell sh -c 'pwd -W')
 PWD=$(shell pwd)
 
 ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-PYTHONPATH := $(PWD)/../cosim;$(PYTHONPATH)
+    WPWD=$(shell cygpath -m "$(PWD)")
 else
-WPWD=$(shell pwd)
-PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
+    WPWD=$(PWD)
 endif
+
+PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv
@@ -91,4 +90,3 @@ profile:
 clean::
 	-rm -rf test_profile.pstat
 	-rm -rf callgraph.svg
-
