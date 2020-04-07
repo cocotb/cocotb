@@ -38,6 +38,7 @@ MODULE := "\
 	test_tests,\
 	test_generator_coroutines,\
 	test_timing_triggers,\
+	test_scheduler,\
 	"
 
 ifeq ($(shell python -c "import sys; print(sys.version_info >= (3, 6))"), "True")
