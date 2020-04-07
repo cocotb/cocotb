@@ -54,11 +54,6 @@ from cocotb.outcomes import Value, Error
 # Tests relating to providing meaningful errors if we forget to use the
 # yield keyword correctly to turn a function into a coroutine
 
-@cocotb.test(expect_error=TypeError)
-def test_not_a_coroutine(dut):
-    """Example of a failing to use the yield keyword in a test"""
-    dut._log.warning("This test will fail because we don't yield anything")
-
 
 @cocotb.coroutine
 def function_not_a_coroutine():
@@ -431,13 +426,6 @@ def syntax_error():
     fail
 
 
-@cocotb.test(expect_error=True)
-def test_syntax_error(dut):
-    """Syntax error in the test"""
-    yield clock_gen(dut.clk)
-    fail
-
-
 #@cocotb.test(expect_error=True)
 @cocotb.test(expect_error=True)
 def test_coroutine_syntax_error(dut):
@@ -789,16 +777,6 @@ def test_lessthan_raises_error(dut):
 
 
 @cocotb.test()
-def test_tests_are_tests(dut):
-    """
-    Test that things annotated with cocotb.test are tests
-    """
-    yield Timer(1)
-
-    assert isinstance(test_tests_are_tests, cocotb.test)
-
-
-@cocotb.test()
 def test_coroutine_return(dut):
     """ Test that the Python 3.3 syntax for returning from generators works """
     @cocotb.coroutine
@@ -907,13 +885,6 @@ def test_stack_overflow(dut):
 
 
 @cocotb.test()
-def test_immediate_test(dut):
-    """ Test that tests can return immediately """
-    return
-    yield
-
-
-@cocotb.test()
 def test_immediate_coro(dut):
     """
     Test that coroutines can return immediately
@@ -1003,28 +974,6 @@ def test_trigger_with_failing_prime(dut):
         raise TestFailure
 
 
-@cocotb.test(expect_fail=True)
-def test_assertion_is_failure(dut):
-    yield Timer(1)
-    assert False
-
-
-class MyException(Exception):
-    pass
-
-
-@cocotb.test(expect_error=MyException)
-def test_expect_particular_exception(dut):
-    yield Timer(1)
-    raise MyException()
-
-
-@cocotb.test(expect_error=(MyException, ValueError))
-def test_expect_exception_list(dut):
-    yield Timer(1)
-    raise MyException()
-
-
 @cocotb.coroutine
 def example():
     yield Timer(10, 'ns')
@@ -1045,29 +994,6 @@ def test_timeout_func_fail(dut):
 def test_timeout_func_pass(dut):
     res = yield cocotb.triggers.with_timeout(example(), timeout_time=100, timeout_unit='ns')
     assert res == 1
-
-
-@cocotb.test(expect_error=cocotb.result.SimTimeoutError, timeout_time=1, timeout_unit='ns')
-def test_timeout_testdec_fail(dut):
-    yield Timer(10, 'ns')
-
-
-@cocotb.test(timeout_time=100, timeout_unit='ns')
-def test_timeout_testdec_pass(dut):
-    yield Timer(10, 'ns')
-
-
-@cocotb.test(timeout_time=10, timeout_unit='ns')
-def test_timeout_testdec_simultaneous(dut):
-    try:
-        yield cocotb.triggers.with_timeout(Timer(1, 'ns'), timeout_time=1, timeout_unit='ns')
-    except cocotb.result.SimTimeoutError:
-        pass
-    else:
-        assert False, "Expected a Timeout"
-    # Whether this test fails or passes depends on the behavior of the
-    # scheduler, simulator, and the implementation of the timeout function.
-    # CAUTION: THIS MAY CHANGE
 
 
 @cocotb.test()
@@ -1104,13 +1030,6 @@ class produce:
 class SomeException(Exception):
     """ Custom exception to test for that can't be thrown by internals """
     pass
-
-
-# just to be sure...
-@cocotb.test(expect_fail=True)
-async def test_async_test_can_fail(dut):
-    await Timer(1)
-    raise TestFailure
 
 
 @cocotb.test()
@@ -1213,31 +1132,6 @@ def test_undecorated_coroutine_yield(dut):
 
     yield example()
     assert ran
-
-
-# these tests should run in definition order, not lexicographic order
-last_ordered_test = None
-
-
-@cocotb.test()
-async def test_ordering_3(dut):
-    global last_ordered_test
-    val, last_ordered_test = last_ordered_test, 3
-    assert val is None
-
-
-@cocotb.test()
-async def test_ordering_2(dut):
-    global last_ordered_test
-    val, last_ordered_test = last_ordered_test, 2
-    assert val == 3
-
-
-@cocotb.test()
-async def test_ordering_1(dut):
-    global last_ordered_test
-    val, last_ordered_test = last_ordered_test, 1
-    assert val == 2
 
 
 # strings are not supported on Icarus
