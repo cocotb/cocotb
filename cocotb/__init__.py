@@ -57,6 +57,11 @@ from ._version import __version__
 # GPI logging instance
 if "COCOTB_SIM" in os.environ:
 
+    # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
+    # Add it back because users expect to be able to import files in their test directory.
+    # TODO: move this to gpi_embed.cpp
+    sys.path.insert(0, "")
+
     def _reopen_stream_with_buffering(stream_name):
         try:
             if not getattr(sys, stream_name).isatty():
