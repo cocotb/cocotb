@@ -7,7 +7,7 @@ Tests that sepcifically test generator-based coroutines
 import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestFailure
-from test_cocotb import clock_gen, _check_traceback
+from common import clock_gen, _check_traceback
 import textwrap
 
 
@@ -169,7 +169,7 @@ def test_exceptions_direct(dut):
     # that when changed, it doesn't become harder to read.
     expected = textwrap.dedent(r"""
     Traceback \(most recent call last\):
-      File ".*test_cocotb\.py", line \d+, in _check_traceback
+      File ".*common\.py", line \d+, in _check_traceback
         yield running_coro
       File ".*test_generator_coroutines\.py", line \d+, in raise_soon
         yield raise_inner\(\)
@@ -198,7 +198,7 @@ def test_exceptions_forked(dut):
     # that when changed, it doesn't become harder to read.
     expected = textwrap.dedent(r"""
     Traceback \(most recent call last\):
-      File ".*test_cocotb\.py", line \d+, in _check_traceback
+      File ".*common\.py", line \d+, in _check_traceback
         yield running_coro
       File ".*test_generator_coroutines\.py", line \d+, in raise_soon
         yield coro\.join\(\)
