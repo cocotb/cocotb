@@ -42,6 +42,7 @@ MODULE := "\
 	test_clock,\
 	test_edge_triggers,\
 	test_async_coroutines,\
+	test_handle,\
 	"
 
 ifeq ($(shell python -c "import sys; print(sys.version_info >= (3, 6))"), "True")
