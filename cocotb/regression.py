@@ -144,6 +144,7 @@ class RegressionManager:
         # Test Discovery
         ####################
 
+        have_tests = False
         for module_name in self._modules:
             try:
                 self.log.debug("Python Path: " + ",".join(sys.path))
@@ -180,6 +181,10 @@ class RegressionManager:
             for thing in vars(module).values():
                 if hasattr(thing, "im_test"):
                     self._init_test(thing)
+                    have_tests = True
+
+        if not have_tests:
+            self.log.warning("No tests were discovered")
 
         self._queue.sort(key=lambda test: (test.stage, test._id))
 
