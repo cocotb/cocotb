@@ -63,7 +63,7 @@ ASIM_ARGS += $(SIM_ARGS)
 # Plusargs need to be passed to ASIM command not vsimsa
 ASIM_ARGS += $(PLUSARGS)
 
-RTL_LIBRARY ?= work
+RTL_LIBRARY ?= $(SIM_BUILD)/work
 ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
 ACOM_ARGS += -dbg
 
@@ -143,10 +143,13 @@ endif
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(COCOTB_LIBS) $(COCOTB_VHPI_LIB) $(COCOTB_VPI_LIB) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
-	set -o pipefail; cd $(SIM_BUILD) && GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) $(RUN_ARGS) -do runsim.tcl | tee sim.log
+	set -o pipefail; GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.tcl | tee $(SIM_BUILD)/sim.log
 
 	$(call check_for_results_file)
 
 clean::
 	@rm -rf $(SIM_BUILD)
+	@rm -rf compile
+	@rm -rf library.cfg
+	@rm -rf dataset.asdb
