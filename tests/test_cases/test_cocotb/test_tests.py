@@ -11,7 +11,7 @@ Tests of cocotb.test functionality
 import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestFailure
-from test_cocotb import clock_gen
+from common import clock_gen
 
 
 @cocotb.test(expect_error=True)

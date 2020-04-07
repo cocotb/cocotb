@@ -7,7 +7,7 @@ Tests for concurrency primitives like First and Combine
 import cocotb
 from cocotb.triggers import Timer, First, Event, Combine
 import textwrap
-from test_cocotb import _check_traceback
+from common import _check_traceback
 
 
 @cocotb.test()
@@ -116,7 +116,7 @@ def test_exceptions_first(dut):
     # that when changed, it doesn't become harder to read.
     expected = textwrap.dedent(r"""
     Traceback \(most recent call last\):
-      File ".*test_cocotb\.py", line \d+, in _check_traceback
+      File ".*common\.py", line \d+, in _check_traceback
         yield running_coro
       File ".*test_concurrency_primitives\.py", line \d+, in raise_soon
         yield cocotb\.triggers\.First\(raise_inner\(\)\)

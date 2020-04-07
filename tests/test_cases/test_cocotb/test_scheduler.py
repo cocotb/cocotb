@@ -13,7 +13,7 @@ import cocotb
 from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
-from test_cocotb import clock_gen
+from common import clock_gen
 
 
 test_flag = False
