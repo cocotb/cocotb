@@ -29,8 +29,13 @@
 
 include ../../designs/sample_module/Makefile
 
-MODULE := test_cocotb,test_deprecated,test_doctests
+MODULE := "\
+	test_cocotb,\
+	test_deprecated,\
+	test_doctests,\
+	test_synchronization_primitives,\
+	"
 
 ifeq ($(shell python -c "import sys; print(sys.version_info >= (3, 6))"), "True")
-MODULE += ,test_async_generators
+MODULE += test_async_generators,
 endif
