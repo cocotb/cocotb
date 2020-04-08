@@ -4,10 +4,13 @@
 # merged and released.
 Sphinx~=2.1
 
+# 4.15 depends on sphinx 3.0.0, but for some reason ReadTheDocs tries to install
+# it anyway.
+breathe < 4.15
+
 # other dependencies
 sphinx-rtd-theme
 cairosvg
-breathe
 sphinxcontrib-makedomain
 sphinxcontrib-spelling
 pyenchant
