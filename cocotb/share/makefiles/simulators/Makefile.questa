@@ -69,7 +69,7 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),vhdl)
-    VSIM_ARGS += -foreign \"cocotb_init $(call to_tcl_path,$(LIB_DIR))/libcocotbfli_modelsim.$(LIB_EXT)\"
+    VSIM_ARGS += -foreign \"cocotb_init $(call to_tcl_path,$(LIB_DIR)/libcocotbfli_modelsim.$(LIB_EXT))\"
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_modelsim:cocotbvpi_entry_point
 endif
