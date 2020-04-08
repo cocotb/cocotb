@@ -75,7 +75,7 @@ ifneq ($(VERILOG_SOURCES),)
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
-    VSIM_ARGS += -pli $(call to_tcl_path,$(LIB_DIR))/libcocotbvpi_modelsim.$(LIB_EXT)
+    VSIM_ARGS += -pli $(call to_tcl_path,$(LIB_DIR)/libcocotbvpi_modelsim.$(LIB_EXT))
 ifneq ($(VHDL_SOURCES),)
     GPI_EXTRA = cocotbfli_modelsim:cocotbfli_entry_point
 endif
