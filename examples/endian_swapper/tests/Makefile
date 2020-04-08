@@ -32,19 +32,13 @@ TOPLEVEL_LANG ?= verilog
 
 PWD=$(shell pwd)
 
-ifeq ($(OS),Msys)
-    WPWD=$(shell cygpath -m "$(PWD)")
-else
-    WPWD=$(PWD)
-endif
-
 export PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
 
 ifeq ($(TOPLEVEL_LANG),verilog)
-    VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv
+    VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
     TOPLEVEL = endian_swapper_sv
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    VHDL_SOURCES = $(WPWD)/../hdl/endian_swapper.vhdl
+    VHDL_SOURCES = $(PWD)/../hdl/endian_swapper.vhdl
     TOPLEVEL = endian_swapper_vhdl
     ifneq ($(filter $(SIM),ius xcelium),)
         SIM_ARGS += -v93
