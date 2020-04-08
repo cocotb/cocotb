@@ -94,6 +94,19 @@ To enable HDL code coverage, add Verilator's coverage option(s) to the :make:var
 
 This will result in coverage data being written to ``coverage.dat``.
 
+Waveforms
+---------
+
+To get waveforms in VCD format, add Verilator's trace option(s) to the
+:make:var:`EXTRA_ARGS` make variable, for example:
+
+  .. code-block:: make
+
+    EXTRA_ARGS += --trace
+
+A VCD file named :file:`dump.vcd` will be generated in current directory.
+
+
 .. _sim-vcs:
 
 Synopsys VCS
