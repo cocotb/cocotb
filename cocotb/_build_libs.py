@@ -150,8 +150,6 @@ def _extra_link_args(lib_name=None, rpath=None):
     if rpath is not None:
         args += ["-Wl,-rpath,%s" % rpath]
     return args
-    else:
-        return []
 
 
 def _get_python_lib_link():
