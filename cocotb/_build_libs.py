@@ -144,10 +144,12 @@ def _extra_link_args(lib_name=None, rpath=None):
     On Linux use`rpath`
     """
 
+    args = []
     if sys.platform == "darwin" and lib_name is not None:
-        return ["-Wl,-install_name,@rpath/%s.so" % lib_name]
-    elif sys.platform == "linux" and rpath is not None:
-        return ["-Wl,-rpath,%s" % rpath]
+        args += ["-Wl,-install_name,@rpath/%s.so" % lib_name]
+    if rpath is not None:
+        args += ["-Wl,-rpath,%s" % rpath]
+    return args
     else:
         return []
 
