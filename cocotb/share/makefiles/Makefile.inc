@@ -91,7 +91,10 @@ ifeq ($(OS),Msys)
     # On Windows there is no support for @rpath/LD_LIBRARY_PATH so we need to set PATH to find cocotb libraries
     # https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order?redirectedfrom=MSDN#standard-search-order-for-desktop-applications
     export PATH := $(LIB_DIR):$(PATH)
+endif
 
-    # For tcl scripts the path to dll has to be in form of C:/User/..
-    LIB_DIR := $(shell cygpath -m '$(LIB_DIR)')
+ifeq ($(OS),Msys)
+    to_tcl_path = $(shell cygpath -m $(1) )
+else
+    to_tcl_path = $(1)
 endif

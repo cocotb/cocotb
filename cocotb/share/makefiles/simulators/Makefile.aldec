@@ -84,13 +84,13 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
-    GPI_ARGS = -pli $(LIB_DIR)/libcocotbvpi_aldec
+    GPI_ARGS = -pli $(call to_tcl_path,$(LIB_DIR)/libcocotbvpi_aldec)
 ifneq ($(VHDL_SOURCES),)
     GPI_EXTRA = cocotbvhpi_aldec:cocotbvhpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    GPI_ARGS = -loadvhpi $(LIB_DIR)/libcocotbvhpi_aldec:vhpi_startup_routines_bootstrap
+    GPI_ARGS = -loadvhpi $(call to_tcl_path,$(LIB_DIR)/libcocotbvhpi_aldec):vhpi_startup_routines_bootstrap
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_aldec:cocotbvpi_entry_point
 endif
@@ -111,10 +111,10 @@ $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
 	@echo "alib $(RTL_LIBRARY)" >> $@
 	@echo "set worklib $(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
-	@echo "acom $(ACOM_ARGS) $(VHDL_SOURCES)" >> $@
+	@echo "acom $(ACOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
 endif
 ifneq ($(VERILOG_SOURCES),)
-	@echo "alog $(ALOG_ARGS) $(VERILOG_SOURCES)" >> $@
+	@echo "alog $(ALOG_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
 endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@

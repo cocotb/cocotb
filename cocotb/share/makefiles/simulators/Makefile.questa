@@ -69,13 +69,13 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),vhdl)
-    VSIM_ARGS += -foreign \"cocotb_init $(LIB_DIR)/libcocotbfli_modelsim.$(LIB_EXT)\"
+    VSIM_ARGS += -foreign \"cocotb_init $(call to_tcl_path,$(LIB_DIR)/libcocotbfli_modelsim.$(LIB_EXT))\"
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_modelsim:cocotbvpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
-    VSIM_ARGS += -pli $(LIB_DIR)/libcocotbvpi_modelsim.$(LIB_EXT)
+    VSIM_ARGS += -pli $(call to_tcl_path,$(LIB_DIR)/libcocotbvpi_modelsim.$(LIB_EXT))
 ifneq ($(VHDL_SOURCES),)
     GPI_EXTRA = cocotbfli_modelsim:cocotbfli_entry_point
 endif
@@ -94,10 +94,10 @@ $(SIM_BUILD)/runsim.do : $(VHDL_SOURCES) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEP
 	@echo "vmap -c" >> $@
 	@echo "vmap $(RTL_LIBRARY) $(SIM_BUILD)/$(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
-	@echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(VHDL_SOURCES)" >> $@
+	@echo "vcom -work $(RTL_LIBRARY) $(VCOM_ARGS) $(call to_tcl_path,$(VHDL_SOURCES))" >> $@
 endif
 ifneq ($(VERILOG_SOURCES),)
-	@echo "vlog -work $(RTL_LIBRARY) +define+COCOTB_SIM -sv $(VLOG_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)" >> $@
+	@echo "vlog -work $(RTL_LIBRARY) +define+COCOTB_SIM -sv $(VLOG_ARGS) $(EXTRA_ARGS) $(call to_tcl_path,$(VERILOG_SOURCES))" >> $@
 endif
 ifdef SCRIPT_FILE
 	@echo "do $(SCRIPT_FILE)" >> $@
