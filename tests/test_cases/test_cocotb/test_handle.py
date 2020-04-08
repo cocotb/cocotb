@@ -12,6 +12,7 @@ import random
 import pytest
 
 import cocotb
+import cocotb.triggers
 from cocotb.handle import LogicArrayObject, StringObject, _Limits
 from cocotb.triggers import Edge, FallingEdge, Timer
 from cocotb.types import Logic, LogicArray
@@ -532,3 +533,39 @@ async def test_assign_str_logic_scalar(dut) -> None:
         dut.stream_in_valid.value = "H"
         await Timer(1, "ns")
         assert dut.stream_in_valid.value == "H"
+
+
+# verilator extended identifier names are not regular (gh-3754)
+@cocotb.test(expect_fail=cocotb.SIM_NAME.startswith("verilator"))
+async def test_extended_identifiers(dut):
+    if LANGUAGE == "vhdl":
+        names = [
+            "\\weird.signal(1)\\",
+            "\\weird.signal(2)\\",
+            "\\(.*|this looks like a regex)\\",
+        ]
+    elif SIM_NAME.startswith("icarus"):
+        # Icarus normalizes extended identifier names to not include the
+        # preceeding \ or the trailing space
+        names = [
+            "weird.signal[1]",
+            "weird.signal[2]",
+            "(.*|this_looks_like_a_regex)",
+        ]
+    else:
+        names = [
+            "\\weird.signal[1] ",
+            "\\weird.signal[2] ",
+            "\\(.*|this_looks_like_a_regex) ",
+        ]
+
+    # Icarus, NVC, and Xcelium can't find the signals by name unless we scan
+    # all signals
+    dut._discover_all()
+
+    # Debugging
+    for name in dut._keys():
+        cocotb.log.info("Found %r", name)
+
+    for name in names:
+        assert dut[name]._name == name

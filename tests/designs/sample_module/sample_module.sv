@@ -248,4 +248,12 @@ always @(mybits_uninitialized) begin
     $display("%m: mybits_uninitialized has been updated, new value is %b", mybits_uninitialized);
 end
 
+// for testing weird signal names
+reg [3:0] \weird.signal[1] = 0;
+reg [3:0] \weird.signal[2] = 0;
+reg [3:0] \(.*|this_looks_like_a_regex) = 0;
+
+// just to check that extended identifiers are the same as non-extended ones
+always@* \weird.signal[1] [0] = \stream_in_valid ;
+
 endmodule

@@ -477,7 +477,7 @@ class HierarchyObject(HierarchyObjectBase[str]):
         return f"{self._path}{delimiter}{name}"
 
     def _sub_handle_key(self, name: str) -> str:
-        return name.rsplit(".", 1)[-1]
+        return name
 
     def _get_handle_by_key(self, key: str) -> Optional[simulator.gpi_sim_hdl]:
         return self._handle.get_handle_by_name(key)
@@ -529,11 +529,13 @@ class HierarchyArrayObject(HierarchyObjectBase[int], RangeableObjectMixin):
         # FLI and VHPI:       _name(X) where X is the index
         # VHPI(ALDEC):        _name__X where X is the index
         # VPI:                _name[X] where X is the index
-        result = re.match(rf"{self._name}__(?P<index>\d+)$", name)
+        result = re.match(rf"{re.escape(self._name)}__(?P<index>\d+)$", name)
         if not result:
-            result = re.match(rf"{self._name}\((?P<index>\d+)\)$", name, re.IGNORECASE)
+            result = re.match(
+                rf"{re.escape(self._name)}\((?P<index>\d+)\)$", name, re.IGNORECASE
+            )
         if not result:
-            result = re.match(rf"{self._name}\[(?P<index>\d+)\]$", name)
+            result = re.match(rf"{re.escape(self._name)}\[(?P<index>\d+)\]$", name)
 
         if result:
             return int(result.group("index"))
