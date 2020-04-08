@@ -104,7 +104,7 @@ To get waveforms in VCD format, add Verilator's trace option(s) to the
 
     EXTRA_ARGS += --trace
 
-A VCD file named :file:`dump.vcd` will be generated in current directory.
+A VCD file named ``dump.vcd`` will be generated in current directory.
 
 
 .. _sim-vcs:
