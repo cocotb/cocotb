@@ -20,7 +20,7 @@ ifeq ($(SIM),questa)
 COMPILE_ARGS = -mixedsvvh
 endif
 
-VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
+VERILOG_SOURCES = $(PWD)/../hdl/mean_sv.sv
 
 MODULE := test_mean
 

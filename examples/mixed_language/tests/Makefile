@@ -19,10 +19,10 @@ VERILOG_SOURCES = $(PWD)/../../endian_swapper/hdl/endian_swapper.sv
 VHDL_SOURCES    = $(PWD)/../../endian_swapper/hdl/endian_swapper.vhdl
 
 ifeq ($(TOPLEVEL_LANG),verilog)
-    VERILOG_SOURCES += $(WPWD)/../hdl/toplevel.sv
+    VERILOG_SOURCES += $(PWD)/../hdl/toplevel.sv
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     $(error "VHDL toplevel not yet implemented")
-    VHDL_SOURCES += $(WPWD)/../hdl/toplevel.vhdl
+    VHDL_SOURCES += $(PWD)/../hdl/toplevel.vhdl
 else
     $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
