@@ -140,7 +140,7 @@ class build_ext(_build_ext):
 def _extra_link_args(lib_name=None, rpath=None):
     """
     Add linker argument to load dependencies from the directory where vpi/vhpi/fli library is located
-    On osx use`install_name`
+    On osx use `install_name`.
     On Linux use`rpath`
     """
 
