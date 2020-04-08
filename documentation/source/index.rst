@@ -15,26 +15,29 @@ Welcome to cocotb's documentation!
 What is cocotb?
 ***************
 
-**cocotb** is a *COroutine* based *COsimulation* *TestBench* environment for verifying VHDL/Verilog RTL using `Python <https://www.python.org>`_.
+**cocotb** is a *COroutine* based *COsimulation* *TestBench* environment for verifying VHDL and SystemVerilog RTL using `Python <https://www.python.org>`_.
 
 cocotb is completely free, open source (under the `BSD License <https://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_(%22BSD_License_2.0%22,_%22Revised_BSD_License%22,_%22New_BSD_License%22,_or_%22Modified_BSD_License%22)>`_) and hosted on `GitHub <https://github.com/cocotb/cocotb>`_.
 
 cocotb requires a simulator to simulate the HDL design
-and has been used with a variety of simulators on Linux, Windows and Mac OS.
+and has been used with a variety of simulators on Linux, Windows and macOS.
 Please check the :ref:`simulator-support` page for specifics.
 
-A (possibly older) version of cocotb can be used live in a web-browser using `EDA Playground <https://www.edaplayground.com>`_.
+A (possibly older) version of cocotb can be used live in a web browser on `EDA Playground <https://www.edaplayground.com>`_.
 
 
 ************************
 How is cocotb different?
 ************************
 
-cocotb encourages the same philosophy of design re-use and randomized testing as UVM, however is implemented in Python rather than SystemVerilog.
+cocotb encourages the same philosophy of design re-use and randomized testing as
+`UVM <https://en.wikipedia.org/wiki/Universal_Verification_Methodology>`_,
+however is implemented in Python.
 
-With cocotb, VHDL/Verilog/SystemVerilog are normally only used for the design itself, not the testbench.
+With cocotb, VHDL or SystemVerilog are normally only used for the design itself, not the testbench.
 
-cocotb has built-in support for integrating with the `Jenkins <https://jenkins.io/>`_ continuous integration system.
+cocotb has built-in support for integrating with continuous integration systems,
+such as Jenkins, GitLab, etc. through standardized, machine-readable test reporting formats.
 
 cocotb was specifically designed to lower the overhead of creating a test.
 
@@ -42,11 +45,11 @@ cocotb automatically discovers tests so that no additional step is required to a
 
 All verification is done using Python which has various advantages over using SystemVerilog or VHDL for verification:
 
-* Writing Python is **fast** - it's a very productive language
-* It's **easy** to interface to other languages from Python
-* Python has a huge library of existing code to **re-use** like `packet generation <https://www.secdev.org/projects/scapy/>`_ libraries.
-* Python is **interpreted**. Tests can be edited and re-run them without having to recompile the design or exit the simulator GUI.
-* Python is **popular** - far more engineers know Python than SystemVerilog or VHDL
+* Writing Python is **fast** - it's a very productive language.
+* It's **easy** to interface to other languages from Python.
+* Python has a huge library of existing code to **re-use**.
+* Python is **interpreted** - tests can be edited and re-run without having to recompile the design or exit the simulator GUI.
+* Python is **popular** - far more engineers know Python than SystemVerilog or VHDL.
 
 
 *********************
@@ -70,14 +73,11 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
 Contributors
 ************
 
-.. spelling::
-   McGregor
-   Grimwood
+cocotb is developed and maintained by an active community under the umbrella of the
+`Free and Open Source Silicon Foundation <https://www.fossi-foundation.org>`_.
 
-cocotb was developed by `Potential Ventures <https://potential.ventures>`_ with the support of
-`Solarflare Communications Ltd <https://www.solarflare.com/>`_
-and contributions from Gordon McGregor and Finn Grimwood
-(see `contributors <https://github.com/cocotb/cocotb/graphs/contributors>`_ for the full list of contributions).
+Our GitHub repository contains a list of all
+`contributors <https://github.com/cocotb/cocotb/graphs/contributors>`_.
 
 We also have a list of talks and papers, libraries and examples at our Wiki page
 `Further Resources <https://github.com/cocotb/cocotb/wiki/Further-Resources>`_.

@@ -303,7 +303,6 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-# For now show the todos
 #todo_include_todos = True
 
 # -- Extra setup for C documentation with Doxygen and breathe ------------------
