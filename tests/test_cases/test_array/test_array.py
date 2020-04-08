@@ -302,7 +302,7 @@ async def test_discover_all(dut):
         pass_total = 180
     elif LANGUAGE in ["verilog"] and "vcs" in SIM_NAME:
         # VCS is unable to access signals in generate loops through VPI (#4328).
-        pass_total = 142
+        pass_total = 172
     elif LANGUAGE in ["vhdl"]:
         pass_total = 244
     else:
