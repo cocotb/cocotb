@@ -1,0 +1,35 @@
+V 000044 55 1720          1586355029127 RTL
+(_unit VHDL (adder 0 6 (rtl 0 16 ))
+	(_version vb4)
+	(_time 1586355029128 2020.04.08 16:10:29)
+	(_source (\./../../hdl/adder.vhdl\))
+	(_use (std(standard))(ieee(std_logic_1164))(ieee(NUMERIC_STD)))
+	(_parameters dbg)
+	(_code 9197929e94c6c187959083cbc19795979597949693)
+	(_entity
+		(_time 1586355029125)
+		(_use (std(standard))(ieee(std_logic_1164))(ieee(NUMERIC_STD)))
+	)
+	(_object
+		(_generic (_internal DATA_WIDTH ~extSTD.STANDARD.POSITIVE 0 8 \4\ (_entity ((i 4)))))
+		(_type (_internal ~UNSIGNED{DATA_WIDTH-1~downto~0}~12 0 10 (_array ~extieee.std_logic_1164.STD_LOGIC ((_downto (c 1 )(i 0))))))
+		(_port (_internal A ~UNSIGNED{DATA_WIDTH-1~downto~0}~12 0 10 (_entity (_in ))))
+		(_type (_internal ~UNSIGNED{DATA_WIDTH-1~downto~0}~122 0 11 (_array ~extieee.std_logic_1164.STD_LOGIC ((_downto (c 2 )(i 0))))))
+		(_port (_internal B ~UNSIGNED{DATA_WIDTH-1~downto~0}~122 0 11 (_entity (_in ))))
+		(_type (_internal ~UNSIGNED{DATA_WIDTH~downto~0}~12 0 12 (_array ~extieee.std_logic_1164.STD_LOGIC ((_downto (c 3 )(i 0))))))
+		(_port (_internal X ~UNSIGNED{DATA_WIDTH~downto~0}~12 0 12 (_entity (_out ))))
+		(_process
+			(line__19(_architecture 0 0 19 (_process (_simple)(_target(2))(_sensitivity(0)(1)))))
+		)
+		(_subprogram
+			(_external resolved (ieee std_logic_1164 15))
+		)
+		(_type (_external ~extSTD.STANDARD.POSITIVE (std STANDARD POSITIVE)))
+		(_type (_external ~extieee.std_logic_1164.STD_LOGIC (ieee std_logic_1164 STD_LOGIC)))
+		(_type (_external ~extieee.NUMERIC_STD.UNSIGNED (ieee NUMERIC_STD UNSIGNED)))
+		(_type (_external ~extSTD.STANDARD.NATURAL (std STANDARD NATURAL)))
+		(_type (_external ~extSTD.STANDARD.INTEGER (std STANDARD INTEGER)))
+	)
+	(_model . RTL 4 -1
+	)
+)
