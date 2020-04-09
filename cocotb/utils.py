@@ -31,6 +31,7 @@ import ctypes
 import math
 import os
 import sys
+import traceback
 import weakref
 import functools
 import warnings
@@ -580,3 +581,39 @@ def remove_traceback_frames(tb_or_exc, frame_names):
             assert tb.tb_frame.f_code.co_name == frame_name
             tb = tb.tb_next
         return tb
+
+
+def walk_coro_stack(coro):
+    """Walk down the coroutine stack, starting at *coro*.
+
+    Supports coroutines and generators.
+    """
+    while coro is not None:
+        try:
+            f = getattr(coro, 'cr_frame')
+            coro = coro.cr_await
+        except AttributeError:
+            try:
+                f = getattr(coro, 'gi_frame')
+                coro = coro.gi_yieldfrom
+            except AttributeError:
+                f = None
+                coro = None
+        if f is not None:
+            yield (f, f.f_lineno)
+
+
+def extract_coro_stack(coro, limit=None):
+    """Create a list of pre-processed entries from the coroutine stack.
+
+    This is based on :func:`traceback.extract_tb`.
+
+    If *limit* is omitted or ``None``, all entries are extracted.
+    The list is a :class:`traceback.StackSummary` object, and
+    each entry in the list is a :class:`traceback.FrameSummary` object
+    containing attributes ``filename``, ``lineno``, ``name``, and ``line``
+    representing the information that is usually printed for a stack
+    trace.  The line is a string with leading and trailing
+    whitespace stripped; if the source is not available it is ``None``.
+    """
+    return traceback.StackSummary.extract(walk_coro_stack(coro), limit=limit)
