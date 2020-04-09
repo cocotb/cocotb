@@ -100,7 +100,7 @@ Waveforms
 ---------
 
 To get waveforms in VCD format, add Verilator's trace option(s) to the
-:make:var:`EXTRA_ARGS` make variable, for example:
+:make:var:`EXTRA_ARGS` make variable, for example in a Makefile:
 
   .. code-block:: make
 
