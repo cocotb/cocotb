@@ -35,7 +35,7 @@ import os
 import cocotb
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
-from cocotb.utils import get_sim_time, lazy_property, remove_traceback_frames
+from cocotb.utils import get_sim_time, lazy_property, remove_traceback_frames, extract_coro_stack
 from cocotb import outcomes
 
 # Sadly the Python standard logging module is very slow so it's better not to
@@ -87,6 +87,8 @@ class RunningTask:
         triggers to fire.
     """
 
+    _id_count = 0  # used by the scheduler for debug
+
     def __init__(self, inst):
 
         if inspect.iscoroutine(inst):
@@ -107,12 +109,15 @@ class RunningTask:
             raise TypeError(
                 "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)
         self._coro = inst
-        self.__name__ = inst.__name__
-        self.__qualname__ = inst.__qualname__
         self._started = False
         self._callbacks = []
         self._outcome = None
         self._trigger = None
+
+        self._task_id = self._id_count
+        RunningTask._id_count += 1
+        self.__name__ = "Task %d" % self._task_id
+        self.__qualname__ = self.__name__
 
     @lazy_property
     def log(self):
@@ -134,7 +139,48 @@ class RunningTask:
         return self
 
     def __str__(self):
-        return str(self.__qualname__)
+        return "<{}>".format(self.__name__)
+
+    def _get_coro_stack(self):
+        """Get the coroutine callstack of this Task."""
+        coro_stack = extract_coro_stack(self._coro)
+
+        # Remove Trigger.__await__() from the stack, as it's not really useful
+        if self._natively_awaitable and len(coro_stack):
+            if coro_stack[-1].name == '__await__':
+                coro_stack.pop()
+
+        return coro_stack
+
+    def __repr__(self):
+        coro_stack = self._get_coro_stack()
+
+        if cocotb.scheduler._current_task is self:
+            fmt = "<{name} running coro={coro}()>"
+        elif self._finished:
+            fmt = "<{name} finished coro={coro}() outcome={outcome}>"
+        elif self._trigger is not None:
+            fmt = "<{name} pending coro={coro}() trigger={trigger}>"
+        elif not self._started:
+            fmt = "<{name} created coro={coro}()>"
+        else:
+            fmt = "<{name} adding coro={coro}()>"
+
+        try:
+            coro_name = coro_stack[-1].name
+        # coro_stack may be empty if:
+        # - exhausted generator
+        # - finished coroutine
+        except IndexError:
+            coro_name = self._coro.__name__
+
+        repr_string = fmt.format(
+            name=self.__name__,
+            coro=coro_name,
+            trigger=self._trigger,
+            outcome=self._outcome
+        )
+        return repr_string
 
     def _advance(self, outcome):
         """Advance to the next yield in this coroutine.
@@ -243,7 +289,7 @@ class RunningTest(RunningCoroutine):
     def __init__(self, inst, parent):
         self.error_messages = []
         RunningCoroutine.__init__(self, inst, parent)
-        self.log = SimLog("cocotb.test.%s" % self.__qualname__, id(self))
+        self.log = SimLog("cocotb.test.%s" % inst.__qualname__, id(self))
         self.started = False
         self.start_time = 0
         self.start_sim_time = 0
@@ -251,10 +297,14 @@ class RunningTest(RunningCoroutine):
         self.expect_error = parent.expect_error
         self.skip = parent.skip
         self.stage = parent.stage
-        self._id = parent._id
+        self.__name__ = "Test %s" % inst.__name__
+        self.__qualname__ = "Test %s" % inst.__qualname__
 
         # make sure not to create a circular reference here
         self.handler = RunningTest.ErrorLogHandler(self.error_messages.append)
+
+    def __str__(self):
+        return "<{}>".format(self.__name__)
 
     def _advance(self, outcome):
         if not self.started:
