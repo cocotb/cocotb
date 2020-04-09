@@ -91,7 +91,6 @@ endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     GPI_ARGS = -loadvhpi \"$(call to_tcl_path,$(LIB_DIR)/libcocotbvhpi_aldec):vhpi_startup_routines_bootstrap\"
-
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_aldec:cocotbvpi_entry_point
 endif
