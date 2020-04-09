@@ -178,7 +178,6 @@ def _initialise_testbench(root_name):
     global regression_manager
 
     regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=RANDOM_SEED, hooks=hooks)
-    regression_manager.initialise()
     regression_manager.execute()
 
     _rlock.release()

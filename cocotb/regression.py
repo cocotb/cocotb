@@ -97,9 +97,6 @@ class RegressionManager:
         self.log = SimLog("cocotb.regression")
         self._seed = seed
         self._hooks = hooks
-
-    def initialise(self):
-
         self.start_time = time.time()
         self.test_results = []
         self.ntests = 0
