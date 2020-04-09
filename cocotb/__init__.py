@@ -165,19 +165,8 @@ def _initialise_testbench(root_name):
         log.info("Seeding Python random module with supplied seed %d" % (RANDOM_SEED))
     random.seed(RANDOM_SEED)
 
-    module_str = os.getenv('MODULE')
-    test_str = os.getenv('TESTCASE')
-    hooks_str = os.getenv('COCOTB_HOOKS', '')
-
-    if module_str is None:
-        raise ValueError("Environment variable MODULE, which defines the module(s) to execute, is not defined.")
-
-    modules = [s.strip() for s in module_str.split(',') if s.strip()]
-    hooks = [s.strip() for s in hooks_str.split(',') if s.strip()]
-
     global regression_manager
-
-    regression_manager = RegressionManager(root_name, modules, tests=test_str, seed=RANDOM_SEED, hooks=hooks)
+    regression_manager = RegressionManager(root_name)
     regression_manager.execute()
 
     _rlock.release()
