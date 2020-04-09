@@ -75,28 +75,17 @@ def _my_import(name):
 class RegressionManager:
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, root_name, modules, tests=None, seed=None, hooks=[]):
+    def __init__(self, root_name):
         """
         Args:
             root_name (str): The name of the root handle.
-            modules (list): A list of Python module names to run.
-            tests (list, optional): A list of tests to run.
-                Defaults to ``None``, meaning all discovered tests will be run.
-            seed (int,  optional): The seed for the random number generator to use.
-                Defaults to ``None``.
-            hooks (list, optional): A list of hook modules to import.
-                Defaults to the empty list.
         """
         self._queue = []
         self._root_name = root_name
         self._dut = None
-        self._modules = modules
-        self._functions = tests
         self._running_test = None
         self._cov = None
         self.log = SimLog("cocotb.regression")
-        self._seed = seed
-        self._hooks = hooks
         self.start_time = time.time()
         self.test_results = []
         self.ntests = 0
@@ -113,11 +102,9 @@ class RegressionManager:
 
         self.xunit = XUnitReporter(filename=results_filename)
 
-        self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
-                                 package=package_name)
+        self.xunit.add_testsuite(name=suite_name, package=package_name)
 
-        if (self._seed is not None):
-            self.xunit.add_property(name="random_seed", value=("%d" % self._seed))
+        self.xunit.add_property(name="random_seed", value=str(cocotb.RANDOM_SEED))
 
         # Setup Coverage
         ####################
@@ -140,36 +127,61 @@ class RegressionManager:
 
         # Test Discovery
         ####################
-
         have_tests = False
-        for module_name in self._modules:
+        for test in self.discover_tests():
+            self.log.info("Found test {}.{}".format(test.__module__, test.__qualname__))
+            self._init_test(test)
+            have_tests = True
+
+        if not have_tests:
+            self.log.warning("No tests were discovered")
+
+        self._queue.sort(key=lambda test: (test.stage, test._id))
+
+        # Process Hooks
+        ###################
+        for hook in self.discover_hooks():
+            self.log.info("Found hook {}.{}".format(hook.__module__, hook.__qualname__))
+            self._init_hook(hook)
+
+    def discover_tests(self):
+
+        module_str = os.getenv('MODULE')
+        test_str = os.getenv('TESTCASE')
+
+        if module_str is None:
+            raise ValueError("Environment variable MODULE, which defines the module(s) to execute, is not defined.")
+
+        modules = [s.strip() for s in module_str.split(',') if s.strip()]
+
+        for module_name in modules:
             try:
                 self.log.debug("Python Path: " + ",".join(sys.path))
                 self.log.debug("PWD: " + os.getcwd())
                 module = _my_import(module_name)
             except Exception as E:
                 self.log.critical("Failed to import module %s: %s", module_name, E)
-                self.log.info("MODULE variable was \"%s\"", ".".join(self._modules))
+                self.log.info("MODULE variable was \"%s\"", ".".join(modules))
                 self.log.info("Traceback: ")
                 self.log.info(traceback.format_exc())
                 raise
 
-            if self._functions:
+            if test_str:
 
                 # Specific functions specified, don't auto-discover
-                for test in self._functions.rsplit(','):
+                for test_name in test_str.rsplit(','):
                     try:
-                        _test = getattr(module, test)
+                        test = getattr(module, test_name)
                     except AttributeError:
-                        self.log.error("Requested test %s wasn't found in module %s", test, module_name)
-                        err = AttributeError("Test %s doesn't exist in %s" % (test, module_name))
+                        self.log.error("Requested test %s wasn't found in module %s", test_name, module_name)
+                        err = AttributeError("Test %s doesn't exist in %s" % (test_name, module_name))
                         raise err from None  # discard nested traceback
 
-                    if not hasattr(_test, "im_test"):
+                    if not hasattr(test, "im_test"):
                         self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
-                                       test, module_name)
-                        raise ImportError("Failed to find requested test %s" % test)
-                    self._init_test(_test)
+                                       test_name, module_name)
+                        raise ImportError("Failed to find requested test %s" % test_name)
+                    yield test
 
                 # only look in first module for all functions and don't complain if all functions are not found
                 break
@@ -177,34 +189,28 @@ class RegressionManager:
             # auto-discover
             for thing in vars(module).values():
                 if hasattr(thing, "im_test"):
-                    self._init_test(thing)
-                    have_tests = True
+                    yield thing
 
-        if not have_tests:
-            self.log.warning("No tests were discovered")
+    def discover_hooks(self):
 
-        self._queue.sort(key=lambda test: (test.stage, test._id))
+        hooks_str = os.getenv('COCOTB_HOOKS', '')
+        hooks = [s.strip() for s in hooks_str.split(',') if s.strip()]
 
-        for valid_tests in self._queue:
-            self.log.info("Found test %s.%s" %
-                          (valid_tests.module,
-                           valid_tests.funcname))
-
-        # Process Hooks
-        ###################
-
-        for module_name in self._hooks:
+        for module_name in hooks:
             self.log.info("Loading hook from module '" + module_name + "'")
             module = _my_import(module_name)
 
             for thing in vars(module).values():
                 if hasattr(thing, "im_hook"):
-                    try:
-                        test = thing(self._dut)
-                    except Exception:
-                        self.log.warning("Failed to initialize hook %s" % thing.name, exc_info=True)
-                    else:
-                        cocotb.scheduler.add(test)
+                    yield thing
+
+    def _init_hook(self, hook):
+        try:
+            test = hook(self._dut)
+        except Exception:
+            self.log.warning("Failed to initialize hook %s" % hook.name, exc_info=True)
+        else:
+            return cocotb.scheduler.add(test)
 
     def tear_down(self):
         # fail remaining tests
