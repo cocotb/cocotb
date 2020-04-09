@@ -40,7 +40,6 @@ from cocotb.result import ReturnValue
 from cocotb.utils import get_sim_time, lazy_property
 from cocotb import outcomes
 from cocotb import _py_compat
-from cocotb import scheduler
 
 # Sadly the Python standard logging module is very slow so it's better not to
 # make any calls by testing a boolean flag first
