@@ -11,7 +11,7 @@ Tests related to timing triggers
 * with_timeout
 """
 import cocotb
-from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join
+from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep
 from cocotb.utils import get_sim_time
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
@@ -233,3 +233,13 @@ def test_readwrite(dut):
     yield Timer(1)
     dut.clk <= 1
     yield ReadWrite()
+
+
+@cocotb.test()
+async def test_singleton_isinstance(dut):
+    """
+    Test that the result of trigger expression have a predictable type
+    """
+    assert isinstance(NextTimeStep(), NextTimeStep)
+    assert isinstance(ReadOnly(), ReadOnly)
+    assert isinstance(ReadWrite(), ReadWrite)

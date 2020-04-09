@@ -10,7 +10,7 @@ Tests for edge triggers
 * ClockCycles
 """
 import cocotb
-from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, NextTimeStep, ReadWrite, ReadOnly, ClockCycles
+from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles
 from cocotb.clock import Clock
 from cocotb.result import TestError, TestFailure
 
@@ -201,9 +201,6 @@ def test_singleton_isinstance(dut):
     assert isinstance(RisingEdge(dut.clk), RisingEdge)
     assert isinstance(FallingEdge(dut.clk), FallingEdge)
     assert isinstance(Edge(dut.clk), Edge)
-    assert isinstance(NextTimeStep(), NextTimeStep)
-    assert isinstance(ReadOnly(), ReadOnly)
-    assert isinstance(ReadWrite(), ReadWrite)
 
     yield Timer(1)
 
