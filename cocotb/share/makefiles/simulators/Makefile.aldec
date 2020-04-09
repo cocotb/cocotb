@@ -84,7 +84,7 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
-    GPI_ARGS = -pli $(call to_tcl_path,$(LIB_DIR)/libcocotbvpi_aldec)
+    GPI_ARGS = -pli \"$(call to_tcl_path,$(LIB_DIR)/libcocotbvpi_aldec)\"
 ifneq ($(VHDL_SOURCES),)
     GPI_EXTRA = cocotbvhpi_aldec:cocotbvhpi_entry_point
 endif
