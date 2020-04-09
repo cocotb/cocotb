@@ -264,7 +264,9 @@ class RunningTest(RunningCoroutine):
         replaced with `abort(outcome.error)`.
         """
         if self._outcome is not None:
-            raise scheduler.InternalError("Outcome already has a value, but is being set again.")
+            # imported here to avoid circular imports
+            from cocotb.scheduler import InternalError
+            raise InternalError("Outcome already has a value, but is being set again.")
         if _debug:
             self.log.debug("outcome forced to {}".format(outcome))
         self._outcome = outcome
