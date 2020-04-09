@@ -106,6 +106,7 @@ To get waveforms in VCD format, add Verilator's trace option(s) to the
 
     EXTRA_ARGS += --trace
 
+To set the same options on the command line, use ``EXTRA_ARGS="--trace --trace-structs" make ...``.
 A VCD file named ``dump.vcd`` will be generated in current directory.
 
 
