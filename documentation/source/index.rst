@@ -73,11 +73,14 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
 Contributors
 ************
 
-cocotb is developed and maintained by an active community under the umbrella of the
-`Free and Open Source Silicon Foundation <https://www.fossi-foundation.org>`_.
+.. spelling::
+   McGregor
+   Grimwood
 
-Our GitHub repository contains a list of all
-`contributors <https://github.com/cocotb/cocotb/graphs/contributors>`_.
+cocotb was developed by `Potential Ventures <https://potential.ventures>`_ with the support of
+`Solarflare Communications Ltd <https://www.solarflare.com/>`_
+and contributions from Gordon McGregor and Finn Grimwood
+(see `contributors <https://github.com/cocotb/cocotb/graphs/contributors>`_ for the full list of contributions).
 
 We also have a list of talks and papers, libraries and examples at our Wiki page
 `Further Resources <https://github.com/cocotb/cocotb/wiki/Further-Resources>`_.
