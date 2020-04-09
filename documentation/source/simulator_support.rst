@@ -94,6 +94,8 @@ To enable HDL code coverage, add Verilator's coverage option(s) to the :make:var
 
 This will result in coverage data being written to ``coverage.dat``.
 
+.. _sim-verilator-waveforms:
+
 Waveforms
 ---------
 
