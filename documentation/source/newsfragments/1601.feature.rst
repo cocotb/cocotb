@@ -1,1 +1,1 @@
-Added support for Aldecs Active-HDL simulator.
+Added support for Aldec's Active-HDL simulator.
