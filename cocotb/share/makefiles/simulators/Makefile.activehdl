@@ -26,12 +26,14 @@ ACOM_ARGS += -dbg
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
+    # backslashes needed because we embed in `echo` below
     GPI_ARGS = -pli \"$(call to_tcl_path,$(LIB_DIR)/libcocotbvpi_aldec)\"
 ifneq ($(VHDL_SOURCES),)
     GPI_EXTRA = cocotbvhpi_aldec:cocotbvhpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
+    # backslashes needed because we embed in `echo` below
     GPI_ARGS = -loadvhpi \"$(call to_tcl_path,$(LIB_DIR)/libcocotbvhpi_aldec):vhpi_startup_routines_bootstrap\"
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_aldec:cocotbvpi_entry_point
@@ -71,4 +73,4 @@ clean::
 	@rm -rf $(SIM_BUILD)
 	@rm -rf work
 
-# TODO: @rm any other file created 
+# TODO: @rm any other file created
