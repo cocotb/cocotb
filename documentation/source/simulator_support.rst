@@ -109,7 +109,7 @@ The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulatorÂ
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
 Aldec Active-HDL
-=================
+================
 
 
 .. _sim-questa:
