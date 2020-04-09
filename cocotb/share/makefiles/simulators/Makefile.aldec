@@ -63,7 +63,7 @@ ASIM_ARGS += $(SIM_ARGS)
 # Plusargs need to be passed to ASIM command not vsimsa
 ASIM_ARGS += $(PLUSARGS)
 
-RTL_LIBRARY ?= $(SIM_BUILD)/work
+RTL_LIBRARY ?= work
 ALOG_ARGS += +define+COCOTB_SIM -dbg -pli libgpi
 ACOM_ARGS += -dbg
 
@@ -90,7 +90,8 @@ ifneq ($(VHDL_SOURCES),)
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    GPI_ARGS = -loadvhpi $(call to_tcl_path,$(LIB_DIR)/libcocotbvhpi_aldec):vhpi_startup_routines_bootstrap
+    GPI_ARGS = -loadvhpi \"$(call to_tcl_path,$(LIB_DIR)/libcocotbvhpi_aldec):vhpi_startup_routines_bootstrap\"
+
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_aldec:cocotbvpi_entry_point
 endif
@@ -104,9 +105,6 @@ $(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
 	@echo "onerror {" > $@
 	@echo "	puts [read [open sim.log r]]" >> $@
 	@echo "	quit -code 1" >> $@
-	@echo "}" >> $@
-	@echo "@if [string length [array get env LICENSE_QUEUE]] {" >> $@
-	@echo " set LICENSE_QUEUE $$::env(LICENSE_QUEUE)" >> $@
 	@echo "}" >> $@
 	@echo "alib $(RTL_LIBRARY)" >> $@
 	@echo "set worklib $(RTL_LIBRARY)" >> $@
