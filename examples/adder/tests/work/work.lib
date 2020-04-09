@@ -1,0 +1,25 @@
+timestamp=1586355029411
+
+[adder]
+A/rtl=A/RTL 21|./../../hdl/adder.vhdl|16|1*0
+BinI32/rtl=3*0
+I=0*638
+I/rtl=I/RTL 0*1067
+M=11|0|vb4|1586355029124|./../../hdl/adder.vhdl|0*231*0xc38fb854593c1f1085d3fb36f374b6bef7e08b2c|0*559*0x5eebbfaf24833dd780412b1f91e05209
+M/rtl=M/RTL 21|0|vb4|1586355029126|./../../hdl/adder.vhdl|0*799*0x01fe02c123d995a500f679163deb58648b416145|0*981*0x9f7672f34934e0a5b91b54c4e667d63c
+R=./../../hdl/adder.vhdl|6
+Version=9.3.2744.sp1.09.4995  (Windows)|00000004789cd34d494a0700030f015b
+Version/rtl=9.3.2744.sp1.09.4995  (Windows)|00000004789cd34d494a0700030f015b
+
+[~A]
+ModifyID=5
+Version=73
+
+[~MFT]
+0=6|0work.mgf|1067|0
+1=0|1work.mgf|0|0
+3=0|3work.mgf|0|0
+
+[~U]
+adder=11|0*0|
+
