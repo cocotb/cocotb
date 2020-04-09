@@ -17,6 +17,7 @@ endif
 
 TOPLEVEL = dff
 MODULE := $(TOPLEVEL)_cocotb
+COCOTB_HDL_TIMEUNIT=1us
 COCOTB_HDL_TIMEPRECISION=1us
 
 CUSTOM_SIM_DEPS=$(CWD)/Makefile
@@ -25,7 +26,7 @@ ifeq ($(SIM),questa)
     SIM_ARGS=-t 1ps
 endif
 
-ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+ifneq ($(filter $(SIM),ius xcelium),)
     SIM_ARGS += -v93
 endif
 

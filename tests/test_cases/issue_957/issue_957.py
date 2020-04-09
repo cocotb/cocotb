@@ -5,7 +5,7 @@ from cocotb.triggers import Timer, RisingEdge, First
 def wait_edge(dut):
     # this trigger never fires
     yield First(
-        RisingEdge(dut.and_output)
+        RisingEdge(dut.stream_out_ready)
     )
 
 @cocotb.test()

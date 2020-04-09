@@ -29,7 +29,6 @@
 import cocotb
 from cocotb.triggers import RisingEdge, ReadOnly, Lock
 from cocotb.drivers import BusDriver
-from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
 
 import array
@@ -158,7 +157,7 @@ class AXI4LiteMaster(BusDriver):
             raise AXIProtocolError("Write to address 0x%08x failed with BRESP: %d"
                                % (address, int(result)))
 
-        raise ReturnValue(result)
+        return result
 
     @cocotb.coroutine
     def read(self, address, sync=True):
@@ -202,7 +201,7 @@ class AXI4LiteMaster(BusDriver):
             raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d" %
                                (address, int(result)))
 
-        raise ReturnValue(data)
+        return data
 
     def __len__(self):
         return 2**len(self.bus.ARADDR)
@@ -304,7 +303,7 @@ class AXI4Slave(BusDriver):
                     _burst_diff = burst_length - burst_count
                     _st = _awaddr + (_burst_diff * bytes_in_beat)  # start
                     _end = _awaddr + ((_burst_diff + 1) * bytes_in_beat)  # end
-                    self._memory[_st:_end] = array.array('B', word.get_buff())
+                    self._memory[_st:_end] = array.array('B', word.buff)
                     burst_count -= 1
                     if burst_count == 0:
                         break
@@ -353,7 +352,7 @@ class AXI4Slave(BusDriver):
                     _burst_diff = burst_length - burst_count
                     _st = _araddr + (_burst_diff * bytes_in_beat)
                     _end = _araddr + ((_burst_diff + 1) * bytes_in_beat)
-                    word.buff = self._memory[_st:_end].tostring()
+                    word.buff = self._memory[_st:_end].tobytes()
                     self.bus.RDATA <= word
                     if burst_count == 1:
                         self.bus.RLAST <= 1

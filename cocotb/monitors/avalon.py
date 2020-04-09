@@ -55,8 +55,7 @@ class AvalonST(BusMonitor):
 
     _default_config = {"firstSymbolInHighOrderBits": True}
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
+    def __init__(self, entity, name, clock, *, config={}, **kwargs):
         BusMonitor.__init__(self, entity, name, clock, **kwargs)
 
         self.config = self._default_config.copy()
@@ -109,9 +108,7 @@ class AvalonSTPkts(BusMonitor):
         "invalidTimeout"                : 0,
     }
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
-        report_channel = kwargs.pop('report_channel', False)
+    def __init__(self, entity, name, clock, *, config={}, report_channel=False, **kwargs):
         BusMonitor.__init__(self, entity, name , clock, **kwargs)
 
         self.config = self._default_config.copy()
@@ -156,7 +153,7 @@ class AvalonSTPkts(BusMonitor):
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
         rdonly = ReadOnly()
-        pkt = ""
+        pkt = b""
         in_pkt = False
         invalid_cyclecount = 0
         channel = None
@@ -180,7 +177,7 @@ class AvalonSTPkts(BusMonitor):
                     if pkt:
                         raise AvalonProtocolError("Duplicate start-of-packet received on %s" %
                                                   str(self.bus.startofpacket))
-                    pkt = ""
+                    pkt = b""
                     in_pkt = True
 
                 if not in_pkt:
@@ -225,7 +222,7 @@ class AvalonSTPkts(BusMonitor):
                         self._recv({"data": pkt, "channel": channel})
                     else:
                         self._recv(pkt)
-                    pkt = ""
+                    pkt = b""
                     in_pkt = False
                     channel = None
             else:

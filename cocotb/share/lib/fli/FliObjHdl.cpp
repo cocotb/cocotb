@@ -31,7 +31,7 @@
 #include "FliImpl.h"
 #include "acc_vhdl.h"
 
-GpiCbHdl *FliSignalObjHdl::value_change_cb(unsigned int edge)
+GpiCbHdl *FliSignalObjHdl::value_change_cb(int edge)
 {
     FliSignalCbHdl *cb = NULL;
 
@@ -78,6 +78,7 @@ int FliObjHdl::initialise(std::string &name, std::string &fq_name)
             break;
         case GPI_GENARRAY:
             m_indexable = true;
+            // fall through
         case GPI_MODULE:
             m_num_elems = 1;
             break;
@@ -139,20 +140,34 @@ long FliValueObjHdl::get_signal_value_long()
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value(const long value)
+int FliValueObjHdl::set_signal_value(long value, gpi_set_action_t action)
 {
+    COCOTB_UNUSED(value);
+    COCOTB_UNUSED(action);
     LOG_ERROR("Setting signal/variable value via long not supported for %s of type %d", m_fullname.c_str(), m_type);
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value(std::string &value)
+int FliValueObjHdl::set_signal_value_binstr(std::string &value, gpi_set_action_t action)
 {
+    COCOTB_UNUSED(value);
+    COCOTB_UNUSED(action);
     LOG_ERROR("Setting signal/variable value via string not supported for %s of type %d", m_fullname.c_str(), m_type);
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value(const double value)
+int FliValueObjHdl::set_signal_value_str(std::string &value, gpi_set_action_t action)
 {
+    COCOTB_UNUSED(value);
+    COCOTB_UNUSED(action);
+    LOG_ERROR("Setting signal/variable value via string not supported for %s of type %d", m_fullname.c_str(), m_type);
+    return -1;
+}
+
+int FliValueObjHdl::set_signal_value(double value, gpi_set_action_t action)
+{
+    COCOTB_UNUSED(value);
+    COCOTB_UNUSED(action);
     LOG_ERROR("Setting signal/variable value via double not supported for %s of type %d", m_fullname.c_str(), m_type);
     return -1;
 }
@@ -210,8 +225,13 @@ long FliEnumObjHdl::get_signal_value_long()
     }
 }
 
-int FliEnumObjHdl::set_signal_value(const long value)
+int FliEnumObjHdl::set_signal_value(const long value, const gpi_set_action_t action)
 {
+    if (action != GPI_DEPOSIT) {
+        LOG_CRITICAL("Force or release action not supported for FLI.");
+        return -1;
+    }
+
     if (value > m_num_enum || value < 0) {
         LOG_ERROR("Attempted to set a enum with range [0,%d] with invalid value %d!\n", m_num_enum, value);
         return -1;
@@ -245,7 +265,7 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
                 m_value_enum  = mti_GetEnumValues(elemType);
                 m_num_enum    = mti_TickLength(elemType);
 
-                m_mti_buff    = (char*)malloc(sizeof(*m_mti_buff) * m_num_elems);
+                m_mti_buff    = new char[m_num_elems+1];
                 if (!m_mti_buff) {
                     LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
                     return -1;
@@ -261,7 +281,7 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
         m_enum_map[m_value_enum[i][1]] = i;  // enum is of the format 'U' or '0', etc.
     }
 
-    m_val_buff = (char*)malloc(m_num_elems+1);
+    m_val_buff = new char[m_num_elems+1];
     if (!m_val_buff) {
         LOG_CRITICAL("Unable to alloc mem for value object read buffer: ABORTING");
     }
@@ -302,8 +322,13 @@ const char* FliLogicObjHdl::get_signal_value_binstr()
     return m_val_buff;
 }
 
-int FliLogicObjHdl::set_signal_value(const long value)
+int FliLogicObjHdl::set_signal_value(const long value, const gpi_set_action_t action)
 {
+    if (action != GPI_DEPOSIT) {
+        LOG_CRITICAL("Force or release action not supported for FLI.");
+        return -1;
+    }
+
     if (m_fli_type == MTI_TYPE_ENUM) {
         mtiInt32T enumVal = value ? m_enum_map['1'] : m_enum_map['0'];
 
@@ -330,8 +355,13 @@ int FliLogicObjHdl::set_signal_value(const long value)
     return 0;
 }
 
-int FliLogicObjHdl::set_signal_value(std::string &value)
+int FliLogicObjHdl::set_signal_value_binstr(std::string &value, const gpi_set_action_t action)
 {
+    if (action != GPI_DEPOSIT) {
+        LOG_CRITICAL("Force or release action not supported for FLI.");
+        return -1;
+    }
+
     if (m_fli_type == MTI_TYPE_ENUM) {
         mtiInt32T enumVal = m_enum_map[value.c_str()[0]];
 
@@ -372,7 +402,7 @@ int FliIntObjHdl::initialise(std::string &name, std::string &fq_name)
 {
     m_num_elems   = 1;
 
-    m_val_buff = (char*)malloc(33);  // Integers are always 32-bits
+    m_val_buff = new char[33];  // Integers are always 32-bits
     if (!m_val_buff) {
         LOG_CRITICAL("Unable to alloc mem for value object read buffer: ABORTING");
         return -1;
@@ -392,7 +422,8 @@ const char* FliIntObjHdl::get_signal_value_binstr()
         val = mti_GetSignalValue(get_handle<mtiSignalIdT>());
     }
 
-    std::bitset<32> value((unsigned long)val);
+    unsigned long tmp = static_cast<unsigned long>(val);  // only way to keep next line from warning
+    std::bitset<32> value {tmp};
     std::string bin_str = value.to_string<char,std::string::traits_type, std::string::allocator_type>();
     snprintf(m_val_buff, 33, "%s", bin_str.c_str());
 
@@ -412,8 +443,13 @@ long FliIntObjHdl::get_signal_value_long()
     return (long)value;
 }
 
-int FliIntObjHdl::set_signal_value(const long value)
+int FliIntObjHdl::set_signal_value(const long value, const gpi_set_action_t action)
 {
+    if (action != GPI_DEPOSIT) {
+        LOG_CRITICAL("Force or release action not supported for FLI.");
+        return -1;
+    }
+
     if (m_is_var) {
         mti_SetVarValue(get_handle<mtiVariableIdT>(), value);
     } else {
@@ -428,7 +464,7 @@ int FliRealObjHdl::initialise(std::string &name, std::string &fq_name)
 
     m_num_elems   = 1;
 
-    m_mti_buff    = (double*)malloc(sizeof(double));
+    m_mti_buff    = new double;
     if (!m_mti_buff) {
         LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
         return -1;
@@ -450,8 +486,13 @@ double FliRealObjHdl::get_signal_value_real()
     return m_mti_buff[0];
 }
 
-int FliRealObjHdl::set_signal_value(const double value)
+int FliRealObjHdl::set_signal_value(const double value, const gpi_set_action_t action)
 {
+    if (action != GPI_DEPOSIT) {
+        LOG_CRITICAL("Force or release action not supported for FLI.");
+        return -1;
+    }
+
     m_mti_buff[0] = value;
 
     if (m_is_var) {
@@ -470,13 +511,13 @@ int FliStringObjHdl::initialise(std::string &name, std::string &fq_name)
     m_num_elems   = mti_TickLength(m_val_type);
     m_indexable   = true;
 
-    m_mti_buff    = (char*)malloc(sizeof(char) * m_num_elems);
+    m_mti_buff    = new char[m_num_elems];
     if (!m_mti_buff) {
         LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
         return -1;
     }
 
-    m_val_buff = (char*)malloc(m_num_elems+1);
+    m_val_buff    = new char[m_num_elems+1];
     if (!m_val_buff) {
         LOG_CRITICAL("Unable to alloc mem for value object read buffer: ABORTING");
         return -1;
@@ -494,16 +535,21 @@ const char* FliStringObjHdl::get_signal_value_str()
         mti_GetArraySignalValue(get_handle<mtiSignalIdT>(), m_mti_buff);
     }
 
-    strncpy(m_val_buff, m_mti_buff, m_num_elems);
+    strncpy(m_val_buff, m_mti_buff, static_cast<size_t>(m_num_elems));
 
     LOG_DEBUG("Retrieved \"%s\" for value object %s", m_val_buff, m_name.c_str());
 
     return m_val_buff;
 }
 
-int FliStringObjHdl::set_signal_value(std::string &value)
+int FliStringObjHdl::set_signal_value_str(std::string &value, const gpi_set_action_t action)
 {
-    strncpy(m_mti_buff, value.c_str(), m_num_elems);
+    if (action != GPI_DEPOSIT) {
+        LOG_CRITICAL("Force or release action not supported for FLI.");
+        return -1;
+    }
+
+    strncpy(m_mti_buff, value.c_str(), static_cast<size_t>(m_num_elems));
 
     if (m_is_var) {
         mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);

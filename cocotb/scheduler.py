@@ -33,11 +33,11 @@ FIXME: We have a problem here.  If a coroutine schedules a read-only but we
 also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
-import collections
 import os
 import sys
 import logging
 import threading
+import inspect
 
 # Debug mode controlled by environment variables
 if "COCOTB_ENABLE_PROFILING" in os.environ:
@@ -61,16 +61,9 @@ import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
-from cocotb.result import TestComplete, ReturnValue
+from cocotb.result import TestComplete
+from cocotb.utils import remove_traceback_frames
 from cocotb import _py_compat
-
-# On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
-# Since `OrderedDict` is a little slower that `dict`, we prefer the latter
-# when possible.
-if sys.version_info[:2] >= (3, 7):
-    _ordered_dict = dict
-else:
-    _ordered_dict = collections.OrderedDict
 
 
 class InternalError(RuntimeError):
@@ -78,7 +71,7 @@ class InternalError(RuntimeError):
     pass
 
 
-class profiling_context(object):
+class profiling_context:
     """ Context manager that profiles its contents """
     def __enter__(self):
         _profile.enable()
@@ -89,14 +82,14 @@ class profiling_context(object):
 
 from cocotb import outcomes
 
-class external_state(object):
+class external_state:
     INIT = 0
     RUNNING = 1
     PAUSED = 2
     EXITED = 3
 
 @cocotb.decorators.public
-class external_waiter(object):
+class external_waiter:
 
     def __init__(self):
         self._outcome = None
@@ -157,7 +150,7 @@ class external_waiter(object):
 
         return self.state
 
-class Scheduler(object):
+class Scheduler:
     """The main scheduler.
 
     Here we accept callbacks from the simulator and schedule the appropriate
@@ -228,16 +221,16 @@ class Scheduler(object):
 
         # A dictionary of pending coroutines for each trigger,
         # indexed by trigger
-        self._trigger2coros = _ordered_dict()
+        self._trigger2coros = _py_compat.insertion_ordered_dict()
 
         # A dictionary mapping coroutines to the trigger they are waiting for
-        self._coro2trigger = _ordered_dict()
+        self._coro2trigger = _py_compat.insertion_ordered_dict()
 
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
 
         # A dictionary of pending writes
-        self._writes = _ordered_dict()
+        self._writes = _py_compat.insertion_ordered_dict()
 
         self._pending_coros = []
         self._pending_triggers = []
@@ -253,15 +246,14 @@ class Scheduler(object):
         self._write_coro_inst = None
         self._writes_pending = Event()
 
-    @cocotb.decorators.coroutine
-    def _do_writes(self):
+    async def _do_writes(self):
         """ An internal coroutine that performs pending writes """
         while True:
-            yield self._writes_pending.wait()
+            await self._writes_pending.wait()
             if self._mode != Scheduler._MODE_NORMAL:
-                yield self._next_time_step
+                await self._next_time_step
 
-            yield self._read_write
+            await self._read_write
 
             while self._writes:
                 handle, value = self._writes.popitem()
@@ -287,10 +279,10 @@ class Scheduler(object):
                 self._timer1.unprime()
 
             self._timer1.prime(self._test_completed)
-            self._trigger2coros = _ordered_dict()
-            self._coro2trigger = _ordered_dict()
+            self._trigger2coros = _py_compat.insertion_ordered_dict()
+            self._coro2trigger = _py_compat.insertion_ordered_dict()
             self._terminate = False
-            self._writes = _ordered_dict()
+            self._writes = _py_compat.insertion_ordered_dict()
             self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
@@ -504,12 +496,12 @@ class Scheduler(object):
                 coro._outcome.get()
             except (TestComplete, AssertionError) as e:
                 coro.log.info("Test stopped by this forked coroutine")
-                outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
-                self._test._force_outcome(outcome)
+                e = remove_traceback_frames(e, ['unschedule', 'get'])
+                self._test.abort(e)
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
-                outcome = outcomes.Error(e).without_frames(['unschedule', 'get'])
-                self._test._force_outcome(outcome)
+                e = remove_traceback_frames(e, ['unschedule', 'get'])
+                self._test.abort(e)
 
     def save_write(self, handle, value):
         if self._mode == Scheduler._MODE_READONLY:
@@ -518,8 +510,7 @@ class Scheduler(object):
         # TODO: we should be able to better keep track of when this needs to
         # be scheduled
         if self._write_coro_inst is None:
-            self._write_coro_inst = self._do_writes()
-            self.schedule(self._write_coro_inst)
+            self._write_coro_inst = self.add(self._do_writes())
 
         self._writes[handle] = value
         self._writes_pending.set()
@@ -580,11 +571,10 @@ class Scheduler(object):
         # each entry always has a unique thread.
         t, = matching_threads
 
-        @cocotb.coroutine
-        def wrapper():
+        async def wrapper():
             # This function runs in the scheduler thread
             try:
-                _outcome = outcomes.Value((yield coro))
+                _outcome = outcomes.Value(await coro)
             except BaseException as e:
                 _outcome = outcomes.Error(e)
             event.outcome = _outcome
@@ -598,7 +588,7 @@ class Scheduler(object):
             event.set()
 
         event = threading.Event()
-        self._pending_coros.append(wrapper())
+        self._pending_coros.append(cocotb.decorators.RunningTask(wrapper()))
         # The scheduler thread blocks in `thread_wait`, and is woken when we
         # call `thread_suspend` - so we need to make sure the coroutine is
         # queued before that.
@@ -609,11 +599,11 @@ class Scheduler(object):
 
     def run_in_executor(self, func, *args, **kwargs):
         """Run the coroutine in a separate execution thread
-        and return a yieldable object for the caller.
+        and return an awaitable object for the caller.
         """
         # Create a thread
         # Create a trigger that is called as a result of the thread finishing
-        # Create an Event object that the caller can yield on
+        # Create an Event object that the caller can await on
         # Event object set when the thread finishes execution, this blocks the
         #   calling coroutine (but not the thread) until the external completes
 
@@ -623,8 +613,7 @@ class Scheduler(object):
                 self.log.debug("Execution of external routine done %s" % threading.current_thread())
             _waiter.thread_done()
 
-        @cocotb.coroutine
-        def wrapper():
+        async def wrapper():
             waiter = external_waiter()
             thread = threading.Thread(group=None, target=execute_external,
                                       name=func.__name__ + "_thread",
@@ -633,10 +622,9 @@ class Scheduler(object):
             waiter.thread = thread
             self._pending_threads.append(waiter)
 
-            yield waiter.event.wait()
+            await waiter.event.wait()
 
-            ret = waiter.result  # raises if there was an exception
-            raise ReturnValue(ret)
+            return waiter.result  # raises if there was an exception
 
         return wrapper()
 
@@ -654,7 +642,16 @@ class Scheduler(object):
                 .format(coroutine)
             )
 
-        elif not isinstance(coroutine, cocotb.decorators.RunningCoroutine):
+        if inspect.iscoroutine(coroutine):
+            return self.add(cocotb.decorators.RunningTask(coroutine))
+
+        elif sys.version_info >= (3, 6) and inspect.isasyncgen(coroutine):
+            raise TypeError(
+                "{} is an async generator, not a coroutine. "
+                "You likely used the yield keyword instead of await.".format(
+                    coroutine.__qualname__))
+
+        elif not isinstance(coroutine, cocotb.decorators.RunningTask):
             raise TypeError(
                 "Attempt to add a object of type {} to the scheduler, which "
                 "isn't a coroutine: {!r}\n"
@@ -678,51 +675,56 @@ class Scheduler(object):
 
     # This collection of functions parses a trigger out of the object
     # that was yielded by a coroutine, converting `list` -> `Waitable`,
-    # `Waitable` -> `RunningCoroutine`, `RunningCoroutine` -> `Trigger`.
-    # Doing them as separate functions allows us to avoid repeating unnecessary
+    # `Waitable` -> `RunningTask`, `RunningTask` -> `Trigger`.
+    # Doing them as separate functions allows us to avoid repeating unencessary
     # `isinstance` checks.
 
-    def _trigger_from_started_coro(self, result):
-        # type: (cocotb.decorators.RunningCoroutine) -> Trigger
+    def _trigger_from_started_coro(self, result: cocotb.decorators.RunningTask) -> Trigger:
         if _debug:
             self.log.debug("Joining to already running coroutine: %s" %
                            result.__name__)
         return result.join()
 
-    def _trigger_from_unstarted_coro(self, result):
-        # type: (cocotb.decorators.RunningCoroutine) -> Trigger
+    def _trigger_from_unstarted_coro(self, result: cocotb.decorators.RunningTask) -> Trigger:
         self.queue(result)
         if _debug:
             self.log.debug("Scheduling nested coroutine: %s" %
                            result.__name__)
         return result.join()
 
-    def _trigger_from_waitable(self, result):
-        # type: (cocotb.triggers.Waitable) -> Trigger
-        return self._trigger_from_unstarted_coro(result._wait())
+    def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
+        return self._trigger_from_unstarted_coro(cocotb.decorators.RunningTask(result._wait()))
 
-    def _trigger_from_list(self, result):
-        # type: (list) -> Trigger
+    def _trigger_from_list(self, result: list) -> Trigger:
         return self._trigger_from_waitable(cocotb.triggers.First(*result))
 
-    def _trigger_from_any(self, result):
+    def _trigger_from_any(self, result) -> Trigger:
         """Convert a yielded object into a Trigger instance"""
         # note: the order of these can significantly impact performance
 
         if isinstance(result, Trigger):
             return result
 
-        if isinstance(result, cocotb.decorators.RunningCoroutine):
+        if isinstance(result, cocotb.decorators.RunningTask):
             if not result.has_started():
                 return self._trigger_from_unstarted_coro(result)
             else:
                 return self._trigger_from_started_coro(result)
+
+        if inspect.iscoroutine(result):
+            return self._trigger_from_unstarted_coro(cocotb.decorators.RunningTask(result))
 
         if isinstance(result, list):
             return self._trigger_from_list(result)
 
         if isinstance(result, cocotb.triggers.Waitable):
             return self._trigger_from_waitable(result)
+
+        if sys.version_info >= (3, 6) and inspect.isasyncgen(result):
+            raise TypeError(
+                "{} is an async generator, not a coroutine. "
+                "You likely used the yield keyword instead of await.".format(
+                    result.__qualname__))
 
         raise TypeError(
             "Coroutine yielded an object of type {}, which the scheduler can't "

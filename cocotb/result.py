@@ -29,8 +29,7 @@
 import traceback
 import sys
 import warnings
-from io import StringIO, BytesIO
-from cocotb import _py_compat
+from io import StringIO
 
 """Exceptions and functions for simulation result handling."""
 
@@ -54,14 +53,8 @@ def raise_error(obj, msg):
 
 def _raise_error(obj, msg):
     exc_info = sys.exc_info()
-    # Python 2.6 cannot use named access
-    if sys.version_info[0] >= 3:
-        buff = StringIO()
-        traceback.print_exception(*exc_info, file=buff)
-    else:
-        buff_bytes = BytesIO()
-        traceback.print_exception(*exc_info, file=buff_bytes)
-        buff = StringIO(buff_bytes.getvalue().decode("UTF-8"))
+    buff = StringIO()
+    traceback.print_exception(*exc_info, file=buff)
     obj.log.error("%s\n%s" % (msg, buff.getvalue()))
     exception = TestError(msg)
     exception.stderr.write(buff.getvalue())
@@ -92,8 +85,18 @@ def create_error(obj, msg):
 
 
 class ReturnValue(Exception):
-    """Helper exception needed for Python versions prior to 3.3."""
+    """
+    Helper exception needed for Python versions prior to 3.3.
+
+    .. deprecated:: 1.4
+        Use a :keyword:`return` statement instead; this works in all supported versions of Python.
+    """
+
     def __init__(self, retval):
+        warnings.warn(
+            "``ReturnValue`` is deprecated, use a normal return statement instead.",
+            DeprecationWarning,
+            stacklevel=2)
         self.retval = retval
 
 
@@ -131,6 +134,6 @@ class SimFailure(TestComplete):
     pass
 
 
-class SimTimeoutError(_py_compat.TimeoutError):
+class SimTimeoutError(TimeoutError):
     """Exception for when a timeout, in terms of simulation time, occurs."""
     pass

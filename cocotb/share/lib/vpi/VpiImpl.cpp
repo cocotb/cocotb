@@ -77,6 +77,8 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
     switch (vpitype) {
         case vpiNet:
         case vpiNetBit:
+            return GPI_NET;
+
         case vpiReg:
         case vpiRegBit:
         case vpiMemoryWord:
@@ -308,7 +310,7 @@ GpiObjHdl* VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
         writable.push_back('\0');
 
         new_hdl = vpi_handle_by_name(&writable[0], NULL);
-    } else if (obj_type == GPI_REGISTER || obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
+    } else if (obj_type == GPI_REGISTER || obj_type == GPI_NET || obj_type == GPI_ARRAY || obj_type == GPI_STRING) {
         new_hdl = vpi_handle_by_index(vpi_hdl, index);
 
         /* vpi_handle_by_index() doesn't work for all simulators when dealing with a two-dimensional array.
@@ -379,7 +381,7 @@ GpiObjHdl* VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
             }
         }
     } else {
-        LOG_ERROR("VPI: Parent of type %s must be of type GPI_GENARRAY, GPI_REGISTER, GPI_ARRAY, or GPI_STRING to have an index.", parent->get_type_str());
+        LOG_ERROR("VPI: Parent of type %s must be of type GPI_GENARRAY, GPI_REGISTER, GPI_NET, GPI_ARRAY, or GPI_STRING to have an index.", parent->get_type_str());
         return NULL;
     }
 
@@ -696,22 +698,19 @@ void (*vlog_startup_routines[])() = {
     register_system_functions,
     register_initial_callback,
     register_final_callback,
-    0
+    nullptr
 };
 
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines symbol
 void vlog_startup_routines_bootstrap() {
-    void (*routine)();
-    int i;
-    routine = vlog_startup_routines[0];
-    for (i = 0, routine = vlog_startup_routines[i];
-         routine;
-         routine = vlog_startup_routines[++i]) {
+    // call each routine in turn like VPI would
+    for (auto it = &vlog_startup_routines[0]; *it != nullptr; it++) {
+        auto routine = *it;
         routine();
     }
 }
 
 }
 
-GPI_ENTRY_POINT(vpi, register_embed)
+GPI_ENTRY_POINT(cocotbvpi, register_embed)

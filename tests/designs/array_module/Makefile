@@ -31,18 +31,14 @@ TOPLEVEL_LANG ?= verilog
 
 TOPLEVEL := array_module
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(COCOTB)/tests/designs/array_module/array_module.sv
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    ifeq ($(SIM),$(filter $(SIM),ius xcelium))
+    ifneq ($(filter $(SIM),ius xcelium),)
         SIM_ARGS += -v93
     endif
 ifeq ($(shell echo $(SIM) | tr A-Z a-z),aldec)
@@ -54,5 +50,5 @@ else
     $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim

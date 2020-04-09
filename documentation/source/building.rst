@@ -1,6 +1,6 @@
-#######################################
+***************************************
 Build options and Environment Variables
-#######################################
+***************************************
 
 Make System
 ===========
@@ -11,16 +11,24 @@ The common Makefile :file:`cocotb/share/makefiles/Makefile.sim` includes the app
 Make Targets
 ------------
 
-Makefiles define two targets, ``regression`` and ``sim``, the default target is ``sim``.
+Makefiles defines the targets ``regression`` and ``sim``, the default target is ``sim``.
 
-Both rules create a results file with the name taken from :envvar:`COCOTB_RESULTS_FILE`, defaulting to ``results.xml``.  This file is a JUnit-compatible output file suitable for use with `Jenkins <https://jenkins.io/>`_. The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
+Both rules create a results file with the name taken from :envvar:`COCOTB_RESULTS_FILE`, defaulting to ``results.xml``.
+This file is a JUnit-compatible output file suitable for use with e.g. `Jenkins <https://jenkins.io/>`_.
+The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
+
+In addition, the target ``clean`` can be used to remove build and simulation artefacts.
+The target ``help`` lists these available targets and the variables described below.
 
 Make Phases
 -----------
 
-Typically the makefiles provided with cocotb for various simulators use a separate ``compile`` and ``run`` target.  This allows for a rapid re-running of a simulator if none of the RTL source files have changed and therefore the simulator does not need to recompile the RTL.
+Typically the makefiles provided with cocotb for various simulators use a separate ``compile`` and ``run`` target.
+This allows for a rapid re-running of a simulator if none of the RTL source files have changed and therefore the simulator does not need to recompile the RTL.
 
 
+..
+  If you edit the following sections, please also update the "helpmsg" text in cocotb/share/makefiles/Makefile.sim
 
 Make Variables
 --------------
@@ -45,15 +53,17 @@ and
 .. make:var:: WAVES
 
       Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators.
-      To get wave traces in Icarus Verilog see :ref:`Simulator Support`.
+      To get wave traces in Icarus Verilog see :ref:`sim-icarus-waveforms`.
 
 .. make:var:: VERILOG_SOURCES
 
       A list of the Verilog source files to include.
+      Paths can be absolute or relative; if relative, they are interpreted as relative to the Makefile's location.
 
 .. make:var:: VHDL_SOURCES
 
       A list of the VHDL source files to include.
+      Paths can be absolute or relative; if relative, they are interpreted as relative to the Makefile's location.
 
 .. make:var:: VHDL_SOURCES_<lib>
 
@@ -66,6 +76,12 @@ and
 .. make:var:: SIM_ARGS
 
       Any arguments or flags to pass to the execution of the compiled simulation.
+
+.. make:var:: RUN_ARGS
+
+      Any argument to be passed to the "first" invocation of a simulator that runs via a TCL script.
+      One motivating usage is to pass `-noautoldlibpath` to Questa to prevent it from loading the out-of-date libraries it ships with.
+      Used by Aldec Riviera-PRO and Mentor Graphics Questa simulator.
 
 .. make:var:: EXTRA_ARGS
 
@@ -89,6 +105,8 @@ and
       Allowed values are 1, 10, and 100.
       Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
 
+      NOTE: Icarus Verilog does not support this variable
+
       .. versionadded:: 1.3
 
 .. make:var:: COCOTB_HDL_TIMEPRECISION
@@ -97,6 +115,8 @@ and
       If this isn't specified then it is assumed to be ``1ps``.
       Allowed values are 1, 10, and 100.
       Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
+
+      NOTE: Icarus Verilog does not support this variable
 
       .. versionadded:: 1.3
 
@@ -111,6 +131,10 @@ and
 .. make:var:: COCOTB_NVC_TRACE
 
       Set this to 1 to enable display of VHPI traces when using the NVC VHDL simulator.
+
+      .. deprecated:: 1.4
+
+         Replaced by the instructions in :ref:`sim-nvc`.
 
 .. make:var:: SIM_BUILD
 
@@ -164,7 +188,9 @@ Environment Variables
 
 .. envvar:: MODULE
 
-    The name of the module(s) to search for test functions.  Multiple modules can be specified using a comma-separated list.
+    The name of the module(s) to search for test functions.
+    Multiple modules can be specified using a comma-separated list.
+    All tests will be run from each specified module in order of the module's appearance in this list.
 
 .. envvar:: TESTCASE
 
@@ -178,6 +204,12 @@ Environment Variables
     The file name where xUnit XML tests results are stored. If not provided, the default is :file:`results.xml`.
 
     .. versionadded:: 1.3
+
+.. envvar:: SCRIPT_FILE
+
+    The name of a simulator script that is run as part of the simulation, e.g. for setting up wave traces.
+    You can usually write out such a file from the simulator's GUI.
+    This is currently supported for the Mentor Questa, Mentor ModelSim and Aldec Riviera simulators.
 
 
 Additional Environment Variables
@@ -251,3 +283,19 @@ Additional Environment Variables
     Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories
     :file:`lib`, :file:`include`, and :file:`makefiles`.
     You don't normally need to modify this.
+
+.. envvar:: GPI_EXTRA
+
+    A comma-separated list of extra libraries that are dynamically loaded at runtime.
+    A function from each of these libraries will be called as an entry point prior to elaboration, allowing these libraries to register
+    system functions and callbacks. Note that HDL objects cannot be accessed at this time.
+    The function name defaults to ``{library_name}_entry_point``, but a custom name can be specified using a ``:``, which follows an existing simulator convention.
+
+    For example:
+
+    * ``GPI_EXTRA=name`` will load ``libname.so`` with default entry point ``name_entry_point``.
+    * ``GPI_EXTRA=nameA:entryA,nameB:entryB`` will first load ``libnameA.so`` with entry point ``entryA`` , then load ``libnameB.so`` with entry point ``entryB``.
+
+    .. versionchanged:: 1.4.0
+        Support for the custom entry point via ``:`` was added.
+        Previously ``:`` was used as a separator between libraries instead of ``,``.

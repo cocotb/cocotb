@@ -13,25 +13,19 @@ TOPLEVEL := mean_sv
 
 PWD=$(shell pwd)
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
-
-VHDL_SOURCES = $(WPWD)/../hdl/mean_pkg.vhd
-VHDL_SOURCES += $(WPWD)/../hdl/mean.vhd
+VHDL_SOURCES = $(PWD)/../hdl/mean_pkg.vhd
+VHDL_SOURCES += $(PWD)/../hdl/mean.vhd
 
 ifeq ($(SIM),questa)
 COMPILE_ARGS = -mixedsvvh
 endif
 
-VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
+VERILOG_SOURCES = $(PWD)/../hdl/mean_sv.sv
 
 MODULE := test_mean
 
-ifeq ($(SIM),$(filter $(SIM),ius xcelium))
-   SIM_ARGS += -v93
+ifneq ($(filter $(SIM),ius xcelium),)
+    SIM_ARGS += -v93
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.inc

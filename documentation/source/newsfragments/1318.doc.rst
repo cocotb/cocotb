@@ -1,0 +1,1 @@
+If a makefile uses cocotb's :file:`Makefile.sim`, ``make help`` now lists the supported targets and variables.

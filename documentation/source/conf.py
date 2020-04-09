@@ -42,15 +42,15 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinxcontrib.makedomain',
-    'sphinx.ext.autosectionlabel',
     'sphinx.ext.inheritance_diagram',
     'cairosvgconverter',
     'breathe',
     'sphinx_issues',
     'sphinxarg.ext',
+    'sphinxcontrib.spelling',
     ]
 
-intersphinx_mapping = {'https://docs.python.org/3': None}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # Github repo
 issues_github_path = "cocotb/cocotb"
@@ -68,8 +68,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'cocotb'
-copyright = u'2014-{0}, PotentialVentures'.format(datetime.datetime.now().year)
+project = 'cocotb'
+copyright = '2014-{0}, PotentialVentures'.format(datetime.datetime.now().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -95,7 +95,14 @@ autoclass_content = "both"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = [
+    # these are compiled into a single file at build-time,
+    # so there is no need to build them separately:
+    "newsfragments/*.rst",
+    # unused outputs from breathe:
+    "generated/namespacelist.rst",
+    "generated/namespace/*.rst",
+    ]
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -234,8 +241,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'cocotb.tex', u'cocotb Documentation',
-   u'PotentialVentures', 'manual'),
+  ('index', 'cocotb.tex', 'cocotb Documentation',
+   'PotentialVentures', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -264,8 +271,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'cocotb', u'cocotb Documentation',
-     [u'PotentialVentures'], 1)
+    ('index', 'cocotb', 'cocotb Documentation',
+     ['PotentialVentures'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -278,8 +285,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'cocotb', u'cocotb Documentation',
-   u'PotentialVentures', 'cocotb', 'Coroutine Cosimulation TestBench \
+  ('index', 'cocotb', 'cocotb Documentation',
+   'PotentialVentures', 'cocotb', 'Coroutine Cosimulation TestBench \
      environment for efficient verification of RTL using Python.',
    'Miscellaneous'),
 ]
@@ -317,12 +324,6 @@ breathe_show_define_initializer = True
 
 # -- Extra setup for spelling check --------------------------------------------
 
-# Spelling check needs an additional module that is not installed by default.
-# Add it only if spelling check is requested so docs can be generated without it.
-
-if 'spelling' in sys.argv:
-    extensions.append("sphinxcontrib.spelling")
-
 # Spelling language.
 spelling_lang = 'en_US'
 tokenizer_lang = spelling_lang
@@ -334,6 +335,15 @@ spelling_ignore_pypi_package_names = False
 spelling_ignore_wiki_words = False
 spelling_show_suggestions = True
 
-# -- Setup for inheritance_diagram directive which uses graphviz ---------------
+# -- Extra setup for inheritance_diagram directive which uses graphviz ---------
 
 graphviz_output_format = 'svg'
+
+# -- Extra setup for towncrier -------------------------------------------------
+# see also https://towncrier.readthedocs.io/en/actual-freaking-docs/
+
+in_progress_notes = subprocess.check_output(['towncrier', '--draft'],
+                                            cwd='../..',
+                                            universal_newlines=True)
+with open('generated/master-notes.rst', 'w') as f:
+    f.write(in_progress_notes)

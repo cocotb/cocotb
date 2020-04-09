@@ -1,0 +1,5 @@
+The makefile variable
+:make:var:`COCOTB_NVC_TRACE`
+that was not supported for all simulators has been deprecated.
+Using it prints a deprecation warning and points to documentation (:ref:`simulator-support`)
+explaining how to replace it by other means.

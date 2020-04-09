@@ -1,6 +1,6 @@
-################
+****************
 Quickstart Guide
-################
+****************
 
 Installing cocotb
 =================
@@ -10,11 +10,15 @@ Pre-requisites
 
 Cocotb has the following requirements:
 
-* Python 2.7, Python 3.5+ (recommended)
+* Python 3.5+
 * Python-dev packages
 * GCC 4.8.1+ or Clang 3.3+ and associated development packages
 * GNU Make
 * A Verilog or VHDL simulator, depending on your RTL source code
+
+.. versionchanged:: 1.4 Dropped Python 2 support
+
+.. _installation_via_pip:
 
 Installation via PIP
 --------------------
@@ -27,12 +31,6 @@ Cocotb can be installed by running
 
     pip3 install cocotb
 
-or
-
-.. code-block:: bash
-
-    pip install cocotb
-
 For user local installation follow the
 `pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
 
@@ -41,8 +39,13 @@ To install the development version of cocotb:
 .. code-block:: bash
 
     git clone https://github.com/cocotb/cocotb
-    pip install -e ./cocotb
+    pip3 install -e ./cocotb
 
+.. note::
+
+    After installation, you should be able to execute ``cocotb-config``.
+    If it is not found, you need to append its location to the ``PATH`` environment variable.
+    This may happen when you use the ``--user`` option to ``pip``, in which case the location is documented :ref:`here <python:inst-alt-install-user>`.
 
 Native Linux Installation
 -------------------------
@@ -54,14 +57,14 @@ If a 32-bit simulator is being used then additional steps are needed, please see
 `our Wiki <https://github.com/cocotb/cocotb/wiki/Tier-2-Setup-Instructions>`_.
 
 Debian/Ubuntu-based
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
     sudo apt-get install git make gcc g++ swig python-dev
 
 Red Hat-based
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -254,6 +257,24 @@ writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 (see :meth:`~cocotb.handle.ModifiableObject.setimmediatevalue`).
 
+In addition to regular value assignments (deposits), signals can be forced
+to a predetermined value or frozen at their current value. To achieve this,
+the various actions described in :ref:`assignment-methods` can be used.
+
+.. code-block:: python3
+
+    # Deposit action
+    dut.my_signal <= 12
+    dut.my_signal <= Deposit(12)  # equivalent syntax
+
+    # Force action
+    dut.my_signal <= Force(12)    # my_signal stays 12 until released
+
+    # Release action
+    dut.my_signal <= Release()    # Reverts any force/freeze assignments
+
+    # Freeze action
+    dut.my_signal <= Freeze()     # my_signal stays at current value until released
 
 
 Reading values from signals
@@ -289,38 +310,38 @@ We can also cast the signal handle directly to an integer:
 Parallel and sequential execution
 ---------------------------------
 
-A :keyword:`yield` will run a function (that must be marked as a "coroutine", see :ref:`Coroutines`)
-sequentially, i.e. wait for it to complete.
-If a coroutine should be run "in the background", i.e. in parallel to other coroutines,
-the way to do this is to :func:`~cocotb.fork` it.
-The end of such a forked coroutine can be waited on by using :meth:`~cocotb.decorators.RunningCoroutine.join`.
+An :keyword:`await` will run an :keyword:`async` coroutine and wait for it to complete.
+The called coroutine "blocks" the execution of the current coroutine.
+Wrapping the call in :func:`~cocotb.fork` runs the coroutine concurrently, allowing the current coroutine to continue executing.
+At any time you can :keyword:`await` the result of the forked coroutine, which will block until the forked coroutine finishes.
 
 The following example shows these in action:
 
 .. code-block:: python3
 
-    @cocotb.coroutine
-    def reset_dut(reset_n, duration):
+    async def reset_dut(reset_n, duration_ns):
         reset_n <= 0
-        yield Timer(duration, units='ns')
+        await Timer(duration_ns, units='ns')
         reset_n <= 1
         reset_n._log.debug("Reset complete")
 
     @cocotb.test()
-    def parallel_example(dut):
+    async def parallel_example(dut):
         reset_n = dut.reset
 
-        # This will call reset_dut sequentially
         # Execution will block until reset_dut has completed
-        yield reset_dut(reset_n, 500)
+        await reset_dut(reset_n, 500)
         dut._log.debug("After reset")
 
-        # Call reset_dut in parallel with the 250 ns timer
-        reset_thread = cocotb.fork(reset_dut(reset_n, 500))
+        # Run reset_dut concurrently
+        reset_thread = cocotb.fork(reset_dut(reset_n, duration_ns=500))
 
-        yield Timer(250, units='ns')
+        # This timer will complete before the timer in the concurrently executing "reset_thread"
+        await Timer(250, units='ns')
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
 
         # Wait for the other thread to complete
-        yield reset_thread.join()
+        await reset_thread
         dut._log.debug("After reset")
+
+See :ref:`coroutines` for more examples of what can be done with coroutines.

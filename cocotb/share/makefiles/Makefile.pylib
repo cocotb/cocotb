@@ -27,22 +27,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# All common pyhon related rules
+# All common python related rules, kept only for downstream C extensions modules
+# which copy the pattern of the endian_swapper HAL example. In future these modules
+# should use `setuptools` to build their HAL interface
 
 NATIVE_ARCH=$(shell uname -m)
 ARCH?=$(NATIVE_ARCH)
 
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib.$(OS)
-
-export LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(PYTHON_LIBDIR)
-
-#debug::
-#	@echo "Debug from Makefile.pylib"
-#	@echo -e "\tUsing PYTHON_VERSION=$(PYTHON_VERSION)"
-#	@echo -e "\tUsing PYTHON_LIBDIR=$(PYTHON_LIBDIR)"
-#	@echo -e "\tUsing PYTHON_DYN_LIB=$(PYTHON_DYN_LIB)"
-#	@echo -e "\tUsing PYTHON_DYNLIBDIR=$(PYTHON_DYNLIBDIR)"
-#	@echo -e "\tUsing PYTHON_INCLUDEDIR=$(PYTHON_INCLUDEDIR)"
-#	file $(PYTHON_LIBDIR)/$(PYTHON_DYN_LIB)
-#	file -L $(PYTHON_LIBDIR)/$(PYTHON_DYN_LIB)
-

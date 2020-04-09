@@ -15,16 +15,16 @@ RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
        g++ \
        flex \
        bison \
-       python2.7-dev python3-dev\
-       python-pip \
-       python-setuptools \
+       python3-dev\
+       python3-pip \
+       python3-setuptools \
        python3 \
        virtualenv \
        python3-venv \
        swig \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
-    && pip install --upgrade pip \
+    && pip3 install --upgrade pip \
     && g++ --version
 
 # Icarus Verilog

@@ -37,7 +37,7 @@ import threading
 import time
 import cocotb
 import pdb
-from cocotb.result import ReturnValue, TestFailure
+from cocotb.result import TestFailure
 from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge, ReadWrite
 from cocotb.clock import Clock
 from cocotb.decorators import external
@@ -59,7 +59,7 @@ def yield_to_readwrite(dut):
     yield RisingEdge(dut.clk)
     dut._log.info("Returning from yield_to_readwrite")
     yield Timer(1, "ns")
-    raise ReturnValue(2)
+    return 2
 
 
 def calls_cocotb_function(dut):
@@ -112,7 +112,8 @@ def wait_cycles(dut, n):
 def wait_cycles_wrapper(dut, n):
     return wait_cycles(dut, n)
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_time_in_external_yield(dut):
     """Test that an external function calling back into a cocotb function
     takes the expected amount of time"""
@@ -128,7 +129,8 @@ def test_time_in_external_yield(dut):
             if expected_after != time_after:
                 raise TestFailure("Wrong time elapsed in external call")
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_ext_call_return(dut):
     """Test ability to yield on an external non cocotb coroutine decorated
     function"""
@@ -159,14 +161,16 @@ def test_external_from_readonly(dut):
     value = yield external(return_two)(dut)
     assert value == 2
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_external_that_yields(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
     value = yield external(calls_cocotb_function)(dut)
     assert value == 2
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_external_and_continue(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
@@ -179,9 +183,10 @@ def test_external_and_continue(dut):
 @cocotb.coroutine
 def run_external(dut):
     value = yield external(calls_cocotb_function)(dut)
-    raise ReturnValue(value)
+    return value
 
-@cocotb.test()
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def test_external_from_fork(dut):
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
@@ -264,8 +269,7 @@ def test_function_returns_exception(dut):
 
     @cocotb.function
     def func():
-        # avoid using `return` syntax here since that requires Python >= 3.3
-        raise ReturnValue(ValueError())
+        return ValueError()
         yield
 
     @external
@@ -288,24 +292,25 @@ def test_function_from_weird_thread_fails(dut):
     # workaround for gh-637
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
-    # workaround the lack of `nonlocal` in Python 2
-    class vals:
-        func_started = False
-        caller_resumed = False
-        raised = False
+    func_started = False
+    caller_resumed = False
+    raised = False
 
     @cocotb.function
     def func():
-        vals.started = True
+        nonlocal func_started
+        func_started = True
         yield Timer(10)
 
     def function_caller():
+        nonlocal raised
+        nonlocal caller_resumed
         try:
             func()
         except RuntimeError:
-            vals.raised = True
+            raised = True
         finally:
-            vals.caller_resumed = True
+            caller_resumed = True
 
     @external
     def ext():
@@ -319,9 +324,9 @@ def test_function_from_weird_thread_fails(dut):
 
     yield Timer(20)
 
-    assert vals.caller_resumed, "Caller was never resumed"
-    assert not vals.func_started, "Function should never have started"
-    assert vals.raised, "No exception was raised to warn the user"
+    assert caller_resumed, "Caller was never resumed"
+    assert not func_started, "Function should never have started"
+    assert raised, "No exception was raised to warn the user"
 
     yield task.join()
 
@@ -337,7 +342,7 @@ def test_function_called_in_parallel(dut):
     @cocotb.function
     def function(x):
         yield Timer(1)
-        raise ReturnValue(x)
+        return x
 
     @cocotb.external
     def call_function(x):

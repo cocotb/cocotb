@@ -59,12 +59,6 @@ we have to create a process with the signal on the sensitivity list to imitate a
 
 #include <gpi_logging.h>
 
-#if defined(__MINGW32__) || defined (__CYGWIN32__)
-#  define DLLEXPORT __declspec(dllexport)
-#else
-#  define DLLEXPORT
-#endif
-
 #ifdef __cplusplus
 # define EXTERN_C_START extern "C" {
 # define EXTERN_C_END }
@@ -78,7 +72,36 @@ we have to create a process with the signal on the sensitivity list to imitate a
 # define __attribute__(x)
 #endif
 
-
+/*
+ * Declare the handle types.
+ *
+ * We want these handles to be opaque pointers, since their layout is not
+ * exposed to C. We do this by using incomplete types. The assumption being
+ * made here is that `sizeof(some_cpp_class*) == sizeof(some_c_struct*)`, which
+ * is true on all reasonable platforms.
+ */
+#ifdef __cplusplus
+    /* In C++, we use forward-declarations of the types in gpi_priv.h as our
+     * incomplete types, as this avoids the need for any casting in GpiCommon.cpp.
+     */
+    class GpiObjHdl;
+    class GpiCbHdl;
+    class GpiIterator;
+    typedef GpiObjHdl *gpi_sim_hdl;
+    typedef GpiCbHdl *gpi_cb_hdl;
+    typedef GpiIterator *gpi_iterator_hdl;
+#else
+    /* In C, we declare some incomplete struct types that we never complete.
+     * The names of these are irrelevant, but for simplicity they match the C++
+     * names.
+     */
+    struct GpiObjHdl;
+    struct GpiCbHdl;
+    struct GpiIterator;
+    typedef struct GpiObjHdl *gpi_sim_hdl;
+    typedef struct GpiCbHdl *gpi_cb_hdl;
+    typedef struct GpiIterator *gpi_iterator_hdl;
+#endif
 
 EXTERN_C_START
 
@@ -96,12 +119,6 @@ typedef struct gpi_sim_info_s
     char      *version;
     int32_t   *reserved[4];
 } gpi_sim_info_t;
-
-// Define a type for our simulation handle.
-typedef void * gpi_sim_hdl;
-
-// Define a handle type for iterators
-typedef void * gpi_iterator_hdl;
 
 // Functions for controlling/querying the simulation state
 
@@ -150,6 +167,11 @@ typedef enum gpi_iterator_sel_e {
     GPI_LOADS = 3,
 } gpi_iterator_sel_t;
 
+typedef enum gpi_set_action_e {
+    GPI_DEPOSIT = 0,
+    GPI_FORCE = 1,
+    GPI_RELEASE = 2,
+} gpi_set_action_t;
 
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls
@@ -195,9 +217,10 @@ int gpi_is_constant(gpi_sim_hdl gpi_hdl);
 int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 
 // Functions for setting the properties of a handle
-void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value);
-void gpi_set_signal_value_long(gpi_sim_hdl gpi_hdl, long value);
-void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str);    // String of binary char(s) [1, 0, x, z]
+void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value, gpi_set_action_t action);
+void gpi_set_signal_value_long(gpi_sim_hdl gpi_hdl, long value, gpi_set_action_t action);
+void gpi_set_signal_value_binstr(gpi_sim_hdl gpi_hdl, const char *str, gpi_set_action_t action); // String of binary char(s) [1, 0, x, z]
+void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str, gpi_set_action_t action);    // String of ASCII char(s)
 
 typedef enum gpi_edge {
     GPI_RISING = 1,
@@ -205,19 +228,19 @@ typedef enum gpi_edge {
 } gpi_edge_e;
 
 // The callback registering functions
-gpi_sim_hdl gpi_register_timed_callback                  (int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
-gpi_sim_hdl gpi_register_value_change_callback           (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, unsigned int edge);
-gpi_sim_hdl gpi_register_readonly_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_nexttime_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
-gpi_sim_hdl gpi_register_readwrite_callback              (int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_timed_callback                  (int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
+gpi_cb_hdl gpi_register_value_change_callback           (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
+gpi_cb_hdl gpi_register_readonly_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_nexttime_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_readwrite_callback              (int (*gpi_function)(const void *), void *gpi_cb_data);
 
 // Calling convention is that 0 = success and negative numbers a failure
 // For implementers of GPI the provided macro GPI_RET(x) is provided
-void gpi_deregister_callback(gpi_sim_hdl gpi_hdl);
+void gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
 
 // Because the internal structures may be different for different implementations
 // of GPI we provide a convenience function to extract the callback data
-void *gpi_get_callback_data(gpi_sim_hdl gpi_hdl);
+void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
 
 // Print out what implementations are registered. Python needs to be loaded for this,
 // Returns the number of libs

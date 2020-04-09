@@ -34,7 +34,9 @@ import sys
 import logging
 import warnings
 
-from cocotb.utils import get_sim_time, want_color_output
+from cocotb.utils import (
+    get_sim_time, get_time_from_sim_steps, want_color_output
+)
 
 import cocotb.ANSI as ANSI
 
@@ -51,20 +53,55 @@ _LINENO_CHARS   = 4  # noqa
 _FUNCNAME_CHARS = 31  # noqa
 
 
+def default_config():
+    """ Apply the default cocotb log formatting to the root logger.
+
+    This hooks up the logger to write to stdout, using either
+    :class:`SimColourLogFormatter` or :class:`SimLogFormatter` depending
+    on whether colored output is requested. It also adds a
+    :class:`SimTimeContextFilter` filter so that
+    :attr:`~logging.LogRecord.created_sim_time` is available to the formatter.
+
+    The logging level for cocotb logs is set based on the
+    :envvar:`COCOTB_LOG_LEVEL` environment variable, which defaults to ``INFO``.
+
+    If desired, this logging configuration can be overwritten by calling
+    ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards), or by
+    manually resetting the root logger instance, for which examples can be
+    found online.
+    """
+    # construct an appropriate handler
+    hdlr = logging.StreamHandler(sys.stdout)
+    hdlr.addFilter(SimTimeContextFilter())
+    if want_color_output():
+        hdlr.setFormatter(SimColourLogFormatter())
+    else:
+        hdlr.setFormatter(SimLogFormatter())
+
+
+    logging.setLoggerClass(SimBaseLog)  # For backwards compatibility
+    logging.basicConfig()
+    logging.getLogger().handlers = [hdlr]  # overwrite default handlers
+
+    # apply level settings for cocotb
+    log = logging.getLogger('cocotb')
+    level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
+    try:
+        _default_log = getattr(logging, level)
+    except AttributeError:
+        log.error("Unable to set logging level to %r" % level)
+        _default_log = logging.INFO
+    log.setLevel(_default_log)
+
+    # Notify GPI of log level, which it uses as an optimization to avoid
+    # calling into Python.
+    if "COCOTB_SIM" in os.environ:
+        from cocotb import simulator
+        simulator.log_level(_default_log)
+
+
 class SimBaseLog(logging.getLoggerClass()):
-    def __init__(self, name):
-        super(SimBaseLog, self).__init__(name)
-
-        # customizations of the defaults
-        hdlr = logging.StreamHandler(sys.stdout)
-
-        if want_color_output():
-            hdlr.setFormatter(SimColourLogFormatter())
-        else:
-            hdlr.setFormatter(SimLogFormatter())
-
-        self.propagate = False
-        self.addHandler(hdlr)
+    """ This class only exists for backwards compatibility """
 
     @property
     def logger(self):
@@ -91,8 +128,43 @@ def SimLog(name, ident=None):
     return logging.getLogger(name)
 
 
+class SimTimeContextFilter(logging.Filter):
+    """
+    A filter to inject simulator times into the log records.
+
+    This uses the approach described in the :ref:`Python logging cookbook <python:filters-contextual>`.
+
+    This adds the :attr:`~logging.LogRecord.created_sim_time` attribute.
+    """
+
+    # needed to make our docs render well
+    def __init__(self):
+        """ Takes no arguments """
+        super().__init__()
+
+    def filter(self, record):
+        try:
+            record.created_sim_time = get_sim_time()
+        except RecursionError:
+            # get_sim_time may try to log - if that happens, we can't
+            # attach a simulator time to this message.
+            record.created_sim_time = None
+        return True
+
+
 class SimLogFormatter(logging.Formatter):
-    """Log formatter to provide consistent log message handling."""
+    """Log formatter to provide consistent log message handling.
+
+    This will only add simulator timestamps if the handler object this
+    formatter is attached to has a :class:`SimTimeContextFilter` filter
+    attached, which cocotb ensures by default.
+    """
+
+    # Removes the arguments from the base class. Docstring needed to make
+    # sphinx happy.
+    def __init__(self):
+        """ Takes no arguments. """
+        super().__init__()
 
     # Justify and truncate
     @staticmethod
@@ -108,9 +180,13 @@ class SimLogFormatter(logging.Formatter):
         return string.rjust(chars)
 
     def _format(self, level, record, msg, coloured=False):
-        time_ns = get_sim_time('ns')
-        simtime = "%6.2fns" % (time_ns)
-        prefix = simtime.rjust(11) + ' ' + level + ' '
+        sim_time = getattr(record, 'created_sim_time', None)
+        if sim_time is None:
+            sim_time_str = "  -.--ns"
+        else:
+            time_ns = get_time_from_sim_steps(sim_time, 'ns')
+            sim_time_str = "{:6.2f}ns".format(time_ns)
+        prefix = sim_time_str.rjust(11) + ' ' + level + ' '
         if not _suppress:
             prefix += self.ljust(record.name, _RECORD_CHARS) + \
                       self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
@@ -136,12 +212,8 @@ class SimLogFormatter(logging.Formatter):
 
     def format(self, record):
         """Prettify the log output, annotate with simulation time"""
-        if record.args:
-            msg = record.msg % record.args
-        else:
-            msg = record.msg
 
-        msg = str(msg)
+        msg = record.getMessage()
         level = record.levelname.ljust(_LEVEL_CHARS)
 
         return self._format(level, record, msg)
@@ -161,10 +233,7 @@ class SimColourLogFormatter(SimLogFormatter):
     def format(self, record):
         """Prettify the log output, annotate with simulation time"""
 
-        if record.args:
-            msg = record.msg % record.args
-        else:
-            msg = record.msg
+        msg = record.getMessage()
 
         # Need to colour each line in case coloring is applied in the message
         msg = '\n'.join([SimColourLogFormatter.loglevel2colour[record.levelno] % line for line in msg.split('\n')])

@@ -38,17 +38,16 @@ Global variables:
     share_dir: str, path where the cocotb data is stored
     makefiles_dir: str, path where the cocotb makefiles are installed
 """
+import argparse
 import os
 import sys
 import cocotb
-import argparse
-
 
 __all__ = ["share_dir", "makefiles_dir"]
 
 
-share_dir = os.path.join(os.path.dirname(cocotb.__file__), 'share')
-makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__), 'share', 'makefiles')
+share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
+makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__), "share", "makefiles")
 
 
 class PrintAction(argparse.Action):
@@ -64,23 +63,53 @@ class PrintAction(argparse.Action):
 def get_parser():
     prefix_dir = os.path.dirname(os.path.dirname(cocotb.__file__))
     version = cocotb.__version__
+    python_bin = sys.executable
 
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--prefix', help='echos the package-prefix of cocotb', action=PrintAction, text=prefix_dir)
-    parser.add_argument('--share', help='echos the package-share of cocotb', action=PrintAction, text=share_dir)
-    parser.add_argument('--makefiles', help='echos the package-makefiles of cocotb', action=PrintAction, text=makefiles_dir)
-    parser.add_argument('-v', '--version', help='echos version of cocotb', action=PrintAction, text=version)
+    parser.add_argument(
+        "--prefix",
+        help="echo the package-prefix of cocotb",
+        action=PrintAction,
+        text=prefix_dir,
+    )
+    parser.add_argument(
+        "--share",
+        help="echo the package-share of cocotb",
+        action=PrintAction,
+        text=share_dir,
+    )
+    parser.add_argument(
+        "--makefiles",
+        help="echo the package-makefiles of cocotb",
+        action=PrintAction,
+        text=makefiles_dir,
+    )
+    parser.add_argument(
+        "--python-bin",
+        help="echo the path to the Python binary cocotb is installed for",
+        action=PrintAction,
+        text=python_bin,
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        help="echo the version of cocotb",
+        action=PrintAction,
+        text=version,
+    )
+
     return parser
 
 
 def main():
     parser = get_parser()
 
-    if len(sys.argv)==1:
+    if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
         sys.exit(1)
 
     args = parser.parse_args()
+
 
 if __name__ == "__main__":
     main()

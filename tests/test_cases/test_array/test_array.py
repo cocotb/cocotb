@@ -40,6 +40,12 @@ def _check_real(tlog, hdl, expected):
     else:
         tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, float(hdl)))
 
+def _check_value(tlog, hdl, expected):
+    if hdl.value != expected:
+        raise TestFailure("{2!r}: Expected >{0}< but got >{1}<".format(expected, hdl.value, hdl))
+    else:
+        tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, hdl.value))
+
 # NOTE: simulator-specific handling is done in this test itself, not via expect_error in the decorator
 @cocotb.test()
 def test_read_write(dut):
@@ -107,6 +113,14 @@ def test_read_write(dut):
     tlog.info("Writing the signals!!!")
     dut.sig_logic         = 1
     dut.sig_logic_vec     = 0xCC
+    dut.sig_t2 = [0xCC, 0xDD, 0xEE, 0xFF]
+    dut.sig_t4 = [
+        [0x00, 0x11, 0x22, 0x33],
+        [0x44, 0x55, 0x66, 0x77],
+        [0x88, 0x99, 0xAA, 0xBB],
+        [0xCC, 0xDD, 0xEE, 0xFF]
+    ]
+
     if cocotb.LANGUAGE in ["vhdl"]:
         dut.sig_bool          = 1
         dut.sig_int           = 5000
@@ -131,6 +145,11 @@ def test_read_write(dut):
     tlog.info("Checking writes:")
     _check_logic(tlog, dut.port_logic_out    , 1)
     _check_logic(tlog, dut.port_logic_vec_out, 0xCC)
+    _check_value(tlog, dut.sig_t2, [0xCC, 0xDD, 0xEE, 0xFF])
+    _check_logic(tlog, dut.sig_t2[7], 0xCC)
+    _check_logic(tlog, dut.sig_t2[4], 0xFF)
+    _check_logic(tlog, dut.sig_t4[1][5], 0x66)
+    _check_logic(tlog, dut.sig_t4[3][7], 0xCC)
 
     if cocotb.LANGUAGE in ["vhdl"]:
         _check_int (tlog, dut.port_bool_out, 1)

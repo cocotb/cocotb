@@ -8,13 +8,9 @@ clean::
 
 else
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 SRC_BASE = $(COCOTB)/tests/designs/uart2bus
 
@@ -40,7 +36,7 @@ ifeq ($(SIM),$(filter $(SIM),ius xcelium))
     SIM_ARGS += -v93
 endif
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif

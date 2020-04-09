@@ -27,9 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-from cocotb import _py_compat
-
 import os
 import random
 import warnings
@@ -64,13 +61,13 @@ def _clog2(val):
         exp += 1
 
 
-class BinaryRepresentation():  # noqa
+class BinaryRepresentation:  # noqa
     UNSIGNED         = 0  #: Unsigned format
     SIGNED_MAGNITUDE = 1  #: Sign and magnitude format
     TWOS_COMPLEMENT  = 2  #: Two's complement format
 
 
-class BinaryValue(object):
+class BinaryValue:
     """Representation of values in binary format.
 
     The underlying value can be set or accessed using these aliasing attributes:
@@ -87,8 +84,8 @@ class BinaryValue(object):
     >>> vec.integer = 42
     >>> print(vec.binstr)
     101010
-    >>> print(repr(vec.buff))
-    '*'
+    >>> print(vec.buff)
+    b'*'
 
     """
     _resolve_to_0     = "-lL"  # noqa
@@ -146,22 +143,30 @@ class BinaryValue(object):
     def assign(self, value):
         """Decides how best to assign the value to the vector.
 
-        We possibly try to be a bit too clever here by first of
-        all trying to assign the raw string as a :attr:`BinaryValue.binstr`,
-        however if the string contains any characters that aren't
-        ``0``, ``1``, ``X`` or ``Z``
-        then we interpret the string as a binary buffer.
+        Picks from the type of its argument whether to set :attr:`integer`,
+        :attr:`binstr`, or :attr:`buff`.
 
         Args:
-            value (str or int or long): The value to assign.
+            value (str or int or bytes): The value to assign.
+
+        .. versionchanged:: 1.4
+
+            This no longer falls back to setting :attr:`buff` if a :class:`str`
+            containining any characters that aren't ``0``, ``1``, ``X`` or ``Z``
+            is used, since :attr:`buff` now accepts only :class:`bytes`. Instead,
+            an error is raised.
         """
-        if isinstance(value, _py_compat.integer_types):
-            self.value = value
+        if isinstance(value, int):
+            self.integer = value
         elif isinstance(value, str):
-            try:
-                self.binstr = value
-            except ValueError:
-                self.buff = value
+            self.binstr = value
+        elif isinstance(value, bytes):
+            self.buff = value
+        else:
+            raise TypeError(
+                "value must be int, str, or bytes, not {!r}"
+                .format(type(value).__name__)
+            )
 
     def _convert_to_unsigned(self, x):
         x = bin(x)
@@ -282,12 +287,30 @@ class BinaryValue(object):
             rv = x
         return rv
 
-    def get_value(self):
-        """Return the integer representation of the underlying vector."""
+    @property
+    def integer(self):
+        """The integer representation of the underlying vector."""
         return self._convert_from[self.binaryRepresentation](self._str)
 
-    def get_value_signed(self):
-        """Return the signed integer representation of the underlying vector."""
+    @integer.setter
+    def integer(self, val):
+        self._str = self._convert_to[self.binaryRepresentation](val)
+
+    @property
+    def value(self):
+        """Integer access to the value. **deprecated**"""
+        return self.integer
+
+    @value.setter
+    def value(self, val):
+        self.integer = val
+
+    get_value = value.fget
+    set_value = value.fset
+
+    @property
+    def signed_integer(self):
+        """The signed integer representation of the underlying vector."""
         ival = int(resolve(self._str), 2)
         bits = len(self._str)
         signbit = (1 << (bits - 1))
@@ -296,55 +319,53 @@ class BinaryValue(object):
         else:
             return -1 * (1 + (int(~ival) & (signbit - 1)))
 
-    def set_value(self, integer):
-        self._str = self._convert_to[self.binaryRepresentation](integer)
+    @signed_integer.setter
+    def signed_integer(self, val):
+        self.integer = val
+
+    get_value_signed = signed_integer.fget
 
     @property
     def is_resolvable(self):
         """Does the value contain any ``X``'s?  Inquiring minds want to know."""
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
 
-    value = property(get_value, set_value, None,
-                     "Integer access to the value. **deprecated**")
-    integer = property(get_value, set_value, None,
-                       "The integer representation of the underlying vector.")
-    signed_integer = property(get_value_signed, set_value, None,
-                              "The signed integer representation of the underlying vector.")
+    @property
+    def buff(self) -> bytes:
+        r"""The value as a binary string buffer.
 
-    def get_buff(self):
-        """Attribute :attr:`buff` represents the value as a binary string buffer.
-
-        >>> "0100000100101111".buff == "\x41\x2F"
+        >>> BinaryValue("01000001" + "00101111").buff == b"\x41\x2F"
         True
+
+        .. versionchanged:: 1.4
+            This changed from :class:`str` to :class:`bytes`.
+            Note that for older versions used with Python 2 these types were
+            indistinguishable.
         """
         bits = resolve(self._str)
 
         if len(bits) % 8:
             bits = "0" * (8 - len(bits) % 8) + bits
 
-        buff = ""
+        buff = []
         while bits:
             byte = bits[:8]
             bits = bits[8:]
             val = int(byte, 2)
             if self.big_endian:
-                buff += chr(val)
+                buff += [val]
             else:
-                buff = chr(val) + buff
-        return buff
+                buff = [val] + buff
+        return bytes(buff)
 
-    def get_hex_buff(self):
-        bstr = self.get_buff()
-        hstr = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
-        return hstr
-
-    def set_buff(self, buff):
+    @buff.setter
+    def buff(self, val: bytes):
         self._str = ""
-        for char in buff:
+        for char in val:
             if self.big_endian:
-                self._str += "{0:08b}".format(ord(char))
+                self._str += "{0:08b}".format(char)
             else:
-                self._str = "{0:08b}".format(ord(char)) + self._str
+                self._str = "{0:08b}".format(char) + self._str
         self._adjust()
 
     def _adjust(self):
@@ -362,35 +383,34 @@ class BinaryValue(object):
                   "(%d -> %d)" % (l, self._n_bits))
             self._str = self._str[l - self._n_bits:]
 
-    buff = property(get_buff, set_buff, None,
-                    "Access to the value as a buffer.")
+    get_buff = buff.fget
+    set_buff = buff.fset
 
-    def get_binstr(self):
-        """Attribute :attr:`binstr` is the binary representation stored as
-        a string of ``1`` and ``0``."""
+    @property
+    def binstr(self):
+        """ The binary representation stored as a string of ``0``, ``1``, and possibly ``x``, ``z``, and other states. """
         return self._str
 
-    def set_binstr(self, string):
+    @binstr.setter
+    def binstr(self, string):
         for char in string:
             if char not in BinaryValue._permitted_chars:
                 raise ValueError("Attempting to assign character %s to a %s" %
-                                 (char, self.__class__.__name__))
+                                 (char, type(self).__name__))
         self._str = string
         self._adjust()
 
-    binstr = property(get_binstr, set_binstr, None,
-                      "Access to the binary string.")
+    get_binstr = binstr.fget
+    set_binstr = binstr.fset
 
-    def _get_n_bits(self):
+    @property
+    def n_bits(self):
         """The number of bits of the binary value."""
         return self._n_bits
 
-    n_bits = property(_get_n_bits, None, None,
-                      "Access to the number of bits of the binary value.")
-
     def hex(self):
         try:
-            return hex(self.get_value())
+            return hex(self.integer)
         except Exception:
             return hex(int(self.binstr, 2))
 
@@ -404,9 +424,6 @@ class BinaryValue(object):
         return self.__str__()
 
     def __bool__(self):
-        return self.__nonzero__()
-
-    def __nonzero__(self):
         """Provide boolean testing of a :attr:`binstr`.
 
         >>> val = BinaryValue("0000")
@@ -433,12 +450,6 @@ class BinaryValue(object):
         if isinstance(other, BinaryValue):
             other = other.value
         return self.value != other
-
-    def __cmp__(self, other):
-        """Comparison against other values"""
-        if isinstance(other, BinaryValue):
-            other = other.value
-        return self.value.__cmp__(other)
 
     def __int__(self):
         return self.integer
@@ -636,16 +647,16 @@ class BinaryValue(object):
                 _binstr = self.binstr[self._n_bits-1-index]
         rv = BinaryValue(n_bits=len(_binstr), bigEndian=self.big_endian,
                          binaryRepresentation=self.binaryRepresentation)
-        rv.set_binstr(_binstr)
+        rv.binstr = _binstr
         return rv
 
     def __setitem__(self, key, val):
         """BinaryValue uses Verilog/VHDL style slices as opposed to Python style."""
-        if not isinstance(val, str) and not isinstance(val, _py_compat.integer_types):
+        if not isinstance(val, str) and not isinstance(val, int):
             raise TypeError('BinaryValue slices only accept string or integer values')
 
         # convert integer to string
-        if isinstance(val, _py_compat.integer_types):
+        if isinstance(val, int):
             if isinstance(key, slice):
                 num_slice_bits = abs(key.start - key.stop) + 1
             else:

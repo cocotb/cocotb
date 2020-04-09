@@ -1,5 +1,6 @@
+**********************************
 Welcome to Cocotb's documentation!
-==================================
+**********************************
 
 Contents:
 
@@ -9,6 +10,7 @@ Contents:
    introduction
    quickstart
    building
+   writing_testbenches
    coroutines
    triggers
    testbench_tools
@@ -20,13 +22,15 @@ Contents:
    examples
    troubleshooting
    simulator_support
+   extensions
    roadmap
    release_notes
 
 
 
+******************
 Indices and tables
-==================
+******************
 
 * :ref:`genindex`
 * :ref:`modindex`

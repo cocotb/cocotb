@@ -5,7 +5,7 @@ import cocotb
 from cocotb.result import TestFailure
 from cocotb.triggers import Timer
 
-import simulator
+from cocotb import simulator
 
 @cocotb.test()
 def test_in_vect_packed(dut):

@@ -47,7 +47,7 @@ def recursive_discovery(dut):
         count = 0
         for thing in parent:
             count += 1
-            tlog.info("Found %s.%s (%s)", parent._name, thing._name, type(thing))
+            tlog.debug("Found %s.%s (%s)", parent._name, thing._name, type(thing))
             count += dump_all_the_things(thing)
         return count
     total = dump_all_the_things(dut)
@@ -84,7 +84,7 @@ def dual_iteration(dut):
 
 @cocotb.test()
 def get_clock(dut):
-    dut._log.info("dut.aclk is %s", dut.aclk.__class__.__name__)
+    dut._log.info("dut.aclk is %s", type(dut.aclk).__name__)
     dut.aclk <= 0
     yield Timer(1)
     dut.aclk <= 1

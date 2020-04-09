@@ -39,7 +39,7 @@ from cocotb.bus import Bus
 from cocotb.log import SimLog
 
 
-class BitDriver(object):
+class BitDriver:
     """Drives a signal onto a single bit.
 
     Useful for exercising ready/valid flags.
@@ -89,7 +89,7 @@ class BitDriver(object):
                 yield edge
 
 
-class Driver(object):
+class Driver:
     """Class defining the standard interface for a driver within a testbench.
 
     The driver is responsible for serializing transactions onto the physical
@@ -102,7 +102,7 @@ class Driver(object):
 
         # Sub-classes may already set up logging
         if not hasattr(self, "log"):
-            self.log = SimLog("cocotb.driver.%s" % (self.__class__.__name__))
+            self.log = SimLog("cocotb.driver.%s" % (type(self).__name__))
 
         # Create an independent coroutine which can send stuff
         self._thread = cocotb.scheduler.add(self._send_thread())
@@ -299,8 +299,7 @@ class ValidatedBusDriver(BusDriver):
             ``(valid, invalid)`` cycles to insert.
     """
 
-    def __init__(self, entity, name, clock, **kwargs):
-        valid_generator = kwargs.pop("valid_generator", None)
+    def __init__(self, entity, name, clock, *, valid_generator=None, **kwargs):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
         self.set_valid_generator(valid_generator=valid_generator)
 

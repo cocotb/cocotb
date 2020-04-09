@@ -30,9 +30,17 @@
 ifeq ($(SIM),)
 all:
 	@echo "Skipping test_multi_dimension_array since icarus doesn't support indexing"
+
+clean::
+# nothing to clean, just define target in this branch
+
 else ifeq ($(shell echo $(SIM) | tr A-Z a-z),icarus)
 all:
 	@echo "Skipping test_multi_dimension_array since icarus doesn't support indexing"
+
+clean::
+# nothing to clean, just define target in this branch
+
 else
 
 include ../../designs/multi_dimension_array/Makefile

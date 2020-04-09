@@ -25,8 +25,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-include ../makefiles/Makefile.inc
-
 # distutils warnings are caused by an old version of virtualenv in travis
 export PYTHONWARNINGS = error,ignore::DeprecationWarning:distutils
 

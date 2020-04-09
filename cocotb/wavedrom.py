@@ -29,10 +29,9 @@ from collections import OrderedDict, defaultdict
 import cocotb
 from cocotb.bus import Bus
 from cocotb.triggers import RisingEdge, ReadOnly
-from cocotb.utils import reject_remaining_kwargs
 
 
-class Wavedrom(object):
+class Wavedrom:
     """Base class for a WaveDrom compatible tracer."""
     def __init__(self, obj):
 
@@ -114,7 +113,7 @@ class Wavedrom(object):
         return siglist
 
 
-class trace(object):
+class trace:
     """Context manager to enable tracing of signals.
 
     Arguments are an arbitrary number of signals or buses to trace.
@@ -129,11 +128,8 @@ class trace(object):
             j = waves.dumpj()
     """
 
-    def __init__(self, *args, **kwargs):
-        # emulate keyword-only arguments in python 2
-        self._clock = kwargs.pop("clk", None)
-        reject_remaining_kwargs('__init__', kwargs)
-
+    def __init__(self, *args, clk=None):
+        self._clock = clk
         self._signals = []
         for arg in args:
             self._signals.append(Wavedrom(arg))
@@ -144,12 +140,11 @@ class trace(object):
         if self._clock is None:
             raise ValueError("Trace requires a clock to sample")
 
-    @cocotb.coroutine
-    def _monitor(self):
+    async def _monitor(self):
         self._clocks = 0
         while True:
-            yield RisingEdge(self._clock)
-            yield ReadOnly()
+            await RisingEdge(self._clock)
+            await ReadOnly()
             if not self._enabled:
                 continue
             self._clocks += 1

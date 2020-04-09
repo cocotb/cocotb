@@ -39,18 +39,17 @@ import cocotb
 from cocotb.bus import Bus
 from cocotb.decorators import coroutine
 from cocotb.log import SimLog
-from cocotb.result import ReturnValue
 from cocotb.triggers import Event, Timer
 
 
-class MonitorStatistics(object):
+class MonitorStatistics:
     """Wrapper class for storing Monitor statistics"""
 
     def __init__(self):
         self.received_transactions = 0
 
 
-class Monitor(object):
+class Monitor:
     """Base class for Monitor objects.
 
     Monitors are passive 'listening' objects that monitor pins going in or out of a DUT.
@@ -83,7 +82,7 @@ class Monitor(object):
 
         # Sub-classes may already set up logging
         if not hasattr(self, "log"):
-            self.log = SimLog("cocotb.monitor.%s" % (self.__class__.__name__))
+            self.log = SimLog("cocotb.monitor.%s" % (type(self).__name__))
 
         if callback is not None:
             self.add_callback(callback)
@@ -129,12 +128,11 @@ class Monitor(object):
             t = Timer(timeout)
             fired = yield [self._wait_event.wait(), t]
             if fired is t:
-                raise ReturnValue(None)
+                return None
         else:
             yield self._wait_event.wait()
 
-        pkt = self._wait_event.data
-        raise ReturnValue(pkt)
+        return self._wait_event.data
 
     @coroutine
     def _monitor_recv(self):
@@ -196,4 +194,4 @@ class BusMonitor(Monitor):
         return False
 
     def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.name)
+        return "%s(%s)" % (type(self).__name__, self.name)

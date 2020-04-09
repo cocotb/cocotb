@@ -220,6 +220,7 @@ GpiObjHdl *FliImpl::create_gpi_obj_from_handle(void *hdl, std::string &name, std
 
 GpiObjHdl* FliImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 {
+    COCOTB_UNUSED(parent);
     LOG_DEBUG("Trying to convert a raw handle to an FLI Handle.");
 
     const char * c_name     = acc_fetch_name(raw_hdl);
@@ -411,6 +412,7 @@ GpiObjHdl*  FliImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
 const char *FliImpl::reason_to_string(int reason)
 {
+    COCOTB_UNUSED(reason);
     return "Who can explain it, who can tell you why?";
 }
 
@@ -423,8 +425,8 @@ const char *FliImpl::reason_to_string(int reason)
  */
 void FliImpl::get_sim_time(uint32_t *high, uint32_t *low)
 {
-    *high = mti_NowUpper();
-    *low = mti_Now();
+    *high = static_cast<uint32_t>(mti_NowUpper());  // these functions return a int32_t for some reason
+    *low = static_cast<uint32_t>(mti_Now());
 }
 
 void FliImpl::get_sim_precision(int32_t *precision)
@@ -1045,5 +1047,5 @@ void cocotb_init()
 
 } // extern "C"
 
-GPI_ENTRY_POINT(fli, register_embed);
+GPI_ENTRY_POINT(cocotbfli, register_embed);
 

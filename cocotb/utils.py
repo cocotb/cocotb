@@ -1,5 +1,3 @@
-from __future__ import print_function, division
-
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
@@ -38,7 +36,7 @@ import functools
 import warnings
 
 if "COCOTB_SIM" in os.environ:
-    import simulator
+    from cocotb import simulator
     _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
 else:
     simulator = None
@@ -49,8 +47,7 @@ def get_python_integer_types():
     warnings.warn(
         "This is an internal cocotb function, use six.integer_types instead",
         DeprecationWarning)
-    from cocotb import _py_compat
-    return _py_compat.integer_types
+    return (int,)
 
 
 # Simulator helper functions
@@ -203,86 +200,94 @@ def unpack(ctypes_obj, string, bytes=None):
 import cocotb.ANSI as ANSI
 
 
-def _sane_color(x):
+# A note on the use of latin1 in the deprecations below:
+# Latin1 is the only encoding `e` that satisfies
+# `all(chr(x).encode(e) == bytes([x]) for x in range(255))`
+# Our use of `ord` and `chr` throughout other bits of code make this the most
+# compatible choice of encoding. Under this convention, old code can be upgraded
+# by changing "binary" strings from `"\x12\x34"` to `b"\x12\x34"`.
+
+
+def _sane(x: bytes) -> str:
     r = ""
-    for i in x:
-        j = ord(i)
+    for j in x:
         if (j < 32) or (j >= 127):
             r += "."
         else:
-            r += i
+            r += chr(j)
     return r
 
 
-def hexdump(x):
+def hexdump(x: bytes) -> str:
     """Hexdump a buffer.
 
     Args:
-        x: Object that supports conversion via the ``str`` built-in.
+        x: Object that supports conversion to :class:`bytes`.
 
     Returns:
         A string containing the hexdump.
 
+    .. deprecated:: 1.4
+        Passing a :class:`str` to this function is deprecated, as it
+        is not an appropriate type for binary data. Doing so anyway
+        will encode the string to latin1.
+
     Example:
-        >>> print(hexdump('this somewhat long string'))
+        >>> print(hexdump(b'this somewhat long string'))
         0000   74 68 69 73 20 73 6F 6D 65 77 68 61 74 20 6C 6F   this somewhat lo
         0010   6E 67 20 73 74 72 69 6E 67                        ng string
         <BLANKLINE>
     """
     # adapted from scapy.utils.hexdump
     rs = ""
-    x = str(x)
+    if isinstance(x, str):
+        warnings.warn(
+            "Passing a string to hexdump is deprecated, pass bytes instead",
+            DeprecationWarning, stacklevel=2)
+        x = x.encode('latin1')
+    x = b"%b" % x
     l = len(x)
     i = 0
     while i < l:
         rs += "%04x   " % i
         for j in range(16):
             if i + j < l:
-                rs += "%02X " % ord(x[i + j])
+                rs += "%02X " % x[i + j]
             else:
                 rs += "   "
             if j % 16 == 7:
                 rs += ""
         rs += "  "
-        rs += _sane_color(x[i:i + 16]) + "\n"
+        rs += _sane(x[i:i + 16]) + "\n"
         i += 16
     return rs
 
 
-def hexdiffs(x, y):
-    """Return a diff string showing differences between two binary strings.
+def hexdiffs(x: bytes, y: bytes) -> str:
+    r"""Return a diff string showing differences between two binary strings.
 
     Args:
-        x: Object that supports conversion via the ``str`` built-in.
-        y: Object that supports conversion via the ``str`` built-in.
+        x: Object that supports conversion to :class:`bytes`.
+        y: Object that supports conversion to :class:`bytes`.
+
+    .. deprecated:: 1.4
+        Passing :class:`str`\ s to this function is deprecated, as it
+        is not an appropriate type for binary data. Doing so anyway
+        will encode the string to latin1.
 
     Example:
-        >>> print(hexdiffs(0, 1))
-        0000      30                                               0
-             0000 31                                               1
-        <BLANKLINE>
-        >>> print(hexdiffs('a', 'b'))
+        >>> print(hexdiffs(b'a', b'b'))
         0000      61                                               a
              0000 62                                               b
         <BLANKLINE>
-        >>> print(hexdiffs('this short thing', 'this also short'))
+        >>> print(hexdiffs(b'this short thing', b'this also short'))
         0000      746869732073686F 7274207468696E67 this short thing
              0000 7468697320616C73 6F  2073686F7274 this also  short
         <BLANKLINE>
     """
     # adapted from scapy.utils.hexdiff
 
-    def sane(x):
-        r = ""
-        for i in x:
-            j = ord(i)
-            if (j < 32) or (j >= 127):
-                r = r + "."
-            else:
-                r = r + i
-        return r
-
-    def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
+    def highlight(string: str, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT) -> str:
         """Highlight with ANSI colors if possible/requested and not running in GUI."""
 
         if want_color_output():
@@ -290,10 +295,22 @@ def hexdiffs(x, y):
         else:
             return string
 
+
+    x_is_str = isinstance(x, str)
+    y_is_str = isinstance(y, str)
+    if x_is_str or y_is_str:
+        warnings.warn(
+            "Passing strings to hexdiffs is deprecated, pass bytes instead",
+            DeprecationWarning, stacklevel=2)
+    if x_is_str:
+        x = x.encode('latin1')
+    if y_is_str:
+        y = y.encode('latin1')
+
     rs = ""
 
-    x = str(x)[::-1]
-    y = str(y)[::-1]
+    x = (b'%b' % x)[::-1]
+    y = (b'%b' % y)[::-1]
     SUBST = 1
     INSERT = 1
     d = {}
@@ -374,16 +391,17 @@ def hexdiffs(x, y):
         for j in range(16):
             if i + j < l:
                 if line[j]:
+                    char_j, = line[j]
                     if linex[j] != liney[j]:
-                        rs += highlight("%02X" % ord(line[j]),
+                        rs += highlight("%02X" % char_j,
                                         colour=ANSI.COLOR_HILITE_HEXDIFF_2)
                     else:
-                        rs += "%02X" % ord(line[j])
+                        rs += "%02X" % char_j
                     if linex[j] == liney[j]:
-                        cl += highlight(_sane_color(line[j]),
+                        cl += highlight(_sane(line[j]),
                                         colour=ANSI.COLOR_HILITE_HEXDIFF_3)
                     else:
-                        cl += highlight(sane(line[j]),
+                        cl += highlight(_sane(line[j]),
                                         colour=ANSI.COLOR_HILITE_HEXDIFF_4)
                 else:
                     rs += "  "
@@ -427,8 +445,7 @@ class ParametrizedSingleton(type):
         """Convert the construction arguments into a normalized representation that
         uniquely identifies this singleton.
         """
-        # Once we drop Python 2, we can implement a default like the following,
-        # which will work in 99% of cases:
+        # Could default to something like this, but it would be slow
         # return tuple(inspect.Signature(cls).bind(*args, **kwargs).arguments.items())
         raise NotImplementedError
 
@@ -459,7 +476,15 @@ def reject_remaining_kwargs(name, kwargs):
 
         def func(x1, *, a=1, b=2):
             ...
+
+    .. deprecated:: 1.4
+        Since the minimum supported Python version is now 3.5, this function
+        is not needed.
     """
+    warnings.warn(
+        "reject_remaining_kwargs is deprecated and will be removed, use "
+        "Python 3 keyword-only arguments directly.", DeprecationWarning,
+        stacklevel=2)
     if kwargs:
         # match the error message to what Python 3 produces
         bad_arg = next(iter(kwargs))
@@ -468,7 +493,7 @@ def reject_remaining_kwargs(name, kwargs):
         )
 
 
-class lazy_property(object):
+class lazy_property:
     """
     A property that is executed the first time, then cached forever.
 
@@ -539,11 +564,6 @@ def remove_traceback_frames(tb_or_exc, frame_names):
     # self-invoking overloads
     if isinstance(tb_or_exc, BaseException):
         exc = tb_or_exc
-        if sys.version_info < (3,):
-            raise RuntimeError(
-                "Cannot use remove_traceback_frames on exceptions in python 2. "
-                "Call it directly on the traceback object instead.")
-
         return exc.with_traceback(
             remove_traceback_frames(exc.__traceback__, frame_names)
         )

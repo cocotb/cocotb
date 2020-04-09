@@ -39,17 +39,11 @@ else
 
 TOPLEVEL := burst_read_master
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
-
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 VERILOG_SOURCES = $(COCOTB)/tests/designs/avalon_module/burst_read_master.v
 
-include $(COCOTB)/makefiles/Makefile.inc
-include $(COCOTB)/makefiles/Makefile.sim
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif

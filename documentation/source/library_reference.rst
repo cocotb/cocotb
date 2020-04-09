@@ -1,6 +1,6 @@
-#################
+*****************
 Library Reference
-#################
+*****************
 
 Test Results
 ============
@@ -42,6 +42,7 @@ Interacting with the Simulator
 .. autoclass:: BinaryValue
     :members:
     :member-order: bysource
+    :exclude-members: get_value, get_buff, get_binstr, get_value_signed
 
 .. autoclass:: cocotb.bus.Bus
     :members:
@@ -51,9 +52,9 @@ Interacting with the Simulator
 
 .. autofunction:: cocotb.fork
 
-.. autofunction:: cocotb.decorators.RunningCoroutine.join
+.. autofunction:: cocotb.decorators.RunningTask.join
 
-.. autofunction:: cocotb.decorators.RunningCoroutine.kill
+.. autofunction:: cocotb.decorators.RunningTask.kill
 
 Triggers
 --------
@@ -152,6 +153,38 @@ Utilities
     :member-order: bysource
     :synopsis: Various utilities for testbench writers.
 
+.. _logging-reference-section:
+
+Logging
+-------
+
+.. currentmodule:: cocotb.log
+
+.. autofunction:: default_config
+
+.. autoclass:: SimLogFormatter
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: SimColourLogFormatter
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: SimTimeContextFilter
+    :show-inheritance:
+    :no-members:
+
+.. currentmodule:: None
+
+.. attribute:: logging.LogRecord.created_sim_time
+
+    The result of :func:`get_sim_time` at the point the log was created
+    (in simulator units). The formatter is responsible for converting this
+    to something like nanoseconds via :func:`~cocotb.utils.get_time_from_sim_steps`.
+
+    This is added by :class:`cocotb.log.SimTimeContextFilter`.
+
+
 Simulation Object Handles
 =========================
 
@@ -166,6 +199,23 @@ Simulation Object Handles
     :show-inheritance:
     :synopsis: Classes for simulation objects.
 
+
+.. _assignment-methods:
+
+Assignment Methods
+------------------
+
+.. currentmodule:: cocotb.handle
+
+.. autoclass:: Deposit
+
+.. autoclass:: Force
+
+.. autoclass:: Freeze
+
+.. autoclass:: Release
+
+
 Implemented Testbench Structures
 ================================
 
@@ -173,7 +223,7 @@ Drivers
 -------
 
 AMBA
-~~~~
+^^^^
 
 Advanced Microcontroller Bus Architecture.
 
@@ -191,7 +241,7 @@ Advanced Microcontroller Bus Architecture.
 
 
 Avalon
-~~~~~~
+^^^^^^
 
 .. currentmodule:: cocotb.drivers.avalon
 
@@ -223,7 +273,7 @@ Avalon
 
 
 OPB
-~~~
+^^^
 
 .. currentmodule:: cocotb.drivers.opb
 
@@ -234,7 +284,7 @@ OPB
 
 
 XGMII
-~~~~~
+^^^^^
 
 .. currentmodule:: cocotb.drivers.xgmii
 
@@ -247,7 +297,7 @@ Monitors
 --------
 
 Avalon
-~~~~~~
+^^^^^^
 
 .. currentmodule:: cocotb.monitors.avalon
 
@@ -262,7 +312,7 @@ Avalon
     :show-inheritance:
 
 XGMII
-~~~~~
+^^^^^
 
 .. autoclass:: cocotb.monitors.xgmii.XGMII
     :members:

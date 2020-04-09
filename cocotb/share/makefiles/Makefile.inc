@@ -29,20 +29,12 @@
 
 # Common makefile included by everything
 
-# Directory containing the cocotb Python module
-ifeq ($(COCOTB_PY_DIR),)
-export COCOTB_PY_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST)))/../../..)
-endif
+# Directory containing the cocotb Python module (realpath for Windows compatibility)
+COCOTB_PY_DIR := $(realpath $(shell cocotb-config --prefix))
 
 # Directory containing all support files required to build cocotb-based
 # simulations: Makefile fragments, and the simulator libraries.
-ifeq ($(COCOTB_SHARE_DIR),)
-export COCOTB_SHARE_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
-endif
-
-ifeq ($(COCOTB_PY_DIR),$(COCOTB_SHARE_DIR))
-$(warning 'Deprecated cocotb file structure detected. Please use "include $$(shell cocotb-config --makefile)/Makefile.inc" in Makefiles')
-endif
+COCOTB_SHARE_DIR := $(COCOTB_PY_DIR)/cocotb/share
 
 ifeq ($(USER_DIR),)
 export USER_DIR:=$(realpath $(dir $(firstword $(MAKEFILE_LIST))))
@@ -62,53 +54,47 @@ OS=Msys
 endif
 export OS
 
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.paths
+# this ensures we use the same python as the one cocotb was installed into
+# realpath to convert windows paths to unix paths, like cygpath -u
+PYTHON_BIN ?= $(realpath $(shell cocotb-config --python-bin))
+
+include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
 
-export LIB_DIR=$(BUILD_DIR)/libs/$(ARCH)
-export LIB_OBJ_DIR:= $(BUILD_DIR)/obj/$(ARCH)
-export INCLUDES := -I$(COCOTB_SHARE_DIR)/include -I$(PYTHON_INCLUDEDIR)
+# Default to Icarus if no simulator is defined
+SIM ?= icarus
 
-LIB_EXT    := so
-PY_EXT     := so
+SIM_DEFINE := $(shell echo $(SIM) | tr a-z A-Z)
 
-BASE_WARNS := -Wall -Wextra -Wconversion -Wcast-qual -Wwrite-strings
-CC_WARNS   := $(BASE_WARNS) -Wstrict-prototypes -Waggregate-return
-CXX_WARNS  := $(BASE_WARNS) -Wnon-virtual-dtor -Woverloaded-virtual
-
-ifeq ($(OS),Darwin)
-CXX_ARGS   := -g -DDEBUG -fpic
-C_ARGS     := $(CXX_ARGS)
-else ifeq ($(OS),Msys)
-CXX_ARGS   := -g -DDEBUG -shared
-ifeq ($(ARCH),x86_64)
-CXX_ARGS   += -DMS_WIN64
+# Use a common define for Questa and Modelsim and cvc
+ifeq ($(SIM_DEFINE),$(filter $(SIM_DEFINE),QUESTA CVC))
+SIM_DEFINE = MODELSIM
 endif
-C_ARGS     := $(CXX_ARGS)
+
+# Use a common define for Xcelium and IUS
+ifeq ($(SIM_DEFINE),XCELIUM)
+SIM_DEFINE = IUS
+endif
+
+LIB_DIR=$(COCOTB_PY_DIR)/cocotb/libs
+
+ifeq ($(OS),Msys)
 LIB_EXT    := dll
-PY_EXT     := pyd
-else ifeq ($(OS),Linux)
-CXX_ARGS   := -fno-common -g -DDEBUG -fpic
-C_ARGS     := $(CXX_ARGS)
 else
-$(error "Unsupported os " $(OS))
+LIB_EXT    := so
 endif
 
-ifeq ($(ARCH),i686)
-CXX_ARGS   += -m32
-C_ARGS     += -m32
+# Set PYTHONHOME to properly populate sys.path in embedded python interpreter
+export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'from distutils.sysconfig import get_config_var; print(get_config_var("prefix"))')
+
+ifeq ($(OS),Msys)
+    # On Windows there is no support for @rpath/LD_LIBRARY_PATH so we need to set PATH to find cocotb libraries
+    # https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order?redirectedfrom=MSDN#standard-search-order-for-desktop-applications
+    export PATH := $(LIB_DIR):$(PATH)
 endif
 
-C_ARGS     += -std=gnu99
-CXX_ARGS   += -std=c++11
-
-ifeq ($(OS),Darwin)
-SO_LINKER_ARGS := -shared -undefined suppress -flat_namespace -L$(PYTHON_LIBDIR)
-else ifeq ($(OS),Linux)
-SO_LINKER_ARGS := -shared -Xlinker -L$(PYTHON_LIBDIR)
-else ifeq ($(OS),Msys)
-SO_LINKER_ARGS := -shared -Wl,-no-undefined -Wl,-enable-runtime-pseudo-reloc-v2 \
-                  -Wl,--enable-auto-import -L$(PYTHON_LIBDIR)
+ifeq ($(OS),Msys)
+    to_tcl_path = $(shell cygpath -m $(1) )
 else
-$(error "Unsupported os" $(OS))
+    to_tcl_path = $(1)
 endif

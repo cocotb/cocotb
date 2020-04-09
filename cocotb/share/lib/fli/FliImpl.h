@@ -51,10 +51,8 @@ public:
     FliProcessCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                               m_proc_hdl(NULL),
                                               m_sensitised(false) { }
-    virtual ~FliProcessCbHdl() { }
 
-    virtual int arm_callback() = 0;
-    virtual int cleanup_callback();
+    int cleanup_callback() override;
 
 protected:
     mtiProcessIdT       m_proc_hdl;
@@ -67,11 +65,10 @@ class FliSignalCbHdl : public FliProcessCbHdl, public GpiValueCbHdl {
 public:
     FliSignalCbHdl(GpiImplInterface *impl,
                    FliSignalObjHdl *sig_hdl,
-                   unsigned int edge);
+                   int edge);
 
-    virtual ~FliSignalCbHdl() { }
-    int arm_callback();
-    int cleanup_callback() {
+    int arm_callback() override;
+    int cleanup_callback() override {
         return FliProcessCbHdl::cleanup_callback();
     }
 
@@ -86,9 +83,8 @@ public:
     FliSimPhaseCbHdl(GpiImplInterface *impl, mtiProcessPriorityT priority) : GpiCbHdl(impl),
                                                                              FliProcessCbHdl(impl),
                                                                              m_priority(priority) { }
-    virtual ~FliSimPhaseCbHdl() { }
 
-    int arm_callback();
+    int arm_callback() override;
 
 protected:
     mtiProcessPriorityT         m_priority;
@@ -99,53 +95,47 @@ class FliReadWriteCbHdl : public FliSimPhaseCbHdl {
 public:
     FliReadWriteCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                 FliSimPhaseCbHdl(impl, MTI_PROC_SYNCH) { }
-    virtual ~FliReadWriteCbHdl() { }
 };
 
 class FliNextPhaseCbHdl : public FliSimPhaseCbHdl {
 public:
     FliNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                 FliSimPhaseCbHdl(impl, MTI_PROC_IMMEDIATE) { }
-    virtual ~FliNextPhaseCbHdl() { }
 };
 
 class FliReadOnlyCbHdl : public FliSimPhaseCbHdl {
 public:
     FliReadOnlyCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                FliSimPhaseCbHdl(impl, MTI_PROC_POSTPONED) { }
-    virtual ~FliReadOnlyCbHdl() { }
 };
 
 class FliStartupCbHdl : public FliProcessCbHdl {
 public:
     FliStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                               FliProcessCbHdl(impl) { }
-    virtual ~FliStartupCbHdl() { }
 
-    int arm_callback();
-    int run_callback();
+    int arm_callback() override;
+    int run_callback() override;
 };
 
 class FliShutdownCbHdl : public FliProcessCbHdl {
 public:
     FliShutdownCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                FliProcessCbHdl(impl) { }
-    virtual ~FliShutdownCbHdl() { }
 
-    int arm_callback();
-    int run_callback();
+    int arm_callback() override;
+    int run_callback() override;
 };
 
 class FliTimedCbHdl : public FliProcessCbHdl {
 public:
     FliTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
-    virtual ~FliTimedCbHdl() { }
 
-    int arm_callback();
+    int arm_callback() override;
     void reset_time(uint64_t new_time) {
         m_time_ps = new_time;
     }
-    int cleanup_callback();
+    int cleanup_callback() override;
 private:
     uint64_t m_time_ps;
 };
@@ -159,7 +149,7 @@ public:
                m_acc_type(acc_type),
                m_acc_full_type(acc_full_type) { }
 
-    virtual ~FliObj() { }
+    virtual ~FliObj() = default;
 
     int get_acc_type() { return m_acc_type; }
     int get_acc_full_type() { return m_acc_full_type; }
@@ -189,9 +179,8 @@ public:
                   GpiObjHdl(impl, hdl, objtype, is_const),
                   FliObj(acc_type, acc_full_type) { }
 
-    virtual ~FliObjHdl() { }
 
-    virtual int initialise(std::string &name, std::string &fq_name);
+    int initialise(std::string &name, std::string &fq_name) override;
 };
 
 class FliSignalObjHdl : public GpiSignalObjHdl, public FliObj {
@@ -210,10 +199,9 @@ public:
                         m_falling_cb(impl, this, GPI_FALLING),
                         m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
 
-    virtual ~FliSignalObjHdl() { }
 
-    virtual GpiCbHdl *value_change_cb(unsigned int edge);
-    virtual int initialise(std::string &name, std::string &fq_name);
+    GpiCbHdl *value_change_cb(int edge) override;
+    int initialise(std::string &name, std::string &fq_name) override;
 
     bool is_var() { return m_is_var; }
 
@@ -241,25 +229,26 @@ public:
                        m_val_buff(NULL),
                        m_sub_hdls(NULL) { }
 
-    virtual ~FliValueObjHdl() {
+    ~FliValueObjHdl() override {
         if (m_val_buff != NULL)
-            free(m_val_buff);
+            delete [] m_val_buff;
         if (m_sub_hdls != NULL)
             mti_VsimFree(m_sub_hdls);
     }
 
-    virtual const char* get_signal_value_binstr();
-    virtual const char* get_signal_value_str();
-    virtual double get_signal_value_real();
-    virtual long get_signal_value_long();
+    const char* get_signal_value_binstr() override;
+    const char* get_signal_value_str() override;
+    double get_signal_value_real() override;
+    long get_signal_value_long() override;
 
-    virtual int set_signal_value(const long value);
-    virtual int set_signal_value(const double value);
-    virtual int set_signal_value(std::string &value);
+    int set_signal_value(long value, gpi_set_action_t action) override;
+    int set_signal_value(double value, gpi_set_action_t action) override;
+    int set_signal_value_str(std::string &value, gpi_set_action_t action) override;
+    int set_signal_value_binstr(std::string &value, gpi_set_action_t action) override;
 
-    virtual void *get_sub_hdl(int index);
+    void *get_sub_hdl(int index);
 
-    virtual int initialise(std::string &name, std::string &fq_name);
+    int initialise(std::string &name, std::string &fq_name) override;
 
     mtiTypeKindT get_fli_typekind() { return m_fli_type; }
     mtiTypeIdT   get_fli_typeid() { return m_val_type; }
@@ -286,14 +275,14 @@ public:
                       m_value_enum(NULL),
                       m_num_enum(0) { }
 
-    virtual ~FliEnumObjHdl() { }
 
-    const char* get_signal_value_str();
-    long get_signal_value_long();
+    const char* get_signal_value_str() override;
+    long get_signal_value_long() override;
 
-    int set_signal_value(const long value);
+    using FliValueObjHdl::set_signal_value;
+    int set_signal_value(long value, gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name);
+    int initialise(std::string &name, std::string &fq_name) override;
 
 private:
     char             **m_value_enum;    // Do Not Free
@@ -325,17 +314,18 @@ public:
                        m_num_enum(0),
                        m_enum_map() { }
 
-    virtual ~FliLogicObjHdl() {
+    ~FliLogicObjHdl() override {
         if (m_mti_buff != NULL)
-            free(m_mti_buff);
+            delete [] m_mti_buff;
     }
 
-    const char* get_signal_value_binstr();
+    const char* get_signal_value_binstr() override;
 
-    int set_signal_value(const long value);
-    int set_signal_value(std::string &value);
+    using FliValueObjHdl::set_signal_value;
+    int set_signal_value(long value, gpi_set_action_t action) override;
+    int set_signal_value_binstr(std::string &value, gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name);
+    int initialise(std::string &name, std::string &fq_name) override;
 
 
 private:
@@ -358,14 +348,14 @@ public:
                  mtiTypeKindT typeKind) :
                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind) { }
 
-    virtual ~FliIntObjHdl() { }
 
-    const char* get_signal_value_binstr();
-    long get_signal_value_long();
+    const char* get_signal_value_binstr() override;
+    long get_signal_value_long() override;
 
-    int set_signal_value(const long value);
+    using FliValueObjHdl::set_signal_value;
+    int set_signal_value(long value, gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name);
+    int initialise(std::string &name, std::string &fq_name) override;
 };
 
 class FliRealObjHdl : public FliValueObjHdl {
@@ -382,16 +372,17 @@ public:
                       FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind),
                       m_mti_buff(NULL) { }
 
-    virtual ~FliRealObjHdl() {
+    ~FliRealObjHdl() override {
         if (m_mti_buff != NULL)
-            free(m_mti_buff);
+            delete m_mti_buff;
     }
 
-    double get_signal_value_real();
+    double get_signal_value_real() override;
 
-    int set_signal_value(const double value);
+    using FliValueObjHdl::set_signal_value;
+    int set_signal_value(double value, gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name);
+    int initialise(std::string &name, std::string &fq_name) override;
 
 private:
     double *m_mti_buff;
@@ -411,16 +402,17 @@ public:
                       FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind),
                       m_mti_buff(NULL) { }
 
-    virtual ~FliStringObjHdl() {
+    ~FliStringObjHdl() override {
         if (m_mti_buff != NULL)
-            free(m_mti_buff);
+            delete [] m_mti_buff;
     }
 
-    const char* get_signal_value_str();
+    const char* get_signal_value_str() override;
 
-    int set_signal_value(std::string &value);
+    using FliValueObjHdl::set_signal_value;
+    int set_signal_value_str(std::string &value, gpi_set_action_t action) override;
 
-    int initialise(std::string &name, std::string &fq_name);
+    int initialise(std::string &name, std::string &fq_name) override;
 
 private:
     char *m_mti_buff;
@@ -429,7 +421,6 @@ private:
 class FliTimerCache {
 public:
     FliTimerCache(FliImpl* impl) : impl(impl) { }
-    ~FliTimerCache() { }
 
     FliTimedCbHdl* get_timer(uint64_t time_ps);
     void put_timer(FliTimedCbHdl*);
@@ -452,9 +443,7 @@ public:
 
     FliIterator(GpiImplInterface *impl, GpiObjHdl *hdl);
 
-    virtual ~FliIterator() { };
-
-    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl);
+    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl) override;
 
 private:
     void populate_handle_list(OneToMany childType);
@@ -480,26 +469,26 @@ public:
                                        m_readwrite_cbhdl(this) { }
 
      /* Sim related */
-    void sim_end();
-    void get_sim_time(uint32_t *high, uint32_t *low);
-    void get_sim_precision(int32_t *precision);
+    void sim_end() override;
+    void get_sim_time(uint32_t *high, uint32_t *low) override;
+    void get_sim_precision(int32_t *precision) override;
 
     /* Hierachy related */
-    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent);
-    GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent);
-    GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *paret);
-    GpiObjHdl *get_root_handle(const char *name);
-    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type);
+    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) override;
+    GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent) override;
+    GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *paret) override;
+    GpiObjHdl *get_root_handle(const char *name) override;
+    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) override;
 
     /* Callback related, these may (will) return the same handle*/
-    GpiCbHdl *register_timed_callback(uint64_t time_ps);
-    GpiCbHdl *register_readonly_callback();
-    GpiCbHdl *register_nexttime_callback();
-    GpiCbHdl *register_readwrite_callback();
-    int deregister_callback(GpiCbHdl *obj_hdl);
+    GpiCbHdl *register_timed_callback(uint64_t time_ps) override;
+    GpiCbHdl *register_readonly_callback() override;
+    GpiCbHdl *register_nexttime_callback() override;
+    GpiCbHdl *register_readwrite_callback() override;
+    int deregister_callback(GpiCbHdl *obj_hdl) override;
 
     /* Method to provide strings from operation types */
-    const char *reason_to_string(int reason);
+    const char *reason_to_string(int reason) override;
 
     /* Method to provide strings from operation types */
     GpiObjHdl *create_gpi_obj_from_handle(void *hdl, std::string &name, std::string &fq_name, int accType, int accFullType);

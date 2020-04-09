@@ -1,0 +1,34 @@
+[tool.towncrier]
+    package = "cocotb"
+    directory = "documentation/source/newsfragments"
+    filename = "documentation/source/release_notes.rst"
+    issue_format = ":pr:`{issue}`"
+    # The first underline is used for the version/date header,
+    # the second underline for the subcategories (like 'Features')
+    underlines = ["=", "-"]
+    all_bullets = false
+
+    [[tool.towncrier.type]]
+        directory = "feature"
+        name = "Features"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "bugfix"
+        name = "Bugfixes"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "doc"
+        name = "Improved Documentation"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "removal"
+        name = "Deprecations and Removals"
+        showcontent = true
+
+    [[tool.towncrier.type]]
+        directory = "change"
+        name = "Changes"
+        showcontent = true
