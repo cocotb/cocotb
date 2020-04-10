@@ -69,26 +69,7 @@ The :keyword:`await` keyword is used to indicate when to pass control of executi
 A test can spawn multiple coroutines, allowing for independent flows of execution.
 
 
-************
-Contributors
-************
-
-.. spelling::
-   McGregor
-   Grimwood
-
-cocotb was developed by `Potential Ventures <https://potential.ventures>`_ with the support of
-`Solarflare Communications Ltd <https://www.solarflare.com/>`_
-and contributions from Gordon McGregor and Finn Grimwood
-(see `contributors <https://github.com/cocotb/cocotb/graphs/contributors>`_ for the full list of contributions).
-
-We also have a list of talks and papers, libraries and examples at our Wiki page
-`Further Resources <https://github.com/cocotb/cocotb/wiki/Further-Resources>`_.
-Feel free to add links to cocotb-related content that we are still missing!
-
-
 .. todo::
-   - Move "Contributors" section to "Development & Community"
    - Move "Installation" section to here
 
 ..
@@ -203,11 +184,14 @@ Feel free to add links to cocotb-related content that we are still missing!
    :hidden:
 
    roadmap
+   contributors
    release_notes
+   further_resources
 
 .. todo::
    - Add "Join us online" and "Contributing"
    - In Contributing, add explanation on how to provide a PR, how to test existing PRs, etc.
+   - merge `further_resources` into Contributing
 
 
 
