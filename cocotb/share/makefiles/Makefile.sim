@@ -130,8 +130,6 @@ CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
 # This triggers a recompilation of the simulation if cocotb library is updated.
 CUSTOM_SIM_DEPS += $(shell find $(LIB_DIR)/ -name "*")
 
-PWD := $(shell pwd)
-
 include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
 
 # Check that the COCOTB_RESULTS_FILE was created, since we can't set an exit code from cocotb.

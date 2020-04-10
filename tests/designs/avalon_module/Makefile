@@ -39,7 +39,7 @@ else
 
 TOPLEVEL := burst_read_master
 
-COCOTB?=$(PWD)/../../..
+COCOTB?=$(shell pwd)/../../..
 
 VERILOG_SOURCES = $(COCOTB)/tests/designs/avalon_module/burst_read_master.v
 
