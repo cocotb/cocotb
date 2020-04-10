@@ -18,7 +18,7 @@ all: io_module.so _hal.so
 io_module.o: io.c io_module.h io.h
 	$(CC) $(GCC_FLAGS) -fPIC -pthread -fno-strict-aliasing -O2 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 \
 	-fexceptions --param=ssp-buffer-size=4 -D_GNU_SOURCE \
-	-fwrapv -DNDEBUG -I$(PYTHON_INCLUDEDIR) -c $< -o $@
+	-fwrapv -I$(PYTHON_INCLUDEDIR) -c $< -o $@
 
 io_module.so: io_module.o
 	$(CC) -pthread -shared  $< -L$(PYTHON_LIBDIR) $(PYTHON_LD_FLAGS) -o $@
