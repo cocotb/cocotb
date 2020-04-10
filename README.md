@@ -40,7 +40,7 @@ First, we need a hardware design which we can test. For this example, create a f
 ```systemverilog
 // dff.sv
 
-`timescale 1us/1ns
+`timescale 1us/1us
 
 module dff (
     output logic q,
@@ -87,6 +87,9 @@ TOPLEVEL_LANG = verilog
 VERILOG_SOURCES = $(shell pwd)/dff.sv
 TOPLEVEL = dff
 MODULE = test_dff
+
+COCOTB_HDL_TIMEPRECISION = 1us
+COCOTB_HDL_TIMEUNIT = 1us
 
 include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
