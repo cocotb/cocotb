@@ -4,7 +4,7 @@
 Simulator Support
 *****************
 
-This page documents any known quirks and gotchas in the various simulators.
+This page documents specifics, limitations, workarounds etc. in the various simulators.
 
 
 .. _sim-icarus:
@@ -23,7 +23,7 @@ Accessing bits of a vector doesn't work:
 
     dut.stream_in_data[2] <= 1
 
-See ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
+See the ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
 
 .. _sim-icarus-waveforms:
 
@@ -59,7 +59,7 @@ Time unit and precision
 -----------------------
 
 Setting the time unit and time precision is not possible from the command-line,
-and therefore make variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` are ignored.
+and therefore the make variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` are ignored.
 
 
 .. _sim-verilator:
@@ -99,6 +99,8 @@ This will result in coverage data being written to ``coverage.dat``.
 Synopsys VCS
 ============
 
+cocotb currently only supports VPI for Synopsys VCS, not VHPI.
+
 
 .. _sim-aldec:
 
@@ -114,6 +116,7 @@ this setting will be mirrored in the TCL ``license_queue`` variable to control r
 Mentor Questa
 =============
 
+See :ref:`sim-modelsim`.
 
 
 .. _sim-modelsim:
@@ -136,11 +139,14 @@ ModelSim DE and SE (and Questa, of course) supports the FLI.
 Cadence Incisive
 ================
 
+See :ref:`sim-xcelium`.
 
 .. _sim-xcelium:
 
 Cadence Xcelium
 ===============
+
+The simulator automatically loads VPI even when only VHPI is requested.
 
 
 .. _sim-ghdl:

@@ -303,8 +303,7 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-# For now show the todos
-todo_include_todos = True
+todo_include_todos = False
 
 # -- Extra setup for C documentation with Doxygen and breathe ------------------
 # see also https://breathe.readthedocs.io/en/latest/readthedocs.html
