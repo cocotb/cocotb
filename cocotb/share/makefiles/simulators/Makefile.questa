@@ -27,6 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 CMD_BIN := vsim
 
 ifdef MODELSIM_BIN_DIR

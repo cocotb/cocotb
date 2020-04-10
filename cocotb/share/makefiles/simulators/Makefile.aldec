@@ -29,6 +29,8 @@
 
 # Common Makefile for Aldec Riviera-PRO simulator
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 ifeq ($(GUI),1)
     CMD_BIN := riviera
 else

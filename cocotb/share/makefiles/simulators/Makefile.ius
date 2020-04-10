@@ -29,6 +29,8 @@
 
 # Common Makefile for Cadence Incisive
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 CMD_BIN := irun
 
 ifdef IUS_BIN_DIR
