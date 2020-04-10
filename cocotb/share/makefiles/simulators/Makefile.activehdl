@@ -38,17 +38,12 @@ else ifeq ($(TOPLEVEL_LANG),vhdl)
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_aldec:cocotbvpi_entry_point
 endif
-
 else
    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
-$(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
-	@echo "onerror {" > $@
-	@echo "	puts [read [open sim.log r]]" >> $@
-	@echo "	quit -code 1" >> $@
-	@echo "}" >> $@
+$(SIM_BUILD)/runsim.do : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
 	@echo "alib $(RTL_LIBRARY)" >> $@
 	@echo "set worklib $(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
@@ -59,18 +54,17 @@ ifneq ($(VERILOG_SOURCES),)
 endif
 	@echo "asim $(ASIM_ARGS) $(PLUSARGS) +access +w -interceptcoutput -O2 -dbg $(GPI_ARGS) $(TOPLEVEL) $(EXTRA_TOPS)" >> $@
 	@echo "run -all" >> $@
-	@echo "endsim" >> $@endif
+	@echo "endsim" >> $@
 
-$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.tcl $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.tcl | tee $(SIM_BUILD)/sim.log
+	$(LIB_LOAD) MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) COCOTB_SIM=1 $(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.do | tee $(SIM_BUILD)/sim.log
 
 	$(call check_for_results_file)
 
 clean::
 	@rm -rf $(SIM_BUILD)
 	@rm -rf work
-
-# TODO: @rm any other file created
+	@rm -rf wave.asdb
