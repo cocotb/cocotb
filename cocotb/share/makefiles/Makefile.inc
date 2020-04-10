@@ -36,13 +36,6 @@ COCOTB_PY_DIR := $(realpath $(shell cocotb-config --prefix))
 # simulations: Makefile fragments, and the simulator libraries.
 COCOTB_SHARE_DIR := $(COCOTB_PY_DIR)/cocotb/share
 
-ifeq ($(USER_DIR),)
-export USER_DIR:=$(realpath $(dir $(firstword $(MAKEFILE_LIST))))
-endif
-
-BUILD_DIR=$(USER_DIR)/build
-export BUILD_DIR
-
 ARCH?=$(shell uname -m)
 export ARCH
 
