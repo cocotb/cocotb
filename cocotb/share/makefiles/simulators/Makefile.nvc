@@ -1,5 +1,7 @@
 # -*- mode: makefile-gmake -*-
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 ifneq ($(VERILOG_SOURCES),)
 
 $(COCOTB_RESULTS_FILE):

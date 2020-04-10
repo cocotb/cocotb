@@ -27,6 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 # Common Makefile for Cadence Xcelium
 
 CMD_BIN := xrun

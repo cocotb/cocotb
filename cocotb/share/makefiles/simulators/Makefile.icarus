@@ -27,6 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 ifneq ($(VHDL_SOURCES),)
 
 $(COCOTB_RESULTS_FILE):

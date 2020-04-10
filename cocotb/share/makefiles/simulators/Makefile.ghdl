@@ -26,6 +26,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 ifneq ($(VERILOG_SOURCES),)
 
 $(COCOTB_RESULTS_FILE):

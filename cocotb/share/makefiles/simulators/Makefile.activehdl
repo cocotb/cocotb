@@ -4,6 +4,8 @@
 
 # Common Makefile for the Aldec Active-HDL simulator
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 CMD_BIN := vsimsa
 
 ifdef ACTIVEHDL_BIN_DIR
