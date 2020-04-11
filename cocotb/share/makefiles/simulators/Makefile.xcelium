@@ -49,7 +49,7 @@ EXTRA_ARGS += $(COMPILE_ARGS)
 EXTRA_ARGS += $(SIM_ARGS)
 EXTRA_ARGS += -licqueue
 
-ifneq ($(ARCH),i686)
+ifeq ($(PYTHON_ARCH),64bit)
     EXTRA_ARGS += -64
 endif
 

@@ -114,8 +114,8 @@ else
 	@echo "quit" >> $@
 endif
 
-ifneq ($(ARCH),i686)
-CMD += -64
+ifeq ($(PYTHON_ARCH),64bit)
+    CMD += -64
 endif
 
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do
