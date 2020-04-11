@@ -33,7 +33,6 @@ from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
 
-
 @cocotb.test()
 def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""

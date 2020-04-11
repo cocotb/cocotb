@@ -135,4 +135,6 @@ assign logic_a = stream_in_valid;
 always@* logic_b = stream_in_valid;
 always@(posedge clk) logic_c <= stream_in_valid;
 
+reg _underscore_name;
+
 endmodule
