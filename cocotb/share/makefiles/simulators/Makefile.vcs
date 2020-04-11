@@ -51,7 +51,7 @@ else
      export VCS_BIN_DIR
 endif
 
-ifeq ($(ARCH),x86_64)
+ifeq ($(PYTHON_ARCH),64bit)
     EXTRA_ARGS += -full64
 endif
 

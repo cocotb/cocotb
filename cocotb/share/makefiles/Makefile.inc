@@ -36,9 +36,6 @@ COCOTB_PY_DIR := $(realpath $(shell cocotb-config --prefix))
 # simulations: Makefile fragments, and the simulator libraries.
 COCOTB_SHARE_DIR := $(COCOTB_PY_DIR)/cocotb/share
 
-ARCH?=$(shell uname -m)
-export ARCH
-
 OS=$(shell uname)
 ifneq (, $(findstring MINGW, $(OS)))
 OS=Msys
@@ -75,6 +72,11 @@ ifeq ($(OS),Msys)
 LIB_EXT    := dll
 else
 LIB_EXT    := so
+endif
+
+PYTHON_ARCH := $(shell $(PYTHON_BIN) -c 'from platform import architecture; print(architecture()[0])')
+ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)
+    $(error Unknown Python architecture: $(PYTHON_ARCH))
 endif
 
 # Set PYTHONHOME to properly populate sys.path in embedded python interpreter
