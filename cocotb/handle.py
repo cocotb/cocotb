@@ -67,18 +67,42 @@ class SimHandleBase:
             path (str): Path to this handle, ``None`` if root.
         """
         self._handle = handle
-        self._len = None
-        self._sub_handles = {}  # Dictionary of children
-        self._invalid_sub_handles = set()  # Set of invalid queries
+        self._len = None  # type: int
+        """The "length" (the number of elements) of the underlying object. For vectors this is the number of bits."""
+        self._sub_handles = {}  # type: dict
+        """Dictionary of this handle's children."""
+        self._invalid_sub_handles = set()  # type: set
+        """Python :class:`set` of invalid queries, for caching purposes."""
+        self._name = self._handle.get_name_string()  # type: str
+        """The name of an object.
 
-        self._name = self._handle.get_name_string()
-        self._type = self._handle.get_type_string()
-        self._fullname = self._name + "(%s)" % self._type
-        self._path = self._name if path is None else path
+        :meta public:
+        """
+        self._type = self._handle.get_type_string()  # type: str
+        """The type of an object as a string.
+
+        :meta public:
+        """
+        self._fullname = self._name + "(%s)" % self._type  # type: str
+        """The name of an object with its type appended in parentheses."""
+        self._path = self._name if path is None else path  # type: str
+        """The path to this handle, or its name if this is the root handle.
+
+        :meta public:
+        """
         self._log = SimLog("cocotb.%s" % self._name)
+        """The logging object."""
         self._log.debug("Created")
-        self._def_name = self._handle.get_definition_name()
-        self._def_file = self._handle.get_definition_file()
+        self._def_name = self._handle.get_definition_name()  # type: str
+        """The name of a GPI object's definition.
+
+        :meta public:
+        """
+        self._def_file = self._handle.get_definition_file()  # type: str
+        """The file that sources the object's definition.
+
+        :meta public:
+        """
 
     def get_definition_name(self):
         return self._def_name
@@ -90,7 +114,7 @@ class SimHandleBase:
         return hash(self._handle)
 
     def __len__(self):
-        """Returns the 'length' of the underlying object.
+        """Return the "length" (the number of elements) of the underlying object.
 
         For vectors this is the number of bits.
         """
@@ -155,7 +179,7 @@ class RegionObject(SimHandleBase):
 
     def __init__(self, handle, path):
         SimHandleBase.__init__(self, handle, path)
-        self._discovered = False
+        self._discovered = False  # True if this object has already been discovered
 
     def __iter__(self):
         """Iterate over all known objects in this layer of hierarchy."""
@@ -176,8 +200,8 @@ class RegionObject(SimHandleBase):
                 yield handle
 
     def _discover_all(self):
-        """When iterating or performing tab completion, we run through ahead of
-        time and discover all possible children, populating the ``_sub_handles``
+        """When iterating or performing IPython tab completion, we run through ahead of
+        time and discover all possible children, populating the :any:`_sub_handles`
         mapping. Hierarchy can't change after elaboration so we only have to
         do this once.
         """
@@ -202,12 +226,12 @@ class RegionObject(SimHandleBase):
 
         self._discovered = True
 
-    def _child_path(self, name):
-        """Returns a string of the path of the child :any:`SimHandle` for a given *name*."""
+    def _child_path(self, name) -> str:
+        """Return a string of the path of the child :any:`SimHandle` for a given *name*."""
         return self._path + "." + name
 
     def _sub_handle_key(self, name):
-        """Translates the handle name to a key to use in ``_sub_handles`` dictionary."""
+        """Translate the handle name to a key to use in :any:`_sub_handles` dictionary."""
         return name.split(".")[-1]
 
     def __dir__(self):
@@ -266,7 +290,7 @@ class HierarchyObject(RegionObject):
         raise AttributeError("%s contains no object named %s" % (self._name, name))
 
     def __getattr__(self, name):
-        """Query the simulator for a object with the specified name
+        """Query the simulator for an object with the specified name
         and cache the result to build a tree of objects.
         """
         if name.startswith("_"):
@@ -281,10 +305,14 @@ class HierarchyObject(RegionObject):
 
         raise AttributeError("%s contains no object named %s" % (self._name, name))
 
-    def _id(self, name, extended=True):
-        """Query the simulator for a object with the specified name,
-        including extended identifiers,
+    def _id(self, name, extended: bool = True):
+        """Query the simulator for an object with the specified *name*,
         and cache the result to build a tree of objects.
+
+        If *extended* is ``True``, run the query only for VHDL extended identifiers.
+        For Verilog, only ``extended=False`` is supported.
+
+        :meta public:
         """
         if extended:
             name = "\\"+name+"\\"
@@ -300,7 +328,7 @@ class HierarchyArrayObject(RegionObject):
     """Hierarchy Arrays are containers of Hierarchy Objects."""
 
     def _sub_handle_key(self, name):
-        """Translates the handle name to a key to use in ``_sub_handles`` dictionary."""
+        """Translate the handle name to a key to use in :any:`_sub_handles` dictionary."""
         # This is slightly hacky, but we need to extract the index from the name
         #
         # FLI and VHPI(IUS):  _name(X) where X is the index
@@ -319,7 +347,7 @@ class HierarchyArrayObject(RegionObject):
             raise ValueError("Unable to match an index pattern: {}".format(name))
 
     def __len__(self):
-        """Returns the 'length' of the generate block."""
+        """Return the "length" of the generate block."""
         if self._len is None:
             if not self._discovered:
                 self._discover_all()
@@ -340,7 +368,7 @@ class HierarchyArrayObject(RegionObject):
         return self._sub_handles[index]
 
     def _child_path(self, name):
-        """Returns a string of the path of the child :any:`SimHandle` for a given name."""
+        """Return a string of the path of the child :any:`SimHandle` for a given name."""
         index = self._sub_handle_key(name)
         return self._path + "[" + str(index) + "]"
 
