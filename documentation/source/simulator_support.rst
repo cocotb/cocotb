@@ -107,6 +107,11 @@ cocotb currently only supports VPI for Synopsys VCS, not VHPI.
 Aldec Riviera-PRO
 =================
 
+.. note::
+
+   On Windows, do not install the C++ compiler, i.e. unselect it during the installation process of Riviera-PRO.
+   (A workaround is to remove or rename the ``mingw`` directory located in the Riviera-PRO installation directory.)
+
 The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
@@ -129,14 +134,19 @@ See :ref:`sim-modelsim`.
 Mentor ModelSim
 ===============
 
-Any ModelSim PE or ModelSim PE derivative (like ModelSim Microsemi, Intel, Lattice Edition) does not support the VHDL FLI feature.
-If you try to run with FLI enabled, you will see a ``vsim-FLI-3155`` error:
+.. note::
+
+   In order to use FLI (for VHDL), a ``vdbg`` executable from the simulator installation directory needs to be available on the ``PATH`` during cocotb installation.
+   This is needed to access the proprietary ``mti.h`` header file.
+
+Any ModelSim PE or ModelSim PE derivatives (like the ModelSim Microsemi, Intel, Lattice Editions) do not support the VHDL FLI feature.
+If you try to use them with FLI, you will see a ``vsim-FLI-3155`` error:
 
 .. code-block:: bash
 
     ** Error (suppressible): (vsim-FLI-3155) The FLI is not enabled in this version of ModelSim.
 
-ModelSim DE and SE (and Questa, of course) supports the FLI.
+ModelSim DE and SE (and Questa, of course) support the FLI.
 
 
 .. _sim-incisive:
