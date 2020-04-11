@@ -1,0 +1,2 @@
+``Makefile.pylib`` has been removed.
+In case ``PYTHON_LIBDIR`` or ``PYTHON_INCLUDEDIR`` have been used, they now have to be set by the user (see the ``endian_swapper`` example).
