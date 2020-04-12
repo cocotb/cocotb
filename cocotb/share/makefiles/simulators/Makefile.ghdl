@@ -54,6 +54,11 @@ RTL_LIBRARY ?= work
 GHDL_ARGS ?=
 GHDL_ARGS += $(EXTRA_ARGS)
 
+# On Windows add GHDL lib folder to PATH to find libraries
+ifeq ($(OS),Msys)
+    export PATH := $(GHDL_BIN_DIR)/../lib:$(PATH)
+endif
+
 .PHONY: analyse
 
 # Compilation phase
