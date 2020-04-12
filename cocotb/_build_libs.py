@@ -125,7 +125,7 @@ class build_ext(_build_ext):
         """
 
         if os.name == "nt":
-            for sim in ["icarus", "modelsim", "aldec"]:
+            for sim in ["icarus", "modelsim", "aldec", "ghdl"]:
                 subprocess.run(
                     [
                         "dlltool",
@@ -403,12 +403,21 @@ def get_ext():
     #
     # GHDL
     #
-    if os.name == "posix":
-        logger.info("Compiling libraries for GHDL")
-        ghdl_vpi_ext = _get_vpi_lib_ext(
-            include_dir=include_dir, share_lib_dir=share_lib_dir, sim_define="GHDL"
-        )
-        ext.append(ghdl_vpi_ext)
+    ghdl_extra_lib = []
+    ghdl_extra_lib_path = []
+    logger.info("Compiling libraries for GHDL")
+    if os.name == "nt":
+        ghdl_extra_lib = ["ghdl"]
+        ghdl_extra_lib_path = [share_def_dir]
+
+    ghdl_vpi_ext = _get_vpi_lib_ext(
+        include_dir=include_dir,
+        share_lib_dir=share_lib_dir,
+        sim_define="GHDL",
+        extra_lib=ghdl_extra_lib,
+        extra_lib_dir=ghdl_extra_lib_path,
+    )
+    ext.append(ghdl_vpi_ext)
 
     #
     # IUS
