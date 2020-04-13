@@ -165,7 +165,7 @@ class BinaryValue:
         else:
             raise TypeError(
                 "value must be int, str, or bytes, not {!r}"
-                .format(type(value).__name__)
+                .format(type(value).__qualname__)
             )
 
     def _convert_to_unsigned(self, x):
@@ -396,7 +396,7 @@ class BinaryValue:
         for char in string:
             if char not in BinaryValue._permitted_chars:
                 raise ValueError("Attempting to assign character %s to a %s" %
-                                 (char, type(self).__name__))
+                                 (char, type(self).__qualname__))
         self._str = string
         self._adjust()
 

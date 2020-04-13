@@ -102,7 +102,7 @@ class Driver:
 
         # Sub-classes may already set up logging
         if not hasattr(self, "log"):
-            self.log = SimLog("cocotb.driver.%s" % (type(self).__name__))
+            self.log = SimLog("cocotb.driver.%s" % (type(self).__qualname__))
 
         # Create an independent coroutine which can send stuff
         self._thread = cocotb.scheduler.add(self._send_thread())

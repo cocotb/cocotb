@@ -130,7 +130,7 @@ class SimHandleBase:
             deffile = self._def_file
             if deffile:
                 desc += " (at "+deffile+")"
-        return type(self).__name__ + "(" + desc + ")"
+        return type(self).__qualname__ + "(" + desc + ")"
 
     def __str__(self):
         return self._path

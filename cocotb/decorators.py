@@ -100,7 +100,8 @@ class RunningTask:
             raise TypeError(
                 "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)
         self._coro = inst
-        self.__name__ = "%s" % inst.__name__
+        self.__name__ = inst.__name__
+        self.__qualname__ = inst.__qualname__
         self._started = False
         self._callbacks = []
         self._outcome = None
@@ -109,10 +110,7 @@ class RunningTask:
     def log(self):
         # Creating a logger is expensive, only do it if we actually plan to
         # log anything
-        if hasattr(self, "__name__"):
-            return SimLog("cocotb.coroutine.%s" % self.__name__, id(self))
-        else:
-            return SimLog("cocotb.coroutine.fail")
+        return SimLog("cocotb.coroutine.%s" % self.__qualname__, id(self))
 
     @property
     def retval(self):
@@ -128,7 +126,7 @@ class RunningTask:
         return self
 
     def __str__(self):
-        return str(self.__name__)
+        return str(self.__qualname__)
 
     def _advance(self, outcome):
         """Advance to the next yield in this coroutine.
@@ -236,7 +234,7 @@ class RunningTest(RunningCoroutine):
     def __init__(self, inst, parent):
         self.error_messages = []
         RunningCoroutine.__init__(self, inst, parent)
-        self.log = SimLog("cocotb.test.%s" % self.__name__, id(self))
+        self.log = SimLog("cocotb.test.%s" % self.__qualname__, id(self))
         self.started = False
         self.start_time = 0
         self.start_sim_time = 0
@@ -295,12 +293,11 @@ class coroutine:
 
     def __init__(self, func):
         self._func = func
-        self.__name__ = self._func.__name__
         functools.update_wrapper(self, func)
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.coroutine.%s" % self._func.__name__, id(self))
+        return SimLog("cocotb.coroutine.%s" % self._func.__qualname__, id(self))
 
     def __call__(self, *args, **kwargs):
         return RunningCoroutine(self._func(*args, **kwargs), self)
@@ -314,7 +311,7 @@ class coroutine:
         return self
 
     def __str__(self):
-        return str(self._func.__name__)
+        return str(self._func.__qualname__)
 
 
 @public
@@ -331,7 +328,7 @@ class function:
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.function.%s" % self._coro.__name__, id(self))
+        return SimLog("cocotb.function.%s" % self._coro.__qualname__, id(self))
 
     def __call__(self, *args, **kwargs):
         return cocotb.scheduler.queue_function(self._coro(*args, **kwargs))
@@ -352,7 +349,7 @@ class external:
     """
     def __init__(self, func):
         self._func = func
-        self._log = SimLog("cocotb.external.%s" % self._func.__name__, id(self))
+        self._log = SimLog("cocotb.external.%s" % self._func.__qualname__, id(self))
 
     def __call__(self, *args, **kwargs):
         return cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
