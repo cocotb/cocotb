@@ -34,6 +34,7 @@ import sys
 import os
 import traceback
 import pdb
+from typing import Any, Optional, Tuple, Iterable
 
 if "COCOTB_PDB_ON_EXCEPTION" in os.environ:
     _pdb_on_exception = True
@@ -62,9 +63,11 @@ from cocotb.log import SimLog
 from cocotb.result import TestSuccess, SimFailure
 from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
+from cocotb.decorators import test as Test, hook as Hook, RunningTask
+from cocotb.outcomes import Outcome
 
 
-def _my_import(name):
+def _my_import(name: str) -> Any:
     mod = __import__(name)
     components = name.split('.')
     for comp in components[1:]:
@@ -75,7 +78,7 @@ def _my_import(name):
 class RegressionManager:
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, root_name):
+    def __init__(self, root_name: str):
         """
         Args:
             root_name (str): The name of the root handle.
@@ -142,7 +145,7 @@ class RegressionManager:
             self.log.info("Found hook {}.{}".format(hook.__module__, hook.__qualname__))
             self._init_hook(hook)
 
-    def discover_tests(self):
+    def discover_tests(self) -> Iterable[Test]:
 
         module_str = os.getenv('MODULE')
         test_str = os.getenv('TESTCASE')
@@ -189,7 +192,7 @@ class RegressionManager:
                 if hasattr(thing, "im_test"):
                     yield thing
 
-    def discover_hooks(self):
+    def discover_hooks(self) -> Iterable[Hook]:
 
         hooks_str = os.getenv('COCOTB_HOOKS', '')
         hooks = [s.strip() for s in hooks_str.split(',') if s.strip()]
@@ -202,7 +205,7 @@ class RegressionManager:
                 if hasattr(thing, "im_hook"):
                     yield thing
 
-    def _init_hook(self, hook):
+    def _init_hook(self, hook: Hook) -> Optional[RunningTask]:
         try:
             test = hook(self._dut)
         except Exception:
@@ -210,7 +213,7 @@ class RegressionManager:
         else:
             return cocotb.scheduler.add(test)
 
-    def tear_down(self):
+    def tear_down(self) -> None:
         # fail remaining tests
         while True:
             test = self.next_test()
@@ -250,14 +253,14 @@ class RegressionManager:
         # Setup simulator finalization
         simulator.stop_simulator()
 
-    def next_test(self):
+    def next_test(self) -> Optional[Test]:
         """Get the next test to run"""
         if not self._queue:
             return None
         self.count += 1
         return self._queue.pop(0)
 
-    def handle_result(self, test):
+    def handle_result(self, test: RunningTask) -> None:
         """Handle a test completing.
 
         Dump result to XML and schedule the next test (if any). Entered by the scheduler.
@@ -297,7 +300,7 @@ class RegressionManager:
 
         self.execute()
 
-    def _init_test(self, test_func):
+    def _init_test(self, test_func: Test) -> Optional[RunningTask]:
         """
         Initializes a test.
 
@@ -348,7 +351,7 @@ class RegressionManager:
             else:
                 return test
 
-    def _score_test(self, test, outcome):
+    def _score_test(self, test: Test, outcome: Outcome) -> Tuple[bool, bool]:
         """
         Given a test and the test's outcome, determine if the test met expectations and log pertinent information
         """
@@ -416,7 +419,7 @@ class RegressionManager:
 
         return result_pass, sim_failed
 
-    def execute(self):
+    def execute(self) -> None:
         while True:
             self._test = self.next_test()
             if self._test is None:
@@ -426,7 +429,7 @@ class RegressionManager:
             if self._running_test:
                 return self._start_test()
 
-    def _start_test(self):
+    def _start_test(self) -> None:
         start = ''
         end   = ''
         if want_color_output():
@@ -444,7 +447,7 @@ class RegressionManager:
 
         cocotb.scheduler.add_test(self._running_test)
 
-    def _log_test_summary(self):
+    def _log_test_summary(self) -> None:
         TEST_FIELD   = 'TEST'
         RESULT_FIELD = 'PASS/FAIL'
         SIM_FIELD    = 'SIM TIME(NS)'
@@ -491,7 +494,7 @@ class RegressionManager:
 
         self.log.info(summary)
 
-    def _log_sim_summary(self):
+    def _log_sim_summary(self) -> None:
         real_time   = time.time() - self.start_time
         sim_time_ns = get_sim_time('ns')
         ratio_time  = self._safe_divide(sim_time_ns, real_time)
@@ -509,7 +512,7 @@ class RegressionManager:
         self.log.info(summary)
 
     @staticmethod
-    def _safe_divide(a, b):
+    def _safe_divide(a: float, b: float) -> float:
         try:
             return a / b
         except ZeroDivisionError:
@@ -518,7 +521,15 @@ class RegressionManager:
             else:
                 return float('inf')
 
-    def _store_test_result(self, module_name, test_name, result_pass, sim_time, real_time, ratio):
+    def _store_test_result(
+        self,
+        module_name: str,
+        test_name: str,
+        result_pass: bool,
+        sim_time: float,
+        real_time: float,
+        ratio: float
+    ) -> None:
         result = {
             'test'  : '.'.join([module_name, test_name]),
             'pass'  : result_pass,
