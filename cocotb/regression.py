@@ -80,7 +80,6 @@ class RegressionManager:
         Args:
             root_name (str): The name of the root handle.
         """
-        self._queue = []
         self._root_name = root_name
         self._dut = None
         self._running_test = None
@@ -88,8 +87,7 @@ class RegressionManager:
         self.log = SimLog("cocotb.regression")
         self.start_time = time.time()
         self.test_results = []
-        self.ntests = 0
-        self.count = 1
+        self.count = 0
         self.skipped = 0
         self.failures = 0
 
@@ -127,13 +125,13 @@ class RegressionManager:
 
         # Test Discovery
         ####################
-        have_tests = False
+        self._queue = []
         for test in self.discover_tests():
             self.log.info("Found test {}.{}".format(test.__module__, test.__qualname__))
-            self._init_test(test)
-            have_tests = True
+            self._queue.append(test)
+        self.ntests = len(self._queue)
 
-        if not have_tests:
+        if not self._queue:
             self.log.warning("No tests were discovered")
 
         self._queue.sort(key=lambda test: (test.stage, test._id))
@@ -218,13 +216,13 @@ class RegressionManager:
             test = self.next_test()
             if test is None:
                 break
-            self.xunit.add_testcase(name=test.funcname,
-                                    classname=test.module,
+            self.xunit.add_testcase(name=test.__qualname__,
+                                    classname=test.__module__,
                                     time=repr(0),
                                     sim_time_ns=repr(0),
                                     ratio_time=repr(0))
             result_pass, _ = self._score_test(test, cocotb.outcomes.Error(SimFailure()))
-            self._store_test_result(test.module, test.funcname, result_pass, 0, 0, 0)
+            self._store_test_result(test.__module__, test.__qualname__, result_pass, 0, 0, 0)
             if not result_pass:
                 self.xunit.add_failure()
                 self.failures += 1
@@ -232,10 +230,10 @@ class RegressionManager:
         # Write out final log messages
         if self.failures:
             self.log.error("Failed %d out of %d tests (%d skipped)" %
-                           (self.failures, self.count - 1, self.skipped))
+                           (self.failures, self.count, self.skipped))
         else:
             self.log.info("Passed %d tests (%d skipped)" %
-                          (self.count - 1, self.skipped))
+                          (self.count, self.skipped))
         if len(self.test_results) > 0:
             self._log_test_summary()
         self._log_sim_summary()
@@ -256,6 +254,7 @@ class RegressionManager:
         """Get the next test to run"""
         if not self._queue:
             return None
+        self.count += 1
         return self._queue.pop(0)
 
     def handle_result(self, test):
@@ -272,20 +271,21 @@ class RegressionManager:
         sim_time_ns = get_sim_time('ns') - test.start_sim_time
         ratio_time = self._safe_divide(sim_time_ns, real_time)
 
-        self.xunit.add_testcase(name=test.funcname,
-                                classname=test.module,
+        self.xunit.add_testcase(name=self._test.__qualname__,
+                                classname=self._test.__module__,
                                 time=repr(real_time),
                                 sim_time_ns=repr(sim_time_ns),
                                 ratio_time=repr(ratio_time))
 
         # score test
-        result_pass, sim_failed = self._score_test(test, test._outcome)
+        result_pass, sim_failed = self._score_test(self._test, test._outcome)
 
         # stop capturing log output
         cocotb.log.removeHandler(test.handler)
 
         # Save results
-        self._store_test_result(test.module, test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
+        self._store_test_result(self._test.__module__, self._test.__qualname__, result_pass,
+                                sim_time_ns, real_time, ratio_time)
         if not result_pass:
             self.xunit.add_failure()
             self.failures += 1
@@ -338,8 +338,7 @@ class RegressionManager:
                 self.skipped += 1
                 self._store_test_result(test.module, test_func.name, None, 0.0, 0.0, 0.0)
             else:
-                self._queue.append(test)
-                self.ntests += 1
+                return test
 
     def _score_test(self, test, outcome):
         """
@@ -410,27 +409,32 @@ class RegressionManager:
         return result_pass, sim_failed
 
     def execute(self):
-        self._running_test = cocotb.regression_manager.next_test()
-        if self._running_test:
-            start = ''
-            end   = ''
-            if want_color_output():
-                start = ANSI.COLOR_TEST
-                end   = ANSI.COLOR_DEFAULT
-            # Want this to stand out a little bit
-            self.log.info("%sRunning test %d/%d:%s %s" %
-                          (start,
-                           self.count, self.ntests,
-                           end,
-                           self._running_test.funcname))
+        while True:
+            self._test = self.next_test()
+            if self._test is None:
+                return self.tear_down()
 
-            # start capturing log output
-            cocotb.log.addHandler(self._running_test.handler)
+            self._running_test = self._init_test(self._test)
+            if self._running_test:
+                return self._start_test()
 
-            cocotb.scheduler.add_test(self._running_test)
-            self.count += 1
-        else:
-            self.tear_down()
+    def _start_test(self):
+        start = ''
+        end   = ''
+        if want_color_output():
+            start = ANSI.COLOR_TEST
+            end   = ANSI.COLOR_DEFAULT
+        # Want this to stand out a little bit
+        self.log.info("%sRunning test %d/%d:%s %s" %
+                      (start,
+                       self.count, self.ntests,
+                       end,
+                       self._test.__qualname__))
+
+        # start capturing log output
+        cocotb.log.addHandler(self._running_test.handler)
+
+        cocotb.scheduler.add_test(self._running_test)
 
     def _log_test_summary(self):
         TEST_FIELD   = 'TEST'
