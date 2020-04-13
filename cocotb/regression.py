@@ -259,8 +259,8 @@ class RegressionManager:
         """
         assert test is self._running_test
 
-        real_time = time.time() - test.start_time
-        sim_time_ns = get_sim_time('ns') - test.start_sim_time
+        real_time = time.time() - self._test_start_time
+        sim_time_ns = get_sim_time('ns') - self._test_start_sim_time
         ratio_time = self._safe_divide(sim_time_ns, real_time)
 
         self.xunit.add_testcase(name=self._test.__qualname__,
@@ -434,6 +434,8 @@ class RegressionManager:
         # start capturing log output
         cocotb.log.addHandler(self._running_test.handler)
 
+        self._test_start_time = time.time()
+        self._test_start_sim_time = get_sim_time('ns')
         cocotb.scheduler.add_test(self._running_test)
 
     def _log_test_summary(self) -> None:
