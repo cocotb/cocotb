@@ -104,12 +104,12 @@ jobs:
       env: SIM=ghdl
       before_install:
         - sudo apt-get install gnat
-        - git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
+        - git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.37
         - cd ghdl && ./configure && make -j2 && sudo make install && cd ..
         - pip install tox
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
-        - tox -e py37
+        - TOPLEVEL_LANG=vhdl tox -e py37
 
     - stage: DeployPyPI
       python: 3.7
