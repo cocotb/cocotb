@@ -78,7 +78,7 @@ class Trigger(Awaitable):
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.%s" % (type(self).__name__), id(self))
+        return SimLog("cocotb.%s" % (type(self).__qualname__), id(self))
 
     @abc.abstractmethod
     def prime(self, callback):
@@ -212,7 +212,7 @@ class Timer(GPITrigger):
 
     def __repr__(self):
         return "<{} of {:1.2f}ps at {}>".format(
-            type(self).__name__,
+            type(self).__qualname__,
             get_time_from_sim_steps(self.sim_steps, units='ps'),
             _pointer_str(self)
         )
@@ -249,7 +249,7 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__name__)
+        return "{}()".format(type(self).__qualname__)
 
 
 class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -273,7 +273,7 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__name__)
+        return "{}()".format(type(self).__qualname__)
 
 
 class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -295,7 +295,7 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__name__)
+        return "{}()".format(type(self).__qualname__)
 
 
 class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -327,7 +327,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         super(_EdgeBase, self).prime(callback)
 
     def __repr__(self):
-        return "{}({!r})".format(type(self).__name__, self.signal)
+        return "{}({!r})".format(type(self).__qualname__, self.signal)
 
 
 class RisingEdge(_EdgeBase):
@@ -425,7 +425,7 @@ class Event:
             fmt = "<{0} at {2}>"
         else:
             fmt = "<{0} for {1} at {2}>"
-        return fmt.format(type(self).__name__, self.name, _pointer_str(self))
+        return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
 class _Lock(PythonTrigger):
@@ -516,7 +516,7 @@ class Lock:
         else:
             fmt = "<{0} for {1} [{2} waiting] at {3}>"
         return fmt.format(
-            type(self).__name__, self.name, len(self._pending_primed),
+            type(self).__qualname__, self.name, len(self._pending_primed),
             _pointer_str(self)
         )
 
@@ -556,7 +556,7 @@ class NullTrigger(Trigger):
             fmt = "<{0} at {2}>"
         else:
             fmt = "<{0} for {1} at {2}>"
-        return fmt.format(type(self).__name__, self.name, _pointer_str(self))
+        return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
 class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -617,7 +617,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
             super(Join, self).prime(callback)
 
     def __repr__(self):
-        return "{}({!r})".format(type(self).__name__, self._coroutine)
+        return "{}({!r})".format(type(self).__qualname__, self._coroutine)
 
 
 class Waitable(Awaitable):
@@ -655,14 +655,14 @@ class _AggregateWaitable(Waitable):
             if not isinstance(trigger, allowed_types):
                 raise TypeError(
                     "All triggers must be instances of Trigger! Got: {}"
-                    .format(type(trigger).__name__)
+                    .format(type(trigger).__qualname__)
                 )
 
     def __repr__(self):
         # no _pointer_str here, since this is not a trigger, so identity
         # doesn't matter.
         return "{}({})".format(
-            type(self).__name__, ", ".join(repr(t) for t in self.triggers)
+            type(self).__qualname__, ", ".join(repr(t) for t in self.triggers)
         )
 
 
@@ -790,7 +790,7 @@ class ClockCycles(Waitable):
             fmt = "{}({!r}, {!r})"
         else:
             fmt = "{}({!r}, {!r}, rising=False)"
-        return fmt.format(type(self).__name__, self.signal, self.num_cycles)
+        return fmt.format(type(self).__qualname__, self.signal, self.num_cycles)
 
 
 async def with_timeout(trigger, timeout_time, timeout_unit=None):
