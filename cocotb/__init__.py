@@ -165,8 +165,18 @@ def _initialise_testbench(root_name):
         log.info("Seeding Python random module with supplied seed %d" % (RANDOM_SEED))
     random.seed(RANDOM_SEED)
 
+    # Setup DUT object
+    from cocotb import simulator
+
+    handle = simulator.get_root_handle(root_name)
+    if not handle:
+        raise RuntimeError("Can not find root handle ({})".format(root_name))
+
+    dut = cocotb.handle.SimHandle(handle)
+
+    # start Regression Manager
     global regression_manager
-    regression_manager = RegressionManager(root_name)
+    regression_manager = RegressionManager(dut)
     regression_manager.execute()
 
     _rlock.release()
