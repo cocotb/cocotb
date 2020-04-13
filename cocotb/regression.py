@@ -65,6 +65,7 @@ from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_outpu
 from cocotb.xunit_reporter import XUnitReporter
 from cocotb.decorators import test as Test, hook as Hook, RunningTask
 from cocotb.outcomes import Outcome
+from cocotb.handle import SimHandle
 
 
 def _my_import(name: str) -> Any:
@@ -78,13 +79,12 @@ def _my_import(name: str) -> Any:
 class RegressionManager:
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, root_name: str):
+    def __init__(self, dut: SimHandle):
         """
         Args:
-            root_name (str): The name of the root handle.
+            dut (SimHandle): The root handle to pass into test functions.
         """
-        self._root_name = root_name
-        self._dut = None
+        self._dut = dut
         self._running_test = None
         self._cov = None
         self.log = SimLog("cocotb.regression")
@@ -114,17 +114,6 @@ class RegressionManager:
             self.log.info("Enabling coverage collection of Python code")
             self._cov = coverage.coverage(branch=True, omit=["*cocotb*"])
             self._cov.start()
-
-        # Setup DUT object
-        #######################
-
-        handle = simulator.get_root_handle(self._root_name)
-
-        self._dut = cocotb.handle.SimHandle(handle) if handle else None
-
-        if self._dut is None:
-            raise AttributeError("Can not find Root Handle (%s)" %
-                                 self._root_name)
 
         # Test Discovery
         ####################
