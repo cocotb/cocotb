@@ -64,3 +64,19 @@ accessible via a TCP socket:
    .. code:: shell
 
       telnet 127.0.0.1 4000
+
+
+Embedding an IPython shell
+==========================
+
+.. module:: cocotb.ipython_support
+
+.. versionadded:: 1.4
+
+A prebuilt test is included to easily launch an IPython shell in an existing design.
+
+.. autofunction:: run_ipython
+
+To embed a shell within an existing test, where it can inspect local variables, the :func:`embed` function can be used.
+
+.. autofunction:: embed

@@ -32,6 +32,3 @@ endif
 
 include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
-
-# list all required Python files here
-sim: $(MODULE).py
