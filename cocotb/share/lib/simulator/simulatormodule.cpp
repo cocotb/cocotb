@@ -135,13 +135,6 @@ namespace {
     PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type;
     template<>
     PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type;
-
-
-    // get the python type corresponding to the static type of a PyObject pointer
-    template<typename gpi_hdl_Object_ptr>
-    PyTypeObject* python_type_for() {
-        return &std::remove_pointer<gpi_hdl_Object_ptr>::type::py_type;
-    }
 }
 
 
@@ -600,19 +593,17 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
 }
 
 
-static PyObject *iterate(PyObject *self, PyObject *args)
+static PyObject *iterate(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     int type;
     gpi_iterator_hdl result;
     PyObject *res;
 
-    if (!PyArg_ParseTuple(args, "O!i", python_type_for<decltype(hdl_obj)>(), &hdl_obj, &type)) {
+    if (!PyArg_ParseTuple(args, "i", &type)) {
         return NULL;
     }
 
-    result = gpi_iterate(hdl_obj->hdl, (gpi_iterator_sel_t)type);
+    result = gpi_iterate(self->hdl, (gpi_iterator_sel_t)type);
 
     res = gpi_hdl_New(result);
 
@@ -633,202 +624,162 @@ static PyObject *next(gpi_hdl_Object<gpi_iterator_hdl> *self)
     return gpi_hdl_New(result);
 }
 
+// Raise an exception on failure
+// Return None if for example get bin_string on enum?
 
-static PyObject *get_signal_val_binstr(PyObject *self, PyObject *args)
+static PyObject *get_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
+    COCOTB_UNUSED(args);
     const char *result;
     PyObject *retstr;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_get_signal_value_binstr(hdl_obj->hdl);
+    result = gpi_get_signal_value_binstr(self->hdl);
     retstr = Py_BuildValue("s", result);
 
     return retstr;
 }
 
-static PyObject *get_signal_val_str(PyObject *self, PyObject *args)
+static PyObject *get_signal_val_str(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
+    COCOTB_UNUSED(args);
     const char *result;
     PyObject *retstr;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_get_signal_value_str(hdl_obj->hdl);
+    result = gpi_get_signal_value_str(self->hdl);
     retstr = PyBytes_FromString(result);
 
     return retstr;
 }
 
-static PyObject *get_signal_val_real(PyObject *self, PyObject *args)
+static PyObject *get_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
+    COCOTB_UNUSED(args);
     double result;
     PyObject *retval;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_get_signal_value_real(hdl_obj->hdl);
+    result = gpi_get_signal_value_real(self->hdl);
     retval = Py_BuildValue("d", result);
 
     return retval;
 }
 
 
-static PyObject *get_signal_val_long(PyObject *self, PyObject *args)
+static PyObject *get_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
+    COCOTB_UNUSED(args);
     long result;
     PyObject *retval;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_get_signal_value_long(hdl_obj->hdl);
+    result = gpi_get_signal_value_long(self->hdl);
     retval = Py_BuildValue("l", result);
 
     return retval;
 }
 
-static PyObject *set_signal_val_binstr(PyObject *self, PyObject *args)
+static PyObject *set_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     const char *binstr;
     gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "O!is", python_type_for<decltype(hdl_obj)>(), &hdl_obj, &action, &binstr)) {
+    if (!PyArg_ParseTuple(args, "is", &action, &binstr)) {
         return NULL;
     }
 
-    gpi_set_signal_value_binstr(hdl_obj->hdl, binstr, action);
+    gpi_set_signal_value_binstr(self->hdl, binstr, action);
     Py_RETURN_NONE;
 }
 
-static PyObject *set_signal_val_str(PyObject *self, PyObject *args)
+static PyObject *set_signal_val_str(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     gpi_set_action_t action;
     const char *str;
 
-    if (!PyArg_ParseTuple(args, "O!iy", python_type_for<decltype(hdl_obj)>(), &hdl_obj, &action, &str)) {
+    if (!PyArg_ParseTuple(args, "iy", &action, &str)) {
         return NULL;
     }
 
-    gpi_set_signal_value_str(hdl_obj->hdl, str, action);
+    gpi_set_signal_value_str(self->hdl, str, action);
     Py_RETURN_NONE;
 }
 
-static PyObject *set_signal_val_real(PyObject *self, PyObject *args)
+static PyObject *set_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     double value;
     gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "O!id", python_type_for<decltype(hdl_obj)>(), &hdl_obj, &action, &value)) {
+    if (!PyArg_ParseTuple(args, "id", &action, &value)) {
         return NULL;
     }
 
-    gpi_set_signal_value_real(hdl_obj->hdl, value, action);
+    gpi_set_signal_value_real(self->hdl, value, action);
     Py_RETURN_NONE;
 }
 
-static PyObject *set_signal_val_long(PyObject *self, PyObject *args)
+static PyObject *set_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     long value;
     gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "O!il", python_type_for<decltype(hdl_obj)>(), &hdl_obj, &action, &value)) {
+    if (!PyArg_ParseTuple(args, "il", &action, &value)) {
         return NULL;
     }
 
-    gpi_set_signal_value_long(hdl_obj->hdl, value, action);
+    gpi_set_signal_value_long(self->hdl, value, action);
     Py_RETURN_NONE;
 }
 
-static PyObject *get_definition_name(PyObject *self, PyObject *args)
+static PyObject *get_definition_name(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     const char* result;
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     PyObject *retstr;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_get_definition_name(hdl_obj->hdl);
+    result = gpi_get_definition_name(self->hdl);
     retstr = Py_BuildValue("s", result);
 
     return retstr;
 }
 
-static PyObject *get_definition_file(PyObject *self, PyObject *args)
+static PyObject *get_definition_file(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     const char* result;
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     PyObject *retstr;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_get_definition_file(hdl_obj->hdl);
+    result = gpi_get_definition_file(self->hdl);
     retstr = Py_BuildValue("s", result);
 
     return retstr;
 }
 
-static PyObject *get_handle_by_name(PyObject *self, PyObject *args)
+static PyObject *get_handle_by_name(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
     const char *name;
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     gpi_sim_hdl result;
     PyObject *res;
 
-    if (!PyArg_ParseTuple(args, "O!s", python_type_for<decltype(hdl_obj)>(), &hdl_obj, &name)) {
+    if (!PyArg_ParseTuple(args, "s", &name)) {
         return NULL;
     }
 
-    result = gpi_get_handle_by_name(hdl_obj->hdl, name);
+    result = gpi_get_handle_by_name(self->hdl, name);
 
     res = gpi_hdl_New(result);
 
     return res;
 }
 
-static PyObject *get_handle_by_index(PyObject *self, PyObject *args)
+static PyObject *get_handle_by_index(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
     int32_t index;
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     gpi_sim_hdl result;
     PyObject *value;
 
-    if (!PyArg_ParseTuple(args, "O!i", python_type_for<decltype(hdl_obj)>(), &hdl_obj, &index)) {
+    if (!PyArg_ParseTuple(args, "i", &index)) {
         return NULL;
     }
 
-    result = gpi_get_handle_by_index(hdl_obj->hdl, index);
+    result = gpi_get_handle_by_index(self->hdl, index);
 
     value = gpi_hdl_New(result);
 
@@ -858,69 +809,50 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *get_name_string(PyObject *self, PyObject *args)
+static PyObject *get_name_string(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
+    COCOTB_UNUSED(args);
     COCOTB_UNUSED(self);
     const char *result;
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     PyObject *retstr;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_get_signal_name_str(hdl_obj->hdl);
+    result = gpi_get_signal_name_str(self->hdl);
     retstr = Py_BuildValue("s", result);
 
     return retstr;
 }
 
-static PyObject *get_type(PyObject *self, PyObject *args)
+static PyObject *get_type(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     gpi_objtype_t result;
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     PyObject *pyresult;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_get_object_type(hdl_obj->hdl);
+    result = gpi_get_object_type(self->hdl);
     pyresult = Py_BuildValue("i", (int)result);
 
     return pyresult;
 }
 
-static PyObject *get_const(PyObject *self, PyObject *args)
+static PyObject *get_const(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     int result;
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     PyObject *pyresult;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_is_constant(hdl_obj->hdl);
+    result = gpi_is_constant(self->hdl);
     pyresult = Py_BuildValue("i", result);
 
     return pyresult;
 }
 
-static PyObject *get_type_string(PyObject *self, PyObject *args)
+static PyObject *get_type_string(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
     const char *result;
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
     PyObject *retstr;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    result = gpi_get_signal_type_str(hdl_obj->hdl);
+    result = gpi_get_signal_type_str(self->hdl);
     retstr = Py_BuildValue("s", result);
 
     return retstr;
@@ -963,35 +895,25 @@ static PyObject *get_precision(PyObject *self, PyObject *args)
     return retint;
 }
 
-static PyObject *get_num_elems(PyObject *self, PyObject *args)
+static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
+    COCOTB_UNUSED(args);
     PyObject *retstr;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    int elems = gpi_get_num_elems(hdl_obj->hdl);
+    int elems = gpi_get_num_elems(self->hdl);
     retstr = Py_BuildValue("i", elems);
 
     return retstr;
 }
 
-static PyObject *get_range(PyObject *self, PyObject *args)
+static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_sim_hdl> *hdl_obj;
+    COCOTB_UNUSED(args);
     PyObject *retstr;
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    int indexable = gpi_is_indexable(hdl_obj->hdl);
-    int rng_left  = gpi_get_range_left(hdl_obj->hdl);
-    int rng_right = gpi_get_range_right(hdl_obj->hdl);
+    int indexable = gpi_is_indexable(self->hdl);
+    int rng_left  = gpi_get_range_left(self->hdl);
+    int rng_right = gpi_get_range_right(self->hdl);
 
     if (indexable)
         retstr = Py_BuildValue("(i,i)", rng_left, rng_right);
@@ -1011,18 +933,12 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *deregister_callback(PyObject *self, PyObject *args)
+static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *args)
 {
-    COCOTB_UNUSED(self);
-    gpi_hdl_Object<gpi_cb_hdl> *hdl_obj;
-
+    COCOTB_UNUSED(args);
     FENTER
 
-    if (!PyArg_ParseTuple(args, "O!", python_type_for<decltype(hdl_obj)>(), &hdl_obj)) {
-        return NULL;
-    }
-
-    gpi_deregister_callback(hdl_obj->hdl);
+    gpi_deregister_callback(self->hdl);
 
     FEXIT
     Py_RETURN_NONE;
@@ -1128,12 +1044,73 @@ PyMODINIT_FUNC PyInit_simulator(void)
     return simulator;
 }
 
+static PyMethodDef gpi_sim_hdl_methods[] = {
+    {"get_signal_val_long",
+        (PyCFunction)get_signal_val_long, METH_NOARGS,
+        "Get the value of a signal as a long"},
+    {"get_signal_val_str",
+        (PyCFunction)get_signal_val_str, METH_NOARGS,
+        "Get the value of a signal as an ASCII string"},
+    {"get_signal_val_binstr",
+        (PyCFunction)get_signal_val_binstr, METH_NOARGS,
+        "Get the value of a signal as a binary string"},
+    {"get_signal_val_real",
+        (PyCFunction)get_signal_val_real, METH_NOARGS,
+        "Get the value of a signal as a double precision float"},
+    {"set_signal_val_long",
+        (PyCFunction)set_signal_val_long, METH_VARARGS,
+        "Set the value of a signal using a long"},
+    {"set_signal_val_str",
+        (PyCFunction)set_signal_val_str, METH_VARARGS,
+        "Set the value of a signal using an NUL-terminated 8-bit string"},
+    {"set_signal_val_binstr",
+        (PyCFunction)set_signal_val_binstr, METH_VARARGS,
+        "Set the value of a signal using a string with a character per bit"},
+    {"set_signal_val_real",
+        (PyCFunction)set_signal_val_real, METH_VARARGS,
+        "Set the value of a signal using a double precision float"},
+    {"get_definition_name",
+        (PyCFunction)get_definition_name, METH_NOARGS,
+        "Get the name of a GPI object's definition"},
+    {"get_definition_file",
+        (PyCFunction)get_definition_file, METH_NOARGS,
+        "Get the file that sources the object's definition"},
+    {"get_handle_by_name",
+        (PyCFunction)get_handle_by_name, METH_VARARGS,
+        "Get handle of a named object"},
+    {"get_handle_by_index",
+        (PyCFunction)get_handle_by_index, METH_VARARGS,
+        "Get handle of a object at an index in a parent"},
+    {"get_name_string",
+        (PyCFunction)get_name_string, METH_NOARGS,
+        "Get the name of an object as a string"},
+    {"get_type_string",
+        (PyCFunction)get_type_string, METH_NOARGS,
+        "Get the type of an object as a string"},
+    {"get_type",
+        (PyCFunction)get_type, METH_NOARGS,
+        "Get the type of an object, mapped to a GPI enumeration"},
+    {"get_const",
+        (PyCFunction)get_const, METH_NOARGS,
+        "Get a flag indicating whether the object is a constant"},
+    {"get_num_elems",
+        (PyCFunction)get_num_elems, METH_NOARGS,
+        "Get the number of elements contained in the handle"},
+    {"get_range",
+        (PyCFunction)get_range, METH_NOARGS,
+        "Get the range of elements (tuple) contained in the handle, returns None if not indexable"},
+    {"iterate",
+        (PyCFunction)iterate, METH_VARARGS,
+        "Get an iterator handle to loop over all members in an object"},
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
 
 // putting these at the bottom means that all the functions above are accessible
 template<>
 PyTypeObject gpi_hdl_Object<gpi_sim_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_sim_hdl>();
     type.tp_name = "gpi_sim_hdl";
+    type.tp_methods = gpi_sim_hdl_methods;
     return type;
 }();
 
@@ -1146,9 +1123,17 @@ PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type = []() -> PyTypeObject {
     return type;
 }();
 
+static PyMethodDef gpi_cb_hdl_methods[] = {
+    {"deregister",
+        (PyCFunction)deregister, METH_NOARGS,
+        "De-register this callback"},
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
 template<>
 PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_cb_hdl>();
     type.tp_name = "gpi_cb_hdl";
+    type.tp_methods = gpi_cb_hdl_methods;
     return type;
 }();

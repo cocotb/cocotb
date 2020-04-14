@@ -153,7 +153,7 @@ class GPITrigger(Trigger):
     def unprime(self):
         """Disable a primed trigger, can be re-primed."""
         if self.cbhdl is not None:
-            simulator.deregister_callback(self.cbhdl)
+            self.cbhdl.deregister()
         self.cbhdl = None
         Trigger.unprime(self)
 
