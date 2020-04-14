@@ -643,13 +643,6 @@ static PyObject *next(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // TODO:eric-wieser: It's valid for iterate to return a NULL handle, to make the Python
-    // intuitive we simply raise StopIteration on the first iteration
-    // if (!hdl) {
-    //     PyErr_SetNone(PyExc_StopIteration);
-    //     return NULL;
-    // }
-
     result = gpi_next(hdl_obj->hdl);
 
     // Raise StopIteration when we're done

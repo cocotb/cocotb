@@ -176,8 +176,9 @@ typedef enum gpi_set_action_e {
 // Functions for iterating over entries of a handle
 // Returns an iterator handle which can then be used in gpi_next calls
 //
-// NB the iterator handle may be NULL if no objects of the requested type are
-// found
+// Unlike `vpi_iterate` the iterator handle may only be NULL if the `type` is
+// not supported, If no objects of the requested type are found, an empty
+// iterator is returned.
 gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base, gpi_iterator_sel_t type);
 
 // Returns NULL when there are no more objects
