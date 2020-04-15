@@ -242,3 +242,39 @@ def test_backwards_compatibility():
 
     with pytest.raises(TypeError):
         BinaryValue(value=0, bits=16, n_bits=17)
+
+
+def test_buff_big_endian():
+    orig_str = "011011001001"
+    orig_bytes = b'\x06\xC9'  # padding is the high bits of the first byte
+
+    v = BinaryValue(value=orig_str, n_bits=12, bigEndian=True)
+    assert v.buff == orig_bytes
+
+    # should be unchanged
+    v.buff = orig_bytes
+    assert v.buff == orig_bytes
+    assert v.binstr == orig_str
+
+    # extra bits are stripped because they don't fit into the 12 bits
+    v.buff = b'\xF6\xC9'
+    assert v.buff == orig_bytes
+    assert v.binstr == orig_str
+
+
+def test_buff_little_endian():
+    orig_str = "011011001001"
+    orig_bytes = b'\xC9\x06'  # padding is the high bits of the last byte
+
+    v = BinaryValue(value=orig_str, n_bits=12, bigEndian=False)
+    assert v.buff == orig_bytes
+
+    # should be unchanged
+    v.buff = orig_bytes
+    assert v.buff == orig_bytes
+    assert v.binstr == orig_str
+
+# extra bits are stripped because they don't fit into the 12 bits
+    v.buff = b'\xC9\xF6'
+    assert v.buff == orig_bytes
+    assert v.binstr == orig_str
