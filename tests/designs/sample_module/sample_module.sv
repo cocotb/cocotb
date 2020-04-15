@@ -48,7 +48,7 @@ module sample_module (
     output real                                 stream_out_real,
     output integer                              stream_out_int,
     input  test_if                              inout_if,
-    input string                                string_input_port,
+    input string                                stream_in_string,
 `endif
     input  [7:0]                                stream_in_data,
     input  [63:0]                               stream_in_data_wide,

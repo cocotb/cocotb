@@ -47,7 +47,7 @@ async def test_returnvalue_deprecated(dut):
 @cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
 async def test_unicode_handle_assignment_deprecated(dut):
     with assert_deprecated() as warns:
-        dut.string_input_port <= "Bad idea"
+        dut.stream_in_string <= "Bad idea"
         await cocotb.triggers.ReadWrite()
     assert "bytes" in str(warns[0].message)
 

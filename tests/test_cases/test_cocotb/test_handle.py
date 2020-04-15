@@ -41,8 +41,8 @@ def test_bad_attr(dut):
 # strings are not supported on Icarus
 @cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
 async def test_string_handle_takes_bytes(dut):
-    dut.string_input_port.value = b"bytes"
+    dut.stream_in_string.value = b"bytes"
     await cocotb.triggers.Timer(10, 'ns')
-    val = dut.string_input_port.value
+    val = dut.stream_in_string.value
     assert isinstance(val, bytes)
     assert val == b"bytes"
