@@ -256,7 +256,7 @@ def test_buff_big_endian():
     assert v.buff == orig_bytes
     assert v.binstr == orig_str
 
-    # extra bits are stripped
+    # extra bits are stripped because they don't fit into the 12 bits
     v.buff = b'\xF6\xC9'
     assert v.buff == orig_bytes
     assert v.binstr == orig_str
@@ -274,7 +274,7 @@ def test_buff_little_endian():
     assert v.buff == orig_bytes
     assert v.binstr == orig_str
 
-    # extra bits are stripped
+# extra bits are stripped because they don't fit into the 12 bits
     v.buff = b'\xC9\xF6'
     assert v.buff == orig_bytes
     assert v.binstr == orig_str
