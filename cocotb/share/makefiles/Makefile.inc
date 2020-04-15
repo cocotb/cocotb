@@ -49,7 +49,6 @@ export OS
 PYTHON_BIN ?= $(realpath $(shell cocotb-config --python-bin))
 
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
 
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
