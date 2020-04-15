@@ -410,12 +410,17 @@ class test(coroutine, metaclass=_decorator_helper):
     Used as ``@cocotb.test(...)``.
 
     Args:
-        timeout_time (int, optional):
-            Value representing simulation timeout.
+        timeout_time (numbers.Real or decimal.Decimal, optional):
+            Simulation time duration before timeout occurs.
 
             .. versionadded:: 1.3
-        timeout_unit (str, optional):
-            Unit of timeout value, see :class:`~cocotb.triggers.Timer` for more info.
+
+            .. note::
+                Test timeout is intended for protection against deadlock.
+                Users should use :class:`~cocotb.triggers.with_timeout` if they require a
+                more general-purpose timeout mechanism.
+        timeout_unit (str or None, optional):
+            Units of timeout_time, accepts any units that :class:`~cocotb.triggers.Timer` does.
 
             .. versionadded:: 1.3
         expect_fail (bool, optional):
