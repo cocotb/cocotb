@@ -29,7 +29,7 @@ def _check_logic(tlog, hdl, expected):
         tlog.info("   Found {0!r} ({1}) with value=0x{2:X}".format(hdl, hdl._type, int(hdl)))
 
 def _check_str(tlog, hdl, expected):
-    if str(hdl) != expected:
+    if hdl.value != expected:
         raise TestFailure("{2!r}: Expected >{0}< but got >{1}<".format(expected, str(hdl), hdl))
     else:
         tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, str(hdl)))
@@ -65,7 +65,7 @@ def test_read_write(dut):
         _check_int (tlog, dut.param_int , 6)
         _check_real(tlog, dut.param_real, 3.14)
         _check_int (tlog, dut.param_char, ord('p'))
-        _check_str (tlog, dut.param_str , "ARRAYMOD")
+        _check_str (tlog, dut.param_str , b"ARRAYMOD")
 
         if not cocotb.SIM_NAME.lower().startswith(("riviera")):
             _check_logic(tlog, dut.param_rec.a        , 0)
@@ -90,7 +90,7 @@ def test_read_write(dut):
         _check_int (tlog, dut.const_int , 12)
         _check_real(tlog, dut.const_real, 6.28)
         _check_int (tlog, dut.const_char, ord('c'))
-        _check_str (tlog, dut.const_str , "MODARRAY")
+        _check_str (tlog, dut.const_str , b"MODARRAY")
 
         if not cocotb.SIM_NAME.lower().startswith(("riviera")):
             _check_logic(tlog, dut.const_rec.a        , 1)
@@ -156,7 +156,7 @@ def test_read_write(dut):
         _check_int (tlog, dut.port_int_out , 5000)
         _check_real(tlog, dut.port_real_out, 22.54)
         _check_int (tlog, dut.port_char_out, ord('Z'))
-        _check_str (tlog, dut.port_str_out , "Testing")
+        _check_str (tlog, dut.port_str_out , b"Testing")
 
         _check_logic(tlog, dut.port_rec_out.a        , 1)
         _check_logic(tlog, dut.port_rec_out.b[0]     , 0x01)
@@ -195,7 +195,7 @@ def test_read_write(dut):
         _check_logic(tlog, dut.sig_t6[0][2][7], 0)
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        _check_str(tlog, dut.port_str_out, "TEsting")  # the uppercase "E" from a few lines before
+        _check_str(tlog, dut.port_str_out, b"TEsting")  # the uppercase "E" from a few lines before
 
         _check_logic(tlog, dut.port_rec_out.b[1]     , 0xA3)
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)
