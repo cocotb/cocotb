@@ -36,80 +36,77 @@
 #include <Python.h>
 #include "io_module.h"
 
+/* Py_SETREF was added in 3.5.2, and only if Py_LIMITED_API is absent */
+#ifndef Py_SETREF
+    #define Py_SETREF(op, op2)                      \
+        do {                                        \
+            PyObject *_py_tmp = (PyObject *)(op);   \
+            (op) = (op2);                           \
+            Py_DECREF(_py_tmp);                     \
+        } while (0)
+#endif
+
+
 // Python read function just takes an offset in bytes and a buffer
-static PyObject *pWrFunction;
+static PyObject *pWrFunction = Py_None;
 // Python read function just takes an offset in bytes and returns a value
-static PyObject *pRdFunction;
+static PyObject *pRdFunction = Py_None;
 
 // Functions called by Python
-static PyObject *set_write_function(PyObject *self, PyObject *args) {
+static PyObject *set_write_function(PyObject *self, PyObject *args)
+{
+    PyObject *func;
+    if (!PyArg_ParseTuple(args, "O:set_write_function", &func)) {
+        return NULL;
+    }
+    Py_INCREF(func);
+    Py_SETREF(pWrFunction, func);
 
-    pWrFunction = PyTuple_GetItem(args, 0);
-    Py_INCREF(pWrFunction);
-
-    PyObject *retstr = Py_BuildValue("s", "OK!");
-    return retstr;
+    Py_RETURN_NONE;
 }
 
-static PyObject *set_read_function(PyObject *self, PyObject *args) {
+static PyObject *set_read_function(PyObject *self, PyObject *args)
+{
+    PyObject *func;
+    if (!PyArg_ParseTuple(args, "O:set_read_function", &func)) {
+        return NULL;
+    }
+    Py_INCREF(func);
+    Py_SETREF(pRdFunction, func);
 
-    pRdFunction = PyTuple_GetItem(args, 0);
-    Py_INCREF(pRdFunction);
-
-    PyObject *retstr = Py_BuildValue("s", "OK!");
-    return retstr;
+    Py_RETURN_NONE;
 }
 
 
 // Functions called by C (exported in a shared library)
-unsigned int IORD(unsigned int base, unsigned int address) {
-
-    unsigned int value;
-
-    if (!PyCallable_Check(pRdFunction)) {
-        printf("Read function not callable...\n");
+unsigned int IORD(unsigned int base, unsigned int address)
+{
+    PyObject *rv = PyObject_CallFunction(pRdFunction, "I", base + address);
+    if (rv == NULL) {
+        PyErr_WriteUnraisable(NULL);
         return 0;
     }
 
-    PyObject *call_args = PyTuple_New(1);
-    PyObject *rv;
-
-    PyTuple_SetItem(call_args, 0, PyInt_FromLong(base + address));
-
-    rv = PyObject_CallObject(pRdFunction, call_args);
-    value = PyInt_AsLong(rv);
-
-    if (PyErr_Occurred())
-        PyErr_Print();
-
+    long value = PyInt_AsLong(rv);
     Py_DECREF(rv);
-    Py_DECREF(call_args);
 
-    return value;
+    if (value == -1 && PyErr_Occurred()) {
+        PyErr_WriteUnraisable(NULL);
+        return 0;
+    }
+
+    return (unsigned int)value;
 }
 
 int IOWR(unsigned int base, unsigned int address, unsigned int value)
 {
-
-    if (!PyCallable_Check(pWrFunction)) {
-        printf("Write function isn't callable...\n");
-        return -1;
+    /* `I` is `unsigned int` */
+    PyObject *rv = PyObject_CallFunction(pWrFunction, "II", base + address, value);
+    if (rv == NULL) {
+        PyErr_WriteUnraisable(NULL);
+        return 0;
     }
-
-    PyObject *call_args = PyTuple_New(2);
-    PyObject *rv;
-
-    PyTuple_SetItem(call_args, 0, PyInt_FromLong(base + address));
-    PyTuple_SetItem(call_args, 1, PyInt_FromLong(value));
-
-    rv = PyObject_CallObject(pWrFunction, call_args);
-
-    if (PyErr_Occurred())
-        PyErr_Print();
-
     Py_DECREF(rv);
-    Py_DECREF(call_args);
-
     return 0;
 }
 
