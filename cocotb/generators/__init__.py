@@ -44,7 +44,10 @@ def repeat(obj, nrepeat=None):
     Kwargs:
         nrepeat (int): The number of times to repeatedly yield obj
     """
-    return itertools.repeat(obj, times=nrepeat)
+    if nrepeat is None:
+        return itertools.repeat(obj)
+    else:
+        return itertools.repeat(obj, times=nrepeat)
 
 
 @public
