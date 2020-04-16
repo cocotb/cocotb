@@ -875,29 +875,32 @@ static PyObject *log_level(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static void add_module_constants(PyObject* simulator)
+static int add_module_constants(PyObject* simulator)
 {
     // Make the GPI constants accessible from the C world
-    int rc = 0;
-    rc |= PyModule_AddIntConstant(simulator, "UNKNOWN",       GPI_UNKNOWN);
-    rc |= PyModule_AddIntConstant(simulator, "MEMORY",        GPI_MEMORY);
-    rc |= PyModule_AddIntConstant(simulator, "MODULE",        GPI_MODULE);
-    rc |= PyModule_AddIntConstant(simulator, "NET",           GPI_NET);
-    rc |= PyModule_AddIntConstant(simulator, "PARAMETER",     GPI_PARAMETER);
-    rc |= PyModule_AddIntConstant(simulator, "REG",           GPI_REGISTER);
-    rc |= PyModule_AddIntConstant(simulator, "NETARRAY",      GPI_ARRAY);
-    rc |= PyModule_AddIntConstant(simulator, "ENUM",          GPI_ENUM);
-    rc |= PyModule_AddIntConstant(simulator, "STRUCTURE",     GPI_STRUCTURE);
-    rc |= PyModule_AddIntConstant(simulator, "REAL",          GPI_REAL);
-    rc |= PyModule_AddIntConstant(simulator, "INTEGER",       GPI_INTEGER);
-    rc |= PyModule_AddIntConstant(simulator, "STRING",        GPI_STRING);
-    rc |= PyModule_AddIntConstant(simulator, "GENARRAY",      GPI_GENARRAY);
-    rc |= PyModule_AddIntConstant(simulator, "OBJECTS",       GPI_OBJECTS);
-    rc |= PyModule_AddIntConstant(simulator, "DRIVERS",       GPI_DRIVERS);
-    rc |= PyModule_AddIntConstant(simulator, "LOADS",         GPI_LOADS);
+    if (
+        PyModule_AddIntConstant(simulator, "UNKNOWN",   GPI_UNKNOWN   ) < 0 ||
+        PyModule_AddIntConstant(simulator, "MEMORY",    GPI_MEMORY    ) < 0 ||
+        PyModule_AddIntConstant(simulator, "MODULE",    GPI_MODULE    ) < 0 ||
+        PyModule_AddIntConstant(simulator, "NET",       GPI_NET       ) < 0 ||
+        PyModule_AddIntConstant(simulator, "PARAMETER", GPI_PARAMETER ) < 0 ||
+        PyModule_AddIntConstant(simulator, "REG",       GPI_REGISTER  ) < 0 ||
+        PyModule_AddIntConstant(simulator, "NETARRAY",  GPI_ARRAY     ) < 0 ||
+        PyModule_AddIntConstant(simulator, "ENUM",      GPI_ENUM      ) < 0 ||
+        PyModule_AddIntConstant(simulator, "STRUCTURE", GPI_STRUCTURE ) < 0 ||
+        PyModule_AddIntConstant(simulator, "REAL",      GPI_REAL      ) < 0 ||
+        PyModule_AddIntConstant(simulator, "INTEGER",   GPI_INTEGER   ) < 0 ||
+        PyModule_AddIntConstant(simulator, "STRING",    GPI_STRING    ) < 0 ||
+        PyModule_AddIntConstant(simulator, "GENARRAY",  GPI_GENARRAY  ) < 0 ||
+        PyModule_AddIntConstant(simulator, "OBJECTS",   GPI_OBJECTS   ) < 0 ||
+        PyModule_AddIntConstant(simulator, "DRIVERS",   GPI_DRIVERS   ) < 0 ||
+        PyModule_AddIntConstant(simulator, "LOADS",     GPI_LOADS     ) < 0 ||
+        false
+    ) {
+        return -1;
+    }
 
-    if (rc != 0)
-        fprintf(stderr, "Failed to add module constants!\n");
+    return 0;
 }
 
 static PyObject *error_out(PyObject *m, PyObject *args)
@@ -957,7 +960,10 @@ PyMODINIT_FUNC PyInit_simulator(void)
         return NULL;
     }
 
-    add_module_constants(simulator);
+    if (add_module_constants(simulator) < 0) {
+        Py_DECREF(simulator);
+        return NULL;
+    }
     return simulator;
 }
 
