@@ -613,7 +613,7 @@ static PyObject *get_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self, PyObje
 {
     COCOTB_UNUSED(args);
     const char *result = gpi_get_signal_value_binstr(self->hdl);
-    return Py_BuildValue("s", result);
+    return PyUnicode_FromString(result);
 }
 
 static PyObject *get_signal_val_str(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
@@ -627,7 +627,7 @@ static PyObject *get_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
 {
     COCOTB_UNUSED(args);
     double result = gpi_get_signal_value_real(self->hdl);
-    return Py_BuildValue("d", result);
+    return PyFloat_FromDouble(result);
 }
 
 
@@ -635,7 +635,7 @@ static PyObject *get_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
 {
     COCOTB_UNUSED(args);
     long result = gpi_get_signal_value_long(self->hdl);
-    return Py_BuildValue("l", result);
+    return PyLong_FromLong(result);
 }
 
 static PyObject *set_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
@@ -694,14 +694,14 @@ static PyObject *get_definition_name(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
 {
     COCOTB_UNUSED(args);
     const char* result = gpi_get_definition_name(self->hdl);
-    return Py_BuildValue("s", result);
+    return PyUnicode_FromString(result);
 }
 
 static PyObject *get_definition_file(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
     COCOTB_UNUSED(args);
     const char* result = gpi_get_definition_file(self->hdl);
-    return Py_BuildValue("s", result);
+    return PyUnicode_FromString(result);
 }
 
 static PyObject *get_handle_by_name(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
@@ -753,28 +753,28 @@ static PyObject *get_name_string(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *ar
     COCOTB_UNUSED(args);
     COCOTB_UNUSED(self);
     const char *result = gpi_get_signal_name_str(self->hdl);
-    return Py_BuildValue("s", result);
+    return PyUnicode_FromString(result);
 }
 
 static PyObject *get_type(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
     COCOTB_UNUSED(args);
     gpi_objtype_t result = gpi_get_object_type(self->hdl);
-    return Py_BuildValue("i", (int)result);
+    return PyLong_FromLong(result);
 }
 
 static PyObject *get_const(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
     COCOTB_UNUSED(args);
     int result = gpi_is_constant(self->hdl);
-    return Py_BuildValue("i", result);
+    return PyBool_FromLong(result);
 }
 
 static PyObject *get_type_string(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
     COCOTB_UNUSED(args);
     const char *result = gpi_get_signal_type_str(self->hdl);
-    return Py_BuildValue("s", result);
+    return PyUnicode_FromString(result);
 }
 
 
@@ -808,14 +808,14 @@ static PyObject *get_precision(PyObject *self, PyObject *args)
 
     gpi_get_sim_precision(&precision);
 
-    return Py_BuildValue("i", precision);
+    return PyLong_FromLong(precision);
 }
 
 static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
     COCOTB_UNUSED(args);
     int elems = gpi_get_num_elems(self->hdl);
-    return Py_BuildValue("i", elems);
+    return PyLong_FromLong(elems);
 }
 
 static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
@@ -826,10 +826,12 @@ static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
     int rng_left  = gpi_get_range_left(self->hdl);
     int rng_right = gpi_get_range_right(self->hdl);
 
-    if (indexable)
+    if (indexable) {
         return Py_BuildValue("(i,i)", rng_left, rng_right);
-    else
-        return Py_BuildValue("");
+    }
+    else {
+        Py_RETURN_NONE;
+    }
 }
 
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
