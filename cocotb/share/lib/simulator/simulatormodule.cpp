@@ -222,15 +222,9 @@ int handle_gpi_callback(void *user_data)
         // If the return value is NULL a Python exception has occurred
         // The best thing to do here is shutdown as any subsequent
         // calls will go back to Python which is now in an unknown state
-        if (pValue == NULL)
-        {
-            fprintf(stderr, "ERROR: called callback function returned NULL\n");
-            if (PyErr_Occurred()) {
-                fprintf(stderr, "Failed to execute callback due to Python exception\n");
-                PyErr_Print();
-            } else {
-                fprintf(stderr, "Failed to execute callback\n");
-            }
+        if (pValue == NULL) {
+            fprintf(stderr, "ERROR: called callback function threw exception\n");
+            PyErr_Print();
 
             gpi_sim_end();
             sim_ending = 1;
