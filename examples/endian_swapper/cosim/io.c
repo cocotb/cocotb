@@ -113,7 +113,6 @@ int IOWR(unsigned int base, unsigned int address, unsigned int value)
     return 0;
 }
 
-#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef io_module =
 {
     PyModuleDef_HEAD_INIT,
@@ -128,10 +127,4 @@ PyMODINIT_FUNC PyInit_io_module(void)
 {
     return PyModule_Create(&io_module);
 }
-#else
-PyMODINIT_FUNC initio_module(void)
-{
-    Py_InitModule("io_module", io_module_methods);
-}
-#endif
 
