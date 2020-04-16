@@ -44,11 +44,6 @@ static int sim_ending = 0;
 #include <type_traits>
 
 
-struct module_state {
-    PyObject *error;
-};
-
-
 /* define the extension types as templates */
 namespace {
     template<typename gpi_hdl>
@@ -137,9 +132,6 @@ namespace {
     PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type;
 }
 
-
-
-#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
 
 typedef int (*gpi_function_t)(const void *);
 
@@ -903,40 +895,20 @@ static int add_module_constants(PyObject* simulator)
     return 0;
 }
 
-static PyObject *error_out(PyObject *m, PyObject *args)
-{
-    COCOTB_UNUSED(args);
-    struct module_state *st = GETSTATE(m);
-    PyErr_SetString(st->error, "something bad happened");
-    return NULL;
-}
-
-static int simulator_traverse(PyObject *m, visitproc visit, void *arg) {
-    Py_VISIT(GETSTATE(m)->error);
-    return 0;
-}
-
-static int simulator_clear(PyObject *m) {
-    Py_CLEAR(GETSTATE(m)->error);
-    return 0;
-}
-
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     MODULE_NAME,
     NULL,
-    sizeof(struct module_state),
+    -1,
     SimulatorMethods,
     NULL,
-    simulator_traverse,
-    simulator_clear,
+    NULL,
+    NULL,
     NULL
 };
 
 PyMODINIT_FUNC PyInit_simulator(void)
 {
-    PyObject* simulator;
-
     /* initialize the extension types */
     if (PyType_Ready(&gpi_hdl_Object<gpi_sim_hdl>::py_type) < 0) {
         return NULL;
@@ -948,15 +920,8 @@ PyMODINIT_FUNC PyInit_simulator(void)
         return NULL;
     }
 
-    simulator = PyModule_Create(&moduledef);
-
-    if (simulator == NULL)
-        return NULL;
-    struct module_state *st = GETSTATE(simulator);
-
-    st->error = PyErr_NewException(MODULE_NAME ".Error", NULL, NULL);
-    if (st->error == NULL) {
-        Py_DECREF(simulator);
+    PyObject* simulator = PyModule_Create(&moduledef);
+    if (simulator == NULL) {
         return NULL;
     }
 

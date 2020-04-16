@@ -51,7 +51,6 @@ typedef struct t_callback_data {
     gpi_sim_hdl cb_hdl;
 } s_callback_data, *p_callback_data;
 
-static PyObject *error_out(PyObject *m, PyObject *args);
 static PyObject *log_msg(PyObject *self, PyObject *args);
 
 static PyObject *register_timed_callback(PyObject *self, PyObject *args);
@@ -81,7 +80,6 @@ static PyMethodDef SimulatorMethods[] = {
 
     {"get_sim_time", get_sim_time, METH_NOARGS, "Get the current simulation time as an int tuple"},
     {"get_precision", get_precision, METH_NOARGS, "Get the precision of the simulator"},
-    {"error_out", error_out, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
