@@ -12,6 +12,12 @@ This page documents specifics, limitations, workarounds etc. in the various simu
 Icarus
 ======
 
+In order to use this simulator, set :make:var:`SIM` to ``icarus``:
+
+.. code-block:: bash
+
+    make SIM=icarus
+
 .. _sim-icarus-accessing-bits:
 
 Accessing bits in a vector
@@ -67,6 +73,12 @@ and therefore the make variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`
 Verilator
 =========
 
+In order to use this simulator, set :make:var:`SIM` to ``verilator``:
+
+.. code-block:: bash
+
+    make SIM=verilator
+
 cocotb supports Verilator 4.020 and above.
 Verilator converts Verilog code to C++ code that is compiled.
 It does not support VHDL.
@@ -94,10 +106,17 @@ To enable HDL code coverage, add Verilator's coverage option(s) to the :make:var
 
 This will result in coverage data being written to ``coverage.dat``.
 
+
 .. _sim-vcs:
 
 Synopsys VCS
 ============
+
+In order to use this simulator, set :make:var:`SIM` to ``vcs``:
+
+.. code-block:: bash
+
+    make SIM=vcs
 
 cocotb currently only supports VPI for Synopsys VCS, not VHPI.
 
@@ -107,6 +126,12 @@ cocotb currently only supports VPI for Synopsys VCS, not VHPI.
 Aldec Riviera-PRO
 =================
 
+In order to use this simulator, set :make:var:`SIM` to ``aldec``:
+
+.. code-block:: bash
+
+    make SIM=aldec
+
 .. note::
 
    On Windows, do not install the C++ compiler, i.e. unselect it during the installation process of Riviera-PRO.
@@ -115,10 +140,17 @@ Aldec Riviera-PRO
 The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
+
 .. _sim-activehdl:
 
 Aldec Active-HDL
 ================
+
+In order to use this simulator, set :make:var:`SIM` to ``activehdl``:
+
+.. code-block:: bash
+
+    make SIM=activehdl
 
 
 .. _sim-questa:
@@ -126,13 +158,25 @@ Aldec Active-HDL
 Mentor Questa
 =============
 
-See :ref:`sim-modelsim`.
+In order to use this simulator, set :make:var:`SIM` to ``questa``:
+
+.. code-block:: bash
+
+    make SIM=questa
+
+For more information, see :ref:`sim-modelsim`.
 
 
 .. _sim-modelsim:
 
 Mentor ModelSim
 ===============
+
+In order to use this simulator, set :make:var:`SIM` to ``modelsim``:
+
+.. code-block:: bash
+
+    make SIM=modelsim
 
 .. note::
 
@@ -154,12 +198,25 @@ ModelSim DE and SE (and Questa, of course) support the FLI.
 Cadence Incisive
 ================
 
-See :ref:`sim-xcelium`.
+In order to use this simulator, set :make:var:`SIM` to ``ius``:
+
+.. code-block:: bash
+
+    make SIM=ius
+
+For more information, see :ref:`sim-xcelium`.
+
 
 .. _sim-xcelium:
 
 Cadence Xcelium
 ===============
+
+In order to use this simulator, set :make:var:`SIM` to ``xcelium``:
+
+.. code-block:: bash
+
+    make SIM=xcelium
 
 The simulator automatically loads VPI even when only VHPI is requested.
 
@@ -169,12 +226,25 @@ The simulator automatically loads VPI even when only VHPI is requested.
 GHDL
 ====
 
+In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
+
+.. code-block:: bash
+
+    make SIM=ghdl
+
 Support is preliminary.
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.
+
 
 .. _sim-nvc:
 
 NVC
 ===
+
+In order to use this simulator, set :make:var:`SIM` to ``nvc``:
+
+.. code-block:: bash
+
+    make SIM=nvc
 
 To enable display of VHPI traces, use ``SIM_ARGS=--vhpi-trace make ...``.
