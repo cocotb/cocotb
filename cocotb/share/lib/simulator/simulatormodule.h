@@ -79,9 +79,8 @@ static PyMethodDef SimulatorMethods[] = {
     {"stop_simulator", stop_simulator, METH_VARARGS, "Instruct the attached simulator to stop"},
     {"log_level", log_level, METH_VARARGS, "Set the log level for GPI"},
 
-    // FIXME METH_NOARGS => initialization from incompatible pointer type
-    {"get_sim_time", get_sim_time, METH_VARARGS, "Get the current simulation time as an int tuple"},
-    {"get_precision", get_precision, METH_VARARGS, "Get the precision of the simulator"},
+    {"get_sim_time", get_sim_time, METH_NOARGS, "Get the current simulation time as an int tuple"},
+    {"get_precision", get_precision, METH_NOARGS, "Get the precision of the simulator"},
     {"error_out", error_out, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
