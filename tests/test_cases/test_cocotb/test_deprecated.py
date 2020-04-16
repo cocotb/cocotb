@@ -4,6 +4,7 @@
 import cocotb
 import warnings
 from contextlib import contextmanager
+from common import assert_raises
 
 
 @contextmanager
@@ -18,15 +19,6 @@ def assert_deprecated():
         assert len(warns) == 1
         assert issubclass(warns[0].category, DeprecationWarning), "Expected DeprecationWarning"
 
-
-@contextmanager
-def assert_raises(exc_type):
-    try:
-        yield
-    except exc_type:
-        pass
-    else:
-        raise AssertionError("{} was not raised".format(exc_type.__name__))
 
 
 @cocotb.test()

@@ -229,8 +229,8 @@ class Scheduler:
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
 
-        # A dictionary of pending writes
-        self._writes = _py_compat.insertion_ordered_dict()
+        # A list of pending (write_func, args)
+        self._write_calls = []
 
         self._pending_coros = []
         self._pending_triggers = []
@@ -255,9 +255,9 @@ class Scheduler:
 
             await self._read_write
 
-            while self._writes:
-                handle, value = self._writes.popitem()
-                handle.setimmediatevalue(value)
+            while self._write_calls:
+                func, args = self._write_calls.pop()
+                func(*args)
             self._writes_pending.clear()
 
     def _check_termination(self):
@@ -282,7 +282,7 @@ class Scheduler:
             self._trigger2coros = _py_compat.insertion_ordered_dict()
             self._coro2trigger = _py_compat.insertion_ordered_dict()
             self._terminate = False
-            self._writes = _py_compat.insertion_ordered_dict()
+            self._write_calls = []
             self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
@@ -503,7 +503,8 @@ class Scheduler:
                 e = remove_traceback_frames(e, ['unschedule', 'get'])
                 self._test.abort(e)
 
-    def save_write(self, handle, value):
+    def _schedule_write(self, handle, write_func, *args):
+        """ Queue `write_func` to be called on the next ReadWrite trigger. """
         if self._mode == Scheduler._MODE_READONLY:
             raise Exception("Write to object {0} was scheduled during a read-only sync phase.".format(handle._name))
 
@@ -512,7 +513,7 @@ class Scheduler:
         if self._write_coro_inst is None:
             self._write_coro_inst = self.add(self._do_writes())
 
-        self._writes[handle] = value
+        self._write_calls.append((write_func, args))
         self._writes_pending.set()
 
     def _coroutine_yielded(self, coro, trigger):

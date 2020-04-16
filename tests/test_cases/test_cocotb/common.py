@@ -6,6 +6,7 @@ Common utilities shared my many tests in this directory
 """
 import re
 import traceback
+from contextlib import contextmanager
 
 import cocotb
 from cocotb.result import TestFailure
@@ -41,3 +42,13 @@ def _check_traceback(running_coro, exc_type, pattern):
                 "{}"
             ).format(tb_text, pattern)
         )
+
+
+@contextmanager
+def assert_raises(exc_type):
+    try:
+        yield
+    except exc_type:
+        pass
+    else:
+        raise AssertionError("{} was not raised".format(exc_type.__name__))

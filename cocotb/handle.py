@@ -378,13 +378,37 @@ class NonHierarchyObject(SimHandleBase):
 
     @property
     def value(self):
-        raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
+        """The value of this simulation object.
 
-    def setimmediatevalue(self, value):
-        raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
+        .. note::
+            When setting this property, the value is stored by the :class:`~cocotb.scheduler.Scheduler`
+            and all stored values are written at the same time at the end of the current simulator time step.
+
+            Use :meth:`setimmediatevalue` to set the value immediately.
+        """
+        raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
 
     @value.setter
     def value(self, value):
+        def _call_on_readwrite(f, *args):
+            cocotb.scheduler._schedule_write(self, f, *args)
+        self._set_value(value, _call_on_readwrite)
+
+    def setimmediatevalue(self, value):
+        """ Assign a value to this simulation object immediately. """
+        def _call_now(f, *args):
+            f(*args)
+        self._set_value(value, _call_now)
+
+    def _set_value(self, value, call_sim):
+        """ This should be overriden in subclasses.
+
+        This is used to implement both the setter for :attr:`value`, and the
+        :meth:`setimmediatevalue` method.
+
+        ``call_sim(f, *args)`` should be used to schedule simulator writes,
+        rather than performing them directly as ``f(*args)``.
+        """
         raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
 
     def __le__(self, value):
@@ -463,7 +487,29 @@ class ConstantObject(NonHierarchyObject):
 
 
 class NonHierarchyIndexableObject(NonHierarchyObject):
-    """ A non-hierarchy indexable object. """
+    """ A non-hierarchy indexable object.
+
+    Getting and setting the current value of an array is done
+    by iterating through sub-handles in left-to-right order.
+
+    Given an HDL array ``arr``:
+
+    +--------------+---------------------+--------------------------------------------------------------+
+    | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
+    +==============+=====================+==============================================================+
+    | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
+    +--------------+---------------------+--------------------------------------------------------------+
+    | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
+    +--------------+---------------------+--------------------------------------------------------------+
+
+    When setting the signal as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
+
+    .. warning::
+        Assigning a value to a sub-handle:
+
+        - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
+        - **Correct**: ``dut.some_array[0].value = 1``
+    """
     def __init__(self, handle, path):
         NonHierarchyObject.__init__(self, handle, path)
         self._range = self._handle.get_range()
@@ -509,45 +555,18 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
                 left = left + 1
 
     @NonHierarchyObject.value.getter
-    def value(self):
-        """A list of each value within this simulation object.
-
-        Getting and setting the current value of an array is done
-        by iterating through sub-handles in left-to-right order.
-
-        Given an HDL array ``arr``:
-
-        +--------------+---------------------+--------------------------------------------------------------+
-        | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
-        +==============+=====================+==============================================================+
-        | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
-        +--------------+---------------------+--------------------------------------------------------------+
-        | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
-        +--------------+---------------------+--------------------------------------------------------------+
-
-        When setting this property as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
-
-        .. note::
-            When setting this property, the values will be cached as explained in :attr:`ModifiableObject.value`.
-
-        .. warning::
-            Assigning a value to a sub-handle:
-
-            - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
-            - **Correct**: ``dut.some_array[0].value = 1``
-        """
+    def value(self) -> list:
         # Don't use self.__iter__, because it has an unwanted `except IndexError`
         return [
             self[i].value
             for i in self._range_iter(self._range[0], self._range[1])
         ]
 
-    @value.setter
-    def value(self, value):
+    def _set_value(self, value, call_sim):
         """Assign value from a list of same length to an array in left-to-right order.
         Index 0 of the list maps to the left-most index in the array.
 
-        See the docstring for :attr:`value` above.
+        See the docstring for this class.
         """
         if type(value) is not list:
             raise TypeError("Assigning non-list value to object %s of type %s" % (self._name, type(self)))
@@ -555,7 +574,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
             raise ValueError("Assigning list of length %d to object %s of length %d" % (
                 len(value), self._name, len(self)))
         for val_idx, self_idx in enumerate(self._range_iter(self._range[0], self._range[1])):
-            self[self_idx].value = value[val_idx]
+            self[self_idx]._set_value(value[val_idx], call_sim)
 
 
 class NonConstantObject(NonHierarchyIndexableObject):
@@ -603,7 +622,7 @@ class Release(_SetAction):
 class ModifiableObject(NonConstantObject):
     """Base class for simulator objects whose values can be modified."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -623,7 +642,7 @@ class ModifiableObject(NonConstantObject):
         value, set_action = self._check_for_set_action(value)
 
         if isinstance(value, int) and value < 0x7fffffff and len(self) <= 32:
-            self._handle.set_signal_val_long(set_action, value)
+            call_sim(self._handle.set_signal_val_long, set_action, value)
             return
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
@@ -647,7 +666,7 @@ class ModifiableObject(NonConstantObject):
                 "Unsupported type for value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        self._handle.set_signal_val_binstr(set_action, value.binstr)
+        call_sim(self._handle.set_signal_val_binstr, set_action, value.binstr)
 
     def _check_for_set_action(self, value):
         if not isinstance(value, _SetAction):
@@ -655,26 +674,10 @@ class ModifiableObject(NonConstantObject):
         return value._as_gpi_args_for(self)
 
     @NonConstantObject.value.getter
-    def value(self):
-        """The value of this simulation object.
-
-        .. note::
-            When setting this property, the value is stored by the :class:`~cocotb.scheduler.Scheduler`
-            and all stored values are written at the same time at the end of the current simulator time step.
-
-            Use :meth:`setimmediatevalue` to set the value immediately.
-        """
+    def value(self) -> BinaryValue:
         binstr = self._handle.get_signal_val_binstr()
         result = BinaryValue(binstr, len(binstr))
         return result
-
-    @value.setter
-    def value(self, value):
-        """Assign value to this simulation object.
-
-        See the docstring for :attr:`value` above.
-        """
-        cocotb.scheduler.save_write(self, value)
 
     def __int__(self):
         return int(self.value)
@@ -686,7 +689,7 @@ class ModifiableObject(NonConstantObject):
 class RealObject(ModifiableObject):
     """Specific object handle for Real signals and variables."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to value.
 
         This operation will fail unless the handle refers to a modifiable
@@ -708,10 +711,10 @@ class RealObject(ModifiableObject):
                 "Unsupported type for real value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        self._handle.set_signal_val_real(set_action, value)
+        call_sim(self._handle.set_signal_val_real, set_action, value)
 
     @ModifiableObject.value.getter
-    def value(self):
+    def value(self) -> float:
         return self._handle.get_signal_val_real()
 
     def __float__(self):
@@ -721,7 +724,7 @@ class RealObject(ModifiableObject):
 class EnumObject(ModifiableObject):
     """Specific object handle for enumeration signals and variables."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -743,17 +746,17 @@ class EnumObject(ModifiableObject):
                 "Unsupported type for enum value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        self._handle.set_signal_val_long(set_action, value)
+        call_sim(self._handle.set_signal_val_long, set_action, value)
 
     @ModifiableObject.value.getter
-    def value(self):
+    def value(self) -> int:
         return self._handle.get_signal_val_long()
 
 
 class IntegerObject(ModifiableObject):
     """Specific object handle for Integer and Enum signals and variables."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -775,17 +778,17 @@ class IntegerObject(ModifiableObject):
                 "Unsupported type for integer value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        self._handle.set_signal_val_long(set_action, value)
+        call_sim(self._handle.set_signal_val_long, set_action, value)
 
     @ModifiableObject.value.getter
-    def value(self):
+    def value(self) -> int:
         return self._handle.get_signal_val_long()
 
 
 class StringObject(ModifiableObject):
     """Specific object handle for String variables."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -818,10 +821,10 @@ class StringObject(ModifiableObject):
                 "Unsupported type for string value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        self._handle.set_signal_val_str(set_action, value)
+        call_sim(self._handle.set_signal_val_str, set_action, value)
 
     @ModifiableObject.value.getter
-    def value(self):
+    def value(self) -> bytes:
         return self._handle.get_signal_val_str()
 
 _handle2obj = {}

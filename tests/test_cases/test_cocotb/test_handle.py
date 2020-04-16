@@ -7,6 +7,8 @@ Tests for handles
 import cocotb
 from cocotb.result import TestFailure
 
+from common import assert_raises
+
 
 @cocotb.test()
 def test_lessthan_raises_error(dut):
@@ -46,3 +48,19 @@ async def test_string_handle_takes_bytes(dut):
     val = dut.stream_in_string.value
     assert isinstance(val, bytes)
     assert val == b"bytes"
+
+
+async def test_delayed_assignment_still_errors(dut):
+    """ Writing a bad value should fail even if the write is scheduled to happen later """
+
+    # note: all these fail because BinaryValue.assign rejects them
+
+    with assert_raises(ValueError):
+        dut.stream_in_int.setimmediatevalue("1010 not a real binary string")
+    with assert_raises(TypeError):
+        dut.stream_in_int.setimmediatevalue([])
+
+    with assert_raises(ValueError):
+        dut.stream_in_int <= "1010 not a real binary string"
+    with assert_raises(TypeError):
+        dut.stream_in_int <= []
