@@ -856,13 +856,13 @@ static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *args)
 static PyObject *log_level(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
-    enum gpi_log_levels new_level;
-    PyObject *py_level;
+    long l_level;
 
-    py_level = PyTuple_GetItem(args, 0);
-    new_level = (enum gpi_log_levels)PyLong_AsLong(py_level);
+    if (!PyArg_ParseTuple(args, "l", &l_level)) {
+        return NULL;
+    }
 
-    set_log_level(new_level);
+    set_log_level((enum gpi_log_levels)l_level);
 
     Py_RETURN_NONE;
 }
