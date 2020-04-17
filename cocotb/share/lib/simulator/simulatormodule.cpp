@@ -184,14 +184,14 @@ int handle_gpi_callback(void *user_data)
 {
     int ret = 0;
     to_python();
-    p_callback_data callback_data_p = (p_callback_data)user_data;
+    callback_data *cb_data = (callback_data *)user_data;
 
-    if (callback_data_p->id_value != COCOTB_ACTIVE_ID) {
+    if (cb_data->id_value != COCOTB_ACTIVE_ID) {
         fprintf(stderr, "Userdata corrupted!\n");
         ret = 1;
         goto err;
     }
-    callback_data_p->id_value = COCOTB_INACTIVE_ID;
+    cb_data->id_value = COCOTB_INACTIVE_ID;
 
     /* Cache the sim time */
     gpi_get_sim_time(&cache_time.high, &cache_time.low);
@@ -201,7 +201,7 @@ int handle_gpi_callback(void *user_data)
 
     // Python allowed
 
-    if (!PyCallable_Check(callback_data_p->function)) {
+    if (!PyCallable_Check(cb_data->function)) {
         fprintf(stderr, "Callback fired but function isn't callable?!\n");
         ret = 1;
         goto out;
@@ -209,7 +209,7 @@ int handle_gpi_callback(void *user_data)
 
     {
         // Call the callback
-        PyObject *pValue = PyObject_Call(callback_data_p->function, callback_data_p->args, callback_data_p->kwargs);
+        PyObject *pValue = PyObject_Call(cb_data->function, cb_data->args, cb_data->kwargs);
 
         // If the return value is NULL a Python exception has occurred
         // The best thing to do here is shutdown as any subsequent
@@ -229,12 +229,12 @@ int handle_gpi_callback(void *user_data)
     }
 
     // Callbacks may have been re-enabled
-    if (callback_data_p->id_value == COCOTB_INACTIVE_ID) {
-        Py_DECREF(callback_data_p->function);
-        Py_DECREF(callback_data_p->args);
+    if (cb_data->id_value == COCOTB_INACTIVE_ID) {
+        Py_DECREF(cb_data->function);
+        Py_DECREF(cb_data->args);
 
         // Free the callback data
-        free(callback_data_p);
+        free(cb_data);
     }
 
 out:
@@ -270,9 +270,9 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
 }
 
 
-static p_callback_data make_callback_data(PyObject *func, PyObject *args, PyObject *kwargs)
+static callback_data *callback_data_new(PyObject *func, PyObject *args, PyObject *kwargs)
 {
-    p_callback_data data = (p_callback_data)malloc(sizeof(s_callback_data));
+    callback_data *data = (callback_data *)malloc(sizeof(callback_data));
     if (data == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -317,12 +317,12 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
-    if (callback_data_p == NULL) {
+    callback_data *cb_data = callback_data_new(function, fArgs, NULL);
+    if (cb_data == NULL) {
         return NULL;
     }
 
-    gpi_cb_hdl hdl = gpi_register_readonly_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
+    gpi_cb_hdl hdl = gpi_register_readonly_callback((gpi_function_t)handle_gpi_callback, cb_data);
 
     PyObject *rv = gpi_hdl_New(hdl);
     FEXIT
@@ -357,13 +357,13 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
-    if (callback_data_p == NULL) {
+    callback_data *cb_data = callback_data_new(function, fArgs, NULL);
+    if (cb_data == NULL) {
         return NULL;
     }
 
     gpi_cb_hdl hdl = gpi_register_readwrite_callback(
-        (gpi_function_t)handle_gpi_callback, callback_data_p);
+        (gpi_function_t)handle_gpi_callback, cb_data);
 
     PyObject *rv = gpi_hdl_New(hdl);
     FEXIT
@@ -398,13 +398,13 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
-    if (callback_data_p == NULL) {
+    callback_data *cb_data = callback_data_new(function, fArgs, NULL);
+    if (cb_data == NULL) {
         return NULL;
     }
 
     gpi_cb_hdl hdl = gpi_register_nexttime_callback(
-        (gpi_function_t)handle_gpi_callback, callback_data_p);
+        (gpi_function_t)handle_gpi_callback, cb_data);
 
     PyObject *rv = gpi_hdl_New(hdl);
     FEXIT
@@ -457,13 +457,13 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
-    if (callback_data_p == NULL) {
+    callback_data *cb_data = callback_data_new(function, fArgs, NULL);
+    if (cb_data == NULL) {
         return NULL;
     }
 
     gpi_cb_hdl hdl = gpi_register_timed_callback(
-        (gpi_function_t)handle_gpi_callback, callback_data_p, time_ps);
+        (gpi_function_t)handle_gpi_callback, cb_data, time_ps);
 
     // Check success
     PyObject *rv = gpi_hdl_New(hdl);
@@ -513,13 +513,13 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
         return NULL;
     }
 
-    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
-    if (callback_data_p == NULL) {
+    callback_data *cb_data = callback_data_new(function, fArgs, NULL);
+    if (cb_data == NULL) {
         return NULL;
     }
 
     gpi_cb_hdl hdl = gpi_register_value_change_callback(
-        (gpi_function_t)handle_gpi_callback, callback_data_p, sig_hdl, edge);
+        (gpi_function_t)handle_gpi_callback, cb_data, sig_hdl, edge);
 
     // Check success
     PyObject *rv = gpi_hdl_New(hdl);

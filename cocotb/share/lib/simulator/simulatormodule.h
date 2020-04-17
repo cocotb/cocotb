@@ -42,14 +42,14 @@
 #define MODULE_NAME "simulator"
 
 // callback user data
-typedef struct t_callback_data {
+struct callback_data {
     PyThreadState *_saved_thread_state; // Thread state of the calling thread FIXME is this required?
     uint32_t id_value;                  // COCOTB_ACTIVE_ID or COCOTB_INACTIVE_ID
     PyObject *function;                 // Function to call when the callback fires
     PyObject *args;                     // The arguments to call the function with
     PyObject *kwargs;                   // Keyword arguments to call the function with
     gpi_sim_hdl cb_hdl;
-} s_callback_data, *p_callback_data;
+};
 
 static PyObject *log_msg(PyObject *self, PyObject *args);
 
