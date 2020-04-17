@@ -275,6 +275,8 @@ class HierarchyObject(RegionObject):
         """Query the simulator for a object with the specified name
         and cache the result to build a tree of objects.
         """
+        if name.startswith("_"):
+            return SimHandleBase.__getattr__(self, name)
 
         handle = self.__get_sub_handle_by_name(name)
         if handle is not None:
