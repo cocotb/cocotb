@@ -64,7 +64,7 @@ from cocotb.result import TestSuccess, SimFailure
 from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
 from cocotb.decorators import test as Test, hook as Hook, RunningTask
-from cocotb.outcomes import Outcome
+from cocotb.outcomes import Outcome, Error
 from cocotb.handle import SimHandle
 
 
@@ -208,26 +208,14 @@ class RegressionManager:
             test = self.next_test()
             if test is None:
                 break
-            self.xunit.add_testcase(name=test.__qualname__,
-                                    classname=test.__module__,
-                                    time=repr(0),
-                                    sim_time_ns=repr(0),
-                                    ratio_time=repr(0))
-            result_pass, _ = self._score_test(test, cocotb.outcomes.Error(SimFailure()))
-            self._store_test_result(test.__module__, test.__qualname__, result_pass, 0, 0, 0)
-            if not result_pass:
-                self.xunit.add_failure()
-                self.failures += 1
+            self._record_result(
+                test=test,
+                outcome=Error(SimFailure),
+                wall_time_s=0,
+                sim_time_ns=0)
 
         # Write out final log messages
-        if self.failures:
-            self.log.error("Failed %d out of %d tests (%d skipped)" %
-                           (self.failures, self.count, self.skipped))
-        else:
-            self.log.info("Passed %d tests (%d skipped)" %
-                          (self.count, self.skipped))
-        if len(self.test_results) > 0:
-            self._log_test_summary()
+        self._log_test_summary()
         self._log_sim_summary()
         self.log.info("Shutting down...")
 
@@ -261,35 +249,19 @@ class RegressionManager:
 
         real_time = time.time() - self._test_start_time
         sim_time_ns = get_sim_time('ns') - self._test_start_sim_time
-        ratio_time = self._safe_divide(sim_time_ns, real_time)
-
-        self.xunit.add_testcase(name=self._test.__qualname__,
-                                classname=self._test.__module__,
-                                time=repr(real_time),
-                                sim_time_ns=repr(sim_time_ns),
-                                ratio_time=repr(ratio_time))
-
-        # score test
-        result_pass, sim_failed = self._score_test(self._test, test._outcome)
 
         # stop capturing log output
         cocotb.log.removeHandler(test.handler)
 
-        # Save results
-        self._store_test_result(self._test.__module__, self._test.__qualname__, result_pass,
-                                sim_time_ns, real_time, ratio_time)
-        if not result_pass:
-            self.xunit.add_failure()
-            self.failures += 1
-
-        # Fail if required
-        if sim_failed:
-            self.tear_down()
-            return
+        self._record_result(
+            test=self._test,
+            outcome=self._running_test._outcome,
+            wall_time_s=real_time,
+            sim_time_ns=sim_time_ns)
 
         self.execute()
 
-    def _init_test(self, test_func: Test) -> Optional[RunningTask]:
+    def _init_test(self, test: Test) -> Optional[RunningTask]:
         """
         Initializes a test.
 
@@ -297,48 +269,29 @@ class RegressionManager:
         Records skip if the test is skipped.
         Saves the initialized test if it successfully initializes.
         """
-        test_init_outcome = cocotb.outcomes.capture(test_func, self._dut)
+
+        if test.skip:
+            hilight_start = ANSI.COLOR_TEST if want_color_output() else ''
+            hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ''
+            # Want this to stand out a little bit
+            self.log.info("{}Skipping test {}/{}:{} {}".format(
+                hilight_start,
+                self.count,
+                self.ntests,
+                hilight_end,
+                test.__qualname__))
+            self._record_result(test, None, 0, 0)
+            return
+
+        test_init_outcome = cocotb.outcomes.capture(test, self._dut)
 
         if isinstance(test_init_outcome, cocotb.outcomes.Error):
-            self.log.error("Failed to initialize test %s" % test_func.name, exc_info=True)
-            self.xunit.add_testcase(name=test_func.name,
-                                    classname=test_func.__module__,
-                                    time="0.0",
-                                    sim_time_ns="0.0",
-                                    ratio_time="0.0")
-            result_pass, sim_failed = self._score_test(test_func, test_init_outcome)
-            # Save results
-            self._store_test_result(test_func.__module__, test_func.__qualname__, result_pass, 0.0, 0.0, 0.0)
-            if not result_pass:
-                self.xunit.add_failure()
-                self.failures += 1
-            # Fail if required
-            if sim_failed:
-                self.tear_down()
-                raise SimFailure("Test initialization caused a simulator failure. Shutting down.")
+            self.log.error("Failed to initialize test %s" % test.__qualname__, exc_info=True)
+            self._record_result(test, test_init_outcome, 0, 0)
+            return
 
-        else:
-            test = test_init_outcome.get()
-            if test.skip:
-                hilight_start = ANSI.COLOR_TEST if want_color_output() else ''
-                hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ''
-                # Want this to stand out a little bit
-                self.log.info("{}Skipping test {}/{}:{} {}".format(
-                    hilight_start,
-                    self.count,
-                    self.ntests,
-                    hilight_end,
-                    test_func.__qualname__))
-                self.xunit.add_testcase(name=test_func.name,
-                                        classname=test.module,
-                                        time="0.0",
-                                        sim_time_ns="0.0",
-                                        ratio_time="0.0")
-                self.xunit.add_skipped()
-                self.skipped += 1
-                self._store_test_result(test.module, test_func.name, None, 0.0, 0.0, 0.0)
-            else:
-                return test
+        test = test_init_outcome.get()
+        return test
 
     def _score_test(self, test: Test, outcome: Outcome) -> Tuple[bool, bool]:
         """
@@ -408,6 +361,44 @@ class RegressionManager:
 
         return result_pass, sim_failed
 
+    def _record_result(
+        self,
+        test: Test,
+        outcome: Optional[Outcome],
+        wall_time_s: float,
+        sim_time_ns: float
+    ) -> None:
+
+        ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
+
+        self.xunit.add_testcase(name=test.__qualname__,
+                                classname=test.__module__,
+                                time=repr(wall_time_s),
+                                sim_time_ns=repr(sim_time_ns),
+                                ratio_time=repr(ratio_time))
+
+        if outcome is None:  # skipped
+            test_pass, sim_failed = None, False
+            self.xunit.add_skipped()
+            self.skipped += 1
+
+        else:
+            test_pass, sim_failed = self._score_test(test, outcome)
+            if not test_pass:
+                self.xunit.add_failure()
+                self.failures += 1
+
+        self.test_results.append({
+            'test': '.'.join([test.__module__, test.__qualname__]),
+            'pass': test_pass,
+            'sim': sim_time_ns,
+            'real': wall_time_s,
+            'ratio': ratio_time})
+
+        if sim_failed:
+            self.tear_down()
+            return
+
     def execute(self) -> None:
         while True:
             self._test = self.next_test()
@@ -439,6 +430,17 @@ class RegressionManager:
         cocotb.scheduler.add_test(self._running_test)
 
     def _log_test_summary(self) -> None:
+
+        if self.failures:
+            self.log.error("Failed %d out of %d tests (%d skipped)" %
+                           (self.failures, self.count, self.skipped))
+        else:
+            self.log.info("Passed %d tests (%d skipped)" %
+                          (self.count, self.skipped))
+
+        if len(self.test_results) == 0:
+            return
+
         TEST_FIELD   = 'TEST'
         RESULT_FIELD = 'PASS/FAIL'
         SIM_FIELD    = 'SIM TIME(NS)'
@@ -511,23 +513,6 @@ class RegressionManager:
                 return float('nan')
             else:
                 return float('inf')
-
-    def _store_test_result(
-        self,
-        module_name: str,
-        test_name: str,
-        result_pass: bool,
-        sim_time: float,
-        real_time: float,
-        ratio: float
-    ) -> None:
-        result = {
-            'test'  : '.'.join([module_name, test_name]),
-            'pass'  : result_pass,
-            'sim'   : sim_time,
-            'real'  : real_time,
-            'ratio' : ratio}
-        self.test_results.append(result)
 
 
 def _create_test(function, name, documentation, mod, *args, **kwargs):
