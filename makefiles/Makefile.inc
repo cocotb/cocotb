@@ -10,6 +10,5 @@ ifeq ($(COCOTB_CONFIG_CMD),)
 endif
 
 $(error 'Deprecated cocotb file structure detected. \
-         Use "include $$(shell cocotb-config --makefile)/Makefile.inc" instead. \
          Please refer to https://cocotb.readthedocs.io/en/latest/quickstart.html#creating-a-makefile \
          for instructions.')

@@ -44,7 +44,6 @@ TOPLEVEL = endian_swapper_sv
 
 MODULE = test_iteration_es
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif

@@ -44,5 +44,4 @@ endif
 TOPLEVEL := adder
 MODULE   := test_adder
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
