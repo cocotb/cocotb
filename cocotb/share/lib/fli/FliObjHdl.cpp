@@ -266,10 +266,6 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
                 m_num_enum    = mti_TickLength(elemType);
 
                 m_mti_buff    = new char[m_num_elems+1];
-                if (!m_mti_buff) {
-                    LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
-                    return -1;
-                }
             }
             break;
         default:
@@ -282,9 +278,6 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
     }
 
     m_val_buff = new char[m_num_elems+1];
-    if (!m_val_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object read buffer: ABORTING");
-    }
     m_val_buff[m_num_elems] = '\0';
 
     return FliValueObjHdl::initialise(name, fq_name);
@@ -403,10 +396,6 @@ int FliIntObjHdl::initialise(std::string &name, std::string &fq_name)
     m_num_elems   = 1;
 
     m_val_buff = new char[33];  // Integers are always 32-bits
-    if (!m_val_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object read buffer: ABORTING");
-        return -1;
-    }
     m_val_buff[m_num_elems] = '\0';
 
     return FliValueObjHdl::initialise(name, fq_name);
@@ -465,10 +454,6 @@ int FliRealObjHdl::initialise(std::string &name, std::string &fq_name)
     m_num_elems   = 1;
 
     m_mti_buff    = new double;
-    if (!m_mti_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
-        return -1;
-    }
 
     return FliValueObjHdl::initialise(name, fq_name);
 }
@@ -512,16 +497,8 @@ int FliStringObjHdl::initialise(std::string &name, std::string &fq_name)
     m_indexable   = true;
 
     m_mti_buff    = new char[m_num_elems];
-    if (!m_mti_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object mti read buffer: ABORTING");
-        return -1;
-    }
 
     m_val_buff    = new char[m_num_elems+1];
-    if (!m_val_buff) {
-        LOG_CRITICAL("Unable to alloc mem for value object read buffer: ABORTING");
-        return -1;
-    }
     m_val_buff[m_num_elems] = '\0';
 
     return FliValueObjHdl::initialise(name, fq_name);
