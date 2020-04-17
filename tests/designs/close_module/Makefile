@@ -46,7 +46,6 @@ COCOTB?=$(PWD)/../../..
 VERILOG_SOURCES = $(COCOTB)/tests/designs/close_module/close_module.v
 
 ifneq ($(SIM),vcs)
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 else
 all:

@@ -43,7 +43,6 @@ PWD=$(shell pwd)
 VERILOG_SOURCES = $(PWD)/../hdl/icmp_reply.sv
 MODULE=test_icmp_reply
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif

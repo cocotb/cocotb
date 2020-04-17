@@ -29,6 +29,5 @@ GPI_IMPL := vpi
 export TOPLEVEL_LANG
 MODULE=test_axi_lite_slave
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 

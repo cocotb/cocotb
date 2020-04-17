@@ -57,7 +57,6 @@ ifeq ($(OS),Linux)
     export LD_LIBRARY_PATH
 endif
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 ifeq ($(OS),Linux)

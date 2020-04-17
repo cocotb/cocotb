@@ -173,7 +173,6 @@ Python test script to load.
     # MODULE is the name of the Python test file:
     MODULE=test_my_design
 
-    include $(shell cocotb-config --makefiles)/Makefile.inc
     include $(shell cocotb-config --makefiles)/Makefile.sim
 
 We would then create a file called ``test_my_design.py`` containing our tests.

@@ -88,7 +88,6 @@ VERILOG_SOURCES = $(shell pwd)/dff.sv
 TOPLEVEL = dff
 MODULE = test_dff
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 ```
 
