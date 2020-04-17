@@ -261,7 +261,7 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
     const char *funcname;
     int lineno;
 
-    if (!PyArg_ParseTuple(args, "sssis", &name, &path, &funcname, &lineno, &msg))
+    if (!PyArg_ParseTuple(args, "sssis:log_msg", &name, &path, &funcname, &lineno, &msg))
         return NULL;
 
     gpi_log(name, GPIInfo, path, funcname, lineno, msg);
@@ -583,7 +583,7 @@ static PyObject *iterate(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
     int type;
 
-    if (!PyArg_ParseTuple(args, "i", &type)) {
+    if (!PyArg_ParseTuple(args, "i:iterate", &type)) {
         return NULL;
     }
 
@@ -643,7 +643,7 @@ static PyObject *set_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self, PyObje
     const char *binstr;
     gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "is", &action, &binstr)) {
+    if (!PyArg_ParseTuple(args, "is:set_signal_val_binstr", &action, &binstr)) {
         return NULL;
     }
 
@@ -656,7 +656,7 @@ static PyObject *set_signal_val_str(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject 
     gpi_set_action_t action;
     const char *str;
 
-    if (!PyArg_ParseTuple(args, "iy", &action, &str)) {
+    if (!PyArg_ParseTuple(args, "iy:set_signal_val_str", &action, &str)) {
         return NULL;
     }
 
@@ -669,7 +669,7 @@ static PyObject *set_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
     double value;
     gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "id", &action, &value)) {
+    if (!PyArg_ParseTuple(args, "id:set_signal_val_real", &action, &value)) {
         return NULL;
     }
 
@@ -682,7 +682,7 @@ static PyObject *set_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
     long value;
     gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "il", &action, &value)) {
+    if (!PyArg_ParseTuple(args, "il:set_signal_val_long", &action, &value)) {
         return NULL;
     }
 
@@ -708,7 +708,7 @@ static PyObject *get_handle_by_name(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject 
 {
     const char *name;
 
-    if (!PyArg_ParseTuple(args, "s", &name)) {
+    if (!PyArg_ParseTuple(args, "s:get_handle_by_name", &name)) {
         return NULL;
     }
 
@@ -721,7 +721,7 @@ static PyObject *get_handle_by_index(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
 {
     int32_t index;
 
-    if (!PyArg_ParseTuple(args, "i", &index)) {
+    if (!PyArg_ParseTuple(args, "i:get_handle_by_index", &index)) {
         return NULL;
     }
 
@@ -735,7 +735,7 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     const char *name;
 
-    if (!PyArg_ParseTuple(args, "z", &name)) {
+    if (!PyArg_ParseTuple(args, "z:get_root_handle", &name)) {
         return NULL;
     }
 
@@ -860,7 +860,7 @@ static PyObject *log_level(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     long l_level;
 
-    if (!PyArg_ParseTuple(args, "l", &l_level)) {
+    if (!PyArg_ParseTuple(args, "l:log_level", &l_level)) {
         return NULL;
     }
 
