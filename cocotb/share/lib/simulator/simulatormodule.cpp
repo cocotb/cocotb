@@ -296,10 +296,6 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     FENTER
 
-    PyObject *fArgs;
-    PyObject *function;
-    gpi_cb_hdl hdl;
-
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
@@ -308,7 +304,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     }
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 0);
+    PyObject *function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError, "Attempt to register ReadOnly without supplying a callback!\n");
         return NULL;
@@ -316,7 +312,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     Py_INCREF(function);
 
     // Remaining args for function
-    fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
+    PyObject *fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
     if (fArgs == NULL) {
         return NULL;
     }
@@ -326,8 +322,7 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-
-    hdl = gpi_register_readonly_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
+    gpi_cb_hdl hdl = gpi_register_readonly_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
 
     PyObject *rv = gpi_hdl_New(hdl);
     FEXIT
@@ -341,10 +336,6 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     FENTER
 
-    PyObject *fArgs;
-    PyObject *function;
-    gpi_cb_hdl hdl;
-
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
@@ -353,7 +344,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     }
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 0);
+    PyObject *function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError, "Attempt to register ReadWrite without supplying a callback!\n");
         return NULL;
@@ -361,7 +352,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     Py_INCREF(function);
 
     // Remaining args for function
-    fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
+    PyObject *fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
     if (fArgs == NULL) {
         return NULL;
     }
@@ -371,7 +362,8 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    hdl = gpi_register_readwrite_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
+    gpi_cb_hdl hdl = gpi_register_readwrite_callback(
+        (gpi_function_t)handle_gpi_callback, callback_data_p);
 
     PyObject *rv = gpi_hdl_New(hdl);
     FEXIT
@@ -385,10 +377,6 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     FENTER
 
-    PyObject *fArgs;
-    PyObject *function;
-    gpi_cb_hdl hdl;
-
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
@@ -397,7 +385,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     }
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 0);
+    PyObject *function = PyTuple_GetItem(args, 0);
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError, "Attempt to register NextStep without supplying a callback!\n");
         return NULL;
@@ -405,7 +393,7 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     Py_INCREF(function);
 
     // Remaining args for function
-    fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
+    PyObject *fArgs = PyTuple_GetSlice(args, 1, numargs);   // New reference
     if (fArgs == NULL) {
         return NULL;
     }
@@ -415,8 +403,8 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-
-    hdl = gpi_register_nexttime_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
+    gpi_cb_hdl hdl = gpi_register_nexttime_callback(
+        (gpi_function_t)handle_gpi_callback, callback_data_p);
 
     PyObject *rv = gpi_hdl_New(hdl);
     FEXIT
@@ -434,11 +422,6 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     FENTER
 
-    PyObject *fArgs;
-    PyObject *function;
-    gpi_cb_hdl hdl;
-    uint64_t time_ps;
-
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 2) {
@@ -446,6 +429,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    uint64_t time_ps;
     {   // Extract the time
         PyObject *pTime = PyTuple_GetItem(args, 0);
         long long pTime_as_longlong = PyLong_AsLongLong(pTime);
@@ -460,7 +444,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     }
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 1);
+    PyObject *function = PyTuple_GetItem(args, 1);
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError, "Attempt to register timed callback without passing a callable callback!\n");
         return NULL;
@@ -468,7 +452,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     Py_INCREF(function);
 
     // Remaining args for function
-    fArgs = PyTuple_GetSlice(args, 2, numargs);   // New reference
+    PyObject *fArgs = PyTuple_GetSlice(args, 2, numargs);   // New reference
     if (fArgs == NULL) {
         return NULL;
     }
@@ -478,8 +462,8 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-
-    hdl = gpi_register_timed_callback((gpi_function_t)handle_gpi_callback, callback_data_p, time_ps);
+    gpi_cb_hdl hdl = gpi_register_timed_callback(
+        (gpi_function_t)handle_gpi_callback, callback_data_p, time_ps);
 
     // Check success
     PyObject *rv = gpi_hdl_New(hdl);
@@ -498,12 +482,6 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     COCOTB_UNUSED(self);
     FENTER
 
-    PyObject *fArgs;
-    PyObject *function;
-    gpi_sim_hdl sig_hdl;
-    gpi_cb_hdl hdl;
-    int edge;
-
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 3) {
@@ -516,10 +494,10 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
         PyErr_SetString(PyExc_TypeError, "First argument must be a gpi_sim_hdl");
         return NULL;
     }
-    sig_hdl = ((gpi_hdl_Object<gpi_sim_hdl> *)pSigHdl)->hdl;
+    gpi_sim_hdl sig_hdl = ((gpi_hdl_Object<gpi_sim_hdl> *)pSigHdl)->hdl;
 
     // Extract the callback function
-    function = PyTuple_GetItem(args, 1);
+    PyObject *function = PyTuple_GetItem(args, 1);
     if (!PyCallable_Check(function)) {
         PyErr_SetString(PyExc_TypeError, "Attempt to register value change callback without passing a callable callback!\n");
         return NULL;
@@ -527,10 +505,10 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     Py_INCREF(function);
 
     PyObject *pedge = PyTuple_GetItem(args, 2);
-    edge = (int)PyLong_AsLong(pedge);
+    int edge = (int)PyLong_AsLong(pedge);
 
     // Remaining args for function
-    fArgs = PyTuple_GetSlice(args, 3, numargs);   // New reference
+    PyObject *fArgs = PyTuple_GetSlice(args, 3, numargs);   // New reference
     if (fArgs == NULL) {
         return NULL;
     }
@@ -540,11 +518,8 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
         return NULL;
     }
 
-
-    hdl = gpi_register_value_change_callback((gpi_function_t)handle_gpi_callback,
-                                             callback_data_p,
-                                             sig_hdl,
-                                             edge);
+    gpi_cb_hdl hdl = gpi_register_value_change_callback(
+        (gpi_function_t)handle_gpi_callback, callback_data_p, sig_hdl, edge);
 
     // Check success
     PyObject *rv = gpi_hdl_New(hdl);
