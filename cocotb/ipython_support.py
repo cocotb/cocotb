@@ -49,7 +49,7 @@ async def embed(user_ns: dict = {}):
 
         If your simulator does not provide an appropriate ``stdin``, you may
         find you cannot type in the resulting shell. Using simulators in batch
-        or non-gui mode may resolve this. This feature is experimental, and
+        or non-GUI mode may resolve this. This feature is experimental, and
         not all simulators are supported.
     """
     # ensure cocotb is in the namespace, for convenience
