@@ -270,6 +270,24 @@ static PyObject *log_msg(PyObject *self, PyObject *args)
 }
 
 
+static p_callback_data make_callback_data(PyObject *func, PyObject *args, PyObject *kwargs)
+{
+    p_callback_data data = (p_callback_data)malloc(sizeof(s_callback_data));
+    if (data == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    data->_saved_thread_state = PyThreadState_Get();
+    data->id_value = COCOTB_ACTIVE_ID;
+    data->function = func;
+    data->args = args;
+    data->kwargs = kwargs;
+
+    return data;
+}
+
+
 // Register a callback for read-only state of sim
 // First argument is the function to call
 // Remaining arguments are keyword arguments to be passed to the callback
@@ -281,8 +299,6 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
     PyObject *fArgs;
     PyObject *function;
     gpi_cb_hdl hdl;
-
-    p_callback_data callback_data_p;
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -305,17 +321,11 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
+    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
     if (callback_data_p == NULL) {
-        return PyErr_NoMemory();
+        return NULL;
     }
 
-    // Set up the user data (no more Python API calls after this!)
-    callback_data_p->_saved_thread_state = PyThreadState_Get();
-    callback_data_p->id_value = COCOTB_ACTIVE_ID;
-    callback_data_p->function = function;
-    callback_data_p->args = fArgs;
-    callback_data_p->kwargs = NULL;
 
     hdl = gpi_register_readonly_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
 
@@ -334,8 +344,6 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
     PyObject *fArgs;
     PyObject *function;
     gpi_cb_hdl hdl;
-
-    p_callback_data callback_data_p;
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -358,17 +366,10 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
+    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
     if (callback_data_p == NULL) {
-        return PyErr_NoMemory();
+        return NULL;
     }
-
-    // Set up the user data (no more Python API calls after this!)
-    callback_data_p->_saved_thread_state = PyThreadState_Get();
-    callback_data_p->id_value = COCOTB_ACTIVE_ID;
-    callback_data_p->function = function;
-    callback_data_p->args = fArgs;
-    callback_data_p->kwargs = NULL;
 
     hdl = gpi_register_readwrite_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
 
@@ -387,8 +388,6 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
     PyObject *fArgs;
     PyObject *function;
     gpi_cb_hdl hdl;
-
-    p_callback_data callback_data_p;
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -411,17 +410,11 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
+    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
     if (callback_data_p == NULL) {
-        return PyErr_NoMemory();
+        return NULL;
     }
 
-    // Set up the user data (no more Python API calls after this!)
-    callback_data_p->_saved_thread_state = PyThreadState_Get();
-    callback_data_p->id_value = COCOTB_ACTIVE_ID;
-    callback_data_p->function = function;
-    callback_data_p->args = fArgs;
-    callback_data_p->kwargs = NULL;
 
     hdl = gpi_register_nexttime_callback((gpi_function_t)handle_gpi_callback, callback_data_p);
 
@@ -445,8 +438,6 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     PyObject *function;
     gpi_cb_hdl hdl;
     uint64_t time_ps;
-
-    p_callback_data callback_data_p;
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -482,17 +473,11 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
+    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
     if (callback_data_p == NULL) {
-        return PyErr_NoMemory();
+        return NULL;
     }
 
-    // Set up the user data (no more Python API calls after this!)
-    callback_data_p->_saved_thread_state = PyThreadState_Get();
-    callback_data_p->id_value = COCOTB_ACTIVE_ID;
-    callback_data_p->function = function;
-    callback_data_p->args = fArgs;
-    callback_data_p->kwargs = NULL;
 
     hdl = gpi_register_timed_callback((gpi_function_t)handle_gpi_callback, callback_data_p, time_ps);
 
@@ -518,8 +503,6 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
     gpi_sim_hdl sig_hdl;
     gpi_cb_hdl hdl;
     int edge;
-
-    p_callback_data callback_data_p;
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -552,19 +535,11 @@ static PyObject *register_value_change_callback(PyObject *self, PyObject *args) 
         return NULL;
     }
 
-
-    callback_data_p = (p_callback_data)malloc(sizeof(s_callback_data));
+    p_callback_data callback_data_p = make_callback_data(function, fArgs, NULL);
     if (callback_data_p == NULL) {
-        return PyErr_NoMemory();
+        return NULL;
     }
 
-    // Set up the user data (no more Python API calls after this!)
-    // Causes segfault?
-    callback_data_p->_saved_thread_state = PyThreadState_Get();//PyThreadState_Get();
-    callback_data_p->id_value = COCOTB_ACTIVE_ID;
-    callback_data_p->function = function;
-    callback_data_p->args = fArgs;
-    callback_data_p->kwargs = NULL;
 
     hdl = gpi_register_value_change_callback((gpi_function_t)handle_gpi_callback,
                                              callback_data_p,
