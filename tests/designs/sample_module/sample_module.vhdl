@@ -66,74 +66,74 @@ end;
 
 architecture impl of sample_module is
 
-  component sample_module_1 is
-  generic (
-    EXAMPLE_STRING      : string;
-    EXAMPLE_BOOL        : boolean;
-    EXAMPLE_WIDTH       : integer
-    );
-    port (
-        clk                             : in    std_ulogic;
-        stream_in_data                  : in    std_ulogic_vector(EXAMPLE_WIDTH downto 0);
-        stream_out_data_registered      : buffer   std_ulogic_vector(EXAMPLE_WIDTH downto 0);
-        stream_out_data_valid           : out   std_ulogic
-    );
-end component sample_module_1;
+    component sample_module_1 is
+        generic (
+            EXAMPLE_STRING      : string;
+            EXAMPLE_BOOL        : boolean;
+            EXAMPLE_WIDTH       : integer
+        );
+        port (
+            clk                             : in    std_ulogic;
+            stream_in_data                  : in    std_ulogic_vector(EXAMPLE_WIDTH downto 0);
+            stream_out_data_registered      : buffer   std_ulogic_vector(EXAMPLE_WIDTH downto 0);
+            stream_out_data_valid           : out   std_ulogic
+        );
+    end component sample_module_1;
 
-  type lutType is array (0 to 3, 0 to 6) of signed(10 downto 0);
+    type lutType is array (0 to 3, 0 to 6) of signed(10 downto 0);
 
-function afunc(value : std_ulogic_vector) return std_ulogic_vector is
-    variable i: integer;
-    variable rv: std_ulogic_vector(7 downto 0);
+    function afunc(value : std_ulogic_vector) return std_ulogic_vector is
+        variable i: integer;
+        variable rv: std_ulogic_vector(7 downto 0);
+    begin
+        i := 0;
+        while i <= 7 loop
+            rv(i) := value(7-i);
+            i := i + 1;
+        end loop;
+        return rv;
+    end afunc;
+
+    signal cosLut0, sinLut0 : lutType;
+    signal cosLut1, sinLut1 : lutType;
+    signal cosLut,  sinLut  : lutType;
+
+    type unsignedArrayType is array (natural range <>) of unsigned(7 downto 0);
+    signal array_7_downto_4 : unsignedArrayType(7 downto 4);
+    signal array_4_to_7     : unsignedArrayType(4 to 7);
+    signal array_3_downto_0 : unsignedArrayType(3 downto 0);
+    signal array_0_to_3     : unsignedArrayType(0 to 3);
+
+    type twoDimArrayType is array (natural range <>) of unsignedArrayType(31 downto 28);
+    signal array_2d         : twoDimArrayType(0 to 1);
+
 begin
-    i := 0;
-    while i <= 7 loop
-        rv(i) := value(7-i);
-        i := i + 1;
-    end loop;
-    return rv;
-end afunc;
 
-  signal cosLut0, sinLut0 : lutType;
-  signal cosLut1, sinLut1 : lutType;
-  signal cosLut,  sinLut  : lutType;
+    process (clk) begin
+        if rising_edge(clk) then
+            stream_out_data_registered <= stream_in_data;
+        end if;
+    end process;
 
-  type unsignedArrayType is array (natural range <>) of unsigned(7 downto 0);
-  signal array_7_downto_4 : unsignedArrayType(7 downto 4);
-  signal array_4_to_7     : unsignedArrayType(4 to 7);
-  signal array_3_downto_0 : unsignedArrayType(3 downto 0);
-  signal array_0_to_3     : unsignedArrayType(0 to 3);
+    stream_out_data_comb <= afunc(stream_in_data) when stream_in_func_en = '0' else stream_in_data;
+    stream_in_ready      <= stream_out_ready;
+    stream_out_real      <= stream_in_real;
+    stream_out_int       <= stream_in_int;
+    stream_out_string    <= stream_in_string;
+    stream_out_bool      <= stream_in_bool;
+    stream_out_data_wide(3 downto 2) <= stream_in_data_wide(3 downto 2);
 
-  type twoDimArrayType is array (natural range <>) of unsignedArrayType(31 downto 28);
-  signal array_2d         : twoDimArrayType(0 to 1);
-
-begin
-
-process (clk) begin
-    if rising_edge(clk) then
-        stream_out_data_registered <= stream_in_data;
-    end if;
-end process;
-
-stream_out_data_comb <= afunc(stream_in_data) when stream_in_func_en = '0' else stream_in_data;
-stream_in_ready      <= stream_out_ready;
-stream_out_real      <= stream_in_real;
-stream_out_int       <= stream_in_int;
-stream_out_string    <= stream_in_string;
-stream_out_bool      <= stream_in_bool;
-stream_out_data_wide(3 downto 2) <= stream_in_data_wide(3 downto 2);
-
-isample_module1 : component sample_module_1
-      generic map (
-        EXAMPLE_STRING  => "TESTING",
-        EXAMPLE_BOOL => true,
-      	EXAMPLE_WIDTH	=> 7
+    isample_module1 : component sample_module_1
+        generic map (
+            EXAMPLE_STRING => "TESTING",
+            EXAMPLE_BOOL => true,
+            EXAMPLE_WIDTH => 7
         )
-  port map (
-  clk => clk,
-  stream_in_data => stream_in_data,
-  stream_out_data_registered => open,
-  stream_out_data_valid => open
-  );
+        port map (
+            clk => clk,
+            stream_in_data => stream_in_data,
+            stream_out_data_registered => open,
+            stream_out_data_valid => open
+        );
 
 end architecture;

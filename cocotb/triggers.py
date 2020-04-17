@@ -78,7 +78,7 @@ class Trigger(Awaitable):
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.%s" % (type(self).__name__), id(self))
+        return SimLog("cocotb.%s" % (type(self).__qualname__), id(self))
 
     @abc.abstractmethod
     def prime(self, callback):
@@ -148,13 +148,13 @@ class GPITrigger(Trigger):
         # if simulator is not None:
         #    self.cbhdl = simulator.create_callback(self)
         # else:
-        self.cbhdl = 0
+        self.cbhdl = None
 
     def unprime(self):
         """Disable a primed trigger, can be re-primed."""
-        if self.cbhdl != 0:
-            simulator.deregister_callback(self.cbhdl)
-        self.cbhdl = 0
+        if self.cbhdl is not None:
+            self.cbhdl.deregister()
+        self.cbhdl = None
         Trigger.unprime(self)
 
 
@@ -203,16 +203,16 @@ class Timer(GPITrigger):
 
     def prime(self, callback):
         """Register for a timed callback."""
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_timed_callback(self.sim_steps,
                                                            callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
         return "<{} of {:1.2f}ps at {}>".format(
-            type(self).__name__,
+            type(self).__qualname__,
             get_time_from_sim_steps(self.sim_steps, units='ps'),
             _pointer_str(self)
         )
@@ -242,14 +242,14 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__name__)
+        return "{}()".format(type(self).__qualname__)
 
 
 class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -264,16 +264,16 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             # import pdb
             # pdb.set_trace()
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__name__)
+        return "{}()".format(type(self).__qualname__)
 
 
 class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -288,14 +288,14 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__name__)
+        return "{}()".format(type(self).__qualname__)
 
 
 class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -318,16 +318,16 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_value_change_callback(
                 self.signal._handle, callback, type(self)._edge_type, self
             )
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         super(_EdgeBase, self).prime(callback)
 
     def __repr__(self):
-        return "{}({!r})".format(type(self).__name__, self.signal)
+        return "{}({!r})".format(type(self).__qualname__, self.signal)
 
 
 class RisingEdge(_EdgeBase):
@@ -425,7 +425,7 @@ class Event:
             fmt = "<{0} at {2}>"
         else:
             fmt = "<{0} for {1} at {2}>"
-        return fmt.format(type(self).__name__, self.name, _pointer_str(self))
+        return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
 class _Lock(PythonTrigger):
@@ -516,7 +516,7 @@ class Lock:
         else:
             fmt = "<{0} for {1} [{2} waiting] at {3}>"
         return fmt.format(
-            type(self).__name__, self.name, len(self._pending_primed),
+            type(self).__qualname__, self.name, len(self._pending_primed),
             _pointer_str(self)
         )
 
@@ -556,7 +556,7 @@ class NullTrigger(Trigger):
             fmt = "<{0} at {2}>"
         else:
             fmt = "<{0} for {1} at {2}>"
-        return fmt.format(type(self).__name__, self.name, _pointer_str(self))
+        return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
 class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -617,7 +617,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
             super(Join, self).prime(callback)
 
     def __repr__(self):
-        return "{}({!r})".format(type(self).__name__, self._coroutine)
+        return "{}({!r})".format(type(self).__qualname__, self._coroutine)
 
 
 class Waitable(Awaitable):
@@ -655,14 +655,14 @@ class _AggregateWaitable(Waitable):
             if not isinstance(trigger, allowed_types):
                 raise TypeError(
                     "All triggers must be instances of Trigger! Got: {}"
-                    .format(type(trigger).__name__)
+                    .format(type(trigger).__qualname__)
                 )
 
     def __repr__(self):
         # no _pointer_str here, since this is not a trigger, so identity
         # doesn't matter.
         return "{}({})".format(
-            type(self).__name__, ", ".join(repr(t) for t in self.triggers)
+            type(self).__qualname__, ", ".join(repr(t) for t in self.triggers)
         )
 
 
@@ -790,7 +790,7 @@ class ClockCycles(Waitable):
             fmt = "{}({!r}, {!r})"
         else:
             fmt = "{}({!r}, {!r}, rising=False)"
-        return fmt.format(type(self).__name__, self.signal, self.num_cycles)
+        return fmt.format(type(self).__qualname__, self.signal, self.num_cycles)
 
 
 async def with_timeout(trigger, timeout_time, timeout_unit=None):
@@ -805,12 +805,12 @@ async def with_timeout(trigger, timeout_time, timeout_unit=None):
         await with_timeout(First(coro, event.wait()), 100, 'ns')
 
     Args:
-        trigger (cocotb_waitable):
+        trigger (:class:`~cocotb.triggers.Trigger` or :class:`~cocotb.triggers.Waitable` or :class:`~cocotb.decorators.RunningTask`):
             A single object that could be right of an :keyword:`await` expression in cocotb.
         timeout_time (numbers.Real or decimal.Decimal):
-            Time duration.
+            Simulation time duration before timeout occurs.
         timeout_unit (str or None, optional):
-            Units of duration, accepts any values that :class:`~cocotb.triggers.Timer` does.
+            Units of timeout_time, accepts any units that :class:`~cocotb.triggers.Timer` does.
 
     Returns:
         First trigger that completed if timeout did not occur.

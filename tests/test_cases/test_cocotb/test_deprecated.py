@@ -1,6 +1,10 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
 import cocotb
 import warnings
 from contextlib import contextmanager
+from common import assert_raises
 
 
 @contextmanager
@@ -13,7 +17,8 @@ def assert_deprecated():
             yield warns  # note: not a cocotb yield, but a contextlib one!
     finally:
         assert len(warns) == 1
-        assert issubclass(warns[0].category, DeprecationWarning)
+        assert issubclass(warns[0].category, DeprecationWarning), "Expected DeprecationWarning"
+
 
 
 @cocotb.test()
@@ -34,5 +39,19 @@ async def test_returnvalue_deprecated(dut):
 @cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
 async def test_unicode_handle_assignment_deprecated(dut):
     with assert_deprecated() as warns:
-        dut.string_input_port <= "Bad idea"
+        dut.stream_in_string <= "Bad idea"
+        await cocotb.triggers.ReadWrite()
     assert "bytes" in str(warns[0].message)
+
+
+@cocotb.test()
+async def test_create_error_deprecated(dut):
+    with assert_deprecated():
+        _ = cocotb.result.create_error(cocotb.triggers.Timer(1), "A test exception")
+
+
+@cocotb.test()
+async def test_raise_error_deprecated(dut):
+    with assert_deprecated():
+        with assert_raises(cocotb.result.TestError):
+            cocotb.result.raise_error(cocotb.triggers.Timer(1), "A test exception")

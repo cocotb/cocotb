@@ -94,11 +94,9 @@ def test_init_little_endian_twos_comp():
     temp_bin = BinaryValue(value="11111111111111111111110000101100", bigEndian=False,
                            binaryRepresentation=BinaryRepresentation.UNSIGNED)
 
-    # Silently fails to set value when another BinaryValue object is passed in
-    bin6 = BinaryValue(value=temp_bin, n_bits=32, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
-    assert bin6._str == ""
-    assert bin6.binstr == ""
-    assert bin6.n_bits == 32
+    # Illegal to construct from another BinaryValue (used to silently fail)
+    with pytest.raises(TypeError):
+        BinaryValue(value=temp_bin, n_bits=32, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
 
     bin7 = BinaryValue(value=temp_bin.binstr, n_bits=32,
                        bigEndian=False, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
@@ -244,3 +242,39 @@ def test_backwards_compatibility():
 
     with pytest.raises(TypeError):
         BinaryValue(value=0, bits=16, n_bits=17)
+
+
+def test_buff_big_endian():
+    orig_str = "011011001001"
+    orig_bytes = b'\x06\xC9'  # padding is the high bits of the first byte
+
+    v = BinaryValue(value=orig_str, n_bits=12, bigEndian=True)
+    assert v.buff == orig_bytes
+
+    # should be unchanged
+    v.buff = orig_bytes
+    assert v.buff == orig_bytes
+    assert v.binstr == orig_str
+
+    # extra bits are stripped because they don't fit into the 12 bits
+    v.buff = b'\xF6\xC9'
+    assert v.buff == orig_bytes
+    assert v.binstr == orig_str
+
+
+def test_buff_little_endian():
+    orig_str = "011011001001"
+    orig_bytes = b'\xC9\x06'  # padding is the high bits of the last byte
+
+    v = BinaryValue(value=orig_str, n_bits=12, bigEndian=False)
+    assert v.buff == orig_bytes
+
+    # should be unchanged
+    v.buff = orig_bytes
+    assert v.buff == orig_bytes
+    assert v.binstr == orig_str
+
+# extra bits are stripped because they don't fit into the 12 bits
+    v.buff = b'\xC9\xF6'
+    assert v.buff == orig_bytes
+    assert v.binstr == orig_str

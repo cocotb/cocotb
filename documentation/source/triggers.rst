@@ -5,7 +5,7 @@ Triggers
 Triggers are used to indicate when the cocotb scheduler should resume coroutine execution.
 To use a trigger, a coroutine should :keyword:`await` it.
 This will cause execution of the current coroutine to pause.
-When the trigger fires, execution of the paused coroutine will resume::
+When the trigger fires, execution of the paused coroutine will resume:
 
 .. code-block:: python3
 

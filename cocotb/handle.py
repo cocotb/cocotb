@@ -31,7 +31,6 @@
 
 import ctypes
 import warnings
-import collections.abc
 
 import os
 
@@ -78,14 +77,14 @@ class SimHandleBase:
         self._sub_handles = {}  # Dictionary of children
         self._invalid_sub_handles = set()  # Set of invalid queries
 
-        self._name = simulator.get_name_string(self._handle)
-        self._type = simulator.get_type_string(self._handle)
+        self._name = self._handle.get_name_string()
+        self._type = self._handle.get_type_string()
         self._fullname = self._name + "(%s)" % self._type
         self._path = self._name if path is None else path
         self._log = SimLog("cocotb.%s" % self._name)
         self._log.debug("Created")
-        self._def_name = simulator.get_definition_name(self._handle)
-        self._def_file = simulator.get_definition_file(self._handle)
+        self._def_name = self._handle.get_definition_name()
+        self._def_file = self._handle.get_definition_file()
 
     def get_definition_name(self):
         return self._def_name
@@ -94,7 +93,7 @@ class SimHandleBase:
         return self._def_file
 
     def __hash__(self):
-        return self._handle
+        return hash(self._handle)
 
     def __len__(self):
         """Returns the 'length' of the underlying object.
@@ -102,7 +101,7 @@ class SimHandleBase:
         For vectors this is the number of bits.
         """
         if self._len is None:
-            self._len = simulator.get_num_elems(self._handle)
+            self._len = self._handle.get_num_elems()
         return self._len
 
     def __eq__(self, other):
@@ -130,7 +129,7 @@ class SimHandleBase:
             deffile = self._def_file
             if deffile:
                 desc += " (at "+deffile+")"
-        return type(self).__name__ + "(" + desc + ")"
+        return type(self).__qualname__ + "(" + desc + ")"
 
     def __str__(self):
         return self._path
@@ -190,8 +189,8 @@ class RegionObject(SimHandleBase):
         if self._discovered:
             return
         self._log.debug("Discovering all on %s", self._name)
-        for thing in _SimIterator(self._handle, simulator.OBJECTS):
-            name = simulator.get_name_string(thing)
+        for thing in self._handle.iterate(simulator.OBJECTS):
+            name = thing.get_name_string()
             try:
                 hdl = SimHandle(thing, self._child_path(name))
             except TestError as e:
@@ -225,6 +224,28 @@ class RegionObject(SimHandleBase):
 class HierarchyObject(RegionObject):
     """Hierarchy objects are namespace/scope objects."""
 
+    def __get_sub_handle_by_name(self, name):
+        try:
+            return self._sub_handles[name]
+        except KeyError:
+            pass
+
+        # Cache to avoid a call to the simulator if we already know the name is
+        # invalid. Unclear if we care, but we had this before.
+        if name in self._invalid_sub_handles:
+            return None
+
+        new_handle = self._handle.get_handle_by_name(name)
+
+        if not new_handle:
+            self._invalid_sub_handles.add(name)
+            return None
+
+        sub_handle = SimHandle(new_handle, self._child_path(name))
+        self._sub_handles[name] = sub_handle
+        return sub_handle
+
+
     def __setattr__(self, name, value):
         """Provide transparent access to signals via the hierarchy.
 
@@ -233,60 +254,36 @@ class HierarchyObject(RegionObject):
         Raise an :exc:`AttributeError` if users attempt to create new members which
         don't exist in the design.
         """
+
+        # private attributes pass through directly
         if name.startswith("_"):
             return SimHandleBase.__setattr__(self, name, value)
-        if self.__hasattr__(name) is not None:
-            sub = self.__getattr__(name)
+
+        # then try handles
+        sub = self.__get_sub_handle_by_name(name)
+        if sub is not None:
             sub.value = value
             return
+
+        # compat behavior
         if name in self._compat_mapping:
             return SimHandleBase.__setattr__(self, name, value)
-        raise AttributeError("Attempt to access %s which isn't present in %s" %(
-            name, self._name))
+
+        raise AttributeError("%s contains no object named %s" % (self._name, name))
 
     def __getattr__(self, name):
         """Query the simulator for a object with the specified name
         and cache the result to build a tree of objects.
         """
-        try:
-            return self._sub_handles[name]
-        except KeyError:
-            pass
 
-        if name.startswith("_"):
+        handle = self.__get_sub_handle_by_name(name)
+        if handle is not None:
+            return handle
+
+        if name in self._compat_mapping:
             return SimHandleBase.__getattr__(self, name)
 
-        new_handle = simulator.get_handle_by_name(self._handle, name)
-
-        if not new_handle:
-            if name in self._compat_mapping:
-                return SimHandleBase.__getattr__(self, name)
-            raise AttributeError("%s contains no object named %s" % (self._name, name))
-
-        sub_handle = SimHandle(new_handle, self._child_path(name))
-        self._sub_handles[name] = sub_handle
-        return sub_handle
-
-    def __hasattr__(self, name):
-        """Since calling ``hasattr(handle, "something")`` will print out a
-        backtrace to the log (since usually attempting to access a
-        non-existent member is an error) we provide a 'peek' function.
-
-        We still add the found handle to our dictionary to prevent leaking
-        handles.
-        """
-        if name in self._sub_handles:
-            return self._sub_handles[name]
-
-        if name in self._invalid_sub_handles:
-            return None
-
-        new_handle = simulator.get_handle_by_name(self._handle, name)
-        if new_handle:
-            self._sub_handles[name] = SimHandle(new_handle, self._child_path(name))
-        else:
-            self._invalid_sub_handles.add(name)
-        return new_handle
+        raise AttributeError("%s contains no object named %s" % (self._name, name))
 
     def _id(self, name, extended=True):
         """Query the simulator for a object with the specified name,
@@ -296,9 +293,12 @@ class HierarchyObject(RegionObject):
         if extended:
             name = "\\"+name+"\\"
 
-        if self.__hasattr__(name) is not None:
-            return getattr(self, name)
+        handle = self.__get_sub_handle_by_name(name)
+        if handle is not None:
+            return handle
+
         raise AttributeError("%s contains no object named %s" % (self._name, name))
+
 
 class HierarchyArrayObject(RegionObject):
     """Hierarchy Arrays are containers of Hierarchy Objects."""
@@ -336,7 +336,7 @@ class HierarchyArrayObject(RegionObject):
             raise IndexError("Slice indexing is not supported")
         if index in self._sub_handles:
             return self._sub_handles[index]
-        new_handle = simulator.get_handle_by_index(self._handle, index)
+        new_handle = self._handle.get_handle_by_index(index)
         if not new_handle:
             raise IndexError("%s contains no object at index %d" % (self._name, index))
         path = self._path + "[" + str(index) + "]"
@@ -378,13 +378,37 @@ class NonHierarchyObject(SimHandleBase):
 
     @property
     def value(self):
-        raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
+        """The value of this simulation object.
 
-    def setimmediatevalue(self, value):
-        raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
+        .. note::
+            When setting this property, the value is stored by the :class:`~cocotb.scheduler.Scheduler`
+            and all stored values are written at the same time at the end of the current simulator time step.
+
+            Use :meth:`setimmediatevalue` to set the value immediately.
+        """
+        raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
 
     @value.setter
     def value(self, value):
+        def _call_on_readwrite(f, *args):
+            cocotb.scheduler._schedule_write(self, f, *args)
+        self._set_value(value, _call_on_readwrite)
+
+    def setimmediatevalue(self, value):
+        """ Assign a value to this simulation object immediately. """
+        def _call_now(f, *args):
+            f(*args)
+        self._set_value(value, _call_now)
+
+    def _set_value(self, value, call_sim):
+        """ This should be overriden in subclasses.
+
+        This is used to implement both the setter for :attr:`value`, and the
+        :meth:`setimmediatevalue` method.
+
+        ``call_sim(f, *args)`` should be used to schedule simulator writes,
+        rather than performing them directly as ``f(*args)``.
+        """
         raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
 
     def __le__(self, value):
@@ -434,13 +458,13 @@ class ConstantObject(NonHierarchyObject):
         """
         NonHierarchyObject.__init__(self, handle, path)
         if handle_type in [simulator.INTEGER, simulator.ENUM]:
-            self._value = simulator.get_signal_val_long(self._handle)
+            self._value = self._handle.get_signal_val_long()
         elif handle_type == simulator.REAL:
-            self._value = simulator.get_signal_val_real(self._handle)
+            self._value = self._handle.get_signal_val_real()
         elif handle_type == simulator.STRING:
-            self._value = simulator.get_signal_val_str(self._handle)
+            self._value = self._handle.get_signal_val_str()
         else:
-            val = simulator.get_signal_val_binstr(self._handle)
+            val = self._handle.get_signal_val_binstr()
             self._value = BinaryValue(n_bits=len(val))
             try:
                 self._value.binstr = val
@@ -463,10 +487,32 @@ class ConstantObject(NonHierarchyObject):
 
 
 class NonHierarchyIndexableObject(NonHierarchyObject):
-    """ A non-hierarchy indexable object. """
+    """ A non-hierarchy indexable object.
+
+    Getting and setting the current value of an array is done
+    by iterating through sub-handles in left-to-right order.
+
+    Given an HDL array ``arr``:
+
+    +--------------+---------------------+--------------------------------------------------------------+
+    | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
+    +==============+=====================+==============================================================+
+    | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
+    +--------------+---------------------+--------------------------------------------------------------+
+    | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
+    +--------------+---------------------+--------------------------------------------------------------+
+
+    When setting the signal as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
+
+    .. warning::
+        Assigning a value to a sub-handle:
+
+        - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
+        - **Correct**: ``dut.some_array[0].value = 1``
+    """
     def __init__(self, handle, path):
         NonHierarchyObject.__init__(self, handle, path)
-        self._range = simulator.get_range(self._handle)
+        self._range = self._handle.get_range()
 
     def __setitem__(self, index, value):
         """Provide transparent assignment to indexed array handles."""
@@ -479,7 +525,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
             raise IndexError("%s is not indexable.  Unable to get object at index %d" % (self._fullname, index))
         if index in self._sub_handles:
             return self._sub_handles[index]
-        new_handle = simulator.get_handle_by_index(self._handle, index)
+        new_handle = self._handle.get_handle_by_index(index)
         if not new_handle:
             raise IndexError("%s contains no object at index %d" % (self._fullname, index))
         path = self._path + "[" + str(index) + "]"
@@ -509,45 +555,18 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
                 left = left + 1
 
     @NonHierarchyObject.value.getter
-    def value(self):
-        """A list of each value within this simulation object.
-
-        Getting and setting the current value of an array is done
-        by iterating through sub-handles in left-to-right order.
-
-        Given an HDL array ``arr``:
-
-        +--------------+---------------------+--------------------------------------------------------------+
-        | Verilog      | VHDL                | ``arr.value`` is equivalent to                               |
-        +==============+=====================+==============================================================+
-        | ``arr[4:7]`` | ``arr(4 to 7)``     | ``[arr[4].value, arr[5].value, arr[6].value, arr[7].value]`` |
-        +--------------+---------------------+--------------------------------------------------------------+
-        | ``arr[7:4]`` | ``arr(7 downto 4)`` | ``[arr[7].value, arr[6].value, arr[5].value, arr[4].value]`` |
-        +--------------+---------------------+--------------------------------------------------------------+
-
-        When setting this property as in ``arr.value = ...``, the same index equivalence as noted in the table holds.
-
-        .. note::
-            When setting this property, the values will be cached as explained in :attr:`ModifiableObject.value`.
-
-        .. warning::
-            Assigning a value to a sub-handle:
-
-            - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
-            - **Correct**: ``dut.some_array[0].value = 1``
-        """
+    def value(self) -> list:
         # Don't use self.__iter__, because it has an unwanted `except IndexError`
         return [
             self[i].value
             for i in self._range_iter(self._range[0], self._range[1])
         ]
 
-    @value.setter
-    def value(self, value):
+    def _set_value(self, value, call_sim):
         """Assign value from a list of same length to an array in left-to-right order.
         Index 0 of the list maps to the left-most index in the array.
 
-        See the docstring for :attr:`value` above.
+        See the docstring for this class.
         """
         if type(value) is not list:
             raise TypeError("Assigning non-list value to object %s of type %s" % (self._name, type(self)))
@@ -555,17 +574,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
             raise ValueError("Assigning list of length %d to object %s of length %d" % (
                 len(value), self._name, len(self)))
         for val_idx, self_idx in enumerate(self._range_iter(self._range[0], self._range[1])):
-            self[self_idx].value = value[val_idx]
-
-
-class _SimIterator(collections.abc.Iterator):
-    """Iterator over simulator objects. For internal use only."""
-
-    def __init__(self, handle, mode):
-        self._iter = simulator.iterate(handle, mode)
-
-    def __next__(self):
-        return simulator.next(self._iter)
+            self[self_idx]._set_value(value[val_idx], call_sim)
 
 
 class NonConstantObject(NonHierarchyIndexableObject):
@@ -574,11 +583,11 @@ class NonConstantObject(NonHierarchyIndexableObject):
 
     def drivers(self):
         """An iterator for gathering all drivers for a signal."""
-        return _SimIterator(self._handle, simulator.DRIVERS)
+        return self._handle.iterate(simulator.DRIVERS)
 
     def loads(self):
         """An iterator for gathering all loads on a signal."""
-        return _SimIterator(self._handle, simulator.LOADS)
+        return self._handle.iterate(simulator.LOADS)
 
 class _SetAction:
     """Base class representing the type of action used while write-accessing a handle."""
@@ -613,7 +622,7 @@ class Release(_SetAction):
 class ModifiableObject(NonConstantObject):
     """Base class for simulator objects whose values can be modified."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -633,7 +642,7 @@ class ModifiableObject(NonConstantObject):
         value, set_action = self._check_for_set_action(value)
 
         if isinstance(value, int) and value < 0x7fffffff and len(self) <= 32:
-            simulator.set_signal_val_long(self._handle, set_action, value)
+            call_sim(self._handle.set_signal_val_long, set_action, value)
             return
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
@@ -657,7 +666,7 @@ class ModifiableObject(NonConstantObject):
                 "Unsupported type for value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        simulator.set_signal_val_binstr(self._handle, set_action, value.binstr)
+        call_sim(self._handle.set_signal_val_binstr, set_action, value.binstr)
 
     def _check_for_set_action(self, value):
         if not isinstance(value, _SetAction):
@@ -665,26 +674,10 @@ class ModifiableObject(NonConstantObject):
         return value._as_gpi_args_for(self)
 
     @NonConstantObject.value.getter
-    def value(self):
-        """The value of this simulation object.
-
-        .. note::
-            When setting this property, the value is stored by the :class:`~cocotb.scheduler.Scheduler`
-            and all stored values are written at the same time at the end of the current simulator time step.
-
-            Use :meth:`setimmediatevalue` to set the value immediately.
-        """
-        binstr = simulator.get_signal_val_binstr(self._handle)
+    def value(self) -> BinaryValue:
+        binstr = self._handle.get_signal_val_binstr()
         result = BinaryValue(binstr, len(binstr))
         return result
-
-    @value.setter
-    def value(self, value):
-        """Assign value to this simulation object.
-
-        See the docstring for :attr:`value` above.
-        """
-        cocotb.scheduler.save_write(self, value)
 
     def __int__(self):
         return int(self.value)
@@ -696,7 +689,7 @@ class ModifiableObject(NonConstantObject):
 class RealObject(ModifiableObject):
     """Specific object handle for Real signals and variables."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to value.
 
         This operation will fail unless the handle refers to a modifiable
@@ -718,11 +711,11 @@ class RealObject(ModifiableObject):
                 "Unsupported type for real value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        simulator.set_signal_val_real(self._handle, set_action, value)
+        call_sim(self._handle.set_signal_val_real, set_action, value)
 
     @ModifiableObject.value.getter
-    def value(self):
-        return simulator.get_signal_val_real(self._handle)
+    def value(self) -> float:
+        return self._handle.get_signal_val_real()
 
     def __float__(self):
         return float(self.value)
@@ -731,7 +724,7 @@ class RealObject(ModifiableObject):
 class EnumObject(ModifiableObject):
     """Specific object handle for enumeration signals and variables."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -753,17 +746,17 @@ class EnumObject(ModifiableObject):
                 "Unsupported type for enum value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        simulator.set_signal_val_long(self._handle, set_action, value)
+        call_sim(self._handle.set_signal_val_long, set_action, value)
 
     @ModifiableObject.value.getter
-    def value(self):
-        return simulator.get_signal_val_long(self._handle)
+    def value(self) -> int:
+        return self._handle.get_signal_val_long()
 
 
 class IntegerObject(ModifiableObject):
     """Specific object handle for Integer and Enum signals and variables."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -785,17 +778,17 @@ class IntegerObject(ModifiableObject):
                 "Unsupported type for integer value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        simulator.set_signal_val_long(self._handle, set_action, value)
+        call_sim(self._handle.set_signal_val_long, set_action, value)
 
     @ModifiableObject.value.getter
-    def value(self):
-        return simulator.get_signal_val_long(self._handle)
+    def value(self) -> int:
+        return self._handle.get_signal_val_long()
 
 
 class StringObject(ModifiableObject):
     """Specific object handle for String variables."""
 
-    def setimmediatevalue(self, value):
+    def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
 
         This operation will fail unless the handle refers to a modifiable
@@ -828,11 +821,11 @@ class StringObject(ModifiableObject):
                 "Unsupported type for string value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        simulator.set_signal_val_str(self._handle, set_action, value)
+        call_sim(self._handle.set_signal_val_str, set_action, value)
 
     @ModifiableObject.value.getter
-    def value(self):
-        return simulator.get_signal_val_str(self._handle)
+    def value(self) -> bytes:
+        return self._handle.get_signal_val_str()
 
 _handle2obj = {}
 
@@ -870,13 +863,15 @@ def SimHandle(handle, path=None):
     except KeyError:
         pass
 
-    t = simulator.get_type(handle)
+    t = handle.get_type()
 
     # Special case for constants
-    if simulator.get_const(handle) and t not in [simulator.MODULE,
-                                                 simulator.STRUCTURE,
-                                                 simulator.NETARRAY,
-                                                 simulator.GENARRAY]:
+    if handle.get_const() and t not in [
+        simulator.MODULE,
+        simulator.STRUCTURE,
+        simulator.NETARRAY,
+        simulator.GENARRAY,
+    ]:
         obj = ConstantObject(handle, path, t)
         _handle2obj[handle] = obj
         return obj

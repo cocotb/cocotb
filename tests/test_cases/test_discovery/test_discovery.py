@@ -209,16 +209,16 @@ def access_string_vhdl(dut):
     tlog.info("%r is %s" % (constant_string, str(constant_string)))
     if not isinstance(constant_string, ConstantObject):
         raise TestFailure("EXAMPLE_STRING was not constant")
-    if constant_string != "TESTING":
+    if constant_string != b"TESTING":
         raise TestFailure("EXAMPLE_STRING was not == \'TESTING\'")
 
     tlog.info("Test writing under size")
 
-    test_string = "cocotb"
+    test_string = b"cocotb"
     dut.stream_in_string.setimmediatevalue(test_string)
 
     variable_string = dut.stream_out_string
-    if variable_string != '':
+    if variable_string != b'':
         raise TestFailure("%r not \'\'" % variable_string)
 
     yield Timer(10)
@@ -226,7 +226,7 @@ def access_string_vhdl(dut):
     if variable_string != test_string:
         raise TestFailure("%r %s != '%s'" % (variable_string, str(variable_string), test_string))
 
-    test_string = "longer_than_the_array"
+    test_string = b"longer_than_the_array"
     tlog.info("Test writing over size with '%s'" % test_string)
 
     dut.stream_in_string.setimmediatevalue(test_string)
@@ -248,9 +248,8 @@ def access_string_vhdl(dut):
     result_slice = variable_string[idx]
 
     # String is defined as string(1 to 8) so idx=3 will access the 3rd character
-    if chr(result_slice) != test_string[idx-1]:
-        raise TestFailure("Single character did not match '%c' != '%c'" %
-                          (result_slice, test_string[idx]))
+    if result_slice != test_string[idx - 1]:
+        raise TestFailure("Single character did not match {} != {}".format(result_slice, test_string[idx - 1]))
 
     tlog.info("Test write access to a string character")
 

@@ -144,6 +144,7 @@ class RegressionManager:
         # Test Discovery
         ####################
 
+        have_tests = False
         for module_name in self._modules:
             try:
                 self.log.debug("Python Path: " + ",".join(sys.path))
@@ -180,6 +181,10 @@ class RegressionManager:
             for thing in vars(module).values():
                 if hasattr(thing, "im_test"):
                     self._init_test(thing)
+                    have_tests = True
+
+        if not have_tests:
+            self.log.warning("No tests were discovered")
 
         self._queue.sort(key=lambda test: (test.stage, test._id))
 
@@ -308,7 +313,7 @@ class RegressionManager:
                                     ratio_time="0.0")
             result_pass, sim_failed = self._score_test(test_func, test_init_outcome)
             # Save results
-            self._store_test_result(test_func.__module__, test_func.__name__, result_pass, 0.0, 0.0, 0.0)
+            self._store_test_result(test_func.__module__, test_func.__qualname__, result_pass, 0.0, 0.0, 0.0)
             if not result_pass:
                 self.xunit.add_failure()
                 self.failures += 1
@@ -341,7 +346,7 @@ class RegressionManager:
         # Helper for logging result
         def _result_was():
             result_was = ("{} (result was {})".format
-                          (test.__name__, type(result).__name__))
+                          (test.__qualname__, type(result).__qualname__))
             return result_was
 
         # scoring outcomes
@@ -358,7 +363,7 @@ class RegressionManager:
         if (isinstance(result, TestSuccess) and
                 not test.expect_fail and
                 not test.expect_error):
-            self.log.info("Test Passed: %s" % test.__name__)
+            self.log.info("Test Passed: %s" % test.__qualname__)
 
         elif (isinstance(result, AssertionError) and
                 test.expect_fail):
@@ -529,6 +534,7 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
         await function(dut, *args, **kwargs)
 
     _my_test.__name__ = name
+    _my_test.__qualname__ = name
     _my_test.__doc__ = documentation
     _my_test.__module__ = mod.__name__
     return cocotb.test()(_my_test)
@@ -586,7 +592,7 @@ class TestFactory:
         if not isinstance(test_function, cocotb.coroutine):
             raise TypeError("TestFactory requires a cocotb coroutine")
         self.test_function = test_function
-        self.name = self.test_function._func.__name__
+        self.name = self.test_function._func.__qualname__
 
         self.args = args
         self.kwargs_constant = kwargs
@@ -642,7 +648,7 @@ class TestFactory:
                         desc = "No docstring supplied"
                     else:
                         desc = optvalue.__doc__.split('\n')[0]
-                    doc += "\t%s: %s (%s)\n" % (optname, optvalue.__name__,
+                    doc += "\t%s: %s (%s)\n" % (optname, optvalue.__qualname__,
                                                 desc)
                 else:
                     doc += "\t%s: %s\n" % (optname, repr(optvalue))

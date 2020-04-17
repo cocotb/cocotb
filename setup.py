@@ -85,7 +85,7 @@ setup(
     cmdclass={'build_ext': build_ext},
     version=__version__,  # noqa: F821
     description='cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.',
-    url='https://github.com/cocotb/cocotb',
+    url='https://cocotb.org',
     license='BSD',
     long_description=read_file('README.md'),
     long_description_content_type='text/markdown',
@@ -112,6 +112,13 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
     ],
+
+    # these appear in the sidebar on PyPI
+    project_urls={
+        "Bug Tracker": "https://github.com/cocotb/cocotb/issues",
+        "Source Code": "https://github.com/cocotb/cocotb",
+        "Documentation": "https://docs.cocotb.org",
+    },
 )
 
 print(log_stream.getvalue())

@@ -69,7 +69,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'cocotb'
-copyright = '2014-{0}, PotentialVentures'.format(datetime.datetime.now().year)
+copyright = '2014-{0}, cocotb contributors'.format(datetime.datetime.now().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -242,7 +242,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'cocotb.tex', 'cocotb Documentation',
-   'PotentialVentures', 'manual'),
+   'cocotb contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -272,7 +272,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'cocotb', 'cocotb Documentation',
-     ['PotentialVentures'], 1)
+     ['cocotb contributors'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -286,7 +286,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'cocotb', 'cocotb Documentation',
-   'PotentialVentures', 'cocotb', 'Coroutine Cosimulation TestBench \
+   'cocotb contributors', 'cocotb', 'Coroutine Cosimulation TestBench \
      environment for efficient verification of RTL using Python.',
    'Miscellaneous'),
 ]
@@ -303,8 +303,7 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-# For now show the todos
-todo_include_todos = True
+todo_include_todos = False
 
 # -- Extra setup for C documentation with Doxygen and breathe ------------------
 # see also https://breathe.readthedocs.io/en/latest/readthedocs.html

@@ -169,12 +169,11 @@ def _initialise_testbench(root_name):
     test_str = os.getenv('TESTCASE')
     hooks_str = os.getenv('COCOTB_HOOKS', '')
 
-    if not module_str:
-        raise ImportError("Environment variables defining the module(s) to " +
-                          "execute not defined.  MODULE=\"%s\"" % (module_str))
+    if module_str is None:
+        raise ValueError("Environment variable MODULE, which defines the module(s) to execute, is not defined.")
 
-    modules = module_str.split(',')
-    hooks = hooks_str.split(',') if hooks_str else []
+    modules = [s.strip() for s in module_str.split(',') if s.strip()]
+    hooks = [s.strip() for s in hooks_str.split(',') if s.strip()]
 
     global regression_manager
 

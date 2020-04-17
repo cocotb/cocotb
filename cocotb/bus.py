@@ -95,9 +95,7 @@ class Bus:
                 signame += "[{:d}]".format(array_idx)
 
             self._entity._log.debug("Signal name {}".format(signame))
-            # Attempts to access a signal that doesn't exist will print a
-            # backtrace so we 'peek' first, slightly un-pythonic
-            if entity.__hasattr__(signame):
+            if hasattr(entity, signame):
                 self._add_signal(attr_name, signame)
             else:
                 self._entity._log.debug("Ignoring optional missing signal "
@@ -124,7 +122,7 @@ class Bus:
                     msg = ("Unable to drive onto {0}.{1} because {2} is missing "
                            "attribute {3}".format(self._entity._name,
                                                   self._name,
-                                                  type(obj).__name__,
+                                                  type(obj).__qualname__,
                                                   attr_name))
                     raise AttributeError(msg)
                 else:
@@ -178,7 +176,7 @@ class Bus:
                     msg = ("Unable to sample from {0}.{1} because {2} is missing "
                            "attribute {3}".format(self._entity._name,
                                                   self._name,
-                                                  type(obj).__name__,
+                                                  type(obj).__qualname__,
                                                   attr_name))
                     raise AttributeError(msg)
                 else:

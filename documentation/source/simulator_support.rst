@@ -4,7 +4,7 @@
 Simulator Support
 *****************
 
-This page documents any known quirks and gotchas in the various simulators.
+This page documents specifics, limitations, workarounds etc. in the various simulators.
 
 
 .. _sim-icarus:
@@ -23,7 +23,7 @@ Accessing bits of a vector doesn't work:
 
     dut.stream_in_data[2] <= 1
 
-See ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
+See the ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
 
 .. _sim-icarus-waveforms:
 
@@ -59,7 +59,7 @@ Time unit and precision
 -----------------------
 
 Setting the time unit and time precision is not possible from the command-line,
-and therefore make variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` are ignored.
+and therefore the make variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` are ignored.
 
 
 .. _sim-verilator:
@@ -115,14 +115,26 @@ A VCD file named ``dump.vcd`` will be generated in current directory.
 Synopsys VCS
 ============
 
+cocotb currently only supports VPI for Synopsys VCS, not VHPI.
+
 
 .. _sim-aldec:
 
 Aldec Riviera-PRO
 =================
 
+.. note::
+
+   On Windows, do not install the C++ compiler, i.e. unselect it during the installation process of Riviera-PRO.
+   (A workaround is to remove or rename the ``mingw`` directory located in the Riviera-PRO installation directory.)
+
 The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
+
+.. _sim-activehdl:
+
+Aldec Active-HDL
+================
 
 
 .. _sim-questa:
@@ -130,6 +142,7 @@ this setting will be mirrored in the TCL ``license_queue`` variable to control r
 Mentor Questa
 =============
 
+See :ref:`sim-modelsim`.
 
 
 .. _sim-modelsim:
@@ -137,14 +150,19 @@ Mentor Questa
 Mentor ModelSim
 ===============
 
-Any ModelSim PE or ModelSim PE derivative (like ModelSim Microsemi, Intel, Lattice Edition) does not support the VHDL FLI feature.
-If you try to run with FLI enabled, you will see a ``vsim-FLI-3155`` error:
+.. note::
+
+   In order to use FLI (for VHDL), a ``vdbg`` executable from the simulator installation directory needs to be available on the ``PATH`` during cocotb installation.
+   This is needed to access the proprietary ``mti.h`` header file.
+
+Any ModelSim PE or ModelSim PE derivatives (like the ModelSim Microsemi, Intel, Lattice Editions) do not support the VHDL FLI feature.
+If you try to use them with FLI, you will see a ``vsim-FLI-3155`` error:
 
 .. code-block:: bash
 
     ** Error (suppressible): (vsim-FLI-3155) The FLI is not enabled in this version of ModelSim.
 
-ModelSim DE and SE (and Questa, of course) supports the FLI.
+ModelSim DE and SE (and Questa, of course) support the FLI.
 
 
 .. _sim-incisive:
@@ -152,11 +170,14 @@ ModelSim DE and SE (and Questa, of course) supports the FLI.
 Cadence Incisive
 ================
 
+See :ref:`sim-xcelium`.
 
 .. _sim-xcelium:
 
 Cadence Xcelium
 ===============
+
+The simulator automatically loads VPI even when only VHPI is requested.
 
 
 .. _sim-ghdl:

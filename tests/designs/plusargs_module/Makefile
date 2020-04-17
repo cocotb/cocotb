@@ -31,13 +31,9 @@ TOPLEVEL_LANG ?= verilog
 
 TOPLEVEL := tb_top
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(COCOTB)/tests/designs/plusargs_module/tb_top.v

@@ -36,16 +36,6 @@ COCOTB_PY_DIR := $(realpath $(shell cocotb-config --prefix))
 # simulations: Makefile fragments, and the simulator libraries.
 COCOTB_SHARE_DIR := $(COCOTB_PY_DIR)/cocotb/share
 
-ifeq ($(USER_DIR),)
-export USER_DIR:=$(realpath $(dir $(firstword $(MAKEFILE_LIST))))
-endif
-
-BUILD_DIR=$(USER_DIR)/build
-export BUILD_DIR
-
-ARCH?=$(shell uname -m)
-export ARCH
-
 OS=$(shell uname)
 ifneq (, $(findstring MINGW, $(OS)))
 OS=Msys
@@ -59,7 +49,6 @@ export OS
 PYTHON_BIN ?= $(realpath $(shell cocotb-config --python-bin))
 
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
-include $(COCOTB_SHARE_DIR)/makefiles/Makefile.pylib
 
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
@@ -84,6 +73,11 @@ else
 LIB_EXT    := so
 endif
 
+PYTHON_ARCH := $(shell $(PYTHON_BIN) -c 'from platform import architecture; print(architecture()[0])')
+ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)
+    $(error Unknown Python architecture: $(PYTHON_ARCH))
+endif
+
 # Set PYTHONHOME to properly populate sys.path in embedded python interpreter
 export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'from distutils.sysconfig import get_config_var; print(get_config_var("prefix"))')
 
@@ -91,7 +85,10 @@ ifeq ($(OS),Msys)
     # On Windows there is no support for @rpath/LD_LIBRARY_PATH so we need to set PATH to find cocotb libraries
     # https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order?redirectedfrom=MSDN#standard-search-order-for-desktop-applications
     export PATH := $(LIB_DIR):$(PATH)
+endif
 
-    # For tcl scripts the path to dll has to be in form of C:/User/..
-    LIB_DIR := $(shell cygpath -m '$(LIB_DIR)')
+ifeq ($(OS),Msys)
+    to_tcl_path = $(shell cygpath -m $(1) )
+else
+    to_tcl_path = $(1)
 endif

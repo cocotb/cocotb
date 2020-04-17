@@ -48,7 +48,7 @@ module sample_module (
     output real                                 stream_out_real,
     output integer                              stream_out_int,
     input  test_if                              inout_if,
-    input string                                string_input_port,
+    input string                                stream_in_string,
 `endif
     input  [7:0]                                stream_in_data,
     input  [63:0]                               stream_in_data_wide,
@@ -93,8 +93,8 @@ test_if struct_var;
 and test_and_gate(and_output, stream_in_ready, stream_in_valid);
 
 initial begin
-     $dumpfile("waveform.vcd");
-     $dumpvars(0,sample_module);
+    $dumpfile("waveform.vcd");
+    $dumpvars(0,sample_module);
 
 //   TODO: Move into a separate test
 //     #500000 $fail_test("Test timed out, failing...");
@@ -104,11 +104,11 @@ reg[3:0] temp;
 parameter NUM_OF_MODULES = 4;
 genvar idx;
 generate
-for (idx = 0; idx < NUM_OF_MODULES; idx=idx+1) begin
-    always @(posedge clk) begin
-        temp[idx] <= 1'b0;
+    for (idx = 0; idx < NUM_OF_MODULES; idx=idx+1) begin
+        always @(posedge clk) begin
+            temp[idx] <= 1'b0;
+        end
     end
-end
 endgenerate
 
 reg [7:0] register_array [1:0];
