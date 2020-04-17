@@ -211,8 +211,7 @@ class VpiSingleIterator : public GpiIterator {
 public:
     VpiSingleIterator(GpiImplInterface *impl,
                       GpiObjHdl *hdl,
-                      int32_t vpitype) : GpiIterator(impl, hdl),
-                                         m_iterator(NULL)
+                      int32_t vpitype) : GpiIterator(impl, hdl)
 
     {
         vpiHandle vpi_hdl = m_parent->get_handle<vpiHandle>();
@@ -226,7 +225,7 @@ public:
     Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl) override;
 
 protected:
-    vpiHandle m_iterator;
+    vpiHandle m_iterator = nullptr;
 };
 
 

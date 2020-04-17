@@ -219,9 +219,7 @@ public:
                    mtiTypeKindT typeKind) :
                        FliSignalObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var),
                        m_fli_type(typeKind),
-                       m_val_type(valType),
-                       m_val_buff(NULL),
-                       m_sub_hdls(NULL) { }
+                       m_val_type(valType) { }
 
     ~FliValueObjHdl() override {
         if (m_val_buff != NULL)
@@ -250,8 +248,8 @@ public:
 protected:
     mtiTypeKindT       m_fli_type;
     mtiTypeIdT         m_val_type;
-    char              *m_val_buff;
-    void             **m_sub_hdls;
+    char              *m_val_buff = nullptr;
+    void             **m_sub_hdls = nullptr;
 };
 
 class FliEnumObjHdl : public FliValueObjHdl {
@@ -265,9 +263,7 @@ public:
                   bool is_var,
                   mtiTypeIdT valType,
                   mtiTypeKindT typeKind) :
-                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind),
-                      m_value_enum(NULL),
-                      m_num_enum(0) { }
+                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind) { }
 
 
     const char* get_signal_value_str() override;
@@ -279,8 +275,8 @@ public:
     int initialise(std::string &name, std::string &fq_name) override;
 
 private:
-    char             **m_value_enum;    // Do Not Free
-    mtiInt32T          m_num_enum;
+    char             **m_value_enum = nullptr;    // Do Not Free
+    mtiInt32T          m_num_enum = 0;
 };
 
 class FliLogicObjHdl : public FliValueObjHdl {
@@ -302,11 +298,8 @@ public:
                                       acc_full_type,
                                       is_var,
                                       valType,
-                                      typeKind),
-                       m_mti_buff(NULL),
-                       m_value_enum(NULL),
-                       m_num_enum(0),
-                       m_enum_map() { }
+                                      typeKind)
+                       { }
 
     ~FliLogicObjHdl() override {
         if (m_mti_buff != NULL)
@@ -323,9 +316,9 @@ public:
 
 
 private:
-    char                      *m_mti_buff;
-    char                     **m_value_enum;    // Do Not Free
-    mtiInt32T                  m_num_enum;
+    char                      *m_mti_buff = nullptr;
+    char                     **m_value_enum = nullptr;    // Do Not Free
+    mtiInt32T                  m_num_enum = 0;
     std::map<char,mtiInt32T>   m_enum_map;
 };
 
@@ -363,8 +356,7 @@ public:
                   bool is_var,
                   mtiTypeIdT valType,
                   mtiTypeKindT typeKind) :
-                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind),
-                      m_mti_buff(NULL) { }
+                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind) { }
 
     ~FliRealObjHdl() override {
         if (m_mti_buff != NULL)
@@ -379,7 +371,7 @@ public:
     int initialise(std::string &name, std::string &fq_name) override;
 
 private:
-    double *m_mti_buff;
+    double *m_mti_buff = nullptr;
 };
 
 class FliStringObjHdl : public FliValueObjHdl {
@@ -393,8 +385,7 @@ public:
                   bool is_var,
                   mtiTypeIdT valType,
                   mtiTypeKindT typeKind) :
-                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind),
-                      m_mti_buff(NULL) { }
+                      FliValueObjHdl(impl, hdl, objtype, is_const, acc_type, acc_full_type, is_var, valType, typeKind) { }
 
     ~FliStringObjHdl() override {
         if (m_mti_buff != NULL)
@@ -409,7 +400,7 @@ public:
     int initialise(std::string &name, std::string &fq_name) override;
 
 private:
-    char *m_mti_buff;
+    char *m_mti_buff = nullptr;
 };
 
 class FliTimerCache {
