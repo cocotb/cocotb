@@ -296,9 +296,6 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
             m_value.bufSize = static_cast<bufSize_type>(bufSize);
             m_value.value.str = new vhpiCharT[bufSize];
             m_value.numElems = m_num_elems;
-            if (!m_value.value.str) {
-                LOG_CRITICAL("Unable to alloc mem for write buffer");
-            }
             LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
             break;
         }
@@ -318,10 +315,6 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
         m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
         m_binvalue.value.str = new vhpiCharT[bufSize];
-
-        if (!m_binvalue.value.str) {
-            LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
-        }
     }
 
     return GpiObjHdl::initialise(name, fq_name);
@@ -367,9 +360,6 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiEnumT));
         m_value.bufSize = static_cast<bufSize_type>(bufSize);
         m_value.value.enumvs = new vhpiEnumT[bufSize];
-        if (!m_value.value.enumvs) {
-            LOG_CRITICAL("Unable to alloc mem for write buffer: ABORTING");
-        }
     }
 
     if (m_indexable && get_range(handle, 0, &m_range_left, &m_range_right)) {
@@ -380,10 +370,6 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
         m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
         m_binvalue.value.str = new vhpiCharT[bufSize];
-
-        if (!m_binvalue.value.str) {
-            LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
-        }
     }
 
     return GpiObjHdl::initialise(name, fq_name);

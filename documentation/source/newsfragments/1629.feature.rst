@@ -1,0 +1,1 @@
+Including ``Makefile.inc`` from user makefiles is now a no-op and deprecated. Lines like  ``include $(shell cocotb-config --makefiles)/Makefile.inc`` can be removed from user makefiles without loss in functionality.
