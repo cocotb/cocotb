@@ -248,3 +248,18 @@ In order to use this simulator, set :make:var:`SIM` to ``nvc``:
     make SIM=nvc
 
 To enable display of VHPI traces, use ``SIM_ARGS=--vhpi-trace make ...``.
+
+
+.. _sim-cvc:
+
+Tachyon DA CVC
+==============
+
+In order to use `Tachyon DA <http://www.tachyon-da.com/>`_'s `CVC <https://github.com/cambridgehackers/open-src-cvc>`_ simulator,
+set :make:var:`SIM` to ``cvc``:
+
+.. code-block:: bash
+
+    make SIM=cvc
+
+Note that cocotb's makefile is using CVC's interpreted mode.
