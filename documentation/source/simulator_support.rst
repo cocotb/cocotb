@@ -262,4 +262,4 @@ set :make:var:`SIM` to ``cvc``:
 
     make SIM=cvc
 
-Note that cocotb is using CVC's interpreted mode.
+Note that cocotb's makefile is using CVC's interpreted mode.
