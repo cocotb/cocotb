@@ -30,6 +30,7 @@
 """
 import math
 import random
+import itertools
 from cocotb.decorators import public
 
 
@@ -44,11 +45,9 @@ def repeat(obj, nrepeat=None):
         nrepeat (int): The number of times to repeatedly yield obj
     """
     if nrepeat is None:
-        while True:
-            yield obj
+        return itertools.repeat(obj)
     else:
-        for i in range(nrepeat):
-            yield obj
+        return itertools.repeat(obj, times=nrepeat)
 
 
 @public
@@ -59,9 +58,7 @@ def combine(generators):
     Args:
         generators (iterable): Generators to combine together
     """
-    for gen in generators:
-        for item in gen:
-            yield item
+    return itertools.chain.from_iterable(generators)
 
 
 @public
