@@ -35,7 +35,7 @@ For more details, including how to install a development version of cocotb, see 
 
 As a first trivial introduction to cocotb, the following example "tests" a flip-flop.
 
-First, we need a hardware design which we can test. For this example, create a file `dff.sv` with SystemVerilog code for a simple [D flip-flop](https://en.wikipedia.org/wiki/Flip-flop_(electronics)#D_flip-flop). You could also use any other language a [cocotb-supported simulator](https://docs.cocotb.org/en/latest/introduction.html) understands, e.g. VHDL.
+First, we need a hardware design which we can test. For this example, create a file `dff.sv` with SystemVerilog code for a simple [D flip-flop](https://en.wikipedia.org/wiki/Flip-flop_(electronics)#D_flip-flop). You could also use any other language a [cocotb-supported simulator](https://docs.cocotb.org/en/latest/simulator_support.html) understands, e.g. VHDL.
 
 ```systemverilog
 // dff.sv
