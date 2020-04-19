@@ -1,1 +1,1 @@
-Cocotb must now be :ref:`installed <installation_via_pip>` before it can be used.
+Cocotb must now be :ref:`installed <installation-via-pip>` before it can be used.

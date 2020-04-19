@@ -69,8 +69,11 @@ The :keyword:`await` keyword is used to indicate when to pass control of executi
 A test can spawn multiple coroutines, allowing for independent flows of execution.
 
 
-.. todo::
-   - Move "Installation" section to here
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   install
 
 ..
    Tutorials - lessons that take the reader by the hand through a series of steps to complete a project
@@ -143,6 +146,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    :name: key_topics
    :hidden:
 
+   install_devel
    troubleshooting
 
 .. todo::

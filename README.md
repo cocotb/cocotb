@@ -25,7 +25,7 @@ After installing these dependencies, the latest stable version of cocotb can be 
 pip install cocotb
 ```
 
-For more details, including how to install a development version of cocotb, see [the documentation](https://docs.cocotb.org/en/latest/quickstart.html#pre-requisites).
+For more details, including how to install a development version of cocotb, see [the documentation](https://docs.cocotb.org/en/latest/install.html).
 
 ## Usage
 
