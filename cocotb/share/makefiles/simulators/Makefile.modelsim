@@ -31,5 +31,4 @@
 #ARCH:=i686
 
 # Everything else is identical to Quest
-include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.questa
-
+include $(shell cocotb-config --makefiles)/simulators/Makefile.questa
