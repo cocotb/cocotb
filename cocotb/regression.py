@@ -328,7 +328,15 @@ class RegressionManager:
         else:
             test = test_init_outcome.get()
             if test.skip:
-                self.log.info("Skipping test %s" % test_func.name)
+                hilight_start = ANSI.COLOR_TEST if want_color_output() else ''
+                hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ''
+                # Want this to stand out a little bit
+                self.log.info("{}Skipping test {}/{}:{} {}".format(
+                    hilight_start,
+                    self.count,
+                    self.ntests,
+                    hilight_end,
+                    test_func.__qualname__))
                 self.xunit.add_testcase(name=test_func.name,
                                         classname=test.module,
                                         time="0.0",
