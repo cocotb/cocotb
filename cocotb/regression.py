@@ -36,6 +36,16 @@ import traceback
 import pdb
 from typing import Any, Optional, Tuple, Iterable
 
+import cocotb
+import cocotb.ANSI as ANSI
+from cocotb.log import SimLog
+from cocotb.result import TestSuccess, SimFailure
+from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
+from cocotb.xunit_reporter import XUnitReporter
+from cocotb.decorators import test as Test, hook as Hook, RunningTask
+from cocotb.outcomes import Outcome, Error
+from cocotb.handle import SimHandle
+
 if "COCOTB_PDB_ON_EXCEPTION" in os.environ:
     _pdb_on_exception = True
 else:
@@ -56,16 +66,6 @@ if "COVERAGE" in os.environ:
                "\n"
                "Import error was: %s\n" % repr(e))
         sys.stderr.write(msg)
-
-import cocotb
-import cocotb.ANSI as ANSI
-from cocotb.log import SimLog
-from cocotb.result import TestSuccess, SimFailure
-from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
-from cocotb.xunit_reporter import XUnitReporter
-from cocotb.decorators import test as Test, hook as Hook, RunningTask
-from cocotb.outcomes import Outcome, Error
-from cocotb.handle import SimHandle
 
 
 def _my_import(name: str) -> Any:
@@ -411,10 +411,10 @@ class RegressionManager:
 
     def _start_test(self) -> None:
         start = ''
-        end   = ''
+        end = ''
         if want_color_output():
             start = ANSI.COLOR_TEST
-            end   = ANSI.COLOR_DEFAULT
+            end = ANSI.COLOR_DEFAULT
         # Want this to stand out a little bit
         self.log.info("%sRunning test %d/%d:%s %s" %
                       (start,
@@ -441,30 +441,41 @@ class RegressionManager:
         if len(self.test_results) == 0:
             return
 
-        TEST_FIELD   = 'TEST'
+        TEST_FIELD = 'TEST'
         RESULT_FIELD = 'PASS/FAIL'
-        SIM_FIELD    = 'SIM TIME(NS)'
-        REAL_FIELD   = 'REAL TIME(S)'
-        RATIO_FIELD  = 'RATIO(NS/S)'
+        SIM_FIELD = 'SIM TIME(NS)'
+        REAL_FIELD = 'REAL TIME(S)'
+        RATIO_FIELD = 'RATIO(NS/S)'
 
-        TEST_FIELD_LEN   = max(len(TEST_FIELD),len(max([x['test'] for x in self.test_results],key=len)))
+        TEST_FIELD_LEN = max(len(TEST_FIELD), len(max([x['test'] for x in self.test_results], key=len)))
         RESULT_FIELD_LEN = len(RESULT_FIELD)
-        SIM_FIELD_LEN    = len(SIM_FIELD)
-        REAL_FIELD_LEN   = len(REAL_FIELD)
-        RATIO_FIELD_LEN  = len(RATIO_FIELD)
+        SIM_FIELD_LEN = len(SIM_FIELD)
+        REAL_FIELD_LEN = len(REAL_FIELD)
+        RATIO_FIELD_LEN = len(RATIO_FIELD)
 
-        LINE_LEN = 3 + TEST_FIELD_LEN + 2 + RESULT_FIELD_LEN + 2 + SIM_FIELD_LEN + 2 + REAL_FIELD_LEN + 2 + RATIO_FIELD_LEN + 3
+        header_dict = dict(
+            a=TEST_FIELD,
+            b=RESULT_FIELD,
+            c=SIM_FIELD,
+            d=REAL_FIELD,
+            e=RATIO_FIELD,
+            a_len=TEST_FIELD_LEN,
+            b_len=RESULT_FIELD_LEN,
+            c_len=SIM_FIELD_LEN,
+            d_len=REAL_FIELD_LEN,
+            e_len=RATIO_FIELD_LEN)
 
-        LINE_SEP = "*"*LINE_LEN+"\n"
+        LINE_LEN = 3 + TEST_FIELD_LEN + 2 + RESULT_FIELD_LEN + 2 + SIM_FIELD_LEN + 2 + \
+            REAL_FIELD_LEN + 2 + RATIO_FIELD_LEN + 3
+
+        LINE_SEP = "*" * LINE_LEN + "\n"
 
         summary = ""
         summary += LINE_SEP
-        summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(a=TEST_FIELD,   a_len=TEST_FIELD_LEN,
-                                                                                                         b=RESULT_FIELD, b_len=RESULT_FIELD_LEN,
-                                                                                                         c=SIM_FIELD,    c_len=SIM_FIELD_LEN,
-                                                                                                         d=REAL_FIELD,   d_len=REAL_FIELD_LEN,
-                                                                                                         e=RATIO_FIELD,  e_len=RATIO_FIELD_LEN)
+        summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(**header_dict)
         summary += LINE_SEP
+
+        test_line = "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n"
         for result in self.test_results:
             hilite = ''
 
@@ -477,20 +488,29 @@ class RegressionManager:
                 if want_color_output():
                     hilite = ANSI.COLOR_HILITE_SUMMARY
 
-            summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
-                                                                                                                                b=pass_fail_str,    b_len=RESULT_FIELD_LEN,
-                                                                                                                                c=result['sim'],    c_len=SIM_FIELD_LEN-1,
-                                                                                                                                d=result['real'],   d_len=REAL_FIELD_LEN-1,
-                                                                                                                                e=result['ratio'],  e_len=RATIO_FIELD_LEN-1,
-                                                                                                                                start=hilite)
+            test_dict = dict(
+                a=result['test'],
+                b=pass_fail_str,
+                c=result['sim'],
+                d=result['real'],
+                e=result['ratio'],
+                a_len=TEST_FIELD_LEN,
+                b_len=RESULT_FIELD_LEN,
+                c_len=SIM_FIELD_LEN - 1,
+                d_len=REAL_FIELD_LEN - 1,
+                e_len=RATIO_FIELD_LEN - 1,
+                start=hilite)
+
+            summary += test_line.format(**test_dict)
+
         summary += LINE_SEP
 
         self.log.info(summary)
 
     def _log_sim_summary(self) -> None:
-        real_time   = time.time() - self.start_time
+        real_time = time.time() - self.start_time
         sim_time_ns = get_sim_time('ns')
-        ratio_time  = self._safe_divide(sim_time_ns, real_time)
+        ratio_time = self._safe_divide(sim_time_ns, real_time)
 
         summary = ""
 
