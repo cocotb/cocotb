@@ -40,9 +40,6 @@ endif
 
 ifeq (, $(CMD))
     $(error "Unable to locate command >$(CMD_BIN)<")
-else
-    MODELSIM_BIN_DIR := $(shell dirname $(CMD))
-    export MODELSIM_BIN_DIR
 endif
 
 RTL_LIBRARY ?= work
@@ -50,10 +47,11 @@ RTL_LIBRARY ?= work
 TOPLEVEL := "$(RTL_LIBRARY).$(TOPLEVEL)"
 
 ifndef VLOG_ARGS
-VLOG_ARGS = -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) -mfcu +acc=rmb
+    VLOG_ARGS = -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) -mfcu +acc=rmb
 endif
+
 ifdef VERILOG_INCLUDE_DIRS
-VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
+    VLOG_ARGS += +incdir+$(VERILOG_INCLUDE_DIRS)
 endif
 
 # below allows for maintaining legacy syntax as well as enables using cross-simulator vars COMPILE_ARGS/SIM_ARGS
@@ -62,11 +60,11 @@ VCOM_ARGS += $(COMPILE_ARGS)
 VSIM_ARGS += $(SIM_ARGS)
 
 ifeq ($(GUI),1)
-CMD += -gui
-VSIM_ARGS += -onfinish stop
+    CMD += -gui
+    VSIM_ARGS += -onfinish stop
 else
-CMD += -c
-VSIM_ARGS += -onfinish exit
+    CMD += -c
+    VSIM_ARGS += -onfinish exit
 endif
 
 GPI_EXTRA:=
@@ -128,9 +126,6 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/runsim.do
 	$(CMD) $(RUN_ARGS) -do $(SIM_BUILD)/runsim.do $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 	$(call check_for_results_file)
-
-# Potential fix for buffered stdout, YMMV
-# STDOUT=$(SIM_BUILD)/sim.log stdbuf --output=0 $(CMD) -do runsim.do 2>&1 && stdbuf --output=0 --input=0 tail -f sim.log && exit $${PIPESTATUS[0]}
 
 clean::
 	-rm -rf $(SIM_BUILD)
