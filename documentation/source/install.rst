@@ -27,6 +27,23 @@ Cocotb has the following requirements:
 .. note:: In order to use a 32-bit simulator you need to use a 32-bit version of Python.
 
 
+Windows
+-------
+
+`Conda <https://conda.io/>`_ is an open-source package and environment management system that we recommend for Windows.
+
+Download and install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ from https://conda.io/.
+From a Command Prompt or the Windows PowerShell, use the following line to install a compiler (GCC or Clang) and GNU Make:
+
+.. code-block:: bash
+
+    conda install -c msys2 m2-base m2-make m2w64-toolchain libpython
+
+.. seealso::
+
+   For more installation options, please see `our Wiki <https://github.com/cocotb/cocotb/wiki/Tier-2-Setup-Instructions>`_.
+
+
 Linux - Debian/Ubuntu-based Systems
 -----------------------------------
 
@@ -51,23 +68,6 @@ In a terminal, run
 
     sudo yum install make gcc gcc-c++ libstdc++-devel python3 python3-devel python3-pip
     sudo yum install swig  # optional, needed for one of the examples
-
-.. seealso::
-
-   For more installation options, please see `our Wiki <https://github.com/cocotb/cocotb/wiki/Tier-2-Setup-Instructions>`_.
-
-
-Windows
--------
-
-`Conda <https://conda.io/>`_ is an open-source package and environment management system that we recommend for Windows.
-
-Download and install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ from https://conda.io/.
-From a Command Prompt or the Windows PowerShell, use the following line to install a compiler (GCC or Clang) and GNU Make:
-
-.. code-block:: bash
-
-    conda install -c msys2 m2-base m2-make m2w64-toolchain libpython
 
 .. seealso::
 
