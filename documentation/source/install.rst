@@ -1,9 +1,15 @@
+.. _install:
+
 ************
 Installation
 ************
 
-Using cocotb requires installation of pre-requisites and installation of cocotb itself.
-In this tutorial we are assuming that you already have a :ref:`supported simulator<simulator-support>` in ``PATH``.
+Using cocotb requires :ref:`installation of pre-requisites<install-pre-requisites>` and
+:ref:`installation of cocotb<installation-via-pip>` itself.
+In this document, we are assuming that you already have a
+:ref:`supported simulator<simulator-support>` available in ``PATH``.
+
+.. _install-pre-requisites:
 
 Pre-requisites
 ==============
@@ -90,25 +96,22 @@ Installation of cocotb
 
 .. versionadded:: 1.2
 
-Cocotb can be installed by running
+The **latest release** of cocotb can be installed by running
 
 .. code-block:: bash
 
     pip install cocotb
 
-
-For user-local installation, follow the `pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
-
-If you want to install the development version of cocotb, :ref:`instructions are here<install-devel>`.
-
 .. warning::
 
     ``pip`` may belong to a different python installation to what you expect.
     Use ``pip -V`` to check.
-    If this prints Python 2.7, use ``pip3`` or ``python3 -m pip`` in place of ``pip`` in the commands shown.
+    If this prints "Python 2.7", use ``pip3`` or ``python3 -m pip`` in place of ``pip`` in the command shown.
 
-.. note::
+For user-local installation, follow the `pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
 
-    After installation, you should be able to execute ``cocotb-config``.
-    If it is not found, you need to append its location to the ``PATH`` environment variable.
-    This may happen when you use the ``--user`` option to ``pip``, in which case the location is documented :ref:`here <python:inst-alt-install-user>`.
+If you want to install the **development version** of cocotb, :ref:`instructions are here<install-devel>`.
+
+After installation, you should be able to execute ``cocotb-config``.
+If it is not found, you need to append its location to the ``PATH`` environment variable.
+This may happen when you use the ``--user`` option to ``pip``, in which case the location is documented :ref:`here <python:inst-alt-install-user>`.
