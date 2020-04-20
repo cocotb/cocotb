@@ -1,3 +1,5 @@
+.. _quickstart:
+
 ****************
 Quickstart Guide
 ****************
@@ -6,22 +8,25 @@ Quickstart Guide
 Running your first Example
 ==========================
 
-Download and extract the cocotb source files according to the version you are using from
-https://github.com/cocotb/cocotb/releases
-You can check your cocotb version with ``cocotb-config --version``.
+Make sure you have the :ref:`pre-requisites<install-pre-requisites>`
+(Python with development packages, a C++ compiler with development packages, GNU Make,
+a :ref:`supported simulator<simulator-support>`) and cocotb itself (``pip install cocotb``) available.
 
-The sources for cocotb's development version are available from
+Download and extract the cocotb source files according to the *release version* you are using from
+https://github.com/cocotb/cocotb/releases - you can check your cocotb version with ``cocotb-config --version``.
+
+The sources for cocotb's *development version* are available from
 https://github.com/cocotb/cocotb/archive/master.zip
 
-Assuming you have installed the prerequisites as above,
-the following lines are all you need to run a first simulation with cocotb:
+The following lines are all you need to run a first simulation with cocotb:
 
 .. code-block:: bash
 
     cd cocotb/examples/endian_swapper/tests
     make
 
-Selecting a different simulator is as easy as:
+This was running with the default simulator, Icarus Verilog,
+but selecting a different simulator is as easy as:
 
 .. code-block:: bash
 
@@ -34,7 +39,7 @@ Running the same example as VHDL
 The ``endian_swapper`` example includes both a VHDL and a Verilog RTL implementation.
 The cocotb testbench can execute against either implementation using VPI for
 Verilog and VHPI/FLI for VHDL.  To run the test suite against the VHDL
-implementation use the following command (a VHPI or FLI capable simulator must
+implementation, use the following command (a VHPI or FLI capable simulator must
 be used):
 
 .. code-block:: bash
