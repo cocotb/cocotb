@@ -73,6 +73,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    :maxdepth: 1
    :hidden:
 
+   quickstart
    install
 
 ..
@@ -94,7 +95,6 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    :name: tutorials
    :hidden:
 
-   quickstart
    endian_swapper
    ping_tun_tap
    hal_cosimulation
