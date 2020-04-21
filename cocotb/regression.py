@@ -76,18 +76,23 @@ def _my_import(name: str) -> Any:
     return mod
 
 
+_logger = SimLog(__name__)
+
+
 class RegressionManager:
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, dut: SimHandle):
+    def __init__(self, dut: SimHandle, tests: Iterable[Test], hooks: Iterable[Hook]):
         """
         Args:
             dut (SimHandle): The root handle to pass into test functions.
+            tests (Iterable[Test]): tests to run
+            hooks (Iterable[Hook]): hooks to tun
         """
         self._dut = dut
         self._test_task = None
         self._cov = None
-        self.log = SimLog("cocotb.regression")
+        self.log = _logger
         self.start_time = time.time()
         self.test_results = []
         self.count = 0
@@ -118,7 +123,7 @@ class RegressionManager:
         # Test Discovery
         ####################
         self._queue = []
-        for test in self.discover_tests():
+        for test in tests:
             self.log.info("Found test {}.{}".format(test.__module__, test.__qualname__))
             self._queue.append(test)
         self.ntests = len(self._queue)
@@ -130,12 +135,31 @@ class RegressionManager:
 
         # Process Hooks
         ###################
-        for hook in self.discover_hooks():
+        for hook in hooks:
             self.log.info("Found hook {}.{}".format(hook.__module__, hook.__qualname__))
             self._init_hook(hook)
 
-    def discover_tests(self) -> Iterable[Test]:
+    @classmethod
+    def from_discovery(cls, dut: SimHandle):
+        """
+        Obtains the test and hook lists by discovery.
 
+        See :envvar:`MODULE` and :envvar:`TESTCASE` for details on how tests are discovered.
+
+        Args:
+            dut (SimHandle): The root handle to pass into test functions.
+        """
+        tests = cls._discover_tests()
+        hooks = cls._discover_hooks()
+        return cls(dut, tests, hooks)
+
+    @staticmethod
+    def _discover_tests() -> Iterable[Test]:
+        """
+        Discovers tests in files automatically.
+
+        See :envvar:`MODULE` and :envvar:`TESTCASE` for details on how tests are discovered.
+        """
         module_str = os.getenv('MODULE')
         test_str = os.getenv('TESTCASE')
 
@@ -146,14 +170,14 @@ class RegressionManager:
 
         for module_name in modules:
             try:
-                self.log.debug("Python Path: " + ",".join(sys.path))
-                self.log.debug("PWD: " + os.getcwd())
+                _logger.debug("Python Path: " + ",".join(sys.path))
+                _logger.debug("PWD: " + os.getcwd())
                 module = _my_import(module_name)
             except Exception as E:
-                self.log.critical("Failed to import module %s: %s", module_name, E)
-                self.log.info("MODULE variable was \"%s\"", ".".join(modules))
-                self.log.info("Traceback: ")
-                self.log.info(traceback.format_exc())
+                _logger.critical("Failed to import module %s: %s", module_name, E)
+                _logger.info("MODULE variable was \"%s\"", ".".join(modules))
+                _logger.info("Traceback: ")
+                _logger.info(traceback.format_exc())
                 raise
 
             if test_str:
@@ -163,13 +187,13 @@ class RegressionManager:
                     try:
                         test = getattr(module, test_name)
                     except AttributeError:
-                        self.log.error("Requested test %s wasn't found in module %s", test_name, module_name)
+                        _logger.error("Requested test %s wasn't found in module %s", test_name, module_name)
                         err = AttributeError("Test %s doesn't exist in %s" % (test_name, module_name))
                         raise err from None  # discard nested traceback
 
                     if not hasattr(test, "im_test"):
-                        self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
-                                       test_name, module_name)
+                        _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
+                                      test_name, module_name)
                         raise ImportError("Failed to find requested test %s" % test_name)
                     yield test
 
@@ -181,13 +205,18 @@ class RegressionManager:
                 if hasattr(thing, "im_test"):
                     yield thing
 
-    def discover_hooks(self) -> Iterable[Hook]:
+    @staticmethod
+    def _discover_hooks() -> Iterable[Hook]:
+        """
+        Discovers hooks automatically.
 
+        See :envvar:`COCOTB_HOOKS` for details on how hooks are discovered.
+        """
         hooks_str = os.getenv('COCOTB_HOOKS', '')
         hooks = [s.strip() for s in hooks_str.split(',') if s.strip()]
 
         for module_name in hooks:
-            self.log.info("Loading hook from module '" + module_name + "'")
+            _logger.info("Loading hook from module '" + module_name + "'")
             module = _my_import(module_name)
 
             for thing in vars(module).values():
@@ -619,7 +648,7 @@ class TestFactory:
         self.args = args
         self.kwargs_constant = kwargs
         self.kwargs = {}
-        self.log = SimLog("cocotb.regression")
+        self.log = _logger
 
     def add_option(self, name, optionlist):
         """Add a named option to the test.

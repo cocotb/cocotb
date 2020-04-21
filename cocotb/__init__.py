@@ -176,7 +176,7 @@ def _initialise_testbench(root_name):
 
     # start Regression Manager
     global regression_manager
-    regression_manager = RegressionManager(dut)
+    regression_manager = RegressionManager.from_discovery(dut)
     regression_manager.execute()
 
     _rlock.release()
