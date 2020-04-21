@@ -4,7 +4,8 @@
 Simulator Support
 *****************
 
-This page documents specifics, limitations, workarounds etc. in the various simulators.
+This page lists all simulators that cocotb provides support for
+and documents specifics, limitations, workarounds etc.
 
 
 .. _sim-icarus:
