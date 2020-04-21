@@ -72,7 +72,12 @@ All changes which should go into the main codebase of cocotb must follow this se
      Use this text to discuss things which are not obvious from the code, especially *why* changes were made.
      Include the GitHub issue number (if one exists) in the form "Fixes #nnn" ([read more about that](https://help.github.com/articles/closing-issues-using-keywords/)).
      Keep each description line below 72 characters.
-
+- Use the following header for new files:
+  ```python
+  # Copyright cocotb contributors
+  # Licensed under the Revised BSD License, see LICENSE for details.
+  # SPDX-License-Identifier: BSD-3-Clause
+  ```
 
 Managing of Issues and Pull Requests
 ------------------------------------
