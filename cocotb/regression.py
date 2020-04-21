@@ -85,7 +85,7 @@ class RegressionManager:
             dut (SimHandle): The root handle to pass into test functions.
         """
         self._dut = dut
-        self._running_test = None
+        self._test_task = None
         self._cov = None
         self.log = SimLog("cocotb.regression")
         self.start_time = time.time()
@@ -245,7 +245,7 @@ class RegressionManager:
         Args:
             test: The test that completed
         """
-        assert test is self._running_test
+        assert test is self._test_task
 
         real_time = time.time() - self._test_start_time
         sim_time_ns = get_sim_time('ns') - self._test_start_sim_time
@@ -255,7 +255,7 @@ class RegressionManager:
 
         self._record_result(
             test=self._test,
-            outcome=self._running_test._outcome,
+            outcome=self._test_task._outcome,
             wall_time_s=real_time,
             sim_time_ns=sim_time_ns)
 
@@ -405,8 +405,8 @@ class RegressionManager:
             if self._test is None:
                 return self.tear_down()
 
-            self._running_test = self._init_test(self._test)
-            if self._running_test:
+            self._test_task = self._init_test(self._test)
+            if self._test_task:
                 return self._start_test()
 
     def _start_test(self) -> None:
@@ -423,11 +423,11 @@ class RegressionManager:
                        self._test.__qualname__))
 
         # start capturing log output
-        cocotb.log.addHandler(self._running_test.handler)
+        cocotb.log.addHandler(self._test_task.handler)
 
         self._test_start_time = time.time()
         self._test_start_sim_time = get_sim_time('ns')
-        cocotb.scheduler.add_test(self._running_test)
+        cocotb.scheduler.add_test(self._test_task)
 
     def _log_test_summary(self) -> None:
 
