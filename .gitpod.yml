@@ -1,0 +1,25 @@
+image:
+  file: .gitpod.Dockerfile
+
+tasks:
+  - before: >
+      pip3 install -e . &&
+      export COCOTB_REDUCED_LOG_FMT=1
+    init: >
+      gp preview https://docs.cocotb.org/ &&
+      cd /workspace/cocotb/examples/dff/tests &&
+      gp open ../hdl/dff.v &&
+      gp open ../hdl/dff.vhdl &&
+      gp open Makefile &&
+      gp open dff_cocotb.py &&
+      make SIM=icarus
+    command: >
+      history -s make SIM=cvc &&
+      history -s make SIM=ghdl TOPLEVEL_LANG=vhdl &&
+      history -s make SIM=verilator &&
+      history -s make SIM=icarus
+
+vscode:
+  extensions:
+    - mshr-h.veriloghdl@1.0.6:RPslnvyzniF7C66mxHT+Hg==
+    - puorc.awesome-vhdl@0.0.1:w0lXwxIDreee5Mbtg9XSfg==
