@@ -104,7 +104,7 @@ The **latest release** of cocotb can be installed by running
 
 .. warning::
 
-    ``pip`` may belong to a different python installation to what you expect.
+    ``pip`` may belong to a different Python installation to what you expect.
     Use ``pip -V`` to check.
     If this prints "Python 2.7", use ``pip3`` or ``python3 -m pip`` in place of ``pip`` in the command shown.
 
