@@ -315,7 +315,8 @@ class RegressionManager:
         test_init_outcome = cocotb.outcomes.capture(test, self._dut)
 
         if isinstance(test_init_outcome, cocotb.outcomes.Error):
-            self.log.error("Failed to initialize test %s" % test.__qualname__, exc_info=True)
+            self.log.error("Failed to initialize test %s" % test.__qualname__,
+                           exc_info=test_init_outcome.error)
             self._record_result(test, test_init_outcome, 0, 0)
             return
 
