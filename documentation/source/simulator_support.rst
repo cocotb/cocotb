@@ -250,20 +250,6 @@ Support is preliminary.
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.
 
 
-.. _sim-nvc:
-
-NVC
-===
-
-In order to use this simulator, set :make:var:`SIM` to ``nvc``:
-
-.. code-block:: bash
-
-    make SIM=nvc
-
-To enable display of VHPI traces, use ``SIM_ARGS=--vhpi-trace make ...``.
-
-
 .. _sim-cvc:
 
 Tachyon DA CVC

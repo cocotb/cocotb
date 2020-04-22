@@ -2,10 +2,6 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
-ifdef COCOTB_NVC_TRACE
-    $(warning COCOTB_NVC_TRACE is deprecated, see the "Simulator Support" section in the documentation.)
-endif
-
 ifdef VERILATOR_TRACE
     $(warning VERILATOR_TRACE is deprecated, see the "Simulator Support" section in the documentation.)
 endif
