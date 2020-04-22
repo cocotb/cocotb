@@ -111,12 +111,9 @@ Monitor
 .. currentmodule:: cocotb.monitors
 
 .. autoclass:: Monitor
-    :members: _monitor_recv, _recv
+    :members:
     :member-order: bysource
     :private-members:
-
-    .. automethod:: wait_for_recv(timeout=None)
-
 
 .. autoclass:: BusMonitor
     :members:
@@ -230,9 +227,8 @@ Advanced Microcontroller Bus Architecture.
 .. currentmodule:: cocotb.drivers.amba
 
 .. autoclass:: AXI4LiteMaster
-
-    .. automethod:: write(address, value, byte_enable=0xf, address_latency=0, data_latency=0)
-    .. automethod:: read(address, sync=True)
+    :members:
+    :member-order: bysource
 
 
 .. autoclass:: AXI4Slave
@@ -251,10 +247,9 @@ Avalon
     :show-inheritance:
 
 .. autoclass:: AvalonMaster
-
-    .. automethod:: write(address, value)
-    .. automethod:: read(address, sync=True)
-
+    :members:
+    :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonMemory
     :members:
@@ -278,9 +273,9 @@ OPB
 .. currentmodule:: cocotb.drivers.opb
 
 .. autoclass:: OPBMaster
-
-    .. automethod:: write(address, value, sync=True)
-    .. automethod:: read(address, sync=True)
+    :members:
+    :member-order: bysource
+    :show-inheritance:
 
 
 XGMII
