@@ -99,6 +99,34 @@ async def test_first_does_not_kill(dut):
     assert ran
 
 
+# currently fork causes the test to fail, but this may change
+@cocotb.test(expect_error=ValueError)
+async def test_exceptions_forked_late(dut):
+    """Test exception propogation via fork, but await *after* forked coro has raised"""
+
+    async def raise_soon():
+        raise ValueError('It is soon now')
+
+    async def await_later():
+        future = cocotb.fork(raise_soon())
+        await Timer(1)
+        # by now `raise_soon` has raised
+        await future
+
+    expected = textwrap.dedent(r"""
+    Traceback \(most recent call last\):
+      File ".*common\.py", line \d+, in _check_traceback
+        yield running_coro
+      File ".*test_concurrency_primitives\.py", line \d+, in await_later
+        await future
+      .*
+      File ".*test_concurrency_primitives\.py", line \d+, in raise_soon
+        raise ValueError\('It is soon now'\)
+    ValueError: It is soon now""").strip()
+
+    await _check_traceback(await_later(), ValueError, expected)
+
+
 @cocotb.test()
 def test_exceptions_first(dut):
     """ Test exception propagation via cocotb.triggers.First """

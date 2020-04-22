@@ -10,7 +10,7 @@ Test for scheduler and coroutine behavior
 """
 
 import cocotb
-from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, ReadOnly
+from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, Event
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
 from common import clock_gen
@@ -189,9 +189,10 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
     dut.clk.setimmediatevalue(0)
 
     victim_resumed = False
+    victim_wait = Event()
 
     async def victim():
-        await Timer(1)  # prevent scheduling of RisingEdge before killer
+        await victim_wait.wait()
         await RisingEdge(dut.clk)
         nonlocal victim_resumed
         victim_resumed = True
@@ -202,7 +203,7 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
         victim_task.kill()
     cocotb.fork(killer())
 
-    await Timer(2)  # allow Timer in victim to pass making it schedule RisingEdge after the killer
+    victim_wait.set()
     dut.clk <= 1
     await Timer(1)
     assert not victim_resumed
