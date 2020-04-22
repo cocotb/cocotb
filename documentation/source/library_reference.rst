@@ -48,8 +48,6 @@ Interacting with the Simulator
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.clock.Clock
-
 .. autofunction:: cocotb.fork
 
 .. autofunction:: cocotb.decorators.RunningTask.join
@@ -195,7 +193,9 @@ Simulation Object Handles
     :member-order: bysource
     :show-inheritance:
     :synopsis: Classes for simulation objects.
-
+    :exclude-members: Deposit, Force, Freeze, Release
+..
+   Excluding the Assignment Methods that are getting their own section below
 
 .. _assignment-methods:
 
