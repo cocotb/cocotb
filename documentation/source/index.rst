@@ -197,11 +197,11 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    - In Contributing, add explanation on how to provide a PR, how to test existing PRs, etc.
    - merge `further_resources` into Contributing
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Index
+   :name: index
+   :hidden:
 
-
-#######
-Indices
-#######
-
-* :ref:`Index of Classes, Methods, Variables etc.<genindex>`
-* :ref:`Index of Python Modules <modindex>`
+   Classes, Methods, Variables etc. <genindex>
+   Python Modules <py-modindex>
