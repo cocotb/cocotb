@@ -22,5 +22,3 @@ For more installation options, please see `our Wiki <https://github.com/cocotb/c
 
 
 FIXME: add instructions for editable installation
-
-FIXME: add "You may also need to use the ``--no-use-pep517`` option to ``pip``." if...

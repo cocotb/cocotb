@@ -1,5 +1,5 @@
-Installation of Pre-requisites
-==============================
+Installation of Prerequisites
+=============================
 
 Cocotb has the following requirements:
 

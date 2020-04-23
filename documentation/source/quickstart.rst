@@ -150,7 +150,7 @@ The syntax ``sig <= new_value`` is a short form of ``sig.value = new_value``.
 It not only resembles HDL syntax, but also has the same semantics:
 writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
-(see :meth:`~cocotb.handle.ModifiableObject.setimmediatevalue`).
+(see :meth:`~cocotb.handle.NonHierarchyObject.setimmediatevalue`).
 
 In addition to regular value assignments (deposits), signals can be forced
 to a predetermined value or frozen at their current value. To achieve this,

@@ -4,8 +4,7 @@
 Installation
 ************
 
-Using cocotb requires :ref:`installation of pre-requisites<install-pre-requisites>` and
-:ref:`installation of cocotb<installation-via-pip>` itself.
+Using cocotb requires installation of prerequisites and installation of cocotb itself.
 In this document, we are assuming that you already have a
 :ref:`supported simulator<simulator-support>` available in ``PATH``.
 
