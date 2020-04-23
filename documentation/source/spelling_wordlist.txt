@@ -19,7 +19,6 @@ Microsemi
 MinGW
 ModelSim
 Msys
-NVC
 Questa
 Quickstart
 README

@@ -128,14 +128,6 @@ and
 
       Use to add additional dependencies to the simulation target.
 
-.. make:var:: COCOTB_NVC_TRACE
-
-      Set this to 1 to enable display of VHPI traces when using the NVC VHDL simulator.
-
-      .. deprecated:: 1.4
-
-         Replaced by the instructions in :ref:`sim-nvc`.
-
 .. make:var:: SIM_BUILD
 
       Use to define a scratch directory for use by the simulator. The path is relative to the Makefile location.
