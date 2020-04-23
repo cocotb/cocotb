@@ -9,16 +9,10 @@ The **latest release** of cocotb can be installed by running
 
     pip install cocotb
 
-.. warning::
+.. include:: install_pip3_warning.rst
 
-    ``pip`` may belong to a different Python installation to what you expect.
-    Use ``pip -V`` to check.
-    If this prints "Python 2.7", use ``pip3`` or ``python3 -m pip`` in place of ``pip`` in the command shown.
+.. include:: install_user_local.rst
 
-For user-local installation, follow the `pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
+If you want to install the **development version** of cocotb, :ref:`instructions are here<install-devel-linux-macos>`.
 
-If you want to install the **development version** of cocotb, :ref:`instructions are here<install-devel>`.
-
-After installation, you should be able to execute ``cocotb-config``.
-If it is not found, you need to append its location to the ``PATH`` environment variable.
-This may happen when you use the ``--user`` option to ``pip``, in which case the location is documented :ref:`here <python:inst-alt-install-user>`.
+.. include:: install_after_check.rst

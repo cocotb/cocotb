@@ -4,21 +4,13 @@
 Installing the Development Version
 **********************************
 
-To install the development version of cocotb on **Windows**, run the following:
+The instructions for installing the development version of cocotb vary depending on your operating system.
+Please choose:
 
-.. code-block:: bash
+.. toctree::
+   :maxdepth: 1
 
-    pip install --global-option build_ext --global-option --compiler=mingw32 https://github.com/cocotb/cocotb/archive/master.zip
+   install_devel_windows
+   install_devel_linux_macos
 
-For **Linux** and **macOS**, run:
-
-.. code-block:: bash
-
-    pip install https://github.com/cocotb/cocotb/archive/master.zip
-
-The instructions in :ref:`installation-via-pip` also apply.
-
-For more installation options, please see `our Wiki <https://github.com/cocotb/cocotb/wiki/Tier-2-Setup-Instructions>`_.
-
-
-FIXME: add instructions for editable installation
+FIXME: add instructions for editable installation - maybe just add this to the wiki?

@@ -8,7 +8,8 @@ Using cocotb requires installation of prerequisites and installation of cocotb i
 In this document, we are assuming that you already have a
 :ref:`supported simulator<simulator-support>` available in ``PATH``.
 
-The installation instructions depend on your operating system, please choose:
+The installation instructions vary depending on your operating system.
+Please choose:
 
 .. toctree::
    :maxdepth: 1
