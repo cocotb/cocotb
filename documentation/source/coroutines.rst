@@ -1,4 +1,5 @@
 .. _coroutines:
+.. _async_functions:
 
 **********
 Coroutines
