@@ -174,7 +174,7 @@ Environment Variables
     From http://no-color.org,
 
         All command-line software which outputs text with ANSI color added should check for the presence
-        of a ``NO_COLOR`` environment variable that, when present (regardless of its value), prevents the addition of ANSI color.   
+        of a ``NO_COLOR`` environment variable that, when present (regardless of its value), prevents the addition of ANSI color.
 
 .. envvar:: COCOTB_REDUCED_LOG_FMT
 
