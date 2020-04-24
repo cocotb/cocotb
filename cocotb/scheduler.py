@@ -775,6 +775,11 @@ class Scheduler:
         if self._terminate:
             return
 
+        # the test was terminated by the currently scheduled coroutine
+        # this prevents us from rescheduling the currently scheduled coroutine
+        if self._test._outcome is not None:
+            return
+
         if not coro_completed:
             try:
                 result = self._trigger_from_any(result)
