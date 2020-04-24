@@ -227,9 +227,6 @@ class Scheduler:
         # indexed by trigger
         self._trigger2coros = _py_compat.insertion_ordered_dict()
 
-        # A dictionary mapping coroutines to the trigger they are waiting for
-        self._coro2trigger = _py_compat.insertion_ordered_dict()
-
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
 
@@ -285,7 +282,6 @@ class Scheduler:
 
             self._timer1.prime(self._test_completed)
             self._trigger2coros = _py_compat.insertion_ordered_dict()
-            self._coro2trigger = _py_compat.insertion_ordered_dict()
             self._terminate = False
             self._write_calls = _py_compat.insertion_ordered_dict()
             self._writes_pending.clear()
@@ -470,12 +466,9 @@ class Scheduler:
         """Unschedule a coroutine.  Unprime any pending triggers"""
 
         # Unprime the trigger this coroutine is waiting on
-        try:
-            trigger = self._coro2trigger.pop(coro)
-        except KeyError:
-            # coroutine probably finished
-            pass
-        else:
+        trigger = coro._trigger
+        if trigger is not None:
+            coro._trigger = None
             if coro in self._trigger2coros.setdefault(trigger, []):
                 self._trigger2coros[trigger].remove(coro)
             if not self._trigger2coros[trigger]:
@@ -523,7 +516,7 @@ class Scheduler:
 
     def _resume_coro_upon(self, coro, trigger):
         """Schedule `coro` to be resumed when `trigger` fires."""
-        self._coro2trigger[coro] = trigger
+        coro._trigger = trigger
 
         trigger_coros = self._trigger2coros.setdefault(trigger, [])
         if coro is self._write_coro_inst:
@@ -765,6 +758,7 @@ class Scheduler:
 
         coro_completed = False
         try:
+            coroutine._trigger = None
             result = coroutine._advance(send_outcome)
             if _debug:
                 self.log.debug("Coroutine %s yielded %s (mode %d)" %

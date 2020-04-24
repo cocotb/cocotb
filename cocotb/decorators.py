@@ -112,6 +112,7 @@ class RunningTask:
         self._started = False
         self._callbacks = []
         self._outcome = None
+        self._trigger = None
 
     @lazy_property
     def log(self):
