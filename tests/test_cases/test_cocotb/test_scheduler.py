@@ -10,7 +10,7 @@ Test for scheduler and coroutine behavior
 """
 
 import cocotb
-from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger
+from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, ReadOnly
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
 from common import clock_gen
@@ -178,3 +178,31 @@ def test_stack_overflow(dut):
         yield null_coroutine()
 
     yield Timer(100)
+
+
+@cocotb.test()
+async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
+    # gh-1348
+    # NOTE: this test depends on scheduling priority.
+    # It assumes that the first task to wait on a trigger will be woken first.
+    # The fix for gh-1348 should prevent that from mattering.
+    dut.clk.setimmediatevalue(0)
+
+    victim_resumed = False
+
+    async def victim():
+        await Timer(1)  # prevent scheduling of RisingEdge before killer
+        await RisingEdge(dut.clk)
+        nonlocal victim_resumed
+        victim_resumed = True
+    victim_task = cocotb.fork(victim())
+
+    async def killer():
+        await RisingEdge(dut.clk)
+        victim_task.kill()
+    cocotb.fork(killer())
+
+    await Timer(2)  # allow Timer in victim to pass making it schedule RisingEdge after the killer
+    dut.clk <= 1
+    await Timer(1)
+    assert not victim_resumed
