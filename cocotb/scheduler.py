@@ -435,7 +435,7 @@ class Scheduler:
 
                 for coro in scheduling:
                     if coro._outcome is not None:
-                        # coroutine was unscheduled by another coroutine waiting on the same trigger
+                        # coroutine was killed by another coroutine waiting on the same trigger
                         continue
                     if _debug:
                         self.log.debug("Scheduling coroutine %s" % (coro.__qualname__))
