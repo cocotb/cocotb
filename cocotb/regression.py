@@ -641,10 +641,14 @@ class TestFactory:
     """
 
     def __init__(self, test_function, *args, **kwargs):
-        if not isinstance(test_function, cocotb.coroutine):
+        if sys.version_info > (3, 6) and inspect.isasyncgenfunction(test_function):
+            raise TypeError("Expected a coroutine function, but got the async generator '{}'. "
+                            "Did you forget to convert a `yield` to an `await`?"
+                            .format(test_function.__qualname__))
+        if not (isinstance(test_function, cocotb.coroutine) or inspect.iscoroutinefunction(test_function)):
             raise TypeError("TestFactory requires a cocotb coroutine")
         self.test_function = test_function
-        self.name = self.test_function._func.__qualname__
+        self.name = self.test_function.__qualname__
 
         self.args = args
         self.kwargs_constant = kwargs
