@@ -33,6 +33,7 @@ FIXME: We have a problem here.  If a coroutine schedules a read-only but we
 also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
+from contextlib import contextmanager
 import os
 import sys
 import logging
@@ -242,6 +243,8 @@ class Scheduler:
         self._terminate = False
         self._test = None
         self._main_thread = threading.current_thread()
+
+        self._current_task = None
 
         self._is_reacting = False
 
@@ -741,6 +744,16 @@ class Scheduler:
             .format(type(result), result)
         )
 
+    @contextmanager
+    def _task_context(self, task):
+        """Context manager for the currently running task."""
+        old_task = self._current_task
+        self._current_task = task
+        try:
+            yield
+        finally:
+            self._current_task = old_task
+
     def schedule(self, coroutine, trigger=None):
         """Schedule a coroutine by calling the send method.
 
@@ -749,67 +762,68 @@ class Scheduler:
             trigger (cocotb.triggers.Trigger): The trigger that caused this
                 coroutine to be scheduled.
         """
-        if trigger is None:
-            send_outcome = outcomes.Value(None)
-        else:
-            send_outcome = trigger._outcome
-        if _debug:
-            self.log.debug("Scheduling with {}".format(send_outcome))
-
-        coro_completed = False
-        try:
-            coroutine._trigger = None
-            result = coroutine._advance(send_outcome)
+        with self._task_context(coroutine):
+            if trigger is None:
+                send_outcome = outcomes.Value(None)
+            else:
+                send_outcome = trigger._outcome
             if _debug:
-                self.log.debug("Coroutine %s yielded %s (mode %d)" %
-                               (coroutine.__qualname__, str(result), self._mode))
+                self.log.debug("Scheduling with {}".format(send_outcome))
 
-        except cocotb.decorators.CoroutineComplete:
-            if _debug:
-                self.log.debug("Coroutine {} completed with {}".format(
-                    coroutine, coroutine._outcome
-                ))
-            coro_completed = True
-
-        # this can't go in the else above, as that causes unwanted exception
-        # chaining
-        if coro_completed:
-            self.unschedule(coroutine)
-
-        # Don't handle the result if we're shutting down
-        if self._terminate:
-            return
-
-        if not coro_completed:
+            coro_completed = False
             try:
-                result = self._trigger_from_any(result)
-            except TypeError as exc:
-                # restart this coroutine with an exception object telling it that
-                # it wasn't allowed to yield that
-                result = NullTrigger(outcome=outcomes.Error(exc))
-
-            self._resume_coro_upon(coroutine, result)
-
-        # We do not return from here until pending threads have completed, but only
-        # from the main thread, this seems like it could be problematic in cases
-        # where a sim might change what this thread is.
-
-        if self._main_thread is threading.current_thread():
-
-            for ext in self._pending_threads:
-                ext.thread_start()
+                coroutine._trigger = None
+                result = coroutine._advance(send_outcome)
                 if _debug:
-                    self.log.debug("Blocking from %s on %s" % (threading.current_thread(), ext.thread))
-                state = ext.thread_wait()
-                if _debug:
-                    self.log.debug("Back from wait on self %s with newstate %d" % (threading.current_thread(), state))
-                if state == external_state.EXITED:
-                    self._pending_threads.remove(ext)
-                    self._pending_events.append(ext.event)
+                    self.log.debug("Coroutine %s yielded %s (mode %d)" %
+                                   (coroutine.__qualname__, str(result), self._mode))
 
-        # Handle any newly queued coroutines that need to be scheduled
-        while self._pending_coros:
-            self.add(self._pending_coros.pop(0))
+            except cocotb.decorators.CoroutineComplete:
+                if _debug:
+                    self.log.debug("Coroutine {} completed with {}".format(
+                        coroutine, coroutine._outcome
+                    ))
+                coro_completed = True
+
+            # this can't go in the else above, as that causes unwanted exception
+            # chaining
+            if coro_completed:
+                self.unschedule(coroutine)
+
+            # Don't handle the result if we're shutting down
+            if self._terminate:
+                return
+
+            if not coro_completed:
+                try:
+                    result = self._trigger_from_any(result)
+                except TypeError as exc:
+                    # restart this coroutine with an exception object telling it that
+                    # it wasn't allowed to yield that
+                    result = NullTrigger(outcome=outcomes.Error(exc))
+
+                self._resume_coro_upon(coroutine, result)
+
+            # We do not return from here until pending threads have completed, but only
+            # from the main thread, this seems like it could be problematic in cases
+            # where a sim might change what this thread is.
+
+            if self._main_thread is threading.current_thread():
+
+                for ext in self._pending_threads:
+                    ext.thread_start()
+                    if _debug:
+                        self.log.debug("Blocking from %s on %s" % (threading.current_thread(), ext.thread))
+                    state = ext.thread_wait()
+                    if _debug:
+                        self.log.debug("Back from wait on self %s with newstate %d" % (threading.current_thread(), state))
+                    if state == external_state.EXITED:
+                        self._pending_threads.remove(ext)
+                        self._pending_events.append(ext.event)
+
+            # Handle any newly queued coroutines that need to be scheduled
+            while self._pending_coros:
+                self.add(self._pending_coros.pop(0))
 
     def finish_test(self, exc):
         self._test.abort(exc)
