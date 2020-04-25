@@ -520,8 +520,8 @@ class Scheduler:
         self._write_calls.append((write_func, args))
         self._writes_pending.set()
 
-    def _coroutine_yielded(self, coro, trigger):
-        """Prime the trigger and update our internal mappings."""
+    def _resume_coro_upon(self, coro, trigger):
+        """Schedule `coro` to be resumed when `trigger` fires."""
         self._coro2trigger[coro] = trigger
 
         trigger_coros = self._trigger2coros.setdefault(trigger, [])
@@ -548,12 +548,10 @@ class Scheduler:
                 self._trigger2coros.pop(trigger)
 
                 # replace it with a new trigger that throws back the exception
-                error_trigger = NullTrigger(outcome=outcomes.Error(e))
-                self._coro2trigger[coro] = error_trigger
-                self._trigger2coros[error_trigger] = [coro]
-
-                # wake up the coroutines
-                error_trigger.prime(self.react)
+                self._resume_coro_upon(
+                    coro,
+                    NullTrigger(name="Trigger.prime() Error", outcome=outcomes.Error(e))
+                )
 
     def queue(self, coroutine):
         """Queue a coroutine for execution"""
@@ -675,8 +673,12 @@ class Scheduler:
         """Called by the regression manager to queue the next test"""
         if self._test is not None:
             raise InternalError("Test was added while another was in progress")
+
         self._test = test_coro
-        return self.add(test_coro)
+        self._resume_coro_upon(
+            test_coro,
+            NullTrigger(name="Start {!s}".format(test_coro), outcome=outcomes.Value(None))
+        )
 
     # This collection of functions parses a trigger out of the object
     # that was yielded by a coroutine, converting `list` -> `Waitable`,
@@ -784,7 +786,7 @@ class Scheduler:
                 # it wasn't allowed to yield that
                 result = NullTrigger(outcome=outcomes.Error(exc))
 
-            self._coroutine_yielded(coroutine, result)
+            self._resume_coro_upon(coroutine, result)
 
         # We do not return from here until pending threads have completed, but only
         # from the main thread, this seems like it could be problematic in cases
