@@ -10,7 +10,7 @@ Test for scheduler and coroutine behavior
 """
 
 import cocotb
-from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger
+from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, Combine, Event
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
 from common import clock_gen
@@ -206,3 +206,60 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
     dut.clk <= 1
     await Timer(1)
     assert not victim_resumed
+
+
+@cocotb.test()
+async def test_nulltrigger_reschedule(dut):
+    """
+    Test that NullTrigger doesn't immediately reschedule the waiting coroutine.
+
+    The NullTrigger will be added to the end of the list of pending triggers.
+    """
+
+    last_fork = None
+
+    @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
+    async def reschedule(n):
+        nonlocal last_fork
+        for i in range(4):
+            cocotb.log.info("Fork {}, iteration {}, last fork was {}".format(n, i, last_fork))
+            assert last_fork != n
+            last_fork = n
+            await NullTrigger()
+
+    # Test should start in event loop
+    await Combine(*(reschedule(i) for i in range(4)))
+
+    await Timer(1)
+
+    # Event loop when simulator returns
+    await Combine(*(reschedule(i) for i in range(4)))
+
+
+@cocotb.test()
+async def test_event_set_schedule(dut):
+    """
+    Test that Event.set() doesn't cause an immediate reschedule.
+
+    The coroutine waiting with Event.wait() will be woken after
+    the current coroutine awaits a trigger.
+    """
+
+    e = Event()
+    waiter_scheduled = False
+
+    async def waiter(event):
+        await event.wait()
+        nonlocal waiter_scheduled
+        waiter_scheduled = True
+
+    cocotb.fork(waiter(e))
+
+    e.set()
+
+    # waiter() shouldn't run until after test awaits a trigger
+    assert waiter_scheduled is False
+
+    await NullTrigger()
+
+    assert waiter_scheduled is True

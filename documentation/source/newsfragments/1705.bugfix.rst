@@ -1,0 +1,1 @@
+Scheduling behavior is now consistent before and after the first :keyword:`await` of a :class:`~cocotb.triggers.GPITrigger`.
