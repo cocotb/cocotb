@@ -59,14 +59,6 @@ to the top component as shown in the example below:
     `endif
     endmodule
 
-.. _sim-icarus-time:
-
-Time unit and precision
------------------------
-
-Setting the time unit and time precision is not possible from the command-line,
-and therefore the make variables :make:var:`COCOTB_HDL_TIMEUNIT` and :make:var:`COCOTB_HDL_TIMEPRECISION` are ignored.
-
 
 .. _sim-verilator:
 
