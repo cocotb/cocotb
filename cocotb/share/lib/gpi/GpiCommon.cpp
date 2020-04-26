@@ -208,6 +208,10 @@ void gpi_load_extra_libs()
     /* Lets look at what other libs we were asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
 
+    /* inform python that we are in simulation */
+    char cocotb_sim_env[] = "COCOTB_SIM=1";
+    putenv(cocotb_sim_env);
+
     if (lib_env) {
         std::string lib_list = lib_env;
         std::string const delim = ",";
