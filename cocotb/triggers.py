@@ -27,15 +27,10 @@
 
 """A collections of triggers which a testbench can await."""
 
-import os
 import abc
 from collections.abc import Awaitable
 
-if "COCOTB_SIM" in os.environ:
-    from cocotb import simulator
-else:
-    simulator = None
-
+from cocotb import simulator
 from cocotb.log import SimLog
 from cocotb.utils import (
     get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,

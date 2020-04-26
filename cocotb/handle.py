@@ -32,14 +32,8 @@
 import ctypes
 import warnings
 
-import os
-
-if "COCOTB_SIM" in os.environ:
-    from cocotb import simulator
-else:
-    simulator = None
-
 import cocotb
+from cocotb import simulator
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
 from cocotb.result import TestError
