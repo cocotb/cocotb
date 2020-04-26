@@ -35,12 +35,7 @@ import weakref
 import functools
 import warnings
 
-if "COCOTB_SIM" in os.environ:
-    from cocotb import simulator
-    _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
-else:
-    simulator = None
-    _LOG_SIM_PRECISION = -15
+from cocotb import simulator
 
 
 def get_python_integer_types():
@@ -94,7 +89,7 @@ def get_time_from_sim_steps(steps, units):
     Returns:
         The simulation time in the specified units.
     """
-    return _ldexp10(steps, _LOG_SIM_PRECISION - _get_log_time_scale(units))
+    return _ldexp10(steps, simulator.get_precision() - _get_log_time_scale(units))
 
 
 def get_sim_steps(time, units=None):
@@ -114,14 +109,14 @@ def get_sim_steps(time, units=None):
     """
     result = time
     if units is not None:
-        result = _ldexp10(result, _get_log_time_scale(units) - _LOG_SIM_PRECISION)
+        result = _ldexp10(result, _get_log_time_scale(units) - simulator.get_precision())
 
     result_rounded = math.floor(result)
 
     if result_rounded != result:
         raise ValueError("Unable to accurately represent {0}({1}) with the "
                          "simulator precision of 1e{2}".format(
-                             time, units, _LOG_SIM_PRECISION))
+                             time, units, simulator.get_precision()))
 
     return int(result_rounded)
 

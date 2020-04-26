@@ -96,9 +96,8 @@ def default_config():
 
     # Notify GPI of log level, which it uses as an optimization to avoid
     # calling into Python.
-    if "COCOTB_SIM" in os.environ:
-        from cocotb import simulator
-        simulator.log_level(_default_log)
+    from cocotb import simulator
+    simulator.log_level(_default_log)
 
 
 class SimBaseLog(logging.getLoggerClass()):

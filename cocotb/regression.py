@@ -46,15 +46,12 @@ from cocotb.decorators import test as Test, hook as Hook, RunningTask
 from cocotb.outcomes import Outcome, Error
 from cocotb.handle import SimHandle
 
+from cocotb import simulator
+
 if "COCOTB_PDB_ON_EXCEPTION" in os.environ:
     _pdb_on_exception = True
 else:
     _pdb_on_exception = False
-
-if "COCOTB_SIM" in os.environ:
-    from cocotb import simulator
-else:
-    simulator = None
 
 # Optional support for coverage collection of testbench files
 coverage = None
