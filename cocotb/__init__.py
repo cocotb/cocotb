@@ -47,11 +47,6 @@ from cocotb.regression import RegressionManager
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
 
-# Singleton scheduler instance
-# NB this cheekily ensures a singleton since we're replacing the reference
-# so that cocotb.scheduler gives you the singleton instance and not the
-# scheduler package
-
 from ._version import __version__
 
 # GPI logging instance
@@ -102,6 +97,12 @@ if "COCOTB_SIM" in os.environ:
     # warning settings in their test module.
     if not sys.warnoptions:
         warnings.simplefilter("default")
+
+
+# Singleton scheduler instance
+# NB this cheekily ensures a singleton since we're replacing the reference
+# so that cocotb.scheduler gives you the singleton instance and not the
+# scheduler package
 
 scheduler = Scheduler()
 """The global scheduler instance."""
