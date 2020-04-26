@@ -117,15 +117,12 @@ To install the development version of cocotb:
 Running your first Example
 ==========================
 
-Download and extract cocotb source files according to the version you are using from https://github.com/cocotb/cocotb/releases
+Download and extract the cocotb source files according to the version you are using from
+https://github.com/cocotb/cocotb/releases
+You can check your cocotb version with ``cocotb-config --version``.
 
-Cocotb version can check with:
-
-.. code-block:: bash
-
-    cocotb-config --version
-
-Development version is available under https://github.com/cocotb/cocotb/archive/master.zip
+The sources for cocotb's development version are available from
+https://github.com/cocotb/cocotb/archive/master.zip
 
 Assuming you have installed the prerequisites as above,
 the following lines are all you need to run a first simulation with cocotb:
