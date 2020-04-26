@@ -117,12 +117,21 @@ To install the development version of cocotb:
 Running your first Example
 ==========================
 
+Download and extract cocotb source files according to the version you are using from https://github.com/cocotb/cocotb/releases
+
+Cocotb version can check with:
+
+.. code-block:: bash
+
+    cocotb-config --version
+
+Development version is available under https://github.com/cocotb/cocotb/archive/master.zip
+
 Assuming you have installed the prerequisites as above,
 the following lines are all you need to run a first simulation with cocotb:
 
 .. code-block:: bash
 
-    git clone https://github.com/cocotb/cocotb
     cd cocotb/examples/endian_swapper/tests
     make
 
