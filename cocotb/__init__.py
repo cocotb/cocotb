@@ -49,13 +49,9 @@ from cocotb.decorators import test, coroutine, hook, function, external  # noqa:
 
 from ._version import __version__
 
-# GPI logging instance
-if "COCOTB_SIM" in os.environ:
 
-    # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
-    # Add it back because users expect to be able to import files in their test directory.
-    # TODO: move this to gpi_embed.cpp
-    sys.path.insert(0, "")
+def _setup_logging():
+    global log
 
     def _reopen_stream_with_buffering(stream_name):
         try:
@@ -92,12 +88,6 @@ if "COCOTB_SIM" in os.environ:
 
     del _stderr_buffer_result, _stdout_buffer_result
 
-    # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
-    # If the user doesn't want to see these, they can always change the global
-    # warning settings in their test module.
-    if not sys.warnoptions:
-        warnings.simplefilter("default")
-
 
 # Singleton scheduler instance
 # NB this cheekily ensures a singleton since we're replacing the reference
@@ -116,6 +106,7 @@ plusargs = {}
 def fork(coro):
     """ Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on it's use. """
     return scheduler.add(coro)
+
 
 # FIXME is this really required?
 _rlock = threading.RLock()
@@ -153,6 +144,19 @@ def _initialise_testbench(argv_):
         elif '.' in root_name:
             # Skip any library component of the toplevel
             root_name = root_name.split(".", 1)[1]
+
+    # sys.path normally includes "" (the current directory), but does not appear to when python is embedded.
+    # Add it back because users expect to be able to import files in their test directory.
+    # TODO: move this to gpi_embed.cpp
+    sys.path.insert(0, "")
+
+    _setup_logging()
+
+    # From https://www.python.org/dev/peps/pep-0565/#recommended-filter-settings-for-test-runners
+    # If the user doesn't want to see these, they can always change the global
+    # warning settings in their test module.
+    if not sys.warnoptions:
+        warnings.simplefilter("default")
 
     from cocotb import simulator
 
