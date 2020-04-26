@@ -104,7 +104,7 @@ if "COCOTB_SIM" in os.environ:
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
 
-scheduler = Scheduler()
+scheduler = None
 """The global scheduler instance."""
 
 regression_manager = None
@@ -170,6 +170,9 @@ def _initialise_testbench(argv_):
     # Create the base handle type
 
     process_plusargs()
+
+    global scheduler
+    scheduler = Scheduler()
 
     # Seed the Python random number generator to make this repeatable
     global RANDOM_SEED
