@@ -112,8 +112,10 @@ regression_manager = None
 plusargs = {}
 """A dictionary of "plusargs" handed to the simulation."""
 
-# To save typing provide an alias to scheduler.add
-fork = scheduler.add
+
+def fork(coro):
+    """ Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on it's use. """
+    return scheduler.add(coro)
 
 # FIXME is this really required?
 _rlock = threading.RLock()
