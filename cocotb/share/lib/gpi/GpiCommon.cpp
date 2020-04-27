@@ -210,8 +210,8 @@ void gpi_load_extra_libs()
 
     /* inform python that we are in simulation
      * TODO[gh-1566]: Eliminate the need for this completely. */
-    char cocotb_sim_env[] = "COCOTB_SIM=1";
-    putenv(cocotb_sim_env);
+    static char cocotb_sim_env[] = "COCOTB_SIM=1";
+    putenv(cocotb_sim_env);  // putenv requires the array lifetime to be as long as the program lifetime, hence the static
 
     if (lib_env) {
         std::string lib_list = lib_env;
