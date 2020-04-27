@@ -208,7 +208,8 @@ void gpi_load_extra_libs()
     /* Lets look at what other libs we were asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
 
-    /* inform python that we are in simulation */
+    /* inform python that we are in simulation
+     * TODO[gh-1566]: Eliminate the need for this completely. */
     char cocotb_sim_env[] = "COCOTB_SIM=1";
     putenv(cocotb_sim_env);
 
