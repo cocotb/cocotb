@@ -29,7 +29,7 @@ Accessing bits of a vector doesn't work:
 
     dut.stream_in_data[2] <= 1
 
-See the ``access_single_bit`` test in :file:`examples/functionality/tests/test_discovery.py`.
+See the ``access_single_bit`` test in :file:`tests/test_cases/test_discovery/test_discovery.py`.
 
 .. _sim-icarus-waveforms:
 
