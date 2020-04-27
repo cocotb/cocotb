@@ -27,12 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-A set of tests that demonstrate cocotb functionality
-
-Also used a regression test of cocotb capabilities
-"""
-
 import cocotb
 from cocotb.triggers import Timer, RisingEdge
 from cocotb.clock import Clock
@@ -46,23 +40,31 @@ def test_read(dut):
         test_count += 1
 
 
-@cocotb.coroutine
-def run_external(dut):
-    yield cocotb.external(test_read)(dut)
+async def run_external(dut):
+    await cocotb.external(test_read)(dut)
 
 
-@cocotb.coroutine
-def clock_mon(dut):
-    yield RisingEdge(dut.clk)
+async def clock_mon(dut):
+    await RisingEdge(dut.clk)
 
 
 @cocotb.test(expect_fail=True,
-             expect_error=cocotb.SIM_NAME.lower().startswith(("modelsim",  # $fail_test() fails hard on Questa
+             expect_error=cocotb.SIM_NAME.lower().startswith(("modelsim",  # $fatal() fails hard on Questa
                                                               )))
-def test_failure_from_system_task(dut):
-    """Allow the dut to call $fail_test() from verilog"""
-    clock = Clock(dut.clk, 100)
-    clock.start()
+async def test_failure_from_system_task(dut):
+    """
+    Allow the dut to call system tasks from verilog.
+    $fatal() will fail the test, and scheduler will cleanup forked coroutines.
+    """
+    cocotb.fork(Clock(dut.clk, 100, units='ns').start())
     cocotb.fork(clock_mon(dut))
     cocotb.fork(run_external(dut))
-    yield Timer(10000000)
+    await Timer(10000000, units='ns')
+
+
+@cocotb.test()
+async def test_after_system_task_fail(dut):
+    """
+    Test to run after failed test.
+    """
+    await Timer(1, units='ns')

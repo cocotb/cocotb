@@ -95,9 +95,6 @@ and test_and_gate(and_output, stream_in_ready, stream_in_valid);
 initial begin
     $dumpfile("waveform.vcd");
     $dumpvars(0,sample_module);
-
-//   TODO: Move into a separate test
-//     #500000 $fail_test("Test timed out, failing...");
 end
 
 reg[3:0] temp;
