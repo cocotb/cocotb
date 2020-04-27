@@ -1,0 +1,1 @@
+The :make:var:`SIM` setting for Aldec Riviera-PRO has changed from ``aldec`` to ``riviera``.

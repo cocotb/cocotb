@@ -129,20 +129,25 @@ cocotb currently only supports VPI for Synopsys VCS, not VHPI.
 
 
 .. _sim-aldec:
+.. _sim-riviera:
 
 Aldec Riviera-PRO
 =================
 
-In order to use this simulator, set :make:var:`SIM` to ``aldec``:
+In order to use this simulator, set :make:var:`SIM` to ``riviera``:
 
 .. code-block:: bash
 
-    make SIM=aldec
+    make SIM=riviera
 
 .. note::
 
    On Windows, do not install the C++ compiler, i.e. unselect it during the installation process of Riviera-PRO.
    (A workaround is to remove or rename the ``mingw`` directory located in the Riviera-PRO installation directory.)
+
+.. deprecated:: 1.4
+
+   Support for Riviera-PRO was previously available with ``SIM=aldec``.
 
 The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
