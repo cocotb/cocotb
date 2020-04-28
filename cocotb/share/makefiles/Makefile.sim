@@ -42,8 +42,37 @@ regression                Run simulator when dependencies have changes
 clean                     Remove build and simulation artefacts
 help                      This help text
 
-Make Variables
---------------
+GPI
+---
+GPI_EXTRA                 Extra libraries to load at runtime (comma-separated)
+
+Cocotb
+------
+TOPLEVEL                  Instance in the hierarchy to use as the DUT
+RANDOM_SEED               Random seed, to recreate a previous test stimulus
+COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
+COCOTB_REDUCED_LOG_FMT    Display log lines shorter
+COCOTB_ATTACH             Pause time value in seconds before the simulator start
+COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
+COCOTB_HOOKS              Comma-separated module list to be executed before test
+COCOTB_LOG_LEVEL          Default logging level (default INFO)
+COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion
+MEMCHECK                  HTTP port to use for debugging Python memory usage
+
+Regression Manager
+------------------
+COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
+MODULE                    Modules to search for test functions (comma-separated)
+TESTCASE                  Test function(s) to run (comma-separated list)
+COCOTB_RESULTS_FILE       File name for xUnit XML tests results
+COVERAGE                  Report Python coverage (also HDL for some simulators)
+
+Scheduler
+---------
+COCOTB_SCHEDULER_DEBUG    Enable additional output of coroutine scheduler
+
+Makefile-based Test Scripts
+---------------------------
 GUI                       Set this to 1 to enable the GUI mode in the simulator
 SIM                       Selects which simulator Makefile to use
 WAVES                     Enable wave traces dump for Riviera-PRO and Questa
@@ -54,35 +83,12 @@ COMPILE_ARGS              Arguments to pass to compile stage of simulation
 SIM_ARGS                  Arguments to pass to execution of compiled simulation
 EXTRA_ARGS                Arguments for compile and execute phases
 PLUSARGS                  Plusargs to pass to the simulator
-GPI_EXTRA                 A list of extra libraries that are dynamically loaded at runtime
 COCOTB_HDL_TIMEUNIT       Default time unit for simulation
 COCOTB_HDL_TIMEPRECISION  Default time precision for simulation
 CUSTOM_COMPILE_DEPS       Add additional dependencies to the compilation target
 CUSTOM_SIM_DEPS           Add additional dependencies to the simulation target
 SIM_BUILD                 Define a scratch directory for use by the simulator
-
-Environment Variables
----------------------
-TOPLEVEL                  Instance in the hierarchy to use as the DUT
-RANDOM_SEED               Random seed, to recreate a previous test stimulus
-COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
-COCOTB_REDUCED_LOG_FMT    Display log lines shorter
-COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
-MODULE                    Modules to search for test functions (comma-separated)
-TESTCASE                  Test function(s) to run (comma-separated list)
-COCOTB_RESULTS_FILE       File name for xUnit XML tests results
 SCRIPT_FILE               Simulator script to run (for e.g. wave traces)
-
-Additional Environment Variables
---------------------------------
-COCOTB_ATTACH             Pause time value in seconds before the simulator start
-COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
-COCOTB_HOOKS              Comma-separated module list to be executed before test
-COCOTB_LOG_LEVEL          Default logging level (default INFO)
-COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion
-COCOTB_SCHEDULER_DEBUG    Enable additional output of coroutine scheduler
-COVERAGE                  Report Python coverage (also HDL for some simulators)
-MEMCHECK                  HTTP port to use for debugging Python memory usage
 
     For details, see $(DOCLINK)
 
@@ -93,9 +99,9 @@ ifeq ($(MAKECMDGOALS),help)
     _VERSION := $(shell cocotb-config -v)
     # for non-intuitive use of ifneq see https://www.gnu.org/software/make/manual/make.html#Testing-Flags
     ifneq (,$(findstring dev,$(_VERSION)))
-        DOCLINK := https://cocotb.readthedocs.io/en/latest/building.html
+        DOCLINK := https://docs.cocotb.org/en/latest/building.html
     else
-        DOCLINK := https://cocotb.readthedocs.io/en/v$(_VERSION)/building.html
+        DOCLINK := https://docs.cocotb.org/en/v$(_VERSION)/building.html
     endif
     $(info $(helpmsg))
     # is there a cleaner way to exit here?
