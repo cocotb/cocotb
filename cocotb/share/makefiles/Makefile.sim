@@ -54,7 +54,6 @@ COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
 COCOTB_REDUCED_LOG_FMT    Display log lines shorter
 COCOTB_ATTACH             Pause time value in seconds before the simulator start
 COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
-COCOTB_HOOKS              Comma-separated module list to be executed before test
 COCOTB_LOG_LEVEL          Default logging level (default INFO)
 COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion
 MEMCHECK                  HTTP port to use for debugging Python memory usage
@@ -66,6 +65,7 @@ MODULE                    Modules to search for test functions (comma-separated)
 TESTCASE                  Test function(s) to run (comma-separated list)
 COCOTB_RESULTS_FILE       File name for xUnit XML tests results
 COVERAGE                  Report Python coverage (also HDL for some simulators)
+COCOTB_HOOKS              Comma-separated module list to be executed before test
 
 Scheduler
 ---------
