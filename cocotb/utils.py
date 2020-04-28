@@ -38,6 +38,14 @@ import warnings
 from cocotb import simulator
 
 
+def _get_simulator_precision():
+    # cache and replace this function
+    precision = simulator.get_precision()
+    global _get_simulator_precision
+    _get_simulator_precision = precision.__int__
+    return _get_simulator_precision()
+
+
 def get_python_integer_types():
     warnings.warn(
         "This is an internal cocotb function, use six.integer_types instead",
@@ -89,7 +97,7 @@ def get_time_from_sim_steps(steps, units):
     Returns:
         The simulation time in the specified units.
     """
-    return _ldexp10(steps, simulator.get_precision() - _get_log_time_scale(units))
+    return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(units))
 
 
 def get_sim_steps(time, units=None):
@@ -109,14 +117,14 @@ def get_sim_steps(time, units=None):
     """
     result = time
     if units is not None:
-        result = _ldexp10(result, _get_log_time_scale(units) - simulator.get_precision())
+        result = _ldexp10(result, _get_log_time_scale(units) - _get_simulator_precision())
 
     result_rounded = math.floor(result)
 
     if result_rounded != result:
         raise ValueError("Unable to accurately represent {0}({1}) with the "
                          "simulator precision of 1e{2}".format(
-                             time, units, simulator.get_precision()))
+                             time, units, _get_simulator_precision()))
 
     return int(result_rounded)
 
