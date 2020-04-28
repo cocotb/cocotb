@@ -1,0 +1,1 @@
+Added :meth:`~cocotb.triggers.Event.is_set`, so users may check if an :class:`~cocotb.triggers.Event` has fired.

@@ -145,3 +145,14 @@ def test_combine(dut):
     crs = [cocotb.fork(do_something(dly)) for dly in [10, 30, 20]]
 
     yield Combine(*(cr.join() for cr in crs))
+
+
+@cocotb.test()
+async def test_event_is_set(dut):
+    e = Event()
+
+    assert not e.is_set()
+    e.set()
+    assert e.is_set()
+    e.clear()
+    assert not e.is_set()

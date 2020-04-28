@@ -420,6 +420,10 @@ class Event:
         :meth:`~cocotb.triggers.Event.set` is called again."""
         self.fired = False
 
+    def is_set(self) -> bool:
+        """ Return true if event has been set """
+        return self.fired
+
     def __repr__(self):
         if self.name is None:
             fmt = "<{0} at {2}>"
