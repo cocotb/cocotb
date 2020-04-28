@@ -113,7 +113,7 @@ extern "C" void embed_init_python(void)
     FENTER;
 
 #ifndef PYTHON_SO_LIB
-#error "Python version needs passing in with -DPYTHON_SO_VERSION=libpython<ver>.so"
+#error "Python version needs passing in with -DPYTHON_SO_LIB=libpython<ver>.so"
 #else
 #define PY_SO_LIB xstr(PYTHON_SO_LIB)
 #endif
