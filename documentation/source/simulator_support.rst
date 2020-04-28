@@ -4,7 +4,7 @@
 Simulator Support
 *****************
 
-This page lists all simulators that cocotb provides support for
+This page lists the simulators that cocotb can be used with
 and documents specifics, limitations, workarounds etc.
 
 
