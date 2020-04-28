@@ -105,18 +105,6 @@ endif
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
 
-SIM_DEFINE := $(shell echo $(SIM) | tr a-z A-Z)
-
-# Use a common define for Questa and Modelsim and cvc
-ifeq ($(SIM_DEFINE),$(filter $(SIM_DEFINE),QUESTA CVC))
-    SIM_DEFINE = MODELSIM
-endif
-
-# Use a common define for Xcelium and IUS
-ifeq ($(SIM_DEFINE),XCELIUM)
-    SIM_DEFINE = IUS
-endif
-
 # Maintain backwards compatibility by supporting upper and lower case SIM variable
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
 
