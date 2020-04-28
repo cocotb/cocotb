@@ -67,9 +67,17 @@ else
     VSIM_ARGS += -onfinish exit
 endif
 
+FLI_LIB := $(LIB_DIR)/libcocotbfli_modelsim.$(LIB_EXT)
+# if this target is run, then cocotb did not build the library
+$(FLI_LIB):
+	@echo -e "ERROR: cocotb was not installed with an FLI library, as the mti.h header could not be located.\n\
+	If you installed an FLI-capable simulator after cocotb, you will need to reinstall cocotb.\n\
+	Please check the cocotb documentation on ModelSim support." >&2 && exit 1
+
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),vhdl)
-    VSIM_ARGS += -foreign \"cocotb_init $(call to_tcl_path,$(LIB_DIR)/libcocotbfli_modelsim.$(LIB_EXT))\"
+    CUSTOM_COMPILE_DEPS += $(FLI_LIB)
+    VSIM_ARGS += -foreign \"cocotb_init $(call to_tcl_path,$(FLI_LIB))\"
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_modelsim:cocotbvpi_entry_point
 endif
