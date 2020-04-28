@@ -8,7 +8,7 @@ Make System
 ===========
 
 Makefiles are provided for a variety of simulators in :file:`cocotb/share/makefiles/simulators`.
-The common Makefile :file:`cocotb/share/makefiles/Makefile.sim` includes the appropriate simulator Makefile based on the contents of the ``SIM`` variable.
+The common Makefile :file:`cocotb/share/makefiles/Makefile.sim` includes the appropriate simulator Makefile based on the contents of the :make:var:`SIM` variable.
 
 Make Targets
 ------------
@@ -29,132 +29,16 @@ Typically the makefiles provided with cocotb for various simulators use a separa
 This allows for a rapid re-running of a simulator if none of the RTL source files have changed and therefore the simulator does not need to recompile the RTL.
 
 
+Variables
+=========
+
+The following sections document makefile variables and environment variables according to their owner/consumer.
+
 ..
   If you edit the following sections, please also update the "helpmsg" text in cocotb/share/makefiles/Makefile.sim
 
-Make Variables
---------------
-
-In addition to the below variables, one may pass additional options to the build process using the `conventional variables <https://www.gnu.org/software/make/manual/html_node/Catalogue-of-Rules.html>`_ for C and C++ compilation and linking:
-`CXXFLAGS`,
-`CFLAGS`,
-`CPPFLAGS`,
-`LDFLAGS`,
-and
-`LDLIBS`
-.
-
-.. make:var:: GUI
-
-      Set this to 1 to enable the GUI mode in the simulator (if supported).
-
-.. make:var:: SIM
-
-      Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/simulators/makefile.$(SIM)`
-
-.. make:var:: WAVES
-
-      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators.
-      To get wave traces in Icarus Verilog see :ref:`sim-icarus-waveforms`.
-
-.. make:var:: VERILOG_SOURCES
-
-      A list of the Verilog source files to include.
-      Paths can be absolute or relative; if relative, they are interpreted as relative to the Makefile's location.
-
-.. make:var:: VHDL_SOURCES
-
-      A list of the VHDL source files to include.
-      Paths can be absolute or relative; if relative, they are interpreted as relative to the Makefile's location.
-
-.. make:var:: VHDL_SOURCES_<lib>
-
-      A list of the VHDL source files to include in the VHDL library *lib* (currently for the GHDL simulator only).
-
-.. make:var:: COMPILE_ARGS
-
-      Any arguments or flags to pass to the compile stage of the simulation.
-
-   .. note::
-      For use on the command line, set this as an environment variable:
-      ``COMPILE_ARGS="..." make`` (for fish and csh: ``env COMPILE_ARGS="..." make``).
-      See :ref:`troubleshooting-make-vars` for details.
-
-.. make:var:: SIM_ARGS
-
-      Any arguments or flags to pass to the execution of the compiled simulation.
-
-   .. note::
-      For use on the command line, set this as an environment variable:
-      ``SIM_ARGS="..." make`` (for fish and csh: ``env SIM_ARGS="..." make``).
-      See :ref:`troubleshooting-make-vars` for details.
-
-.. make:var:: RUN_ARGS
-
-      Any argument to be passed to the "first" invocation of a simulator that runs via a TCL script.
-      One motivating usage is to pass `-noautoldlibpath` to Questa to prevent it from loading the out-of-date libraries it ships with.
-      Used by Aldec Riviera-PRO and Mentor Graphics Questa simulator.
-
-.. make:var:: EXTRA_ARGS
-
-      Passed to both the compile and execute phases of simulators with two rules,
-      or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
-
-   .. note::
-      For use on the command line, set this as an environment variable:
-      ``EXTRA_ARGS="..." make`` (for fish and csh: ``env EXTRA_ARGS="..." make``).
-      See :ref:`troubleshooting-make-vars` for details.
-
-.. make:var:: PLUSARGS
-
-      "Plusargs" are options that are starting with a plus (``+``) sign.
-      They are passed to the simulator and are also available within cocotb as :data:`cocotb.plusargs`.
-      In the simulator, they can be read by the Verilog/SystemVerilog system functions
-      ``$test$plusargs`` and ``$value$plusargs``.
-
-      The special plusargs ``+ntb_random_seed`` and ``+seed``, if present, are evaluated
-      to set the random seed value if :envvar:`RANDOM_SEED` is not set.
-      If both ``+ntb_random_seed`` and ``+seed`` are set, ``+ntb_random_seed`` is used.
-
-   .. note::
-      For use on the command line, set this as an environment variable:
-      ``PLUSARGS="..." make`` (for fish and csh: ``env PLUSARGS="..." make``).
-      See :ref:`troubleshooting-make-vars` for details.
-
-.. make:var:: COCOTB_HDL_TIMEUNIT
-
-      The default time unit that should be assumed for simulation when not specified by modules in the design.
-      If this isn't specified then it is assumed to be ``1ns``.
-      Allowed values are 1, 10, and 100.
-      Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
-
-      .. versionadded:: 1.3
-
-.. make:var:: COCOTB_HDL_TIMEPRECISION
-
-      The default time precision that should be assumed for simulation when not specified by modules in the design.
-      If this isn't specified then it is assumed to be ``1ps``.
-      Allowed values are 1, 10, and 100.
-      Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
-
-      .. versionadded:: 1.3
-
-.. make:var:: CUSTOM_COMPILE_DEPS
-
-      Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :make:var:`VERILOG_SOURCES` or :make:var:`VHDL_SOURCES`.
-
-.. make:var:: CUSTOM_SIM_DEPS
-
-      Use to add additional dependencies to the simulation target.
-
-.. make:var:: SIM_BUILD
-
-      Use to define a scratch directory for use by the simulator. The path is relative to the Makefile location.
-      If not provided, the default scratch directory is :file:`sim_build`.
-
-
-Environment Variables
-=====================
+Cocotb
+------
 
 .. envvar:: TOPLEVEL
 
@@ -200,6 +84,64 @@ Environment Variables
     If defined, log lines displayed in the terminal will be shorter. It will print only
     time, message type (``INFO``, ``WARNING``, ``ERROR``, ...) and the log message itself.
 
+.. envvar:: COCOTB_ATTACH
+
+    In order to give yourself time to attach a debugger to the simulator process before it starts to run,
+    you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time value in seconds.
+    If set, cocotb will print the process ID (PID) to attach to and wait the specified time before
+    actually letting the simulator run.
+
+.. envvar:: COCOTB_ENABLE_PROFILING
+
+    Enable performance analysis of the Python portion of cocotb. When set, a file :file:`test_profile.pstat`
+    will be written which contains statistics about the cumulative time spent in the functions.
+
+    From this, a callgraph diagram can be generated with `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ and ``graphviz``.
+    See the ``profile`` Make target in the ``endian_swapper`` example on how to set this up.
+
+.. envvar:: COCOTB_LOG_LEVEL
+
+    The default logging level to use. This is set to ``INFO`` unless overridden.
+    Valid values are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
+
+.. envvar:: COCOTB_RESOLVE_X
+
+    Defines how to resolve bits with a value of ``X``, ``Z``, ``U`` or ``W`` when being converted to integer.
+    Valid settings are:
+
+    ``VALUE_ERROR``
+       raise a :exc:`ValueError` exception
+    ``ZEROS``
+       resolve to ``0``
+    ``ONES``
+       resolve to ``1``
+    ``RANDOM``
+       randomly resolve to a ``0`` or a ``1``
+
+    Set to ``VALUE_ERROR`` by default.
+
+.. envvar:: MEMCHECK
+
+    HTTP port to use for debugging Python's memory usage.
+    When set to e.g. ``8088``, data will be presented at `<http://localhost:8088>`_.
+
+    This needs the :mod:`cherrypy` and :mod:`dowser` Python modules installed.
+
+.. envvar:: COCOTB_PY_DIR
+
+    Path to the directory containing the cocotb Python package in the :file:`cocotb` subdirectory;
+    for cocotb-internal use.
+
+.. envvar:: COCOTB_SHARE_DIR
+
+    Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories
+    :file:`lib`, :file:`include`, and :file:`makefiles`;
+    for cocotb-internal use.
+
+
+Regression Manager
+~~~~~~~~~~~~~~~~~~
+
 .. envvar:: COCOTB_PDB_ON_EXCEPTION
 
    If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
@@ -223,84 +165,28 @@ Environment Variables
 
     .. versionadded:: 1.3
 
-.. envvar:: SCRIPT_FILE
-
-    The name of a simulator script that is run as part of the simulation, e.g. for setting up wave traces.
-    You can usually write out such a file from the simulator's GUI.
-    This is currently supported for the Mentor Questa, Mentor ModelSim and Aldec Riviera simulators.
-
-
-Additional Environment Variables
---------------------------------
-
-.. envvar:: COCOTB_ATTACH
-
-    In order to give yourself time to attach a debugger to the simulator process before it starts to run,
-    you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time value in seconds.
-    If set, cocotb will print the process ID (PID) to attach to and wait the specified time before
-    actually letting the simulator run.
-
-.. envvar:: COCOTB_ENABLE_PROFILING
-
-    Enable performance analysis of the Python portion of cocotb. When set, a file :file:`test_profile.pstat`
-    will be written which contains statistics about the cumulative time spent in the functions.
-
-    From this, a callgraph diagram can be generated with `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ and ``graphviz``.
-    See the ``profile`` Make target in the ``endian_swapper`` example on how to set this up.
-
-.. envvar:: COCOTB_HOOKS
-
-    A comma-separated list of modules that should be executed before the first test.
-    You can also use the :class:`cocotb.hook` decorator to mark a function to be run before test code.
-
-.. envvar:: COCOTB_LOG_LEVEL
-
-    The default logging level to use. This is set to ``INFO`` unless overridden.
-    Valid values are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
-
-.. envvar:: COCOTB_RESOLVE_X
-
-    Defines how to resolve bits with a value of ``X``, ``Z``, ``U`` or ``W`` when being converted to integer.
-    Valid settings are:
-
-    ``VALUE_ERROR``
-       raise a :exc:`ValueError` exception
-    ``ZEROS``
-       resolve to ``0``
-    ``ONES``
-       resolve to ``1``
-    ``RANDOM``
-       randomly resolve to a ``0`` or a ``1``
-
-    Set to ``VALUE_ERROR`` by default.
-
-.. envvar:: COCOTB_SCHEDULER_DEBUG
-
-    Enable additional log output of the coroutine scheduler.
-
 .. envvar:: COVERAGE
 
     Enable to report Python coverage data. For some simulators, this will also report HDL coverage.
 
     This needs the :mod:`coverage` Python module to be installed.
 
-.. envvar:: MEMCHECK
+.. envvar:: COCOTB_HOOKS
 
-    HTTP port to use for debugging Python's memory usage.
-    When set to e.g. ``8088``, data will be presented at `<http://localhost:8088>`_.
+    A comma-separated list of modules that should be executed before the first test.
+    You can also use the :class:`cocotb.hook` decorator to mark a function to be run before test code.
 
-    This needs the :mod:`cherrypy` and :mod:`dowser` Python modules installed.
 
-.. envvar:: COCOTB_PY_DIR
+Scheduler
+~~~~~~~~~
 
-    Path to the directory containing the cocotb Python package in the :file:`cocotb` subdirectory.
-    You don't normally need to modify this.
+.. envvar:: COCOTB_SCHEDULER_DEBUG
 
-.. envvar:: COCOTB_SHARE_DIR
+    Enable additional log output of the coroutine scheduler.
 
-    Path to the directory containing the cocotb Makefiles and simulator libraries in the subdirectories
-    :file:`lib`, :file:`include`, and :file:`makefiles`.
-    You don't normally need to modify this.
+
+GPI
+---
 
 .. envvar:: GPI_EXTRA
 
@@ -317,3 +203,128 @@ Additional Environment Variables
     .. versionchanged:: 1.4.0
         Support for the custom entry point via ``:`` was added.
         Previously ``:`` was used as a separator between libraries instead of ``,``.
+
+
+Makefile-based Test Scripts
+---------------------------
+
+.. make:var:: GUI
+
+      Set this to 1 to enable the GUI mode in the simulator (if supported).
+
+.. make:var:: SIM
+
+      Selects which simulator Makefile to use.  Attempts to include a simulator specific makefile from :file:`cocotb/share/makefiles/simulators/makefile.$(SIM)`
+
+.. make:var:: WAVES
+
+      Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators.
+      To get wave traces in Icarus Verilog see :ref:`sim-icarus-waveforms`.
+
+.. make:var:: VERILOG_SOURCES
+
+      A list of the Verilog source files to include.
+      Paths can be absolute or relative; if relative, they are interpreted as relative to the Makefile's location.
+
+.. make:var:: VHDL_SOURCES
+
+      A list of the VHDL source files to include.
+      Paths can be absolute or relative; if relative, they are interpreted as relative to the Makefile's location.
+
+.. make:var:: VHDL_SOURCES_<lib>
+
+      A list of the VHDL source files to include in the VHDL library *lib* (currently for the GHDL simulator only).
+
+.. make:var:: COMPILE_ARGS
+
+      Any arguments or flags to pass to the compile stage of the simulation.
+
+.. make:var:: SIM_ARGS
+
+      Any arguments or flags to pass to the execution of the compiled simulation.
+
+.. make:var:: RUN_ARGS
+
+      Any argument to be passed to the "first" invocation of a simulator that runs via a TCL script.
+      One motivating usage is to pass `-noautoldlibpath` to Questa to prevent it from loading the out-of-date libraries it ships with.
+      Used by Aldec Riviera-PRO and Mentor Graphics Questa simulator.
+
+.. make:var:: EXTRA_ARGS
+
+      Passed to both the compile and execute phases of simulators with two rules, or passed to the single compile and run command for simulators which don't have a distinct compilation stage.
+
+.. make:var:: PLUSARGS
+
+      "Plusargs" are options that are starting with a plus (``+``) sign.
+      They are passed to the simulator and are also available within cocotb as :data:`cocotb.plusargs`.
+      In the simulator, they can be read by the Verilog/SystemVerilog system functions
+      ``$test$plusargs`` and ``$value$plusargs``.
+
+      The special plusargs ``+ntb_random_seed`` and ``+seed``, if present, are evaluated
+      to set the random seed value if :envvar:`RANDOM_SEED` is not set.
+      If both ``+ntb_random_seed`` and ``+seed`` are set, ``+ntb_random_seed`` is used.
+
+.. make:var:: COCOTB_HDL_TIMEUNIT
+
+      The default time unit that should be assumed for simulation when not specified by modules in the design.
+      If this isn't specified then it is assumed to be ``1ns``.
+      Allowed values are 1, 10, and 100.
+      Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
+
+      .. versionadded:: 1.3
+
+.. make:var:: COCOTB_HDL_TIMEPRECISION
+
+      The default time precision that should be assumed for simulation when not specified by modules in the design.
+      If this isn't specified then it is assumed to be ``1ps``.
+      Allowed values are 1, 10, and 100.
+      Allowed units are ``s``, ``ms``, ``us``, ``ns``, ``ps``, ``fs``.
+
+      .. versionadded:: 1.3
+
+.. make:var:: CUSTOM_COMPILE_DEPS
+
+      Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :make:var:`VERILOG_SOURCES` or :make:var:`VHDL_SOURCES`.
+
+.. make:var:: CUSTOM_SIM_DEPS
+
+      Use to add additional dependencies to the simulation target.
+
+.. make:var:: SIM_BUILD
+
+      Use to define a scratch directory for use by the simulator. The path is relative to the Makefile location.
+      If not provided, the default scratch directory is :file:`sim_build`.
+
+.. envvar:: SCRIPT_FILE
+
+    The name of a simulator script that is run as part of the simulation, e.g. for setting up wave traces.
+    You can usually write out such a file from the simulator's GUI.
+    This is currently supported for the Mentor Questa, Mentor ModelSim and Aldec Riviera simulators.
+
+
+Library Build Process
+---------------------
+
+You can pass additional options to the library build process
+(which is usually happening as part of the installation with ``pip``) using the
+`conventional variables <https://www.gnu.org/software/make/manual/html_node/Catalogue-of-Rules.html>`_
+for C and C++ compilation and linking:
+`CFLAGS`,
+`CPPFLAGS`,
+and
+`LDFLAGS`.
+
+..
+   `CXXFLAGS`, `LDLIBS` are not supported by distutils/pip
+
+
+..
+   TODO
+
+   Build Defines
+   -------------
+
+   SINGLETON_HANDLES
+   PYTHON_SO_LIB
+
+   simulator sim defines
