@@ -524,6 +524,8 @@ def want_color_output():
     Colored output can be explicitly requested by setting :envvar:`COCOTB_ANSI_OUTPUT` to  ``1``.
     """
     want_color = sys.stdout.isatty()  # default to color for TTYs
+    if os.getenv("NO_COLOR") is not None:
+        want_color = False
     if os.getenv("COCOTB_ANSI_OUTPUT", default='0') == '1':
         want_color = True
     if os.getenv("GUI", default='0') == '1':

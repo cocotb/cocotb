@@ -161,9 +161,15 @@ Environment Variables
     Use this to override the default behavior of annotating cocotb output with
     ANSI color codes if the output is a terminal (``isatty()``).
 
-    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type of ``stdout``
+    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type of ``stdout`` or the presence of :envvar:`NO_COLOR`.
 
     ``COCOTB_ANSI_OUTPUT=0`` suppresses the ANSI output in the log messages
+
+.. envvar:: NO_COLOR
+    From http://no-color.org,
+
+        All command-line software which outputs text with ANSI color added should check for the presence
+        of a ``NO_COLOR`` environment variable that, when present (regardless of its value), prevents the addition of ANSI color.
 
 .. envvar:: COCOTB_REDUCED_LOG_FMT
 
