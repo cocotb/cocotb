@@ -26,6 +26,14 @@ and do not use a bullet point at the beginning of the file.
 Use Sphinx references (see https://sphinx-tutorial.readthedocs.io/cheatsheet/)
 if you refer to added classes, methods etc.
 
+Additional newsfragments of the same ``<TYPE>`` for a single ``<ISSUE_OR_PR>`` are
+supported, using the name format ``<ISSUE_OR_PR>.<TYPE>.<#>.rst``.
+
+Example:
+
+* ``<ISSUE_OR_PR>.bugfix.rst``
+* ``<ISSUE_OR_PR>.bugfix.1.rst``
+
 An example file could consist of the content between the marks:
 
 --8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<--8<
