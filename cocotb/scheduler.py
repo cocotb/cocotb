@@ -811,6 +811,7 @@ class Scheduler:
 
     def finish_test(self, exc):
         self._test.abort(exc)
+        self._check_termination()
 
     def finish_scheduler(self, exc):
         """Directly call into the regression manager and end test
