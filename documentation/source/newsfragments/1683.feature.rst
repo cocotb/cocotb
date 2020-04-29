@@ -1,1 +1,0 @@
-Add Gitpod support. Can by tried under https://gitpod.io/#https://github.com/cocotb/cocotb
