@@ -1,6 +1,6 @@
 # Python environment and dependencies to build the documentation
 
-name: cocotb-docs3
+name: cocotb-docs
 dependencies:
   - python=3.8
   - pip
