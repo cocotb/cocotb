@@ -1,0 +1,9 @@
+# Python environment and dependencies to build the documentation
+
+name: cocotb-docs
+dependencies:
+  - python=3.8
+  - pip
+  # Packages installed from PyPI
+  - pip:
+      - -r requirements.txt

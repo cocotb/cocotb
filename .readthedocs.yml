@@ -4,10 +4,14 @@
 
 version: 2
 
+# Use conda because default Python is not compiled with --enable-shared
+conda:
+  environment: documentation/conda.yml
+
 python:
-  version: 3.7
   install:
-    - requirements: documentation/requirements.txt
+    - method: pip
+      path: .
 
 sphinx:
   configuration: documentation/source/conf.py
