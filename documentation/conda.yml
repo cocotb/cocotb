@@ -4,11 +4,6 @@ name: cocotb-docs3
 dependencies:
   - python=3.8
   - pip
-  # ReadTheDoc dependencies
-  - mock
-  - pillow
-  - sphinx
-  - sphinx_rtd_theme
   # Packages installed from PyPI
   - pip:
       - -r requirements.txt
