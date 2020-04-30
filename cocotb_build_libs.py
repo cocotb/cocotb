@@ -24,12 +24,8 @@ def name2file(self, dso, so=False):
 
     if parts[-1] == "cocotbvpi_icarus":
         ext = "vpi"
-    elif sys.platform == "win32":
-        ext = "dll"
-    elif sys.platform == "darwin":
-        ext = "dylib"
     else:
-        ext = "so"
+        ext = _get_lib_ext_name()
 
     if sys.platform == "win32":
         parts[-1] = parts[-1]+'.'+ext
