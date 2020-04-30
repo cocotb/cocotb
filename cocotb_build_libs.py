@@ -14,7 +14,9 @@ from distutils.spawn import find_executable
 logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
 
-
+# setuptools_dso normally handles converting the library/extension name to path
+# e.g. cocotb.lib.cocotb to cocotb/lib/libcocotb.so. We override that here
+# because icarus needs its module to end in .vpi
 def name2file(self, dso, so=False):
     parts = dso.name.split('.')
 
@@ -92,9 +94,6 @@ _extra_cxx_compile_args = ["-std=c++11"] + _ccx_warns
 # Make PRI* format macros available with C++11 compiler but older libc, e.g. on RHEL6.
 _extra_cxx_compile_args += ["-D__STDC_FORMAT_MACROS"]
 
-def dso_join(*args):
-    return ".".join(args)
-
 
 def _get_common_lib_ext(include_dir, share_lib_dir):
 
@@ -109,7 +108,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #  libcocotbutils
     #
     libcocotbutils = DSO(
-        dso_join("cocotb", "libs", "cocotbutils"),
+        "cocotb.libs.cocotbutils",
         include_dirs=[include_dir],
         sources=[os.path.join(share_lib_dir, "utils", "cocotb_utils.cpp")],
         extra_compile_args=_extra_cxx_compile_args,
@@ -125,7 +124,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     python_include_dir = sysconfig.get_config_var("INCLUDEPY")
 
     libgpilog = DSO(
-        dso_join("cocotb", "libs", "gpilog"),
+        "cocotb.libs.gpilog",
         include_dirs=[include_dir, python_include_dir],
         dsos=["cocotb.libs.cocotbutils"],
         library_dirs=python_lib_dirs,
@@ -137,7 +136,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #  libcocotb
     #
     libcocotb = DSO(
-        dso_join("cocotb", "libs", "cocotb"),
+        "cocotb.libs.cocotb",
         define_macros=[("PYTHON_SO_LIB", _get_python_lib())],
         include_dirs=[include_dir, python_include_dir],
         libraries=[_get_python_lib_link()],
@@ -152,7 +151,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #  libgpi
     #
     libgpi = DSO(
-        dso_join("cocotb", "libs", "gpi"),
+        "cocotb.libs.gpi",
         define_macros=[("LIB_EXT", _get_lib_ext_name()), ("SINGLETON_HANDLES", "")],
         include_dirs=[include_dir],
         dsos=["cocotb.libs.cocotb"],
@@ -168,7 +167,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #  simulator
     #
     libsim = Extension(
-        dso_join("cocotb", "simulator"),
+        "cocotb.simulator",
         include_dirs=[include_dir],
         dsos=["cocotb.libs.gpi"],
         library_dirs=python_lib_dirs,
@@ -183,7 +182,7 @@ def _get_vpi_lib_ext(
     include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
     libcocotbvpi = DSO(
-        dso_join("cocotb", "libs", "cocotbvpi_" + sim_define.lower()),
+        "cocotb.libs.cocotbvpi_" + sim_define.lower(),
         define_macros=[("VPI_CHECKING", "1")] + [(sim_define, "")],
         include_dirs=[include_dir],
         dsos=["cocotb.libs.gpi"],
@@ -203,7 +202,7 @@ def _get_vhpi_lib_ext(
     include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
     libcocotbvhpi = DSO(
-        dso_join("cocotb", "libs", "cocotbvhpi_" + sim_define.lower()),
+        "cocotb.libs.cocotbvhpi_" + sim_define.lower(),
         include_dirs=[include_dir],
         define_macros=[("VHPI_CHECKING", 1)] + [(sim_define, "")],
         dsos=["cocotb.libs.gpi"],
@@ -278,7 +277,7 @@ def get_ext():
         mti_path = os.path.join(modelsim_include_dir, "mti.h")
         if os.path.isfile(mti_path):
             fli_ext = DSO(
-                dso_join("cocotb", "libs", "cocotbfli_modelsim"),
+                "cocotb.libs.cocotbfli_modelsim",
                 include_dirs=[include_dir, modelsim_include_dir],
                 dsos=["cocotb.libs.gpi"],
                 libraries=["stdc++"] + modelsim_extra_lib,
