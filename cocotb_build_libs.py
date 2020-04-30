@@ -275,6 +275,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")],
         extra_compile_args=_extra_cxx_compile_args,
+        extra_link_args=["-Wl,-rpath," + l for l in python_lib_dirs]
     )
 
     #
