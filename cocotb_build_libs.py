@@ -31,6 +31,17 @@ def _get_lib_ext_name():
 
 
 class build_ext(_build_ext):
+
+    user_options = _build_ext.user_options + [
+        ('nondebug-python', None, 'link to non-debug Python on Windows (used with --debug)'),
+    ]
+
+    boolean_options = _build_ext.boolean_options + ['nondebug-python']
+
+    def initialize_options(self):
+        _build_ext.initialize_options(self)
+        self.nondebug_python = None
+
     def run(self):
 
         def_dir = os.path.join(cocotb_share_dir, "def")
@@ -69,6 +80,23 @@ class build_ext(_build_ext):
         filename_short = filename_short.replace("libcocotbvpi_icarus.dll", "libcocotbvpi_icarus.vpl")
 
         return filename_short
+
+    def get_libraries(self, ext):
+        """
+        Call base-class and remove any ``_d`` suffix from Python DLL on Windows.
+        """
+        libs = _build_ext.get_libraries(self, ext)
+
+        if os.name == "nt" and self.nondebug_python:
+            # pythonXX_d should be at the end for non-MSVC debug builds,
+            # but check the whole list in case this changes.
+            for idx, lib in enumerate(libs):
+                if lib.startswith("python"):
+                    if lib.endswith("_d"):
+                        libs[idx] = lib[:-2]
+                        break
+
+        return libs
 
     def finalize_options(self):
         """ Like the base class method,but add extra library_dirs path. """
