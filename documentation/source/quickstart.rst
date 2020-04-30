@@ -8,7 +8,7 @@ Quickstart Guide
 Running your first Example
 ==========================
 
-Make sure you have the :ref:`pre-requisites<install-pre-requisites>`
+Make sure you have the :ref:`prerequisites<install-prerequisites>`
 (Python with development packages, a C++ compiler with development packages, GNU Make,
 a :ref:`supported simulator<simulator-support>`) and cocotb itself (``pip install cocotb``) available.
 
