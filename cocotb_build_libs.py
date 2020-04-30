@@ -271,7 +271,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         define_macros=[("PYTHON_SO_LIB", _get_python_lib())],
         include_dirs=[include_dir, python_include_dir],
         libraries=[_get_python_lib_link()],
-        dsos=["cocotb.libs.gpilog", "cocotb.libs.cocotbutils"],
+        dsos=["cocotb.libs.gpilog"],
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")],
         extra_compile_args=_extra_cxx_compile_args,
@@ -285,7 +285,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         dso_join("cocotb", "libs", "gpi"),
         define_macros=[("LIB_EXT", _get_lib_ext_name()), ("SINGLETON_HANDLES", "")],
         include_dirs=[include_dir],
-        dsos=["cocotb.libs.cocotbutils", "cocotb.libs.gpilog", "cocotb.libs.cocotb"],
+        dsos=["cocotb.libs.cocotb"],
         libraries=["stdc++"],
         sources=[
             os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
@@ -300,7 +300,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libsim = Extension(
         dso_join("cocotb", "simulator"),
         include_dirs=[include_dir],
-        dsos=["cocotb.libs.cocotbutils", "cocotb.libs.gpilog", "cocotb.libs.gpi"],
+        dsos=["cocotb.libs.gpi"],
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "simulator", "simulatormodule.cpp")],
         extra_compile_args=_extra_cxx_compile_args,
@@ -316,7 +316,7 @@ def _get_vpi_lib_ext(
         dso_join("cocotb", "libs", "cocotbvpi_" + sim_define.lower()),
         define_macros=[("VPI_CHECKING", "1")] + [(sim_define, "")],
         include_dirs=[include_dir],
-        dsos=["cocotb.libs.gpi", "cocotb.libs.gpilog"],
+        dsos=["cocotb.libs.gpi"],
         libraries=extra_lib,
         library_dirs=extra_lib_dir,
         sources=[
@@ -336,7 +336,7 @@ def _get_vhpi_lib_ext(
         dso_join("cocotb", "libs", "cocotbvhpi_" + sim_define.lower()),
         include_dirs=[include_dir],
         define_macros=[("VHPI_CHECKING", 1)] + [(sim_define, "")],
-        dsos=["cocotb.libs.gpi", "cocotb.libs.gpilog"],
+        dsos=["cocotb.libs.gpi"],
         libraries=["stdc++"] + extra_lib,
         library_dirs=extra_lib_dir,
         sources=[
@@ -410,7 +410,7 @@ def get_ext():
             fli_ext = DSO(
                 dso_join("cocotb", "libs", "cocotbfli_modelsim"),
                 include_dirs=[include_dir, modelsim_include_dir],
-                dsos=["cocotb.libs.gpi", "cocotb.libs.gpilog"],
+                dsos=["cocotb.libs.gpi"],
                 libraries=["stdc++"] + modelsim_extra_lib,
                 library_dirs=modelsim_extra_lib_path,
                 sources=[
