@@ -9,7 +9,7 @@ import logging
 import distutils
 import subprocess
 
-from setuptools_dso import DSO, Extension
+from setuptools_dso import DSO, Extension, build_dso
 from distutils.spawn import find_executable
 from setuptools.command.build_ext import build_ext as _build_ext
 from distutils.file_util import copy_file
@@ -17,6 +17,38 @@ from distutils.file_util import copy_file
 
 logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
+
+
+def name2file(self, dso, so=False):
+    parts = dso.name.split('.')
+
+    if parts[-1] == "cocotbvpi_icarus":
+        ext = "vpi"
+    elif sys.platform == "win32":
+        ext = "dll"
+    elif sys.platform == "darwin":
+        ext = "dylib"
+    else:
+        ext = "so"
+
+    if sys.platform == "win32":
+        parts[-1] = parts[-1]+'.'+ext
+
+    elif sys.platform == 'darwin':
+        if so and dso.soversion is not None:
+            parts[-1] = 'lib%s.%s.dylib'%(parts[-1], dso.soversion)
+        else:
+            parts[-1] = 'lib%s.%s'%(parts[-1], ext)
+
+    else: # ELF
+        if so and dso.soversion is not None:
+            parts[-1] = 'lib%s.so.%s'%(parts[-1], dso.soversion)
+        else:
+            parts[-1] = 'lib%s.%s'%(parts[-1], ext)
+
+    return os.path.join(*parts)
+
+build_dso._name2file = name2file
 
 
 def _get_lib_ext_name():
