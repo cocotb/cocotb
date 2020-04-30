@@ -6,13 +6,9 @@ import os
 import sys
 import sysconfig
 import logging
-import distutils
-import subprocess
 
 from setuptools_dso import DSO, Extension, build_dso
 from distutils.spawn import find_executable
-from setuptools.command.build_ext import build_ext as _build_ext
-from distutils.file_util import copy_file
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +32,7 @@ def name2file(self, dso, so=False):
         else:
             parts[-1] = 'lib%s.%s'%(parts[-1], ext)
 
-    else: # ELF
+    else:  # ELF
         if so and dso.soversion is not None:
             parts[-1] = 'lib%s.so.%s'%(parts[-1], dso.soversion)
         else:
