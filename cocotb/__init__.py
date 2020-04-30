@@ -38,6 +38,7 @@ import random
 import time
 import warnings
 
+import cocotb._os_compat  # must appear first, before the first import of cocotb.simulator
 import cocotb.handle
 import cocotb.log
 from cocotb.scheduler import Scheduler
