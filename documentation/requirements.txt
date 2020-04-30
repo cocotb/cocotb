@@ -4,6 +4,7 @@ Sphinx ~= 3.0
 breathe
 sphinx-rtd-theme
 cairosvg
+sphinxcontrib-details-directive
 sphinxcontrib-makedomain
 sphinxcontrib-spelling
 pyenchant
@@ -11,3 +12,4 @@ sphinx-issues
 sphinx-argparse
 towncrier
 IPython
+sphinx-tabs
