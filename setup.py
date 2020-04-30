@@ -48,14 +48,14 @@ if sys.version_info[:2] < (3, 5):
     raise SystemExit("\n".join(msg))
 
 import logging
-from setuptools import setup
+from setuptools_dso import setup
 from setuptools import find_packages
 from os import path, walk
 from io import StringIO
 
 # Note: cocotb is not installed properly yet and is missing dependencies and binaries
 # We can still import other files next to setup.py, as long as they're in MANIFEST.in
-from cocotb_build_libs import get_ext, build_ext
+from cocotb_build_libs import get_ext
 
 def read_file(fname):
     with open(path.join(path.dirname(__file__), fname), encoding='utf8') as f:
@@ -79,9 +79,10 @@ log = logging.getLogger("cocotb._build_libs")
 log.setLevel(logging.INFO)
 log.addHandler(handler)
 
+dsos, ext = get_ext()
+
 setup(
     name='cocotb',
-    cmdclass={'build_ext': build_ext},
     version=__version__,  # noqa: F821
     description='cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.',
     url='https://cocotb.org',
@@ -90,12 +91,14 @@ setup(
     long_description_content_type='text/markdown',
     author='Chris Higgs, Stuart Hodgson',
     author_email='cocotb@potentialventures.com',
+    setup_requires=['setuptools_dso'],
     install_requires=[],
     python_requires='>=3.5',
     packages=find_packages(),
     include_package_data=True,
     package_data={'cocotb': package_files('cocotb/share')},
-    ext_modules=get_ext(),
+    ext_modules=ext,
+    x_dsos=dsos,
     entry_points={
         'console_scripts': [
             'cocotb-config=cocotb.config:main',
