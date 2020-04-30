@@ -47,6 +47,8 @@ from cocotb.result import TestError
 # Only issue a warning for each deprecated attribute access
 _deprecation_warned = set()
 
+_INT_MAX = 2**31-1
+_INT_MIN = -2**31
 
 class SimHandleBase:
     """Base class for all simulation objects.
@@ -768,6 +770,9 @@ class IntegerObject(ModifiableObject):
         Raises:
             TypeError: If target has an unsupported type for
                  integer value assignment.
+
+            ValueError: If value is out of range for assignment
+                 of 32-bit IntegerObject.
         """
         value, set_action = self._check_for_set_action(value)
 
@@ -777,6 +782,11 @@ class IntegerObject(ModifiableObject):
             raise TypeError(
                 "Unsupported type for integer value assignment: {} ({!r})"
                 .format(type(value), value))
+
+        if value < _INT_MIN or value > _INT_MAX:
+            raise ValueError(
+                "Out of range value ({!r}) for assignment of 32-bit IntegerObject"
+                .format(value))
 
         call_sim(self._handle.set_signal_val_long, set_action, value)
 
