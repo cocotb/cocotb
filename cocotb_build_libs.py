@@ -83,6 +83,8 @@ def _get_python_lib():
     else:
         python_lib = "lib" + _get_python_lib_link() + "." + _get_lib_ext_name()
 
+    python_lib = os.path.join(sysconfig.get_config_var("LIBDIR"), python_lib)
+    open(python_lib) # Raise error if not found
     return python_lib
 
 
@@ -117,19 +119,18 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libgpilog
     #
-    python_lib_dirs = []
-    if sys.platform == "darwin":
-        python_lib_dirs = [sysconfig.get_config_var("LIBDIR")]
-
+    python_lib_dir = os.path.dirname(_get_python_lib())
     python_include_dir = sysconfig.get_config_var("INCLUDEPY")
 
     libgpilog = DSO(
         "cocotb.libs.gpilog",
         include_dirs=[include_dir, python_include_dir],
+        libraries=[_get_python_lib_link()],
         dsos=["cocotb.libs.cocotbutils"],
-        library_dirs=python_lib_dirs,
+        library_dirs=[python_lib_dir],
         sources=[os.path.join(share_lib_dir, "gpi_log", "gpi_logging.cpp")],
         extra_compile_args=_extra_cxx_compile_args,
+        extra_link_args=["-Wl,-rpath," + python_lib_dir]
     )
 
     #
@@ -141,10 +142,10 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         include_dirs=[include_dir, python_include_dir],
         libraries=[_get_python_lib_link()],
         dsos=["cocotb.libs.gpilog"],
-        library_dirs=python_lib_dirs,
+        library_dirs=[python_lib_dir],
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")],
         extra_compile_args=_extra_cxx_compile_args,
-        extra_link_args=["-Wl,-rpath," + l for l in python_lib_dirs]
+        extra_link_args=["-Wl,-rpath," + python_lib_dir]
     )
 
     #
@@ -170,7 +171,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         "cocotb.simulator",
         include_dirs=[include_dir],
         dsos=["cocotb.libs.gpi"],
-        library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "simulator", "simulatormodule.cpp")],
         extra_compile_args=_extra_cxx_compile_args,
     )
