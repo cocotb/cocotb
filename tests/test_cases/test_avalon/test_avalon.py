@@ -33,16 +33,11 @@ A set of tests that demonstrate cocotb functionality
 Also used as regression test of cocotb capabilities
 """
 
-import logging
-
 import cocotb
 from cocotb.drivers.avalon import AvalonMemory
-from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite)
+from cocotb.triggers import Timer, RisingEdge
 from cocotb.clock import Clock
-from cocotb.result import TestFailure, TestError, TestSuccess
-
-
+from cocotb.result import TestFailure
 
 class BurstAvlReadTest(object):
     """ class to test avalon burst """
@@ -60,6 +55,7 @@ class BurstAvlReadTest(object):
                                   memory=self.memdict,
                                   readlatency_min=0,
                                   avl_properties=avlproperties)
+
     @cocotb.coroutine
     def init_sig(self, burstcount_w, address):
         """ Initialize all signals """

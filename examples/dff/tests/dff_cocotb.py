@@ -10,13 +10,13 @@
 # License:
 # ==============================================================================
 # Copyright 2016 Technische Universitaet Dresden - Germany
-#		 Chair for VLSI-Design, Diagnostics and Architecture
+# Chair for VLSI-Design, Diagnostics and Architecture
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#		http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,13 +30,12 @@ import random
 import cocotb
 from cocotb.clock import Clock
 from cocotb.decorators import coroutine
-from cocotb.triggers import Timer, RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge
 from cocotb.monitors import Monitor
 from cocotb.drivers import BitDriver
 from cocotb.binary import BinaryValue
 from cocotb.regression import TestFactory
 from cocotb.scoreboard import Scoreboard
-from cocotb.result import TestFailure, TestSuccess
 
 #      dut
 #    ________
@@ -93,7 +92,7 @@ class DFF_TB(object):
         self.output_mon = BitMonitor(name="output", signal=dut.q, clk=dut.c)
 
         # Create a scoreboard on the outputs
-        self.expected_output = [ init_val ]  # a list with init_val as the first element
+        self.expected_output = [init_val]  # a list with init_val as the first element
         self.scoreboard = Scoreboard(dut)
         self.scoreboard.add_interface(self.output_mon, self.expected_output)
 

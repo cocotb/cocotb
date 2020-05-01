@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """Test to demonstrate functionality of the avalon basic streaming interface"""
 
-import logging
 import random
 import struct
-import sys
 
 import cocotb
 from cocotb.drivers import BitDriver
@@ -55,7 +53,7 @@ def test_avalon_stream(dut):
     tb.backpressure.start(wave())
 
     for _ in range(20):
-        data = random.randint(0,(2^7)-1)
+        data = random.randint(0, (2**7)-1)
         yield tb.send_data(data)
         yield tb.clkedge
 

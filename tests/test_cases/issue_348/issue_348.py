@@ -1,9 +1,7 @@
 import cocotb
 from cocotb.log import SimLog
-from cocotb.triggers import Timer, Edge, RisingEdge, FallingEdge, Join
+from cocotb.triggers import Timer, Edge, RisingEdge, FallingEdge
 from cocotb.result import TestFailure
-
-import sys
 
 @cocotb.coroutine
 def clock_gen(signal, num):

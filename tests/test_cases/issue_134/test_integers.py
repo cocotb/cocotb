@@ -1,12 +1,8 @@
 import logging
-import random
-import sys
 
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer, ReadOnly
+from cocotb.triggers import Timer
 from cocotb.result import TestFailure
-from cocotb.binary import BinaryValue
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])

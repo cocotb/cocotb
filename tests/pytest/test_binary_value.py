@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import pytest
 
-import cocotb
 from cocotb.binary import BinaryValue, BinaryRepresentation
 
 
@@ -162,8 +161,8 @@ def test_init_short_binstr_value():
 def test_defaults():
     bin1 = BinaryValue(17)
     assert bin1.binaryRepresentation == BinaryRepresentation.UNSIGNED
-    assert bin1.big_endian == True
-    assert bin1._n_bits == None
+    assert bin1.big_endian is True
+    assert bin1._n_bits is None
     assert bin1.integer == 17
 
 def test_index():
@@ -209,12 +208,12 @@ def test_general():
 
     vec = BinaryValue(value=0, n_bits=16)
     assert vec.n_bits == 16
-    assert vec.big_endian == True
+    assert vec.big_endian is True
     assert vec.integer == 0
 
     # Checking single index assignment works as expected on a Little Endian BinaryValue
     vec = BinaryValue(value=0, n_bits=16, bigEndian=False)
-    assert vec.big_endian == False
+    assert vec.big_endian is False
     for idx in range(vec.n_bits):
         vec[idx] = '1'
         expected_value = 2**(idx+1) - 1

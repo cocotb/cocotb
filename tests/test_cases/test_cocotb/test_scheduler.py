@@ -10,7 +10,7 @@ Test for scheduler and coroutine behavior
 """
 
 import cocotb
-from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, ReadOnly
+from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
 from common import clock_gen

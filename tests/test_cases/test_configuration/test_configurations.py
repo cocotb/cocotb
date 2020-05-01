@@ -36,4 +36,3 @@ def iterate(dut):
     yield Timer(100)
     sub_iterate(dut)
     yield Timer(100)
-

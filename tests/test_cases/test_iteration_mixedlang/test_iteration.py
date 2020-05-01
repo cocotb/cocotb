@@ -27,7 +27,7 @@ import logging
 
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
+from cocotb.result import TestFailure
 
 
 def recursive_dump(parent, log):
@@ -104,4 +104,3 @@ def recursive_discovery_boundary(dut):
     tlog.info("Found a total of %d things", total)
     if total != pass_total:
         raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
-
