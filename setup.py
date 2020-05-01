@@ -48,14 +48,13 @@ if sys.version_info[:2] < (3, 5):
     raise SystemExit("\n".join(msg))
 
 import logging
-from setuptools_dso import setup
 from setuptools import find_packages
 from os import path, walk
 from io import StringIO
 
 # Note: cocotb is not installed properly yet and is missing dependencies and binaries
 # We can still import other files next to setup.py, as long as they're in MANIFEST.in
-from cocotb_build_libs import get_ext
+from cocotb_build_libs import setup, get_ext
 
 def read_file(fname):
     with open(path.join(path.dirname(__file__), fname), encoding='utf8') as f:

@@ -7,7 +7,11 @@ import sys
 import sysconfig
 import logging
 
-from setuptools_dso import DSO, Extension, build_dso
+try:
+    from setuptools_dso import DSO, Extension, build_dso, setup
+except ImportError:
+    build_dso = None
+    from setuptools import setup
 from distutils.spawn import find_executable
 
 
@@ -42,7 +46,8 @@ def name2file(self, dso, so=False):
 
     return os.path.join(*parts)
 
-build_dso._name2file = name2file
+if build_dso is not None:
+    build_dso._name2file = name2file
 
 
 def _get_lib_ext_name():
@@ -382,3 +387,7 @@ def get_ext():
         dsos.append(verilator_vpi_ext)
 
     return dsos, ext
+
+if build_dso is None:
+    def get_ext():
+        return [], []
