@@ -155,6 +155,13 @@ struct sim_time {
 
 static struct sim_time cache_time;
 
+
+enum class limits_e : int {
+    NONE = 0,
+    SIGNED_32BIT = 1,
+    VECTOR_NBIT = 2
+};
+
 /**
  * @name    Callback Handling
  * @brief   Handle a callback coming from GPI
@@ -619,14 +626,34 @@ static PyObject *set_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
 
 static PyObject *set_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    long value;
+    long long value;
     gpi_set_action_t action;
+    limits_e limits;
 
-    if (!PyArg_ParseTuple(args, "il:set_signal_val_long", &action, &value)) {
+    if (!PyArg_ParseTuple(args, "iLi:set_signal_val_long", &action, &value, &limits)) {
         return NULL;
     }
 
-    gpi_set_signal_value_long(self->hdl, value, action);
+    if (limits == limits_e::VECTOR_NBIT) {
+        int m_elems = gpi_get_num_elems(self->hdl);
+
+        if (m_elems > 32) {
+            const char *m_name = gpi_get_signal_name_str(self->hdl);
+            PyErr_Format(PyExc_ValueError, "%d-bit signal (%s) is wider than 32-bit maximum supported by set_signal_val_long()", m_elems, m_name);
+            return NULL;
+        }
+
+        long long m_max = (1LL << m_elems) - 1LL;   // unsigned max value: 2**N-1
+        long long m_min = -(1LL << (m_elems - 1));  // signed min value: -2**(N-1)
+
+        if (value < m_min || value > m_max) {
+            const char *m_name = gpi_get_signal_name_str(self->hdl);
+            PyErr_Format(PyExc_OverflowError, "Value (%lld) out of range for assignment of %d-bit signal (%s)", value, m_elems, m_name);
+            return NULL;
+        }
+    }
+
+    gpi_set_signal_value_long(self->hdl, static_cast<long>(value), action);
     Py_RETURN_NONE;
 }
 

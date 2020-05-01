@@ -48,6 +48,12 @@ from cocotb.result import TestError
 _deprecation_warned = set()
 
 
+class _Limits:
+    NONE         = 0
+    SIGNED_32BIT = 1  # -2**(Nbits - 1) <= value <= 2**(Nbits - 1)  where Nbits = 32
+    VECTOR_NBIT  = 2  # -2**(Nbits - 1) <= value <= 2**Nbits - 1    where Nbits <= 32
+
+
 class SimHandleBase:
     """Base class for all simulation objects.
 
@@ -654,8 +660,8 @@ class ModifiableObject(NonConstantObject):
         """
         value, set_action = self._check_for_set_action(value)
 
-        if isinstance(value, int) and value < 0x7fffffff and len(self) <= 32:
-            call_sim(self, self._handle.set_signal_val_long, set_action, value)
+        if isinstance(value, int) and len(self) <= 32:
+            call_sim(self, self._handle.set_signal_val_long, set_action, value, _Limits.VECTOR_NBIT)
             return
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
@@ -759,7 +765,7 @@ class EnumObject(ModifiableObject):
                 "Unsupported type for enum value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self, self._handle.set_signal_val_long, set_action, value)
+        call_sim(self, self._handle.set_signal_val_long, set_action, value,  _Limits.NONE)
 
     @ModifiableObject.value.getter
     def value(self) -> int:
@@ -791,7 +797,7 @@ class IntegerObject(ModifiableObject):
                 "Unsupported type for integer value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self, self._handle.set_signal_val_long, set_action, value)
+        call_sim(self, self._handle.set_signal_val_long, set_action, value,  _Limits.NONE)
 
     @ModifiableObject.value.getter
     def value(self) -> int:

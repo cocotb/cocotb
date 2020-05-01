@@ -54,6 +54,96 @@ async def test_string_handle_takes_bytes(dut):
     assert val == b"bytes"
 
 
+@cocotb.test()
+async def test_int_vector_32bit_signed(dut):
+    """
+    Test signed integer access to 32-bit vector
+    """
+    N = len(dut.stream_in_data_dword)
+    S_MIN = -2**(N-1)
+    S_MAX = 2**(N-1)-1
+
+    for value in [0, 1, -1, 4, -4, S_MIN, S_MAX]:
+        dut.stream_in_data_dword = value
+        await Timer(10, 'ns')
+        got = dut.stream_in_data_dword.value.signed_integer
+        assert got == value
+
+
+@cocotb.test()
+async def test_int_vector_32bit_unsigned(dut):
+    """
+    Test unsigned integer access to 32-bit vector
+    """
+    N = len(dut.stream_in_data_dword)
+    U_MIN = 0
+    U_MAX = 2**N-1
+
+    for value in [0, 1, 4, 2**(N-1)-1, U_MIN, U_MAX]:
+        dut.stream_in_data_dword = value
+        await Timer(10, 'ns')
+        got = int(dut.stream_in_data_dword)
+        assert got == value
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_vector_32bit_overflow(dut):
+    """
+    Test 32-bit vector integer overflow
+    """
+    N = len(dut.stream_in_data_dword)
+    value = 2**N
+    dut.stream_in_data_dword = value
+    await Timer(10, 'ns')
+    got = int(dut.stream_in_data_dword)
+    assert got == value
+
+
+@cocotb.test()
+async def test_int_vector_8bit_signed(dut):
+    """
+    Test signed integer access to 8-bit vector
+    """
+    N = len(dut.stream_in_data)
+    S_MIN = -2**(N-1)
+    S_MAX = 2**(N-1)-1
+
+    for value in [0, 1, -1, 4, -4, S_MIN, S_MAX]:
+        dut.stream_in_data = value
+        await Timer(10, 'ns')
+        got = dut.stream_in_data.value.signed_integer
+        assert got == value
+
+
+@cocotb.test()
+async def test_int_vector_8bit_unsigned(dut):
+    """
+    Test unsigned integer access to 8-bit vector
+    """
+    N = len(dut.stream_in_data)
+    U_MIN = 0
+    U_MAX = 2**N-1
+
+    for value in [0, 1, 4, 2**(N-1)-1, U_MIN, U_MAX]:
+        dut.stream_in_data = value
+        await Timer(10, 'ns')
+        got = int(dut.stream_in_data)
+        assert got == value
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_vector_8bit_underflow(dut):
+    """
+    Test 8-bit vector integer underflow
+    """
+    N = len(dut.stream_in_data)
+    value = -2**(N-1)-1
+    dut.stream_in_data = value
+    await Timer(10, 'ns')
+    got = int(dut.stream_in_data)
+    assert got == value
+
+
 async def test_delayed_assignment_still_errors(dut):
     """ Writing a bad value should fail even if the write is scheduled to happen later """
 
