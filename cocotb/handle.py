@@ -45,6 +45,7 @@ _deprecation_warned = set()
 class _Limits(enum.IntEnum):
     NONE         = 0
     SIGNED_32BIT = 1  # -2**(Nbits - 1) <= value <= 2**(Nbits - 1)  where Nbits = 32
+    VECTOR_NBIT  = 2  # -2**(Nbits - 1) <= value <= 2**Nbits - 1    where Nbits <= 32
 
 
 class SimHandleBase:
@@ -715,14 +716,15 @@ class ModifiableObject(NonConstantObject):
         value, set_action = self._check_for_set_action(value)
 
         if isinstance(value, int):
+            if len(self) <= 32:
+                call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.VECTOR_NBIT))
+                return
+
             min_value = -2 ** (len(self) - 1)  # minimum negative value for 'signed' number
             max_value = 2 ** len(self) - 1     # maximum positive value for 'unsigned' number
 
             if min_value <= value <= max_value:
-                if len(self) <= 32 and value < 0x7fffffff:  # set_signal_val_int() does not support full 32-bit 'unsigned' range
-                    call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.NONE))
-                    return
-                elif value < 0:
+                if value < 0:
                     value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
                 else:
                     value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.UNSIGNED)
