@@ -203,6 +203,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libcocotbutils = Extension(
         os.path.join("cocotb", "libs", "libcocotbutils"),
         include_dirs=[include_dir],
+        libraries=["gpilog"],
         sources=[os.path.join(share_lib_dir, "utils", "cocotb_utils.cpp")],
         extra_link_args=_extra_link_args(lib_name="libcocotbutils", rpath="$ORIGIN"),
         extra_compile_args=_extra_cxx_compile_args,
@@ -218,7 +219,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     libgpilog = Extension(
         os.path.join("cocotb", "libs", "libgpilog"),
         include_dirs=[include_dir],
-        libraries=["cocotbutils"],
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "gpi_log", "gpi_logging.cpp")],
         extra_link_args=_extra_link_args(lib_name="libgpilog", rpath="$ORIGIN"),
@@ -268,7 +268,10 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         extra_link_args=_extra_link_args(rpath="$ORIGIN/libs"),
     )
 
-    return [libcocotbutils, libgpilog, libcocotb, libgpi, libsim]
+    # The libraries in this list are compiled in order of their appearance.
+    # If there is a linking dependency on one library to another,
+    # the linked library must be built first.
+    return [libgpilog, libcocotbutils, libcocotb, libgpi, libsim]
 
 
 def _get_vpi_lib_ext(

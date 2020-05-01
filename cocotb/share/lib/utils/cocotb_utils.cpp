@@ -28,7 +28,7 @@
 ******************************************************************************/
 
 #include <cocotb_utils.h>
-#include <stdio.h>
+#include <gpi_logging.h>
 #include <stdlib.h>
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -47,17 +47,17 @@ extern "C" void* utils_dyn_open(const char* lib_name)
     SetErrorMode(0);
     ret = static_cast<void*>(LoadLibrary(lib_name));
     if (!ret) {
-        printf("Unable to open lib %s", lib_name);
+        const char *log_fmt = "Unable to open lib %s%s%s\n";
         LPSTR msg_ptr;
         if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
                            FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL,
                            GetLastError(),
                            MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT),
                            (LPSTR)&msg_ptr, 255, NULL)) {
-            printf(": %s", msg_ptr);
+            LOG_ERROR(log_fmt, lib_name, ": ", msg_ptr);
             LocalFree(msg_ptr);
         } else {
-            printf("\n");
+            LOG_ERROR(log_fmt, lib_name, "", "");
         }
     }
 #else
@@ -66,7 +66,7 @@ extern "C" void* utils_dyn_open(const char* lib_name)
 
     ret = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL);
     if (!ret) {
-        printf("Unable to open lib %s (%s)\n", lib_name, dlerror());
+        LOG_ERROR("Unable to open lib %s: %s\n", lib_name, dlerror());
     }
 #endif
     return ret;
@@ -78,23 +78,23 @@ extern "C" void* utils_dyn_sym(void *handle, const char* sym_name)
 #if ! defined(__linux__) && ! defined(__APPLE__)
     entry_point = reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(handle), sym_name));
     if (!entry_point) {
-        printf("Unable to find symbol %s", sym_name);
+        const char *log_fmt = "Unable to find symbol %s%s%s\n";
         LPSTR msg_ptr;
         if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
                            FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL,
                            GetLastError(),
                            MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT),
                            (LPSTR)&msg_ptr, 255, NULL)) {
-            printf(": %s", msg_ptr);
+            LOG_ERROR(log_fmt, sym_name, ": ", msg_ptr);
             LocalFree(msg_ptr);
         } else {
-            printf("\n");
+            LOG_ERROR(log_fmt, sym_name, "", "");
         }
     }
 #else
     entry_point = dlsym(handle, sym_name);
     if (!entry_point) {
-        printf("Unable to find symbol %s (%s)\n", sym_name, dlerror());
+        LOG_ERROR("Unable to find symbol %s: %s\n", sym_name, dlerror());
     }
 #endif
     return entry_point;
