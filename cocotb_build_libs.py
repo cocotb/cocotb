@@ -156,7 +156,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         define_macros=[("LIB_EXT", _get_lib_ext_name()), ("SINGLETON_HANDLES", "")],
         include_dirs=[include_dir],
         dsos=["cocotb.libs.cocotb"],
-        libraries=["stdc++"],
         sources=[
             os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
             os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
@@ -206,7 +205,7 @@ def _get_vhpi_lib_ext(
         include_dirs=[include_dir],
         define_macros=[("VHPI_CHECKING", 1)] + [(sim_define, "")],
         dsos=["cocotb.libs.gpi"],
-        libraries=["stdc++"] + extra_lib,
+        libraries=extra_lib,
         library_dirs=extra_lib_dir,
         sources=[
             os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
@@ -280,7 +279,7 @@ def get_ext():
                 "cocotb.libs.cocotbfli_modelsim",
                 include_dirs=[include_dir, modelsim_include_dir],
                 dsos=["cocotb.libs.gpi"],
-                libraries=["stdc++"] + modelsim_extra_lib,
+                libraries=modelsim_extra_lib,
                 library_dirs=modelsim_extra_lib_path,
                 sources=[
                     os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
