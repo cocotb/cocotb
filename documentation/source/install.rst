@@ -26,8 +26,7 @@ Cocotb has the following requirements:
 
 .. note:: In order to use a 32-bit simulator you need to use a 32-bit version of Python.
 
-The installation instructions vary depending on your operating system.
-Please choose:
+The installation instructions vary depending on your operating system:
 
 .. tabs::
 
