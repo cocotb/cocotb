@@ -2,9 +2,7 @@
 # This is a very simple test; it just makes sure we can yield a list of both.
 
 import cocotb
-from cocotb import triggers, result, utils, clock
-
-import sys
+from cocotb import triggers, result, utils
 
 @cocotb.coroutine
 def sample_coroutine(dut):

@@ -8,7 +8,6 @@ no more tests can be added to this file.
 """
 import cocotb
 from cocotb.triggers import Timer, ReadOnly
-from cocotb.binary import BinaryValue
 
 # this line is different between the two files
 value = 0

@@ -1,12 +1,9 @@
 import logging
 import random
-import sys
 
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer, ReadOnly
+from cocotb.triggers import Timer
 from cocotb.result import TestFailure
-from cocotb.binary import BinaryValue
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
@@ -21,7 +18,7 @@ def assign_double(dut):
     log.info("Setting the value %g" % val)
     dut.stream_in_real = val
     yield Timer(1)
-    yield Timer(1) # Workaround for VHPI scheduling - needs investigation
+    yield Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = float(dut.stream_out_real)
     log.info("Read back value %g" % got)
     if got != val:
@@ -39,7 +36,7 @@ def assign_int(dut):
     log.info("Setting the value %i" % val)
     dut.stream_in_real <= val
     yield Timer(1)
-    yield Timer(1) # Workaround for VHPI scheduling - needs investigation
+    yield Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = dut.stream_out_real
     log.info("Read back value %d" % got)
     if got != float(val):

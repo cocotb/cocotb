@@ -26,11 +26,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import cocotb
-import logging
-from cocotb.handle import ModifiableObject
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
-from cocotb.handle import IntegerObject
+from cocotb.result import TestFailure
 
 
 @cocotb.test()

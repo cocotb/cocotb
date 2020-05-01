@@ -6,7 +6,6 @@ import contextlib
 import logging
 
 import cocotb
-from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.result import TestFailure
 from cocotb.triggers import Timer

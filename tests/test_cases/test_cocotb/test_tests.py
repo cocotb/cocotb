@@ -18,7 +18,7 @@ from common import clock_gen
 def test_syntax_error(dut):
     """Syntax error in the test"""
     yield clock_gen(dut.clk)
-    fail
+    fail  # noqa
 
 
 @cocotb.test()

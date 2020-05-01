@@ -6,7 +6,7 @@ import logging
 import cocotb
 
 from cocotb.clock import Clock
-from cocotb.triggers import Timer, RisingEdge
+from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import HierarchyObject, HierarchyArrayObject, ModifiableObject, NonHierarchyIndexableObject, ConstantObject
 
@@ -61,11 +61,11 @@ def test_read_write(dut):
     _check_logic(tlog, dut.param_logic_vec, 0xDA)
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        _check_int (tlog, dut.param_bool, 1)
-        _check_int (tlog, dut.param_int , 6)
+        _check_int(tlog, dut.param_bool, 1)
+        _check_int(tlog, dut.param_int , 6)
         _check_real(tlog, dut.param_real, 3.14)
-        _check_int (tlog, dut.param_char, ord('p'))
-        _check_str (tlog, dut.param_str , b"ARRAYMOD")
+        _check_int(tlog, dut.param_char, ord('p'))
+        _check_str(tlog, dut.param_str , b"ARRAYMOD")
 
         if not cocotb.SIM_NAME.lower().startswith(("riviera")):
             _check_logic(tlog, dut.param_rec.a        , 0)
@@ -86,11 +86,11 @@ def test_read_write(dut):
     _check_logic(tlog, dut.const_logic_vec, 0x3D)
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        _check_int (tlog, dut.const_bool, 0)
-        _check_int (tlog, dut.const_int , 12)
+        _check_int(tlog, dut.const_bool, 0)
+        _check_int(tlog, dut.const_int , 12)
         _check_real(tlog, dut.const_real, 6.28)
-        _check_int (tlog, dut.const_char, ord('c'))
-        _check_str (tlog, dut.const_str , b"MODARRAY")
+        _check_int(tlog, dut.const_char, ord('c'))
+        _check_str(tlog, dut.const_str , b"MODARRAY")
 
         if not cocotb.SIM_NAME.lower().startswith(("riviera")):
             _check_logic(tlog, dut.const_rec.a        , 1)
@@ -152,11 +152,11 @@ def test_read_write(dut):
     _check_logic(tlog, dut.sig_t4[3][7], 0xCC)
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        _check_int (tlog, dut.port_bool_out, 1)
-        _check_int (tlog, dut.port_int_out , 5000)
+        _check_int(tlog, dut.port_bool_out, 1)
+        _check_int(tlog, dut.port_int_out , 5000)
         _check_real(tlog, dut.port_real_out, 22.54)
-        _check_int (tlog, dut.port_char_out, ord('Z'))
-        _check_str (tlog, dut.port_str_out , b"Testing")
+        _check_int(tlog, dut.port_char_out, ord('Z'))
+        _check_str(tlog, dut.port_str_out , b"Testing")
 
         _check_logic(tlog, dut.port_rec_out.a        , 1)
         _check_logic(tlog, dut.port_rec_out.b[0]     , 0x01)
@@ -320,7 +320,7 @@ def test_discover_all(dut):
     #
     # DO NOT REMOVE.  Aldec cannot iterate over the complex records due to bugs in the VPI interface.
     if (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")) and
-        cocotb.SIM_VERSION.startswith(("2016.02"))) :
+       cocotb.SIM_VERSION.startswith(("2016.02"))) :
         if len(dut._sub_handles) != 0:
             dut._sub_handles = {}
 

@@ -38,6 +38,7 @@ from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, String
 def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
     yield Timer(0)
+
     def _discover(obj):
         for thing in obj:
             dut._log.info("Found %s (%s)", thing._name, type(thing))
@@ -118,10 +119,10 @@ def access_single_bit(dut):
                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     dut.stream_in_data[2] <= 1
     yield Timer(10)
-    if dut.stream_out_data_comb.value.integer != (1<<2):
+    if dut.stream_out_data_comb.value.integer != (1 << 2):
         raise TestError("%s.%s != %d" %
                         (str(dut.stream_out_data_comb),
-                         dut.stream_out_data_comb.value.integer, (1<<2)))
+                         dut.stream_out_data_comb.value.integer, (1 << 2)))
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
@@ -138,10 +139,10 @@ def access_single_bit_assignment(dut):
                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     dut.stream_in_data[2] = 1
     yield Timer(10)
-    if dut.stream_out_data_comb.value.integer != (1<<2):
+    if dut.stream_out_data_comb.value.integer != (1 << 2):
         raise TestError("%s.%s != %d" %
                         (str(dut.stream_out_data_comb),
-                         dut.stream_out_data_comb.value.integer, (1<<2)))
+                         dut.stream_out_data_comb.value.integer, (1 << 2)))
 
 
 @cocotb.test(expect_error=True)
@@ -336,8 +337,8 @@ def access_boolean(dut):
 
     return
 
-    #if not isinstance(boolean, IntegerObject):
-    #    raise TestFailure("dut.stream_in_boolean is not a IntegerObject is %s" % type(boolean))
+    # if not isinstance(boolean, IntegerObject):
+    #     raise TestFailure("dut.stream_in_boolean is not a IntegerObject is %s" % type(boolean))
 
     try:
         bit = boolean[3]
@@ -462,11 +463,11 @@ def type_check_verilog(dut):
     ]
 
     if cocotb.SIM_NAME.lower().startswith(("icarus")):
-        test_handles.append((dut.logic_a, "GPI_NET")) # https://github.com/steveicarus/iverilog/issues/312
+        test_handles.append((dut.logic_a, "GPI_NET"))  # https://github.com/steveicarus/iverilog/issues/312
     else:
         test_handles.append((dut.logic_a, "GPI_REGISTER"))
 
     for handle in test_handles:
-        tlog.info("Handle %s" %  (handle[0]._fullname,))
+        tlog.info("Handle %s" % (handle[0]._fullname,))
         if handle[0]._type != handle[1]:
             raise TestFailure("Expected %s found %s for %s" % (handle[1], handle[0]._type, handle[0]._fullname))

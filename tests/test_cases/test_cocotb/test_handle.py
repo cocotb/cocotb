@@ -26,7 +26,8 @@ def test_lessthan_raises_error(dut):
         )
 
     # to make this a generator
-    if False: yield
+    if False:
+        yield
 
 
 @cocotb.test()

@@ -192,5 +192,5 @@ def wavedrom_test(dut):
         yield tb.csr.read(0)
         yield RisingEdge(dut.clk)
         yield RisingEdge(dut.clk)
-        dut._log.info(waves.dumpj(header = {'text':'WaveDrom example', 'tick':0}))
-        waves.write('wavedrom.json', header = {'tick':0}, config = {'hscale':3})
+        dut._log.info(waves.dumpj(header={'text':'WaveDrom example', 'tick':0}))
+        waves.write('wavedrom.json', header={'tick':0}, config={'hscale':3})

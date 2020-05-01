@@ -50,7 +50,7 @@ def test_function_not_decorated(dut):
     except TypeError as exc:
         assert "yielded" in str(exc)
         assert "scheduler can't handle" in str(exc)
-    except:
+    else:
         raise TestFailure
 
 
@@ -94,7 +94,7 @@ def test_yield_list(dut):
 @cocotb.coroutine
 def syntax_error():
     yield Timer(100)
-    fail
+    fail  # noqa
 
 
 @cocotb.test(expect_error=True)

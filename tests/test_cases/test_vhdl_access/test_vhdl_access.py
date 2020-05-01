@@ -26,9 +26,9 @@
 import logging
 
 import cocotb
-from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, IntegerObject, ConstantObject, EnumObject
+from cocotb.handle import HierarchyObject, ModifiableObject, IntegerObject, ConstantObject, EnumObject
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
+from cocotb.result import TestFailure
 
 @cocotb.test()
 def check_enum_object(dut):

@@ -26,9 +26,9 @@
 import logging
 
 import cocotb
-from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, IntegerObject, ConstantObject
+from cocotb.handle import HierarchyObject, ModifiableObject
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
+from cocotb.result import TestFailure
 
 @cocotb.test()
 def port_not_hierarchy(dut):

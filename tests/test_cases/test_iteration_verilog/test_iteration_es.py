@@ -27,7 +27,7 @@ import logging
 
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
+from cocotb.result import TestFailure
 
 @cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog"])
 def recursive_discovery(dut):
@@ -45,6 +45,7 @@ def recursive_discovery(dut):
 
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
+
     def dump_all_the_things(parent):
         count = 0
         for thing in parent:
@@ -69,4 +70,3 @@ def dual_iteration(dut):
     loop_two = cocotb.fork(iteration_loop(dut))
 
     yield [loop_one.join(), loop_two.join()]
-

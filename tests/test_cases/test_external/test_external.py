@@ -34,11 +34,9 @@ Also used a regression test of cocotb capabilities
 """
 
 import threading
-import time
 import cocotb
-import pdb
 from cocotb.result import TestFailure
-from cocotb.triggers import Timer, Join, RisingEdge, ReadOnly, Edge, ReadWrite
+from cocotb.triggers import Timer, RisingEdge, ReadOnly
 from cocotb.clock import Clock
 from cocotb.decorators import external
 from cocotb.utils import get_sim_time

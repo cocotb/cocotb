@@ -2,9 +2,8 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer, ReadOnly
+from cocotb.triggers import RisingEdge, ReadOnly
 from cocotb.result import TestFailure
-from cocotb.binary import BinaryValue
 
 
 @cocotb.coroutine
