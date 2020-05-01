@@ -337,7 +337,8 @@ graphviz_output_format = 'svg'
 # -- Extra setup for towncrier -------------------------------------------------
 # see also https://towncrier.readthedocs.io/en/actual-freaking-docs/
 
-in_progress_notes = subprocess.check_output(['towncrier', '--draft'],
+# we pass the name and version directly, to avoid towncrier failing to import the non-installed version
+in_progress_notes = subprocess.check_output(['towncrier', '--draft', '--name', 'cocotb', '--version', release],
                                             cwd='../..',
                                             universal_newlines=True)
 with open('generated/master-notes.rst', 'w') as f:
