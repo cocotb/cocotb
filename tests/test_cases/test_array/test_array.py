@@ -240,7 +240,7 @@ def test_gen_loop(dut):
 
 @cocotb.test()
 def test_discover_all(dut):
-    """Discover everything in the DUT:
+    r"""Discover everything in the DUT:
           dut
                  TYPE    CNT  NOTES                                                  EXCEPTIONS
              parameters: 7/2 (base types)                                            (VHDL/Verilog)
