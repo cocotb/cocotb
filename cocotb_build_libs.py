@@ -282,8 +282,9 @@ def _get_vpi_lib_ext(
 def _get_vhpi_lib_ext(
     include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
+    lib_name = "libcocotbvhpi_" + sim_define.lower()
     libcocotbvhpi = Extension(
-        os.path.join("cocotb", "libs", "libcocotbvhpi_" + sim_define.lower()),
+        os.path.join("cocotb", "libs", lib_name),
         include_dirs=[include_dir],
         define_macros=[("VHPI_CHECKING", 1)] + [(sim_define, "")],
         libraries=["gpi", "gpilog", "stdc++"] + extra_lib,
@@ -292,7 +293,7 @@ def _get_vhpi_lib_ext(
             os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
             os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
         ],
-        extra_link_args=_extra_link_args(rpath="$ORIGIN"),
+        extra_link_args=_extra_link_args(lib_name=lib_name, rpath="$ORIGIN"),
         extra_compile_args=_extra_cxx_compile_args,
     )
 
@@ -374,7 +375,7 @@ def get_ext():
                     os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
                     os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
                 ],
-                extra_link_args=_extra_link_args(rpath="$ORIGIN"),
+                extra_link_args=_extra_link_args(lib_name="libcocotbfli_modelsim", rpath="$ORIGIN"),
                 extra_compile_args=_extra_cxx_compile_args,
             )
 
