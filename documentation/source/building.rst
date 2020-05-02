@@ -35,7 +35,7 @@ Variables
 The following sections document makefile variables and environment variables according to their owner/consumer.
 
 ..
-  If you edit the following sections, please also update the "helpmsg" text in cocotb/share/makefiles/Makefile.sim
+  If you edit the following sections, please also update the "helpmsg" text in cocotb/config.py
 
 Cocotb
 ------
