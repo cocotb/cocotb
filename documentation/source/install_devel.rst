@@ -6,8 +6,7 @@ Installing the Development Version
 
 We are assuming here that you have :ref:`installed the prerequisites<install-prerequisites>`.
 
-The instructions for installing the development version of cocotb vary depending on your operating system.
-Please choose:
+The instructions for installing the development version of cocotb vary depending on your operating system:
 
 .. tabs::
 
