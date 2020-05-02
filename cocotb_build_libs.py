@@ -38,22 +38,6 @@ class build_ext(_build_ext):
 
         super().run()
 
-    # On osx need extra extra rpath with install_name_tool to find libraries
-    if sys.platform == "darwin":
-        def build_extension(self, ext):
-            super().build_extension(ext)
-
-            subprocess.run([
-                "install_name_tool",
-                "-add_rpath",
-                "@loader_path",
-                "-add_rpath",
-                "@loader_path/libs",
-                "-add_rpath",
-                sysconfig.get_config_var("LIBDIR"),
-                os.path.join(self.build_lib, ext._file_name),
-            ], check=True)
-
     # Needed for Windows to not assume python module (generate interface in def file)
     def get_export_symbols(self, ext):
         return None
@@ -146,6 +130,8 @@ def _extra_link_args(lib_name=None, rpath=None):
     if sys.platform == "darwin" and lib_name is not None:
         args += ["-Wl,-install_name,@rpath/%s.so" % lib_name]
     if rpath is not None:
+        if sys.platform == "darwin":
+            rpath = rpath.replace("$ORIGIN", "@loader_path")
         args += ["-Wl,-rpath,%s" % rpath]
     return args
 
@@ -226,6 +212,9 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libcocotb
     #
+    link_args = _extra_link_args(lib_name="libcocotb", rpath="$ORIGIN")
+    for lib_dir in python_lib_dirs:
+        link_args += _extra_link_args(rpath=lib_dir)
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
         define_macros=[("PYTHON_SO_LIB", _get_python_lib())],
@@ -233,7 +222,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libraries=[_get_python_lib_link(), "gpilog", "cocotbutils"],
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")],
-        extra_link_args=_extra_link_args(lib_name="libcocotb", rpath="$ORIGIN"),
+        extra_link_args=link_args,
         extra_compile_args=_extra_cxx_compile_args,
     )
 
