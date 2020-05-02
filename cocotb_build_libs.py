@@ -272,8 +272,9 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
 def _get_vpi_lib_ext(
     include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
+    lib_name = "libcocotbvpi_" + sim_define.lower()
     libcocotbvpi = Extension(
-        os.path.join("cocotb", "libs", "libcocotbvpi_" + sim_define.lower()),
+        os.path.join("cocotb", "libs", lib_name),
         define_macros=[("VPI_CHECKING", "1")] + [(sim_define, "")],
         include_dirs=[include_dir],
         libraries=["gpi", "gpilog"] + extra_lib,
@@ -282,7 +283,7 @@ def _get_vpi_lib_ext(
             os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
             os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
         ],
-        extra_link_args=_extra_link_args(rpath="$ORIGIN"),
+        extra_link_args=_extra_link_args(lib_name=lib_name, rpath="$ORIGIN"),
         extra_compile_args=_extra_cxx_compile_args,
     )
 
