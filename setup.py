@@ -47,6 +47,18 @@ if sys.version_info[:2] < (3, 5):
 
     raise SystemExit("\n".join(msg))
 
+
+# Cocotb requires linking to a dynamic Python library.
+# On Windows, the Python library is always dynamic (an "Import Library").
+# Python must be compiled with the `--enable-shared` flag on Linux and macOS
+# and the `--enable-framework` flag on macOS.
+from distutils import sysconfig
+
+if sys.platform == "posix":
+    config_args = sysconfig.get_config_vars().get("CONFIG_ARGS", "")
+    if "--enable-framework" not in config_args or "--enable-shared" not in config_args:
+        raise SystemExit("ERROR: You must use a Python compiled with --enable-shared or --enable-framework.\nPython executable location is %s" % sys.executable)
+
 import logging
 from setuptools import setup
 from setuptools import find_packages
