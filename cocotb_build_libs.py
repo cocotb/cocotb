@@ -47,12 +47,10 @@ class build_ext(_build_ext):
                 "install_name_tool",
                 "-add_rpath",
                 "@loader_path",
-                os.path.join(self.build_lib, ext._file_name),
-            ], check=True)
-            subprocess.run([
-                "install_name_tool",
                 "-add_rpath",
                 "@loader_path/libs",
+                "-add_rpath",
+                sysconfig.get_config_var("LIBDIR"),
                 os.path.join(self.build_lib, ext._file_name),
             ], check=True)
 
