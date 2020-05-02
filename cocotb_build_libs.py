@@ -11,7 +11,7 @@ try:
     from setuptools_dso import DSO, Extension, build_dso, setup
 except ImportError:
     build_dso = None
-    from setuptools import setup
+    from setuptools import setup  # noqa: F401
 from distutils.spawn import find_executable
 
 
@@ -89,7 +89,7 @@ def _get_python_lib():
         python_lib = "lib" + _get_python_lib_link() + "." + _get_lib_ext_name()
 
     python_lib = os.path.join(sysconfig.get_config_var("LIBDIR"), python_lib)
-    open(python_lib) # Raise error if not found
+    open(python_lib)  # Raise error if not found
     return python_lib
 
 
@@ -388,6 +388,7 @@ def get_ext():
 
     return dsos, ext
 
+# for `python setup.py sdist` to work before setuptools_dso is installed
 if build_dso is None:
-    def get_ext():
+    def get_ext():  # noqa: F811
         return [], []
