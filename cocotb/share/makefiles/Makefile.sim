@@ -32,45 +32,17 @@
 .PHONY: all
 all: sim
 
-# NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
-# Also keep it at 80 chars.
-define helpmsg =
+# NOTE: keep this at 80 chars.
+define help_targets =
 Targets
--------
+=======
 sim                       Unconditionally re-run the simulator (default)
 regression                Run simulator when dependencies have changes
 clean                     Remove build and simulation artefacts
 help                      This help text
 
-GPI
----
-GPI_EXTRA                 Extra libraries to load at runtime (comma-separated)
-
-Cocotb
-------
-TOPLEVEL                  Instance in the hierarchy to use as the DUT
-RANDOM_SEED               Random seed, to recreate a previous test stimulus
-COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
-COCOTB_REDUCED_LOG_FMT    Display log lines shorter
-COCOTB_ATTACH             Pause time value in seconds before the simulator start
-COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
-COCOTB_LOG_LEVEL          Default logging level (default INFO)
-COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion
-MEMCHECK                  HTTP port to use for debugging Python memory usage
-
-Regression Manager
-------------------
-COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
-MODULE                    Modules to search for test functions (comma-separated)
-TESTCASE                  Test function(s) to run (comma-separated list)
-COCOTB_RESULTS_FILE       File name for xUnit XML tests results
-COVERAGE                  Report Python coverage (also HDL for some simulators)
-COCOTB_HOOKS              Comma-separated module list to be executed before test
-
-Scheduler
----------
-COCOTB_SCHEDULER_DEBUG    Enable additional output of coroutine scheduler
-
+Variables
+=========
 Makefile-based Test Scripts
 ---------------------------
 GUI                       Set this to 1 to enable the GUI mode in the simulator
@@ -90,20 +62,22 @@ CUSTOM_SIM_DEPS           Add additional dependencies to the simulation target
 SIM_BUILD                 Define a scratch directory for use by the simulator
 SCRIPT_FILE               Simulator script to run (for e.g. wave traces)
 
-    For details, see $(DOCLINK)
+endef
+
+
+# NOTE: keep *two* empty lines between "define" and "endef":
+define newline
+
 
 endef
 
 # this cannot be a regular target because of the way Makefile.$(SIM) is included
 ifeq ($(MAKECMDGOALS),help)
-    _VERSION := $(shell cocotb-config -v)
-    # for non-intuitive use of ifneq see https://www.gnu.org/software/make/manual/make.html#Testing-Flags
-    ifneq (,$(findstring dev,$(_VERSION)))
-        DOCLINK := https://docs.cocotb.org/en/latest/building.html
-    else
-        DOCLINK := https://docs.cocotb.org/en/v$(_VERSION)/building.html
-    endif
-    $(info $(helpmsg))
+    $(info $(help_targets))
+    # hack to get newlines in output, see https://stackoverflow.com/a/54539610
+    # NOTE: the output of the command must not include a '%' sign, otherwise the formatting will break
+    help_vars := $(subst %,${newline},$(shell cocotb-config --help-vars | tr \\n %))
+    $(info ${help_vars})
     # is there a cleaner way to exit here?
     $(error "Stopping after printing help")
 endif

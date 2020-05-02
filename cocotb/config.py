@@ -41,6 +41,7 @@ Global variables:
 import argparse
 import os
 import sys
+import textwrap
 import cocotb
 
 __all__ = ["share_dir", "makefiles_dir"]
@@ -48,6 +49,48 @@ __all__ = ["share_dir", "makefiles_dir"]
 
 share_dir = os.path.join(os.path.dirname(cocotb.__file__), "share")
 makefiles_dir = os.path.join(os.path.dirname(cocotb.__file__), "share", "makefiles")
+
+
+def help_vars_text():
+    if "dev" in cocotb.__version__:
+        doclink = "https://docs.cocotb.org/en/latest/building.html"
+    else:
+        doclink = "https://docs.cocotb.org/en/v{}/building.html".format(cocotb.__version__)
+
+    # NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
+    # Also keep it at 80 chars.
+    helpmsg = textwrap.dedent("""\
+    Cocotb
+    ------
+    TOPLEVEL                  Instance in the hierarchy to use as the DUT
+    RANDOM_SEED               Random seed, to recreate a previous test stimulus
+    COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
+    COCOTB_REDUCED_LOG_FMT    Display log lines shorter
+    COCOTB_ATTACH             Pause time value in seconds before the simulator start
+    COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
+    COCOTB_LOG_LEVEL          Default logging level (default INFO)
+    COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion
+    MEMCHECK                  HTTP port to use for debugging Python memory usage
+
+    Regression Manager
+    ------------------
+    COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
+    MODULE                    Modules to search for test functions (comma-separated)
+    TESTCASE                  Test function(s) to run (comma-separated list)
+    COCOTB_RESULTS_FILE       File name for xUnit XML tests results
+    COVERAGE                  Report Python coverage (also HDL for some simulators)
+    COCOTB_HOOKS              Comma-separated module list to be executed before test
+
+    GPI
+    ---
+    GPI_EXTRA                 Extra libraries to load at runtime (comma-separated)
+
+    Scheduler
+    ---------
+    COCOTB_SCHEDULER_DEBUG    Enable additional output of coroutine scheduler
+
+    For details, see {}""").format(doclink)
+    return helpmsg
 
 
 class PrintAction(argparse.Action):
@@ -89,6 +132,12 @@ def get_parser():
         help="echo the path to the Python binary cocotb is installed for",
         action=PrintAction,
         text=python_bin,
+    )
+    parser.add_argument(
+        "--help-vars",
+        help="show help about supported variables",
+        action=PrintAction,
+        text=help_vars_text(),
     )
     parser.add_argument(
         "-v",
