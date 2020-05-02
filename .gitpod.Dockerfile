@@ -37,7 +37,7 @@ RUN git clone https://github.com/ghdl/ghdl.git --depth=1 --branch ${GHDL_BRANCH}
     && rm -rf ghdl
 
 # Install cvc
-RUN  git clone https://github.com/cambridgehackers/open-src-cvc.git --depth=1 cvc \
+RUN git clone https://github.com/cambridgehackers/open-src-cvc.git --depth=1 cvc \
     && cd cvc/src \
     && make -f makefile.cvc64 -s \
     && sudo cp cvc64 /usr/local/bin \
