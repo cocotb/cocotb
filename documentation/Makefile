@@ -21,7 +21,7 @@ help: .venv
 	python3 -m venv .venv
 	.venv/bin/pip -q install --upgrade pip
 	.venv/bin/pip -q install -r requirements.txt
-	.venv/bin/pip -q install ..
+	.venv/bin/pip -q install -e ..
 
 .PHONY: clean
 clean: .venv Makefile
