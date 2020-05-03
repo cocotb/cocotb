@@ -10,11 +10,13 @@ from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import HierarchyObject, HierarchyArrayObject, ModifiableObject, NonHierarchyIndexableObject, ConstantObject
 
+
 def _check_type(tlog, hdl, expected):
     if not isinstance(hdl, expected):
         raise TestFailure(">{0!r} ({1})< should be >{2}<".format(hdl, hdl._type, expected))
     else:
         tlog.info("   Found %r (%s) with length=%d", hdl, hdl._type, len(hdl))
+
 
 def _check_int(tlog, hdl, expected):
     if int(hdl) != expected:
@@ -22,11 +24,13 @@ def _check_int(tlog, hdl, expected):
     else:
         tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, int(hdl)))
 
+
 def _check_logic(tlog, hdl, expected):
     if int(hdl) != expected:
         raise TestFailure("{2!r}: Expected >0x{0:X}< but got >0x{1:X}<".format(expected, int(hdl), hdl))
     else:
         tlog.info("   Found {0!r} ({1}) with value=0x{2:X}".format(hdl, hdl._type, int(hdl)))
+
 
 def _check_str(tlog, hdl, expected):
     if hdl.value != expected:
@@ -34,11 +38,13 @@ def _check_str(tlog, hdl, expected):
     else:
         tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, str(hdl)))
 
+
 def _check_real(tlog, hdl, expected):
     if float(hdl) != expected:
         raise TestFailure("{2!r}: Expected >{0}< but got >{1}<".format(expected, float(hdl), hdl))
     else:
         tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, float(hdl)))
+
 
 def _check_value(tlog, hdl, expected):
     if hdl.value != expected:
@@ -200,6 +206,7 @@ def test_read_write(dut):
         _check_logic(tlog, dut.port_rec_out.b[1]     , 0xA3)
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)
 
+
 @cocotb.test()
 def test_gen_loop(dut):
     """Test accessing Generate Loops"""
@@ -237,6 +244,7 @@ def test_gen_loop(dut):
 
     for gens in dut.asc_gen:
         tlog.info("Iterate access found %s", gens)
+
 
 @cocotb.test()
 def test_discover_all(dut):
@@ -370,6 +378,7 @@ def test_discover_all(dut):
     if total != pass_total:
         raise TestFailure("Expected {0} objects but found {1}".format(pass_total, total))
 
+
 @cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith(("riviera"))))
 def test_direct_constant_indexing(dut):
     """Test directly accessing constant/parameter data in arrays, i.e. not iterating"""
@@ -475,7 +484,6 @@ def test_direct_signal_indexing(dut):
         _check_type(tlog, dut.sig_t8[1], NonHierarchyIndexableObject)
         _check_type(tlog, dut.sig_t8[0][3], ModifiableObject)
 
-
     # Riviera has a bug and finds dut.sig_cmplx[1], but the type returned is a vpiBitVar
     # only true for version 2016.02
     if not (cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")) and
@@ -497,6 +505,7 @@ def test_direct_signal_indexing(dut):
             cocotb.SIM_VERSION.startswith(("2016.02"))):
         _check_type(tlog, dut.sig_rec.b[1], ModifiableObject)
         _check_type(tlog, dut.sig_rec.b[1][2], ModifiableObject)
+
 
 @cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"]))
 def test_extended_identifiers(dut):

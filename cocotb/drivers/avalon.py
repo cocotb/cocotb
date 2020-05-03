@@ -58,7 +58,6 @@ class AvalonMM(BusDriver):
                          "writedata", "readdatavalid", "byteenable",
                          "cs"]
 
-
     def __init__(self, entity, name, clock, **kwargs):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
         self._can_read = False
@@ -95,6 +94,7 @@ class AvalonMM(BusDriver):
 
 class AvalonMaster(AvalonMM):
     """Avalon Memory Mapped Interface (Avalon-MM) Master."""
+
     def __init__(self, entity, name, clock, **kwargs):
         AvalonMM.__init__(self, entity, name, clock, **kwargs)
         self.log.debug("AvalonMaster created")
@@ -308,7 +308,6 @@ class AvalonMemory(BusDriver):
             else:
                 self.bus.waitrequest <= 0
 
-
         if hasattr(self.bus, "readdatavalid"):
             self.bus.readdatavalid.setimmediatevalue(0)
 
@@ -382,7 +381,6 @@ class AvalonMemory(BusDriver):
                 yield NextTimeStep()
 
             self.bus.waitrequest <= 0
-
 
     @coroutine
     def _respond(self):

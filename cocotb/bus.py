@@ -32,6 +32,7 @@ A bus is simply defined as a collection of signals.
 """
 from cocotb.handle import _AssignmentResult
 
+
 def _build_sig_attr_dict(signals):
     if isinstance(signals, dict):
         return signals
@@ -51,6 +52,7 @@ class Bus:
     TODO:
         Support for ``struct``/``record`` ports where signals are member names.
     """
+
     def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", array_idx=None):
         """
         Args:

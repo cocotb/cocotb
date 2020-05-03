@@ -12,6 +12,7 @@ from cocotb.triggers import Timer
 
 tlog = logging.getLogger("cocotb.test")
 
+
 def _check_value(tlog, hdl, expected):
     if hdl.value != expected:
         raise TestFailure("{2!r}: Expected >{0}< but got >{1}<".format(expected, hdl.value, hdl))
@@ -174,6 +175,7 @@ async def test_ndim_array_indexes(dut):
     _check_value(tlog, dut.array_2d[0][30], 0xBE)
     _check_value(tlog, dut.array_2d[1]    , [0xDE, 0xAD, 0x12, 0xEF])
 
+
 @contextlib.contextmanager
 def assert_raises(exc_type):
     try:
@@ -182,6 +184,7 @@ def assert_raises(exc_type):
         tlog.info("   {} raised as expected: {}".format(exc_type.__name__, exc))
     else:
         raise AssertionError("{} was not raised".format(exc_type.__name__))
+
 
 @cocotb.test()
 async def test_exceptions(dut):

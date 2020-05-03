@@ -45,6 +45,7 @@ def recursive_discover(dut):
             _discover(thing)
     _discover(dut)
 
+
 @cocotb.test()
 def discover_module_values(dut):
     """Discover everything in the DUT"""
@@ -55,6 +56,7 @@ def discover_module_values(dut):
         count += 1
     if count < 2:
         raise TestFailure("Expected to discover things in the DUT")
+
 
 @cocotb.test(skip=True)
 def ipython_embed(dut):
@@ -179,6 +181,7 @@ def access_integer(dut):
     if length != 1:
         raise TestFailure("Length should be 1 not %d" % length)
 
+
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def access_ulogic(dut):
     """Access a std_ulogic as enum"""
@@ -200,6 +203,7 @@ def access_constant_integer(dut):
         raise TestFailure("EXAMPLE_WIDTH was not constant")
     if constant_integer != 7:
         raise TestFailure("EXAMPLE_WIDTH was not 7")
+
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def access_string_vhdl(dut):
@@ -327,6 +331,7 @@ def access_constant_boolean(dut):
 
     tlog.info("Value of %s is %d" % (constant_boolean, constant_boolean))
 
+
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def access_boolean(dut):
     """Test access to a boolean"""
@@ -368,6 +373,7 @@ def access_boolean(dut):
     if (int(curr_val) == int(output_bool)):
         raise TestFailure("Value did not propagate")
 
+
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
 def access_internal_register_array(dut):
     """Test access to an internal register array"""
@@ -381,6 +387,7 @@ def access_internal_register_array(dut):
 
     if (dut.register_array[1].value != 4):
         raise TestFailure("Failed to set internal register array value")
+
 
 @cocotb.test(skip=True)
 def skip_a_test(dut):
@@ -406,6 +413,7 @@ def access_gate(dut):
 
     if not isinstance(gate, HierarchyObject):
         raise TestFailure("Gate should be HierarchyObject")
+
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 def custom_type(dut):
@@ -440,6 +448,7 @@ def custom_type(dut):
 
     if expected_top != count:
         raise TestFailure("Expected %d found %d for cosLut" % (expected_top, count))
+
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
 def type_check_verilog(dut):

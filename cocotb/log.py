@@ -78,7 +78,6 @@ def default_config():
     else:
         hdlr.setFormatter(SimLogFormatter())
 
-
     logging.setLoggerClass(SimBaseLog)  # For backwards compatibility
     logging.basicConfig()
     logging.getLogger().handlers = [hdlr]  # overwrite default handlers

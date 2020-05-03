@@ -206,6 +206,7 @@ class AXI4LiteMaster(BusDriver):
     def __len__(self):
         return 2**len(self.bus.ARADDR)
 
+
 class AXI4Slave(BusDriver):
     '''
     AXI4 Slave

@@ -59,6 +59,7 @@ def public(f):
         all.append(f.__name__)
     return f
 
+
 public(public)  # Emulate decorating ourself
 
 
@@ -69,6 +70,7 @@ class CoroutineComplete(Exception):
     exception that the scheduler catches and the callbacks are attached
     here.
     """
+
     def __init__(self, text=""):
         Exception.__init__(self, text)
 
@@ -206,6 +208,7 @@ class RunningCoroutine(RunningTask):
 
     All this class does is provide some extra attributes.
     """
+
     def __init__(self, inst, parent):
         RunningTask.__init__(self, inst)
         self._parent = parent
@@ -323,6 +326,7 @@ class function:
     in other words, to internally block while externally
     appear to yield.
     """
+
     def __init__(self, func):
         self._coro = cocotb.coroutine(func)
 
@@ -338,6 +342,7 @@ class function:
             and standalone functions"""
         return type(self)(self._coro._func.__get__(obj, owner))
 
+
 @public
 class external:
     """Decorator to apply to an external function to enable calling from cocotb.
@@ -347,6 +352,7 @@ class external:
     called.
     Scope for this to be streamlined to a queue in future.
     """
+
     def __init__(self, func):
         self._func = func
         self._log = SimLog("cocotb.external.%s" % self._func.__qualname__, id(self))
@@ -391,6 +397,7 @@ class hook(coroutine, metaclass=_decorator_helper):
 
     All hooks are run at the beginning of a cocotb test suite, prior to any
     test code being run."""
+
     def __init__(self, f):
         super(hook, self).__init__(f)
         self.im_hook = True

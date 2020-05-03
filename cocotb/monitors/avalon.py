@@ -40,6 +40,7 @@ from cocotb.monitors import BusMonitor
 from cocotb.triggers import RisingEdge, ReadOnly
 from cocotb.binary import BinaryValue
 
+
 class AvalonProtocolError(Exception):
     pass
 
@@ -233,6 +234,7 @@ class AvalonSTPkts(BusMonitor):
                             raise AvalonProtocolError(
                                 "In-Packet Timeout. Didn't receive any valid data for %d cycles!" %
                                 invalid_cyclecount)
+
 
 class AvalonSTPktsWithChannel(AvalonSTPkts):
     """Packetized AvalonST bus using channel.

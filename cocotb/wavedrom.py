@@ -33,6 +33,7 @@ from cocotb.triggers import RisingEdge, ReadOnly
 
 class Wavedrom:
     """Base class for a WaveDrom compatible tracer."""
+
     def __init__(self, obj):
 
         self._hdls = OrderedDict()

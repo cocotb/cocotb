@@ -12,6 +12,7 @@ CLK_PERIOD_NS = 10
 MODULE_PATH = os.path.join(os.path.dirname(__file__), os.pardir, "hdl")
 MODULE_PATH = os.path.abspath(MODULE_PATH)
 
+
 def setup_dut(dut):
     cocotb.fork(Clock(dut.clk, CLK_PERIOD_NS, units='ns').start())
 
@@ -87,7 +88,6 @@ def read_address_1(dut):
     dut._log.info("Read: 0x%08X From Address: 0x%08X" % (int(value), ADDRESS))
 
 
-
 @cocotb.test()
 def write_and_read(dut):
     """Write to the register at address 0.
@@ -126,6 +126,7 @@ def write_and_read(dut):
 
     dut._log.info("Write 0x%08X to address 0x%08X" % (int(value), ADDRESS))
 
+
 @cocotb.test()
 def write_fail(dut):
     """Attempt to write data to an address that doesn't exist. This test
@@ -157,6 +158,7 @@ def write_fail(dut):
         raise TestSuccess()
     raise TestFailure("AXI bus should have raised an error when writing to \
                         an invalid address")
+
 
 @cocotb.test()
 def read_fail(dut):

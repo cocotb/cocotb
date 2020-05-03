@@ -26,10 +26,12 @@
 import cocotb
 from cocotb.triggers import Timer
 
+
 def sub_iterate(unit):
     for thing in unit:
         thing._log.info("Found %s.%s %s" % (unit._name, thing._name, type(thing)))
         sub_iterate(thing)
+
 
 @cocotb.test()
 def iterate(dut):

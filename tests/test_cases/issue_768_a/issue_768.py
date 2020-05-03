@@ -12,6 +12,7 @@ from cocotb.triggers import Timer, ReadOnly
 # this line is different between the two files
 value = 0
 
+
 @cocotb.test()
 def test(dut):
     dut.stream_in_data.setimmediatevalue(value)
