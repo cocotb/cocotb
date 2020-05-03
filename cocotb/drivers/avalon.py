@@ -314,8 +314,8 @@ class AvalonMemory(BusDriver):
 
     def _pad(self):
         """Pad response queue up to read latency."""
-        l = random.randint(self._readlatency_min, self._readlatency_max)
-        while len(self._responses) < l:
+        latency = random.randint(self._readlatency_min, self._readlatency_max)
+        while len(self._responses) < latency:
             self._responses.append(None)
 
     def _do_response(self):

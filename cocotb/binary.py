@@ -229,40 +229,40 @@ class BinaryValue:
     def _adjust_unsigned(self, x):
         if self._n_bits is None:
             return x
-        l = len(x)
-        if l <= self._n_bits:
+        _len = len(x)
+        if _len <= self._n_bits:
             if self.big_endian:
-                rv = x + '0' * (self._n_bits - l)
+                rv = x + '0' * (self._n_bits - _len)
             else:
-                rv = '0' * (self._n_bits - l) + x
-        elif l > self._n_bits:
+                rv = '0' * (self._n_bits - _len) + x
+        elif _len > self._n_bits:
             print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
+                  "(%d -> %d)" % (_len, self._n_bits))
             if self.big_endian:
-                rv = x[l - self._n_bits:]
+                rv = x[_len - self._n_bits:]
             else:
-                rv = x[:l - self._n_bits]
+                rv = x[:_len - self._n_bits]
         return rv
 
     def _adjust_signed_mag(self, x):
         """Pad/truncate the bit string to the correct length."""
         if self._n_bits is None:
             return x
-        l = len(x)
-        if l <= self._n_bits:
+        _len = len(x)
+        if _len <= self._n_bits:
             if self.big_endian:
-                rv = x[:-1] + '0' * (self._n_bits - 1 - l)
+                rv = x[:-1] + '0' * (self._n_bits - 1 - _len)
                 rv = rv + x[-1]
             else:
-                rv = '0' * (self._n_bits - 1 - l) + x[1:]
+                rv = '0' * (self._n_bits - 1 - _len) + x[1:]
                 rv = x[0] + rv
-        elif l > self._n_bits:
+        elif _len > self._n_bits:
             print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
+                  "(%d -> %d)" % (_len, self._n_bits))
             if self.big_endian:
-                rv = x[l - self._n_bits:]
+                rv = x[_len - self._n_bits:]
             else:
-                rv = x[:-(l - self._n_bits)]
+                rv = x[:-(_len - self._n_bits)]
         else:
             rv = x
         return rv
@@ -270,19 +270,19 @@ class BinaryValue:
     def _adjust_twos_comp(self, x):
         if self._n_bits is None:
             return x
-        l = len(x)
-        if l <= self._n_bits:
+        _len = len(x)
+        if _len <= self._n_bits:
             if self.big_endian:
-                rv = x + x[-1] * (self._n_bits - l)
+                rv = x + x[-1] * (self._n_bits - _len)
             else:
-                rv = x[0] * (self._n_bits - l) + x
-        elif l > self._n_bits:
+                rv = x[0] * (self._n_bits - _len) + x
+        elif _len > self._n_bits:
             print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
+                  "(%d -> %d)" % (_len, self._n_bits))
             if self.big_endian:
-                rv = x[l - self._n_bits:]
+                rv = x[_len - self._n_bits:]
             else:
-                rv = x[:-(l - self._n_bits)]
+                rv = x[:-(_len - self._n_bits)]
         else:
             rv = x
         return rv
@@ -372,16 +372,16 @@ class BinaryValue:
         """Pad/truncate the bit string to the correct length."""
         if self._n_bits is None:
             return
-        l = len(self._str)
-        if l < self._n_bits:
+        _len = len(self._str)
+        if _len < self._n_bits:
             if self.big_endian:
-                self._str = self._str + "0" * (self._n_bits - l)
+                self._str = self._str + "0" * (self._n_bits - _len)
             else:
-                self._str = "0" * (self._n_bits - l) + self._str
-        elif l > self._n_bits:
+                self._str = "0" * (self._n_bits - _len) + self._str
+        elif _len > self._n_bits:
             print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
-            self._str = self._str[l - self._n_bits:]
+                  "(%d -> %d)" % (_len, self._n_bits))
+            self._str = self._str[_len - self._n_bits:]
 
     get_buff = buff.fget
     set_buff = buff.fset

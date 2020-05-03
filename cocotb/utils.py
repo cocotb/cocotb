@@ -246,12 +246,12 @@ def hexdump(x: bytes) -> str:
             DeprecationWarning, stacklevel=2)
         x = x.encode('latin1')
     x = b"%b" % x
-    l = len(x)
+    _len = len(x)
     i = 0
-    while i < l:
+    while i < _len:
         rs += "%04x   " % i
         for j in range(16):
-            if i + j < l:
+            if i + j < _len:
                 rs += "%02X " % x[i + j]
             else:
                 rs += "   "
@@ -343,8 +343,8 @@ def hexdiffs(x: bytes, y: bytes) -> str:
 
     dox = 1
     doy = 0
-    l = len(backtrackx)
-    while i < l:
+    _len = len(backtrackx)
+    while i < _len:
         separate = 0
         linex = backtrackx[i:i+16]
         liney = backtracky[i:i+16]
@@ -389,7 +389,7 @@ def hexdiffs(x: bytes, y: bytes) -> str:
 
         cl = ""
         for j in range(16):
-            if i + j < l:
+            if i + j < _len:
                 if line[j]:
                     char_j, = line[j]
                     if linex[j] != liney[j]:
