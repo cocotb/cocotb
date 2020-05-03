@@ -140,11 +140,11 @@ long FliValueObjHdl::get_signal_value_long()
     return -1;
 }
 
-int FliValueObjHdl::set_signal_value(long value, gpi_set_action_t action)
+int FliValueObjHdl::set_signal_value(int32_t value, gpi_set_action_t action)
 {
     COCOTB_UNUSED(value);
     COCOTB_UNUSED(action);
-    LOG_ERROR("Setting signal/variable value via long not supported for %s of type %d", m_fullname.c_str(), m_type);
+    LOG_ERROR("Setting signal/variable value via int32_t not supported for %s of type %d", m_fullname.c_str(), m_type);
     return -1;
 }
 
@@ -225,7 +225,7 @@ long FliEnumObjHdl::get_signal_value_long()
     }
 }
 
-int FliEnumObjHdl::set_signal_value(const long value, const gpi_set_action_t action)
+int FliEnumObjHdl::set_signal_value(const int32_t value, const gpi_set_action_t action)
 {
     if (action != GPI_DEPOSIT) {
         LOG_ERROR("Force or release action not supported for FLI.");
@@ -238,9 +238,9 @@ int FliEnumObjHdl::set_signal_value(const long value, const gpi_set_action_t act
     }
 
     if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), value);
+        mti_SetVarValue(get_handle<mtiVariableIdT>(), static_cast<mtiLongT>(value));
     } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), value);
+        mti_SetSignalValue(get_handle<mtiSignalIdT>(), static_cast<mtiLongT>(value));
     }
 
     return 0;
@@ -315,7 +315,7 @@ const char* FliLogicObjHdl::get_signal_value_binstr()
     return m_val_buff;
 }
 
-int FliLogicObjHdl::set_signal_value(const long value, const gpi_set_action_t action)
+int FliLogicObjHdl::set_signal_value(const int32_t value, const gpi_set_action_t action)
 {
     if (action != GPI_DEPOSIT) {
         LOG_ERROR("Force or release action not supported for FLI.");
@@ -331,9 +331,9 @@ int FliLogicObjHdl::set_signal_value(const long value, const gpi_set_action_t ac
             mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
         }
     } else {
-        LOG_DEBUG("set_signal_value(long)::0x%016x", value);
+        LOG_DEBUG("set_signal_value(int32_t)::0x%08x", value);
         for (int i = 0, idx = m_num_elems-1; i < m_num_elems; i++, idx--) {
-            mtiInt32T enumVal = value&(1L<<i) ? m_enum_map['1'] : m_enum_map['0'];
+            mtiInt32T enumVal = value&(1<<i) ? m_enum_map['1'] : m_enum_map['0'];
 
             m_mti_buff[idx] = (char)enumVal;
         }
@@ -432,7 +432,7 @@ long FliIntObjHdl::get_signal_value_long()
     return (long)value;
 }
 
-int FliIntObjHdl::set_signal_value(const long value, const gpi_set_action_t action)
+int FliIntObjHdl::set_signal_value(const int32_t value, const gpi_set_action_t action)
 {
     if (action != GPI_DEPOSIT) {
         LOG_ERROR("Force or release action not supported for FLI.");
@@ -440,9 +440,9 @@ int FliIntObjHdl::set_signal_value(const long value, const gpi_set_action_t acti
     }
 
     if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), value);
+        mti_SetVarValue(get_handle<mtiVariableIdT>(), static_cast<mtiLongT>(value));
     } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), value);
+        mti_SetSignalValue(get_handle<mtiSignalIdT>(), static_cast<mtiLongT>(value));
     }
 
     return 0;

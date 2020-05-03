@@ -486,7 +486,7 @@ vhpiEnumT VhpiSignalObjHdl::chr2vhpi(const char value)
 }
 
 // Value related functions
-int VhpiLogicSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
+int VhpiLogicSignalObjHdl::set_signal_value(int32_t value, gpi_set_action_t action)
 {
     switch (m_value.format) {
         case vhpiEnumVal:
@@ -499,7 +499,7 @@ int VhpiLogicSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
         case vhpiLogicVecVal: {
             int i;
             for (i=0; i<m_num_elems; i++)
-                m_value.value.enumvs[m_num_elems-i-1] = value&(1L<<i) ? vhpi1 : vhpi0;
+                m_value.value.enumvs[m_num_elems-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
 
             m_value.numElems = m_num_elems;
             break;
@@ -565,14 +565,14 @@ int VhpiLogicSignalObjHdl::set_signal_value_binstr(std::string &value, gpi_set_a
 }
 
 // Value related functions
-int VhpiSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
+int VhpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action_t action)
 {
     switch (m_value.format) {
         case vhpiEnumVecVal:
         case vhpiLogicVecVal: {
             int i;
             for (i=0; i<m_num_elems; i++)
-                m_value.value.enumvs[m_num_elems-i-1] = value&(1L<<i) ? vhpi1 : vhpi0;
+                m_value.value.enumvs[m_num_elems-i-1] = value&(1<<i) ? vhpi1 : vhpi0;
 
             // Since we may not get the numElems correctly from the sim and have to infer it
             // we also need to set it here as well each time.
@@ -583,21 +583,11 @@ int VhpiSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
 
         case vhpiLogicVal:
         case vhpiEnumVal: {
-            using EnumLimits = std::numeric_limits<vhpiEnumT>;
-            if ((value > EnumLimits::max()) || (value < EnumLimits::min())) {
-                LOG_ERROR("VHPI: Data loss detected");
-                return -1;
-            }
             m_value.value.enumv = static_cast<vhpiEnumT>(value);
             break;
         }
 
         case vhpiIntVal: {
-            using IntLimits = std::numeric_limits<vhpiIntT>;
-            if ((value > IntLimits::max()) || (value < IntLimits::min())) {
-                LOG_ERROR("VHPI: Data loss detected");
-                return -1;
-            }
             m_value.value.intg = static_cast<vhpiIntT>(value);
             break;
         }

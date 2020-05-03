@@ -329,11 +329,11 @@ long VpiSignalObjHdl::get_signal_value_long()
 }
 
 // Value related functions
-int VpiSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
+int VpiSignalObjHdl::set_signal_value(int32_t value, gpi_set_action_t action)
 {
     s_vpi_value value_s;
 
-    value_s.value.integer = (int)value;
+    value_s.value.integer = static_cast<PLI_INT32>(value);
     value_s.format = vpiIntVal;
 
     return set_signal_value(value_s, action);

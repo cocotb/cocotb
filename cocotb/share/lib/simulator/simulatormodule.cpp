@@ -663,14 +663,14 @@ static PyObject *set_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
 
 static PyObject *set_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    long value;
+    long long value;
     gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "il:set_signal_val_long", &action, &value)) {
+    if (!PyArg_ParseTuple(args, "iL:set_signal_val_long", &action, &value)) {
         return NULL;
     }
 
-    gpi_set_signal_value_long(self->hdl, value, action);
+    gpi_set_signal_value_int(self->hdl, static_cast<int32_t>(value), action);
     Py_RETURN_NONE;
 }
 
