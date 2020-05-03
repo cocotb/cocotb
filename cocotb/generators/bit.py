@@ -35,7 +35,7 @@
     cycles (ON,OFF)
 """
 from cocotb.decorators import public
-from cocotb.generators import *
+from cocotb.generators import gaussian, sine_wave, repeat
 
 
 def bit_toggler(gen_on, gen_off):
