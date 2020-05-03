@@ -26,6 +26,7 @@
 import cocotb
 from cocotb.triggers import Timer
 
+
 @cocotb.test()
 def index_name_iter(dut):
     """Access a non local indexed name"""

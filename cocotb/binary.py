@@ -33,6 +33,7 @@ import warnings
 
 resolve_x_to = os.getenv('COCOTB_RESOLVE_X', "VALUE_ERROR")
 
+
 def resolve(string):
     for char in BinaryValue._resolve_to_0:
         string = string.replace(char, "0")
@@ -714,6 +715,7 @@ class BinaryValue:
                 self.binstr = self.binstr[:index] + val + self.binstr[index + 1:]
             else:
                 self.binstr = self.binstr[0:self._n_bits-index-1] + val + self.binstr[self._n_bits-index:self._n_bits]
+
 
 if __name__ == "__main__":
     import doctest

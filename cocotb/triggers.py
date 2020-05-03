@@ -59,6 +59,7 @@ def _pointer_str(obj):
 class TriggerException(Exception):
     pass
 
+
 class Trigger(Awaitable):
     """Base class to derive from."""
 
@@ -160,6 +161,7 @@ class GPITrigger(Trigger):
 
 class Timer(GPITrigger):
     """Fires after the specified simulation time period has elapsed."""
+
     def __init__(self, time_ps, units=None):
         """
         Args:
@@ -540,6 +542,7 @@ class NullTrigger(Trigger):
 
     Primarily for internal scheduler use.
     """
+
     def __init__(self, name=None, outcome=None):
         super(NullTrigger, self).__init__()
         self._callback = None
@@ -766,6 +769,7 @@ class First(_AggregateWaitable):
 
 class ClockCycles(Waitable):
     """Fires after *num_cycles* transitions of *signal* from ``0`` to ``1``."""
+
     def __init__(self, signal, num_cycles, rising=True):
         """
         Args:

@@ -44,6 +44,7 @@ class BitDriver:
 
     Useful for exercising ready/valid flags.
     """
+
     def __init__(self, signal, clk, generator=None):
         self._signal = signal
         self._clk = clk
@@ -95,6 +96,7 @@ class Driver:
     The driver is responsible for serializing transactions onto the physical
     pins of the interface.  This may consume simulation time.
     """
+
     def __init__(self):
         """Constructor for a driver instance."""
         self._pending = Event(name="Driver._pending")

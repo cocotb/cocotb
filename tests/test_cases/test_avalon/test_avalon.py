@@ -39,6 +39,7 @@ from cocotb.triggers import Timer, RisingEdge
 from cocotb.clock import Clock
 from cocotb.result import TestFailure
 
+
 class BurstAvlReadTest(object):
     """ class to test avalon burst """
 
@@ -67,6 +68,7 @@ class BurstAvlReadTest(object):
         self.dut.control_fixed_location = 0
         self.dut.control_go = 0
         self.dut.master_waitrequest = 0
+
 
 @cocotb.test(expect_fail=False)
 def test_burst_read(dut):

@@ -4,11 +4,13 @@
 import cocotb
 from cocotb import triggers, result, utils
 
+
 @cocotb.coroutine
 def sample_coroutine(dut):
     """ Very simple coroutine that waits 5 ns."""
     yield triggers.Timer(5, "ns")
     dut._log.info("Sample coroutine yielded.")
+
 
 @cocotb.test()
 def issue_588_coroutine_list(dut):

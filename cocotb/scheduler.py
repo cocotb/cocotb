@@ -73,6 +73,7 @@ class InternalError(RuntimeError):
 
 class profiling_context:
     """ Context manager that profiles its contents """
+
     def __enter__(self):
         _profile.enable()
 
@@ -82,11 +83,13 @@ class profiling_context:
 
 from cocotb import outcomes
 
+
 class external_state:
     INIT = 0
     RUNNING = 1
     PAUSED = 2
     EXITED = 3
+
 
 @cocotb.decorators.public
 class external_waiter:
@@ -149,6 +152,7 @@ class external_waiter:
                 raise Exception("Thread %s state was not allowed from %s"  % (self.thread, threading.current_thread()))
 
         return self.state
+
 
 class Scheduler:
     """The main scheduler.
@@ -347,7 +351,6 @@ class Scheduler:
         finally:
             self._is_reacting = False
 
-
     def _event_loop(self, trigger):
         """
         Run an event loop triggered by the given trigger.
@@ -422,7 +425,6 @@ class Scheduler:
                     del trigger
                     continue
 
-
                 if _debug:
                     debugstr = "\n\t".join([coro.__qualname__ for coro in scheduling])
                     if len(scheduling):
@@ -462,7 +464,6 @@ class Scheduler:
             if _debug:
                 self.log.debug("All coroutines scheduled, handing control back"
                                " to simulator")
-
 
     def unschedule(self, coro):
         """Unschedule a coroutine.  Unprime any pending triggers"""

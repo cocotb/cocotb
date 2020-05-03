@@ -45,8 +45,10 @@ from cocotb.scoreboard import Scoreboard
 #  --|>c    |
 #    |______|
 
+
 class BitMonitor(Monitor):
     """Observe a single-bit input or output of the DUT."""
+
     def __init__(self, name, signal, clk, callback=None, event=None):
         self.name = name
         self.signal = signal

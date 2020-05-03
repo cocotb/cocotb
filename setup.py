@@ -57,9 +57,11 @@ from io import StringIO
 # We can still import other files next to setup.py, as long as they're in MANIFEST.in
 from cocotb_build_libs import get_ext, build_ext
 
+
 def read_file(fname):
     with open(path.join(path.dirname(__file__), fname), encoding='utf8') as f:
         return f.read()
+
 
 def package_files(directory):
     paths = []
@@ -67,6 +69,7 @@ def package_files(directory):
         for filename in filenames:
             paths.append(path.join('..', fpath, filename))
     return paths
+
 
 # this sets the __version__ variable
 exec(read_file(path.join('cocotb', '_version.py')))

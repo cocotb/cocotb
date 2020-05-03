@@ -295,7 +295,6 @@ def hexdiffs(x: bytes, y: bytes) -> str:
         else:
             return string
 
-
     x_is_str = isinstance(x, str)
     y_is_str = isinstance(y, str)
     if x_is_str or y_is_str:
@@ -426,8 +425,6 @@ def hexdiffs(x: bytes, y: bytes) -> str:
     return rs
 
 
-
-
 class ParametrizedSingleton(type):
     """A metaclass that allows class construction to reuse an existing instance.
 
@@ -503,6 +500,7 @@ class lazy_property:
     This should be used for expensive members of objects that are not always
     used.
     """
+
     def __init__(self, fget):
         self.fget = fget
 

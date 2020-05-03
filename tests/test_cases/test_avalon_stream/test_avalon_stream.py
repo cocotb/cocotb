@@ -13,8 +13,10 @@ from cocotb.clock import Clock
 from cocotb.scoreboard import Scoreboard
 from cocotb.generators.bit import wave
 
+
 class AvalonSTTB(object):
     """Testbench for avalon basic stream"""
+
     def __init__(self, dut):
         self.dut = dut
 
@@ -43,6 +45,7 @@ class AvalonSTTB(object):
         exp_data = struct.pack("B",data)
         self.expected_output.append(exp_data)
         yield self.stream_in.send(data)
+
 
 @cocotb.test(expect_fail=False)
 def test_avalon_stream(dut):

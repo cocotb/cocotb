@@ -158,6 +158,7 @@ class RegionObject(SimHandleBase):
 
     Region objects don't have values, they are effectively scopes or namespaces.
     """
+
     def __init__(self, handle, path):
         SimHandleBase.__init__(self, handle, path)
         self._discovered = False
@@ -244,7 +245,6 @@ class HierarchyObject(RegionObject):
         sub_handle = SimHandle(new_handle, self._child_path(name))
         self._sub_handles[name] = sub_handle
         return sub_handle
-
 
     def __setattr__(self, name, value):
         """Provide transparent access to signals via the hierarchy.
@@ -357,6 +357,7 @@ class _AssignmentResult:
     An object that exists solely to provide an error message if the caller
     is not aware of cocotb's meaning of ``<=``.
     """
+
     def __init__(self, signal, value):
         self._signal = signal
         self._value = value
@@ -447,6 +448,7 @@ class ConstantObject(NonHierarchyObject):
     The value is cached in the class since it is fixed at elaboration
     time and won't change within a simulation.
     """
+
     def __init__(self, handle, path, handle_type):
         """
         Args:
@@ -510,6 +512,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         - **Wrong**: ``dut.some_array.value[0] = 1`` (gets value as a list then updates index 0)
         - **Correct**: ``dut.some_array[0].value = 1``
     """
+
     def __init__(self, handle, path):
         NonHierarchyObject.__init__(self, handle, path)
         self._range = self._handle.get_range()
@@ -589,35 +592,47 @@ class NonConstantObject(NonHierarchyIndexableObject):
         """An iterator for gathering all loads on a signal."""
         return self._handle.iterate(simulator.LOADS)
 
+
 class _SetAction:
     """Base class representing the type of action used while write-accessing a handle."""
     pass
 
+
 class _SetValueAction(_SetAction):
     __slots__ = ("value",)
     """Base class representing the type of action used while write-accessing a handle with a value."""
+
     def __init__(self, value):
         self.value = value
 
+
 class Deposit(_SetValueAction):
     """Action used for placing a value into a given handle."""
+
     def _as_gpi_args_for(self, hdl):
         return self.value, 0  # GPI_DEPOSIT
 
+
 class Force(_SetValueAction):
     """Action used to force a handle to a given value until a release is applied."""
+
     def _as_gpi_args_for(self, hdl):
         return self.value, 1  # GPI_FORCE
 
+
 class Freeze(_SetAction):
     """Action used to make a handle keep its current value until a release is used."""
+
     def _as_gpi_args_for(self, hdl):
         return hdl.value, 1  # GPI_FORCE
 
+
 class Release(_SetAction):
     """Action used to stop the effects of a previously applied force/freeze action."""
+
     def _as_gpi_args_for(self, hdl):
         return 0, 2  # GPI_RELEASE
+
 
 class ModifiableObject(NonConstantObject):
     """Base class for simulator objects whose values can be modified."""
@@ -827,7 +842,9 @@ class StringObject(ModifiableObject):
     def value(self) -> bytes:
         return self._handle.get_signal_val_str()
 
+
 _handle2obj = {}
+
 
 def SimHandle(handle, path=None):
     """Factory function to create the correct type of `SimHandle` object.

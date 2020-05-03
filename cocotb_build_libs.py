@@ -188,8 +188,8 @@ _extra_cxx_compile_args = ["-std=c++11"] + _ccx_warns
 # Make PRI* format macros available with C++11 compiler but older libc, e.g. on RHEL6.
 _extra_cxx_compile_args += ["-D__STDC_FORMAT_MACROS"]
 
-def _get_common_lib_ext(include_dir, share_lib_dir):
 
+def _get_common_lib_ext(include_dir, share_lib_dir):
     """
     Defines common libraries.
 

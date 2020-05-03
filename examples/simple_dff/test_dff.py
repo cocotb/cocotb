@@ -6,6 +6,7 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge
 
+
 @cocotb.test()
 async def test_dff_simple(dut):
     """ Test that d propagates to q """

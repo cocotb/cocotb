@@ -3,6 +3,7 @@ from cocotb.log import SimLog
 from cocotb.triggers import Timer, Edge, RisingEdge, FallingEdge
 from cocotb.result import TestFailure
 
+
 @cocotb.coroutine
 def clock_gen(signal, num):
     for x in range(num):
@@ -10,6 +11,7 @@ def clock_gen(signal, num):
         yield Timer(500)
         signal <= 1
         yield Timer(500)
+
 
 @cocotb.coroutine
 def signal_mon(signal, idx, edge):
@@ -23,6 +25,7 @@ def signal_mon(signal, idx, edge):
         edges += 1
 
     return edges
+
 
 class DualMonitor:
     def __init__(self, edge, signal):
@@ -50,7 +53,6 @@ class DualMonitor:
         for mon in self.monitor_edges:
             if not mon:
                 raise TestFailure("Monitor saw nothing")
-
 
 
 # Cadence simulators: "Unable set up RisingEdge(ModifiableObject(sample_module.clk)) Trigger" with VHDL (see #1076)

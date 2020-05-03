@@ -20,7 +20,6 @@ def assert_deprecated():
         assert issubclass(warns[0].category, DeprecationWarning), "Expected DeprecationWarning"
 
 
-
 @cocotb.test()
 async def test_returnvalue_deprecated(dut):
 

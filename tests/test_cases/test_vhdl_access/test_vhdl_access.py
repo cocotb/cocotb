@@ -30,6 +30,7 @@ from cocotb.handle import HierarchyObject, ModifiableObject, IntegerObject, Cons
 from cocotb.triggers import Timer
 from cocotb.result import TestFailure
 
+
 @cocotb.test()
 def check_enum_object(dut):
     """
@@ -40,6 +41,7 @@ def check_enum_object(dut):
     yield Timer(100)
     if not isinstance(dut.inst_ram_ctrl.write_ram_fsm, EnumObject):
         raise TestFailure("Expected the FSM enum to be an EnumObject")
+
 
 @cocotb.test()
 def check_objects(dut):
@@ -91,6 +93,7 @@ def check_objects(dut):
 
     if fails:
         raise TestFailure("%d Failures during the test" % fails)
+
 
 @cocotb.test()
 def port_not_hierarchy(dut):

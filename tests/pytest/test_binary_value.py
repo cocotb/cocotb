@@ -158,12 +158,14 @@ def test_init_short_binstr_value():
     bin4.binstr == "10000000"
     bin4.integer == 1
 
+
 def test_defaults():
     bin1 = BinaryValue(17)
     assert bin1.binaryRepresentation == BinaryRepresentation.UNSIGNED
     assert bin1.big_endian is True
     assert bin1._n_bits is None
     assert bin1.integer == 17
+
 
 def test_index():
     bin1 = BinaryValue(value=-980, n_bits=32,
@@ -200,6 +202,7 @@ def test_index():
     with pytest.raises(IndexError):
         bin3[2:-2]
 
+
 def test_general():
     """
     Test out the cocotb supplied BinaryValue class for manipulating
@@ -225,6 +228,7 @@ def test_general():
     vec[7:0] = '00110101'
     assert vec.binstr == '1111111100110101'
     assert vec[7:0].binstr == '00110101'
+
 
 def test_backwards_compatibility():
     """

@@ -29,6 +29,7 @@ import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestFailure
 
+
 @cocotb.test()
 def recursive_discovery(dut):
     """
@@ -70,11 +71,13 @@ def discovery_all(dut):
     item = dut.gen_acs[3]
     item._log.info("this is item")
 
+
 @cocotb.coroutine
 def iteration_loop(dut):
     for thing in dut:
         thing._log.info("Found something: %s", thing._fullname)
         yield Timer(1)
+
 
 @cocotb.test()
 def dual_iteration(dut):
@@ -82,6 +85,7 @@ def dual_iteration(dut):
     loop_two = cocotb.fork(iteration_loop(dut))
 
     yield [loop_one.join(), loop_two.join()]
+
 
 @cocotb.test()
 def get_clock(dut):
@@ -92,6 +96,7 @@ def get_clock(dut):
     yield Timer(1)
     if int(dut.aclk) != 1:
         raise TestFailure("dut.aclk is not what we expected (got %d)" % int(dut.aclk))
+
 
 @cocotb.test()
 def test_n_dimension_array(dut):
