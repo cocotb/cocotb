@@ -29,7 +29,6 @@ import random
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.decorators import coroutine
 from cocotb.triggers import RisingEdge
 from cocotb.monitors import Monitor
 from cocotb.drivers import BitDriver
@@ -55,13 +54,12 @@ class BitMonitor(Monitor):
         self.clk = clk
         Monitor.__init__(self, callback, event)
 
-    @coroutine
-    def _monitor_recv(self):
+    async def _monitor_recv(self):
         clkedge = RisingEdge(self.clk)
 
         while True:
             # Capture signal at rising edge of clock
-            yield clkedge
+            await clkedge
             vec = self.signal.value
             self._recv(vec)
 
@@ -131,8 +129,7 @@ class DFF_TB(object):
         self.stopped = True
 
 
-@cocotb.coroutine
-def run_test(dut):
+async def run_test(dut):
     """Setup testbench and run a test."""
 
     cocotb.fork(Clock(dut.c, 10, 'us').start(start_high=False))
@@ -144,12 +141,12 @@ def run_test(dut):
     # Apply random input data by input_gen via BitDriver for 100 clock cycles.
     tb.start()
     for _ in range(100):
-        yield clkedge
+        await clkedge
 
     # Stop generation of input data. One more clock cycle is needed to capture
     # the resulting output of the DUT.
     tb.stop()
-    yield clkedge
+    await clkedge
 
     # Print result of scoreboard.
     raise tb.scoreboard.result
