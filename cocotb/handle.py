@@ -62,7 +62,7 @@ class SimHandleBase:
         "log"               :       "_log",
         "fullname"          :       "_fullname",
         "name"              :       "_name",
-        }
+    }
 
     def __init__(self, handle, path):
         """

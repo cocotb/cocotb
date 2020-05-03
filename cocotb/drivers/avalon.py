@@ -242,7 +242,7 @@ class AvalonMemory(BusDriver):
             "readLatency": 1,    # number of cycles
             "WriteBurstWaitReq": True,  # generate random waitrequest
             "MaxWaitReqLen": 4,  # maximum value of waitrequest
-            }
+    }
 
     def __init__(self, entity, name, clock, readlatency_min=1,
                  readlatency_max=1, memory=None, avl_properties={}, **kwargs):
