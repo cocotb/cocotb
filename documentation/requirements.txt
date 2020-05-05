@@ -10,3 +10,4 @@ pyenchant
 sphinx-issues
 sphinx-argparse
 towncrier
+IPython
