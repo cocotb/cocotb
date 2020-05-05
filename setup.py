@@ -57,7 +57,9 @@ from distutils import sysconfig
 if sys.platform == "posix":
     config_args = sysconfig.get_config_vars().get("CONFIG_ARGS", "")
     if "--enable-framework" not in config_args or "--enable-shared" not in config_args:
-        raise SystemExit("ERROR: You must use a Python compiled with --enable-shared or --enable-framework.\nPython executable location is %s" % sys.executable)
+        raise SystemExit(
+            "ERROR: You must use a Python compiled with --enable-shared or --enable-framework.\n"
+            "Python executable location is {}".format(sys.executable))
 
 import logging
 from setuptools import setup
