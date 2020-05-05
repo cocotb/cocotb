@@ -31,6 +31,7 @@ import logging
 import functools
 import inspect
 import os
+from typing import Any
 
 import cocotb
 from cocotb.log import SimLog
@@ -91,16 +92,36 @@ class RunningTask:
 
         if inspect.iscoroutine(inst):
             self._natively_awaitable = True
+
         elif inspect.isgenerator(inst):
             self._natively_awaitable = False
+
         elif sys.version_info >= (3, 6) and inspect.isasyncgen(inst):
             raise TypeError(
-                "{} is an async generator, not a coroutine. "
-                "You likely used the yield keyword instead of await.".format(
-                    inst.__qualname__))
+                "'{}' is an async generator, not a coroutine.\n"
+                "You likely used the `yield` keyword instead of `await`."
+                .format(inst.__qualname__))
+
+        elif isinstance(inst, cocotb.coroutine) or inspect.iscoroutinefunction(inst):
+            raise TypeError(
+                "'{}' is an unstarted coroutine function.\n"
+                "Did you forget to add parentheses to the @cocotb.test() decorator?\n"
+                "Or forget to call the coroutine function?"
+                .format(coroutine.__qualname__))
+
+        elif sys.version_info >= (3, 6) and inspect.isasyncgenfunction(inst):
+            raise TypeError(
+                "'{}' is an unstarted async generator function.\n"
+                "You likely used the `yield` keyword instead of `await`.\n"
+                "And you also forgot to call the function."
+                .format(inst.__qualname__))
+
         else:
             raise TypeError(
-                "%s isn't a valid coroutine! Did you forget to use the yield keyword?" % inst)
+                "'{}' isn't a valid cocotb coroutine.\n"
+                "Did you forget to make the function `async`?"
+                .format(inst))
+
         self._coro = inst
         self.__name__ = inst.__name__
         self.__qualname__ = inst.__qualname__
@@ -295,6 +316,27 @@ class coroutine:
     """
 
     def __init__(self, func):
+
+        if inspect.isgeneratorfunction(func) or inspect.iscoroutinefunction(func):
+            # check and exit early in the correct case
+            pass
+
+        elif sys.version_info >= (3, 6) and inspect.isasyncgenfunction(func):
+            raise TypeError(
+                "'{}' is an async generator, not a coroutine function.\n"
+                "Did you forget to update your `yield`s to `await`s?".format(
+                    func.__qualname__))
+
+        elif inspect.isfunction(func):
+            raise TypeError(
+                "'{}' is not a generator function.\n"
+                "Did you forget to use the `yield` keyword?".format(
+                    func.__qualname__))
+
+        else:
+            raise TypeError(
+                "'{}' is not a valid cocotb coroutine function.".format(func))
+
         self._func = func
         functools.update_wrapper(self, func)
 
@@ -497,3 +539,54 @@ class test(coroutine, metaclass=_decorator_helper):
 
     def __call__(self, *args, **kwargs):
         return RunningTest(self._func(*args, **kwargs), self)
+
+
+def make_coroutine(corofunc: Any) -> coroutine:
+    """
+    Coerces an object into a cocotb coroutine function
+    """
+    if isinstance(corofunc, coroutine):
+        return corofunc
+    else:
+        return coroutine(corofunc)
+
+
+def make_task(coro: Any) -> RunningTask:
+    """
+    Coerces an object into a cocotb coroutine object (AKA :class:`~cocotb.decorators.RunningTask`)
+    """
+    if isinstance(coro, RunningTask):
+        return coro
+    else:
+        return RunningTask(coro)
+
+
+def iscoroutinefunction(thing: Any) -> bool:
+    """
+    Returns ``True`` if thing is a valid coroutine function in cocotb
+    """
+    try:
+        make_coroutine(thing)
+    except TypeError:
+        return False
+    else:
+        return True
+
+
+def iscoroutine(thing: Any) -> bool:
+    """
+    Returns ``True`` if thing is a valid coroutine object (AKA :class:`~cocotb.decorators.RunningTask`) in cocotb
+    """
+    try:
+        make_task(thing)
+    except TypeError:
+        return False
+    else:
+        return True
+
+
+def isyieldable(thing: Any) -> bool:
+    """
+    Returns ``True`` if thing can be used in a yield/await statement in cocotb
+    """
+    return iscoroutine(thing) or isinstance(thing, (cocotb.triggers.Trigger, cocotb.triggers.Waitable))
