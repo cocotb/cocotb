@@ -29,7 +29,7 @@ class StreamBusMonitor(BusMonitor):
 
 
 @cocotb.coroutine
-def clock_gen(signal, period=10):
+def clock_gen_ns(signal, period=10):
     while True:
         signal <= 0
         yield Timer(period/2, units='ns')
@@ -46,7 +46,7 @@ def value_test(dut, num):
     dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
                  (data_width, bus_width))
 
-    cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units='ns'))
+    cocotb.fork(clock_gen_ns(dut.clk, period=CLK_PERIOD_NS))
 
     dut.rst <= 1
     for i in range(bus_width):
@@ -101,7 +101,7 @@ def mean_randomised_test(dut):
     dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
                  (data_width, bus_width))
 
-    cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units='ns'))
+    cocotb.fork(clock_gen_ns(dut.clk, period=CLK_PERIOD_NS))
 
     dut.rst <= 1
     for i in range(bus_width):

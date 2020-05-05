@@ -9,7 +9,8 @@ use work.mean_pkg.all;
 
 entity mean is
 generic (
-  BUS_WIDTH : natural := 2);
+  DATA_WIDTH : natural := DATA_WIDTH;
+  BUS_WIDTH  : natural := 2);
 port (
   clk      : in  std_logic;
   rst      : in  std_logic;

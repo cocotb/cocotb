@@ -1,15 +1,14 @@
 
 TOPLEVEL_LANG ?= verilog
 
-ifneq ($(TOPLEVEL_LANG),verilog)
-
-all:
-	@echo "Skipping example due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
-clean::
-
+ifeq ($(TOPLEVEL_LANG),verilog)
+  VERILOG_SOURCES = $(PWD)/../hdl/mean_sv.sv
+  TOPLEVEL := mean_sv
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+  TOPLEVEL := mean
 else
-
-TOPLEVEL := mean_sv
+  $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
+endif
 
 PWD=$(shell pwd)
 
@@ -20,8 +19,6 @@ ifeq ($(SIM),questa)
 COMPILE_ARGS = -mixedsvvh
 endif
 
-VERILOG_SOURCES = $(PWD)/../hdl/mean_sv.sv
-
 MODULE := test_mean
 
 ifneq ($(filter $(SIM),ius xcelium),)
@@ -29,5 +26,3 @@ ifneq ($(filter $(SIM),ius xcelium),)
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
-
-endif
