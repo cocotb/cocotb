@@ -316,27 +316,6 @@ class coroutine:
     """
 
     def __init__(self, func):
-
-        if inspect.isgeneratorfunction(func) or inspect.iscoroutinefunction(func):
-            # check and exit early in the correct case
-            pass
-
-        elif sys.version_info >= (3, 6) and inspect.isasyncgenfunction(func):
-            raise TypeError(
-                "'{}' is an async generator, not a coroutine function.\n"
-                "Did you forget to update your `yield`s to `await`s?".format(
-                    func.__qualname__))
-
-        elif inspect.isfunction(func):
-            raise TypeError(
-                "'{}' is not a generator function.\n"
-                "Did you forget to use the `yield` keyword?".format(
-                    func.__qualname__))
-
-        else:
-            raise TypeError(
-                "'{}' is not a valid cocotb coroutine function.".format(func))
-
         self._func = func
         functools.update_wrapper(self, func)
 
@@ -541,14 +520,28 @@ class test(coroutine, metaclass=_decorator_helper):
         return RunningTest(self._func(*args, **kwargs), self)
 
 
-def make_coroutine(corofunc: Any) -> coroutine:
+def make_coroutine(func: Any) -> coroutine:
     """
     Coerces an object into a cocotb coroutine function
     """
-    if isinstance(corofunc, coroutine):
-        return corofunc
-    else:
-        return coroutine(corofunc)
+    if isinstance(func, coroutine):
+        return func
+    elif inspect.isgeneratorfunction(func) or inspect.iscoroutinefunction(func):
+        return coroutine(func)
+
+    # The coroutine constructor does not do type checking to prevent module loading failures
+    # so we do it here for now
+    elif sys.version_info >= (3, 6) and inspect.isasyncgenfunction(func):
+        raise TypeError(
+            "'{}' is an async generator, not a coroutine function.\n"
+            "Did you forget to update your `yield`s to `await`s?".format(
+                func.__qualname__))
+    elif inspect.isfunction(func):
+        raise TypeError(
+            "'{}' is not a generator function.\n"
+            "Did you forget to use the `yield` keyword?".format(
+                func.__qualname__))
+    raise TypeError("'{}' is not a valid cocotb coroutine function.".format(func))
 
 
 def make_task(coro: Any) -> RunningTask:
