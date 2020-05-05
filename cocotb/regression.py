@@ -641,7 +641,7 @@ class TestFactory:
     """
 
     def __init__(self, test_function, *args, **kwargs):
-        if not isinstance(test_function, cocotb.coroutine):
+        if not cocotb.decorators.iscoroutinefunction(test_function):
             raise TypeError("TestFactory requires a cocotb coroutine")
         self.test_function = test_function
         self.name = self.test_function._func.__qualname__
