@@ -765,7 +765,7 @@ static PyObject *get_simulator_product(PyObject *m, PyObject *args)
 {
     COCOTB_UNUSED(m);
     COCOTB_UNUSED(args);
-    return Py_BuildValue("s", gpi_get_simulator_product());
+    return PyUnicode_FromString(gpi_get_simulator_product());
 }
 
 static PyObject *get_simulator_version(PyObject *m, PyObject *args)
