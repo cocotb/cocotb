@@ -34,7 +34,6 @@ also have pending writes we have to schedule the ReadWrite callback before
 the ReadOnly (and this is invalid, at least in Modelsim).
 """
 import os
-import sys
 import logging
 import threading
 import inspect
@@ -700,18 +699,7 @@ class Scheduler:
         if isinstance(result, cocotb.triggers.Waitable):
             return self._trigger_from_waitable(result)
 
-        if sys.version_info >= (3, 6) and inspect.isasyncgen(result):
-            raise TypeError(
-                "{} is an async generator, not a coroutine. "
-                "You likely used the yield keyword instead of await.".format(
-                    result.__qualname__))
-
-        raise TypeError(
-            "Coroutine yielded an object of type {}, which the scheduler can't "
-            "handle: {!r}\n"
-            "Did you forget to decorate with @cocotb.coroutine?"
-            .format(type(result), result)
-        )
+        return self._trigger_from_unstarted_coro(cocotb.decorators.make_task(result))
 
     def schedule(self, coroutine, trigger=None):
         """Schedule a coroutine by calling the send method.
