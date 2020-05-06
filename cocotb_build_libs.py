@@ -362,8 +362,9 @@ def get_ext():
         modelsim_include_dir = os.path.join(modelsim_dir, "include")
         mti_path = os.path.join(modelsim_include_dir, "mti.h")
         if os.path.isfile(mti_path):
+            lib_name = "libcocotbfli_modelsim"
             fli_ext = Extension(
-                os.path.join("cocotb", "libs", "libcocotbfli_modelsim"),
+                os.path.join("cocotb", "libs", lib_name),
                 include_dirs=[include_dir, modelsim_include_dir],
                 libraries=["gpi", "gpilog", "stdc++"] + modelsim_extra_lib,
                 library_dirs=modelsim_extra_lib_path,
@@ -372,7 +373,7 @@ def get_ext():
                     os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
                     os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
                 ],
-                extra_link_args=_extra_link_args(lib_name="libcocotbfli_modelsim", rpaths=["$ORIGIN"]),
+                extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
                 extra_compile_args=_extra_cxx_compile_args,
             )
 
