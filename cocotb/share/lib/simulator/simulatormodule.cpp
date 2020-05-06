@@ -42,6 +42,8 @@ static int sim_ending = 0;
 #include "simulatormodule.h"
 #include <cocotb_utils.h>     // COCOTB_UNUSED
 #include <type_traits>
+#include <array>
+#include <string>
 
 
 /* define the extension types as templates */
@@ -588,6 +590,60 @@ static PyObject *get_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
     return PyLong_FromLong(result);
 }
 
+
+static PyObject *set_signal_val_bytes(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
+{
+    gpi_set_action_t action;
+    const char *bytes;
+    Py_ssize_t len;
+
+    if (!PyArg_ParseTuple(args, "iy#:set_signal_val_bytes", &action, &bytes, &len)) {
+        return NULL;
+    }
+
+    const std::array<std::string, 16> BINSTR_LUT = {
+        {"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111",
+         "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111"}
+    };
+
+    const std::string HEXSTR_LUT = {"0123456789abcdef"};
+
+    size_t m_elems{0};
+    uint8_t m_idx_hi{0};
+    uint8_t m_idx_lo{0};
+    std::string m_binstr{""};
+    std::string m_hexstr{""};
+
+    for (auto i = 0; i < len; ++i)
+    {
+        m_idx_hi = (bytes[i] >> 4) & UINT8_C(0x0F);
+        m_idx_lo = bytes[i] & UINT8_C(0x0F);
+
+        m_binstr += BINSTR_LUT[m_idx_hi];
+        m_binstr += BINSTR_LUT[m_idx_lo];
+        m_hexstr += HEXSTR_LUT[m_idx_hi];
+        m_hexstr += HEXSTR_LUT[m_idx_lo];
+    }
+
+    m_elems = static_cast<size_t>(gpi_get_num_elems(self->hdl));
+
+    if (m_binstr.length() > m_elems) {
+        std::string m_msb = m_binstr.substr(0, m_binstr.length() - m_elems);
+        bool m_ovfl = m_msb.find_first_not_of(m_msb[0]) != std::string::npos; // are MSBs not all the same?
+
+        if (m_ovfl) {
+            const char *m_name = gpi_get_signal_name_str(self->hdl);
+            PyErr_Format(PyExc_OverflowError, "Value (0x%s) out of range for assignment of %d-bit signal (%s)", m_hexstr.c_str(), m_elems, m_name);
+            return NULL;
+        } else {
+            m_binstr = m_binstr.substr(m_binstr.length() - m_elems, std::string::npos); // safely drop MSBs
+        }
+    }
+
+    gpi_set_signal_value_binstr(self->hdl, m_binstr.c_str(), action);
+    Py_RETURN_NONE;
+}
+
 static PyObject *set_signal_val_binstr(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
     const char *binstr;
@@ -903,6 +959,9 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
     {"set_signal_val_str",
         (PyCFunction)set_signal_val_str, METH_VARARGS,
         "Set the value of a signal using an NUL-terminated 8-bit string"},
+    {"set_signal_val_bytes",
+        (PyCFunction)set_signal_val_bytes, METH_VARARGS,
+        "Set the value of a signal using a bytes object"},
     {"set_signal_val_binstr",
         (PyCFunction)set_signal_val_binstr, METH_VARARGS,
         "Set the value of a signal using a string with a character per bit"},

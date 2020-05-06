@@ -51,6 +51,8 @@ module sample_module (
     input string                                stream_in_string,
 `endif
     input  [7:0]                                stream_in_data,
+    input  [31:0]                               stream_in_data_dword,
+    input  [38:0]                               stream_in_data_39bit,
     input  [63:0]                               stream_in_data_wide,
 
     input                                       stream_out_ready,

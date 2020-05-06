@@ -656,13 +656,17 @@ class ModifiableObject(NonConstantObject):
         """
         value, set_action = self._check_for_set_action(value)
 
-        if isinstance(value, int) and value < 0x7fffffff and len(self) <= 32:
-            call_sim(self._handle.set_signal_val_long, set_action, value)
-            return
+        if isinstance(value, int):
+            if len(self) <= 32 and -(2**31) <= value <= (2**31)-1:
+                call_sim(self._handle.set_signal_val_long, set_action, value)
+                return
+            else:
+                value = value.to_bytes((len(self)+9)//8, byteorder='big', signed=True)
+                call_sim(self._handle.set_signal_val_bytes, set_action, value)
+                return
+
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
-        elif isinstance(value, int):
-            value = BinaryValue(value=value, n_bits=len(self), bigEndian=False)
         elif isinstance(value, dict):
             # We're given a dictionary with a list of values and a bit size...
             num = 0
