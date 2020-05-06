@@ -772,7 +772,7 @@ static PyObject *get_simulator_version(PyObject *m, PyObject *args)
 {
     COCOTB_UNUSED(m);
     COCOTB_UNUSED(args);
-    return Py_BuildValue("s", gpi_get_simulator_version());
+    return PyUnicode_FromString(gpi_get_simulator_version());
 }
 
 static PyObject *get_num_elems(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
