@@ -85,5 +85,4 @@ async def run_ipython(dut):
 
     Within the shell, a global ``dut`` variable pointing to the design will be present.
     """
-    await cocotb.triggers.Timer(0)  # workaround for gh-637
     await embed(user_ns=dict(dut=dut))

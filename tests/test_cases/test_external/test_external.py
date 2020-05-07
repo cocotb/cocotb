@@ -88,7 +88,6 @@ def clock_monitor(dut):
 def test_time_in_external(dut):
     """Test that the simulation time does not advance if the wrapped external
     routine does not itself yield"""
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     yield Timer(10, 'ns')
     time = get_sim_time('ns')
     dut._log.info("Time at start of test = %d" % time)
@@ -142,8 +141,6 @@ def test_ext_call_return(dut):
 
 @cocotb.test()
 def test_multiple_externals(dut):
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
     value = yield external(return_two)(dut)
     dut._log.info("First one completed")
     assert value == 2
@@ -155,8 +152,6 @@ def test_multiple_externals(dut):
 
 @cocotb.test()
 def test_external_from_readonly(dut):
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
     yield ReadOnly()
     dut._log.info("In readonly")
     value = yield external(return_two)(dut)
@@ -210,9 +205,6 @@ def test_ext_exit_error(dut):
 @cocotb.test()
 def test_external_raised_exception(dut):
     """ Test that exceptions thrown by @external functions can be caught """
-    # workaround for gh-637
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
     @external
     def func():
         raise ValueError()
@@ -228,9 +220,6 @@ def test_external_raised_exception(dut):
 @cocotb.test()
 def test_external_returns_exception(dut):
     """ Test that exceptions can be returned by @external functions """
-    # workaround for gh-637
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
     @external
     def func():
         return ValueError()
@@ -247,9 +236,6 @@ def test_external_returns_exception(dut):
 @cocotb.test()
 def test_function_raised_exception(dut):
     """ Test that exceptions thrown by @function coroutines can be caught """
-    # workaround for gh-637
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
     @cocotb.function
     def func():
         raise ValueError()
@@ -270,9 +256,6 @@ def test_function_raised_exception(dut):
 @cocotb.test()
 def test_function_returns_exception(dut):
     """ Test that exceptions can be returned by @function coroutines """
-    # workaround for gh-637
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
     @cocotb.function
     def func():
         return ValueError()
@@ -296,9 +279,6 @@ def test_function_from_weird_thread_fails(dut):
     """
     Test that background threads caling a @function do not hang forever
     """
-    # workaround for gh-637
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
     func_started = False
     caller_resumed = False
     raised = False
@@ -344,9 +324,6 @@ def test_function_called_in_parallel(dut):
     Test that the same `@function` can be called from two parallel background
     threads.
     """
-    # workaround for gh-637
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
     @cocotb.function
     def function(x):
         yield Timer(1)
