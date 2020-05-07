@@ -131,7 +131,7 @@ async def test_access_underscore_name(dut):
     """Test accessing HDL name starting with an underscore"""
     # direct access does not work because we consider such names cocotb-internal
     with assert_raises(AttributeError):
-        dut._underscore_name.value
+        dut._underscore_name
 
     # indirect access works
     dut._id("_underscore_name", extended=False) <= 0
