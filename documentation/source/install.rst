@@ -72,7 +72,6 @@ The installation instructions vary depending on your operating system:
       .. code-block:: bash
 
           sudo yum install make gcc gcc-c++ libstdc++-devel python3 python3-devel python3-pip
-          sudo yum install swig  # optional, needed for one of the examples
 
       .. details:: **Show/Hide** *Example Installation Output*
 
