@@ -85,7 +85,7 @@ always @(stream_in_real)
     stream_out_real      = stream_in_real;
 
 always @(stream_in_int)
-    stream_out_int <= stream_in_int;
+    stream_out_int = stream_in_int;
 
 test_if struct_var;
 `endif
