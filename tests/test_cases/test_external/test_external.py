@@ -32,8 +32,8 @@ A set of tests that demonstrate cocotb functionality
 
 Also used a regression test of cocotb capabilities
 """
-
 import threading
+
 import cocotb
 from cocotb.result import TestFailure
 from cocotb.triggers import Timer, RisingEdge, ReadOnly
@@ -42,25 +42,21 @@ from cocotb.decorators import external
 from cocotb.utils import get_sim_time
 
 
-# Tests relating to calling convention and operation
-
 def return_two(dut):
-    # dut._log.info("Sleeping")
     return 2
 
 
 @cocotb.function
-def yield_to_readwrite(dut):
-    yield RisingEdge(dut.clk)
-    dut._log.info("Returning from yield_to_readwrite")
-    yield RisingEdge(dut.clk)
-    dut._log.info("Returning from yield_to_readwrite")
-    yield Timer(1, "ns")
+async def await_two_clock_edges(dut):
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    await Timer(1, units='ns')
+    dut._log.info("Returning from await_two_clock_edges")
     return 2
 
 
 def calls_cocotb_function(dut):
-    return yield_to_readwrite(dut)
+    return await_two_clock_edges(dut)
 
 
 def print_sim_time(dut, base_time):
@@ -75,142 +71,185 @@ def print_sim_time(dut, base_time):
     dut._log.info("external function has ended")
 
 
-@cocotb.coroutine
-def clock_monitor(dut):
-    count = 0
-    while True:
-        yield RisingEdge(dut.clk)
-        yield Timer(1000)
-        count += 1
-
-
 @cocotb.test()
-def test_time_in_external(dut):
-    """Test that the simulation time does not advance if the wrapped external
-    routine does not itself yield"""
-    yield Timer(10, 'ns')
+async def test_time_in_external(dut):
+    """
+    Test that the simulation time does not advance if the wrapped external
+    routine does not call @function
+    """
+    await Timer(10, units='ns')
     time = get_sim_time('ns')
     dut._log.info("Time at start of test = %d" % time)
     for i in range(100):
         dut._log.info("Loop call %d" % i)
-        yield external(print_sim_time)(dut, time)
+        await external(print_sim_time)(dut, time)
 
     time_now = get_sim_time('ns')
-    yield Timer(10, 'ns')
+    await Timer(10, units='ns')
 
     if time != time_now:
         raise TestFailure("Time has elapsed over external call")
 
 
-@cocotb.function
-def wait_cycles(dut, n):
-    for _ in range(n):
-        yield RisingEdge(dut.clk)
-
-
-def wait_cycles_wrapper(dut, n):
-    return wait_cycles(dut, n)
-
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
 @cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
-def test_time_in_external_yield(dut):
-    """Test that an external function calling back into a cocotb function
-    takes the expected amount of time"""
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-    yield Timer(10, 'ns')
+async def test_time_in_function(dut):
+    """
+    Test that an @external function calling back into a cocotb @function
+    takes the expected amount of time
+    """
+    @cocotb.function
+    def wait_cycles(dut, n):
+        for _ in range(n):
+            yield RisingEdge(dut.clk)
+
+    @external
+    def wait_cycles_wrapper(dut, n):
+        return wait_cycles(dut, n)
+
+    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+    await Timer(10, units='ns')
     for n in range(5):
         for i in range(20):
-            yield RisingEdge(dut.clk)
-            time = get_sim_time()
+            await RisingEdge(dut.clk)
+            time = get_sim_time('ns')
             expected_after = time + 100*n
-            yield external(wait_cycles_wrapper)(dut, n)
-            time_after = get_sim_time()
+            await wait_cycles_wrapper(dut, n)
+            time_after = get_sim_time('ns')
             if expected_after != time_after:
                 raise TestFailure("Wrong time elapsed in external call")
 
+
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
 @cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
-def test_ext_call_return(dut):
-    """Test ability to yield on an external non cocotb coroutine decorated
-    function"""
-    mon = cocotb.scheduler.queue(clock_monitor(dut))
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-    value = yield external(return_two)(dut)
+async def test_external_call_return(dut):
+    """
+    Test ability to await an external function that is not a coroutine using @external
+    """
+    async def clock_monitor(dut):
+        count = 0
+        while True:
+            await RisingEdge(dut.clk)
+            await Timer(1000, units='ns')
+            count += 1
+
+    mon = cocotb.fork(clock_monitor(dut))
+    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+    value = await external(return_two)(dut)
     assert value == 2
 
 
 @cocotb.test()
-def test_multiple_externals(dut):
-    value = yield external(return_two)(dut)
+async def test_consecutive_externals(dut):
+    """
+    Test that multiple @external functions can be called in the same test
+    """
+    value = await external(return_two)(dut)
     dut._log.info("First one completed")
     assert value == 2
 
-    value = yield external(return_two)(dut)
+    value = await external(return_two)(dut)
     dut._log.info("Second one completed")
     assert value == 2
 
 
 @cocotb.test()
-def test_external_from_readonly(dut):
-    yield ReadOnly()
+async def test_external_from_readonly(dut):
+    """
+    Test that @external functions that don't consume simulation time
+    can be called from ReadOnly state
+    """
+    await ReadOnly()
     dut._log.info("In readonly")
-    value = yield external(return_two)(dut)
+    value = await external(return_two)(dut)
     assert value == 2
-
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
-def test_external_that_yields(dut):
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
-    value = yield external(calls_cocotb_function)(dut)
-    assert value == 2
-
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
-def test_external_and_continue(dut):
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
-    value = yield external(calls_cocotb_function)(dut)
-    assert value == 2
-
-    yield Timer(10, "ns")
-    yield RisingEdge(dut.clk)
-
-
-@cocotb.coroutine
-def run_external(dut):
-    value = yield external(calls_cocotb_function)(dut)
-    return value
-
-# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
-def test_external_from_fork(dut):
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-
-    coro = cocotb.fork(run_external(dut))
-    value = yield coro.join()
-    assert value == 2
-
-    dut._log.info("Back from join")
-
-
-@cocotb.test(expect_fail=True, skip=True)
-def test_ext_exit_error(dut):
-    """Test that a premature exit of the sim at its request still results in
-    the clean close down of the sim world"""
-    yield external(return_two)(dut)
-    yield Timer(1000)
 
 
 @cocotb.test()
-def test_external_raised_exception(dut):
-    """ Test that exceptions thrown by @external functions can be caught """
+async def test_function_from_readonly(dut):
+    """
+    Test that @external functions that call @functions that await Triggers
+    can be called from ReadOnly state
+    """
+    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+
+    await ReadOnly()
+    dut._log.info("In readonly")
+    value = await external(calls_cocotb_function)(dut)
+    assert value == 2
+
+
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
+async def test_function_that_awaits(dut):
+    """
+    Test that @external functions can call @function coroutines that
+    awaits Triggers and return values back through to
+    the test
+    """
+    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+
+    value = await external(calls_cocotb_function)(dut)
+    assert value == 2
+
+
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
+async def test_await_after_function(dut):
+    """
+    Test that awaiting a Trigger works after returning
+    from @external functions that call @functions that consume
+    simulation time
+    """
+    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+
+    value = await external(calls_cocotb_function)(dut)
+    assert value == 2
+
+    await Timer(10, units="ns")
+    await RisingEdge(dut.clk)
+
+
+# Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
+async def test_external_from_fork(dut):
+    """
+    Test that @external functions work when awaited from a forked
+    task
+    """
+    async def run_function(dut):
+        value = await external(calls_cocotb_function)(dut)
+        return value
+
+    async def run_external(dut):
+        value = await external(return_two)(dut)
+        return value
+
+    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+
+    coro1 = cocotb.fork(run_function(dut))
+    value = await coro1.join()
+    assert value == 2
+    dut._log.info("Back from join 1")
+
+    value = 0
+    coro2 = cocotb.fork(run_external(dut))
+    value = await coro2.join()
+    assert value == 2
+    dut._log.info("Back from join 2")
+
+
+@cocotb.test()
+async def test_external_raised_exception(dut):
+    """
+    Test that exceptions thrown by @external functions can be caught
+    """
     @external
     def func():
         raise ValueError()
 
     try:
-        yield func()
+        await func()
     except ValueError:
         pass
     else:
@@ -218,14 +257,16 @@ def test_external_raised_exception(dut):
 
 
 @cocotb.test()
-def test_external_returns_exception(dut):
-    """ Test that exceptions can be returned by @external functions """
+async def test_external_returns_exception(dut):
+    """
+    Test that exceptions can be returned by @external functions
+    """
     @external
     def func():
         return ValueError()
 
     try:
-        result = yield func()
+        result = await func()
     except ValueError:
         raise TestFailure('Exception should not have been thrown')
 
@@ -234,19 +275,20 @@ def test_external_returns_exception(dut):
 
 
 @cocotb.test()
-def test_function_raised_exception(dut):
-    """ Test that exceptions thrown by @function coroutines can be caught """
+async def test_function_raised_exception(dut):
+    """
+    Test that exceptions thrown by @function coroutines can be caught
+    """
     @cocotb.function
-    def func():
+    async def func():
         raise ValueError()
-        yield
 
     @external
     def ext():
         return func()
 
     try:
-        yield ext()
+        await ext()
     except ValueError:
         pass
     else:
@@ -254,19 +296,21 @@ def test_function_raised_exception(dut):
 
 
 @cocotb.test()
-def test_function_returns_exception(dut):
-    """ Test that exceptions can be returned by @function coroutines """
+async def test_function_returns_exception(dut):
+    """
+    Test that exceptions can be returned by @function coroutines
+    """
     @cocotb.function
-    def func():
+    def gen_func():
         return ValueError()
         yield
 
     @external
     def ext():
-        return func()
+        return gen_func()
 
     try:
-        result = yield ext()
+        result = await ext()
     except ValueError:
         raise TestFailure('Exception should not have been thrown')
 
@@ -275,7 +319,7 @@ def test_function_returns_exception(dut):
 
 
 @cocotb.test()
-def test_function_from_weird_thread_fails(dut):
+async def test_function_from_weird_thread_fails(dut):
     """
     Test that background threads caling a @function do not hang forever
     """
@@ -284,10 +328,10 @@ def test_function_from_weird_thread_fails(dut):
     raised = False
 
     @cocotb.function
-    def func():
+    async def func():
         nonlocal func_started
         func_started = True
-        yield Timer(10)
+        await Timer(10, units='ns')
 
     def function_caller():
         nonlocal raised
@@ -309,24 +353,24 @@ def test_function_from_weird_thread_fails(dut):
 
     task = cocotb.fork(ext())
 
-    yield Timer(20)
+    await Timer(20, units='ns')
 
     assert caller_resumed, "Caller was never resumed"
     assert not func_started, "Function should never have started"
     assert raised, "No exception was raised to warn the user"
 
-    yield task.join()
+    await task.join()
 
 
 @cocotb.test()
-def test_function_called_in_parallel(dut):
+async def test_function_called_in_parallel(dut):
     """
     Test that the same `@function` can be called from two parallel background
     threads.
     """
     @cocotb.function
-    def function(x):
-        yield Timer(1)
+    async def function(x):
+        await Timer(1, units='ns')
         return x
 
     @cocotb.external
@@ -335,7 +379,7 @@ def test_function_called_in_parallel(dut):
 
     t1 = cocotb.fork(call_function(1))
     t2 = cocotb.fork(call_function(2))
-    v1 = yield t1
-    v2 = yield t2
+    v1 = await t1
+    v2 = await t2
     assert v1 == 1, v1
     assert v2 == 2, v2
