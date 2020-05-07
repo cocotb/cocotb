@@ -44,6 +44,7 @@ extensions = [
     'sphinxarg.ext',
     'sphinxcontrib.spelling',
     'sphinx_tabs.tabs',
+    'sphinxcontrib.details.directive',
     ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}

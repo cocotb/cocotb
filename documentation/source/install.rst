@@ -41,14 +41,6 @@ The installation instructions vary depending on your operating system:
 
          conda install -c msys2 m2-base m2-make m2w64-toolchain libpython
 
-      .. details:: **Show/Hide** *Example Installation Output*
-
-          The following shows an example of the output of the above installation step.
-
-          .. code-block::
-
-             <FIXME: add installation output here>
-
    .. group-tab:: Linux - Debian
 
       In a terminal, run
@@ -56,14 +48,6 @@ The installation instructions vary depending on your operating system:
       .. code-block:: bash
 
           sudo apt-get install make gcc g++ python3 python3-dev python3-pip
-
-      .. details:: **Show/Hide** *Example Installation Output*
-
-          The following shows an example of the output of the above installation step.
-
-          .. code-block::
-
-             <FIXME: add installation output here>
 
    .. group-tab:: Linux - Red Hat
 
@@ -73,14 +57,6 @@ The installation instructions vary depending on your operating system:
 
           sudo yum install make gcc gcc-c++ libstdc++-devel python3 python3-devel python3-pip
 
-      .. details:: **Show/Hide** *Example Installation Output*
-
-          The following shows an example of the output of the above installation step.
-
-          .. code-block::
-
-             <FIXME: add installation output here>
-
    .. group-tab:: macOS
 
       We recommmend using the `Homebrew <https://brew.sh/>`_ package manager.
@@ -89,14 +65,6 @@ The installation instructions vary depending on your operating system:
       .. code-block:: bash
 
            brew install python icarus-verilog gtkwave
-
-      .. details:: **Show/Hide** *Example Installation Output*
-
-          The following shows an example of the output of the above installation step.
-
-          .. code-block::
-
-             <FIXME: add installation output here>
 
 
 .. _install-cocotb:
@@ -115,14 +83,6 @@ Installation of cocotb
 
           pip install --global-option build_ext --global-option --compiler=mingw32 cocotb
 
-      .. details:: **Show/Hide** *Example Installation Output*
-
-          The following shows an example of the output of the above installation step.
-
-          .. code-block::
-
-             <FIXME: add installation output here>
-
    .. group-tab:: Linux - Debian
 
       The **latest release** of cocotb can be installed by running
@@ -130,14 +90,6 @@ Installation of cocotb
       .. code-block:: bash
 
           pip install cocotb
-
-      .. details:: **Show/Hide** *Example Installation Output*
-
-          The following shows an example of the output of the above installation step.
-
-          .. code-block::
-
-             <FIXME: add installation output here>
 
    .. group-tab:: Linux - Red Hat
 
@@ -147,14 +99,6 @@ Installation of cocotb
 
           pip install cocotb
 
-      .. details:: **Show/Hide** *Example Installation Output*
-
-          The following shows an example of the output of the above installation step.
-
-          .. code-block::
-
-             <FIXME: add installation output here>
-
    .. group-tab:: macOS
 
       The **latest release** of cocotb can be installed by running
@@ -162,14 +106,6 @@ Installation of cocotb
       .. code-block:: bash
 
           pip install cocotb
-
-      .. details:: **Show/Hide** *Example Installation Output*
-
-          The following shows an example of the output of the above installation step.
-
-          .. code-block::
-
-             <FIXME: add installation output here>
 
 .. warning::
 
