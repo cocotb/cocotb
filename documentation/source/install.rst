@@ -41,11 +41,7 @@ The installation instructions vary depending on your operating system:
 
          conda install -c msys2 m2-base m2-make m2w64-toolchain libpython
 
-      .. container:: toggle
-
-          .. container:: header
-
-              **Show/Hide Example Installation Output**
+      .. details:: **Show/Hide** *Example Installation Output*
 
           The following shows an example of the output of the above installation step.
 
@@ -62,11 +58,7 @@ The installation instructions vary depending on your operating system:
           sudo apt-get install make gcc g++ python3 python3-dev python3-pip
           sudo apt-get install swig  # optional, needed for one of the examples
 
-      .. container:: toggle
-
-          .. container:: header
-
-              **Show/Hide Example Installation Output**
+      .. details:: **Show/Hide** *Example Installation Output*
 
           The following shows an example of the output of the above installation step.
 
@@ -83,11 +75,7 @@ The installation instructions vary depending on your operating system:
           sudo yum install make gcc gcc-c++ libstdc++-devel python3 python3-devel python3-pip
           sudo yum install swig  # optional, needed for one of the examples
 
-      .. container:: toggle
-
-          .. container:: header
-
-              **Show/Hide Example Installation Output**
+      .. details:: **Show/Hide** *Example Installation Output*
 
           The following shows an example of the output of the above installation step.
 
@@ -104,11 +92,7 @@ The installation instructions vary depending on your operating system:
 
            brew install python icarus-verilog gtkwave
 
-      .. container:: toggle
-
-          .. container:: header
-
-              **Show/Hide Example Installation Output**
+      .. details:: **Show/Hide** *Example Installation Output*
 
           The following shows an example of the output of the above installation step.
 
@@ -133,11 +117,7 @@ Installation of cocotb
 
           pip install --global-option build_ext --global-option --compiler=mingw32 cocotb
 
-      .. container:: toggle
-
-          .. container:: header
-
-              **Show/Hide Example Installation Output**
+      .. details:: **Show/Hide** *Example Installation Output*
 
           The following shows an example of the output of the above installation step.
 
@@ -153,11 +133,7 @@ Installation of cocotb
 
           pip install cocotb
 
-      .. container:: toggle
-
-          .. container:: header
-
-              **Show/Hide Example Installation Output**
+      .. details:: **Show/Hide** *Example Installation Output*
 
           The following shows an example of the output of the above installation step.
 
@@ -173,11 +149,7 @@ Installation of cocotb
 
           pip install cocotb
 
-      .. container:: toggle
-
-          .. container:: header
-
-              **Show/Hide Example Installation Output**
+      .. details:: **Show/Hide** *Example Installation Output*
 
           The following shows an example of the output of the above installation step.
 
@@ -193,11 +165,7 @@ Installation of cocotb
 
           pip install cocotb
 
-      .. container:: toggle
-
-          .. container:: header
-
-              **Show/Hide Example Installation Output**
+      .. details:: **Show/Hide** *Example Installation Output*
 
           The following shows an example of the output of the above installation step.
 
