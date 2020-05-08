@@ -391,13 +391,11 @@ class NonHierarchyObject(SimHandleBase):
 
     @value.setter
     def value(self, value):
-        def _call_on_readwrite(f, *args):
-            cocotb.scheduler._schedule_write(self, f, *args)
-        self._set_value(value, _call_on_readwrite)
+        self._set_value(value, cocotb.scheduler._schedule_write)
 
     def setimmediatevalue(self, value):
         """ Assign a value to this simulation object immediately. """
-        def _call_now(f, *args):
+        def _call_now(handle, f, *args):
             f(*args)
         self._set_value(value, _call_now)
 
@@ -407,7 +405,7 @@ class NonHierarchyObject(SimHandleBase):
         This is used to implement both the setter for :attr:`value`, and the
         :meth:`setimmediatevalue` method.
 
-        ``call_sim(f, *args)`` should be used to schedule simulator writes,
+        ``call_sim(handle, f, *args)`` should be used to schedule simulator writes,
         rather than performing them directly as ``f(*args)``.
         """
         raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
@@ -657,7 +655,7 @@ class ModifiableObject(NonConstantObject):
         value, set_action = self._check_for_set_action(value)
 
         if isinstance(value, int) and value < 0x7fffffff and len(self) <= 32:
-            call_sim(self._handle.set_signal_val_long, set_action, value)
+            call_sim(self, self._handle.set_signal_val_long, set_action, value)
             return
         if isinstance(value, ctypes.Structure):
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
@@ -681,7 +679,7 @@ class ModifiableObject(NonConstantObject):
                 "Unsupported type for value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self._handle.set_signal_val_binstr, set_action, value.binstr)
+        call_sim(self, self._handle.set_signal_val_binstr, set_action, value.binstr)
 
     def _check_for_set_action(self, value):
         if not isinstance(value, _SetAction):
@@ -726,7 +724,7 @@ class RealObject(ModifiableObject):
                 "Unsupported type for real value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self._handle.set_signal_val_real, set_action, value)
+        call_sim(self, self._handle.set_signal_val_real, set_action, value)
 
     @ModifiableObject.value.getter
     def value(self) -> float:
@@ -761,7 +759,7 @@ class EnumObject(ModifiableObject):
                 "Unsupported type for enum value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self._handle.set_signal_val_long, set_action, value)
+        call_sim(self, self._handle.set_signal_val_long, set_action, value)
 
     @ModifiableObject.value.getter
     def value(self) -> int:
@@ -793,7 +791,7 @@ class IntegerObject(ModifiableObject):
                 "Unsupported type for integer value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self._handle.set_signal_val_long, set_action, value)
+        call_sim(self, self._handle.set_signal_val_long, set_action, value)
 
     @ModifiableObject.value.getter
     def value(self) -> int:
@@ -836,7 +834,7 @@ class StringObject(ModifiableObject):
                 "Unsupported type for string value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self._handle.set_signal_val_str, set_action, value)
+        call_sim(self, self._handle.set_signal_val_str, set_action, value)
 
     @ModifiableObject.value.getter
     def value(self) -> bytes:

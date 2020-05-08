@@ -10,7 +10,7 @@ Test for scheduler and coroutine behavior
 """
 
 import cocotb
-from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, Combine, Event
+from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, Combine, Event, ReadOnly
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
 from common import clock_gen
@@ -263,3 +263,40 @@ async def test_event_set_schedule(dut):
     await NullTrigger()
 
     assert waiter_scheduled is True
+
+
+@cocotb.test()
+async def test_last_scheduled_write_wins(dut):
+    """
+    Test that the last scheduled write for a signal handle is the value that is written.
+    """
+    e = Event()
+    dut.stream_in_data.setimmediatevalue(0)
+
+    @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
+    async def first():
+        await Timer(1)
+        dut._log.info("scheduling stream_in_data <= 1")
+        dut.stream_in_data <= 1
+        e.set()
+
+    @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
+    async def second():
+        await Timer(1)
+        await e.wait()
+        dut._log.info("scheduling stream_in_data <= 2")
+        dut.stream_in_data <= 2
+
+    await Combine(first(), second())
+
+    await ReadOnly()
+
+    assert dut.stream_in_data.value.integer == 2
+
+    await Timer(1)
+    dut.array_7_downto_4 <= [1, 2, 3, 4]
+    dut.array_7_downto_4[7] <= 10
+
+    await ReadOnly()
+
+    assert dut.array_7_downto_4.value == [10, 2, 3, 4]
