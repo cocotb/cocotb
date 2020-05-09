@@ -107,14 +107,12 @@ def access_signal(dut):
                          dut.stream_in_data.value.integer, 1))
 
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
-             skip=cocotb.LANGUAGE in ["vhdl"])
+@cocotb.test(
+    # Icarus 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
+    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("icarus") else False,
+    skip=cocotb.LANGUAGE in ["vhdl"])
 def access_single_bit(dut):
-    """
-    Access a single bit in a vector of the DUT
-
-    Icarus v0.96 doesn't support single bit access to vectors
-    """
+    """Access a single bit in a vector of the DUT"""
     dut.stream_in_data <= 0
     yield Timer(10)
     dut._log.info("%s = %d bits" %
@@ -127,14 +125,12 @@ def access_single_bit(dut):
                          dut.stream_out_data_comb.value.integer, (1 << 2)))
 
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"],
-             skip=cocotb.LANGUAGE in ["vhdl"])
+@cocotb.test(
+    # Icarus 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
+    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("icarus") else False,
+    skip=cocotb.LANGUAGE in ["vhdl"])
 def access_single_bit_assignment(dut):
-    """
-    Access a single bit in a vector of the DUT using the assignment mechanism
-
-    Icarus v0.96 doesn't support single bit access to vectors
-    """
+    """Access a single bit in a vector of the DUT using the assignment mechanism"""
     dut.stream_in_data = 0
     yield Timer(10)
     dut._log.info("%s = %d bits" %
