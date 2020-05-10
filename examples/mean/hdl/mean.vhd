@@ -9,7 +9,7 @@ use work.mean_pkg.all;
 
 entity mean is
 generic (
-  BUS_WIDTH : natural := 2);
+  BUS_WIDTH : natural := 4);
 port (
   clk      : in  std_logic;
   rst      : in  std_logic;
@@ -23,8 +23,11 @@ end mean;
 
 architecture RTL of mean is
 
-  signal s_sum : unsigned(DATA_WIDTH + clog2(BUS_WIDTH-1)-1 downto 0) := (others => '0');  -- introduce bug
---  signal s_sum : unsigned(DATA_WIDTH + clog2(BUS_WIDTH)-1 downto 0) := (others => '0');
+  constant DATA_WIDTH : natural := C_DATA_WIDTH;
+  constant SUM_WIDTH  : natural := DATA_WIDTH + clog2(BUS_WIDTH);
+--  constant SUM_WIDTH : natural := DATA_WIDTH + clog2(BUS_WIDTH) - 1;  -- introduce bug
+
+  signal s_sum : unsigned(SUM_WIDTH-1 downto 0) := (others => '0');
   signal s_valid : std_logic := '0';
 
 begin
