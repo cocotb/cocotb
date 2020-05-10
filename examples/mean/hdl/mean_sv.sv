@@ -17,7 +17,7 @@ module mean_sv #(
 
 
 // make constant from package visible
-parameter DATA_WIDTH = data_width;
+parameter DATA_WIDTH = c_data_width;
 
 // VHDL DUT
   mean #(
