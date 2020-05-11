@@ -105,7 +105,6 @@ jobs:
 
     - stage: SimTests
       name: "Py 3.7, Icarus devel"
-      env: ALLOW_FAIL=yes
       python: 3.7
       os: windows
       language: shell
@@ -173,4 +172,3 @@ jobs:
     - stage: SimTests
       python: 3.7
       env: SIM=ghdl TOPLEVEL_LANG=vhdl
-    - env: ALLOW_FAIL=yes

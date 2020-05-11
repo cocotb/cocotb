@@ -61,7 +61,17 @@ typedef PLI_INT32  (*fptr_vpi_mcd_flush)       (PLI_UINT32);
 typedef PLI_INT32  (*fptr_vpi_control)         (PLI_INT32, ...);
 typedef vpiHandle  (*fptr_vpi_handle_by_multi_index) (vpiHandle, PLI_INT32, PLI_INT32 *);
 
+typedef PLI_INT32  (*fptr_vpi_vcontrol)         (PLI_INT32, va_list);
+
 namespace {
+class VpiJumpTable
+{
+    public:
+        virtual void *resolve_function(const char *name) = 0;
+        virtual ~VpiJumpTable() = default;
+};
+class VpiJumpTable *vpip_jump_table = 0;
+
 class VpiTrampoline
 {
     public:
@@ -120,6 +130,10 @@ class VpiTrampoline
 
         static PLI_INT32 vpi_vcontrol         (PLI_INT32 operation, va_list ap)
         {
+            static fptr_vpi_vcontrol vf = reinterpret_cast<fptr_vpi_vcontrol>(resolve_function("vpi_vcontrol", 0));
+            if(vf)
+                return vf(operation, ap);
+
             static fptr_vpi_control f = reinterpret_cast<fptr_vpi_control>(resolve_function("vpi_control"));
 
             switch(operation)
@@ -143,8 +157,18 @@ class VpiTrampoline
         VpiTrampoline(VpiTrampoline const&);
         void operator=(VpiTrampoline const&);
 
-        static void *resolve_function(const char *name)
+        static void *resolve_function(const char *name, int fail_on_unresolvable = 1)
         {
+            void *f = 0;
+
+            if (vpip_jump_table)
+            {
+                f = vpip_jump_table->resolve_function(name);
+
+                if(f)
+                    return f;
+            }
+
 #if defined(ALDEC)
             static HMODULE hModule = GetModuleHandle("aldecpli.dll");
 #elif defined(GHDL)
@@ -157,12 +181,20 @@ class VpiTrampoline
 #error No target module defined for trampoline
 #endif
             if(!hModule)
-                LOG_CRITICAL("Failed to load module");
+            {
+                if(fail_on_unresolvable)
+                    LOG_CRITICAL("Failed to load module");
+                return nullptr;
+            }
 
-            void *f = reinterpret_cast<void *>(GetProcAddress(hModule, name));
+            f = reinterpret_cast<void *>(GetProcAddress(hModule, name));
 
             if(!f)
-                LOG_CRITICAL("Failed to resolve %s", name);
+            {
+                if(fail_on_unresolvable)
+                    LOG_CRITICAL("Failed to resolve %s", name);
+                return nullptr;
+            }
 
             return f;
         }
@@ -226,3 +258,171 @@ PLI_INT32  vpi_flush           (void)                                           
 PLI_INT32  vpi_mcd_flush       (PLI_UINT32 mcd)                                                                      { return VpiTrampoline::vpi_mcd_flush(mcd); }
 PLI_INT32  vpi_control         (PLI_INT32 operation, ...)                                                            { va_list ap; va_start(ap, operation); PLI_INT32 ret = VpiTrampoline::vpi_vcontrol(operation, ap); va_end(ap); return ret; }
 vpiHandle  vpi_handle_by_multi_index (vpiHandle obj, PLI_INT32 num_index, PLI_INT32 *index_array)                    { return VpiTrampoline::vpi_handle_by_multi_index(obj, num_index, index_array); }
+
+namespace {
+class VpiJumpTableV1 : public VpiJumpTable
+{
+    public:
+        VpiJumpTableV1(void *jump_table)
+        {
+            vpip_routines = reinterpret_cast<vpip_routines_s *>(jump_table);
+        }
+        ~VpiJumpTableV1() = default;
+
+        void *resolve_function(const char *name)
+        {
+            void *f = 0;
+
+            if     (strcmp(name, "vpi_register_cb") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->register_cb);
+            else if(strcmp(name, "vpi_remove_cb") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->remove_cb);
+            //else if(strcmp(name, "vpi_get_cb_info") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->get_cb_info);
+            else if(strcmp(name, "vpi_register_systf") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->register_systf);
+            else if(strcmp(name, "vpi_get_systf_info") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->get_systf_info);
+            else if(strcmp(name, "vpi_handle_by_name") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->handle_by_name);
+            else if(strcmp(name, "vpi_handle_by_index") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->handle_by_index);
+            else if(strcmp(name, "vpi_handle") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->handle);
+            //else if(strcmp(name, "vpi_handle_multi") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->handle_multi);
+            else if(strcmp(name, "vpi_iterate") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->iterate);
+            else if(strcmp(name, "vpi_scan") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->scan);
+            else if(strcmp(name, "vpi_get") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->get);
+            //else if(strcmp(name, "vpi_get64") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->get64);
+            else if(strcmp(name, "vpi_get_str") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->get_str);
+            else if(strcmp(name, "vpi_get_delays") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->get_delays);
+            else if(strcmp(name, "vpi_put_delays") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->put_delays);
+            else if(strcmp(name, "vpi_get_value") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->get_value);
+            else if(strcmp(name, "vpi_put_value") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->put_value);
+            //else if(strcmp(name, "vpi_get_value_array") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->get_value_array);
+            //else if(strcmp(name, "vpi_put_value_array") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->put_value_array);
+            else if(strcmp(name, "vpi_get_time") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->get_time);
+            else if(strcmp(name, "vpi_mcd_open") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->mcd_open);
+            else if(strcmp(name, "vpi_mcd_close") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->mcd_close);
+            else if(strcmp(name, "vpi_mcd_name") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->mcd_name);
+            //else if(strcmp(name, "vpi_mcd_printf") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->mcd_printf);
+            //else if(strcmp(name, "vpi_printf") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->printf);
+            else if(strcmp(name, "vpi_compare_objects") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->compare_objects);
+            else if(strcmp(name, "vpi_chk_error") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->chk_error);
+            else if(strcmp(name, "vpi_free_object") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->free_object);
+            //else if(strcmp(name, "vpi_release_handle") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->release_handle);
+            else if(strcmp(name, "vpi_get_vlog_info") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->get_vlog_info);
+            //else if(strcmp(name, "vpi_get_data") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->get_data);
+            //else if(strcmp(name, "vpi_put_data") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->put_data);
+            else if(strcmp(name, "vpi_get_userdata") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->get_userdata);
+            else if(strcmp(name, "vpi_put_userdata") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->put_userdata);
+            else if(strcmp(name, "vpi_vprintf") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->vprintf);
+            else if(strcmp(name, "vpi_mcd_vprintf") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->mcd_vprintf);
+            else if(strcmp(name, "vpi_flush") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->flush);
+            else if(strcmp(name, "vpi_mcd_flush") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->mcd_flush);
+            //else if(strcmp(name, "vpi_control") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->control);
+            //else if(strcmp(name, "vpi_handle_by_multi_index") == 0)
+            //    f = reinterpret_cast<void *>(vpip_routines->handle_by_multi_index);
+            else if(strcmp(name, "vpi_vcontrol") == 0)
+                f = reinterpret_cast<void *>(vpip_routines->vcontrol);
+
+            return f;
+        }
+
+    private:
+        typedef struct {
+            vpiHandle   (*register_cb)(p_cb_data);
+            PLI_INT32   (*remove_cb)(vpiHandle);
+            vpiHandle   (*register_systf)(const struct t_vpi_systf_data*ss);
+            void        (*get_systf_info)(vpiHandle, p_vpi_systf_data);
+            vpiHandle   (*handle_by_name)(const char*, vpiHandle);
+            vpiHandle   (*handle_by_index)(vpiHandle, PLI_INT32);
+            vpiHandle   (*handle)(PLI_INT32, vpiHandle);
+            vpiHandle   (*iterate)(PLI_INT32, vpiHandle);
+            vpiHandle   (*scan)(vpiHandle);
+            PLI_INT32   (*get)(int, vpiHandle);
+            char*       (*get_str)(PLI_INT32, vpiHandle);
+            void        (*get_delays)(vpiHandle, p_vpi_delay);
+            void        (*put_delays)(vpiHandle, p_vpi_delay);
+            void        (*get_value)(vpiHandle, p_vpi_value);
+            vpiHandle   (*put_value)(vpiHandle, p_vpi_value, p_vpi_time, PLI_INT32);
+            void        (*get_time)(vpiHandle, s_vpi_time*);
+            void*       (*get_userdata)(vpiHandle);
+            PLI_INT32   (*put_userdata)(vpiHandle, void*);
+            PLI_UINT32  (*mcd_open)(char *);
+            PLI_UINT32  (*mcd_close)(PLI_UINT32);
+            PLI_INT32   (*mcd_flush)(PLI_UINT32);
+            char*       (*mcd_name)(PLI_UINT32);
+            PLI_INT32   (*mcd_vprintf)(PLI_UINT32, const char*, va_list);
+            PLI_INT32   (*flush)(void);
+            PLI_INT32   (*vprintf)(const char*, va_list);
+            PLI_INT32   (*chk_error)(p_vpi_error_info);
+            PLI_INT32   (*compare_objects)(vpiHandle, vpiHandle);
+            PLI_INT32   (*free_object)(vpiHandle);
+            PLI_INT32   (*get_vlog_info)(p_vpi_vlog_info info) ;
+            void        (*vcontrol)(PLI_INT32, va_list);
+            PLI_INT32   (*fopen)(const char*, const char*);
+            FILE*       (*get_file)(PLI_INT32);
+            s_vpi_vecval(*calc_clog2)(vpiHandle);
+            void        (*count_drivers)(vpiHandle, unsigned, unsigned [4]);
+            void        (*format_strength)(char*, s_vpi_value*, unsigned);
+            void        (*make_systf_system_defined)(vpiHandle);
+            void        (*mcd_rawwrite)(PLI_UINT32, const char*, size_t);
+            void        (*set_return_value)(int);
+        } vpip_routines_s;
+        vpip_routines_s *vpip_routines;
+};
+}
+
+extern "C" COCOTBVPI_EXPORT PLI_UINT32 vpip_set_callback(void *routines, PLI_UINT32 version)
+{
+    if(!routines)
+        LOG_CRITICAL("Invalid jump table provided");
+
+    if(vpip_jump_table)
+        LOG_CRITICAL("Jump table already set, updating is not supported");
+
+    switch(version)
+    {
+        case 1:
+            vpip_jump_table = new VpiJumpTableV1(routines);
+            break;
+
+        default:
+            LOG_CRITICAL("Unknown version %" PRId32 " of jump table passed", version);
+    }
+
+    return 1;
+}
