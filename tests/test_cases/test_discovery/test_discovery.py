@@ -153,6 +153,7 @@ def access_single_bit_erroneous(dut):
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
 
+
 @cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("icarus", "chronologic simulation vcs")),
              expect_fail=cocotb.SIM_NAME.lower().startswith(("riviera")) and cocotb.LANGUAGE in ["verilog"])
 def access_integer(dut):
@@ -394,6 +395,7 @@ def skip_a_test(dut):
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
+
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
              expect_error=cocotb.SIM_NAME.lower().startswith(("icarus")))

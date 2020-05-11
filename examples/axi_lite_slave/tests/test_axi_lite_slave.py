@@ -16,6 +16,7 @@ MODULE_PATH = os.path.abspath(MODULE_PATH)
 def setup_dut(dut):
     cocotb.fork(Clock(dut.clk, CLK_PERIOD_NS, units='ns').start())
 
+
 # Write to address 0 and verify that value got through
 @cocotb.test()
 def write_address_0(dut):

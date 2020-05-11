@@ -61,11 +61,13 @@ def issue_348_rising(dut):
     """ Start two monitors on RisingEdge """
     yield DualMonitor(RisingEdge, dut.clk).start()
 
+
 # Cadence simulators: "Unable set up FallingEdge(ModifiableObject(sample_module.clk)) Trigger" with VHDL (see #1076)
 @cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def issue_348_falling(dut):
     """ Start two monitors on FallingEdge """
     yield DualMonitor(FallingEdge, dut.clk).start()
+
 
 # Cadence simulators: "Unable set up Edge(ModifiableObject(sample_module.clk)) Trigger" with VHDL (see #1076)
 @cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
