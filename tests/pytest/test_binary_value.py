@@ -152,7 +152,7 @@ def test_init_short_binstr_value():
     assert bin3.integer == 1
 
     bin4 = BinaryValue(value="1", n_bits=8,
-                        bigEndian=True, binaryRepresentation=BinaryRepresentation.SIGNED_MAGNITUDE)
+                       bigEndian=True, binaryRepresentation=BinaryRepresentation.SIGNED_MAGNITUDE)
     # 1 digit is too small for Signed Magnitude representation, so setting binstr will fail, falling back to buff
     bin4._str == "10000000"
     bin4.binstr == "10000000"

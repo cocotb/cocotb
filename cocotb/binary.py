@@ -127,15 +127,15 @@ class BinaryValue:
         self._n_bits = n_bits
 
         self._convert_to = {
-                            BinaryRepresentation.UNSIGNED         : self._convert_to_unsigned   ,
-                            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_to_signed_mag ,
-                            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_to_twos_comp  ,
+            BinaryRepresentation.UNSIGNED         : self._convert_to_unsigned   ,
+            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_to_signed_mag ,
+            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_to_twos_comp  ,
         }
 
         self._convert_from = {
-                            BinaryRepresentation.UNSIGNED         : self._convert_from_unsigned   ,
-                            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_from_signed_mag ,
-                            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_from_twos_comp  ,
+            BinaryRepresentation.UNSIGNED         : self._convert_from_unsigned   ,
+            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_from_signed_mag ,
+            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_from_twos_comp  ,
         }
 
         if value is not None:

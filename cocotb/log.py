@@ -188,9 +188,9 @@ class SimLogFormatter(logging.Formatter):
         prefix = sim_time_str.rjust(11) + ' ' + level + ' '
         if not _suppress:
             prefix += self.ljust(record.name, _RECORD_CHARS) + \
-                      self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
-                      ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
-                      ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
+                self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
+                ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
+                ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
 
         # these lines are copied from the builtin logger
         if record.exc_info:
