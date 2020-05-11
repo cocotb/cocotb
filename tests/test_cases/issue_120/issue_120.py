@@ -21,6 +21,7 @@ def monitor(dut):
     if not dut.stream_in_valid.value.integer:
         raise TestFailure("stream_in_valid should be high on the 5th cycle")
 
+
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
 @cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
 def issue_120_scheduling(dut):

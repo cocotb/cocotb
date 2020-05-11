@@ -52,6 +52,7 @@ def _check_value(tlog, hdl, expected):
     else:
         tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, hdl.value))
 
+
 # NOTE: simulator-specific handling is done in this test itself, not via expect_error in the decorator
 @cocotb.test()
 def test_read_write(dut):
