@@ -13,11 +13,13 @@ TOPLEVEL := mean_sv
 
 PWD=$(shell pwd)
 
+export PYTHONPATH := $(PWD)/../tests:$(PYTHONPATH)
+
 VHDL_SOURCES = $(PWD)/../hdl/mean_pkg.vhd
 VHDL_SOURCES += $(PWD)/../hdl/mean.vhd
 
-ifeq ($(SIM),questa)
-COMPILE_ARGS = -mixedsvvh
+ifneq ($(filter $(SIM),questa modelsim),)
+    COMPILE_ARGS += -mixedsvvh
 endif
 
 VERILOG_SOURCES = $(PWD)/../hdl/mean_sv.sv
