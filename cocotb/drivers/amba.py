@@ -155,7 +155,7 @@ class AXI4LiteMaster(BusDriver):
 
         if int(result):
             raise AXIProtocolError("Write to address 0x%08x failed with BRESP: %d"
-                               % (address, int(result)))
+                                   % (address, int(result)))
 
         return result
 
@@ -199,7 +199,7 @@ class AXI4LiteMaster(BusDriver):
 
         if int(result):
             raise AXIProtocolError("Read address 0x%08x failed with RRESP: %d" %
-                               (address, int(result)))
+                                   (address, int(result)))
 
         return data
 

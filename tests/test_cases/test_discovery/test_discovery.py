@@ -116,7 +116,7 @@ def access_single_bit(dut):
     dut.stream_in_data <= 0
     yield Timer(10)
     dut._log.info("%s = %d bits" %
-                 (str(dut.stream_in_data), len(dut.stream_in_data)))
+                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     dut.stream_in_data[2] <= 1
     yield Timer(10)
     if dut.stream_out_data_comb.value.integer != (1 << 2):
@@ -134,7 +134,7 @@ def access_single_bit_assignment(dut):
     dut.stream_in_data = 0
     yield Timer(10)
     dut._log.info("%s = %d bits" %
-                 (str(dut.stream_in_data), len(dut.stream_in_data)))
+                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     dut.stream_in_data[2] = 1
     yield Timer(10)
     if dut.stream_out_data_comb.value.integer != (1 << 2):
@@ -148,7 +148,7 @@ def access_single_bit_erroneous(dut):
     """Access a non-existent single bit"""
     yield Timer(10)
     dut._log.info("%s = %d bits" %
-                 (str(dut.stream_in_data), len(dut.stream_in_data)))
+                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
@@ -390,7 +390,7 @@ def skip_a_test(dut):
     """This test shouldn't execute"""
     yield Timer(10)
     dut._log.info("%s = %d bits" %
-                 (str(dut.stream_in_data), len(dut.stream_in_data)))
+                  (str(dut.stream_in_data), len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
