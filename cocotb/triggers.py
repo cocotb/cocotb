@@ -504,7 +504,7 @@ class Lock:
         """Release the lock."""
         if not self.locked:
             raise TriggerException("Attempt to release an unacquired Lock %s" %
-                        (str(self)))
+                                   (str(self)))
 
         self.locked = False
 
