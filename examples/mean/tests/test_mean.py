@@ -29,12 +29,12 @@ class StreamBusMonitor(BusMonitor):
 
 
 @cocotb.coroutine
-def clock_gen(signal, period=10):
+def clock_gen(signal, period=10, units='ns'):
     while True:
         signal <= 0
-        yield Timer(period/2, units='ns')
+        yield Timer(period/2, units=units)
         signal <= 1
-        yield Timer(period/2, units='ns')
+        yield Timer(period/2, units=units)
 
 
 @cocotb.coroutine
