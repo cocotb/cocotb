@@ -95,8 +95,8 @@ def test_burst_read(dut):
         yield RisingEdge(dut.clk)
         value = dut.user_buffer_data.value
         for i in range(databuswidthB):
-            read_mem[address + burst*databuswidthB + i] =\
-                    (value >> i*8)& 0xFF
+            read_mem[address + burst*databuswidthB + i] = \
+                (value >> i*8)& 0xFF
         burst += 1
 
     dut.user_read_buffer = 0

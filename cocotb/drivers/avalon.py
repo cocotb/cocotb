@@ -237,11 +237,11 @@ class AvalonMemory(BusDriver):
     _optional_signals = ["write", "read", "writedata", "readdatavalid",
                          "readdata", "waitrequest", "burstcount", "byteenable"]
     _avalon_properties = {
-            "burstCountUnits": "symbols",  # symbols or words
-            "addressUnits": "symbols",     # symbols or words
-            "readLatency": 1,    # number of cycles
-            "WriteBurstWaitReq": True,  # generate random waitrequest
-            "MaxWaitReqLen": 4,  # maximum value of waitrequest
+        "burstCountUnits": "symbols",  # symbols or words
+        "addressUnits": "symbols",     # symbols or words
+        "readLatency": 1,    # number of cycles
+        "WriteBurstWaitReq": True,  # generate random waitrequest
+        "MaxWaitReqLen": 4,  # maximum value of waitrequest
     }
 
     def __init__(self, entity, name, clock, readlatency_min=1,

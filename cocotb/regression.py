@@ -706,14 +706,14 @@ class TestFactory:
                     doc += "\t%s: %s\n" % (optname, repr(optvalue))
 
             self.log.debug("Adding generated test \"%s\" to module \"%s\"" %
-                             (name, mod.__name__))
+                           (name, mod.__name__))
             kwargs = {}
             kwargs.update(self.kwargs_constant)
             kwargs.update(testoptions)
             if hasattr(mod, name):
                 self.log.error("Overwriting %s in module %s. "
-                                 "This causes a previously defined testcase "
-                                 "not to be run. Consider setting/changing "
-                                 "name_postfix" % (name, mod))
+                               "This causes a previously defined testcase "
+                               "not to be run. Consider setting/changing "
+                               "name_postfix" % (name, mod))
             setattr(mod, name, _create_test(self.test_function, name, doc, mod,
                                             *self.args, **kwargs))
