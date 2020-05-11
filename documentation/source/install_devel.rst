@@ -18,14 +18,6 @@ The instructions for installing the development version of cocotb vary depending
 
           pip install --global-option build_ext --global-option --compiler=mingw32 https://github.com/cocotb/cocotb/archive/master.zip
 
-      This requires administrator permissions.
-
-      In order to install only for your current user, run
-
-      .. code-block:: bash
-
-          pip install --global-option build_ext --global-option --compiler=mingw32 https://github.com/cocotb/cocotb/archive/master.zip --user
-
       See also the `pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
 
    .. group-tab:: Linux and macOS
