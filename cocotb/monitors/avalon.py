@@ -217,7 +217,7 @@ class AvalonSTPkts(BusMonitor):
 
                 if self.bus.endofpacket.value:
                     self.log.info("Received a packet of %d bytes", len(pkt))
-                    self.log.debug(hexdump(str((pkt))))
+                    self.log.debug(hexdump(pkt))
                     self.channel = channel
                     if self.report_channel:
                         self._recv({"data": pkt, "channel": channel})
