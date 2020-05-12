@@ -568,18 +568,10 @@ int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
     return gpi_hdl->cleanup_callback();
 }
 
-// If the Python world wants things to shut down then unregister
-// the callback for end of sim
 void VpiImpl::sim_end()
 {
-    /* Some sims do not seem to be able to deregister the end of sim callback
-     * so we need to make sure we have tracked this and not call the handler
-     */
-    if (GPI_DELETE != sim_finish_cb->get_call_state()) {
-        sim_finish_cb->set_call_state(GPI_DELETE);
-        vpi_control(vpiFinish, vpiDiagTimeLoc);
-        check_vpi_error();
-    }
+    vpi_control(vpiFinish, vpiDiagTimeLoc);
+    check_vpi_error();
 }
 
 extern "C" {

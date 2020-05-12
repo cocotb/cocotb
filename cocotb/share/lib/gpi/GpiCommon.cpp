@@ -131,24 +131,19 @@ bool gpi_has_registered_impl()
 void gpi_embed_init(int argc, char const* const* argv)
 {
     if (embed_sim_init(argc, argv))
-        gpi_embed_end();
+        gpi_sim_end();
 }
 
 void gpi_embed_end()
 {
-    embed_sim_event(SIM_FAIL, "Simulator shutdown prematurely");
-    gpi_cleanup();
+    gpi_embed_event(SIM_FAIL, "Simulator shutdown prematurely");
+    CLEAR_STORE();
+    embed_sim_cleanup();
 }
 
 void gpi_sim_end()
 {
     registered_impls[0]->sim_end();
-}
-
-void gpi_cleanup(void)
-{
-    CLEAR_STORE();
-    embed_sim_cleanup();
 }
 
 void gpi_embed_event(gpi_event_t level, const char *msg)
