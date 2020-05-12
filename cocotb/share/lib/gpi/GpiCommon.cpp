@@ -30,7 +30,6 @@
 #include "gpi_priv.h"
 #include <cocotb_utils.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <vector>
 #include <map>
 #include <algorithm>

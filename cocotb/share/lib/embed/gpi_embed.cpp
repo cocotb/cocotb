@@ -30,7 +30,6 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
-#include <unistd.h>
 #include <cocotb_utils.h>
 #include "embed.h"
 #include "locale.h"
@@ -38,9 +37,12 @@
 #if defined(_WIN32)
 #include <windows.h>
 #define sleep(n) Sleep(1000 * n)
+#define getpid() GetCurrentProcessId()
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
 #endif
+#else
+#include <unistd.h>
 #endif
 static PyThreadState *gtstate = NULL;
 
