@@ -17,7 +17,7 @@ jobs:
     - stage: Lint
       name: whitespace
       os: linux
-      script: "[[ -z \"$(git ls-files | xargs egrep -l '\\s+$')\" ]]"
+      script: "! git --no-pager grep --color --line-number --full-name --extended-regexp -I '\\s+$'"
 
     - stage: Lint
       name: flake8
