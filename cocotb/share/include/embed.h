@@ -31,7 +31,6 @@
 #define COCOTB_EMBED_H_
 
 #include <gpi.h>
-#include <gpi_logging.h>
 
 #ifdef __cplusplus
 extern "C" {
