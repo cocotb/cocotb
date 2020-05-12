@@ -8,9 +8,11 @@ Test for scheduler and coroutine behavior
 * join
 * kill
 """
+import logging
+import re
 
 import cocotb
-from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, Combine, Event, ReadOnly
+from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, Combine, Event, ReadOnly, First
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
 from common import clock_gen
@@ -62,6 +64,7 @@ def clock_two(dut):
 
 @cocotb.test(expect_fail=False)
 def test_coroutine_close_down(dut):
+    log = logging.getLogger("cocotb.test")
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
 
     coro_one = cocotb.fork(clock_one(dut))
@@ -70,7 +73,7 @@ def test_coroutine_close_down(dut):
     yield Join(coro_one)
     yield Join(coro_two)
 
-    dut._log.info("Back from joins")
+    log.info("Back from joins")
 
 
 @cocotb.test()
@@ -215,14 +218,14 @@ async def test_nulltrigger_reschedule(dut):
 
     The NullTrigger will be added to the end of the list of pending triggers.
     """
-
+    log = logging.getLogger("cocotb.test")
     last_fork = None
 
     @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
     async def reschedule(n):
         nonlocal last_fork
         for i in range(4):
-            cocotb.log.info("Fork {}, iteration {}, last fork was {}".format(n, i, last_fork))
+            log.info("Fork {}, iteration {}, last fork was {}".format(n, i, last_fork))
             assert last_fork != n
             last_fork = n
             await NullTrigger()
@@ -270,13 +273,14 @@ async def test_last_scheduled_write_wins(dut):
     """
     Test that the last scheduled write for a signal handle is the value that is written.
     """
+    log = logging.getLogger("cocotb.test")
     e = Event()
     dut.stream_in_data.setimmediatevalue(0)
 
     @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
     async def first():
         await Timer(1)
-        dut._log.info("scheduling stream_in_data <= 1")
+        log.info("scheduling stream_in_data <= 1")
         dut.stream_in_data <= 1
         e.set()
 
@@ -284,7 +288,7 @@ async def test_last_scheduled_write_wins(dut):
     async def second():
         await Timer(1)
         await e.wait()
-        dut._log.info("scheduling stream_in_data <= 2")
+        log.info("scheduling stream_in_data <= 2")
         dut.stream_in_data <= 2
 
     await Combine(first(), second())
@@ -300,3 +304,104 @@ async def test_last_scheduled_write_wins(dut):
     await ReadOnly()
 
     assert dut.array_7_downto_4.value == [10, 2, 3, 4]
+
+
+@cocotb.test()
+async def test_task_repr(dut):
+    """Test RunningTask.__repr__."""
+    log = logging.getLogger("cocotb.test")
+    gen_e = Event('generator_coro_inner')
+
+    def generator_coro_inner():
+        gen_e.set()
+        yield Timer(1, units='ns')
+        raise ValueError("inner")
+
+    @cocotb.coroutine
+    def generator_coro_outer():
+        yield from generator_coro_inner()
+
+    gen_task = generator_coro_outer()
+
+    log.info(repr(gen_task))
+    assert re.match(r"<Task \d+ created coro=generator_coro_outer\(\)>", repr(gen_task))
+
+    cocotb.fork(gen_task)
+
+    await gen_e.wait()
+
+    log.info(repr(gen_task))
+    assert re.match(r"<Task \d+ pending coro=generator_coro_inner\(\) trigger=<Timer of 1000.00ps at \w+>>", repr(gen_task))
+
+    try:
+        await Join(gen_task)
+    except ValueError:
+        pass
+
+    log.info(repr(gen_task))
+    assert re.match(r"<Task \d+ finished coro=generator_coro_outer\(\) outcome=Error\(ValueError\('inner',?\)\)>", repr(gen_task))
+
+    coro_e = Event('coroutine_inner')
+
+    async def coroutine_forked(task):
+        log.info(repr(task))
+        assert re.match(r"<Task \d+ adding coro=coroutine_outer\(\)>", repr(task))
+
+    @cocotb.coroutine
+    async def coroutine_wait():
+        await Timer(1, units='ns')
+
+    async def coroutine_inner():
+        await coro_e.wait()
+        this_task = coro_e.data
+        # cr_await is None while the coroutine is running, so we can't get the stack...
+        log.info(repr(this_task))
+        assert re.match(r"<Task \d+ running coro=coroutine_outer\(\)>", repr(this_task))
+
+        cocotb.fork(coroutine_forked(this_task))
+        await Combine(*(coroutine_wait() for _ in range(2)))
+
+        return "Combine done"
+
+    async def coroutine_middle():
+        return await coroutine_inner()
+
+    async def coroutine_outer():
+        return await coroutine_middle()
+
+    coro_task = cocotb.fork(coroutine_outer())
+
+    coro_e.set(coro_task)
+
+    await NullTrigger()
+
+    log.info(repr(coro_task))
+    assert re.match(
+        r"<Task \d+ pending coro=coroutine_inner\(\) trigger=Combine\(Join\(<Task \d+>\), Join\(<Task \d+>\)\)>",
+        repr(coro_task)
+    )
+
+    await Timer(2, units='ns')
+
+    log.info(repr(coro_task))
+    assert re.match(r"<Task \d+ finished coro=coroutine_outer\(\) outcome=Value\('Combine done'\)", repr(coro_task))
+
+    async def coroutine_first():
+        await First(coroutine_wait(), Timer(2, units='ns'))
+
+    coro_task = cocotb.fork(coroutine_first())
+
+    log.info(repr(coro_task))
+    assert re.match(
+        r"<Task \d+ pending coro=coroutine_first\(\) trigger=First\(Join\(<Task \d+>\), <Timer of 2000.00ps at \w+>\)>",
+        repr(coro_task)
+    )
+
+    async def coroutine_timer():
+        await Timer(1, units='ns')
+
+    coro_task = cocotb.fork(coroutine_timer())
+
+    # Trigger.__await__ should be popped from the coroutine stack
+    log.info(repr(coro_task))
+    assert re.match(r"<Task \d+ pending coro=coroutine_timer\(\) trigger=<Timer of 1000.00ps at \w+>>", repr(coro_task))
