@@ -42,7 +42,10 @@ entity sample_module is
         clk                             : in    std_ulogic;
 
         stream_in_data                  : in    std_ulogic_vector(7 downto 0);
+        stream_in_data_dword            : in    std_ulogic_vector(31 downto 0);
+        stream_in_data_39bit            : in    std_ulogic_vector(38 downto 0);
         stream_in_data_wide             : in    std_ulogic_vector(63 downto 0);
+        stream_in_data_dqword           : in    std_ulogic_vector(127 downto 0);
         stream_in_valid                 : in    std_ulogic;
         stream_in_func_en               : in    std_ulogic;
         stream_in_ready                 : out   std_ulogic;
