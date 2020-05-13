@@ -60,7 +60,7 @@ import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
-from cocotb.result import TestComplete
+from cocotb.result import TestComplete, _EscapeHatch
 from cocotb.utils import remove_traceback_frames
 from cocotb import _py_compat
 
@@ -721,7 +721,10 @@ class Scheduler:
             self.add(self._pending_coros.pop(0))
 
     def finish_test(self, exc):
-        cocotb.regression_manager._test_task.abort(exc)
+        try:
+            cocotb.regression_manager._test_task.abort(exc)
+        except _EscapeHatch:
+            pass
         cocotb.regression_manager._check_termination()
 
     def finish_scheduler(self, exc):

@@ -34,7 +34,7 @@ import os
 
 import cocotb
 from cocotb.log import SimLog
-from cocotb.result import ReturnValue
+from cocotb.result import ReturnValue, _EscapeHatch
 from cocotb.utils import get_sim_time, lazy_property, remove_traceback_frames
 from cocotb import outcomes
 
@@ -152,6 +152,9 @@ class RunningTask:
         except StopIteration as e:
             self._outcome = outcomes.Value(e.value)
             raise CoroutineComplete()
+        except _EscapeHatch:
+            # must pass escape hatch through all calls to schedule() so user cannot handle it
+            raise
         except BaseException as e:
             self._outcome = outcomes.Error(remove_traceback_frames(e, ['_advance', 'send']))
             raise CoroutineComplete()
@@ -274,6 +277,7 @@ class RunningTest(RunningCoroutine):
         if _debug:
             self.log.debug("outcome forced to {}".format(outcome))
         self._outcome = outcome
+        raise _EscapeHatch from None
 
     def sort_name(self):
         if self.stage is None:

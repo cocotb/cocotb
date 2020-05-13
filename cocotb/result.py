@@ -140,3 +140,8 @@ class SimFailure(TestComplete):
 class SimTimeoutError(TimeoutError):
     """Exception for when a timeout, in terms of simulation time, occurs."""
     pass
+
+
+class _EscapeHatch(BaseException):
+    """Internal class used to prevent issue with schedule re-entrancy."""
+    pass

@@ -39,7 +39,7 @@ from typing import Any, Optional, Tuple, Iterable
 import cocotb
 import cocotb.ANSI as ANSI
 from cocotb.log import SimLog
-from cocotb.result import TestSuccess, SimFailure
+from cocotb.result import TestSuccess, SimFailure, _EscapeHatch
 from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
 from cocotb.decorators import test as Test, hook as Hook, RunningTask
@@ -328,7 +328,10 @@ class RegressionManager:
         return test
 
     def _react(self, trigger: Trigger) -> None:
-        cocotb.scheduler.react(trigger)
+        try:
+            cocotb.scheduler.react(trigger)
+        except _EscapeHatch:
+            pass
         self._check_termination()
 
     def _check_termination(self):
