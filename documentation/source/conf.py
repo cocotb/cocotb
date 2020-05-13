@@ -43,6 +43,7 @@ extensions = [
     'sphinx_issues',
     'sphinxarg.ext',
     'sphinxcontrib.spelling',
+    'sphinx_tabs.tabs',
     ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}

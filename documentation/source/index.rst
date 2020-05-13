@@ -69,8 +69,12 @@ The :keyword:`await` keyword is used to indicate when to pass control of executi
 A test can spawn multiple coroutines, allowing for independent flows of execution.
 
 
-.. todo::
-   - Move "Installation" section to here
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   quickstart
+   install
 
 ..
    Tutorials - lessons that take the reader by the hand through a series of steps to complete a project
@@ -91,7 +95,6 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    :name: tutorials
    :hidden:
 
-   quickstart
    endian_swapper
    ping_tun_tap
    hal_cosimulation
@@ -144,6 +147,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    :name: key_topics
    :hidden:
 
+   install_devel
    troubleshooting
 
 .. todo::
@@ -194,11 +198,11 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    - In Contributing, add explanation on how to provide a PR, how to test existing PRs, etc.
    - merge `further_resources` into Contributing
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Index
+   :name: index
+   :hidden:
 
-
-#######
-Indices
-#######
-
-* :ref:`Index of Classes, Methods, Variables etc.<genindex>`
-* :ref:`Index of Python Modules <modindex>`
+   Classes, Methods, Variables etc. <genindex>
+   Python Modules <py-modindex>
