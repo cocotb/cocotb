@@ -120,6 +120,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    coroutines
    triggers
    testbench_tools
+   rotating_logger
 
 .. todo::
    - Add WaveDrom, IPython sections

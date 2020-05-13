@@ -67,8 +67,10 @@ def default_config():
 
     If desired, this logging configuration can be overwritten by calling
     ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards), or by
-    manually resetting the root logger instance, for which examples can be
-    found online.
+    manually resetting the root logger instance.
+    An example of this can be found in the section on :ref:`rotating-logger`.
+
+    .. versionadded:: 1.4
     """
     # construct an appropriate handler
     hdlr = logging.StreamHandler(sys.stdout)
@@ -134,11 +136,13 @@ class SimTimeContextFilter(logging.Filter):
     This uses the approach described in the :ref:`Python logging cookbook <python:filters-contextual>`.
 
     This adds the :attr:`~logging.LogRecord.created_sim_time` attribute.
+
+    .. versionadded:: 1.4
     """
 
     # needed to make our docs render well
     def __init__(self):
-        """ Takes no arguments """
+        """"""
         super().__init__()
 
     def filter(self, record):
