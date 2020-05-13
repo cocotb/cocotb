@@ -5,6 +5,8 @@ import pytest
 
 from cocotb.binary import BinaryValue, BinaryRepresentation
 
+TRUNCATION_MATCH = r"\d+-bit value requested, truncating value"
+
 
 def test_init_big_endian_twos_comp():
     bin1 = BinaryValue(value=-1, n_bits=2, bigEndian=True, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
@@ -111,22 +113,44 @@ def test_init_unsigned_negative_value():
         pytest.fail("Expected ValueError when assigning negative number to unsigned BinaryValue")
 
 
-def test_init_not_enough_bits(capsys):
-    bin1 = BinaryValue(value=128, n_bits=7, bigEndian=True, binaryRepresentation=BinaryRepresentation.UNSIGNED)
-    assert bin1._str == "0000000"
-    assert bin1.binstr == "0000000"
-    assert bin1.integer == 0
-    captured = capsys.readouterr()
-    assert captured.out == "WARNING: truncating value to match requested number of bits (8 -> 7)\n"
+def test_init_not_enough_bits():
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        bin1_unsigned = BinaryValue(value=128, n_bits=7, bigEndian=True,
+                                    binaryRepresentation=BinaryRepresentation.UNSIGNED)
+    assert bin1_unsigned._str == "0000000"
+    assert bin1_unsigned.binstr == "0000000"
+    assert bin1_unsigned.integer == 0
 
-    bin2 = BinaryValue(value="1111110000101100", n_bits=12, bigEndian=False,
-                       binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        bin1_sigmag = BinaryValue(value=128, n_bits=7, bigEndian=True,
+                                  binaryRepresentation=BinaryRepresentation.SIGNED_MAGNITUDE)
+    assert bin1_sigmag._str == "0000000"
+    assert bin1_sigmag.binstr == "0000000"
+    assert bin1_sigmag.integer == 0
+
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        bin1_twoscomp = BinaryValue(value=128, n_bits=7, bigEndian=True,
+                                    binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
+    assert bin1_twoscomp._str == "0000000"
+    assert bin1_twoscomp.binstr == "0000000"
+    assert bin1_twoscomp.integer == 0
+
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        bin1_binstr = BinaryValue(value="110000000", n_bits=7, bigEndian=True)
+    assert bin1_binstr._str == "0000000"
+    assert bin1_binstr.binstr == "0000000"
+    assert bin1_binstr.integer == 0
+
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        bin2 = BinaryValue(value="1111110000101100", n_bits=12, bigEndian=False,
+                           binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
     assert bin2._str == "110000101100"
     assert bin2.binstr == "110000101100"
     assert bin2.integer == -980
 
-    bin3 = BinaryValue(value="1111110000101100", n_bits=11, bigEndian=False,
-                       binaryRepresentation=BinaryRepresentation.SIGNED_MAGNITUDE)
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        bin3 = BinaryValue(value="1111110000101100", n_bits=11, bigEndian=False,
+                           binaryRepresentation=BinaryRepresentation.SIGNED_MAGNITUDE)
     assert bin3._str == "10000101100"
     assert bin3.binstr == "10000101100"
     assert bin3.integer == -44
@@ -248,36 +272,40 @@ def test_backwards_compatibility():
 
 
 def test_buff_big_endian():
-    orig_str = "011011001001"
+    orig_str = "0110"+"1100"+"1001"
     orig_bytes = b'\x06\xC9'  # padding is the high bits of the first byte
 
     v = BinaryValue(value=orig_str, n_bits=12, bigEndian=True)
     assert v.buff == orig_bytes
 
-    # should be unchanged
-    v.buff = orig_bytes
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        # the binstr is truncated, but its value should be unchanged
+        v.buff = orig_bytes
     assert v.buff == orig_bytes
     assert v.binstr == orig_str
 
-    # extra bits are stripped because they don't fit into the 12 bits
-    v.buff = b'\xF6\xC9'
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        # extra bits are stripped because they don't fit into the 12 bits
+        v.buff = b'\xF6\xC9'
     assert v.buff == orig_bytes
     assert v.binstr == orig_str
 
 
 def test_buff_little_endian():
-    orig_str = "011011001001"
+    orig_str = "0110"+"1100"+"1001"
     orig_bytes = b'\xC9\x06'  # padding is the high bits of the last byte
 
     v = BinaryValue(value=orig_str, n_bits=12, bigEndian=False)
     assert v.buff == orig_bytes
 
-    # should be unchanged
-    v.buff = orig_bytes
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        # the binstr is truncated, but its value should be unchanged
+        v.buff = orig_bytes
     assert v.buff == orig_bytes
     assert v.binstr == orig_str
 
-# extra bits are stripped because they don't fit into the 12 bits
-    v.buff = b'\xC9\xF6'
+    with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
+        # extra bits are stripped because they don't fit into the 12 bits
+        v.buff = b'\xC9\xF6'
     assert v.buff == orig_bytes
     assert v.binstr == orig_str

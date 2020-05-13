@@ -237,12 +237,12 @@ class BinaryValue:
             else:
                 rv = '0' * (self._n_bits - l) + x
         elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
             if self.big_endian:
                 rv = x[l - self._n_bits:]
             else:
                 rv = x[:l - self._n_bits]
+            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
         return rv
 
     def _adjust_signed_mag(self, x):
@@ -258,12 +258,12 @@ class BinaryValue:
                 rv = '0' * (self._n_bits - 1 - l) + x[1:]
                 rv = x[0] + rv
         elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
             if self.big_endian:
                 rv = x[l - self._n_bits:]
             else:
                 rv = x[:-(l - self._n_bits)]
+            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
         else:
             rv = x
         return rv
@@ -278,12 +278,12 @@ class BinaryValue:
             else:
                 rv = x[0] * (self._n_bits - l) + x
         elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
             if self.big_endian:
                 rv = x[l - self._n_bits:]
             else:
                 rv = x[:-(l - self._n_bits)]
+            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
         else:
             rv = x
         return rv
@@ -380,9 +380,10 @@ class BinaryValue:
             else:
                 self._str = "0" * (self._n_bits - l) + self._str
         elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
-            self._str = self._str[l - self._n_bits:]
+            rv = self._str[l - self._n_bits:]
+            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                self._n_bits, self._str, l, rv), category=RuntimeWarning, stacklevel=3)
+            self._str = rv
 
     get_buff = buff.fget
     set_buff = buff.fset
