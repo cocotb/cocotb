@@ -123,3 +123,23 @@ def test_real_assign_int(dut):
     log.info("Read back value %d" % got)
     if got != float(val):
         raise TestFailure("Values didn't match!")
+
+
+# identifiers starting with `_` are illegal in VHDL
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
+async def test_access_underscore_name(dut):
+    """Test accessing HDL name starting with an underscore"""
+    # direct access does not work because we consider such names cocotb-internal
+    with assert_raises(AttributeError):
+        dut._underscore_name
+
+    # indirect access works
+    dut._id("_underscore_name", extended=False) <= 0
+    await Timer(1, 'ns')
+    assert dut._id("_underscore_name", extended=False).value == 0
+    dut._id("_underscore_name", extended=False) <= 1
+    await Timer(1, 'ns')
+    assert dut._id("_underscore_name", extended=False).value == 1
+    dut._id("_underscore_name", extended=False) <= 0
+    await Timer(1, 'ns')
+    assert dut._id("_underscore_name", extended=False).value == 0
