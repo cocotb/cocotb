@@ -113,7 +113,7 @@ namespace {
     // Initialize the python type slots
     template<typename gpi_hdl>
     PyTypeObject fill_common_slots() {
-        PyTypeObject type;
+        PyTypeObject type = {};
         type.ob_base = {PyObject_HEAD_INIT(NULL) 0};
         type.tp_basicsize = sizeof(gpi_hdl_Object<gpi_hdl>);
         type.tp_repr = (reprfunc)gpi_hdl_repr<gpi_hdl>;
