@@ -601,7 +601,6 @@ static void register_embed()
 {
     vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
-    gpi_load_extra_libs();
 }
 
 
@@ -717,6 +716,7 @@ static void register_system_functions()
 
 void (*vlog_startup_routines[])() = {
     register_embed,
+    gpi_load_extra_libs,
     register_system_functions,
     register_initial_callback,
     register_final_callback,

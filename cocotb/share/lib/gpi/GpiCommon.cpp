@@ -199,11 +199,6 @@ static void gpi_load_libs(std::vector<std::string> to_load)
 
 void gpi_load_extra_libs()
 {
-    static bool loading = false;
-
-    if (loading)
-        return;
-
     /* Lets look at what other libs we were asked to load too */
     char *lib_env = getenv("GPI_EXTRA");
 
@@ -228,7 +223,6 @@ void gpi_load_extra_libs()
             to_load.push_back(lib_list);
         }
 
-        loading = true;
         gpi_load_libs(to_load);
     }
 
