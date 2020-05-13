@@ -270,7 +270,10 @@ class RunningTest(RunningCoroutine):
         `exc` is the exception that the test should report as its reason for
         aborting.
         """
-        assert self._outcome is None
+        if self._outcome is not None:
+            # imported here to avoid circular imports
+            from cocotb.scheduler import InternalError
+            raise InternalError("Outcome already has a value, but is being set again.")
         outcome = outcomes.Error(exc)
         if _debug:
             self.log.debug("outcome forced to {}".format(outcome))
