@@ -233,8 +233,9 @@ class Scheduler:
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
 
-        # A list of pending (write_func, args)
-        self._write_calls = []
+        # A dictionary of pending (write_func, args), keyed by handle. Only the last scheduled write
+        # in a timestep is performed, all the rest are discarded in python.
+        self._write_calls = _py_compat.insertion_ordered_dict()
 
         self._pending_coros = []
         self._pending_triggers = []
@@ -260,7 +261,7 @@ class Scheduler:
             await self._read_write
 
             while self._write_calls:
-                func, args = self._write_calls.pop()
+                handle, (func, args) = self._write_calls.popitem()
                 func(*args)
             self._writes_pending.clear()
 
@@ -286,7 +287,7 @@ class Scheduler:
             self._trigger2coros = _py_compat.insertion_ordered_dict()
             self._coro2trigger = _py_compat.insertion_ordered_dict()
             self._terminate = False
-            self._write_calls = []
+            self._write_calls = _py_compat.insertion_ordered_dict()
             self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
@@ -517,7 +518,7 @@ class Scheduler:
         if self._write_coro_inst is None:
             self._write_coro_inst = self.add(self._do_writes())
 
-        self._write_calls.append((write_func, args))
+        self._write_calls[handle] = (write_func, args)
         self._writes_pending.set()
 
     def _resume_coro_upon(self, coro, trigger):
