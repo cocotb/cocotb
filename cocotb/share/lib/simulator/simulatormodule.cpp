@@ -174,6 +174,11 @@ struct sim_time {
 
 static struct sim_time cache_time;
 
+enum class limits_e : int {
+    NONE = 0,
+    SIGNED_32BIT = 1
+};
+
 /**
  * @name    Callback Handling
  * @brief   Handle a callback coming from GPI
@@ -666,29 +671,19 @@ static PyObject *set_signal_val_int(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject 
 {
     long long value;
     gpi_set_action_t action;
+    limits_e limits;
 
-    if (!PyArg_ParseTuple(args, "iL:set_signal_val_int", &action, &value)) {
+    if (!PyArg_ParseTuple(args, "iLi:set_signal_val_int", &action, &value, &limits)) {
         return NULL;
     }
 
-    if (value < std::numeric_limits<int32_t>::min() ||
-        value > std::numeric_limits<int32_t>::max()) {
-        const char *m_name = gpi_get_signal_name_str(self->hdl);
-        PyErr_Format(PyExc_OverflowError, "Value (%lld) out of range for assignment of 32-bit integer signal (%s)", value, m_name);
-        return NULL;
-    }
-
-    gpi_set_signal_value_int(self->hdl, static_cast<int32_t>(value), action);
-    Py_RETURN_NONE;
-}
-
-static PyObject *set_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
-{
-    long long value;
-    gpi_set_action_t action;
-
-    if (!PyArg_ParseTuple(args, "iL:set_signal_val_long", &action, &value)) {
-        return NULL;
+    if (limits == limits_e::SIGNED_32BIT) {
+        if (value < std::numeric_limits<int32_t>::min() ||
+            value > std::numeric_limits<int32_t>::max()) {
+            const char *m_name = gpi_get_signal_name_str(self->hdl);
+            PyErr_Format(PyExc_OverflowError, "Value (%lld) out of range for assignment of 32-bit signed integer signal (%s)", value, m_name);
+            return NULL;
+        }
     }
 
     gpi_set_signal_value_int(self->hdl, static_cast<int32_t>(value), action);
@@ -1182,17 +1177,9 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
             "Get the value of a signal as a float."
         )
     },
-    {"set_signal_val_long",
-        (PyCFunction)set_signal_val_long, METH_VARARGS, PyDoc_STR(
-            "set_signal_val_long($self, action, value, /)\n"
-            "--\n\n"
-            "set_signal_val_long(action: int, value: int) -> None\n"
-            "Set the value of a signal using an integer.\n"
-        )
-    },
     {"set_signal_val_int",
         (PyCFunction)set_signal_val_int, METH_VARARGS, PyDoc_STR(
-            "set_signal_val_int($self, action, value, /)\n"
+            "set_signal_val_int($self, action, value, limits, /)\n"
             "--\n\n"
             "Set the value of a signal using an int"
         )

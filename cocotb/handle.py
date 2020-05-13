@@ -31,6 +31,7 @@
 
 import ctypes
 import warnings
+import enum
 
 import cocotb
 from cocotb import simulator
@@ -39,6 +40,11 @@ from cocotb.log import SimLog
 
 # Only issue a warning for each deprecated attribute access
 _deprecation_warned = set()
+
+
+class _Limits(enum.IntEnum):
+    NONE         = 0
+    SIGNED_32BIT = 1  # -2**(Nbits - 1) <= value <= 2**(Nbits - 1)  where Nbits = 32
 
 
 class SimHandleBase:
@@ -707,7 +713,7 @@ class ModifiableObject(NonConstantObject):
         value, set_action = self._check_for_set_action(value)
 
         if isinstance(value, int) and value < 0x7fffffff and len(self) <= 32:
-            call_sim(self, self._handle.set_signal_val_long, set_action, value)
+            call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.NONE))
             return
         if isinstance(value, ctypes.Structure):
             warnings.warn(
@@ -823,7 +829,7 @@ class EnumObject(ModifiableObject):
                 "Unsupported type for enum value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self, self._handle.set_signal_val_long, set_action, value)
+        call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.NONE))
 
     @ModifiableObject.value.getter
     def value(self) -> int:
@@ -858,7 +864,7 @@ class IntegerObject(ModifiableObject):
                 "Unsupported type for integer value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self, self._handle.set_signal_val_int, set_action, value)
+        call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.SIGNED_32BIT))
 
     @ModifiableObject.value.getter
     def value(self) -> int:
