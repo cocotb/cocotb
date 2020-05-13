@@ -134,6 +134,7 @@ Maintainers
 Cocotb uses a shared maintainer model.
 Most maintainers are experts in part of the cocotb codebase, and are primarily responsible for reviews in this area.
 
+- Kaleb Barrett (@ktbarrett)
 - Julius Baxter (@juliusbaxter)
 - Luke Darnell (@lukedarnell)
 - Tomasz Hemperek (@themperek)
