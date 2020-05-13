@@ -258,18 +258,20 @@ def _sim_event(level, message):
     from cocotb.result import TestFailure, SimFailure
 
     if level is SIM_TEST_FAIL:
-        scheduler.log.error("Failing test at simulator request")
-        scheduler.finish_test(TestFailure("Failure from external source: %s" %
-                              message))
+        if cocotb.regression_manager is not None:
+            # the regression manager may not have been created (_initialize_testbench failed)
+            msg = "Failing test at request of external source: " + message
+            cocotb.log.error(msg)
+            scheduler.finish_test(TestFailure(msg))
     elif level is SIM_FAIL:
-        # We simply return here as the simulator will exit
-        # so no cleanup is needed
-        msg = ("Failing test at simulator request before test run completion: "
-               "%s" % message)
-        scheduler.log.error(msg)
-        scheduler.finish_scheduler(SimFailure(msg))
+        if cocotb.regression_manager is not None:
+            # the regression manager may not have been created (_initialize_testbench failed)
+            msg = ("Failing remaining tests at request of external source "
+                   "before test run completion: ") + message
+            cocotb.log.error(msg)
+            scheduler.finish_scheduler(SimFailure(msg))
     else:
-        scheduler.log.error("Unsupported sim event")
+        cocotb.log.error("Unsupported sim event")
 
     return True
 
