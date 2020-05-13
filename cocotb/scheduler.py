@@ -42,7 +42,6 @@ import inspect
 # Debug mode controlled by environment variables
 if "COCOTB_ENABLE_PROFILING" in os.environ:
     import cProfile
-    import pstats
     _profile = cProfile.Profile()
     _profiling = True
 else:
@@ -265,68 +264,6 @@ class Scheduler:
                 func(*args)
             self._writes_pending.clear()
 
-    def _check_termination(self):
-        """
-        Handle a termination that causes us to move onto the next test.
-        """
-        if self._terminate:
-            if _debug:
-                self.log.debug("Test terminating, scheduling Timer")
-
-            if self._write_coro_inst is not None:
-                self._write_coro_inst.kill()
-                self._write_coro_inst = None
-
-            for t in self._trigger2coros:
-                t.unprime()
-
-            if self._timer1.primed:
-                self._timer1.unprime()
-
-            self._timer1.prime(self._test_completed)
-            self._trigger2coros = _py_compat.insertion_ordered_dict()
-            self._coro2trigger = _py_compat.insertion_ordered_dict()
-            self._terminate = False
-            self._write_calls = _py_compat.insertion_ordered_dict()
-            self._writes_pending.clear()
-            self._mode = Scheduler._MODE_TERM
-
-    def _test_completed(self, trigger=None):
-        """Called after a test and its cleanup have completed
-        """
-        if _debug:
-            self.log.debug("begin_test called with trigger: %s" %
-                           (str(trigger)))
-        if _profiling:
-            ps = pstats.Stats(_profile).sort_stats('cumulative')
-            ps.dump_stats("test_profile.pstat")
-            ctx = profiling_context()
-        else:
-            ctx = _py_compat.nullcontext()
-
-        with ctx:
-            self._mode = Scheduler._MODE_NORMAL
-            if trigger is not None:
-                trigger.unprime()
-
-            # extract the current test, and clear it
-            test = self._test
-            self._test = None
-            if test is None:
-                raise InternalError("_test_completed called with no active test")
-            if test._outcome is None:
-                raise InternalError("_test_completed called with an incomplete test")
-
-            # Issue previous test result
-            if _debug:
-                self.log.debug("Issue test result to regression object")
-
-            # this may scheduler another test
-            cocotb.regression_manager.handle_result(test)
-
-            # if it did, make sure we handle the test completing
-            self._check_termination()
-
     def react(self, trigger):
         """
         Called when a trigger fires.
@@ -461,7 +398,6 @@ class Scheduler:
                 del scheduling
 
             # no more pending triggers
-            self._check_termination()
             if _debug:
                 self.log.debug("All coroutines scheduled, handing control back"
                                " to simulator")
@@ -482,17 +418,7 @@ class Scheduler:
                 trigger.unprime()
                 del self._trigger2coros[trigger]
 
-        assert self._test is not None
-
-        if coro is self._test:
-            if _debug:
-                self.log.debug("Unscheduling test {}".format(coro))
-
-            if not self._terminate:
-                self._terminate = True
-                self.cleanup()
-
-        elif Join(coro) in self._trigger2coros:
+        if Join(coro) in self._trigger2coros:
             self.react(Join(coro))
         else:
             try:
@@ -502,11 +428,11 @@ class Scheduler:
             except (TestComplete, AssertionError) as e:
                 coro.log.info("Test stopped by this forked coroutine")
                 e = remove_traceback_frames(e, ['unschedule', 'get'])
-                self._test.abort(e)
+                cocotb.regression_manager._test_task.abort(e)
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
                 e = remove_traceback_frames(e, ['unschedule', 'get'])
-                self._test.abort(e)
+                cocotb.regression_manager._test_task.abort(e)
 
     def _schedule_write(self, handle, write_func, *args):
         """ Queue `write_func` to be called on the next ReadWrite trigger. """
@@ -543,7 +469,7 @@ class Scheduler:
                     "More than one coroutine waiting on an unprimed trigger")
 
             try:
-                trigger.prime(self.react)
+                trigger.prime(cocotb.regression_manager._react)
             except Exception as e:
                 # discard the trigger we associated, it will never fire
                 self._trigger2coros.pop(trigger)
@@ -667,19 +593,7 @@ class Scheduler:
             self.log.debug("Adding new coroutine %s" % coroutine.__qualname__)
 
         self.schedule(coroutine)
-        self._check_termination()
         return coroutine
-
-    def add_test(self, test_coro):
-        """Called by the regression manager to queue the next test"""
-        if self._test is not None:
-            raise InternalError("Test was added while another was in progress")
-
-        self._test = test_coro
-        self._resume_coro_upon(
-            test_coro,
-            NullTrigger(name="Start {!s}".format(test_coro), outcome=outcomes.Value(None))
-        )
 
     # This collection of functions parses a trigger out of the object
     # that was yielded by a coroutine, converting `list` -> `Waitable`,
@@ -775,10 +689,6 @@ class Scheduler:
         if coro_completed:
             self.unschedule(coroutine)
 
-        # Don't handle the result if we're shutting down
-        if self._terminate:
-            return
-
         if not coro_completed:
             try:
                 result = self._trigger_from_any(result)
@@ -811,32 +721,46 @@ class Scheduler:
             self.add(self._pending_coros.pop(0))
 
     def finish_test(self, exc):
-        self._test.abort(exc)
-        self._check_termination()
+        cocotb.regression_manager._test_task.abort(exc)
+        cocotb.regression_manager._check_termination()
 
     def finish_scheduler(self, exc):
         """Directly call into the regression manager and end test
            once we return the sim will close us so no cleanup is needed.
         """
-        # If there is an error during cocotb initialization, self._test may not
-        # have been set yet. Don't cause another Python exception here.
+        self.finish_test(exc)
 
-        if self._test:
-            self.log.debug("Issue sim closedown result to regression object")
-            self._test.abort(exc)
-            cocotb.regression_manager.handle_result(self._test)
+    def restart(self) -> None:
+        """Sets the scheduler back in a valid state to start a new test"""
+        self._is_reacting = False
+        self._mode = Scheduler._MODE_NORMAL
 
     def cleanup(self):
         """Clear up all our state.
 
         Unprime all pending triggers and kill off any coroutines stop all externals.
         """
+        self._mode = Scheduler._MODE_TERM
+
+        # kill writer coro and stop all pending writes
+        if self._write_coro_inst is not None:
+            self._write_coro_inst.kill()
+            self._write_coro_inst = None
+        self._write_calls = _py_compat.insertion_ordered_dict()
+        self._writes_pending.clear()
+
         # copy since we modify this in kill
         items = list(self._trigger2coros.items())
 
+        # empty all waiting triggers
+        self._trigger2coros = _py_compat.insertion_ordered_dict()
+        self._coro2trigger = _py_compat.insertion_ordered_dict()
+
+        # unprime all active triggers, kill all waiting tasks
         # reversing seems to fix gh-928, although the order is still somewhat
         # arbitrary.
         for trigger, waiting in items[::-1]:
+            trigger.unprime()
             for coro in waiting:
                 if _debug:
                     self.log.debug("Killing %s" % str(coro))
@@ -847,3 +771,9 @@ class Scheduler:
 
         for ext in self._pending_threads:
             self.log.warning("Waiting for %s to exit", ext.thread)
+
+        # stop all pending events (should already be empty)
+        self._pending_coros = []
+        self._pending_triggers = []
+        self._pending_threads = []
+        self._pending_events = []

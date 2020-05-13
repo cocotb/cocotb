@@ -45,6 +45,7 @@ from cocotb.xunit_reporter import XUnitReporter
 from cocotb.decorators import test as Test, hook as Hook, RunningTask
 from cocotb.outcomes import Outcome, Error
 from cocotb.handle import SimHandle
+from cocotb.triggers import Trigger, Timer
 
 from cocotb import simulator
 
@@ -95,6 +96,8 @@ class RegressionManager:
         self.count = 0
         self.skipped = 0
         self.failures = 0
+        self._timer1 = Timer(1)
+        self._sim_failed = False
 
         # Setup XUnit
         ###################
@@ -291,8 +294,6 @@ class RegressionManager:
             wall_time_s=real_time,
             sim_time_ns=sim_time_ns)
 
-        self.execute()
-
     def _init_test(self, test: Test) -> Optional[RunningTask]:
         """
         Initializes a test.
@@ -325,6 +326,16 @@ class RegressionManager:
 
         test = test_init_outcome.get()
         return test
+
+    def _react(self, trigger: Trigger) -> None:
+        cocotb.scheduler.react(trigger)
+        self._check_termination()
+
+    def _check_termination(self):
+        if self._test_task._finished:
+            self.handle_result(self._test_task)
+            cocotb.scheduler.cleanup()
+            self.execute()
 
     def _score_test(self, test: Test, outcome: Outcome) -> Tuple[bool, bool]:
         """
@@ -411,12 +422,12 @@ class RegressionManager:
                                 ratio_time=repr(ratio_time))
 
         if outcome is None:  # skipped
-            test_pass, sim_failed = None, False
+            test_pass = None
             self.xunit.add_skipped()
             self.skipped += 1
 
         else:
-            test_pass, sim_failed = self._score_test(test, outcome)
+            test_pass, self._sim_failed = self._score_test(test, outcome)
             if not test_pass:
                 self.xunit.add_failure()
                 self.failures += 1
@@ -428,21 +439,22 @@ class RegressionManager:
             'real': wall_time_s,
             'ratio': ratio_time})
 
-        if sim_failed:
-            self.tear_down()
-            return
-
     def execute(self) -> None:
+        if self._sim_failed:
+            return self.tear_down()
         while True:
             self._test = self.next_test()
             if self._test is None:
                 return self.tear_down()
 
             self._test_task = self._init_test(self._test)
-            if self._test_task:
-                return self._start_test()
+            if self._test_task is not None:
+                cocotb.scheduler.restart()
+                return cocotb.scheduler.add(self._start_test())
 
-    def _start_test(self) -> None:
+    async def _start_test(self) -> None:
+        await self._timer1
+
         start = ''
         end = ''
         if want_color_output():
@@ -460,7 +472,8 @@ class RegressionManager:
 
         self._test_start_time = time.time()
         self._test_start_sim_time = get_sim_time('ns')
-        cocotb.scheduler.add_test(self._test_task)
+
+        cocotb.scheduler.schedule(self._test_task)
 
     def _log_test_summary(self) -> None:
 
