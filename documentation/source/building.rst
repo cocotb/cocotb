@@ -189,6 +189,7 @@ Environment Variables
     ``COCOTB_ANSI_OUTPUT=0`` suppresses the ANSI output in the log messages
 
 .. envvar:: NO_COLOR
+
     From http://no-color.org,
 
         All command-line software which outputs text with ANSI color added should check for the presence
