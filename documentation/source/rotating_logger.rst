@@ -8,7 +8,7 @@ The following is an example of how to support rotation of log files.
 It will keep the newest 3 files which are at most 5 MiB in size.
 
 See also :ref:`logging-reference-section`,
-and the Python documentation for :class:`logging.RotatingFileHandler`.
+and the Python documentation for :class:`logging.handlers.RotatingFileHandler`.
 
 .. code-block:: python3
 
