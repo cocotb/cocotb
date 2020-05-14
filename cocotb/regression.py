@@ -188,7 +188,7 @@ class RegressionManager:
                         err = AttributeError("Test %s doesn't exist in %s" % (test_name, module_name))
                         raise err from None  # discard nested traceback
 
-                    if not hasattr(test, "im_test"):
+                    if not isinstance(test, Test):
                         _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
                                       test_name, module_name)
                         raise ImportError("Failed to find requested test %s" % test_name)
@@ -199,7 +199,7 @@ class RegressionManager:
 
             # auto-discover
             for thing in vars(module).values():
-                if hasattr(thing, "im_test"):
+                if isinstance(thing, Test):
                     yield thing
 
     @staticmethod
