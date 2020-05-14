@@ -1,1 +1,1 @@
-Questa now interprets relative paths to source files as relative to the Makefile, the same behavior used by other simulators.
+Questa, Aldec Riviera-PRO and GHDL now starts and saves results.xml file in Makefile location, the same behavior used by other simulators. (:pr:`1598`) (:pr:`1599`)
