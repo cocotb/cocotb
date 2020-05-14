@@ -43,12 +43,12 @@ module sample_module (
     output reg                                  stream_in_ready,
     input                                       stream_in_valid,
 `ifndef __ICARUS__
-    input real                                  stream_in_real,
+    input  real                                 stream_in_real,
     input  integer                              stream_in_int,
     output real                                 stream_out_real,
     output integer                              stream_out_int,
     input  test_if                              inout_if,
-    input string                                stream_in_string,
+    input  string                               stream_in_string,
 `endif
     input  [7:0]                                stream_in_data,
     input  [63:0]                               stream_in_data_wide,
@@ -70,9 +70,6 @@ const string STRING_CONST = "TESTING_CONST";
 
 always @(posedge clk)
     stream_out_data_registered <= stream_in_data;
-
-always @(stream_in_data)
-    stream_out_data_comb = stream_in_data;
 
 always @(stream_in_data)
     stream_out_data_comb = stream_in_data;
