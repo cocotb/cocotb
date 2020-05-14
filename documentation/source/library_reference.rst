@@ -346,6 +346,19 @@ The Scheduler
     :member-order: bysource
 
 
+The ``cocotb.simulator`` module
+-------------------------------
+
+This module is a Python wrapper to libgpi.
+It should not be considered public API, but is documented here for developers
+of cocotb.
+
+.. automodule:: cocotb.simulator
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+
 The ``cocotb-config`` script
 ----------------------------
 
