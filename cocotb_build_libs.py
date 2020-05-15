@@ -9,6 +9,7 @@ import logging
 import distutils
 import subprocess
 import textwrap
+import ctypes
 
 from setuptools import Extension
 from distutils.spawn import find_executable
@@ -446,6 +447,18 @@ def _get_vhpi_lib_ext(
     return libcocotbvhpi
 
 
+def _can_load_library(path):
+    try:
+        if os.name == "nt":
+            ctypes.windll.LoadLibrary(path)
+        else:
+            ctypes.cdll.LoadLibrary(path)
+    except OSError:
+        return False
+
+    return True
+
+
 def get_ext():
 
     cfg_vars = distutils.sysconfig.get_config_vars()
@@ -495,29 +508,45 @@ def get_ext():
     else:
         modelsim_dir = os.path.dirname(os.path.dirname(vsim_path))
         modelsim_include_dir = os.path.join(modelsim_dir, "include")
-        modelsim_lib_path = [os.path.dirname(vsim_path)]
+        modelsim_lib_path = os.path.dirname(vsim_path)
+        if os.name == "nt":
+            modelsim_libmtipli_path = os.path.join(modelsim_lib_path, "mtipli.dll")
+        else:
+            modelsim_libmtipli_path = os.path.join(modelsim_lib_path, "libmtipli.so")
         mti_path = os.path.join(modelsim_include_dir, "mti.h")
         if os.path.isfile(mti_path):
-            lib_name = "libcocotbfli_modelsim"
-            fli_sources = [
-                os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
-                os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
-                os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
-            ]
-            if os.name == "nt":
-                fli_sources += [lib_name + ".rc"]
-            fli_ext = Extension(
-                os.path.join("cocotb", "libs", lib_name),
-                define_macros=[("COCOTBFLI_EXPORTS", "")],
-                include_dirs=[include_dir, modelsim_include_dir],
-                libraries=["gpi", "gpilog", "stdc++", "mtipli"],
-                library_dirs=modelsim_lib_path,
-                sources=fli_sources,
-                extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
-                extra_compile_args=_extra_cxx_compile_args,
-            )
+            # Check if the library is compatible with our current architecture
+            # e.g. 32-bit libmtipli and 32-bit python runtime
+            # To check can load the library into our current python runtime
+            # if it works we are sure that it is compatible
+            if _can_load_library(modelsim_libmtipli_path):
+                lib_name = "libcocotbfli_modelsim"
+                fli_sources = [
+                    os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
+                    os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
+                    os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
+                ]
+                if os.name == "nt":
+                    fli_sources += [lib_name + ".rc"]
+                fli_ext = Extension(
+                    os.path.join("cocotb", "libs", lib_name),
+                    define_macros=[("COCOTBFLI_EXPORTS", "")],
+                    include_dirs=[include_dir, modelsim_include_dir],
+                    libraries=["gpi", "gpilog", "stdc++", "mtipli"],
+                    library_dirs=[modelsim_lib_path],
+                    sources=fli_sources,
+                    extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
+                    extra_compile_args=_extra_cxx_compile_args,
+                )
 
-            ext.append(fli_ext)
+                ext.append(fli_ext)
+            else:
+                logger.warning(
+                    "Cannot build FLI interface for Modelsim/Questa - "
+                    "the mtipli library for '{}' at '{}' cannot be loaded.".format(
+                        vsim_path, modelsim_libmtipli_path
+                    )
+                )  # e.g. 32-bit Modelsim versions do not work with 64-bit python
 
         else:
             logger.warning(
