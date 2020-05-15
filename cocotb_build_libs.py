@@ -215,7 +215,7 @@ class build_ext(_build_ext):
         """
 
         if os.name == "nt":
-            for sim in ["modelsim", "aldec"]:
+            for sim in ["aldec"]:
                 subprocess.run(
                     [
                         "dlltool",
@@ -478,12 +478,7 @@ def get_ext():
     #
     #  Modelsim/Questa
     #
-    modelsim_extra_lib = []
-    modelsim_extra_lib_path = []
     logger.info("Compiling libraries for Modelsim/Questa")
-    if os.name == "nt":
-        modelsim_extra_lib = ["modelsim"]
-        modelsim_extra_lib_path = [share_def_dir]
 
     modelsim_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
@@ -500,6 +495,7 @@ def get_ext():
     else:
         modelsim_dir = os.path.dirname(os.path.dirname(vsim_path))
         modelsim_include_dir = os.path.join(modelsim_dir, "include")
+        modelsim_lib_path = [os.path.dirname(vsim_path)]
         mti_path = os.path.join(modelsim_include_dir, "mti.h")
         if os.path.isfile(mti_path):
             lib_name = "libcocotbfli_modelsim"
@@ -514,8 +510,8 @@ def get_ext():
                 os.path.join("cocotb", "libs", lib_name),
                 define_macros=[("COCOTBFLI_EXPORTS", "")],
                 include_dirs=[include_dir, modelsim_include_dir],
-                libraries=["gpi", "gpilog", "stdc++"] + modelsim_extra_lib,
-                library_dirs=modelsim_extra_lib_path,
+                libraries=["gpi", "gpilog", "stdc++", "mtipli"],
+                library_dirs=modelsim_lib_path,
                 sources=fli_sources,
                 extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
                 extra_compile_args=_extra_cxx_compile_args,
