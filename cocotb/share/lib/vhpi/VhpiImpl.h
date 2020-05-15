@@ -30,6 +30,7 @@
 
 #include "../gpi/gpi_priv.h"
 #include <vhpi_user.h>
+#include <vhpi_user_ext.h>
 #include <vector>
 #include <map>
 

@@ -39,6 +39,12 @@ extern "C" {
 #define vpiInterconnectNet   533
 #define vpiInterconnectArray 534
 
+/* arguments for vpiStop or vpiFinish */
+#define vpiDiagNone               0  /* prints nothing */
+#define vpiDiagTimeLoc            1  /* prints simulation time and location */
+#define vpiDiagTimeLocCPUMem      2  /* prints simulation time, location and
+                                        statistics about CPU and memory usage */
+
 #ifdef  __cplusplus
 }
 #endif
