@@ -215,7 +215,7 @@ class build_ext(_build_ext):
         """
 
         if os.name == "nt":
-            for sim in ["icarus", "modelsim", "aldec", "ghdl"]:
+            for sim in ["modelsim", "aldec"]:
                 subprocess.run(
                     [
                         "dlltool",
@@ -407,7 +407,7 @@ def _get_vpi_lib_ext(
         os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
     ]
     if os.name == "nt":
-        libcocotbvpi_sources += [lib_name + ".rc"]
+        libcocotbvpi_sources += [lib_name + ".rc", os.path.join(share_lib_dir, "vpi", "VpiTrampoline.cpp")]
     libcocotbvpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         define_macros=[("COCOTBVPI_EXPORTS", ""), ("VPI_CHECKING", "1")] + [(sim_define, "")],
@@ -466,19 +466,12 @@ def get_ext():
     #
     #  Icarus Verilog
     #
-    icarus_extra_lib = []
-    icarus_extra_lib_path = []
     logger.info("Compiling libraries for Icarus Verilog")
-    if os.name == "nt":
-        icarus_extra_lib = ["icarus"]
-        icarus_extra_lib_path = [share_def_dir]
 
     icarus_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="ICARUS",
-        extra_lib=icarus_extra_lib,
-        extra_lib_dir=icarus_extra_lib_path,
     )
     ext.append(icarus_vpi_ext)
 
@@ -496,8 +489,6 @@ def get_ext():
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="MODELSIM",
-        extra_lib=modelsim_extra_lib,
-        extra_lib_dir=modelsim_extra_lib_path,
     )
     ext.append(modelsim_vpi_ext)
 
@@ -543,19 +534,12 @@ def get_ext():
     #
     # GHDL
     #
-    ghdl_extra_lib = []
-    ghdl_extra_lib_path = []
     logger.info("Compiling libraries for GHDL")
-    if os.name == "nt":
-        ghdl_extra_lib = ["ghdl"]
-        ghdl_extra_lib_path = [share_def_dir]
 
     ghdl_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="GHDL",
-        extra_lib=ghdl_extra_lib,
-        extra_lib_dir=ghdl_extra_lib_path,
     )
     ext.append(ghdl_vpi_ext)
 
@@ -598,8 +582,6 @@ def get_ext():
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
-        extra_lib=aldec_extra_lib,
-        extra_lib_dir=aldec_extra_lib_path,
     )
     ext.append(aldec_vpi_ext)
 
