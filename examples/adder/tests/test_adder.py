@@ -1,47 +1,40 @@
+# This file is public domain, it can be freely copied without restrictions.
+# SPDX-License-Identifier: CC0-1.0
 # Simple tests for an adder module
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestFailure
 from adder_model import adder_model
 import random
 
 
 @cocotb.test()
-def adder_basic_test(dut):
+async def adder_basic_test(dut):
     """Test for 5 + 10"""
-    yield Timer(2, units='ns')
+
     A = 5
     B = 10
 
-    dut.A = A
-    dut.B = B
+    dut.A <= A
+    dut.B <= B
 
-    yield Timer(2, units='ns')
+    await Timer(2, units='ns')
 
-    if int(dut.X) != adder_model(A, B):
-        raise TestFailure(
-            "Adder result is incorrect: %s != 15" % str(dut.X))
-    else:  # these last two lines are not strictly necessary
-        dut._log.info("Ok!")
+    assert int(dut.X) == adder_model(A, B), "Adder result is incorrect: {} != 15".format(dut.X)
 
 
 @cocotb.test()
-def adder_randomised_test(dut):
+async def adder_randomised_test(dut):
     """Test for adding 2 random numbers multiple times"""
-    yield Timer(2, units='ns')
 
     for i in range(10):
+
         A = random.randint(0, 15)
         B = random.randint(0, 15)
 
-        dut.A = A
-        dut.B = B
+        dut.A <= A
+        dut.B <= B
 
-        yield Timer(2, units='ns')
+        await Timer(2, units='ns')
 
-        if int(dut.X) != adder_model(A, B):
-            raise TestFailure(
-                "Randomised test failed with: %s + %s = %s" %
-                (int(dut.A), int(dut.B), int(dut.X)))
-        else:  # these last two lines are not strictly necessary
-            dut._log.info("Ok!")
+        assert int(dut.X) == adder_model(A, B), "Randomised test failed with: {A} + {B} = {X}".format(
+            A=int(dut.A), B=int(dut.B), X=int(dut.X))
