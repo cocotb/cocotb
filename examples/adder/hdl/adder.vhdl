@@ -1,24 +1,26 @@
+-- This file is public domain, it can be freely copied without restrictions.
+-- SPDX-License-Identifier: CC0-1.0
 -- Adder DUT
-library ieee ;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+library ieee;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_
+  std.all;
 
 entity adder is
-generic(
+  generic (
     DATA_WIDTH : positive := 4);
-port(
-    A : in  unsigned(DATA_WIDTH-1 downto 0);
-    B : in  unsigned(DATA_WIDTH-1 downto 0);
-    X : out unsigned(DATA_WIDTH downto 0)
-    );
-end adder;
+  port (
+    A : in    unsigned(DATA_WIDTH-1 downto 0);
+    B : in    unsigned(DATA_WIDTH-1 downto 0);
+    X : out   unsigned(DATA_WIDTH downto 0));
+end entity adder;
 
-architecture RTL of adder is
+architecture rtl of adder is
 begin
 
-    process(A, B)
-    begin
-	  X <= resize(A, X'length) + B;
-    end process;
+  add_proc : process (A, B) is
+  begin
+    X <= resize(A, X'length) + B;
+  end process add_proc;
 
-end RTL;
+end architecture rtl;
