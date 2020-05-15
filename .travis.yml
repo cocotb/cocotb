@@ -105,6 +105,31 @@ jobs:
         - powershell "$CONDA_PATH; tox -e py3_mingw"
 
     - stage: SimTests
+      name: "Py 3.7, Icarus devel"
+      env: ALLOW_FAIL=yes
+      python: 3.7
+      os: windows
+      language: shell
+      before_install:
+        - powershell "Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe"
+        - powershell "Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait"
+
+        - export CONDA_PATH="\$env:Path = ';C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin;C:\miniconda3\Library\usr\local\bin;' + \$env:Path"
+        - powershell "$CONDA_PATH; conda install --yes -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain libpython"
+        - powershell "$CONDA_PATH; conda install --yes virtualenv"
+        - powershell "$CONDA_PATH; pip install tox"
+
+        - powershell "$CONDA_PATH; if (!(Test-Path iverilog/README.txt)) { Get-ChildItem -Path iverilog -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue; Remove-Item iverilog -Force -Recurse -ErrorAction SilentlyContinue; git clone --depth=1 https://github.com/steveicarus/iverilog.git } else { cd iverilog; git fetch origin; cd ..}"
+        - powershell "$CONDA_PATH; cd iverilog; git reset --hard origin/master; git clean -fdx; cd .."
+        - powershell "$CONDA_PATH; cd iverilog; bash ./autoconf.sh; cd .."
+        - powershell "$CONDA_PATH; cd iverilog; bash ./configure --host=x86_64-w64-mingw32; cd .."
+        - powershell "$CONDA_PATH; cd iverilog; make; cd .."
+        - powershell "$CONDA_PATH; cd iverilog; make install; cd .."
+      script:
+        # TODO[gh-1372]: the default compiler on windows, msvc, is not supported
+        - powershell "$CONDA_PATH; tox -e py3_mingw"
+
+    - stage: SimTests
       os: osx
       osx_image: xcode11.2
       language: shell
@@ -146,3 +171,4 @@ jobs:
     - stage: SimTests
       python: 3.7
       env: SIM=ghdl TOPLEVEL_LANG=vhdl
+    - env: ALLOW_FAIL=yes
