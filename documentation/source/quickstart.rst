@@ -22,7 +22,7 @@ The following lines are all you need to run a first simulation with cocotb:
 
 .. code-block:: bash
 
-    cd cocotb/examples/endian_swapper/tests
+    cd cocotb/examples/simple_dff
     make
 
 This was running with the default simulator, Icarus Verilog,
@@ -36,7 +36,7 @@ but selecting a different simulator is as easy as:
 Running the same example as VHDL
 --------------------------------
 
-The ``endian_swapper`` example includes both a VHDL and a Verilog RTL implementation.
+The ``simple_dff`` example includes both a VHDL and a Verilog RTL implementation.
 The cocotb testbench can execute against either implementation using VPI for
 Verilog and VHPI/FLI for VHDL.  To run the test suite against the VHDL
 implementation, use the following command (a VHPI or FLI capable simulator must
