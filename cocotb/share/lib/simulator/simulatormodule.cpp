@@ -849,6 +849,35 @@ static int add_module_constants(PyObject* simulator)
     return 0;
 }
 
+// Add the extension types as entries in the module namespace
+static int add_module_types(PyObject* simulator)
+{
+    PyObject *typ;
+
+    typ = (PyObject *)&gpi_hdl_Object<gpi_sim_hdl>::py_type;
+    Py_INCREF(typ);
+    if (PyModule_AddObject(simulator, "gpi_sim_hdl", typ) < 0) {
+        Py_DECREF(typ);
+        return -1;
+    }
+
+    typ = (PyObject *)&gpi_hdl_Object<gpi_cb_hdl>::py_type;
+    Py_INCREF(typ);
+    if (PyModule_AddObject(simulator, "gpi_cb_hdl", typ) < 0) {
+        Py_DECREF(typ);
+        return -1;
+    }
+
+    typ = (PyObject *)&gpi_hdl_Object<gpi_iterator_hdl>::py_type;
+    Py_INCREF(typ);
+    if (PyModule_AddObject(simulator, "gpi_iterator_hdl", typ) < 0) {
+        Py_DECREF(typ);
+        return -1;
+    }
+
+    return 0;
+}
+
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     MODULE_NAME,
@@ -883,6 +912,12 @@ PyMODINIT_FUNC PyInit_simulator(void)
         Py_DECREF(simulator);
         return NULL;
     }
+
+    if (add_module_types(simulator) < 0) {
+        Py_DECREF(simulator);
+        return NULL;
+    }
+
     return simulator;
 }
 
@@ -951,7 +986,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
 template<>
 PyTypeObject gpi_hdl_Object<gpi_sim_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_sim_hdl>();
-    type.tp_name = "gpi_sim_hdl";
+    type.tp_name = "cocotb.simulator.gpi_sim_hdl";
     type.tp_methods = gpi_sim_hdl_methods;
     return type;
 }();
@@ -959,7 +994,7 @@ PyTypeObject gpi_hdl_Object<gpi_sim_hdl>::py_type = []() -> PyTypeObject {
 template<>
 PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_iterator_hdl>();
-    type.tp_name = "gpi_iterator_hdl";
+    type.tp_name = "cocotb.simulator.gpi_iterator_hdl";
     type.tp_iter = PyObject_SelfIter;
     type.tp_iternext = (iternextfunc)next;
     return type;
@@ -975,7 +1010,7 @@ static PyMethodDef gpi_cb_hdl_methods[] = {
 template<>
 PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_cb_hdl>();
-    type.tp_name = "gpi_cb_hdl";
+    type.tp_name = "cocotb.simulator.gpi_cb_hdl";
     type.tp_methods = gpi_cb_hdl_methods;
     return type;
 }();
