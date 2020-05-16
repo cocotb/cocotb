@@ -80,12 +80,6 @@ endif
 export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'from distutils.sysconfig import get_config_var; print(get_config_var("prefix"))')
 
 ifeq ($(OS),Msys)
-    # On Windows there is no support for @rpath/LD_LIBRARY_PATH so we need to set PATH to find cocotb libraries
-    # https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order?redirectedfrom=MSDN#standard-search-order-for-desktop-applications
-    export PATH := $(LIB_DIR):$(PATH)
-endif
-
-ifeq ($(OS),Msys)
     to_tcl_path = $(shell cygpath -m $(1) )
 else
     to_tcl_path = $(1)

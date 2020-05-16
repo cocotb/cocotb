@@ -39,7 +39,6 @@ import time
 import warnings
 from typing import Dict, List, Union
 
-import cocotb._os_compat  # must appear first, before the first import of cocotb.simulator
 import cocotb.handle
 import cocotb.log
 from cocotb.scheduler import Scheduler

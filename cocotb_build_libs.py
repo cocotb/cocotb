@@ -8,15 +8,111 @@ import sysconfig
 import logging
 import distutils
 import subprocess
+import textwrap
 
 from setuptools import Extension
 from distutils.spawn import find_executable
 from setuptools.command.build_ext import build_ext as _build_ext
 from distutils.file_util import copy_file
+from typing import List
 
 
 logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
+
+
+def create_sxs_assembly_manifest(name: str, filename: str, libraries: List[str]) -> str:
+    """
+    Create side-by-side (sxs) assembly manifest
+
+    It contains dependencies to other assemblies (in our case the assemblies are equal to the other libraries).
+    For more details see:
+     - https://docs.microsoft.com/en-us/windows/win32/sbscs/assembly-manifests
+     - https://docs.microsoft.com/en-us/windows/win32/sbscs/using-side-by-side-assemblies
+
+    Args:
+        name: The name of the assembly for which the manifest is generated, e.g. ``libcocotbutils``.
+        filename: The filename of the library, e.g. ``libcocotbutils.dll``.
+        libraries: A list of names of dependent manifests, e.g. ``["libgpilog"]``.
+    """
+
+    architecture = "amd64" if sys.maxsize > 2**32 else "x86"
+    dependencies = []
+
+    for lib in libraries:
+        dependencies.append(textwrap.dedent('''\
+            <dependency>
+                <dependentAssembly>
+                    <assemblyIdentity name="%s" version="1.0.0.0" type="win32" processorArchitecture="%s" />
+                </dependentAssembly>
+            </dependency>
+            ''') % (lib, architecture))
+
+    manifest_body = textwrap.dedent('''\
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+            <assemblyIdentity name="%s" version="1.0.0.0" type="win32" processorArchitecture="%s" />
+            <file name="%s" />
+            %s
+        </assembly>
+        ''') % (name, architecture, filename, textwrap.indent("".join(dependencies), '    ').strip())
+
+    return manifest_body
+
+
+def create_sxs_appconfig(filename):
+    """
+    Create side-by-side (sxs) application configuration file.
+
+    The application configuration specifies additional search paths for manifests.
+    For more details see: https://docs.microsoft.com/en-us/windows/win32/sbscs/application-configuration-files
+    """
+
+    config_body = textwrap.dedent('''\
+        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <configuration>
+            <windows>
+                <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
+                    <probing privatePath="libs" />
+                </assemblyBinding>
+            </windows>
+        </configuration>
+        ''')
+
+    dirpath = os.path.dirname(filename)
+    os.makedirs(dirpath, exist_ok=True)
+
+    with open(filename + ".2.config", "w", encoding='utf-8') as f:
+        f.write(config_body)
+
+
+def create_rc_file(name, filename, libraries):
+    """
+    Creates windows resource definition script to embed the side-by-side assembly manifest into the libraries.
+
+    For more details see: https://docs.microsoft.com/en-us/windows/win32/menurc/about-resource-files
+    """
+
+    manifest = create_sxs_assembly_manifest(name, filename, libraries)
+
+    # Escape double quotes and put every line between double quotes for embedding into rc file
+    manifest = manifest.replace('"', '""')
+    manifest = '\n'.join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
+
+    rc_body = textwrap.dedent('''\
+        #pragma code_page(65001) // UTF-8
+        #include <WinUser.h>
+
+        LANGUAGE 0x00, 0x00
+
+        ISOLATIONAWARE_MANIFEST_RESOURCE_ID RT_MANIFEST
+        BEGIN
+        %s
+        END
+        ''') % manifest
+
+    with open(name + ".rc", "w", encoding='utf-8') as f:
+        f.write(rc_body)
 
 
 def _get_lib_ext_name():
@@ -35,6 +131,18 @@ class build_ext(_build_ext):
 
         def_dir = os.path.join(cocotb_share_dir, "def")
         self._gen_import_libs(def_dir)
+
+        if os.name == "nt":
+            create_sxs_appconfig(self.get_ext_fullpath(os.path.join("cocotb", "simulator")))
+
+            ext_names = {os.path.split(ext.name)[-1] for ext in self.extensions}
+            for ext in self.extensions:
+                fullname = self.get_ext_fullname(ext.name)
+                filename = self.get_ext_filename(fullname)
+                name = os.path.split(fullname)[-1]
+                filename = os.path.split(filename)[-1]
+                libraries = {"lib" + lib for lib in ext.libraries}.intersection(ext_names)
+                create_rc_file(name, filename, libraries)
 
         super().run()
 
@@ -184,11 +292,16 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libcocotbutils
     #
+    libcocotbutils_sources = [
+        os.path.join(share_lib_dir, "utils", "cocotb_utils.cpp")
+    ]
+    if os.name == "nt":
+        libcocotbutils_sources += ["libcocotbutils.rc"]
     libcocotbutils = Extension(
         os.path.join("cocotb", "libs", "libcocotbutils"),
         include_dirs=[include_dir],
         libraries=["gpilog"],
-        sources=[os.path.join(share_lib_dir, "utils", "cocotb_utils.cpp")],
+        sources=libcocotbutils_sources,
         extra_link_args=_extra_link_args(lib_name="libcocotbutils", rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
     )
@@ -200,11 +313,16 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     if sys.platform == "darwin":
         python_lib_dirs = [sysconfig.get_config_var("LIBDIR")]
 
+    libgpilog_sources = [
+        os.path.join(share_lib_dir, "gpi_log", "gpi_logging.cpp")
+    ]
+    if os.name == "nt":
+        libgpilog_sources += ["libgpilog.rc"]
     libgpilog = Extension(
         os.path.join("cocotb", "libs", "libgpilog"),
         include_dirs=[include_dir],
         library_dirs=python_lib_dirs,
-        sources=[os.path.join(share_lib_dir, "gpi_log", "gpi_logging.cpp")],
+        sources=libgpilog_sources,
         extra_link_args=_extra_link_args(lib_name="libgpilog", rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
     )
@@ -212,13 +330,18 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libcocotb
     #
+    libcocotb_sources = [
+        os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")
+    ]
+    if os.name == "nt":
+        libcocotb_sources += ["libcocotb.rc"]
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
         define_macros=[("PYTHON_SO_LIB", _get_python_lib())],
         include_dirs=[include_dir],
         libraries=[_get_python_lib_link(), "gpilog", "cocotbutils"],
         library_dirs=python_lib_dirs,
-        sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")],
+        sources=libcocotb_sources,
         extra_link_args=_extra_link_args(lib_name="libcocotb", rpaths=["$ORIGIN"] + python_lib_dirs),
         extra_compile_args=_extra_cxx_compile_args,
     )
@@ -226,15 +349,18 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libgpi
     #
+    libgpi_sources=[
+        os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
+        os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
+    ]
+    if os.name == "nt":
+        libgpi_sources += ["libgpi.rc"]
     libgpi = Extension(
         os.path.join("cocotb", "libs", "libgpi"),
         define_macros=[("LIB_EXT", _get_lib_ext_name()), ("SINGLETON_HANDLES", "")],
         include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "cocotb", "stdc++"],
-        sources=[
-            os.path.join(share_lib_dir, "gpi", "GpiCbHdl.cpp"),
-            os.path.join(share_lib_dir, "gpi", "GpiCommon.cpp"),
-        ],
+        sources=libgpi_sources,
         extra_link_args=_extra_link_args(lib_name="libgpi", rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
     )
@@ -242,12 +368,17 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  simulator
     #
+    simulator_sources=[
+        os.path.join(share_lib_dir, "simulator", "simulatormodule.cpp"),
+    ]
+    if os.name == "nt":
+        simulator_sources += ["simulator.rc"]
     libsim = Extension(
         os.path.join("cocotb", "simulator"),
         include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "gpi"],
         library_dirs=python_lib_dirs,
-        sources=[os.path.join(share_lib_dir, "simulator", "simulatormodule.cpp")],
+        sources=simulator_sources,
         extra_compile_args=_extra_cxx_compile_args,
         extra_link_args=_extra_link_args(rpaths=["$ORIGIN/libs"]),
     )
@@ -262,16 +393,19 @@ def _get_vpi_lib_ext(
     include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
     lib_name = "libcocotbvpi_" + sim_define.lower()
+    libcocotbvpi_sources = [
+        os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
+        os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
+    ]
+    if os.name == "nt":
+        libcocotbvpi_sources += [lib_name + ".rc"]
     libcocotbvpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         define_macros=[("VPI_CHECKING", "1")] + [(sim_define, "")],
         include_dirs=[include_dir],
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
-        sources=[
-            os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
-            os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
-        ],
+        sources=libcocotbvpi_sources,
         extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
     )
@@ -283,16 +417,19 @@ def _get_vhpi_lib_ext(
     include_dir, share_lib_dir, sim_define, extra_lib=[], extra_lib_dir=[]
 ):
     lib_name = "libcocotbvhpi_" + sim_define.lower()
+    libcocotbvhpi_sources = [
+        os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
+        os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
+    ]
+    if os.name == "nt":
+        libcocotbvhpi_sources += [lib_name + ".rc"]
     libcocotbvhpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         include_dirs=[include_dir],
         define_macros=[("VHPI_CHECKING", 1)] + [(sim_define, "")],
         libraries=["gpi", "gpilog", "stdc++"] + extra_lib,
         library_dirs=extra_lib_dir,
-        sources=[
-            os.path.join(share_lib_dir, "vhpi", "VhpiImpl.cpp"),
-            os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
-        ],
+        sources=libcocotbvhpi_sources,
         extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
     )
@@ -366,16 +503,19 @@ def get_ext():
         mti_path = os.path.join(modelsim_include_dir, "mti.h")
         if os.path.isfile(mti_path):
             lib_name = "libcocotbfli_modelsim"
+            fli_sources = [
+                os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
+                os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
+                os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
+            ]
+            if os.name == "nt":
+                fli_sources += [lib_name + ".rc"]
             fli_ext = Extension(
                 os.path.join("cocotb", "libs", lib_name),
                 include_dirs=[include_dir, modelsim_include_dir],
                 libraries=["gpi", "gpilog", "stdc++"] + modelsim_extra_lib,
                 library_dirs=modelsim_extra_lib_path,
-                sources=[
-                    os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
-                    os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
-                    os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
-                ],
+                sources=fli_sources,
                 extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
                 extra_compile_args=_extra_cxx_compile_args,
             )
