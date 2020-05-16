@@ -123,6 +123,13 @@ int gpi_register_impl(GpiImplInterface *func_tbl)
     return 0;
 }
 
+gpi_interface *gpi_default_impl() {
+    if (registered_impls.size() > 0) {
+        return registered_impls[0];
+    }
+    return nullptr;
+}
+
 void gpi_embed_init(int argc, char const* const* argv)
 {
     if (embed_sim_init(argc, argv))
@@ -135,9 +142,9 @@ void gpi_embed_end()
     gpi_cleanup();
 }
 
-void gpi_sim_end()
+void gpi_sim_end(gpi_interface *impl)
 {
-    registered_impls[0]->sim_end();
+    impl->sim_end();
 }
 
 void gpi_cleanup(void)
@@ -226,16 +233,16 @@ void gpi_load_extra_libs()
     gpi_print_registered_impl();
 }
 
-void gpi_get_sim_time(uint32_t *high, uint32_t *low)
+void gpi_get_sim_time(gpi_interface *impl, uint32_t *high, uint32_t *low)
 {
-    registered_impls[0]->get_sim_time(high, low);
+    impl->get_sim_time(high, low);
 }
 
-void gpi_get_sim_precision(int32_t *precision)
+void gpi_get_sim_precision(gpi_interface *impl, int32_t *precision)
 {
     /* We clamp to sensible values here, 1e-15 min and 1e3 max */
     int32_t val;
-    registered_impls[0]->get_sim_precision(&val);
+    impl->get_sim_precision(&val);
     if (val > 2 )
         val = 2;
 
@@ -246,14 +253,14 @@ void gpi_get_sim_precision(int32_t *precision)
 
 }
 
-const char *gpi_get_simulator_product()
+const char *gpi_get_simulator_product(gpi_interface *impl)
 {
-    return registered_impls[0]->get_simulator_product();
+    return impl->get_simulator_product();
 }
 
-const char *gpi_get_simulator_version()
+const char *gpi_get_simulator_version(gpi_interface *impl)
 {
-    return registered_impls[0]->get_simulator_version();
+    return impl->get_simulator_version();
 }
 
 gpi_sim_hdl gpi_get_root_handle(const char *name)
@@ -546,10 +553,11 @@ int gpi_get_range_right(gpi_sim_hdl obj_hdl)
     return obj_hdl->get_range_right();
 }
 
-gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),
-                                               void *gpi_cb_data,
-                                               gpi_sim_hdl sig_hdl,
-                                               int edge)
+gpi_cb_hdl gpi_register_value_change_callback(
+        int (*gpi_function)(const void *),
+        void *gpi_cb_data,
+        gpi_sim_hdl sig_hdl,
+        int edge)
 {
 
     GpiSignalObjHdl *signal_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
@@ -567,10 +575,12 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),
 
 /* It should not matter which implementation we use for this so just pick the first
    one */
-gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(const void *),
-                                        void *gpi_cb_data, uint64_t time_ps)
+gpi_cb_hdl gpi_register_timed_callback(
+        gpi_interface *impl,
+        int (*gpi_function)(const void *),
+        void *gpi_cb_data, uint64_t time_ps)
 {
-    GpiCbHdl *gpi_hdl = registered_impls[0]->register_timed_callback(time_ps);
+    GpiCbHdl *gpi_hdl = impl->register_timed_callback(time_ps);
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a timed callback");
         return NULL;
@@ -583,10 +593,12 @@ gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(const void *),
 /* It should not matter which implementation we use for this so just pick the first
    one
 */
-gpi_cb_hdl gpi_register_readonly_callback(int (*gpi_function)(const void *),
-                                           void *gpi_cb_data)
+gpi_cb_hdl gpi_register_readonly_callback(
+        gpi_interface *impl,
+        int (*gpi_function)(const void *),
+        void *gpi_cb_data)
 {
-    GpiCbHdl *gpi_hdl = registered_impls[0]->register_readonly_callback();
+    GpiCbHdl *gpi_hdl = impl->register_readonly_callback();
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a readonly callback");
         return NULL;
@@ -596,10 +608,12 @@ gpi_cb_hdl gpi_register_readonly_callback(int (*gpi_function)(const void *),
     return gpi_hdl;
 }
 
-gpi_cb_hdl gpi_register_nexttime_callback(int (*gpi_function)(const void *),
-                                           void *gpi_cb_data)
+gpi_cb_hdl gpi_register_nexttime_callback(
+        gpi_interface *impl,
+        int (*gpi_function)(const void *),
+        void *gpi_cb_data)
 {
-    GpiCbHdl *gpi_hdl = registered_impls[0]->register_nexttime_callback();
+    GpiCbHdl *gpi_hdl = impl->register_nexttime_callback();
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a nexttime callback");
         return NULL;
@@ -612,10 +626,12 @@ gpi_cb_hdl gpi_register_nexttime_callback(int (*gpi_function)(const void *),
 /* It should not matter which implementation we use for this so just pick the first
    one
 */
-gpi_cb_hdl gpi_register_readwrite_callback(int (*gpi_function)(const void *),
-                                            void *gpi_cb_data)
+gpi_cb_hdl gpi_register_readwrite_callback(
+        gpi_interface *impl,
+        int (*gpi_function)(const void *),
+        void *gpi_cb_data)
 {
-    GpiCbHdl *gpi_hdl = registered_impls[0] ->register_readwrite_callback();
+    GpiCbHdl *gpi_hdl = impl->register_readwrite_callback();
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a readwrite callback");
         return NULL;

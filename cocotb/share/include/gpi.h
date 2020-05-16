@@ -87,9 +87,11 @@ we have to create a process with the signal on the sensitivity list to imitate a
     class GpiObjHdl;
     class GpiCbHdl;
     class GpiIterator;
+    class GpiImplInterface;
     typedef GpiObjHdl *gpi_sim_hdl;
     typedef GpiCbHdl *gpi_cb_hdl;
     typedef GpiIterator *gpi_iterator_hdl;
+    typedef GpiImplInterface *gpi_interface;
 #else
     /* In C, we declare some incomplete struct types that we never complete.
      * The names of these are irrelevant, but for simplicity they match the C++
@@ -98,9 +100,11 @@ we have to create a process with the signal on the sensitivity list to imitate a
     struct GpiObjHdl;
     struct GpiCbHdl;
     struct GpiIterator;
+    struct GpiImplInterface;
     typedef struct GpiObjHdl *gpi_sim_hdl;
     typedef struct GpiCbHdl *gpi_cb_hdl;
     typedef struct GpiIterator *gpi_iterator_hdl;
+    typedef struct GpiImplInterface *gpi_interface;
 #endif
 
 EXTERN_C_START
@@ -111,31 +115,34 @@ typedef enum gpi_event_e {
     SIM_FAIL = 2,
 } gpi_event_t;
 
+// Obtain a handle to an interface, if one is available
+gpi_interface *gpi_default_impl(void);
+
 // Functions for controlling/querying the simulation state
 
 // Stop the simulator
-void gpi_sim_end(void);
+void gpi_sim_end(gpi_interface *impl);
 
 // Cleanup GPI resources during sim shutdown
-void gpi_cleanup(void);
+void gpi_cleanup(gpi_interface *impl);
 
 // Returns simulation time as two uints. Units are default sim units
-void gpi_get_sim_time(uint32_t *high, uint32_t *low);
-void gpi_get_sim_precision(int32_t *precision);
+void gpi_get_sim_time(gpi_interface *impl, uint32_t *high, uint32_t *low);
+void gpi_get_sim_precision(gpi_interface *impl, int32_t *precision);
 
 /**
  * Returns a string with the running simulator product information
  *
  * @return simulator product string
  */
-const char *gpi_get_simulator_product(void);
+const char *gpi_get_simulator_product(gpi_interface *impl);
 
 /**
  * Returns a string with the running simulator version
  *
  * @return simulator version string
  */
-const char *gpi_get_simulator_version(void);
+const char *gpi_get_simulator_version(gpi_interface *impl);
 
 // Functions for extracting a gpi_sim_hdl to an object
 // Returns a handle to the root simulation object,
@@ -233,11 +240,11 @@ typedef enum gpi_edge {
 } gpi_edge_e;
 
 // The callback registering functions
-gpi_cb_hdl gpi_register_timed_callback                  (int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
-gpi_cb_hdl gpi_register_value_change_callback           (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
-gpi_cb_hdl gpi_register_readonly_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
-gpi_cb_hdl gpi_register_nexttime_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
-gpi_cb_hdl gpi_register_readwrite_callback              (int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_value_change_callback (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
+gpi_cb_hdl gpi_register_timed_callback        (gpi_interface *impl, int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
+gpi_cb_hdl gpi_register_readonly_callback     (gpi_interface *impl, int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_nexttime_callback     (gpi_interface *impl, int (*gpi_function)(const void *), void *gpi_cb_data);
+gpi_cb_hdl gpi_register_readwrite_callback    (gpi_interface *impl, int (*gpi_function)(const void *), void *gpi_cb_data);
 
 // Calling convention is that 0 = success and negative numbers a failure
 // For implementers of GPI the provided macro GPI_RET(x) is provided

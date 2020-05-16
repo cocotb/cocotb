@@ -130,6 +130,8 @@ namespace {
     PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type;
     template<>
     PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type;
+    template<>
+    PyTypeObject gpi_hdl_Object<gpi_interface>::py_type;
 }
 
 
@@ -875,6 +877,13 @@ static int add_module_types(PyObject* simulator)
         return -1;
     }
 
+    typ = (PyObject *)&gpi_hdl_Object<gpi_interface>::py_type;
+    Py_INCREF(typ);
+    if (PyModule_AddObject(simulator, "gpi_interface", typ) < 0) {
+        Py_DECREF(typ);
+        return -1;
+    }
+
     return 0;
 }
 
@@ -902,6 +911,10 @@ PyMODINIT_FUNC PyInit_simulator(void)
     if (PyType_Ready(&gpi_hdl_Object<gpi_iterator_hdl>::py_type) < 0) {
         return NULL;
     }
+    if (PyType_Ready(&gpi_hdl_Object<gpi_interface>::py_type) < 0) {
+        return NULL;
+    }
+
 
     PyObject* simulator = PyModule_Create(&moduledef);
     if (simulator == NULL) {
