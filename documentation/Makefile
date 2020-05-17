@@ -15,12 +15,22 @@ BUILDDIR      = build
 # Put it first so that "make" without argument is like "make help".
 help: .venv
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@echo "Other targets"
+	@echo "  .venv             Create virtual environment used to generate documentation"
+	@echo "  rebuild_cocotb    Rebuilds the cocotb package and installs in the virtual environment"
+	@echo "  clean             Deletes Sphinx-build artifacts"
+	@echo "  distclean         Deletes the virtual environment and Sphinx-build artifacts"
+	@echo "  help              Prints this help message"
 
 .venv: requirements.txt
 	@echo Creating Python venv for Sphinx build
 	python3 -m venv .venv
 	.venv/bin/pip -q install --upgrade pip
 	.venv/bin/pip -q install -r requirements.txt
+	.venv/bin/pip -q install -e ..
+
+.PHONY: rebuild_cocotb
+rebuild_cocotb:
 	.venv/bin/pip -q install -e ..
 
 .PHONY: clean
@@ -41,4 +51,4 @@ distclean:
 # We hack around that by calling the target explicitly.
 	make .venv
 
-	source .venv/bin/activate; $(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	. .venv/bin/activate; $(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
