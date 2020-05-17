@@ -921,11 +921,19 @@ PyMODINIT_FUNC PyInit_simulator(void)
     return simulator;
 }
 
+/* NOTE: in the following docstrings we are specifying the parameters twice, but this is necessary.
+ * The first docstring before the long '--' line specifies the __text_signature__ that is used
+ * by the help() function. And the second after the '--' line contains type annotations used by
+ * the `autodoc_docstring_signature` setting of sphinx.ext.autodoc for generating documentation
+ * because type annotations are not supported in __text_signature__.
+ */
+
 static PyMethodDef gpi_sim_hdl_methods[] = {
     {"get_signal_val_long",
         (PyCFunction)get_signal_val_long, METH_NOARGS, PyDoc_STR(
             "get_signal_val_long($self)\n"
             "--\n\n"
+            "get_signal_val_long(self) -> int\n"
             "Get the value of a signal as an integer."
         )
     },
@@ -933,13 +941,15 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_signal_val_str, METH_NOARGS, PyDoc_STR(
             "get_signal_val_str($self)\n"
             "--\n\n"
-            "Get the value of a signal as a string."
+            "get_signal_val_str(self) -> bytes\n"
+            "Get the value of a signal as a byte string."
         )
     },
     {"get_signal_val_binstr",
         (PyCFunction)get_signal_val_binstr, METH_NOARGS, PyDoc_STR(
             "get_signal_val_binstr($self)\n"
             "--\n\n"
+            "get_signal_val_binstr(self) -> str\n"
             "Get the value of a logic vector signal as a string of (``0``, ``1``, ``X``, etc.), one element per character."
         )
     },
@@ -947,6 +957,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_signal_val_real, METH_NOARGS, PyDoc_STR(
             "get_signal_val_real($self)\n"
             "--\n\n"
+            "get_signal_val_real(self) -> float\n"
             "Get the value of a signal as a float."
         )
     },
@@ -954,6 +965,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)set_signal_val_long, METH_VARARGS, PyDoc_STR(
             "set_signal_val_long($self, action, value, /)\n"
             "--\n\n"
+            "set_signal_val_long(self, action: int, value: int) -> None\n"
             "Set the value of a signal using an integer.\n"
         )
     },
@@ -961,6 +973,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)set_signal_val_str, METH_VARARGS, PyDoc_STR(
             "set_signal_val_str($self, action, value, /)\n"
             "--\n\n"
+            "set_signal_val_str(self, action: int, value: bytes) -> None\n"
             "Set the value of a signal using a user-encoded string."
         )
     },
@@ -968,6 +981,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)set_signal_val_binstr, METH_VARARGS, PyDoc_STR(
             "set_signal_val_binstr($self, action, value, /)\n"
             "--\n\n"
+            "set_signal_val_binstr(self, action: int, value: str) -> None\n"
             "Set the value of a logic vector signal using a string of (``0``, ``1``, ``X``, etc.), one element per character."
         )
     },
@@ -975,6 +989,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)set_signal_val_real, METH_VARARGS, PyDoc_STR(
             "set_signal_val_real($self, action, value, /)\n"
             "--\n\n"
+            "set_signal_val_real(self, action: int, value: float) -> None\n"
             "Set the value of a signal using a float."
         )
     },
@@ -982,6 +997,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_definition_name, METH_NOARGS, PyDoc_STR(
             "get_definition_name($self)\n"
             "--\n\n"
+            "get_definition_name(self) -> str\n"
             "Get the name of a GPI object's definition."
         )
     },
@@ -989,6 +1005,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_definition_file, METH_NOARGS, PyDoc_STR(
             "get_definition_file($self)\n"
             "--\n\n"
+            "get_definition_file(self) -> str\n"
             "Get the file that sources the object's definition."
         )
     },
@@ -996,6 +1013,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_handle_by_name, METH_VARARGS, PyDoc_STR(
             "get_handle_by_name($self, name, /)\n"
             "--\n\n"
+            "get_handle_by_name(self, name: str) -> cocotb.simulator.gpi_sim_hdl\n"
             "Get a handle to a child object by name."
         )
     },
@@ -1003,6 +1021,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_handle_by_index, METH_VARARGS, PyDoc_STR(
             "get_handle_by_index($self, index, /)\n"
             "--\n\n"
+            "get_handle_by_index(self, index: int) -> cocotb.simulator.gpi_sim_hdl\n"
             "Get a handle to a child object by index."
         )
     },
@@ -1010,6 +1029,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_name_string, METH_NOARGS, PyDoc_STR(
             "get_name_string($self)\n"
             "--\n\n"
+            "get_name_string(self) -> str\n"
             "Get the name of an object as a string."
         )
     },
@@ -1017,6 +1037,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_type_string, METH_NOARGS, PyDoc_STR(
             "get_type_string($self)\n"
             "--\n\n"
+            "get_type_string(self) -> str\n"
             "Get the GPI type of an object as a string."
         )
     },
@@ -1024,6 +1045,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_type, METH_NOARGS, PyDoc_STR(
             "get_type($self)\n"
             "--\n\n"
+            "get_type(self) -> int\n"
             "Get the GPI type of an object as an enum."
         )
     },
@@ -1031,6 +1053,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_const, METH_NOARGS, PyDoc_STR(
             "get_const($self)\n"
             "--\n\n"
+            "get_const(self) -> bool\n"
             "Return ``True`` if the object is a constant."
         )
     },
@@ -1038,6 +1061,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_num_elems, METH_NOARGS, PyDoc_STR(
             "get_num_elems($self)\n"
             "--\n\n"
+            "get_num_elems(self) -> int\n"
             "Get the number of elements contained in the handle."
         )
     },
@@ -1045,6 +1069,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_range, METH_NOARGS, PyDoc_STR(
             "get_range($self)\n"
             "--\n\n"
+            "get_range(self) -> Tuple[int, int]\n"
             "Get the range of elements (tuple) contained in the handle, return ``None`` if not indexable."
         )
     },
@@ -1052,6 +1077,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)iterate, METH_VARARGS, PyDoc_STR(
             "iterate($self, mode, /)\n"
             "--\n\n"
+            "iterate(self, mode: int) -> cocotb.simulator.gpi_iterator_hdl\n"
             "Get an iterator handle to loop over all members in an object."
         )
     },
@@ -1081,6 +1107,7 @@ static PyMethodDef gpi_cb_hdl_methods[] = {
         (PyCFunction)deregister, METH_NOARGS, PyDoc_STR(
             "deregister($self)\n"
             "--\n\n"
+            "deregister(self) -> None\n"
             "De-register this callback."
         )},
     {NULL, NULL, 0, NULL}        /* Sentinel */
