@@ -855,7 +855,7 @@ class IntegerObject(ModifiableObject):
                 "Unsupported type for integer value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self, self._handle.set_signal_val_long, set_action, value)
+        call_sim(self, self._handle.set_signal_val_int, set_action, value)
 
     @ModifiableObject.value.getter
     def value(self) -> int:

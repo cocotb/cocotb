@@ -661,6 +661,19 @@ static PyObject *set_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
     Py_RETURN_NONE;
 }
 
+static PyObject *set_signal_val_int(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
+{
+    int value;
+    gpi_set_action_t action;
+
+    if (!PyArg_ParseTuple(args, "ii:set_signal_val_int", &action, &value)) {
+        return NULL;
+    }
+
+    gpi_set_signal_value_int(self->hdl, static_cast<int32_t>(value), action);
+    Py_RETURN_NONE;
+}
+
 static PyObject *set_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
     long long value;
@@ -1167,6 +1180,13 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
             "--\n\n"
             "set_signal_val_long(action: int, value: int) -> None\n"
             "Set the value of a signal using an integer.\n"
+        )
+    },
+    {"set_signal_val_int",
+        (PyCFunction)set_signal_val_int, METH_VARARGS, PyDoc_STR(
+            "set_signal_val_int($self, action, value, /)\n"
+            "--\n\n"
+            "Set the value of a signal using an int"
         )
     },
     {"set_signal_val_str",
