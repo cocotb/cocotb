@@ -73,68 +73,72 @@ static PyMethodDef SimulatorMethods[] = {
     {"log_msg", log_msg, METH_VARARGS, PyDoc_STR(
         "log_msg(name, path, funcname, lineno, msg, /)\n"
         "--\n\n"
-        "Log a message"
+        "Log a message."
     )},
     {"get_root_handle", get_root_handle, METH_VARARGS, PyDoc_STR(
         "get_root_handle(name, /)\n"
         "--\n\n"
-        "Get the root handle"
+        "Get the root handle."
     )},
     {"register_timed_callback", register_timed_callback, METH_VARARGS, PyDoc_STR(
         "register_timed_callback(time, func, /, *args)\n"
         "--\n\n"
-        "Register a timed callback"
+        "Register a timed callback."
     )},
     {"register_value_change_callback", register_value_change_callback, METH_VARARGS, PyDoc_STR(
         "register_value_change_callback(signal, func, edge, /, *args)\n"
         "--\n\n"
-        "Register a signal change callback"
+        "Register a signal change callback."
     )},
     {"register_readonly_callback", register_readonly_callback, METH_VARARGS, PyDoc_STR(
         "register_readonly_callback(func, /, *args)\n"
         "--\n\n"
-        "Register a callback for the read-only section"
+        "Register a callback for the read-only section."
     )},
     {"register_nextstep_callback", register_nextstep_callback, METH_VARARGS, PyDoc_STR(
         "register_nextstep_callback(func, /, *args)\n"
         "--\n\n"
-        "Register a callback for the NextSimTime callback"
+        "Register a callback for the NextSimTime callback."
     )},
     {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS, PyDoc_STR(
         "register_rwsynch_callback(func, /, *args)\n"
         "--\n\n"
-        "Register a callback for the read-write section"
+        "Register a callback for the read-write section."
     )},
     {"stop_simulator", stop_simulator, METH_VARARGS, PyDoc_STR(
         "stop_simulator()\n"
         "--\n\n"
-        "Instruct the attached simulator to stop"
+        "Instruct the attached simulator to stop. Users should not call this function."
     )},
     {"log_level", log_level, METH_VARARGS, PyDoc_STR(
         "log_level(level, /)\n"
         "--\n\n"
-        "Set the log level for GPI"
+        "Set the log level for GPI."
     )},
 
     {"get_sim_time", get_sim_time, METH_NOARGS, PyDoc_STR(
         "get_sim_time()\n"
         "--\n\n"
-        "Get the current simulation time as an int tuple"
+        "Get the current simulation time.\n"
+        "\n"
+        "Time is represented as a tuple of 32 bit integers ([low32, high32]) comprising a single 64 bit integer."
     )},
     {"get_precision", get_precision, METH_NOARGS, PyDoc_STR(
         "get_precision()\n"
         "--\n\n"
-        "Get the precision of the simulator"
+        "Get the precision of the simulator in powers of 10.\n"
+        "\n"
+        "For example, if ``-12`` is returned, the simulator's time precision is 10**-12 or 1 ps."
     )},
     {"get_simulator_product", get_simulator_product, METH_NOARGS, PyDoc_STR(
         "get_simulator_product()\n"
         "--\n\n"
-        "Simulator product information"
+        "Get the simulator's product string."
     )},
     {"get_simulator_version", get_simulator_version, METH_NOARGS, PyDoc_STR(
         "get_simulator_version()\n"
         "--\n\n"
-        "Simulator product version information"
+        "Get the simulator's product version string."
     )},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
