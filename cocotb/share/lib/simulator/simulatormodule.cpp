@@ -255,6 +255,7 @@ err:
 static PyObject *log_msg(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
+
     const char *name;
     const char *path;
     const char *msg;
@@ -295,6 +296,11 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
 
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
     Py_ssize_t numargs = PyTuple_Size(args);
 
     if (numargs < 1) {
@@ -332,6 +338,11 @@ static PyObject *register_readonly_callback(PyObject *self, PyObject *args)
 static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
+
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -371,6 +382,11 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args)
 static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
+
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -414,6 +430,11 @@ static PyObject *register_nextstep_callback(PyObject *self, PyObject *args)
 static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
+
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -472,6 +493,11 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
 static PyObject *register_value_change_callback(PyObject *self, PyObject *args) //, PyObject *keywds)
 {
     COCOTB_UNUSED(self);
+
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
 
     Py_ssize_t numargs = PyTuple_Size(args);
 
@@ -675,6 +701,11 @@ static PyObject *get_root_handle(PyObject *self, PyObject *args)
     COCOTB_UNUSED(self);
     const char *name;
 
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
     if (!PyArg_ParseTuple(args, "z:get_root_handle", &name)) {
         return NULL;
     }
@@ -725,6 +756,12 @@ static PyObject *get_sim_time(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
     COCOTB_UNUSED(args);
+
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
     struct sim_time local_time;
 
     if (is_python_context) {
@@ -744,6 +781,15 @@ static PyObject *get_precision(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
     COCOTB_UNUSED(args);
+
+    if (!gpi_has_registered_impl()) {
+        char const * msg = "Simulator is not available! Defaulting precision to 1 fs.";
+        if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0) {
+            return NULL;
+        }
+        return PyLong_FromLong(-15);  // preserves old behavior
+    }
+
     int32_t precision;
 
     gpi_get_sim_precision(&precision);
@@ -755,6 +801,12 @@ static PyObject *get_simulator_product(PyObject *m, PyObject *args)
 {
     COCOTB_UNUSED(m);
     COCOTB_UNUSED(args);
+
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
     return PyUnicode_FromString(gpi_get_simulator_product());
 }
 
@@ -762,6 +814,12 @@ static PyObject *get_simulator_version(PyObject *m, PyObject *args)
 {
     COCOTB_UNUSED(m);
     COCOTB_UNUSED(args);
+
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
     return PyUnicode_FromString(gpi_get_simulator_version());
 }
 
@@ -792,6 +850,12 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
     COCOTB_UNUSED(args);
+
+    if (!gpi_has_registered_impl()) {
+        PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+        return NULL;
+    }
+
     gpi_sim_end();
     sim_ending = 1;
     Py_RETURN_NONE;
@@ -810,6 +874,7 @@ static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *args)
 static PyObject *log_level(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
+
     long l_level;
 
     if (!PyArg_ParseTuple(args, "l:log_level", &l_level)) {
