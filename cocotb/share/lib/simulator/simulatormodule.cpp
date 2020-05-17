@@ -926,133 +926,133 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
         (PyCFunction)get_signal_val_long, METH_NOARGS, PyDoc_STR(
             "get_signal_val_long($self)\n"
             "--\n\n"
-            "Get the value of a signal as a long"
+            "Get the value of a signal as an integer."
         )
     },
     {"get_signal_val_str",
         (PyCFunction)get_signal_val_str, METH_NOARGS, PyDoc_STR(
             "get_signal_val_str($self)\n"
             "--\n\n"
-            "Get the value of a signal as an ASCII string"
+            "Get the value of a signal as a string."
         )
     },
     {"get_signal_val_binstr",
         (PyCFunction)get_signal_val_binstr, METH_NOARGS, PyDoc_STR(
             "get_signal_val_binstr($self)\n"
             "--\n\n"
-            "Get the value of a signal as a binary string"
+            "Get the value of a logic vector signal as a string of (``0``, ``1``, ``X``, etc.), one element per character."
         )
     },
     {"get_signal_val_real",
         (PyCFunction)get_signal_val_real, METH_NOARGS, PyDoc_STR(
             "get_signal_val_real($self)\n"
             "--\n\n"
-            "Get the value of a signal as a double precision float"
+            "Get the value of a signal as a float."
         )
     },
     {"set_signal_val_long",
         (PyCFunction)set_signal_val_long, METH_VARARGS, PyDoc_STR(
             "set_signal_val_long($self, action, value, /)\n"
             "--\n\n"
-            "Set the value of a signal using a long"
+            "Set the value of a signal using an integer.\n"
         )
     },
     {"set_signal_val_str",
         (PyCFunction)set_signal_val_str, METH_VARARGS, PyDoc_STR(
             "set_signal_val_str($self, action, value, /)\n"
             "--\n\n"
-            "Set the value of a signal using an NUL-terminated 8-bit string"
+            "Set the value of a signal using a user-encoded string."
         )
     },
     {"set_signal_val_binstr",
         (PyCFunction)set_signal_val_binstr, METH_VARARGS, PyDoc_STR(
             "set_signal_val_binstr($self, action, value, /)\n"
             "--\n\n"
-            "Set the value of a signal using a string with a character per bit"
+            "Set the value of a logic vector signal using a string of (``0``, ``1``, ``X``, etc.), one element per character."
         )
     },
     {"set_signal_val_real",
         (PyCFunction)set_signal_val_real, METH_VARARGS, PyDoc_STR(
             "set_signal_val_real($self, action, value, /)\n"
             "--\n\n"
-            "Set the value of a signal using a double precision float"
+            "Set the value of a signal using a float."
         )
     },
     {"get_definition_name",
         (PyCFunction)get_definition_name, METH_NOARGS, PyDoc_STR(
             "get_definition_name($self)\n"
             "--\n\n"
-            "Get the name of a GPI object's definition"
+            "Get the name of a GPI object's definition."
         )
     },
     {"get_definition_file",
         (PyCFunction)get_definition_file, METH_NOARGS, PyDoc_STR(
             "get_definition_file($self)\n"
             "--\n\n"
-            "Get the file that sources the object's definition"
+            "Get the file that sources the object's definition."
         )
     },
     {"get_handle_by_name",
         (PyCFunction)get_handle_by_name, METH_VARARGS, PyDoc_STR(
             "get_handle_by_name($self, name, /)\n"
             "--\n\n"
-            "Get handle of a named object"
+            "Get a handle to a child object by name."
         )
     },
     {"get_handle_by_index",
         (PyCFunction)get_handle_by_index, METH_VARARGS, PyDoc_STR(
             "get_handle_by_index($self, index, /)\n"
             "--\n\n"
-            "Get handle of a object at an index in a parent"
+            "Get a handle to a child object by index."
         )
     },
     {"get_name_string",
         (PyCFunction)get_name_string, METH_NOARGS, PyDoc_STR(
             "get_name_string($self)\n"
             "--\n\n"
-            "Get the name of an object as a string"
+            "Get the name of an object as a string."
         )
     },
     {"get_type_string",
         (PyCFunction)get_type_string, METH_NOARGS, PyDoc_STR(
             "get_type_string($self)\n"
             "--\n\n"
-            "Get the type of an object as a string"
+            "Get the GPI type of an object as a string."
         )
     },
     {"get_type",
         (PyCFunction)get_type, METH_NOARGS, PyDoc_STR(
             "get_type($self)\n"
             "--\n\n"
-            "Get the type of an object, mapped to a GPI enumeration"
+            "Get the GPI type of an object as an enum."
         )
     },
     {"get_const",
         (PyCFunction)get_const, METH_NOARGS, PyDoc_STR(
             "get_const($self)\n"
             "--\n\n"
-            "Get a flag indicating whether the object is a constant"
+            "Return ``True`` if the object is a constant."
         )
     },
     {"get_num_elems",
         (PyCFunction)get_num_elems, METH_NOARGS, PyDoc_STR(
             "get_num_elems($self)\n"
             "--\n\n"
-            "Get the number of elements contained in the handle"
+            "Get the number of elements contained in the handle."
         )
     },
     {"get_range",
         (PyCFunction)get_range, METH_NOARGS, PyDoc_STR(
             "get_range($self)\n"
             "--\n\n"
-            "Get the range of elements (tuple) contained in the handle, returns None if not indexable"
+            "Get the range of elements (tuple) contained in the handle, return ``None`` if not indexable."
         )
     },
     {"iterate",
         (PyCFunction)iterate, METH_VARARGS, PyDoc_STR(
             "iterate($self, mode, /)\n"
             "--\n\n"
-            "Get an iterator handle to loop over all members in an object"
+            "Get an iterator handle to loop over all members in an object."
         )
     },
     {NULL, NULL, 0, NULL}        /* Sentinel */
@@ -1081,7 +1081,7 @@ static PyMethodDef gpi_cb_hdl_methods[] = {
         (PyCFunction)deregister, METH_NOARGS, PyDoc_STR(
             "deregister($self)\n"
             "--\n\n"
-            "De-register this callback"
+            "De-register this callback."
         )},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
