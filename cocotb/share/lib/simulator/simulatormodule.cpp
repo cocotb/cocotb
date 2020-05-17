@@ -1089,6 +1089,9 @@ template<>
 PyTypeObject gpi_hdl_Object<gpi_sim_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_sim_hdl>();
     type.tp_name = "cocotb.simulator.gpi_sim_hdl";
+    type.tp_doc = "GPI object handle\n"
+        "\n"
+        "Contains methods for getting and setting the value of a GPI object, and introspection.";
     type.tp_methods = gpi_sim_hdl_methods;
     return type;
 }();
@@ -1097,6 +1100,7 @@ template<>
 PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_iterator_hdl>();
     type.tp_name = "cocotb.simulator.gpi_iterator_hdl";
+    type.tp_doc = "GPI iterator handle.";
     type.tp_iter = PyObject_SelfIter;
     type.tp_iternext = (iternextfunc)next;
     return type;
@@ -1117,6 +1121,7 @@ template<>
 PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
     auto type = fill_common_slots<gpi_cb_hdl>();
     type.tp_name = "cocotb.simulator.gpi_cb_hdl";
+    type.tp_doc = "GPI callback handle";
     type.tp_methods = gpi_cb_hdl_methods;
     return type;
 }();
