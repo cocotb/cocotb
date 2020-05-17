@@ -70,22 +70,31 @@ async def test_delayed_assignment_still_errors(dut):
         dut.stream_in_int <= []
 
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
-def test_integer(dut):
-    """
-    Test access to integers
-    """
-    log = logging.getLogger("cocotb.test")
-    yield Timer(10)
-    dut.stream_in_int = 4
-    yield Timer(10)
-    yield Timer(10)
-    got_in = int(dut.stream_out_int)
-    got_out = int(dut.stream_in_int)
-    log.info("dut.stream_out_int = %d" % got_out)
-    log.info("dut.stream_in_int = %d" % got_in)
-    if got_in != got_out:
-        raise TestFailure("stream_in_int and stream_out_int should not match")
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+async def test_integer(dut):
+    """Test access to integers."""
+    for value in [0, 1, -1, 4, -4, 2**31-1, -2**31]:
+        dut.stream_in_int = value
+        await cocotb.triggers.Timer(10, 'ns')
+        assert int(dut.stream_in_int) == value
+
+
+@cocotb.test(expect_error=OverflowError, skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+async def test_integer_overflow(dut):
+    """Test integer overflow."""
+    value = 2**31
+    dut.stream_in_int = value
+    await cocotb.triggers.Timer(10, 'ns')
+    assert int(dut.stream_in_int) == value
+
+
+@cocotb.test(expect_error=OverflowError, skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+async def test_integer_underflow(dut):
+    """Test integer underflow."""
+    value = -2**32-1
+    dut.stream_in_int = value
+    await cocotb.triggers.Timer(10, 'ns')
+    assert int(dut.stream_in_int) == value
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
