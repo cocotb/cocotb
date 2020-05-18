@@ -1,1 +1,1 @@
-Passing :type:`str` instances to :func:`cocotb.utils.hexdump` and :func:`cocotb.utils.hexdiffs` is deprecated. :class:`bytes` objects should be passed instead.
+Passing :class:`str` instances to :func:`cocotb.utils.hexdump` and :func:`cocotb.utils.hexdiffs` is deprecated. :class:`bytes` objects should be passed instead.
