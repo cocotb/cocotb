@@ -619,7 +619,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
             super(Join, self).prime(callback)
 
     def __repr__(self):
-        return "{}({!r})".format(type(self).__qualname__, self._coroutine)
+        return "{}({!s})".format(type(self).__qualname__, self._coroutine)
 
 
 class Waitable(Awaitable):
