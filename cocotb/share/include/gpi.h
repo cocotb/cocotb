@@ -113,6 +113,13 @@ typedef enum gpi_event_e {
 
 // Functions for controlling/querying the simulation state
 
+/**
+ * Returns 1 if there is a registered GPI implementation, 0 otherwise.
+ *
+ * Useful for checking if a simulator is running.
+ */
+bool gpi_has_registered_impl(void);
+
 // Stop the simulator
 void gpi_sim_end(void);
 
