@@ -218,7 +218,6 @@ async def test_nulltrigger_reschedule(dut):
 
     last_fork = None
 
-    @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
     async def reschedule(n):
         nonlocal last_fork
         for i in range(4):
@@ -273,14 +272,12 @@ async def test_last_scheduled_write_wins(dut):
     e = Event()
     dut.stream_in_data.setimmediatevalue(0)
 
-    @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
     async def first():
         await Timer(1)
         dut._log.info("scheduling stream_in_data <= 1")
         dut.stream_in_data <= 1
         e.set()
 
-    @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
     async def second():
         await Timer(1)
         await e.wait()
