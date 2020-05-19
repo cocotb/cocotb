@@ -709,7 +709,12 @@ class _AggregateWaitable(Waitable):
         # no _pointer_str here, since this is not a trigger, so identity
         # doesn't matter.
         return "{}({})".format(
-            type(self).__qualname__, ", ".join(repr(t) for t in self.triggers)
+            type(self).__qualname__,
+            ", ".join(
+                repr(Join(t)) if isinstance(t, cocotb.decorators.RunningTask)
+                else repr(t)
+                for t in self.triggers
+            )
         )
 
 
