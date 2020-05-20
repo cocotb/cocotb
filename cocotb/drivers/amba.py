@@ -107,24 +107,26 @@ class AXI4LiteMaster(BusDriver):
         self.write_data_busy.release()
 
     @cocotb.coroutine
-    def write(self, address, value, byte_enable=0xf, address_latency=0,
-              data_latency=0, sync=True):
+    def write(
+        self, address: int, value: int, byte_enable: int = 0xf,
+        address_latency: int = 0, data_latency: int = 0, sync: bool = True
+    ) -> BinaryValue:
         """Write a value to an address.
 
         Args:
-            address (int): The address to write to.
-            value (int): The data value to write.
-            byte_enable (int, optional): Which bytes in value to actually write.
+            address: The address to write to.
+            value: The data value to write.
+            byte_enable: Which bytes in value to actually write.
                 Default is to write all bytes.
-            address_latency (int, optional): Delay before setting the address (in clock cycles).
+            address_latency: Delay before setting the address (in clock cycles).
                 Default is no delay.
-            data_latency (int, optional): Delay before setting the data value (in clock cycles).
+            data_latency: Delay before setting the data value (in clock cycles).
                 Default is no delay.
-            sync (bool, optional): Wait for rising edge on clock initially.
+            sync: Wait for rising edge on clock initially.
                 Defaults to True.
 
         Returns:
-            BinaryValue: The write response value.
+            The write response value.
 
         Raises:
             AXIProtocolError: If write response from AXI is not ``OKAY``.
@@ -160,16 +162,16 @@ class AXI4LiteMaster(BusDriver):
         return result
 
     @cocotb.coroutine
-    def read(self, address, sync=True):
+    def read(self, address: int, sync: bool = True) -> BinaryValue:
         """Read from an address.
 
         Args:
-            address (int): The address to read from.
-            sync (bool, optional): Wait for rising edge on clock initially.
+            address: The address to read from.
+            sync: Wait for rising edge on clock initially.
                 Defaults to True.
 
         Returns:
-            BinaryValue: The read data value.
+            The read data value.
 
         Raises:
             AXIProtocolError: If read response from AXI is not ``OKAY``.
