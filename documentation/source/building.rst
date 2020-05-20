@@ -61,7 +61,7 @@ Cocotb
 
        make RANDOM_SEED=1377424946
 
-    See also: :envvar:`PLUSARGS`
+    See also: :make:var:`PLUSARGS`
 
 .. envvar:: COCOTB_ANSI_OUTPUT
 
