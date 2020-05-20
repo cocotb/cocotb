@@ -141,8 +141,6 @@ Clock
 Utilities
 =========
 
-.. autodata:: cocotb.plusargs
-
 .. automodule:: cocotb.utils
     :members:
     :member-order: bysource
@@ -316,6 +314,22 @@ XGMII
 
 Miscellaneous
 =============
+
+Other Runtime Information
+-------------------------
+
+.. autodata:: cocotb.argv
+
+.. autodata:: cocotb.SIM_NAME
+
+.. autodata:: cocotb.SIM_VERSION
+
+.. autodata:: cocotb.RANDOM_SEED
+
+.. autodata:: cocotb.plusargs
+
+.. autodata:: cocotb.LANGUAGE
+
 
 Signal Tracer for WaveDrom
 --------------------------
