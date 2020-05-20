@@ -28,6 +28,13 @@
 #ifndef COCOTB_FLI_IMPL_H_
 #define COCOTB_FLI_IMPL_H_
 
+#include <exports.h>
+#ifdef COCOTBFLI_EXPORTS
+#define COCOTBFLI_EXPORT COCOTB_EXPORT
+#else
+#define COCOTBFLI_EXPORT COCOTB_IMPORT
+#endif
+
 #include "../gpi/gpi_priv.h"
 #include "mti.h"
 
@@ -35,7 +42,7 @@
 #include <map>
 
 extern "C" {
-void cocotb_init();
+COCOTBFLI_EXPORT void cocotb_init();
 void handle_fli_callback(void *data);
 }
 

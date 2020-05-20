@@ -51,6 +51,13 @@ we have to create a process with the signal on the sensitivity list to imitate a
 
 */
 
+#include <exports.h>
+#ifdef GPI_EXPORTS
+#define GPI_EXPORT COCOTB_EXPORT
+#else
+#define GPI_EXPORT COCOTB_IMPORT
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -118,39 +125,39 @@ typedef enum gpi_event_e {
  *
  * Useful for checking if a simulator is running.
  */
-bool gpi_has_registered_impl(void);
+GPI_EXPORT bool gpi_has_registered_impl(void);
 
 // Stop the simulator
-void gpi_sim_end(void);
+GPI_EXPORT void gpi_sim_end(void);
 
 // Cleanup GPI resources during sim shutdown
-void gpi_cleanup(void);
+GPI_EXPORT void gpi_cleanup(void);
 
 // Returns simulation time as two uints. Units are default sim units
-void gpi_get_sim_time(uint32_t *high, uint32_t *low);
-void gpi_get_sim_precision(int32_t *precision);
+GPI_EXPORT void gpi_get_sim_time(uint32_t *high, uint32_t *low);
+GPI_EXPORT void gpi_get_sim_precision(int32_t *precision);
 
 /**
  * Returns a string with the running simulator product information
  *
  * @return simulator product string
  */
-const char *gpi_get_simulator_product(void);
+GPI_EXPORT const char *gpi_get_simulator_product(void);
 
 /**
  * Returns a string with the running simulator version
  *
  * @return simulator version string
  */
-const char *gpi_get_simulator_version(void);
+GPI_EXPORT const char *gpi_get_simulator_version(void);
 
 // Functions for extracting a gpi_sim_hdl to an object
 // Returns a handle to the root simulation object,
 // Should be freed with gpi_free_handle
-gpi_sim_hdl gpi_get_root_handle(const char *name);
-gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name);
-gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index);
-void gpi_free_handle(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT gpi_sim_hdl gpi_get_root_handle(const char *name);
+GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent, const char *name);
+GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent, int32_t index);
+GPI_EXPORT void gpi_free_handle(gpi_sim_hdl gpi_hdl);
 
 // Types that can be passed to the iterator.
 //
@@ -190,49 +197,49 @@ typedef enum gpi_set_action_e {
 // Unlike `vpi_iterate` the iterator handle may only be NULL if the `type` is
 // not supported, If no objects of the requested type are found, an empty
 // iterator is returned.
-gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base, gpi_iterator_sel_t type);
+GPI_EXPORT gpi_iterator_hdl gpi_iterate(gpi_sim_hdl base, gpi_iterator_sel_t type);
 
 // Returns NULL when there are no more objects
-gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
+GPI_EXPORT gpi_sim_hdl gpi_next(gpi_iterator_hdl iterator);
 
 // Returns the number of objects in the collection of the handle
-int gpi_get_num_elems(gpi_sim_hdl gpi_sim_hdl);
+GPI_EXPORT int gpi_get_num_elems(gpi_sim_hdl gpi_sim_hdl);
 
 // Returns the left side of the range constraint
-int gpi_get_range_left(gpi_sim_hdl gpi_sim_hdl);
+GPI_EXPORT int gpi_get_range_left(gpi_sim_hdl gpi_sim_hdl);
 
 // Returns the right side of the range constraint
-int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
+GPI_EXPORT int gpi_get_range_right(gpi_sim_hdl gpi_sim_hdl);
 
 // Functions for querying the properties of a handle
 // Caller responsible for freeing the returned string.
 // This is all slightly verbose but it saves having to enumerate various value types
 // We only care about a limited subset of values.
-const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
-const char *gpi_get_signal_value_str(gpi_sim_hdl gpi_hdl);
-double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
-long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
-const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
-const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_signal_value_binstr(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_signal_value_str(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT double gpi_get_signal_value_real(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT long gpi_get_signal_value_long(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_signal_name_str(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char *gpi_get_signal_type_str(gpi_sim_hdl gpi_hdl);
 
 // Returns one of the types defined above e.g. gpiMemory etc.
-gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT gpi_objtype_t gpi_get_object_type(gpi_sim_hdl gpi_hdl);
 
 // Get information about the definition of a handle
-const char* gpi_get_definition_name(gpi_sim_hdl gpi_hdl);
-const char* gpi_get_definition_file(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char* gpi_get_definition_name(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT const char* gpi_get_definition_file(gpi_sim_hdl gpi_hdl);
 
 // Determine whether an object value is constant (parameters / generics etc)
-int gpi_is_constant(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT int gpi_is_constant(gpi_sim_hdl gpi_hdl);
 
 // Determine whether an object is indexable
-int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
+GPI_EXPORT int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 
 // Functions for setting the properties of a handle
-void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value, gpi_set_action_t action);
-void gpi_set_signal_value_long(gpi_sim_hdl gpi_hdl, long value, gpi_set_action_t action);
-void gpi_set_signal_value_binstr(gpi_sim_hdl gpi_hdl, const char *str, gpi_set_action_t action); // String of binary char(s) [1, 0, x, z]
-void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str, gpi_set_action_t action);    // String of ASCII char(s)
+GPI_EXPORT void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value, gpi_set_action_t action);
+GPI_EXPORT void gpi_set_signal_value_long(gpi_sim_hdl gpi_hdl, long value, gpi_set_action_t action);
+GPI_EXPORT void gpi_set_signal_value_binstr(gpi_sim_hdl gpi_hdl, const char *str, gpi_set_action_t action); // String of binary char(s) [1, 0, x, z]
+GPI_EXPORT void gpi_set_signal_value_str(gpi_sim_hdl gpi_hdl, const char *str, gpi_set_action_t action);    // String of ASCII char(s)
 
 typedef enum gpi_edge {
     GPI_RISING = 1,
@@ -240,23 +247,23 @@ typedef enum gpi_edge {
 } gpi_edge_e;
 
 // The callback registering functions
-gpi_cb_hdl gpi_register_timed_callback                  (int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
-gpi_cb_hdl gpi_register_value_change_callback           (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
-gpi_cb_hdl gpi_register_readonly_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
-gpi_cb_hdl gpi_register_nexttime_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
-gpi_cb_hdl gpi_register_readwrite_callback              (int (*gpi_function)(const void *), void *gpi_cb_data);
+GPI_EXPORT gpi_cb_hdl gpi_register_timed_callback                  (int (*gpi_function)(const void *), void *gpi_cb_data, uint64_t time_ps);
+GPI_EXPORT gpi_cb_hdl gpi_register_value_change_callback           (int (*gpi_function)(const void *), void *gpi_cb_data, gpi_sim_hdl gpi_hdl, int edge);
+GPI_EXPORT gpi_cb_hdl gpi_register_readonly_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
+GPI_EXPORT gpi_cb_hdl gpi_register_nexttime_callback               (int (*gpi_function)(const void *), void *gpi_cb_data);
+GPI_EXPORT gpi_cb_hdl gpi_register_readwrite_callback              (int (*gpi_function)(const void *), void *gpi_cb_data);
 
 // Calling convention is that 0 = success and negative numbers a failure
 // For implementers of GPI the provided macro GPI_RET(x) is provided
-void gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
+GPI_EXPORT void gpi_deregister_callback(gpi_cb_hdl gpi_hdl);
 
 // Because the internal structures may be different for different implementations
 // of GPI we provide a convenience function to extract the callback data
-void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
+GPI_EXPORT void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
 
 // Print out what implementations are registered. Python needs to be loaded for this,
 // Returns the number of libs
-size_t gpi_print_registered_impl(void);
+GPI_EXPORT size_t gpi_print_registered_impl(void);
 
 #define GPI_RET(_code) \
     if (_code == 1) \

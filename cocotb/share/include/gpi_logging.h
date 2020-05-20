@@ -30,6 +30,13 @@
 #ifndef COCOTB_GPI_LOGGING_H_
 #define COCOTB_GPI_LOGGING_H_
 
+#include <exports.h>
+#ifdef GPILOG_EXPORTS
+#define GPILOG_EXPORT COCOTB_EXPORT
+#else
+#define GPILOG_EXPORT COCOTB_IMPORT
+#endif
+
 #ifdef __cplusplus
 # define EXTERN_C_START extern "C" {
 # define EXTERN_C_END }
@@ -55,13 +62,13 @@ enum gpi_log_levels {
 #define LOG_ERROR(...)     gpi_log("cocotb.gpi", GPIError,         __FILE__, __func__, __LINE__, __VA_ARGS__);
 #define LOG_CRITICAL(...)  gpi_log("cocotb.gpi", GPICritical,      __FILE__, __func__, __LINE__, __VA_ARGS__);
 
-void set_log_handler(void *handler);
-void clear_log_handler(void);
-void set_log_filter(void *filter);
-void clear_log_filter(void);
-void set_log_level(enum gpi_log_levels new_level);
+GPILOG_EXPORT void set_log_handler(void *handler);
+GPILOG_EXPORT void clear_log_handler(void);
+GPILOG_EXPORT void set_log_filter(void *filter);
+GPILOG_EXPORT void clear_log_filter(void);
+GPILOG_EXPORT void set_log_level(enum gpi_log_levels new_level);
 
-void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...);
+GPILOG_EXPORT void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...);
 
 EXTERN_C_END
 

@@ -30,6 +30,13 @@
 #ifndef COCOTB_UTILS_H_
 #define COCOTB_UTILS_H_
 
+#include <exports.h>
+#ifdef COCOTBUTILS_EXPORTS
+#define COCOTBUTILS_EXPORT COCOTB_EXPORT
+#else
+#define COCOTBUTILS_EXPORT COCOTB_IMPORT
+#endif
+
 #include <gpi_logging.h>
 
 #ifdef __cplusplus
@@ -39,10 +46,10 @@ extern "C" {
 #define xstr(a) str(a)
 #define str(a) #a
 
-extern void* utils_dyn_open(const char* lib_name);
-extern void* utils_dyn_sym(void *handle, const char* sym_name);
+extern COCOTBUTILS_EXPORT void* utils_dyn_open(const char* lib_name);
+extern COCOTBUTILS_EXPORT void* utils_dyn_sym(void *handle, const char* sym_name);
 
-extern int is_python_context;
+extern COCOTBUTILS_EXPORT int is_python_context;
 
 // to_python and to_simulator are implemented as macros instead of functions so
 // that the logs reference the user's lineno and filename
