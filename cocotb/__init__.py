@@ -37,6 +37,7 @@ import threading
 import random
 import time
 import warnings
+from typing import Dict, List, Union
 
 import cocotb._os_compat  # must appear first, before the first import of cocotb.simulator
 import cocotb.handle
@@ -95,13 +96,35 @@ def _setup_logging():
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
 
-scheduler = None
+scheduler = None  # type: cocotb.scheduler.Scheduler
 """The global scheduler instance."""
 
-regression_manager = None
+regression_manager = None  # type: cocotb.regression.RegressionManager
+"""The global regression manager instance."""
 
-plusargs = {}
-"""A dictionary of "plusargs" handed to the simulation."""
+argv = None  # type: List[str]
+"""The argument list as seen by the simulator"""
+
+argc = None  # type: int
+"""The length of :data:`cocotb.argv`"""
+
+plusargs = None  # type: Dict[str, Union[bool, str]]
+"""A dictionary of "plusargs" handed to the simulation. See :make:var:`PLUSARGS` for details."""
+
+LANGUAGE = os.getenv("TOPLEVEL_LANG")  # type: str
+"""The value of :make:var:`TOPLEVEL_LANG`"""
+
+SIM_NAME = None  # type: str
+"""The running simulator product information. ``None`` if :mod:`cocotb` was not loaded from a simulator"""
+
+SIM_VERSION = None  # type: str
+"""The version of the running simulator. ``None`` if :mod:`cocotb` was not loaded from a simulator"""
+
+RANDOM_SEED = None  # type: int
+"""
+The value passed to the Python default random number generator.
+See :envvar:`RANDOM_SEED` for details on how the value is computed.
+"""
 
 
 def fork(coro):
@@ -111,8 +134,6 @@ def fork(coro):
 
 # FIXME is this really required?
 _rlock = threading.RLock()
-
-LANGUAGE = os.getenv("TOPLEVEL_LANG")
 
 
 def mem_debug(port):
