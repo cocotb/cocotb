@@ -1083,6 +1083,13 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
+#if defined(__linux__) || defined(__APPLE__)
+// Only required for Python < 3.9, default for 3.9+ (bpo-11410)
+#pragma GCC visibility push(default)
+PyMODINIT_FUNC PyInit_simulator(void);
+#pragma GCC visibility pop
+#endif
+
 PyMODINIT_FUNC PyInit_simulator(void)
 {
     /* initialize the extension types */

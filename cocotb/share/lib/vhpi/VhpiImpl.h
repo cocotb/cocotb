@@ -28,6 +28,13 @@
 #ifndef COCOTB_VHPI_IMPL_H_
 #define COCOTB_VHPI_IMPL_H_
 
+#include <exports.h>
+#ifdef COCOTBVHPI_EXPORTS
+#define COCOTBVHPI_EXPORT COCOTB_EXPORT
+#else
+#define COCOTBVHPI_EXPORT COCOTB_IMPORT
+#endif
+
 #include "../gpi/gpi_priv.h"
 #include <vhpi_user.h>
 #include <vhpi_user_ext.h>

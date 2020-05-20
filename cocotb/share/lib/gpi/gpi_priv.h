@@ -29,6 +29,13 @@
 #ifndef COCOTB_GPI_PRIV_H_
 #define COCOTB_GPI_PRIV_H_
 
+#include <exports.h>
+#ifdef GPI_EXPORTS
+#define GPI_EXPORT COCOTB_EXPORT
+#else
+#define GPI_EXPORT COCOTB_IMPORT
+#endif
+
 #include <gpi.h>
 #include <embed.h>
 #include <string>
@@ -50,7 +57,7 @@ class GpiIterator;
 class GpiCbHdl;
 
 /* Base GPI class others are derived from */
-class GpiHdl {
+class GPI_EXPORT GpiHdl {
 public:
     GpiHdl(GpiImplInterface *impl, void *hdl = NULL) : m_impl(impl), m_obj_hdl(hdl) { }
     virtual ~GpiHdl() = default;
@@ -78,7 +85,7 @@ protected:
 // Subsequent operations to get children go through this handle.
 // GpiObjHdl::get_handle_by_name/get_handle_by_index are really factories
 // that construct an object derived from GpiSignalObjHdl or GpiObjHdl
-class GpiObjHdl : public GpiHdl {
+class GPI_EXPORT GpiObjHdl : public GpiHdl {
 public:
     GpiObjHdl(
         GpiImplInterface *impl,
@@ -134,7 +141,7 @@ protected:
 //
 // Identical to an object but adds additional methods for getting/setting the
 // value of the signal (which doesn't apply to non signal items in the hierarchy
-class GpiSignalObjHdl : public GpiObjHdl {
+class GPI_EXPORT GpiSignalObjHdl : public GpiObjHdl {
 public:
     using GpiObjHdl::GpiObjHdl;
 
@@ -161,7 +168,7 @@ public:
 /* GPI Callback handle */
 // To set a callback it needs the signal to do this on,
 // vpiHandle/vhpiHandleT for instance. The
-class GpiCbHdl : public GpiHdl {
+class GPI_EXPORT GpiCbHdl : public GpiHdl {
 public:
     GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl) { }
 
@@ -185,7 +192,7 @@ protected:
     gpi_cb_state_e m_state = GPI_FREE;         // GPI state of the callback through its cycle
 };
 
-class GpiValueCbHdl : public virtual GpiCbHdl {
+class GPI_EXPORT GpiValueCbHdl : public virtual GpiCbHdl {
 public:
     GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal, int edge);
     int run_callback() override;
@@ -195,7 +202,7 @@ protected:
     GpiSignalObjHdl *m_signal;
 };
 
-class GpiIterator : public GpiHdl {
+class GPI_EXPORT GpiIterator : public GpiHdl {
 public:
     enum Status {
         NATIVE,             // Fully resolved object was created
@@ -225,7 +232,7 @@ protected:
 };
 
 
-class GpiImplInterface {
+class GPI_EXPORT GpiImplInterface {
 public:
     GpiImplInterface(const std::string& name) : m_name(name) { }
     const char *get_name_c();
@@ -264,13 +271,13 @@ protected:
 };
 
 /* Called from implementation layers back up the stack */
-int gpi_register_impl(GpiImplInterface *func_tbl);
+GPI_EXPORT int gpi_register_impl(GpiImplInterface *func_tbl);
 
-void gpi_embed_init(int argc, char const* const* argv);
-void gpi_cleanup();
-void gpi_embed_end();
-void gpi_embed_event(gpi_event_t level, const char *msg);
-void gpi_load_extra_libs();
+GPI_EXPORT void gpi_embed_init(int argc, char const* const* argv);
+GPI_EXPORT void gpi_cleanup();
+GPI_EXPORT void gpi_embed_end();
+GPI_EXPORT void gpi_embed_event(gpi_event_t level, const char *msg);
+GPI_EXPORT void gpi_load_extra_libs();
 
 typedef void (*layer_entry_func)();
 

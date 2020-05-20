@@ -717,7 +717,7 @@ static void register_system_functions()
 
 }
 
-void (*vlog_startup_routines[])() = {
+COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {
     register_embed,
     gpi_load_extra_libs,
     register_system_functions,
@@ -728,7 +728,7 @@ void (*vlog_startup_routines[])() = {
 
 
 // For non-VPI compliant applications that cannot find vlog_startup_routines symbol
-void vlog_startup_routines_bootstrap() {
+COCOTBVPI_EXPORT void vlog_startup_routines_bootstrap() {
     // call each routine in turn like VPI would
     for (auto it = &vlog_startup_routines[0]; *it != nullptr; it++) {
         auto routine = *it;

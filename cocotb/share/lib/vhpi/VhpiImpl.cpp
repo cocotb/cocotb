@@ -977,7 +977,7 @@ static void register_embed()
 }
 
 // pre-defined VHPI registration table
-void (*vhpi_startup_routines[])() = {
+COCOTBVHPI_EXPORT void (*vhpi_startup_routines[])() = {
     register_embed,
     gpi_load_extra_libs,
     register_initial_callback,
@@ -986,7 +986,7 @@ void (*vhpi_startup_routines[])() = {
 };
 
 // For non-VHPI compliant applications that cannot find vhpi_startup_routines
-void vhpi_startup_routines_bootstrap() {
+COCOTBVHPI_EXPORT void vhpi_startup_routines_bootstrap() {
     void (*routine)();
     int i;
     routine = vhpi_startup_routines[0];
