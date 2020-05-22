@@ -61,7 +61,7 @@ static PyObject *register_rwsynch_callback(PyObject *self, PyObject *args);
 
 static PyObject *get_root_handle(PyObject *self, PyObject *args);
 static PyObject *stop_simulator(PyObject *self, PyObject *args);
-
+static PyObject *is_running(PyObject *self, PyObject *args);
 static PyObject *get_sim_time(PyObject *self, PyObject *args);
 static PyObject *get_precision(PyObject *self, PyObject *args);
 static PyObject *get_simulator_product(PyObject *self, PyObject *args);
@@ -131,7 +131,14 @@ static PyMethodDef SimulatorMethods[] = {
         "log_level(level: int) -> None\n"
         "Set the log level for GPI."
     )},
-
+    {"is_running", is_running, METH_NOARGS, PyDoc_STR(
+        "is_running()\n"
+        "--\n\n"
+        "is_running() -> bool\n"
+        "Returns ``True`` if the caller is running within a simulator.\n"
+        "\n"
+        ".. versionadded:: 1.4"
+    )},
     {"get_sim_time", get_sim_time, METH_NOARGS, PyDoc_STR(
         "get_sim_time()\n"
         "--\n\n"
