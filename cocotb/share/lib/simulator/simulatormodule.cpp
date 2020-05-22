@@ -749,6 +749,14 @@ static PyObject *get_type_string(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *ar
 }
 
 
+static PyObject *is_running(PyObject *self, PyObject *args)
+{
+    COCOTB_UNUSED(self);
+    COCOTB_UNUSED(args);
+
+    return PyBool_FromLong(gpi_has_registered_impl());
+}
+
 // Returns a high, low, tuple of simulator time
 // Note we can never log from this function since the logging mechanism calls this to annotate
 // log messages with the current simulation time
