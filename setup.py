@@ -97,8 +97,13 @@ setup(
     install_requires=[],
     python_requires='>=3.5',
     packages=find_packages(),
-    include_package_data=True,
-    package_data={'cocotb': package_files('cocotb/share')},
+    package_data={
+        'cocotb': (
+            package_files('cocotb/share/makefiles') +   # noqa: W504
+            package_files('cocotb/share/include') +     # noqa: W504
+            package_files('cocotb/share/def')
+        )
+    },
     ext_modules=get_ext(),
     entry_points={
         'console_scripts': [
