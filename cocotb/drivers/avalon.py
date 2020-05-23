@@ -33,6 +33,7 @@ NB Currently we only support a very small subset of functionality
 """
 
 import random
+from typing import Iterable, Union, Optional
 
 import cocotb
 from cocotb.decorators import coroutine
@@ -116,19 +117,19 @@ class AvalonMaster(AvalonMM):
         self.busy_event.set()
 
     @coroutine
-    def read(self, address, sync=True):
+    def read(self, address: int, sync: bool = True) -> BinaryValue:
         """Issue a request to the bus and block until this comes back.
 
         Simulation time still progresses
         but syntactically it blocks.
 
         Args:
-            address (int): The address to read from.
-            sync (bool, optional): Wait for rising edge on clock initially.
+            address: The address to read from.
+            sync: Wait for rising edge on clock initially.
                 Defaults to True.
 
         Returns:
-            BinaryValue: The read data value.
+            The read data value.
 
         Raises:
             :any:`TestError`: If master is write-only.
@@ -183,13 +184,13 @@ class AvalonMaster(AvalonMM):
         return data
 
     @coroutine
-    def write(self, address, value):
+    def write(self, address: int, value: int) -> None:
         """Issue a write to the given address with the specified
         value.
 
         Args:
-            address (int): The address to write to.
-            value (int): The data value to write.
+            address: The address to write to.
+            value: The data value to write.
 
         Raises:
             :any:`TestError`: If master is read-only.
@@ -671,10 +672,10 @@ class AvalonSTPkts(ValidatedBusDriver):
             yield ReadOnly()
 
     @coroutine
-    def _send_string(self, string, sync=True, channel=None):
+    def _send_string(self, string: bytes, sync: bool = True, channel: Optional[int] = None) -> None:
         """Args:
-            string (bytes): A string of bytes to send over the bus.
-            channel (int): Channel to send the data on.
+            string: A string of bytes to send over the bus.
+            channel: Channel to send the data on.
         """
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -774,9 +775,9 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.bus.channel <= channel_value
 
     @coroutine
-    def _send_iterable(self, pkt, sync=True):
+    def _send_iterable(self, pkt: Iterable, sync: bool = True) -> None:
         """Args:
-            pkt (iterable): Will yield objects with attributes matching the
+            pkt: Will yield objects with attributes matching the
                 signal names for each individual bus cycle.
         """
         clkedge = RisingEdge(self.clock)
@@ -815,12 +816,12 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.valid <= 0
 
     @coroutine
-    def _driver_send(self, pkt, sync=True, channel=None):
+    def _driver_send(self, pkt: Union[bytes, Iterable], sync: bool = True, channel: Optional[int] = None):
         """Send a packet over the bus.
 
         Args:
-            pkt (str or iterable): Packet to drive onto the bus.
-            channel (None or int): Channel attributed to the packet.
+            pkt: Packet to drive onto the bus.
+            channel: Channel attributed to the packet.
 
         If ``pkt`` is a string, we simply send it word by word
 
