@@ -101,7 +101,7 @@ def get_clock(dut):
         raise TestFailure("dut.aclk is not what we expected (got %d)" % int(dut.aclk))
 
 
-@cocotb.test()
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10"))
 def test_n_dimension_array(dut):
     tlog = logging.getLogger("cocotb.test")
     inner_count = 0
