@@ -274,7 +274,7 @@ def access_string_vhdl(dut):
 
 # TODO: add tests for Verilog "string_input_port" and "STRING_LOCALPARAM" (see issue #802)
 
-@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"] or cocotb.SIM_NAME.lower().startswith("icarus"),
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"] or cocotb.SIM_NAME.lower().startswith(("icarus", "riviera")),
              expect_error=cocotb.result.TestFailure if cocotb.SIM_NAME.lower().startswith(("xmsim", "ncsim", "modelsim", "chronologic simulation vcs")) else False)
 def access_const_string_verilog(dut):
     """Access to a const Verilog string."""
