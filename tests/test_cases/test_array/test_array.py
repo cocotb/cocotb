@@ -357,7 +357,7 @@ def test_discover_all(dut):
             pass_total = 803
         elif cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")):
             pass_total = 813
-        elif cocotb.SIM_VERSION.startswith(("2016.02")):
+        elif cocotb.SIM_VERSION.startswith(("2016.02", "2019.10")):
             pass_total = 947
         else:
             pass_total = 1038
