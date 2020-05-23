@@ -30,11 +30,14 @@ from cocotb.triggers import Timer
 from cocotb.result import TestFailure
 
 
-@cocotb.test()
+# This test crashes Riviera-PRO 2019.10 (at least); skip to avoid hanging the
+# tests. See issue #1854 for details.
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10"))
 def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
+
     if (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim", "modelsim")) or
        (cocotb.SIM_NAME.lower().startswith("riviera") and not cocotb.SIM_VERSION.startswith("2016.02"))):
         # Finds regions, signal, generics, constants, varibles and ports.
