@@ -115,5 +115,5 @@ def test_n_dimension_array(dut):
             inner_count += 1
         outer_count += 1
 
-    if inner_count != 14 or outer_count != 2:
-        raise TestFailure("dut.inst_ram_ctrl.config should have a total of 14 elems over 2 loops")
+    assert outer_count == 2, outer_count
+    assert inner_count == 14, inner_count
