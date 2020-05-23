@@ -341,7 +341,7 @@ def test_discover_all(dut):
         dummy = dut.sig_rec
         dummy = dut.port_rec_out
 
-    # Riviera-Pro's VHPI implementation does not fine signal declarations when iterating
+    # Riviera-Pro's VHPI implementation does not find signal declarations when iterating
     if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
         for hdl in dut.asc_gen:
             dummy = hdl.sig
