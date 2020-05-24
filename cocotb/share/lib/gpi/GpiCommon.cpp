@@ -85,7 +85,7 @@ private:
 static GpiHandleStore unique_handles;
 
 #define CHECK_AND_STORE(_x) unique_handles.check_and_store(_x)
-#define CLEAR_STORE() unique_handles.clear()
+#define CLEAR_STORE() (void)0
 
 #else
 
