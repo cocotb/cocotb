@@ -83,7 +83,7 @@ int FliObjHdl::initialise(std::string &name, std::string &fq_name)
             m_num_elems = 1;
             break;
         default:
-            LOG_CRITICAL("Invalid object type for FliObjHdl. (%s (%s))", name.c_str(), get_type_str());
+            LOG_ERROR("Invalid object type for FliObjHdl. (%s (%s))", name.c_str(), get_type_str());
             return -1;
     }
 
@@ -228,7 +228,7 @@ long FliEnumObjHdl::get_signal_value_long()
 int FliEnumObjHdl::set_signal_value(const long value, const gpi_set_action_t action)
 {
     if (action != GPI_DEPOSIT) {
-        LOG_CRITICAL("Force or release action not supported for FLI.");
+        LOG_ERROR("Force or release action not supported for FLI.");
         return -1;
     }
 
@@ -269,7 +269,7 @@ int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name)
             }
             break;
         default:
-            LOG_CRITICAL("Object type is not 'logic' for %s (%d)", name.c_str(), m_fli_type);
+            LOG_ERROR("Object type is not 'logic' for %s (%d)", name.c_str(), m_fli_type);
             return -1;
     }
 
@@ -306,7 +306,7 @@ const char* FliLogicObjHdl::get_signal_value_binstr()
             }
             break;
         default:
-            LOG_CRITICAL("Object type is not 'logic' for %s (%d)", m_name.c_str(), m_fli_type);
+            LOG_ERROR("Object type is not 'logic' for %s (%d)", m_name.c_str(), m_fli_type);
             return NULL;
     }
 
@@ -318,7 +318,7 @@ const char* FliLogicObjHdl::get_signal_value_binstr()
 int FliLogicObjHdl::set_signal_value(const long value, const gpi_set_action_t action)
 {
     if (action != GPI_DEPOSIT) {
-        LOG_CRITICAL("Force or release action not supported for FLI.");
+        LOG_ERROR("Force or release action not supported for FLI.");
         return -1;
     }
 
@@ -351,7 +351,7 @@ int FliLogicObjHdl::set_signal_value(const long value, const gpi_set_action_t ac
 int FliLogicObjHdl::set_signal_value_binstr(std::string &value, const gpi_set_action_t action)
 {
     if (action != GPI_DEPOSIT) {
-        LOG_CRITICAL("Force or release action not supported for FLI.");
+        LOG_ERROR("Force or release action not supported for FLI.");
         return -1;
     }
 
@@ -435,7 +435,7 @@ long FliIntObjHdl::get_signal_value_long()
 int FliIntObjHdl::set_signal_value(const long value, const gpi_set_action_t action)
 {
     if (action != GPI_DEPOSIT) {
-        LOG_CRITICAL("Force or release action not supported for FLI.");
+        LOG_ERROR("Force or release action not supported for FLI.");
         return -1;
     }
 
@@ -474,7 +474,7 @@ double FliRealObjHdl::get_signal_value_real()
 int FliRealObjHdl::set_signal_value(const double value, const gpi_set_action_t action)
 {
     if (action != GPI_DEPOSIT) {
-        LOG_CRITICAL("Force or release action not supported for FLI.");
+        LOG_ERROR("Force or release action not supported for FLI.");
         return -1;
     }
 
@@ -522,7 +522,7 @@ const char* FliStringObjHdl::get_signal_value_str()
 int FliStringObjHdl::set_signal_value_str(std::string &value, const gpi_set_action_t action)
 {
     if (action != GPI_DEPOSIT) {
-        LOG_CRITICAL("Force or release action not supported for FLI.");
+        LOG_ERROR("Force or release action not supported for FLI.");
         return -1;
     }
 

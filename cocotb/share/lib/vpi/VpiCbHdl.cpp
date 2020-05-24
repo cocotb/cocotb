@@ -164,7 +164,8 @@ int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
         }
 
         if (rangeHdl == NULL) {
-            LOG_CRITICAL("Unable to get range for indexable object");
+            LOG_ERROR("Unable to get range for indexable object");
+            return -1;
         } else {
             vpi_free_object(iter); // Need to free iterator since exited early
 
@@ -185,7 +186,8 @@ int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
         check_vpi_error();
         m_range_right = val.value.integer;
     } else {
-        LOG_CRITICAL("Unable to get range for indexable object");
+        LOG_ERROR("Unable to get range for indexable object");
+        return -1;
     }
 
     /* vpiSize will return a size that is incorrect for multi-dimensional arrays so use the range
@@ -260,7 +262,8 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
                         check_vpi_error();
                         m_range_right = val.value.integer;
                     } else {
-                        LOG_CRITICAL("Unable to get range for indexable object");
+                        LOG_ERROR("Unable to get range for indexable object");
+                        return -1;
                     }
                 }
                 else {
