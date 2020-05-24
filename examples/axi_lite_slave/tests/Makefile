@@ -1,5 +1,13 @@
 
 TOPLEVEL_LANG ?= verilog
+
+ifneq ($(TOPLEVEL_LANG),verilog)
+all:
+	@echo "Skipping; this example does not support VHDL at the top-level"
+clean::
+
+else
+
 PWD=$(shell pwd)
 TOPDIR=$(PWD)/..
 PYTHONPATH := ./model:$(PYTHONPATH)
@@ -31,3 +39,4 @@ MODULE=test_axi_lite_slave
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
+endif
