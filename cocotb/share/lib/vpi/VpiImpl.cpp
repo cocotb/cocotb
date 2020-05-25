@@ -572,6 +572,8 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
     if (!cb_hdl) {
         LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
+        gpi_embed_end();
+        return -1;
     }
 
     gpi_cb_state_e old_state = cb_hdl->get_call_state();
