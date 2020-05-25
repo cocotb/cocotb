@@ -96,11 +96,13 @@ int VpiCbHdl::cleanup_callback()
 
     if (m_state == GPI_PRIMED) {
         if (!m_obj_hdl) {
-            LOG_CRITICAL("VPI: passed a NULL pointer : ABORTING");
+            LOG_ERROR("VPI: passed a NULL pointer");
+            return -1;
         }
 
         if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
-            LOG_CRITICAL("VPI: unable to remove callback : ABORTING");
+            LOG_ERROR("VPI: unable to remove callback");
+            return -1;
         }
 
         check_vpi_error();
@@ -108,7 +110,8 @@ int VpiCbHdl::cleanup_callback()
 #ifndef MODELSIM
         /* This is disabled for now, causes a small leak going to put back in */
         if (!(vpi_free_object(get_handle<vpiHandle>()))) {
-            LOG_CRITICAL("VPI: unable to free handle : ABORTING");
+            LOG_ERROR("VPI: unable to free handle");
+            return -1;
         }
 #endif
     }
@@ -461,7 +464,8 @@ int VpiValueCbHdl::cleanup_callback()
     /* This is a recurring callback so just remove when
      * not wanted */
     if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
-        LOG_CRITICAL("VPI: unbale to remove callback : ABORTING");
+        LOG_ERROR("VPI: unable to remove callback");
+        return -1;
     }
 
     m_obj_hdl = NULL;
