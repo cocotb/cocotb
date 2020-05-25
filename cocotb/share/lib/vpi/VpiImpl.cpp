@@ -543,8 +543,7 @@ GpiCbHdl *VpiImpl::register_nexttime_callback()
 
 int VpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 {
-    gpi_hdl->cleanup_callback();
-    return 0;
+    return gpi_hdl->cleanup_callback();
 }
 
 // If the Python world wants things to shut down then unregister
@@ -587,13 +586,15 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
         /* We have re-primed in the handler */
         if (new_state != GPI_PRIMED)
-            if (cb_hdl->cleanup_callback())
+            if (cb_hdl->cleanup_callback()) {
                 delete cb_hdl;
+            }
 
     } else {
         /* Issue #188: This is a work around for a modelsim */
-        if (cb_hdl->cleanup_callback())
+        if (cb_hdl->cleanup_callback()) {
             delete cb_hdl;
+        }
     }
 
     return rv;
