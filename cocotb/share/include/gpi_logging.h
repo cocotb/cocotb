@@ -53,10 +53,7 @@ enum gpi_log_levels {
 #define LOG_INFO(...)      gpi_log("cocotb.gpi", GPIInfo,          __FILE__, __func__, __LINE__, __VA_ARGS__);
 #define LOG_WARN(...)      gpi_log("cocotb.gpi", GPIWarning,       __FILE__, __func__, __LINE__, __VA_ARGS__);
 #define LOG_ERROR(...)     gpi_log("cocotb.gpi", GPIError,         __FILE__, __func__, __LINE__, __VA_ARGS__);
-#define LOG_CRITICAL(...)  do { \
-    gpi_log("cocotb.gpi", GPICritical,      __FILE__, __func__, __LINE__, __VA_ARGS__); \
-    exit(1); \
-} while (0)
+#define LOG_CRITICAL(...)  gpi_log("cocotb.gpi", GPICritical,      __FILE__, __func__, __LINE__, __VA_ARGS__);
 
 void set_log_handler(void *handler);
 void clear_log_handler(void);
