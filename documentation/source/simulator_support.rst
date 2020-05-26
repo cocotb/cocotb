@@ -164,6 +164,14 @@ In order to use this simulator, set :make:var:`SIM` to ``activehdl``:
 
     make SIM=activehdl
 
+.. warning::
+
+    cocotb does not work with some versions of Active-HDL (see :issue:`1494`).
+
+    Known affected versions:
+
+    - Aldec Active-HDL 10.4a
+    - Aldec Active-HDL 10.5a
 
 .. _sim-questa:
 
