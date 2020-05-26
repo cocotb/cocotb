@@ -44,8 +44,10 @@ else
    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
+# Always create the DO script
+FORCE_RUNSIM:
 # Create a DO script (Tcl-like but not fully compatible) based on the list of $(VERILOG_SOURCES)
-$(SIM_BUILD)/runsim.do : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
+$(SIM_BUILD)/runsim.do : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD) FORCE_RUNSIM
 	@echo "alib $(RTL_LIBRARY)" >> $@
 	@echo "set worklib $(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)
