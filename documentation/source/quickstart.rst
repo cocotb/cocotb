@@ -214,6 +214,7 @@ The following example shows these in action:
 
 .. code-block:: python3
 
+    # A coroutine
     async def reset_dut(reset_n, duration_ns):
         reset_n <= 0
         await Timer(duration_ns, units='ns')
