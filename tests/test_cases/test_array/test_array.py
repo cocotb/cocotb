@@ -349,7 +349,7 @@ def test_discover_all(dut):
             dummy = hdl.sig
 
     if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
-        pass_total = 818
+        pass_total = 571
     elif cocotb.LANGUAGE in ["vhdl"]:
         pass_total = 856
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
