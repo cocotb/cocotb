@@ -45,7 +45,7 @@ else
 endif
 
 # Create a DO script (Tcl-like but not fully compatible) based on the list of $(VERILOG_SOURCES)
-$(SIM_BUILD)/runsim.do : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
+$(SIM_BUILD)/runsim.do : $(VERILOG_SOURCES) $(VHDL_SOURCES) | $(SIM_BUILD)
 	@echo "alib $(RTL_LIBRARY)" > $@
 	@echo "set worklib $(RTL_LIBRARY)" >> $@
 ifneq ($(VHDL_SOURCES),)

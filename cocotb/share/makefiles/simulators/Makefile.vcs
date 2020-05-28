@@ -66,11 +66,11 @@ endif
 
 # Can't do this using an argument, we have to create a PLI table file
 # enabling write access to the design
-$(SIM_BUILD)/pli.tab :
+$(SIM_BUILD)/pli.tab : | $(SIM_BUILD)
 	echo "acc+=rw,wn:*" > $@
 
 # Compilation phase
-$(SIM_BUILD)/simv: $(SIM_BUILD) $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(CUSTOM_COMPILE_DEPS)
+$(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	cd $(SIM_BUILD) && \
 	TOPLEVEL=$(TOPLEVEL) \
 	$(CMD) -top $(TOPLEVEL) $(PLUSARGS) +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog \
