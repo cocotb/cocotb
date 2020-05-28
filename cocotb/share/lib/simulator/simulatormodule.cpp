@@ -864,14 +864,18 @@ static PyObject *get_range(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 static PyObject *stop_simulator(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
-    COCOTB_UNUSED(args);
 
     if (!gpi_has_registered_impl()) {
         PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
         return NULL;
     }
 
-    gpi_sim_end("Shutting down simulator at user request.");
+    char const *msg = NULL;
+    if (!PyArg_ParseTuple(args, "z:msg", &msg)) {
+        return NULL;
+    }
+
+    gpi_sim_end(msg);
     Py_RETURN_NONE;
 }
 
@@ -1009,9 +1013,9 @@ static PyMethodDef SimulatorMethods[] = {
         "Register a callback for the read-write section."
     )},
     {"stop_simulator", stop_simulator, METH_VARARGS, PyDoc_STR(
-        "stop_simulator()\n"
+        "stop_simulator(msg, /)\n"
         "--\n\n"
-        "stop_simulator() -> None\n"
+        "stop_simulator(msg: str) -> None\n"
         "Instruct the attached simulator to stop. Users should not call this function."
     )},
     {"log_level", log_level, METH_VARARGS, PyDoc_STR(
