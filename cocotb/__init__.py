@@ -269,18 +269,40 @@ def _sim_event(level, message):
     from cocotb.result import TestFailure, SimFailure
 
     if level is SIM_TEST_FAIL:
-        scheduler.log.error("Failing test at simulator request")
-        scheduler.finish_test(TestFailure("Failure from external source: %s" %
-                              message))
+        if regression_manager is None:  # pragma: no cover
+            # Test failure before regression manager started. Should never happen.
+            cocotb.log.error("Test failed before Regression Manager started: " + message)
+
+        elif not regression_manager.finished:
+            # Test failure during a test, fail it
+            msg = "Test failure from external source: " + message
+            cocotb.log.error(msg)
+            scheduler.finish_test(TestFailure(msg))
+
+        else:  # pragma: no cover
+            # Test failure after the regression manager finishes. Should never happen.
+            msg = "Received test failure, but all tests have finished: " + message
+            cocotb.log.error(msg)
+
     elif level is SIM_FAIL:
-        # We simply return here as the simulator will exit
-        # so no cleanup is needed
-        msg = ("Failing test at simulator request before test run completion: "
-               "%s" % message)
+        if regression_manager is None:  # pragma: no cover
+            # Sim failure/end before regression manager started. Should never happen.
+            cocotb.log.error("Regression ended before Regression Manager started: " + message)
+
+        elif not regression_manager.finished:
+            # Sim failure/end during test. Fail the current test and all the rest
+            msg = "Failing test at simulator request before test run completion: " + message
+            cocotb.log.error(msg)
+            scheduler.finish_scheduler(SimFailure(msg))
+
+        else:
+            # Sim failure/end after the regression manager finishes. Do nothing.
+            cocotb.log.info(message)
+
+    else:  # pragma: no cover
+        # should never happen
+        msg = "Unsupported sim event: level={}, msg={}".format(level, message)
         scheduler.log.error(msg)
-        scheduler.finish_scheduler(SimFailure(msg))
-    else:
-        scheduler.log.error("Unsupported sim event")
 
     return True
 

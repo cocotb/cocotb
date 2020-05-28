@@ -95,6 +95,7 @@ class RegressionManager:
         self.count = 0
         self.skipped = 0
         self.failures = 0
+        self._finished = False
 
         # Setup XUnit
         ###################
@@ -249,7 +250,6 @@ class RegressionManager:
         # Write out final log messages
         self._log_test_summary()
         self._log_sim_summary()
-        self.log.info("Shutting down...")
 
         # Generate output reports
         self.xunit.write()
@@ -264,7 +264,18 @@ class RegressionManager:
             cocotb._library_coverage.save()
 
         # Setup simulator finalization
-        simulator.stop_simulator()
+        self._finished = True
+        simulator.stop_simulator("Shutting down...")
+
+    @property
+    def finished(self) -> bool:
+        """
+        Returns ``True`` once the regression manager has finished.
+
+        Finished implies all tests have been run or skipped and test results
+        and coverage information written out to their respective files.
+        """
+        return self._finished
 
     def next_test(self) -> Optional[Test]:
         """Get the next test to run"""
