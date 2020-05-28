@@ -45,9 +45,12 @@ VhpiArrayObjHdl::~VhpiArrayObjHdl()
 
 VhpiObjHdl::~VhpiObjHdl()
 {
-    LOG_DEBUG("Releasing VhpiObjHdl handle at %p\n", (void *)get_handle<vhpiHandleT>());
-    if (vhpi_release_handle(get_handle<vhpiHandleT>()))
-        check_vhpi_error();
+    /* Don't release handles for pseudo-regions, as they borrow the handle of the containing region */
+    if (m_type != GPI_GENARRAY) {
+        LOG_DEBUG("Releasing VhpiObjHdl handle at %p\n", (void *)get_handle<vhpiHandleT>());
+        if (vhpi_release_handle(get_handle<vhpiHandleT>()))
+            check_vhpi_error();
+    }
 }
 
 VhpiSignalObjHdl::~VhpiSignalObjHdl()
