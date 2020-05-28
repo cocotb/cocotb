@@ -32,11 +32,8 @@
 from __future__ import print_function
 
 import cocotb
-from cocotb.decorators import coroutine
 from cocotb.result import TestFailure
-from cocotb.triggers import Timer, Edge, Event
-
-import sys
+from cocotb.triggers import Timer
 
 
 @cocotb.test()

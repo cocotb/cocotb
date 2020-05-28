@@ -27,9 +27,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# Modelsim is (no longer) 32-bit only
-#ARCH:=i686
 
-# Everything else is identical to Quest
-include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.questa
-
+# Identical to Questa
+include $(shell cocotb-config --makefiles)/simulators/Makefile.questa

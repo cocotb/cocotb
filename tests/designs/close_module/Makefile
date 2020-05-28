@@ -39,18 +39,13 @@ else
 
 TOPLEVEL = close_module
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 VERILOG_SOURCES = $(COCOTB)/tests/designs/close_module/close_module.v
 
 ifneq ($(SIM),vcs)
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 else
 all:

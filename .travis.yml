@@ -17,7 +17,7 @@ jobs:
     - stage: Lint
       name: whitespace
       os: linux
-      script: "[[ -z \"$(git ls-files | xargs egrep -l '\\s+$')\" ]]"
+      script: "! git --no-pager grep --color --line-number --full-name --extended-regexp -I '\\s+$'"
 
     - stage: Lint
       name: flake8
@@ -36,15 +36,14 @@ jobs:
         - docker ps -a
       script:
         - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
-        # - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -e py35'
-        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install importlib-resources==1.0.2 tox; cd /src; tox -e py35'  # remove once gh-1469's upstream bug is resolved
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -e py35'
         - echo 'travis_fold:end:cocotb_py35'
 
     - stage: SimTests
       python: 3.7
       before_install: &travis_linx_prep
         - sudo apt-get -y install gperf swig
-        - if [[ ! -e "./iverilog/README.txt" ]]; then rm -rf iverilog; git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_2; fi
+        - if [[ ! -e "./iverilog/README.txt" ]]; then rm -rf iverilog; git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_3; fi
         - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
         - pip install tox
         - pyenv global system $TRAVIS_PYTHON_VERSION

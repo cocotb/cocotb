@@ -39,18 +39,13 @@ clean::
 
 else
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 VERILOG_SOURCES = $(COCOTB)/tests/designs/multi_dimension_array/cocotb_array_pkg.sv \
                   $(COCOTB)/tests/designs/multi_dimension_array/cocotb_array.sv
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif

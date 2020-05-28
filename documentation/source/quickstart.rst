@@ -1,129 +1,32 @@
+.. _quickstart:
+
 ****************
 Quickstart Guide
 ****************
-
-Installing cocotb
-=================
-
-Pre-requisites
---------------
-
-Cocotb has the following requirements:
-
-* Python 3.5+
-* Python-dev packages
-* GCC 4.8.1+ or Clang 3.3+ and associated development packages
-* GNU Make
-* A Verilog or VHDL simulator, depending on your RTL source code
-
-.. versionchanged:: 1.4 Dropped Python 2 support
-
-Installation via PIP
---------------------
-
-.. versionadded:: 1.2
-
-Cocotb can be installed by running
-
-.. code-block:: bash
-
-    pip3 install cocotb
-
-For user local installation follow the
-`pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
-
-To install the development version of cocotb:
-
-.. code-block:: bash
-
-    git clone https://github.com/cocotb/cocotb
-    pip3 install -e ./cocotb
-
-
-Native Linux Installation
--------------------------
-
-The following instructions will allow building of the cocotb libraries
-for use with a 64-bit native simulator.
-
-If a 32-bit simulator is being used then additional steps are needed, please see
-`our Wiki <https://github.com/cocotb/cocotb/wiki/Tier-2-Setup-Instructions>`_.
-
-Debian/Ubuntu-based
-^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-    sudo apt-get install git make gcc g++ swig python-dev
-
-Red Hat-based
-^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-    sudo yum install gcc gcc-c++ libstdc++-devel swig python-devel
-
-
-Windows Installation
---------------------
-
-Download the MinGW installer from https://osdn.net/projects/mingw/releases/.
-
-Run the GUI installer and specify a directory you would like the environment
-installed in. The installer will retrieve a list of possible packages, when this
-is done press "Continue". The MinGW Installation Manager is then launched.
-
-The following packages need selecting by checking the tick box and selecting
-"Mark for installation"
-
-.. code-block:: bash
-
-    Basic Installation
-      -- mingw-developer-tools
-      -- mingw32-base
-      -- mingw32-gcc-g++
-      -- msys-base
-
-From the Installation menu then select "Apply Changes", in the next dialog
-select "Apply".
-
-When installed a shell can be opened using the :file:`msys.bat` file located under
-the :file:`<install_dir>/msys/1.0/`
-
-Python can be downloaded from https://www.python.org/downloads/windows/.
-Run the installer and download to your chosen location.
-
-It is beneficial to add the path to Python to the Windows system ``PATH`` variable
-so it can be used easily from inside Msys.
-
-Once inside the Msys shell commands as given here will work as expected.
-
-macOS Packages
---------------
-
-You need a few packages installed to get cocotb running on macOS.
-Installing a package manager really helps things out here.
-
-`Brew <https://brew.sh/>`_ seems to be the most popular, so we'll assume you have that installed.
-
-.. code-block:: bash
-
-    brew install python icarus-verilog gtkwave
 
 
 Running your first Example
 ==========================
 
-Assuming you have installed the prerequisites as above,
-the following lines are all you need to run a first simulation with cocotb:
+Make sure you have the :ref:`prerequisites<install-prerequisites>`
+(Python with development packages, a C++ compiler with development packages, GNU Make,
+a :ref:`supported simulator<simulator-support>`) and cocotb itself (``pip install cocotb``) available.
+
+Download and extract the cocotb source files according to the *release version* you are using from
+https://github.com/cocotb/cocotb/releases - you can check your cocotb version with ``cocotb-config --version``.
+
+The sources for cocotb's *development version* are available from
+https://github.com/cocotb/cocotb/archive/master.zip
+
+The following lines are all you need to run a first simulation with cocotb:
 
 .. code-block:: bash
 
-    git clone https://github.com/cocotb/cocotb
-    cd cocotb/examples/endian_swapper/tests
+    cd cocotb/examples/simple_dff
     make
 
-Selecting a different simulator is as easy as:
+This was running with the default simulator, Icarus Verilog,
+but selecting a different simulator is as easy as:
 
 .. code-block:: bash
 
@@ -133,10 +36,10 @@ Selecting a different simulator is as easy as:
 Running the same example as VHDL
 --------------------------------
 
-The ``endian_swapper`` example includes both a VHDL and a Verilog RTL implementation.
+The ``simple_dff`` example includes both a VHDL and a Verilog RTL implementation.
 The cocotb testbench can execute against either implementation using VPI for
 Verilog and VHPI/FLI for VHDL.  To run the test suite against the VHDL
-implementation use the following command (a VHPI or FLI capable simulator must
+implementation, use the following command (a VHPI or FLI capable simulator must
 be used):
 
 .. code-block:: bash
@@ -170,7 +73,6 @@ Python test script to load.
     # MODULE is the name of the Python test file:
     MODULE=test_my_design
 
-    include $(shell cocotb-config --makefiles)/Makefile.inc
     include $(shell cocotb-config --makefiles)/Makefile.sim
 
 We would then create a file called ``test_my_design.py`` containing our tests.
@@ -192,15 +94,15 @@ following:
     from cocotb.triggers import Timer
 
     @cocotb.test()
-    def my_first_test(dut):
+    async def my_first_test(dut):
         """Try accessing the design."""
 
         dut._log.info("Running test!")
         for cycle in range(10):
             dut.clk = 0
-            yield Timer(1, units='ns')
+            await Timer(1, units='ns')
             dut.clk = 1
-            yield Timer(1, units='ns')
+            await Timer(1, units='ns')
         dut._log.info("Running test!")
 
 This will drive a square wave clock onto the ``clk`` port of the toplevel.
@@ -248,7 +150,7 @@ The syntax ``sig <= new_value`` is a short form of ``sig.value = new_value``.
 It not only resembles HDL syntax, but also has the same semantics:
 writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
-(see :meth:`~cocotb.handle.ModifiableObject.setimmediatevalue`).
+(see :meth:`~cocotb.handle.NonHierarchyObject.setimmediatevalue`).
 
 In addition to regular value assignments (deposits), signals can be forced
 to a predetermined value or frozen at their current value. To achieve this,
@@ -303,38 +205,39 @@ We can also cast the signal handle directly to an integer:
 Parallel and sequential execution
 ---------------------------------
 
-A :keyword:`yield` will run a function (that must be marked as a "coroutine", see :ref:`coroutines`)
-sequentially, i.e. wait for it to complete.
-If a coroutine should be run "in the background", i.e. in parallel to other coroutines,
-the way to do this is to :func:`~cocotb.fork` it.
-The end of such a forked coroutine can be waited on by using :meth:`~cocotb.decorators.RunningCoroutine.join`.
+An :keyword:`await` will run an :keyword:`async` coroutine and wait for it to complete.
+The called coroutine "blocks" the execution of the current coroutine.
+Wrapping the call in :func:`~cocotb.fork` runs the coroutine concurrently, allowing the current coroutine to continue executing.
+At any time you can :keyword:`await` the result of the forked coroutine, which will block until the forked coroutine finishes.
 
 The following example shows these in action:
 
 .. code-block:: python3
 
-    @cocotb.coroutine
-    def reset_dut(reset_n, duration):
+    # A coroutine
+    async def reset_dut(reset_n, duration_ns):
         reset_n <= 0
-        yield Timer(duration, units='ns')
+        await Timer(duration_ns, units='ns')
         reset_n <= 1
         reset_n._log.debug("Reset complete")
 
     @cocotb.test()
-    def parallel_example(dut):
+    async def parallel_example(dut):
         reset_n = dut.reset
 
-        # This will call reset_dut sequentially
         # Execution will block until reset_dut has completed
-        yield reset_dut(reset_n, 500)
+        await reset_dut(reset_n, 500)
         dut._log.debug("After reset")
 
-        # Call reset_dut in parallel with the 250 ns timer
-        reset_thread = cocotb.fork(reset_dut(reset_n, 500))
+        # Run reset_dut concurrently
+        reset_thread = cocotb.fork(reset_dut(reset_n, duration_ns=500))
 
-        yield Timer(250, units='ns')
+        # This timer will complete before the timer in the concurrently executing "reset_thread"
+        await Timer(250, units='ns')
         dut._log.debug("During reset (reset_n = %s)" % reset_n.value)
 
         # Wait for the other thread to complete
-        yield reset_thread.join()
+        await reset_thread
         dut._log.debug("After reset")
+
+See :ref:`coroutines` for more examples of what can be done with coroutines.

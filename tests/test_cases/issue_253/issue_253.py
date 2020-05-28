@@ -1,10 +1,9 @@
 # A set of regression tests for open issues
 
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer, ReadOnly
+from cocotb.triggers import Timer
 from cocotb.result import TestFailure
-from cocotb.binary import BinaryValue
+
 
 @cocotb.coroutine
 def toggle_clock(dut):
@@ -17,13 +16,16 @@ def toggle_clock(dut):
     if dut.clk.value.integer != 1:
         raise TestFailure("Clock not set to 1 as expected")
 
+
 @cocotb.test()
 def issue_253_empty(dut):
     yield toggle_clock(dut)
 
+
 @cocotb.test()
 def issue_253_none(dut):
     yield toggle_clock(dut)
+
 
 @cocotb.test()
 def issue_253_notset(dut):

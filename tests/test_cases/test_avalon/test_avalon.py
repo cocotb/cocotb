@@ -33,15 +33,11 @@ A set of tests that demonstrate cocotb functionality
 Also used as regression test of cocotb capabilities
 """
 
-import logging
-
 import cocotb
 from cocotb.drivers.avalon import AvalonMemory
-from cocotb.triggers import (Timer, Join, RisingEdge, FallingEdge, Edge,
-                             ReadOnly, ReadWrite)
+from cocotb.triggers import Timer, RisingEdge
 from cocotb.clock import Clock
-from cocotb.result import TestFailure, TestError, TestSuccess
-
+from cocotb.result import TestFailure
 
 
 class BurstAvlReadTest(object):
@@ -60,6 +56,7 @@ class BurstAvlReadTest(object):
                                   memory=self.memdict,
                                   readlatency_min=0,
                                   avl_properties=avlproperties)
+
     @cocotb.coroutine
     def init_sig(self, burstcount_w, address):
         """ Initialize all signals """
@@ -71,6 +68,7 @@ class BurstAvlReadTest(object):
         self.dut.control_fixed_location = 0
         self.dut.control_go = 0
         self.dut.master_waitrequest = 0
+
 
 @cocotb.test(expect_fail=False)
 def test_burst_read(dut):
@@ -97,8 +95,8 @@ def test_burst_read(dut):
         yield RisingEdge(dut.clk)
         value = dut.user_buffer_data.value
         for i in range(databuswidthB):
-            read_mem[address + burst*databuswidthB + i] =\
-                    (value >> i*8)& 0xFF
+            read_mem[address + burst*databuswidthB + i] = \
+                (value >> i*8)& 0xFF
         burst += 1
 
     dut.user_read_buffer = 0

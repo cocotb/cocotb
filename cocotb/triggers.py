@@ -25,22 +25,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A collections of triggers which a testbench can yield."""
+"""A collections of triggers which a testbench can await."""
 
-import os
 import abc
+from collections.abc import Awaitable
 
-if "COCOTB_SIM" in os.environ:
-    import simulator
-else:
-    simulator = None
-
+from cocotb import simulator
 from cocotb.log import SimLog
 from cocotb.utils import (
-    get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,
+    get_sim_steps, ParametrizedSingleton,
     lazy_property, remove_traceback_frames,
 )
-from cocotb import decorators
 from cocotb import outcomes
 import cocotb
 
@@ -59,7 +54,8 @@ def _pointer_str(obj):
 class TriggerException(Exception):
     pass
 
-class Trigger(metaclass=abc.ABCMeta):
+
+class Trigger(Awaitable):
     """Base class to derive from."""
 
     # __dict__ is needed here for the `.log` lazy_property below to work.
@@ -78,7 +74,7 @@ class Trigger(metaclass=abc.ABCMeta):
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.%s" % (self.__class__.__name__), id(self))
+        return SimLog("cocotb.%s" % (type(self).__qualname__), id(self))
 
     @abc.abstractmethod
     def prime(self, callback):
@@ -115,7 +111,7 @@ class Trigger(metaclass=abc.ABCMeta):
 
     @property
     def _outcome(self):
-        """The result that `yield this_trigger` produces in a coroutine.
+        """The result that `await this_trigger` produces in a coroutine.
 
         The default is to produce the trigger itself, which is done for
         ease of use with :class:`~cocotb.triggers.First`.
@@ -148,18 +144,19 @@ class GPITrigger(Trigger):
         # if simulator is not None:
         #    self.cbhdl = simulator.create_callback(self)
         # else:
-        self.cbhdl = 0
+        self.cbhdl = None
 
     def unprime(self):
         """Disable a primed trigger, can be re-primed."""
-        if self.cbhdl != 0:
-            simulator.deregister_callback(self.cbhdl)
-        self.cbhdl = 0
+        if self.cbhdl is not None:
+            self.cbhdl.deregister()
+        self.cbhdl = None
         Trigger.unprime(self)
 
 
 class Timer(GPITrigger):
     """Fires after the specified simulation time period has elapsed."""
+
     def __init__(self, time_ps, units=None):
         """
         Args:
@@ -173,24 +170,24 @@ class Timer(GPITrigger):
 
         Examples:
 
-            >>> yield Timer(100, units='ps')
+            >>> await Timer(100, units='ps')
 
             The time can also be a ``float``:
 
-            >>> yield Timer(100e-9, units='sec')
+            >>> await Timer(100e-9, units='sec')
 
             which is particularly convenient when working with frequencies:
 
             >>> freq = 10e6  # 10 MHz
-            >>> yield Timer(1 / freq, units='sec')
+            >>> await Timer(1 / freq, units='sec')
 
             Other builtin exact numeric types can be used too:
 
             >>> from fractions import Fraction
-            >>> yield Timer(Fraction(1, 10), units='ns')
+            >>> await Timer(Fraction(1, 10), units='ns')
 
             >>> from decimal import Decimal
-            >>> yield Timer(Decimal('100e-9'), units='sec')
+            >>> await Timer(Decimal('100e-9'), units='sec')
 
             These are most useful when using computed durations while
             avoiding floating point inaccuracies.
@@ -199,21 +196,28 @@ class Timer(GPITrigger):
             :func:`~cocotb.utils.get_sim_steps`
         """
         GPITrigger.__init__(self)
-        self.sim_steps = get_sim_steps(time_ps, units)
+        self._time_ps = time_ps
+        self._units = units
+
+    @lazy_property
+    def sim_steps(self):
+        # lazy so we don't call into the simulator until we need to
+        return get_sim_steps(self._time_ps, self._units)
 
     def prime(self, callback):
         """Register for a timed callback."""
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_timed_callback(self.sim_steps,
                                                            callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "<{} of {:1.2f}ps at {}>".format(
-            type(self).__name__,
-            get_time_from_sim_steps(self.sim_steps, units='ps'),
+        return "<{} of {:1.2f}{} at {}>".format(
+            type(self).__qualname__,
+            self._time_ps,
+            self._units,
             _pointer_str(self)
         )
 
@@ -242,14 +246,14 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_readonly_callback(callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__name__)
+        return "{}()".format(type(self).__qualname__)
 
 
 class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -264,16 +268,16 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             # import pdb
             # pdb.set_trace()
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__name__)
+        return "{}()".format(type(self).__qualname__)
 
 
 class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -288,14 +292,14 @@ class NextTimeStep(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         GPITrigger.__init__(self)
 
     def prime(self, callback):
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_nextstep_callback(callback, self)
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "{}()".format(type(self).__name__)
+        return "{}()".format(type(self).__qualname__)
 
 
 class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -318,16 +322,16 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 
     def prime(self, callback):
         """Register notification of a value change via a callback"""
-        if self.cbhdl == 0:
+        if self.cbhdl is None:
             self.cbhdl = simulator.register_value_change_callback(
                 self.signal._handle, callback, type(self)._edge_type, self
             )
-            if self.cbhdl == 0:
+            if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
         super(_EdgeBase, self).prime(callback)
 
     def __repr__(self):
-        return "{}({!r})".format(type(self).__name__, self.signal)
+        return "{}({!r})".format(type(self).__qualname__, self.signal)
 
 
 class RisingEdge(_EdgeBase):
@@ -373,10 +377,10 @@ class _Event(PythonTrigger):
         return "<{!r}.wait() at {}>".format(self.parent, _pointer_str(self))
 
 
-class Event(object):
+class Event:
     """Event to permit synchronization between two coroutines.
 
-    Yielding :meth:`wait()` from one coroutine will block the coroutine until
+    Awaiting :meth:`wait()` from one coroutine will block the coroutine until
     :meth:`set()` is called somewhere else.
     """
 
@@ -420,12 +424,16 @@ class Event(object):
         :meth:`~cocotb.triggers.Event.set` is called again."""
         self.fired = False
 
+    def is_set(self) -> bool:
+        """ Return true if event has been set """
+        return self.fired
+
     def __repr__(self):
         if self.name is None:
             fmt = "<{0} at {2}>"
         else:
             fmt = "<{0} for {1} at {2}>"
-        return fmt.format(type(self).__name__, self.name, _pointer_str(self))
+        return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
 class _Lock(PythonTrigger):
@@ -453,16 +461,24 @@ class _Lock(PythonTrigger):
         return "<{!r}.acquire() at {}>".format(self.parent, _pointer_str(self))
 
 
-class Lock(object):
+class Lock:
     """Lock primitive (not re-entrant).
 
-    This should be used as::
+    This can be used as::
 
-        yield lock.acquire()
+        await lock.acquire()
         try:
             # do some stuff
         finally:
             lock.release()
+
+    .. versionchanged:: 1.4
+
+        The lock can be used as an asynchronous context manager in an
+        :keyword:`async with` statement::
+
+            async with lock:
+                # do some stuff
     """
 
     def __init__(self, name=None):
@@ -490,7 +506,7 @@ class Lock(object):
         """Release the lock."""
         if not self.locked:
             raise TriggerException("Attempt to release an unacquired Lock %s" %
-                        (str(self)))
+                                   (str(self)))
 
         self.locked = False
 
@@ -508,15 +524,19 @@ class Lock(object):
         else:
             fmt = "<{0} for {1} [{2} waiting] at {3}>"
         return fmt.format(
-            type(self).__name__, self.name, len(self._pending_primed),
+            type(self).__qualname__, self.name, len(self._pending_primed),
             _pointer_str(self)
         )
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Provide boolean of a Lock"""
         return self.locked
 
-    __bool__ = __nonzero__
+    async def __aenter__(self):
+        return await self.acquire()
+
+    async def __aexit__(self, exc_type, exc, tb):
+        self.release()
 
 
 class NullTrigger(Trigger):
@@ -524,6 +544,7 @@ class NullTrigger(Trigger):
 
     Primarily for internal scheduler use.
     """
+
     def __init__(self, name=None, outcome=None):
         super(NullTrigger, self).__init__()
         self._callback = None
@@ -544,7 +565,7 @@ class NullTrigger(Trigger):
             fmt = "<{0} at {2}>"
         else:
             fmt = "<{0} for {1} at {2}>"
-        return fmt.format(type(self).__name__, self.name, _pointer_str(self))
+        return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
 
 
 class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
@@ -553,20 +574,6 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
     The result of blocking on the trigger can be used to get the coroutine
     result::
 
-        @cocotb.coroutine()
-        def coro_inner():
-            yield Timer(1, units='ns')
-            return "Hello world"
-
-        task = cocotb.fork(coro_inner())
-        result = yield Join(task)
-        assert result == "Hello world"
-
-    Or using the syntax in Python 3.5 onwards:
-
-    .. code-block:: python3
-
-        @cocotb.coroutine()
         async def coro_inner():
             await Timer(1, units='ns')
             return "Hello world"
@@ -575,8 +582,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
         result = await Join(task)
         assert result == "Hello world"
 
-    If the coroutine threw an exception, the :keyword:`await` or :keyword:`yield`
-    will re-raise it.
+    If the coroutine threw an exception, the :keyword:`await` will re-raise it.
 
     """
     __slots__ = ('_coroutine',)
@@ -603,13 +609,13 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
 
                 forked = cocotb.fork(mycoro())
                 j = Join(forked)
-                yield j
+                await j
                 result = j.retval
 
             ::
 
                 forked = cocotb.fork(mycoro())
-                result = yield Join(forked)
+                result = await Join(forked)
         """
         return self._coroutine.retval
 
@@ -620,27 +626,23 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
             super(Join, self).prime(callback)
 
     def __repr__(self):
-        return "{}({!r})".format(type(self).__name__, self._coroutine)
+        return "{}({!r})".format(type(self).__qualname__, self._coroutine)
 
 
-class Waitable(object):
+class Waitable(Awaitable):
     """
-    Compatibility layer that emulates `collections.abc.Awaitable`.
+    Base class for trigger-like objects implemented using coroutines.
 
-    This converts a `_wait` abstract method into a suitable `__await__` on
-    supporting Python versions (>=3.3).
+    This converts a `_wait` abstract method into a suitable `__await__`.
     """
     __slots__ = ()
-    @decorators.coroutine
-    def _wait(self):
-        """
-        Should be implemented by the sub-class. Called by `yield self` to
-        convert the waitable object into a coroutine.
 
-        ReturnValue can be used here.
+    async def _wait(self):
+        """
+        Should be implemented by the sub-class. Called by `await self` to
+        convert the waitable object into a coroutine.
         """
         raise NotImplementedError
-        yield
 
     def __await__(self):
         return self._wait().__await__()
@@ -656,30 +658,30 @@ class _AggregateWaitable(Waitable):
         self.triggers = tuple(triggers)
 
         # Do some basic type-checking up front, rather than waiting until we
-        # yield them.
-        allowed_types = (Trigger, Waitable, decorators.RunningTask)
+        # await them.
+        allowed_types = (Trigger, Waitable, cocotb.decorators.RunningTask)
         for trigger in self.triggers:
             if not isinstance(trigger, allowed_types):
                 raise TypeError(
                     "All triggers must be instances of Trigger! Got: {}"
-                    .format(type(trigger).__name__)
+                    .format(type(trigger).__qualname__)
                 )
 
     def __repr__(self):
         # no _pointer_str here, since this is not a trigger, so identity
         # doesn't matter.
         return "{}({})".format(
-            type(self).__name__, ", ".join(repr(t) for t in self.triggers)
+            type(self).__qualname__, ", ".join(repr(t) for t in self.triggers)
         )
 
 
-@decorators.coroutine
-def _wait_callback(trigger, callback):
+async def _wait_callback(trigger, callback):
     """
-    Wait for a trigger, and call `callback` with the outcome of the yield.
+    Wait for a trigger, and call `callback` with the outcome of the await.
     """
+    trigger = cocotb.scheduler._trigger_from_any(trigger)
     try:
-        ret = outcomes.Value((yield trigger))
+        ret = outcomes.Value(await trigger)
     except BaseException as exc:
         # hide this from the traceback
         ret = outcomes.Error(remove_traceback_frames(exc, ['_wait_callback']))
@@ -694,8 +696,7 @@ class Combine(_AggregateWaitable):
     """
     __slots__ = ()
 
-    @decorators.coroutine
-    def _wait(self):
+    async def _wait(self):
         waiters = []
         e = Event()
         triggers = list(self.triggers)
@@ -711,7 +712,7 @@ class Combine(_AggregateWaitable):
             waiters.append(cocotb.fork(_wait_callback(t, on_done)))
 
         # wait for the last waiter to complete
-        yield e.wait()
+        await e.wait()
         return self
 
 
@@ -721,10 +722,6 @@ class First(_AggregateWaitable):
 
     Returns the result of the trigger that fired.
 
-    As a shorthand, ``t = yield [a, b]`` can be used instead of
-    ``t = yield First(a, b)``. Note that this shorthand is not available when
-    using :keyword:`await`.
-
     .. note::
         The event loop is single threaded, so while events may be simultaneous
         in simulation time, they can never be simultaneous in real time.
@@ -733,12 +730,16 @@ class First(_AggregateWaitable):
 
             t1 = Timer(10, units='ps')
             t2 = Timer(10, units='ps')
-            t_ret = yield First(t1, t2)
+            t_ret = await First(t1, t2)
+
+    .. note::
+        In the old-style :ref:`generator-based coroutines <yield-syntax>`, ``t = yield [a, b]`` was another spelling of
+        ``t = yield First(a, b)``. This spelling is no longer available when using :keyword:`await`-based
+        coroutines.
     """
     __slots__ = ()
 
-    @decorators.coroutine
-    def _wait(self):
+    async def _wait(self):
         waiters = []
         e = Event()
         triggers = list(self.triggers)
@@ -751,7 +752,7 @@ class First(_AggregateWaitable):
             waiters.append(cocotb.fork(_wait_callback(t, on_done)))
 
         # wait for a waiter to complete
-        yield e.wait()
+        await e.wait()
 
         # kill all the other waiters
         # TODO: Should this kill the coroutines behind any Join triggers?
@@ -765,11 +766,12 @@ class First(_AggregateWaitable):
         #  - Using `NullTrigger` here instead of `result = completed[0].get()`
         #    means we avoid inserting an `outcome.get` frame in the traceback
         first_trigger = NullTrigger(outcome=completed[0])
-        return (yield first_trigger)  # the first of multiple triggers that fired
+        return await first_trigger  # the first of multiple triggers that fired
 
 
 class ClockCycles(Waitable):
     """Fires after *num_cycles* transitions of *signal* from ``0`` to ``1``."""
+
     def __init__(self, signal, num_cycles, rising=True):
         """
         Args:
@@ -785,11 +787,10 @@ class ClockCycles(Waitable):
         else:
             self._type = FallingEdge
 
-    @decorators.coroutine
-    def _wait(self):
+    async def _wait(self):
         trigger = self._type(self.signal)
         for _ in range(self.num_cycles):
-            yield trigger
+            await trigger
         return self
 
     def __repr__(self):
@@ -799,11 +800,10 @@ class ClockCycles(Waitable):
             fmt = "{}({!r}, {!r})"
         else:
             fmt = "{}({!r}, {!r}, rising=False)"
-        return fmt.format(type(self).__name__, self.signal, self.num_cycles)
+        return fmt.format(type(self).__qualname__, self.signal, self.num_cycles)
 
 
-@decorators.coroutine
-def with_timeout(trigger, timeout_time, timeout_unit=None):
+async def with_timeout(trigger, timeout_time, timeout_unit=None):
     """
     Waits on triggers, throws an exception if it waits longer than the given time.
 
@@ -811,17 +811,16 @@ def with_timeout(trigger, timeout_time, timeout_unit=None):
 
     .. code-block:: python
 
-        yield with_timeout(coro, 100, 'ns')
-        yield with_timeout(First(coro, event.wait()), 100, 'ns')
+        await with_timeout(coro, 100, 'ns')
+        await with_timeout(First(coro, event.wait()), 100, 'ns')
 
     Args:
-        trigger (cocotb_waitable):
-            A single object that could be right of a :keyword:`yield`
-            (or :keyword:`await` in Python 3) expression in cocotb.
+        trigger (:class:`~cocotb.triggers.Trigger` or :class:`~cocotb.triggers.Waitable` or :class:`~cocotb.decorators.RunningTask`):
+            A single object that could be right of an :keyword:`await` expression in cocotb.
         timeout_time (numbers.Real or decimal.Decimal):
-            Time duration.
+            Simulation time duration before timeout occurs.
         timeout_unit (str or None, optional):
-            Units of duration, accepts any values that :class:`~cocotb.triggers.Timer` does.
+            Units of timeout_time, accepts any units that :class:`~cocotb.triggers.Timer` does.
 
     Returns:
         First trigger that completed if timeout did not occur.
@@ -831,8 +830,9 @@ def with_timeout(trigger, timeout_time, timeout_unit=None):
 
     .. versionadded:: 1.3
     """
+
     timeout_timer = cocotb.triggers.Timer(timeout_time, timeout_unit)
-    res = yield [timeout_timer, trigger]
+    res = await First(timeout_timer, trigger)
     if res is timeout_timer:
         raise cocotb.result.SimTimeoutError
     else:

@@ -40,6 +40,7 @@ from cocotb.monitors import BusMonitor
 from cocotb.triggers import RisingEdge, ReadOnly
 from cocotb.binary import BinaryValue
 
+
 class AvalonProtocolError(Exception):
     pass
 
@@ -55,8 +56,7 @@ class AvalonST(BusMonitor):
 
     _default_config = {"firstSymbolInHighOrderBits": True}
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
+    def __init__(self, entity, name, clock, *, config={}, **kwargs):
         BusMonitor.__init__(self, entity, name, clock, **kwargs)
 
         self.config = self._default_config.copy()
@@ -109,9 +109,7 @@ class AvalonSTPkts(BusMonitor):
         "invalidTimeout"                : 0,
     }
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
-        report_channel = kwargs.pop('report_channel', False)
+    def __init__(self, entity, name, clock, *, config={}, report_channel=False, **kwargs):
         BusMonitor.__init__(self, entity, name , clock, **kwargs)
 
         self.config = self._default_config.copy()
@@ -156,7 +154,7 @@ class AvalonSTPkts(BusMonitor):
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
         rdonly = ReadOnly()
-        pkt = ""
+        pkt = b""
         in_pkt = False
         invalid_cyclecount = 0
         channel = None
@@ -180,7 +178,7 @@ class AvalonSTPkts(BusMonitor):
                     if pkt:
                         raise AvalonProtocolError("Duplicate start-of-packet received on %s" %
                                                   str(self.bus.startofpacket))
-                    pkt = ""
+                    pkt = b""
                     in_pkt = True
 
                 if not in_pkt:
@@ -219,13 +217,13 @@ class AvalonSTPkts(BusMonitor):
 
                 if self.bus.endofpacket.value:
                     self.log.info("Received a packet of %d bytes", len(pkt))
-                    self.log.debug(hexdump(str((pkt))))
+                    self.log.debug(hexdump(pkt))
                     self.channel = channel
                     if self.report_channel:
                         self._recv({"data": pkt, "channel": channel})
                     else:
                         self._recv(pkt)
-                    pkt = ""
+                    pkt = b""
                     in_pkt = False
                     channel = None
             else:
@@ -236,6 +234,7 @@ class AvalonSTPkts(BusMonitor):
                             raise AvalonProtocolError(
                                 "In-Packet Timeout. Didn't receive any valid data for %d cycles!" %
                                 invalid_cyclecount)
+
 
 class AvalonSTPktsWithChannel(AvalonSTPkts):
     """Packetized AvalonST bus using channel.

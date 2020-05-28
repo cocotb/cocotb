@@ -30,22 +30,15 @@
 # Default to verilog
 TOPLEVEL_LANG ?= verilog
 
-WPWD=$(shell sh -c 'pwd -W')
 PWD=$(shell pwd)
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-PYTHONPATH := $(PWD)/../cosim;$(PYTHONPATH)
-else
-WPWD=$(shell pwd)
-PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
-endif
+export PYTHONPATH := $(PWD)/../cosim:$(PYTHONPATH)
 
 ifeq ($(TOPLEVEL_LANG),verilog)
-    VERILOG_SOURCES = $(WPWD)/../hdl/endian_swapper.sv
+    VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
     TOPLEVEL = endian_swapper_sv
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    VHDL_SOURCES = $(WPWD)/../hdl/endian_swapper.vhdl
+    VHDL_SOURCES = $(PWD)/../hdl/endian_swapper.vhdl
     TOPLEVEL = endian_swapper_vhdl
     ifneq ($(filter $(SIM),ius xcelium),)
         SIM_ARGS += -v93
@@ -61,15 +54,15 @@ ifeq ($(OS),Linux)
     MODULE := $(MODULE),test_endian_swapper_hal
     CUSTOM_COMPILE_DEPS = hal
     LD_LIBRARY_PATH := $(PWD)/../cosim:$(LD_LIBRARY_PATH)
+    export LD_LIBRARY_PATH
 endif
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 ifeq ($(OS),Linux)
 .PHONY: hal
 hal:
-	-cd ../cosim && make
+	cd ../cosim && make
 
 clean::
 	-cd ../cosim && make clean
@@ -90,4 +83,3 @@ profile:
 clean::
 	-rm -rf test_profile.pstat
 	-rm -rf callgraph.svg
-

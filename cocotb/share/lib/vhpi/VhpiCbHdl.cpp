@@ -296,9 +296,6 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
             m_value.bufSize = static_cast<bufSize_type>(bufSize);
             m_value.value.str = new vhpiCharT[bufSize];
             m_value.numElems = m_num_elems;
-            if (!m_value.value.str) {
-                LOG_CRITICAL("Unable to alloc mem for write buffer");
-            }
             LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
             break;
         }
@@ -318,10 +315,6 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
         m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
         m_binvalue.value.str = new vhpiCharT[bufSize];
-
-        if (!m_binvalue.value.str) {
-            LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
-        }
     }
 
     return GpiObjHdl::initialise(name, fq_name);
@@ -367,9 +360,6 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiEnumT));
         m_value.bufSize = static_cast<bufSize_type>(bufSize);
         m_value.value.enumvs = new vhpiEnumT[bufSize];
-        if (!m_value.value.enumvs) {
-            LOG_CRITICAL("Unable to alloc mem for write buffer: ABORTING");
-        }
     }
 
     if (m_indexable && get_range(handle, 0, &m_range_left, &m_range_right)) {
@@ -380,10 +370,6 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         int bufSize = m_num_elems * static_cast<int>(sizeof(vhpiCharT)) + 1;
         m_binvalue.bufSize = static_cast<bufSize_type>(bufSize);
         m_binvalue.value.str = new vhpiCharT[bufSize];
-
-        if (!m_binvalue.value.str) {
-            LOG_CRITICAL("Unable to alloc mem for read buffer of signal %s", name.c_str());
-        }
     }
 
     return GpiObjHdl::initialise(name, fq_name);
@@ -847,16 +833,11 @@ VhpiStartupCbHdl::VhpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 
 int VhpiStartupCbHdl::run_callback() {
     vhpiHandleT tool, argv_iter, argv_hdl;
-    gpi_sim_info_t sim_info;
     char **tool_argv = NULL;
     int tool_argc = 0;
     int i = 0;
 
     tool = vhpi_handle(vhpiTool, NULL);
-
-    sim_info.product = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiNameP, tool)));
-    sim_info.version = const_cast<char*>(static_cast<const char*>(vhpi_get_str(vhpiToolVersionP, tool)));
-
     if (tool) {
         tool_argc = static_cast<int>(vhpi_get(vhpiArgcP, tool));
         tool_argv = new char*[tool_argc];
@@ -870,13 +851,11 @@ int VhpiStartupCbHdl::run_callback() {
             }
             vhpi_release_handle(argv_iter);
         }
-        sim_info.argc = tool_argc;
-        sim_info.argv = tool_argv;
 
         vhpi_release_handle(tool);
     }
 
-    gpi_embed_init(&sim_info);
+    gpi_embed_init(tool_argc, tool_argv);
     delete [] tool_argv;
 
     return 0;

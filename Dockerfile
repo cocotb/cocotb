@@ -4,7 +4,7 @@ FROM ubuntu:16.04
 ARG MAKE_JOBS=-j2
 
 # Simulation
-ARG ICARUS_VERILOG_VERSION=10_2
+ARG ICARUS_VERILOG_VERSION=10_3
 
 RUN apt-get -qq update && apt-get -qq install -y --no-install-recommends \
        wget \

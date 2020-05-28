@@ -2,9 +2,8 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer, ReadOnly
+from cocotb.triggers import RisingEdge, ReadOnly
 from cocotb.result import TestFailure
-from cocotb.binary import BinaryValue
 
 
 @cocotb.coroutine
@@ -21,6 +20,7 @@ def monitor(dut):
     yield ReadOnly()
     if not dut.stream_in_valid.value.integer:
         raise TestFailure("stream_in_valid should be high on the 5th cycle")
+
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
 @cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)

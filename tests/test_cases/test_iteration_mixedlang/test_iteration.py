@@ -27,7 +27,7 @@ import logging
 
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
+from cocotb.result import TestFailure
 
 
 def recursive_dump(parent, log):
@@ -84,7 +84,7 @@ def recursive_discovery(dut):
 
     if not isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject):
         tlog.error("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable")
-        tlog.error("but it was %s" % dut.i_verilog.uart1.baud_gen_1.baud_freq.__class__.__name__)
+        tlog.error("but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__)
         raise TestFailure()
 
 
@@ -104,4 +104,3 @@ def recursive_discovery_boundary(dut):
     tlog.info("Found a total of %d things", total)
     if total != pass_total:
         raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
-

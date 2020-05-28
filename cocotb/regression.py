@@ -34,16 +34,24 @@ import sys
 import os
 import traceback
 import pdb
+from typing import Any, Optional, Tuple, Iterable
+
+import cocotb
+import cocotb.ANSI as ANSI
+from cocotb.log import SimLog
+from cocotb.result import TestSuccess, SimFailure
+from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
+from cocotb.xunit_reporter import XUnitReporter
+from cocotb.decorators import test as Test, hook as Hook, RunningTask
+from cocotb.outcomes import Outcome, Error
+from cocotb.handle import SimHandle
+
+from cocotb import simulator
 
 if "COCOTB_PDB_ON_EXCEPTION" in os.environ:
     _pdb_on_exception = True
 else:
     _pdb_on_exception = False
-
-if "COCOTB_SIM" in os.environ:
-    import simulator
-else:
-    simulator = None
 
 # Optional support for coverage collection of testbench files
 coverage = None
@@ -56,15 +64,8 @@ if "COVERAGE" in os.environ:
                "Import error was: %s\n" % repr(e))
         sys.stderr.write(msg)
 
-import cocotb
-import cocotb.ANSI as ANSI
-from cocotb.log import SimLog
-from cocotb.result import TestSuccess, SimFailure
-from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
-from cocotb.xunit_reporter import XUnitReporter
 
-
-def _my_import(name):
+def _my_import(name: str) -> Any:
     mod = __import__(name)
     components = name.split('.')
     for comp in components[1:]:
@@ -72,40 +73,29 @@ def _my_import(name):
     return mod
 
 
-class RegressionManager(object):
+_logger = SimLog(__name__)
+
+
+class RegressionManager:
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, root_name, modules, tests=None, seed=None, hooks=[]):
+    def __init__(self, dut: SimHandle, tests: Iterable[Test], hooks: Iterable[Hook]):
         """
         Args:
-            root_name (str): The name of the root handle.
-            modules (list): A list of Python module names to run.
-            tests (list, optional): A list of tests to run.
-                Defaults to ``None``, meaning all discovered tests will be run.
-            seed (int,  optional): The seed for the random number generator to use.
-                Defaults to ``None``.
-            hooks (list, optional): A list of hook modules to import.
-                Defaults to the empty list.
+            dut (SimHandle): The root handle to pass into test functions.
+            tests (Iterable[Test]): tests to run
+            hooks (Iterable[Hook]): hooks to tun
         """
-        self._queue = []
-        self._root_name = root_name
-        self._dut = None
-        self._modules = modules
-        self._functions = tests
-        self._running_test = None
+        self._dut = dut
+        self._test_task = None
         self._cov = None
-        self.log = SimLog("cocotb.regression")
-        self._seed = seed
-        self._hooks = hooks
-
-    def initialise(self):
-
+        self.log = _logger
         self.start_time = time.time()
         self.test_results = []
-        self.ntests = 0
-        self.count = 1
+        self.count = 0
         self.skipped = 0
         self.failures = 0
+        self._tearing_down = False
 
         # Setup XUnit
         ###################
@@ -116,11 +106,9 @@ class RegressionManager(object):
 
         self.xunit = XUnitReporter(filename=results_filename)
 
-        self.xunit.add_testsuite(name=suite_name, tests=repr(self.ntests),
-                                 package=package_name)
+        self.xunit.add_testsuite(name=suite_name, package=package_name)
 
-        if (self._seed is not None):
-            self.xunit.add_property(name="random_seed", value=("%d" % self._seed))
+        self.xunit.add_property(name="random_seed", value=str(cocotb.RANDOM_SEED))
 
         # Setup Coverage
         ####################
@@ -130,106 +118,137 @@ class RegressionManager(object):
             self._cov = coverage.coverage(branch=True, omit=["*cocotb*"])
             self._cov.start()
 
-        # Setup DUT object
-        #######################
-
-        handle = simulator.get_root_handle(self._root_name)
-
-        self._dut = cocotb.handle.SimHandle(handle) if handle else None
-
-        if self._dut is None:
-            raise AttributeError("Can not find Root Handle (%s)" %
-                                 self._root_name)
-
         # Test Discovery
         ####################
+        self._queue = []
+        for test in tests:
+            self.log.info("Found test {}.{}".format(test.__module__, test.__qualname__))
+            self._queue.append(test)
+        self.ntests = len(self._queue)
 
-        for module_name in self._modules:
+        if not self._queue:
+            self.log.warning("No tests were discovered")
+
+        self._queue.sort(key=lambda test: (test.stage, test._id))
+
+        # Process Hooks
+        ###################
+        for hook in hooks:
+            self.log.info("Found hook {}.{}".format(hook.__module__, hook.__qualname__))
+            self._init_hook(hook)
+
+    @classmethod
+    def from_discovery(cls, dut: SimHandle):
+        """
+        Obtains the test and hook lists by discovery.
+
+        See :envvar:`MODULE` and :envvar:`TESTCASE` for details on how tests are discovered.
+
+        Args:
+            dut (SimHandle): The root handle to pass into test functions.
+        """
+        tests = cls._discover_tests()
+        hooks = cls._discover_hooks()
+        return cls(dut, tests, hooks)
+
+    @staticmethod
+    def _discover_tests() -> Iterable[Test]:
+        """
+        Discovers tests in files automatically.
+
+        See :envvar:`MODULE` and :envvar:`TESTCASE` for details on how tests are discovered.
+        """
+        module_str = os.getenv('MODULE')
+        test_str = os.getenv('TESTCASE')
+
+        if module_str is None:
+            raise ValueError("Environment variable MODULE, which defines the module(s) to execute, is not defined.")
+
+        modules = [s.strip() for s in module_str.split(',') if s.strip()]
+
+        for module_name in modules:
             try:
-                self.log.debug("Python Path: " + ",".join(sys.path))
-                self.log.debug("PWD: " + os.getcwd())
+                _logger.debug("Python Path: " + ",".join(sys.path))
+                _logger.debug("PWD: " + os.getcwd())
                 module = _my_import(module_name)
             except Exception as E:
-                self.log.critical("Failed to import module %s: %s", module_name, E)
-                self.log.info("MODULE variable was \"%s\"", ".".join(self._modules))
-                self.log.info("Traceback: ")
-                self.log.info(traceback.format_exc())
+                _logger.critical("Failed to import module %s: %s", module_name, E)
+                _logger.info("MODULE variable was \"%s\"", ".".join(modules))
+                _logger.info("Traceback: ")
+                _logger.info(traceback.format_exc())
                 raise
 
-            if self._functions:
+            if test_str:
 
                 # Specific functions specified, don't auto-discover
-                for test in self._functions.rsplit(','):
+                for test_name in test_str.rsplit(','):
                     try:
-                        _test = getattr(module, test)
+                        test = getattr(module, test_name)
                     except AttributeError:
-                        self.log.error("Requested test %s wasn't found in module %s", test, module_name)
-                        err = AttributeError("Test %s doesn't exist in %s" % (test, module_name))
+                        _logger.error("Requested test %s wasn't found in module %s", test_name, module_name)
+                        err = AttributeError("Test %s doesn't exist in %s" % (test_name, module_name))
                         raise err from None  # discard nested traceback
 
-                    if not hasattr(_test, "im_test"):
-                        self.log.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
-                                       test, module_name)
-                        raise ImportError("Failed to find requested test %s" % test)
-                    self._init_test(_test)
+                    if not isinstance(test, Test):
+                        _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
+                                      test_name, module_name)
+                        raise ImportError("Failed to find requested test %s" % test_name)
+                    yield test
 
                 # only look in first module for all functions and don't complain if all functions are not found
                 break
 
             # auto-discover
             for thing in vars(module).values():
-                if hasattr(thing, "im_test"):
-                    self._init_test(thing)
+                if isinstance(thing, Test):
+                    yield thing
 
-        self._queue.sort(key=lambda test: (test.stage, test._id))
+    @staticmethod
+    def _discover_hooks() -> Iterable[Hook]:
+        """
+        Discovers hooks automatically.
 
-        for valid_tests in self._queue:
-            self.log.info("Found test %s.%s" %
-                          (valid_tests.module,
-                           valid_tests.funcname))
+        See :envvar:`COCOTB_HOOKS` for details on how hooks are discovered.
+        """
+        hooks_str = os.getenv('COCOTB_HOOKS', '')
+        hooks = [s.strip() for s in hooks_str.split(',') if s.strip()]
 
-        # Process Hooks
-        ###################
-
-        for module_name in self._hooks:
-            self.log.info("Loading hook from module '" + module_name + "'")
+        for module_name in hooks:
+            _logger.info("Loading hook from module '" + module_name + "'")
             module = _my_import(module_name)
 
             for thing in vars(module).values():
                 if hasattr(thing, "im_hook"):
-                    try:
-                        test = thing(self._dut)
-                    except Exception:
-                        self.log.warning("Failed to initialize hook %s" % thing.name, exc_info=True)
-                    else:
-                        cocotb.scheduler.add(test)
+                    yield thing
 
-    def tear_down(self):
+    def _init_hook(self, hook: Hook) -> Optional[RunningTask]:
+        try:
+            test = hook(self._dut)
+        except Exception:
+            self.log.warning("Failed to initialize hook %s" % hook.name, exc_info=True)
+        else:
+            return cocotb.scheduler.add(test)
+
+    def tear_down(self) -> None:
+        # prevent re-entering the tear down procedure
+        if not self._tearing_down:
+            self._tearing_down = True
+        else:
+            return
+
         # fail remaining tests
         while True:
             test = self.next_test()
             if test is None:
                 break
-            self.xunit.add_testcase(name=test.funcname,
-                                    classname=test.module,
-                                    time=repr(0),
-                                    sim_time_ns=repr(0),
-                                    ratio_time=repr(0))
-            result_pass, _ = self._score_test(test, cocotb.outcomes.Error(SimFailure()))
-            self._store_test_result(test.module, test.funcname, result_pass, 0, 0, 0)
-            if not result_pass:
-                self.xunit.add_failure()
-                self.failures += 1
+            self._record_result(
+                test=test,
+                outcome=Error(SimFailure),
+                wall_time_s=0,
+                sim_time_ns=0)
 
         # Write out final log messages
-        if self.failures:
-            self.log.error("Failed %d out of %d tests (%d skipped)" %
-                           (self.failures, self.count - 1, self.skipped))
-        else:
-            self.log.info("Passed %d tests (%d skipped)" %
-                          (self.count - 1, self.skipped))
-        if len(self.test_results) > 0:
-            self._log_test_summary()
+        self._log_test_summary()
         self._log_sim_summary()
         self.log.info("Shutting down...")
 
@@ -244,13 +263,14 @@ class RegressionManager(object):
         # Setup simulator finalization
         simulator.stop_simulator()
 
-    def next_test(self):
+    def next_test(self) -> Optional[Test]:
         """Get the next test to run"""
         if not self._queue:
             return None
+        self.count += 1
         return self._queue.pop(0)
 
-    def handle_result(self, test):
+    def handle_result(self, test: RunningTask) -> None:
         """Handle a test completing.
 
         Dump result to XML and schedule the next test (if any). Entered by the scheduler.
@@ -258,38 +278,23 @@ class RegressionManager(object):
         Args:
             test: The test that completed
         """
-        assert test is self._running_test
+        assert test is self._test_task
 
-        real_time = time.time() - test.start_time
-        sim_time_ns = get_sim_time('ns') - test.start_sim_time
-        ratio_time = self._safe_divide(sim_time_ns, real_time)
-
-        self.xunit.add_testcase(name=test.funcname,
-                                classname=test.module,
-                                time=repr(real_time),
-                                sim_time_ns=repr(sim_time_ns),
-                                ratio_time=repr(ratio_time))
-
-        # score test
-        result_pass, sim_failed = self._score_test(test, test._outcome)
+        real_time = time.time() - self._test_start_time
+        sim_time_ns = get_sim_time('ns') - self._test_start_sim_time
 
         # stop capturing log output
         cocotb.log.removeHandler(test.handler)
 
-        # Save results
-        self._store_test_result(test.module, test.funcname, result_pass, sim_time_ns, real_time, ratio_time)
-        if not result_pass:
-            self.xunit.add_failure()
-            self.failures += 1
-
-        # Fail if required
-        if sim_failed:
-            self.tear_down()
-            return
+        self._record_result(
+            test=self._test,
+            outcome=self._test_task._outcome,
+            wall_time_s=real_time,
+            sim_time_ns=sim_time_ns)
 
         self.execute()
 
-    def _init_test(self, test_func):
+    def _init_test(self, test: Test) -> Optional[RunningTask]:
         """
         Initializes a test.
 
@@ -297,43 +302,32 @@ class RegressionManager(object):
         Records skip if the test is skipped.
         Saves the initialized test if it successfully initializes.
         """
-        test_init_outcome = cocotb.outcomes.capture(test_func, self._dut)
+
+        if test.skip:
+            hilight_start = ANSI.COLOR_TEST if want_color_output() else ''
+            hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ''
+            # Want this to stand out a little bit
+            self.log.info("{}Skipping test {}/{}:{} {}".format(
+                hilight_start,
+                self.count,
+                self.ntests,
+                hilight_end,
+                test.__qualname__))
+            self._record_result(test, None, 0, 0)
+            return
+
+        test_init_outcome = cocotb.outcomes.capture(test, self._dut)
 
         if isinstance(test_init_outcome, cocotb.outcomes.Error):
-            self.log.error("Failed to initialize test %s" % test_func.name, exc_info=True)
-            self.xunit.add_testcase(name=test_func.name,
-                                    classname=test_func.__module__,
-                                    time="0.0",
-                                    sim_time_ns="0.0",
-                                    ratio_time="0.0")
-            result_pass, sim_failed = self._score_test(test_func, test_init_outcome)
-            # Save results
-            self._store_test_result(test_func.__module__, test_func.__name__, result_pass, 0.0, 0.0, 0.0)
-            if not result_pass:
-                self.xunit.add_failure()
-                self.failures += 1
-            # Fail if required
-            if sim_failed:
-                self.tear_down()
-                raise SimFailure("Test initialization caused a simulator failure. Shutting down.")
+            self.log.error("Failed to initialize test %s" % test.__qualname__,
+                           exc_info=test_init_outcome.error)
+            self._record_result(test, test_init_outcome, 0, 0)
+            return
 
-        else:
-            test = test_init_outcome.get()
-            if test.skip:
-                self.log.info("Skipping test %s" % test_func.name)
-                self.xunit.add_testcase(name=test_func.name,
-                                        classname=test.module,
-                                        time="0.0",
-                                        sim_time_ns="0.0",
-                                        ratio_time="0.0")
-                self.xunit.add_skipped()
-                self.skipped += 1
-                self._store_test_result(test.module, test_func.name, None, 0.0, 0.0, 0.0)
-            else:
-                self._queue.append(test)
-                self.ntests += 1
+        test = test_init_outcome.get()
+        return test
 
-    def _score_test(self, test, outcome):
+    def _score_test(self, test: Test, outcome: Outcome) -> Tuple[bool, bool]:
         """
         Given a test and the test's outcome, determine if the test met expectations and log pertinent information
         """
@@ -341,7 +335,7 @@ class RegressionManager(object):
         # Helper for logging result
         def _result_was():
             result_was = ("{} (result was {})".format
-                          (test.__name__, result.__class__.__name__))
+                          (test.__qualname__, type(result).__qualname__))
             return result_was
 
         # scoring outcomes
@@ -358,7 +352,7 @@ class RegressionManager(object):
         if (isinstance(result, TestSuccess) and
                 not test.expect_fail and
                 not test.expect_error):
-            self.log.info("Test Passed: %s" % test.__name__)
+            self.log.info("Test Passed: %s" % test.__qualname__)
 
         elif (isinstance(result, AssertionError) and
                 test.expect_fail):
@@ -401,54 +395,121 @@ class RegressionManager(object):
 
         return result_pass, sim_failed
 
-    def execute(self):
-        self._running_test = cocotb.regression_manager.next_test()
-        if self._running_test:
-            start = ''
-            end   = ''
-            if want_color_output():
-                start = ANSI.COLOR_TEST
-                end   = ANSI.COLOR_DEFAULT
-            # Want this to stand out a little bit
-            self.log.info("%sRunning test %d/%d:%s %s" %
-                          (start,
-                           self.count, self.ntests,
-                           end,
-                           self._running_test.funcname))
+    def _record_result(
+        self,
+        test: Test,
+        outcome: Optional[Outcome],
+        wall_time_s: float,
+        sim_time_ns: float
+    ) -> None:
 
-            # start capturing log output
-            cocotb.log.addHandler(self._running_test.handler)
+        ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
 
-            cocotb.scheduler.add_test(self._running_test)
-            self.count += 1
+        self.xunit.add_testcase(name=test.__qualname__,
+                                classname=test.__module__,
+                                time=repr(wall_time_s),
+                                sim_time_ns=repr(sim_time_ns),
+                                ratio_time=repr(ratio_time))
+
+        if outcome is None:  # skipped
+            test_pass, sim_failed = None, False
+            self.xunit.add_skipped()
+            self.skipped += 1
+
         else:
+            test_pass, sim_failed = self._score_test(test, outcome)
+            if not test_pass:
+                self.xunit.add_failure()
+                self.failures += 1
+
+        self.test_results.append({
+            'test': '.'.join([test.__module__, test.__qualname__]),
+            'pass': test_pass,
+            'sim': sim_time_ns,
+            'real': wall_time_s,
+            'ratio': ratio_time})
+
+        if sim_failed:
             self.tear_down()
+            return
 
-    def _log_test_summary(self):
-        TEST_FIELD   = 'TEST'
+    def execute(self) -> None:
+        while True:
+            self._test = self.next_test()
+            if self._test is None:
+                return self.tear_down()
+
+            self._test_task = self._init_test(self._test)
+            if self._test_task:
+                return self._start_test()
+
+    def _start_test(self) -> None:
+        start = ''
+        end = ''
+        if want_color_output():
+            start = ANSI.COLOR_TEST
+            end = ANSI.COLOR_DEFAULT
+        # Want this to stand out a little bit
+        self.log.info("%sRunning test %d/%d:%s %s" %
+                      (start,
+                       self.count, self.ntests,
+                       end,
+                       self._test.__qualname__))
+
+        # start capturing log output
+        cocotb.log.addHandler(self._test_task.handler)
+
+        self._test_start_time = time.time()
+        self._test_start_sim_time = get_sim_time('ns')
+        cocotb.scheduler.add_test(self._test_task)
+
+    def _log_test_summary(self) -> None:
+
+        if self.failures:
+            self.log.error("Failed %d out of %d tests (%d skipped)" %
+                           (self.failures, self.count, self.skipped))
+        else:
+            self.log.info("Passed %d tests (%d skipped)" %
+                          (self.count, self.skipped))
+
+        if len(self.test_results) == 0:
+            return
+
+        TEST_FIELD = 'TEST'
         RESULT_FIELD = 'PASS/FAIL'
-        SIM_FIELD    = 'SIM TIME(NS)'
-        REAL_FIELD   = 'REAL TIME(S)'
-        RATIO_FIELD  = 'RATIO(NS/S)'
+        SIM_FIELD = 'SIM TIME(NS)'
+        REAL_FIELD = 'REAL TIME(S)'
+        RATIO_FIELD = 'RATIO(NS/S)'
 
-        TEST_FIELD_LEN   = max(len(TEST_FIELD),len(max([x['test'] for x in self.test_results],key=len)))
+        TEST_FIELD_LEN = max(len(TEST_FIELD), len(max([x['test'] for x in self.test_results], key=len)))
         RESULT_FIELD_LEN = len(RESULT_FIELD)
-        SIM_FIELD_LEN    = len(SIM_FIELD)
-        REAL_FIELD_LEN   = len(REAL_FIELD)
-        RATIO_FIELD_LEN  = len(RATIO_FIELD)
+        SIM_FIELD_LEN = len(SIM_FIELD)
+        REAL_FIELD_LEN = len(REAL_FIELD)
+        RATIO_FIELD_LEN = len(RATIO_FIELD)
 
-        LINE_LEN = 3 + TEST_FIELD_LEN + 2 + RESULT_FIELD_LEN + 2 + SIM_FIELD_LEN + 2 + REAL_FIELD_LEN + 2 + RATIO_FIELD_LEN + 3
+        header_dict = dict(
+            a=TEST_FIELD,
+            b=RESULT_FIELD,
+            c=SIM_FIELD,
+            d=REAL_FIELD,
+            e=RATIO_FIELD,
+            a_len=TEST_FIELD_LEN,
+            b_len=RESULT_FIELD_LEN,
+            c_len=SIM_FIELD_LEN,
+            d_len=REAL_FIELD_LEN,
+            e_len=RATIO_FIELD_LEN)
 
-        LINE_SEP = "*"*LINE_LEN+"\n"
+        LINE_LEN = 3 + TEST_FIELD_LEN + 2 + RESULT_FIELD_LEN + 2 + SIM_FIELD_LEN + 2 + \
+            REAL_FIELD_LEN + 2 + RATIO_FIELD_LEN + 3
+
+        LINE_SEP = "*" * LINE_LEN + "\n"
 
         summary = ""
         summary += LINE_SEP
-        summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(a=TEST_FIELD,   a_len=TEST_FIELD_LEN,
-                                                                                                         b=RESULT_FIELD, b_len=RESULT_FIELD_LEN,
-                                                                                                         c=SIM_FIELD,    c_len=SIM_FIELD_LEN,
-                                                                                                         d=REAL_FIELD,   d_len=REAL_FIELD_LEN,
-                                                                                                         e=RATIO_FIELD,  e_len=RATIO_FIELD_LEN)
+        summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(**header_dict)
         summary += LINE_SEP
+
+        test_line = "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n"
         for result in self.test_results:
             hilite = ''
 
@@ -461,20 +522,29 @@ class RegressionManager(object):
                 if want_color_output():
                     hilite = ANSI.COLOR_HILITE_SUMMARY
 
-            summary += "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n".format(a=result['test'],   a_len=TEST_FIELD_LEN,
-                                                                                                                                b=pass_fail_str,    b_len=RESULT_FIELD_LEN,
-                                                                                                                                c=result['sim'],    c_len=SIM_FIELD_LEN-1,
-                                                                                                                                d=result['real'],   d_len=REAL_FIELD_LEN-1,
-                                                                                                                                e=result['ratio'],  e_len=RATIO_FIELD_LEN-1,
-                                                                                                                                start=hilite)
+            test_dict = dict(
+                a=result['test'],
+                b=pass_fail_str,
+                c=result['sim'],
+                d=result['real'],
+                e=result['ratio'],
+                a_len=TEST_FIELD_LEN,
+                b_len=RESULT_FIELD_LEN,
+                c_len=SIM_FIELD_LEN - 1,
+                d_len=REAL_FIELD_LEN - 1,
+                e_len=RATIO_FIELD_LEN - 1,
+                start=hilite)
+
+            summary += test_line.format(**test_dict)
+
         summary += LINE_SEP
 
         self.log.info(summary)
 
-    def _log_sim_summary(self):
-        real_time   = time.time() - self.start_time
+    def _log_sim_summary(self) -> None:
+        real_time = time.time() - self.start_time
         sim_time_ns = get_sim_time('ns')
-        ratio_time  = self._safe_divide(sim_time_ns, real_time)
+        ratio_time = self._safe_divide(sim_time_ns, real_time)
 
         summary = ""
 
@@ -489,7 +559,7 @@ class RegressionManager(object):
         self.log.info(summary)
 
     @staticmethod
-    def _safe_divide(a, b):
+    def _safe_divide(a: float, b: float) -> float:
         try:
             return a / b
         except ZeroDivisionError:
@@ -497,15 +567,6 @@ class RegressionManager(object):
                 return float('nan')
             else:
                 return float('inf')
-
-    def _store_test_result(self, module_name, test_name, result_pass, sim_time, real_time, ratio):
-        result = {
-            'test'  : '.'.join([module_name, test_name]),
-            'pass'  : result_pass,
-            'sim'   : sim_time,
-            'real'  : real_time,
-            'ratio' : ratio}
-        self.test_results.append(result)
 
 
 def _create_test(function, name, documentation, mod, *args, **kwargs):
@@ -525,16 +586,17 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
     Returns:
         Decorated test function
     """
-    def _my_test(dut):
-        yield function(dut, *args, **kwargs)
+    async def _my_test(dut):
+        await function(dut, *args, **kwargs)
 
     _my_test.__name__ = name
+    _my_test.__qualname__ = name
     _my_test.__doc__ = documentation
     _my_test.__module__ = mod.__name__
     return cocotb.test()(_my_test)
 
 
-class TestFactory(object):
+class TestFactory:
     """Factory to automatically generate tests.
 
     Args:
@@ -583,15 +645,19 @@ class TestFactory(object):
     """
 
     def __init__(self, test_function, *args, **kwargs):
-        if not isinstance(test_function, cocotb.coroutine):
+        if sys.version_info > (3, 6) and inspect.isasyncgenfunction(test_function):
+            raise TypeError("Expected a coroutine function, but got the async generator '{}'. "
+                            "Did you forget to convert a `yield` to an `await`?"
+                            .format(test_function.__qualname__))
+        if not (isinstance(test_function, cocotb.coroutine) or inspect.iscoroutinefunction(test_function)):
             raise TypeError("TestFactory requires a cocotb coroutine")
         self.test_function = test_function
-        self.name = self.test_function._func.__name__
+        self.name = self.test_function.__qualname__
 
         self.args = args
         self.kwargs_constant = kwargs
         self.kwargs = {}
-        self.log = SimLog("cocotb.regression")
+        self.log = _logger
 
     def add_option(self, name, optionlist):
         """Add a named option to the test.
@@ -642,20 +708,20 @@ class TestFactory(object):
                         desc = "No docstring supplied"
                     else:
                         desc = optvalue.__doc__.split('\n')[0]
-                    doc += "\t%s: %s (%s)\n" % (optname, optvalue.__name__,
+                    doc += "\t%s: %s (%s)\n" % (optname, optvalue.__qualname__,
                                                 desc)
                 else:
                     doc += "\t%s: %s\n" % (optname, repr(optvalue))
 
             self.log.debug("Adding generated test \"%s\" to module \"%s\"" %
-                             (name, mod.__name__))
+                           (name, mod.__name__))
             kwargs = {}
             kwargs.update(self.kwargs_constant)
             kwargs.update(testoptions)
             if hasattr(mod, name):
                 self.log.error("Overwriting %s in module %s. "
-                                 "This causes a previously defined testcase "
-                                 "not to be run. Consider setting/changing "
-                                 "name_postfix" % (name, mod))
+                               "This causes a previously defined testcase "
+                               "not to be run. Consider setting/changing "
+                               "name_postfix" % (name, mod))
             setattr(mod, name, _create_test(self.test_function, name, doc, mod,
                                             *self.args, **kwargs))

@@ -58,17 +58,8 @@ enum gpi_log_levels {
     exit(1); \
 } while (0)
 
-// #ifdef DEBUG
-// #define FENTER LOG_DEBUG(__func__)
-// #define FEXIT  LOG_DEBUG(__func__)
-// #else
-#define FENTER
-#define FEXIT
-// #endif
-
 void set_log_handler(void *handler);
 void clear_log_handler(void);
-void set_make_record(void *makerecord);
 void set_log_filter(void *filter);
 void clear_log_filter(void);
 void set_log_level(enum gpi_log_levels new_level);

@@ -37,7 +37,7 @@ from cocotb.monitors import Monitor
 from cocotb.result import TestFailure, TestSuccess
 
 
-class Scoreboard(object):
+class Scoreboard:
     """Generic scoreboarding class.
 
     We can add interfaces by providing a monitor and an expected output queue.
@@ -204,7 +204,7 @@ class Scoreboard(object):
         # Enforce some type checking as we only work with a real monitor
         if not isinstance(monitor, Monitor):
             raise TypeError("Expected monitor on the interface but got %s" %
-                            (monitor.__class__.__name__))
+                            (type(monitor).__qualname__))
 
         if compare_fn is not None:
             if callable(compare_fn):
@@ -222,7 +222,7 @@ class Scoreboard(object):
             if monitor.name:
                 log_name = self.log.name + '.' + monitor.name
             else:
-                log_name = self.log.name + '.' + monitor.__class__.__name__
+                log_name = self.log.name + '.' + type(monitor).__qualname__
 
             log = logging.getLogger(log_name)
 

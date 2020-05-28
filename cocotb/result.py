@@ -33,6 +33,7 @@ from io import StringIO
 
 """Exceptions and functions for simulation result handling."""
 
+
 def raise_error(obj, msg):
     """Create a :exc:`TestError` exception and raise it after printing a traceback.
 
@@ -102,6 +103,7 @@ class ReturnValue(Exception):
 
 class TestComplete(Exception):
     """Exception showing that the test was completed. Sub-exceptions detail the exit status."""
+
     def __init__(self, *args, **kwargs):
         super(TestComplete, self).__init__(*args, **kwargs)
         self.stdout = StringIO()
@@ -110,6 +112,7 @@ class TestComplete(Exception):
 
 class ExternalException(Exception):
     """Exception thrown by :class:`cocotb.external` functions."""
+
     def __init__(self, exception):
         self.exception = exception
 

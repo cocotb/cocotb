@@ -30,11 +30,8 @@
 .PHONY: all
 all: test
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
-
 .PHONY: clean
 clean:
-	-@rm -rf $(BUILD_DIR)
 	-@find . -name "obj" | xargs rm -rf
 	-@find . -name "*.pyc" | xargs rm -rf
 	-@find . -name "*results.xml" | xargs rm -rf
@@ -58,6 +55,9 @@ jenkins: do_tests
 test:
 	$(MAKE) do_tests; ret=$$?; ./bin/combine_results.py && exit $$ret
 
+COCOTB_MAKEFILES_DIR = $(realpath $(shell cocotb-config --makefiles))
+AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.*)))
+
 .PHONY: help
 help:
 	@echo ""
@@ -69,8 +69,10 @@ help:
 	@echo "            (return error code 1 if any failure was found)"
 	@echo "clean     - remove build directory and all simulation artefacts"
 	@echo ""
-	@echo "Default simulator is Icarus. To use another set environment variable SIM as below"
-	@for X in $(shell ls cocotb/share/makefiles/simulators/); do \
-		echo $$X | sed 's/^[^.]*./export SIM=/';\
+	@echo "The default simulator is Icarus Verilog."
+	@echo "To use another, set the environment variable SIM as below."
+	@echo "Available simulators:"
+	@for X in $(sort $(AVAILABLE_SIMULATORS)); do \
+		echo export SIM=$$X; \
 	done
 	@echo ""

@@ -10,13 +10,13 @@
 # License:
 # ==============================================================================
 # Copyright 2016 Technische Universitaet Dresden - Germany
-#		 Chair for VLSI-Design, Diagnostics and Architecture
+# Chair for VLSI-Design, Diagnostics and Architecture
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#		http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,14 +29,12 @@ import random
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.decorators import coroutine
-from cocotb.triggers import Timer, RisingEdge, ReadOnly
+from cocotb.triggers import RisingEdge
 from cocotb.monitors import Monitor
 from cocotb.drivers import BitDriver
 from cocotb.binary import BinaryValue
 from cocotb.regression import TestFactory
 from cocotb.scoreboard import Scoreboard
-from cocotb.result import TestFailure, TestSuccess
 
 #      dut
 #    ________
@@ -46,21 +44,22 @@ from cocotb.result import TestFailure, TestSuccess
 #  --|>c    |
 #    |______|
 
+
 class BitMonitor(Monitor):
     """Observe a single-bit input or output of the DUT."""
+
     def __init__(self, name, signal, clk, callback=None, event=None):
         self.name = name
         self.signal = signal
         self.clk = clk
         Monitor.__init__(self, callback, event)
 
-    @coroutine
-    def _monitor_recv(self):
+    async def _monitor_recv(self):
         clkedge = RisingEdge(self.clk)
 
         while True:
             # Capture signal at rising edge of clock
-            yield clkedge
+            await clkedge
             vec = self.signal.value
             self._recv(vec)
 
@@ -93,7 +92,7 @@ class DFF_TB(object):
         self.output_mon = BitMonitor(name="output", signal=dut.q, clk=dut.c)
 
         # Create a scoreboard on the outputs
-        self.expected_output = [ init_val ]  # a list with init_val as the first element
+        self.expected_output = [init_val]  # a list with init_val as the first element
         self.scoreboard = Scoreboard(dut)
         self.scoreboard.add_interface(self.output_mon, self.expected_output)
 
@@ -130,8 +129,7 @@ class DFF_TB(object):
         self.stopped = True
 
 
-@cocotb.coroutine
-def run_test(dut):
+async def run_test(dut):
     """Setup testbench and run a test."""
 
     cocotb.fork(Clock(dut.c, 10, 'us').start(start_high=False))
@@ -143,12 +141,12 @@ def run_test(dut):
     # Apply random input data by input_gen via BitDriver for 100 clock cycles.
     tb.start()
     for _ in range(100):
-        yield clkedge
+        await clkedge
 
     # Stop generation of input data. One more clock cycle is needed to capture
     # the resulting output of the DUT.
     tb.stop()
-    yield clkedge
+    await clkedge
 
     # Print result of scoreboard.
     raise tb.scoreboard.result

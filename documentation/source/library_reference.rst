@@ -48,8 +48,6 @@ Interacting with the Simulator
     :members:
     :member-order: bysource
 
-.. autoclass:: cocotb.clock.Clock
-
 .. autofunction:: cocotb.fork
 
 .. autofunction:: cocotb.decorators.RunningTask.join
@@ -111,12 +109,9 @@ Monitor
 .. currentmodule:: cocotb.monitors
 
 .. autoclass:: Monitor
-    :members: _monitor_recv, _recv
+    :members:
     :member-order: bysource
     :private-members:
-
-    .. automethod:: wait_for_recv(timeout=None)
-
 
 .. autoclass:: BusMonitor
     :members:
@@ -145,8 +140,6 @@ Clock
 
 Utilities
 =========
-
-.. autodata:: cocotb.plusargs
 
 .. automodule:: cocotb.utils
     :members:
@@ -198,7 +191,9 @@ Simulation Object Handles
     :member-order: bysource
     :show-inheritance:
     :synopsis: Classes for simulation objects.
-
+    :exclude-members: Deposit, Force, Freeze, Release
+..
+   Excluding the Assignment Methods that are getting their own section below
 
 .. _assignment-methods:
 
@@ -230,9 +225,8 @@ Advanced Microcontroller Bus Architecture.
 .. currentmodule:: cocotb.drivers.amba
 
 .. autoclass:: AXI4LiteMaster
-
-    .. automethod:: write(address, value, byte_enable=0xf, address_latency=0, data_latency=0)
-    .. automethod:: read(address, sync=True)
+    :members:
+    :member-order: bysource
 
 
 .. autoclass:: AXI4Slave
@@ -251,10 +245,9 @@ Avalon
     :show-inheritance:
 
 .. autoclass:: AvalonMaster
-
-    .. automethod:: write(address, value)
-    .. automethod:: read(address, sync=True)
-
+    :members:
+    :member-order: bysource
+    :show-inheritance:
 
 .. autoclass:: AvalonMemory
     :members:
@@ -278,9 +271,9 @@ OPB
 .. currentmodule:: cocotb.drivers.opb
 
 .. autoclass:: OPBMaster
-
-    .. automethod:: write(address, value, sync=True)
-    .. automethod:: read(address, sync=True)
+    :members:
+    :member-order: bysource
+    :show-inheritance:
 
 
 XGMII
@@ -322,6 +315,22 @@ XGMII
 Miscellaneous
 =============
 
+Other Runtime Information
+-------------------------
+
+.. autodata:: cocotb.argv
+
+.. autodata:: cocotb.SIM_NAME
+
+.. autodata:: cocotb.SIM_VERSION
+
+.. autodata:: cocotb.RANDOM_SEED
+
+.. autodata:: cocotb.plusargs
+
+.. autodata:: cocotb.LANGUAGE
+
+
 Signal Tracer for WaveDrom
 --------------------------
 
@@ -331,16 +340,15 @@ Signal Tracer for WaveDrom
     :synopsis: A signal tracer for WaveDrom.
 
 
-Developer-focused
-=================
+Implementation Details
+======================
+
+.. note::
+    In general, nothing in this section should be interacted with directly -
+    these components work mostly behind the scenes.
 
 The Scheduler
 -------------
-
-.. note::
-    The scheduler object should generally not be interacted with directly -
-    the only part of it that a user will need is encapsulated in :func:`~cocotb.fork`,
-    everything else works behind the scenes.
 
 .. currentmodule:: cocotb.scheduler
 
@@ -348,6 +356,30 @@ The Scheduler
 
 .. autoclass:: Scheduler
     :members:
+    :member-order: bysource
+
+The Regression Manager
+----------------------
+
+.. currentmodule:: cocotb.regression
+
+.. autodata:: cocotb.regression_manager
+
+.. autoclass:: RegressionManager
+    :members:
+    :member-order: bysource
+
+
+The ``cocotb.simulator`` module
+-------------------------------
+
+This module is a Python wrapper to libgpi.
+It should not be considered public API, but is documented here for developers
+of cocotb.
+
+.. automodule:: cocotb.simulator
+    :members:
+    :undoc-members:
     :member-order: bysource
 
 

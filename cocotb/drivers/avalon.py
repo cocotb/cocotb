@@ -33,6 +33,7 @@ NB Currently we only support a very small subset of functionality
 """
 
 import random
+from typing import Iterable, Union, Optional
 
 import cocotb
 from cocotb.decorators import coroutine
@@ -57,7 +58,6 @@ class AvalonMM(BusDriver):
     _optional_signals = ["readdata", "read", "write", "waitrequest",
                          "writedata", "readdatavalid", "byteenable",
                          "cs"]
-
 
     def __init__(self, entity, name, clock, **kwargs):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
@@ -95,6 +95,7 @@ class AvalonMM(BusDriver):
 
 class AvalonMaster(AvalonMM):
     """Avalon Memory Mapped Interface (Avalon-MM) Master."""
+
     def __init__(self, entity, name, clock, **kwargs):
         AvalonMM.__init__(self, entity, name, clock, **kwargs)
         self.log.debug("AvalonMaster created")
@@ -116,19 +117,19 @@ class AvalonMaster(AvalonMM):
         self.busy_event.set()
 
     @coroutine
-    def read(self, address, sync=True):
+    def read(self, address: int, sync: bool = True) -> BinaryValue:
         """Issue a request to the bus and block until this comes back.
 
         Simulation time still progresses
         but syntactically it blocks.
 
         Args:
-            address (int): The address to read from.
-            sync (bool, optional): Wait for rising edge on clock initially.
+            address: The address to read from.
+            sync: Wait for rising edge on clock initially.
                 Defaults to True.
 
         Returns:
-            BinaryValue: The read data value.
+            The read data value.
 
         Raises:
             :any:`TestError`: If master is write-only.
@@ -183,13 +184,13 @@ class AvalonMaster(AvalonMM):
         return data
 
     @coroutine
-    def write(self, address, value):
+    def write(self, address: int, value: int) -> None:
         """Issue a write to the given address with the specified
         value.
 
         Args:
-            address (int): The address to write to.
-            value (int): The data value to write.
+            address: The address to write to.
+            value: The data value to write.
 
         Raises:
             :any:`TestError`: If master is read-only.
@@ -237,12 +238,12 @@ class AvalonMemory(BusDriver):
     _optional_signals = ["write", "read", "writedata", "readdatavalid",
                          "readdata", "waitrequest", "burstcount", "byteenable"]
     _avalon_properties = {
-            "burstCountUnits": "symbols",  # symbols or words
-            "addressUnits": "symbols",     # symbols or words
-            "readLatency": 1,    # number of cycles
-            "WriteBurstWaitReq": True,  # generate random waitrequest
-            "MaxWaitReqLen": 4,  # maximum value of waitrequest
-            }
+        "burstCountUnits": "symbols",  # symbols or words
+        "addressUnits": "symbols",     # symbols or words
+        "readLatency": 1,    # number of cycles
+        "WriteBurstWaitReq": True,  # generate random waitrequest
+        "MaxWaitReqLen": 4,  # maximum value of waitrequest
+    }
 
     def __init__(self, entity, name, clock, readlatency_min=1,
                  readlatency_max=1, memory=None, avl_properties={}, **kwargs):
@@ -307,7 +308,6 @@ class AvalonMemory(BusDriver):
                 self.bus.waitrequest <= 1
             else:
                 self.bus.waitrequest <= 0
-
 
         if hasattr(self.bus, "readdatavalid"):
             self.bus.readdatavalid.setimmediatevalue(0)
@@ -382,7 +382,6 @@ class AvalonMemory(BusDriver):
                 yield NextTimeStep()
 
             self.bus.waitrequest <= 0
-
 
     @coroutine
     def _respond(self):
@@ -512,8 +511,7 @@ class AvalonST(ValidatedBusDriver):
 
     _default_config = {"firstSymbolInHighOrderBits" : True}
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
+    def __init__(self, entity, name, clock, *, config={}, **kwargs):
         ValidatedBusDriver.__init__(self, entity, name, clock, **kwargs)
 
         self.config = AvalonST._default_config.copy()
@@ -605,8 +603,7 @@ class AvalonSTPkts(ValidatedBusDriver):
         "readyLatency"                  : 0
     }
 
-    def __init__(self, entity, name, clock, **kwargs):
-        config = kwargs.pop('config', {})
+    def __init__(self, entity, name, clock, *, config={}, **kwargs):
         ValidatedBusDriver.__init__(self, entity, name, clock, **kwargs)
 
         self.config = AvalonSTPkts._default_config.copy()
@@ -675,10 +672,10 @@ class AvalonSTPkts(ValidatedBusDriver):
             yield ReadOnly()
 
     @coroutine
-    def _send_string(self, string, sync=True, channel=None):
+    def _send_string(self, string: bytes, sync: bool = True, channel: Optional[int] = None) -> None:
         """Args:
-            string (str): A string of bytes to send over the bus.
-            channel (int): Channel to send the data on.
+            string: A string of bytes to send over the bus.
+            channel: Channel to send the data on.
         """
         # Avoid spurious object creation by recycling
         clkedge = RisingEdge(self.clock)
@@ -749,7 +746,7 @@ class AvalonSTPkts(ValidatedBusDriver):
                 self.bus.endofpacket <= 1
                 if self.use_empty:
                     self.bus.empty <= bus_width - len(string)
-                string = ""
+                string = b""
             else:
                 string = string[bus_width:]
 
@@ -778,9 +775,9 @@ class AvalonSTPkts(ValidatedBusDriver):
             self.bus.channel <= channel_value
 
     @coroutine
-    def _send_iterable(self, pkt, sync=True):
+    def _send_iterable(self, pkt: Iterable, sync: bool = True) -> None:
         """Args:
-            pkt (iterable): Will yield objects with attributes matching the
+            pkt: Will yield objects with attributes matching the
                 signal names for each individual bus cycle.
         """
         clkedge = RisingEdge(self.clock)
@@ -819,12 +816,12 @@ class AvalonSTPkts(ValidatedBusDriver):
         self.bus.valid <= 0
 
     @coroutine
-    def _driver_send(self, pkt, sync=True, channel=None):
+    def _driver_send(self, pkt: Union[bytes, Iterable], sync: bool = True, channel: Optional[int] = None):
         """Send a packet over the bus.
 
         Args:
-            pkt (str or iterable): Packet to drive onto the bus.
-            channel (None or int): Channel attributed to the packet.
+            pkt: Packet to drive onto the bus.
+            channel: Channel attributed to the packet.
 
         If ``pkt`` is a string, we simply send it word by word
 
@@ -833,11 +830,13 @@ class AvalonSTPkts(ValidatedBusDriver):
         """
 
         # Avoid spurious object creation by recycling
-        if isinstance(pkt, str):
+        if isinstance(pkt, bytes):
             self.log.debug("Sending packet of length %d bytes", len(pkt))
             self.log.debug(hexdump(pkt))
             yield self._send_string(pkt, sync=sync, channel=channel)
             self.log.debug("Successfully sent packet of length %d bytes", len(pkt))
+        elif isinstance(pkt, str):
+            raise TypeError("pkt must be a bytestring, not a unicode string")
         else:
             if channel is not None:
                 self.log.warning("%s is ignoring channel=%d because pkt is an iterable", self.name, channel)

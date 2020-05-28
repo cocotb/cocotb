@@ -12,11 +12,6 @@ import os
 import subprocess
 import sys
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../..'))
-
 # Add in-tree extensions to path
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 
@@ -48,6 +43,7 @@ extensions = [
     'sphinx_issues',
     'sphinxarg.ext',
     'sphinxcontrib.spelling',
+    'sphinx_tabs.tabs',
     ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
@@ -68,8 +64,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'cocotb'
-copyright = u'2014-{0}, PotentialVentures'.format(datetime.datetime.now().year)
+project = 'cocotb'
+copyright = '2014-{0}, cocotb contributors'.format(datetime.datetime.now().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -241,8 +237,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'cocotb.tex', u'cocotb Documentation',
-   u'PotentialVentures', 'manual'),
+  ('index', 'cocotb.tex', 'cocotb Documentation',
+   'cocotb contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -271,8 +267,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'cocotb', u'cocotb Documentation',
-     [u'PotentialVentures'], 1)
+    ('index', 'cocotb', 'cocotb Documentation',
+     ['cocotb contributors'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -285,8 +281,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'cocotb', u'cocotb Documentation',
-   u'PotentialVentures', 'cocotb', 'Coroutine Cosimulation TestBench \
+  ('index', 'cocotb', 'cocotb Documentation',
+   'cocotb contributors', 'cocotb', 'Coroutine Cosimulation TestBench \
      environment for efficient verification of RTL using Python.',
    'Miscellaneous'),
 ]
@@ -303,8 +299,7 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-# For now show the todos
-todo_include_todos = True
+todo_include_todos = False
 
 # -- Extra setup for C documentation with Doxygen and breathe ------------------
 # see also https://breathe.readthedocs.io/en/latest/readthedocs.html
@@ -342,7 +337,8 @@ graphviz_output_format = 'svg'
 # -- Extra setup for towncrier -------------------------------------------------
 # see also https://towncrier.readthedocs.io/en/actual-freaking-docs/
 
-in_progress_notes = subprocess.check_output(['towncrier', '--draft'],
+# we pass the name and version directly, to avoid towncrier failing to import the non-installed version
+in_progress_notes = subprocess.check_output(['towncrier', '--draft', '--name', 'cocotb', '--version', release],
                                             cwd='../..',
                                             universal_newlines=True)
 with open('generated/master-notes.rst', 'w') as f:

@@ -27,13 +27,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-
 import os
 import random
 import warnings
 
 resolve_x_to = os.getenv('COCOTB_RESOLVE_X', "VALUE_ERROR")
+
 
 def resolve(string):
     for char in BinaryValue._resolve_to_0:
@@ -63,13 +62,13 @@ def _clog2(val):
         exp += 1
 
 
-class BinaryRepresentation():  # noqa
+class BinaryRepresentation:  # noqa
     UNSIGNED         = 0  #: Unsigned format
     SIGNED_MAGNITUDE = 1  #: Sign and magnitude format
     TWOS_COMPLEMENT  = 2  #: Two's complement format
 
 
-class BinaryValue(object):
+class BinaryValue:
     """Representation of values in binary format.
 
     The underlying value can be set or accessed using these aliasing attributes:
@@ -86,8 +85,8 @@ class BinaryValue(object):
     >>> vec.integer = 42
     >>> print(vec.binstr)
     101010
-    >>> print(repr(vec.buff))
-    '*'
+    >>> print(vec.buff)
+    b'*'
 
     """
     _resolve_to_0     = "-lL"  # noqa
@@ -128,16 +127,16 @@ class BinaryValue(object):
         self._n_bits = n_bits
 
         self._convert_to = {
-                            BinaryRepresentation.UNSIGNED         : self._convert_to_unsigned   ,
-                            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_to_signed_mag ,
-                            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_to_twos_comp  ,
-                            }
+            BinaryRepresentation.UNSIGNED         : self._convert_to_unsigned   ,
+            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_to_signed_mag ,
+            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_to_twos_comp  ,
+        }
 
         self._convert_from = {
-                            BinaryRepresentation.UNSIGNED         : self._convert_from_unsigned   ,
-                            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_from_signed_mag ,
-                            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_from_twos_comp  ,
-                            }
+            BinaryRepresentation.UNSIGNED         : self._convert_from_unsigned   ,
+            BinaryRepresentation.SIGNED_MAGNITUDE : self._convert_from_signed_mag ,
+            BinaryRepresentation.TWOS_COMPLEMENT  : self._convert_from_twos_comp  ,
+        }
 
         if value is not None:
             self.assign(value)
@@ -145,22 +144,30 @@ class BinaryValue(object):
     def assign(self, value):
         """Decides how best to assign the value to the vector.
 
-        We possibly try to be a bit too clever here by first of
-        all trying to assign the raw string as a :attr:`BinaryValue.binstr`,
-        however if the string contains any characters that aren't
-        ``0``, ``1``, ``X`` or ``Z``
-        then we interpret the string as a binary buffer.
+        Picks from the type of its argument whether to set :attr:`integer`,
+        :attr:`binstr`, or :attr:`buff`.
 
         Args:
-            value (str or int or long): The value to assign.
+            value (str or int or bytes): The value to assign.
+
+        .. versionchanged:: 1.4
+
+            This no longer falls back to setting :attr:`buff` if a :class:`str`
+            containining any characters that aren't ``0``, ``1``, ``X`` or ``Z``
+            is used, since :attr:`buff` now accepts only :class:`bytes`. Instead,
+            an error is raised.
         """
         if isinstance(value, int):
-            self.value = value
+            self.integer = value
         elif isinstance(value, str):
-            try:
-                self.binstr = value
-            except ValueError:
-                self.buff = value
+            self.binstr = value
+        elif isinstance(value, bytes):
+            self.buff = value
+        else:
+            raise TypeError(
+                "value must be int, str, or bytes, not {!r}"
+                .format(type(value).__qualname__)
+            )
 
     def _convert_to_unsigned(self, x):
         x = bin(x)
@@ -230,12 +237,12 @@ class BinaryValue(object):
             else:
                 rv = '0' * (self._n_bits - l) + x
         elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
             if self.big_endian:
                 rv = x[l - self._n_bits:]
             else:
                 rv = x[:l - self._n_bits]
+            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
         return rv
 
     def _adjust_signed_mag(self, x):
@@ -251,12 +258,12 @@ class BinaryValue(object):
                 rv = '0' * (self._n_bits - 1 - l) + x[1:]
                 rv = x[0] + rv
         elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
             if self.big_endian:
                 rv = x[l - self._n_bits:]
             else:
                 rv = x[:-(l - self._n_bits)]
+            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
         else:
             rv = x
         return rv
@@ -271,12 +278,12 @@ class BinaryValue(object):
             else:
                 rv = x[0] * (self._n_bits - l) + x
         elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
             if self.big_endian:
                 rv = x[l - self._n_bits:]
             else:
                 rv = x[:-(l - self._n_bits)]
+            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
         else:
             rv = x
         return rv
@@ -325,36 +332,41 @@ class BinaryValue(object):
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
 
     @property
-    def buff(self):
-        """Attribute :attr:`buff` represents the value as a binary string buffer.
+    def buff(self) -> bytes:
+        r"""The value as a binary string buffer.
 
-        >>> BinaryValue("0100000100101111").buff == "\x41\x2F"
+        >>> BinaryValue("01000001" + "00101111").buff == b"\x41\x2F"
         True
+
+        .. versionchanged:: 1.4
+            This changed from :class:`str` to :class:`bytes`.
+            Note that for older versions used with Python 2 these types were
+            indistinguishable.
         """
         bits = resolve(self._str)
 
         if len(bits) % 8:
             bits = "0" * (8 - len(bits) % 8) + bits
 
-        buff = ""
+        buff = []
         while bits:
             byte = bits[:8]
             bits = bits[8:]
             val = int(byte, 2)
             if self.big_endian:
-                buff += chr(val)
+                buff += [val]
             else:
-                buff = chr(val) + buff
-        return buff
+                buff = [val] + buff
+        return bytes(buff)
 
     @buff.setter
-    def buff(self, val):
+    def buff(self, val: bytes):
         self._str = ""
         for char in val:
             if self.big_endian:
-                self._str += "{0:08b}".format(ord(char))
+                self._str += "{0:08b}".format(char)
             else:
-                self._str = "{0:08b}".format(ord(char)) + self._str
+                self._str = "{0:08b}".format(char) + self._str
         self._adjust()
 
     def _adjust(self):
@@ -368,9 +380,10 @@ class BinaryValue(object):
             else:
                 self._str = "0" * (self._n_bits - l) + self._str
         elif l > self._n_bits:
-            print("WARNING: truncating value to match requested number of bits "
-                  "(%d -> %d)" % (l, self._n_bits))
-            self._str = self._str[l - self._n_bits:]
+            rv = self._str[l - self._n_bits:]
+            warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
+                self._n_bits, self._str, l, rv), category=RuntimeWarning, stacklevel=3)
+            self._str = rv
 
     get_buff = buff.fget
     set_buff = buff.fset
@@ -385,7 +398,7 @@ class BinaryValue(object):
         for char in string:
             if char not in BinaryValue._permitted_chars:
                 raise ValueError("Attempting to assign character %s to a %s" %
-                                 (char, self.__class__.__name__))
+                                 (char, type(self).__qualname__))
         self._str = string
         self._adjust()
 
@@ -413,9 +426,6 @@ class BinaryValue(object):
         return self.__str__()
 
     def __bool__(self):
-        return self.__nonzero__()
-
-    def __nonzero__(self):
         """Provide boolean testing of a :attr:`binstr`.
 
         >>> val = BinaryValue("0000")
@@ -442,12 +452,6 @@ class BinaryValue(object):
         if isinstance(other, BinaryValue):
             other = other.value
         return self.value != other
-
-    def __cmp__(self, other):
-        """Comparison against other values"""
-        if isinstance(other, BinaryValue):
-            other = other.value
-        return self.value.__cmp__(other)
 
     def __int__(self):
         return self.integer
@@ -712,6 +716,7 @@ class BinaryValue(object):
                 self.binstr = self.binstr[:index] + val + self.binstr[index + 1:]
             else:
                 self.binstr = self.binstr[0:self._n_bits-index-1] + val + self.binstr[self._n_bits-index:self._n_bits]
+
 
 if __name__ == "__main__":
     import doctest

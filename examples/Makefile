@@ -30,6 +30,7 @@
 EXAMPLES := adder/tests \
             axi_lite_slave/tests \
             dff/tests \
+            simple_dff \
             endian_swapper/tests \
             mean/tests \
             mixed_language/tests

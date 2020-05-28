@@ -1,0 +1,17 @@
+# .readthedocs.yml
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+version: 2
+
+# Use conda because default Python is not compiled with --enable-shared
+conda:
+  environment: documentation/conda.yml
+
+python:
+  install:
+    - method: pip
+      path: .
+
+sphinx:
+  configuration: documentation/source/conf.py

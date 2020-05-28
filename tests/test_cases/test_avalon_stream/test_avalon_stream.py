@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 """Test to demonstrate functionality of the avalon basic streaming interface"""
 
-import logging
 import random
 import struct
-import sys
 
 import cocotb
 from cocotb.drivers import BitDriver
@@ -15,8 +13,10 @@ from cocotb.clock import Clock
 from cocotb.scoreboard import Scoreboard
 from cocotb.generators.bit import wave
 
+
 class AvalonSTTB(object):
     """Testbench for avalon basic stream"""
+
     def __init__(self, dut):
         self.dut = dut
 
@@ -43,9 +43,9 @@ class AvalonSTTB(object):
     @cocotb.coroutine
     def send_data(self, data):
         exp_data = struct.pack("B",data)
-        exp_data = exp_data.decode('ascii')
         self.expected_output.append(exp_data)
         yield self.stream_in.send(data)
+
 
 @cocotb.test(expect_fail=False)
 def test_avalon_stream(dut):
@@ -56,7 +56,7 @@ def test_avalon_stream(dut):
     tb.backpressure.start(wave())
 
     for _ in range(20):
-        data = random.randint(0,(2^7)-1)
+        data = random.randint(0, (2**7)-1)
         yield tb.send_data(data)
         yield tb.clkedge
 

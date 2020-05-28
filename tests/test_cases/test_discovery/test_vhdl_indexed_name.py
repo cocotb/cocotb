@@ -24,10 +24,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import cocotb
-import logging
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
-from cocotb.handle import IntegerObject
 
 
 @cocotb.test()
@@ -35,6 +32,7 @@ def index_name_iter(dut):
     """Access a non local indexed name"""
     yield Timer(0)
     total_count = 0
+
     def _discover(obj):
         count = 0
         for thing in obj:
@@ -45,4 +43,3 @@ def index_name_iter(dut):
     total_count = _discover(dut.isample_module1)
 
     dut._log.info("Number of objects in non local vhpiIndexedNameK is %d" % total_count)
-

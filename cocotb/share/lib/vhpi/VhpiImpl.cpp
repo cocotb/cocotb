@@ -110,6 +110,34 @@ void VhpiImpl::get_sim_precision(int32_t *precision)
     *precision = log10int(femtoseconds) - 15;
 }
 
+const char *VhpiImpl::get_simulator_product()
+{
+    if (m_product.empty()) {
+        vhpiHandleT tool = vhpi_handle(vhpiTool, NULL);
+        if (tool) {
+            m_product = vhpi_get_str(vhpiNameP, tool);
+            vhpi_release_handle(tool);
+        } else {
+            m_product = "UNKNOWN";
+        }
+    }
+    return m_product.c_str();
+}
+
+const char *VhpiImpl::get_simulator_version()
+{
+    if (m_version.empty()) {
+        vhpiHandleT tool = vhpi_handle(vhpiTool, NULL);
+        if (tool) {
+            m_version = vhpi_get_str(vhpiToolVersionP, tool);
+            vhpi_release_handle(tool);
+        } else {
+            m_version = "UNKNOWN";
+        }
+    }
+    return m_version.c_str();
+}
+
 // Determine whether a VHPI object type is a constant or not
 bool is_const(vhpiHandleT hdl)
 {
@@ -893,7 +921,7 @@ int VhpiImpl::deregister_callback(GpiCbHdl *gpi_hdl)
 void VhpiImpl::sim_end()
 {
     sim_finish_cb->set_call_state(GPI_DELETE);
-    vhpi_control(vhpiFinish);
+    vhpi_control(vhpiFinish, vhpiDiagTimeLoc);
     check_vhpi_error();
 }
 
@@ -929,33 +957,29 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data)
 
 static void register_initial_callback()
 {
-    FENTER
     sim_init_cb = new VhpiStartupCbHdl(vhpi_table);
     sim_init_cb->arm_callback();
-    FEXIT
 }
 
 static void register_final_callback()
 {
-    FENTER
     sim_finish_cb = new VhpiShutdownCbHdl(vhpi_table);
     sim_finish_cb->arm_callback();
-    FEXIT
 }
 
 static void register_embed()
 {
     vhpi_table = new VhpiImpl("VHPI");
     gpi_register_impl(vhpi_table);
-    gpi_load_extra_libs();
 }
 
 // pre-defined VHPI registration table
 void (*vhpi_startup_routines[])() = {
     register_embed,
+    gpi_load_extra_libs,
     register_initial_callback,
     register_final_callback,
-    0
+    nullptr
 };
 
 // For non-VHPI compliant applications that cannot find vhpi_startup_routines

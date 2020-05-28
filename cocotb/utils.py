@@ -1,5 +1,3 @@
-from __future__ import print_function, division
-
 # Copyright (c) 2013 Potential Ventures Ltd
 # Copyright (c) 2013 SolarFlare Communications Inc
 # All rights reserved.
@@ -37,12 +35,15 @@ import weakref
 import functools
 import warnings
 
-if "COCOTB_SIM" in os.environ:
-    import simulator
-    _LOG_SIM_PRECISION = simulator.get_precision()  # request once and cache
-else:
-    simulator = None
-    _LOG_SIM_PRECISION = -15
+from cocotb import simulator
+
+
+def _get_simulator_precision():
+    # cache and replace this function
+    precision = simulator.get_precision()
+    global _get_simulator_precision
+    _get_simulator_precision = precision.__int__
+    return _get_simulator_precision()
 
 
 def get_python_integer_types():
@@ -96,7 +97,7 @@ def get_time_from_sim_steps(steps, units):
     Returns:
         The simulation time in the specified units.
     """
-    return _ldexp10(steps, _LOG_SIM_PRECISION - _get_log_time_scale(units))
+    return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(units))
 
 
 def get_sim_steps(time, units=None):
@@ -116,14 +117,14 @@ def get_sim_steps(time, units=None):
     """
     result = time
     if units is not None:
-        result = _ldexp10(result, _get_log_time_scale(units) - _LOG_SIM_PRECISION)
+        result = _ldexp10(result, _get_log_time_scale(units) - _get_simulator_precision())
 
     result_rounded = math.floor(result)
 
     if result_rounded != result:
         raise ValueError("Unable to accurately represent {0}({1}) with the "
                          "simulator precision of 1e{2}".format(
-                             time, units, _LOG_SIM_PRECISION))
+                             time, units, _get_simulator_precision()))
 
     return int(result_rounded)
 
@@ -202,86 +203,94 @@ def unpack(ctypes_obj, string, bytes=None):
 import cocotb.ANSI as ANSI
 
 
-def _sane_color(x):
+# A note on the use of latin1 in the deprecations below:
+# Latin1 is the only encoding `e` that satisfies
+# `all(chr(x).encode(e) == bytes([x]) for x in range(255))`
+# Our use of `ord` and `chr` throughout other bits of code make this the most
+# compatible choice of encoding. Under this convention, old code can be upgraded
+# by changing "binary" strings from `"\x12\x34"` to `b"\x12\x34"`.
+
+
+def _sane(x: bytes) -> str:
     r = ""
-    for i in x:
-        j = ord(i)
+    for j in x:
         if (j < 32) or (j >= 127):
             r += "."
         else:
-            r += i
+            r += chr(j)
     return r
 
 
-def hexdump(x):
+def hexdump(x: bytes) -> str:
     """Hexdump a buffer.
 
     Args:
-        x: Object that supports conversion via the ``str`` built-in.
+        x: Object that supports conversion to :class:`bytes`.
 
     Returns:
         A string containing the hexdump.
 
+    .. deprecated:: 1.4
+        Passing a :class:`str` to this function is deprecated, as it
+        is not an appropriate type for binary data. Doing so anyway
+        will encode the string to latin1.
+
     Example:
-        >>> print(hexdump('this somewhat long string'))
+        >>> print(hexdump(b'this somewhat long string'))
         0000   74 68 69 73 20 73 6F 6D 65 77 68 61 74 20 6C 6F   this somewhat lo
         0010   6E 67 20 73 74 72 69 6E 67                        ng string
         <BLANKLINE>
     """
     # adapted from scapy.utils.hexdump
     rs = ""
-    x = str(x)
+    if isinstance(x, str):
+        warnings.warn(
+            "Passing a string to hexdump is deprecated, pass bytes instead",
+            DeprecationWarning, stacklevel=2)
+        x = x.encode('latin1')
+    x = b"%b" % x
     l = len(x)
     i = 0
     while i < l:
         rs += "%04x   " % i
         for j in range(16):
             if i + j < l:
-                rs += "%02X " % ord(x[i + j])
+                rs += "%02X " % x[i + j]
             else:
                 rs += "   "
             if j % 16 == 7:
                 rs += ""
         rs += "  "
-        rs += _sane_color(x[i:i + 16]) + "\n"
+        rs += _sane(x[i:i + 16]) + "\n"
         i += 16
     return rs
 
 
-def hexdiffs(x, y):
-    """Return a diff string showing differences between two binary strings.
+def hexdiffs(x: bytes, y: bytes) -> str:
+    r"""Return a diff string showing differences between two binary strings.
 
     Args:
-        x: Object that supports conversion via the ``str`` built-in.
-        y: Object that supports conversion via the ``str`` built-in.
+        x: Object that supports conversion to :class:`bytes`.
+        y: Object that supports conversion to :class:`bytes`.
+
+    .. deprecated:: 1.4
+        Passing :class:`str`\ s to this function is deprecated, as it
+        is not an appropriate type for binary data. Doing so anyway
+        will encode the string to latin1.
 
     Example:
-        >>> print(hexdiffs(0, 1))
-        0000      30                                               0
-             0000 31                                               1
-        <BLANKLINE>
-        >>> print(hexdiffs('a', 'b'))
+        >>> print(hexdiffs(b'a', b'b'))
         0000      61                                               a
              0000 62                                               b
         <BLANKLINE>
-        >>> print(hexdiffs('this short thing', 'this also short'))
+        >>> print(hexdiffs(b'this short thing', b'this also short'))
         0000      746869732073686F 7274207468696E67 this short thing
              0000 7468697320616C73 6F  2073686F7274 this also  short
         <BLANKLINE>
     """
     # adapted from scapy.utils.hexdiff
 
-    def sane(x):
-        r = ""
-        for i in x:
-            j = ord(i)
-            if (j < 32) or (j >= 127):
-                r = r + "."
-            else:
-                r = r + i
-        return r
-
-    def highlight(string, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT):
+    def highlight(string: str, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT) -> str:
         """Highlight with ANSI colors if possible/requested and not running in GUI."""
 
         if want_color_output():
@@ -289,10 +298,21 @@ def hexdiffs(x, y):
         else:
             return string
 
+    x_is_str = isinstance(x, str)
+    y_is_str = isinstance(y, str)
+    if x_is_str or y_is_str:
+        warnings.warn(
+            "Passing strings to hexdiffs is deprecated, pass bytes instead",
+            DeprecationWarning, stacklevel=2)
+    if x_is_str:
+        x = x.encode('latin1')
+    if y_is_str:
+        y = y.encode('latin1')
+
     rs = ""
 
-    x = str(x)[::-1]
-    y = str(y)[::-1]
+    x = (b'%b' % x)[::-1]
+    y = (b'%b' % y)[::-1]
     SUBST = 1
     INSERT = 1
     d = {}
@@ -373,16 +393,17 @@ def hexdiffs(x, y):
         for j in range(16):
             if i + j < l:
                 if line[j]:
+                    char_j, = line[j]
                     if linex[j] != liney[j]:
-                        rs += highlight("%02X" % ord(line[j]),
+                        rs += highlight("%02X" % char_j,
                                         colour=ANSI.COLOR_HILITE_HEXDIFF_2)
                     else:
-                        rs += "%02X" % ord(line[j])
+                        rs += "%02X" % char_j
                     if linex[j] == liney[j]:
-                        cl += highlight(_sane_color(line[j]),
+                        cl += highlight(_sane(line[j]),
                                         colour=ANSI.COLOR_HILITE_HEXDIFF_3)
                     else:
-                        cl += highlight(sane(line[j]),
+                        cl += highlight(_sane(line[j]),
                                         colour=ANSI.COLOR_HILITE_HEXDIFF_4)
                 else:
                     rs += "  "
@@ -405,8 +426,6 @@ def hexdiffs(x, y):
             else:
                 i += 16
     return rs
-
-
 
 
 class ParametrizedSingleton(type):
@@ -457,7 +476,15 @@ def reject_remaining_kwargs(name, kwargs):
 
         def func(x1, *, a=1, b=2):
             ...
+
+    .. deprecated:: 1.4
+        Since the minimum supported Python version is now 3.5, this function
+        is not needed.
     """
+    warnings.warn(
+        "reject_remaining_kwargs is deprecated and will be removed, use "
+        "Python 3 keyword-only arguments directly.", DeprecationWarning,
+        stacklevel=2)
     if kwargs:
         # match the error message to what Python 3 produces
         bad_arg = next(iter(kwargs))
@@ -466,7 +493,7 @@ def reject_remaining_kwargs(name, kwargs):
         )
 
 
-class lazy_property(object):
+class lazy_property:
     """
     A property that is executed the first time, then cached forever.
 
@@ -476,6 +503,7 @@ class lazy_property(object):
     This should be used for expensive members of objects that are not always
     used.
     """
+
     def __init__(self, fget):
         self.fget = fget
 
@@ -487,7 +515,7 @@ class lazy_property(object):
             return self
 
         value = self.fget(obj)
-        setattr(obj, self.fget.__name__, value)
+        setattr(obj, self.fget.__qualname__, value)
         return value
 
 
@@ -497,6 +525,8 @@ def want_color_output():
     Colored output can be explicitly requested by setting :envvar:`COCOTB_ANSI_OUTPUT` to  ``1``.
     """
     want_color = sys.stdout.isatty()  # default to color for TTYs
+    if os.getenv("NO_COLOR") is not None:
+        want_color = False
     if os.getenv("COCOTB_ANSI_OUTPUT", default='0') == '1':
         want_color = True
     if os.getenv("GUI", default='0') == '1':

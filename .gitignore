@@ -2,6 +2,7 @@
 
 # C extensions
 *.so
+*.dll
 
 # C objects
 *.o
@@ -79,3 +80,15 @@ tests/test_cases/*/transcript
 examples/*/tests/modelsim.ini
 examples/*/tests/transcript
 *.wlf
+
+# Riviera
+tests/test_cases/*/library.cfg
+tests/test_cases/*/dataset.asdb
+tests/test_cases/*/compile
+examples/*/tests/library.cfg
+examples/*/tests/dataset.asdb
+examples/*/tests/compile
+
+# Tachyon DA CVC
+tests/test_cases/*/verilog.log
+examples/*/tests/verilog.log

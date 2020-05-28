@@ -32,7 +32,7 @@ import sys
 
 
 # backport of Python 3.7's contextlib.nullcontext
-class nullcontext(object):
+class nullcontext:
     """Context manager that does no additional processing.
     Used as a stand-in for a normal context manager, when a particular
     block of code is only sometimes used with a normal context manager:
@@ -50,6 +50,7 @@ class nullcontext(object):
 
     def __exit__(self, *excinfo):
         pass
+
 
 # On python 3.7 onwards, `dict` is guaranteed to preserve insertion order.
 # Since `OrderedDict` is a little slower that `dict`, we prefer the latter

@@ -283,7 +283,6 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
 
 const char* VpiSignalObjHdl::get_signal_value_binstr()
 {
-    FENTER
     s_vpi_value value_s = {vpiBinStrVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
@@ -304,7 +303,6 @@ const char* VpiSignalObjHdl::get_signal_value_str()
 
 double VpiSignalObjHdl::get_signal_value_real()
 {
-    FENTER
     s_vpi_value value_s = {vpiRealVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
@@ -315,7 +313,6 @@ double VpiSignalObjHdl::get_signal_value_real()
 
 long VpiSignalObjHdl::get_signal_value_long()
 {
-    FENTER
     s_vpi_value value_s = {vpiIntVal, {NULL}};
 
     vpi_get_value(GpiObjHdl::get_handle<vpiHandle>(), &value_s);
@@ -373,7 +370,6 @@ int VpiSignalObjHdl::set_signal_value_str(std::string &value, gpi_set_action_t a
 
 int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s, gpi_set_action_t action)
 {
-    FENTER
     PLI_INT32 vpi_put_flag = -1;
     s_vpi_time vpi_time_s;
 
@@ -411,7 +407,6 @@ int VpiSignalObjHdl::set_signal_value(s_vpi_value value_s, gpi_set_action_t acti
 
     check_vpi_error();
 
-    FEXIT
     return 0;
 }
 
@@ -486,16 +481,14 @@ VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 
 int VpiStartupCbHdl::run_callback() {
     s_vpi_vlog_info info;
-    gpi_sim_info_t sim_info;
 
-    vpi_get_vlog_info(&info);
+    if (!vpi_get_vlog_info(&info)) {
+        LOG_WARN("Unable to get argv and argc from simulator");
+        info.argc = 0;
+        info.argv = nullptr;
+    }
 
-    sim_info.argc = info.argc;
-    sim_info.argv = info.argv;
-    sim_info.product = info.product;
-    sim_info.version = info.version;
-
-    gpi_embed_init(&sim_info);
+    gpi_embed_init(info.argc, info.argv);
 
     return 0;
 }

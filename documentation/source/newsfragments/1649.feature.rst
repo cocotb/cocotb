@@ -1,0 +1,1 @@
+Support for using ``await`` inside an embedded IPython terminal, using :mod:`cocotb.ipython_support`.

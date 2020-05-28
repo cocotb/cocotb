@@ -16,13 +16,9 @@ else
 
 TOPLEVEL = testbench
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 VHDL_SOURCES = $(COCOTB)/tests/designs/vhdl_configurations/dut.vhd
 ifeq ($(TOPLEVEL_LANG),verilog)
@@ -38,7 +34,6 @@ ifneq ($(filter $(SIM),ius xcelium),)
     SIM_ARGS += -v93
 endif
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif

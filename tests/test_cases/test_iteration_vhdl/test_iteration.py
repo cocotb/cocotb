@@ -29,13 +29,17 @@ import cocotb
 from cocotb.triggers import Timer
 from cocotb.result import TestFailure
 
-@cocotb.test()
+
+# This test crashes Riviera-PRO 2019.10 (at least); skip to avoid hanging the
+# tests. See issue #1854 for details.
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10"))
 def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
+
     if (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim", "modelsim")) or
-        (cocotb.SIM_NAME.lower().startswith("riviera") and not cocotb.SIM_VERSION.startswith("2016.02"))):
+       (cocotb.SIM_NAME.lower().startswith("riviera") and not cocotb.SIM_VERSION.startswith("2016.02"))):
         # Finds regions, signal, generics, constants, varibles and ports.
         pass_total = 34569
     else:
@@ -43,6 +47,7 @@ def recursive_discovery(dut):
 
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
+
     def dump_all_the_things(parent):
         count = 0
         for thing in parent:
@@ -62,18 +67,20 @@ def discovery_all(dut):
     yield Timer(0)
     for thing in dut:
         thing._log.info("Found something: %s", thing._fullname)
-        #for subthing in thing:
-        #    thing._log.info("Found something: %s" % thing._fullname)
+        # for subthing in thing:
+        #     thing._log.info("Found something: %s" % thing._fullname)
 
     dut._log.info("length of dut.inst_acs is %d", len(dut.gen_acs))
     item = dut.gen_acs[3]
     item._log.info("this is item")
+
 
 @cocotb.coroutine
 def iteration_loop(dut):
     for thing in dut:
         thing._log.info("Found something: %s", thing._fullname)
         yield Timer(1)
+
 
 @cocotb.test()
 def dual_iteration(dut):
@@ -82,17 +89,19 @@ def dual_iteration(dut):
 
     yield [loop_one.join(), loop_two.join()]
 
+
 @cocotb.test()
 def get_clock(dut):
-    dut._log.info("dut.aclk is %s", dut.aclk.__class__.__name__)
+    dut._log.info("dut.aclk is %s", type(dut.aclk).__name__)
     dut.aclk <= 0
     yield Timer(1)
     dut.aclk <= 1
     yield Timer(1)
-    if int(dut.aclk) is not 1:
+    if int(dut.aclk) != 1:
         raise TestFailure("dut.aclk is not what we expected (got %d)" % int(dut.aclk))
 
-@cocotb.test()
+
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10"))
 def test_n_dimension_array(dut):
     tlog = logging.getLogger("cocotb.test")
     inner_count = 0
@@ -106,5 +115,5 @@ def test_n_dimension_array(dut):
             inner_count += 1
         outer_count += 1
 
-    if inner_count != 14 or outer_count != 2:
-        raise TestFailure("dut.inst_ram_ctrl.config should have a total of 14 elems over 2 loops")
+    assert outer_count == 2, outer_count
+    assert inner_count == 14, inner_count

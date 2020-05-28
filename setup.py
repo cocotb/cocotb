@@ -30,7 +30,22 @@
 
 import sys
 if sys.version_info[:2] < (3, 5):
-    raise RuntimeError("Python version >= 3.5 required.")
+    msg = [
+        "This version of cocotb requires at least Python 3.5,",
+        "you are running Python %d.%d.%d." % (
+            sys.version_info[0], sys.version_info[1], sys.version_info[2])
+    ]
+    if sys.version_info[0] == 2:
+        msg += [
+            "If you have Python 3 installed on your machine try ",
+            "using 'python3 -m pip' instead of 'pip' to install cocotb."
+        ]
+    msg += [
+        "For more information please refer to the documentation at ",
+        "https://cocotb.readthedocs.io."
+    ]
+
+    raise SystemExit("\n".join(msg))
 
 import logging
 from setuptools import setup
@@ -38,13 +53,15 @@ from setuptools import find_packages
 from os import path, walk
 from io import StringIO
 
-# note: cocotb is not installed properly yet, but we can import it anyway
-# because it's in the current directory. We'll need to change this if we
-# add `install_requires` to the `setup()` call.
-from cocotb._build_libs import get_ext, build_ext
+# Note: cocotb is not installed properly yet and is missing dependencies and binaries
+# We can still import other files next to setup.py, as long as they're in MANIFEST.in
+from cocotb_build_libs import get_ext, build_ext
+
 
 def read_file(fname):
-    return open(path.join(path.dirname(__file__), fname)).read()
+    with open(path.join(path.dirname(__file__), fname), encoding='utf8') as f:
+        return f.read()
+
 
 def package_files(directory):
     paths = []
@@ -52,6 +69,7 @@ def package_files(directory):
         for filename in filenames:
             paths.append(path.join('..', fpath, filename))
     return paths
+
 
 # this sets the __version__ variable
 exec(read_file(path.join('cocotb', '_version.py')))
@@ -69,12 +87,13 @@ setup(
     cmdclass={'build_ext': build_ext},
     version=__version__,  # noqa: F821
     description='cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.',
-    url='https://github.com/cocotb/cocotb',
+    url='https://docs.cocotb.org',
     license='BSD',
     long_description=read_file('README.md'),
     long_description_content_type='text/markdown',
     author='Chris Higgs, Stuart Hodgson',
-    author_email='cocotb@potentialventures.com',
+    maintainer='cocotb contributors',
+    maintainer_email='cocotb@lists.librecores.org',
     install_requires=[],
     python_requires='>=3.5',
     packages=find_packages(),
@@ -96,6 +115,13 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
     ],
+
+    # these appear in the sidebar on PyPI
+    project_urls={
+        "Bug Tracker": "https://github.com/cocotb/cocotb/issues",
+        "Source Code": "https://github.com/cocotb/cocotb",
+        "Documentation": "https://docs.cocotb.org",
+    },
 )
 
 print(log_stream.getvalue())

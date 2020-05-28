@@ -43,7 +43,8 @@ Follow the steps below to get your changes merged, i.e. integrated into the main
    If any of them turns "red," i.e. reports a failure, you most likely need to fix your code before it can be merged.
 7. The pull request needs to be reviewed by at least one maintainer.
    We aim to give feedback to all pull requests within a week, but as so often, life can get in the way.
-   If you receive no feedback from a maintainer within that time, please contact him/her directly (e.g. on [Gitter](https://gitter.im/cocotb) or email). You can find a [list of all maintainers](#maintainers) and their main area of expertise [below](#maintainers).
+   If you receive no feedback from a maintainer within that time, please contact them directly (e.g. on [Gitter](https://gitter.im/cocotb) or email).
+   You can find a [list of all maintainers](#maintainers) below.
    If a maintainer asks you to explain or modify code, try to do so.
 8. Once your code has at least one positive review from a maintainer and no maintainer strongly objects it your code is ready to be merged into the `master` branch.
 
@@ -72,7 +73,17 @@ All changes which should go into the main codebase of cocotb must follow this se
      Use this text to discuss things which are not obvious from the code, especially *why* changes were made.
      Include the GitHub issue number (if one exists) in the form "Fixes #nnn" ([read more about that](https://help.github.com/articles/closing-issues-using-keywords/)).
      Keep each description line below 72 characters.
-
+- Use the following header for new non-example files:
+  ```python
+  # Copyright cocotb contributors
+  # Licensed under the Revised BSD License, see LICENSE for details.
+  # SPDX-License-Identifier: BSD-3-Clause
+  ```
+- Use the following header for new example files:
+  ```python
+  # This file is public domain, it can be freely copied without restrictions.
+  # SPDX-License-Identifier: CC0-1.0
+  ```
 
 Managing of Issues and Pull Requests
 ------------------------------------
@@ -117,23 +128,22 @@ cocotb aims to keep the `master` branch always in a releasable state.
 At least four times a year an official release should be created.
 It is the job of the maintainers to find a suitable time for a release, to communicate it to the community, and to coordinate it.
 
-
 Maintainers
 -----------
 
 Cocotb uses a shared maintainer model.
 Most maintainers are experts in part of the cocotb codebase, and are primarily responsible for reviews in this area.
 
-- Julius Baxter (@juliusbaxter)
-- Luke Darnell (@lukedarnell)
+- Kaleb Barrett (@ktbarrett)
 - Tomasz Hemperek (@themperek)
-- Chris Higgs (@chiggs).
-  Founder of cocotb.
-- Stuart Hodgson (@stuarthodgson).
-  Founder of cocotb.
 - Colin Marquardt (@cmarqu)
 - Philipp Wagner (@imphil)
 - Eric Wieser (@eric-wieser)
+
+Founders
+
+- Chris Higgs (@chiggs)
+- Stuart Hodgson (@stuarthodgson)
 
 Code of Conduct
 ---------------

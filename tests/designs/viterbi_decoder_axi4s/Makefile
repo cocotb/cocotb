@@ -37,13 +37,9 @@ else
 
 TOPLEVEL = dec_viterbi_ent
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 SRC_BASE = $(COCOTB)/tests/designs/viterbi_decoder_axi4s
 
@@ -69,7 +65,6 @@ ifneq ($(filter $(SIM),ius xcelium),)
     SIM_ARGS += -v93
 endif
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 endif

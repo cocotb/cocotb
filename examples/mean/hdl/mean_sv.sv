@@ -1,3 +1,6 @@
+// This file is public domain, it can be freely copied without restrictions.
+// SPDX-License-Identifier: CC0-1.0
+
 //-----------------------------------------------------------------------------
 //  sv wrapper for mean.vhd
 //-----------------------------------------------------------------------------
@@ -17,7 +20,7 @@ module mean_sv #(
 
 
 // make constant from package visible
-parameter DATA_WIDTH = data_width;
+parameter DATA_WIDTH = c_data_width;
 
 // VHDL DUT
   mean #(

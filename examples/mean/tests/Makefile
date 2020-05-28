@@ -1,40 +1,24 @@
+# This file is public domain, it can be freely copied without restrictions.
+# SPDX-License-Identifier: CC0-1.0
 
 TOPLEVEL_LANG ?= verilog
 
-ifneq ($(TOPLEVEL_LANG),verilog)
-
-all:
-	@echo "Skipping example due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
-clean::
-
-else
-
-TOPLEVEL := mean_sv
-
 PWD=$(shell pwd)
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
+ifeq ($(TOPLEVEL_LANG),verilog)
+    VERILOG_SOURCES = $(PWD)/../hdl/mean.sv
+else ifeq ($(TOPLEVEL_LANG),vhdl)
+    VHDL_SOURCES = $(PWD)/../hdl/mean_pkg.vhd
+    VHDL_SOURCES += $(PWD)/../hdl/mean.vhd
 else
-WPWD=$(shell pwd)
+    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
-VHDL_SOURCES = $(WPWD)/../hdl/mean_pkg.vhd
-VHDL_SOURCES += $(WPWD)/../hdl/mean.vhd
-
-ifeq ($(SIM),questa)
-COMPILE_ARGS = -mixedsvvh
-endif
-
-VERILOG_SOURCES = $(WPWD)/../hdl/mean_sv.sv
-
+TOPLEVEL := mean
 MODULE := test_mean
 
 ifneq ($(filter $(SIM),ius xcelium),)
     SIM_ARGS += -v93
 endif
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
-
-endif

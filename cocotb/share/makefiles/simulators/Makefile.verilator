@@ -2,6 +2,8 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 ifneq ($(VHDL_SOURCES),)
 
 results.xml:
@@ -34,45 +36,30 @@ endif
 
 SIM_BUILD_FLAGS += -std=c++11
 
-COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o $(TOPLEVEL) -LDFLAGS "-L$(LIB_DIR) -lcocotbvpi -lgpi -lcocotb -lgpilog -lcocotbutils"
+COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o $(TOPLEVEL) -LDFLAGS "-Wl,-rpath,$(LIB_DIR) -L$(LIB_DIR) -lcocotbvpi_verilator -lgpi -lcocotb -lgpilog -lcocotbutils"
 
 $(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp
 	$(CMD) -cc --exe -Mdir $(SIM_BUILD) -DCOCOTB_SIM=1 --top-module $(TOPLEVEL) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp
 
 # Compilation phase
-$(SIM_BUILD)/$(TOPLEVEL): $(SIM_BUILD)/Vtop.mk $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+$(SIM_BUILD)/$(TOPLEVEL): $(SIM_BUILD)/Vtop.mk
 	CPPFLAGS="$(SIM_BUILD_FLAGS)" make -C $(SIM_BUILD) -f Vtop.mk
 
-ifeq ($(OS),Msys)
-
-OLD_PATH := $(shell echo "$(PATH)" | sed 's/(/\\(/g' | sed 's/)/\\)/g' | sed 's/ /\\ /g')
-LIB_LOAD = PATH=$(OLD_PATH):$(LIB_DIR)
-NEW_PYTHONPATH:=$(shell python -c "import sys, os; print(':'.join(['/'+dir.replace(os.sep,'/').replace(':','') for dir in sys.path]))")
-
-else
-LIB_LOAD := LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH)
-NEW_PYTHONPATH := $(PYTHONPATH)
-endif
-
-$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
-	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) $(LIB_LOAD) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
+	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $< $(PLUSARGS)
 
-	# check that the file was actually created, since we can't set an exit code from cocotb
-	test -f $(COCOTB_RESULTS_FILE)
+	$(call check_for_results_file)
 
-debug: $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS) $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+debug: $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
-	PYTHONPATH=$(LIB_DIR):$(PWD):$(NEW_PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR) $(LIB_LOAD) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
+	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         gdb --args $< $(PLUSARGS)
 
-	# check that the file was actually created, since we can't set an exit code from cocotb
-	test -f $(COCOTB_RESULTS_FILE)
+	$(call check_for_results_file)
 
 clean::
 	@rm -rf $(SIM_BUILD)

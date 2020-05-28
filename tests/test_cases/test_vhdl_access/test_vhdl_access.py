@@ -26,9 +26,10 @@
 import logging
 
 import cocotb
-from cocotb.handle import HierarchyObject, ModifiableObject, RealObject, IntegerObject, ConstantObject, EnumObject
+from cocotb.handle import HierarchyObject, ModifiableObject, IntegerObject, ConstantObject, EnumObject
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
+from cocotb.result import TestFailure
+
 
 @cocotb.test()
 def check_enum_object(dut):
@@ -40,6 +41,7 @@ def check_enum_object(dut):
     yield Timer(100)
     if not isinstance(dut.inst_ram_ctrl.write_ram_fsm, EnumObject):
         raise TestFailure("Expected the FSM enum to be an EnumObject")
+
 
 @cocotb.test()
 def check_objects(dut):
@@ -53,9 +55,9 @@ def check_objects(dut):
     def check_instance(obj, objtype):
         if not isinstance(obj, objtype):
             tlog.error("Expected %s to be of type %s but got %s" % (
-                obj._fullname, objtype.__name__, obj.__class__.__name__))
+                obj._fullname, objtype.__name__, type(obj).__name__))
             return 1
-        tlog.info("%s is %s" % (obj._fullname, obj.__class__.__name__))
+        tlog.info("%s is %s" % (obj._fullname, type(obj).__name__))
         return 0
 
     # Hierarchy checks
@@ -92,7 +94,10 @@ def check_objects(dut):
     if fails:
         raise TestFailure("%d Failures during the test" % fails)
 
-@cocotb.test()
+
+# This test crashes Riviera-PRO 2019.10 (at least); skip to avoid hanging the
+# tests. See issue #1857 for details.
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10"))
 def port_not_hierarchy(dut):
     """
     Test for issue raised by Luke - iteration causes a toplevel port type to
@@ -101,12 +106,12 @@ def port_not_hierarchy(dut):
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)
     if not isinstance(dut.aclk, ModifiableObject):
-        tlog.error("dut.aclk should be ModifiableObject but got %s", dut.aclk.__class__.__name__)
+        tlog.error("dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__)
     else:
         tlog.info("dut.aclk is ModifiableObject")
     for _ in dut:
         pass
     if not isinstance(dut.aclk, ModifiableObject):
-        tlog.error("dut.aclk should be ModifiableObject but got %s", dut.aclk.__class__.__name__)
+        tlog.error("dut.aclk should be ModifiableObject but got %s", type(dut.aclk).__name__)
     else:
         tlog.info("dut.aclk is ModifiableObject")

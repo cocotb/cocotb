@@ -2,10 +2,9 @@
 
 import cocotb
 import logging
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer, ReadOnly
+from cocotb.triggers import Timer
 from cocotb.result import TestFailure
-from cocotb.binary import BinaryValue
+
 
 @cocotb.test(skip=cocotb.SIM_NAME in ["Icarus Verilog"])
 def issue_330_direct(dut):
@@ -19,6 +18,7 @@ def issue_330_direct(dut):
     structure = dut.inout_if
 
     tlog.info("Value of inout_if => a_in = %s ; b_out = %s" % (structure.a_in, structure.b_out))
+
 
 @cocotb.test(skip=cocotb.SIM_NAME in ["Icarus Verilog"])
 def issue_330_iteration(dut):
@@ -38,4 +38,3 @@ def issue_330_iteration(dut):
 
     if count != 2:
         raise TestFailure("There should have been two members of the structure")
-

@@ -1,0 +1,1 @@
+Makefile and documentation for the NVC simulator which has never worked have been removed.

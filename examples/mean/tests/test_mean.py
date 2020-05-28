@@ -1,3 +1,6 @@
+# This file is public domain, it can be freely copied without restrictions.
+# SPDX-License-Identifier: CC0-1.0
+
 from __future__ import print_function
 from __future__ import division
 
@@ -29,12 +32,12 @@ class StreamBusMonitor(BusMonitor):
 
 
 @cocotb.coroutine
-def clock_gen(signal, period=10):
+def clock_gen(signal, period=10, units='ns'):
     while True:
         signal <= 0
-        yield Timer(period/2, units='ns')
+        yield Timer(period/2, units=units)
         signal <= 1
-        yield Timer(period/2, units='ns')
+        yield Timer(period/2, units=units)
 
 
 @cocotb.coroutine
@@ -44,7 +47,7 @@ def value_test(dut, num):
     data_width = int(dut.DATA_WIDTH.value)
     bus_width = int(dut.BUS_WIDTH.value)
     dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
-                 (data_width, bus_width))
+                  (data_width, bus_width))
 
     cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units='ns'))
 
@@ -99,7 +102,7 @@ def mean_randomised_test(dut):
     data_width = int(dut.DATA_WIDTH.value)
     bus_width = int(dut.BUS_WIDTH.value)
     dut._log.info('Detected DATA_WIDTH = %d, BUS_WIDTH = %d' %
-                 (data_width, bus_width))
+                  (data_width, bus_width))
 
     cocotb.fork(clock_gen(dut.clk, period=CLK_PERIOD_NS, units='ns'))
 

@@ -26,6 +26,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+include $(shell cocotb-config --makefiles)/Makefile.inc
+
 ifneq ($(VERILOG_SOURCES),)
 
 $(COCOTB_RESULTS_FILE):
@@ -54,26 +56,27 @@ RTL_LIBRARY ?= work
 GHDL_ARGS ?=
 GHDL_ARGS += $(EXTRA_ARGS)
 
+# On Windows add GHDL lib folder to PATH to find libraries
+ifeq ($(OS),Msys)
+    export PATH := $(GHDL_BIN_DIR)/../lib:$(PATH)
+endif
+
 .PHONY: analyse
 
 # Compilation phase
-analyse: $(VHDL_SOURCES) $(SIM_BUILD)
-	cd $(SIM_BUILD) && \
+analyse: $(VHDL_SOURCES) $(SIM_BUILD) $(CUSTOM_COMPILE_DEPS)
 	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), \
-		$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(SOURCES_VAR:VHDL_SOURCES_%=%) $($(SOURCES_VAR)) && ) \
-	$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && \
-	$(CMD) -m $(GHDL_ARGS) $(COMPILE_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL)
+		$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) --work=$(SOURCES_VAR:VHDL_SOURCES_%=%) $($(SOURCES_VAR)) && ) \
+	$(CMD) -i $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) --work=$(RTL_LIBRARY) $(VHDL_SOURCES) && \
+	$(CMD) -m $(GHDL_ARGS) $(COMPILE_ARGS) --workdir=$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL)
 
-$(COCOTB_RESULTS_FILE): analyse  $(COCOTB_LIBS) $(COCOTB_VPI_LIB)
+$(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
-	cd $(SIM_BUILD); \
-	PYTHONPATH=$(LIB_DIR):$(PWD):$(PYTHONPATH) LD_LIBRARY_PATH=$(LIB_DIR):$(LD_LIBRARY_PATH) MODULE=$(MODULE) \
-        TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) COCOTB_SIM=1 \
-	$(CMD) -r $(GHDL_ARGS) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(LIB_DIR)/libcocotbvpi.$(LIB_EXT) $(SIM_ARGS) $(PLUSARGS)
+	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
+	$(CMD) -r $(GHDL_ARGS) --workdir=$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(LIB_DIR)/libcocotbvpi_ghdl.$(LIB_EXT) $(SIM_ARGS) $(PLUSARGS)
 
-	# check that the file was actually created, since we can't set an exit code from cocotb
-	test -f $(COCOTB_RESULTS_FILE)
+	$(call check_for_results_file)
 
 clean::
 	-@rm -rf $(SIM_BUILD)

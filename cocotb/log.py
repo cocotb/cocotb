@@ -67,8 +67,10 @@ def default_config():
 
     If desired, this logging configuration can be overwritten by calling
     ``logging.basicConfig(..., force=True)`` (in Python 3.8 onwards), or by
-    manually resetting the root logger instance, for which examples can be
-    found online.
+    manually resetting the root logger instance.
+    An example of this can be found in the section on :ref:`rotating-logger`.
+
+    .. versionadded:: 1.4
     """
     # construct an appropriate handler
     hdlr = logging.StreamHandler(sys.stdout)
@@ -77,7 +79,6 @@ def default_config():
         hdlr.setFormatter(SimColourLogFormatter())
     else:
         hdlr.setFormatter(SimLogFormatter())
-
 
     logging.setLoggerClass(SimBaseLog)  # For backwards compatibility
     logging.basicConfig()
@@ -95,9 +96,8 @@ def default_config():
 
     # Notify GPI of log level, which it uses as an optimization to avoid
     # calling into Python.
-    if "COCOTB_SIM" in os.environ:
-        import simulator
-        simulator.log_level(_default_log)
+    from cocotb import simulator
+    simulator.log_level(_default_log)
 
 
 class SimBaseLog(logging.getLoggerClass()):
@@ -135,11 +135,13 @@ class SimTimeContextFilter(logging.Filter):
     This uses the approach described in the :ref:`Python logging cookbook <python:filters-contextual>`.
 
     This adds the :attr:`~logging.LogRecord.created_sim_time` attribute.
+
+    .. versionadded:: 1.4
     """
 
     # needed to make our docs render well
     def __init__(self):
-        """ Takes no arguments """
+        """"""
         super().__init__()
 
     def filter(self, record):
@@ -189,9 +191,9 @@ class SimLogFormatter(logging.Formatter):
         prefix = sim_time_str.rjust(11) + ' ' + level + ' '
         if not _suppress:
             prefix += self.ljust(record.name, _RECORD_CHARS) + \
-                      self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
-                      ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
-                      ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
+                self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
+                ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
+                ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
 
         # these lines are copied from the builtin logger
         if record.exc_info:

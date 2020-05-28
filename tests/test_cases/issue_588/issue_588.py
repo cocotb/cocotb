@@ -2,15 +2,15 @@
 # This is a very simple test; it just makes sure we can yield a list of both.
 
 import cocotb
-from cocotb import triggers, result, utils, clock
+from cocotb import triggers, result, utils
 
-import sys
 
 @cocotb.coroutine
 def sample_coroutine(dut):
     """ Very simple coroutine that waits 5 ns."""
     yield triggers.Timer(5, "ns")
     dut._log.info("Sample coroutine yielded.")
+
 
 @cocotb.test()
 def issue_588_coroutine_list(dut):

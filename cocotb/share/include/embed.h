@@ -31,9 +31,6 @@
 #define COCOTB_EMBED_H_
 
 #include <gpi.h>
-#include <gpi_logging.h>
-#include <vpi_user_ext.h>
-#include <sv_vpi_user.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,7 +38,7 @@ extern "C" {
 
 extern void embed_init_python(void);
 extern void embed_sim_cleanup(void);
-extern int embed_sim_init(gpi_sim_info_t *info);
+extern int embed_sim_init(int argc, char const* const* argv);
 extern void embed_sim_event(gpi_event_t level, const char *msg);
 
 #ifdef __cplusplus

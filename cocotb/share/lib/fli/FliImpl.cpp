@@ -434,6 +434,30 @@ void FliImpl::get_sim_precision(int32_t *precision)
     *precision = mti_GetResolutionLimit();
 }
 
+const char *FliImpl::get_simulator_product()
+{
+    if (m_product.empty() && m_version.empty()) {
+        const std::string info = mti_GetProductVersion(); // Returned pointer must not be freed, does not fail
+        const std::string search = " Version ";
+        const std::size_t found = info.find(search);
+
+        if (found != std::string::npos) {
+            m_product = info.substr(0, found);
+            m_version = info.substr(found + search.length());
+        } else {
+            m_product = info;
+            m_version = "UNKNOWN";
+        }
+    }
+    return m_product.c_str();
+}
+
+const char *FliImpl::get_simulator_version()
+{
+    get_simulator_product();
+    return m_version.c_str();
+}
+
 /**
  * @name    Find the root handle
  * @brief   Find the root handle using an optional name
@@ -1015,25 +1039,20 @@ void handle_fli_callback(void *data)
 
 static void register_initial_callback()
 {
-    FENTER
     sim_init_cb = new FliStartupCbHdl(fli_table);
     sim_init_cb->arm_callback();
-    FEXIT
 }
 
 static void register_final_callback()
 {
-    FENTER
     sim_finish_cb = new FliShutdownCbHdl(fli_table);
     sim_finish_cb->arm_callback();
-    FEXIT
 }
 
 static void register_embed()
 {
     fli_table = new FliImpl("FLI");
     gpi_register_impl(fli_table);
-    gpi_load_extra_libs();
 }
 
 
@@ -1041,11 +1060,12 @@ void cocotb_init()
 {
     LOG_INFO("cocotb_init called\n");
     register_embed();
+    gpi_load_extra_libs();
     register_initial_callback();
     register_final_callback();
 }
 
 } // extern "C"
 
-GPI_ENTRY_POINT(fli, register_embed);
+GPI_ENTRY_POINT(cocotbfli, register_embed);
 

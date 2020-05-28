@@ -24,7 +24,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import random
 import logging
 
 import fcntl
@@ -62,7 +61,7 @@ def create_tun(name="tun0", ip="192.168.255.1"):
             # Errno 16 if tun device already exists, otherwise this
             # failed for different reason.
             if e.errno != 16:
-               raise e
+                raise e
 
         tun_num += 1
 

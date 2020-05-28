@@ -27,24 +27,24 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-# This is a simple wrapper Makefile to pull in the appropriate Makefile for
-# the desired simulator and set up common paths for the sims to use to build with
+# This file includes an appropriate makefile depending on the SIM variable.
 
 .PHONY: all
 all: sim
 
-# NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
-# Also keep it at 80 chars.
-define helpmsg =
+# NOTE: keep this at 80 chars.
+define help_targets =
 Targets
--------
+=======
 sim                       Unconditionally re-run the simulator (default)
 regression                Run simulator when dependencies have changes
 clean                     Remove build and simulation artefacts
 help                      This help text
 
-Make Variables
---------------
+Variables
+=========
+Makefile-based Test Scripts
+---------------------------
 GUI                       Set this to 1 to enable the GUI mode in the simulator
 SIM                       Selects which simulator Makefile to use
 WAVES                     Enable wave traces dump for Riviera-PRO and Questa
@@ -55,97 +55,49 @@ COMPILE_ARGS              Arguments to pass to compile stage of simulation
 SIM_ARGS                  Arguments to pass to execution of compiled simulation
 EXTRA_ARGS                Arguments for compile and execute phases
 PLUSARGS                  Plusargs to pass to the simulator
-GPI_EXTRA                 A list of extra libraries that are dynamically loaded at runtime
 COCOTB_HDL_TIMEUNIT       Default time unit for simulation
 COCOTB_HDL_TIMEPRECISION  Default time precision for simulation
 CUSTOM_COMPILE_DEPS       Add additional dependencies to the compilation target
 CUSTOM_SIM_DEPS           Add additional dependencies to the simulation target
-COCOTB_NVC_TRACE          Set this to 1 to enable display of VHPI traces for NVC
 SIM_BUILD                 Define a scratch directory for use by the simulator
-
-Environment Variables
----------------------
-TOPLEVEL                  Instance in the hierarchy to use as the DUT
-RANDOM_SEED               Random seed, to recreate a previous test stimulus
-COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
-COCOTB_REDUCED_LOG_FMT    Display log lines shorter
-COCOTB_PDB_ON_EXCEPTION   Drop into the Python debugger (pdb) on exception
-MODULE                    Modules to search for test functions (comma-separated)
-TESTCASE                  Test function(s) to run (comma-separated list)
-COCOTB_RESULTS_FILE       File name for xUnit XML tests results
 SCRIPT_FILE               Simulator script to run (for e.g. wave traces)
 
-Additional Environment Variables
---------------------------------
-COCOTB_ATTACH             Pause time value in seconds before the simulator start
-COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
-COCOTB_HOOKS              Comma-separated module list to be executed before test
-COCOTB_LOG_LEVEL          Default logging level (default INFO)
-COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion
-COCOTB_SCHEDULER_DEBUG    Enable additional output of coroutine scheduler
-COVERAGE                  Report Python coverage (also HDL for some simulators)
-MEMCHECK                  HTTP port to use for debugging Python memory usage
+endef
 
-    For details, see $(DOCLINK)
+
+# NOTE: keep *two* empty lines between "define" and "endef":
+define newline
+
 
 endef
 
 # this cannot be a regular target because of the way Makefile.$(SIM) is included
 ifeq ($(MAKECMDGOALS),help)
-_VERSION := $(shell cocotb-config -v)
-# for non-intuitive use of ifneq see https://www.gnu.org/software/make/manual/make.html#Testing-Flags
-ifneq (,$(findstring dev,$(_VERSION)))
-DOCLINK := https://cocotb.readthedocs.io/en/latest/building.html
-else
-DOCLINK := https://cocotb.readthedocs.io/en/v$(_VERSION)/building.html
-endif
-$(info $(helpmsg))
-# is there a cleaner way to exit here?
-$(error "Stopping after printing help")
+    $(info $(help_targets))
+    # hack to get newlines in output, see https://stackoverflow.com/a/54539610
+    # NOTE: the output of the command must not include a '%' sign, otherwise the formatting will break
+    help_vars := $(subst %,${newline},$(shell cocotb-config --help-vars | tr \\n %))
+    $(info ${help_vars})
+    # is there a cleaner way to exit here?
+    $(error "Stopping after printing help")
 endif
 
-SIM_BUILD ?= sim_build
-export SIM_BUILD
-
-COCOTB_RESULTS_FILE ?= results.xml
-COCOTB_HDL_TIMEUNIT ?= 1ns
-COCOTB_HDL_TIMEPRECISION ?= 1ps
+# Default to Icarus if no simulator is defined
+SIM ?= icarus
 
 # Maintain backwards compatibility by supporting upper and lower case SIM variable
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
 
-HAVE_SIMULATOR = $(shell if [ -f $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE) ]; then echo 1; else echo 0; fi;)
-AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.*)))
+# Directory containing the cocotb Makfiles (realpath for Windows compatibility)
+COCOTB_MAKEFILES_DIR := $(realpath $(shell cocotb-config --makefiles))
+
+include $(COCOTB_MAKEFILES_DIR)/Makefile.deprecations
+
+HAVE_SIMULATOR = $(shell if [ -f $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.$(SIM_LOWERCASE) ]; then echo 1; else echo 0; fi;)
+AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.*)))
 
 ifeq ($(HAVE_SIMULATOR),0)
     $(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simulators: $(AVAILABLE_SIMULATORS)")
 endif
 
-# Depend on all Python from the cocotb package. This triggers a
-# recompilation of the simulation if cocotb is updated.
-CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
-
-PWD := $(shell pwd)
-
-#include $(COCOTB_SHARE_DIR)/lib/Makefile
-include $(COCOTB_SHARE_DIR)/makefiles/simulators/Makefile.$(SIM_LOWERCASE)
-
-# Append directory containing the cocotb Python package to PYTHONPATH
-# XXX: This is only needed if cocotb is not installed into the default
-# Python search path.
-PYTHONPATH := $(COCOTB_PY_DIR):$(PYTHONPATH)
-export PYTHONPATH
-
-$(SIM_BUILD):
-	mkdir -p $@
-
-# Regression rule uses Make dependencies to determine whether to run the simulation
-.PHONY: regression
-regression: $(COCOTB_RESULTS_FILE)
-
-# Default sim rule will force a re-run of the simulation (though the cocotb library
-# and RTL compilation phases are still evaluated by makefile dependencies)
-.PHONY: sim
-sim:
-	-@rm -f $(COCOTB_RESULTS_FILE)
-	$(MAKE) $(COCOTB_RESULTS_FILE)
+include $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.$(SIM_LOWERCASE)

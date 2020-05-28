@@ -31,13 +31,9 @@ TOPLEVEL_LANG ?= verilog
 
 TOPLEVEL := array_module
 
-ifeq ($(OS),Msys)
-WPWD=$(shell sh -c 'pwd -W')
-else
-WPWD=$(shell pwd)
-endif
+PWD=$(shell pwd)
 
-COCOTB?=$(WPWD)/../../..
+COCOTB?=$(PWD)/../../..
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES = $(COCOTB)/tests/designs/array_module/array_module.sv
@@ -54,5 +50,4 @@ else
     $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
-include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim

@@ -111,3 +111,12 @@ Code hosting
 The source code of cocotb extensions can be hosted anywhere.
 If authors wish to do so, extensions can also be hosted on GitHub in the `cocotb GitHub organization <https://github.com/cocotb>`_ (e.g. ``github.com/cocotb/cocotbext-EXTNAME``).
 Please file a `GitHub issue in the cocotb repository <https://github.com/cocotb/cocotb/issues>`_ if you'd like to discuss that.
+
+Note that hosting extensions within the cocotb organization is decided on a case-by-case basis by the cocotb maintainers.
+At least, a cocotb-hosted extension needs to fulfill the following requirements:
+
+* It needs tests that can be run in order to see that the extension works
+  and continues to work as cocotb itself changes, especially when a new release is upcoming.
+* It needs documentation (preferably in Sphinx) so that users know how to use the extension.
+* We must have access to the PyPi project so that we can continue to upload new releases
+  in case the extension maintainer ("Owner") becomes unresponsive.

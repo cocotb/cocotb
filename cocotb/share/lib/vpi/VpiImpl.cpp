@@ -72,6 +72,28 @@ void VpiImpl::get_sim_precision(int32_t *precision)
     *precision = vpi_get(vpiTimePrecision, NULL);
 }
 
+const char *VpiImpl::get_simulator_product()
+{
+    if (m_product.empty() && m_version.empty()) {
+        s_vpi_vlog_info info;
+        if (!vpi_get_vlog_info(&info)) {
+            LOG_WARN("Could not obtain info about the simulator");
+            m_product = "UNKNOWN";
+            m_version = "UNKNOWN";
+        } else {
+            m_product = info.product;
+            m_version = info.version;
+        }
+    }
+    return m_product.c_str();
+}
+
+const char *VpiImpl::get_simulator_version()
+{
+    get_simulator_product();
+    return m_version.c_str();
+}
+
 gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 {
     switch (vpitype) {
@@ -534,7 +556,7 @@ void VpiImpl::sim_end()
      */
     if (GPI_DELETE != sim_finish_cb->get_call_state()) {
         sim_finish_cb->set_call_state(GPI_DELETE);
-        vpi_control(vpiFinish);
+        vpi_control(vpiFinish, vpiDiagTimeLoc);
         check_vpi_error();
     }
 }
@@ -579,7 +601,6 @@ static void register_embed()
 {
     vpi_table = new VpiImpl("VPI");
     gpi_register_impl(vpi_table);
-    gpi_load_extra_libs();
 }
 
 
@@ -695,6 +716,7 @@ static void register_system_functions()
 
 void (*vlog_startup_routines[])() = {
     register_embed,
+    gpi_load_extra_libs,
     register_system_functions,
     register_initial_callback,
     register_final_callback,
