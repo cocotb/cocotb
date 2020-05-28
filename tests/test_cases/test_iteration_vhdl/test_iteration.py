@@ -26,27 +26,52 @@
 import logging
 
 import cocotb
-from cocotb.triggers import Timer
+from cocotb.triggers import Timer, Combine
 from cocotb.result import TestFailure
 
 
-# This test crashes Riviera-PRO 2019.10 (at least); skip to avoid hanging the
-# tests. See issue #1854 for details.
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10"))
-def recursive_discovery(dut):
-    """
-    Recursively discover every single object in the design
-    """
+def total_object_count():
+    """Return the total object count based on simulator."""
+    SIM_NAME = cocotb.SIM_NAME.lower()
+    SIM_VERSION = cocotb.SIM_VERSION.lower()
 
-    if (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim", "modelsim")) or
-       (cocotb.SIM_NAME.lower().startswith("riviera") and not cocotb.SIM_VERSION.startswith("2016.02"))):
-        # Finds regions, signal, generics, constants, varibles and ports.
-        pass_total = 34569
-    else:
-        pass_total = 32393
+    if SIM_NAME.startswith(
+        (
+            "ncsim",
+            "xmsim",
+            "modelsim",
+        )
+    ):
+        return 34569
+
+    # Riviera-PRO
+    if SIM_NAME.startswith("riviera"):
+        if SIM_VERSION.startswith("2019.10"):
+            return 27359
+        if SIM_VERSION.startswith("2016.02"):
+            return 32393
+        return 34569
+
+    # Active-HDL
+    if SIM_NAME.startswith("aldec"):
+        if SIM_VERSION.startswith("11.1"):
+            # Active-HDL 11.1 only finds 'inbranch_tdata_low' inside the gen_acs for generate block
+            return 27359
+        if SIM_VERSION.startswith("10.01"):
+            # Active-HDL 10.1 doesn't find any signals declared inside the gen_acs for generate block
+            return 26911
+
+    return 0
+
+
+@cocotb.test(skip=(total_object_count() == 0))
+async def recursive_discovery(dut):
+    """Recursively discover every single object in the design."""
+
+    pass_total = total_object_count()
 
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
+    await Timer(100)
 
     def dump_all_the_things(parent):
         count = 0
@@ -62,51 +87,37 @@ def recursive_discovery(dut):
 
 
 @cocotb.test()
-def discovery_all(dut):
-    dut._log.info("Trying to discover")
-    yield Timer(0)
+async def discovery_all(dut):
+    """Discover everything on top-level."""
+    dut._log.info("Iterating over top-level to discover objects")
     for thing in dut:
         thing._log.info("Found something: %s", thing._fullname)
-        # for subthing in thing:
-        #     thing._log.info("Found something: %s" % thing._fullname)
 
     dut._log.info("length of dut.inst_acs is %d", len(dut.gen_acs))
     item = dut.gen_acs[3]
     item._log.info("this is item")
 
 
-@cocotb.coroutine
-def iteration_loop(dut):
-    for thing in dut:
-        thing._log.info("Found something: %s", thing._fullname)
-        yield Timer(1)
-
-
 @cocotb.test()
-def dual_iteration(dut):
-    loop_one = cocotb.fork(iteration_loop(dut))
-    loop_two = cocotb.fork(iteration_loop(dut))
+async def dual_iteration(dut):
+    """Test iteration over top-level in two forked coroutines."""
+    async def iteration_loop():
+        for thing in dut:
+            thing._log.info("Found something: %s", thing._fullname)
+            await Timer(1)
 
-    yield [loop_one.join(), loop_two.join()]
+    loop_one = cocotb.fork(iteration_loop())
+    loop_two = cocotb.fork(iteration_loop())
 
-
-@cocotb.test()
-def get_clock(dut):
-    dut._log.info("dut.aclk is %s", type(dut.aclk).__name__)
-    dut.aclk <= 0
-    yield Timer(1)
-    dut.aclk <= 1
-    yield Timer(1)
-    if int(dut.aclk) != 1:
-        raise TestFailure("dut.aclk is not what we expected (got %d)" % int(dut.aclk))
+    await Combine(loop_one, loop_two)
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10"))
-def test_n_dimension_array(dut):
+@cocotb.test(expect_fail=(cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10")) or cocotb.SIM_NAME.lower().startswith("aldec"))
+async def test_n_dimension_array(dut):
+    """Test iteration over multi-dimensional array."""
     tlog = logging.getLogger("cocotb.test")
     inner_count = 0
     outer_count = 0
-    yield Timer(0)
     config = dut.inst_ram_ctrl.config
     # This signal is a 2 x 7 vhpiEnumVecVal
     for thing in config:
