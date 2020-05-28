@@ -95,9 +95,7 @@ def check_objects(dut):
         raise TestFailure("%d Failures during the test" % fails)
 
 
-# This test crashes Riviera-PRO 2019.10 (at least); skip to avoid hanging the
-# tests. See issue #1857 for details.
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10"))
+@cocotb.test()
 def port_not_hierarchy(dut):
     """
     Test for issue raised by Luke - iteration causes a toplevel port type to
