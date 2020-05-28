@@ -118,6 +118,7 @@ def do_test_afterdelay_in_readonly(dut, delay):
 
 
 @cocotb.test(expect_error=True,
+             skip=cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith(("riviera")),  # gh-1245
              expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "riviera",
                                                              "modelsim",
