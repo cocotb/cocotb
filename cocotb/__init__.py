@@ -262,14 +262,14 @@ def _sim_event(level, message):
             # the regression manager may not have been created (_initialize_testbench failed)
             msg = "Failing test at request of external source: " + message
             cocotb.log.error(msg)
-            scheduler.finish_test(TestFailure(msg))
+            regression_manager._finish_test(TestFailure(msg))
     elif level is SIM_FAIL:
         if cocotb.regression_manager is not None:
             # the regression manager may not have been created (_initialize_testbench failed)
             msg = ("Failing remaining tests at request of external source "
                    "before test run completion: ") + message
             cocotb.log.error(msg)
-            scheduler.finish_scheduler(SimFailure(msg))
+            regression_manager._finish_test(SimFailure(msg))
     else:
         cocotb.log.error("Unsupported sim event")
 

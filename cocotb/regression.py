@@ -478,6 +478,16 @@ class RegressionManager:
 
         cocotb.scheduler.schedule(self._test_task)
 
+    def _finish_test(self, exc: Exception) -> None:
+        """
+        Finishes the test with the given exception as the outcome. Not to be called by the user.
+        """
+        try:
+            self._test_task.abort(exc)
+        except _EscapeHatch:
+            pass
+        self._check_termination()
+
     def _log_test_summary(self) -> None:
 
         if self.failures:

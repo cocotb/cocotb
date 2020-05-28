@@ -60,7 +60,7 @@ import cocotb.decorators
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
-from cocotb.result import TestComplete, _EscapeHatch
+from cocotb.result import TestComplete
 from cocotb.utils import remove_traceback_frames
 from cocotb import _py_compat
 
@@ -719,19 +719,6 @@ class Scheduler:
         # Handle any newly queued coroutines that need to be scheduled
         while self._pending_coros:
             self.add(self._pending_coros.pop(0))
-
-    def finish_test(self, exc):
-        try:
-            cocotb.regression_manager._test_task.abort(exc)
-        except _EscapeHatch:
-            pass
-        cocotb.regression_manager._check_termination()
-
-    def finish_scheduler(self, exc):
-        """Directly call into the regression manager and end test
-           once we return the sim will close us so no cleanup is needed.
-        """
-        self.finish_test(exc)
 
     def restart(self) -> None:
         """Sets the scheduler back in a valid state to start a new test"""
