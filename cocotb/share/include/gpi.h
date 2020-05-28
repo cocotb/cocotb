@@ -127,8 +127,12 @@ typedef enum gpi_event_e {
  */
 GPI_EXPORT bool gpi_has_registered_impl(void);
 
-// Stop the simulator
-GPI_EXPORT void gpi_sim_end(void);
+/**
+ * Stop the simulator.
+ *
+ * @param msg message to give GPI users about why you are ending the sim, NULL gives default reason message
+ */
+GPI_EXPORT void gpi_sim_end(char const *msg);
 
 // Returns simulation time as two uints. Units are default sim units
 GPI_EXPORT void gpi_get_sim_time(uint32_t *high, uint32_t *low);

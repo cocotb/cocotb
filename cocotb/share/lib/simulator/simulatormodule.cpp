@@ -231,10 +231,9 @@ int handle_gpi_callback(void *user_data)
         // The best thing to do here is shutdown as any subsequent
         // calls will go back to Python which is now in an unknown state
         if (pValue == NULL) {
-            fprintf(stderr, "ERROR: called callback function threw exception\n");
             PyErr_Print();
 
-            gpi_sim_end();
+            gpi_sim_end("ERROR: called callback function threw exception");
             ret = 0;
             goto out;
         }
@@ -872,7 +871,7 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    gpi_sim_end();
+    gpi_sim_end("Shutting down simulator at user request.");
     Py_RETURN_NONE;
 }
 

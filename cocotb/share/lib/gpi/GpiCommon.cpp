@@ -94,6 +94,7 @@ static GpiHandleStore unique_handles;
 
 #endif
 
+static std::string sim_end_msg = "Simulator shutdown prematurely";
 
 size_t gpi_print_registered_impl()
 {
@@ -130,19 +131,23 @@ bool gpi_has_registered_impl()
 
 void gpi_embed_init(int argc, char const* const* argv)
 {
-    if (embed_sim_init(argc, argv))
-        gpi_sim_end();
+    if (embed_sim_init(argc, argv)) {
+        gpi_sim_end("Python initialization failed.");
+    }
 }
 
 void gpi_embed_end()
 {
-    gpi_embed_event(SIM_FAIL, "Simulator shutdown prematurely");
+    gpi_embed_event(SIM_FAIL, sim_end_msg.c_str());
     CLEAR_STORE();
     embed_sim_cleanup();
 }
 
-void gpi_sim_end()
+void gpi_sim_end(char const *msg)
 {
+    if (msg) {
+        sim_end_msg = msg;
+    }
     registered_impls[0]->sim_end();
 }
 
