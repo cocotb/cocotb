@@ -161,7 +161,7 @@ class Scoreboard:
                     pass
             log.warning("Difference:\n%s" % hexdiffs(strexp, strgot))
             if self._imm:
-                raise TestFailure("Received transaction differed from expected"
+                raise TestFailure("Received transaction differed from expected "
                                   "transaction")
         else:
             # Don't want to fail the test
