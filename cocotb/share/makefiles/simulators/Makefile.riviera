@@ -102,7 +102,7 @@ else
 endif
 
 # Create a TCL script based on the list of $(VERILOG_SOURCES)
-$(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) $(SIM_BUILD)
+$(SIM_BUILD)/runsim.tcl : $(VERILOG_SOURCES) $(VHDL_SOURCES) | $(SIM_BUILD)
 	@echo "onerror {" > $@
 	@echo "	puts [read [open sim.log r]]" >> $@
 	@echo "	quit -code 1" >> $@
