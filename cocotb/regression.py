@@ -115,7 +115,9 @@ class RegressionManager:
 
         if coverage is not None:
             self.log.info("Enabling coverage collection of Python code")
-            self._cov = coverage.coverage(branch=True, omit=["*cocotb*"])
+            # Exclude cocotb itself from coverage collection.
+            cocotb_package_dir = os.path.dirname(__file__)
+            self._cov = coverage.coverage(branch=True, omit=["{}/*".format(cocotb_package_dir)])
             self._cov.start()
 
         # Test Discovery
