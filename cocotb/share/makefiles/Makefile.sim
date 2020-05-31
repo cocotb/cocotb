@@ -82,6 +82,18 @@ ifeq ($(MAKECMDGOALS),help)
     $(error "Stopping after printing help")
 endif
 
+# Safety net to bail out early if users go into this Makefile without making
+# cocotb-config available in their PATH.
+# Use override to prevent users from overriding COCOTB_CONFIG_CMD, which is not
+# supported. (Modify PATH instead.)
+override COCOTB_CONFIG_CMD := $(shell :; command -v cocotb-config)
+ifeq ($(COCOTB_CONFIG_CMD),)
+    $(error cocotb-config not found! Cocotb is not installed (or is installed \
+            but not on the PATH). \
+            Please refer to https://docs.cocotb.org/en/latest/install.html \
+            for installation instructions.)
+endif
+
 # Default to Icarus if no simulator is defined
 SIM ?= icarus
 
@@ -89,7 +101,7 @@ SIM ?= icarus
 SIM_LOWERCASE := $(shell echo $(SIM) | tr A-Z a-z)
 
 # Directory containing the cocotb Makfiles (realpath for Windows compatibility)
-COCOTB_MAKEFILES_DIR := $(realpath $(shell cocotb-config --makefiles))
+COCOTB_MAKEFILES_DIR := $(realpath $(shell $(COCOTB_CONFIG_CMD) --makefiles))
 
 include $(COCOTB_MAKEFILES_DIR)/Makefile.deprecations
 

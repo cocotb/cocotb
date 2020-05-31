@@ -43,7 +43,7 @@ sim:
 SHELL := bash
 
 # Directory containing the cocotb Python module (realpath for Windows compatibility)
-COCOTB_PY_DIR := $(realpath $(shell cocotb-config --prefix))
+COCOTB_PY_DIR := $(realpath $(shell $(COCOTB_CONFIG_CMD) --prefix))
 
 # Directory containing all support files required to build cocotb-based
 # simulations: Makefile fragments, and the simulator libraries.
@@ -59,7 +59,7 @@ export OS
 
 # this ensures we use the same python as the one cocotb was installed into
 # realpath to convert windows paths to unix paths, like cygpath -u
-PYTHON_BIN ?= $(realpath $(shell cocotb-config --python-bin))
+PYTHON_BIN ?= $(realpath $(shell $(COCOTB_CONFIG_CMD) --python-bin))
 
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
 
