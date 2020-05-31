@@ -94,15 +94,15 @@ following:
     from cocotb.triggers import Timer
 
     @cocotb.test()
-    def my_first_test(dut):
+    async def my_first_test(dut):
         """Try accessing the design."""
 
         dut._log.info("Running test!")
         for cycle in range(10):
             dut.clk = 0
-            yield Timer(1, units='ns')
+            await Timer(1, units='ns')
             dut.clk = 1
-            yield Timer(1, units='ns')
+            await Timer(1, units='ns')
         dut._log.info("Running test!")
 
 This will drive a square wave clock onto the ``clk`` port of the toplevel.
@@ -214,6 +214,7 @@ The following example shows these in action:
 
 .. code-block:: python3
 
+    # A coroutine
     async def reset_dut(reset_n, duration_ns):
         reset_n <= 0
         await Timer(duration_ns, units='ns')

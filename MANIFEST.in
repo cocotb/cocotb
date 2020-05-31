@@ -1,5 +1,5 @@
-recursive-include cocotb/share *.c* *.h *.def Makefile.* Makefile
-recursive-include examples *.v *.py Makefile *.tcl *.cfg
-include version
+recursive-include cocotb/share *
+recursive-include examples *
 include README.md
+include LICENSE
 include cocotb_build_libs.py

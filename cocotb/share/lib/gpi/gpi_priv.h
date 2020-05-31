@@ -52,8 +52,7 @@ class GpiCbHdl;
 /* Base GPI class others are derived from */
 class GpiHdl {
 public:
-    GpiHdl(GpiImplInterface *impl) : m_impl(impl), m_obj_hdl(NULL) { }
-    GpiHdl(GpiImplInterface *impl, void *hdl) : m_impl(impl), m_obj_hdl(hdl) { }
+    GpiHdl(GpiImplInterface *impl, void *hdl = NULL) : m_impl(impl), m_obj_hdl(hdl) { }
     virtual ~GpiHdl() = default;
 
 
@@ -81,31 +80,16 @@ protected:
 // that construct an object derived from GpiSignalObjHdl or GpiObjHdl
 class GpiObjHdl : public GpiHdl {
 public:
-    GpiObjHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
-                                        m_num_elems(0),
-                                        m_indexable(false),
-                                        m_range_left(-1),
-                                        m_range_right(-1),
-                                        m_fullname("unknown"),
-                                        m_type(GPI_UNKNOWN),
-                                        m_const(false) { }
-    GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype) : GpiHdl(impl, hdl),
-                                                                          m_num_elems(0),
-                                                                          m_indexable(false),
-                                                                          m_range_left(-1),
-                                                                          m_range_right(-1),
-                                                                          m_fullname("unknown"),
-                                                                          m_type(objtype),
-                                                                          m_const(false) { }
-    GpiObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype, bool is_const) :
-                                                                          GpiHdl(impl, hdl),
-                                                                          m_num_elems(0),
-                                                                          m_indexable(false),
-                                                                          m_range_left(-1),
-                                                                          m_range_right(-1),
-                                                                          m_fullname("unknown"),
-                                                                          m_type(objtype),
-                                                                          m_const(is_const) { }
+    GpiObjHdl(
+        GpiImplInterface *impl,
+        void *hdl = nullptr,
+        gpi_objtype_t objtype = GPI_UNKNOWN,
+        bool is_const = false
+    ) :
+        GpiHdl(impl, hdl),
+        m_type(objtype),
+        m_const(is_const) { }
+
     virtual ~GpiObjHdl() = default;
 
     virtual const char* get_name_str();
@@ -131,12 +115,12 @@ public:
     virtual int initialise(std::string &name, std::string &full_name);
 
 protected:
-    int           m_num_elems;
-    bool          m_indexable;
-    int           m_range_left;
-    int           m_range_right;
+    int           m_num_elems = 0;
+    bool          m_indexable = false;
+    int           m_range_left = -1;
+    int           m_range_right = -1;
     std::string   m_name;
-    std::string   m_fullname;
+    std::string   m_fullname = "unknown";
 
     std::string   m_definition_name;
     std::string   m_definition_file;
@@ -152,9 +136,8 @@ protected:
 // value of the signal (which doesn't apply to non signal items in the hierarchy
 class GpiSignalObjHdl : public GpiObjHdl {
 public:
-    GpiSignalObjHdl(GpiImplInterface *impl, void *hdl, gpi_objtype_t objtype, bool is_const) :
-                                                         GpiObjHdl(impl, hdl, objtype, is_const),
-                                                         m_length(0) { }
+    using GpiObjHdl::GpiObjHdl;
+
     virtual ~GpiSignalObjHdl() = default;
     // Provide public access to the implementation (composition vs inheritance)
     virtual const char* get_signal_value_binstr() = 0;
@@ -162,7 +145,7 @@ public:
     virtual double get_signal_value_real() = 0;
     virtual long get_signal_value_long() = 0;
 
-    int m_length;
+    int m_length = 0;
 
     virtual int set_signal_value(const long value, gpi_set_action_t action) = 0;
     virtual int set_signal_value(const double value, gpi_set_action_t action) = 0;
@@ -180,10 +163,8 @@ public:
 // vpiHandle/vhpiHandleT for instance. The
 class GpiCbHdl : public GpiHdl {
 public:
-    GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl, NULL),
-                                       gpi_function(NULL),
-                                       m_cb_data(NULL),
-                                       m_state(GPI_FREE) { }
+    GpiCbHdl(GpiImplInterface *impl) : GpiHdl(impl) { }
+
     // Pure virtual functions for derived classes
     virtual int arm_callback() = 0;         // Register with simulator
     virtual int run_callback();         // Entry point from simulator
@@ -199,9 +180,9 @@ public:
     virtual ~GpiCbHdl();
 
 protected:
-    int (*gpi_function)(const void *);    // GPI function to callback
-    const void *m_cb_data;                // GPI data supplied to "gpi_function"
-    gpi_cb_state_e m_state;         // GPI state of the callback through its cycle
+    int (*gpi_function)(const void *) = nullptr;    // GPI function to callback
+    const void *m_cb_data = nullptr;                // GPI data supplied to "gpi_function"
+    gpi_cb_state_e m_state = GPI_FREE;         // GPI state of the callback through its cycle
 };
 
 class GpiValueCbHdl : public virtual GpiCbHdl {

@@ -48,9 +48,11 @@ async def clock_mon(dut):
     await RisingEdge(dut.clk)
 
 
-@cocotb.test(expect_fail=True,
-             expect_error=cocotb.SIM_NAME.lower().startswith(("modelsim",  # $fatal() fails hard on Questa
-                                                              )))
+@cocotb.test(
+    expect_fail=True,
+    skip=cocotb.SIM_NAME.lower().startswith("riviera"),  # gh-1859
+    expect_error=cocotb.SIM_NAME.lower().startswith("modelsim")  # $fatal() fails hard on Questa
+)
 async def test_failure_from_system_task(dut):
     """
     Allow the dut to call system tasks from verilog.
@@ -62,7 +64,7 @@ async def test_failure_from_system_task(dut):
     await Timer(10000000, units='ns')
 
 
-@cocotb.test()
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("riviera"))  # gh-1859
 async def test_after_system_task_fail(dut):
     """
     Test to run after failed test.

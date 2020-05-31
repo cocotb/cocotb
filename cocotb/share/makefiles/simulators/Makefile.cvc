@@ -60,7 +60,7 @@ ifeq ($(CVC_ITERP),1)
 endif
 
 # Compilation phase
-$(SIM_BUILD)/sim.vvp: $(SIM_BUILD) $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS)
+$(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	MODULE=$(MODULE) \
 	TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
         $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=$(LIB_DIR)/libcocotbvpi_modelsim:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)

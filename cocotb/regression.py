@@ -95,6 +95,7 @@ class RegressionManager:
         self.count = 0
         self.skipped = 0
         self.failures = 0
+        self._tearing_down = False
 
         # Setup XUnit
         ###################
@@ -229,6 +230,12 @@ class RegressionManager:
             return cocotb.scheduler.add(test)
 
     def tear_down(self) -> None:
+        # prevent re-entering the tear down procedure
+        if not self._tearing_down:
+            self._tearing_down = True
+        else:
+            return
+
         # fail remaining tests
         while True:
             test = self.next_test()

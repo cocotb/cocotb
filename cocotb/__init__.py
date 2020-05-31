@@ -128,7 +128,7 @@ See :envvar:`RANDOM_SEED` for details on how the value is computed.
 
 
 def fork(coro):
-    """ Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on it's use. """
+    """ Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use. """
     return scheduler.add(coro)
 
 
