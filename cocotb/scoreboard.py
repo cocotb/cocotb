@@ -82,8 +82,8 @@ class Scoreboard:
                                "than a list" % str(monitor))
                 continue
             if len(expected_output):
-                self.log.warn("Still expecting %d transactions on %s" %
-                              (len(expected_output), str(monitor)))
+                self.log.warning("Still expecting %d transactions on %s" %
+                                 (len(expected_output), str(monitor)))
                 for index, transaction in enumerate(expected_output):
                     self.log.info("Expecting %d:\n%s" %
                                   (index, hexdump(str(transaction))))

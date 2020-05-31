@@ -846,4 +846,4 @@ class Scheduler:
             raise Exception("Cleanup() called outside of the main thread")
 
         for ext in self._pending_threads:
-            self.log.warn("Waiting for %s to exit", ext.thread)
+            self.log.warning("Waiting for %s to exit", ext.thread)
