@@ -114,7 +114,7 @@ class XGMII(Monitor):
                                   " ".join(["%02X" % b for b in bytes]))
                     self.log.info("ctrl = :" +
                                   " ".join(["%s" % str(c) for c in ctrl]))
-                    self._pkt = b""
+                    self._pkt = bytearray()
                 return False
 
             self._pkt.append(byte)
@@ -123,7 +123,7 @@ class XGMII(Monitor):
     @cocotb.coroutine
     def _monitor_recv(self):
         clk = RisingEdge(self.clock)
-        self._pkt = b""
+        self._pkt = bytearray()
 
         while True:
             yield clk
@@ -154,7 +154,7 @@ class XGMII(Monitor):
                     self.log.error("Received a runt frame!")
                 if len(self._pkt) < 12:
                     self.log.error("No data to extract")
-                    self._pkt = b""
+                    self._pkt = bytearray()
                     continue
 
                 preamble_sfd = self._pkt[0:7]
@@ -164,7 +164,7 @@ class XGMII(Monitor):
                 if preamble_sfd != _PREAMBLE_SFD:
                     self.log.error("Got a frame with unknown preamble/SFD")
                     self.log.error(hexdump(preamble_sfd))
-                    self._pkt = b""
+                    self._pkt = bytearray()
                     continue
 
                 expected_crc = struct.pack("<I",
@@ -183,4 +183,4 @@ class XGMII(Monitor):
                     p = payload
 
                 self._recv(p)
-                self._pkt = b""
+                self._pkt = bytearray()
