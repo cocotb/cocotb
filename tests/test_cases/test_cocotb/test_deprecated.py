@@ -8,7 +8,7 @@ from common import assert_raises
 
 
 @contextmanager
-def assert_deprecated():
+def assert_deprecated(warning_category=DeprecationWarning):
     warns = []
     try:
         with warnings.catch_warnings(record=True) as warns:
@@ -17,7 +17,8 @@ def assert_deprecated():
             yield warns  # note: not a cocotb yield, but a contextlib one!
     finally:
         assert len(warns) == 1
-        assert issubclass(warns[0].category, DeprecationWarning), "Expected DeprecationWarning"
+        msg = "Expected {}".format(warning_category.__qualname__)
+        assert issubclass(warns[0].category, warning_category), msg
 
 
 @cocotb.test()
@@ -41,6 +42,29 @@ async def test_unicode_handle_assignment_deprecated(dut):
         dut.stream_in_string <= "Bad idea"
         await cocotb.triggers.ReadWrite()
     assert "bytes" in str(warns[0].message)
+
+
+@cocotb.test()
+async def test_convert_handle_to_string_deprecated(dut):
+    dut.stream_in_data <= 0
+    await cocotb.triggers.Timer(1, units='ns')
+
+    with assert_deprecated(FutureWarning) as warns:
+        as_str = str(dut.stream_in_data)
+    assert "_path" in str(warns[0].message)
+
+    # in future this will be ` == dut._path`
+    assert as_str == str(dut.stream_in_data.value)
+
+    if cocotb.LANGUAGE == "verilog":
+        # the `NUM_OF_MODULES` parameter is only present in the verilog design
+        with assert_deprecated(FutureWarning) as warns:
+            as_str = str(dut.NUM_OF_MODULES)
+
+        assert "_path" in str(warns[0].message)
+
+        # in future this will be ` == dut._path`
+        assert as_str == str(dut.NUM_OF_MODULES.value)
 
 
 @cocotb.test()

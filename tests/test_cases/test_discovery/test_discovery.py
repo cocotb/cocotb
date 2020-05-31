@@ -103,7 +103,7 @@ def access_signal(dut):
     yield Timer(10)
     if dut.stream_in_data.value.integer != 1:
         raise TestError("%s.%s != %d" %
-                        (str(dut.stream_in_data),
+                        (dut.stream_in_data._path,
                          dut.stream_in_data.value.integer, 1))
 
 
@@ -116,12 +116,12 @@ def access_single_bit(dut):
     dut.stream_in_data <= 0
     yield Timer(10)
     dut._log.info("%s = %d bits" %
-                  (str(dut.stream_in_data), len(dut.stream_in_data)))
+                  (dut.stream_in_data._path, len(dut.stream_in_data)))
     dut.stream_in_data[2] <= 1
     yield Timer(10)
     if dut.stream_out_data_comb.value.integer != (1 << 2):
         raise TestError("%s.%s != %d" %
-                        (str(dut.stream_out_data_comb),
+                        (dut.stream_out_data_comb._path,
                          dut.stream_out_data_comb.value.integer, (1 << 2)))
 
 
@@ -134,12 +134,12 @@ def access_single_bit_assignment(dut):
     dut.stream_in_data = 0
     yield Timer(10)
     dut._log.info("%s = %d bits" %
-                  (str(dut.stream_in_data), len(dut.stream_in_data)))
+                  (dut.stream_in_data._path, len(dut.stream_in_data)))
     dut.stream_in_data[2] = 1
     yield Timer(10)
     if dut.stream_out_data_comb.value.integer != (1 << 2):
         raise TestError("%s.%s != %d" %
-                        (str(dut.stream_out_data_comb),
+                        (dut.stream_out_data_comb._path,
                          dut.stream_out_data_comb.value.integer, (1 << 2)))
 
 
@@ -148,7 +148,7 @@ def access_single_bit_erroneous(dut):
     """Access a non-existent single bit"""
     yield Timer(10)
     dut._log.info("%s = %d bits" %
-                  (str(dut.stream_in_data), len(dut.stream_in_data)))
+                  (dut.stream_in_data._path, len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
     yield Timer(10)
@@ -208,7 +208,7 @@ def access_string_vhdl(dut):
     tlog = logging.getLogger("cocotb.test")
     yield Timer(10)
     constant_string = dut.isample_module1.EXAMPLE_STRING
-    tlog.info("%r is %s" % (constant_string, str(constant_string)))
+    tlog.info("%r is %s" % (constant_string, constant_string.value))
     if not isinstance(constant_string, ConstantObject):
         raise TestFailure("EXAMPLE_STRING was not constant")
     if constant_string != b"TESTING":
@@ -226,7 +226,7 @@ def access_string_vhdl(dut):
     yield Timer(10)
 
     if variable_string != test_string:
-        raise TestFailure("%r %s != '%s'" % (variable_string, str(variable_string), test_string))
+        raise TestFailure("%r %s != '%s'" % (variable_string, variable_string.value, test_string))
 
     test_string = b"longer_than_the_array"
     tlog.info("Test writing over size with '%s'" % test_string)
@@ -239,7 +239,7 @@ def access_string_vhdl(dut):
     test_string = test_string[:len(variable_string)]
 
     if variable_string != test_string:
-        raise TestFailure("%r %s != '%s'" % (variable_string, str(variable_string), test_string))
+        raise TestFailure("%r %s != '%s'" % (variable_string, variable_string.value, test_string))
 
     tlog.info("Test read access to a string character")
 
@@ -266,7 +266,7 @@ def access_string_vhdl(dut):
 
     test_string = test_string.upper()
 
-    result = str(variable_string)
+    result = variable_string.value
     tlog.info("After setting bytes of string value is %s" % result)
     if variable_string != test_string:
         raise TestFailure("%r %s != '%s'" % (variable_string, result, test_string))
@@ -282,7 +282,7 @@ def access_const_string_verilog(dut):
     string_const = dut.STRING_CONST
 
     yield Timer(10, 'ns')
-    tlog.info("%r is %s" % (string_const, str(string_const)))
+    tlog.info("%r is %s" % (string_const, string_const.value))
     if not isinstance(string_const, StringObject):
         raise TestFailure("STRING_CONST was not StringObject")
     if string_const != b"TESTING_CONST":
@@ -303,7 +303,7 @@ def access_var_string_verilog(dut):
     string_var = dut.STRING_VAR
 
     yield Timer(10, 'ns')
-    tlog.info("%r is %s" % (string_var, str(string_var)))
+    tlog.info("%r is %s" % (string_var, string_var.value))
     if not isinstance(string_var, StringObject):
         raise TestFailure("STRING_VAR was not StringObject")
     if string_var != b"TESTING_VAR":
@@ -326,7 +326,7 @@ def access_constant_boolean(dut):
     if not isinstance(constant_boolean, ConstantObject):
         raise TestFailure("dut.stream_in_int.EXAMPLE_BOOL is not a ConstantObject")
 
-    tlog.info("Value of %s is %d" % (constant_boolean, constant_boolean))
+    tlog.info("Value of %s is %d" % (constant_boolean._path, constant_boolean.value))
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
@@ -355,7 +355,7 @@ def access_boolean(dut):
     if length != 1:
         raise TestFailure("Length should be 1 not %d" % length)
 
-    tlog.info("Value of %s is %d" % (boolean, boolean))
+    tlog.info("Value of %s is %d" % (boolean._path, boolean.value))
 
     curr_val = int(boolean)
     output_bool = dut.stream_out_bool
@@ -366,7 +366,7 @@ def access_boolean(dut):
 
     yield Timer(1)
 
-    tlog.info("Value of %s is now %d" % (output_bool, output_bool))
+    tlog.info("Value of %s is now %d" % (output_bool._path, output_bool.value))
     if (int(curr_val) == int(output_bool)):
         raise TestFailure("Value did not propagate")
 
@@ -391,7 +391,7 @@ def skip_a_test(dut):
     """This test shouldn't execute"""
     yield Timer(10)
     dut._log.info("%s = %d bits" %
-                  (str(dut.stream_in_data), len(dut.stream_in_data)))
+                  (dut.stream_in_data._path, len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
     yield Timer(10)

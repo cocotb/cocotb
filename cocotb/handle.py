@@ -479,7 +479,12 @@ class ConstantObject(NonHierarchyObject):
         return self._value
 
     def __str__(self):
-        return str(self.value)
+        if isinstance(self.value, bytes):
+            StringObject._emit_str_warning(self)
+            return self.value.decode('ascii')
+        else:
+            ModifiableObject._emit_str_warning(self)
+            return str(self.value)
 
 
 class NonHierarchyIndexableObject(NonHierarchyObject):
@@ -691,7 +696,15 @@ class ModifiableObject(NonConstantObject):
     def __int__(self):
         return int(self.value)
 
+    def _emit_str_warning(self):
+        warnings.warn(
+            "`str({t})` is deprecated, and in future will return `{t}._path`. "
+            "To get a string representation of the value, use `str({t}.value)`."
+            .format(t=type(self).__qualname__),
+            FutureWarning, stacklevel=3)
+
     def __str__(self):
+        self._emit_str_warning()
         return str(self.value)
 
 
@@ -835,6 +848,17 @@ class StringObject(ModifiableObject):
     @ModifiableObject.value.getter
     def value(self) -> bytes:
         return self._handle.get_signal_val_str()
+
+    def _emit_str_warning(self):
+        warnings.warn(
+            "`str({t})` is deprecated, and in future will return `{t}._path`. "
+            "To access the `bytes` value of this handle, use `{t}.value`."
+            .format(t=type(self).__qualname__),
+            FutureWarning, stacklevel=3)
+
+    def __str__(self):
+        self._emit_str_warning()
+        return self.value.decode('ascii')
 
 
 _handle2obj = {}
