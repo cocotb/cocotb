@@ -79,7 +79,7 @@ ifeq ($(MAKECMDGOALS),help)
     help_vars := $(subst %,${newline},$(shell cocotb-config --help-vars | tr \\n %))
     $(info ${help_vars})
     # is there a cleaner way to exit here?
-    $(error "Stopping after printing help")
+    $(error Stopping after printing help)
 endif
 
 # Safety net to bail out early if users go into this Makefile without making
@@ -109,7 +109,8 @@ HAVE_SIMULATOR = $(shell if [ -f $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.$(S
 AVAILABLE_SIMULATORS = $(patsubst .%,%,$(suffix $(wildcard $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.*)))
 
 ifeq ($(HAVE_SIMULATOR),0)
-    $(error "Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! Available simulators: $(AVAILABLE_SIMULATORS)")
+    $(error Couldn't find makefile for simulator: "$(SIM_LOWERCASE)"! \
+            Available simulators: $(AVAILABLE_SIMULATORS))
 endif
 
 include $(COCOTB_MAKEFILES_DIR)/simulators/Makefile.$(SIM_LOWERCASE)
