@@ -1,1 +1,1 @@
-Certain methods on the :mod:`cocotb.simulator` Python module now throw a :exc`RuntimeError` when no simulator is present, making it safe to use :mod:`cocotb` without a simulator present.
+Certain methods on the :mod:`cocotb.simulator` Python module now throw a :exc:`RuntimeError` when no simulator is present, making it safe to use :mod:`cocotb` without a simulator present.
