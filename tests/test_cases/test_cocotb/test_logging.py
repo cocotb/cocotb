@@ -4,9 +4,14 @@
 """
 Tests for the cocotb logger
 """
+
 import cocotb
+import cocotb.log
 from cocotb.triggers import Timer
+
+from common import assert_raises
 import logging
+import os
 
 
 class StrCallCounter(object):
@@ -39,3 +44,39 @@ def test_logging_with_args(dut):
     dut._log.warning("Testing multiple line\nmessage")
 
     yield Timer(100)  # Make it do something with time
+
+
+@cocotb.test()
+def test_logging_default_config(dut):
+    # The cocotb.log module is shadowed by an instance of
+    # cocotb.log.SimBaseLog()
+    from cocotb.log import default_config as log_default_config
+
+    cocotb_log = logging.getLogger('cocotb')
+
+    # Save pre-test configuration
+    log_level_prev = cocotb_log.level
+    os_environ_prev = os.environ.copy()
+
+    try:
+        # Set a valid log level
+        os.environ['COCOTB_LOG_LEVEL'] = 'DEBUG'
+        log_default_config()
+        assert cocotb_log.level == logging.DEBUG, cocotb_log.level
+
+        # Try to set log level to an invalid log level
+        os.environ['COCOTB_LOG_LEVEL'] = 'INVALID_LOG_LEVEL'
+        with assert_raises(ValueError):
+            log_default_config()
+
+        # Try to set log level to a valid log level with wrong capitalization
+        os.environ['COCOTB_LOG_LEVEL'] = 'error'
+        log_default_config()
+        assert cocotb_log.level == logging.ERROR, cocotb_log.level
+
+    finally:
+        # Restore pre-test configuration
+        os.environ = os_environ_prev
+        cocotb_log.level = log_level_prev
+
+    yield Timer(1)

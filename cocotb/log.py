@@ -52,6 +52,9 @@ _FILENAME_CHARS = 20  # noqa
 _LINENO_CHARS   = 4  # noqa
 _FUNCNAME_CHARS = 31  # noqa
 
+# Default log level if not overwritten by the user.
+_COCOTB_LOG_LEVEL_DEFAULT = "INFO"
+
 
 def default_config():
     """ Apply the default cocotb log formatting to the root logger.
@@ -86,18 +89,25 @@ def default_config():
 
     # apply level settings for cocotb
     log = logging.getLogger('cocotb')
-    level = os.getenv("COCOTB_LOG_LEVEL", "INFO")
+
     try:
-        _default_log = getattr(logging, level)
-    except AttributeError:
-        log.error("Unable to set logging level to %r" % level)
-        _default_log = logging.INFO
-    log.setLevel(_default_log)
+        # All log levels are upper case, convert the user input for convenience.
+        level = os.environ["COCOTB_LOG_LEVEL"].upper()
+    except KeyError:
+        level = _COCOTB_LOG_LEVEL_DEFAULT
+
+    try:
+        log.setLevel(level)
+    except ValueError:
+        valid_levels = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG')
+        raise ValueError("Invalid log level %r passed through the "
+                         "COCOTB_LOG_LEVEL environment variable. Valid log "
+                         "levels: %s" % (level, ', '.join(valid_levels)))
 
     # Notify GPI of log level, which it uses as an optimization to avoid
     # calling into Python.
     from cocotb import simulator
-    simulator.log_level(_default_log)
+    simulator.log_level(log.getEffectiveLevel())
 
 
 class SimBaseLog(logging.getLoggerClass()):
