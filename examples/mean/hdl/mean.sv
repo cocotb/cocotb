@@ -7,10 +7,16 @@
 
 `timescale 1ns/1ps
 
+`ifdef VERILATOR  // make parameter readable from VPI
+  `define VL_RD /*verilator public_flat_rd*/
+`else
+  `define VL_RD
+`endif
+
 
 module mean #(
-  parameter int BUS_WIDTH = 4,
-  parameter int DATA_WIDTH = 6
+  parameter int BUS_WIDTH  `VL_RD = 4,
+  parameter int DATA_WIDTH `VL_RD = 6
 ) (
   input  logic                  clk,
   input  logic                  rst,
@@ -60,13 +66,17 @@ module mean #(
   assign o_data = s_sum >> $clog2(BUS_WIDTH);
 
 
+`ifndef VERILATOR
   initial begin
     int idx;
     $dumpfile("dump.vcd");
     $dumpvars(0, mean);
-    for (idx = 0; idx < BUS_WIDTH; idx++)
+  `ifdef __ICARUS__
+    for (idx = 0; idx < BUS_WIDTH; idx++) begin
         $dumpvars(0, i_data[idx]);
-    #1;
+    end
+  `endif
   end
+`endif
 
 endmodule

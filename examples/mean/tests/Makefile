@@ -21,4 +21,8 @@ ifneq ($(filter $(SIM),ius xcelium),)
     SIM_ARGS += -v93
 endif
 
+ifeq ($(SIM),verilator)
+    EXTRA_ARGS += $(PWD)/verilator_waiver.vlt
+endif
+
 include $(shell cocotb-config --makefiles)/Makefile.sim
