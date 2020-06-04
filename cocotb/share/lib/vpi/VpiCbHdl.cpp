@@ -713,10 +713,10 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
         return;
     }
 
-    LOG_DEBUG("Created iterator working from type %d %s (%s)",
-              *one2many,
+    LOG_DEBUG("Created iterator working from '%s' with type %s(%d)",
               vpi_get_str(vpiFullName, vpi_hdl),
-              vpi_get_str(vpiType, vpi_hdl));
+              vpi_get_str(vpiType, vpi_hdl),
+              type);
 
     m_iterator = iterator;
 }
