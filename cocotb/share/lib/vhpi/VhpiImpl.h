@@ -232,7 +232,7 @@ public:
 private:
     vhpiHandleT m_iterator;
     vhpiHandleT m_iter_obj;
-    static GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> iterate_over;      /* Possible mappings */
+    static std::map<vhpiClassKindT, std::vector<vhpiOneToManyT>> iterate_over;      /* Possible mappings */
     std::vector<vhpiOneToManyT> *selected; /* Mapping currently in use */
     std::vector<vhpiOneToManyT>::iterator one2many;
 };
