@@ -418,7 +418,6 @@ private:
 class FliIterator : public GpiIterator {
 public:
     enum OneToMany {
-        OTM_END = 0,
         OTM_CONSTANTS,  // include Generics
         OTM_SIGNALS,
         OTM_REGIONS,
@@ -434,7 +433,7 @@ private:
     void populate_handle_list(OneToMany childType);
 
 private:
-    static GpiIteratorMapping<int, OneToMany> iterate_over;      /* Possible mappings */
+    static std::map<int, std::vector<OneToMany>> iterate_over;   /* Possible mappings */
     std::vector<OneToMany> *selected;                            /* Mapping currently in use */
     std::vector<OneToMany>::iterator one2many;
 

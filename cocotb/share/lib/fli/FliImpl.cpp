@@ -576,63 +576,60 @@ GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type
     return new_iter;
 }
 
-void fli_mappings(GpiIteratorMapping<int, FliIterator::OneToMany> &map)
-{
-    FliIterator::OneToMany region_options[] = {
-        FliIterator::OTM_CONSTANTS,
-        FliIterator::OTM_SIGNALS,
-        FliIterator::OTM_REGIONS,
-        FliIterator::OTM_END,
-    };
-    map.add_to_options(accArchitecture, &region_options[0]);
-    map.add_to_options(accEntityVitalLevel0, &region_options[0]);
-    map.add_to_options(accArchVitalLevel0, &region_options[0]);
-    map.add_to_options(accArchVitalLevel1, &region_options[0]);
-    map.add_to_options(accBlock, &region_options[0]);
-    map.add_to_options(accCompInst, &region_options[0]);
-    map.add_to_options(accDirectInst, &region_options[0]);
-    map.add_to_options(accinlinedBlock, &region_options[0]);
-    map.add_to_options(accinlinedinnerBlock, &region_options[0]);
-    map.add_to_options(accGenerate, &region_options[0]);
-    map.add_to_options(accIfGenerate, &region_options[0]);
+decltype(FliIterator::iterate_over) FliIterator::iterate_over = []{
+    std::initializer_list<FliIterator::OneToMany> region_options;
+    std::initializer_list<FliIterator::OneToMany> signal_options;
+    std::initializer_list<FliIterator::OneToMany> variable_options;
+
+    return decltype(FliIterator::iterate_over) {
+        {accArchitecture, region_options = {
+            FliIterator::OTM_CONSTANTS,
+            FliIterator::OTM_SIGNALS,
+            FliIterator::OTM_REGIONS,
+        }},
+        {accEntityVitalLevel0, region_options},
+        {accArchVitalLevel0, region_options},
+        {accArchVitalLevel1, region_options},
+        {accBlock, region_options},
+        {accCompInst, region_options},
+        {accDirectInst, region_options},
+        {accinlinedBlock, region_options},
+        {accinlinedinnerBlock, region_options},
+        {accGenerate, region_options},
+        {accIfGenerate, region_options},
 #ifdef accElsifGenerate
-    map.add_to_options(accElsifGenerate, &region_options[0]);
+        {accElsifGenerate, region_options},
 #endif
 #ifdef accElseGenerate
-    map.add_to_options(accElseGenerate, &region_options[0]);
+        {accElseGenerate, region_options},
 #endif
 #ifdef accCaseGenerate
-    map.add_to_options(accCaseGenerate, &region_options[0]);
+        {accCaseGenerate, region_options},
 #endif
 #ifdef accCaseOTHERSGenerate
-    map.add_to_options(accCaseOTHERSGenerate, &region_options[0]);
+        {accCaseOTHERSGenerate, region_options},
 #endif
-    map.add_to_options(accForGenerate, &region_options[0]);
-    map.add_to_options(accConfiguration, &region_options[0]);
+        {accForGenerate, region_options},
+        {accConfiguration, region_options},
 
-    FliIterator::OneToMany signal_options[] = {
-        FliIterator::OTM_SIGNAL_SUB_ELEMENTS,
-        FliIterator::OTM_END,
+        {accSignal, signal_options = {
+            FliIterator::OTM_SIGNAL_SUB_ELEMENTS,
+        }},
+        {accSignalBit, signal_options},
+        {accSignalSubComposite, signal_options},
+        {accAliasSignal, signal_options},
+
+        {accVariable, variable_options = {
+            FliIterator::OTM_VARIABLE_SUB_ELEMENTS,
+        }},
+        {accGeneric, variable_options},
+        {accGenericConstant, variable_options},
+        {accAliasConstant, variable_options},
+        {accAliasGeneric, variable_options},
+        {accAliasVariable, variable_options},
+        {accVHDLConstant, variable_options},
     };
-    map.add_to_options(accSignal, &signal_options[0]);
-    map.add_to_options(accSignalBit, &signal_options[0]);
-    map.add_to_options(accSignalSubComposite, &signal_options[0]);
-    map.add_to_options(accAliasSignal, &signal_options[0]);
-
-    FliIterator::OneToMany variable_options[] = {
-        FliIterator::OTM_VARIABLE_SUB_ELEMENTS,
-        FliIterator::OTM_END,
-    };
-    map.add_to_options(accVariable, &variable_options[0]);
-    map.add_to_options(accGeneric, &variable_options[0]);
-    map.add_to_options(accGenericConstant, &variable_options[0]);
-    map.add_to_options(accAliasConstant, &variable_options[0]);
-    map.add_to_options(accAliasGeneric, &variable_options[0]);
-    map.add_to_options(accAliasVariable, &variable_options[0]);
-    map.add_to_options(accVHDLConstant, &variable_options[0]);
-}
-
-GpiIteratorMapping<int, FliIterator::OneToMany> FliIterator::iterate_over(fli_mappings);
+}();
 
 FliIterator::FliIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(impl, hdl),
                                                                    m_vars(),
@@ -645,9 +642,13 @@ FliIterator::FliIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
 
     LOG_DEBUG("fli_iterator::Create iterator for %s of type %d:%s", m_parent->get_fullname().c_str(), type, acc_fetch_type_str(type));
 
-    if (NULL == (selected = iterate_over.get_options(type))) {
+    try {
+        selected = &iterate_over.at(type);
+    }
+    catch (std::out_of_range const&) {
         LOG_WARN("FLI: Implementation does not know how to iterate over %s(%d)",
                  acc_fetch_type_str(type), type);
+        selected = nullptr;
         return;
     }
 

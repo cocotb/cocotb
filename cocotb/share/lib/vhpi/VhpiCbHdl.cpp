@@ -919,81 +919,64 @@ VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.time = &vhpi_time;
 }
 
-void vhpi_mappings(GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> &map)
-{
-    /* vhpiRootInstK */
-    vhpiOneToManyT root_options[] = {
-        vhpiInternalRegions,
-        vhpiSigDecls,
-        vhpiVarDecls,
-        vhpiPortDecls,
-        vhpiGenericDecls,
-        vhpiConstDecls,
-        //    vhpiIndexedNames,
-        vhpiCompInstStmts,
-        vhpiBlockStmts,
-        (vhpiOneToManyT)0,
+decltype(VhpiIterator::iterate_over) VhpiIterator::iterate_over = []{
+    /* for reused lists */
+    std::initializer_list<vhpiOneToManyT> root_options;
+    std::initializer_list<vhpiOneToManyT> sig_options;
+    std::initializer_list<vhpiOneToManyT> simplesig_options;
+    std::initializer_list<vhpiOneToManyT> gen_options;
+
+    return decltype(VhpiIterator::iterate_over) {
+        {vhpiRootInstK, root_options = {
+            vhpiInternalRegions,
+            vhpiSigDecls,
+            vhpiVarDecls,
+            vhpiPortDecls,
+            vhpiGenericDecls,
+            vhpiConstDecls,
+            //    vhpiIndexedNames,
+            vhpiCompInstStmts,
+            vhpiBlockStmts,
+        }},
+        {vhpiCompInstStmtK, root_options},
+
+        {vhpiGenericDeclK, sig_options = {
+            vhpiIndexedNames,
+            vhpiSelectedNames,
+        }},
+        {vhpiSigDeclK, sig_options},
+        {vhpiSelectedNameK, sig_options},
+        {vhpiIndexedNameK, sig_options},
+        {vhpiPortDeclK, sig_options},
+
+        {vhpiCondSigAssignStmtK, simplesig_options = {
+            vhpiDecls,
+            vhpiInternalRegions,
+            vhpiSensitivitys,
+            vhpiStmts,
+        }},
+        {vhpiSimpleSigAssignStmtK, simplesig_options},
+        {vhpiSelectSigAssignStmtK, simplesig_options},
+
+        {vhpiForGenerateK, gen_options = {
+            vhpiDecls,
+            vhpiInternalRegions,
+            vhpiSigDecls,
+            vhpiVarDecls,
+            vhpiConstDecls,
+            vhpiCompInstStmts,
+            vhpiBlockStmts,
+        }},
+        {vhpiIfGenerateK, gen_options},
+        {vhpiBlockStmtK, gen_options},
+
+        {vhpiConstDeclK, {
+            vhpiAttrSpecs,
+            vhpiIndexedNames,
+            vhpiSelectedNames,
+        }},
     };
-    map.add_to_options(vhpiRootInstK, &root_options[0]);
-
-    /* vhpiSigDeclK */
-    vhpiOneToManyT sig_options[] = {
-        vhpiIndexedNames,
-        vhpiSelectedNames,
-        (vhpiOneToManyT)0,
-    };
-    map.add_to_options(vhpiGenericDeclK, &sig_options[0]);
-    map.add_to_options(vhpiSigDeclK, &sig_options[0]);
-
-    /* vhpiIndexedNameK */
-    map.add_to_options(vhpiSelectedNameK, &sig_options[0]);
-    map.add_to_options(vhpiIndexedNameK, &sig_options[0]);
-
-    /* vhpiCompInstStmtK */
-    map.add_to_options(vhpiCompInstStmtK, &root_options[0]);
-
-    /* vhpiSimpleSigAssignStmtK */
-    vhpiOneToManyT simplesig_options[] = {
-        vhpiDecls,
-        vhpiInternalRegions,
-        vhpiSensitivitys,
-        vhpiStmts,
-        (vhpiOneToManyT)0,
-    };
-    map.add_to_options(vhpiCondSigAssignStmtK, &simplesig_options[0]);
-    map.add_to_options(vhpiSimpleSigAssignStmtK, &simplesig_options[0]);
-    map.add_to_options(vhpiSelectSigAssignStmtK, &simplesig_options[0]);
-
-    /* vhpiPortDeclK */
-    map.add_to_options(vhpiPortDeclK, &sig_options[0]);
-
-    /* vhpiForGenerateK */
-    vhpiOneToManyT gen_options[] = {
-        vhpiDecls,
-        vhpiInternalRegions,
-        vhpiSigDecls,
-        vhpiVarDecls,
-        vhpiConstDecls,
-        vhpiCompInstStmts,
-        vhpiBlockStmts,
-        (vhpiOneToManyT)0,
-    };
-    map.add_to_options(vhpiForGenerateK, &gen_options[0]);
-    map.add_to_options(vhpiIfGenerateK, &gen_options[0]);
-    map.add_to_options(vhpiBlockStmtK, &gen_options[0]);
-
-    /* vhpiConstDeclK */
-    vhpiOneToManyT const_options[] = {
-        vhpiAttrSpecs,
-        vhpiIndexedNames,
-        vhpiSelectedNames,
-        (vhpiOneToManyT)0,
-    };
-    map.add_to_options(vhpiConstDeclK, &const_options[0]);
-
-}
-
-GpiIteratorMapping<vhpiClassKindT, vhpiOneToManyT> VhpiIterator::iterate_over(vhpi_mappings);
+}();
 
 VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(impl, hdl),
                                                                      m_iterator(NULL),
@@ -1003,9 +986,13 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
     vhpiHandleT vhpi_hdl = m_parent->get_handle<vhpiHandleT>();
 
     vhpiClassKindT type = (vhpiClassKindT)vhpi_get(vhpiKindP, vhpi_hdl);
-    if (NULL == (selected = iterate_over.get_options(type))) {
+    try {
+        selected = &iterate_over.at(type);
+    }
+    catch (std::out_of_range const&) {
         LOG_WARN("VHPI: Implementation does not know how to iterate over %s(%d)",
                  vhpi_get_str(vhpiKindStrP, vhpi_hdl), type);
+        selected = nullptr;
         return;
     }
 

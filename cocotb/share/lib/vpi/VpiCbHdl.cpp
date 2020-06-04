@@ -559,117 +559,94 @@ VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
     cb_data.reason = cbNextSimTime;
 }
 
-void vpi_mappings(GpiIteratorMapping<int32_t, int32_t> &map)
-{
-    /* vpiModule */
-    int32_t module_options[] = {
-        //vpiModule,            // Aldec SEGV on mixed language
-        //vpiModuleArray,       // Aldec SEGV on mixed language
-        //vpiIODecl,            // Don't care about these
-        vpiNet,
-        vpiNetArray,
-        vpiReg,
-        vpiRegArray,
-        vpiMemory,
-        vpiIntegerVar,
-        vpiRealVar,
-        vpiRealNet,
-        vpiStructVar,
-        vpiStructNet,
-        //vpiVariables          // Aldec SEGV on plain Verilog
-        vpiNamedEvent,
-        vpiNamedEventArray,
-        vpiParameter,
-        //vpiSpecParam,         // Don't care
-        //vpiParamAssign,       // Aldec SEGV on mixed language
-        //vpiDefParam,          // Don't care
-        vpiPrimitive,
-        vpiPrimitiveArray,
-        //vpiContAssign,        // Don't care
-        vpiProcess,             // Don't care
-        vpiModPath,
-        vpiTchk,
-        vpiAttribute,
-        vpiPort,
-        vpiInternalScope,
-        //vpiInterface,         // Aldec SEGV on mixed language
-        //vpiInterfaceArray,    // Aldec SEGV on mixed language
-        0
-    };
-    map.add_to_options(vpiModule, &module_options[0]);
-    map.add_to_options(vpiGenScope, &module_options[0]);
+decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = []{
+    /* for reused lists */
+    std::initializer_list<int32_t> module_options;
+    std::initializer_list<int32_t> struct_options;
 
-    int32_t struct_options[] = {
-        vpiNet,
+    return decltype(VpiIterator::iterate_over) {
+        {vpiModule, module_options = {
+            //vpiModule,            // Aldec SEGV on mixed language
+            //vpiModuleArray,       // Aldec SEGV on mixed language
+            //vpiIODecl,            // Don't care about these
+            vpiNet,
+            vpiNetArray,
+            vpiReg,
+            vpiRegArray,
+            vpiMemory,
+            vpiIntegerVar,
+            vpiRealVar,
+            vpiRealNet,
+            vpiStructVar,
+            vpiStructNet,
+            //vpiVariables          // Aldec SEGV on plain Verilog
+            vpiNamedEvent,
+            vpiNamedEventArray,
+            vpiParameter,
+            //vpiSpecParam,         // Don't care
+            //vpiParamAssign,       // Aldec SEGV on mixed language
+            //vpiDefParam,          // Don't care
+            vpiPrimitive,
+            vpiPrimitiveArray,
+            //vpiContAssign,        // Don't care
+            vpiProcess,             // Don't care
+            vpiModPath,
+            vpiTchk,
+            vpiAttribute,
+            vpiPort,
+            vpiInternalScope,
+            //vpiInterface,         // Aldec SEGV on mixed language
+            //vpiInterfaceArray,    // Aldec SEGV on mixed language
+        }},
+        {vpiGenScope, module_options},
+
+        {vpiStructVar, struct_options = {
+            vpiNet,
 #ifndef IUS
-        vpiNetArray,
+            vpiNetArray,
 #endif
-        vpiReg,
-        vpiRegArray,
-        vpiMemory,
-        vpiParameter,
-        vpiPrimitive,
-        vpiPrimitiveArray,
-        vpiAttribute,
-        vpiMember,
-        0
-    };
-    map.add_to_options(vpiStructVar, &struct_options[0]);
-    map.add_to_options(vpiStructNet, &struct_options[0]);
+            vpiReg,
+            vpiRegArray,
+            vpiMemory,
+            vpiParameter,
+            vpiPrimitive,
+            vpiPrimitiveArray,
+            vpiAttribute,
+            vpiMember,
+        }},
+        {vpiStructNet, struct_options},
 
-    /* vpiNet */
-    int32_t net_options[] = {
-        //vpiContAssign,        // Driver and load handled separately
-        //vpiPrimTerm,
-        //vpiPathTerm,
-        //vpiTchkTerm,
-        //vpiDriver,
-        //vpiLocalDriver,
-        //vpiLoad,
-        //vpiLocalLoad,
-        vpiNetBit,
-        0
+        {vpiNet, {
+            //vpiContAssign,        // Driver and load handled separately
+            //vpiPrimTerm,
+            //vpiPathTerm,
+            //vpiTchkTerm,
+            //vpiDriver,
+            //vpiLocalDriver,
+            //vpiLoad,
+            //vpiLocalLoad,
+            vpiNetBit,
+        }},
+        {vpiNetArray, {
+            vpiNet,
+        }},
+        {vpiRegArray, {
+            vpiReg,
+        }},
+        {vpiMemory, {
+            vpiMemoryWord,
+        }},
+        {vpiPort, {
+            vpiPortBit,
+        }},
+        {vpiGate, {
+            vpiPrimTerm,
+            vpiTableEntry,
+            vpiUdpDefn,
+        }},
     };
-    map.add_to_options(vpiNet, &net_options[0]);
+}();
 
-    /* vpiNetArray */
-    int32_t netarray_options[] = {
-        vpiNet,
-        0
-    };
-    map.add_to_options(vpiNetArray, &netarray_options[0]);
-
-    /* vpiRegArray */
-    int32_t regarray_options[] = {
-        vpiReg,
-        0
-    };
-    map.add_to_options(vpiRegArray, &regarray_options[0]);
-
-    /* vpiMemory */
-    int32_t memory_options[] = {
-        vpiMemoryWord,
-        0
-    };
-    map.add_to_options(vpiMemory, &memory_options[0]);
-
-    /* vpiPort */
-    int32_t port_options[] = {
-        vpiPortBit,
-        0
-    };
-    map.add_to_options(vpiPort, &port_options[0]);
-
-    int32_t gate_options[] = {
-        vpiPrimTerm,
-        vpiTableEntry,
-        vpiUdpDefn,
-        0
-    };
-    map.add_to_options(vpiGate, &gate_options[0]);
-}
-
-GpiIteratorMapping<int32_t, int32_t> VpiIterator::iterate_over(vpi_mappings);
 
 VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(impl, hdl),
                                                                    m_iterator(NULL)
@@ -678,9 +655,13 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator(i
     vpiHandle vpi_hdl = m_parent->get_handle<vpiHandle>();
 
     int type = vpi_get(vpiType, vpi_hdl);
-    if (NULL == (selected = iterate_over.get_options(type))) {
+    try {
+        selected = &iterate_over.at(type);
+    }
+    catch (std::out_of_range const&) {
         LOG_WARN("VPI: Implementation does not know how to iterate over %s(%d)",
                   vpi_get_str(vpiType, vpi_hdl), type);
+        selected = nullptr;
         return;
     }
 

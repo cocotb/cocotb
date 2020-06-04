@@ -200,7 +200,7 @@ public:
 
 private:
     vpiHandle m_iterator;
-    static GpiIteratorMapping<int32_t, int32_t> iterate_over;      /* Possible mappings */
+    static std::map<int32_t, std::vector<int32_t>> iterate_over;  /* Possible mappings */
     std::vector<int32_t> *selected; /* Mapping currently in use */
     std::vector<int32_t>::iterator one2many;
 };

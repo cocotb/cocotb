@@ -224,40 +224,6 @@ protected:
     GpiObjHdl *m_parent;
 };
 
-template <class Ti, class Tm> class GpiIteratorMapping {
-public:
-    GpiIteratorMapping(void(*populate)(GpiIteratorMapping<Ti, Tm>&)) {
-        populate(*this);
-    }
-public:
-    std::vector<Tm>* get_options(Ti type);
-    void add_to_options(Ti type, Tm *options);
-private:
-    std::map<Ti, std::vector<Tm> > options_map;
-};
-
-template <class Ti, class Tm> void GpiIteratorMapping<Ti, Tm>::add_to_options(Ti type, Tm *options)
-{
-    std::vector<Tm> option_vec;
-    Tm *ptr = options;
-    while (*ptr) {
-        option_vec.push_back(*ptr);
-        ptr++;
-    }
-    options_map[type] = option_vec;
-}
-
-template <class Ti, class Tm> std::vector<Tm> * GpiIteratorMapping<Ti, Tm>::get_options(Ti type)
-{
-    typename std::map<Ti, std::vector<Tm> >::iterator valid = options_map.find(type);
-
-    if (options_map.end() == valid) {
-        return NULL;
-    } else {
-        return &valid->second;
-    }
-}
-
 
 class GpiImplInterface {
 public:
