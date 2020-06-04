@@ -241,7 +241,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
 
     new_obj->initialise(name, fq_name);
 
-    LOG_DEBUG("VPI: Created object with type was %s(%d)",
+    LOG_DEBUG("VPI: Created GPI object from type %s(%d)",
               vpi_get_str(vpiType, new_hdl), type);
 
     return new_obj;
