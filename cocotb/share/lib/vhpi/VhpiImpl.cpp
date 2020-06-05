@@ -938,8 +938,7 @@ void handle_vhpi_callback(const vhpiCbDataT *cb_data)
     VhpiCbHdl *cb_hdl = (VhpiCbHdl*)cb_data->user_data;
 
     if (!cb_hdl) {
-        LOG_CRITICAL("VHPI: Callback data corrupted: ABORTING");
-        gpi_embed_end();
+        gpi_sim_end("VHPI: Callback data corrupted: ABORTING");
         return;
     }
 

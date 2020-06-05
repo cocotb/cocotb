@@ -1019,8 +1019,7 @@ void handle_fli_callback(void *data)
     FliProcessCbHdl *cb_hdl = (FliProcessCbHdl*)data;
 
     if (!cb_hdl) {
-        LOG_CRITICAL("FLI: Callback data corrupted: ABORTING");
-        gpi_embed_end();
+        gpi_sim_end("FLI: Callback data corrupted: ABORTING");
         return;
     }
 

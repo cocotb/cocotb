@@ -584,8 +584,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
     VpiCbHdl *cb_hdl = (VpiCbHdl*)cb_data->user_data;
 
     if (!cb_hdl) {
-        LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
-        gpi_embed_end();
+        gpi_sim_end("VPI: Callback data corrupted: ABORTING");
         return -1;
     }
 
