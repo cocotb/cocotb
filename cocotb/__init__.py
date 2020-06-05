@@ -126,6 +126,9 @@ The value passed to the Python default random number generator.
 See :envvar:`RANDOM_SEED` for details on how the value is computed.
 """
 
+_library_coverage = None
+""" used for cocotb library coverage """
+
 
 def fork(coro):
     """ Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use. """
@@ -154,6 +157,16 @@ def _initialise_testbench(argv_):
     comma-separated list of modules to be executed before the first test.
     """
     _rlock.acquire()
+
+    if "COCOTB_LIBRARY_COVERAGE" in os.environ:
+        import coverage
+
+        global _library_coverage
+        _library_coverage = coverage.coverage(
+            data_file=".coverage.cocotb",
+            branch=True,
+            include=["{}/*".format(os.path.dirname(__file__))])
+        _library_coverage.start()
 
     global argc, argv
     argv = argv_
