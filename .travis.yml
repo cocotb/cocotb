@@ -45,12 +45,14 @@ jobs:
         - sudo apt-get -y install gperf swig
         - if [[ ! -e "./iverilog/README.txt" ]]; then rm -rf iverilog; git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_3; fi
         - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
-        - pip install --upgrade tox virtualenv
+        - pip install --upgrade tox virtualenv codecov
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
         - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
         - tox -e py37
         - echo 'travis_fold:end:cocotb_py37'
+      after_success: &travis_linux_post
+        - codecov
 
     - stage: SimTests
       python: 3.8
@@ -59,6 +61,7 @@ jobs:
         - echo 'Running cocotb tests with Python 3.8 ...' && echo -en 'travis_fold:start:cocotb_py38'
         - tox -e py38
         - echo 'travis_fold:end:cocotb_py38'
+      after_success: *travis_linux_post
 
     - stage: SimTests
       python: 3.6.7
@@ -67,6 +70,7 @@ jobs:
         - echo 'Running cocotb tests with Python 3.6.7 ...' && echo -en 'travis_fold:start:cocotb_py36'
         - tox -e py36
         - echo 'travis_fold:end:cocotb_py36'
+      after_success: *travis_linux_post
 
     - stage: SimTests
       python: 3.7
