@@ -8,7 +8,7 @@ Useful for Jenkins.
 import os
 import sys
 import argparse
-from xml.etree import cElementTree as ET
+from xml.etree import ElementTree as ET
 
 
 def find_all(name, path):
