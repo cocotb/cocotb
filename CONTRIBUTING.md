@@ -85,6 +85,13 @@ All changes which should go into the main codebase of cocotb must follow this se
   # SPDX-License-Identifier: CC0-1.0
   ```
 
+Running tests locally
+---------------------
+
+Our tests are managed by `tox`, which runs both `pytest` and our system of makefiles.
+This exercises the contents of both the `tests` and `examples` directories.
+
+
 Managing of Issues and Pull Requests
 ------------------------------------
 
