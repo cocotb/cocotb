@@ -45,7 +45,7 @@ jobs:
         - sudo apt-get -y install gperf swig
         - if [[ ! -e "./iverilog/README.txt" ]]; then rm -rf iverilog; git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_3; fi
         - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
-        - pip install tox
+        - pip install --upgrade tox virtualenv
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
         - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
