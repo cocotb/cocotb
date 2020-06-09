@@ -45,7 +45,8 @@ jobs:
         - sudo apt-get -y install gperf swig
         - if [[ ! -e "./iverilog/README.txt" ]]; then rm -rf iverilog; git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_3; fi
         - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
-        - pip install --upgrade tox virtualenv codecov
+        - pip install -r dev-requirements.txt
+        - pip install codecov
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
         - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
@@ -86,7 +87,7 @@ jobs:
         - export CONDA_PATH="\$env:Path = ';C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin;C:\iverilog\bin;' + \$env:Path"
         - powershell "$CONDA_PATH; conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython"
         - powershell "$CONDA_PATH; conda install --yes virtualenv"
-        - powershell "$CONDA_PATH; pip install tox"
+        - powershell "$CONDA_PATH; pip install -r dev-requirements.txt"
       script:
         # TODO[gh-1372]: the default compiler on windows, msvc, is not supported
         - powershell "$CONDA_PATH; tox -e py3_mingw"
@@ -99,7 +100,7 @@ jobs:
       before_install: &osx_prep
         - brew update-reset
         - brew install icarus-verilog
-        - pip3 install tox
+        - sudo pip3 install -r dev-requirements.txt
       script:
         - tox -e py37
 
@@ -110,7 +111,7 @@ jobs:
         - sudo apt-get install gnat
         - git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
         - cd ghdl && ./configure && make -j2 && sudo make install && cd ..
-        - pip install tox
+        - pip install -r dev-requirements.txt
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
         - tox -e py37
