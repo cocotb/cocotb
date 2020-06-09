@@ -1,0 +1,8 @@
+# Python packages which are required/recommended to develop cocotb
+
+tox
+
+# virtualenv is used by tox; versions below 16.1.0 cause a DeprecationWarning
+# to be shown for all code which uses virtualenv, which is the case for all code
+# we run through tox. (https://github.com/pypa/virtualenv/pull/1064)
+virtualenv >= 16.1
