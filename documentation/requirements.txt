@@ -12,5 +12,3 @@ sphinx-argparse
 towncrier
 IPython
 sphinx-tabs
-IPython
-sphinx-tabs
