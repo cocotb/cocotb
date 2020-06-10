@@ -221,6 +221,14 @@ Makefile-based Test Scripts
       Set this to 1 to enable wave traces dump for the Aldec Riviera-PRO and Mentor Graphics Questa simulators.
       To get wave traces in Icarus Verilog see :ref:`sim-icarus-waveforms`.
 
+.. make:var:: TOPLEVEL_LANG
+
+    Used to inform the makefile scripts which HDL language the top-level design element is written in.
+    Currently it supports the values ``verilog`` for Verilog or SystemVerilog tops, and ``vhdl`` for VHDL tops.
+    This is used by simulators that support more than one interface (VPI, VHPI, or FLI) to select the appropriate interface to start cocotb.
+
+    The variable is also made available to cocotb tests conveniently as :data:`cocotb.LANGUAGE`.
+
 .. make:var:: VERILOG_SOURCES
 
       A list of the Verilog source files to include.
