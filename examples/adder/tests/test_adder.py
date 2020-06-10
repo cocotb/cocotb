@@ -19,7 +19,7 @@ async def adder_basic_test(dut):
 
     await Timer(2, units='ns')
 
-    assert int(dut.X) == adder_model(A, B), "Adder result is incorrect: {} != 15".format(dut.X)
+    assert dut.X.value == adder_model(A, B), "Adder result is incorrect: {} != 15".format(dut.X.value)
 
 
 @cocotb.test()
@@ -36,5 +36,5 @@ async def adder_randomised_test(dut):
 
         await Timer(2, units='ns')
 
-        assert int(dut.X) == adder_model(A, B), "Randomised test failed with: {A} + {B} = {X}".format(
-            A=int(dut.A), B=int(dut.B), X=int(dut.X))
+        assert dut.X.value == adder_model(A, B), "Randomised test failed with: {A} + {B} = {X}".format(
+            A=dut.A.value, B=dut.B.value, X=dut.X.value)
