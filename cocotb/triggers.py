@@ -33,7 +33,7 @@ from collections.abc import Awaitable
 from cocotb import simulator
 from cocotb.log import SimLog
 from cocotb.utils import (
-    get_sim_steps, ParametrizedSingleton,
+    get_sim_steps, get_time_from_sim_steps, ParametrizedSingleton,
     lazy_property, remove_traceback_frames,
 )
 from cocotb import outcomes
@@ -196,13 +196,7 @@ class Timer(GPITrigger):
             :func:`~cocotb.utils.get_sim_steps`
         """
         GPITrigger.__init__(self)
-        self._time_ps = time_ps
-        self._units = units
-
-    @lazy_property
-    def sim_steps(self):
-        # lazy so we don't call into the simulator until we need to
-        return get_sim_steps(self._time_ps, self._units)
+        self.sim_steps = get_sim_steps(time_ps, units)
 
     def prime(self, callback):
         """Register for a timed callback."""
@@ -214,10 +208,9 @@ class Timer(GPITrigger):
         GPITrigger.prime(self, callback)
 
     def __repr__(self):
-        return "<{} of {:1.2f}{} at {}>".format(
+        return "<{} of {:1.2f}ps at {}>".format(
             type(self).__qualname__,
-            self._time_ps,
-            self._units,
+            get_time_from_sim_steps(self.sim_steps, units='ps'),
             _pointer_str(self)
         )
 
