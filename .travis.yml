@@ -105,7 +105,7 @@ jobs:
 
     - stage: SimTests
       python: 3.7
-      env: SIM=ghdl
+      env: SIM=ghdl TOPLEVEL_LANG=vhdl
       before_install:
         - sudo apt-get install gnat
         - git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
@@ -132,4 +132,4 @@ jobs:
   allow_failures:
     - stage: SimTests
       python: 3.7
-      env: SIM=ghdl
+      env: SIM=ghdl TOPLEVEL_LANG=vhdl
