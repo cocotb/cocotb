@@ -90,6 +90,7 @@ Running tests locally
 
 Our tests are managed by `tox`, which runs both `pytest` and our system of makefiles.
 This exercises the contents of both the `tests` and `examples` directories.
+`tox` supports the usage of the environment variables `SIM` and `TOPLEVEL_LANG` to direct how to run the regression.
 
 
 Managing of Issues and Pull Requests
