@@ -73,6 +73,15 @@ jobs:
       after_success: *travis_linux_post
 
     - stage: SimTests
+      python: 3.9-dev
+      before_install: *travis_linx_prep
+      script:
+        - echo 'Running cocotb tests with Python 3.9-dev ...' && echo -en 'travis_fold:start:cocotb_py39'
+        - tox -e py39
+        - echo 'travis_fold:end:cocotb_py39'
+      after_success: *travis_linux_post
+
+    - stage: SimTests
       python: 3.7
       os: windows
       language: shell
