@@ -34,7 +34,7 @@ PWD=$(shell pwd)
 export PYTHONPATH := $(PWD)/../model:$(PYTHONPATH)
 
 ifeq ($(TOPLEVEL_LANG),verilog)
-    VERILOG_SOURCES = $(PWD)/../hdl/adder.v
+    VERILOG_SOURCES = $(PWD)/../hdl/adder.sv
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     VHDL_SOURCES = $(PWD)/../hdl/adder.vhdl
 else
