@@ -26,13 +26,17 @@ After installing these dependencies, the latest stable version of cocotb can be 
 pip install cocotb
 ```
 
-For more details, including how to install a development version of cocotb, see [the documentation](https://docs.cocotb.org/en/latest/install.html).
+**!!! Windows Users !!!** See [here](https://docs.cocotb.org/en/stable/install.html) for installation instructions.
+
+For more details on installation, including prerequisites, see [the documentation](https://docs.cocotb.org/en/stable/install.html).
+
+For detail on how to install the *development* version of cocotb, see [the lastest documentation](https://docs.cocotb.org/en/latest/install_devel.html#install-devel).
 
 ## Usage
 
 As a first trivial introduction to cocotb, the following example "tests" a flip-flop.
 
-First, we need a hardware design which we can test. For this example, create a file `dff.sv` with SystemVerilog code for a simple [D flip-flop](https://en.wikipedia.org/wiki/Flip-flop_(electronics)#D_flip-flop). You could also use any other language a [cocotb-supported simulator](https://docs.cocotb.org/en/latest/simulator_support.html) understands, e.g. VHDL.
+First, we need a hardware design which we can test. For this example, create a file `dff.sv` with SystemVerilog code for a simple [D flip-flop](https://en.wikipedia.org/wiki/Flip-flop_(electronics)#D_flip-flop). You could also use any other language a [cocotb-supported simulator](https://docs.cocotb.org/en/stable/simulator_support.html) understands, e.g. VHDL.
 
 ```systemverilog
 // dff.sv
@@ -100,8 +104,8 @@ For more information please see the [cocotb documentation](https://docs.cocotb.o
 
 ## Tutorials, examples and related projects
 
-* [Endian Swapper tutorial](https://docs.cocotb.org/en/latest/endian_swapper.html)
-* [Ping using TUN/TAP tutorial](https://docs.cocotb.org/en/latest/ping_tun_tap.html)
+* [Endian Swapper tutorial](https://docs.cocotb.org/en/stable/endian_swapper.html)
+* [Ping using TUN/TAP tutorial](https://docs.cocotb.org/en/stable/ping_tun_tap.html)
 * [Cocotb based USB 1.1 test suite for FPGA IP, with testbenches for a variety of open source USB cores](https://github.com/antmicro/usb-test-suite-build)
 * [Functional Coverage and Constrained Randomization Extensions for Cocotb](https://github.com/mciepluc/cocotb-coverage)
 * [UVM 1.2 port to Python](https://github.com/tpoikela/uvm-python)
