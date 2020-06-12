@@ -131,7 +131,6 @@ extern "C" void embed_init_python(void)
     set_program_name_in_venv();
     Py_Initialize();                    /* Initialize the interpreter */
     PySys_SetArgvEx(1, argv, 0);
-    PyEval_InitThreads();               /* Create (and acquire) the interpreter lock */
 
     /* Swap out and return current thread state and release the GIL */
     gtstate = PyEval_SaveThread();
