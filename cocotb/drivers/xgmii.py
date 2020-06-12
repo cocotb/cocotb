@@ -78,10 +78,6 @@ class _XGMIIBus:
         self._interleaved = interleaved
         self._nbytes = nbytes
 
-        # Default to idle
-        for i in range(nbytes):
-            self[i] = (0x07, True)
-
     def __setitem__(self, index, value):
         byte, ctrl = value
 
@@ -138,6 +134,7 @@ class XGMII(Driver):
         self.clock = clock
         self.bus = _XGMIIBus(len(signal)//9, interleaved=interleaved)
         Driver.__init__(self)
+        self.idle()
 
     @staticmethod
     def layer1(packet: bytes) -> bytes:
