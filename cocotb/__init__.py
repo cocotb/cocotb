@@ -196,8 +196,8 @@ def _initialise_testbench(argv_):
     from cocotb import simulator
 
     global SIM_NAME, SIM_VERSION
-    SIM_NAME = simulator.get_simulator_product()
-    SIM_VERSION = simulator.get_simulator_version()
+    SIM_NAME = simulator.get_simulator_product().strip()
+    SIM_VERSION = simulator.get_simulator_version().strip()
 
     cocotb.log.info("Running on {} version {}".format(SIM_NAME, SIM_VERSION))
 
