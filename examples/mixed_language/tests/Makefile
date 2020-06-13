@@ -6,6 +6,10 @@ else ifeq ($(shell echo $(SIM) | tr A-Z a-z),icarus)
 all:
 	@echo "Skipping example mixed_language since Icarus doesn't support this"
 clean::
+else ifneq ($(shell echo $(TOPLEVEL_LANG) | tr A-Z a-z),verilog)
+all:
+	@echo "Skipping example mixed_language since only Verilog toplevel implemented"
+clean::
 else
 
 # Override this variable to use a VHDL toplevel instead of SystemVerilog
