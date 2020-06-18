@@ -101,7 +101,8 @@ setup(
         'cocotb': (
             package_files('cocotb/share/makefiles') +   # noqa: W504
             package_files('cocotb/share/include') +     # noqa: W504
-            package_files('cocotb/share/def')
+            package_files('cocotb/share/def') +
+            package_files('cocotb/share/lib/verilator')
         )
     },
     ext_modules=get_ext(),
