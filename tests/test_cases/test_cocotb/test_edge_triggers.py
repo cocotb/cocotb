@@ -29,17 +29,17 @@ def count_edges_cycles(signal, edges):
 def do_single_edge_check(dut, level):
     """Do test for rising edge"""
     old_value = dut.clk.value.integer
-    dut._log.info("Value of %s is %d" % (dut.clk, old_value))
+    dut._log.info("Value of %s is %d" % (dut.clk._path, old_value))
     if old_value is level:
-        raise TestError("%s not to %d start with" % (dut.clk, not level))
+        raise TestError("%s not to %d start with" % (dut.clk._path, not level))
     if level == 1:
         yield RisingEdge(dut.clk)
     else:
         yield FallingEdge(dut.clk)
     new_value = dut.clk.value.integer
-    dut._log.info("Value of %s is %d" % (dut.clk, new_value))
+    dut._log.info("Value of %s is %d" % (dut.clk._path, new_value))
     if new_value is not level:
-        raise TestError("%s not %d at end" % (dut.clk, level))
+        raise TestError("%s not %d at end" % (dut.clk._path, level))
 
 
 @cocotb.test()
