@@ -101,3 +101,46 @@ and having them ignored is likely to lead to strange errors.
 As a side note,
 when you need to *clear* a Makefile variable from the command line,
 use the syntax ``make EXTRA_ARGS=``.
+
+``GLIBCXX_3.4.XX`` not found
+============================
+
+This error can occur on Linux, and will raise ``ImportError: /some/libstdc++.so.6: version `GLIBCXX_3.4.XX' not found``.
+This occurs because an older non-C++11 version of libstdc++ is being loaded by the simulator or cocotb.
+It is usually an issue with your environment, but sometimes can occur when using very old version of certain simulators.
+
+Check your environment
+----------------------
+
+To see if your environment is the issue, look at the value of the ``LD_LIBRARY_PATH`` environment variable.
+Ensure the first path in the colon-deliminated list is the path to the libstdc++ that shipped with the compiler you used to build cocotb.
+
+.. code:: shell
+
+    echo $LD_LIBRARY_PATH
+
+This variable might be empty, in which case the loader looks in the system's libraries.
+If the library you built cocotb with is not first, prepend that path to the list.
+
+.. code:: shell
+
+    export LD_LIBRARY_PATH=/path/to/newer/libraries/:$LD_LIBRARY_PATH
+
+Check your simulator
+--------------------
+
+Sometimes, simulators modify the ``LD_LIBRARY_PATH`` so they point to the libraries that are shipped with instead of the system libraries.
+If you are running an old simulator, the packaged libraries may include a pre-C++11 libstdc++.
+To see if your simulator is modifying the ``LD_LIBRARY_PATH``, open the simulator up to an internal console and obtain the environment variable.
+
+For example, with Questa one could open Questa to a TCL console and run the ``env`` command to list the current environment.
+The ``LD_LIBRARY`` path should appear in the list.
+
+If the simulator does modify the ``LD_LIBRARY_PATH``, refer to the simulator documenation on how to prevent or work around this issue.
+
+For example, Questa ships with GCC.
+Sometimes that version of GCC is old enough to not support C++11 (<4.8).
+When you install cocotb, ``pip`` uses the system (or some other) compiler that supports C++11.
+But when you try to run cocotb with the older Questa, it prepends the older libraries Questa ships with to ``LD_LIBRARY_PATH``.
+This causes the older libstdc++ Questa ships with to be loaded, resuling in the error message.
+For Questa, you can use the ``-noautoldlibpath`` option to turn off the ``LD_LIBRARY_PATH`` prepend to resolve this issue.
