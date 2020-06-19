@@ -9,7 +9,7 @@ Running your first Example
 ==========================
 
 Make sure you have the :ref:`prerequisites<install-prerequisites>`
-(Python with development packages, a C++ compiler with development packages, GNU Make,
+(Python with development packages, a C++11 compiler with development packages, GNU Make,
 a :ref:`supported simulator<simulator-support>`) and cocotb itself (``pip install cocotb``) available.
 
 Download and extract the cocotb source files according to the *release version* you are using from
