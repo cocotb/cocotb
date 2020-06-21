@@ -107,7 +107,7 @@ use the syntax ``make EXTRA_ARGS=``.
 
 This error can occur on Linux, and will raise ``ImportError: /some/libstdc++.so.6: version `GLIBCXX_3.4.XX' not found``.
 This occurs because an older non-C++11 version of libstdc++ is being loaded by the simulator or cocotb.
-It is usually an issue with your environment, but sometimes can occur when using very old version of certain simulators.
+It is usually an issue with your environment, but sometimes can occur when using a very old version of certain simulators.
 
 Check your environment
 ----------------------
@@ -133,10 +133,10 @@ Sometimes, simulators modify the ``LD_LIBRARY_PATH`` so they point to the librar
 If you are running an old simulator, the packaged libraries may include a pre-C++11 libstdc++.
 To see if your simulator is modifying the ``LD_LIBRARY_PATH``, open the simulator up to an internal console and obtain the environment variable.
 
-For example, with Questa one could open Questa to a TCL console and run the ``env`` command to list the current environment.
+For example, with Mentor Questa and Cadence Xcelium, one could open a Tcl console and run the ``env`` command to list the current environment.
 The ``LD_LIBRARY`` path should appear in the list.
 
-If the simulator does modify the ``LD_LIBRARY_PATH``, refer to the simulator documenation on how to prevent or work around this issue.
+If the simulator does modify the ``LD_LIBRARY_PATH``, refer to the simulator documentation on how to prevent or work around this issue.
 
 For example, Questa ships with GCC.
 Sometimes that version of GCC is old enough to not support C++11 (<4.8).
