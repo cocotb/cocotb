@@ -98,7 +98,7 @@ jobs:
         - powershell "$CONDA_PATH; conda update --yes pip"
         - powershell "$CONDA_PATH; conda info; conda list --show-channel-urls"
         # needed to make the builtin sqlite3 module (used by coverage) work - see gh-1909
-        - powershell '$CONDA_PATH; cp C:\miniconda3\Library\bin\sqlite3.dll C:\miniconda3\DLLs\'
+        - powershell 'cp C:\miniconda3\Library\bin\sqlite3.dll C:\miniconda3\DLLs\sqlite3.dll'
         - powershell "$CONDA_PATH; pip install tox"
       script:
         # TODO[gh-1372]: the default compiler on windows, msvc, is not supported
