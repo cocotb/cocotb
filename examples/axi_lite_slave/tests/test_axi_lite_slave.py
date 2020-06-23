@@ -19,7 +19,7 @@ def setup_dut(dut):
 
 # Write to address 0 and verify that value got through
 @cocotb.test()
-def write_address_0(dut):
+async def write_address_0(dut):
     """Write to the register at address 0, verify the value has changed.
 
     Test ID: 0
@@ -34,14 +34,14 @@ def write_address_0(dut):
     dut.test_id <= 0
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
     ADDRESS = 0x00
     DATA = 0xAB
 
-    yield axim.write(ADDRESS, DATA)
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    await axim.write(ADDRESS, DATA)
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
 
     value = dut.dut.r_temp_0
     if value != DATA:
@@ -54,7 +54,7 @@ def write_address_0(dut):
 
 # Read back a value at address 0x01
 @cocotb.test()
-def read_address_1(dut):
+async def read_address_1(dut):
     """Use cocotb to set the value of the register at address 0x01.
     Use AXIML to read the contents of that register and
     compare the values.
@@ -69,17 +69,17 @@ def read_address_1(dut):
     dut.test_id <= 1
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
-    yield Timer(CLK_PERIOD_NS, units='ns')
+    await Timer(CLK_PERIOD_NS, units='ns')
     ADDRESS = 0x01
     DATA = 0xCD
 
     dut.dut.r_temp_1 <= DATA
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
 
-    value = yield axim.read(ADDRESS)
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    value = await axim.read(ADDRESS)
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
 
     if value != DATA:
         # Fail
@@ -90,7 +90,7 @@ def read_address_1(dut):
 
 
 @cocotb.test()
-def write_and_read(dut):
+async def write_and_read(dut):
     """Write to the register at address 0.
     Read back from that register and verify the value is the same.
 
@@ -105,19 +105,19 @@ def write_and_read(dut):
     dut.test_id <= 2
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
     ADDRESS = 0x00
     DATA = 0xAB
 
     # Write to the register
-    yield axim.write(ADDRESS, DATA)
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    await axim.write(ADDRESS, DATA)
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
 
     # Read back the value
-    value = yield axim.read(ADDRESS)
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    value = await axim.read(ADDRESS)
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
 
     value = dut.dut.r_temp_0
     if value != DATA:
@@ -129,7 +129,7 @@ def write_and_read(dut):
 
 
 @cocotb.test()
-def write_fail(dut):
+async def write_fail(dut):
     """Attempt to write data to an address that doesn't exist. This test
     should fail.
 
@@ -144,15 +144,15 @@ def write_fail(dut):
     dut.test_id <= 3
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
     ADDRESS = 0x02
     DATA = 0xAB
 
     try:
-        yield axim.write(ADDRESS, DATA)
-        yield Timer(CLK_PERIOD_NS * 10, units='ns')
+        await axim.write(ADDRESS, DATA)
+        await Timer(CLK_PERIOD_NS * 10, units='ns')
     except AXIProtocolError as e:
         print("Exception: %s" % str(e))
         dut._log.info("Bus successfully raised an error")
@@ -162,7 +162,7 @@ def write_fail(dut):
 
 
 @cocotb.test()
-def read_fail(dut):
+async def read_fail(dut):
     """Attempt to read data from an address that doesn't exist. This test
     should fail.
 
@@ -177,15 +177,15 @@ def read_fail(dut):
     dut.test_id <= 4
     axim = AXI4LiteMaster(dut, "AXIML", dut.clk)
     setup_dut(dut)
-    yield Timer(CLK_PERIOD_NS * 10, units='ns')
+    await Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
     ADDRESS = 0x02
     DATA = 0xAB
 
     try:
-        yield axim.read(ADDRESS, DATA)
-        yield Timer(CLK_PERIOD_NS * 10, units='ns')
+        await axim.read(ADDRESS, DATA)
+        await Timer(CLK_PERIOD_NS * 10, units='ns')
     except AXIProtocolError as e:
         print("Exception: %s" % str(e))
         dut._log.info("Bus Successfully Raised an Error")
