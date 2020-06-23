@@ -36,23 +36,22 @@ import hal
 import io_module
 
 
-@cocotb.coroutine
-def reset(dut, duration=10):
+async def reset(dut, duration=10):
     dut._log.debug("Resetting DUT")
     dut.reset_n = 0
     dut.stream_in_valid = 0
-    yield Timer(duration, units='ns')
-    yield RisingEdge(dut.clk)
+    await Timer(duration, units='ns')
+    await RisingEdge(dut.clk)
     dut.reset_n = 1
     dut._log.debug("Out of reset")
 
 
 @cocotb.test()
-def initial_hal_test(dut, debug=True):
+async def initial_hal_test(dut, debug=True):
     """Example of using the software HAL against cosim testbench"""
 
     cocotb.fork(Clock(dut.clk, 5, units='ns').start())
-    yield reset(dut)
+    await reset(dut)
 
     # Create the avalon master and direct our HAL calls to that
     master = AvalonMaster(dut, "csr", dut.clk)
@@ -60,16 +59,16 @@ def initial_hal_test(dut, debug=True):
         master.log.setLevel(logging.DEBUG)
 
     @cocotb.function
-    def read(address):
+    async def read(address):
         master.log.debug("External source: reading address 0x%08X" % address)
-        value = yield master.read(address)
+        value = await master.read(address)
         master.log.debug("Reading complete: got value 0x%08x" % value)
         return value
 
     @cocotb.function
-    def write(address, value):
+    async def write(address, value):
         master.log.debug("Write called for 0x%08X -> %d" % (address, value))
-        yield master.write(address, value)
+        await master.write(address, value)
         master.log.debug("Write complete")
 
     io_module.set_write_function(write)
@@ -83,9 +82,9 @@ def initial_hal_test(dut, debug=True):
     if dut.byteswapping.value:
         raise TestFailure("Byteswapping is enabled but haven't configured DUT")
 
-    yield cocotb.external(hal.endian_swapper_enable)(state)
+    await cocotb.external(hal.endian_swapper_enable)(state)
 
-    yield ReadOnly()
+    await ReadOnly()
 
     if not dut.byteswapping.value:
         raise TestFailure("Byteswapping wasn't enabled after calling "
