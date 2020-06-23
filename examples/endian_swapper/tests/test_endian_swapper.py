@@ -46,16 +46,15 @@ from cocotb.generators.bit import (wave, intermittent_single_cycles,
                                    random_50_percent)
 
 
-@cocotb.coroutine
-def stream_out_config_setter(dut, stream_out, stream_in):
+async def stream_out_config_setter(dut, stream_out, stream_in):
     """Coroutine to monitor the DUT configuration at the start
        of each packet transfer and set the endianness of the
        output stream accordingly"""
     edge = RisingEdge(dut.stream_in_startofpacket)
     ro = ReadOnly()
     while True:
-        yield edge
-        yield ro
+        await edge
+        await ro
         if dut.byteswapping.value:
             stream_out.config['firstSymbolInHighOrderBits'] = \
                 not stream_in.config['firstSymbolInHighOrderBits']
@@ -100,25 +99,23 @@ class EndianSwapperTB(object):
         self.expected_output.append(transaction)
         self.pkts_sent += 1
 
-    @cocotb.coroutine
-    def reset(self, duration=20):
+    async def reset(self, duration=20):
         self.dut._log.debug("Resetting DUT")
         self.dut.reset_n <= 0
         self.stream_in.bus.valid <= 0
-        yield Timer(duration, units='ns')
-        yield RisingEdge(self.dut.clk)
+        await Timer(duration, units='ns')
+        await RisingEdge(self.dut.clk)
         self.dut.reset_n <= 1
         self.dut._log.debug("Out of reset")
 
 
-@cocotb.coroutine
-def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
-             backpressure_inserter=None):
+async def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
+                   backpressure_inserter=None):
 
     cocotb.fork(Clock(dut.clk, 10, units='ns').start())
     tb = EndianSwapperTB(dut)
 
-    yield tb.reset()
+    await tb.reset()
     dut.stream_out_ready <= 1
 
     # Start off any optional coroutines
@@ -131,15 +128,15 @@ def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
 
     # Send in the packets
     for transaction in data_in():
-        yield tb.stream_in.send(transaction)
+        await tb.stream_in.send(transaction)
 
     # Wait at least 2 cycles where output ready is low before ending the test
     for i in range(2):
-        yield RisingEdge(dut.clk)
+        await RisingEdge(dut.clk)
         while not dut.stream_out_ready.value:
-            yield RisingEdge(dut.clk)
+            await RisingEdge(dut.clk)
 
-    pkt_count = yield tb.csr.read(1)
+    pkt_count = await tb.csr.read(1)
 
     if pkt_count.integer != tb.pkts_sent:
         raise TestFailure("DUT recorded %d packets but tb counted %d" % (
@@ -156,11 +153,10 @@ def random_packet_sizes(min_size=1, max_size=150, npackets=10):
         yield get_bytes(random.randint(min_size, max_size), random_data())
 
 
-@cocotb.coroutine
-def randomly_switch_config(csr):
+async def randomly_switch_config(csr):
     """Twiddle the byteswapping config register"""
     while True:
-        yield csr.write(0, random.randint(0, 1))
+        await csr.write(0, random.randint(0, 1))
 
 
 factory = TestFactory(run_test)
@@ -178,19 +174,19 @@ import cocotb.wavedrom
 
 
 @cocotb.test()
-def wavedrom_test(dut):
+async def wavedrom_test(dut):
     """
     Generate a JSON wavedrom diagram of a trace and save it to wavedrom.json
     """
     cocotb.fork(Clock(dut.clk, 10, units='ns').start())
-    yield RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
     tb = EndianSwapperTB(dut)
-    yield tb.reset()
+    await tb.reset()
 
     with cocotb.wavedrom.trace(dut.reset_n, tb.csr.bus, clk=dut.clk) as waves:
-        yield RisingEdge(dut.clk)
-        yield tb.csr.read(0)
-        yield RisingEdge(dut.clk)
-        yield RisingEdge(dut.clk)
+        await RisingEdge(dut.clk)
+        await tb.csr.read(0)
+        await RisingEdge(dut.clk)
+        await RisingEdge(dut.clk)
         dut._log.info(waves.dumpj(header={'text':'WaveDrom example', 'tick':0}))
         waves.write('wavedrom.json', header={'tick':0}, config={'hscale':3})
