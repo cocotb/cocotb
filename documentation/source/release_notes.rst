@@ -4,6 +4,15 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
+cocotb 1.3.2
+============
+
+Notable changes and bug fixes
+-----------------------------
+
+- Iterating over ``for generate`` statements using VHPI has been fixed.
+  This bug caused some simulators to crash, and was a regression in version 1.3.1. (:pr:`1882`)
+
 cocotb 1.3.1
 ============
 
