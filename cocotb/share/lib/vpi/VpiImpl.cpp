@@ -127,6 +127,7 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiIntegerNet:
             return GPI_INTEGER;
 
+        case vpiConstant:
         case vpiParameter:
             return GPI_PARAMETER;
 
@@ -186,6 +187,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
         case vpiInterconnectNet:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
             break;
+        case vpiConstant:
         case vpiParameter:
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), true);
             break;
