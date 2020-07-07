@@ -10,8 +10,8 @@ and documents specifics, limitations, workarounds etc.
 
 .. _sim-icarus:
 
-Icarus
-======
+Icarus Verilog
+==============
 
 In order to use this simulator, set :make:var:`SIM` to ``icarus``:
 
@@ -24,13 +24,13 @@ In order to use this simulator, set :make:var:`SIM` to ``icarus``:
 Accessing bits in a vector
 --------------------------
 
-Accessing bits of a vector doesn't work:
+Accessing bits of a vector directly was not possible until (including) version 10.3:
 
 .. code-block:: python3
 
     dut.stream_in_data[2] <= 1
 
-See the ``access_single_bit`` test in :file:`tests/test_cases/test_discovery/test_discovery.py`.
+See also https://github.com/steveicarus/iverilog/issues/323.
 
 .. _sim-icarus-waveforms:
 
