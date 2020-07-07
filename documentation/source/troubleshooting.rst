@@ -144,3 +144,16 @@ When you install cocotb, ``pip`` uses the system (or some other) compiler that s
 But when you try to run cocotb with the older Questa, it prepends the older libraries Questa ships with to ``LD_LIBRARY_PATH``.
 This causes the older libstdc++ Questa ships with to be loaded, resuling in the error message.
 For Questa, you can use the ``-noautoldlibpath`` option to turn off the ``LD_LIBRARY_PATH`` prepend to resolve this issue.
+
+
+Using cocotb with more than one Python installation
+===================================================
+
+Users of cocotb with more than one installation of a single Python version (including conda env users) must take care not to re-use cached versions of the installed cocotb package.
+If this isn't done, running simulations fails with errors like ``libpython3.7m.so.1.0: cannot open shared object file: No such file or directory``.
+
+Cocotb builds binary libraries during its installation process.
+These libraries are tailored to the installation of Python used when installing cocotb.
+When switching between Python installations, cocotb needs to be re-installed without using cached build artifacts, e.g. with ``pip install --no-cache-dir cocotb``.
+
+Further details are available in :issue:`1943`.
