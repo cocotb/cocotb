@@ -11,6 +11,8 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 cocotb 1.3.2
 ============
 
+Released on 08 July 2020
+
 Notable changes and bug fixes
 -----------------------------
 
