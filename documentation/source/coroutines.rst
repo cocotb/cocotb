@@ -61,7 +61,7 @@ Coroutines can be used with :func:`~cocotb.fork` for concurrent operation.
         await Timer(10, units='ns')
         print("Reset is still active: %d" % dut.rstn)
         await Timer(15, units='ns')
-        await("Reset has gone inactive: %d" % dut.rstn)
+        print("Reset has gone inactive: %d" % dut.rstn)
 
 
 Forked coroutines can be used in an :keyword:`await` statement to block until the forked coroutine finishes.
