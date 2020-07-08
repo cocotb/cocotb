@@ -4,7 +4,7 @@ language: python
 dist: xenial
 cache:
   directories:
-  - iverilog
+  - iverilog_stable
 
 git:
   quiet: true
@@ -27,6 +27,7 @@ jobs:
       script: flake8
 
     - stage: SimTests
+      name: "Py 3.5, Docker"
       os: linux
       python: 3.5
       before_install: &docker_prep
@@ -40,69 +41,57 @@ jobs:
         - echo 'travis_fold:end:cocotb_py35'
 
     - stage: SimTests
+      name: "Py 3.7, Icarus stable"
       python: 3.7
-      before_install: &travis_linx_prep
+      before_install: &travis_lnx_icarus_stable_prep
         - sudo apt-get -y install gperf swig
-        - if [[ ! -e "./iverilog/README.txt" ]]; then rm -rf iverilog; git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_3; fi
-        - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
+        - if [[ ! -e "./iverilog_stable/README.txt" ]]; then rm -rf iverilog_stable; git clone https://github.com/steveicarus/iverilog.git iverilog_stable --depth=1 --branch v10_3; fi
+        - cd iverilog_stable && autoconf && ./configure && make -j2 && sudo make install && cd ..
         - pip install --upgrade tox virtualenv codecov
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
-        - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
+        - echo 'Running cocotb tests with Python 3.7 and Icarus Verilog stable...' && echo -en 'travis_fold:start:cocotb_icarus_py37'
         - tox -e py37
-        - echo 'travis_fold:end:cocotb_py37'
-      after_success: &travis_linux_post
+        - echo 'travis_fold:end:cocotb_icarus_py37'
+      after_success: &travis_lnx_icarus_stable_post
         - codecov
 
     - stage: SimTests
-      python: 3.8
-      before_install: *travis_linx_prep
-      script:
-        - echo 'Running cocotb tests with Python 3.8 ...' && echo -en 'travis_fold:start:cocotb_py38'
-        - tox -e py38
-        - echo 'travis_fold:end:cocotb_py38'
-      after_success: *travis_linux_post
-
-    - stage: SimTests
-      python: 3.6.7
-      before_install: *travis_linx_prep
-      script:
-        - echo 'Running cocotb tests with Python 3.6.7 ...' && echo -en 'travis_fold:start:cocotb_py36'
-        - tox -e py36
-        - echo 'travis_fold:end:cocotb_py36'
-      after_success: *travis_linux_post
-
-    - stage: SimTests
-      python: 3.9-dev
-      before_install: *travis_linx_prep
-      script:
-        - echo 'Running cocotb tests with Python 3.9-dev ...' && echo -en 'travis_fold:start:cocotb_py39'
-        - tox -e py39
-        - echo 'travis_fold:end:cocotb_py39'
-      after_success: *travis_linux_post
-
-    - stage: SimTests
+      name: "Py 3.7, Icarus devel"
+      env: ALLOW_FAIL=yes
       python: 3.7
-      os: windows
-      language: shell
-      before_install:
-        - powershell "Invoke-WebRequest -outfile miniconda3.exe https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe"
-        - powershell "Start-Process .\miniconda3.exe -ArgumentList '/S /D=C:\miniconda3' -Wait"
-
-        - powershell "Invoke-WebRequest -Uri http://bleyer.org/icarus/iverilog-v11-20190809-x64_setup.exe -OutFile iverilog-x64_setup.exe"
-        - powershell "Start-Process .\iverilog-x64_setup -ArgumentList '/VERYSILENT' -Wait"
-
-        - export CONDA_PATH="\$env:Path = ';C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin;C:\iverilog\bin;' + \$env:Path"
-        - powershell "$CONDA_PATH; conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython"
-        - powershell "$CONDA_PATH; conda install --yes virtualenv"
-        - powershell "$CONDA_PATH; conda update --yes pip"
-        - powershell "$CONDA_PATH; conda info; conda list --show-channel-urls"
-        # needed to make the builtin sqlite3 module (used by coverage) work - see gh-1909
-        - powershell 'cp C:\miniconda3\Library\bin\sqlite3.dll C:\miniconda3\DLLs\sqlite3.dll'
-        - powershell "$CONDA_PATH; pip install tox"
+      before_install: &travis_lnx_icarus_devel_prep
+        - sudo apt-get -y install gperf swig
+        - if [[ ! -e "./iverilog_devel/README.txt" ]]; then rm -rf iverilog_devel; git clone https://github.com/steveicarus/iverilog.git iverilog_devel --depth=1; fi
+        - cd iverilog_devel && autoconf && ./configure && make -j2 && sudo make install && cd ..
+        - pip install --upgrade tox virtualenv codecov
+        - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
-        # TODO[gh-1372]: the default compiler on windows, msvc, is not supported
-        - powershell "$CONDA_PATH; tox -e py3_mingw"
+        - echo 'Running cocotb tests with Python 3.7 and Icarus Verilog devel...' && echo -en 'travis_fold:start:cocotb_icarus_devel_py37'
+        - tox -e py37
+        - echo 'travis_fold:end:cocotb_icarus_devel_py37'
+      after_success: &travis_lnx_icarus_devel_post
+        - codecov
+
+    - stage: SimTests
+      name: "Py 3.8, Icarus stable"
+      python: 3.8
+      before_install: *travis_lnx_icarus_stable_prep
+      script:
+        - echo 'Running cocotb tests with Python 3.8 and Icarus Verilog stable...' && echo -en 'travis_fold:start:cocotb_icarus_py38'
+        - tox -e py38
+        - echo 'travis_fold:end:cocotb_icarus_py38'
+      after_success: *travis_lnx_icarus_stable_post
+
+    - stage: SimTests
+      name: "Py 3.9-dev, Icarus stable"
+      python: 3.9-dev
+      before_install: *travis_lnx_icarus_stable_prep
+      script:
+        - echo 'Running cocotb tests with Python 3.9-dev and Icarus Verilog stable...' && echo -en 'travis_fold:start:cocotb_icarus_py39'
+        - tox -e py39
+        - echo 'travis_fold:end:cocotb_icarus_py39'
+      after_success: *travis_lnx_icarus_stable_post
 
     - stage: SimTests
       name: "Py 3.7, Icarus devel"
@@ -134,6 +123,7 @@ jobs:
         - powershell "$CONDA_PATH; tox -e py3_mingw"
 
     - stage: SimTests
+      name: "Py 3.7, Icarus brew"
       os: osx
       osx_image: xcode11.2
       language: shell
@@ -146,15 +136,31 @@ jobs:
         - tox -e py37
 
     - stage: SimTests
+      name: "Py 3.7, ghdl 0.36"
       python: 3.7
       env: SIM=ghdl TOPLEVEL_LANG=vhdl
       before_install:
         - sudo apt-get install gnat
-        - git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
-        - cd ghdl && ./configure && make -j2 && sudo make install && cd ..
+        - if [[ ! -e "./ghdl_stable/README.md" ]]; then rm -rf ghdl_stable; git clone https://github.com/ghdl/ghdl.git ghdl_stable --depth=1 --branch v0.36; fi
+        - cd ghdl_stable && ./configure && make -j2 && sudo make install && cd ..
         - pip install tox
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
+        - echo 'Running cocotb tests with Python 3.7 and ghdl stable...'
+        - tox -e py37
+
+    - stage: SimTests
+      name: "Py 3.7, ghdl devel"
+      python: 3.7
+      env: SIM=ghdl TOPLEVEL_LANG=vhdl
+      before_install:
+        - sudo apt-get install gnat
+        - if [[ ! -e "./ghdl_devel/README.md" ]]; then rm -rf ghdl_devel; git clone https://github.com/ghdl/ghdl.git ghdl_devel --depth=1; fi
+        - cd ghdl_devel && ./configure && make -j2 && sudo make install && cd ..
+        - pip install tox
+        - pyenv global system $TRAVIS_PYTHON_VERSION
+      script:
+        - echo 'Running cocotb tests with Python 3.7 and ghdl devel...'
         - tox -e py37
 
     - stage: DeployPyPI

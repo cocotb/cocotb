@@ -35,6 +35,7 @@ import weakref
 import functools
 import warnings
 
+from distutils.version import LooseVersion
 from cocotb import simulator
 
 
@@ -534,23 +535,6 @@ def want_color_output():
     return want_color
 
 
-if __name__ == "__main__":
-    import random
-    a = ""
-    for char in range(random.randint(250, 500)):
-        a += chr(random.randint(0, 255))
-    b = a
-    for error in range(random.randint(2, 9)):
-        offset = random.randint(0, len(a))
-        b = b[:offset] + chr(random.randint(0, 255)) + b[offset+1:]
-
-    diff = hexdiffs(a, b)
-    print(diff)
-
-    space = '\n' + (" " * 20)
-    print(space.join(diff.split('\n')))
-
-
 def remove_traceback_frames(tb_or_exc, frame_names):
     """
     Strip leading frames from a traceback
@@ -581,3 +565,127 @@ def remove_traceback_frames(tb_or_exc, frame_names):
             assert tb.tb_frame.f_code.co_name == frame_name
             tb = tb.tb_next
         return tb
+
+
+class ActivehdlVersion(LooseVersion):
+    """Version numbering class for Aldec Active-HDL.
+
+    NOTE: unsupported versions exist, e.g.
+    ActivehdlVersion("10.5a.12.6914") > ActivehdlVersion("10.5.216.6767")
+    """
+    pass
+
+
+class CvcVersion(LooseVersion):
+    """Version numbering class for Tachyon DA CVC.
+
+    Example:
+        >>> CvcVersion("OSS_CVC_7.00b-x86_64-rhel6x of 07/07/14 (Linux-elf)") > CvcVersion("OSS_CVC_7.00a-x86_64-rhel6x of 07/07/14 (Linux-elf)")
+        True
+    """
+    pass
+
+
+class GhdlVersion(LooseVersion):
+    """Version numbering class for GHDL."""
+    pass
+
+
+class IcarusVersion(LooseVersion):
+    """Version numbering class for Icarus Verilog.
+
+    Example:
+        >>> IcarusVersion("11.0 (devel)") > IcarusVersion("10.3 (stable)")
+        True
+        >>> IcarusVersion("10.3 (stable)") <= IcarusVersion("10.3 (stable)")
+        True
+    """
+    pass
+
+
+class ModelsimVersion(LooseVersion):
+    """Version numbering class for Mentor ModelSim."""
+    pass
+
+
+class QuestaVersion(LooseVersion):
+    """Version numbering class for Mentor Questa.
+
+    Example:
+        >>> QuestaVersion("10.7c 2018.08") > QuestaVersion("10.7b 2018.06")
+        True
+        >>> QuestaVersion("2020.1 2020.01") > QuestaVersion("10.7c 2018.08")
+        True
+    """
+    pass
+
+
+class RivieraVersion(LooseVersion):
+    """Version numbering class for Aldec Riviera-PRO.
+
+    Example:
+        >>> RivieraVersion("2019.10.138.7537") == RivieraVersion("2019.10.138.7537")
+        True
+    """
+    pass
+
+
+class VcsVersion(LooseVersion):
+    """Version numbering class for Synopsys VCS.
+
+    Example:
+        >>> VcsVersion("Q-2020.03-1_Full64") > VcsVersion("K-2015.09_Full64")
+        True
+    """
+    pass
+
+
+class VerilatorVersion(LooseVersion):
+    """Version numbering class for Verilator.
+
+    Example:
+        >>> VerilatorVersion("4.032 2020-04-04") > VerilatorVersion("4.031 devel")
+        True
+    """
+    pass
+
+
+class XceliumVersion(LooseVersion):
+    """Version numbering class for Cadence Xcelium.
+
+    Example:
+        >>> XceliumVersion("20.06-g183") > XceliumVersion("20.03-s002")
+        True
+        >>> XceliumVersion("20.07-e501") > XceliumVersion("20.06-g183")
+        True
+    """
+    pass
+
+
+class IusVersion(XceliumVersion):  # inherit everything from Xcelium
+    """Version numbering class for Cadence IUS.
+
+    Example:
+        >>> IusVersion("15.20-s050") > IusVersion("15.20-s049")
+        True
+    """
+    pass
+
+
+if __name__ == "__main__":
+    import random
+    import doctest
+    doctest.testmod()
+    a = ""
+    for char in range(random.randint(250, 500)):
+        a += chr(random.randint(0, 255))
+    b = a
+    for error in range(random.randint(2, 9)):
+        offset = random.randint(0, len(a))
+        b = b[:offset] + chr(random.randint(0, 255)) + b[offset+1:]
+
+    # diff = hexdiffs(a.encode('latin1'), b.encode('latin1'))
+    # print(diff)
+    #
+    # space = '\n' + (" " * 20)
+    # print(space.join(diff.split('\n')))
