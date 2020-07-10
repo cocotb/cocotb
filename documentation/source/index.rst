@@ -179,9 +179,6 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    simulator_support
    extensions
 
-.. todo::
-   - *Maybe* add a glossary (Coroutine, Driver, Monitor, Scoreboard, HDL, RTL, GPI, V(H)PI, FLI, VIP, UVM, MDV, DUT/DUV)
-
 .. toctree::
    :maxdepth: 1
    :caption: Development & Community
@@ -206,3 +203,4 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
 
    Classes, Methods, Variables etc. <genindex>
    Python Modules <py-modindex>
+   glossary
