@@ -5,6 +5,7 @@ Roadmap
 cocotb is in active development.
 
 We use GitHub issues to track our pending tasks.
-Take a look at the `open Feature List <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+is%3Aopen+label%3Atype%3Afeature>`_ to see the work that's lined up.
+Take a look at the `open feature list <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+is%3Aopen+label%3Atype%3Afeature>`_ to see the work that's lined up,
+or the `list of good first issues <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22>`_ to get your feet wet.
 
 If you have a GitHub account you can also `raise an enhancement request <https://github.com/cocotb/cocotb/issues/new>`_ to suggest new features.
