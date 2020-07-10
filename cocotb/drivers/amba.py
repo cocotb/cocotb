@@ -292,6 +292,7 @@ class AXI4Slave(BusDriver):
                     "AWLEN   %d\n" % _awlen +
                     "AWSIZE  %d\n" % _awsize +
                     "AWBURST %d\n" % _awburst +
+                    "AWPROT %d\n" % _awprot +
                     "BURST_LENGTH %d\n" % burst_length +
                     "Bytes in beat %d\n" % bytes_in_beat)
 
@@ -341,6 +342,7 @@ class AXI4Slave(BusDriver):
                     "ARLEN   %d\n" % _arlen +
                     "ARSIZE  %d\n" % _arsize +
                     "ARBURST %d\n" % _arburst +
+                    "ARPROT %d\n" % _arprot +
                     "BURST_LENGTH %d\n" % burst_length +
                     "Bytes in beat %d\n" % bytes_in_beat)
 

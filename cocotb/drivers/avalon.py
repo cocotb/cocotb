@@ -213,7 +213,7 @@ class AvalonMaster(AvalonMM):
 
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
-            count = yield self._wait_for_nsignal(self.bus.waitrequest)
+            yield self._wait_for_nsignal(self.bus.waitrequest)
 
         # Deassert write
         yield RisingEdge(self.clock)

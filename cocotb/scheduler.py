@@ -763,7 +763,7 @@ class Scheduler:
                 self.log.debug("Coroutine %s yielded %s (mode %d)" %
                                (coroutine.__qualname__, str(result), self._mode))
 
-        except cocotb.decorators.CoroutineComplete as exc:
+        except cocotb.decorators.CoroutineComplete:
             if _debug:
                 self.log.debug("Coroutine {} completed with {}".format(
                     coroutine, coroutine._outcome
