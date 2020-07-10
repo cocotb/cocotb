@@ -347,7 +347,6 @@ def hexdiffs(x: bytes, y: bytes) -> str:
     doy = 0
     l = len(backtrackx)
     while i < l:
-        separate = 0
         linex = backtrackx[i:i+16]
         liney = backtracky[i:i+16]
         xx = sum(len(k) for k in linex)

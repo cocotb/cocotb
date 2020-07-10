@@ -252,7 +252,7 @@ def _initialise_testbench(argv_):
 
 def _sim_event(level, message):
     """Function that can be called externally to signal an event."""
-    SIM_INFO = 0
+    # SIM_INFO = 0
     SIM_TEST_FAIL = 1
     SIM_FAIL = 2
     from cocotb.result import TestFailure, SimFailure
