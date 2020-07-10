@@ -117,6 +117,10 @@ jobs:
         - export CONDA_PATH="\$env:Path = ';C:\miniconda3;C:\miniconda3\Library\mingw-w64\bin;C:\miniconda3\Library\usr\bin;C:\miniconda3\Library\bin;C:\miniconda3\Scripts;C:\miniconda3\bin;C:\miniconda3\condabin;C:\miniconda3\Library\usr\local\bin;' + \$env:Path"
         - powershell "$CONDA_PATH; conda install --yes -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain libpython"
         - powershell "$CONDA_PATH; conda install --yes virtualenv"
+        - powershell "$CONDA_PATH; conda update --yes pip"
+        - powershell "$CONDA_PATH; conda info; conda list --show-channel-urls"
+        # needed to make the builtin sqlite3 module (used by coverage) work - see gh-1909
+        - powershell 'cp C:\miniconda3\Library\bin\sqlite3.dll C:\miniconda3\DLLs\sqlite3.dll'
         - powershell "$CONDA_PATH; pip install tox"
 
         - powershell "$CONDA_PATH; if (!(Test-Path iverilog/README.txt)) { Get-ChildItem -Path iverilog -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue; Remove-Item iverilog -Force -Recurse -ErrorAction SilentlyContinue; git clone --depth=1 https://github.com/steveicarus/iverilog.git } else { cd iverilog; git fetch origin; cd ..}"
