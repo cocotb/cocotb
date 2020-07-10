@@ -244,6 +244,8 @@ def _extra_link_args(lib_name=None, rpaths=[]):
     if os.name == "nt":
         # Align behavior of gcc with msvc and export only symbols marked with __declspec(dllexport)
         args += ["-Wl,--exclude-all-symbols"]
+    else:
+        args += ["-flto"]
     return args
 
 
@@ -279,6 +281,8 @@ def _get_python_lib():
 _base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings", "-Wconversion"]
 _ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
 _extra_cxx_compile_args = ["-std=c++11", "-fvisibility=hidden", "-fvisibility-inlines-hidden"] + _ccx_warns
+if os.name != "nt":
+    _extra_cxx_compile_args += ["-flto"]
 
 # Make PRI* format macros available with C++11 compiler but older libc, e.g. on RHEL6.
 _extra_cxx_compile_args += ["-D__STDC_FORMAT_MACROS"]
