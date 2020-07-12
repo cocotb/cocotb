@@ -57,7 +57,7 @@ const char * GpiObjHdl::get_type_str()
         CASE_OPTION(GPI_MEMORY);
         CASE_OPTION(GPI_MODULE);
         CASE_OPTION(GPI_NET);
-        CASE_OPTION(GPI_PARAMETER);
+        // CASE_OPTION(GPI_PARAMETER);  // Deprecated
         CASE_OPTION(GPI_REGISTER);
         CASE_OPTION(GPI_ARRAY);
         CASE_OPTION(GPI_ENUM);

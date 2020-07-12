@@ -920,7 +920,7 @@ static int add_module_constants(PyObject* simulator)
         PyModule_AddIntConstant(simulator, "MEMORY",    GPI_MEMORY    ) < 0 ||
         PyModule_AddIntConstant(simulator, "MODULE",    GPI_MODULE    ) < 0 ||
         PyModule_AddIntConstant(simulator, "NET",       GPI_NET       ) < 0 ||
-        PyModule_AddIntConstant(simulator, "PARAMETER", GPI_PARAMETER ) < 0 ||
+        // PyModule_AddIntConstant(simulator, "PARAMETER", GPI_PARAMETER ) < 0 ||  // Deprecated
         PyModule_AddIntConstant(simulator, "REG",       GPI_REGISTER  ) < 0 ||
         PyModule_AddIntConstant(simulator, "NETARRAY",  GPI_ARRAY     ) < 0 ||
         PyModule_AddIntConstant(simulator, "ENUM",      GPI_ENUM      ) < 0 ||
