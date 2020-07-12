@@ -167,7 +167,7 @@ typedef enum gpi_objtype_e {
     GPI_MEMORY = 1,
     GPI_MODULE = 2,
     GPI_NET = 3,
-    GPI_PARAMETER = 4,
+    // GPI_PARAMETER = 4,  // Deprecated
     GPI_REGISTER = 5,
     GPI_ARRAY = 6,
     GPI_ENUM = 7,

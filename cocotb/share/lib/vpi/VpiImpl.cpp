@@ -94,7 +94,7 @@ const char *VpiImpl::get_simulator_version()
     return m_version.c_str();
 }
 
-gpi_objtype_t to_gpi_objtype(int32_t vpitype)
+static gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 {
     switch (vpitype) {
         case vpiNet:
@@ -127,9 +127,6 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiIntegerNet:
             return GPI_INTEGER;
 
-        case vpiParameter:
-            return GPI_PARAMETER;
-
         case vpiStructVar:
         case vpiStructNet:
         case vpiUnionVar:
@@ -153,6 +150,27 @@ gpi_objtype_t to_gpi_objtype(int32_t vpitype)
 
         default:
             LOG_DEBUG("Unable to map VPI type %d onto GPI type", vpitype);
+            return GPI_UNKNOWN;
+    }
+}
+
+static gpi_objtype_t const_type_to_gpi_objtype(int32_t const_type)
+{
+    switch (const_type)
+    {
+        case vpiDecConst:
+        case vpiBinaryConst:
+        case vpiOctConst:
+        case vpiHexConst:
+        case vpiIntConst:
+            return GPI_INTEGER;
+        case vpiRealConst:
+            return GPI_REAL;
+        case vpiStringConst:
+            return GPI_STRING;
+        //case vpiTimeConst:  // Not implemented
+        default:
+            LOG_DEBUG("Unable to map vpiConst type %d onto GPI type", const_type);
             return GPI_UNKNOWN;
     }
 }
@@ -187,8 +205,12 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
             new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), false);
             break;
         case vpiParameter:
-            new_obj = new VpiSignalObjHdl(this, new_hdl, to_gpi_objtype(type), true);
+        case vpiConstant:
+        {
+            auto const_type = vpi_get(vpiConstType, new_hdl);
+            new_obj = new VpiSignalObjHdl(this, new_hdl, const_type_to_gpi_objtype(const_type), true);
             break;
+        }
         case vpiRegArray:
         case vpiNetArray:
         case vpiInterfaceArray:
