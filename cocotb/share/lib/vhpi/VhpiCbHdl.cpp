@@ -921,52 +921,52 @@ VhpiNextPhaseCbHdl::VhpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 
 decltype(VhpiIterator::iterate_over) VhpiIterator::iterate_over = []{
     /* for reused lists */
-    std::initializer_list<vhpiOneToManyT> root_options;
-    std::initializer_list<vhpiOneToManyT> sig_options;
-    std::initializer_list<vhpiOneToManyT> simplesig_options;
-    std::initializer_list<vhpiOneToManyT> gen_options;
+    std::initializer_list<vhpiOneToManyT> root_options = {
+        vhpiInternalRegions,
+        vhpiSigDecls,
+        vhpiVarDecls,
+        vhpiPortDecls,
+        vhpiGenericDecls,
+        vhpiConstDecls,
+        //    vhpiIndexedNames,
+        vhpiCompInstStmts,
+        vhpiBlockStmts,
+    };
+    std::initializer_list<vhpiOneToManyT> sig_options = {
+        vhpiIndexedNames,
+        vhpiSelectedNames,
+    };
+    std::initializer_list<vhpiOneToManyT> simplesig_options = {
+        vhpiDecls,
+        vhpiInternalRegions,
+        vhpiSensitivitys,
+        vhpiStmts,
+    };
+    std::initializer_list<vhpiOneToManyT> gen_options = {
+        vhpiDecls,
+        vhpiInternalRegions,
+        vhpiSigDecls,
+        vhpiVarDecls,
+        vhpiConstDecls,
+        vhpiCompInstStmts,
+        vhpiBlockStmts,
+    };
 
     return decltype(VhpiIterator::iterate_over) {
-        {vhpiRootInstK, root_options = {
-            vhpiInternalRegions,
-            vhpiSigDecls,
-            vhpiVarDecls,
-            vhpiPortDecls,
-            vhpiGenericDecls,
-            vhpiConstDecls,
-            //    vhpiIndexedNames,
-            vhpiCompInstStmts,
-            vhpiBlockStmts,
-        }},
+        {vhpiRootInstK, root_options},
         {vhpiCompInstStmtK, root_options},
 
-        {vhpiGenericDeclK, sig_options = {
-            vhpiIndexedNames,
-            vhpiSelectedNames,
-        }},
+        {vhpiGenericDeclK, sig_options},
         {vhpiSigDeclK, sig_options},
         {vhpiSelectedNameK, sig_options},
         {vhpiIndexedNameK, sig_options},
         {vhpiPortDeclK, sig_options},
 
-        {vhpiCondSigAssignStmtK, simplesig_options = {
-            vhpiDecls,
-            vhpiInternalRegions,
-            vhpiSensitivitys,
-            vhpiStmts,
-        }},
+        {vhpiCondSigAssignStmtK, simplesig_options},
         {vhpiSimpleSigAssignStmtK, simplesig_options},
         {vhpiSelectSigAssignStmtK, simplesig_options},
 
-        {vhpiForGenerateK, gen_options = {
-            vhpiDecls,
-            vhpiInternalRegions,
-            vhpiSigDecls,
-            vhpiVarDecls,
-            vhpiConstDecls,
-            vhpiCompInstStmts,
-            vhpiBlockStmts,
-        }},
+        {vhpiForGenerateK, gen_options},
         {vhpiIfGenerateK, gen_options},
         {vhpiBlockStmtK, gen_options},
 

@@ -577,16 +577,20 @@ GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type
 }
 
 decltype(FliIterator::iterate_over) FliIterator::iterate_over = []{
-    std::initializer_list<FliIterator::OneToMany> region_options;
-    std::initializer_list<FliIterator::OneToMany> signal_options;
-    std::initializer_list<FliIterator::OneToMany> variable_options;
+    std::initializer_list<FliIterator::OneToMany> region_options = {
+        FliIterator::OTM_CONSTANTS,
+        FliIterator::OTM_SIGNALS,
+        FliIterator::OTM_REGIONS,
+    };
+    std::initializer_list<FliIterator::OneToMany> signal_options = {
+        FliIterator::OTM_SIGNAL_SUB_ELEMENTS,
+    };
+    std::initializer_list<FliIterator::OneToMany> variable_options = {
+        FliIterator::OTM_VARIABLE_SUB_ELEMENTS,
+    };
 
     return decltype(FliIterator::iterate_over) {
-        {accArchitecture, region_options = {
-            FliIterator::OTM_CONSTANTS,
-            FliIterator::OTM_SIGNALS,
-            FliIterator::OTM_REGIONS,
-        }},
+        {accArchitecture, region_options},
         {accEntityVitalLevel0, region_options},
         {accArchVitalLevel0, region_options},
         {accArchVitalLevel1, region_options},
@@ -612,16 +616,12 @@ decltype(FliIterator::iterate_over) FliIterator::iterate_over = []{
         {accForGenerate, region_options},
         {accConfiguration, region_options},
 
-        {accSignal, signal_options = {
-            FliIterator::OTM_SIGNAL_SUB_ELEMENTS,
-        }},
+        {accSignal, signal_options},
         {accSignalBit, signal_options},
         {accSignalSubComposite, signal_options},
         {accAliasSignal, signal_options},
 
-        {accVariable, variable_options = {
-            FliIterator::OTM_VARIABLE_SUB_ELEMENTS,
-        }},
+        {accVariable, variable_options},
         {accGeneric, variable_options},
         {accGenericConstant, variable_options},
         {accAliasConstant, variable_options},

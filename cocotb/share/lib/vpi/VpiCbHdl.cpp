@@ -561,59 +561,59 @@ VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
 
 decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = []{
     /* for reused lists */
-    std::initializer_list<int32_t> module_options;
-    std::initializer_list<int32_t> struct_options;
+    std::initializer_list<int32_t> module_options = {
+        //vpiModule,            // Aldec SEGV on mixed language
+        //vpiModuleArray,       // Aldec SEGV on mixed language
+        //vpiIODecl,            // Don't care about these
+        vpiNet,
+        vpiNetArray,
+        vpiReg,
+        vpiRegArray,
+        vpiMemory,
+        vpiIntegerVar,
+        vpiRealVar,
+        vpiRealNet,
+        vpiStructVar,
+        vpiStructNet,
+        //vpiVariables          // Aldec SEGV on plain Verilog
+        vpiNamedEvent,
+        vpiNamedEventArray,
+        vpiParameter,
+        //vpiSpecParam,         // Don't care
+        //vpiParamAssign,       // Aldec SEGV on mixed language
+        //vpiDefParam,          // Don't care
+        vpiPrimitive,
+        vpiPrimitiveArray,
+        //vpiContAssign,        // Don't care
+        vpiProcess,             // Don't care
+        vpiModPath,
+        vpiTchk,
+        vpiAttribute,
+        vpiPort,
+        vpiInternalScope,
+        //vpiInterface,         // Aldec SEGV on mixed language
+        //vpiInterfaceArray,    // Aldec SEGV on mixed language
+    };
+    std::initializer_list<int32_t> struct_options = {
+        vpiNet,
+#ifndef IUS
+        vpiNetArray,
+#endif
+        vpiReg,
+        vpiRegArray,
+        vpiMemory,
+        vpiParameter,
+        vpiPrimitive,
+        vpiPrimitiveArray,
+        vpiAttribute,
+        vpiMember,
+    };
 
     return decltype(VpiIterator::iterate_over) {
-        {vpiModule, module_options = {
-            //vpiModule,            // Aldec SEGV on mixed language
-            //vpiModuleArray,       // Aldec SEGV on mixed language
-            //vpiIODecl,            // Don't care about these
-            vpiNet,
-            vpiNetArray,
-            vpiReg,
-            vpiRegArray,
-            vpiMemory,
-            vpiIntegerVar,
-            vpiRealVar,
-            vpiRealNet,
-            vpiStructVar,
-            vpiStructNet,
-            //vpiVariables          // Aldec SEGV on plain Verilog
-            vpiNamedEvent,
-            vpiNamedEventArray,
-            vpiParameter,
-            //vpiSpecParam,         // Don't care
-            //vpiParamAssign,       // Aldec SEGV on mixed language
-            //vpiDefParam,          // Don't care
-            vpiPrimitive,
-            vpiPrimitiveArray,
-            //vpiContAssign,        // Don't care
-            vpiProcess,             // Don't care
-            vpiModPath,
-            vpiTchk,
-            vpiAttribute,
-            vpiPort,
-            vpiInternalScope,
-            //vpiInterface,         // Aldec SEGV on mixed language
-            //vpiInterfaceArray,    // Aldec SEGV on mixed language
-        }},
+        {vpiModule, module_options},
         {vpiGenScope, module_options},
 
-        {vpiStructVar, struct_options = {
-            vpiNet,
-#ifndef IUS
-            vpiNetArray,
-#endif
-            vpiReg,
-            vpiRegArray,
-            vpiMemory,
-            vpiParameter,
-            vpiPrimitive,
-            vpiPrimitiveArray,
-            vpiAttribute,
-            vpiMember,
-        }},
+        {vpiStructVar, struct_options},
         {vpiStructNet, struct_options},
 
         {vpiNet, {
