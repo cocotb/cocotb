@@ -328,6 +328,35 @@ Issues for this simulator
 * `All issues with label category:simulators:ghdl <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aghdl>`_
 
 
+.. _sim-ghdl-waveforms:
+
+Waveforms
+---------
+
+To get waveforms in VCD format, set the :make:var:`SIM_ARGS` option to ``--vcd=anyname.vcd``,
+for example in a Makefile:
+
+  .. code-block:: make
+
+    SIM_ARGS+=--vcd=anyname.vcd
+
+The option can be set on the command line, as shown in the following example.
+
+  .. code-block:: bash
+
+    make SIM=ghdl SIM_ARGS=--vcd=anyname.vcd
+
+    # or define the SIM_ARGS environment variable in bash
+
+    export SIM_ARGS=--vcd=anyname.vhd; make SIM=ghdl
+
+    # or in csh
+
+    setenv SIM_ARGS=--vcd=anyname.vhd; make SIM=ghdl
+
+A VCD file named ``anyname.vcd`` will be generated in the current directory.
+
+
 .. _sim-cvc:
 
 Tachyon DA CVC
