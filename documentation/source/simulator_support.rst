@@ -60,6 +60,13 @@ to the top component as shown in the example below:
     `endif
     endmodule
 
+.. _sim-icarus-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:icarus <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aicarus>`_
+
 
 .. _sim-verilator:
 
@@ -114,6 +121,14 @@ To get waveforms in VCD format, add Verilator's trace option(s) to the
 To set the same options on the command line, use ``EXTRA_ARGS="--trace --trace-structs" make ...``.
 A VCD file named ``dump.vcd`` will be generated in the current directory.
 
+.. _sim-verilator-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:verilator <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Averilator>`_
+
+
 .. _sim-vcs:
 
 Synopsys VCS
@@ -126,6 +141,13 @@ In order to use this simulator, set :make:var:`SIM` to ``vcs``:
     make SIM=vcs
 
 cocotb currently only supports VPI for Synopsys VCS, not VHPI.
+
+.. _sim-vcs-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:vcs <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Avcs>`_
 
 
 .. _sim-aldec:
@@ -152,6 +174,13 @@ In order to use this simulator, set :make:var:`SIM` to ``riviera``:
 The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
+.. _sim-aldec-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:riviera <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Ariviera>`_
+
 
 .. _sim-activehdl:
 
@@ -173,6 +202,14 @@ In order to use this simulator, set :make:var:`SIM` to ``activehdl``:
     - Aldec Active-HDL 10.4a
     - Aldec Active-HDL 10.5a
 
+.. _sim-activehdl-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:activehdl <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aactivehdl>`_
+
+
 .. _sim-questa:
 
 Mentor Questa
@@ -185,6 +222,13 @@ In order to use this simulator, set :make:var:`SIM` to ``questa``:
     make SIM=questa
 
 For more information, see :ref:`sim-modelsim`.
+
+.. _sim-questa-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:questa <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aquesta>`_
 
 
 .. _sim-modelsim:
@@ -212,6 +256,13 @@ If you try to use them with FLI, you will see a ``vsim-FLI-3155`` error:
 
 ModelSim DE and SE (and Questa, of course) support the FLI.
 
+.. _sim-modelsim-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:modelsim <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Amodelsim>`_
+
 
 .. _sim-incisive:
 
@@ -226,6 +277,13 @@ In order to use this simulator, set :make:var:`SIM` to ``ius``:
 
 For more information, see :ref:`sim-xcelium`.
 
+.. _sim-incisive-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:ius <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aius>`_
+
 
 .. _sim-xcelium:
 
@@ -239,6 +297,13 @@ In order to use this simulator, set :make:var:`SIM` to ``xcelium``:
     make SIM=xcelium
 
 The simulator automatically loads VPI even when only VHPI is requested.
+
+.. _sim-xcelium-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:xcelium <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Axcelium>`_
 
 
 .. _sim-ghdl:
@@ -255,6 +320,13 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 Support is preliminary.
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.
 
+.. _sim-ghdl-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:ghdl <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aghdl>`_
+
 
 .. _sim-cvc:
 
@@ -269,3 +341,10 @@ set :make:var:`SIM` to ``cvc``:
     make SIM=cvc
 
 Note that cocotb's makefile is using CVC's interpreted mode.
+
+.. _sim-cvc-issues:
+
+Issues for this simulator
+-------------------------
+
+* `All issues with label category:simulators:cvc <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Acvc>`_
