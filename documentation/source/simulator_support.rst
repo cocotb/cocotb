@@ -256,6 +256,35 @@ Support is preliminary.
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.
 
 
+.. _sim-ghdl-waveforms:
+
+Waveforms
+---------
+
+To get waveforms in VCD format, set the :make:var:`SIM_ARGS` option to ``--vcd=anyname.vcd``,
+for example in a Makefile:
+
+  .. code-block:: make
+
+    SIM_ARGS+=--vcd=anyname.vcd
+
+The option can be set on the command line, as shown in the following example.
+
+  .. code-block:: bash
+
+    make SIM=ghdl SIM_ARGS=--vcd=anyname.vcd
+
+    # or define the SIM_ARGS environment variable in bash
+
+    export SIM_ARGS=--vcd=anyname.vhd; make SIM=ghdl
+
+    # or in csh
+
+    setenv SIM_ARGS=--vcd=anyname.vhd; make SIM=ghdl
+
+A VCD file named ``anyname.vcd`` will be generated in the current directory.
+
+
 .. _sim-cvc:
 
 Tachyon DA CVC
