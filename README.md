@@ -18,7 +18,7 @@ Cocotb requires:
 
 - Python 3.5+
 - A C++11 compiler
-- An HDL simulator (such as [Icarus Verilog](http://iverilog.icarus.com/),
+- An HDL simulator (such as [Icarus Verilog](https://docs.cocotb.org/en/stable/simulator_support.html#icarus-verilog),
 [Verilator](https://docs.cocotb.org/en/stable/simulator_support.html#verilator),
 [GHDL](https://docs.cocotb.org/en/stable/simulator_support.html#ghdl) or
 [other simulator](https://docs.cocotb.org/en/stable/simulator_support.html))
