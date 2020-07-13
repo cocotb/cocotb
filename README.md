@@ -19,8 +19,8 @@ Cocotb requires:
 - Python 3.5+
 - A C++11 compiler
 - An HDL simulator (such as [Icarus Verilog](http://iverilog.icarus.com/),
-[Verilator](https://www.veripool.org/wiki/verilator),
-[GHDL](http://ghdl.free.fr/) or 
+[Verilator](https://docs.cocotb.org/en/stable/simulator_support.html#verilator),
+[GHDL](https://docs.cocotb.org/en/stable/simulator_support.html#ghdl) or
 [other simulator](https://docs.cocotb.org/en/stable/simulator_support.html))
 
 After installing these dependencies, the latest stable version of cocotb can be installed with pip.
