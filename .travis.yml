@@ -36,7 +36,7 @@ jobs:
         - docker ps -a
       script:
         - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
-        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -e py35'
+        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -vvv -e py35'
         - echo 'travis_fold:end:cocotb_py35'
 
     - stage: SimTests
@@ -49,7 +49,7 @@ jobs:
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
         - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
-        - tox -e py37
+        - tox -vvv -e py37
         - echo 'travis_fold:end:cocotb_py37'
       after_success: &travis_linux_post
         - codecov
@@ -59,7 +59,7 @@ jobs:
       before_install: *travis_linx_prep
       script:
         - echo 'Running cocotb tests with Python 3.8 ...' && echo -en 'travis_fold:start:cocotb_py38'
-        - tox -e py38
+        - tox -vvv -e py38
         - echo 'travis_fold:end:cocotb_py38'
       after_success: *travis_linux_post
 
@@ -68,7 +68,7 @@ jobs:
       before_install: *travis_linx_prep
       script:
         - echo 'Running cocotb tests with Python 3.6.7 ...' && echo -en 'travis_fold:start:cocotb_py36'
-        - tox -e py36
+        - tox -vvv -e py36
         - echo 'travis_fold:end:cocotb_py36'
       after_success: *travis_linux_post
 
@@ -77,7 +77,7 @@ jobs:
       before_install: *travis_linx_prep
       script:
         - echo 'Running cocotb tests with Python 3.9-dev ...' && echo -en 'travis_fold:start:cocotb_py39'
-        - tox -e py39
+        - tox -vvv -e py39
         - echo 'travis_fold:end:cocotb_py39'
       after_success: *travis_linux_post
 
@@ -102,7 +102,7 @@ jobs:
         - powershell "$CONDA_PATH; pip install tox"
       script:
         # TODO[gh-1372]: the default compiler on windows, msvc, is not supported
-        - powershell "$CONDA_PATH; tox -e py3_mingw"
+        - powershell "$CONDA_PATH; tox -vvv -e py3_mingw"
 
     - stage: SimTests
       name: "Py 3.7, Icarus devel"
@@ -131,7 +131,7 @@ jobs:
         - powershell "$CONDA_PATH; cd iverilog; make install; cd .."
       script:
         # TODO[gh-1372]: the default compiler on windows, msvc, is not supported
-        - powershell "$CONDA_PATH; tox -e py3_mingw"
+        - powershell "$CONDA_PATH; tox -vvv -e py3_mingw"
 
     - stage: SimTests
       os: osx
@@ -143,7 +143,7 @@ jobs:
         - brew install icarus-verilog
         - pip3 install tox
       script:
-        - tox -e py37
+        - tox -vvv -e py37
 
     - stage: SimTests
       python: 3.7
@@ -155,7 +155,7 @@ jobs:
         - pip install tox
         - pyenv global system $TRAVIS_PYTHON_VERSION
       script:
-        - tox -e py37
+        - tox -vvv -e py37
 
     - stage: DeployPyPI
       python: 3.7
