@@ -46,7 +46,10 @@ extensions = [
     'sphinx_tabs.tabs',
     ]
 
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'ghdl': ('https://ghdl.readthedocs.io/en/latest', None)
+}
 
 # Github repo
 issues_github_path = "cocotb/cocotb"

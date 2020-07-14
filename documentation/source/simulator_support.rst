@@ -349,7 +349,7 @@ The option can be set on the command line, as shown in the following example.
 A VCD file named ``anyname.vcd`` will be generated in the current directory.
 
 The :make:var:`SIM_ARGS` option allows access to all GHDL Command Line Run (-r)
-options listed in :ghdl:`USING:Simulation`. This includes other waveform
+options listed in :ghdl:`simulation-options`. This includes other waveform
 generation options including the compressed Fast Signal Trace (FST) format and
 the GHDL Wave File (GHW) which supports any VHDL type. For more information
 see :ghdl:`export_waves`.
