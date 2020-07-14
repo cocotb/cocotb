@@ -27,12 +27,14 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
+TOPLEVEL_LANG ?= verilog
+
 include $(shell cocotb-config --makefiles)/Makefile.inc
 
-ifneq ($(VHDL_SOURCES),)
+ifneq ($(or $(filter-out $(TOPLEVEL_LANG),verilog),$(VHDL_SOURCES)),)
 
 $(COCOTB_RESULTS_FILE):
-	@echo "Skipping simulation as VHDL is not supported on simulator=$(SIM)"
+	@echo "Skipping simulation as only Verilog is supported on simulator=$(SIM)"
 debug: $(COCOTB_RESULTS_FILE)
 clean::
 
