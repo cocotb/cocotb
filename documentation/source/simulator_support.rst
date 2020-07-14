@@ -348,7 +348,7 @@ The option can be set on the command line, as shown in the following example.
 
 A VCD file named ``anyname.vcd`` will be generated in the current directory.
 
-:make:var:`SIM_ARGS` can also be used to pass command line arguments related to other waveform formats supported by GHDL like :ref:`Fast Signal Trace (FST) <ghdl:export_waves>`, which is compressed; or :ref:`GHDL Wave File (GHW) <ghdl:export_waves>`, which supports any VHDL type. 
+:make:var:`SIM_ARGS` can also be used to pass command line arguments related to :ref:`other waveform formats supported by GHDL <ghdl:export_waves>`.
 
 
 .. _sim-cvc:
