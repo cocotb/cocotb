@@ -336,7 +336,7 @@ Waveforms
 To get waveforms in VCD format, set the :make:var:`SIM_ARGS` option to ``--vcd=anyname.vcd``,
 for example in a Makefile:
 
-  .. code-block:: make
+.. code-block:: make
 
     SIM_ARGS+=--vcd=anyname.vcd
 
