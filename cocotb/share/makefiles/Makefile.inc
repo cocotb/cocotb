@@ -79,6 +79,9 @@ endif
 # Set PYTHONHOME to properly populate sys.path in embedded python interpreter
 export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'from distutils.sysconfig import get_config_var; print(get_config_var("prefix"))')
 
+export COCOTB_LIBPYTHON_PATH := $(shell $(PYTHON_BIN) $(COCOTB_PY_DIR)/cocotb/find_libpython.py)
+$(info ${COCOTB_LIBPYTHON_PATH})
+
 ifeq ($(OS),Msys)
     # On Windows there is no support for @rpath/LD_LIBRARY_PATH so we need to set PATH to find cocotb libraries
     # https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order?redirectedfrom=MSDN#standard-search-order-for-desktop-applications

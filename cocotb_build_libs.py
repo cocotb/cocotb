@@ -14,6 +14,7 @@ from distutils.spawn import find_executable
 from setuptools.command.build_ext import build_ext as _build_ext
 from distutils.file_util import copy_file
 
+from find_libpython import finding_libpython
 
 logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
@@ -35,6 +36,7 @@ class build_ext(_build_ext):
 
         def_dir = os.path.join(cocotb_share_dir, "def")
         self._gen_import_libs(def_dir)
+        self._gen_python_delay_import_lib()
 
         super().run()
 
@@ -118,6 +120,29 @@ class build_ext(_build_ext):
                     ]
                 )
 
+    def _gen_python_delay_import_lib(self):
+        if os.name == "nt":
+            libpython_path = [x for x in finding_libpython() if x.endswith(".dll")][0]
+            f = open("libpython.def", "w")
+            subprocess.run(["gendef", "-", libpython_path], stdout=f)
+            f.close()
+
+            subprocess.run(
+                [
+                    "dlltool",
+                    "--def",
+                    "libpython.def",
+                    "--output-delaylib",
+                    "libpython_delay.a"
+                ]
+            )
+
+            for ext in self.extensions:
+                ext.library_dirs.append(".")
+
+    def get_libraries(self, ext):
+        return ext.libraries
+
 
 def _extra_link_args(lib_name=None, rpaths=[]):
     """
@@ -197,12 +222,15 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #  libgpilog
     #
     python_lib_dirs = []
+    libgpilog_libraries = []
     if sys.platform == "darwin":
         python_lib_dirs = [sysconfig.get_config_var("LIBDIR")]
-
+    if os.name == "nt":
+        libgpilog_libraries += ["python_delay"]
     libgpilog = Extension(
         os.path.join("cocotb", "libs", "libgpilog"),
         include_dirs=[include_dir],
+        libraries=libgpilog_libraries,
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "gpi_log", "gpi_logging.cpp")],
         extra_link_args=_extra_link_args(lib_name="libgpilog", rpaths=["$ORIGIN"]),
@@ -212,13 +240,15 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libcocotb
     #
+    libcocotb_libraries = ["gpilog", "cocotbutils"]
+    if os.name == "nt":
+        libcocotb_libraries += ["python_delay"]
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
-        define_macros=[("PYTHON_SO_LIB", _get_python_lib())],
         include_dirs=[include_dir],
-        libraries=["gpilog", "cocotbutils"],
+        libraries=libcocotb_libraries,
         sources=[os.path.join(share_lib_dir, "embed", "gpi_embed.cpp")],
-        extra_link_args=_extra_link_args(lib_name="libcocotb", rpaths=["$ORIGIN"] + python_lib_dirs),
+        extra_link_args=_extra_link_args(lib_name="libcocotb", rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
     )
 
@@ -241,10 +271,13 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  simulator
     #
+    libsim_libraries = ["cocotbutils", "gpilog", "gpi"]
+    if os.name == "nt":
+        libsim_libraries += ["python_delay"]
     libsim = Extension(
         os.path.join("cocotb", "simulator"),
         include_dirs=[include_dir],
-        libraries=["cocotbutils", "gpilog", "gpi"],
+        libraries=libsim_libraries,
         library_dirs=python_lib_dirs,
         sources=[os.path.join(share_lib_dir, "simulator", "simulatormodule.cpp")],
         extra_compile_args=_extra_cxx_compile_args,

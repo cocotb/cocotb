@@ -113,16 +113,11 @@ static void set_program_name_in_venv(void)
 
 extern "C" void embed_init_python(void)
 {
-
-#ifndef PYTHON_SO_LIB
-#error "Python version needs passing in with -DPYTHON_SO_LIB=libpython<ver>.so"
-#else
-#define PY_SO_LIB xstr(PYTHON_SO_LIB)
-#endif
-
     assert(!gtstate);  // this function should not be called twice
 
-    void * lib_handle = utils_dyn_open(PY_SO_LIB);
+    const char *libpython_path = getenv("COCOTB_LIBPYTHON_PATH");
+
+    void * lib_handle = utils_dyn_open(libpython_path);
     if (!lib_handle) {
         LOG_ERROR("Failed to find Python shared library\n");
     }
