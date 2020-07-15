@@ -19,12 +19,12 @@ jobs:
       os: linux
       script: "! git --no-pager grep --color --line-number --full-name --extended-regexp -I '\\s+$'"
 
-    - stage: Lint
-      name: flake8
-      os: linux
-      python: 3.5
-      install: pip install flake8
-      script: flake8
+#    - stage: Lint
+#      name: flake8
+#      os: linux
+#      python: 3.5
+#      install: pip install flake8
+#      script: flake8
 
     - stage: SimTests
       os: linux
