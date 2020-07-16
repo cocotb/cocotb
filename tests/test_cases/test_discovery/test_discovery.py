@@ -30,6 +30,7 @@ import logging
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
+from cocotb._sim_versions import IcarusVersion
 
 
 @cocotb.test()
@@ -89,8 +90,8 @@ async def access_signal(dut):
 
 
 @cocotb.test(
-    # Icarus 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("icarus") else False,
+    # Icarus up to (including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
+    expect_error=IndexError if (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))) else False,
     skip=cocotb.LANGUAGE in ["vhdl"])
 async def access_single_bit(dut):
     """Access a single bit in a vector of the DUT"""
@@ -107,8 +108,8 @@ async def access_single_bit(dut):
 
 
 @cocotb.test(
-    # Icarus 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("icarus") else False,
+    # Icarus up to (including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
+    expect_error=IndexError if (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))) else False,
     skip=cocotb.LANGUAGE in ["vhdl"])
 async def access_single_bit_assignment(dut):
     """Access a single bit in a vector of the DUT using the assignment mechanism"""
