@@ -32,6 +32,7 @@ import textwrap
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
+from cocotb.simulator import PortDirection
 
 
 @cocotb.test()
@@ -56,6 +57,54 @@ def discover_module_values(dut):
         count += 1
     if count < 2:
         raise TestFailure("Expected to discover things in the DUT")
+
+
+@cocotb.test()
+async def test_discover_ports(dut):
+    """Discover ports in the DUT"""
+    count = 0
+    inputs = 0
+    outputs = 0
+    inouts = 0
+    if cocotb.SIM_NAME in ["Icarus Verilog"]:
+        # some ports are ifdef'ed out in the SV HDL with __ICARUS__
+        count_exp = 9
+        inputs_exp = 5
+        outputs_exp = 4
+        inouts_exp = 0
+    elif cocotb.LANGUAGE == "verilog":
+        count_exp = 14
+        inputs_exp = 8
+        outputs_exp = 6
+        inouts_exp = 0
+    else:  # vhdl
+        count_exp = 19
+        inputs_exp = 11
+        outputs_exp = 8
+        inouts_exp = 0
+
+    for thing in dut:
+        if thing._is_port:
+            thing._log.info("Found %s port %s (%s)", thing._port_direction, thing._name, type(thing))
+            count += 1
+            if thing._port_direction == PortDirection.INPUT:
+                inputs += 1
+            elif thing._port_direction == PortDirection.OUTPUT:
+                outputs += 1
+            elif thing._port_direction == PortDirection.INOUT:
+                inouts += 1
+            else:
+                assert False, "Unhandled port direction"
+
+    def assert_expected(things, expected, actual):
+        msg = "Did not discover the expected number of {things} in the DUT. Expected {expected}, got {actual}"
+        if expected != actual:
+            raise AssertionError(msg.format(things=things, expected=expected, actual=actual))
+
+    assert_expected("total ports", count_exp, count)
+    assert_expected("input ports", inputs_exp, inputs)
+    assert_expected("output ports", outputs_exp, outputs)
+    assert_expected("inout ports", inouts_exp, inouts)
 
 
 @cocotb.test(skip=True)

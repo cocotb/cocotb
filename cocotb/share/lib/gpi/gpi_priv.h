@@ -104,6 +104,8 @@ public:
     int get_range_left() { return m_range_left; }
     int get_range_right() { return m_range_right; }
     int get_indexable() { return m_indexable; }
+    virtual bool is_port() const;
+    virtual gpi_port_direction_t get_port_direction() const;
 
     const std::string & get_name();
     const std::string & get_fullname();

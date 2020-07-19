@@ -98,6 +98,22 @@ int FliObjHdl::initialise(std::string &name, std::string &fq_name)
     return GpiObjHdl::initialise(name, fq_name);
 }
 
+gpi_port_direction_t FliSignalObjHdl::get_port_direction() const
+{
+    mtiDirectionT dir_raw =  mti_GetSignalMode(static_cast<mtiSignalIdT>(hdl));
+    switch (dir_raw) {
+        case MTI_DIR_IN:
+            return GPI_PORT_INPUT;
+        case MTI_DIR_OUT:
+            return GPI_PORT_OUTPUT;
+        case MTI_DIR_INOUT:
+            return GPI_PORT_INOUT;
+        case MTI_INTERNAL:
+            return GPI_NOT_A_PORT;
+    }
+    LOG_ERROR("Unable to map FLI port direction type '%d' to GPI port direction type", dir_raw);
+    return GPI_PORT_UNHANDLED;
+}
 
 int FliSignalObjHdl::initialise(std::string &name, std::string &fq_name)
 {

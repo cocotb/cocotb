@@ -228,6 +228,29 @@ int gpi_is_constant(gpi_sim_hdl gpi_hdl);
 // Determine whether an object is indexable
 int gpi_is_indexable(gpi_sim_hdl gpi_hdl);
 
+/** Determine whether an object is a port
+ *  @returns 1 if object is a port, 0 otherwise
+ */
+int gpi_is_port(gpi_sim_hdl gpi_hdl);
+
+/** Enumerates possible port types */
+typedef enum gpi_port_direction_e {
+    GPI_PORT_UNHANDLED = -1,    ///< unknown and unhandled port type
+    GPI_NOT_A_PORT = 0,         ///< definitely not a port
+    GPI_PORT_INPUT = 1,         ///< input port
+    GPI_PORT_OUTPUT = 2,        ///< output port
+    GPI_PORT_INOUT = 3,         ///< inout port
+    GPI_PORT_MIXEDIO = 4,       ///< ??? (Verilog only)
+    GPI_PORT_NO_DIRECTION = 5,  ///< ??? (Verilog only)
+    GPI_PORT_BUFFER = 6,        ///< ??? (VHDL only)
+    GPI_PORT_LINKAGE = 7,       ///< ??? (VHDL only)
+} gpi_port_direction_t;
+
+/** The direction of a port
+ *  @returns the direction of a port, GPI_NOT_A_PORT if the object is not a port
+ */
+gpi_port_direction_t gpi_port_direction(gpi_sim_hdl gpi_hdl);
+
 // Functions for setting the properties of a handle
 void gpi_set_signal_value_real(gpi_sim_hdl gpi_hdl, double value, gpi_set_action_t action);
 void gpi_set_signal_value_long(gpi_sim_hdl gpi_hdl, long value, gpi_set_action_t action);

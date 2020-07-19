@@ -104,6 +104,24 @@ class SimHandleBase:
         :meta public:
         """
 
+    @property
+    def _is_port(self):
+        """
+        Whether the GPI object is a port or not.
+
+        :meta public:
+        """
+        return self._handle.is_port()
+
+    @property
+    def _port_direction(self):
+        """
+        The directionality of the port, if the object is a port, otherwise ``GPI_UNDEFINED``.
+
+        :meta public:
+        """
+        return self._handle.get_port_direction()
+
     def get_definition_name(self):
         return self._def_name
 

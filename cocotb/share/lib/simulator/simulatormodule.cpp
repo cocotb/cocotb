@@ -150,6 +150,8 @@ namespace {
     PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type;
 }
 
+static PyObject *direction_enum;
+
 
 typedef int (*gpi_function_t)(const void *);
 
@@ -759,6 +761,22 @@ static PyObject *get_const(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
     return PyBool_FromLong(result);
 }
 
+static PyObject *is_port(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
+{
+    COCOTB_UNUSED(args);
+    if (gpi_is_port(self->hdl)) {
+        return Py_True;
+    }
+    return Py_False;
+}
+
+static PyObject *get_port_direction(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
+{
+    COCOTB_UNUSED(args);
+    const gpi_port_direction_t dir = gpi_port_direction(self->hdl);
+    return PyObject_CallFunction(direction_enum, "i", (int)dir);
+}
+
 static PyObject *get_type_string(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
     COCOTB_UNUSED(args);
@@ -963,6 +981,36 @@ static int add_module_types(PyObject* simulator)
     Py_INCREF(typ);
     if (PyModule_AddObject(simulator, "gpi_iterator_hdl", typ) < 0) {
         Py_DECREF(typ);
+        return -1;
+    }
+
+    PyObject *enum_module = PyImport_ImportModule("enum");
+    if (enum_module == NULL) {
+        return -1;
+    }
+    PyObject *enum_class = PyObject_GetAttrString(enum_module, "Enum");
+    Py_DECREF(enum_module);
+    if (enum_class == NULL) {
+        return -1;
+    }
+    direction_enum = PyObject_CallFunction(enum_class,
+        "s{sisisisisisisisisi}",
+        "PortDirection",
+        "UNHANDLED", GPI_PORT_UNHANDLED,
+        "NOT_A_PORT", GPI_NOT_A_PORT,
+        "INPUT", GPI_PORT_INPUT,
+        "OUTPUT", GPI_PORT_OUTPUT,
+        "INOUT", GPI_PORT_INOUT,
+        "MIXEDIO", GPI_PORT_MIXEDIO,
+        "NO_DIRECTION", GPI_PORT_NO_DIRECTION,
+        "BUFFER", GPI_PORT_BUFFER,
+        "LINKAGE", GPI_PORT_LINKAGE
+    );
+    Py_DECREF(enum_class);
+    if (direction_enum  == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(simulator, "PortDirection", direction_enum) < 0) {
         return -1;
     }
 
@@ -1248,6 +1296,22 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
             "--\n\n"
             "get_const() -> bool\n"
             "Return ``True`` if the object is a constant."
+        )
+    },
+    {"is_port",
+        (PyCFunction)is_port, METH_NOARGS, PyDoc_STR(
+            "is_port($self)\n"
+            "--\n\n"
+            "is_port() -> bool\n"
+            "Returns ``True`` if the object is a port."
+        )
+    },
+    {"get_port_direction",
+        (PyCFunction)get_port_direction, METH_NOARGS, PyDoc_STR(
+            "get_port_direction($self)\n"
+            "--\n\n"
+            "get_port_direction() -> cocotb.simulator.PortDirection\n"
+            "Returns the port direction as an enum, ``cocotb.simulator.PortDirection.GPI_UNDEFINED`` if not a port."
         )
     },
     {"get_num_elems",

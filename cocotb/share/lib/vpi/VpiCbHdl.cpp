@@ -211,6 +211,35 @@ int VpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     return GpiObjHdl::initialise(name, fq_name);
 }
 
+bool VpiArrayObjHdl::is_port() const
+{
+    return get_port_direction() != GPI_NOT_A_PORT;
+}
+
+gpi_port_direction_t VpiArrayObjHdl::get_port_direction() const
+{
+    vpiHandle self = GpiObjHdl::get_handle<vpiHandle>();
+    vpiHandle module = vpi_handle(vpiModule, self);
+    vpiHandle port_iter = vpi_iterate(vpiPort, module);
+    if (!port_iter) {
+        return GPI_NOT_A_PORT;
+    }
+    for (vpiHandle port; port = vpi_scan(port_iter); ) {
+        if (vpi_compare_objects(port, self)) {
+            vpi_free_object(port_iter);
+            switch (vpi_get(vpiDirection, port)) {
+                case vpiInput: return GPI_PORT_INPUT;
+                case vpiOutput: return GPI_PORT_OUTPUT;
+                case vpiInout: return GPI_PORT_INOUT;
+                case vpiMixedIO: return GPI_PORT_MIXEDIO;
+                case vpiNoDirection: return GPI_PORT_NO_DIRECTION;
+                default: return GPI_PORT_UNHANDLED;
+            }
+        }
+    }
+    return GPI_NOT_A_PORT;
+}
+
 int VpiObjHdl::initialise(std::string &name, std::string &fq_name) {
     char * str;
     vpiHandle hdl = GpiObjHdl::get_handle<vpiHandle>();
@@ -222,6 +251,35 @@ int VpiObjHdl::initialise(std::string &name, std::string &fq_name) {
         m_definition_file = str;
 
     return GpiObjHdl::initialise(name, fq_name);
+}
+
+bool VpiObjHdl::is_port() const
+{
+    return get_port_direction() != GPI_NOT_A_PORT;
+}
+
+gpi_port_direction_t VpiObjHdl::get_port_direction() const
+{
+    vpiHandle self = GpiObjHdl::get_handle<vpiHandle>();
+    vpiHandle module = vpi_handle(vpiModule, self);
+    vpiHandle port_iter = vpi_iterate(vpiPort, module);
+    if (!port_iter) {
+        return GPI_NOT_A_PORT;
+    }
+    for (vpiHandle port; port = vpi_scan(port_iter); ) {
+        if (vpi_compare_objects(port, self)) {
+            vpi_free_object(port_iter);
+            switch (vpi_get(vpiDirection, port)) {
+                case vpiInput: return GPI_PORT_INPUT;
+                case vpiOutput: return GPI_PORT_OUTPUT;
+                case vpiInout: return GPI_PORT_INOUT;
+                case vpiMixedIO: return GPI_PORT_MIXEDIO;
+                case vpiNoDirection: return GPI_PORT_NO_DIRECTION;
+                default: return GPI_PORT_UNHANDLED;
+            }
+        }
+    }
+    return GPI_NOT_A_PORT;
 }
 
 int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
@@ -286,6 +344,35 @@ int VpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     }
     LOG_DEBUG("VPI: %s initialized with %d elements", name.c_str(), m_num_elems);
     return GpiObjHdl::initialise(name, fq_name);
+}
+
+bool VpiSignalObjHdl::is_port() const
+{
+    return get_port_direction() != GPI_NOT_A_PORT;
+}
+
+gpi_port_direction_t VpiSignalObjHdl::get_port_direction() const
+{
+    vpiHandle self = GpiObjHdl::get_handle<vpiHandle>();
+    vpiHandle module = vpi_handle(vpiModule, self);
+    vpiHandle port_iter = vpi_iterate(vpiPort, module);
+    if (!port_iter) {
+        return GPI_NOT_A_PORT;
+    }
+    for (vpiHandle port; port = vpi_scan(port_iter); ) {
+        if (vpi_compare_objects(port, self)) {
+            vpi_free_object(port_iter);
+            switch (vpi_get(vpiDirection, port)) {
+                case vpiInput: return GPI_PORT_INPUT;
+                case vpiOutput: return GPI_PORT_OUTPUT;
+                case vpiInout: return GPI_PORT_INOUT;
+                case vpiMixedIO: return GPI_PORT_MIXEDIO;
+                case vpiNoDirection: return GPI_PORT_NO_DIRECTION;
+                default: return GPI_PORT_UNHANDLED;
+            }
+        }
+    }
+    return GPI_NOT_A_PORT;
 }
 
 const char* VpiSignalObjHdl::get_signal_value_binstr()

@@ -91,6 +91,23 @@ int GpiObjHdl::initialise(std::string &name, std::string &fq_name)
     return 0;
 }
 
+bool GpiObjHdl::is_port() const
+{
+    switch (get_port_direction()) {
+        case GPI_NOT_A_PORT:
+        case GPI_UNHANDLED:
+            return false;
+        default:
+            return true;
+    }
+}
+
+gpi_port_direction_t GpiObjHdl::get_port_direction() const
+{
+    LOG_ERROR("get_port_direction not implemented for %s", m_impl->get_name_c());
+    return GPI_UNHANDLED;
+}
+
 int GpiCbHdl::run_callback()
 {
     LOG_DEBUG("Generic run_callback");

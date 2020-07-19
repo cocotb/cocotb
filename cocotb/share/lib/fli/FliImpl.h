@@ -173,7 +173,8 @@ public:
         GpiObjHdl(impl, hdl, objtype, is_const),
         FliObj(acc_type, acc_full_type) { }
 
-
+    bool is_port() const override;
+    gpi_port_direction_t get_port_direction() const override;
     int initialise(std::string &name, std::string &fq_name) override;
 };
 
