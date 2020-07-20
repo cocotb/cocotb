@@ -461,12 +461,14 @@ def type_check_verilog(dut):
     test_handles = [
         (dut.stream_in_ready, "GPI_REGISTER"),
         (dut.register_array, "GPI_ARRAY"),
-        (dut.NUM_OF_MODULES, "GPI_INTEGER"),
         (dut.temp, "GPI_REGISTER"),
         (dut.and_output, "GPI_NET"),
         (dut.stream_in_data, "GPI_NET"),
         (dut.logic_b, "GPI_REGISTER"),
         (dut.logic_c, "GPI_REGISTER"),
+        (dut.INT_PARAM, "GPI_INTEGER"),
+        (dut.REAL_PARAM, "GPI_REAL"),
+        (dut.STRING_PARAM, "GPI_STRING")
     ]
 
     if cocotb.SIM_NAME.lower().startswith(("icarus")):

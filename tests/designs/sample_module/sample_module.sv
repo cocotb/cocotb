@@ -37,7 +37,11 @@ typedef struct packed
 } test_if;
 `endif
 
-module sample_module (
+module sample_module #(
+    parameter INT_PARAM = 12,
+    parameter REAL_PARAM = 3.14,
+    parameter STRING_PARAM = "Test"
+)(
     input                                       clk,
 
     output reg                                  stream_in_ready,
