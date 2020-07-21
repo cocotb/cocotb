@@ -39,10 +39,11 @@ static int releases = 0;
 
 static int sim_ending = 0;
 
-#include <cocotb_utils.h>     // COCOTB_UNUSED
+#include <cocotb_utils.h>       // COCOTB_UNUSED
 #include <type_traits>
 #include <Python.h>
-#include "gpi_logging.h"
+#include <gpi_logging.h>        // LOG_* macros
+#include <py_gpi_logging.h>     // py_gpi_logger_set_level
 #include "gpi.h"
 
 // This file defines the routines available to Python
@@ -897,17 +898,18 @@ static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+
 static PyObject *log_level(PyObject *self, PyObject *args)
 {
     COCOTB_UNUSED(self);
 
-    long l_level;
+    int l_level;
 
-    if (!PyArg_ParseTuple(args, "l:log_level", &l_level)) {
+    if (!PyArg_ParseTuple(args, "i:log_level", &l_level)) {
         return NULL;
     }
 
-    set_log_level((enum gpi_log_levels)l_level);
+    py_gpi_logger_set_level(l_level);
 
     Py_RETURN_NONE;
 }

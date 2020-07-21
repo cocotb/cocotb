@@ -344,11 +344,28 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libgpilog_sources += ["libgpilog.rc"]
     libgpilog = Extension(
         os.path.join("cocotb", "libs", "libgpilog"),
-        define_macros=[("GPILOG_EXPORTS", "")]  + _extra_defines,
+        define_macros=[("GPILOG_EXPORTS", "")] + _extra_defines,
         include_dirs=[include_dir],
-        library_dirs=python_lib_dirs,
         sources=libgpilog_sources,
         extra_link_args=_extra_link_args(lib_name="libgpilog", rpaths=["$ORIGIN"]),
+        extra_compile_args=_extra_cxx_compile_args,
+    )
+
+    #
+    #  libpygpilog
+    #
+    libpygpilog_sources = [
+        os.path.join(share_lib_dir, "py_gpi_log", "py_gpi_logging.cpp")
+    ]
+    if os.name == "nt":
+        libpygpilog_sources += ["libpygpilog.rc"]
+    libpygpilog = Extension(
+        os.path.join("cocotb", "libs", "libpygpilog"),
+        define_macros=[("PYGPILOG_EXPORTS", "")] + _extra_defines,
+        include_dirs=[include_dir],
+        libraries=["gpilog"],
+        sources=libpygpilog_sources,
+        extra_link_args=_extra_link_args(lib_name="libpygpilog", rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
     )
 
@@ -364,7 +381,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         os.path.join("cocotb", "libs", "libcocotb"),
         define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_SO_LIB", _get_python_lib())] + _extra_defines,
         include_dirs=[include_dir],
-        libraries=[_get_python_lib_link(), "gpilog", "cocotbutils"],
+        libraries=[_get_python_lib_link(), "gpilog", "cocotbutils", "pygpilog"],
         library_dirs=python_lib_dirs,
         sources=libcocotb_sources,
         extra_link_args=_extra_link_args(lib_name="libcocotb", rpaths=["$ORIGIN"] + python_lib_dirs),
@@ -402,7 +419,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         os.path.join("cocotb", "simulator"),
         define_macros=_extra_defines,
         include_dirs=[include_dir],
-        libraries=["cocotbutils", "gpilog", "gpi"],
+        libraries=["cocotbutils", "gpilog", "gpi", "pygpilog"],
         library_dirs=python_lib_dirs,
         sources=simulator_sources,
         extra_compile_args=_extra_cxx_compile_args,
@@ -412,7 +429,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     # The libraries in this list are compiled in order of their appearance.
     # If there is a linking dependency on one library to another,
     # the linked library must be built first.
-    return [libgpilog, libcocotbutils, libcocotb, libgpi, libsim]
+    return [libgpilog, libpygpilog, libcocotbutils, libcocotb, libgpi, libsim]
 
 
 def _get_vpi_lib_ext(
