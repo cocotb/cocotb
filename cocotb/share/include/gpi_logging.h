@@ -37,39 +37,183 @@
 #define GPILOG_EXPORT COCOTB_IMPORT
 #endif
 
+#include <cstdarg>
+
 #ifdef __cplusplus
-# define EXTERN_C_START extern "C" {
-# define EXTERN_C_END }
-#else
-# define EXTERN_C_START
-# define EXTERN_C_END
+extern "C" {
 #endif
 
-EXTERN_C_START
-
+/** Named logging level
+ *
+ *  Only logs at one of these log level will print a level name.
+ */
 enum gpi_log_levels {
-    GPIDebug = 10,
-    GPIInfo = 20,
-    GPIWarning = 30,
-    GPIError = 40,
-    GPICritical = 50
+    GPIDebug    = 10,   ///< Prints `DEBUG`    . Verbose information, useful for debugging
+    GPIInfo     = 20,   ///< Prints `INFO`     . Information about major events in the current program
+    GPIWarning  = 30,   ///< Prints `WARN`     . Encountered a recoverable bug, or information about surprising behavior
+    GPIError    = 40,   ///< Prints `ERROR`    . An unrecoverable error
+    GPICritical = 50    ///< Prints `CRITICAL` . An unrecoverable error, to be followed by immediate simulator shutdown
 };
 
+/** Logs a message at DEBUG log level using the current log handler.
+    Automatically populates arguments using information in the called context.
+ */
+#define LOG_DEBUG(...) \
+    gpi_log("cocotb.gpi", GPIDebug,         __FILE__, __func__, __LINE__, __VA_ARGS__);
 
-#define LOG_DEBUG(...)     gpi_log("cocotb.gpi", GPIDebug,         __FILE__, __func__, __LINE__, __VA_ARGS__);
-#define LOG_INFO(...)      gpi_log("cocotb.gpi", GPIInfo,          __FILE__, __func__, __LINE__, __VA_ARGS__);
-#define LOG_WARN(...)      gpi_log("cocotb.gpi", GPIWarning,       __FILE__, __func__, __LINE__, __VA_ARGS__);
-#define LOG_ERROR(...)     gpi_log("cocotb.gpi", GPIError,         __FILE__, __func__, __LINE__, __VA_ARGS__);
-#define LOG_CRITICAL(...)  gpi_log("cocotb.gpi", GPICritical,      __FILE__, __func__, __LINE__, __VA_ARGS__);
+/** Logs a message at INFO log level using the current log handler.
+    Automatically populates arguments using information in the called context.
+ */
+#define LOG_INFO(...) \
+    gpi_log("cocotb.gpi", GPIInfo,          __FILE__, __func__, __LINE__, __VA_ARGS__);
 
-GPILOG_EXPORT void set_log_handler(void *handler);
-GPILOG_EXPORT void clear_log_handler(void);
-GPILOG_EXPORT void set_log_filter(void *filter);
-GPILOG_EXPORT void clear_log_filter(void);
-GPILOG_EXPORT void set_log_level(enum gpi_log_levels new_level);
+/** Logs a message at WARN log level using the current log handler.
+    Automatically populates arguments using information in the called context.
+ */
+#define LOG_WARN(...) \
+    gpi_log("cocotb.gpi", GPIWarning,       __FILE__, __func__, __LINE__, __VA_ARGS__);
 
-GPILOG_EXPORT void gpi_log(const char *name, enum gpi_log_levels level, const char *pathname, const char *funcname, long lineno, const char *msg, ...);
+/** Logs a message at ERROR log level using the current log handler.
+    Automatically populates arguments using information in the called context.
+ */
+#define LOG_ERROR(...) \
+    gpi_log("cocotb.gpi", GPIError,         __FILE__, __func__, __LINE__, __VA_ARGS__);
 
-EXTERN_C_END
+/** Logs a message at CRITICAL log level using the current log handler.
+    Automatically populates arguments using information in the called context.
+ */
+#define LOG_CRITICAL(...) \
+    gpi_log("cocotb.gpi", GPICritical,      __FILE__, __func__, __LINE__, __VA_ARGS__);
+
+/** Logs a message at the given log level using the current log handler.
+    Automatically populates arguments using information in the called context.
+    @param level The gpi_log_levels at this to log the message
+ */
+#define LOG_(level, ...) \
+    gpi_log("cocotb.gpi", level,      __FILE__, __func__, __LINE__, __VA_ARGS__);
+
+/** Type of a log handler function.
+    @param userdata  private implementation data registered with this function
+    @param name      Name of the logger
+    @param level     Level at which to log a message at
+    @param pathname  Name of the file where the call site is located
+    @param funcname  Name of the function where the call site is located
+    @param lineno    Line number of the call site
+    @param msg       The message to log, uses C-sprintf-style format specifier
+    @param args      Additional arguments; formatted and inserted in message according to format specifier in msg argument
+ */
+typedef void (gpi_log_handler_type)(
+    void *userdata,
+    const char *name,
+    int level,
+    const char *pathname,
+    const char *funcname,
+    long lineno,
+    const char *msg,
+    va_list args);
+
+/** Log a message using the currently registered log handler.
+    User is expected to populate all arguments to this function.
+    @param name      Name of the logger
+    @param level     Level at which to log a message at
+    @param pathname  Name of the file where the call site is located
+    @param funcname  Name of the function where the call site is located
+    @param lineno    Line number of the call site
+    @param msg       The message to log, uses C-sprintf-style format specifier
+    @param ...       Additional arguments; formatted and inserted in message according to format specifier in msg argument
+ */
+GPILOG_EXPORT void gpi_log(
+    const char *name,
+    int level,
+    const char *pathname,
+    const char *funcname,
+    long lineno,
+    const char *msg,
+    ...);
+
+/** Log a message using the currently registered log handler.
+    User is expected to populate all arguments to this function.
+    @param name      Name of the logger
+    @param level     Level at which to log a message at
+    @param pathname  Name of the file where the call site is located
+    @param funcname  Name of the function where the call site is located
+    @param lineno    Line number of the call site
+    @param msg       The message to log, uses C-sprintf-style format specifier
+    @param args      Additional arguments; formatted and inserted in message according to format specifier in msg argument
+ */
+GPILOG_EXPORT void gpi_vlog(
+    const char *name,
+    int level,
+    const char *pathname,
+    const char *funcname,
+    long lineno,
+    const char *msg,
+    va_list args);
+
+/** Retrieve the current log handler.
+    @param handler  Location to return current log handler. If no custom logger is register this will be `NULL`.
+    @param userdata Location to return log handler userdata
+ */
+GPILOG_EXPORT void gpi_get_log_handler(gpi_log_handler_type **handler, void **userdata);
+
+/** Set custom log handler
+    @param handler   Handler function to call when the GPI logs a message
+    @param userdata  Data to pass to the handler function when logging a message
+ */
+GPILOG_EXPORT void gpi_set_log_handler(gpi_log_handler_type *handler, void *userdata);
+
+/** Clear the current custom log handler and use native logger
+ */
+GPILOG_EXPORT void gpi_clear_log_handler(void);
+
+/** Log a message using the native log handler.
+    User is expected to populate all arguments to this function.
+    @param name      Name of the logger
+    @param level     Level at which to log a message at
+    @param pathname  Name of the file where the call site is located
+    @param funcname  Name of the function where the call site is located
+    @param lineno    Line number of the call site
+    @param msg       The message to log, uses C-sprintf-style format specifier
+    @param ...       Additional arguments; formatted and inserted in message according to format specifier in msg argument
+ */
+GPILOG_EXPORT void gpi_native_logger_log(
+    const char *name,
+    int level,
+    const char *pathname,
+    const char *funcname,
+    long lineno,
+    const char *msg,
+    ...);
+
+/** Log a message using the native log handler.
+    User is expected to populate all arguments to this function.
+    @param name      Name of the logger
+    @param level     Level at which to log a message at
+    @param pathname  Name of the file where the call site is located
+    @param funcname  Name of the function where the call site is located
+    @param lineno    Line number of the call site
+    @param msg       The message to log, uses C-sprintf-style format specifier
+    @param args      Additional arguments; formatted and inserted in message according to format specifier in msg argument
+ */
+GPILOG_EXPORT void gpi_native_logger_vlog(
+    const char *name,
+    int level,
+    const char *pathname,
+    const char *funcname,
+    long lineno,
+    const char *msg,
+    va_list args);
+
+/** Set minimum logging level of the native logger.
+    If a logging request occurs where the logging level is lower than the level set by this function, it is not logged.
+    Only affects the native logger.
+    @param level     Logging level
+    @return          Previous logging level
+ */
+GPILOG_EXPORT int gpi_native_logger_set_level(int level);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COCOTB_GPI_LOGGING_H_ */

@@ -31,6 +31,8 @@
 
 #include <Python.h>
 #include <cocotb_utils.h>
+#include <gpi_logging.h>        // LOG_* macros
+#include <py_gpi_logging.h>     // set_log_handler, set_log_filter, clear_log_handler, clear_log_filter
 #include "embed.h"
 #include "locale.h"
 #include <cassert>
@@ -181,8 +183,7 @@ extern "C" void embed_sim_cleanup(void)
         PyGILState_Ensure();    // Don't save state as we are calling Py_Finalize
         Py_DecRef(pEventFn);
         pEventFn = NULL;
-        clear_log_handler();
-        clear_log_filter();
+        py_gpi_finalize();
         Py_Finalize();
         to_simulator();
     }
@@ -228,7 +229,8 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
 
     PyObject *cocotb_module, *cocotb_init, *cocotb_retval;
     PyObject *cocotb_log_module = NULL;
-    PyObject *simlog_func;
+    PyObject *log_func;
+    PyObject *filter_func;
     PyObject *argv_list;
 
     cocotb_module = NULL;
@@ -248,24 +250,23 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
     }
 
     // Obtain the function to use when logging from C code
-    simlog_func = PyObject_GetAttrString(cocotb_log_module, "_log_from_c");      // New reference
-    if (simlog_func == NULL) {
+    log_func = PyObject_GetAttrString(cocotb_log_module, "_log_from_c");      // New reference
+    if (log_func == NULL) {
         PyErr_Print();
         LOG_ERROR("Failed to get the _log_from_c function");
         goto cleanup;
     }
 
-    set_log_handler(simlog_func);                                       // Note: This function steals a reference to simlog_func.
-
     // Obtain the function to check whether to call log function
-    simlog_func = PyObject_GetAttrString(cocotb_log_module, "_filter_from_c");   // New reference
-    if (simlog_func == NULL) {
+    filter_func = PyObject_GetAttrString(cocotb_log_module, "_filter_from_c");   // New reference
+    if (filter_func == NULL) {
+        Py_DECREF(log_func);
         PyErr_Print();
         LOG_ERROR("Failed to get the _filter_from_c method");
         goto cleanup;
     }
 
-    set_log_filter(simlog_func);                                        // Note: This function steals a reference to simlog_func.
+    py_gpi_initialize(log_func, filter_func);                           // Note: This function steals a reference to simlog_func.
 
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");     // New reference
     if (pEventFn == NULL) {
