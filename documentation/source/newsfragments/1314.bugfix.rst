@@ -1,1 +1,0 @@
-Makefiles now correctly fail if the simulation crashes before a ``results.xml`` file can be written.

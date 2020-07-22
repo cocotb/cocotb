@@ -1,8 +1,0 @@
-Various binary representations have changed type from :class:`str` to :class:`bytes`. These include:
-
-* :attr:`cocotb.binary.BinaryValue.buff`, which as a consequence means :meth:`cocotb.binary.BinaryValue.assign` no longer accepts malformed ``10xz``-style :class:`str`\ s (which were treated as binary).
-* The objects produced by :mod:`cocotb.generators.byte`, which means that single bytes are represented by :class:`int` instead of 1-character :class:`str`\ s.
-* The packets produced by the :class:`~cocotb.drivers.avalon.AvalonSTPkts`.
-
-Code working with these objects may find it needs to switch from creating :class:`str` objects like ``"this"`` to :class:`bytes` objects like ``b"this"``.
-This change is a consequence of the move to Python 3.

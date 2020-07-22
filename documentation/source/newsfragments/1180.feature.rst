@@ -1,1 +1,0 @@
-Support for dropping into :mod:`pdb` upon failure, via the new :envvar:`COCOTB_PDB_ON_EXCEPTION` environment variable

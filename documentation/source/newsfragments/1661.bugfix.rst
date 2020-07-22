@@ -1,1 +1,0 @@
-``signal <= value_of_wrong_type`` no longer breaks the scheduler, and throws an error immediately.

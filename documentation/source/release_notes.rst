@@ -8,6 +8,163 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+Cocotb 1.4.0 (2020-07-08)
+=========================
+
+Features
+--------
+
+- :class:`~cocotb.triggers.Lock` can now be used in :keyword:`async with` statements. (:pr:`1031`)
+- Add support for distinguishing between NET (vpiNet) and REG (vpiReg) type when using vpi interface. (:pr:`1107`)
+- Support for dropping into :mod:`pdb` upon failure, via the new :envvar:`COCOTB_PDB_ON_EXCEPTION` environment variable (:pr:`1180`)
+- Simulators run through a TCL script (Aldec Riviera Pro and Mentor simulators) now support a new :make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
+- Cocotb now supports the following example of forking a *non-decorated* :ref:`async coroutine <async_functions>`.
+
+  .. code-block:: python3
+
+     async def example():
+         for i in range(10):
+             await cocotb.triggers.Timer(10, "ns")
+
+     cocotb.fork(example())
+
+  ..
+     towncrier will append the issue number taken from the file name here:
+  Issue (:pr:`1255`)
+- The cocotb log configuration is now less intrusive, and only configures the root logger instance, ``logging.getLogger()``, as part of :func:`cocotb.log.default_config` (:pr:`1266`).
+
+  As such, it is now possible to override the default cocotb logging behavior with something like::
+
+      # remove the cocotb log handler and formatting
+      root = logging.getLogger()
+      for h in root.handlers[:]:
+          root.remove_handler(h)
+          h.close()
+
+      # add your own
+      logging.basicConfig()
+
+  .. consume the towncrier issue number on this line. (:pr:`1266`)
+- Support for ``vpiRealNet`` (:pr:`1282`)
+- The colored output can now be disabled by the :envvar:`NO_COLOR` environment variable. (:pr:`1309`)
+- Cocotb now supports deposit/force/release/freeze actions on simulator handles, exposing functionality similar to the respective Verilog/VHDL assignments.
+
+  .. code-block:: python3
+
+     from cocotb.handle import Deposit, Force, Release, Freeze
+
+     dut.q <= 1            # A regular value deposit
+     dut.q <= Deposit(1)   # The same, higher verbosity
+     dut.q <= Force(1)     # Force value of q to 1
+     dut.q <= Release()    # Release q from a Force
+     dut.q <= Freeze()     # Freeze the current value of q
+
+  ..
+     towncrier will append the issue number taken from the file name here:
+  Issue (:pr:`1403`)
+- Custom logging handlers can now access the simulator time using
+  :attr:`logging.LogRecord.created_sim_time`, provided the
+  :class:`~cocotb.log.SimTimeContextFilter` filter added by
+  :func:`~cocotb.log.default_config` is not removed from the logger instance. (:pr:`1411`)
+- Questa now supports :envvar:`PLUSARGS`.
+  This requires that ``tcl.h`` be present on the system.
+  This is likely included in your installation of Questa, otherwise, specify ``CFLAGS=-I/path/to/tcl/includedir``. (:pr:`1424`)
+- The name of the entry point symbol for libraries in :envvar:`GPI_EXTRA` can now be customized.
+  The delimiter between each library in the list has changed from ``:`` to ``,``. (:pr:`1457`)
+- New methods for setting the value of a :class:`~cocotb.handle.NonHierarchyIndexableObject` (HDL arrays). (:pr:`1507`)
+
+  .. code-block:: python3
+
+      # Now supported
+      dut.some_array <= [0xAA, 0xBB, 0xCC]
+      dut.some_array.value = [0xAA, 0xBB, 0xCC]
+
+      # For simulators that support n-dimensional arrays
+      dut.some_2d_array <= [[0xAA, 0xBB], [0xCC, 0xDD]]
+      dut.some_2d_array.value = [[0xAA, 0xBB], [0xCC, 0xDD]]
+
+  .. consume the towncrier issue number on this line. (:pr:`1507`)
+- Added support for Aldec's Active-HDL simulator. (:pr:`1601`)
+- Including ``Makefile.inc`` from user makefiles is now a no-op and deprecated. Lines like  ``include $(shell cocotb-config --makefiles)/Makefile.inc`` can be removed from user makefiles without loss in functionality. (:pr:`1629`)
+- Support for using ``await`` inside an embedded IPython terminal, using :mod:`cocotb.ipython_support`. (:pr:`1649`)
+- Added :meth:`~cocotb.triggers.Event.is_set`, so users may check if an :class:`~cocotb.triggers.Event` has fired. (:pr:`1723`)
+- The :func:`cocotb.simulator.is_running` function was added so a user of cocotb could determine if they are running within a simulator. (:pr:`1843`)
+
+
+Bugfixes
+--------
+
+- Tests which fail at initialization, for instance due to no ``yield`` being present, are no longer silently ignored (:pr:`1253`)
+- Tests that were not run because predecessors threw :class:`cocotb.result.SimFailure`, and caused the simulator to exit, are now recorded with an outcome of :class:`cocotb.result.SimFailure`.
+  Previously, these tests were ignored. (:pr:`1279`)
+- Makefiles now correctly fail if the simulation crashes before a ``results.xml`` file can be written. (:pr:`1314`)
+- Logging of non-string messages with colored log output is now working. (:pr:`1410`)
+- Getting and setting the value of a :class:`~cocotb.handle.NonHierarchyIndexableObject` now iterates through the correct range of the simulation object, so arrays that do not start/end at index 0 are supported. (:pr:`1507`)
+- The :class:`~cocotb.monitors.xgmii.XGMII` monitor no longer crashes on Python 3, and now assembles packets as :class:`bytes` instead of :class:`str`. The :class:`~cocotb.drivers.xgmii.XGMII` driver has expected :class:`bytes` since cocotb 1.2.0. (:pr:`1545`)
+- ``signal <= value_of_wrong_type`` no longer breaks the scheduler, and throws an error immediately. (:pr:`1661`)
+- Scheduling behavior is now consistent before and after the first :keyword:`await` of a :class:`~cocotb.triggers.GPITrigger`. (:pr:`1705`)
+- Iterating over ``for generate`` statements using VHPI has been fixed. This bug caused some simulators to crash, and was a regression in version 1.3. (:pr:`1882`)
+- The :class:`~cocotb.drivers.xgmii.XGMII` driver no longer emits a corrupted word on the first transfer. (:pr:`1905`)
+
+
+Improved Documentation
+----------------------
+
+- If a makefile uses cocotb's :file:`Makefile.sim`, ``make help`` now lists the supported targets and variables. (:pr:`1318`)
+- A new section :ref:`rotating-logger` has been added. (:pr:`1400`)
+- The documentation at http://docs.cocotb.org/ has been restructured,
+  making it easier to find relevant information. (:pr:`1482`)
+
+
+Deprecations and Removals
+-------------------------
+
+- :func:`cocotb.utils.reject_remaining_kwargs` is deprecated, as it is no longer
+  needed now that we only support Python 3.5 and newer. (:pr:`1339`)
+- The value of :class:`cocotb.handle.StringObject`\ s is now of type :class:`bytes`, instead of  :class:`str` with an implied ASCII encoding scheme. (:pr:`1381`)
+- :class:`ReturnValue` is now deprecated. Use a :keyword:`return` statement instead; this works in all supported versions of Python. (:pr:`1489`)
+- The makefile variable :make:var:`VERILATOR_TRACE`
+  that was not supported for all simulators has been deprecated.
+  Using it prints a deprecation warning and points to the documentation section
+  :ref:`simulator-support` explaining how to get the same effect by other means. (:pr:`1495`)
+- ``BinaryValue.get_hex_buff`` produced nonsense and has been removed. (:pr:`1511`)
+- Passing :class:`str` instances to :func:`cocotb.utils.hexdump` and :func:`cocotb.utils.hexdiffs` is deprecated. :class:`bytes` objects should be passed instead. (:pr:`1519`)
+- ``Makefile.pylib``, which provided helpers for building C extension modules for Python, has been removed.
+  Users of the ``PYTHON_LIBDIR`` and ``PYTHON_INCLUDEDIR`` variables will now have to compute these values themselves.
+  See the ``endian_swapper`` example for how to do this. (:pr:`1632`)
+- Makefile and documentation for the NVC simulator which has never worked have been removed. (:pr:`1693`)
+
+
+Changes
+-------
+
+- Cocotb no longer supports Python 2, at least Python 3.5 is now required.
+  Users of Python 2.7 can still use cocotb 1.3, but are heavily encouraged to update.
+  It is recommended to use the latest release of Python 3 for improved performance over older Python 3 versions. (:pr:`767`)
+- Mentor Questa, Aldec Riviera-PRO and GHDL are now started in the directory containing the Makefile and also save :file:`results.xml` there, bringing them in line with the behavior used by other simulators. (:pr:`1598`) (:pr:`1599`) (:pr:`1063`)
+- Tests are now evaluated in order of their appearance in the :envvar:`MODULE` environment variable, their stage, and the order of invocation of the :class:`cocotb.test` decorator within a module. (:pr:`1380`)
+- All libraries are compiled during installation to the ``cocotb/libs`` directory.
+  The interface libraries ``libcocotbvpi`` and ``libcocotbvhpi`` have been renamed to have a ``_simulator_name`` postfix.
+  The ``simulator`` module has moved to :mod:`cocotb.simulator`.
+  The ``LD_LIBRARY_PATH`` environment variable no longer needs to be set by the makefiles, as the libraries now discover each other via ``RPATH`` settings. (:pr:`1425`)
+- Cocotb must now be :ref:`installed <installation-via-pip>` before it can be used. (:pr:`1445`)
+- :attr:`cocotb.handle.NonHierarchyIndexableObject.value` is now a list in left-to-right range order of the underlying simulation object.
+  Previously the list was always ordered low-to-high. (:pr:`1507`)
+- Various binary representations have changed type from :class:`str` to :class:`bytes`. These include:
+
+  * :attr:`cocotb.binary.BinaryValue.buff`, which as a consequence means :meth:`cocotb.binary.BinaryValue.assign` no longer accepts malformed ``10xz``-style :class:`str`\ s (which were treated as binary).
+  * The objects produced by :mod:`cocotb.generators.byte`, which means that single bytes are represented by :class:`int` instead of 1-character :class:`str`\ s.
+  * The packets produced by the :class:`~cocotb.drivers.avalon.AvalonSTPkts`.
+
+  Code working with these objects may find it needs to switch from creating :class:`str` objects like ``"this"`` to :class:`bytes` objects like ``b"this"``.
+  This change is a consequence of the move to Python 3. (:pr:`1514`)
+- There's no longer any need to set the ``PYTHON_BIN`` makefile variable, the Python executable automatically matches the one cocotb was installed into. (:pr:`1574`)
+- The :make:var:`SIM` setting for Aldec Riviera-PRO has changed from ``aldec`` to ``riviera``. (:pr:`1691`)
+- Certain methods on the :mod:`cocotb.simulator` Python module now throw a :exc:`RuntimeError` when no simulator is present, making it safe to use :mod:`cocotb` without a simulator present. (:pr:`1843`)
+- Invalid values of the environment variable :envvar:`COCOTB_LOG_LEVEL` are no longer ignored.
+  They now raise an exception with instructions how to fix the problem. (:pr:`1898`)
+
+
 cocotb 1.3.2
 ============
 

@@ -1,3 +1,0 @@
-Questa now supports :envvar:`PLUSARGS`.
-This requires that ``tcl.h`` be present on the system.
-This is likely included in your installation of Questa, otherwise, specify ``CFLAGS=-I/path/to/tcl/includedir``.

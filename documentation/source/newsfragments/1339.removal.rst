@@ -1,2 +1,0 @@
-:func:`cocotb.utils.reject_remaining_kwargs` is deprecated, as it is no longer
-needed now that we only support Python 3.5 and newer.

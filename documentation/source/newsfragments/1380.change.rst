@@ -1,1 +1,0 @@
-Tests are now evaluated in order of their appearance in the :envvar:`MODULE` environment variable, their stage, and the order of invocation of the :class:`cocotb.test` decorator within a module.
