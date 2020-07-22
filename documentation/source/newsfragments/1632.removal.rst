@@ -1,3 +1,0 @@
-``Makefile.pylib``, which provided helpers for building C extension modules for Python, has been removed.
-Users of the ``PYTHON_LIBDIR`` and ``PYTHON_INCLUDEDIR`` variables will now have to compute these values themselves.
-See the ``endian_swapper`` example for how to do this.

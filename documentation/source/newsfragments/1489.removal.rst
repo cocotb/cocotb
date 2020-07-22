@@ -1,1 +1,0 @@
-:class:`ReturnValue` is now deprecated. Use a :keyword:`return` statement instead; this works in all supported versions of Python.

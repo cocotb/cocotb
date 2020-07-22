@@ -1,1 +1,0 @@
-Add support for distinguishing between NET (vpiNet) and REG (vpiReg) type when using vpi interface.

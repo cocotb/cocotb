@@ -1,1 +1,0 @@
-The :func:`cocotb.simulator.is_running` function was added so a user of cocotb could determine if they are running within a simulator.

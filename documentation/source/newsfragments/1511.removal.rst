@@ -1,1 +1,0 @@
-``BinaryValue.get_hex_buff`` produced nonsense and has been removed.

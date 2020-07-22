@@ -1,1 +1,0 @@
-Tests which fail at initialization, for instance due to no ``yield`` being present, are no longer silently ignored

@@ -1,1 +1,0 @@
-The :class:`~cocotb.monitors.xgmii.XGMII` monitor no longer crashes on Python 3, and now assembles packets as :class:`bytes` instead of :class:`str`. The :class:`~cocotb.drivers.xgmii.XGMII` driver has expected :class:`bytes` since cocotb 1.2.0.

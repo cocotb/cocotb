@@ -1,1 +1,0 @@
-Logging of non-string messages with colored log output is now working.
