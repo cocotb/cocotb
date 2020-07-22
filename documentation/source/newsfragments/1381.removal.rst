@@ -1,1 +1,0 @@
-The value of :class:`cocotb.handle.StringObject`\ s is now of type :class:`bytes`, instead of  :class:`str` with an implied ASCII encoding scheme.

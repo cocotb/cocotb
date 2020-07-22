@@ -1,1 +1,0 @@
-Iterating over ``for generate`` statements using VHPI has been fixed. This bug caused some simulators to crash, and was a regression in version 1.3.

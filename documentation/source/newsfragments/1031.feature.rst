@@ -1,1 +1,0 @@
-:class:`~cocotb.triggers.Lock` can now be used in :keyword:`async with` statements.

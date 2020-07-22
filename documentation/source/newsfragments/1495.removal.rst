@@ -1,4 +1,0 @@
-The makefile variable :make:var:`VERILATOR_TRACE`
-that was not supported for all simulators has been deprecated.
-Using it prints a deprecation warning and points to the documentation section
-:ref:`simulator-support` explaining how to get the same effect by other means.

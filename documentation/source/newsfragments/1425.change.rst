@@ -1,4 +1,0 @@
-All libraries are compiled during installation to the ``cocotb/libs`` directory.
-The interface libraries ``libcocotbvpi`` and ``libcocotbvhpi`` have been renamed to have a ``_simulator_name`` postfix.
-The ``simulator`` module has moved to :mod:`cocotb.simulator`.
-The ``LD_LIBRARY_PATH`` environment variable no longer needs to be set by the makefiles, as the libraries now discover each other via ``RPATH`` settings.
