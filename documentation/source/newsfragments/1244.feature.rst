@@ -1,1 +1,0 @@
-Simulators run through a TCL script (Aldec Riviera Pro and Mentor simulators) now support a new :make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime.

@@ -1,1 +1,0 @@
-There's no longer any need to set the ``PYTHON_BIN`` makefile variable, the Python executable automatically matches the one cocotb was installed into.

@@ -1,2 +1,0 @@
-The documentation at http://docs.cocotb.org/ has been restructured,
-making it easier to find relevant information.

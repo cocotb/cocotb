@@ -1,2 +1,0 @@
-Tests that were not run because predecessors threw :class:`cocotb.result.SimFailure`, and caused the simulator to exit, are now recorded with an outcome of :class:`cocotb.result.SimFailure`.
-Previously, these tests were ignored.

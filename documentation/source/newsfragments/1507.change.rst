@@ -1,2 +1,0 @@
-:attr:`cocotb.handle.NonHierarchyIndexableObject.value` is now a list in left-to-right range order of the underlying simulation object.
-Previously the list was always ordered low-to-high.

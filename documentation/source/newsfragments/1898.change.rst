@@ -1,2 +1,0 @@
-Invalid values of the environment variable :envvar:`COCOTB_LOG_LEVEL` are no longer ignored.
-They now raise an exception with instructions how to fix the problem.

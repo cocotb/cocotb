@@ -1,2 +1,0 @@
-The name of the entry point symbol for libraries in :envvar:`GPI_EXTRA` can now be customized.
-The delimiter between each library in the list has changed from ``:`` to ``,``.

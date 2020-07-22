@@ -1,1 +1,0 @@
-Getting and setting the value of a :class:`~cocotb.handle.NonHierarchyIndexableObject` now iterates through the correct range of the simulation object, so arrays that do not start/end at index 0 are supported.
