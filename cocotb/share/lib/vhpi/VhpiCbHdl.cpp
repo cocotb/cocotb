@@ -29,6 +29,7 @@
 #include "VhpiImpl.h"
 #include <limits>     // numeric_limits
 #include <cinttypes>  // fixed-size int types and format strings
+#include <stdexcept>
 
 namespace {
     using bufSize_type = decltype(vhpiValueT::bufSize);

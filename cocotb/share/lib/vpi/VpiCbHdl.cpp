@@ -29,6 +29,7 @@
 
 #include <assert.h>
 #include "VpiImpl.h"
+#include <stdexcept>
 
 extern "C" int32_t handle_vpi_callback(p_cb_data cb_data);
 
