@@ -72,7 +72,7 @@ jobs:
         - pip install --upgrade tox tox-wheel virtualenv codecov
       script:
         - echo 'Running cocotb tests with Python 3.8 ...' && echo -en 'travis_fold:start:cocotb_py38'
-        - tox -e py38_wheel
+        - tox -e py38_wheel,py38_wheel-build
         - echo 'travis_fold:end:cocotb_py38'
       after_success: *travis_linux_post
 
