@@ -11,65 +11,278 @@ on:
 
 jobs:
 
+  lint-whitespace:
+    runs-on: ubuntu-latest
+    name: whitespace
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: whitespace
+      run: |
+        ! git --no-pager grep --color --line-number --full-name --extended-regexp -I '\\s+$'
+
+  lint-flake8:
+    runs-on: ubuntu-latest
+    name: flake8
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.5, 3.9]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{matrix.python-version}}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{matrix.python-version}}
+    - name: flake8
+      run: |
+        pip install flake8
+        flake8
+
   tests:
-    name: ${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}}
+
+    name: ${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}} ${{matrix.may_fail && '| May Fail' || ''}}
     runs-on: ${{matrix.os}}
+    env:
+      SIM: ${{matrix.sim}}
+      TOPLEVEL_LANG: ${{matrix.lang}}
+      CXX: ${{matrix.cxx || 'g++'}}
+      CC: ${{matrix.cc || 'gcc'}}
+      OS: ${{matrix.os}}
+
     strategy:
       fail-fast: false
       matrix:
         include:
-          - sim-version: "v10_3"
-            sim: 'icarus'
-            lang: 'verilog'
+
+            # Test different Python versions with package managed Icarus on Ubuntu
+
+          - sim: icarus
+            sim-version: apt
+            lang: verilog
+            python-version: 3.5
+            os: ubuntu-20.04
+
+          - sim: icarus
+            sim-version: apt
+            lang: verilog
+            python-version: 3.6
+            os: ubuntu-20.04
+
+          - sim: icarus
+            sim-version: apt
+            lang: verilog
+            python-version: 3.7
+            os: ubuntu-20.04
+
+          - sim: icarus
+            sim-version: apt
+            lang: verilog
             python-version: 3.8
-            os: 'windows-latest'
-          - sim-version: "master"
-            sim: 'icarus'
-            lang: 'verilog'
+            os: ubuntu-20.04
+
+          - sim: icarus
+            sim-version: apt
+            lang: verilog
+            python-version: 3.9
+            os: ubuntu-20.04
+
+            # Test Icarus dev on Ubuntu
+
+          - sim: icarus
+            sim-version: master
+            lang: verilog
             python-version: 3.8
-            os: 'windows-latest'
+            os: ubuntu-20.04
             may_fail: true
-    env:
-      SIM: ${{matrix.sim}}
-      TOPLEVEL_LANG: ${{matrix.lang}}
-      PYTHON: ${{matrix.python-version}}
-      OS: ${{matrix.os}}
+
+            # Test GHDL on Ubuntu
+
+          - sim: ghdl
+            sim-version: apt
+            lang: vhdl
+            python-version: 3.8
+            os: ubuntu-20.04
+            may_fail: true
+
+          - sim: ghdl
+            sim-version: nightly
+            lang: vhdl
+            python-version: 3.8
+            os: ubuntu-latest
+            may_fail: true
+
+            # Test Verilator on Ubuntu
+
+          - sim: verilator
+            sim-version: apt
+            lang: verilog
+            python-version: 3.8
+            os: ubuntu-20.04
+            may_fail: true
+
+          - sim: verilator
+            sim-version: master
+            lang: verilog
+            python-version: 3.8
+            os: ubuntu-20.04
+            may_fail: true
+
+            # Test other OSes
+
+          - sim: icarus             # Icarus homebrew --HEAD
+            sim-version: homebrew-HEAD
+            lang: verilog
+            python-version: 3.8
+            os: macos-latest
+            may_fail: true
+
+          - sim: icarus             # Icarus homebrew stable
+            sim-version: homebrew
+            lang: verilog
+            python-version: 3.8
+            os: macos-latest
+
+          - sim: icarus             # Icarus windows master from source
+            sim-version: master
+            lang: verilog
+            python-version: 3.8
+            os: windows-latest
+            may_fail: true
+
+          - sim: icarus             # Icarus windows 10.3 from source
+            sim-version: v10_3
+            lang: verilog
+            python-version: 3.8
+            os: windows-latest
+
+            # Other
+
+          - sim: icarus             # use clang instead of gcc
+            sim-version: v10_3
+            lang: verilog
+            python-version: 3.8
+            os: ubuntu-latest
+            cxx: clang++
+            cc: clang
+            extra_name: "clang | "
+
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Anaconda ${{matrix.python-version}}
+
+      # Install Python
+    - name: Set up Python ${{matrix.python-version}}
+      if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{matrix.python-version}}
+    - name: Set up Anaconda ${{matrix.python-version}} (Windows)
+      if: startsWith(matrix.os, 'windows')
       uses: conda-incubator/setup-miniconda@v1
       with:
         auto-update-conda: true
         python-version: ${{matrix.python-version}}
-    - name: Set up cocotb build dependencies
+
+      # Install Icarus
+    - name: Set up Icarus (Ubuntu - apt)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version == 'apt'
       run: |
-        conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain libpython
-    - name: Build and install Icarus
+        sudo apt install -y --no-install-recommends iverilog
+    - name: Set up Icarus (Ubuntu - source)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'icarus' && matrix.sim-version != 'apt'
       run: |
-        git clone https://github.com/steveicarus/iverilog.git -b "${{matrix.sim-version}}"
+        sudo apt install -y --no-install-recommends g++ gperf flex bison make autoconf
+        git clone https://github.com/steveicarus/iverilog.git -b ${{matrix.sim-version}}
+        cd iverilog
+        bash ./autoconf.sh
+        bash ./configure
+        make -j $(nproc)
+        sudo make install
+    - name: Set up Icarus (Windows - source)
+      if: startsWith(matrix.os, 'windows') && matrix.sim == 'icarus'
+      run: |
+        conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain
+        git clone https://github.com/steveicarus/iverilog.git -b ${{matrix.sim-version}}
         cd iverilog
         bash ./autoconf.sh
         bash ./configure --host=x86_64-w64-mingw32 --prefix=/c/iverilog
         make -j $(nproc)
         make install
-        echo "::add-path::C:\iverilog\bin"
-    - name: Install Python testing dependencies
+        echo "C:\iverilog\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+    - name: Set up Icarus (MacOS - homebrew --HEAD)
+      if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew-HEAD'
       run: |
-        pip install coverage xunitparser pytest pytest-cov
-    - name: Install cocotb
+        brew install icarus-verilog --HEAD
+    - name: Set up Icarus (MacOS - homebrew)
+      if: startsWith(matrix.os, 'macos') && matrix.sim == 'icarus' && matrix.sim-version == 'homebrew'
       run: |
-        python -m pip install  --global-option build_ext --global-option --compiler=mingw32 -e .
-    - name: Test
+        brew install icarus-verilog
+
+      # Install GHDL
+    - name: Set up GHDL (Ubuntu - apt)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'apt'
+      run: |
+        sudo apt install -y --no-install-recommends ghdl-mcode ghdl
+    - name : Set up GHDL (Ubunutu - nightly)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'nightly'
+      uses: ghdl/setup-ghdl-ci@nightly
+      with:
+        backend: mcode
+
+      # Install Verilator
+    - name: Set up Verilator (Ubuntu - apt)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator' && matrix.sim-version == 'apt'
+      run: |
+        sudo apt install -y --no-install-recommends verilator
+    - name: Set up Verilator (Ubunutu - source)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator' && matrix.sim-version != 'apt'
+      run: |
+        sudo apt install -y --no-install-recommends make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlibc zlib1g zlib1g-dev
+        git clone https://github.com/verilator/verilator.git -b ${{matrix.sim-version}}
+        cd verilator
+        autoconf
+        ./configure
+        make -j $(nproc)
+        sudo make install
+
+      # Windows Testing
+    - name: Install cocotb build dependencies (Windows)
+      if: startsWith(matrix.os, 'windows')
+      run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
+    - name: Install cocotb (Windows)
+      if: startsWith(matrix.os, 'windows')
+      run: python -m pip install  --global-option build_ext --global-option --compiler=mingw32 -e .
+    - name: Install Python testing dependencies (Windows)
+      run: pip install coverage xunitparser pytest pytest-cov
+    - name: Test (Windows)
+      if: startsWith(matrix.os, 'windows')
       continue-on-error: ${{matrix.may_fail || false}}
+      timeout-minutes: 15
       run: |
         pytest
-        $pass = $?
         make test
-        exit -not ($pass -and $?)
-      # inverted the pass for exit because the boolean is converted to 0/1, but an exit code of 1 is a failure
-    - name: Upload coverage
-      if: steps.Test.outcome != 'failure'
+
+      # Ubuntu / MacOS Testing
+    - name: Install cocotb build dependencies (Ubuntu - g++)
+      if: startsWith(matrix.os, 'ubuntu') && (!matrix.cxx || matrix.cxx == 'g++')
       run: |
-        pip install codecov
-        bash -c 'find . -type f -name "\.coverage\.cocotb" | xargs coverage combine --append'
-        codecov
+        sudo apt install g++
+    - name: Install cocotb build dependencies (Ubuntu - clang++)
+      if: startsWith(matrix.os, 'ubuntu') && matrix.cxx == 'clang++'
+      run: |
+        sudo apt install clang
+    - name: Install cocotb build dependencies (MacOS)
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        g++ --version
+    - name: Install Python testing dependencies (Ubuntu, MacOS)
+      if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
+      run: |
+        pip install tox tox-gh-actions
+    - name: Test (Ubuntu, MacOS)
+      if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
+      continue-on-error: ${{matrix.may_fail || false}}
+      timeout-minutes: 15
+      run: |
+        tox
