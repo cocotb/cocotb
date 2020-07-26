@@ -108,8 +108,6 @@ def access_signal(dut):
 
 
 @cocotb.test(
-    # Icarus 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("icarus") else False,
     skip=cocotb.LANGUAGE in ["vhdl"])
 def access_single_bit(dut):
     """Access a single bit in a vector of the DUT"""
@@ -126,8 +124,6 @@ def access_single_bit(dut):
 
 
 @cocotb.test(
-    # Icarus 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
-    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("icarus") else False,
     skip=cocotb.LANGUAGE in ["vhdl"])
 def access_single_bit_assignment(dut):
     """Access a single bit in a vector of the DUT using the assignment mechanism"""
