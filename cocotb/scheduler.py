@@ -426,7 +426,7 @@ class Scheduler:
                     continue
 
                 if _debug:
-                    debugstr = "\n\t".join([coro.__qualname__ for coro in scheduling])
+                    debugstr = "\n\t".join([coro._coro.__qualname__ for coro in scheduling])
                     if len(scheduling):
                         debugstr = "\n\t" + debugstr
                     self.log.debug("%d pending coroutines for event %s%s" %
@@ -440,10 +440,10 @@ class Scheduler:
                         # coroutine was killed by another coroutine waiting on the same trigger
                         continue
                     if _debug:
-                        self.log.debug("Scheduling coroutine %s" % (coro.__qualname__))
+                        self.log.debug("Scheduling coroutine %s" % (coro._coro.__qualname__))
                     self.schedule(coro, trigger=trigger)
                     if _debug:
-                        self.log.debug("Scheduled coroutine %s" % (coro.__qualname__))
+                        self.log.debug("Scheduled coroutine %s" % (coro._coro.__qualname__))
 
                 # Schedule may have queued up some events so we'll burn through those
                 while self._pending_events:
@@ -667,7 +667,7 @@ class Scheduler:
             )
 
         if _debug:
-            self.log.debug("Adding new coroutine %s" % coroutine.__qualname__)
+            self.log.debug("Adding new coroutine %s" % coroutine._coro.__qualname__)
 
         self.schedule(coroutine)
         self._check_termination()
@@ -693,14 +693,14 @@ class Scheduler:
     def _trigger_from_started_coro(self, result: cocotb.decorators.RunningTask) -> Trigger:
         if _debug:
             self.log.debug("Joining to already running coroutine: %s" %
-                           result.__qualname__)
+                           result._coro.__qualname__)
         return result.join()
 
     def _trigger_from_unstarted_coro(self, result: cocotb.decorators.RunningTask) -> Trigger:
         self.queue(result)
         if _debug:
             self.log.debug("Scheduling nested coroutine: %s" %
-                           result.__qualname__)
+                           result._coro.__qualname__)
         return result.join()
 
     def _trigger_from_waitable(self, result: cocotb.triggers.Waitable) -> Trigger:
@@ -776,7 +776,7 @@ class Scheduler:
                 result = coroutine._advance(send_outcome)
                 if _debug:
                     self.log.debug("Coroutine %s yielded %s (mode %d)" %
-                                   (coroutine.__qualname__, str(result), self._mode))
+                                   (coroutine._coro.__qualname__, str(result), self._mode))
 
             except cocotb.decorators.CoroutineComplete:
                 if _debug:
