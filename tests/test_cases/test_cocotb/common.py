@@ -45,10 +45,13 @@ def _check_traceback(running_coro, exc_type, pattern):
 
 
 @contextmanager
-def assert_raises(exc_type):
+def assert_raises(exc_type, pattern=None):
     try:
         yield
-    except exc_type:
+    except exc_type as e:
+        if pattern:
+            assert re.match(pattern, str(e)), \
+                "Correct exception type caught, but message did not match pattern"
         pass
     else:
         raise AssertionError("{} was not raised".format(exc_type.__name__))
