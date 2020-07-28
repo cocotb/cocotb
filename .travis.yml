@@ -155,6 +155,18 @@ jobs:
       script:
         - tox -e py37
 
+    - stage: SimTests
+      python: 3.7
+      name: "Py 3.7, Linux, Verilator devel"
+      env: SIM=verilator TOPLEVEL_LANG=verilog
+      before_install:
+        - sudo apt install autoconf make g++ bison flex libfl-dev
+        - git clone https://github.com/verilator/verilator --depth=1 verilator_devel
+        - cd verilator_devel && autoconf && ./configure && make -j2 && sudo make install && cd ..
+        - pip install tox
+      script:
+        - tox -e py37
+
     - stage: DeployPyPI
       python: 3.7
       if: tag IS present
@@ -174,3 +186,5 @@ jobs:
       python: 3.7
       env: SIM=ghdl TOPLEVEL_LANG=vhdl
     - env: ALLOW_FAIL=yes
+    - stage: SimTests
+      env: SIM=verilator TOPLEVEL_LANG=verilog
