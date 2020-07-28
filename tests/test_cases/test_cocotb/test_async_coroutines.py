@@ -8,6 +8,7 @@ Test function and substitutablility of async coroutines
 import cocotb
 from cocotb.triggers import Timer
 from cocotb.outcomes import Value, Error
+from common import assert_raises
 
 
 class produce:
@@ -135,3 +136,25 @@ def test_undecorated_coroutine_yield(dut):
 
     yield example()
     assert ran
+
+
+@cocotb.test()
+async def test_fork_coroutine_function_exception(dut):
+    async def coro():
+        pass
+
+    pattern = "Coroutine function {} should be called " \
+        "prior to being scheduled.".format(coro)
+    with assert_raises(TypeError, pattern):
+        cocotb.fork(coro)
+
+
+@cocotb.test()
+async def test_task_coroutine_function_exception(dut):
+    async def coro(dut):
+        pass
+
+    pattern = "Coroutine function {} should be called " \
+        "prior to being scheduled.".format(coro)
+    with assert_raises(TypeError, pattern):
+        cocotb.decorators.RunningTask(coro)
