@@ -93,6 +93,11 @@ class RunningTask:
             self._natively_awaitable = True
         elif inspect.isgenerator(inst):
             self._natively_awaitable = False
+        elif inspect.iscoroutinefunction(inst):
+            raise TypeError(
+                "Coroutine function {} should be called prior to being "
+                "scheduled."
+                .format(inst))
         elif sys.version_info >= (3, 6) and inspect.isasyncgen(inst):
             raise TypeError(
                 "{} is an async generator, not a coroutine. "

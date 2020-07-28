@@ -638,6 +638,13 @@ class Scheduler:
         Just a wrapper around self.schedule which provides some debug and
         useful error messages in the event of common gotchas.
         """
+
+        if inspect.iscoroutinefunction(coroutine):
+            raise TypeError(
+                "Coroutine function {} should be called prior to being "
+                "scheduled."
+                .format(coroutine))
+
         if isinstance(coroutine, cocotb.decorators.coroutine):
             raise TypeError(
                 "Attempt to schedule a coroutine that hasn't started: {}.\n"
