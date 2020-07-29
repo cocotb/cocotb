@@ -251,21 +251,21 @@ class RegressionManager:
         self._log_test_summary()
         self._log_sim_summary()
 
-        # Generate output reports
+        # Write user coverage
         self.xunit.write()
         if self._cov:
             self._cov.stop()
             self.log.info("Writing coverage data")
             self._cov.save()
             self._cov.html_report()
-        if cocotb._library_coverage is not None:
-            # TODO: move this once we have normal shutdown behavior to _sim_event
-            cocotb._library_coverage.stop()
-            cocotb._library_coverage.save()
 
         # Setup simulator finalization
         self._finished = True
         simulator.stop_simulator("Shutting down...")
+
+        if cocotb._library_coverage is not None:
+            cocotb._library_coverage.stop()
+            cocotb._library_coverage.save()  # pragma: no cover
 
     @property
     def finished(self) -> bool:
