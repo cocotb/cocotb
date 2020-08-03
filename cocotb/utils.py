@@ -28,6 +28,7 @@
 """Collection of handy functions."""
 
 import ctypes
+import inspect
 import math
 import os
 import sys
@@ -458,6 +459,10 @@ class ParametrizedSingleton(type):
             self = super(ParametrizedSingleton, cls).__call__(*args, **kwargs)
             cls.__instances[key] = self
             return self
+
+    @property
+    def __signature__(cls):
+        return inspect.signature(cls.__singleton_key__)
 
 
 def reject_remaining_kwargs(name, kwargs):
