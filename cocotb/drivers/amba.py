@@ -188,7 +188,10 @@ class AXI4Master(BusDriver):
             self.bus.WVALID <= 1
 
             try:
-                self.bus.WSTRB <= next(byte_enable_iterator)
+                current_byte_enable = next(byte_enable_iterator)
+                self.bus.WSTRB <= (2**self.bus.WSTRB.value.n_bits - 1
+                                   if current_byte_enable is None
+                                   else current_byte_enable)
             except StopIteration:
                 # Do not update WSTRB if we have reached the end of the iter
                 pass
@@ -211,7 +214,7 @@ class AXI4Master(BusDriver):
 
     @cocotb.coroutine
     async def write(self, address, value, *, size=None, burst=AXIBurst.INCR,
-                    byte_enable=0xf, address_latency=0, data_latency=0,
+                    byte_enable=None, address_latency=0, data_latency=0,
                     sync=True):
         """Write a value to an address.
 
@@ -222,8 +225,8 @@ class AXI4Master(BusDriver):
                 the data bus).
             burst: The burst type, either ``FIXED``, ``INCR`` or ``WRAP``.
                 Defaults to ``INCR``.
-            byte_enable: Which bytes in value to actually write. Default is to
-                write all bytes.
+            byte_enable: Which bytes in value to actually write. Defaults to
+                None (write all bytes).
             address_latency: Delay before setting the address (in clock
                 cycles). Default is no delay.
             data_latency: Delay before setting the data value (in clock
@@ -401,7 +404,7 @@ class AXI4LiteMaster(AXI4Master):
 
     @cocotb.coroutine
     async def write(
-        self, address: int, value: int, byte_enable: int = 0xf,
+        self, address: int, value: int, byte_enable: Optional[int] = None,
         address_latency: int = 0, data_latency: int = 0, sync: bool = True
     ) -> BinaryValue:
         """Write a value to an address.
@@ -409,8 +412,8 @@ class AXI4LiteMaster(AXI4Master):
         Args:
             address: The address to write to.
             value: The data value to write.
-            byte_enable: Which bytes in value to actually write. Default is to
-                write all bytes.
+            byte_enable: Which bytes in value to actually write. Defaults to
+                None (write all bytes).
             address_latency: Delay before setting the address (in clock
                 cycles). Default is no delay.
             data_latency: Delay before setting the data value (in clock
