@@ -7,7 +7,6 @@ import sys
 import sysconfig
 import logging
 import distutils
-import subprocess
 import textwrap
 import ctypes
 
@@ -129,10 +128,6 @@ def _get_lib_ext_name():
 
 class build_ext(_build_ext):
     def run(self):
-
-        def_dir = os.path.join(cocotb_share_dir, "def")
-        self._gen_import_libs(def_dir)
-
         if os.name == "nt":
             create_sxs_appconfig(self.get_ext_fullpath(os.path.join("cocotb", "simulator")))
 
@@ -208,24 +203,6 @@ class build_ext(_build_ext):
             )
             if ext._needs_stub:
                 self.write_stub(package_dir or os.curdir, ext, True)
-
-    def _gen_import_libs(self, def_dir):
-        """
-        On Windows generate import libraries that contains the code required to
-        load the DLL (.a) based on module definition files (.def)
-        """
-
-        if os.name == "nt":
-            for sim in ["aldec"]:
-                subprocess.run(
-                    [
-                        "dlltool",
-                        "-d",
-                        os.path.join(def_dir, sim + ".def"),
-                        "-l",
-                        os.path.join(def_dir, "lib" + sim + ".a"),
-                    ]
-                )
 
 
 def _extra_link_args(lib_name=None, rpaths=[]):
@@ -432,7 +409,7 @@ def _get_vhpi_lib_ext(
         os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
     ]
     if os.name == "nt":
-        libcocotbvhpi_sources += [lib_name + ".rc"]
+        libcocotbvhpi_sources += [lib_name + ".rc", os.path.join(share_lib_dir, "vhpi", "VhpiTrampoline.cpp")]
     libcocotbvhpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         include_dirs=[include_dir],
@@ -468,7 +445,6 @@ def get_ext():
 
     share_lib_dir = os.path.relpath(os.path.join(cocotb_share_dir, "lib"))
     include_dir = os.path.relpath(os.path.join(cocotb_share_dir, "include"))
-    share_def_dir = os.path.relpath(os.path.join(cocotb_share_dir, "def"))
 
     ext = []
 
@@ -596,12 +572,7 @@ def get_ext():
     #
     # Aldec Riviera Pro
     #
-    aldec_extra_lib = []
-    aldec_extra_lib_path = []
     logger.info("Compiling libraries for Riviera")
-    if os.name == "nt":
-        aldec_extra_lib = ["aldec"]
-        aldec_extra_lib_path = [share_def_dir]
 
     aldec_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
@@ -614,8 +585,6 @@ def get_ext():
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
-        extra_lib=aldec_extra_lib,
-        extra_lib_dir=aldec_extra_lib_path,
     )
     ext.append(aldec_vhpi_ext)
 
