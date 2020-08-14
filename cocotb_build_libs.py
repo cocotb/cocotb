@@ -7,8 +7,8 @@ import sys
 import sysconfig
 import logging
 import distutils
-import subprocess
 import textwrap
+import ctypes
 
 from setuptools import Extension
 from distutils.spawn import find_executable
@@ -128,10 +128,6 @@ def _get_lib_ext_name():
 
 class build_ext(_build_ext):
     def run(self):
-
-        def_dir = os.path.join(cocotb_share_dir, "def")
-        self._gen_import_libs(def_dir)
-
         if os.name == "nt":
             create_sxs_appconfig(self.get_ext_fullpath(os.path.join("cocotb", "simulator")))
 
@@ -207,24 +203,6 @@ class build_ext(_build_ext):
             )
             if ext._needs_stub:
                 self.write_stub(package_dir or os.curdir, ext, True)
-
-    def _gen_import_libs(self, def_dir):
-        """
-        On Windows generate import libraries that contains the code required to
-        load the DLL (.a) based on module definition files (.def)
-        """
-
-        if os.name == "nt":
-            for sim in ["icarus", "modelsim", "aldec", "ghdl"]:
-                subprocess.run(
-                    [
-                        "dlltool",
-                        "-d",
-                        os.path.join(def_dir, sim + ".def"),
-                        "-l",
-                        os.path.join(def_dir, "lib" + sim + ".a"),
-                    ]
-                )
 
 
 def _extra_link_args(lib_name=None, rpaths=[]):
@@ -407,7 +385,7 @@ def _get_vpi_lib_ext(
         os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
     ]
     if os.name == "nt":
-        libcocotbvpi_sources += [lib_name + ".rc"]
+        libcocotbvpi_sources += [lib_name + ".rc", os.path.join(share_lib_dir, "vpi", "VpiTrampoline.cpp")]
     libcocotbvpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         define_macros=[("COCOTBVPI_EXPORTS", ""), ("VPI_CHECKING", "1")] + [(sim_define, "")],
@@ -431,7 +409,7 @@ def _get_vhpi_lib_ext(
         os.path.join(share_lib_dir, "vhpi", "VhpiCbHdl.cpp"),
     ]
     if os.name == "nt":
-        libcocotbvhpi_sources += [lib_name + ".rc"]
+        libcocotbvhpi_sources += [lib_name + ".rc", os.path.join(share_lib_dir, "vhpi", "VhpiTrampoline.cpp")]
     libcocotbvhpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         include_dirs=[include_dir],
@@ -446,6 +424,18 @@ def _get_vhpi_lib_ext(
     return libcocotbvhpi
 
 
+def _can_load_library(path):
+    try:
+        if os.name == "nt":
+            ctypes.windll.LoadLibrary(path)
+        else:
+            ctypes.cdll.LoadLibrary(path)
+    except OSError:
+        return False
+
+    return True
+
+
 def get_ext():
 
     cfg_vars = distutils.sysconfig.get_config_vars()
@@ -455,7 +445,6 @@ def get_ext():
 
     share_lib_dir = os.path.relpath(os.path.join(cocotb_share_dir, "lib"))
     include_dir = os.path.relpath(os.path.join(cocotb_share_dir, "include"))
-    share_def_dir = os.path.relpath(os.path.join(cocotb_share_dir, "def"))
 
     ext = []
 
@@ -466,38 +455,24 @@ def get_ext():
     #
     #  Icarus Verilog
     #
-    icarus_extra_lib = []
-    icarus_extra_lib_path = []
     logger.info("Compiling libraries for Icarus Verilog")
-    if os.name == "nt":
-        icarus_extra_lib = ["icarus"]
-        icarus_extra_lib_path = [share_def_dir]
 
     icarus_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="ICARUS",
-        extra_lib=icarus_extra_lib,
-        extra_lib_dir=icarus_extra_lib_path,
     )
     ext.append(icarus_vpi_ext)
 
     #
     #  Modelsim/Questa
     #
-    modelsim_extra_lib = []
-    modelsim_extra_lib_path = []
     logger.info("Compiling libraries for Modelsim/Questa")
-    if os.name == "nt":
-        modelsim_extra_lib = ["modelsim"]
-        modelsim_extra_lib_path = [share_def_dir]
 
     modelsim_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="MODELSIM",
-        extra_lib=modelsim_extra_lib,
-        extra_lib_dir=modelsim_extra_lib_path,
     )
     ext.append(modelsim_vpi_ext)
 
@@ -509,28 +484,45 @@ def get_ext():
     else:
         modelsim_dir = os.path.dirname(os.path.dirname(vsim_path))
         modelsim_include_dir = os.path.join(modelsim_dir, "include")
+        modelsim_lib_path = os.path.dirname(vsim_path)
+        if os.name == "nt":
+            modelsim_libmtipli_path = os.path.join(modelsim_lib_path, "mtipli.dll")
+        else:
+            modelsim_libmtipli_path = os.path.join(modelsim_lib_path, "libmtipli.so")
         mti_path = os.path.join(modelsim_include_dir, "mti.h")
         if os.path.isfile(mti_path):
-            lib_name = "libcocotbfli_modelsim"
-            fli_sources = [
-                os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
-                os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
-                os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
-            ]
-            if os.name == "nt":
-                fli_sources += [lib_name + ".rc"]
-            fli_ext = Extension(
-                os.path.join("cocotb", "libs", lib_name),
-                define_macros=[("COCOTBFLI_EXPORTS", "")],
-                include_dirs=[include_dir, modelsim_include_dir],
-                libraries=["gpi", "gpilog", "stdc++"] + modelsim_extra_lib,
-                library_dirs=modelsim_extra_lib_path,
-                sources=fli_sources,
-                extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
-                extra_compile_args=_extra_cxx_compile_args,
-            )
+            # Check if the library is compatible with our current architecture
+            # e.g. 32-bit libmtipli and 32-bit python runtime
+            # To check can load the library into our current python runtime
+            # if it works we are sure that it is compatible
+            if _can_load_library(modelsim_libmtipli_path):
+                lib_name = "libcocotbfli_modelsim"
+                fli_sources = [
+                    os.path.join(share_lib_dir, "fli", "FliImpl.cpp"),
+                    os.path.join(share_lib_dir, "fli", "FliCbHdl.cpp"),
+                    os.path.join(share_lib_dir, "fli", "FliObjHdl.cpp"),
+                ]
+                if os.name == "nt":
+                    fli_sources += [lib_name + ".rc"]
+                fli_ext = Extension(
+                    os.path.join("cocotb", "libs", lib_name),
+                    define_macros=[("COCOTBFLI_EXPORTS", "")],
+                    include_dirs=[include_dir, modelsim_include_dir],
+                    libraries=["gpi", "gpilog", "stdc++", "mtipli"],
+                    library_dirs=[modelsim_lib_path],
+                    sources=fli_sources,
+                    extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
+                    extra_compile_args=_extra_cxx_compile_args,
+                )
 
-            ext.append(fli_ext)
+                ext.append(fli_ext)
+            else:
+                logger.warning(
+                    "Cannot build FLI interface for Modelsim/Questa - "
+                    "the mtipli library for '{}' at '{}' cannot be loaded.".format(
+                        vsim_path, modelsim_libmtipli_path
+                    )
+                )  # e.g. 32-bit Modelsim versions do not work with 64-bit python
 
         else:
             logger.warning(
@@ -543,19 +535,12 @@ def get_ext():
     #
     # GHDL
     #
-    ghdl_extra_lib = []
-    ghdl_extra_lib_path = []
     logger.info("Compiling libraries for GHDL")
-    if os.name == "nt":
-        ghdl_extra_lib = ["ghdl"]
-        ghdl_extra_lib_path = [share_def_dir]
 
     ghdl_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="GHDL",
-        extra_lib=ghdl_extra_lib,
-        extra_lib_dir=ghdl_extra_lib_path,
     )
     ext.append(ghdl_vpi_ext)
 
@@ -587,19 +572,12 @@ def get_ext():
     #
     # Aldec Riviera Pro
     #
-    aldec_extra_lib = []
-    aldec_extra_lib_path = []
     logger.info("Compiling libraries for Riviera")
-    if os.name == "nt":
-        aldec_extra_lib = ["aldec"]
-        aldec_extra_lib_path = [share_def_dir]
 
     aldec_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
-        extra_lib=aldec_extra_lib,
-        extra_lib_dir=aldec_extra_lib_path,
     )
     ext.append(aldec_vpi_ext)
 
@@ -607,8 +585,6 @@ def get_ext():
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
-        extra_lib=aldec_extra_lib,
-        extra_lib_dir=aldec_extra_lib_path,
     )
     ext.append(aldec_vhpi_ext)
 

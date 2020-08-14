@@ -35,9 +35,32 @@
 #define COCOTBVHPI_EXPORT COCOTB_IMPORT
 #endif
 
-#include "../gpi/gpi_priv.h"
+// On Windows vhpi_* are provided by VhpiTrampoline, therefore do not use dllimport
+#if !defined(__linux__) && !defined(__APPLE__)
+#define PLI_DLLISPEC
+
+// Workaround broken WIN32 detection in vhpi_user.h
+#ifndef WIN32
+#define WIN32
+#define COCOTB_VHPI_WIN32_DEFINED
+#endif
+#endif
+
+// Include stdint.h here to provide (u)int8/16/32/64_t as the portability help in vhpi_user.h is broken
+#include <stdint.h>
 #include <vhpi_user.h>
 #include <vhpi_user_ext.h>
+
+#if !defined(__linux__) && !defined(__APPLE__)
+#undef PLI_DLLISPEC
+
+#ifdef COCOTB_VHPI_WIN32_DEFINED
+#undef WIN32
+#undef COCOTB_VHPI_WIN32_DEFINED
+#endif
+#endif
+
+#include "../gpi/gpi_priv.h"
 #include <vector>
 #include <map>
 
