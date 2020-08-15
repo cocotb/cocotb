@@ -270,9 +270,17 @@ def _get_python_lib():
     """ Get the library for embedded the python interpreter """
 
     if os.name == "nt":
-        python_lib = _get_python_lib_link() + "." + _get_lib_ext_name()
+        python_lib = _get_python_lib_link() + ".dll"
     else:
-        python_lib = "lib" + _get_python_lib_link() + "." + _get_lib_ext_name()
+        python_lib = "lib" + _get_python_lib_link() + "."
+        if sys.platform == "darwin":
+            python_lib = os.path.join(sysconfig.get_config_var("LIBDIR"), python_lib)
+            if os.path.exists(python_lib + "dylib"):
+                python_lib += "dylib"
+            else:
+                python_lib += "so"
+        else:
+            python_lib += "so"
 
     return python_lib
 
@@ -317,10 +325,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     #
     #  libgpilog
     #
-    python_lib_dirs = []
-    if sys.platform == "darwin":
-        python_lib_dirs = [sysconfig.get_config_var("LIBDIR")]
-
     libgpilog_sources = [
         os.path.join(share_lib_dir, "gpi_log", "gpi_logging.cpp")
     ]
@@ -349,7 +353,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         include_dirs=[include_dir],
         libraries=["gpilog", "cocotbutils"],
         sources=libcocotb_sources,
-        extra_link_args=_extra_link_args(lib_name="libcocotb", rpaths=["$ORIGIN"] + python_lib_dirs),
+        extra_link_args=_extra_link_args(lib_name="libcocotb", rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
     )
 
