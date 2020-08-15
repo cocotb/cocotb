@@ -293,7 +293,7 @@ if os.name != "nt":
     _extra_cxx_compile_args += ["-flto"]
 
 # Make PRI* format macros available with C++11 compiler but older libc, e.g. on RHEL6.
-_extra_cxx_compile_args += ["-D__STDC_FORMAT_MACROS"]
+_extra_defines = [("__STDC_FORMAT_MACROS", "")]
 
 
 def _get_common_lib_ext(include_dir, share_lib_dir):
@@ -314,7 +314,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libcocotbutils_sources += ["libcocotbutils.rc"]
     libcocotbutils = Extension(
         os.path.join("cocotb", "libs", "libcocotbutils"),
-        define_macros=[("COCOTBUTILS_EXPORTS", "")],
+        define_macros=[("COCOTBUTILS_EXPORTS", "")] + _extra_defines,
         include_dirs=[include_dir],
         libraries=["gpilog"],
         sources=libcocotbutils_sources,
@@ -332,7 +332,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libgpilog_sources += ["libgpilog.rc"]
     libgpilog = Extension(
         os.path.join("cocotb", "libs", "libgpilog"),
-        define_macros=[("GPILOG_EXPORTS", "")],
+        define_macros=[("GPILOG_EXPORTS", "")]  + _extra_defines,
         include_dirs=[include_dir],
         sources=libgpilog_sources,
         extra_link_args=_extra_link_args(lib_name="libgpilog", rpaths=["$ORIGIN"]),
@@ -349,7 +349,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libcocotb_sources += ["libcocotb.rc"]
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
-        define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_SO_LIB", _get_python_lib())],
+        define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_SO_LIB", _get_python_lib())] + _extra_defines,
         include_dirs=[include_dir],
         libraries=["gpilog", "cocotbutils"],
         sources=libcocotb_sources,
@@ -368,7 +368,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libgpi_sources += ["libgpi.rc"]
     libgpi = Extension(
         os.path.join("cocotb", "libs", "libgpi"),
-        define_macros=[("GPI_EXPORTS", ""), ("LIB_EXT", _get_lib_ext_name()), ("SINGLETON_HANDLES", "")],
+        define_macros=[("GPI_EXPORTS", ""), ("LIB_EXT", _get_lib_ext_name()), ("SINGLETON_HANDLES", "")] + _extra_defines,
         include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "cocotb"],
         sources=libgpi_sources,
@@ -386,6 +386,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         simulator_sources += ["simulator.rc"]
     libsim = Extension(
         os.path.join("cocotb", "simulator"),
+        define_macros=_extra_defines,
         include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "gpi"],
         sources=simulator_sources,
@@ -411,7 +412,7 @@ def _get_vpi_lib_ext(
         libcocotbvpi_sources += [lib_name + ".rc"]
     libcocotbvpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
-        define_macros=[("COCOTBVPI_EXPORTS", ""), ("VPI_CHECKING", "1")] + [(sim_define, "")],
+        define_macros=[("COCOTBVPI_EXPORTS", ""), ("VPI_CHECKING", "1")] + [(sim_define, "")] + _extra_defines,
         include_dirs=[include_dir],
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
@@ -436,7 +437,7 @@ def _get_vhpi_lib_ext(
     libcocotbvhpi = Extension(
         os.path.join("cocotb", "libs", lib_name),
         include_dirs=[include_dir],
-        define_macros=[("COCOTBVHPI_EXPORTS", ""), ("VHPI_CHECKING", 1)] + [(sim_define, "")],
+        define_macros=[("COCOTBVHPI_EXPORTS", ""), ("VHPI_CHECKING", 1)] + [(sim_define, "")] + _extra_defines,
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
         sources=libcocotbvhpi_sources,
@@ -522,7 +523,7 @@ def get_ext():
                 fli_sources += [lib_name + ".rc"]
             fli_ext = Extension(
                 os.path.join("cocotb", "libs", lib_name),
-                define_macros=[("COCOTBFLI_EXPORTS", "")],
+                define_macros=[("COCOTBFLI_EXPORTS", "")] + _extra_defines,
                 include_dirs=[include_dir, modelsim_include_dir],
                 libraries=["gpi", "gpilog"] + modelsim_extra_lib,
                 library_dirs=modelsim_extra_lib_path,
