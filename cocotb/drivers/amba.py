@@ -101,10 +101,12 @@ class AXI4Master(BusDriver):
             except AttributeError:
                 pass
 
-        # Mutex for each channel that we master to prevent contention
-        self.write_address_busy = Lock("%s_wabusy" % name)
-        self.read_address_busy = Lock("%s_rabusy" % name)
-        self.write_data_busy = Lock("%s_wbusy" % name)
+        # Mutex for each channel to prevent contention
+        self.write_address_busy = Lock(name + "_awbusy")
+        self.read_address_busy = Lock(name + "_arbusy")
+        self.write_data_busy = Lock(name + "_wbusy")
+        self.read_data_busy = Lock(name + "_rbusy")
+        self.write_response_busy = Lock(name + "_bbusy")
 
     @staticmethod
     def _check_length(length, burst):
@@ -145,72 +147,75 @@ class AXI4Master(BusDriver):
                     .format(address, last_address,
                             (address & ~0xfff) + 0x1000))
 
-    async def _send_write_address(self, address, length, burst, size, delay):
-        """
-        Send the write address, with optional delay (in clocks)
-        """
-        await self.write_address_busy.acquire()
-        await ClockCycles(self.clock, delay)
+    async def _send_write_address(self, address, length, burst, size, delay,
+                                  sync):
+        """Send the write address, with optional delay (in clocks)"""
+        async with self.write_address_busy:
+            if sync:
+                await RisingEdge(self.clock)
 
-        # Set the address and, if present on the bus, burst, length and size
-        self.bus.AWADDR <= address
-        self.bus.AWVALID <= 1
-
-        if hasattr(self.bus, "AWBURST"):
-            self.bus.AWBURST <= burst.value
-
-        if hasattr(self.bus, "AWLEN"):
-            self.bus.AWLEN <= length - 1
-
-        if hasattr(self.bus, "AWSIZE"):
-            self.bus.AWSIZE <= size.bit_length() - 1
-
-        # Wait until acknowledged
-        while True:
-            await ReadOnly()
-            if self.bus.AWREADY.value:
-                break
-            await RisingEdge(self.clock)
-        await RisingEdge(self.clock)
-        self.bus.AWVALID <= 0
-        self.write_address_busy.release()
-
-    async def _send_write_data(self, data, delay, byte_enable):
-        """Send the write data, with optional delay (in clocks)."""
-        await self.write_data_busy.acquire()
-
-        byte_enable_iterator = iter(byte_enable)
-
-        for i, word in enumerate(data):
             await ClockCycles(self.clock, delay)
 
-            self.bus.WDATA <= word
-            self.bus.WVALID <= 1
+            # Set the address and, if present on the bus, burst, length and
+            # size
+            self.bus.AWADDR <= address
+            self.bus.AWVALID <= 1
 
-            try:
-                current_byte_enable = next(byte_enable_iterator)
-                self.bus.WSTRB <= (2**self.bus.WSTRB.value.n_bits - 1
-                                   if current_byte_enable is None
-                                   else current_byte_enable)
-            except StopIteration:
-                # Do not update WSTRB if we have reached the end of the iter
-                pass
+            if hasattr(self.bus, "AWBURST"):
+                self.bus.AWBURST <= burst.value
 
-            if hasattr(self.bus, "WLAST"):
-                if i == len(data) - 1:
-                    self.bus.WLAST <= 1
-                else:
-                    self.bus.WLAST <= 0
+            if hasattr(self.bus, "AWLEN"):
+                self.bus.AWLEN <= length - 1
 
+            if hasattr(self.bus, "AWSIZE"):
+                self.bus.AWSIZE <= size.bit_length() - 1
+
+            # Wait until acknowledged
             while True:
-                await RisingEdge(self.clock)
-                if self.bus.WREADY.value:
+                await ReadOnly()
+                if self.bus.AWREADY.value:
                     break
+                await RisingEdge(self.clock)
+            await RisingEdge(self.clock)
+            self.bus.AWVALID <= 0
 
-            if i == len(data) - 1:
-                self.bus.WVALID <= 0
+    async def _send_write_data(self, data, delay, byte_enable, sync):
+        """Send the write data, with optional delay (in clocks)."""
+        async with self.write_data_busy:
+            if sync:
+                await RisingEdge(self.clock)
 
-        self.write_data_busy.release()
+            byte_enable_iterator = iter(byte_enable)
+
+            for i, word in enumerate(data):
+                await ClockCycles(self.clock, delay)
+
+                self.bus.WDATA <= word
+                self.bus.WVALID <= 1
+
+                try:
+                    current_byte_enable = next(byte_enable_iterator)
+                    self.bus.WSTRB <= (2**self.bus.WSTRB.value.n_bits - 1
+                                       if current_byte_enable is None
+                                       else current_byte_enable)
+                except StopIteration:
+                    # Do not update WSTRB if we have reached the end of the
+                    # iterator
+                    pass
+
+                if hasattr(self.bus, "WLAST"):
+                    if i == len(data) - 1:
+                        self.bus.WLAST <= 1
+                    else:
+                        self.bus.WLAST <= 0
+
+                while True:
+                    await RisingEdge(self.clock)
+                    if self.bus.WREADY.value:
+                        break
+
+                if i == len(data) - 1:
+                    self.bus.WVALID <= 0
 
     @cocotb.coroutine
     async def write(self, address, value, *, size=None, burst=AXIBurst.INCR,
@@ -255,35 +260,34 @@ class AXI4Master(BusDriver):
         AXI4Master._check_4kB_boundary_crossing(address, burst, size,
                                                 len(value))
 
-        if sync:
-            await RisingEdge(self.clock)
-
         write_address = self._send_write_address(address, len(value), burst,
-                                                 size, address_latency)
+                                                 size, address_latency, sync)
 
-        write_data = self._send_write_data(value, data_latency, byte_enable)
+        write_data = self._send_write_data(value, data_latency, byte_enable,
+                                           sync)
 
         await Combine(cocotb.fork(write_address), cocotb.fork(write_data))
 
-        # Wait for the response
-        while True:
-            await ReadOnly()
-            if self.bus.BVALID.value and self.bus.BREADY.value:
-                result = AXIxRESP(self.bus.BRESP.value.integer)
-                break
+        async with self.write_response_busy:
+            # Wait for the response
+            while True:
+                await ReadOnly()
+                if self.bus.BVALID.value and self.bus.BREADY.value:
+                    result = AXIxRESP(self.bus.BRESP.value.integer)
+                    break
+                await RisingEdge(self.clock)
+
             await RisingEdge(self.clock)
 
-        await RisingEdge(self.clock)
+            if result is not AXIxRESP.OKAY:
+                err_msg = "Write to address {0:#x}"
+                if len(value) != 1:
+                    err_msg += " ({1} beats, {2} burst)"
+                err_msg += " failed with BRESP: {3} ({4})"
 
-        if result is not AXIxRESP.OKAY:
-            err_msg = "Write to address {0:#x}"
-            if len(value) != 1:
-                err_msg += " ({1} beats, {2} burst)"
-            err_msg += " failed with BRESP: {3} ({4})"
-
-            raise AXIProtocolError(
-                err_msg.format(address, len(value), burst.name, result.value,
-                               result.name))
+                raise AXIProtocolError(
+                    err_msg.format(address, len(value), burst.name,
+                                   result.value, result.name))
 
     @cocotb.coroutine
     async def read(self, address, length=1, *, size=None, burst=AXIBurst.INCR,
@@ -321,71 +325,73 @@ class AXI4Master(BusDriver):
         AXI4Master._check_length(length, burst)
         AXI4Master._check_4kB_boundary_crossing(address, burst, size, length)
 
-        if sync:
-            await RisingEdge(self.clock)
+        async with self.read_address_busy:
+            if sync:
+                await RisingEdge(self.clock)
 
-        self.bus.ARADDR <= address
-        self.bus.ARVALID <= 1
+            self.bus.ARADDR <= address
+            self.bus.ARVALID <= 1
 
-        if hasattr(self.bus, "ARLEN"):
-            self.bus.ARLEN <= length - 1
+            if hasattr(self.bus, "ARLEN"):
+                self.bus.ARLEN <= length - 1
 
-        if hasattr(self.bus, "ARSIZE"):
-            self.bus.ARSIZE <= size.bit_length() - 1
+            if hasattr(self.bus, "ARSIZE"):
+                self.bus.ARSIZE <= size.bit_length() - 1
 
-        if hasattr(self.bus, "ARBURST"):
-            self.bus.ARBURST <= burst.value
+            if hasattr(self.bus, "ARBURST"):
+                self.bus.ARBURST <= burst.value
 
-        while True:
-            await ReadOnly()
-            if self.bus.ARREADY.value:
-                break
-            await RisingEdge(self.clock)
-
-        await RisingEdge(self.clock)
-        self.bus.ARVALID <= 0
-
-        data = []
-        rresp = []
-
-        while True:
             while True:
                 await ReadOnly()
-                if self.bus.RVALID.value and self.bus.RREADY.value:
-                    data.append(self.bus.RDATA.value)
-                    rresp.append(AXIxRESP(self.bus.RRESP.value.integer))
+                if self.bus.ARREADY.value:
                     break
                 await RisingEdge(self.clock)
 
-            if not hasattr(self.bus, "RLAST") or self.bus.RLAST.value:
-                break
-
             await RisingEdge(self.clock)
+            self.bus.ARVALID <= 0
 
-        if len(data) != length:
-            raise AXIReadBurstLengthMismatch(
-                "AXI4 slave returned {} data than expected (requested {} "
-                "words, received {})"
-                .format("more" if len(data) > length else "less",
-                        length, len(data)))
+        async with self.read_data_busy:
+            data = []
+            rresp = []
 
-        if return_rresp:
-            return list(zip(data, rresp))
-        else:
-            for beat_number, beat_result in enumerate(rresp):
-                if beat_result is not AXIxRESP.OKAY:
-                    err_msg = "Read on address {0:#x}"
-                    if length != 1:
-                        err_msg += " (beat {1} of {2}, {3} burst)"
-                    err_msg += " failed with RRESP: {4} ({5})"
+            while True:
+                while True:
+                    await ReadOnly()
+                    if self.bus.RVALID.value and self.bus.RREADY.value:
+                        data.append(self.bus.RDATA.value)
+                        rresp.append(AXIxRESP(self.bus.RRESP.value.integer))
+                        break
+                    await RisingEdge(self.clock)
 
-                    err_msg = err_msg.format(
-                        address, beat_number + 1, length, burst,
-                        beat_result.value, beat_result.name)
+                if not hasattr(self.bus, "RLAST") or self.bus.RLAST.value:
+                    break
 
-                    raise AXIProtocolError(err_msg)
+                await RisingEdge(self.clock)
 
-            return data
+            if len(data) != length:
+                raise AXIReadBurstLengthMismatch(
+                    "AXI4 slave returned {} data than expected (requested {} "
+                    "words, received {})"
+                    .format("more" if len(data) > length else "less",
+                            length, len(data)))
+
+            if return_rresp:
+                return list(zip(data, rresp))
+            else:
+                for beat_number, beat_result in enumerate(rresp):
+                    if beat_result is not AXIxRESP.OKAY:
+                        err_msg = "Read on address {0:#x}"
+                        if length != 1:
+                            err_msg += " (beat {1} of {2}, {3} burst)"
+                        err_msg += " failed with RRESP: {4} ({5})"
+
+                        err_msg = err_msg.format(
+                            address, beat_number + 1, length, burst,
+                            beat_result.value, beat_result.name)
+
+                        raise AXIProtocolError(err_msg)
+
+                return data
 
     def __len__(self):
         return 2**len(self.bus.ARADDR)
