@@ -37,7 +37,9 @@ from cocotb.triggers import ClockCycles, Combine, Lock, ReadOnly, RisingEdge
 
 
 class AXIProtocolError(Exception):
-    pass
+    def __init__(self,  message, xresp):
+        super().__init__(message)
+        self.xresp = xresp
 
 
 class AXIReadBurstLengthMismatch(Exception):
@@ -287,7 +289,7 @@ class AXI4Master(BusDriver):
 
                 raise AXIProtocolError(
                     err_msg.format(address, len(value), burst.name,
-                                   result.value, result.name))
+                                   result.value, result.name), result)
 
     @cocotb.coroutine
     async def read(self, address, length=1, *, size=None, burst=AXIBurst.INCR,
@@ -389,7 +391,7 @@ class AXI4Master(BusDriver):
                             address, beat_number + 1, length, burst,
                             beat_result.value, beat_result.name)
 
-                        raise AXIProtocolError(err_msg)
+                        raise AXIProtocolError(err_msg, beat_result)
 
                 return data
 
