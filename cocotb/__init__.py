@@ -38,12 +38,13 @@ import random
 import time
 import warnings
 from typing import Dict, List, Union
+from collections.abc import Coroutine
 
 import cocotb.handle
 import cocotb.log
 from cocotb.scheduler import Scheduler
 from cocotb.regression import RegressionManager
-
+from cocotb.decorators import RunningTask
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
@@ -129,7 +130,7 @@ _library_coverage = None
 """ used for cocotb library coverage """
 
 
-def fork(coro):
+def fork(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     """ Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use. """
     return scheduler.add(coro)
 
