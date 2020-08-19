@@ -39,7 +39,7 @@ import cocotb
 from cocotb.bus import Bus
 from cocotb.decorators import coroutine
 from cocotb.log import SimLog
-from cocotb.triggers import Event, Timer
+from cocotb.triggers import Event, Timer, First
 
 
 class MonitorStatistics:
@@ -59,7 +59,7 @@ class Monitor:
     method should capture some behavior of the pins, form a transaction, and
     pass this transaction to the internal :any:`_recv` method.  The :any:`_monitor_recv`
     method is added to the cocotb scheduler during the ``__init__`` phase, so it
-    should not be yielded anywhere.
+    should not be awaited anywhere.
 
     The primary use of a Monitor is as an interface for a
     :class:`~cocotb.scoreboard.Scoreboard`.
@@ -113,7 +113,7 @@ class Monitor:
         self._callbacks.append(callback)
 
     @coroutine
-    def wait_for_recv(self, timeout=None):
+    async def wait_for_recv(self, timeout=None):
         """With *timeout*, :meth:`.wait` for transaction to arrive on monitor
         and return its data.
 
@@ -126,15 +126,15 @@ class Monitor:
         """
         if timeout:
             t = Timer(timeout)
-            fired = yield [self._wait_event.wait(), t]
+            fired = await First(self._wait_event.wait(), t)
             if fired is t:
                 return None
         else:
-            yield self._wait_event.wait()
+            await self._wait_event.wait()
 
         return self._wait_event.data
 
-    @coroutine
+    # this is not `async` so that we fail in `__init__` on subclasses without it
     def _monitor_recv(self):
         """Actual implementation of the receiver.
 

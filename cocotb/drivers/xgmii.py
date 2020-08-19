@@ -28,7 +28,6 @@
 import struct
 import zlib
 
-import cocotb
 from cocotb.triggers import RisingEdge
 from cocotb.drivers import Driver
 from cocotb.utils import hexdump
@@ -173,8 +172,7 @@ class XGMII(Driver):
             for rem in range(index + 1, len(self.bus)):
                 self.bus[rem] = (_XGMII_IDLE, True)
 
-    @cocotb.coroutine
-    def _driver_send(self, pkt: bytes, sync: bool = True) -> None:
+    async def _driver_send(self, pkt: bytes, sync: bool = True) -> None:
         """Send a packet over the bus.
 
         Args:
@@ -187,7 +185,7 @@ class XGMII(Driver):
 
         clkedge = RisingEdge(self.clock)
         if sync:
-            yield clkedge
+            await clkedge
 
         self.bus[0] = (_XGMII_START, True)
 
@@ -196,7 +194,7 @@ class XGMII(Driver):
 
         pkt = pkt[len(self.bus)-1:]
         self.signal <= self.bus.value
-        yield clkedge
+        await clkedge
 
         done = False
 
@@ -211,14 +209,14 @@ class XGMII(Driver):
                 self.bus[i] = (pkt[i], False)
 
             self.signal <= self.bus.value
-            yield clkedge
+            await clkedge
             pkt = pkt[len(self.bus):]
 
         if not done:
             self.terminate(0)
             self.signal <= self.bus.value
-            yield clkedge
+            await clkedge
 
         self.idle()
-        yield clkedge
+        await clkedge
         self.log.debug("Successfully sent packet")

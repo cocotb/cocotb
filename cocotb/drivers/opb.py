@@ -54,10 +54,9 @@ class OPBMaster(BusDriver):
         self.busy_event = Event("%s_busy" % name)
         self.busy = False
 
-    @cocotb.coroutine
-    def _acquire_lock(self):
+    async def _acquire_lock(self):
         if self.busy:
-            yield self.busy_event.wait()
+            await self.busy_event.wait()
         self.busy_event.clear()
         self.busy = True
 
@@ -66,7 +65,7 @@ class OPBMaster(BusDriver):
         self.busy_event.set()
 
     @cocotb.coroutine
-    def read(self, address: int, sync: bool = True) -> BinaryValue:
+    async def read(self, address: int, sync: bool = True) -> BinaryValue:
         """Issue a request to the bus and block until this comes back.
 
         Simulation time still progresses but syntactically it blocks.
@@ -82,11 +81,11 @@ class OPBMaster(BusDriver):
         Raises:
             OPBException: If read took longer than 16 cycles.
         """
-        yield self._acquire_lock()
+        await self._acquire_lock()
 
         # Apply values for next clock edge
         if sync:
-            yield RisingEdge(self.clock)
+            await RisingEdge(self.clock)
         self.bus.ABus <= address
         self.bus.select <= 1
         self.bus.RNW <= 1
@@ -94,8 +93,8 @@ class OPBMaster(BusDriver):
 
         count = 0
         while not int(self.bus.xferAck.value):
-            yield RisingEdge(self.clock)
-            yield ReadOnly()
+            await RisingEdge(self.clock)
+            await ReadOnly()
             if int(self.bus.toutSup.value):
                 count = 0
             else:
@@ -111,7 +110,7 @@ class OPBMaster(BusDriver):
         return data
 
     @cocotb.coroutine
-    def write(self, address: int, value: int, sync: bool = True) -> None:
+    async def write(self, address: int, value: int, sync: bool = True) -> None:
         """Issue a write to the given address with the specified value.
 
         Args:
@@ -123,10 +122,10 @@ class OPBMaster(BusDriver):
         Raises:
             OPBException: If write took longer than 16 cycles.
         """
-        yield self._acquire_lock()
+        await self._acquire_lock()
 
         if sync:
-            yield RisingEdge(self.clock)
+            await RisingEdge(self.clock)
         self.bus.ABus <= address
         self.bus.select <= 1
         self.bus.RNW <= 0
@@ -135,8 +134,8 @@ class OPBMaster(BusDriver):
 
         count = 0
         while not int(self.bus.xferAck.value):
-            yield RisingEdge(self.clock)
-            yield ReadOnly()
+            await RisingEdge(self.clock)
+            await ReadOnly()
             if int(self.bus.toutSup.value):
                 count = 0
             else:
