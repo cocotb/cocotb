@@ -29,21 +29,13 @@
 import array
 import collections.abc
 import enum
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.drivers import BusDriver
+from cocotb.handle import SimHandleBase
 from cocotb.triggers import ClockCycles, Combine, Lock, ReadOnly, RisingEdge
-
-
-class AXIProtocolError(Exception):
-    def __init__(self,  message, xresp):
-        super().__init__(message)
-        self.xresp = xresp
-
-
-class AXIReadBurstLengthMismatch(Exception):
-    pass
 
 
 class AXIBurst(enum.IntEnum):
@@ -57,6 +49,16 @@ class AXIxRESP(enum.IntEnum):
     EXOKAY = 0b01
     SLVERR = 0b10
     DECERR = 0b11
+
+
+class AXIProtocolError(Exception):
+    def __init__(self,  message: str, xresp: AXIxRESP):
+        super().__init__(message)
+        self.xresp = xresp
+
+
+class AXIReadBurstLengthMismatch(Exception):
+    pass
 
 
 class AXI4Master(BusDriver):
@@ -76,7 +78,8 @@ class AXI4Master(BusDriver):
                          "WLAST",
                          "ARREGION", "ARLOCK", "ARCACHE", "ARPROT", "ARQOS"]
 
-    def __init__(self, entity, name, clock, **kwargs):
+    def __init__(self, entity: SimHandleBase, name: str, clock: SimHandleBase,
+                 **kwargs: Any):
         BusDriver.__init__(self, entity, name, clock, **kwargs)
 
         # Drive some sensible defaults (setimmediatevalue to avoid x asserts)
@@ -111,7 +114,7 @@ class AXI4Master(BusDriver):
         self.write_response_busy = Lock(name + "_bbusy")
 
     @staticmethod
-    def _check_length(length, burst):
+    def _check_length(length: int, burst: AXIBurst) -> None:
         """Check that the provided burst length is valid."""
         if length <= 0:
             raise ValueError("Burst length must be a positive integer")
@@ -128,7 +131,7 @@ class AXI4Master(BusDriver):
                 raise ValueError("Maximum burst length for FIXED bursts is 16")
 
     @staticmethod
-    def _check_size(size, data_bus_width):
+    def _check_size(size: int, data_bus_width: int) -> None:
         """Check that the provided transfer size is valid."""
         if size > data_bus_width:
             raise ValueError("Beat size ({} B) is larger than the bus width "
@@ -137,7 +140,8 @@ class AXI4Master(BusDriver):
             raise ValueError("Beat size must be a positive power of 2")
 
     @staticmethod
-    def _check_4kB_boundary_crossing(address, burst, size, length):
+    def _check_4kB_boundary_crossing(address: int, burst: AXIBurst, size: int,
+                                     length: int) -> None:
         """Check that the provided burst does not cross a 4kB boundary."""
         if burst is AXIBurst.INCR:
             last_address = address + size * (length - 1)
@@ -149,8 +153,10 @@ class AXI4Master(BusDriver):
                     .format(address, last_address,
                             (address & ~0xfff) + 0x1000))
 
-    async def _send_write_address(self, address, length, burst, size, delay,
-                                  sync):
+    async def _send_write_address(
+        self, address: int, length: int, burst: AXIBurst, size: int,
+        delay: int, sync: bool
+    ) -> None:
         """Send the write address, with optional delay (in clocks)"""
         async with self.write_address_busy:
             if sync:
@@ -181,7 +187,10 @@ class AXI4Master(BusDriver):
             await RisingEdge(self.clock)
             self.bus.AWVALID <= 0
 
-    async def _send_write_data(self, data, delay, byte_enable, sync):
+    async def _send_write_data(
+        self, data: Sequence[int], delay: int,
+        byte_enable: Sequence[Optional[int]], sync: bool
+    ) -> None:
         """Send the write data, with optional delay (in clocks)."""
         async with self.write_data_busy:
             if sync:
@@ -220,9 +229,12 @@ class AXI4Master(BusDriver):
                     self.bus.WVALID <= 0
 
     @cocotb.coroutine
-    async def write(self, address, value, *, size=None, burst=AXIBurst.INCR,
-                    byte_enable=None, address_latency=0, data_latency=0,
-                    sync=True):
+    async def write(
+        self, address: int, value: Union[int, Sequence[int]], *,
+        size: Optional[int] = None, burst: AXIBurst = AXIBurst.INCR,
+        byte_enable: Union[Optional[int], Sequence[Optional[int]]] = None,
+        address_latency: int = 0, data_latency: int = 0, sync: bool = True
+    ) -> None:
         """Write a value to an address.
 
         Args:
@@ -292,8 +304,11 @@ class AXI4Master(BusDriver):
                                    result.value, result.name), result)
 
     @cocotb.coroutine
-    async def read(self, address, length=1, *, size=None, burst=AXIBurst.INCR,
-                   return_rresp=False, sync=True):
+    async def read(
+        self, address: int, length: int = 1, *,
+        size: Optional[int] = None, burst: AXIBurst = AXIBurst.INCR,
+        return_rresp: bool = False, sync: bool = True
+    ) -> Union[List[BinaryValue], List[Tuple[BinaryValue, AXIxRESP]]]:
         """Read from an address.
 
         Args:
