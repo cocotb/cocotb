@@ -104,13 +104,13 @@ example:
             self.dut = dut
             self.stream_in = AvalonSTDriver(dut, "stream_in", dut.clk)
 
-    def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
+    async def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
                  backpressure_inserter=None):
 
         cocotb.fork(Clock(dut.clk, 5000).start())
         tb = EndianSwapperTB(dut)
 
-        yield tb.reset()
+        await tb.reset()
         dut.stream_out_ready <= 1
 
         if idle_inserter is not None:
@@ -118,7 +118,7 @@ example:
 
         # Send in the packets
         for transaction in data_in():
-            yield tb.stream_in.send(transaction)
+            await tb.stream_in.send(transaction)
 
 
 Monitoring Buses
@@ -149,13 +149,12 @@ class.
             self.clock = clock
             Monitor.__init__(self, callback, event)
 
-        @coroutine
-        def _monitor_recv(self):
+        async def _monitor_recv(self):
             clkedge = RisingEdge(self.clock)
 
             while True:
                 # Capture signal at rising edge of clock
-                yield clkedge
+                await clkedge
                 vec = self.signal.value
                 self._recv(vec)
 
