@@ -105,10 +105,9 @@ class AvalonMaster(AvalonMM):
     def __len__(self):
         return 2**len(self.bus.address)
 
-    @coroutine
-    def _acquire_lock(self):
+    async def _acquire_lock(self):
         if self.busy:
-            yield self.busy_event.wait()
+            await self.busy_event.wait()
         self.busy_event.clear()
         self.busy = True
 
@@ -117,7 +116,7 @@ class AvalonMaster(AvalonMM):
         self.busy_event.set()
 
     @coroutine
-    def read(self, address: int, sync: bool = True) -> BinaryValue:
+    async def read(self, address: int, sync: bool = True) -> BinaryValue:
         """Issue a request to the bus and block until this comes back.
 
         Simulation time still progresses
@@ -138,11 +137,11 @@ class AvalonMaster(AvalonMM):
             self.log.error("Cannot read - have no read signal")
             raise TestError("Attempt to read on a write-only AvalonMaster")
 
-        yield self._acquire_lock()
+        await self._acquire_lock()
 
         # Apply values for next clock edge
         if sync:
-            yield RisingEdge(self.clock)
+            await RisingEdge(self.clock)
         self.bus.address <= address
         self.bus.read <= 1
         if hasattr(self.bus, "byteenable"):
@@ -152,8 +151,8 @@ class AvalonMaster(AvalonMM):
 
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
-            yield self._wait_for_nsignal(self.bus.waitrequest)
-        yield RisingEdge(self.clock)
+            await self._wait_for_nsignal(self.bus.waitrequest)
+        await RisingEdge(self.clock)
 
         # Deassert read
         self.bus.read <= 0
@@ -167,15 +166,15 @@ class AvalonMaster(AvalonMM):
 
         if hasattr(self.bus, "readdatavalid"):
             while True:
-                yield ReadOnly()
+                await ReadOnly()
                 if int(self.bus.readdatavalid):
                     break
-                yield RisingEdge(self.clock)
+                await RisingEdge(self.clock)
         else:
             # Assume readLatency = 1 if no readdatavalid
             # FIXME need to configure this,
             # should take a dictionary of Avalon properties.
-            yield ReadOnly()
+            await ReadOnly()
 
         # Get the data
         data = self.bus.readdata.value
@@ -184,7 +183,7 @@ class AvalonMaster(AvalonMM):
         return data
 
     @coroutine
-    def write(self, address: int, value: int) -> None:
+    async def write(self, address: int, value: int) -> None:
         """Issue a write to the given address with the specified
         value.
 
@@ -199,10 +198,10 @@ class AvalonMaster(AvalonMM):
             self.log.error("Cannot write - have no write signal")
             raise TestError("Attempt to write on a read-only AvalonMaster")
 
-        yield self._acquire_lock()
+        await self._acquire_lock()
 
         # Apply values to bus
-        yield RisingEdge(self.clock)
+        await RisingEdge(self.clock)
         self.bus.address <= address
         self.bus.writedata <= value
         self.bus.write <= 1
@@ -213,10 +212,10 @@ class AvalonMaster(AvalonMM):
 
         # Wait for waitrequest to be low
         if hasattr(self.bus, "waitrequest"):
-            yield self._wait_for_nsignal(self.bus.waitrequest)
+            await self._wait_for_nsignal(self.bus.waitrequest)
 
         # Deassert write
-        yield RisingEdge(self.clock)
+        await RisingEdge(self.clock)
         self.bus.write <= 0
         if hasattr(self.bus, "byteenable"):
             self.bus.byteenable <= 0
@@ -358,18 +357,16 @@ class AvalonMemory(BusDriver):
 
         return (addr, byteenable, burstcount)
 
-    @coroutine
-    def _writing_byte_value(self, byteaddr):
+    async def _writing_byte_value(self, byteaddr):
         """Writing value in _mem with byteaddr size."""
-        yield FallingEdge(self.clock)
+        await FallingEdge(self.clock)
         for i in range(self.dataByteSize):
             data = self.bus.writedata.value.integer
             addrtmp = byteaddr + i
             datatmp = (data >> (i*8)) & 0xff
             self._mem[addrtmp] = datatmp
 
-    @coroutine
-    def _waitrequest(self):
+    async def _waitrequest(self):
         """Generate waitrequest randomly."""
         if self._avalon_properties.get("WriteBurstWaitReq", True):
             if random.choice([True, False, False, False]):
@@ -377,21 +374,20 @@ class AvalonMemory(BusDriver):
                 waitingtime = range(random.randint(0, randmax))
                 for waitreq in waitingtime:
                     self.bus.waitrequest <= 1
-                    yield RisingEdge(self.clock)
+                    await RisingEdge(self.clock)
             else:
-                yield NextTimeStep()
+                await NextTimeStep()
 
             self.bus.waitrequest <= 0
 
-    @coroutine
-    def _respond(self):
+    async def _respond(self):
         """Coroutine to respond to the actual requests."""
         edge = RisingEdge(self.clock)
         while True:
-            yield edge
+            await edge
             self._do_response()
 
-            yield ReadOnly()
+            await ReadOnly()
 
             if self._readable and self.bus.read.value:
                 if not self._burstread:
@@ -424,15 +420,15 @@ class AvalonMemory(BusDriver):
 
                     # toggle waitrequest
                     # TODO: configure waitrequest time with Avalon properties
-                    yield NextTimeStep()  # can't write during read-only phase
+                    await NextTimeStep()  # can't write during read-only phase
                     self.bus.waitrequest <= 1
-                    yield edge
-                    yield edge
+                    await edge
+                    await edge
                     self.bus.waitrequest <= 0
 
                     # wait for read data
                     for i in range(self._avalon_properties["readLatency"]):
-                        yield edge
+                        await edge
                     for count in range(burstcount):
                         if (addr + count)*self.dataByteSize not in self._mem:
                             self.log.warning("Attempt to burst read from uninitialized "
@@ -447,7 +443,7 @@ class AvalonMemory(BusDriver):
                             self.log.debug("Read from address 0x%x returning 0x%x",
                                            (addr + count) * self.dataByteSize, value)
                             self._responses.append(value)
-                        yield edge
+                        await edge
                         self._do_response()
 
             if self._writeable and self.bus.write.value:
@@ -483,21 +479,21 @@ class AvalonMemory(BusDriver):
                 else:
                     self.log.debug("writing burst")
                     # maintain waitrequest high randomly
-                    yield self._waitrequest()
+                    await self._waitrequest()
 
                     addr, byteenable, burstcount = self._write_burst_addr()
 
                     for count in range(burstcount):
                         while self.bus.write.value == 0:
-                            yield NextTimeStep()
+                            await NextTimeStep()
                         # self._mem is aligned on 8 bits words
-                        yield self._writing_byte_value(addr + count*self.dataByteSize)
+                        await self._writing_byte_value(addr + count*self.dataByteSize)
                         self.log.debug("writing %016X @ %08X",
                                        self.bus.writedata.value.integer,
                                        addr + count * self.dataByteSize)
-                        yield edge
+                        await edge
                         # generate waitrequest randomly
-                        yield self._waitrequest()
+                        await self._waitrequest()
 
                     if self._avalon_properties.get("WriteBurstWaitReq", True):
                         self.bus.waitrequest <= 1
@@ -526,21 +522,19 @@ class AvalonST(ValidatedBusDriver):
         self.bus.valid  <= 0
         self.bus.data   <= word
 
-    @coroutine
-    def _wait_ready(self):
+    async def _wait_ready(self):
         """Wait for a ready cycle on the bus before continuing.
 
             Can no longer drive values this cycle...
 
             FIXME assumes readyLatency of 0
         """
-        yield ReadOnly()
+        await ReadOnly()
         while not self.bus.ready.value:
-            yield RisingEdge(self.clock)
-            yield ReadOnly()
+            await RisingEdge(self.clock)
+            await ReadOnly()
 
-    @coroutine
-    def _driver_send(self, value, sync=True):
+    async def _driver_send(self, value, sync=True):
         """Send a transmission over the bus.
 
         Args:
@@ -557,13 +551,13 @@ class AvalonST(ValidatedBusDriver):
         self.bus.valid <= 0
 
         if sync:
-            yield clkedge
+            await clkedge
 
         # Insert a gap where valid is low
         if not self.on:
             self.bus.valid <= 0
             for _ in range(self.off):
-                yield clkedge
+                await clkedge
 
             # Grab the next set of on/off values
             self._next_valids()
@@ -580,9 +574,9 @@ class AvalonST(ValidatedBusDriver):
         # If this is a bus with a ready signal, wait for this word to
         # be acknowledged
         if hasattr(self.bus, "ready"):
-            yield self._wait_ready()
+            await self._wait_ready()
 
-        yield clkedge
+        await clkedge
         self.bus.valid <= 0
         word.binstr   = "x" * len(self.bus.data)
         self.bus.data <= word
@@ -658,21 +652,19 @@ class AvalonSTPkts(ValidatedBusDriver):
                                   value="x" * len(self.bus.channel))
             self.bus.channel <= channel
 
-    @coroutine
-    def _wait_ready(self):
+    async def _wait_ready(self):
         """Wait for a ready cycle on the bus before continuing.
 
             Can no longer drive values this cycle...
 
             FIXME assumes readyLatency of 0
         """
-        yield ReadOnly()
+        await ReadOnly()
         while not self.bus.ready.value:
-            yield RisingEdge(self.clock)
-            yield ReadOnly()
+            await RisingEdge(self.clock)
+            await ReadOnly()
 
-    @coroutine
-    def _send_string(self, string: bytes, sync: bool = True, channel: Optional[int] = None) -> None:
+    async def _send_string(self, string: bytes, sync: bool = True, channel: Optional[int] = None) -> None:
         """Args:
             string: A string of bytes to send over the bus.
             channel: Channel to send the data on.
@@ -707,13 +699,13 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         while string:
             if not firstword or (firstword and sync):
-                yield clkedge
+                await clkedge
 
             # Insert a gap where valid is low
             if not self.on:
                 self.bus.valid <= 0
                 for _ in range(self.off):
-                    yield clkedge
+                    await clkedge
 
                 # Grab the next set of on/off values
                 self._next_valids()
@@ -755,9 +747,9 @@ class AvalonSTPkts(ValidatedBusDriver):
             # If this is a bus with a ready signal, wait for this word to
             # be acknowledged
             if hasattr(self.bus, "ready"):
-                yield self._wait_ready()
+                await self._wait_ready()
 
-        yield clkedge
+        await clkedge
         self.bus.valid <= 0
         self.bus.endofpacket <= 0
         word.binstr   = "x" * len(self.bus.data)
@@ -774,8 +766,7 @@ class AvalonSTPkts(ValidatedBusDriver):
                                         value="x" * len(self.bus.channel))
             self.bus.channel <= channel_value
 
-    @coroutine
-    def _send_iterable(self, pkt: Iterable, sync: bool = True) -> None:
+    async def _send_iterable(self, pkt: Iterable, sync: bool = True) -> None:
         """Args:
             pkt: Will yield objects with attributes matching the
                 signal names for each individual bus cycle.
@@ -785,7 +776,7 @@ class AvalonSTPkts(ValidatedBusDriver):
 
         for word in pkt:
             if not firstword or (firstword and sync):
-                yield clkedge
+                await clkedge
 
             firstword = False
 
@@ -793,7 +784,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             if not self.on:
                 self.bus.valid <= 0
                 for _ in range(self.off):
-                    yield clkedge
+                    await clkedge
 
                 # Grab the next set of on/off values
                 self._next_valids()
@@ -810,13 +801,12 @@ class AvalonSTPkts(ValidatedBusDriver):
             # Wait for valid words to be acknowledged
             if not hasattr(word, "valid") or word.valid:
                 if hasattr(self.bus, "ready"):
-                    yield self._wait_ready()
+                    await self._wait_ready()
 
-        yield clkedge
+        await clkedge
         self.bus.valid <= 0
 
-    @coroutine
-    def _driver_send(self, pkt: Union[bytes, Iterable], sync: bool = True, channel: Optional[int] = None):
+    async def _driver_send(self, pkt: Union[bytes, Iterable], sync: bool = True, channel: Optional[int] = None):
         """Send a packet over the bus.
 
         Args:
@@ -833,11 +823,11 @@ class AvalonSTPkts(ValidatedBusDriver):
         if isinstance(pkt, bytes):
             self.log.debug("Sending packet of length %d bytes", len(pkt))
             self.log.debug(hexdump(pkt))
-            yield self._send_string(pkt, sync=sync, channel=channel)
+            await self._send_string(pkt, sync=sync, channel=channel)
             self.log.debug("Successfully sent packet of length %d bytes", len(pkt))
         elif isinstance(pkt, str):
             raise TypeError("pkt must be a bytestring, not a unicode string")
         else:
             if channel is not None:
                 self.log.warning("%s is ignoring channel=%d because pkt is an iterable", self.name, channel)
-            yield self._send_iterable(pkt, sync=sync)
+            await self._send_iterable(pkt, sync=sync)

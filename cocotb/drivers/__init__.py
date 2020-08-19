@@ -72,8 +72,7 @@ class BitDriver:
         """Stop generating data."""
         self._cr.kill()
 
-    @cocotb.coroutine
-    def _cr_twiddler(self, generator=None):
+    async def _cr_twiddler(self, generator=None):
         if generator is None and self._generator is None:
             raise Exception("No generator provided!")
         if generator is not None:
@@ -86,10 +85,10 @@ class BitDriver:
             on, off = next(self._generator)
             self._signal <= 1
             for _ in range(on):
-                yield edge
+                await edge
             self._signal <= 0
             for _ in range(off):
-                yield edge
+                await edge
 
 
 class Driver:
@@ -143,8 +142,8 @@ class Driver:
         self._sendQ = deque()
 
     @coroutine
-    def send(self, transaction: Any, sync: bool = True, **kwargs: Any) -> None:
-        """Blocking send call (hence must be "yielded" rather than called).
+    async def send(self, transaction: Any, sync: bool = True, **kwargs: Any) -> None:
+        """Blocking send call (hence must be "awaited" rather than called).
 
         Sends the transaction over the bus.
 
@@ -154,9 +153,9 @@ class Driver:
             **kwargs: Additional arguments used in child class'
                 :any:`_driver_send` method.
         """
-        yield self._send(transaction, None, None, sync=sync, **kwargs)
+        await self._send(transaction, None, None, sync=sync, **kwargs)
 
-    def _driver_send(self, transaction: Any, sync: bool = True, **kwargs: Any) -> None:
+    async def _driver_send(self, transaction: Any, sync: bool = True, **kwargs: Any) -> None:
         """Actual implementation of the send.
 
         Sub-classes should override this method to implement the actual
@@ -170,8 +169,7 @@ class Driver:
         raise NotImplementedError("Sub-classes of Driver should define a "
                                   "_driver_send coroutine")
 
-    @coroutine
-    def _send(
+    async def _send(
         self, transaction: Any, callback: Callable[[Any], Any], event: Event,
         sync: bool = True, **kwargs
     ) -> None:
@@ -186,7 +184,7 @@ class Driver:
             **kwargs: Any additional arguments used in child class'
                 :any:`_driver_send` method.
         """
-        yield self._driver_send(transaction, sync=sync, **kwargs)
+        await self._driver_send(transaction, sync=sync, **kwargs)
 
         # Notify the world that this transaction is complete
         if event:
@@ -194,14 +192,13 @@ class Driver:
         if callback:
             callback(transaction)
 
-    @coroutine
-    def _send_thread(self):
+    async def _send_thread(self):
         while True:
 
             # Sleep until we have something to send
             while not self._sendQ:
                 self._pending.clear()
-                yield self._pending.wait()
+                await self._pending.wait()
 
             synchronised = False
 
@@ -210,7 +207,7 @@ class Driver:
             while self._sendQ:
                 transaction, callback, event, kwargs = self._sendQ.popleft()
                 self.log.debug("Sending queued packet...")
-                yield self._send(transaction, callback, event,
+                await self._send(transaction, callback, event,
                                  sync=not synchronised, **kwargs)
                 synchronised = True
 
@@ -252,8 +249,7 @@ class BusDriver(Driver):
         # Give this instance a unique name
         self.name = name if index is None else "%s_%d" % (name, index)
 
-    @coroutine
-    def _driver_send(self, transaction, sync: bool = True) -> None:
+    async def _driver_send(self, transaction, sync: bool = True) -> None:
         """Implementation for BusDriver.
 
         Args:
@@ -261,36 +257,36 @@ class BusDriver(Driver):
             sync: Synchronize the transfer by waiting for a rising edge.
         """
         if sync:
-            yield RisingEdge(self.clock)
+            await RisingEdge(self.clock)
         self.bus <= transaction
 
     @coroutine
-    def _wait_for_signal(self, signal):
+    async def _wait_for_signal(self, signal):
         """This method will return when the specified signal
         has hit logic ``1``. The state will be in the
         :class:`~cocotb.triggers.ReadOnly` phase so sim will need
         to move to :class:`~cocotb.triggers.NextTimeStep` before
         registering more callbacks can occur.
         """
-        yield ReadOnly()
+        await ReadOnly()
         while signal.value.integer != 1:
-            yield RisingEdge(signal)
-            yield ReadOnly()
-        yield NextTimeStep()
+            await RisingEdge(signal)
+            await ReadOnly()
+        await NextTimeStep()
 
     @coroutine
-    def _wait_for_nsignal(self, signal):
+    async def _wait_for_nsignal(self, signal):
         """This method will return when the specified signal
         has hit logic ``0``. The state will be in the
         :class:`~cocotb.triggers.ReadOnly` phase so sim will need
         to move to :class:`~cocotb.triggers.NextTimeStep` before
         registering more callbacks can occur.
         """
-        yield ReadOnly()
+        await ReadOnly()
         while signal.value.integer != 0:
-            yield Edge(signal)
-            yield ReadOnly()
-        yield NextTimeStep()
+            await Edge(signal)
+            await ReadOnly()
+        await NextTimeStep()
 
     def __str__(self):
         """Provide the name of the bus"""
@@ -349,8 +345,8 @@ class ValidatedBusDriver(BusDriver):
         self._next_valids()
 
 
-@cocotb.coroutine
-def polled_socket_attachment(driver, sock):
+@coroutine
+async def polled_socket_attachment(driver, sock):
     """Non-blocking socket attachment that queues any payload received from the
     socket to be queued for sending into the driver.
     """
@@ -359,7 +355,7 @@ def polled_socket_attachment(driver, sock):
     sock.setblocking(False)
     driver.log.info("Listening for data from %s" % repr(sock))
     while True:
-        yield RisingEdge(driver.clock)
+        await RisingEdge(driver.clock)
         try:
             data = sock.recv(4096)
         except socket.error as e:
