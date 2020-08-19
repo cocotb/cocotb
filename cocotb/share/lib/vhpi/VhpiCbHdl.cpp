@@ -190,7 +190,7 @@ int VhpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     }
 
     if (NULL == type) {
-        LOG_ERROR("Unable to get vhpiBaseType for %s", fq_name.c_str());
+        LOG_ERROR("VHPI: Unable to get vhpiBaseType for %s", fq_name.c_str());
         return -1;
     }
 
@@ -270,7 +270,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     vhpiHandleT handle = GpiObjHdl::get_handle<vhpiHandleT>();
 
     if (0 > vhpi_get_value(get_handle<vhpiHandleT>(), &m_value)) {
-        LOG_ERROR("vhpi_get_value failed for %s (%s)", fq_name.c_str(), vhpi_get_str(vhpiKindStrP, handle));
+        LOG_ERROR("VHPI: vhpi_get_value failed for %s (%s)", fq_name.c_str(), vhpi_get_str(vhpiKindStrP, handle));
         return -1;
     }
 
@@ -305,7 +305,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         }
 
         default: {
-            LOG_ERROR("Unable to determine property for %s (%d) format object",
+            LOG_ERROR("VHPI: Unable to determine property for %s (%d) format object",
                          ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format), m_value.format);
             return -1;
         }
@@ -437,14 +437,14 @@ int VhpiCbHdl::arm_callback()
 
         if (!new_hdl) {
             check_vhpi_error();
-            LOG_ERROR("VHPI: Unable to register callback a handle for VHPI type %s(%d)",
+            LOG_ERROR("VHPI: Unable to register a callback handle for VHPI type %s(%d)",
                          m_impl->reason_to_string(cb_data.reason), cb_data.reason);
             goto error;
         }
 
         cbState = (vhpiStateT)vhpi_get(vhpiStateP, new_hdl);
         if (vhpiEnable != cbState) {
-            LOG_ERROR("VHPI ERROR: Registered callback isn't enabled! Got %d\n", cbState);
+            LOG_ERROR("VHPI: Registered callback isn't enabled! Got %d\n", cbState);
             goto error;
         }
 
@@ -581,7 +581,7 @@ int VhpiSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
         case vhpiEnumVal: {
             using EnumLimits = std::numeric_limits<vhpiEnumT>;
             if ((value > EnumLimits::max()) || (value < EnumLimits::min())) {
-                LOG_ERROR("Data loss detected");
+                LOG_ERROR("VHPI: Data loss detected");
                 return -1;
             }
             m_value.value.enumv = static_cast<vhpiEnumT>(value);
@@ -591,7 +591,7 @@ int VhpiSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
         case vhpiIntVal: {
             using IntLimits = std::numeric_limits<vhpiIntT>;
             if ((value > IntLimits::max()) || (value < IntLimits::min())) {
-                LOG_ERROR("Data loss detected");
+                LOG_ERROR("VHPI: Data loss detected");
                 return -1;
             }
             m_value.value.intg = static_cast<vhpiIntT>(value);
@@ -601,7 +601,7 @@ int VhpiSignalObjHdl::set_signal_value(long value, gpi_set_action_t action)
         case vhpiCharVal: {
             using CharLimits = std::numeric_limits<vhpiCharT>;
             if ((value > CharLimits::max()) || (value < CharLimits::min())) {
-                LOG_ERROR("Data loss detected");
+                LOG_ERROR("VHPI: Data loss detected");
                 return -1;
             }
             m_value.value.ch = static_cast<vhpiCharT>(value);
@@ -679,7 +679,7 @@ int VhpiSignalObjHdl::set_signal_value_binstr(std::string &value, gpi_set_action
         }
 
         default: {
-            LOG_ERROR("VHPI: Unable to handle this format type %s",
+            LOG_ERROR("VHPI: Unable to handle this format type: %s",
                       ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
             return -1;
         }
@@ -706,7 +706,7 @@ int VhpiSignalObjHdl::set_signal_value_str(std::string &value, gpi_set_action_t 
         }
 
         default: {
-            LOG_ERROR("VHPI: Unable to handle this format type %s",
+            LOG_ERROR("VHPI: Unable to handle this format type: %s",
                       ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
             return -1;
         }
@@ -732,7 +732,7 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr()
             int ret = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_binvalue);
             if (ret) {
                 check_vhpi_error();
-                LOG_ERROR("Size of m_binvalue.value.str was not large enough: req=%d have=%d for type %s",
+                LOG_ERROR("VHPI: Size of m_binvalue.value.str was not large enough: req=%d have=%d for type %s",
                           ret,
                           m_binvalue.bufSize,
                           ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
@@ -750,7 +750,7 @@ const char* VhpiSignalObjHdl::get_signal_value_str()
             int ret = vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value);
             if (ret) {
                 check_vhpi_error();
-                LOG_ERROR("Size of m_value.value.str was not large enough req=%d have=%d for type %s",
+                LOG_ERROR("VHPI: Size of m_value.value.str was not large enough: req=%d have=%d for type %s",
                           ret,
                           m_value.bufSize,
                           ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
@@ -758,7 +758,7 @@ const char* VhpiSignalObjHdl::get_signal_value_str()
             break;
         }
         default: {
-            LOG_ERROR("Reading strings not valid for this handle");
+            LOG_ERROR("VHPI: Reading strings not valid for this handle");
             return "";
         }
     }
@@ -773,7 +773,7 @@ double VhpiSignalObjHdl::get_signal_value_real()
 
     if (vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &m_value)) {
         check_vhpi_error();
-        LOG_ERROR("failed to get real value");
+        LOG_ERROR("VHPI: Failed to get value of type real");
     }
     return m_value.value.real;
 }
@@ -786,7 +786,7 @@ long VhpiSignalObjHdl::get_signal_value_long()
 
     if (vhpi_get_value(GpiObjHdl::get_handle<vhpiHandleT>(), &value)) {
         check_vhpi_error();
-        LOG_ERROR("failed to get long value");
+        LOG_ERROR("VHPI: Failed to get value of type long");
     }
 
     return value.value.intg;
