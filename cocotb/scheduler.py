@@ -39,6 +39,8 @@ import sys
 import logging
 import threading
 import inspect
+from typing import Any, Union
+from collections.abc import Coroutine
 
 # Debug mode controlled by environment variables
 if "COCOTB_ENABLE_PROFILING" in os.environ:
@@ -59,6 +61,7 @@ else:
 
 import cocotb
 import cocotb.decorators
+from cocotb.decorators import RunningTask
 from cocotb.triggers import (Trigger, GPITrigger, Timer, ReadOnly,
                              NextTimeStep, ReadWrite, Event, Join, NullTrigger)
 from cocotb.log import SimLog
@@ -628,19 +631,19 @@ class Scheduler:
 
         return wrapper()
 
-    def add(self, coroutine):
-        """Add a new coroutine.
+    @staticmethod
+    def create_task(coroutine: Any) -> RunningTask:
+        """ Checks to see if the given object is a schedulable coroutine object """
 
-        Just a wrapper around self.schedule which provides some debug and
-        useful error messages in the event of common gotchas.
-        """
-
+        if isinstance(coroutine, RunningTask):
+            return coroutine
+        if inspect.iscoroutine(coroutine):
+            return RunningTask(coroutine)
         if inspect.iscoroutinefunction(coroutine):
             raise TypeError(
                 "Coroutine function {} should be called prior to being "
                 "scheduled."
                 .format(coroutine))
-
         if isinstance(coroutine, cocotb.decorators.coroutine):
             raise TypeError(
                 "Attempt to schedule a coroutine that hasn't started: {}.\n"
@@ -648,30 +651,51 @@ class Scheduler:
                 "decorator?"
                 .format(coroutine)
             )
-
-        if inspect.iscoroutine(coroutine):
-            return self.add(cocotb.decorators.RunningTask(coroutine))
-
-        elif sys.version_info >= (3, 6) and inspect.isasyncgen(coroutine):
+        if sys.version_info >= (3, 6) and inspect.isasyncgen(coroutine):
             raise TypeError(
                 "{} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await.".format(
                     coroutine.__qualname__))
+        raise TypeError(
+            "Attempt to add a object of type {} to the scheduler, which "
+            "isn't a coroutine: {!r}\n"
+            "Did you forget to use the @cocotb.coroutine decorator?"
+            .format(type(coroutine), coroutine)
+        )
 
-        elif not isinstance(coroutine, cocotb.decorators.RunningTask):
-            raise TypeError(
-                "Attempt to add a object of type {} to the scheduler, which "
-                "isn't a coroutine: {!r}\n"
-                "Did you forget to use the @cocotb.coroutine decorator?"
-                .format(type(coroutine), coroutine)
-            )
+    def add(self, coroutine: Union[RunningTask, Coroutine]) -> RunningTask:
+        """Add a new coroutine.
+
+        Just a wrapper around self.schedule which provides some debug and
+        useful error messages in the event of common gotchas.
+        """
+
+        task = self.create_task(coroutine)
 
         if _debug:
-            self.log.debug("Adding new coroutine %s" % coroutine._coro.__qualname__)
+            self.log.debug("Adding new coroutine %s" % task._coro.__qualname__)
 
-        self.schedule(coroutine)
+        self.schedule(task)
         self._check_termination()
-        return coroutine
+        return task
+
+    def start_soon(self, coro: Union[Coroutine, RunningTask]) -> RunningTask:
+        """
+        Schedule a coroutine to be run concurrently, starting after the current coroutine yields control.
+
+        :func:`~cocotb.fork` starts the given coroutine immediately. This function
+        starts the given coroutine only after the current coroutine yields control.
+        This is useful when the forked coroutine has logic before the first
+        :keyword:`await` that may not be safe to execute immediately.
+        """
+
+        task = self.create_task(coro)
+
+        if _debug:
+            self.log.debug("queueing a new coroutine %s" % task._coro.__qualname__)
+
+        self.queue(task)
+        return task
 
     def add_test(self, test_coro):
         """Called by the regression manager to queue the next test"""
