@@ -5,10 +5,14 @@ Glossary
 
 .. glossary::
 
+   BFM
+      Bus Functional Model
+
    coroutine function
       The definition of a function that, when called, returns a coroutine object.
       Implemented using :keyword:`async` functions.
       See also the :term:`Python glossary <python:coroutine function>`.
+
    coroutine
       The result of calling a :term:`coroutine function`.
       Coroutines are not run immediately, you must either
