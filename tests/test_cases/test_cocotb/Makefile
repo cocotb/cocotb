@@ -18,6 +18,7 @@ MODULE := "\
 	test_async_coroutines,\
 	test_handle,\
 	test_logging,\
+	test_pytest,\
 	"
 
 ifeq ($(shell python -c "import sys; print(sys.version_info >= (3, 6))"), "True")
