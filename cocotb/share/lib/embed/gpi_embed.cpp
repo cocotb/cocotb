@@ -114,18 +114,22 @@ static void set_program_name_in_venv(void)
 extern "C" void embed_init_python(void)
 {
 
+#if defined(__linux__) || defined(__APPLE__)
 #ifndef PYTHON_SO_LIB
 #error "Python version needs passing in with -DPYTHON_SO_LIB=libpython<ver>.so"
 #else
 #define PY_SO_LIB xstr(PYTHON_SO_LIB)
 #endif
+#endif
 
     assert(!gtstate);  // this function should not be called twice
 
+#if defined(__linux__) || defined(__APPLE__)
     void * lib_handle = utils_dyn_open(PY_SO_LIB);
     if (!lib_handle) {
         LOG_ERROR("Failed to find Python shared library\n");
     }
+#endif
 
     to_python();
     set_program_name_in_venv();

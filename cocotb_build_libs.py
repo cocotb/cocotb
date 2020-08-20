@@ -311,9 +311,12 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     ]
     if os.name == "nt":
         libcocotb_sources += ["libcocotb.rc"]
+    libcocotb_defines = [("COCOTB_EMBED_EXPORTS", "")] + _extra_defines
+    if os.name != "nt":
+        libcocotb_defines += [("PYTHON_SO_LIB", find_libpython.find_libpython())]
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
-        define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_SO_LIB", find_libpython.find_libpython())] + _extra_defines,
+        define_macros=libcocotb_defines,
         include_dirs=[include_dir],
         libraries=["gpilog", "cocotbutils"],
         sources=libcocotb_sources,
