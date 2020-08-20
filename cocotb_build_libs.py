@@ -4,7 +4,6 @@
 
 import os
 import sys
-import sysconfig
 import logging
 import distutils
 import subprocess
@@ -16,6 +15,7 @@ from setuptools.command.build_ext import build_ext as _build_ext
 from distutils.file_util import copy_file
 from typing import List
 
+import find_libpython
 
 logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
@@ -249,42 +249,6 @@ def _extra_link_args(lib_name=None, rpaths=[]):
     return args
 
 
-def _get_python_lib_link():
-    """ Get name of python library used for linking """
-
-    if sys.platform == "darwin":
-        ld_library = sysconfig.get_config_var("LIBRARY")
-    else:
-        ld_library = sysconfig.get_config_var("LDLIBRARY")
-
-    if ld_library is not None:
-        python_lib_link = os.path.splitext(ld_library)[0][3:]
-    else:
-        python_version = sysconfig.get_python_version().replace(".", "")
-        python_lib_link = "python" + python_version
-
-    return python_lib_link
-
-
-def _get_python_lib():
-    """ Get the library for embedded the python interpreter """
-
-    if os.name == "nt":
-        python_lib = _get_python_lib_link() + ".dll"
-    else:
-        python_lib = "lib" + _get_python_lib_link() + "."
-        if sys.platform == "darwin":
-            python_lib = os.path.join(sysconfig.get_config_var("LIBDIR"), python_lib)
-            if os.path.exists(python_lib + "dylib"):
-                python_lib += "dylib"
-            else:
-                python_lib += "so"
-        else:
-            python_lib += "so"
-
-    return python_lib
-
-
 # TODO [gh-1372]: make this work for MSVC which has a different flag syntax
 _base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings", "-Wconversion"]
 _ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
@@ -349,7 +313,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libcocotb_sources += ["libcocotb.rc"]
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
-        define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_SO_LIB", _get_python_lib())] + _extra_defines,
+        define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_SO_LIB", find_libpython.find_libpython())] + _extra_defines,
         include_dirs=[include_dir],
         libraries=["gpilog", "cocotbutils"],
         sources=libcocotb_sources,
