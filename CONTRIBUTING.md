@@ -103,23 +103,48 @@ The `type` labels define the type of issue or PR:
 - `type:bug`: a bug in existing functionality
 - `type:feature`: new functionality
 - `type:question`: a support question
+- `type:cleanup`: cleanup or refactoring on code, documentation, or other areas
+- `type:deprecation`: API that should warn and eventually be removed
 
 The `status` labels give a quick impression of the current status of the issue or PR:
 - `status:worksforme`: the issue it not reproducible, or intended behavior (i.e. not a bug)
 - `status:blocked`: further progress is blocked by a dependency, e.g. other code which must be commited first.
-- `status:needinfo`: feedback from someone is required. The issue/PR text gives more details.
+- `status:needs-info`: feedback from someone is required. The issue/PR text gives more details.
 - `status:duplicate`: the same issue is already being handled in another issue/PR.
+- `status:close?`: issues which can probably be closed, but need a second pair of eyes
+- `status:needs-proprietary-testing`: Help needed testing on a proprietary tool
+- `status:out-of-scope`: An issue or PR that was closed because the feature or bug was deemed to be out of scope
 
 For the use in pull requests the following additional status labels are defined:
-- `status:review-needed`: this PR needs at least one review
+- `status:needs-review`: this PR needs at least one review
 - `status:changes-requested`: changes are requested to the code
 - `status:ready-for-merge`: this PR is ready (according to the [Patch Requirements](#patch-requirements)) to be merged
+- `status:needs-rebase`: needs a git rebase
+- `status:needs-newsfragment`: Needs a towncrier newsfragment for the changelog
 
 The `category` labels help maintainers to filter issues which are relevant to their area of expertise:
-- `category:windows`: Microsoft Windows-specific issues
+- `category:OS:MacOS`: Mac OS/OS X specific issues
+- `category:OS:Linux`: Linux specific issues
+- `category:OS:Windows`: Microsoft Windows-specific issues
 - `category:simulators`: simulator support, including VPI/GPI/etc.
+- `category:simulators:activehdl`: Aldec Active-HDL
+- `category:simulators:cvc`: Tachyon CVC
+- `category:simulators:ghdl`: GHDL
+- `category:simulators:icarus`: Icarus Verilog (iverilog)
+- `category:simulators:ius`: Cadence Incisive (IUS)
+- `category:simulators:modelsim`: Mentor Modelsim
+- `category:simulators:questa`: Mentor Questa
+- `category:simulators:riviera`: Aldec Riviera-PRO
+- `category:simulators:vcs`: Synopsys VCS
+- `category:simulators:verilator`: Verilator
+- `category:simulators:xcelium`: Cadence Xcelium
 - `category:packaging`: issues related to (PyPi) packaging, etc.
 - `category:docs`: documentation issues and fixes
+- `category:extensions`: cocotb extensions
+- `category:performance`: performance topics
+- `category:core`: Issues in the core of cocotb (scheduler, error reporting, etc.)
+- `category:tests-ci`: continuous integration and unit tests
+- `category:test-runner`: regarding the code for automating test runs
 
 To help new contributors find a good issue to work on one more label is used (following [GitHub standard practices](#https://help.github.com/articles/helping-new-contributors-find-your-project-with-labels/)):
 - `good first issue`: this issue is a good starting point for new contributors.
