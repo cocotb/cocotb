@@ -9,7 +9,7 @@ the directory :file:`cocotb/examples/` contains some more smaller modules you ma
 Adder
 =====
 
-The directory :file:`cocotb/examples/adder/` contains an ``adder`` RTL in both Verilog and VHDL,
+The directory :file:`cocotb/examples/adder/` contains an ``adder`` :term:`RTL` in both Verilog and VHDL,
 an ``adder_model`` implemented in Python,
 and the cocotb testbench with two defined tests ­ a simple :func:`adder_basic_test` and
 a slightly more advanced :func:`adder_randomised_test`.
@@ -22,7 +22,7 @@ D Flip-Flop
 
 The directory :file:`cocotb/examples/dff/` contains a simple D flip-flop, implemented in both VDHL and Verilog.
 
-The HDL has the data input port ``d``, the clock port ``c``, and the data output ``q`` with an initial state of ``0``.
+The :term:`HDL` has the data input port ``d``, the clock port ``c``, and the data output ``q`` with an initial state of ``0``.
 No reset port exists.
 
 The cocotb testbench checks the initial state first, then applies random data to the data input.
@@ -52,7 +52,7 @@ feed a :class:`.Scoreboard` with the collected transactions on input bus ``i``.
 Mixed Language
 ==============
 
-The directory :file:`cocotb/examples/mixed_language/` contains two toplevel HDL files,
+The directory :file:`cocotb/examples/mixed_language/` contains two toplevel :term:`HDL` files,
 one in VHDL, one in SystemVerilog, that each instantiate the ``endian_swapper`` in
 SystemVerilog and VHDL in parallel and chains them together so that the endianness is swapped twice.
 

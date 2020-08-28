@@ -16,12 +16,12 @@ You can run this example from a fresh checkout::
 Design
 ======
 
-We have a relatively simplistic RTL block called the ``endian_swapper``.
-The DUT has three interfaces, all conforming to the Avalon standard:
+We have a relatively simplistic :term:`RTL` block called the ``endian_swapper``.
+The :term:`DUT` has three interfaces, all conforming to the Avalon standard:
 
 .. image:: diagrams/svg/endian_swapper_design.svg
 
-The DUT will swap the endianness of packets on the Avalon-ST bus if a configuration bit is set.
+The :term:`DUT` will swap the endianness of packets on the Avalon-ST bus if a configuration bit is set.
 For every packet arriving on the ``stream_in`` interface the entire packet will be endian swapped
 if the configuration bit is set, otherwise the entire packet will pass through unmodified.
 
@@ -97,7 +97,7 @@ We do the same to create the :class:`monitor <cocotb.monitors.avalon.AvalonSTPkt
             self.scoreboard.add_interface(self.stream_out, self.expected_output)
 
 The above lines create a :class:`.Scoreboard` instance and attach it to the ``stream_out`` monitor instance.
-The scoreboard is used to check that the DUT behavior is correct.
+The scoreboard is used to check that the :term:`DUT` behavior is correct.
 The call to :meth:`.add_interface()` takes a Monitor instance as the first argument and
 the second argument is a mechanism for describing the expected output for that interface.
 This could be a callable function but in this example a simple list of expected transactions is sufficient.
@@ -108,7 +108,7 @@ This could be a callable function but in this example a simple list of expected 
             self.stream_in_recovered = AvalonSTMonitor(dut, "stream_in", dut.clk, callback=self.model)
 
 Finally we create another Monitor instance, this time connected to the ``stream_in`` interface.
-This is to reconstruct the transactions being driven into the DUT.
+This is to reconstruct the transactions being driven into the :term:`DUT`.
 It's good practice to use a monitor to reconstruct the transactions from the pin interactions
 rather than snooping them from a higher abstraction layer as we can gain confidence that our drivers and monitors are functioning correctly.
 
@@ -177,7 +177,7 @@ To generate backpressure on the ``stream_out`` interface we use the :class:`.Bit
         raise tb.scoreboard.result
 
 We can see that this test function creates an instance of the testbench,
-resets the DUT by running the coroutine ``tb.reset()`` and then starts off any optional coroutines passed in using the keyword arguments.
+resets the :term:`DUT` by running the coroutine ``tb.reset()`` and then starts off any optional coroutines passed in using the keyword arguments.
 We then send in all the packets from ``data_in``, ensure that all the packets have been received by waiting 2 cycles at the end.
 We read the packet count and compare this with the number of packets.
 Finally we use the :any:`tb.scoreboard.result <cocotb.scoreboard.Scoreboard.result>` to determine the status of the test.

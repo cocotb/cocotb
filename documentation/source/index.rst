@@ -15,11 +15,11 @@ Welcome to cocotb's documentation!
 What is cocotb?
 ***************
 
-**cocotb** is a *COroutine* based *COsimulation* *TestBench* environment for verifying VHDL and SystemVerilog RTL using `Python <https://www.python.org>`_.
+**cocotb** is a *COroutine* based *COsimulation* *TestBench* environment for verifying VHDL and SystemVerilog :term:`RTL` using `Python <https://www.python.org>`_.
 
 cocotb is completely free, open source (under the `BSD License <https://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_(%22BSD_License_2.0%22,_%22Revised_BSD_License%22,_%22New_BSD_License%22,_or_%22Modified_BSD_License%22)>`_) and hosted on `GitHub <https://github.com/cocotb/cocotb>`_.
 
-cocotb requires a simulator to simulate the HDL design
+cocotb requires a simulator to simulate the :term:`HDL` design
 and has been used with a variety of simulators on Linux, Windows and macOS.
 Please check the :ref:`simulator-support` page for specifics.
 
@@ -56,9 +56,9 @@ All verification is done using Python which has various advantages over using Sy
 How does cocotb work?
 *********************
 
-A typical cocotb testbench requires no additional RTL code.
-The Design Under Test (DUT) is instantiated as the toplevel in the simulator without any wrapper code.
-cocotb drives stimulus onto the inputs to the DUT (or further down the hierarchy) and monitors the outputs directly from Python.
+A typical cocotb testbench requires no additional :term:`RTL` code.
+The Design Under Test (:term:`DUT`) is instantiated as the toplevel in the simulator without any wrapper code.
+cocotb drives stimulus onto the inputs to the :term:`DUT` (or further down the hierarchy) and monitors the outputs directly from Python.
 
 
 .. image:: diagrams/svg/cocotb_overview.svg

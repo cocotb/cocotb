@@ -36,10 +36,10 @@ but selecting a different simulator is as easy as:
 Running the same example as VHDL
 --------------------------------
 
-The ``simple_dff`` example includes both a VHDL and a Verilog RTL implementation.
-The cocotb testbench can execute against either implementation using VPI for
-Verilog and VHPI/FLI for VHDL.  To run the test suite against the VHDL
-implementation, use the following command (a VHPI or FLI capable simulator must
+The ``simple_dff`` example includes both a VHDL and a Verilog :term:`RTL` implementation.
+The cocotb testbench can execute against either implementation using :term:`VPI` for
+Verilog and :term:`VHPI`/:term:`FLI` for VHDL.  To run the test suite against the VHDL
+implementation, use the following command (a :term:`VHPI` or :term:`FLI` capable simulator must
 be used):
 
 .. code-block:: bash
@@ -50,10 +50,10 @@ be used):
 Using cocotb
 ============
 
-A typical cocotb testbench requires no additional HDL code (though nothing prevents you from adding testbench helper code).
-The Design Under Test (DUT) is instantiated as the toplevel in the simulator
+A typical cocotb testbench requires no additional :term:`HDL` code (though nothing prevents you from adding testbench helper code).
+The Design Under Test (:term:`DUT`) is instantiated as the toplevel in the simulator
 without any wrapper code.
-Cocotb drives stimulus onto the inputs to the DUT and monitors the outputs
+Cocotb drives stimulus onto the inputs to the :term:`DUT` and monitors the outputs
 directly from Python.
 
 
@@ -84,7 +84,7 @@ Creating a test
 The test is written in Python. Cocotb wraps your top level with the handle you
 pass it. In this documentation, and most of the examples in the project, that
 handle is ``dut``, but you can pass your own preferred name in instead. The
-handle is used in all Python files referencing your RTL project. Assuming we
+handle is used in all Python files referencing your :term:`RTL` project. Assuming we
 have a toplevel port called ``clk`` we could create a test file containing the
 following:
 
@@ -147,7 +147,7 @@ or using direct assignment while traversing the hierarchy.
 
 
 The syntax ``sig <= new_value`` is a short form of ``sig.value = new_value``.
-It not only resembles HDL syntax, but also has the same semantics:
+It not only resembles :term:`HDL` syntax, but also has the same semantics:
 writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 (see :meth:`~cocotb.handle.NonHierarchyObject.setimmediatevalue`).

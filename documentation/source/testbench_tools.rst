@@ -6,11 +6,11 @@ Logging
 =======
 
 Cocotb uses the builtin :mod:`logging` library, with some configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
-Each DUT, monitor, driver, and scoreboard (as well as any other function using the coroutine decorator) holds a :class:`logging.Logger`, and each can be set to its own logging level.
-Within a DUT, each hierarchical object can also have individual logging levels set.
+Each :term:`DUT`, monitor, driver, and scoreboard (as well as any other function using the coroutine decorator) holds a :class:`logging.Logger`, and each can be set to its own logging level.
+Within a :term:`DUT`, each hierarchical object can also have individual logging levels set.
 
-When logging HDL objects, beware that ``_log`` is the preferred way to use
-logging. This helps minimize the change of name collisions with an HDL log
+When logging :term:`HDL` objects, beware that ``_log`` is the preferred way to use
+logging. This helps minimize the change of name collisions with an :term:`HDL` log
 component with the Python logging functionality.
 
 Log printing levels can also be set on a per-object basis.
@@ -131,9 +131,9 @@ Monitor class is a base class which you are expected to derive for your
 particular purpose. You must create a :any:`_monitor_recv()` function which is
 responsible for determining 1) at what points in simulation to call the
 :any:`_recv()` function, and 2) what transaction values to pass to be stored in the
-monitors receiving queue. Monitors are good for both outputs of the DUT for
-verification, and for the inputs of the DUT, to drive a test model of the DUT
-to be compared to the actual DUT. For this purpose, input monitors will often
+monitors receiving queue. Monitors are good for both outputs of the :term:`DUT` for
+verification, and for the inputs of the :term:`DUT`, to drive a test model of the :term:`DUT`
+to be compared to the actual :term:`DUT`. For this purpose, input monitors will often
 have a callback function passed that is a model. This model will often generate
 expected transactions, which are then compared using the :class:`.Scoreboard`
 class.

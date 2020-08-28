@@ -34,20 +34,20 @@ Calling the HAL from a test
 ---------------------------
 
 Typically the software component (often referred to as a Hardware Abstraction
-Layer or HAL) is written in C.  We need to call this software from our test
+Layer or :term:`HAL`) is written in C.  We need to call this software from our test
 written in Python.  There are multiple ways to call C code from Python, in
-this tutorial we'll use `SWIG`_ to generate Python bindings for our HAL.
+this tutorial we'll use `SWIG`_ to generate Python bindings for our :term:`HAL`.
 
 
 Blocking in the driver
 ----------------------
 
-Another difficulty to overcome is the fact that the HAL is expecting to call
+Another difficulty to overcome is the fact that the :term:`HAL` is expecting to call
 a low-level function to access the hardware, often something like ``ioread32``.
 We need this call to block while simulation time advances and a value is
-either read or written on the bus.  To achieve this we link the HAL against
+either read or written on the bus.  To achieve this we link the :term:`HAL` against
 a C library that provides the low level read/write functions.  These functions
-in turn call into cocotb and perform the relevant access on the DUT.
+in turn call into cocotb and perform the relevant access on the :term:`DUT`.
 
 
 Cocotb infrastructure
@@ -87,8 +87,8 @@ The endian swapper has a very simple register map:
 HAL
 ---
 
-To keep things simple we use the same RTL from the :doc:`endian_swapper`. We
-write a simplistic HAL which provides the following functions:
+To keep things simple we use the same :term:`RTL` from the :doc:`endian_swapper`. We
+write a simplistic :term:`HAL` which provides the following functions:
 
 .. code-block:: c
 
@@ -104,8 +104,8 @@ NIOS framework.
 IO Module
 ---------
 
-This module acts as the bridge between the C HAL and the Python testbench.  It
-exposes the ``IORD`` and ``IOWR`` calls to link the HAL against, but also
+This module acts as the bridge between the C :term:`HAL` and the Python testbench.  It
+exposes the ``IORD`` and ``IOWR`` calls to link the :term:`HAL` against, but also
 provides a Python interface to allow the read/write bindings to be dynamically
 set (through ``set_write_function`` and ``set_read_function`` module functions).
 
@@ -118,9 +118,9 @@ Testbench
 ---------
 
 First of all we set up a clock, create an :class:`Avalon Master <cocotb.drivers.avalon.AvalonMaster>`
-interface and reset the DUT.
+interface and reset the :term:`DUT`.
 Then we create two functions that are wrapped with the :class:`cocotb.function` decorator
-to be called when the HAL attempts to perform a read or write.
+to be called when the :term:`HAL` attempts to perform a read or write.
 These are then passed to the `IO Module`_:
 
 
@@ -144,7 +144,7 @@ These are then passed to the `IO Module`_:
     io_module.set_read_function(read)
 
 
-We can then initialize the HAL and call functions, using the :class:`cocotb.external`
+We can then initialize the :term:`HAL` and call functions, using the :class:`cocotb.external`
 decorator to turn the normal function into a blocking coroutine that we can
 :keyword:`yield`:
 
@@ -154,7 +154,7 @@ decorator to turn the normal function into a blocking coroutine that we can
     yield cocotb.external(hal.endian_swapper_enable)(state)
 
 
-The HAL will perform whatever calls it needs, accessing the DUT through the
+The :term:`HAL` will perform whatever calls it needs, accessing the :term:`DUT` through the
 :class:`Avalon-MM driver <cocotb.drivers.avalon.AvalonMM>`,
 and control will return to the testbench when the function returns.
 

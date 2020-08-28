@@ -32,6 +32,9 @@ Glossary
    GPI
       General Procedural Interface, cocotb's abstraction over :term:`VPI`, :term:`VHPI`, and :term:`FLI`.
 
+   HAL
+      Hardware Abstraction Layer
+
    HDL
       Hardware Description Language
 

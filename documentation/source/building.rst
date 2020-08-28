@@ -26,7 +26,7 @@ Make Phases
 -----------
 
 Typically the makefiles provided with cocotb for various simulators use a separate ``compile`` and ``run`` target.
-This allows for a rapid re-running of a simulator if none of the RTL source files have changed and therefore the simulator does not need to recompile the RTL.
+This allows for a rapid re-running of a simulator if none of the :term:`RTL` source files have changed and therefore the simulator does not need to recompile the :term:`RTL`.
 
 
 Variables
@@ -42,7 +42,7 @@ Cocotb
 
 .. envvar:: TOPLEVEL
 
-    Use this to indicate the instance in the hierarchy to use as the DUT.
+    Use this to indicate the instance in the hierarchy to use as the :term:`DUT`.
     If this isn't defined then the first root instance is used.
 
 .. envvar:: RANDOM_SEED
@@ -167,7 +167,7 @@ Regression Manager
 
 .. envvar:: COVERAGE
 
-    Enable to report Python coverage data. For some simulators, this will also report HDL coverage.
+    Enable to report Python coverage data. For some simulators, this will also report :term:`HDL` coverage.
 
     This needs the :mod:`coverage` Python module to be installed.
 
@@ -192,7 +192,7 @@ GPI
 
     A comma-separated list of extra libraries that are dynamically loaded at runtime.
     A function from each of these libraries will be called as an entry point prior to elaboration, allowing these libraries to register
-    system functions and callbacks. Note that HDL objects cannot be accessed at this time.
+    system functions and callbacks. Note that :term:`HDL` objects cannot be accessed at this time.
     The function name defaults to ``{library_name}_entry_point``, but a custom name can be specified using a ``:``, which follows an existing simulator convention.
 
     For example:
@@ -223,9 +223,9 @@ Makefile-based Test Scripts
 
 .. make:var:: TOPLEVEL_LANG
 
-    Used to inform the makefile scripts which HDL language the top-level design element is written in.
+    Used to inform the makefile scripts which :term:`HDL` language the top-level design element is written in.
     Currently it supports the values ``verilog`` for Verilog or SystemVerilog tops, and ``vhdl`` for VHDL tops.
-    This is used by simulators that support more than one interface (VPI, VHPI, or FLI) to select the appropriate interface to start cocotb.
+    This is used by simulators that support more than one interface (:term:`VPI`, :term:`VHPI`, or :term:`FLI`) to select the appropriate interface to start cocotb.
 
     The variable is also made available to cocotb tests conveniently as :data:`cocotb.LANGUAGE`.
 
@@ -292,7 +292,7 @@ Makefile-based Test Scripts
 
 .. make:var:: CUSTOM_COMPILE_DEPS
 
-      Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the RTL sources listed in :make:var:`VERILOG_SOURCES` or :make:var:`VHDL_SOURCES`.
+      Use to add additional dependencies to the compilation target; useful for defining additional rules to run pre-compilation or if the compilation phase depends on files other than the :term:`RTL` sources listed in :make:var:`VERILOG_SOURCES` or :make:var:`VHDL_SOURCES`.
 
 .. make:var:: CUSTOM_SIM_DEPS
 
