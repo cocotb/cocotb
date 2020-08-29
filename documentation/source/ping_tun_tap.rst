@@ -4,7 +4,7 @@ Tutorial: Ping
 
 One of the benefits of Python is the ease with which interfacing is possible.
 In this tutorial we'll look at interfacing the standard GNU `ping`_ command
-to the simulator. Using Python we can ping our DUT with fewer than 50 lines of
+to the simulator. Using Python we can ping our :term:`DUT` with fewer than 50 lines of
 code.
 
 For the impatient this tutorial is provided as an example with cocotb. You can
@@ -22,13 +22,13 @@ run this example from a fresh checkout:
 Architecture
 ============
 
-We have a simple RTL block that takes ICMP echo requests and generates an ICMP
+We have a simple :term:`RTL` block that takes ICMP echo requests and generates an ICMP
 echo response.  To verify this behavior we want to run the `ping`_ utility
-against our RTL running in the simulator.
+against our :term:`RTL` running in the simulator.
 
 In order to achieve this we need to capture the packets that are created by
-ping, drive them onto the pins of our DUT in simulation, monitor the output of
-the DUT and send any responses back to the ping process.
+ping, drive them onto the pins of our :term:`DUT` in simulation, monitor the output of
+the :term:`DUT` and send any responses back to the ping process.
 
 Linux has a `TUN/TAP`_ virtual network device which we can use for this
 purpose, allowing `ping`_ to run unmodified and unaware that it is
@@ -63,7 +63,7 @@ we write a function that will create our virtual interface:
 
 Now we can get started on the actual test.  First of all we'll create a clock
 signal and connect up the :class:`Avalon driver <cocotb.drivers.avalon.AvalonSTPkts>` and
-:class:`monitor <cocotb.monitors.avalon.AvalonSTPkts>` to the DUT.  To help debug
+:class:`monitor <cocotb.monitors.avalon.AvalonSTPkts>` to the :term:`DUT`.  To help debug
 the testbench we'll enable verbose debug on the drivers and monitors by setting
 the log level to ``logging.DEBUG``.
 
@@ -86,7 +86,7 @@ the log level to ``logging.DEBUG``.
         stream_out.log.setLevel(logging.DEBUG)
 
 
-We also need to reset the DUT and drive some default values onto some of the
+We also need to reset the :term:`DUT` and drive some default values onto some of the
 bus signals.  Note that we'll need to import the :class:`~.triggers.Timer`
 and :class:`~.triggers.RisingEdge` triggers.
 

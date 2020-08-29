@@ -98,7 +98,7 @@ If your design's clocks vary in precision, the performance of the simulation can
 Coverage
 --------
 
-To enable HDL code coverage, add Verilator's coverage option(s) to the :make:var:`EXTRA_ARGS` make variable, for example:
+To enable :term:`HDL` code coverage, add Verilator's coverage option(s) to the :make:var:`EXTRA_ARGS` make variable, for example:
 
  .. code-block:: make
 
@@ -140,7 +140,7 @@ In order to use this simulator, set :make:var:`SIM` to ``vcs``:
 
     make SIM=vcs
 
-cocotb currently only supports VPI for Synopsys VCS, not VHPI.
+cocotb currently only supports :term:`VPI` for Synopsys VCS, not :term:`VHPI`.
 
 .. _sim-vcs-issues:
 
@@ -244,17 +244,17 @@ In order to use this simulator, set :make:var:`SIM` to ``modelsim``:
 
 .. note::
 
-   In order to use FLI (for VHDL), a ``vdbg`` executable from the simulator installation directory needs to be available on the ``PATH`` during cocotb installation.
+   In order to use :term:`FLI` (for VHDL), a ``vdbg`` executable from the simulator installation directory needs to be available on the ``PATH`` during cocotb installation.
    This is needed to access the proprietary ``mti.h`` header file.
 
-Any ModelSim PE or ModelSim PE derivatives (like the ModelSim Microsemi, Intel, Lattice Editions) do not support the VHDL FLI feature.
-If you try to use them with FLI, you will see a ``vsim-FLI-3155`` error:
+Any ModelSim PE or ModelSim PE derivatives (like the ModelSim Microsemi, Intel, Lattice Editions) do not support the VHDL :term:`FLI` feature.
+If you try to use them with :term:`FLI`, you will see a ``vsim-FLI-3155`` error:
 
 .. code-block:: bash
 
     ** Error (suppressible): (vsim-FLI-3155) The FLI is not enabled in this version of ModelSim.
 
-ModelSim DE and SE (and Questa, of course) support the FLI.
+ModelSim DE and SE (and Questa, of course) support the :term:`FLI`.
 
 .. _sim-modelsim-issues:
 
@@ -296,7 +296,7 @@ In order to use this simulator, set :make:var:`SIM` to ``xcelium``:
 
     make SIM=xcelium
 
-The simulator automatically loads VPI even when only VHPI is requested.
+The simulator automatically loads :term:`VPI` even when only :term:`VHPI` is requested.
 
 .. _sim-xcelium-issues:
 
@@ -318,7 +318,7 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
     make SIM=ghdl
 
 Support is preliminary.
-Noteworthy is that despite GHDL being a VHDL simulator, it implements the VPI interface.
+Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
 
 .. _sim-ghdl-issues:
 

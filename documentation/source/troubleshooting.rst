@@ -12,7 +12,7 @@ i.e. without using :keyword:`await` or :keyword:`yield`?
 Increasing Verbosity
 ====================
 
-If things fail in the VPI/VHPI/FLI area, check your simulator's documentation to see if it has options to
+If things fail in the :term:`VPI`/:term:`VHPI`/:term:`FLI` area, check your simulator's documentation to see if it has options to
 increase its verbosity about what may be wrong. You can then set these options on the :command:`make` command line
 as :make:var:`COMPILE_ARGS`, :make:var:`SIM_ARGS` or :make:var:`EXTRA_ARGS` (see :doc:`building` for details).
 If things fail from within Python, or coroutines aren't being called when you expect, the
@@ -36,7 +36,7 @@ Python
 ------
 
 When executing the Makefile to run a cocotb test, a Python shell interpreter is called from within the
-VPI/VHPI/FLI library.
+:term:`VPI`/:term:`VHPI`/:term:`FLI` library.
 Hence it is not possible to directly attach a Python debugger to the Python process being part of the simulator that uses the aforementioned library.
 Using ``import pdb; pdb.set_trace()`` directly is also frequently not possible, due to the way that simulators interfere with stdin.
 
