@@ -27,6 +27,7 @@
 
 import random
 import logging
+import warnings
 
 import cocotb
 
@@ -81,7 +82,9 @@ class EndianSwapperTB(object):
         # Create a scoreboard on the stream_out bus
         self.pkts_sent = 0
         self.expected_output = []
-        self.scoreboard = Scoreboard(dut)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.scoreboard = Scoreboard(dut)
         self.scoreboard.add_interface(self.stream_out, self.expected_output)
 
         # Reconstruct the input transactions from the pins
