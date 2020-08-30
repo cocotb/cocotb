@@ -3,6 +3,7 @@
 
 import random
 import struct
+import warnings
 
 import cocotb
 from cocotb.drivers import BitDriver
@@ -24,7 +25,9 @@ class AvalonSTTB(object):
 
         self.stream_in = AvalonSTDriver(self.dut, "asi", dut.clk)
         self.stream_out = AvalonSTMonitor(self.dut, "aso", dut.clk)
-        self.scoreboard = Scoreboard(self.dut, fail_immediately=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.scoreboard = Scoreboard(self.dut, fail_immediately=True)
 
         self.expected_output = []
         self.scoreboard.add_interface(self.stream_out, self.expected_output)
