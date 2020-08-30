@@ -1,7 +1,7 @@
 # ==============================================================================
-# Authors:		Martin Zabel
+# Authors:              Martin Zabel
 #
-# Cocotb Testbench:	For D flip-flop
+# Cocotb Testbench:     For D flip-flop
 #
 # Description:
 # ------------------------------------
@@ -26,6 +26,7 @@
 # ==============================================================================
 
 import random
+import warnings
 
 import cocotb
 from cocotb.clock import Clock
@@ -93,7 +94,9 @@ class DFF_TB(object):
 
         # Create a scoreboard on the outputs
         self.expected_output = [init_val]  # a list with init_val as the first element
-        self.scoreboard = Scoreboard(dut)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.scoreboard = Scoreboard(dut)
         self.scoreboard.add_interface(self.output_mon, self.expected_output)
 
         # Use the input monitor to reconstruct the transactions from the pins

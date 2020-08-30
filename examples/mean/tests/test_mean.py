@@ -8,6 +8,7 @@ from cocotb.monitors import BusMonitor
 from cocotb.scoreboard import Scoreboard
 
 import random
+import warnings
 
 CLK_PERIOD_NS = 100
 
@@ -90,7 +91,9 @@ async def mean_randomised_test(dut):
     dut_out = StreamBusMonitor(dut, "o", dut.clk)
 
     exp_out = []
-    scoreboard = Scoreboard(dut)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        scoreboard = Scoreboard(dut)
     scoreboard.add_interface(dut_out, exp_out)
 
     DATA_WIDTH = int(dut.DATA_WIDTH.value)
