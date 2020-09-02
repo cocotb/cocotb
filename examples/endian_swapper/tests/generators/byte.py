@@ -29,60 +29,49 @@
 
 
 """
-    Collection of Ethernet Packet generators to use for testdata generation
+    Collection of generators for creating byte streams
 
-    Most generators take the keyword argument "payload" which can be
-    used to control the payload contents if required.  Defaults to random data.
+    Note that on Python 3, individual bytes are represented with integers.
 """
 import random
-
-from scapy.all import Ether, IP, UDP
-
-# Supress SCAPY warning messages
-import logging
-logging.getLogger("scapy").setLevel(logging.ERROR)
-
+import itertools
 from cocotb.decorators import public
-from cocotb.generators.byte import get_bytes, random_data
-
-_default_payload = random_data
-
-
-# UDP packet generators
-@public
-def udp_all_sizes(max_size=1500, payload=_default_payload()):
-    """
-    UDP packets of every supported size
-
-    .. deprecated:: 1.4.1
-    """
-    header = Ether() / IP() / UDP()
-
-    for size in range(0, max_size - len(header)):
-        yield header / get_bytes(size, payload)
+from typing import Iterator
 
 
 @public
-def udp_random_sizes(npackets=100, payload=_default_payload()):
-    """
-    UDP packets with random sizes
+def get_bytes(nbytes: int, generator: Iterator[int]) -> bytes:
+    """Get nbytes from generator
 
-    .. deprecated:: 1.4.1
-    """
-    header = Ether() / IP() / UDP()
-    max_size = 1500 - len(header)
-
-    for pkt in range(npackets):
-        yield header / get_bytes(random.randint(0, max_size), payload)
+    .. versionchanged:: 1.4.0
+        This now returns :type:`bytes` not :type:`str`. """
+    return bytes(next(generator) for i in range(nbytes))
 
 
-# IPV4 generator
 @public
-def ipv4_small_packets(npackets=100, payload=_default_payload()):
-    """
-    Small (<100bytes payload) IPV4 packets
+def random_data() -> Iterator[int]:
+    r"""Random bytes
 
-    .. deprecated:: 1.4.1
-    """
-    for pkt in range(npackets):
-        yield Ether() / IP() / get_bytes(random.randint(0, 100), payload)
+    .. versionchanged:: 1.4.0
+        This now returns integers not single-character :type:`str`\ s. """
+    while True:
+        yield random.randrange(256)
+
+
+@public
+def incrementing_data(increment=1) -> Iterator[int]:
+    r"""Incrementing bytes
+
+    .. versionchanged:: 1.4.0
+        This now returns integers not single-character :type:`str`\ s. """
+    val = 0
+    while True:
+        yield val
+        val += increment
+        val = val & 0xFF
+
+
+@public
+def repeating_bytes(pattern : bytes = b"\x00") -> Iterator[int]:
+    """Repeat a pattern of bytes"""
+    return itertools.cycle(pattern)

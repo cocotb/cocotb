@@ -51,11 +51,7 @@ _default_payload = random_data
 # UDP packet generators
 @public
 def udp_all_sizes(max_size=1500, payload=_default_payload()):
-    """
-    UDP packets of every supported size
-
-    .. deprecated:: 1.4.1
-    """
+    """UDP packets of every supported size"""
     header = Ether() / IP() / UDP()
 
     for size in range(0, max_size - len(header)):
@@ -64,11 +60,7 @@ def udp_all_sizes(max_size=1500, payload=_default_payload()):
 
 @public
 def udp_random_sizes(npackets=100, payload=_default_payload()):
-    """
-    UDP packets with random sizes
-
-    .. deprecated:: 1.4.1
-    """
+    """UDP packets with random sizes"""
     header = Ether() / IP() / UDP()
     max_size = 1500 - len(header)
 
@@ -79,10 +71,6 @@ def udp_random_sizes(npackets=100, payload=_default_payload()):
 # IPV4 generator
 @public
 def ipv4_small_packets(npackets=100, payload=_default_payload()):
-    """
-    Small (<100bytes payload) IPV4 packets
-
-    .. deprecated:: 1.4.1
-    """
+    """Small (<100bytes payload) IPV4 packets"""
     for pkt in range(npackets):
         yield Ether() / IP() / get_bytes(random.randint(0, 100), payload)

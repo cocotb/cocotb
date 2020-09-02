@@ -31,18 +31,8 @@
 import math
 import random
 import itertools
-import warnings
 
 from cocotb.decorators import public
-
-
-warnings.warn(
-    "The contents of the cocotb.generators package will soon be removed.\n"
-    "Most of the functionality can be replaced with utilities provided "
-    "by other packages or the standard library.\n Alternatively, you can "
-    "copy this package or individual functions into your project, if you "
-    "follow cocotb's license agreement.",
-    DeprecationWarning)
 
 
 @public
@@ -51,9 +41,9 @@ def repeat(obj, nrepeat=None):
 
     Args:
         obj (any): The object to yield
-        nrepeat (int, optional): The number of times to repeatedly yield *obj*
 
-    .. deprecated:: 1.4.1
+    Kwargs:
+        nrepeat (int): The number of times to repeatedly yield obj
     """
     if nrepeat is None:
         return itertools.repeat(obj)
@@ -68,8 +58,6 @@ def combine(generators):
 
     Args:
         generators (iterable): Generators to combine together
-
-    .. deprecated:: 1.4.1
     """
     return itertools.chain.from_iterable(generators)
 
@@ -82,9 +70,7 @@ def gaussian(mean, sigma):
     Args:
         mean (int/float): mean value
 
-        sigma (int/float): Standard deviation
-
-    .. deprecated:: 1.4.1
+        signma (int/float): Standard deviation
     """
     while True:
         yield random.gauss(mean, sigma)
@@ -96,14 +82,12 @@ def sine_wave(amplitude, w, offset=0):
     Generates a sine wave that repeats forever
 
     Args:
-        amplitude (int/float): peak deviation of the function from zero
+        amplitude (int/float):  peak deviation of the function from zero
 
         w (int/float): is the rate of change of the function argument
 
     Yields:
         floats that form a sine wave
-
-    .. deprecated:: 1.4.1
     """
     twoPiF_DIV_sampleRate = math.pi * 2
     while True:
@@ -112,11 +96,9 @@ def sine_wave(amplitude, w, offset=0):
 
 
 def get_generators(module):
-    """Return an iterator which yields all the generators in a module
+    """Return an iterator which yields  all the generators in a module
 
     Args:
         module (python module): The module to get the generators from
-
-    .. deprecated:: 1.4.1
     """
     return (getattr(module, gen) for gen in module.__all__)
