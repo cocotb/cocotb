@@ -42,9 +42,8 @@ from cocotb.scoreboard import Scoreboard
 from cocotb.result import TestFailure
 
 # Data generators
-from cocotb.generators.byte import random_data, get_bytes
-from cocotb.generators.bit import (wave, intermittent_single_cycles,
-                                   random_50_percent)
+from generators.byte import random_data, get_bytes
+from generators.bit import wave, intermittent_single_cycles, random_50_percent
 
 
 async def stream_out_config_setter(dut, stream_out, stream_in):

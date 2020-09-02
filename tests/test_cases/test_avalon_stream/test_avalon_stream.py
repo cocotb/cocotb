@@ -4,6 +4,7 @@
 import random
 import struct
 import warnings
+import math
 
 import cocotb
 from cocotb.drivers import BitDriver
@@ -12,7 +13,47 @@ from cocotb.monitors.avalon import AvalonST as AvalonSTMonitor
 from cocotb.triggers import RisingEdge
 from cocotb.clock import Clock
 from cocotb.scoreboard import Scoreboard
-from cocotb.generators.bit import wave
+
+
+def sine_wave(amplitude, w, offset=0):
+    """
+    Generates a sine wave that repeats forever
+
+    Args:
+        amplitude (int/float):  peak deviation of the function from zero
+
+        w (int/float): is the rate of change of the function argument
+
+    Yields:
+        floats that form a sine wave
+    """
+    twoPiF_DIV_sampleRate = math.pi * 2
+    while True:
+        for idx in (i / float(w) for i in range(int(w))):
+            yield amplitude * math.sin(twoPiF_DIV_sampleRate * idx) + offset
+
+
+def bit_toggler(gen_on, gen_off):
+    """Combines two generators to provide cycles_on, cycles_off tuples
+
+    Args:
+        gen_on (generator): generator that yields number of cycles on
+
+        gen_off (generator): generator that yields number of cycles off
+    """
+    for n_on, n_off in zip(gen_on, gen_off):
+        yield int(abs(n_on)), int(abs(n_off))
+
+
+def wave(on_ampl=30, on_freq=200, off_ampl=10, off_freq=100):
+    """
+    Drive a repeating sine_wave pattern
+
+    TODO:
+        Adjust args so we just specify a repeat duration and overall throughput
+    """
+    return bit_toggler(sine_wave(on_ampl, on_freq),
+                       sine_wave(off_ampl, off_freq))
 
 
 class AvalonSTTB(object):
