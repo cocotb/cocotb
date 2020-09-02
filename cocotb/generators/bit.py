@@ -44,6 +44,8 @@ def bit_toggler(gen_on, gen_off):
     Args:
         gen_on (generator): generator that yields number of cycles on
         gen_off (generator): generator that yields number of cycles off
+
+    .. deprecated:: 1.4.1
     """
     for n_on, n_off in zip(gen_on, gen_off):
         yield int(abs(n_on)), int(abs(n_off))
@@ -56,6 +58,8 @@ def intermittent_single_cycles(mean=10, sigma=None):
     Args:
         mean (int, optional): Average number of cycles in between single cycle gaps
         sigma (int, optional): Standard deviation of gaps.  mean/4 if sigma is None
+
+    .. deprecated:: 1.4.1
     """
     if sigma is None:
         sigma = mean / 4.0
@@ -70,6 +74,8 @@ def random_50_percent(mean=10, sigma=None):
     Args:
         mean (int, optional): Average number of cycles on/off
         sigma (int, optional): Standard deviation of gaps.  mean/4 if sigma is None
+
+    .. deprecated:: 1.4.1
     """
     if sigma is None:
         sigma = mean / 4.0
@@ -84,6 +90,8 @@ def wave(on_ampl=30, on_freq=200, off_ampl=10, off_freq=100):
 
     TODO:
         Adjust args so we just specify a repeat duration and overall throughput
+
+    .. deprecated:: 1.4.1
     """
     return bit_toggler(sine_wave(on_ampl, on_freq),
                        sine_wave(off_ampl, off_freq))

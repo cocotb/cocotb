@@ -12,7 +12,10 @@ from cocotb.monitors.avalon import AvalonST as AvalonSTMonitor
 from cocotb.triggers import RisingEdge
 from cocotb.clock import Clock
 from cocotb.scoreboard import Scoreboard
-from cocotb.generators.bit import wave
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    from cocotb.generators.bit import wave
 
 
 class AvalonSTTB(object):
