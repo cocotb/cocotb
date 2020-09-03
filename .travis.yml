@@ -81,7 +81,6 @@ jobs:
       after_success: *travis_linux_post
 
     - stage: SimTests
-      python: 3.7
       os: windows
       language: shell
       before_install:
