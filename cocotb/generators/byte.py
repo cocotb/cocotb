@@ -29,7 +29,7 @@
 
 
 """
-    Collection of generators for creating byte streams
+    Collection of generators for creating byte streams.
 
     Note that on Python 3, individual bytes are represented with integers.
 """
@@ -44,7 +44,7 @@ def get_bytes(nbytes: int, generator: Iterator[int]) -> bytes:
     """Get nbytes from generator
 
     .. versionchanged:: 1.4.0
-        This now returns :type:`bytes` not :type:`str`. """
+        This now returns :class:`bytes`, not :class:`str`. """
     return bytes(next(generator) for i in range(nbytes))
 
 
@@ -53,7 +53,7 @@ def random_data() -> Iterator[int]:
     r"""Random bytes
 
     .. versionchanged:: 1.4.0
-        This now returns integers not single-character :type:`str`\ s. """
+        This now returns integers, not single-character :class:`str`\ s. """
     while True:
         yield random.randrange(256)
 
@@ -63,7 +63,7 @@ def incrementing_data(increment=1) -> Iterator[int]:
     r"""Incrementing bytes
 
     .. versionchanged:: 1.4.0
-        This now returns integers not single-character :type:`str`\ s. """
+        This now returns integers, not single-character :class:`str`\ s. """
     val = 0
     while True:
         yield val

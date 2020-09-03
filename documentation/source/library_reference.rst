@@ -130,6 +130,45 @@ Scoreboard
     :show-inheritance:
     :synopsis: Class for scoreboards.
 
+Generators
+----------
+
+.. currentmodule:: cocotb.generators
+
+.. automodule:: cocotb.generators
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+    :synopsis: Class for generators.
+
+Bit
+^^^
+
+.. automodule:: cocotb.generators.bit
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+
+
+Byte
+^^^^
+
+.. automodule:: cocotb.generators.byte
+    :members:
+    :member-order: bysource
+    :show-inheritance:
+
+..
+   Needs scapy
+
+   Packet
+   ^^^^^^
+
+   .. automodule:: cocotb.generators.packet
+       :members:
+       :member-order: bysource
+       :show-inheritance:
+
 Clock
 -----
 
