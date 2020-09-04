@@ -195,6 +195,10 @@ class RegressionManager:
                         _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
                                       test_name, module_name)
                         raise ImportError("Failed to find requested test %s" % test_name)
+
+                    # If we request a test manually, it should be ran even if skip=True is set.
+                    test.skip = False
+
                     yield test
 
                 # only look in first module for all functions and don't complain if all functions are not found
