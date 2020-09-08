@@ -510,7 +510,8 @@ class test(coroutine, metaclass=_decorator_helper):
             .. versionchanged:: 1.3
                 Specific exception types can be expected
         skip (bool, optional):
-            Don't execute this test as part of the regression.
+            Don't execute this test as part of the regression. Test can still be run
+            manually by setting :make:var:`TESTCASE`.
         stage (int, optional)
             Order tests logically into stages, where multiple tests can share a stage.
     """
