@@ -205,6 +205,47 @@ def test_writes_have_taken_effect_after_readwrite(dut):
     assert dut.stream_in_data.value == 2
 
 
+async def write_in_readwrite(dut):
+    dut.stream_in_valid.setimmediatevalue(0)
+    dut.stream_out_ready.setimmediatevalue(0)
+
+    async def write_delayed():
+        await ReadWrite()
+        dut.stream_in_valid.value = 1
+
+    @cocotb.coroutine
+    async def wait_signal():
+        await RisingEdge(dut.stream_in_valid)
+        dut.stream_out_ready.value = 1
+
+    write_coro = cocotb.fork(write_delayed())
+
+    await cocotb.triggers.with_timeout(wait_signal(), timeout_time=10, timeout_unit='ns')
+
+    await ReadOnly()
+    assert dut.stream_out_ready.value == 1
+
+
+@cocotb.test()
+async def test_write_in_readwrite_no_do_writes(dut):
+    """Test doing a normal (delayed) write after awaiting ReadWrite trigger.
+
+    Don't fork _do_writes() task before-hand.
+    """
+    await write_in_readwrite(dut)
+
+
+@cocotb.test()
+async def test_write_in_readwrite(dut):
+    """Test doing a normal (delayed) write after awaiting ReadWrite trigger.
+
+    Fork _do_writes() task by doing a delayed write. This ensures that _do_writes() runs
+    before write_delayed() when the ReadWrite() trigger fires.
+    """
+    dut.stream_in_data.value = 0
+    await write_in_readwrite(dut)
+
+
 @cocotb.coroutine
 def example():
     yield Timer(10, 'ns')
