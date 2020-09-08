@@ -196,7 +196,7 @@ class RegressionManager:
                                       test_name, module_name)
                         raise ImportError("Failed to find requested test %s" % test_name)
 
-                    # If we request a test manually, it should be ran even if skip=True is set.
+                    # If we request a test manually, it should be run even if skip=True is set.
                     test.skip = False
 
                     yield test
