@@ -138,13 +138,19 @@ The `category` labels help maintainers to filter issues which are relevant to th
 - `category:simulators:vcs`: Synopsys VCS
 - `category:simulators:verilator`: Verilator
 - `category:simulators:xcelium`: Cadence Xcelium
+- `category:codebase:gpi`: relating to the GPI or one of the implementation
+- `category:codebase:pygpi`: relating to the Python wrapper around the GPI (embed library and simulator module)
+- `category:codebase:scheduler`: relating to the coroutine scheduler, triggers, or coroutine objects
+- `category:codebase:test-runner`: relating to code for automating test runs (regression manager)
+- `category:codebase:handle`: relating to handles or handle types (BinaryValue)
+- `category:codebase:project-automation`: relating to included project automation (makefiles)
+- `category:codebase:testbenching`: relating to testbenching components (Drivers, Monitors, etc.)
+- `category:building`: relating to build C/C++ libraries and extension modules
 - `category:packaging`: issues related to (PyPi) packaging, etc.
 - `category:docs`: documentation issues and fixes
 - `category:extensions`: cocotb extensions
 - `category:performance`: performance topics
-- `category:core`: Issues in the core of cocotb (scheduler, error reporting, etc.)
 - `category:tests-ci`: continuous integration and unit tests
-- `category:test-runner`: regarding the code for automating test runs
 
 To help new contributors find a good issue to work on one more label is used (following [GitHub standard practices](#https://help.github.com/articles/helping-new-contributors-find-your-project-with-labels/)):
 - `good first issue`: this issue is a good starting point for new contributors.
