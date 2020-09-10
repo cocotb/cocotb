@@ -120,6 +120,8 @@ The directory :file:`cocotb/examples/axi_lite_slave/` contains ...
     Write documentation, see :file:`README.md`
 
 
+.. _mixed_signal:
+
 Mixed-signal (analog/digital)
 =============================
 
