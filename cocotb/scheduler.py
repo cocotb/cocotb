@@ -156,53 +156,20 @@ class external_waiter:
 
 
 class Scheduler:
-    """The main scheduler.
+    """The main coroutine scheduler.
 
-    Here we accept callbacks from the simulator and schedule the appropriate
-    coroutines.
+    The scheduler is entered from a simulator event callback, and the appropriate
+    coroutines are run.
 
-    A callback fires, causing the :any:`react` method to be called, with the
-    trigger that caused the callback as the first argument.
-
-    We look up a list of coroutines to schedule (indexed by the trigger) and
-    schedule them in turn.
+    The simulator callback starts scheduling with a :class:`cocotb.triggers.GPITrigger`,
+    and any coroutines that are waiting on that trigger are scheduled. After all coroutines
+    are finished or waiting on a :class:`cocotb.triggers.Trigger` (including any new ones),
+    the scheduler returns control to the simulator and waits for the next event callback.
 
     .. attention::
 
        Implementors should not depend on the scheduling order!
 
-    Some additional management is required since coroutines can return a list
-    of triggers, to be scheduled when any one of the triggers fires.  To
-    ensure we don't receive spurious callbacks, we have to un-prime all the
-    other triggers when any one fires.
-
-    Due to the simulator nuances and fun with delta delays we have the
-    following modes:
-
-    Normal mode
-        - Callbacks cause coroutines to be scheduled
-        - Any pending writes are cached and do not happen immediately
-
-    ReadOnly mode
-        - Corresponds to :any:`cbReadOnlySynch` (VPI) or :any:`vhpiCbLastKnownDeltaCycle`
-          (VHPI).  In this state we are not allowed to perform writes.
-
-    Write mode
-        - Corresponds to :any:`cbReadWriteSynch` (VPI) or :c:macro:`vhpiCbEndOfProcesses` (VHPI)
-          In this mode we play back all the cached write updates.
-
-    We can legally transition from Normal to Write by registering a :class:`~cocotb.triggers.ReadWrite`
-    callback, however usually once a simulator has entered the ReadOnly phase
-    of a given timestep then we must move to a new timestep before performing
-    any writes.  The mechanism for moving to a new timestep may not be
-    consistent across simulators and therefore we provide an abstraction to
-    assist with compatibility.
-
-
-    Unless a coroutine has explicitly requested to be scheduled in ReadOnly
-    mode (for example wanting to sample the finally settled value after all
-    delta delays) then it can reasonably be expected to be scheduled during
-    "normal mode" i.e. where writes are permitted.
     """
 
     _MODE_NORMAL   = 1  # noqa
