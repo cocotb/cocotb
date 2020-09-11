@@ -361,18 +361,25 @@ Other Runtime Information
 -------------------------
 
 .. autodata:: cocotb.argv
+   :no-value:
 
 .. autodata:: cocotb.SIM_NAME
+   :no-value:
 
 .. autodata:: cocotb.SIM_VERSION
+   :no-value:
 
 .. autodata:: cocotb.RANDOM_SEED
+   :no-value:
 
 .. autodata:: cocotb.plusargs
+   :no-value:
 
 .. autodata:: cocotb.LANGUAGE
+   :no-value:
 
 .. autodata:: cocotb.top
+   :no-value:
 
 
 Signal Tracer for WaveDrom
@@ -397,6 +404,7 @@ The Scheduler
 .. currentmodule:: cocotb.scheduler
 
 .. autodata:: cocotb.scheduler
+   :no-value:
 
 .. autoclass:: Scheduler
     :members:
@@ -408,6 +416,7 @@ The Regression Manager
 .. currentmodule:: cocotb.regression
 
 .. autodata:: cocotb.regression_manager
+   :no-value:
 
 .. autoclass:: RegressionManager
     :members:

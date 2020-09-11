@@ -1,6 +1,6 @@
 # Python dependencies to build the documentation
 
-Sphinx ~= 3.1
+Sphinx ~= 3.4
 breathe
 sphinx-rtd-theme
 cairosvg
