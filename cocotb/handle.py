@@ -96,10 +96,18 @@ class SimHandleBase:
         self._def_name = self._handle.get_definition_name()  # type: str
         """The name of a GPI object's definition.
 
+        This is the value of ``vpiDefName`` for VPI, ``vhpiNameP`` for VHPI,
+        and ``mti_GetPrimaryName`` for FLI.
+        Support for this depends on the specific object type and simulator used.
+
         :meta public:
         """
         self._def_file = self._handle.get_definition_file()  # type: str
-        """The file that sources the object's definition.
+        """The name of the file that sources the object's definition.
+
+        This is the value of ``vpiDefFile`` for VPI, ``vhpiFileNameP`` for VHPI,
+        and ``mti_GetRegionSourceName`` for FLI.
+        Support for this depends on the specific object type and simulator used.
 
         :meta public:
         """
