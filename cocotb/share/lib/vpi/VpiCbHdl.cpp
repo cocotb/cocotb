@@ -576,7 +576,7 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = []{
         vpiRealNet,
         vpiStructVar,
         vpiStructNet,
-        //vpiVariables          // Aldec SEGV on plain Verilog
+        vpiVariables,
         vpiNamedEvent,
         vpiNamedEventArray,
         vpiParameter,
