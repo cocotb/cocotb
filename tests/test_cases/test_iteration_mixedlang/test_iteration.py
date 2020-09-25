@@ -71,7 +71,7 @@ def recursive_discovery(dut):
     elif cocotb.SIM_NAME.lower().startswith(("modelsim")):
         pass_total = 933
     else:
-        pass_total = 966
+        pass_total = 1024
 
     tlog = logging.getLogger("cocotb.test")
     yield Timer(100)

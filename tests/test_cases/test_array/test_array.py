@@ -336,7 +336,7 @@ def test_discover_all(dut):
     # Modelsim/Questa VPI will not find a vpiStructVar from vpiModule so we set a dummy variable
     # to ensure the handle is in the dut "sub_handles" for iterating
     #
-    # DO NOT ADD FOR ALDEC.  Does not iterate over properly
+    # DO NOT ADD FOR ALDEC.  Older Versions do not iterate over properly
     if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("modelsim", "ncsim", "xmsim")):
         dummy = dut.sig_rec
         dummy = dut.port_rec_out
@@ -353,12 +353,16 @@ def test_discover_all(dut):
     elif cocotb.LANGUAGE in ["vhdl"]:
         pass_total = 856
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")):
+        # Numbers for versions before 2019.10 may be outdated
         if cocotb.SIM_VERSION.startswith(("2017.10.61")):
             pass_total = 803
         elif cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")):
             pass_total = 813
-        elif cocotb.SIM_VERSION.startswith(("2016.02", "2019.10")):
+        elif cocotb.SIM_VERSION.startswith(("2016.02")):
             pass_total = 947
+        elif cocotb.SIM_VERSION.startswith(("2019.10")):
+            # vpiVariables finds port_rec_out and sig_rec
+            pass_total = 1006
         else:
             pass_total = 1038
     else:
