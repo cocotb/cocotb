@@ -243,7 +243,7 @@ async def test_4kB_boundary(dut):
 
 
 @cocotb.test()
-async def test_simultaneous(dut, num=10):
+async def test_simultaneous(dut, num=5):
     """Test simultaneous reads/writes"""
 
     axim = AXI4Master(dut, AXI_PREFIX, dut.clk)
@@ -261,13 +261,9 @@ async def test_simultaneous(dut, num=10):
 
     addresses = [base_address + i * data_width for i in range(num)]
     write_values = [randrange(0, 2**(data_width * 8)) for i in range(num)]
-    addr_latencies = [randrange(0, 10) for i in range(num)]
-    data_latencies = [randrange(0, 10) for i in range(num)]
 
-    writers = [axim.write(address, value, address_latency=address_latency,
-                          data_latency=data_latency)
-               for address, value, address_latency, data_latency
-               in zip(addresses, write_values, addr_latencies, data_latencies)]
+    writers = [axim.write(address, value)
+               for address, value in zip(addresses, write_values)]
 
     await Combine(*writers)
 

@@ -385,6 +385,8 @@ class AXI4Master(BusDriver):
 
                 await RisingEdge(self.clock)
 
+            await RisingEdge(self.clock)
+
             if len(data) != length:
                 raise AXIReadBurstLengthMismatch(
                     "AXI4 slave returned {} data than expected (requested {} "

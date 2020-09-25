@@ -40,19 +40,19 @@
     parameter RAM_PIPELINE_OUTPUT = 1,
     // AW channel register type
     // 0 to bypass, 1 for simple buffer, 2 for skid buffer
-    parameter AW_REG_TYPE = 0,
+    parameter AW_REG_TYPE = 2,
     // W channel register type
     // 0 to bypass, 1 for simple buffer, 2 for skid buffer
-    parameter W_REG_TYPE = 2,
+    parameter W_REG_TYPE = 0,
     // B channel register type
     // 0 to bypass, 1 for simple buffer, 2 for skid buffer
     parameter B_REG_TYPE = 1,
     // AR channel register type
     // 0 to bypass, 1 for simple buffer, 2 for skid buffer
-    parameter AR_REG_TYPE = 0,
+    parameter AR_REG_TYPE = 2,
     // R channel register type
     // 0 to bypass, 1 for simple buffer, 2 for skid buffer
-    parameter R_REG_TYPE = 2
+    parameter R_REG_TYPE = 0
  )
  (
     input  wire                   clk,
