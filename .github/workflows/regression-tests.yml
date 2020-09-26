@@ -1,0 +1,53 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+name: Regression Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  tests:
+    name: ${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}}
+    runs-on: ${{matrix.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        sim-version: ["v10_3", "master"]
+        sim: ['icarus']
+        lang: ['verilog']
+        python-version: [3.8]
+        os: ['windows-latest']
+    env:
+      SIM: ${{matrix.sim}}
+      TOPLEVEL_LANG: ${{matrix.lang}}
+      PYTHON: ${{matrix.python-version}}
+      OS: ${{matrix.os}}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Anaconda ${{matrix.python-version}}
+      uses: conda-incubator/setup-miniconda@v1
+      with:
+        auto-update-conda: true
+        python-version: ${{matrix.python-version}}
+    - name: Set up cocotb build dependencies
+      run: |
+        conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain libpython
+    - name: Build and install Icarus
+      run: |
+        git clone https://github.com/steveicarus/iverilog.git -b "${{matrix.sim-version}}"
+        cd iverilog
+        bash ./autoconf.sh
+        ./configure
+        make -j $(nproc)
+        make install
+    - name: Install Python testing dependencies
+      run: |
+        pip install tox tox-gh-actions
+    - name: Test with tox
+      run: |
+        tox -e py3_mingw
