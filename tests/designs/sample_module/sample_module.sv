@@ -98,8 +98,8 @@ initial begin
     $dumpvars(0,sample_module);
 end
 
-reg[3:0] temp;
 parameter NUM_OF_MODULES = 4;
+reg[NUM_OF_MODULES-1:0] temp;
 genvar idx;
 generate
     for (idx = 0; idx < NUM_OF_MODULES; idx=idx+1) begin

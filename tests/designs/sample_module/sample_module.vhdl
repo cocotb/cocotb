@@ -107,7 +107,19 @@ architecture impl of sample_module is
     type twoDimArrayType is array (natural range <>) of unsignedArrayType(31 downto 28);
     signal array_2d         : twoDimArrayType(0 to 1);
 
+    constant NUM_OF_MODULES : natural := 4;
+    signal temp             : std_logic_vector(NUM_OF_MODULES-1 downto 0);
+
 begin
+
+    genblk1: for i in NUM_OF_MODULES - 1 downto 0 generate
+    begin
+        process (clk) begin
+            if rising_edge(clk) then
+                temp(i) <= '0';
+            end if;
+        end process;
+    end generate;
 
     process (clk) begin
         if rising_edge(clk) then
