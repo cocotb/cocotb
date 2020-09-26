@@ -35,6 +35,20 @@ from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, String
 
 
 @cocotb.test()
+async def pseudo_region_access(dut):
+    """Test that pseudo-regions are accessible before iteration"""
+
+    # Ensure pseudo-region lookup will fail
+    if len(dut._sub_handles) != 0:
+        dut._sub_handles = {}
+
+    pseudo_region = dut.genblk1
+    dut._log.info("Found %s (%s)", pseudo_region._name, type(pseudo_region))
+    first_generate_instance = pseudo_region[0]
+    dut._log.info("Found %s (%s)", first_generate_instance._name, type(first_generate_instance))
+
+
+@cocotb.test()
 def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
     yield Timer(0)
