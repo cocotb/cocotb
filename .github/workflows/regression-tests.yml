@@ -17,11 +17,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sim-version: ["v10_3", "master"]
-        sim: ['icarus']
-        lang: ['verilog']
-        python-version: [3.8]
-        os: ['windows-latest']
+        include:
+          - sim-version: "v10_3"
+            sim: 'icarus'
+            lang: 'verilog'
+            python-version: 3.8
+            os: 'windows-latest'
+          - sim-version: "master"
+            sim: 'icarus'
+            lang: 'verilog'
+            python-version: 3.8
+            os: 'windows-latest'
+            may_fail: true
+    continue-on-error: ${{matrix.may_fail || false}}
     env:
       SIM: ${{matrix.sim}}
       TOPLEVEL_LANG: ${{matrix.lang}}
@@ -36,18 +44,19 @@ jobs:
         python-version: ${{matrix.python-version}}
     - name: Set up cocotb build dependencies
       run: |
-        conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain libpython
+        conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain libpython virtualenv=16
     - name: Build and install Icarus
       run: |
         git clone https://github.com/steveicarus/iverilog.git -b "${{matrix.sim-version}}"
         cd iverilog
         bash ./autoconf.sh
-        ./configure
+        bash ./configure --host=x86_64-w64-mingw32 --prefix=/c/iverilog
         make -j $(nproc)
         make install
+        echo "::add-path::C:\iverilog\bin"
     - name: Install Python testing dependencies
       run: |
-        pip install tox tox-gh-actions
+        pip install tox
     - name: Test with tox
       run: |
         tox -e py3_mingw
