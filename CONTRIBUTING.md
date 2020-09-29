@@ -1,13 +1,11 @@
-Cocotb Contribution Guidelines
-==============================
+# Cocotb Contribution Guidelines
 
 Welcome to the cocotb development!
 We are an inclusive community with the common goal of improving the cocotb, a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 This guide explains how to contribute to cocotb, and documents the processes we agreed on to manage the project.
 All processes in this document are designed to streamline the development effort, to avoid bottlenecks, and to ultimately give a pleasant experience to all involved.
 
-Architecture and Scope of Cocotb
---------------------------------
+## Architecture and Scope of Cocotb
 
 Cocotb has seen adoption in a wide variety of scenarios with sometimes conflicting requirements.
 To foster experimentation and to decentralize the development process the architecture of cocotb is highly modular.
@@ -24,8 +22,7 @@ However, none of these rules are set in stone.
 They can and should be challenged at times to ensure the project stays relevant to the majority of its users.
 
 
-How to Get Changes Merged
--------------------------
+## How to Get Changes Merged
 
 Have you fixed a bug in cocotb, or want to add new functionality to it?
 Cocotb follows the typical [GitHub flow](https://guides.github.com/introduction/flow/) and makes use of pull requests and reviews.
@@ -49,8 +46,7 @@ Follow the steps below to get your changes merged, i.e. integrated into the main
 8. Once your code has at least one positive review from a maintainer and no maintainer strongly objects it your code is ready to be merged into the `master` branch.
 
 
-Patch Requirements
-------------------
+## Patch Requirements
 
 All changes which should go into the main codebase of cocotb must follow this set of requirements.
 
@@ -85,16 +81,14 @@ All changes which should go into the main codebase of cocotb must follow this se
   # SPDX-License-Identifier: CC0-1.0
   ```
 
-Running tests locally
----------------------
+## Running tests locally
 
 Our tests are managed by `tox`, which runs both `pytest` and our system of makefiles.
 This exercises the contents of both the `tests` and `examples` directories.
 `tox` supports the usage of the environment variables `SIM` and `TOPLEVEL_LANG` to direct how to run the regression.
 
 
-Managing of Issues and Pull Requests
-------------------------------------
+## Managing of Issues and Pull Requests
 
 The cocotb project makes use of GitHub labels attached to issues and pull requests to structure the development process.
 Each issue and pull request can have multiple labels assigned.
@@ -160,15 +154,13 @@ cocotb explicitly uses no priority labels, as experience indicates that they pro
 
 Issues and pull requests which are invalid, or where feedback is lacking for four weeks, should be closed.
 
-Cocotb Releases
----------------
+## Cocotb Releases
 
 cocotb aims to keep the `master` branch always in a releasable state.
 At least four times a year an official release should be created.
 It is the job of the maintainers to find a suitable time for a release, to communicate it to the community, and to coordinate it.
 
-Maintainers
------------
+## Maintainers
 
 Cocotb uses a shared maintainer model.
 Most maintainers are experts in part of the cocotb codebase, and are primarily responsible for reviews in this area.
@@ -185,8 +177,7 @@ Founders
 - Chris Higgs (@chiggs)
 - Stuart Hodgson (@stuarthodgson)
 
-Code of Conduct
----------------
+## Code of Conduct
 
 The cocotb development community aims to be welcoming to everyone.
 The [FOSSi Foundation Code of Conduct](https://www.fossi-foundation.org/code-of-conduct) applies.
