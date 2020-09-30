@@ -5,6 +5,26 @@ We are an inclusive community with the common goal of improving the cocotb, a co
 This guide explains how to contribute to cocotb, and documents the processes we agreed on to manage the project.
 All processes in this document are designed to streamline the development effort, to avoid bottlenecks, and to ultimately give a pleasant experience to all involved.
 
+
+## Setting Up a Development Environment
+
+Assuming you have used cocotb prior to reading this guide, you will already have the cocotb [installation prerequisites](https://docs.cocotb.org/en/latest/install.html) and standard development tools (editor, shell, git, etc.) installed.
+
+Additionally, you will need [doxygen](https://www.doxygen.nl/index.html), for building documentation, and [tox](https://pypi.org/project/tox/), for building documentation and running regression tests.
+
+We recommend if you are using a Linux distribution to use your system package manager to install doxygen.
+Likewise, doxygen can be installed using the homebrew package manager on Mac OS.
+Windows contributors should download a binary distribution installer from the main website.
+
+tox is a Python project and can be installed with `pip`, like so.
+
+```command
+pip install tox
+```
+
+Now you are ready to contribute!
+
+
 ## Architecture and Scope of Cocotb
 
 Cocotb has seen adoption in a wide variety of scenarios with sometimes conflicting requirements.
