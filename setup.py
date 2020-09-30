@@ -55,6 +55,8 @@ from io import StringIO
 
 # Note: cocotb is not installed properly yet and is missing dependencies and binaries
 # We can still import other files next to setup.py, as long as they're in MANIFEST.in
+# The below line is necessary for PEP517 support
+sys.path.append(path.dirname(__file__))
 from cocotb_build_libs import get_ext, build_ext
 
 
