@@ -29,7 +29,6 @@ jobs:
             python-version: 3.8
             os: 'windows-latest'
             may_fail: true
-    continue-on-error: ${{matrix.may_fail || false}}
     env:
       SIM: ${{matrix.sim}}
       TOPLEVEL_LANG: ${{matrix.lang}}
@@ -44,7 +43,7 @@ jobs:
         python-version: ${{matrix.python-version}}
     - name: Set up cocotb build dependencies
       run: |
-        conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain libpython virtualenv=16
+        conda install -c msys2 m2-base m2-make m2-autoconf m2-flex m2-bison m2-gperf m2w64-toolchain libpython
     - name: Build and install Icarus
       run: |
         git clone https://github.com/steveicarus/iverilog.git -b "${{matrix.sim-version}}"
@@ -56,7 +55,21 @@ jobs:
         echo "::add-path::C:\iverilog\bin"
     - name: Install Python testing dependencies
       run: |
-        pip install tox
-    - name: Test with tox
+        pip install coverage xunitparser pytest pytest-cov
+    - name: Install cocotb
       run: |
-        tox -e py3_mingw
+        python -m pip install  --global-option build_ext --global-option --compiler=mingw32 -e .
+    - name: Test
+      continue-on-error: ${{matrix.may_fail || false}}
+      run: |
+        pytest
+        $pass = $?
+        make test
+        exit -not ($pass -and $?)
+      # inverted the pass for exit because the boolean is converted to 0/1, but an exit code of 1 is a failure
+    - name: Upload coverage
+      if: steps.Test.outcome != 'failure'
+      run: |
+        pip install codecov
+        bash -c 'find . -type f -name "\.coverage\.cocotb" | xargs coverage combine --append'
+        codecov
