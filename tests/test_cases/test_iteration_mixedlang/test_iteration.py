@@ -60,6 +60,22 @@ def test_drivers(dut):
         raise TestFailure("No drivers found for dut.i_verilog.uart1.uart_rx_1.rx_data")
 
 
+@cocotb.test(expect_fail=True)
+def test_loads(dut):
+    """
+    Try iterating over loads of a signal.
+
+    Seems that few simulators implement vpiLoad
+    """
+    tlog = logging.getLogger("cocotb.test")
+    yield Timer(100)
+    for load in dut.i_verilog.uart1.ser_in.loads():
+        tlog.info("Found %s" % repr(load))
+        break
+    else:
+        raise TestFailure("No loads found for dut.i_verilog.uart1.ser_in")
+
+
 @cocotb.test()
 def recursive_discovery(dut):
     """
