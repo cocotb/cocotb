@@ -192,6 +192,9 @@ def _initialise_testbench(argv_):
     if not sys.warnoptions:
         warnings.simplefilter("default")
 
+    # Check for debugger
+    check_debug_attach()
+
     from cocotb import simulator
 
     global SIM_NAME, SIM_VERSION
@@ -286,3 +289,32 @@ def process_plusargs():
                 plusargs[name] = value
             else:
                 plusargs[option[1:]] = True
+
+
+def check_debug_attach():
+    """Determine if user wants to attach a Python debugger.
+
+    Expected value of COCOTB_PY_ATTACH is 'host:port'.
+    """
+    attach_str = os.getenv("COCOTB_PY_ATTACH")
+    if attach_str is not None:
+        try:
+            if ":" not in attach_str:
+                raise ValueError("Invalid COCOTB_PY_ATTACH, form is 'host:port'.")
+            host_str, port_str = attach_str.split(":", 1)
+            port_num = int(port_str)
+        except Exception as e:
+            raise RuntimeError("Failure to parse COCOTB_PY_ATTACH ('{}')".format(attach_str)) from e
+
+        try:
+            import debugpy
+        except ImportError as e:
+            raise RuntimeError("COCOTB_PY_ATTACH is set but debugpy package is not importable. Install debugpy to debug cocotb.") from e
+
+        try:
+            listen_host, listen_port = debugpy.listen((host_str, port_num))
+            cocotb.log.info("Waiting for Python debugger attach on {}:{}".format(listen_host, listen_port))
+            debugpy.wait_for_client()
+            debugpy.breakpoint()
+        except Exception as e:
+            raise RuntimeError("COCOTB_PY_ATTACH failure using '{}:{}'".format(host_str, port_num)) from e

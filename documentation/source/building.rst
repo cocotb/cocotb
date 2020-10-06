@@ -91,6 +91,21 @@ Cocotb
     If set, cocotb will print the process ID (PID) to attach to and wait the specified time before
     actually letting the simulator run.
 
+.. envvar:: COCOTB_PY_ATTACH
+
+    To attach a feature-full Python debugger (VSCode, GitPod/Theia, etc)
+    and enable stepping through tests and cocotb internals, viewing local variables, and more,
+    install the `debugpy <https://pypi.org/project/debugpy/>`_ package alongside cocotb.
+
+    Set :envvar:`COCOTB_PY_ATTACH` to a ``host:port`` value that cocotb will listen on
+    (i.e., ``localhost:5678``).
+    During initialization, cocotb will print the host and port it is listening on,
+    and wait for a debugger to attach.
+
+    Attach Python debugger using the provided host and port.
+    After attach, cocotb will immediately break into the debugger as if a breakpoint was set.
+    Set breakpoints in tests or other Python code and start debugging.
+
 .. envvar:: COCOTB_ENABLE_PROFILING
 
     Enable performance analysis of the Python portion of cocotb. When set, a file :file:`test_profile.pstat`
