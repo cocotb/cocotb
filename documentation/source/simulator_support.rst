@@ -121,6 +121,16 @@ To get waveforms in VCD format, add Verilator's trace option(s) to the
 To set the same options on the command line, use ``EXTRA_ARGS="--trace --trace-structs" make ...``.
 A VCD file named ``dump.vcd`` will be generated in the current directory.
 
+If you wish to use FST-Tracing (much smaller file size), which is supported by GTKWAVE, then use
+
+  .. code-block:: make
+
+    EXTRA_ARGS += --trace-fst --trace-structs -CFLAGS -DTRACE_FST
+
+instead. The resulting file will be ``dump.fst`` and can be opened by ``gtkwave dump.fst``.
+Please note that you should use the most recent versions of verilator and gtkwave for FST to be
+properly supported with acceptable performance.
+
 .. _sim-verilator-issues:
 
 Issues for this simulator
