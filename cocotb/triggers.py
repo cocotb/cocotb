@@ -194,6 +194,13 @@ class Timer(GPITrigger):
 
         See Also:
             :func:`~cocotb.utils.get_sim_steps`
+
+        Raises:
+            TriggerException: If a Timer value is requested which is not greater than 0.
+
+        .. versionadded:: 1.5
+            Raise an exception when Timer uses a value not greater than 0 as this will
+            cause undefined behavior in many simulators.
         """
         if time_ps <= 0:
             raise TriggerException("Timer value time_ps needs to be greater than 0")
