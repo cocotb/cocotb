@@ -9,7 +9,7 @@
 #include <memory>
 
 #if VM_TRACE
-#if TRACE_FST
+#if VM_TRACE_FST
 #include <verilated_fst_c.h>
 #else
 #include <verilated_vcd_c.h>
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 
 #if VM_TRACE
     Verilated::traceEverOn(true);
-#if TRACE_FST
+#if VM_TRACE_FST
     std::unique_ptr<VerilatedFstC> tfp(new VerilatedFstC);
     top->trace(tfp.get(), 99);
     tfp->open("dump.fst");

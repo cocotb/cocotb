@@ -125,7 +125,7 @@ If you wish to use FST-Tracing (much smaller file size), which is supported by G
 
   .. code-block:: make
 
-    EXTRA_ARGS += --trace-fst --trace-structs -CFLAGS -DTRACE_FST
+    EXTRA_ARGS += --trace-fst --trace-structs -CFLAGS -DVM_TRACE_FST
 
 instead. The resulting file will be ``dump.fst`` and can be opened by ``gtkwave dump.fst``.
 Please note that you should use the most recent versions of verilator and gtkwave for FST to be
