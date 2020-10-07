@@ -195,6 +195,8 @@ class Timer(GPITrigger):
         See Also:
             :func:`~cocotb.utils.get_sim_steps`
         """
+        if time_ps <= 0:
+            raise TriggerException("Timer value time_ps needs to be greater than 0")
         GPITrigger.__init__(self)
         self.sim_steps = get_sim_steps(time_ps, units)
 
