@@ -258,3 +258,4 @@ async def test_neg_timer(dut):
     with warnings.catch_warnings(record=True) as w:
         Timer(0)
         assert "Timer setup with value 0, which might exhibit undefined behavior in some simulators" in str(w[-1].message)
+        assert issubclass(w[-1].category, RuntimeWarning)
