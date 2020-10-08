@@ -28,6 +28,7 @@
 """A collections of triggers which a testbench can await."""
 
 import abc
+import warnings
 from collections.abc import Awaitable
 
 from cocotb import simulator
@@ -204,7 +205,9 @@ class Timer(GPITrigger):
         """
         if time_ps <= 0:
             if time_ps == 0:
-                self.log.warning("Timer setup with value 0, which might exhibit undefined behavior in some simulators")
+                warnings.warn("Timer setup with value 0, which might exhibit undefined behavior in some simulators",
+                              category=RuntimeWarning,
+                              stacklevel=2)
             else:
                 raise TriggerException("Timer value time_ps must not be negative")
         GPITrigger.__init__(self)
