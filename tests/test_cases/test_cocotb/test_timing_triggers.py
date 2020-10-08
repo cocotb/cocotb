@@ -250,7 +250,8 @@ async def test_singleton_isinstance(dut):
     assert isinstance(ReadWrite(), ReadWrite)
 
 
-@cocotb.test(expect_fail=True, expect_error=TriggerException)
-def test_neg_timer(dut):
+@cocotb.test()
+async def test_neg_timer(dut):
     """Test intentionally failing by requesting negative timer value"""
-    yield Timer(-42)
+    with assert_raises(TriggerException):
+        Timer(-42)  # no need to even `await`, constructing it is an error
