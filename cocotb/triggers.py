@@ -199,7 +199,7 @@ class Timer(GPITrigger):
         Raises:
             TriggerException: If a negative value is passed for Timer setup.
 
-        .. versionadded:: 1.5
+        .. versionchanged:: 1.5
             Raise an exception when Timer uses a negative value as it is undefined behavior.
             Warn for 0 as this will cause erratic behavior in some simulators as well.
         """
