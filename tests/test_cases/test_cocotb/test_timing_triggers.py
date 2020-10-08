@@ -254,6 +254,6 @@ async def test_singleton_isinstance(dut):
 
 @cocotb.test()
 async def test_neg_timer(dut):
-    """Test intentionally failing by requesting negative timer value"""
+    """Test negative timer values are forbidden"""
     with assert_raises(TriggerException):
         Timer(-42)  # no need to even `await`, constructing it is an error
