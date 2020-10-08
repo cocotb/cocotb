@@ -196,14 +196,17 @@ class Timer(GPITrigger):
             :func:`~cocotb.utils.get_sim_steps`
 
         Raises:
-            TriggerException: If a Timer value is requested which is not greater than 0.
+            TriggerException: If a negative value is passed for Timer setup.
 
         .. versionadded:: 1.5
-            Raise an exception when Timer uses a value not greater than 0 as this will
-            cause undefined behavior in many simulators.
+            Raise an exception when Timer uses a negative value as it is undefined behavior.
+            Warn for 0 as this will cause erratic behavior in some simulators as well.
         """
         if time_ps <= 0:
-            raise TriggerException("Timer value time_ps needs to be greater than 0")
+            if time_ps == 0:
+                self.log.warning("Timer setup with value 0, which might exhibit undefined behavior in some simulators")
+            else:
+                raise TriggerException("Timer value time_ps must not be negative")
         GPITrigger.__init__(self)
         self.sim_steps = get_sim_steps(time_ps, units)
 
