@@ -26,8 +26,6 @@
 import logging
 
 import cocotb
-from cocotb.triggers import Timer
-from cocotb.result import TestFailure
 
 
 def recursive_dump(parent, log):
@@ -72,9 +70,7 @@ async def test_loads(dut):
 
 @cocotb.test()
 async def recursive_discovery(dut):
-    """
-    Recursively discover every single object in the design
-    """
+    """Recursively discover every single object in the design."""
     if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS/Xcelium
         pass_total = 917
@@ -86,22 +82,17 @@ async def recursive_discovery(dut):
     tlog = logging.getLogger("cocotb.test")
     total = recursive_dump(dut, tlog)
 
-    if pass_total != total:
-        raise TestFailure("Expected %d but found %d" % (pass_total, total))
-    else:
-        tlog.info("Found a total of %d things", total)
+    assert pass_total == total, "Expected %d but found %d" % (pass_total, total)
+    tlog.info("Found a total of %d things", total)
 
-    if not isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject):
-        tlog.error("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable")
-        tlog.error("but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__)
-        raise TestFailure()
+    assert isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject), \
+        ("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable"
+         " but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__)
 
 
 @cocotb.test()
 async def recursive_discovery_boundary(dut):
-    """
-    Iteration through the boundary works but this just double checks
-    """
+    """Iteration through the boundary works but this just double checks."""
     if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         pass_total = 462
     else:
@@ -110,5 +101,4 @@ async def recursive_discovery_boundary(dut):
     tlog = logging.getLogger("cocotb.test")
     total = recursive_dump(dut.i_vhdl, tlog)
     tlog.info("Found a total of %d things", total)
-    if total != pass_total:
-        raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
+    assert total == pass_total, "Expected %d objects but found %d" % (pass_total, total)
