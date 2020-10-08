@@ -116,10 +116,7 @@ def do_test_afterdelay_in_readonly(dut, delay):
     global exited
     yield RisingEdge(dut.clk)
     yield ReadOnly()
-    with warnings.catch_warnings(record=True) as w:
-        yield Timer(delay)
-        if delay == 0:
-            assert "Timer setup with value 0, which might exhibit undefined behavior in some simulators" in str(w[-1].message)
+    yield Timer(delay)
     exited = True
 
 
@@ -257,3 +254,7 @@ async def test_neg_timer(dut):
     """Test intentionally failing by requesting negative timer value"""
     with assert_raises(TriggerException):
         Timer(-42)  # no need to even `await`, constructing it is an error
+    # handle 0 special case
+    with warnings.catch_warnings(record=True) as w:
+        Timer(0)
+        assert "Timer setup with value 0, which might exhibit undefined behavior in some simulators" in str(w[-1].message)
