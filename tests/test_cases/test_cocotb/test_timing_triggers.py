@@ -11,6 +11,7 @@ Tests related to timing triggers
 * with_timeout
 """
 import cocotb
+import warnings
 from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep
 from cocotb.utils import get_sim_time
 from cocotb.result import TestFailure
@@ -113,7 +114,10 @@ def do_test_afterdelay_in_readonly(dut, delay):
     global exited
     yield RisingEdge(dut.clk)
     yield ReadOnly()
-    yield Timer(delay)
+    with warnings.catch_warnings(record=True) as w:
+        yield Timer(delay)
+        if delay == 0:
+            assert "Timer setup with value 0, which might exhibit undefined behavior in some simulators" in str(w[-1].message)
     exited = True
 
 
