@@ -164,9 +164,10 @@ including triggers like :class:`~cocotb.triggers.Timer`.
     @cocotb.coroutine
     def simple_clock(signal, half_period, half_period_units):
         signal <= 0
+        timer = Timer(half_period, half_period_units)
         while True:
             # in generator-based coroutines triggers are yielded
-            yield Timer(half_period, half_period_units)
+            yield timer
             signal <= ~signal
 
 Likewise, any place that will accept async coroutines will also accept generator-based coroutines;
