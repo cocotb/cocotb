@@ -45,39 +45,33 @@ def recursive_dump(parent, log):
 
 
 @cocotb.test(expect_fail=True)
-def test_drivers(dut):
-    """
-    Try iterating over drivers of a signal.
+async def test_drivers(dut):
+    """Try iterating over drivers of a signal.
 
-    Seems that few simulators implement vpiDriver
+    Seems that few simulators implement ``vpiDriver``.
     """
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
-    for driver in dut.i_verilog.uart1.uart_rx_1.rx_data.drivers():
+    drivers = list(dut.i_verilog.uart1.uart_rx_1.rx_data.drivers())
+    assert drivers, "No drivers found for dut.i_verilog.uart1.uart_rx_1.rx_data"
+    for driver in drivers:
         tlog.info("Found %s" % repr(driver))
-        break
-    else:
-        raise TestFailure("No drivers found for dut.i_verilog.uart1.uart_rx_1.rx_data")
 
 
 @cocotb.test(expect_fail=True)
-def test_loads(dut):
-    """
-    Try iterating over loads of a signal.
+async def test_loads(dut):
+    """Try iterating over loads of a signal.
 
-    Seems that few simulators implement vpiLoad
+    Seems that few simulators implement ``vpiLoad``.
     """
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
-    for load in dut.i_verilog.uart1.ser_in.loads():
+    loads = list(dut.i_verilog.uart1.ser_in.loads())
+    assert loads, "No loads found for dut.i_verilog.uart1.ser_in"
+    for load in loads:
         tlog.info("Found %s" % repr(load))
-        break
-    else:
-        raise TestFailure("No loads found for dut.i_verilog.uart1.ser_in")
 
 
 @cocotb.test()
-def recursive_discovery(dut):
+async def recursive_discovery(dut):
     """
     Recursively discover every single object in the design
     """
@@ -90,7 +84,6 @@ def recursive_discovery(dut):
         pass_total = 1024
 
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
     total = recursive_dump(dut, tlog)
 
     if pass_total != total:
@@ -105,9 +98,9 @@ def recursive_discovery(dut):
 
 
 @cocotb.test()
-def recursive_discovery_boundary(dut):
+async def recursive_discovery_boundary(dut):
     """
-    Iteration though the boundary works but this just double checks
+    Iteration through the boundary works but this just double checks
     """
     if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         pass_total = 462
@@ -115,7 +108,6 @@ def recursive_discovery_boundary(dut):
         pass_total = 478
 
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
     total = recursive_dump(dut.i_vhdl, tlog)
     tlog.info("Found a total of %d things", total)
     if total != pass_total:
