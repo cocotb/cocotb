@@ -257,7 +257,7 @@ async def test_neg_timer(dut):
         Timer(-42)  # no need to even `await`, constructing it is an error
     # handle 0 special case
     with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
         Timer(0)
         assert "Timer setup with value 0, which might exhibit undefined behavior in some simulators" in str(w[-1].message)
         assert issubclass(w[-1].category, RuntimeWarning)
-        warnings.simplefilter("ignore")
