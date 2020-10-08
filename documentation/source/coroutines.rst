@@ -168,7 +168,7 @@ including triggers like :class:`~cocotb.triggers.Timer`.
         while True:
             # in generator-based coroutines triggers are yielded
             yield timer
-            signal <= ~signal
+            signal <= ~signal.value
 
 Likewise, any place that will accept async coroutines will also accept generator-based coroutines;
 including :func:`~cocotb.fork`.
