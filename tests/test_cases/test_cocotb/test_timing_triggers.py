@@ -12,7 +12,7 @@ Tests related to timing triggers
 """
 import cocotb
 import warnings
-from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep
+from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep, TriggerException
 from cocotb.utils import get_sim_time
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
@@ -248,3 +248,9 @@ async def test_singleton_isinstance(dut):
     assert isinstance(NextTimeStep(), NextTimeStep)
     assert isinstance(ReadOnly(), ReadOnly)
     assert isinstance(ReadWrite(), ReadWrite)
+
+
+@cocotb.test(expect_fail=True, expect_error=TriggerException)
+def test_neg_timer(dut):
+    """Test intentionally failing by requesting negative timer value"""
+    yield Timer(-42)
