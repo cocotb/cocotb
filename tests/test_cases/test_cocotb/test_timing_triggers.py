@@ -17,6 +17,8 @@ from cocotb.utils import get_sim_time
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
 
+from common import assert_raises
+
 from fractions import Fraction
 from decimal import Decimal
 
