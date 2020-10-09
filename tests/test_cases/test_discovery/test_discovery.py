@@ -33,6 +33,8 @@ from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
 
+from common import assert_raises
+
 
 @cocotb.test()
 async def pseudo_region_access(dut):
@@ -49,10 +51,8 @@ async def pseudo_region_access(dut):
 
 
 @cocotb.test()
-def recursive_discover(dut):
+async def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
-    yield Timer(0)
-
     def _discover(obj):
         for thing in obj:
             dut._log.info("Found %s (%s)", thing._name, type(thing))
@@ -61,9 +61,8 @@ def recursive_discover(dut):
 
 
 @cocotb.test()
-def discover_module_values(dut):
+async def discover_module_values(dut):
     """Discover everything in the DUT"""
-    yield Timer(0)
     count = 0
     for thing in dut:
         thing._log.info("Found something: %s" % thing._fullname)
@@ -98,12 +97,11 @@ def ipython_embed_kernel(dut):
     IPython.embed_kernel()
 
 
-@cocotb.test(expect_error=True)
-def discover_value_not_in_dut(dut):
+@cocotb.test()
+async def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
-    yield Timer(0)
-    fake_signal = dut.fake_signal
-    yield Timer(0)
+    with assert_raises(AttributeError):
+        fake_signal = dut.fake_signal
 
 
 @cocotb.test()
