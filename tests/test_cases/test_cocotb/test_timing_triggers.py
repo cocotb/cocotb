@@ -159,7 +159,7 @@ def test_cached_write_in_readonly(dut):
 
 @cocotb.test()
 def test_afterdelay_in_readonly_valid(dut):
-    """Same as test_afterdelay_in_readonly but with valid delay > 0"""
+    """Test Timer delay after ReadOnly phase"""
     global exited
     exited = False
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
