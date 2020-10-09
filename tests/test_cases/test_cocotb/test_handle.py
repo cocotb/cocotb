@@ -34,8 +34,12 @@ def test_lessthan_raises_error(dut):
 
 
 @cocotb.test()
-def test_bad_attr(dut):
-    yield cocotb.triggers.NullTrigger()
+async def test_bad_attr(dut):
+    await cocotb.triggers.NullTrigger()
+
+    with assert_raises(AttributeError):
+        fake_signal = dut.fake_signal
+
     try:
         _ = dut.stream_in_data.whoops
     except AttributeError as e:

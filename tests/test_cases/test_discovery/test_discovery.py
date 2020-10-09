@@ -33,8 +33,6 @@ from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
 
-from common import assert_raises
-
 
 @cocotb.test()
 async def pseudo_region_access(dut):
@@ -95,13 +93,6 @@ def ipython_embed_kernel(dut):
         jupyter console --existing kernel-{}.json
     ###############################################################################""".format(os.getpid())))
     IPython.embed_kernel()
-
-
-@cocotb.test()
-async def discover_value_not_in_dut(dut):
-    """Try and get a value from the DUT that is not there"""
-    with assert_raises(AttributeError):
-        fake_signal = dut.fake_signal
 
 
 @cocotb.test()
