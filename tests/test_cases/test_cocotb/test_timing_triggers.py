@@ -157,22 +157,6 @@ def test_cached_write_in_readonly(dut):
         raise TestFailure
 
 
-# Suggestion is to scrap this completely, as we now warn about Timer(0) being problematic
-# @cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
-#                                                              "chronologic simulation vcs")),
-#              skip=cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")))
-# def test_afterdelay_in_readonly(dut):
-#     """Test doing invalid sim operation"""
-#     global exited
-#     exited = False
-#     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-#     coro = cocotb.fork(do_test_afterdelay_in_readonly(dut, 0))
-#     yield [Join(coro), Timer(1000)]
-#     clk_gen.kill()
-#     if exited is not True:
-#         raise TestFailure
-
-
 @cocotb.test()
 def test_afterdelay_in_readonly_valid(dut):
     """Same as test_afterdelay_in_readonly but with valid delay > 0"""
