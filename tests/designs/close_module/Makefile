@@ -49,7 +49,7 @@ ifneq ($(SIM),vcs)
 include $(shell cocotb-config --makefiles)/Makefile.sim
 else
 all:
-	@echo "Skipping test as system call overrides seqfault VCS"
+	@echo "Skipping test as system call overrides segfault VCS"
 endif
 
 endif
