@@ -683,7 +683,7 @@ class Scheduler:
         """
         Schedule a coroutine to be run concurrently, starting after the current coroutine yields control.
 
-        :func:`~cocotb.fork` starts the given coroutine immediately. This function
+        In contrast to :func:`~cocotb.fork` which starts the given coroutine immediately, this function
         starts the given coroutine only after the current coroutine yields control.
         This is useful when the forked coroutine has logic before the first
         :keyword:`await` that may not be safe to execute immediately.
@@ -692,7 +692,7 @@ class Scheduler:
         task = self.create_task(coro)
 
         if _debug:
-            self.log.debug("queueing a new coroutine %s" % task._coro.__qualname__)
+            self.log.debug("Queueing a new coroutine %s" % task._coro.__qualname__)
 
         self.queue(task)
         return task
