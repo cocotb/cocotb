@@ -633,7 +633,7 @@ class Scheduler:
 
     @staticmethod
     def create_task(coroutine: Any) -> RunningTask:
-        """ Checks to see if the given object is a schedulable coroutine object """
+        """ Checks to see if the given object is a schedulable coroutine object and if so, returns it """
 
         if isinstance(coroutine, RunningTask):
             return coroutine
@@ -685,7 +685,7 @@ class Scheduler:
 
         In contrast to :func:`~cocotb.fork` which starts the given coroutine immediately, this function
         starts the given coroutine only after the current coroutine yields control.
-        This is useful when the forked coroutine has logic before the first
+        This is useful when the coroutine to be forked has logic before the first
         :keyword:`await` that may not be safe to execute immediately.
         """
 
