@@ -657,7 +657,7 @@ class Scheduler:
                 "You likely used the yield keyword instead of await.".format(
                     coroutine.__qualname__))
         raise TypeError(
-            "Attempt to add a object of type {} to the scheduler, which "
+            "Attempt to add an object of type {} to the scheduler, which "
             "isn't a coroutine: {!r}\n"
             "Did you forget to use the @cocotb.coroutine decorator?"
             .format(type(coroutine), coroutine)
