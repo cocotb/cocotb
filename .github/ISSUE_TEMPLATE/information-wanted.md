@@ -1,7 +1,6 @@
 ---
 name: Information wanted
-about: Remind reporters to provide information about their environment in a Markdown
-  comment
+about: Remind reporters to provide information about their environment
 title: ''
 labels: ''
 assignees: ''
@@ -9,7 +8,8 @@ assignees: ''
 ---
 
 <!--
-In case you are reporting a problem with running cocotb, please remember to add relevant information about your environment, such as
+In case you are reporting a problem with running cocotb,
+please remember to add relevant information about your environment, such as
 
 * the cocotb version used,
 * the operating system and version (32/64 bit),
