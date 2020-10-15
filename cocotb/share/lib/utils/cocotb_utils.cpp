@@ -47,7 +47,7 @@ extern "C" void* utils_dyn_open(const char* lib_name)
     SetErrorMode(0);
     ret = static_cast<void*>(LoadLibrary(lib_name));
     if (!ret) {
-        const char *log_fmt = "Unable to open lib %s%s%s\n";
+        const char *log_fmt = "Unable to open lib %s%s%s";
         LPSTR msg_ptr;
         if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
                            FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL,
@@ -66,7 +66,7 @@ extern "C" void* utils_dyn_open(const char* lib_name)
 
     ret = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL);
     if (!ret) {
-        LOG_ERROR("Unable to open lib %s: %s\n", lib_name, dlerror());
+        LOG_ERROR("Unable to open lib %s: %s", lib_name, dlerror());
     }
 #endif
     return ret;
@@ -78,7 +78,7 @@ extern "C" void* utils_dyn_sym(void *handle, const char* sym_name)
 #if ! defined(__linux__) && ! defined(__APPLE__)
     entry_point = reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(handle), sym_name));
     if (!entry_point) {
-        const char *log_fmt = "Unable to find symbol %s%s%s\n";
+        const char *log_fmt = "Unable to find symbol %s%s%s";
         LPSTR msg_ptr;
         if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
                            FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL,
@@ -94,7 +94,7 @@ extern "C" void* utils_dyn_sym(void *handle, const char* sym_name)
 #else
     entry_point = dlsym(handle, sym_name);
     if (!entry_point) {
-        LOG_ERROR("Unable to find symbol %s: %s\n", sym_name, dlerror());
+        LOG_ERROR("Unable to find symbol %s: %s", sym_name, dlerror());
     }
 #endif
     return entry_point;

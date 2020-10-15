@@ -124,7 +124,7 @@ extern "C" void embed_init_python(void)
 
     void * lib_handle = utils_dyn_open(PY_SO_LIB);
     if (!lib_handle) {
-        LOG_ERROR("Failed to find Python shared library\n");
+        LOG_ERROR("Failed to find Python shared library");
     }
 
     to_python();
@@ -153,7 +153,7 @@ extern "C" void embed_init_python(void)
             return;
         }
 
-        LOG_ERROR("Waiting for %lu seconds - attach to PID %d with your debugger\n", sleep_time, getpid());
+        LOG_ERROR("Waiting for %lu seconds - attach to PID %d with your debugger", sleep_time, getpid());
         sleep((unsigned int)sleep_time);
     }
 }
@@ -208,7 +208,7 @@ static int get_module_ref(const char *modname, PyObject **mod)
 
     if (pModule == NULL) {
         PyErr_Print();
-        LOG_ERROR("Failed to load Python module \"%s\"\n", modname);
+        LOG_ERROR("Failed to load Python module \"%s\"", modname);
         return -1;
     }
 
