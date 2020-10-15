@@ -55,10 +55,9 @@ class BurstAvlReadTest(object):
                                   readlatency_min=0,
                                   avl_properties=avlproperties)
 
-    @cocotb.coroutine
-    def init_sig(self, burstcount_w, address):
+    async def init_sig(self, burstcount_w, address):
         """ Initialize all signals """
-        yield Timer(10)
+        await Timer(1, "ns")
         self.dut.reset = 0
         self.dut.user_read_buffer = 0
         self.dut.control_read_base = address
@@ -68,29 +67,29 @@ class BurstAvlReadTest(object):
         self.dut.master_waitrequest = 0
 
 
-@cocotb.test(expect_fail=False)
-def test_burst_read(dut):
+@cocotb.test()
+async def test_burst_read(dut):
     """ Testing burst read """
     wordburstcount = 16
     address = 10*wordburstcount
 
     bart = BurstAvlReadTest(dut, {"readLatency": 10})
-    yield bart.init_sig(wordburstcount, address)
-    yield Timer(100)
+    await bart.init_sig(wordburstcount, address)
+    await Timer(100, "ns")
     # Begin master burst read
     dut.control_go = 1
-    yield Timer(10)
+    await Timer(10, "ns")
     dut.control_go = 0
-    yield Timer(200)
+    await Timer(200, "ns")
 
     # read back values
     dut.user_read_buffer = 1
-    yield RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
     read_mem = {}
     databuswidthB = len(dut.master_byteenable)
     burst = 0
     while dut.user_data_available == 1:
-        yield RisingEdge(dut.clk)
+        await RisingEdge(dut.clk)
         value = dut.user_buffer_data.value
         for i in range(databuswidthB):
             read_mem[address + burst*databuswidthB + i] = \
@@ -98,7 +97,7 @@ def test_burst_read(dut):
         burst += 1
 
     dut.user_read_buffer = 0
-    yield RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
 
     print(str(read_mem))
     print(str(len(read_mem)) + " 8bits values read")
@@ -116,6 +115,6 @@ def test_burst_read(dut):
                               hex(value) + " must be " +
                               memdictvalue)
 
-    yield Timer(10)
+    await Timer(1, "ns")
     dut.user_read_buffer = 0
-    yield Timer(10)
+    await Timer(1, "ns")

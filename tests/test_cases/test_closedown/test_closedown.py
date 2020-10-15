@@ -30,11 +30,11 @@ from cocotb.triggers import Timer, RisingEdge
 from cocotb.clock import Clock
 
 
-def test_read(dut):
+async def test_read(dut):
     global test_count
     dut._log.info("Inside test_read")
     while test_count != 5:
-        yield RisingEdge(dut.clk)
+        await RisingEdge(dut.clk)
         test_count += 1
 
 

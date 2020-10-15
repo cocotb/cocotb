@@ -34,7 +34,7 @@ def sub_iterate(unit):
 
 
 @cocotb.test()
-def iterate(dut):
-    yield Timer(100)
+async def iterate(dut):
+    await Timer(1, "ns")
     sub_iterate(dut)
-    yield Timer(100)
+    await Timer(1, "ns")
