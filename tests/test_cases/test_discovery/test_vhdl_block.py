@@ -26,14 +26,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import cocotb
-from cocotb.triggers import Timer
 from cocotb.result import TestFailure
 
 
 @cocotb.test()
-def block_iter(dut):
+async def block_iter(dut):
     """Access a VHDL block statement"""
-    yield Timer(0)
 
     try:
         dut._log.info("Block: {} ({})".format(dut.isample_module1.SAMPLE_BLOCK._name,

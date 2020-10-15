@@ -27,19 +27,17 @@ import logging
 
 import cocotb
 from cocotb.handle import HierarchyObject, ModifiableObject
-from cocotb.triggers import Timer
 from cocotb.result import TestFailure
 
 
 @cocotb.test()
-def port_not_hierarchy(dut):
+async def port_not_hierarchy(dut):
     """
     Test for issue raised by Luke - iteration causes a toplevel port type to
     change from ModifiableObject to HierarchyObject
     """
     fails = 0
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
 
     def check_instance(obj, objtype):
         if not isinstance(obj, objtype):

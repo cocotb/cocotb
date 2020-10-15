@@ -17,25 +17,24 @@ class Testbench(object):
         self.dut = dut
         self.clkedge = RisingEdge(dut.clk)
 
-    @cocotb.coroutine
-    def initialise(self):
+    async def initialise(self):
         """Initalise the testbench"""
         cocotb.fork(Clock(self.dut.clk, 10).start())
         self.dut.reset <= 0
         for _ in range(2):
-            yield self.clkedge
+            await self.clkedge
         self.dut.reset <= 1
         for _ in range(3):
-            yield self.clkedge
+            await self.clkedge
 
 
 @cocotb.test()
-def test_compare_simhandlebase(dut):
+async def test_compare_simhandlebase(dut):
     """Test for SimHandleBase comparisons"""
     tb = Testbench(dut)
-    yield tb.initialise()
+    await tb.initialise()
     for _ in range(3):
-        yield tb.clkedge
+        await tb.clkedge
 
     # Want to check the __eq__ comparator in SimHandleBase
     # (overridden in NonHierarchyObject)
@@ -56,12 +55,12 @@ def test_compare_simhandlebase(dut):
 
 
 @cocotb.test()
-def test_compare_nonhierarchy(dut):
+async def test_compare_nonhierarchy(dut):
     """Test for NonHierarchyObject comparisons"""
     tb = Testbench(dut)
-    yield tb.initialise()
+    await tb.initialise()
     for _ in range(3):
-        yield tb.clkedge
+        await tb.clkedge
 
     # Check that all these signals are NonHierarchyObject children
     assert isinstance(dut.counter_plus_two, NonHierarchyObject)
@@ -78,9 +77,9 @@ def test_compare_nonhierarchy(dut):
     assert dut.clk != dut.i_module_a.clk
     # A handle and a value
     # Because one is a value, it is compared against the value of the handle
-    yield tb.clkedge
+    await tb.clkedge
     assert dut.clk == 1
     assert dut.clk != 0
-    yield FallingEdge(tb.dut.clk)
+    await FallingEdge(tb.dut.clk)
     assert dut.clk == 0
     assert dut.clk != 1
