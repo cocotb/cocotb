@@ -65,7 +65,7 @@ extern COCOTBUTILS_EXPORT int is_python_context;
 
 #define to_simulator() do { \
     if (!is_python_context) { \
-        LOG_ERROR("FATAL: We have returned twice from python\n"); \
+        LOG_ERROR("FATAL: We have returned twice from Python"); \
         exit(1); \
     } \
     --is_python_context; \
