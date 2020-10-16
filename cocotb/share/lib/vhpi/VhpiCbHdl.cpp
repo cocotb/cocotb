@@ -789,7 +789,7 @@ long VhpiSignalObjHdl::get_signal_value_long()
         LOG_ERROR("VHPI: Failed to get value of type long");
     }
 
-    return value.value.intg;
+    return static_cast<int32_t>(value.value.intg);
 }
 
 
