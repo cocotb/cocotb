@@ -67,6 +67,7 @@ def help_vars_text():
     COCOTB_ANSI_OUTPUT        Force cocotb to print or not print in color
     COCOTB_REDUCED_LOG_FMT    Display log lines shorter
     COCOTB_ATTACH             Pause time value in seconds before the simulator start
+    COCOTB_PY_ATTACH          On Python init, listen for debugger attach at 'host:port'
     COCOTB_ENABLE_PROFILING   Performance analysis of the Python portion of cocotb
     COCOTB_LOG_LEVEL          Default logging level (default INFO)
     COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion

@@ -55,7 +55,7 @@ jobs:
         echo "::add-path::C:\iverilog\bin"
     - name: Install Python testing dependencies
       run: |
-        pip install coverage xunitparser pytest pytest-cov
+        pip install coverage xunitparser pytest pytest-cov debugpy
     - name: Install cocotb
       run: |
         python -m pip install  --global-option build_ext --global-option --compiler=mingw32 -e .

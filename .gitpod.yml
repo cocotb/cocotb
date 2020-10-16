@@ -4,6 +4,7 @@ image:
 tasks:
   - before: >
       pip3 install -e . &&
+      pip3 install debugpy &&
       export COCOTB_REDUCED_LOG_FMT=1
     init: >
       gp preview https://docs.cocotb.org/ &&
@@ -18,6 +19,7 @@ tasks:
       history -s make SIM=ghdl TOPLEVEL_LANG=vhdl &&
       history -s make SIM=verilator &&
       history -s make SIM=icarus
+      history -s COCOTB_PY_ATTACH=localhost:5678 make SIM=icarus
 
 vscode:
   extensions:
