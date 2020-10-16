@@ -79,29 +79,28 @@ async def test_single_beat(dut, driver, address_latency, data_latency):
                                   write_value, strobe, previous_value))
 
 
-async def test_burst(dut, return_rresp):
+async def test_incr_burst(dut, size, return_rresp):
     """Test burst reads/writes"""
 
     axim = AXI4Master(dut, AXI_PREFIX, dut.clk)
     _, data_width, ram_start, ram_stop = get_parameters(dut)
+    size = size if size else data_width
 
     await setup_dut(dut)
 
     burst_length = randrange(2, 256)
     base = randrange(ram_start, ram_stop, 4096)
-    offset = randrange(0, 4096 - (burst_length - 1) * data_width, data_width)
+    offset = randrange(0, 4096 - (burst_length - 1) * size, size)
     address = base + offset
-    write_values = \
-        [randrange(0, 2**(data_width * 8)) for i in range(burst_length)]
+    write_values = [randrange(0, 2**(size * 8)) for i in range(burst_length)]
 
     # Make strobe one item less than data, to test also that driver behavior
-    strobes = [randrange(0, 2**data_width)
-               for i in range(len(write_values) - 1)]
+    strobes = [randrange(0, 2**size) for i in range(len(write_values) - 1)]
 
-    previous_values = await axim.read(address, len(write_values))
-    await axim.write(address, write_values, byte_enable=strobes)
+    previous_values = await axim.read(address, len(write_values), size=size)
+    await axim.write(address, write_values, byte_enable=strobes, size=size)
     read_values = await axim.read(address, len(write_values),
-                                  return_rresp=return_rresp)
+                                  return_rresp=return_rresp, size=size)
 
     if return_rresp:
         read_values, rresp_list = zip(*read_values)
@@ -115,7 +114,7 @@ async def test_burst(dut, return_rresp):
 
     strobes += [strobes[-1]]
     expected_values = \
-        [add_wstrb_mask(data_width, previous_value, write_value, wstrb)
+        [add_wstrb_mask(size, previous_value, write_value, wstrb)
          for previous_value, write_value, wstrb
          in zip(previous_values, write_values, strobes)]
 
@@ -128,6 +127,79 @@ async def test_burst(dut, return_rresp):
                 .format(read_values[i].integer, i + 1, burst_length, address,
                         expected_values[i], write_values[i], strobes[i],
                         previous_values[i].integer))
+
+
+async def test_fixed_wrap_burst(dut, size, burst_length=16):
+    """Test FIXED and WRAP read/writes"""
+
+    axim = AXI4Master(dut, AXI_PREFIX, dut.clk)
+    _, data_width, ram_start, ram_stop = get_parameters(dut)
+    size = size if size else data_width
+
+    await setup_dut(dut)
+
+    base = randrange(ram_start, ram_stop, 4096)
+    offset = randrange(0, 4096 - (burst_length - 1) * size, size)
+    address = base + offset
+
+    for burst in (AXIBurst.FIXED, AXIBurst.WRAP):
+
+        write_values = \
+            [randrange(0, 2**(size * 8)) for i in range(burst_length)]
+
+        await axim.write(address, write_values, burst=burst, size=size)
+
+        if burst is AXIBurst.FIXED:
+            # A FIXED write on a memory is like writing the last element,
+            # reading it with a FIXED burst returns always the same value.
+            expected_values = [write_values[-1]] * burst_length
+        else:
+            # Regardless of the boundary, reading with a WRAP from the same
+            # address with the same length returns the same sequence.
+            # This RAM implementation does not support WRAP bursts and treats
+            # them as INCR.
+            expected_values = write_values
+
+        read_values = await axim.read(address, burst_length, burst=burst,
+                                      size=size)
+
+        for i in range(len(read_values)):
+            if expected_values[i] != read_values[i]:
+                raise TestFailure(
+                    "Read {:#x} at beat {}/{} of {} burst with starting "
+                    "address {:#x}, but was expecting {:#x})"
+                    .format(read_values[i].integer, i + 1, burst_length,
+                            burst.name, address, expected_values[i]))
+
+
+@cocotb.test()
+async def test_narrow_burst(dut):
+    """Test that narrow writes and full reads match"""
+
+    axim = AXI4Master(dut, AXI_PREFIX, dut.clk)
+    _, data_width, ram_start, ram_stop = get_parameters(dut)
+
+    await setup_dut(dut)
+
+    burst_length = (randrange(2, 256) // 2) * 2
+    address = ram_start
+    write_values = \
+        [randrange(0, 2**(data_width * 8 // 2)) for i in range(burst_length)]
+
+    await axim.write(address, write_values, size=data_width // 2)
+
+    read_values = await axim.read(address, burst_length // 2)
+
+    expected_values = [write_values[i + 1] << 16 | write_values[i]
+                       for i in range(0, burst_length // 2, 2)]
+
+    for i, (expected, read) in enumerate(zip(expected_values, read_values)):
+        if expected != read:
+            raise TestFailure(
+                "Read {:#x} at beat {}/{} with starting address {:#x}, but "
+                "was expecting {:#x})"
+                .format(read.integer, i + 1, burst_length // 2, address,
+                        expected))
 
 
 async def test_unmapped(dut, driver):
@@ -242,8 +314,7 @@ async def test_4kB_boundary(dut):
             pass
 
 
-@cocotb.test()
-async def test_simultaneous(dut, num=5):
+async def test_simultaneous(dut, sync, num=5):
     """Test simultaneous reads/writes"""
 
     axim = AXI4Master(dut, AXI_PREFIX, dut.clk)
@@ -262,15 +333,16 @@ async def test_simultaneous(dut, num=5):
     addresses = [base_address + i * data_width for i in range(num)]
     write_values = [randrange(0, 2**(data_width * 8)) for i in range(num)]
 
-    writers = [axim.write(address, value)
+    writers = [axim.write(address, value, sync=sync)
                for address, value in zip(addresses, write_values)]
 
     await Combine(*writers)
 
-    readers = [cocotb.fork(axim.read(address)) for address in addresses]
+    readers = [cocotb.fork(axim.read(address, sync=sync))
+               for address in addresses]
 
     dummy_addrs = [base_address + (num + i) * data_width for i in range(num)]
-    dummy_writers = [cocotb.fork(axim.write(address, value))
+    dummy_writers = [cocotb.fork(axim.write(address, value, sync=sync))
                      for address, value in zip(dummy_addrs, write_values)]
 
     read_values = []
@@ -354,10 +426,24 @@ single_beat_with_latency.add_option('address_latency', (0, 5))
 single_beat_with_latency.add_option('data_latency', (1, 10))
 single_beat_with_latency.generate_tests(postfix="_latency")
 
-burst = TestFactory(test_burst)
-burst.add_option('return_rresp', (True, False))
-burst.generate_tests()
+incr_burst = TestFactory(test_incr_burst)
+incr_burst.add_option('return_rresp', (True, False))
+incr_burst.add_option('size', (None,))
+incr_burst.generate_tests()
+
+incr_burst_size = TestFactory(test_incr_burst)
+incr_burst_size.add_option('return_rresp', (False,))
+incr_burst_size.add_option('size', (1, 2))
+incr_burst_size.generate_tests(postfix="_size")
+
+fixed_wrap_burst = TestFactory(test_fixed_wrap_burst)
+fixed_wrap_burst.add_option('size', (None, 1, 2))
+fixed_wrap_burst.generate_tests()
 
 unmapped = TestFactory(test_unmapped)
 unmapped.add_option('driver', [AXI4Master, AXI4LiteMaster])
 unmapped.generate_tests()
+
+simultaneous = TestFactory(test_simultaneous)
+simultaneous.add_option('sync', [True, False])
+simultaneous.generate_tests()
