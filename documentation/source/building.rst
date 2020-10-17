@@ -45,6 +45,9 @@ Cocotb
     Use this to indicate the instance in the hierarchy to use as the :term:`DUT`.
     If this isn't defined then the first root instance is used.
 
+    The DUT is available in cocotb tests as a Python object at :data:`cocotb.top`;
+    and is also passed to all cocotb tests as the :ref:`first and only parameter <quickstart_creating_a_test>`.
+
 .. envvar:: RANDOM_SEED
 
     Seed the Python random module to recreate a previous test stimulus.
