@@ -129,6 +129,16 @@ See :envvar:`RANDOM_SEED` for details on how the value is computed.
 _library_coverage = None
 """ used for cocotb library coverage """
 
+top = None  # type: cocotb.handle.SimHandleBase
+r"""
+A handle to the :envvar:`TOPLEVEL` entity/module.
+
+This is equivalent to the :term:`DUT` parameter given to cocotb tests, so it can be used wherever that variable can be used.
+It is particularly useful for extracting information about the :term:`DUT` in module-level class and function definitions;
+and in parameters to :class:`.TestFactory`\ s.
+``None`` if :mod:`cocotb` was not loaded from a simulator.
+"""
+
 
 def fork(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     """ Schedule a coroutine to be run concurrently. See :ref:`coroutines` for details on its use. """
@@ -239,11 +249,12 @@ def _initialise_testbench(argv_):
     if not handle:
         raise RuntimeError("Can not find root handle ({})".format(root_name))
 
-    dut = cocotb.handle.SimHandle(handle)
+    global top
+    top = cocotb.handle.SimHandle(handle)
 
     # start Regression Manager
     global regression_manager
-    regression_manager = RegressionManager.from_discovery(dut)
+    regression_manager = RegressionManager.from_discovery(top)
     regression_manager.execute()
 
     _rlock.release()
