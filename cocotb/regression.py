@@ -654,6 +654,9 @@ class TestFactory:
     the test description) includes the name and description of each generator.
     """
 
+    # Prevent warnings from collection of TestFactories by unit testing frameworks.
+    __test__ = False
+
     def __init__(self, test_function, *args, **kwargs):
         if sys.version_info > (3, 6) and inspect.isasyncgenfunction(test_function):
             raise TypeError("Expected a coroutine function, but got the async generator '{}'. "
