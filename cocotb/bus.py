@@ -53,7 +53,7 @@ class Bus:
         Support for ``struct``/``record`` ports where signals are member names.
     """
 
-    def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", array_idx=None):
+    def __init__(self, entity, name, signals, optional_signals=[], bus_separator="_", case_insensitive=True, array_idx=None):
         """
         Args:
             entity (SimHandle): :any:`SimHandle` instance to the entity containing the bus.
@@ -70,17 +70,29 @@ class Bus:
                 See the *signals* argument above for details.
             bus_separator (str, optional): Character(s) to use as separator between bus
                 name and signal name. Defaults to '_'.
+            case_insensitive (bool, optional): Perform case-insensitive match on signal names.
+                Defaults to True.
             array_idx (int or None, optional): Optional index when signal is an array.
         """
         self._entity = entity
         self._name = name
         self._signals = {}
 
+        if case_insensitive:
+            signal_names = dir(self._entity)
+            signal_name_mapping = dict([(n.casefold(), n) for n in signal_names])
+
         for attr_name, sig_name in _build_sig_attr_dict(signals).items():
             if name:
                 signame = name + bus_separator + sig_name
             else:
                 signame = sig_name
+
+            # case insensitive remap
+            if case_insensitive:
+                signame_folded = signame.casefold()
+                if signame not in signal_names and signame_folded in signal_name_mapping:
+                    signame = signal_name_mapping[signame_folded]
 
             if array_idx is not None:
                 signame += "[{:d}]".format(array_idx)
@@ -92,6 +104,12 @@ class Bus:
                 signame = name + bus_separator + sig_name
             else:
                 signame = sig_name
+
+            # case insensitive remap
+            if case_insensitive:
+                signame_folded = signame.casefold()
+                if signame not in signal_names and signame_folded in signal_name_mapping:
+                    signame = signal_name_mapping[signame_folded]
 
             if array_idx is not None:
                 signame += "[{:d}]".format(array_idx)
