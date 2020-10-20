@@ -188,31 +188,42 @@ class AXI4Master(BusDriver):
             self.bus.AWVALID <= 0
 
     async def _send_write_data(
-        self, data: Sequence[int], delay: int,
-        byte_enable: Sequence[Optional[int]], sync: bool
+        self, address, data: Sequence[int], burst: AXIBurst, size: int,
+        delay: int, byte_enable: Sequence[Optional[int]], sync: bool
     ) -> None:
         """Send the write data, with optional delay (in clocks)."""
+
+        # Helper function for narrow bursts
+        def mask_and_shift(value: int, block_size: int, block_num: int) -> int:
+            return (value & (2**block_size - 1)) << (block_num * block_size)
+
         async with self.write_data_busy:
             if sync:
                 await RisingEdge(self.clock)
 
+            wdata_bytes = len(self.bus.WDATA) // 8
             byte_enable_iterator = iter(byte_enable)
+            narrow_block = (address % wdata_bytes) // size
 
             for i, word in enumerate(data):
                 await ClockCycles(self.clock, delay)
 
-                self.bus.WDATA <= word
                 self.bus.WVALID <= 1
+                self.bus.WDATA <= mask_and_shift(word, size * 8, narrow_block)
 
                 try:
                     current_byte_enable = next(byte_enable_iterator)
-                    self.bus.WSTRB <= (2**self.bus.WSTRB.value.n_bits - 1
-                                       if current_byte_enable is None
-                                       else current_byte_enable)
+                    strobe = 2**self.bus.WSTRB.value.n_bits - 1 \
+                        if current_byte_enable is None else current_byte_enable
                 except StopIteration:
-                    # Do not update WSTRB if we have reached the end of the
+                    # Do not update strobe if we have reached the end of the
                     # iterator
                     pass
+
+                self.bus.WSTRB <= mask_and_shift(strobe, size, narrow_block)
+
+                if burst is not AXIBurst.FIXED:
+                    narrow_block = (narrow_block + 1) % (wdata_bytes // size)
 
                 if hasattr(self.bus, "WLAST"):
                     if i == len(data) - 1:
@@ -277,8 +288,8 @@ class AXI4Master(BusDriver):
         write_address = self._send_write_address(address, len(value), burst,
                                                  size, address_latency, sync)
 
-        write_data = self._send_write_data(value, data_latency, byte_enable,
-                                           sync)
+        write_data = self._send_write_data(address, value, burst, size,
+                                           data_latency, byte_enable, sync)
 
         await Combine(cocotb.fork(write_address), cocotb.fork(write_data))
 
@@ -334,6 +345,13 @@ class AXI4Master(BusDriver):
                 not match the requested one.
         """
 
+        # Helper function for narrow bursts
+        def shift_and_mask(binvalue: BinaryValue, bytes_num: int,
+                           byte_shift: int) -> BinaryValue:
+            start = byte_shift * 8
+            end = (bytes_num + byte_shift) * 8
+            return binvalue[len(binvalue) - end:len(binvalue) - start - 1]
+
         if size is None:
             size = len(self.bus.RDATA) // 8
         else:
@@ -341,6 +359,9 @@ class AXI4Master(BusDriver):
 
         AXI4Master._check_length(length, burst)
         AXI4Master._check_4kB_boundary_crossing(address, burst, size, length)
+
+        rdata_bytes = len(self.bus.RDATA) // 8
+        byte_offset = address % rdata_bytes
 
         async with self.read_address_busy:
             if sync:
@@ -375,8 +396,22 @@ class AXI4Master(BusDriver):
                 while True:
                     await ReadOnly()
                     if self.bus.RVALID.value and self.bus.RREADY.value:
-                        data.append(self.bus.RDATA.value)
+                        # Shift and mask to correctly handle narrow bursts
+                        new_val = shift_and_mask(self.bus.RDATA.value,
+                                                 size, byte_offset)
+
+                        # Push the value into a new BinaryValue, identical to
+                        # the previous one but with a lower number of bits
+                        data.append(BinaryValue(
+                            value=new_val.binstr, n_bits=size * 8,
+                            bigEndian=new_val.big_endian,
+                            binaryRepresentation=new_val.binaryRepresentation))
+
                         rresp.append(AXIxRESP(self.bus.RRESP.value.integer))
+
+                        if burst is not AXIBurst.FIXED:
+                            byte_offset = (byte_offset + size) % rdata_bytes
+
                         break
                     await RisingEdge(self.clock)
 
