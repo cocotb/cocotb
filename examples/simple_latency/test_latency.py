@@ -8,7 +8,7 @@ from cocotb.triggers import FallingEdge, Edge
 from cocotb.clock import Timer
 
 
-async def delayed_wire (output_sig, input_sig, latency):
+async def delayed_wire(output_sig, input_sig, latency):
     while (1):
         await Edge(input_sig)
         cocotb.fork(delayer(output_sig, input_sig.value, latency))
@@ -42,11 +42,11 @@ async def test_dff_simple(dut):
         assert dut.q == val, "output q was incorrect on the {}th cycle".format(i)
 
         # check output of delayed signals
-        if (dut.delayed_q[0].value): # Avoid X/Z, expected 1 cycle delay
+        if (dut.delayed_q[0].value):    # Avoid X/Z, expected 1 cycle delay
             assert dut.delayed_q[0] == old_val1, "output delayed_q[0] was incorrect on the {}th cycle".format(i)
-        if (dut.delayed_q[1].value): # Avoid X/Z, expected 1 cycle delay
+        if (dut.delayed_q[1].value):    # Avoid X/Z, expected 1 cycle delay
             assert dut.delayed_q[1] == old_val1, "output delayed_q[1] was incorrect on the {}th cycle".format(i)
-        if (dut.delayed_q[2].value): # Avoid X/Z, expected 2 cycles delay
+        if (dut.delayed_q[2].value):    # Avoid X/Z, expected 2 cycles delay
             assert dut.delayed_q[2] == old_val2, "output delayed_q[2] was incorrect on the {}th cycle".format(i)
 
         # update value of previous cycle signal
