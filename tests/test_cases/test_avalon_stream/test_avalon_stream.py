@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Test to demonstrate functionality of the avalon basic streaming interface"""
 
 import random
