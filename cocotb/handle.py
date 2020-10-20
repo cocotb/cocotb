@@ -626,14 +626,16 @@ class NonConstantObject(NonHierarchyIndexableObject):
     def drivers(self):
         """An iterator for gathering all drivers for a signal.
 
-        Few simulators implement this.
+        This is currently only available for VPI.
+        Also, only a few simulators implement this.
         """
         return self._handle.iterate(simulator.DRIVERS)
 
     def loads(self):
         """An iterator for gathering all loads on a signal.
 
-        Few simulators implement this.
+        This is currently only available for VPI.
+        Also, only a few simulators implement this.
         """
         return self._handle.iterate(simulator.LOADS)
 

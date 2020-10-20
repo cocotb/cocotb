@@ -568,8 +568,14 @@ GpiIterator *FliImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type
         case GPI_OBJECTS:
             new_iter = new FliIterator(this, obj_hdl);
             break;
+        case GPI_DRIVERS:
+            LOG_WARN("FLI: Drivers iterator not implemented yet");
+            break;
+        case GPI_LOADS:
+            LOG_WARN("FLI: Loads iterator not implemented yet");
+            break;
         default:
-            LOG_WARN("Other iterator types not implemented yet");
+            LOG_WARN("FLI: Other iterator types not implemented yet");
             break;
     }
 
