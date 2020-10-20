@@ -26,6 +26,7 @@
 ******************************************************************************/
 
 #include "VpiImpl.h"
+#include <cstring>
 #include <cocotb_utils.h>  // COCOTB_UNUSED
 
 extern "C" {
@@ -296,13 +297,52 @@ GpiObjHdl* VpiImpl::native_check_create(void *raw_hdl, GpiObjHdl *parent)
 GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
 {
     vpiHandle new_hdl;
+    const vpiHandle parent_hdl = parent->get_handle<vpiHandle>();
     std::string fq_name = parent->get_fullname() + "." + name;
-    std::vector<char> writable(fq_name.begin(), fq_name.end());
-    writable.push_back('\0');
 
-    new_hdl = vpi_handle_by_name(&writable[0], NULL);
+    new_hdl = vpi_handle_by_name(const_cast<char*>(fq_name.c_str()), NULL);
 
-    /* No need to iterate to look for generate loops as the tools will at least find vpiGenScopeArray */
+#ifdef ICARUS
+    /* Icarus does not support vpiGenScopeArray, only vpiGenScope.
+     * If handle is not found by name, look for a generate block with
+     * a matching prefix.
+     *     For Example:
+     *         genvar idx;
+     *         generate
+     *             for (idx = 0; idx < 5; idx = idx + 1) begin
+     *                 ...
+     *             end
+     *         endgenerate
+     *
+     *     genblk1      => vpiGenScopeArray (not found)
+     *     genblk1[0]   => vpiGenScope
+     *     ...
+     *     genblk1[4]   => vpiGenScope
+     *
+     *     genblk1 is not found directly, but if genblk1[n] is found,
+     *     genblk1 must exist, so create the pseudo-region object for it.
+     */
+    if (new_hdl == NULL) {
+        vpiHandle iter = vpi_iterate(vpiInternalScope, parent_hdl);
+        if (iter == NULL) {
+            goto skip_iterate;
+        }
+
+        for (auto rgn = vpi_scan(iter); rgn != NULL; rgn = vpi_scan(iter)) {
+            if (vpi_get(vpiType, rgn) == vpiGenScope) {
+                auto rgn_name = vpi_get_str(vpiName, rgn);
+                /* Check if name is a prefix of rgn_name */
+                if (rgn_name && name.length() > 0 && std::strncmp(name.c_str(), rgn_name, name.length()) == 0) {
+                    new_hdl = parent_hdl;
+                    vpi_free_object(iter);
+                    break;
+                }
+            }
+        }
+    }
+skip_iterate:
+#endif
+
     if (new_hdl == NULL) {
         LOG_DEBUG("Unable to query vpi_get_handle_by_name %s", fq_name.c_str());
         return NULL;
@@ -319,7 +359,7 @@ GpiObjHdl* VpiImpl::native_check_create(std::string &name, GpiObjHdl *parent)
     if (vpi_get(vpiType, new_hdl) == vpiGenScopeArray) {
         vpi_free_object(new_hdl);
 
-        new_hdl = parent->get_handle<vpiHandle>();
+        new_hdl = parent_hdl;
     }
 
 

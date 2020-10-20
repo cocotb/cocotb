@@ -257,10 +257,6 @@ class HierarchyObject(RegionObject):
         except KeyError:
             pass
 
-        if not self._discovered:
-            self._discover_all()
-            return self.__get_sub_handle_by_name(name)
-
         # Cache to avoid a call to the simulator if we already know the name is
         # invalid. Unclear if we care, but we had this before.
         if name in self._invalid_sub_handles:
