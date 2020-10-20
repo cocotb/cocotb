@@ -52,6 +52,10 @@ _FILENAME_CHARS = 20  # noqa
 _LINENO_CHARS   = 4  # noqa
 _FUNCNAME_CHARS = 31  # noqa
 
+# Custom log level
+logging.TRACE = 5
+logging.addLevelName(5, "TRACE")
+
 # Default log level if not overwritten by the user.
 _COCOTB_LOG_LEVEL_DEFAULT = "INFO"
 
@@ -99,7 +103,7 @@ def default_config():
     try:
         log.setLevel(level)
     except ValueError:
-        valid_levels = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG')
+        valid_levels = ('CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE')
         raise ValueError("Invalid log level %r passed through the "
                          "COCOTB_LOG_LEVEL environment variable. Valid log "
                          "levels: %s" % (level, ', '.join(valid_levels)))
@@ -235,6 +239,7 @@ class SimColourLogFormatter(SimLogFormatter):
     """Log formatter to provide consistent log message handling."""
 
     loglevel2colour = {
+        logging.TRACE   :       "%s",
         logging.DEBUG   :       "%s",
         logging.INFO    :       "%s",
         logging.WARNING :       ANSI.COLOR_WARNING + "%s" + ANSI.COLOR_DEFAULT,
