@@ -869,8 +869,14 @@ GpiIterator *VhpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t typ
         case GPI_OBJECTS:
             new_iter = new VhpiIterator(this, obj_hdl);
             break;
+        case GPI_DRIVERS:
+            LOG_WARN("VHPI: Drivers iterator not implemented yet");
+            break;
+        case GPI_LOADS:
+            LOG_WARN("VHPI: Loads iterator not implemented yet");
+            break;
         default:
-            LOG_WARN("Other iterator types not implemented yet");
+            LOG_WARN("VHPI: Other iterator types not implemented yet");
             break;
     }
     return new_iter;
