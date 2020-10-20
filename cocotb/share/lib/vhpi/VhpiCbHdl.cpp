@@ -39,7 +39,7 @@ extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 
 VhpiArrayObjHdl::~VhpiArrayObjHdl()
 {
-    LOG_DEBUG("Releasing VhpiArrayObjHdl handle at %p", (void *)get_handle<vhpiHandleT>());
+    LOG_DEBUG("VHPI: Releasing VhpiArrayObjHdl handle at %p", (void *)get_handle<vhpiHandleT>());
     if (vhpi_release_handle(get_handle<vhpiHandleT>()))
         check_vhpi_error();
 }
@@ -48,7 +48,7 @@ VhpiObjHdl::~VhpiObjHdl()
 {
     /* Don't release handles for pseudo-regions, as they borrow the handle of the containing region */
     if (m_type != GPI_GENARRAY) {
-        LOG_DEBUG("Releasing VhpiObjHdl handle at %p", (void *)get_handle<vhpiHandleT>());
+        LOG_DEBUG("VHPI: Releasing VhpiObjHdl handle at %p", (void *)get_handle<vhpiHandleT>());
         if (vhpi_release_handle(get_handle<vhpiHandleT>()))
             check_vhpi_error();
     }
@@ -68,7 +68,7 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl()
     if (m_binvalue.value.str)
         delete [] m_binvalue.value.str;
 
-    LOG_DEBUG("Releasing VhpiSignalObjHdl handle at %p", (void *)get_handle<vhpiHandleT>());
+    LOG_DEBUG("VHPI: Releasing VhpiSignalObjHdl handle at %p", (void *)get_handle<vhpiHandleT>());
     if (vhpi_release_handle(get_handle<vhpiHandleT>()))
         check_vhpi_error();
 }
@@ -220,7 +220,7 @@ int VhpiArrayObjHdl::initialise(std::string &name, std::string &fq_name) {
     bool error = get_range(handle, dim_idx, &m_range_left, &m_range_right);
 
     if (error) {
-        LOG_ERROR("Unable to obtain constraints for an indexable object %s.", fq_name.c_str());
+        LOG_ERROR("VHPI: Unable to obtain constraints for an indexable object %s.", fq_name.c_str());
         return -1;
     }
 
@@ -274,7 +274,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
         return -1;
     }
 
-    LOG_DEBUG("Found %s of format type %s (%d) format object with %d elems buffsize %d size %d",
+    LOG_DEBUG("VHPI: Found %s of format type %s (%d) format object with %d elems buffsize %d size %d",
               name.c_str(),
               ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format),
               m_value.format,
@@ -300,7 +300,7 @@ int VhpiSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
             m_value.bufSize = static_cast<bufSize_type>(bufSize);
             m_value.value.str = new vhpiCharT[bufSize];
             m_value.numElems = m_num_elems;
-            LOG_DEBUG("Overriding num_elems to %d", m_num_elems);
+            LOG_DEBUG("VHPI: Overriding num_elems to %d", m_num_elems);
             break;
         }
 
@@ -354,7 +354,7 @@ int VhpiLogicSignalObjHdl::initialise(std::string &name, std::string &fq_name) {
     m_num_elems = static_cast<int>(vhpi_get(vhpiSizeP, handle));
 
     if (m_num_elems == 0) {
-        LOG_DEBUG("Null vector... Delete object")
+        LOG_DEBUG("VHPI: Null vector... Delete object")
         return -1;
     }
 
@@ -438,13 +438,17 @@ int VhpiCbHdl::arm_callback()
         if (!new_hdl) {
             check_vhpi_error();
             LOG_ERROR("VHPI: Unable to register a callback handle for VHPI type %s(%d)",
-                         m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+                      m_impl->reason_to_string(cb_data.reason), cb_data.reason);
             goto error;
         }
 
-        cbState = (vhpiStateT)vhpi_get(vhpiStateP, new_hdl);
-        if (vhpiEnable != cbState) {
-            LOG_ERROR("VHPI: Registered callback isn't enabled! Got %d", cbState);
+        // don't cast to vhpiStateT immediately because vhpiUndefined is not in the enum
+        vhpiIntT cbState_raw = vhpi_get(vhpiStateP, new_hdl);
+        if ((unsigned int)vhpiUndefined == cbState_raw) {
+            LOG_ERROR("VHPI: Registered callback isn't enabled! Got vhpiStateP=vhpiUndefined(%d)", vhpiUndefined);
+            goto error;
+        } else if (vhpiEnable != (vhpiStateT)cbState_raw) {
+            LOG_ERROR("VHPI: Registered callback isn't enabled! Got vhpiStateP=%d", (vhpiStateT)cbState_raw);
             goto error;
         }
 
@@ -724,7 +728,7 @@ const char* VhpiSignalObjHdl::get_signal_value_binstr()
 {
     switch (m_value.format) {
         case vhpiRealVal:
-            LOG_INFO("get_signal_value_binstr not supported for %s",
+            LOG_INFO("VHPI: get_signal_value_binstr not supported for %s",
                       ((VhpiImpl*)GpiObjHdl::m_impl)->format_to_string(m_value.format));
             return "";
         default: {
@@ -1004,7 +1008,7 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
 
         /* GPI_GENARRAY are pseudo-regions and all that should be searched for are the sub-regions */
         if (m_parent->get_type() == GPI_GENARRAY && *one2many != vhpiInternalRegions) {
-            LOG_DEBUG("vhpi_iterator vhpiOneToManyT=%d skipped for GPI_GENARRAY type", *one2many);
+            LOG_DEBUG("VHPI: vhpi_iterator vhpiOneToManyT=%d skipped for GPI_GENARRAY type", *one2many);
             continue;
         }
 
@@ -1013,11 +1017,11 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
         if (iterator)
             break;
 
-        LOG_DEBUG("vhpi_iterate vhpiOneToManyT=%d returned NULL", *one2many);
+        LOG_DEBUG("VHPI: vhpi_iterate vhpiOneToManyT=%d returned NULL", *one2many);
     }
 
     if (NULL == iterator) {
-        LOG_DEBUG("vhpi_iterate return NULL for all relationships on %s (%d) kind:%s",
+        LOG_DEBUG("VHPI: vhpi_iterate return NULL for all relationships on %s (%d) kind:%s",
                   vhpi_get_str(vhpiCaseNameP, vhpi_hdl),
                   type,
                   vhpi_get_str(vhpiKindStrP, vhpi_hdl));
@@ -1025,7 +1029,7 @@ VhpiIterator::VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl) : GpiIterator
         return;
     }
 
-    LOG_DEBUG("Created iterator working from scope %d (%s)",
+    LOG_DEBUG("VHPI: Created iterator working from scope %d (%s)",
              vhpi_get(vhpiKindP, vhpi_hdl),
              vhpi_get_str(vhpiKindStrP, vhpi_hdl));
 
@@ -1087,23 +1091,23 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
                                 vhpiCondSigAssignStmtK   == vhpi_get(vhpiKindP, obj) ||
                                 vhpiSimpleSigAssignStmtK == vhpi_get(vhpiKindP, obj) ||
                                 vhpiSelectSigAssignStmtK == vhpi_get(vhpiKindP, obj))) {
-                LOG_DEBUG("Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
+                LOG_DEBUG("VHPI: Skipping %s (%s)", vhpi_get_str(vhpiFullNameP, obj),
                                               vhpi_get_str(vhpiKindStrP, obj));
                 obj=NULL;
                 continue;
             }
 
             if (obj != NULL) {
-                LOG_DEBUG("Found an item %s", vhpi_get_str(vhpiFullNameP, obj));
+                LOG_DEBUG("VHPI: Found an item %s", vhpi_get_str(vhpiFullNameP, obj));
                 break;
             } else {
-                LOG_DEBUG("vhpi_scan on %d returned NULL", *one2many);
+                LOG_DEBUG("VHPI: vhpi_scan on vhpiOneToManyT=%d returned NULL", *one2many);
             }
 
-            LOG_DEBUG("End of vhpiOneToManyT=%d iteration", *one2many);
+            LOG_DEBUG("VHPI: End of vhpiOneToManyT=%d iteration", *one2many);
             m_iterator = NULL;
         } else {
-            LOG_DEBUG("No valid vhpiOneToManyT=%d iterator", *one2many);
+            LOG_DEBUG("VHPI: No valid vhpiOneToManyT=%d iterator", *one2many);
         }
 
         if (++one2many >= selected->end()) {
@@ -1113,7 +1117,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
 
         /* GPI_GENARRAY are pseudo-regions and all that should be searched for are the sub-regions */
         if (obj_type == GPI_GENARRAY && *one2many != vhpiInternalRegions) {
-            LOG_DEBUG("vhpi_iterator vhpiOneToManyT=%d skipped for GPI_GENARRAY type", *one2many);
+            LOG_DEBUG("VHPI: vhpi_iterator vhpiOneToManyT=%d skipped for GPI_GENARRAY type", *one2many);
             continue;
         }
 
@@ -1122,7 +1126,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
     } while (!obj);
 
     if (NULL == obj) {
-        LOG_DEBUG("No more children, all relationships tested");
+        LOG_DEBUG("VHPI: No more children, all relationships have been tested");
         return GpiIterator::END;
     }
 
@@ -1135,7 +1139,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
             return GpiIterator::NOT_NATIVE_NO_NAME;
         }
 
-        LOG_DEBUG("Unable to get the name for this object of type " PRIu32, type);
+        LOG_DEBUG("VHPI: Unable to get the name for this object of type " PRIu32, type);
 
         return GpiIterator::NATIVE_NO_NAME;
     }
@@ -1155,14 +1159,14 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
             name        = idx_str.substr(0,found);
             obj         = m_parent->get_handle<vhpiHandleT>();
         } else {
-            LOG_WARN("Unhandled Generate Loop Format - %s", name.c_str());
+            LOG_WARN("VHPI: Unhandled Generate Loop Format - %s", name.c_str());
             name = c_name;
         }
     } else {
         name = c_name;
     }
 
-    LOG_DEBUG("vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
+    LOG_DEBUG("VHPI: vhpi_scan found %s (%d) kind:%s name:%s", name.c_str(),
             vhpi_get(vhpiKindP, obj),
             vhpi_get_str(vhpiKindStrP, obj),
             vhpi_get_str(vhpiCaseNameP, obj));
@@ -1179,7 +1183,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
         if (found != std::string::npos) {
             fq_name += name.substr(found);
         } else {
-            LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
+            LOG_WARN("VHPI: Unhandled Sub-Element Format - %s", name.c_str());
             fq_name += "." + name;
         }
     } else if (obj_type == GPI_STRUCTURE) {
@@ -1189,7 +1193,7 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
             fq_name += name.substr(found);
             name = name.substr(found+1);
         } else {
-            LOG_WARN("Unhandled Sub-Element Format - %s", name.c_str());
+            LOG_WARN("VHPI: Unhandled Sub-Element Format - %s", name.c_str());
             fq_name += "." + name;
         }
     } else {
@@ -1204,4 +1208,3 @@ GpiIterator::Status VhpiIterator::next_handle(std::string &name,
     else
         return GpiIterator::NOT_NATIVE;
 }
-
