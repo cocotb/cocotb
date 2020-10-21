@@ -27,8 +27,6 @@
 
 import cocotb
 import logging
-import os
-import textwrap
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
@@ -94,16 +92,22 @@ def ipython_embed_kernel(dut):
     ###############################################################################""".format(os.getpid())))
     IPython.embed_kernel()
 
+  
+@cocotb.test(expect_error=True)
+async def discover_value_not_in_dut(dut):
+    """Try and get a value from the DUT that is not there"""
+    fake_signal = dut.fake_signal
+
 
 @cocotb.test()
-def access_signal(dut):
+async def access_signal(dut):
     """Access a signal using the assignment mechanism"""
     tlog = logging.getLogger("cocotb.test")
     signal = dut.stream_in_data
 
     tlog.info("Signal is %s" % type(signal))
     dut.stream_in_data.setimmediatevalue(1)
-    yield Timer(10)
+    await Timer(1, "ns")
     if dut.stream_in_data.value.integer != 1:
         raise TestError("%s.%s != %d" %
                         (dut.stream_in_data._path,
@@ -114,14 +118,14 @@ def access_signal(dut):
     # Icarus 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
     expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("icarus") else False,
     skip=cocotb.LANGUAGE in ["vhdl"])
-def access_single_bit(dut):
+async def access_single_bit(dut):
     """Access a single bit in a vector of the DUT"""
     dut.stream_in_data <= 0
-    yield Timer(10)
+    await Timer(1, "ns")
     dut._log.info("%s = %d bits" %
                   (dut.stream_in_data._path, len(dut.stream_in_data)))
     dut.stream_in_data[2] <= 1
-    yield Timer(10)
+    await Timer(1, "ns")
     if dut.stream_out_data_comb.value.integer != (1 << 2):
         raise TestError("%s.%s != %d" %
                         (dut.stream_out_data_comb._path,
@@ -132,14 +136,14 @@ def access_single_bit(dut):
     # Icarus 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
     expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("icarus") else False,
     skip=cocotb.LANGUAGE in ["vhdl"])
-def access_single_bit_assignment(dut):
+async def access_single_bit_assignment(dut):
     """Access a single bit in a vector of the DUT using the assignment mechanism"""
     dut.stream_in_data = 0
-    yield Timer(10)
+    await Timer(1, "ns")
     dut._log.info("%s = %d bits" %
                   (dut.stream_in_data._path, len(dut.stream_in_data)))
     dut.stream_in_data[2] = 1
-    yield Timer(10)
+    await Timer(1, "ns")
     if dut.stream_out_data_comb.value.integer != (1 << 2):
         raise TestError("%s.%s != %d" %
                         (dut.stream_out_data_comb._path,
@@ -147,23 +151,20 @@ def access_single_bit_assignment(dut):
 
 
 @cocotb.test(expect_error=True)
-def access_single_bit_erroneous(dut):
+async def access_single_bit_erroneous(dut):
     """Access a non-existent single bit"""
-    yield Timer(10)
     dut._log.info("%s = %d bits" %
                   (dut.stream_in_data._path, len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
-    yield Timer(10)
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("icarus", "chronologic simulation vcs")),
              expect_fail=cocotb.SIM_NAME.lower().startswith(("riviera")) and cocotb.LANGUAGE in ["verilog"])
-def access_integer(dut):
+async def access_integer(dut):
     """Integer should show as an IntegerObject"""
     bitfail = False
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(10)
     test_int = dut.stream_in_int
     if not isinstance(test_int, IntegerObject):
         raise TestFailure("dut.stream_in_int is not an integer but {} instead".format(type(test_int)))
@@ -183,20 +184,17 @@ def access_integer(dut):
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
-def access_ulogic(dut):
+async def access_ulogic(dut):
     """Access a std_ulogic as enum"""
-    tlog = logging.getLogger("cocotb.test")
-    yield Timer(10)
     constant_integer = dut.stream_in_valid
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
-def access_constant_integer(dut):
+async def access_constant_integer(dut):
     """
     Access a constant integer
     """
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(10)
     constant_integer = dut.isample_module1.EXAMPLE_WIDTH
     tlog.info("Value of EXAMPLE_WIDTH is %d" % constant_integer)
     if not isinstance(constant_integer, ConstantObject):
@@ -206,10 +204,9 @@ def access_constant_integer(dut):
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
-def access_string_vhdl(dut):
+async def access_string_vhdl(dut):
     """Access to a string, both constant and signal."""
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(10)
     constant_string = dut.isample_module1.EXAMPLE_STRING
     tlog.info("%r is %s" % (constant_string, constant_string.value))
     if not isinstance(constant_string, ConstantObject):
@@ -226,7 +223,7 @@ def access_string_vhdl(dut):
     if variable_string != b'':
         raise TestFailure("%r not \'\'" % variable_string)
 
-    yield Timer(10)
+    await Timer(1, "ns")
 
     if variable_string != test_string:
         raise TestFailure("%r %s != '%s'" % (variable_string, variable_string.value, test_string))
@@ -237,7 +234,7 @@ def access_string_vhdl(dut):
     dut.stream_in_string.setimmediatevalue(test_string)
     variable_string = dut.stream_out_string
 
-    yield Timer(10)
+    await Timer(1, "ns")
 
     test_string = test_string[:len(variable_string)]
 
@@ -246,7 +243,7 @@ def access_string_vhdl(dut):
 
     tlog.info("Test read access to a string character")
 
-    yield Timer(10)
+    await Timer(1, "ns")
 
     idx = 3
 
@@ -258,14 +255,14 @@ def access_string_vhdl(dut):
 
     tlog.info("Test write access to a string character")
 
-    yield Timer(10)
+    await Timer(1, "ns")
 
     for i in variable_string:
         lower = chr(i)
         upper = lower.upper()
         i.setimmediatevalue(ord(upper))
 
-    yield Timer(10)
+    await Timer(1, "ns")
 
     test_string = test_string.upper()
 
@@ -279,12 +276,12 @@ def access_string_vhdl(dut):
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"] or cocotb.SIM_NAME.lower().startswith(("icarus", "riviera")),
              expect_error=cocotb.result.TestFailure if cocotb.SIM_NAME.lower().startswith(("xmsim", "ncsim", "modelsim", "chronologic simulation vcs")) else False)
-def access_const_string_verilog(dut):
+async def access_const_string_verilog(dut):
     """Access to a const Verilog string."""
     tlog = logging.getLogger("cocotb.test")
     string_const = dut.STRING_CONST
 
-    yield Timer(10, 'ns')
+    await Timer(10, "ns")
     tlog.info("%r is %s" % (string_const, string_const.value))
     if not isinstance(string_const, StringObject):
         raise TestFailure("STRING_CONST was not StringObject")
@@ -293,19 +290,19 @@ def access_const_string_verilog(dut):
 
     tlog.info("Modifying const string")
     string_const <= b"MODIFIED"
-    yield Timer(10, 'ns')
+    await Timer(10, "ns")
     if string_const != b"TESTING_CONST":
         raise TestFailure("STRING_CONST was not still b\'TESTING_CONST\' after modification but {} instead".format(string_const))
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
              expect_error=cocotb.SIM_NAME.lower().startswith("icarus"))
-def access_var_string_verilog(dut):
+async def access_var_string_verilog(dut):
     """Access to a var Verilog string."""
     tlog = logging.getLogger("cocotb.test")
     string_var = dut.STRING_VAR
 
-    yield Timer(10, 'ns')
+    await Timer(10, "ns")
     tlog.info("%r is %s" % (string_var, string_var.value))
     if not isinstance(string_var, StringObject):
         raise TestFailure("STRING_VAR was not StringObject")
@@ -314,17 +311,16 @@ def access_var_string_verilog(dut):
 
     tlog.info("Modifying var string")
     string_var <= b"MODIFIED"
-    yield Timer(10, 'ns')
+    await Timer(10, "ns")
     if string_var != b"MODIFIED":
         raise TestFailure("STRING_VAR was not == b\'MODIFIED\' after modification but {} instead".format(string_var))
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
-def access_constant_boolean(dut):
+async def access_constant_boolean(dut):
     """Test access to a constant boolean"""
     tlog = logging.getLogger("cocotb.test")
 
-    yield Timer(10)
     constant_boolean = dut.isample_module1.EXAMPLE_BOOL
     if not isinstance(constant_boolean, ConstantObject):
         raise TestFailure("dut.stream_in_int.EXAMPLE_BOOL is not a ConstantObject")
@@ -333,11 +329,10 @@ def access_constant_boolean(dut):
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
-def access_boolean(dut):
+async def access_boolean(dut):
     """Test access to a boolean"""
     tlog = logging.getLogger("cocotb.test")
 
-    yield Timer(10)
     boolean = dut.stream_in_bool
 
     return
@@ -367,7 +362,7 @@ def access_boolean(dut):
 
     boolean.setimmediatevalue(not curr_val)
 
-    yield Timer(1)
+    await Timer(1, "ns")
 
     tlog.info("Value of %s is now %d" % (output_bool._path, output_bool.value))
     if (int(curr_val) == int(output_bool)):
@@ -375,7 +370,7 @@ def access_boolean(dut):
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
-def access_internal_register_array(dut):
+async def access_internal_register_array(dut):
     """Test access to an internal register array"""
 
     if (dut.register_array[0].value.binstr != "xxxxxxxx"):
@@ -383,33 +378,27 @@ def access_internal_register_array(dut):
 
     dut.register_array[1].setimmediatevalue(4)
 
-    yield Timer(1)
+    await Timer(1, "ns")
 
     if (dut.register_array[1].value != 4):
         raise TestFailure("Failed to set internal register array value")
 
 
 @cocotb.test(skip=True)
-def skip_a_test(dut):
+async def skip_a_test(dut):
     """This test shouldn't execute"""
-    yield Timer(10)
     dut._log.info("%s = %d bits" %
                   (dut.stream_in_data._path, len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
     dut.stream_in_data[bit] <= 1
-    yield Timer(10)
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
              expect_error=cocotb.SIM_NAME.lower().startswith(("icarus")))
-def access_gate(dut):
+async def access_gate(dut):
     """
     Test access to a gate Object
     """
-    tlog = logging.getLogger("cocotb.test")
-
-    yield Timer(10)
-
     gate = dut.test_and_gate
 
     if not isinstance(gate, HierarchyObject):
@@ -417,13 +406,11 @@ def access_gate(dut):
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
-def custom_type(dut):
+async def custom_type(dut):
     """
     Test iteration over a custom type
     """
     tlog = logging.getLogger("cocotb.test")
-
-    yield Timer(10)
 
     new_type = dut.cosLut
     tlog.info("cosLut object %s %s" % (new_type, type(new_type)))
@@ -452,14 +439,12 @@ def custom_type(dut):
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
-def type_check_verilog(dut):
+async def type_check_verilog(dut):
     """
     Test if types are recognized
     """
 
     tlog = logging.getLogger("cocotb.test")
-
-    yield Timer(1)
 
     test_handles = [
         (dut.stream_in_ready, "GPI_REGISTER"),

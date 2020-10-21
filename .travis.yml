@@ -1,119 +1,11 @@
-# See Dockerfile for the full build instructions
-sudo: required
 language: python
 dist: xenial
-cache:
-  directories:
-  - iverilog
 
 git:
   quiet: true
 
-services:
-  - docker
-
 jobs:
   include:
-    - stage: Lint
-      name: whitespace
-      os: linux
-      script: "! git --no-pager grep --color --line-number --full-name --extended-regexp -I '\\s+$'"
-
-    - stage: Lint
-      name: flake8
-      os: linux
-      python: 3.5
-      install: pip install flake8
-      script: flake8
-
-    - stage: SimTests
-      os: linux
-      python: 3.5
-      before_install: &docker_prep
-        - docker build -t cocotb .
-        - docker images -a
-        - docker run -d --name cocotb cocotb tail -f /dev/null
-        - docker ps -a
-      script:
-        - echo 'Running cocotb tests with Python 3.5 ...' && echo -en 'travis_fold:start:cocotb_py35'
-        - docker exec -it -e TRAVIS=true cocotb bash -lc 'pip3 install tox; cd /src; tox -e py35'
-        - echo 'travis_fold:end:cocotb_py35'
-
-    - stage: SimTests
-      python: 3.7
-      before_install: &travis_linx_prep
-        - sudo apt-get -y install gperf swig
-        - if [[ ! -e "./iverilog/README.txt" ]]; then rm -rf iverilog; git clone https://github.com/steveicarus/iverilog.git --depth=1 --branch v10_3; fi
-        - cd iverilog && autoconf && ./configure && make -j2 && sudo make install && cd ..
-        - pip install --upgrade tox virtualenv codecov
-      script:
-        - echo 'Running cocotb tests with Python 3.7 ...' && echo -en 'travis_fold:start:cocotb_py37'
-        - tox -e py37
-        - echo 'travis_fold:end:cocotb_py37'
-      after_success: &travis_linux_post
-        - codecov
-
-    - stage: SimTests
-      python: 3.8
-      before_install: *travis_linx_prep
-      script:
-        - echo 'Running cocotb tests with Python 3.8 ...' && echo -en 'travis_fold:start:cocotb_py38'
-        - tox -e py38
-        - echo 'travis_fold:end:cocotb_py38'
-      after_success: *travis_linux_post
-
-    - stage: SimTests
-      python: 3.6.7
-      before_install: *travis_linx_prep
-      script:
-        - echo 'Running cocotb tests with Python 3.6.7 ...' && echo -en 'travis_fold:start:cocotb_py36'
-        - tox -e py36
-        - echo 'travis_fold:end:cocotb_py36'
-      after_success: *travis_linux_post
-
-    - stage: SimTests
-      python: 3.9-dev
-      before_install: *travis_linx_prep
-      script:
-        - echo 'Running cocotb tests with Python 3.9-dev ...' && echo -en 'travis_fold:start:cocotb_py39'
-        - tox -e py39
-        - echo 'travis_fold:end:cocotb_py39'
-      after_success: *travis_linux_post
-
-    - stage: SimTests
-      os: osx
-      osx_image: xcode11.2
-      language: shell
-      python: 3.7
-      before_install: &osx_prep
-        - brew update-reset
-        - brew install icarus-verilog
-        - pip3 install tox
-      script:
-        - tox -e py37
-
-    - stage: SimTests
-      python: 3.7
-      env: SIM=ghdl TOPLEVEL_LANG=vhdl
-      before_install:
-        - sudo apt-get install gnat
-        - git clone https://github.com/ghdl/ghdl.git --depth=1 --branch v0.36
-        - cd ghdl && ./configure && make -j2 && sudo make install && cd ..
-        - pip install tox
-      script:
-        - tox -e py37
-
-    - stage: SimTests
-      python: 3.7
-      name: "Py 3.7, Linux, Verilator devel"
-      env: SIM=verilator TOPLEVEL_LANG=verilog
-      before_install:
-        - sudo apt install autoconf make g++ bison flex libfl-dev
-        - git clone https://github.com/verilator/verilator --depth=1 verilator_devel
-        - cd verilator_devel && autoconf && ./configure && make -j2 && sudo make install && cd ..
-        - pip install tox
-      script:
-        - tox -e py37
 
     - stage: DeployPyPI
       python: 3.7
@@ -128,11 +20,3 @@ jobs:
           tags: true
           repo: cocotb/cocotb
         distributions: sdist
-
-  allow_failures:
-    - stage: SimTests
-      python: 3.7
-      env: SIM=ghdl TOPLEVEL_LANG=vhdl
-    - env: ALLOW_FAIL=yes
-    - stage: SimTests
-      env: SIM=verilator TOPLEVEL_LANG=verilog

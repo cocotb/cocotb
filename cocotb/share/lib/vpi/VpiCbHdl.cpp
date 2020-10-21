@@ -529,11 +529,11 @@ int VpiTimedCbHdl::cleanup_callback()
         /* Issue #188: Work around for modelsim that is harmless to others too,
            we tag the time as delete, let it fire then do not pass up
            */
-        LOG_DEBUG("Not removing PRIMED timer %d\n", vpi_time.low);
+        LOG_DEBUG("Not removing PRIMED timer %d", vpi_time.low);
         m_state = GPI_DELETE;
         return 0;
     case GPI_DELETE:
-        LOG_DEBUG("Removing DELETE timer %d\n", vpi_time.low);
+        LOG_DEBUG("Removing DELETE timer %d", vpi_time.low);
     default:
         break;
     }

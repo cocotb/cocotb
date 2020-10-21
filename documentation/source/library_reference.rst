@@ -369,6 +369,8 @@ Other Runtime Information
 
 .. autodata:: cocotb.LANGUAGE
 
+.. autodata:: cocotb.top
+
 
 Signal Tracer for WaveDrom
 --------------------------

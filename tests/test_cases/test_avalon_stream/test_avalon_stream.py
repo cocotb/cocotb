@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Test to demonstrate functionality of the avalon basic streaming interface"""
 
 import random
@@ -37,36 +36,34 @@ class AvalonSTTB(object):
 
         self.backpressure = BitDriver(self.dut.aso_ready, self.dut.clk)
 
-    @cocotb.coroutine
-    def initialise(self):
+    async def initialise(self):
         self.dut.reset <= 0
         cocotb.fork(Clock(self.dut.clk, 10).start())
         for _ in range(3):
-            yield self.clkedge
+            await self.clkedge
         self.dut.reset <= 1
-        yield self.clkedge
+        await self.clkedge
 
-    @cocotb.coroutine
-    def send_data(self, data):
+    async def send_data(self, data):
         exp_data = struct.pack("B",data)
         self.expected_output.append(exp_data)
-        yield self.stream_in.send(data)
+        await self.stream_in.send(data)
 
 
-@cocotb.test(expect_fail=False)
-def test_avalon_stream(dut):
+@cocotb.test()
+async def test_avalon_stream(dut):
     """Test stream of avalon data"""
 
     tb = AvalonSTTB(dut)
-    yield tb.initialise()
+    await tb.initialise()
     tb.backpressure.start(wave())
 
     for _ in range(20):
         data = random.randint(0, (2**7)-1)
-        yield tb.send_data(data)
-        yield tb.clkedge
+        await tb.send_data(data)
+        await tb.clkedge
 
     for _ in range(5):
-        yield tb.clkedge
+        await tb.clkedge
 
     raise tb.scoreboard.result

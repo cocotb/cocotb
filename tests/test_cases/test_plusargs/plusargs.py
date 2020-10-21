@@ -29,23 +29,16 @@
     plusarg testing
 """
 
-from __future__ import print_function
-
 import cocotb
 from cocotb.result import TestFailure
-from cocotb.triggers import Timer
 
 
 @cocotb.test()
-def plusargs_test(dut):
-    """Demonstrates plusarg access from Python test"""
-
-    yield Timer(10000)
+async def plusargs_test(dut):
+    """Demonstrate plusarg access from Python test"""
 
     for name in cocotb.plusargs:
         print("COCOTB:", name, cocotb.plusargs[name])
 
     if cocotb.plusargs['foo'] != 'bar':
         raise TestFailure("plusargs 'foo' value '{}' does not match expected 'bar'".format(cocotb.plusargs['foo']))
-
-    yield Timer(10000)

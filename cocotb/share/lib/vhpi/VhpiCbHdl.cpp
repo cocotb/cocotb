@@ -39,7 +39,7 @@ extern "C" void handle_vhpi_callback(const vhpiCbDataT *cb_data);
 
 VhpiArrayObjHdl::~VhpiArrayObjHdl()
 {
-    LOG_DEBUG("Releasing VhpiArrayObjHdl handle at %p\n", (void *)get_handle<vhpiHandleT>());
+    LOG_DEBUG("Releasing VhpiArrayObjHdl handle at %p", (void *)get_handle<vhpiHandleT>());
     if (vhpi_release_handle(get_handle<vhpiHandleT>()))
         check_vhpi_error();
 }
@@ -48,7 +48,7 @@ VhpiObjHdl::~VhpiObjHdl()
 {
     /* Don't release handles for pseudo-regions, as they borrow the handle of the containing region */
     if (m_type != GPI_GENARRAY) {
-        LOG_DEBUG("Releasing VhpiObjHdl handle at %p\n", (void *)get_handle<vhpiHandleT>());
+        LOG_DEBUG("Releasing VhpiObjHdl handle at %p", (void *)get_handle<vhpiHandleT>());
         if (vhpi_release_handle(get_handle<vhpiHandleT>()))
             check_vhpi_error();
     }
@@ -68,7 +68,7 @@ VhpiSignalObjHdl::~VhpiSignalObjHdl()
     if (m_binvalue.value.str)
         delete [] m_binvalue.value.str;
 
-    LOG_DEBUG("Releasing VhpiSignalObjHdl handle at %p\n", (void *)get_handle<vhpiHandleT>());
+    LOG_DEBUG("Releasing VhpiSignalObjHdl handle at %p", (void *)get_handle<vhpiHandleT>());
     if (vhpi_release_handle(get_handle<vhpiHandleT>()))
         check_vhpi_error();
 }
@@ -420,8 +420,8 @@ int VhpiCbHdl::arm_callback()
     if (m_state == GPI_PRIMED)
         return 0;
 
-    /* Do we already have a handle, if so and it is disabled then
-       just re-enable it */
+    /* Do we already have a handle? If so and it is disabled then
+       just re-enable it. */
 
     if (get_handle<vhpiHandleT>()) {
         cbState = (vhpiStateT)vhpi_get(vhpiStateP, get_handle<vhpiHandleT>());
@@ -444,7 +444,7 @@ int VhpiCbHdl::arm_callback()
 
         cbState = (vhpiStateT)vhpi_get(vhpiStateP, new_hdl);
         if (vhpiEnable != cbState) {
-            LOG_ERROR("VHPI: Registered callback isn't enabled! Got %d\n", cbState);
+            LOG_ERROR("VHPI: Registered callback isn't enabled! Got %d", cbState);
             goto error;
         }
 
@@ -789,7 +789,7 @@ long VhpiSignalObjHdl::get_signal_value_long()
         LOG_ERROR("VHPI: Failed to get value of type long");
     }
 
-    return value.value.intg;
+    return static_cast<int32_t>(value.value.intg);
 }
 
 

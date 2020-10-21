@@ -624,11 +624,19 @@ class NonConstantObject(NonHierarchyIndexableObject):
     # FIXME: what is the difference to ModifiableObject? Explain in docstring.
 
     def drivers(self):
-        """An iterator for gathering all drivers for a signal."""
+        """An iterator for gathering all drivers for a signal.
+
+        This is currently only available for VPI.
+        Also, only a few simulators implement this.
+        """
         return self._handle.iterate(simulator.DRIVERS)
 
     def loads(self):
-        """An iterator for gathering all loads on a signal."""
+        """An iterator for gathering all loads on a signal.
+
+        This is currently only available for VPI.
+        Also, only a few simulators implement this.
+        """
         return self._handle.iterate(simulator.LOADS)
 
 

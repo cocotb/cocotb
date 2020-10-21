@@ -7,6 +7,12 @@
 # C objects
 *.o
 
+# Python and C++ code coverage
+.coverage
+*.gcno
+*.gcda
+*.gcov
+
 # Packaging
 *.egg
 *.egg-info

@@ -405,3 +405,34 @@ async def test_task_repr(dut):
     # Trigger.__await__ should be popped from the coroutine stack
     log.info(repr(coro_task))
     assert re.match(r"<Task \d+ pending coro=coroutine_timer\(\) trigger=<Timer of 1000.00ps at \w+>>", repr(coro_task))
+
+
+@cocotb.test()
+async def test_start_soon_async(_):
+    """ Tests start_soon works with coroutines """
+    a = 0
+
+    async def example():
+        nonlocal a
+        a = 1
+
+    cocotb.scheduler.start_soon(example())
+    assert a == 0
+    await NullTrigger()
+    assert a == 1
+
+
+@cocotb.test()
+async def test_start_soon_decorator(_):
+    """ Tests start_soon works with RunningTasks """
+    a = 0
+
+    @cocotb.coroutine
+    async def example():
+        nonlocal a
+        a = 1
+
+    cocotb.scheduler.start_soon(example())
+    assert a == 0
+    await NullTrigger()
+    assert a == 1

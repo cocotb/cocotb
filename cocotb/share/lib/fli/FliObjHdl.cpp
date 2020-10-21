@@ -233,7 +233,7 @@ int FliEnumObjHdl::set_signal_value(const long value, const gpi_set_action_t act
     }
 
     if (value > m_num_enum || value < 0) {
-        LOG_ERROR("Attempted to set a enum with range [0,%d] with invalid value %d!\n", m_num_enum, value);
+        LOG_ERROR("Attempted to set an enum with range [0,%d] with invalid value %d!", m_num_enum, value);
         return -1;
     }
 

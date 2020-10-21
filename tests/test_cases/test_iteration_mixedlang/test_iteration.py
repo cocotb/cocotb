@@ -26,8 +26,6 @@
 import logging
 
 import cocotb
-from cocotb.triggers import Timer
-from cocotb.result import TestFailure
 
 
 def recursive_dump(parent, log):
@@ -45,62 +43,62 @@ def recursive_dump(parent, log):
 
 
 @cocotb.test(expect_fail=True)
-def test_drivers(dut):
-    """
-    Try iterating over drivers of a signal.
+async def test_drivers(dut):
+    """Try iterating over drivers of a signal.
 
-    Seems that few simulators implement vpiDriver
+    Seems that few simulators implement ``vpiDriver``.
     """
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
-    for driver in dut.i_verilog.uart1.uart_rx_1.rx_data.drivers():
+    drivers = list(dut.i_verilog.uart1.uart_rx_1.rx_data.drivers())
+    assert drivers, "No drivers found for dut.i_verilog.uart1.uart_rx_1.rx_data"
+    for driver in drivers:
         tlog.info("Found %s" % repr(driver))
-        break
-    else:
-        raise TestFailure("No drivers found for dut.i_verilog.uart1.uart_rx_1.rx_data")
+
+
+@cocotb.test(expect_fail=True)
+async def test_loads(dut):
+    """Try iterating over loads of a signal.
+
+    Seems that few simulators implement ``vpiLoad``.
+    """
+    tlog = logging.getLogger("cocotb.test")
+    loads = list(dut.i_verilog.uart1.ser_in.loads())
+    assert loads, "No loads found for dut.i_verilog.uart1.ser_in"
+    for load in loads:
+        tlog.info("Found %s" % repr(load))
 
 
 @cocotb.test()
-def recursive_discovery(dut):
-    """
-    Recursively discover every single object in the design
-    """
+async def recursive_discovery(dut):
+    """Recursively discover every single object in the design."""
     if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS/Xcelium
-        pass_total = 917
+        pass_total = 975
     elif cocotb.SIM_NAME.lower().startswith(("modelsim")):
         pass_total = 933
     else:
         pass_total = 1024
 
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
     total = recursive_dump(dut, tlog)
 
-    if pass_total != total:
-        raise TestFailure("Expected %d but found %d" % (pass_total, total))
-    else:
-        tlog.info("Found a total of %d things", total)
+    assert pass_total == total, "Expected %d but found %d" % (pass_total, total)
+    tlog.info("Found a total of %d things", total)
 
-    if not isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject):
-        tlog.error("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable")
-        tlog.error("but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__)
-        raise TestFailure()
+    assert isinstance(dut.i_verilog.uart1.baud_gen_1.baud_freq, cocotb.handle.ModifiableObject), \
+        ("Expected dut.i_verilog.uart1.baud_gen_1.baud_freq to be modifiable"
+         " but it was %s" % type(dut.i_verilog.uart1.baud_gen_1.baud_freq).__name__)
 
 
 @cocotb.test()
-def recursive_discovery_boundary(dut):
-    """
-    Iteration though the boundary works but this just double checks
-    """
+async def recursive_discovery_boundary(dut):
+    """Iteration through the boundary works but this just double checks."""
     if cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         pass_total = 462
     else:
         pass_total = 478
 
     tlog = logging.getLogger("cocotb.test")
-    yield Timer(100)
     total = recursive_dump(dut.i_vhdl, tlog)
     tlog.info("Found a total of %d things", total)
-    if total != pass_total:
-        raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
+    assert total == pass_total, "Expected %d objects but found %d" % (pass_total, total)

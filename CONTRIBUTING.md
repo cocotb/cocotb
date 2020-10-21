@@ -175,6 +175,7 @@ Most maintainers are experts in part of the cocotb codebase, and are primarily r
 
 - Kaleb Barrett (@ktbarrett)
 - Tomasz Hemperek (@themperek)
+- Marlon James (@garmin-mjames)
 - Colin Marquardt (@cmarqu)
 - Philipp Wagner (@imphil)
 - Eric Wieser (@eric-wieser)

@@ -24,13 +24,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import cocotb
-from cocotb.triggers import Timer
 
 
 @cocotb.test()
-def index_name_iter(dut):
+async def index_name_iter(dut):
     """Access a non local indexed name"""
-    yield Timer(0)
     total_count = 0
 
     def _discover(obj):

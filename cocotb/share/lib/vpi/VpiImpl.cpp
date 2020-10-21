@@ -362,9 +362,9 @@ GpiObjHdl* VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
          *       wire [7:0] sig_t4 [0:1][0:2];
          *
          *    Assume vpi_hdl is for "sig_t4":
-         *       vpi_handl_by_index(vpi_hdl, 0);   // Returns a handle to sig_t4[0] for IUS, but NULL on Questa
+         *       vpi_handle_by_index(vpi_hdl, 0);   // Returns a handle to sig_t4[0] for IUS, but NULL on Questa
          *
-         *    Questa only works when both indicies are provided, i.e. will need a pseudo-handle to behave like the first index.
+         *    Questa only works when both indices are provided, i.e. will need a pseudo-handle to behave like the first index.
          */
         if (new_hdl == NULL) {
             int left       = parent->get_range_left();
@@ -393,7 +393,7 @@ GpiObjHdl* VpiImpl::native_check_create(int32_t index, GpiObjHdl *parent)
 
             std::string act_hdl_name = vpi_get_str(vpiName, p_hdl);
 
-            /* Removing the act_hdl_name from the parent->get_name() will leave the psuedo-indices */
+            /* Removing the act_hdl_name from the parent->get_name() will leave the pseudo-indices */
             if (act_hdl_name.length() < parent->get_name().length()) {
                 std::string idx_str = parent->get_name().substr(act_hdl_name.length());
 

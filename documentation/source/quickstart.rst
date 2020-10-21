@@ -78,6 +78,8 @@ Python test script to load.
 We would then create a file called ``test_my_design.py`` containing our tests.
 
 
+.. _quickstart_creating_a_test:
+
 Creating a test
 ---------------
 
