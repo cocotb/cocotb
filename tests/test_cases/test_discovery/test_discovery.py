@@ -27,8 +27,6 @@
 
 import cocotb
 import logging
-import os
-import textwrap
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
