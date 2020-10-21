@@ -94,7 +94,7 @@ def ipython_embed_kernel(dut):
     ###############################################################################""".format(os.getpid())))
     IPython.embed_kernel()
 
-  
+
 @cocotb.test(expect_error=True)
 async def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
