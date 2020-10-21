@@ -131,9 +131,8 @@ For Verilator 4.102 and above, the `-CFLAGS -DVM_TRACE_FST=1` argument is no lon
 
     EXTRA_ARGS += --trace-fst --trace-structs -CFLAGS -DVM_TRACE_FST
 
-instead. The resulting file will be ``dump.fst`` and can be opened by ``gtkwave dump.fst``.
-Please note that you should use the most recent versions of verilator and gtkwave for FST to be
-properly supported with acceptable performance.
+The resulting file will be ``dump.fst`` and can be opened by ``gtkwave dump.fst``.
+Note only the most recent versions of gtkwave and verilator support the FST format.
 
 .. _sim-verilator-issues:
 
