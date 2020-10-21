@@ -67,32 +67,6 @@ async def discover_module_values(dut):
         raise TestFailure("Expected to discover things in the DUT")
 
 
-@cocotb.test(skip=True)
-def ipython_embed(dut):
-    yield Timer(0)
-    import IPython
-    IPython.embed()
-
-
-@cocotb.test(skip=True)
-def ipython_embed_kernel(dut):
-    """Start an interactive Python shell."""
-    yield Timer(0)
-    import IPython
-    print(textwrap.dedent("""
-    ###############################################################################
-    Running IPython embed_kernel()
-
-    You can now send this process into the background with "Ctrl-Z bg" and run
-        jupyter console --existing
-    or
-        jupyter qtconsole --existing
-    or
-        jupyter console --existing kernel-{}.json
-    ###############################################################################""".format(os.getpid())))
-    IPython.embed_kernel()
-
-
 @cocotb.test(expect_error=True)
 async def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
