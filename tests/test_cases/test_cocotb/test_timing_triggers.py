@@ -11,10 +11,13 @@ Tests related to timing triggers
 * with_timeout
 """
 import cocotb
-from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep
+import warnings
+from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep, TriggerException
 from cocotb.utils import get_sim_time
 from cocotb.result import TestFailure
 from cocotb.clock import Clock
+
+from common import assert_raises
 
 from fractions import Fraction
 from decimal import Decimal
@@ -154,24 +157,9 @@ def test_cached_write_in_readonly(dut):
         raise TestFailure
 
 
-@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
-                                                             "chronologic simulation vcs")),
-             skip=cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")))
-def test_afterdelay_in_readonly(dut):
-    """Test doing invalid sim operation"""
-    global exited
-    exited = False
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
-    coro = cocotb.fork(do_test_afterdelay_in_readonly(dut, 0))
-    yield [Join(coro), Timer(1000)]
-    clk_gen.kill()
-    if exited is not True:
-        raise TestFailure
-
-
 @cocotb.test()
 def test_afterdelay_in_readonly_valid(dut):
-    """Same as test_afterdelay_in_readonly but with valid delay > 0"""
+    """Test Timer delay after ReadOnly phase"""
     global exited
     exited = False
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
@@ -244,3 +232,16 @@ async def test_singleton_isinstance(dut):
     assert isinstance(NextTimeStep(), NextTimeStep)
     assert isinstance(ReadOnly(), ReadOnly)
     assert isinstance(ReadWrite(), ReadWrite)
+
+
+@cocotb.test()
+async def test_neg_timer(dut):
+    """Test negative timer values are forbidden"""
+    with assert_raises(TriggerException):
+        Timer(-42)  # no need to even `await`, constructing it is an error
+    # handle 0 special case
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        Timer(0)
+        assert "Timer setup with value 0, which might exhibit undefined behavior in some simulators" in str(w[-1].message)
+        assert issubclass(w[-1].category, RuntimeWarning)

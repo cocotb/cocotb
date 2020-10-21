@@ -49,7 +49,6 @@ async def pseudo_region_access(dut):
 @cocotb.test()
 async def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
-
     def _discover(obj):
         for thing in obj:
             dut._log.info("Found %s (%s)", thing._name, type(thing))

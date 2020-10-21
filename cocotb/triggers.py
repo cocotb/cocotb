@@ -28,6 +28,7 @@
 """A collections of triggers which a testbench can await."""
 
 import abc
+import warnings
 from collections.abc import Awaitable
 
 from cocotb import simulator
@@ -194,8 +195,22 @@ class Timer(GPITrigger):
 
         See Also:
             :func:`~cocotb.utils.get_sim_steps`
+
+        Raises:
+            TriggerException: If a negative value is passed for Timer setup.
+
+        .. versionchanged:: 1.5
+            Raise an exception when Timer uses a negative value as it is undefined behavior.
+            Warn for 0 as this will cause erratic behavior in some simulators as well.
         """
         GPITrigger.__init__(self)
+        if time_ps <= 0:
+            if time_ps == 0:
+                warnings.warn("Timer setup with value 0, which might exhibit undefined behavior in some simulators",
+                              category=RuntimeWarning,
+                              stacklevel=2)
+            else:
+                raise TriggerException("Timer value time_ps must not be negative")
         self.sim_steps = get_sim_steps(time_ps, units)
 
     def prime(self, callback):
