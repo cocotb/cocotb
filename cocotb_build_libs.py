@@ -146,6 +146,16 @@ class build_ext(_build_ext):
 
         super().run()
 
+    def build_extension(self, ext):
+        """Build each extension in its own temp directory to make gcov happy.
+
+        A normal PEP 517 install still works as the temp directories are discarded anyway.
+        """
+        old_build_temp = self.build_temp
+        self.build_temp = os.path.join(self.build_temp, ext.name)
+        super().build_extension(ext)
+        self.build_temp = old_build_temp
+
     # Needed for Windows to not assume python module (generate interface in def file)
     def get_export_symbols(self, ext):
         return None
