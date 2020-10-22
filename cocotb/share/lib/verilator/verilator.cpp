@@ -8,8 +8,17 @@
 
 #include <memory>
 
+#ifndef VM_TRACE_FST
+    //emulate new verilator behavior for legacy versions
+    #define VM_TRACE_FST 0
+#endif
+
 #if VM_TRACE
-# include <verilated_vcd_c.h>
+#if VM_TRACE_FST
+#include <verilated_fst_c.h>
+#else
+#include <verilated_vcd_c.h>
+#endif
 #endif
 
 vluint64_t main_time = 0;       // Current simulation time
@@ -36,10 +45,15 @@ int main(int argc, char** argv) {
 
 #if VM_TRACE
     Verilated::traceEverOn(true);
-
+#if VM_TRACE_FST
+    std::unique_ptr<VerilatedFstC> tfp(new VerilatedFstC);
+    top->trace(tfp.get(), 99);
+    tfp->open("dump.fst");
+#else
     std::unique_ptr<VerilatedVcdC> tfp(new VerilatedVcdC);
     top->trace(tfp.get(), 99);
     tfp->open("dump.vcd");
+#endif
 #endif
 
     while (!Verilated::gotFinish()) {

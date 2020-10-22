@@ -66,5 +66,6 @@ debug: $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS)
 clean::
 	@rm -rf $(SIM_BUILD)
 	@rm -f dump.vcd
+	@rm -f dump.fst
 
 endif
