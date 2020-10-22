@@ -168,14 +168,6 @@ jobs:
             cc: clang
             extra_name: "clang | "
 
-          - sim: icarus             # with gcov
-            sim-version: v10_3
-            lang: verilog
-            python-version: 3.8
-            os: ubuntu-latest
-            extra_name: "gcov | "
-            use-gcov: true
-
     steps:
     - uses: actions/checkout@v2
 
@@ -288,7 +280,7 @@ jobs:
     - name: Install Python testing dependencies (Ubuntu, MacOS)
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       run: |
-        pip install tox tox-gh-actions gcovr
+        pip install tox tox-gh-actions
     - name: Test (Ubuntu, MacOS)
       id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
