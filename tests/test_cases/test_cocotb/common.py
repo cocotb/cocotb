@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 """
-Common utilities shared my many tests in this directory
+Common utilities shared by many tests in this directory
 """
 import re
 import traceback
@@ -17,9 +17,9 @@ def clock_gen(clock):
     """Example clock gen for test use"""
     for i in range(5):
         clock <= 0
-        yield Timer(100)
+        yield Timer(100, "ns")
         clock <= 1
-        yield Timer(100)
+        yield Timer(100, "ns")
     clock._log.warning("Clock generator finished!")
 
 

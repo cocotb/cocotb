@@ -13,7 +13,7 @@ from common import assert_raises
 
 
 @cocotb.test()
-def test_lessthan_raises_error(dut):
+async def test_lessthan_raises_error(dut):
     """
     Test that trying to use <= as if it were a comparison produces an error
     """
@@ -24,10 +24,6 @@ def test_lessthan_raises_error(dut):
         pass
     else:
         assert False, "No exception was raised when confusing comparison with assignment"
-
-    # to make this a generator
-    if False:
-        yield
 
 
 @cocotb.test()
@@ -71,15 +67,15 @@ async def test_delayed_assignment_still_errors(dut):
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
-def test_integer(dut):
+async def test_integer(dut):
     """
     Test access to integers
     """
     log = logging.getLogger("cocotb.test")
-    yield Timer(10)
+    await Timer(10, "ns")
     dut.stream_in_int = 4
-    yield Timer(10)
-    yield Timer(10)
+    await Timer(10, "ns")
+    await Timer(10, "ns")
     got_in = int(dut.stream_out_int)
     got_out = int(dut.stream_in_int)
     log.info("dut.stream_out_int = %d" % got_out)
@@ -88,35 +84,35 @@ def test_integer(dut):
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
-def test_real_assign_double(dut):
+async def test_real_assign_double(dut):
     """
     Assign a random floating point value, read it back from the DUT and check
     it matches what we assigned
     """
     val = random.uniform(-1e307, 1e307)
     log = logging.getLogger("cocotb.test")
-    yield Timer(1)
+    await Timer(1)
     log.info("Setting the value %g" % val)
     dut.stream_in_real = val
-    yield Timer(1)
-    yield Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
+    await Timer(1)
+    await Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = float(dut.stream_out_real)
     log.info("Read back value %g" % got)
     assert got == val, "Values didn't match!"
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
-def test_real_assign_int(dut):
+async def test_real_assign_int(dut):
     """Assign a random integer value to ensure we can write types convertible to
     int, read it back from the DUT and check it matches what we assigned.
     """
     val = random.randint(-2**31, 2**31 - 1)
     log = logging.getLogger("cocotb.test")
-    yield Timer(1)
+    await Timer(1)
     log.info("Setting the value %i" % val)
     dut.stream_in_real <= val
-    yield Timer(1)
-    yield Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
+    await Timer(1)
+    await Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = dut.stream_out_real
     log.info("Read back value %d" % got)
     assert got == float(val), "Values didn't match!"

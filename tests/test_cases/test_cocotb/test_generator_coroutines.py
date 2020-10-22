@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 """
-Tests that sepcifically test generator-based coroutines
+Tests that specifically test generator-based coroutines
 """
 import cocotb
 from cocotb.triggers import Timer
