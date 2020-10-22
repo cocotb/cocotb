@@ -10,105 +10,105 @@ Tests for edge triggers
 * ClockCycles
 """
 import cocotb
-from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles
+from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles, First
 from cocotb.clock import Clock
 
 
 @cocotb.coroutine
-def count_edges_cycles(signal, edges):
+async def count_edges_cycles(signal, edges):
     edge = RisingEdge(signal)
     for i in range(edges):
-        yield edge
+        await edge
         signal._log.info("Rising edge %d detected" % i)
     signal._log.info("Finished, returning %d" % edges)
     return edges
 
 
 @cocotb.coroutine
-def do_single_edge_check(dut, level):
+async def do_single_edge_check(dut, level):
     """Do test for rising edge"""
     old_value = dut.clk.value.integer
     dut._log.info("Value of %s is %d" % (dut.clk._path, old_value))
     assert old_value != level, "%s not to %d start with" % (dut.clk._path, not level)
     if level == 1:
-        yield RisingEdge(dut.clk)
+        await RisingEdge(dut.clk)
     else:
-        yield FallingEdge(dut.clk)
+        await FallingEdge(dut.clk)
     new_value = dut.clk.value.integer
     dut._log.info("Value of %s is %d" % (dut.clk._path, new_value))
     assert new_value == level, "%s not %d at end" % (dut.clk._path, level)
 
 
 @cocotb.test()
-def test_rising_edge(dut):
-    """Test that a rising edge can be yielded on"""
+async def test_rising_edge(dut):
+    """Test that a rising edge can be awaited on"""
     dut.clk <= 0
-    yield Timer(1)
+    await Timer(1, "ns")
     test = cocotb.fork(do_single_edge_check(dut, 1))
-    yield Timer(10)
+    await Timer(10, "ns")
     dut.clk <= 1
-    fail_timer = Timer(1000)
-    result = yield [fail_timer, test.join()]
+    fail_timer = Timer(1000, "ns")
+    result = await First(fail_timer, test.join())
     assert result is not fail_timer, "Test timed out"
 
 
 @cocotb.test()
-def test_falling_edge(dut):
-    """Test that a falling edge can be yielded on"""
+async def test_falling_edge(dut):
+    """Test that a falling edge can be awaited on"""
     dut.clk <= 1
-    yield Timer(1)
+    await Timer(1, "ns")
     test = cocotb.fork(do_single_edge_check(dut, 0))
-    yield Timer(10)
+    await Timer(10, "ns")
     dut.clk <= 0
-    fail_timer = Timer(1000)
-    result = yield [fail_timer, test.join()]
+    fail_timer = Timer(1000, "ns")
+    result = await First(fail_timer, test.join())
     assert result is not fail_timer, "Test timed out"
 
 
 @cocotb.test()
-def test_either_edge(dut):
+async def test_either_edge(dut):
     """Test that either edge can be triggered on"""
     dut.clk <= 0
-    yield Timer(1)
+    await Timer(1, "ns")
     dut.clk <= 1
-    yield Edge(dut.clk)
+    await Edge(dut.clk)
     assert dut.clk.value.integer == 1
-    yield Timer(10)
+    await Timer(10, "ns")
     dut.clk <= 0
-    yield Edge(dut.clk)
+    await Edge(dut.clk)
     assert dut.clk.value.integer == 0
-    yield Timer(10)
+    await Timer(10, "ns")
     dut.clk <= 1
-    yield Edge(dut.clk)
+    await Edge(dut.clk)
     assert dut.clk.value.integer == 1
-    yield Timer(10)
+    await Timer(10, "ns")
     dut.clk <= 0
-    yield Edge(dut.clk)
+    await Edge(dut.clk)
     assert dut.clk.value.integer == 0
-    yield Timer(10)
+    await Timer(10, "ns")
     dut.clk <= 1
-    yield Edge(dut.clk)
+    await Edge(dut.clk)
     assert dut.clk.value.integer == 1
-    yield Timer(10)
+    await Timer(10, "ns")
     dut.clk <= 0
-    yield Edge(dut.clk)
+    await Edge(dut.clk)
     assert dut.clk.value.integer == 0
 
 
 @cocotb.test()
-def test_fork_and_monitor(dut, period=1000, clocks=6):
-    cocotb.fork(Clock(dut.clk, period).start())
+async def test_fork_and_monitor(dut, period=1000, clocks=6):
+    cocotb.fork(Clock(dut.clk, period, "ns").start())
 
     # Ensure the clock has started
-    yield RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
 
-    timer = Timer(period + 10)
+    timer = Timer(period + 10, "ns")
     task = cocotb.fork(count_edges_cycles(dut.clk, clocks))
     count = 0
     expect = clocks - 1
 
     while True:
-        result = yield [timer, task.join()]
+        result = await First(timer, task.join())
         assert count <= expect, "Task didn't complete in expected time"
         if result is timer:
             dut._log.info("Count %d: Task still running" % count)
@@ -120,29 +120,29 @@ def test_fork_and_monitor(dut, period=1000, clocks=6):
 
 
 @cocotb.coroutine
-def do_clock(dut, limit, period):
+async def do_clock(dut, limit, period):
     """Simple clock with a limit"""
     wait_period = period / 2
     while limit:
-        yield Timer(wait_period)
+        await Timer(wait_period, "ns")
         dut.clk <= 0
-        yield Timer(wait_period)
+        await Timer(wait_period, "ns")
         dut.clk <= 1
         limit -= 1
 
 
 @cocotb.coroutine
-def do_edge_count(dut, signal):
+async def do_edge_count(dut, signal):
     """Count the edges"""
     global edges_seen
     count = 0
     while True:
-        yield RisingEdge(signal)
+        await RisingEdge(signal)
         edges_seen += 1
 
 
 @cocotb.test()
-def test_edge_count(dut):
+async def test_edge_count(dut):
     """Count the number of edges is as expected"""
     global edges_seen
     edges_seen = 0
@@ -151,13 +151,13 @@ def test_edge_count(dut):
     clock = cocotb.fork(do_clock(dut, edge_count, clk_period))
     test = cocotb.fork(do_edge_count(dut, dut.clk))
 
-    yield Timer(clk_period * (edge_count + 1))
+    await Timer(clk_period * (edge_count + 1), "ns")
 
     assert edge_count == edges_seen, "Correct edge count failed - saw %d, wanted %d" % (edges_seen, edge_count)
 
 
 @cocotb.test()
-def test_edge_identity(dut):
+async def test_edge_identity(dut):
     """
     Test that Edge triggers returns the same object each time
     """
@@ -172,11 +172,11 @@ def test_edge_identity(dut):
 
     # check they are all unique
     assert len({re, fe, e}) == 3
-    yield Timer(1)
+    await Timer(1, "ns")
 
 
 @cocotb.test()
-def test_singleton_isinstance(dut):
+async def test_singleton_isinstance(dut):
     """
     Test that the result of trigger expression have a predictable type
     """
@@ -184,40 +184,40 @@ def test_singleton_isinstance(dut):
     assert isinstance(FallingEdge(dut.clk), FallingEdge)
     assert isinstance(Edge(dut.clk), Edge)
 
-    yield Timer(1)
+    await Timer(1, "ns")
 
 
 @cocotb.test()
-def test_clock_cycles(dut):
+async def test_clock_cycles(dut):
     """
     Test the ClockCycles Trigger
     """
 
     clk = dut.clk
 
-    clk_gen = cocotb.fork(Clock(clk, 100).start())
+    clk_gen = cocotb.fork(Clock(clk, 100, "ns").start())
 
-    yield RisingEdge(clk)
+    await RisingEdge(clk)
 
     dut._log.info("After one edge")
 
-    yield ClockCycles(clk, 10)
+    await ClockCycles(clk, 10)
 
     dut._log.info("After 10 edges")
 
 
 @cocotb.test()
-def test_clock_cycles_forked(dut):
+async def test_clock_cycles_forked(dut):
     """ Test that ClockCycles can be used in forked coroutines """
     # gh-520
 
-    clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
+    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
 
     @cocotb.coroutine
-    def wait_ten():
-        yield ClockCycles(dut.clk, 10)
+    async def wait_ten():
+        await ClockCycles(dut.clk, 10)
 
     a = cocotb.fork(wait_ten())
     b = cocotb.fork(wait_ten())
-    yield a.join()
-    yield b.join()
+    await a.join()
+    await b.join()

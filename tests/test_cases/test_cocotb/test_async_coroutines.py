@@ -2,7 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 """
-Test function and substitutablility of async coroutines
+Test function and substitutability of async coroutines
 """
 
 import cocotb

@@ -7,7 +7,6 @@ Tests for the cocotb logger
 
 import cocotb
 import cocotb.log
-from cocotb.triggers import Timer
 
 from common import assert_raises
 import logging
@@ -24,7 +23,7 @@ class StrCallCounter(object):
 
 
 @cocotb.test()
-def test_logging_with_args(dut):
+async def test_logging_with_args(dut):
     counter = StrCallCounter()
     dut._log.setLevel(logging.INFO)  # To avoid logging debug message, to make next line run without error
     dut._log.debug("%s", counter)
@@ -43,11 +42,9 @@ def test_logging_with_args(dut):
 
     dut._log.warning("Testing multiple line\nmessage")
 
-    yield Timer(100)  # Make it do something with time
-
 
 @cocotb.test()
-def test_logging_default_config(dut):
+async def test_logging_default_config(dut):
     # The cocotb.log module is shadowed by an instance of
     # cocotb.log.SimBaseLog()
     from cocotb.log import default_config as log_default_config
@@ -78,5 +75,3 @@ def test_logging_default_config(dut):
         # Restore pre-test configuration
         os.environ = os_environ_prev
         cocotb_log.level = log_level_prev
-
-    yield Timer(1)

@@ -11,68 +11,63 @@ from common import _check_traceback
 
 
 @cocotb.test()
-def test_yield_list_stale(dut):
-    """ Test that a trigger yielded as part of a list can't cause a spurious wakeup """
+async def test_await_list_stale(dut):
+    """ Test that a trigger awaited as part of a list can't cause a spurious wakeup """
     # gh-843
     events = [Event() for i in range(3)]
 
     waiters = [e.wait() for e in events]
 
-    @cocotb.coroutine
-    def wait_for_lists():
-        ret_i = waiters.index((yield [waiters[0], waiters[1]]))
+    async def wait_for_lists():
+        ret_i = waiters.index((await First(waiters[0], waiters[1])))
         assert ret_i == 0, "Expected event 0 to fire, not {}".format(ret_i)
 
-        ret_i = waiters.index((yield [waiters[2]]))
+        ret_i = waiters.index((await First(waiters[2])))
         assert ret_i == 2, "Expected event 2 to fire, not {}".format(ret_i)
 
-    @cocotb.coroutine
-    def wait_for_e1():
+    async def wait_for_e1():
         """ wait on the event that didn't wake `wait_for_lists` """
-        ret_i = waiters.index((yield waiters[1]))
+        ret_i = waiters.index((await waiters[1]))
         assert ret_i == 1, "Expected event 1 to fire, not {}".format(ret_i)
 
-    @cocotb.coroutine
-    def fire_events():
+    async def fire_events():
         """ fire the events in order """
         for e in events:
-            yield Timer(1)
+            await Timer(1, "ns")
             e.set()
 
     fire_task = cocotb.fork(fire_events())
     e1_task = cocotb.fork(wait_for_e1())
-    yield wait_for_lists()
+    await wait_for_lists()
 
     # make sure the other tasks finish
-    yield fire_task.join()
-    yield e1_task.join()
+    await fire_task.join()
+    await e1_task.join()
 
 
 @cocotb.test()
-def test_nested_first(dut):
+async def test_nested_first(dut):
     """ Test that nested First triggers behave as expected """
     events = [Event() for i in range(3)]
     waiters = [e.wait() for e in events]
 
-    @cocotb.coroutine
-    def fire_events():
+    async def fire_events():
         """ fire the events in order """
         for e in events:
-            yield Timer(1)
+            await Timer(1, "ns")
             e.set()
 
-    @cocotb.coroutine
-    def wait_for_nested_first():
+    async def wait_for_nested_first():
         inner_first = First(waiters[0], waiters[1])
-        ret = yield First(inner_first, waiters[2])
+        ret = await First(inner_first, waiters[2])
 
         # should unpack completely, rather than just by one level
         assert ret is not inner_first
         assert ret is waiters[0]
 
     fire_task = cocotb.fork(fire_events())
-    yield wait_for_nested_first()
-    yield fire_task.join()
+    await wait_for_nested_first()
+    await fire_task.join()
 
 
 @cocotb.test()
@@ -100,17 +95,16 @@ async def test_first_does_not_kill(dut):
 
 
 @cocotb.test()
-def test_exceptions_first(dut):
+async def test_exceptions_first(dut):
     """ Test exception propagation via cocotb.triggers.First """
     @cocotb.coroutine
     def raise_inner():
-        yield Timer(10)
+        yield Timer(10, "ns")
         raise ValueError('It is soon now')
 
-    @cocotb.coroutine
-    def raise_soon():
-        yield Timer(1)
-        yield cocotb.triggers.First(raise_inner())
+    async def raise_soon():
+        await Timer(1, "ns")
+        await cocotb.triggers.First(raise_inner())
 
     # it's ok to change this value if the traceback changes - just make sure
     # that when changed, it doesn't become harder to read.
@@ -119,7 +113,7 @@ def test_exceptions_first(dut):
       File ".*common\.py", line \d+, in _check_traceback
         yield running_coro
       File ".*test_concurrency_primitives\.py", line \d+, in raise_soon
-        yield cocotb\.triggers\.First\(raise_inner\(\)\)
+        await cocotb\.triggers\.First\(raise_inner\(\)\)
       File ".*triggers\.py", line \d+, in _wait
         return await first_trigger[^\n]*
       File ".*triggers.py", line \d+, in __await__
@@ -130,21 +124,20 @@ def test_exceptions_first(dut):
         raise ValueError\('It is soon now'\)
     ValueError: It is soon now""").strip()
 
-    yield _check_traceback(raise_soon(), ValueError, expected)
+    await _check_traceback(raise_soon(), ValueError, expected)
 
 
 @cocotb.test()
-def test_combine(dut):
+async def test_combine(dut):
     """ Test the Combine trigger. """
     # gh-852
 
-    @cocotb.coroutine
-    def do_something(delay):
-        yield Timer(delay)
+    async def do_something(delay):
+        await Timer(delay, "ns")
 
     crs = [cocotb.fork(do_something(dly)) for dly in [10, 30, 20]]
 
-    yield Combine(*(cr.join() for cr in crs))
+    await Combine(*(cr.join() for cr in crs))
 
 
 @cocotb.test()
