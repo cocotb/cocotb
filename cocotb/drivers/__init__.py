@@ -33,7 +33,6 @@ from collections import deque
 from typing import Iterable, Tuple, Any, Optional, Callable
 
 import cocotb
-from cocotb.decorators import coroutine
 from cocotb.triggers import (Event, RisingEdge, ReadOnly, NextTimeStep,
                              Edge)
 from cocotb.bus import Bus
@@ -141,7 +140,6 @@ class Driver:
         """Clear any queued transactions without sending them onto the bus."""
         self._sendQ = deque()
 
-    @coroutine
     async def send(self, transaction: Any, sync: bool = True, **kwargs: Any) -> None:
         """Blocking send call (hence must be "awaited" rather than called).
 
@@ -260,7 +258,6 @@ class BusDriver(Driver):
             await RisingEdge(self.clock)
         self.bus <= transaction
 
-    @coroutine
     async def _wait_for_signal(self, signal):
         """This method will return when the specified signal
         has hit logic ``1``. The state will be in the
@@ -274,7 +271,6 @@ class BusDriver(Driver):
             await ReadOnly()
         await NextTimeStep()
 
-    @coroutine
     async def _wait_for_nsignal(self, signal):
         """This method will return when the specified signal
         has hit logic ``0``. The state will be in the
@@ -345,7 +341,6 @@ class ValidatedBusDriver(BusDriver):
         self._next_valids()
 
 
-@coroutine
 async def polled_socket_attachment(driver, sock):
     """Non-blocking socket attachment that queues any payload received from the
     socket to be queued for sending into the driver.

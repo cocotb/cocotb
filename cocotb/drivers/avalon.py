@@ -36,7 +36,6 @@ import random
 from typing import Iterable, Union, Optional
 
 import cocotb
-from cocotb.decorators import coroutine
 from cocotb.triggers import RisingEdge, FallingEdge, ReadOnly, NextTimeStep, Event
 from cocotb.drivers import BusDriver, ValidatedBusDriver
 from cocotb.utils import hexdump
@@ -115,7 +114,6 @@ class AvalonMaster(AvalonMM):
         self.busy = False
         self.busy_event.set()
 
-    @coroutine
     async def read(self, address: int, sync: bool = True) -> BinaryValue:
         """Issue a request to the bus and block until this comes back.
 
@@ -182,7 +180,6 @@ class AvalonMaster(AvalonMM):
         self._release_lock()
         return data
 
-    @coroutine
     async def write(self, address: int, value: int) -> None:
         """Issue a write to the given address with the specified
         value.

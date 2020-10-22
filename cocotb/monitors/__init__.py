@@ -37,7 +37,6 @@ from collections import deque
 
 import cocotb
 from cocotb.bus import Bus
-from cocotb.decorators import coroutine
 from cocotb.log import SimLog
 from cocotb.triggers import Event, Timer, First
 
@@ -55,7 +54,7 @@ class Monitor:
     Monitors are passive 'listening' objects that monitor pins going in or out of a DUT.
     This class should not be used
     directly, but should be sub-classed and the internal :any:`_monitor_recv` method
-    should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
+    should be overridden and made an ``async def``.  This :any:`_monitor_recv`
     method should capture some behavior of the pins, form a transaction, and
     pass this transaction to the internal :any:`_recv` method.  The :any:`_monitor_recv`
     method is added to the cocotb scheduler during the ``__init__`` phase, so it
@@ -112,7 +111,6 @@ class Monitor:
                        callback.__qualname__)
         self._callbacks.append(callback)
 
-    @coroutine
     async def wait_for_recv(self, timeout=None):
         """With *timeout*, :meth:`.wait` for transaction to arrive on monitor
         and return its data.

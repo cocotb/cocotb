@@ -104,7 +104,6 @@ class AXI4LiteMaster(BusDriver):
         self.bus.WVALID <= 0
         self.write_data_busy.release()
 
-    @cocotb.coroutine
     async def write(
         self, address: int, value: int, byte_enable: int = 0xf,
         address_latency: int = 0, data_latency: int = 0, sync: bool = True
@@ -159,7 +158,6 @@ class AXI4LiteMaster(BusDriver):
 
         return result
 
-    @cocotb.coroutine
     async def read(self, address: int, sync: bool = True) -> BinaryValue:
         """Read from an address.
 
