@@ -8,6 +8,11 @@
 
 #include <memory>
 
+#ifndef VM_TRACE_FST
+    //emulate new verilator behavior for legacy versions
+    #define VM_TRACE_FST 0
+#endif
+
 #if VM_TRACE
 #if VM_TRACE_FST
 #include <verilated_fst_c.h>
