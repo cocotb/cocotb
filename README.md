@@ -1,7 +1,7 @@
 **cocotb** is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 
 [![Documentation Status](https://readthedocs.org/projects/cocotb/badge/?version=latest)](https://docs.cocotb.org/en/latest/)
-[![Build Status](https://travis-ci.org/cocotb/cocotb.svg?branch=master)](https://travis-ci.org/cocotb/cocotb)
+[![Build Status](https://github.com/cocotb/cocotb/workflows/Regression%20Tests/badge.svg)](https://github.com/cocotb/cocotb/actions?query=workflow%3A%22Regression+Tests%22)
 [![PyPI](https://img.shields.io/pypi/dm/cocotb.svg?label=PyPI%20downloads)](https://pypi.org/project/cocotb/)
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/cocotb/cocotb)
 [![codecov](https://codecov.io/gh/cocotb/cocotb/branch/master/graph/badge.svg)](https://codecov.io/gh/cocotb/cocotb)
