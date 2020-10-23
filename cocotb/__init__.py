@@ -285,8 +285,8 @@ def _sim_event(level, message):
             cocotb.log.error(msg)
 
     elif level is SIM_FAIL:
-        if regression_manager is None:  # pragma: no cover
-            # Sim failure/end before regression manager started. Should never happen.
+        if regression_manager is None:
+            # Sim failure/end before regression manager started. Occurs when initialization fails.
             cocotb.log.error("Regression ended before Regression Manager started: " + message)
 
         elif not regression_manager.finished:
