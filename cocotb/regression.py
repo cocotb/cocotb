@@ -235,8 +235,7 @@ class RegressionManager:
         else:
             return cocotb.scheduler.add(test)
 
-    def tear_down(self) -> None:
-        # fail remaining tests
+    def _fail_remaining_tests(self) -> None:
         while True:
             test = self.next_test()
             if test is None:
@@ -247,6 +246,7 @@ class RegressionManager:
                 wall_time_s=0,
                 sim_time_ns=0)
 
+    def tear_down(self) -> None:
         # Write out final log messages
         self._log_test_summary()
         self._log_sim_summary()
@@ -300,11 +300,14 @@ class RegressionManager:
         # stop capturing log output
         cocotb.log.removeHandler(test.handler)
 
-        self._record_result(
+        sim_failed = self._record_result(
             test=self._test,
             outcome=self._test_task._outcome,
             wall_time_s=real_time,
             sim_time_ns=sim_time_ns)
+
+        if sim_failed:
+            self._fail_remaining_tests()
 
         self.execute()
 
@@ -335,7 +338,9 @@ class RegressionManager:
         if isinstance(test_init_outcome, cocotb.outcomes.Error):
             self.log.error("Failed to initialize test %s" % test.__qualname__,
                            exc_info=test_init_outcome.error)
-            self._record_result(test, test_init_outcome, 0, 0)
+            sim_failed = self._record_result(test, test_init_outcome, 0, 0)
+            if sim_failed:
+                self._fail_remaining_tests()
             return
 
         test = test_init_outcome.get()
@@ -415,7 +420,7 @@ class RegressionManager:
         outcome: Optional[Outcome],
         wall_time_s: float,
         sim_time_ns: float
-    ) -> None:
+    ) -> bool:
 
         ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
 
@@ -443,9 +448,7 @@ class RegressionManager:
             'real': wall_time_s,
             'ratio': ratio_time})
 
-        if sim_failed:
-            self.tear_down()
-            return
+        return sim_failed
 
     def execute(self) -> None:
         while True:
