@@ -181,11 +181,10 @@ Accessing the :attr:`~cocotb.handle.NonHierarchyObject.value` property of a hand
 Any unresolved bits are preserved and can be accessed using the :attr:`~cocotb.binary.BinaryValue.binstr` attribute,
 or a resolved integer value can be accessed using the :attr:`~cocotb.binary.BinaryValue.integer` attribute.
 
-.. code-block:: python3
+.. code-block:: pycon
 
     >>> # Read a value back from the DUT
     >>> count = dut.counter.value
-    >>>
     >>> print(count.binstr)
     1X1010
     >>> # Resolve the value to an integer (X or Z treated as 0)
@@ -197,7 +196,7 @@ or a resolved integer value can be accessed using the :attr:`~cocotb.binary.Bina
 
 We can also cast the signal handle directly to an integer:
 
-.. code-block:: python3
+.. code-block:: pycon
 
     >>> print(int(dut.counter))
     42
