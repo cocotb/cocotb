@@ -12,7 +12,8 @@ from common import _check_traceback
 
 @cocotb.test()
 async def test_await_list_stale(dut):
-    """ Test that a trigger awaited as part of a list can't cause a spurious wakeup """
+    async def test_unfired_first_triggers(dut):
+    """ Test that un-fired trigger(s) in First don't later cause a spurious wakeup """
     # gh-843
     events = [Event() for i in range(3)]
 
