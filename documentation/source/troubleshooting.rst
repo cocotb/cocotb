@@ -5,8 +5,8 @@ Troubleshooting
 Simulation Hangs
 ================
 
-Did you directly call a function that is decorated as a :class:`~cocotb.coroutine`,
-i.e. without using :keyword:`await` or :keyword:`yield`?
+Did you directly call an ``async def`` function without using :keyword:`await`;
+or a :class:`~cocotb.coroutine` without using :keyword:`yield`?
 
 
 Increasing Verbosity
@@ -155,5 +155,8 @@ If this isn't done, running simulations fails with errors like ``libpython3.7m.s
 Cocotb builds binary libraries during its installation process.
 These libraries are tailored to the installation of Python used when installing cocotb.
 When switching between Python installations, cocotb needs to be re-installed without using cached build artifacts, e.g. with ``pip install --no-cache-dir cocotb``.
+
+Setting ``LD_DEBUG=libs`` (example: ``LD_DEBUG=libs make SIM=verilator``)
+prints detailed output about which libraries are loaded from where.
 
 Further details are available in :issue:`1943`.
