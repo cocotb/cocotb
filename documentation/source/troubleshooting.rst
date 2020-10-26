@@ -156,7 +156,8 @@ Cocotb builds binary libraries during its installation process.
 These libraries are tailored to the installation of Python used when installing cocotb.
 When switching between Python installations, cocotb needs to be re-installed without using cached build artifacts, e.g. with ``pip install --no-cache-dir cocotb``.
 
-Setting ``LD_DEBUG=libs`` (example: ``LD_DEBUG=libs make SIM=verilator``)
-prints detailed output about which libraries are loaded from where.
+On Linux distributions, setting ``LD_DEBUG=libs`` (example: ``LD_DEBUG=libs make SIM=verilator``) prints detailed output about which libraries are loaded from where.
+On Mac OS, you can use ``DYLD_PRINT_LIBRARIES=1`` instead of ``LD_DEBUG=libs`` to get similar information.
+On Windows, use `Process Explorer <https://docs.microsoft.com/en-us/sysinternals/downloads/process-explorer>`_.
 
 Further details are available in :issue:`1943`.
