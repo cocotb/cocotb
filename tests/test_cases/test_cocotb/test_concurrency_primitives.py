@@ -11,15 +11,14 @@ from common import _check_traceback
 
 
 @cocotb.test()
-async def test_await_list_stale(dut):
-    async def test_unfired_first_triggers(dut):
+async def test_unfired_first_triggers(dut):
     """ Test that un-fired trigger(s) in First don't later cause a spurious wakeup """
     # gh-843
     events = [Event() for i in range(3)]
 
     waiters = [e.wait() for e in events]
 
-    async def wait_for_lists():
+    async def wait_for_firsts():
         ret_i = waiters.index((await First(waiters[0], waiters[1])))
         assert ret_i == 0, "Expected event 0 to fire, not {}".format(ret_i)
 
@@ -27,7 +26,7 @@ async def test_await_list_stale(dut):
         assert ret_i == 2, "Expected event 2 to fire, not {}".format(ret_i)
 
     async def wait_for_e1():
-        """ wait on the event that didn't wake `wait_for_lists` """
+        """ wait on the event that didn't wake `wait_for_firsts` """
         ret_i = waiters.index((await waiters[1]))
         assert ret_i == 1, "Expected event 1 to fire, not {}".format(ret_i)
 
@@ -39,7 +38,7 @@ async def test_await_list_stale(dut):
 
     fire_task = cocotb.fork(fire_events())
     e1_task = cocotb.fork(wait_for_e1())
-    await wait_for_lists()
+    await wait_for_firsts()
 
     # make sure the other tasks finish
     await fire_task.join()
