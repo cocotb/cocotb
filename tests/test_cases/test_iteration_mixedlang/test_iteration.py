@@ -75,7 +75,7 @@ async def recursive_discovery(dut):
         # vpiAlways = 31 and vpiStructVar = 2 do not show up in IUS/Xcelium
         pass_total = 975
     elif cocotb.SIM_NAME.lower().startswith(("modelsim")):
-        pass_total = 933
+        pass_total = 991
     else:
         pass_total = 1024
 
