@@ -1,7 +1,5 @@
 import os
 import cocotb
-from cocotb.result import TestFailure
-from cocotb.result import TestSuccess
 from cocotb.clock import Clock
 from cocotb.triggers import Timer
 from cocotb.drivers.amba import AXI4LiteMaster
@@ -44,11 +42,8 @@ async def write_address_0(dut):
     await Timer(CLK_PERIOD_NS * 10, units='ns')
 
     value = dut.dut.r_temp_0
-    if value != DATA:
-        # Fail
-        raise TestFailure("Register at address 0x%08X should have been: \
-                           0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
-
+    assert value == DATA, ("Register at address 0x%08X should have been "
+                           "0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
     dut.log.info("Write 0x%08X to address 0x%08X" % (int(value), ADDRESS))
 
 
@@ -81,11 +76,8 @@ async def read_address_1(dut):
     value = await axim.read(ADDRESS)
     await Timer(CLK_PERIOD_NS * 10, units='ns')
 
-    if value != DATA:
-        # Fail
-        raise TestFailure("Register at address 0x%08X should have been: \
-                           0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
-
+    assert value == DATA, ("Register at address 0x%08X should have been "
+                           "0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
     dut._log.info("Read: 0x%08X From Address: 0x%08X" % (int(value), ADDRESS))
 
 
@@ -120,24 +112,20 @@ async def write_and_read(dut):
     await Timer(CLK_PERIOD_NS * 10, units='ns')
 
     value = dut.dut.r_temp_0
-    if value != DATA:
-        # Fail
-        raise TestFailure("Register at address 0x%08X should have been: \
-                           0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
-
+    assert value == DATA, ("Register at address 0x%08X should have been "
+                           "0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
     dut._log.info("Write 0x%08X to address 0x%08X" % (int(value), ADDRESS))
 
 
 @cocotb.test()
 async def write_fail(dut):
-    """Attempt to write data to an address that doesn't exist. This test
-    should fail.
+    """Attempt to write data to an address that doesn't exist.
 
     Test ID: 3
 
     Expected Results:
-        The AXIML bus should throw an exception because the user attempted
-        to write to an invalid address.
+        The AXIML bus should throw an AXIProtocolError exception because
+        the user attempted to write to an invalid address.
     """
     # Reset
     dut.rst <= 1
@@ -156,21 +144,19 @@ async def write_fail(dut):
     except AXIProtocolError as e:
         print("Exception: %s" % str(e))
         dut._log.info("Bus successfully raised an error")
-        raise TestSuccess()
-    raise TestFailure("AXI bus should have raised an error when writing to \
-                        an invalid address")
+    else:
+        assert False, "AXI bus should have raised an error when writing to an invalid address"
 
 
 @cocotb.test()
 async def read_fail(dut):
-    """Attempt to read data from an address that doesn't exist. This test
-    should fail.
+    """Attempt to read data from an address that doesn't exist.
 
     Test ID: 4
 
     Expected Results:
-        The AXIML bus should throw an exception because the user attempted
-        to read from an invalid address.
+        The AXIML bus should throw an AXIProtocolError exception because
+        the user attempted to read from an invalid address.
     """
     # Reset
     dut.rst <= 1
@@ -189,6 +175,5 @@ async def read_fail(dut):
     except AXIProtocolError as e:
         print("Exception: %s" % str(e))
         dut._log.info("Bus Successfully Raised an Error")
-        raise TestSuccess()
-    raise TestFailure("AXI bus should have raised an error when reading from \
-                        an invalid address")
+    else:
+        assert False, "AXI bus should have raised an error when reading from an invalid address"

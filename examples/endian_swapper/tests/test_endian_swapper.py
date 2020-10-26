@@ -39,7 +39,6 @@ from cocotb.drivers.avalon import AvalonMaster
 from cocotb.monitors.avalon import AvalonSTPkts as AvalonSTMonitor
 from cocotb.regression import TestFactory
 from cocotb.scoreboard import Scoreboard
-from cocotb.result import TestFailure
 
 # Data generators
 with warnings.catch_warnings():
@@ -142,11 +141,8 @@ async def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
 
     pkt_count = await tb.csr.read(1)
 
-    if pkt_count.integer != tb.pkts_sent:
-        raise TestFailure("DUT recorded %d packets but tb counted %d" % (
-                          pkt_count.integer, tb.pkts_sent))
-    else:
-        dut._log.info("DUT correctly counted %d packets" % pkt_count.integer)
+    assert pkt_count.integer == tb.pkts_sent, "DUT recorded %d packets but tb counted %d" % (pkt_count.integer, tb.pkts_sent)
+    dut._log.info("DUT correctly counted %d packets" % pkt_count.integer)
 
     raise tb.scoreboard.result
 

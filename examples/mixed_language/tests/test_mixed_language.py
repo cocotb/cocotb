@@ -1,6 +1,5 @@
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestFailure
 
 
 @cocotb.test()
@@ -20,11 +19,8 @@ async def mixed_language_test(dut):
     vhdl.reset_n <= 1
     await Timer(100, units='ns')
 
-    if int(verilog.reset_n) == int(vhdl.reset_n):
-        dut._log.info("Both signals read as %d" % int(vhdl.reset_n))
-    else:
-        raise TestFailure("reset_n signals were different")
+    assert int(verilog.reset_n) == int(vhdl.reset_n), "reset_n signals were different"
 
     # Try accessing an object other than a port...
-    verilog_flush = str(verilog.flush_pipe)
-    vhdl_flush = str(vhdl.flush_pipe)
+    verilog_flush = str(verilog.flush_pipe.value)
+    vhdl_flush = str(vhdl.flush_pipe.value)
