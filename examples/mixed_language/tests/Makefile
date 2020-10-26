@@ -1,3 +1,6 @@
+# Override this variable to use a VHDL toplevel instead of SystemVerilog
+TOPLEVEL_LANG ?= verilog
+
 ifeq ($(SIM),)
 all:
 	@echo "Skipping example mixed_language since Icarus doesn't support this"
@@ -11,9 +14,6 @@ all:
 	@echo "Skipping example mixed_language since only Verilog toplevel implemented"
 clean::
 else
-
-# Override this variable to use a VHDL toplevel instead of SystemVerilog
-TOPLEVEL_LANG ?= verilog
 
 TOPLEVEL = endian_swapper_mixed
 
