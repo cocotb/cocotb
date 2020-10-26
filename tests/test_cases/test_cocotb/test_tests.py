@@ -26,8 +26,6 @@ async def test_tests_are_tests(dut):
     """
     Test that things annotated with cocotb.test are tests
     """
-    await Timer(1, "ns")
-
     assert isinstance(test_tests_are_tests, cocotb.test)
 
 

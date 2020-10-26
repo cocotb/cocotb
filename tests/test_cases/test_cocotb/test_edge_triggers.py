@@ -135,7 +135,6 @@ async def do_clock(dut, limit, period):
 async def do_edge_count(dut, signal):
     """Count the edges"""
     global edges_seen
-    count = 0
     while True:
         await RisingEdge(signal)
         edges_seen += 1
@@ -152,7 +151,6 @@ async def test_edge_count(dut):
     test = cocotb.fork(do_edge_count(dut, dut.clk))
 
     await Timer(clk_period * (edge_count + 1), "ns")
-
     assert edge_count == edges_seen, "Correct edge count failed - saw %d, wanted %d" % (edges_seen, edge_count)
 
 
@@ -192,17 +190,11 @@ async def test_clock_cycles(dut):
     """
     Test the ClockCycles Trigger
     """
-
     clk = dut.clk
-
     clk_gen = cocotb.fork(Clock(clk, 100, "ns").start())
-
     await RisingEdge(clk)
-
     dut._log.info("After one edge")
-
     await ClockCycles(clk, 10)
-
     dut._log.info("After 10 edges")
 
 
