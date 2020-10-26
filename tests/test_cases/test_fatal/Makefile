@@ -7,10 +7,15 @@ TOPLEVEL_LANG ?= verilog
 TOPLEVEL := fatal
 MODULE := test_fatal
 
+PWD=$(shell pwd)
+
 ifeq ($(TOPLEVEL_LANG),verilog)
-	VERILOG_SOURCES := fatal.sv
+    VERILOG_SOURCES := $(PWD)/fatal.sv
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-	VHDL_SOURCES := fatal.vhd
+    VHDL_SOURCES := $(PWD)/fatal.vhd
+    ifneq ($(filter $(SIM),ius xcelium),)
+        SIM_ARGS += -v93
+    endif
 endif
 
 # squash error code from simulator and ensure the cocotb test passed
