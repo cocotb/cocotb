@@ -21,7 +21,7 @@
 #endif
 #endif
 
-vluint64_t main_time = 0;       // Current simulation time
+static vluint64_t main_time = 0;       // Current simulation time
 
 double sc_time_stamp() {       // Called by $time in Verilog
     return main_time;           // converts to double, to match
@@ -32,6 +32,20 @@ extern "C" {
 void vlog_startup_routines_bootstrap(void);
 }
 
+static inline bool settle_value_callbacks() {
+    bool cbs_called, again;
+
+    // Call Value Change callbacks
+    // These can modify signal values so we loop
+    // until there are no more changes
+    cbs_called = again = VerilatedVpi::callValueCbs();
+    while (again) {
+        again = VerilatedVpi::callValueCbs();
+    }
+
+    return cbs_called;
+}
+
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
 #ifdef VERILATOR_SIM_DEBUG
@@ -39,6 +53,10 @@ int main(int argc, char** argv) {
 #endif
     std::unique_ptr<Vtop> top(new Vtop(""));
     Verilated::fatalOnVpiError(false); // otherwise it will fail on systemtf
+
+#ifdef VERILATOR_SIM_DEBUG
+    Verilated::internalsDump();
+#endif
 
     vlog_startup_routines_bootstrap();
     VerilatedVpi::callCbs(cbStartOfSimulation);
@@ -57,42 +75,65 @@ int main(int argc, char** argv) {
 #endif
 
     while (!Verilated::gotFinish()) {
-        bool again = true;
+        // Call registered timed callbacks (e.g. clock timer)
+        // These are called at the beginning of the time step
+        // before the iterative regions (IEEE 1800-2012 4.4.1)
+        VerilatedVpi::callTimedCbs();
+
+        // Call Value Change callbacks triggered by Timer callbacks
+        // These can modify signal values
+        settle_value_callbacks();
 
         // We must evaluate whole design until we process all 'events'
+        bool again = true;
         while (again) {
             // Evaluate design
             top->eval();
 
-            // Call Value Change callbacks as eval()
-            // can modify signals values
-            VerilatedVpi::callValueCbs();
+            // Call Value Change callbacks triggered by eval()
+            // These can modify signal values
+            again = settle_value_callbacks();
 
-            // Call registered Read-Write callbacks
-            again = VerilatedVpi::callCbs(cbReadWriteSynch);
+            // Call registered ReadWrite callbacks
+            again |= VerilatedVpi::callCbs(cbReadWriteSynch);
 
-            // Call Value Change callbacks as cbReadWriteSynch
-            // can modify signals values
-            VerilatedVpi::callValueCbs();
+            // Call Value Change callbacks triggered by ReadWrite callbacks
+            // These can modify signal values
+            again |= settle_value_callbacks();
         }
 
         // Call ReadOnly callbacks
         VerilatedVpi::callCbs(cbReadOnlySynch);
 
-        // Call registered timed callbacks (e.g. clock timer)
-        VerilatedVpi::callTimedCbs();
-
 #if VM_TRACE
         tfp->dump(main_time);
 #endif
-        main_time++;
+        // cocotb controls the clock inputs using cbAfterDelay so
+        // skip ahead to the next registered callback
+        vluint64_t next_time = VerilatedVpi::cbNextDeadline();
+
+        // If there are no more cbAfterDelay callbacks,
+        // the next deadline is max value, so end the simulation now
+        if (next_time == static_cast<vluint64_t>(~0ULL)) {
+            vl_finish(__FILE__, __LINE__, "");
+            break;
+        } else {
+            main_time = next_time;
+        }
 
         // Call registered NextSimTime
-        // It should be called in new slot before everything else
+        // It should be called in simulation cycle before everything else
+        // but not on first cycle
         VerilatedVpi::callCbs(cbNextSimTime);
+
+        // Call Value Change callbacks triggered by NextTimeStep callbacks
+        // These can modify signal values
+        settle_value_callbacks();
     }
 
     VerilatedVpi::callCbs(cbEndOfSimulation);
+
+    top->final();
 
 #if VM_TRACE
     tfp->close();

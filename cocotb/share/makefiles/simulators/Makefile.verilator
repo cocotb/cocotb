@@ -22,6 +22,13 @@ ifeq ($(shell which $(CMD) 2>/dev/null),)
 $(error Cannot find verilator.)
 endif
 
+VLT_MIN := 4.106
+VLT_VERSION := $(shell $(CMD) --version | cut -d " " -f 2)
+MIN_VERSION := $(shell printf "%s\n%s\n" "$(VLT_MIN)" "$(VLT_VERSION)" | sort -g | head -1)
+ifneq ($(MIN_VERSION),$(VLT_MIN))
+  $(error cocotb requires Verilator $(VLT_MIN) or later, but using $(VLT_VERSION))
+endif
+
 ifeq ($(VERILATOR_SIM_DEBUG), 1)
   COMPILE_ARGS += --debug
   PLUSARGS += +verilator+debug
