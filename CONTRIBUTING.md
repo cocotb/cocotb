@@ -16,14 +16,14 @@ We recommend if you are using a Linux distribution to use your system package ma
 Likewise, doxygen can be installed using the homebrew package manager on Mac OS.
 Windows contributors should download a binary distribution installer from the main website.
 
-`tox` is a Python project and can be installed with `pip`.
+`tox` is a Python project and can be installed with `pip`:
 
 ```command
 pip install tox
 ```
 
 Finally, you should [fork and clone](https://guides.github.com/activities/forking/) the cocotb repo.
-This will allows you to make changes to cocotb source code, and run regressions and build documentation locally.
+This will allow you to make changes to the cocotb source code, and run regressions and build documentation locally.
 
 Now you are ready to contribute!
 
@@ -40,13 +40,13 @@ Valid test environments are formatted as `{your python version}-{your OS}`.
 Valid python version values are `py35`, `py36`, `py37`, `py38`, or `py39`;
 and valid OS values are `linux`, `macos`, or `windows`.
 For example, a valid test environment is `py38-linux`.
-You can see the list of valid test environments by running the below command.
+You can see the list of valid test environments by running the below command:
 
 ```command
 tox -l
 ```
 
-Once you know the test environment you wish to use, call `tox` .
+Once you know the test environment you wish to use, call `tox`.
 
 ```command
 tox -e py38-linux
@@ -57,10 +57,10 @@ Otherwise, tox will print a green `:)`.
 
 ### Selecting a Language and Simulator for Regression
 
-`tox` supports the usage of the environment variables [`SIM`](https://docs.cocotb.org/en/stable/building.html#var-SIM) and [`TOPLEVEL_LANG`](https://docs.cocotb.org/en/stable/building.html#var-TOPLEVEL_LANG) to select a simulator and language to run the regression.
+`tox` supports the usage of the environment variables [`SIM`](https://docs.cocotb.org/en/latest/building.html#var-SIM) and [`TOPLEVEL_LANG`](https://docs.cocotb.org/en/latest/building.html#var-TOPLEVEL_LANG) to select a simulator and language to run the regression.
 By default the tests will attempt to run with the Icarus Verilog simulator.
 
-For example, if you wanted to run tests with GHDL on Linux with Python 3.8, you would issue the following command.
+For example, if you wanted to run tests with GHDL on Linux with Python 3.8, you would issue the following command:
 
 ```command
 SIM=ghdl TOPLEVEL_LANG=vhdl tox -e py38-linux
@@ -71,20 +71,20 @@ SIM=ghdl TOPLEVEL_LANG=vhdl tox -e py38-linux
 Each test under `/tests/test_cases/*/` and `/examples/*/tests/` can be run individually.
 This is particularly useful if you want to run a particular test that fails the regression.
 
-First you must install cocotb from source by navigating to the project root directory and issuing the following.
+First you must install cocotb from source by navigating to the project root directory and issuing the following command:
 
 ```command
 python -m pip install .
 ```
 
-On Windows, you must instead install cocotb from source like so.
+On Windows, you must instead install cocotb from source like so:
 
 ```command
 python -m pip install --global-option build_ext --global-option --compiler=mingw32 .
 ```
 
 Once that has been done, you can navigate to the directory containing the test you wish to run.
-Then you may issue an [appropriate]https://docs.cocotb.org/en/stable/building.html#makefile-based-test-scripts) `make` command.
+Then you may issue an [appropriate]https://docs.cocotb.org/en/latest/building.html#makefile-based-test-scripts) `make` command:
 
 ```command
 make SIM=icarus
@@ -100,7 +100,7 @@ The last message in the output will contain a URL to the documentation you just 
 Simply copy and paste the link into your browser to view it.
 The documentation will be built in the same location on your hard drive on every run, so you only have to refresh the page to see new changes.
 
-To build the documentation locally on Linux or Mac, issue the following command.
+To build the documentation locally on Linux or Mac, issue the following command:
 
 ```command
 tox -e docs
