@@ -29,6 +29,7 @@
 import array
 import collections.abc
 import enum
+import itertools
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import cocotb
@@ -197,36 +198,60 @@ class AXI4Master(BusDriver):
         def mask_and_shift(value: int, block_size: int, block_num: int) -> int:
             return (value & (2**block_size - 1)) << (block_num * block_size)
 
+        # [0x33221100, 0x77665544] --> [0x221100XX, 0x66554433]
+        def unalign_data(
+            data: Sequence[int], size_bits: int, shift: int
+        ) -> List[int]:
+            padded_data = (0,) + tuple(value for value in data)
+            low_mask = 2**(size_bits - shift) - 1
+            high_mask = (2**shift - 1) << (size_bits - shift)
+
+            return [(padded_data[i] & high_mask) >> (size_bits - shift) |
+                    (padded_data[i + 1] & low_mask) << shift
+                    for i in range(len(data))]
+
+        strobes = []
+        byte_enable_iterator = iter(byte_enable)
+        try:
+            for i in range(len(data)):
+                current_byte_enable = next(byte_enable_iterator)
+                strobes.append(2**size - 1 if current_byte_enable is None
+                               else current_byte_enable)
+        except StopIteration:
+            # Fill the remaining strobes with the last one if we have reached
+            # the end of the iterator
+            strobes += [strobes[-1]] * (len(data) - i)
+
+        # Unalign the words and strobes (if unaligned and not FIXED)
+        if address % size != 0:
+            shift = (address % size) * 8
+            if burst is AXIBurst.FIXED:
+                data = [(word << shift) & (2**(size * 8) - 1) for word in data]
+                strobes = \
+                    [(strb << shift // 8) & (2**size - 1) for strb in strobes]
+            else:
+                data = unalign_data(data, size * 8, shift)
+                strobes = unalign_data(strobes, size, address % size)
+
         async with self.write_data_busy:
             if sync:
                 await RisingEdge(self.clock)
 
             wdata_bytes = len(self.bus.WDATA) // 8
-            byte_enable_iterator = iter(byte_enable)
             narrow_block = (address % wdata_bytes) // size
 
-            for i, word in enumerate(data):
+            for beat_num, (word, strobe) in enumerate(zip(data, strobes)):
                 await ClockCycles(self.clock, delay)
 
                 self.bus.WVALID <= 1
                 self.bus.WDATA <= mask_and_shift(word, size * 8, narrow_block)
-
-                try:
-                    current_byte_enable = next(byte_enable_iterator)
-                    strobe = 2**self.bus.WSTRB.value.n_bits - 1 \
-                        if current_byte_enable is None else current_byte_enable
-                except StopIteration:
-                    # Do not update strobe if we have reached the end of the
-                    # iterator
-                    pass
-
                 self.bus.WSTRB <= mask_and_shift(strobe, size, narrow_block)
 
                 if burst is not AXIBurst.FIXED:
                     narrow_block = (narrow_block + 1) % (wdata_bytes // size)
 
                 if hasattr(self.bus, "WLAST"):
-                    if i == len(data) - 1:
+                    if beat_num == len(data) - 1:
                         self.bus.WLAST <= 1
                     else:
                         self.bus.WLAST <= 0
@@ -236,7 +261,7 @@ class AXI4Master(BusDriver):
                     if self.bus.WREADY.value:
                         break
 
-                if i == len(data) - 1:
+                if beat_num == len(data) - 1:
                     self.bus.WVALID <= 0
 
     @cocotb.coroutine
@@ -247,6 +272,11 @@ class AXI4Master(BusDriver):
         address_latency: int = 0, data_latency: int = 0, sync: bool = True
     ) -> None:
         """Write a value to an address.
+
+        With unaligned writes (when ``address`` is not a multiple of ``size``),
+        only the low ``size - address % size`` Bytes are written for:
+         * the last element of ``value`` for INCR or WRAP bursts, or
+         * every element of ``value`` for FIXED bursts.
 
         Args:
             address: The address to write to.
@@ -322,6 +352,13 @@ class AXI4Master(BusDriver):
     ) -> Union[List[BinaryValue], List[Tuple[BinaryValue, AXIxRESP]]]:
         """Read from an address.
 
+        With unaligned reads (when ``address`` is not a multiple of ``size``)
+        with INCR or WRAP bursts, the last element of the returned read data
+        will be only the low-order ``size - address % size`` Bytes of the last
+        word.
+        With unaligned reads with FIXED bursts, every element of the returned
+        read data will be only the low-order ``size - address % size`` Bytes.
+
         Args:
             address: The address to read from.
             length: Number of words to transfer. Defaults to 1.
@@ -352,6 +389,17 @@ class AXI4Master(BusDriver):
             end = (bytes_num + byte_shift) * 8
             return binvalue[len(binvalue) - end:len(binvalue) - start - 1]
 
+        # [0x221100XX, 0x66554433] --> [0x33221100, 0x665544]
+        def realign_data(
+            data: Sequence[BinaryValue], size_bits: int, shift: int
+        ) -> List[BinaryValue]:
+            binstr_join = "".join([word.binstr[::-1] for word in data])
+            binstr_join = binstr_join[shift:]
+            data_binstr = [binstr_join[i * size_bits:(i + 1) * size_bits][::-1]
+                           for i in range(len(data))]
+            return [BinaryValue(value=binstr, n_bits=len(binstr))
+                    for binstr in data_binstr]
+
         if size is None:
             size = len(self.bus.RDATA) // 8
         else:
@@ -361,7 +409,7 @@ class AXI4Master(BusDriver):
         AXI4Master._check_4kB_boundary_crossing(address, burst, size, length)
 
         rdata_bytes = len(self.bus.RDATA) // 8
-        byte_offset = address % rdata_bytes
+        byte_offset = (address % rdata_bytes) // size * size
 
         async with self.read_address_busy:
             if sync:
@@ -392,21 +440,15 @@ class AXI4Master(BusDriver):
             data = []
             rresp = []
 
-            while True:
+            for beat_num in itertools.count():
                 while True:
                     await ReadOnly()
                     if self.bus.RVALID.value and self.bus.RREADY.value:
                         # Shift and mask to correctly handle narrow bursts
-                        new_val = shift_and_mask(self.bus.RDATA.value,
-                                                 size, byte_offset)
+                        beat_value = shift_and_mask(self.bus.RDATA.value,
+                                                    size, byte_offset)
 
-                        # Push the value into a new BinaryValue, identical to
-                        # the previous one but with a lower number of bits
-                        data.append(BinaryValue(
-                            value=new_val.binstr, n_bits=size * 8,
-                            bigEndian=new_val.big_endian,
-                            binaryRepresentation=new_val.binaryRepresentation))
-
+                        data.append(beat_value)
                         rresp.append(AXIxRESP(self.bus.RRESP.value.integer))
 
                         if burst is not AXIBurst.FIXED:
@@ -428,6 +470,14 @@ class AXI4Master(BusDriver):
                     "words, received {})"
                     .format("more" if len(data) > length else "less",
                             length, len(data)))
+
+            # Re-align the words
+            if address % size != 0:
+                shift = (address % size) * 8
+                if burst is AXIBurst.FIXED:
+                    data = [word[0:size * 8 - shift - 1] for word in data]
+                else:
+                    data = realign_data(data, size * 8, shift)
 
             if return_rresp:
                 return list(zip(data, rresp))

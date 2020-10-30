@@ -5,7 +5,7 @@
 
 """Test to demonstrate functionality of the AXI4 master interface"""
 
-from random import randint, randrange
+from random import randint, randrange, getrandbits
 
 import cocotb
 from cocotb.clock import Clock
@@ -36,6 +36,17 @@ def add_wstrb_mask(data_width, previous_value, write_value, wstrb):
         result |= (source & (0xff << (i * 8)))
 
     return result
+
+
+def compare_read_values(expected_values, read_values, burst, burst_length,
+                        address):
+    for i, (expected, read) in enumerate(zip(expected_values, read_values)):
+        if expected != read:
+            raise TestFailure(
+                "Read {:#x} at beat {}/{} of {} burst with starting address "
+                "{:#x}, but was expecting {:#x})"
+                .format(read.integer, i + 1, burst_length, burst.name, address,
+                        expected))
 
 
 async def setup_dut(dut):
@@ -163,13 +174,8 @@ async def test_fixed_wrap_burst(dut, size, burst_length=16):
         read_values = await axim.read(address, burst_length, burst=burst,
                                       size=size)
 
-        for i in range(len(read_values)):
-            if expected_values[i] != read_values[i]:
-                raise TestFailure(
-                    "Read {:#x} at beat {}/{} of {} burst with starting "
-                    "address {:#x}, but was expecting {:#x})"
-                    .format(read_values[i].integer, i + 1, burst_length,
-                            burst.name, address, expected_values[i]))
+        compare_read_values(expected_values, read_values, burst, burst_length,
+                            address)
 
 
 @cocotb.test()
@@ -193,13 +199,85 @@ async def test_narrow_burst(dut):
     expected_values = [write_values[i + 1] << 16 | write_values[i]
                        for i in range(0, burst_length // 2, 2)]
 
-    for i, (expected, read) in enumerate(zip(expected_values, read_values)):
-        if expected != read:
-            raise TestFailure(
-                "Read {:#x} at beat {}/{} with starting address {:#x}, but "
-                "was expecting {:#x})"
-                .format(read.integer, i + 1, burst_length // 2, address,
-                        expected))
+    compare_read_values(expected_values, read_values, AXIBurst.INCR,
+                        burst_length // 2, address)
+
+
+async def test_unaligned(dut, size, burst):
+    """Test that unaligned read and writes are performed correctly"""
+
+    def get_random_words(length, size, num_bits):
+        r_bytes = getrandbits(num_bits).to_bytes(size * length, 'little')
+        r_words = [r_bytes[i * size:(i + 1) * size] for i in range(length)]
+        r_ints = [int.from_bytes(w, 'little') for w in r_words]
+        return r_bytes, r_ints
+
+    axim = AXI4Master(dut, AXI_PREFIX, dut.clk)
+    _, data_width, ram_start, ram_stop = get_parameters(dut)
+    size = size if size else data_width
+
+    await setup_dut(dut)
+
+    burst_length = randrange(2, 16 if burst is AXIBurst.FIXED else 256)
+
+    if burst is AXIBurst.FIXED:
+        address = randrange(ram_start, ram_stop, size)
+    else:
+        base = randrange(ram_start, ram_stop, 4096)
+        offset = randrange(0, 4096 - (burst_length - 1) * size, size)
+        address = base + offset
+
+    unaligned_addr = address + randrange(1, size)
+    shift = unaligned_addr % size
+
+    # Write aligned, read unaligned
+    write_bytes, write_values = \
+        get_random_words(burst_length, size, size * burst_length * 8)
+
+    await axim.write(address, write_values, burst=burst, size=size)
+    read_values = await axim.read(unaligned_addr, burst_length, burst=burst,
+                                  size=size)
+
+    if burst is AXIBurst.FIXED:
+        mask = 2**((size - shift) * 8) - 1
+        expected_values = \
+            [(write_values[-1] >> (shift * 8)) & mask] * burst_length
+    else:
+        expected_bytes = write_bytes[shift:]
+        expected_words = [expected_bytes[i * size:(i + 1) * size]
+                          for i in range(burst_length)]
+        expected_values = [int.from_bytes(w, 'little') for w in expected_words]
+
+    compare_read_values(expected_values, read_values, burst, burst_length,
+                        unaligned_addr)
+
+    # Write unaligned, read aligned
+    write_bytes, write_values = \
+        get_random_words(burst_length, size,
+                         (size * burst_length - shift) * 8)
+
+    first_word = randrange(0, 2**(size * 8))
+    await axim.write(address, first_word, burst=burst, size=size)
+    await axim.write(unaligned_addr, write_values, burst=burst, size=size)
+    read_values = await axim.read(address, burst_length, burst=burst,
+                                  size=size)
+
+    mask_low = 2**(shift * 8) - 1
+    mask_high = (2**((size - shift) * 8) - 1) << (shift * 8)
+
+    if burst is AXIBurst.FIXED:
+        last_val = \
+            first_word & mask_low | (write_values[-1] << shift * 8) & mask_high
+        expected_values = [last_val] * burst_length
+    else:
+        first_bytes = (first_word & mask_low).to_bytes(shift, 'little')
+        expected_bytes = first_bytes + write_bytes
+        expected_words = [expected_bytes[i * size:(i + 1) * size]
+                          for i in range(burst_length - 1)]
+        expected_values = [int.from_bytes(w, 'little') for w in expected_words]
+
+    compare_read_values(expected_values, read_values, burst, burst_length,
+                        unaligned_addr)
 
 
 async def test_unmapped(dut, driver):
@@ -439,6 +517,11 @@ incr_burst_size.generate_tests(postfix="_size")
 fixed_wrap_burst = TestFactory(test_fixed_wrap_burst)
 fixed_wrap_burst.add_option('size', (None, 1, 2))
 fixed_wrap_burst.generate_tests()
+
+unaligned = TestFactory(test_unaligned)
+unaligned.add_option('size', (None, 2))
+unaligned.add_option('burst', (AXIBurst.FIXED, AXIBurst.INCR))
+unaligned.generate_tests()
 
 unmapped = TestFactory(test_unmapped)
 unmapped.add_option('driver', [AXI4Master, AXI4LiteMaster])
