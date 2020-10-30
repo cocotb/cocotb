@@ -16,13 +16,99 @@ We recommend if you are using a Linux distribution to use your system package ma
 Likewise, doxygen can be installed using the homebrew package manager on Mac OS.
 Windows contributors should download a binary distribution installer from the main website.
 
-tox is a Python project and can be installed with `pip`, like so.
+`tox` is a Python project and can be installed with `pip`.
 
 ```command
 pip install tox
 ```
 
+Finally, you must download the cocotb source from Github if you have not already done so.
+
+```command
+git clone https://github.com/cocotb/cocotb
+```
+
 Now you are ready to contribute!
+
+
+## Running Tests Locally
+
+First, [set up your development environment](#setting-up-a-development-environment).
+
+Our tests are managed by `tox`, which runs both `pytest` tests and our system of makefiles.
+The regression does not end on the first failure, but continues until all tests in the `test` and `example` directories have been run.
+
+To run the tests locally with `tox`, you will need to select an appropriate test environment.
+Valid test environments are formatted as `{your python version}-{your OS}`.
+Valid python version values are `py35`, `py36`, `py37`, `py38`, or `py39`;
+and valid OS values are `linux`, `macos`, or `windows`.
+For example, a valid test environment is `py38-linux`.
+You can see the list of valid test environments by running the below command.
+
+```command
+tox -l
+```
+
+Once you know the test environment you wish to use, call `tox` .
+
+```command
+tox -e py38-linux
+```
+
+At the end of the regression, if there were any test failures, the tests that failed will be printed.
+Otherwise, tox will print a green `:)`.
+
+### Selecting a Regression Language and Simulator
+
+`tox` supports the usage of the environment variables `SIM` and `TOPLEVEL_LANG` to select a simulator and language to run the regression.
+By default the tests will attempt to run with the Icarus Verilog simulator.
+For example, if you wanted to run tests with GHDL on Linux with Python 3.8, you would issue the following command.
+
+```command
+SIM=ghdl TOPLEVEL_LANG=vhdl tox -e py38-linux
+```
+
+### Running Individual Tests Locally
+
+Each test under `/tests/test_cases/*/` and `/examples/tests/` can be run individually.
+This is particularly useful if you want to run a particular test that fails the regression.
+
+First you must install cocotb from source by navigating to the project root and issuing the following.
+
+```command
+python -m pip install .
+```
+
+On Windows, you must install cocotb from source like so.
+
+```command
+python -m pip install --global-option build_ext --global-option --compiler=mingw32 .
+```
+
+Once that has been done, you can navigate to the directory containing the test you wish to run.
+Then you may issue an [appropriate](https://docs.cocotb.org/en/stable/quickstart.html#running-your-first-example) `make` command.
+
+```command
+make SIM=icarus
+```
+
+
+## Building Documentation Locally
+
+First, [set up your development environment](#setting-up-a-development-environment).
+
+Documentation is built locally using `tox`.
+The last message in the output will contain a URL to the documentation you just built.
+Simply copy and paste the link into your browser to view it.
+The documentation will be built in the same location on your hard drive on every run, so you only have to refresh the page to see new changes.
+
+To build the documentation locally on Linux or Mac, issue the following command.
+
+```command
+tox -e docs
+```
+
+Building the documentation is not currently supported on Windows.
 
 
 ## Architecture and Scope of Cocotb
@@ -100,13 +186,6 @@ All changes which should go into the main codebase of cocotb must follow this se
   # This file is public domain, it can be freely copied without restrictions.
   # SPDX-License-Identifier: CC0-1.0
   ```
-
-## Running tests locally
-
-Our tests are managed by `tox`, which runs both `pytest` and our system of makefiles.
-This exercises the contents of both the `tests` and `examples` directories.
-`tox` supports the usage of the environment variables `SIM` and `TOPLEVEL_LANG` to direct how to run the regression.
-
 
 ## Managing of Issues and Pull Requests
 
