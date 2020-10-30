@@ -22,11 +22,8 @@ Windows contributors should download a binary distribution installer from the ma
 pip install tox
 ```
 
-Finally, you must download the cocotb source from Github if you have not already done so.
-
-```command
-git clone https://github.com/cocotb/cocotb
-```
+Finally, you should [fork and clone](https://guides.github.com/activities/forking/) the cocotb repo.
+This will allows you to make changes to cocotb source code, and run regressions and build documentation locally.
 
 Now you are ready to contribute!
 
@@ -36,7 +33,7 @@ Now you are ready to contribute!
 First, [set up your development environment](#setting-up-a-development-environment).
 
 Our tests are managed by `tox`, which runs both `pytest` tests and our system of makefiles.
-The regression does not end on the first failure, but continues until all tests in the `test` and `example` directories have been run.
+The regression does not end on the first failure, but continues until all tests in the `/tests` and `/examples` directories have been run.
 
 To run the tests locally with `tox`, you will need to select an appropriate test environment.
 Valid test environments are formatted as `{your python version}-{your OS}`.
@@ -58,10 +55,11 @@ tox -e py38-linux
 At the end of the regression, if there were any test failures, the tests that failed will be printed.
 Otherwise, tox will print a green `:)`.
 
-### Selecting a Regression Language and Simulator
+### Selecting a Language and Simulator for Regression
 
-`tox` supports the usage of the environment variables `SIM` and `TOPLEVEL_LANG` to select a simulator and language to run the regression.
+`tox` supports the usage of the environment variables [`SIM`](https://docs.cocotb.org/en/stable/building.html#var-SIM) and [`TOPLEVEL_LANG`](https://docs.cocotb.org/en/stable/building.html#var-TOPLEVEL_LANG) to select a simulator and language to run the regression.
 By default the tests will attempt to run with the Icarus Verilog simulator.
+
 For example, if you wanted to run tests with GHDL on Linux with Python 3.8, you would issue the following command.
 
 ```command
@@ -70,23 +68,23 @@ SIM=ghdl TOPLEVEL_LANG=vhdl tox -e py38-linux
 
 ### Running Individual Tests Locally
 
-Each test under `/tests/test_cases/*/` and `/examples/tests/` can be run individually.
+Each test under `/tests/test_cases/*/` and `/examples/*/tests/` can be run individually.
 This is particularly useful if you want to run a particular test that fails the regression.
 
-First you must install cocotb from source by navigating to the project root and issuing the following.
+First you must install cocotb from source by navigating to the project root directory and issuing the following.
 
 ```command
 python -m pip install .
 ```
 
-On Windows, you must install cocotb from source like so.
+On Windows, you must instead install cocotb from source like so.
 
 ```command
 python -m pip install --global-option build_ext --global-option --compiler=mingw32 .
 ```
 
 Once that has been done, you can navigate to the directory containing the test you wish to run.
-Then you may issue an [appropriate](https://docs.cocotb.org/en/stable/quickstart.html#running-your-first-example) `make` command.
+Then you may issue an [appropriate]https://docs.cocotb.org/en/stable/building.html#makefile-based-test-scripts) `make` command.
 
 ```command
 make SIM=icarus
