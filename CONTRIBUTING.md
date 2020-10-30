@@ -1,13 +1,115 @@
-Cocotb Contribution Guidelines
-==============================
+# Cocotb Contribution Guidelines
 
 Welcome to the cocotb development!
 We are an inclusive community with the common goal of improving the cocotb, a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.
 This guide explains how to contribute to cocotb, and documents the processes we agreed on to manage the project.
 All processes in this document are designed to streamline the development effort, to avoid bottlenecks, and to ultimately give a pleasant experience to all involved.
 
-Architecture and Scope of Cocotb
---------------------------------
+
+## Setting Up a Development Environment
+
+Assuming you have used cocotb prior to reading this guide, you will already have the cocotb [installation prerequisites](https://docs.cocotb.org/en/latest/install.html) and standard development tools (editor, shell, git, etc.) installed.
+
+Additionally, you will need [doxygen](https://www.doxygen.nl/index.html), for building documentation, and [tox](https://pypi.org/project/tox/), for building documentation and running regression tests.
+
+We recommend if you are using a Linux distribution to use your system package manager to install doxygen.
+Likewise, doxygen can be installed using the homebrew package manager on Mac OS.
+Windows contributors should download a binary distribution installer from the main website.
+
+`tox` is a Python project and can be installed with `pip`:
+
+```command
+pip install tox
+```
+
+Finally, you should [fork and clone](https://guides.github.com/activities/forking/) the cocotb repo.
+This will allow you to make changes to the cocotb source code, and run regressions and build documentation locally.
+
+Now you are ready to contribute!
+
+
+## Running Tests Locally
+
+First, [set up your development environment](#setting-up-a-development-environment).
+
+Our tests are managed by `tox`, which runs both `pytest` tests and our system of makefiles.
+The regression does not end on the first failure, but continues until all tests in the `/tests` and `/examples` directories have been run.
+
+To run the tests locally with `tox`, you will need to select an appropriate test environment.
+Valid test environments are formatted as `{your python version}-{your OS}`.
+Valid python version values are `py35`, `py36`, `py37`, `py38`, or `py39`;
+and valid OS values are `linux`, `macos`, or `windows`.
+For example, a valid test environment is `py38-linux`.
+You can see the list of valid test environments by running the below command:
+
+```command
+tox -l
+```
+
+Once you know the test environment you wish to use, call `tox`.
+
+```command
+tox -e py38-linux
+```
+
+At the end of the regression, if there were any test failures, the tests that failed will be printed.
+Otherwise, tox will print a green `:)`.
+
+### Selecting a Language and Simulator for Regression
+
+`tox` supports the usage of the environment variables [`SIM`](https://docs.cocotb.org/en/latest/building.html#var-SIM) and [`TOPLEVEL_LANG`](https://docs.cocotb.org/en/latest/building.html#var-TOPLEVEL_LANG) to select a simulator and language to run the regression.
+By default the tests will attempt to run with the Icarus Verilog simulator.
+
+For example, if you wanted to run tests with GHDL on Linux with Python 3.8, you would issue the following command:
+
+```command
+SIM=ghdl TOPLEVEL_LANG=vhdl tox -e py38-linux
+```
+
+### Running Individual Tests Locally
+
+Each test under `/tests/test_cases/*/` and `/examples/*/tests/` can be run individually.
+This is particularly useful if you want to run a particular test that fails the regression.
+
+First you must install cocotb from source by navigating to the project root directory and issuing the following command:
+
+```command
+python -m pip install .
+```
+
+On Windows, you must instead install cocotb from source like so:
+
+```command
+python -m pip install --global-option build_ext --global-option --compiler=mingw32 .
+```
+
+Once that has been done, you can navigate to the directory containing the test you wish to run.
+Then you may issue an [appropriate]https://docs.cocotb.org/en/latest/building.html#makefile-based-test-scripts) `make` command:
+
+```command
+make SIM=icarus
+```
+
+
+## Building Documentation Locally
+
+First, [set up your development environment](#setting-up-a-development-environment).
+
+Documentation is built locally using `tox`.
+The last message in the output will contain a URL to the documentation you just built.
+Simply copy and paste the link into your browser to view it.
+The documentation will be built in the same location on your hard drive on every run, so you only have to refresh the page to see new changes.
+
+To build the documentation locally on Linux or Mac, issue the following command:
+
+```command
+tox -e docs
+```
+
+Building the documentation is not currently supported on Windows.
+
+
+## Architecture and Scope of Cocotb
 
 Cocotb has seen adoption in a wide variety of scenarios with sometimes conflicting requirements.
 To foster experimentation and to decentralize the development process the architecture of cocotb is highly modular.
@@ -24,8 +126,7 @@ However, none of these rules are set in stone.
 They can and should be challenged at times to ensure the project stays relevant to the majority of its users.
 
 
-How to Get Changes Merged
--------------------------
+## How to Get Changes Merged
 
 Have you fixed a bug in cocotb, or want to add new functionality to it?
 Cocotb follows the typical [GitHub flow](https://guides.github.com/introduction/flow/) and makes use of pull requests and reviews.
@@ -49,8 +150,7 @@ Follow the steps below to get your changes merged, i.e. integrated into the main
 8. Once your code has at least one positive review from a maintainer and no maintainer strongly objects it your code is ready to be merged into the `master` branch.
 
 
-Patch Requirements
-------------------
+## Patch Requirements
 
 All changes which should go into the main codebase of cocotb must follow this set of requirements.
 
@@ -85,16 +185,7 @@ All changes which should go into the main codebase of cocotb must follow this se
   # SPDX-License-Identifier: CC0-1.0
   ```
 
-Running tests locally
----------------------
-
-Our tests are managed by `tox`, which runs both `pytest` and our system of makefiles.
-This exercises the contents of both the `tests` and `examples` directories.
-`tox` supports the usage of the environment variables `SIM` and `TOPLEVEL_LANG` to direct how to run the regression.
-
-
-Managing of Issues and Pull Requests
-------------------------------------
+## Managing of Issues and Pull Requests
 
 The cocotb project makes use of GitHub labels attached to issues and pull requests to structure the development process.
 Each issue and pull request can have multiple labels assigned.
@@ -160,15 +251,13 @@ cocotb explicitly uses no priority labels, as experience indicates that they pro
 
 Issues and pull requests which are invalid, or where feedback is lacking for four weeks, should be closed.
 
-Cocotb Releases
----------------
+## Cocotb Releases
 
 cocotb aims to keep the `master` branch always in a releasable state.
 At least four times a year an official release should be created.
 It is the job of the maintainers to find a suitable time for a release, to communicate it to the community, and to coordinate it.
 
-Maintainers
------------
+## Maintainers
 
 Cocotb uses a shared maintainer model.
 Most maintainers are experts in part of the cocotb codebase, and are primarily responsible for reviews in this area.
@@ -185,8 +274,7 @@ Founders
 - Chris Higgs (@chiggs)
 - Stuart Hodgson (@stuarthodgson)
 
-Code of Conduct
----------------
+## Code of Conduct
 
 The cocotb development community aims to be welcoming to everyone.
 The [FOSSi Foundation Code of Conduct](https://www.fossi-foundation.org/code-of-conduct) applies.
