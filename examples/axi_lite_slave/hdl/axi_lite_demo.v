@@ -69,7 +69,7 @@ module axi_lite_demo #(
 
 //Address Map
 localparam  ADDR_0      = 0;
-localparam  ADDR_1      = 1;
+localparam  ADDR_1      = 4;
 
 localparam  MAX_ADDR = ADDR_1;
 
