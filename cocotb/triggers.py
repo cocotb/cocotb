@@ -158,16 +158,16 @@ class GPITrigger(Trigger):
 class Timer(GPITrigger):
     """Fires after the specified simulation time period has elapsed."""
 
-    def __init__(self, time_ps, units=None):
+    def __init__(self, time_ps, units="step"):
         """
         Args:
            time_ps (numbers.Real or decimal.Decimal): The time value.
                Note that despite the name this is not actually in picoseconds
                but depends on the *units* argument.
-           units (str or None, optional): One of
-               ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
-               When no *units* is given (``None``) the timestep is determined by
-               the simulator.
+           units (str, optional): One of
+               ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
+               When *units* is ``'step'``,
+               the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
 
         Examples:
 
@@ -202,6 +202,12 @@ class Timer(GPITrigger):
         .. versionchanged:: 1.5
             Raise an exception when Timer uses a negative value as it is undefined behavior.
             Warn for 0 as this will cause erratic behavior in some simulators as well.
+
+        .. versionchanged:: 1.5
+            Support ``'step'`` as the the *units* argument to mean "simulator time step".
+
+        .. deprecation:: 1.5
+            Using None as the the *units* argument is deprecated, use ``'step'`` instead.
         """
         GPITrigger.__init__(self)
         if time_ps <= 0:
@@ -211,6 +217,11 @@ class Timer(GPITrigger):
                               stacklevel=2)
             else:
                 raise TriggerException("Timer value time_ps must not be negative")
+        if units is None:
+            warnings.warn(
+                'Using units=None is deprecated, use units="step" instead.',
+                DeprecationWarning, stacklevel=2)
+            units="step"  # don't propagate deprecated value
         self.sim_steps = get_sim_steps(time_ps, units)
 
     def prime(self, callback):
@@ -861,7 +872,7 @@ class ClockCycles(Waitable):
         return fmt.format(type(self).__qualname__, self.signal, self.num_cycles)
 
 
-async def with_timeout(trigger, timeout_time, timeout_unit=None):
+async def with_timeout(trigger, timeout_time, timeout_unit="step"):
     """
     Waits on triggers, throws an exception if it waits longer than the given time.
 
@@ -877,7 +888,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit=None):
             A single object that could be right of an :keyword:`await` expression in cocotb.
         timeout_time (numbers.Real or decimal.Decimal):
             Simulation time duration before timeout occurs.
-        timeout_unit (str or None, optional):
+        timeout_unit (str, optional):
             Units of timeout_time, accepts any units that :class:`~cocotb.triggers.Timer` does.
 
     Returns:
@@ -887,8 +898,16 @@ async def with_timeout(trigger, timeout_time, timeout_unit=None):
         :exc:`SimTimeoutError`: If timeout occurs.
 
     .. versionadded:: 1.3
-    """
 
+    .. deprecation:: 1.5
+        Using None as the the *timeout_unit* argument is deprecated, use ``'step'`` instead.
+   """
+
+    if timeout_unit is None:
+        warnings.warn(
+            'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',
+            DeprecationWarning, stacklevel=2)
+        timeout_unit="step"  # don't propagate deprecated value
     timeout_timer = cocotb.triggers.Timer(timeout_time, timeout_unit)
     res = await First(timeout_timer, trigger)
     if res is timeout_timer:
