@@ -102,24 +102,32 @@ def get_time_from_sim_steps(steps, units):
     return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(units))
 
 
-def get_sim_steps(time, units=None):
+def get_sim_steps(time, units="step"):
     """Calculates the number of simulation time steps for a given amount of *time*.
 
     Args:
         time (numbers.Real or decimal.Decimal):  The value to convert to simulation time steps.
-        units (str or None, optional):  String specifying the units of the result
-            (one of ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
-            ``None`` means time is already in simulation time steps.
+        units (str, optional):  String specifying the units of the result
+            (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+            ``'step'`` means time is already in simulation time steps.
 
     Returns:
         int: The number of simulation time steps.
 
     Raises:
         :exc:`ValueError`: If given *time* cannot be represented by simulator precision.
+
+    .. versionchanged:: 1.5
+        Support ``'step'`` as the the *units* argument to mean "simulator time step".
     """
     result = time
-    if units is not None:
+    if units not in (None, "step"):
         result = _ldexp10(result, _get_log_time_scale(units) - _get_simulator_precision())
+    if units is None:
+        warnings.warn(
+            'Using units=None is deprecated, use units="step" instead.',
+            DeprecationWarning, stacklevel=2)
+        units="step"  # don't propagate deprecated value
 
     result_rounded = math.floor(result)
 

@@ -91,11 +91,12 @@ async def test_real_assign_double(dut):
     """
     val = random.uniform(-1e307, 1e307)
     log = logging.getLogger("cocotb.test")
-    await Timer(1)
+    timer_shortest = Timer(1, "step")
+    await timer_shortest
     log.info("Setting the value %g" % val)
     dut.stream_in_real = val
-    await Timer(1)
-    await Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
+    await timer_shortest
+    await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = float(dut.stream_out_real)
     log.info("Read back value %g" % got)
     assert got == val, "Values didn't match!"
@@ -108,11 +109,12 @@ async def test_real_assign_int(dut):
     """
     val = random.randint(-2**31, 2**31 - 1)
     log = logging.getLogger("cocotb.test")
-    await Timer(1)
+    timer_shortest = Timer(1, "step")
+    await timer_shortest
     log.info("Setting the value %i" % val)
     dut.stream_in_real <= val
-    await Timer(1)
-    await Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
+    await timer_shortest
+    await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = dut.stream_out_real
     log.info("Read back value %d" % got)
     assert got == float(val), "Values didn't match!"

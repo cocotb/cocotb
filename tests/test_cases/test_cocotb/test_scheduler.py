@@ -186,7 +186,7 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
     victim_resumed = False
 
     async def victim():
-        await Timer(1)  # prevent scheduling of RisingEdge before killer
+        await Timer(1, "step")  # prevent scheduling of RisingEdge before killer
         await RisingEdge(dut.clk)
         nonlocal victim_resumed
         victim_resumed = True
@@ -197,9 +197,9 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
         victim_task.kill()
     cocotb.fork(killer())
 
-    await Timer(2)  # allow Timer in victim to pass making it schedule RisingEdge after the killer
+    await Timer(2, "step")  # allow Timer in victim to pass making it schedule RisingEdge after the killer
     dut.clk <= 1
-    await Timer(1)
+    await Timer(1, "step")
     assert not victim_resumed
 
 

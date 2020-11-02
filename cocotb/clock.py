@@ -28,6 +28,7 @@
 """A clock class."""
 
 import itertools
+import warnings
 
 from cocotb.log import SimLog
 from cocotb.triggers import Timer
@@ -66,10 +67,9 @@ class Clock(BaseClock):
         period (int): The clock period. Must convert to an even number of
             timesteps.
         units (str, optional): One of
-            ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
-            When no *units* is given (``None``) the timestep is determined by
-            the simulator.
-
+            ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
+            When *units* is ``'step'``,
+            the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
 
     If you need more features like a phase shift and an asymmetric duty cycle,
     it is simple to create your own clock generator (that you then :func:`fork`):
@@ -106,10 +106,21 @@ class Clock(BaseClock):
         await Timer(1000, units="ns")
         high_delay = low_delay = 10  # change the clock speed
         await Timer(1000, units="ns")
+
+    .. versionchanged:: 1.5
+        Support ``'step'`` as the the *units* argument to mean "simulator time step".
+
+    .. deprecation:: 1.5
+        Using None as the the *units* argument is deprecated, use ``'step'`` instead.
     """
 
-    def __init__(self, signal, period, units=None):
+    def __init__(self, signal, period, units="step"):
         BaseClock.__init__(self, signal)
+        if units is None:
+            warnings.warn(
+                'Using units=None is deprecated, use units="step" instead.',
+                DeprecationWarning, stacklevel=2)
+            units="step"  # don't propagate deprecated value
         self.period = get_sim_steps(period, units)
         self.half_period = get_sim_steps(period / 2.0, units)
         self.frequency = 1.0 / get_time_from_sim_steps(self.period, units='us')

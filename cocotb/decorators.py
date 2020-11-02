@@ -485,11 +485,14 @@ class test(coroutine, metaclass=_decorator_helper):
                 Test timeout is intended for protection against deadlock.
                 Users should use :class:`~cocotb.triggers.with_timeout` if they require a
                 more general-purpose timeout mechanism.
-        timeout_unit (str or None, optional):
+        timeout_unit (str, optional):
             Units of timeout_time, accepts any units that :class:`~cocotb.triggers.Timer` does.
 
             .. versionadded:: 1.3
-        expect_fail (bool, optional):
+
+            .. deprecation:: 1.5
+                Using None as the the *timeout_unit* argument is deprecated, use ``'step'`` instead.
+         expect_fail (bool, optional):
             Don't mark the result as a failure if the test fails.
         expect_error (bool or exception type or tuple of exception types, optional):
             If ``True``, consider this test passing if it raises *any* :class:`Exception`, and failing if it does not.
@@ -518,10 +521,15 @@ class test(coroutine, metaclass=_decorator_helper):
 
     _id_count = 0  # used by the RegressionManager to sort tests in definition order
 
-    def __init__(self, f, timeout_time=None, timeout_unit=None,
+    def __init__(self, f, timeout_time=None, timeout_unit="step",
                  expect_fail=False, expect_error=False,
                  skip=False, stage=None):
 
+        if timeout_unit is None:
+            warnings.warn(
+                'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',
+                DeprecationWarning, stacklevel=2)
+            timeout_unit="step"  # don't propagate deprecated value
         self._id = self._id_count
         type(self)._id_count += 1
 
