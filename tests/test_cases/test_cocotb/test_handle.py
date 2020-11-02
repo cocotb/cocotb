@@ -8,7 +8,6 @@ import logging
 import random
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestFailure
 
 from common import assert_raises
 
@@ -24,9 +23,7 @@ def test_lessthan_raises_error(dut):
     except TypeError:
         pass
     else:
-        raise TestFailure(
-            "No exception was raised when confusing comparison with assignment"
-        )
+        assert False, "No exception was raised when confusing comparison with assignment"
 
     # to make this a generator
     if False:
@@ -87,8 +84,7 @@ def test_integer(dut):
     got_out = int(dut.stream_in_int)
     log.info("dut.stream_out_int = %d" % got_out)
     log.info("dut.stream_in_int = %d" % got_in)
-    if got_in != got_out:
-        raise TestFailure("stream_in_int and stream_out_int should not match")
+    assert got_in == got_out, "stream_in_int and stream_out_int should not match"
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
@@ -106,8 +102,7 @@ def test_real_assign_double(dut):
     yield Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = float(dut.stream_out_real)
     log.info("Read back value %g" % got)
-    if got != val:
-        raise TestFailure("Values didn't match!")
+    assert got == val, "Values didn't match!"
 
 
 @cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
@@ -124,8 +119,7 @@ def test_real_assign_int(dut):
     yield Timer(1)  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = dut.stream_out_real
     log.info("Read back value %d" % got)
-    if got != float(val):
-        raise TestFailure("Values didn't match!")
+    assert got == float(val), "Values didn't match!"
 
 
 # identifiers starting with `_` are illegal in VHDL
