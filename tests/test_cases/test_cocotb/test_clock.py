@@ -71,9 +71,8 @@ def test_clock_with_units(dut):
 
 
 @cocotb.test(expect_fail=False)
-def test_anternal_clock(dut):
-    """Test ability to yield on an external non cocotb coroutine decorated
-    function"""
+def test_external_clock(dut):
+    """Test ability to yield on an external non-cocotb coroutine decorated function"""
     clk_gen = cocotb.fork(Clock(dut.clk, 100).start())
     count = 0
     while count != 100:

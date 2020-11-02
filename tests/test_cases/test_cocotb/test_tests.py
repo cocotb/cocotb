@@ -35,7 +35,7 @@ def test_tests_are_tests(dut):
 @cocotb.test(expect_fail=True)
 async def test_async_test_can_fail(dut):
     await Timer(1)
-    raise TestFailure
+    raise TestFailure  # explicitly do not use assert here
 
 
 @cocotb.test()

@@ -13,7 +13,6 @@ import re
 
 import cocotb
 from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, Combine, Event, ReadOnly, First
-from cocotb.result import TestFailure
 from cocotb.clock import Clock
 from common import clock_gen
 
@@ -37,11 +36,9 @@ def test_coroutine_kill(dut):
     clk_gen_two = cocotb.fork(clock_yield(clk_gen))
     yield Timer(100)
     clk_gen.kill()
-    if test_flag is not False:
-        raise TestFailure
+    assert not test_flag
     yield Timer(1000)
-    if test_flag is not True:
-        raise TestFailure
+    assert test_flag
 
 
 @cocotb.coroutine
@@ -163,7 +160,7 @@ def test_trigger_with_failing_prime(dut):
     except RuntimeError as exc:
         assert "oops" in str(exc)
     else:
-        raise TestFailure
+        assert False
 
 
 @cocotb.test()

@@ -12,7 +12,6 @@ Tests for edge triggers
 import cocotb
 from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles
 from cocotb.clock import Clock
-from cocotb.result import TestError, TestFailure
 
 
 @cocotb.coroutine
@@ -30,16 +29,14 @@ def do_single_edge_check(dut, level):
     """Do test for rising edge"""
     old_value = dut.clk.value.integer
     dut._log.info("Value of %s is %d" % (dut.clk._path, old_value))
-    if old_value is level:
-        raise TestError("%s not to %d start with" % (dut.clk._path, not level))
+    assert old_value != level, "%s not to %d start with" % (dut.clk._path, not level)
     if level == 1:
         yield RisingEdge(dut.clk)
     else:
         yield FallingEdge(dut.clk)
     new_value = dut.clk.value.integer
     dut._log.info("Value of %s is %d" % (dut.clk._path, new_value))
-    if new_value is not level:
-        raise TestError("%s not %d at end" % (dut.clk._path, level))
+    assert new_value == level, "%s not %d at end" % (dut.clk._path, level)
 
 
 @cocotb.test()
@@ -52,8 +49,7 @@ def test_rising_edge(dut):
     dut.clk <= 1
     fail_timer = Timer(1000)
     result = yield [fail_timer, test.join()]
-    if result is fail_timer:
-        raise TestError("Test timed out")
+    assert result is not fail_timer, "Test timed out"
 
 
 @cocotb.test()
@@ -66,8 +62,7 @@ def test_falling_edge(dut):
     dut.clk <= 0
     fail_timer = Timer(1000)
     result = yield [fail_timer, test.join()]
-    if result is fail_timer:
-        raise TestError("Test timed out")
+    assert result is not fail_timer, "Test timed out"
 
 
 @cocotb.test()
@@ -77,33 +72,27 @@ def test_either_edge(dut):
     yield Timer(1)
     dut.clk <= 1
     yield Edge(dut.clk)
-    if dut.clk.value.integer != 1:
-        raise TestError("Value should be 0")
+    assert dut.clk.value.integer == 1
     yield Timer(10)
     dut.clk <= 0
     yield Edge(dut.clk)
-    if dut.clk.value.integer != 0:
-        raise TestError("Value should be 0")
+    assert dut.clk.value.integer == 0
     yield Timer(10)
     dut.clk <= 1
     yield Edge(dut.clk)
-    if dut.clk.value.integer != 1:
-        raise TestError("Value should be 0")
+    assert dut.clk.value.integer == 1
     yield Timer(10)
     dut.clk <= 0
     yield Edge(dut.clk)
-    if dut.clk.value.integer != 0:
-        raise TestError("Value should be 0")
+    assert dut.clk.value.integer == 0
     yield Timer(10)
     dut.clk <= 1
     yield Edge(dut.clk)
-    if dut.clk.value.integer != 1:
-        raise TestError("Value should be 0")
+    assert dut.clk.value.integer == 1
     yield Timer(10)
     dut.clk <= 0
     yield Edge(dut.clk)
-    if dut.clk.value.integer != 0:
-        raise TestError("Value should be 0")
+    assert dut.clk.value.integer == 0
 
 
 @cocotb.test()
@@ -120,19 +109,14 @@ def test_fork_and_monitor(dut, period=1000, clocks=6):
 
     while True:
         result = yield [timer, task.join()]
-        if count > expect:
-            raise TestFailure("Task didn't complete in expected time")
+        assert count <= expect, "Task didn't complete in expected time"
         if result is timer:
             dut._log.info("Count %d: Task still running" % count)
             count += 1
         else:
             break
-    if count != expect:
-        raise TestFailure("Expected to monitor the task %d times but got %d" %
-                          (expect, count))
-    if result != clocks:
-        raise TestFailure("Expected task to return %d but got %s" %
-                          (clocks, repr(result)))
+    assert count == expect, "Expected to monitor the task %d times but got %d" % (expect, count)
+    assert result == clocks, "Expected task to return %d but got %s" % (clocks, repr(result))
 
 
 @cocotb.coroutine
@@ -169,9 +153,7 @@ def test_edge_count(dut):
 
     yield Timer(clk_period * (edge_count + 1))
 
-    if edge_count is not edges_seen:
-        raise TestFailure("Correct edge count failed - saw %d wanted %d" %
-                          (edges_seen, edge_count))
+    assert edge_count == edges_seen, "Correct edge count failed - saw %d, wanted %d" % (edges_seen, edge_count)
 
 
 @cocotb.test()

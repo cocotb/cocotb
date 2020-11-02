@@ -6,7 +6,6 @@ Tests that sepcifically test generator-based coroutines
 """
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestFailure
 from common import clock_gen, _check_traceback
 import textwrap
 
@@ -36,7 +35,7 @@ def test_function_not_a_coroutine(dut):
     except TypeError as exc:
         assert "isn't a valid coroutine" in str(exc)
     else:
-        raise TestFailure
+        assert False
 
 
 def normal_function(dut):
@@ -51,7 +50,7 @@ def test_function_not_decorated(dut):
         assert "yielded" in str(exc)
         assert "scheduler can't handle" in str(exc)
     else:
-        raise TestFailure
+        assert False
 
 
 @cocotb.test()
@@ -63,7 +62,7 @@ def test_function_not_decorated_fork(dut):
     except TypeError as exc:
         assert "isn't a coroutine" in str(exc)
     else:
-        raise TestFailure()
+        assert False
 
     yield Timer(500)
 
@@ -78,7 +77,7 @@ def test_adding_a_coroutine_without_starting(dut):
     except TypeError as exc:
         assert "a coroutine that hasn't started" in str(exc)
     else:
-        raise TestFailure
+        assert False
 
 
 @cocotb.test(expect_fail=False)
@@ -123,8 +122,7 @@ def test_coroutine_return(dut):
         yield
 
     ret = yield return_it(42)
-    if ret != 42:
-        raise TestFailure("Return statement did not work")
+    assert ret == 42, "Return statement did not work"
 
 
 @cocotb.test()
@@ -149,7 +147,7 @@ def test_immediate_coro(dut):
     except ValueError:
         pass
     else:
-        raise TestFailure("Exception was not raised")
+        assert False, "Exception was not raised"
 
 
 @cocotb.test()
