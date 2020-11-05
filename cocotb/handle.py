@@ -217,9 +217,10 @@ class RegionObject(SimHandleBase):
         self._log.debug("Discovering all on %s", self._name)
         for thing in self._handle.iterate(simulator.OBJECTS):
             name = thing.get_name_string()
+            path = self._child_path(name)
             try:
-                hdl = SimHandle(thing, self._child_path(name))
-            except TypeError as e:
+                hdl = SimHandle(thing, path)
+            except NotImplementedError as e:
                 self._log.debug("%s", e)
                 continue
 
@@ -918,7 +919,7 @@ def SimHandle(handle, path=None):
         The `SimHandle` object.
 
     Raises:
-        TypeError: If no matching object for GPI type could be found.
+        NotImplementedError: If no matching object for GPI type could be found.
     """
     _type2cls = {
         simulator.MODULE:      HierarchyObject,
