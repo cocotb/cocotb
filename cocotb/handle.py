@@ -955,7 +955,7 @@ def SimHandle(handle, path=None):
         return obj
 
     if t not in _type2cls:
-        raise TypeError("Couldn't find a matching object for GPI type %d (path=%s)" % (t, path))
+        raise NotImplementedError("Couldn't find a matching object for GPI type %d (path=%s)" % (t, path))
     obj = _type2cls[t](handle, path)
     _handle2obj[handle] = obj
     return obj
