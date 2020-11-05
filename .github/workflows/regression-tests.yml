@@ -20,7 +20,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: whitespace
       run: |
-        ! git --no-pager grep --color --line-number --full-name --extended-regexp -I '\\s+$'
+        ! git --no-pager grep --color --line-number --full-name --extended-regexp -I '\s+$'
 
   lint-flake8:
     runs-on: ubuntu-latest
