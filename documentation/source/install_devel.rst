@@ -12,31 +12,25 @@ The instructions for installing the development version of cocotb vary depending
 
    .. group-tab:: Windows
 
-      The development version of cocotb can be installed globally by running
+      The development version of cocotb can be installed by running
 
       .. code-block:: bash
 
           pip install --global-option build_ext --global-option --compiler=mingw32 https://github.com/cocotb/cocotb/archive/master.zip
 
-      See also the `pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
-
    .. group-tab:: Linux and macOS
 
-      The development version of cocotb can be installed globally by running
+      The development version of cocotb can be installed by running
 
       .. code-block:: bash
 
           pip install https://github.com/cocotb/cocotb/archive/master.zip
 
-      This requires administrator permissions.
+.. note::
 
-      In order to install only for your current user, run
-
-      .. code-block:: bash
-
-          pip install https://github.com/cocotb/cocotb/archive/master.zip --user
-
-      See also the `pip User Guide <https://pip.pypa.io/en/stable/user_guide/#user-installs/>`_.
+    If your user does not have permissions to install cocotb using the instructions above,
+    try adding the ``--user`` option to ``pip``
+    (see :ref:`the pip documentation<https://pip.pypa.io/en/stable/user_guide/#user-installs>`).
 
 .. warning::
 
@@ -46,4 +40,4 @@ The instructions for installing the development version of cocotb vary depending
 
 After installation, you should be able to execute ``cocotb-config``.
 If it is not found, you need to append its location to the ``PATH`` environment variable.
-This may happen when you use the ``--user`` option to ``pip``, in which case the location is documented :ref:`here <python:inst-alt-install-user>`.
+This may happen when you use the ``--user`` option to ``pip``, in which case the location is documented :ref:`here<python:inst-alt-install-user>`.
