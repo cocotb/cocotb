@@ -118,6 +118,7 @@ class ExternalException(Exception):
 class TestError(TestComplete):
     """
     Exception showing that the test was completed with severity Error.
+
     .. deprecated:: 1.5
         Raise a standard Python exception instead of calling this function.
         A stacktrace will be printed by cocotb automatically if the exception is unhandled.
