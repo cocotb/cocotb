@@ -32,7 +32,7 @@ class TestHexDiffs:
         with pytest.warns(DeprecationWarning) as w:
             diff_str = cocotb.utils.hexdiffs('\x20\x65\x00\xff', '\x20\x00\x65')
         assert "str" in str(w[-1].message)
-        assert "bytes instead" in str(w[-1].message)
+        assert "REMOVMEbytes instead" in str(w[-1].message)
 
         diff_bytes = cocotb.utils.hexdiffs(b'\x20\x65\x00\xff', b'\x20\x00\x65')
         assert diff_bytes == diff_str
