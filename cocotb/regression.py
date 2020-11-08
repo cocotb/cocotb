@@ -48,10 +48,7 @@ from cocotb.handle import SimHandle
 
 from cocotb import simulator
 
-if "COCOTB_PDB_ON_EXCEPTION" in os.environ:
-    _pdb_on_exception = True
-else:
-    _pdb_on_exception = False
+_pdb_on_exception = "COCOTB_PDB_ON_EXCEPTION" in os.environ
 
 # Optional support for coverage collection of testbench files
 coverage = None
@@ -87,7 +84,10 @@ class RegressionManager:
             hooks (Iterable[Hook]): hooks to tun
         """
         self._dut = dut
+        self._test = None
         self._test_task = None
+        self._test_start_time = None
+        self._test_start_sim_time = None
         self._cov = None
         self.log = _logger
         self.start_time = time.time()
@@ -305,12 +305,11 @@ class RegressionManager:
         self.execute()
 
     def _init_test(self, test: Test) -> Optional[RunningTask]:
-        """
-        Initializes a test.
+        """Initialize a test.
 
-        Records outcome if the initialization fails.
-        Records skip if the test is skipped.
-        Saves the initialized test if it successfully initializes.
+        Record outcome if the initialization fails.
+        Record skip if the test is skipped.
+        Save the initialized test if it successfully initializes.
         """
 
         if test.skip:
@@ -324,7 +323,7 @@ class RegressionManager:
                 hilight_end,
                 test.__qualname__))
             self._record_result(test, None, 0, 0)
-            return
+            return None
 
         test_init_outcome = cocotb.outcomes.capture(test, self._dut)
 
@@ -332,7 +331,7 @@ class RegressionManager:
             self.log.error("Failed to initialize test %s" % test.__qualname__,
                            exc_info=test_init_outcome.error)
             self._record_result(test, test_init_outcome, 0, 0)
-            return
+            return None
 
         test = test_init_outcome.get()
         return test
@@ -450,7 +449,7 @@ class RegressionManager:
                 return self.tear_down()
 
             self._test_task = self._init_test(self._test)
-            if self._test_task:
+            if self._test_task is not None:
                 return self._start_test()
 
     def _start_test(self) -> None:

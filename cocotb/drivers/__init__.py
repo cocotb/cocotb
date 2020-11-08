@@ -51,6 +51,7 @@ class BitDriver:
         self._signal = signal
         self._clk = clk
         self._generator = generator
+        self._cr = None
 
     def start(self, generator: Iterable[Tuple[int, int]] = None) -> None:
         """Start generating data.
@@ -310,6 +311,9 @@ class ValidatedBusDriver(BusDriver):
         valid_generator: Iterable[Tuple[int, int]] = None, **kwargs: Any
     ) -> None:
         BusDriver.__init__(self, entity, name, clock, **kwargs)
+        self.on = None
+        self.off = None
+        # keep this line after the on/off attributes since it overwrites them
         self.set_valid_generator(valid_generator=valid_generator)
 
     def _next_valids(self):
@@ -364,7 +368,7 @@ async def polled_socket_attachment(driver, sock):
             else:
                 driver.log.error(repr(e))
                 raise
-        if not len(data):
+        if not len(data) > 0:
             driver.log.info("Remote end closed the connection")
             break
         driver.append(data)
