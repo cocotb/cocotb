@@ -36,7 +36,6 @@ import cocotb
 from cocotb import simulator
 from cocotb.binary import BinaryValue
 from cocotb.log import SimLog
-from cocotb.result import TestError
 
 # Only issue a warning for each deprecated attribute access
 _deprecation_warned = set()
@@ -218,9 +217,10 @@ class RegionObject(SimHandleBase):
         self._log.debug("Discovering all on %s", self._name)
         for thing in self._handle.iterate(simulator.OBJECTS):
             name = thing.get_name_string()
+            path = self._child_path(name)
             try:
-                hdl = SimHandle(thing, self._child_path(name))
-            except TestError as e:
+                hdl = SimHandle(thing, path)
+            except NotImplementedError as e:
                 self._log.debug("%s", e)
                 continue
 
@@ -919,7 +919,7 @@ def SimHandle(handle, path=None):
         The `SimHandle` object.
 
     Raises:
-        TestError: If no matching object for GPI type could be found.
+        NotImplementedError: If no matching object for GPI type could be found.
     """
     _type2cls = {
         simulator.MODULE:      HierarchyObject,
@@ -956,7 +956,7 @@ def SimHandle(handle, path=None):
         return obj
 
     if t not in _type2cls:
-        raise TestError("Couldn't find a matching object for GPI type %d (path=%s)" % (t, path))
+        raise NotImplementedError("Couldn't find a matching object for GPI type %s(%d) (path=%s)" % (handle.get_type_string(), t, path))
     obj = _type2cls[t](handle, path)
     _handle2obj[handle] = obj
     return obj

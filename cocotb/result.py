@@ -38,16 +38,15 @@ def raise_error(obj, msg):
     """Create a :exc:`TestError` exception and raise it after printing a traceback.
 
     .. deprecated:: 1.3
-        Use ``raise TestError(msg)`` instead of this function. A stacktrace will
-        be printed by cocotb automatically if the exception is unhandled.
+        Raise a standard Python exception instead of calling this function.
+        A stacktrace will be printed by cocotb automatically if the exception is unhandled.
 
     Args:
         obj: Object with a log method.
         msg (str): The log message.
     """
     warnings.warn(
-        "``raise_error`` is deprecated - use ``raise TestError(msg)`` (or any "
-        "other exception type) instead",
+        "``raise_error`` is deprecated - raise a standard Exception instead",
         DeprecationWarning, stacklevel=2)
     _raise_error(obj, msg)
 
@@ -67,15 +66,14 @@ def create_error(obj, msg):
     simply to avoid too many levels of nested `try/except` blocks.
 
     .. deprecated:: 1.3
-        Use ``TestError(msg)`` directly instead of this function.
+        Raise a standard Python exception instead of calling this function.
 
     Args:
         obj: Object with a log method.
         msg (str): The log message.
     """
     warnings.warn(
-        "``create_error`` is deprecated - use ``TestError(msg)`` directly "
-        "(or any other exception type) instead",
+        "``create_error`` is deprecated - raise a standard Exception instead",
         DeprecationWarning, stacklevel=2)
     try:
         # use the private version to avoid multiple warnings
@@ -118,8 +116,19 @@ class ExternalException(Exception):
 
 
 class TestError(TestComplete):
-    """Exception showing that the test was completed with severity Error."""
-    pass
+    """
+    Exception showing that the test was completed with severity Error.
+
+    .. deprecated:: 1.5
+        Raise a standard Python exception instead.
+        A stacktrace will be printed by cocotb automatically if the exception is unhandled.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "TestError is deprecated - raise a standard Exception instead",
+            DeprecationWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
 
 
 class TestFailure(TestComplete, AssertionError):
