@@ -1,0 +1,1 @@
+:class:`~cocotb.result.TestError` has been deprecated, use a standard :ref:`Python Exception <python:library/exception>`.
