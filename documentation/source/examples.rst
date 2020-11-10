@@ -6,6 +6,44 @@ Apart from the examples covered with full tutorials in the previous sections,
 the directory :file:`cocotb/examples/` contains some more smaller modules you may want to take a look at.
 
 
+.. _clkgen_in_hdl:
+
+Clock Generator in HDL
+======================
+
+The directory :file:`cocotb/examples/clkgen_in_hdl`
+contains three HDL modules:
+a very simple counter design under test (``dut``),
+a clock generator (``clkgen``),
+and a testbench (``tb``) instantiating both the counter and the clock generator.
+
+All HDL modules are implemented in both VHDL and SystemVerilog.
+
+The example also includes a Python testbench with two testcases,
+``test_clkgen_hdl`` which uses the HDL clock generator to drive the DUT, and
+``test_clkgen_python`` which uses :class:`cocotb.clock.Clock` to drive the DUT.
+
+Note that :envvar:`TOPLEVEL` and :data:`cocotb.top` point to the testbench instead of the DUT.
+
+Here is the last part of the output of this example (with :envvar:`COCOTB_REDUCED_LOG_FMT` set),
+showing the different runtimes::
+
+    2469132.00ns INFO     ****************************************************************************************
+                          ** TEST                            PASS/FAIL  SIM TIME(NS)  REAL TIME(S)  RATIO(NS/S) **
+                          ****************************************************************************************
+                          ** test_clkgen.test_clkgen_hdl       PASS      1234566.00          0.03   41720542.34  **
+                          ** test_clkgen.test_clkgen_python    PASS      1234566.00         29.95     41219.68  **
+                          ****************************************************************************************
+
+It can be seen that the HDL implementation of the clock generator results in a
+much higher simulation performance than the Python implementation.
+
+This comes at the expense of less flexibility and
+having to handle and maintain the extra HDL.
+
+.. versionadded:: 1.5
+
+
 Adder
 =====
 

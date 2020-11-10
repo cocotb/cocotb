@@ -1,0 +1,1 @@
+Add example ``clkgen_in_hdl`` showing the use of a clock generator implemented in HDL and comparing it against :class:`cocotb.clock.Clock`.

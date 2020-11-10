@@ -29,6 +29,7 @@
 
 EXAMPLES := adder/tests \
             axi_lite_slave/tests \
+            clkgen_in_hdl \
             dff/tests \
             simple_dff \
             endian_swapper/tests \
