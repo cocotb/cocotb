@@ -31,6 +31,7 @@ import logging
 import functools
 import inspect
 import os
+import warnings
 
 import cocotb
 from cocotb.log import SimLog
