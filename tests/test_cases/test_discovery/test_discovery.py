@@ -260,13 +260,13 @@ async def access_const_string_verilog(dut):
     if not isinstance(string_const, StringObject):
         raise TestFailure("STRING_CONST was not StringObject")
     if string_const != b"TESTING_CONST":
-        raise TestFailure("Initial value of STRING_CONST was not == b\'TESTING_CONST\' but {} instead".format(string_const))
+        raise TestFailure("Initial value of STRING_CONST was not == b\'TESTING_CONST\' but {} instead".format(string_const.value))
 
     tlog.info("Modifying const string")
     string_const <= b"MODIFIED"
     await Timer(10, "ns")
     if string_const != b"TESTING_CONST":
-        raise TestFailure("STRING_CONST was not still b\'TESTING_CONST\' after modification but {} instead".format(string_const))
+        raise TestFailure("STRING_CONST was not still b\'TESTING_CONST\' after modification but {} instead".format(string_const.value))
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
@@ -281,13 +281,13 @@ async def access_var_string_verilog(dut):
     if not isinstance(string_var, StringObject):
         raise TestFailure("STRING_VAR was not StringObject")
     if string_var != b"TESTING_VAR":
-        raise TestFailure("Initial value of STRING_VAR was not == b\'TESTING_VAR\' but {} instead".format(string_var))
+        raise TestFailure("Initial value of STRING_VAR was not == b\'TESTING_VAR\' but {} instead".format(string_var.value))
 
     tlog.info("Modifying var string")
     string_var <= b"MODIFIED"
     await Timer(10, "ns")
     if string_var != b"MODIFIED":
-        raise TestFailure("STRING_VAR was not == b\'MODIFIED\' after modification but {} instead".format(string_var))
+        raise TestFailure("STRING_VAR was not == b\'MODIFIED\' after modification but {} instead".format(string_var.value))
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])

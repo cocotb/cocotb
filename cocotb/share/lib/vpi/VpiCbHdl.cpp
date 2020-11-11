@@ -822,7 +822,7 @@ GpiIterator::Status VpiIterator::next_handle(std::string &name, GpiObjHdl **hdl,
     /* Simulators vary here. Some will allow the name to be accessed
        across boundary. We can simply return this up and allow
        the object to be created. Others do not. In this case
-       we see if the object is in out type range and if not
+       we see if the object is in our type range and if not
        return the raw_hdl up */
 
     const char *c_name = vpi_get_str(vpiName, obj);

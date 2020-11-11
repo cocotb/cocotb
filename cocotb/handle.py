@@ -203,7 +203,7 @@ class RegionObject(SimHandleBase):
                     self._log.debug("Yielding index %d from %s (%s)", subindex, name, type(subhdl))
                     yield subhdl
             else:
-                self._log.debug("Yielding %s (%s)", name, handle)
+                self._log.debug("Yielding %s of type %s (%s)", name, type(handle), handle._path)
                 yield handle
 
     def _discover_all(self):

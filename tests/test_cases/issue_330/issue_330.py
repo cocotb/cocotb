@@ -17,7 +17,7 @@ def issue_330_direct(dut):
 
     structure = dut.inout_if
 
-    tlog.info("Value of inout_if => a_in = %s ; b_out = %s" % (structure.a_in, structure.b_out))
+    tlog.info("Value of inout_if => a_in = %s ; b_out = %s" % (structure.a_in.value, structure.b_out.value))
 
 
 @cocotb.test(skip=cocotb.SIM_NAME in ["Icarus Verilog"])
@@ -33,7 +33,7 @@ def issue_330_iteration(dut):
 
     count = 0
     for member in structure:
-        tlog.info("Found %s" % member)
+        tlog.info("Found %s" % member._path)
         count += 1
 
     if count != 2:
