@@ -351,6 +351,8 @@ async def test_discover_all(dut):
             pass_total = 1006
         else:
             pass_total = 1038
+    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("chronologic simulation vcs")):
+        pass_total = 606
     else:
         pass_total = 1078
 
