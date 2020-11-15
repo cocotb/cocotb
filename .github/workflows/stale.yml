@@ -1,0 +1,21 @@
+name: "Stale Questions"
+on:
+  schedule:
+  - cron: "00 02 * * *"
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/stale@v3
+      with:
+        repo-token: ${{secrets.GITHUB_TOKEN}}
+        days-before-stale: 30
+        days-before-close: 7
+        stale-issue-message: >
+          Has your question been resolved? If so please close this issue.
+          If it has not been resolved, you may need to provide more information.
+          If no more activity on this issue occurs in 7 days, it will be closed.
+        stale-issue-label: "status:stale"
+        only-labels: "type:question"
+        exempt-labels: "type:bug,type:feature"
