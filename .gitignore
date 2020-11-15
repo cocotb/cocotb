@@ -100,3 +100,6 @@ examples/*/tests/compile
 # Tachyon DA CVC
 tests/test_cases/*/verilog.log
 examples/*/tests/verilog.log
+
+# setuptools_scm artifact
+/cocotb/_version.py
