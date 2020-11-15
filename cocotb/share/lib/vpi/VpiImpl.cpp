@@ -684,6 +684,7 @@ static void register_final_callback()
 COCOTBVPI_EXPORT void (*vlog_startup_routines[])() = {
     register_embed,
     gpi_load_extra_libs,
+    register_system_functions,
     register_initial_callback,
     register_final_callback,
     nullptr

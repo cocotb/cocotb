@@ -116,6 +116,7 @@ typedef enum gpi_event_e {
     SIM_INFO = 0,
     SIM_TEST_FAIL = 1,
     SIM_FAIL = 2,
+    SIM_TEST_PASS = 3
 } gpi_event_t;
 
 // Functions for controlling/querying the simulation state

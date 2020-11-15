@@ -932,7 +932,10 @@ static int add_module_constants(PyObject* simulator)
         PyModule_AddIntConstant(simulator, "OBJECTS",   GPI_OBJECTS   ) < 0 ||
         PyModule_AddIntConstant(simulator, "DRIVERS",   GPI_DRIVERS   ) < 0 ||
         PyModule_AddIntConstant(simulator, "LOADS",     GPI_LOADS     ) < 0 ||
-        false
+        PyModule_AddIntConstant(simulator, "INFO_EVENT", SIM_INFO) < 0 ||
+        PyModule_AddIntConstant(simulator, "TEST_FAIL_EVENT", SIM_TEST_FAIL) < 0 ||
+        PyModule_AddIntConstant(simulator, "FAIL_EVENT", SIM_FAIL) < 0 ||
+        PyModule_AddIntConstant(simulator, "TEST_PASS_EVENT", SIM_TEST_PASS) < 0
     ) {
         return -1;
     }

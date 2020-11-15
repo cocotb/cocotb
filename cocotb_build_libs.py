@@ -405,6 +405,7 @@ def _get_vpi_lib_ext(
     lib_name = "libcocotbvpi_" + sim_define.lower()
     libcocotbvpi_sources = [
         os.path.join(share_lib_dir, "vpi", "VpiImpl.cpp"),
+        os.path.join(share_lib_dir, "vpi", "VpiSystemTasks.cpp"),
         os.path.join(share_lib_dir, "vpi", "VpiCbHdl.cpp"),
     ]
     if os.name == "nt":

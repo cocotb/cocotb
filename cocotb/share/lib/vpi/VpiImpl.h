@@ -276,4 +276,6 @@ private:
     VpiReadOnlyCbHdl m_read_only;
 };
 
+void register_system_functions();
+
 #endif /*COCOTB_VPI_IMPL_H_  */

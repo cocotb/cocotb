@@ -263,16 +263,14 @@ def _initialise_testbench(argv_):
 
 def _sim_event(level, message):
     """Function that can be called externally to signal an event."""
-    # SIM_INFO = 0
-    SIM_TEST_FAIL = 1
-    SIM_FAIL = 2
-    from cocotb.result import TestFailure, SimFailure
+    from cocotb.result import TestFailure, TestSuccess, SimFailure
+    from cocotb.simulator import TEST_FAIL_EVENT, TEST_PASS_EVENT, FAIL_EVENT
 
-    if level is SIM_TEST_FAIL:
-        scheduler.log.error("Failing test at simulator request")
-        scheduler.finish_test(TestFailure("Failure from external source: %s" %
-                              message))
-    elif level is SIM_FAIL:
+    if level == TEST_FAIL_EVENT:
+        scheduler.finish_test(TestFailure(message))
+    elif level == TEST_PASS_EVENT:
+        scheduler.finish_test(TestSuccess(message))
+    elif level == FAIL_EVENT:
         # We simply return here as the simulator will exit
         # so no cleanup is needed
         msg = ("Failing test at simulator request before test run completion: "

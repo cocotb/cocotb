@@ -1,0 +1,1 @@
+Added ``$cocotb_test_pass()`` and ``$cocotb_test_fail()`` (System)Verilog system tasks for ending the current cocotb from Verilog with either a pass or fail.
