@@ -451,15 +451,25 @@ class _decorator_helper(type):
 
 @public
 class hook(coroutine, metaclass=_decorator_helper):
-    """Decorator to mark a function as a hook for cocotb.
+    """
+    Decorator to mark a function as a hook for cocotb.
 
     Used as ``@cocotb.hook()``.
 
     All hooks are run at the beginning of a cocotb test suite, prior to any
-    test code being run."""
+    test code being run.
+
+    .. deprecated:: 1.5
+        Hooks are deprecated. Their functionality can be replaced with module-level Python code;
+        higher-priority tests using the ``stage`` option; or function decorators; depending on
+        what your original use case entailed.
+    """
 
     def __init__(self, f):
         super(hook, self).__init__(f)
+        warnings.warn(
+            "Hooks have been deprecated. Module-level code can be written to replace hooks.",
+            DeprecationWarning, stacklevel=2)
         self.im_hook = True
         self.name = self._func.__name__
 

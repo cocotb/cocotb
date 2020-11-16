@@ -168,6 +168,9 @@ Regression Manager
     A comma-separated list of modules that should be executed before the first test.
     You can also use the :class:`cocotb.hook` decorator to mark a function to be run before test code.
 
+    .. deprecated:: 1.5
+        :class:`cocotb.hook` has been deprecated and this variable is no longer used.
+
 
 Scheduler
 ~~~~~~~~~

@@ -1,0 +1,5 @@
+Deprecated :class:`cocotb.hook` and :envvar:`COCOTB_HOOKS`.
+Write module-level Python code;
+create higher-priority tests using the ``stage`` option of :class:`cocotb.test`;
+or define your own function decorators;
+depending on how you were using hooks.
