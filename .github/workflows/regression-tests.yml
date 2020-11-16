@@ -257,6 +257,7 @@ jobs:
       run: pip install coverage xunitparser pytest pytest-cov
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
+      id: windowstesting
       continue-on-error: ${{matrix.may_fail || false}}
       timeout-minutes: 15
       run: |
@@ -281,8 +282,16 @@ jobs:
       run: |
         pip install tox tox-gh-actions
     - name: Test (Ubuntu, MacOS)
+      id: unixtesting
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
       continue-on-error: ${{matrix.may_fail || false}}
       timeout-minutes: 15
       run: |
         tox
+
+    # codecov
+    - name: Upload to codecov
+      if: steps.windowstesting.outcome == 'success' || steps.unixtesting.outcome == 'success'
+      run: |
+        pip install codecov
+        codecov
