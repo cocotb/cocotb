@@ -461,16 +461,16 @@ class hook(coroutine, metaclass=_decorator_helper):
 
     .. deprecated:: 1.5
         Hooks are deprecated.
-        Their functionality can be replaced with module-level Python code;
-        higher-priority tests using the ``stage`` option on `cocotb.test()`s;
-        or function decorators;
-        depending on what your original use case entailed.
+        Their functionality can be replaced with module-level Python code,
+        higher-priority tests using the ``stage`` argument to :func:`cocotb.test`\ s,
+        or custom decorators which perform work before and after the tests
+        they decorate.
     """
 
     def __init__(self, f):
         super(hook, self).__init__(f)
         warnings.warn(
-            "Hooks have been deprecated. Module-level code can be written to replace hooks.",
+            "Hooks have been deprecated. See the documentation for suggestions on alternatives.",
             DeprecationWarning, stacklevel=2)
         self.im_hook = True
         self.name = self._func.__name__

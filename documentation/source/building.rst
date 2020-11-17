@@ -169,7 +169,7 @@ Regression Manager
     You can also use the :class:`cocotb.hook` decorator to mark a function to be run before test code.
 
     .. deprecated:: 1.5
-        :class:`cocotb.hook` has been deprecated and this variable is no longer used.
+        :class:`cocotb.hook` is deprecated, and in the future this variable will be ignored.
 
 
 Scheduler
