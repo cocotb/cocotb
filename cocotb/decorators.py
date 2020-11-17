@@ -460,9 +460,11 @@ class hook(coroutine, metaclass=_decorator_helper):
     test code being run.
 
     .. deprecated:: 1.5
-        Hooks are deprecated. Their functionality can be replaced with module-level Python code;
-        higher-priority tests using the ``stage`` option; or function decorators; depending on
-        what your original use case entailed.
+        Hooks are deprecated.
+        Their functionality can be replaced with module-level Python code;
+        higher-priority tests using the ``stage`` option on `cocotb.test()`s;
+        or function decorators;
+        depending on what your original use case entailed.
     """
 
     def __init__(self, f):
