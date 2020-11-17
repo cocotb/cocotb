@@ -451,7 +451,7 @@ class _decorator_helper(type):
 
 @public
 class hook(coroutine, metaclass=_decorator_helper):
-    """
+    r"""
     Decorator to mark a function as a hook for cocotb.
 
     Used as ``@cocotb.hook()``.
