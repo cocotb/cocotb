@@ -111,7 +111,7 @@ Installation of cocotb
 
     If your user does not have permissions to install cocotb using the instructions above,
     try adding the ``--user`` option to ``pip``
-    (see :ref:`the pip documentation<https://pip.pypa.io/en/stable/user_guide/#user-installs>`).
+    (see `the pip documentation <https://pip.pypa.io/en/stable/user_guide/#user-installs>`_).
 
 .. warning::
 

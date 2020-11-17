@@ -110,7 +110,7 @@ class Clock(BaseClock):
     .. versionchanged:: 1.5
         Support ``'step'`` as the the *units* argument to mean "simulator time step".
 
-    .. deprecation:: 1.5
+    .. deprecated:: 1.5
         Using None as the the *units* argument is deprecated, use ``'step'`` instead.
     """
 
