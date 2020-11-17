@@ -19,3 +19,4 @@ jobs:
         stale-issue-label: "status:stale"
         only-labels: "type:question"
         exempt-labels: "type:bug,type:feature"
+        operations-per-run: 5
