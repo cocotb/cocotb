@@ -78,3 +78,11 @@ async def test_raise_error_deprecated(dut):
     with assert_deprecated():
         with assert_raises(cocotb.result.TestError):
             cocotb.result.raise_error(cocotb.triggers.Timer(1), "A test exception")
+
+
+@cocotb.test()
+async def test_hook_deprecated(_):
+    async def example():
+        pass
+    with assert_deprecated():
+        cocotb.hook()(example)
