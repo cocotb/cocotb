@@ -12,12 +12,24 @@ tasks:
       gp open ../hdl/dff.vhdl &&
       gp open Makefile &&
       gp open dff_cocotb.py &&
-      make SIM=icarus
+      make SIM=icarus &&
+      EXTRA_ARGS="-CFLAGS -DVM_TRACE_FST=1 --trace-fst --trace-structs" make SIM=verilator &&
+      gtkwave dump.fst &
     command: >
-      history -s make SIM=cvc &&
-      history -s make SIM=ghdl TOPLEVEL_LANG=vhdl &&
-      history -s make SIM=verilator &&
-      history -s make SIM=icarus
+      cd /workspace/cocotb/examples/dff/tests ;
+      history -s make SIM=cvc ;
+      history -s make SIM=ghdl TOPLEVEL_LANG=vhdl ;
+      history -s make SIM=icarus ;
+      history -s EXTRA_ARGS="-CFLAGS -DVM_TRACE_FST=1 --trace-fst --trace-structs" make SIM=verilator ;
+      history -s gtkwave dump.fst ;
+      history -d 3
+
+# https://www.gitpod.io/docs/config-ports/
+ports:
+  - port: 6080  # VNC for e.g. gtkwave
+    onOpen: notify
+  - port: 5900
+    onOpen: ignore
 
 vscode:
   extensions:
