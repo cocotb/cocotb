@@ -762,6 +762,8 @@ class Combine(_AggregateWaitable):
     Fires when all of *triggers* have fired.
 
     Like most triggers, this simply returns itself.
+
+    This is similar to Verilog's ``join``.
     """
     __slots__ = ()
 
@@ -790,6 +792,8 @@ class First(_AggregateWaitable):
     Fires when the first trigger in *triggers* fires.
 
     Returns the result of the trigger that fired.
+
+    This is similar to Verilog's ``join_any``.
 
     .. note::
         The event loop is single threaded, so while events may be simultaneous
