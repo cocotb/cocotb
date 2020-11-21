@@ -23,7 +23,8 @@ cocotb requires a simulator to simulate the :term:`HDL` design
 and has been used with a variety of simulators on Linux, Windows and macOS.
 Please check the :ref:`simulator-support` page for specifics.
 
-A (possibly older) version of cocotb can be used live in a web browser on `EDA Playground <https://www.edaplayground.com>`_.
+You can try the latest released version live in a web browser with :gitpod:`Gitpod<>`.
+A (possibly older) version of cocotb can also be used on `EDA Playground <https://www.edaplayground.com>`_.
 
 
 ************************

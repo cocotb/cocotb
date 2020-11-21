@@ -36,6 +36,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.extlinks',
     'sphinxcontrib.makedomain',
     'sphinx.ext.inheritance_diagram',
     'cairosvgconverter',
@@ -79,6 +80,24 @@ release = cocotb.__version__
 # The short X.Y version.
 v_major, v_minor = LooseVersion(release).version[:2]
 version = '{}.{}'.format(v_major, v_minor)
+
+# Find the tag name of the latest/highest released version.
+try:
+    latest_released_version = subprocess.check_output(['../../get_latest_released_version'],
+                                                      universal_newlines=True)
+except:
+    # use the default branch so that the link below works
+    latest_released_version = "master"
+
+# Build links using the tag of the latest released version determined above.
+#
+# This is misusing extlinks somewhat:
+# we construct the URL dynamically here with the {} and the %s should be a NOP in HTML.
+# The alternative way (https://stackoverflow.com/a/49019210)
+# to get a dynamic URL with rst_epilog did not work.
+extlinks = {'gitpod': ('https://gitpod.io/#https://github.com/cocotb/cocotb/tree/{}%s'.format(latest_released_version),
+                       None)}
+
 
 autoclass_content = "both"
 
