@@ -47,10 +47,10 @@ async def write_address_0(dut):
     dut.log.info("Write 0x%08X to address 0x%08X" % (int(value), ADDRESS))
 
 
-# Read back a value at address 0x01
+# Read back a value at address 0x04
 @cocotb.test()
-async def read_address_1(dut):
-    """Use cocotb to set the value of the register at address 0x01.
+async def read_address_4(dut):
+    """Use cocotb to set the value of the register at address 0x04.
     Use AXIML to read the contents of that register and
     compare the values.
 
@@ -67,7 +67,7 @@ async def read_address_1(dut):
     await Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
     await Timer(CLK_PERIOD_NS, units='ns')
-    ADDRESS = 0x01
+    ADDRESS = 0x04
     DATA = 0xCD
 
     dut.dut.r_temp_1 <= DATA
@@ -135,7 +135,7 @@ async def write_fail(dut):
     await Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
-    ADDRESS = 0x02
+    ADDRESS = 0x08
     DATA = 0xAB
 
     try:
@@ -166,7 +166,7 @@ async def read_fail(dut):
     await Timer(CLK_PERIOD_NS * 10, units='ns')
     dut.rst <= 0
 
-    ADDRESS = 0x02
+    ADDRESS = 0x08
     DATA = 0xAB
 
     try:
