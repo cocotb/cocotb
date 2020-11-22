@@ -294,4 +294,4 @@ jobs:
       if: steps.windowstesting.outcome == 'success' || steps.unixtesting.outcome == 'success'
       run: |
         pip install codecov
-        codecov
+        codecov --gcov-args='-rl'
