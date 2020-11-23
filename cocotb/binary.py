@@ -335,7 +335,7 @@ class BinaryValue:
         This can be configured with :envvar:`COCOTB_RESOLVE_X`.
 
         This is similar to the SystemVerilog Assertion ``$isunknown`` system function
-        (with an inverted meaning).
+        or the VHDL function ``is_x`` (with an inverted meaning).
         """
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
 
