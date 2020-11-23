@@ -444,7 +444,7 @@ int VhpiCbHdl::arm_callback()
 
         // don't cast to vhpiStateT immediately because vhpiUndefined is not in the enum
         vhpiIntT cbState_raw = vhpi_get(vhpiStateP, new_hdl);
-        if ((unsigned int)vhpiUndefined == cbState_raw) {
+        if ((vhpiIntT)vhpiUndefined == cbState_raw) {
             LOG_ERROR("VHPI: Registered callback isn't enabled! Got vhpiStateP=vhpiUndefined(%d)", vhpiUndefined);
             goto error;
         } else if (vhpiEnable != (vhpiStateT)cbState_raw) {
