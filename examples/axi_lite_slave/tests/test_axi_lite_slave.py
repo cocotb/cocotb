@@ -44,7 +44,7 @@ async def write_address_0(dut):
     value = dut.dut.r_temp_0
     assert value == DATA, ("Register at address 0x%08X should have been "
                            "0x%08X but was 0x%08X" % (ADDRESS, DATA, int(value)))
-    dut.log.info("Write 0x%08X to address 0x%08X" % (int(value), ADDRESS))
+    dut._log.info("Write 0x%08X to address 0x%08X" % (int(value), ADDRESS))
 
 
 # Read back a value at address 0x04
