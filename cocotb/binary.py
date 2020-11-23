@@ -327,8 +327,16 @@ class BinaryValue:
     get_value_signed = signed_integer.fget
 
     @property
-    def is_resolvable(self):
-        """Does the value contain any ``X``'s?  Inquiring minds want to know."""
+    def is_resolvable(self) -> bool:
+        """
+        Return whether the value contains only resolvable (i.e. no "unknown") bits.
+
+        By default the values ``X``, ``Z``, ``U`` and ``W`` are considered unresolvable.
+        This can be configured with :envvar:`COCOTB_RESOLVE_X`.
+
+        This is similar to the SystemVerilog Assertion ``$isunknown`` system function
+        or the VHDL function ``is_x`` (with an inverted meaning).
+        """
         return not any(char in self._str for char in BinaryValue._resolve_to_error)
 
     @property
