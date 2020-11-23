@@ -328,7 +328,8 @@ class BinaryValue:
 
     @property
     def is_resolvable(self) -> bool:
-        """Return whether the value contains only resolvable (i.e. no "unknown") bits.
+        """
+        Return whether the value contains only resolvable (i.e. no "unknown") bits.
 
         By default the values ``X``, ``Z``, ``U`` and ``W`` are considered unresolvable.
         This can be configured with :envvar:`COCOTB_RESOLVE_X`.
