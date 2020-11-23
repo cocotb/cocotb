@@ -86,3 +86,23 @@ async def test_hook_deprecated(_):
         pass
     with assert_deprecated():
         cocotb.hook()(example)
+
+
+@cocotb.test()
+async def test_handle_compat_mapping(dut):
+    """
+    Test DeprecationWarnings for _compat_mapping.
+
+    Note that these only warn once per attribute.
+    """
+    # log
+    with assert_deprecated():
+        dut.log.info("'log' is deprecated")
+    # name
+    with assert_deprecated():
+        dut.name = "myname"
+    assert dut.name == "myname"
+    # fullname
+    with assert_deprecated():
+        dut.fullname = "myfullname"
+    assert dut.fullname == "myfullname"
