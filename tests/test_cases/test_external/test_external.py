@@ -90,7 +90,7 @@ async def test_time_in_external(dut):
 
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else ())
 async def test_time_in_function(dut):
     """
     Test that an @external function calling back into a cocotb @function
@@ -119,7 +119,7 @@ async def test_time_in_function(dut):
 
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else ())
 async def test_external_call_return(dut):
     """
     Test ability to await an external function that is not a coroutine using @external
@@ -178,7 +178,7 @@ async def test_function_from_readonly(dut):
 
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else ())
 async def test_function_that_awaits(dut):
     """
     Test that @external functions can call @function coroutines that
@@ -192,7 +192,7 @@ async def test_function_that_awaits(dut):
 
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else ())
 async def test_await_after_function(dut):
     """
     Test that awaiting a Trigger works after returning
@@ -209,7 +209,7 @@ async def test_await_after_function(dut):
 
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else ())
 async def test_external_from_fork(dut):
     """
     Test that @external functions work when awaited from a forked

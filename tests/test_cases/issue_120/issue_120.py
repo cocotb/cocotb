@@ -19,7 +19,7 @@ async def monitor(dut):
 
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
-@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else False)
+@cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else ())
 async def issue_120_scheduling(dut):
 
     cocotb.fork(Clock(dut.clk, 10, 'ns').start())

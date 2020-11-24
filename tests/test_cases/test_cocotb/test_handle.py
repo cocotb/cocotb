@@ -66,7 +66,7 @@ async def test_delayed_assignment_still_errors(dut):
         dut.stream_in_int <= []
 
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
 async def test_integer(dut):
     """
     Test access to integers
@@ -83,7 +83,7 @@ async def test_integer(dut):
     assert got_in == got_out, "stream_in_int and stream_out_int should not match"
 
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
 async def test_real_assign_double(dut):
     """
     Assign a random floating point value, read it back from the DUT and check
@@ -102,7 +102,7 @@ async def test_real_assign_double(dut):
     assert got == val, "Values didn't match!"
 
 
-@cocotb.test(expect_error=cocotb.SIM_NAME in ["Icarus Verilog"])
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
 async def test_real_assign_int(dut):
     """Assign a random integer value to ensure we can write types convertible to
     int, read it back from the DUT and check it matches what we assigned.

@@ -68,7 +68,7 @@ async def discover_module_values(dut):
         raise TestFailure("Expected to discover things in the DUT")
 
 
-@cocotb.test(expect_error=True)
+@cocotb.test(expect_error=AttributeError)
 async def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
     fake_signal = dut.fake_signal
@@ -91,7 +91,7 @@ async def access_signal(dut):
 
 @cocotb.test(
     # Icarus up to (including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
-    expect_error=IndexError if (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))) else False,
+    expect_error=IndexError if (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))) else (),
     skip=cocotb.LANGUAGE in ["vhdl"])
 async def access_single_bit(dut):
     """Access a single bit in a vector of the DUT"""
@@ -109,7 +109,7 @@ async def access_single_bit(dut):
 
 @cocotb.test(
     # Icarus up to (including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
-    expect_error=IndexError if (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))) else False,
+    expect_error=IndexError if (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))) else (),
     skip=cocotb.LANGUAGE in ["vhdl"])
 async def access_single_bit_assignment(dut):
     """Access a single bit in a vector of the DUT using the assignment mechanism"""
@@ -125,7 +125,7 @@ async def access_single_bit_assignment(dut):
                          dut.stream_out_data_comb.value.integer, (1 << 2)))
 
 
-@cocotb.test(expect_error=True)
+@cocotb.test(expect_error=IndexError)
 async def access_single_bit_erroneous(dut):
     """Access a non-existent single bit"""
     dut._log.info("%s = %d bits" %
@@ -134,7 +134,7 @@ async def access_single_bit_erroneous(dut):
     dut.stream_in_data[bit] <= 1
 
 
-@cocotb.test(expect_error=cocotb.SIM_NAME.lower().startswith(("icarus", "chronologic simulation vcs")),
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus", "chronologic simulation vcs")) else (),
              expect_fail=cocotb.SIM_NAME.lower().startswith(("riviera")) and cocotb.LANGUAGE in ["verilog"])
 async def access_integer(dut):
     """Integer should show as an IntegerObject"""
@@ -250,7 +250,7 @@ async def access_string_vhdl(dut):
 # TODO: add tests for Verilog "string_input_port" and "STRING_LOCALPARAM" (see issue #802)
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"] or cocotb.SIM_NAME.lower().startswith(("icarus", "riviera")),
-             expect_error=cocotb.result.TestFailure if cocotb.SIM_NAME.lower().startswith(("xmsim", "ncsim", "modelsim", "chronologic simulation vcs")) else False)
+             expect_error=cocotb.result.TestFailure if cocotb.SIM_NAME.lower().startswith(("xmsim", "ncsim", "modelsim", "chronologic simulation vcs")) else ())
 async def access_const_string_verilog(dut):
     """Access to a const Verilog string."""
     tlog = logging.getLogger("cocotb.test")
@@ -271,7 +271,7 @@ async def access_const_string_verilog(dut):
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
-             expect_error=cocotb.SIM_NAME.lower().startswith("icarus"))
+             expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else ())
 async def access_var_string_verilog(dut):
     """Access to a var Verilog string."""
     tlog = logging.getLogger("cocotb.test")
@@ -369,7 +369,7 @@ async def skip_a_test(dut):
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
-             expect_error=cocotb.SIM_NAME.lower().startswith(("icarus")))
+             expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus")) else ())
 async def access_gate(dut):
     """
     Test access to a gate Object

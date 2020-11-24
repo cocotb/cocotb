@@ -106,3 +106,13 @@ async def test_handle_compat_mapping(dut):
     with assert_deprecated():
         dut.fullname = "myfullname"
     assert dut.fullname == "myfullname"
+
+
+@cocotb.test()
+async def test_expect_error_bool_deprecated(_):
+    async def t():
+        pass
+    with assert_deprecated():
+        cocotb.test(expect_error=True)(t)
+    with assert_deprecated():
+        cocotb.test(expect_error=False)(t)
