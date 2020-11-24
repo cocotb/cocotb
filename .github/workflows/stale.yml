@@ -18,5 +18,5 @@ jobs:
           If no more activity on this issue occurs in 7 days, it will be closed.
         stale-issue-label: "status:stale"
         only-labels: "type:question"
-        exempt-labels: "type:bug,type:feature"
+        exempt-issue-labels: "type:bug,type:feature"
         operations-per-run: 5
