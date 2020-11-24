@@ -11,5 +11,5 @@ import cocotb
 
 
 @cocotb.test()
-async def test_fail():
+async def test_fail(_):
     assert False
