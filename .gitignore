@@ -41,6 +41,8 @@ __pycache__
 
 # Waveforms
 *.vcd
+*.fst
+*.fst.hier
 
 # Results
 results.xml
