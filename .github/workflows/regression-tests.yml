@@ -52,6 +52,7 @@ jobs:
       CXX: ${{matrix.cxx || 'g++'}}
       CC: ${{matrix.cc || 'gcc'}}
       OS: ${{matrix.os}}
+      TOX_TESTENV_PASSENV: GITHUB_ACTIONS
 
     strategy:
       fail-fast: false

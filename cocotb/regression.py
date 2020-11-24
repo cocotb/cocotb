@@ -413,9 +413,15 @@ class RegressionManager:
     ) -> None:
 
         ratio_time = self._safe_divide(sim_time_ns, wall_time_s)
+        try:
+            lineno = inspect.getsourcelines(test._func)[1]
+        except OSError:
+            lineno = 1
 
         self.xunit.add_testcase(name=test.__qualname__,
                                 classname=test.__module__,
+                                file=inspect.getfile(test._func),
+                                lineno=repr(lineno),
                                 time=repr(wall_time_s),
                                 sim_time_ns=repr(sim_time_ns),
                                 ratio_time=repr(ratio_time))
