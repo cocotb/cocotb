@@ -14,9 +14,9 @@ from cocotb.result import TestFailure
 from common import clock_gen
 
 
-@cocotb.test(expect_error=True)
-async def test_syntax_error(dut):
-    """Syntax error in the test"""
+@cocotb.test(expect_error=NameError)
+async def test_error(dut):
+    """Error in the test"""
     await clock_gen(dut.clk)
     fail  # noqa
 
