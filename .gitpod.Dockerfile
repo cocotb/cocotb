@@ -10,36 +10,46 @@ RUN pyenv global ${PYTHON_VERSION}
 
 RUN pip3 install --upgrade pip
 
-# Install linters
-RUN pip3 install -U flake8 pylint
+# Install extra packages
+RUN pip3 install -U flake8 pylint pytype mypy gcovr cherrypy dowser
 
-# Re-synchronize the package index
+# Re-synchronize the OS package index
 RUN sudo apt-get update
 
-# Install needed packages
-RUN sudo apt-get install -y flex gnat gtkwave swig
+# Install all needed packages for all simulators
+RUN sudo apt-get install -y perl make flex gnat gtkwave swig autoconf g++ bison libfl2 libfl-dev ccache libgoogle-perftools-dev numactl perl-doc
 RUN sudo rm -rf /var/lib/apt/lists/*
 
 ## Install Icarus Verilog
 RUN brew install icarus-verilog
 
 ## Install Verilator
-RUN brew install verilator
+ENV VERILATOR_BRANCH=stable
+
+RUN git clone https://github.com/verilator/verilator.git --branch ${VERILATOR_BRANCH} verilator \
+    && unset VERILATOR_ROOT \
+    && cd verilator \
+    && autoconf \
+    && ./configure \
+    && make --silent \
+    && sudo make --silent install \
+    && cd .. \
+    && rm -rf verilator
 
 ## Install GHDL
 ENV GHDL_BRANCH=v0.37
 RUN git clone https://github.com/ghdl/ghdl.git --depth=1 --branch ${GHDL_BRANCH} ghdl \
     && cd ghdl \
     && ./configure \
-    && make -s \
-    && sudo make -s install \
+    && make --silent \
+    && sudo make --silent install \
     && cd .. \
     && rm -rf ghdl
 
 # Install cvc
 RUN git clone https://github.com/cambridgehackers/open-src-cvc.git --depth=1 cvc \
     && cd cvc/src \
-    && make -f makefile.cvc64 -s \
+    && make -f makefile.cvc64 --silent \
     && sudo cp cvc64 /usr/local/bin \
     && cd ../.. \
     && rm -rf cvc
