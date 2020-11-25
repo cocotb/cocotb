@@ -46,7 +46,7 @@ def total_object_count():
 
     # Riviera-PRO
     if SIM_NAME.startswith("riviera"):
-        if SIM_VERSION.startswith("2019.10"):
+        if SIM_VERSION.startswith(("2019.10", "2020.")):
             return 27359
         if SIM_VERSION.startswith("2016.02"):
             return 32393
@@ -112,7 +112,7 @@ async def dual_iteration(dut):
     await Combine(loop_one, loop_two)
 
 
-@cocotb.test(expect_fail=(cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith("2019.10")) or cocotb.SIM_NAME.lower().startswith("aldec"))
+@cocotb.test(expect_fail=(cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith(("2019.10", "2020."))) or cocotb.SIM_NAME.lower().startswith("aldec"))
 async def test_n_dimension_array(dut):
     """Test iteration over multi-dimensional array."""
     tlog = logging.getLogger("cocotb.test")
