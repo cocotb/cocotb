@@ -547,23 +547,6 @@ def want_color_output():
     return want_color
 
 
-if __name__ == "__main__":
-    import random
-    a = ""
-    for char in range(random.randint(250, 500)):
-        a += chr(random.randint(0, 255))
-    b = a
-    for error in range(random.randint(2, 9)):
-        offset = random.randint(0, len(a))
-        b = b[:offset] + chr(random.randint(0, 255)) + b[offset+1:]
-
-    diff = hexdiffs(a, b)
-    print(diff)
-
-    space = '\n' + (" " * 20)
-    print(space.join(diff.split('\n')))
-
-
 def remove_traceback_frames(tb_or_exc, frame_names):
     """
     Strip leading frames from a traceback
