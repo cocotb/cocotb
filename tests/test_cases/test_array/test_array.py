@@ -346,7 +346,7 @@ async def test_discover_all(dut):
             pass_total = 813
         elif cocotb.SIM_VERSION.startswith(("2016.02")):
             pass_total = 947
-        elif cocotb.SIM_VERSION.startswith(("2019.10")):
+        elif cocotb.SIM_VERSION.startswith(("2019.10", "2020.")):
             # vpiVariables finds port_rec_out and sig_rec
             pass_total = 1006
         else:
