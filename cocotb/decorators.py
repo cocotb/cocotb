@@ -498,6 +498,7 @@ class test(coroutine, metaclass=_decorator_helper):
                 Test timeout is intended for protection against deadlock.
                 Users should use :class:`~cocotb.triggers.with_timeout` if they require a
                 more general-purpose timeout mechanism.
+
         timeout_unit (str, optional):
             Units of timeout_time, accepts any units that :class:`~cocotb.triggers.Timer` does.
 
@@ -505,8 +506,10 @@ class test(coroutine, metaclass=_decorator_helper):
 
             .. deprecated:: 1.5
                 Using None as the the *timeout_unit* argument is deprecated, use ``'step'`` instead.
-         expect_fail (bool, optional):
+
+        expect_fail (bool, optional):
             Don't mark the result as a failure if the test fails.
+
         expect_error (bool or exception type or tuple of exception types, optional):
             If ``True``, consider this test passing if it raises *any* :class:`Exception`, and failing if it does not.
             If given an exception type or tuple of exception types, catching *only* a listed exception type is considered passing.
@@ -525,9 +528,11 @@ class test(coroutine, metaclass=_decorator_helper):
 
             .. versionchanged:: 1.3
                 Specific exception types can be expected
+
         skip (bool, optional):
             Don't execute this test as part of the regression. Test can still be run
             manually by setting :make:var:`TESTCASE`.
+
         stage (int, optional)
             Order tests logically into stages, where multiple tests can share a stage.
     """
