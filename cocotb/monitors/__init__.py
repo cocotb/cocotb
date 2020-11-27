@@ -53,23 +53,21 @@ class Monitor:
     """Base class for Monitor objects.
 
     Monitors are passive 'listening' objects that monitor pins going in or out of a DUT.
-    This class should not be used
-    directly, but should be sub-classed and the internal :any:`_monitor_recv` method
-    should be overridden and decorated as a :any:`coroutine`.  This :any:`_monitor_recv`
-    method should capture some behavior of the pins, form a transaction, and
-    pass this transaction to the internal :any:`_recv` method.  The :any:`_monitor_recv`
-    method is added to the cocotb scheduler during the ``__init__`` phase, so it
-    should not be awaited anywhere.
+    This class should not be used directly,
+    but should be sub-classed and the internal :meth:`_monitor_recv` method should be overridden.
+    This :meth:`_monitor_recv` method should capture some behavior of the pins, form a transaction,
+    and pass this transaction to the internal :meth:`_recv` method.
+    The :meth:`_monitor_recv` method is added to the cocotb scheduler during the ``__init__`` phase,
+    so it should not be awaited anywhere.
 
-    The primary use of a Monitor is as an interface for a
-    :class:`~cocotb.scoreboard.Scoreboard`.
+    The primary use of a Monitor is as an interface for a :class:`~cocotb.scoreboard.Scoreboard`.
 
     Args:
         callback (callable): Callback to be called with each recovered transaction
             as the argument. If the callback isn't used, received transactions will
             be placed on a queue and the event used to notify any consumers.
         event (cocotb.triggers.Event): Event that will be called when a transaction
-            is received through the internal :any:`_recv` method.
+            is received through the internal :meth:`_recv` method.
             `Event.data` is set to the received transaction.
     """
 
@@ -139,7 +137,7 @@ class Monitor:
         """Actual implementation of the receiver.
 
         Sub-classes should override this method to implement the actual receive
-        routine and call :any:`_recv` with the recovered transaction.
+        routine and call :meth:`_recv` with the recovered transaction.
         """
         raise NotImplementedError("Attempt to use base monitor class without "
                                   "providing a ``_monitor_recv`` method")

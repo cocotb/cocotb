@@ -30,6 +30,7 @@ Features
 
   ..
      towncrier will append the issue number taken from the file name here:
+
   Issue (:pr:`1255`)
 - The cocotb log configuration is now less intrusive, and only configures the root logger instance, ``logging.getLogger()``, as part of :func:`cocotb.log.default_config` (:pr:`1266`).
 
@@ -61,6 +62,7 @@ Features
 
   ..
      towncrier will append the issue number taken from the file name here:
+
   Issue (:pr:`1403`)
 - Custom logging handlers can now access the simulator time using
   :attr:`logging.LogRecord.created_sim_time`, provided the

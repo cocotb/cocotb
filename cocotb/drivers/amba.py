@@ -275,8 +275,8 @@ class AXI4Master(BusDriver):
 
         With unaligned writes (when ``address`` is not a multiple of ``size``),
         only the low ``size - address % size`` Bytes are written for:
-         * the last element of ``value`` for INCR or WRAP bursts, or
-         * every element of ``value`` for FIXED bursts.
+        * the last element of ``value`` for INCR or WRAP bursts, or
+        * every element of ``value`` for FIXED bursts.
 
         Args:
             address: The address to write to.
