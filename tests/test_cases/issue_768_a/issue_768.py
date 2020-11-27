@@ -14,8 +14,8 @@ value = 0
 
 
 @cocotb.test()
-def test(dut):
+async def test(dut):
     dut.stream_in_data.setimmediatevalue(value)
-    yield Timer(1)
+    await Timer(1, 'step')
     assert dut.stream_in_data.value == 0
-    yield ReadOnly()
+    await ReadOnly()

@@ -14,8 +14,8 @@ value = BinaryValue(0, n_bits=8)
 
 
 @cocotb.test()
-def do_test(dut):
+async def do_test(dut):
     dut.stream_in_data.setimmediatevalue(value)
-    yield Timer(1)
+    await Timer(1, 'step')
     assert dut.stream_in_data.value == 0
-    yield ReadOnly()
+    await ReadOnly()
