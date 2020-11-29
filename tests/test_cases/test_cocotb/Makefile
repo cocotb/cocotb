@@ -6,7 +6,6 @@ include ../../designs/sample_module/Makefile
 
 MODULE := "\
 	test_deprecated,\
-	test_doctests,\
 	test_synchronization_primitives,\
 	test_concurrency_primitives,\
 	test_tests,\
