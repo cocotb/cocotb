@@ -8,6 +8,7 @@ import warnings
 import ctypes
 from contextlib import contextmanager
 from common import assert_raises
+from typing import List
 
 
 @contextmanager
@@ -148,3 +149,26 @@ async def test_time_ps_deprecated(_):
         Timer(time=0, time_ps=7, units='ns')
     with assert_raises(TypeError):
         Timer(units='ps')
+
+
+def pack_bit_vector(values: List[int], bits: int):
+    """Pack the integers in `values` into a single integer, with each entry occupying `bits` bits.
+
+    >>> pack_bit_vector([0x012, 0x234, 0x456], bits=12) == 0x456234012
+    True
+    """
+    return sum(v << (bits * i) for i, v in enumerate(values))
+
+
+@cocotb.test()
+async def test_dict_signal_assignment_deprecated(dut):
+    """Assigning a dict to a ModifiableObject signal is deprecated"""
+
+    d = dict(values=[0xC, 0x5], bits=4)
+
+    with assert_deprecated():
+        dut.stream_in_data <= d
+
+    await Timer(1, 'step')
+
+    assert dut.stream_in_data.value == pack_bit_vector(**d)
