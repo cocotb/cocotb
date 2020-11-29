@@ -5,7 +5,7 @@
 
 import cocotb
 
-# pytest is an option dependency
+# pytest is an optional dependency
 try:
     import pytest
 except ImportError:
