@@ -59,9 +59,24 @@ endif
 COMPILE_ARGS += -f $(SIM_BUILD)/cmds.f -g2012 # Default to latest SystemVerilog standard
 
 # Compilation phase
+
+ifeq ($(WAVES), 1)
+    VERILOG_SOURCES += $(SIM_BUILD)/iverilog_dump.v
+    COMPILE_ARGS += -s iverilog_dump
+    PLUSARGS += -fst
+endif
+
 $(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	@echo "+timescale+$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)" > $(SIM_BUILD)/cmds.f
 	$(CMD) -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 -s $(TOPLEVEL) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+
+$(SIM_BUILD)/iverilog_dump.v: | $(SIM_BUILD)
+	@echo 'module iverilog_dump();' > $@
+	@echo 'initial begin' >> $@
+	@echo '    $$dumpfile("$(TOPLEVEL).fst");' >> $@
+	@echo '    $$dumpvars(0, $(TOPLEVEL));' >> $@
+	@echo 'end' >> $@
+	@echo 'endmodule' >> $@
 
 # Execution phase
 
