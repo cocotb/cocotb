@@ -84,6 +84,7 @@ Deprecations and Removals
   See the documentation for :class:`cocotb.hook` for suggestions on alternatives. (:pr:`2201`)
 - Deprecate :func:`~cocotb.utils.pack` and :func:`~cocotb.utils.unpack` and the use of :class:`python:ctypes.Structure` in signal assignments. (:pr:`2203`)
 - The outdated "ping" example has been removed from the documentation and repository. (:pr:`2232`)
+- Using the undocumented custom format :class:`dict` object in signal assignments has been deprecated. (:pr:`2240`)
 - The access modes of many interfaces in the cocotb core libraries were re-evaluated.
   Some interfaces that were previously public are now private and vice versa.
   Accessing the methods through their old name will create a :class:`DeprecationWarning`.

@@ -729,6 +729,11 @@ class ModifiableObject(NonConstantObject):
             :class:`ctypes.Structure` objects are no longer accepted as values for assignment.
             Convert the struct object to a :class:`~cocotb.binary.BinaryValue` before assignment using
             ``BinaryValue(value=bytes(struct_obj), n_bits=len(signal))`` instead.
+
+        .. deprecated:: 1.5
+            :class:`dict` objects are no longer accepted as values for assignment.
+            Convert the dictionary to an integer before assignment using
+            ``sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))``.
         """
         value, set_action = self._check_for_set_action(value)
 
@@ -755,6 +760,11 @@ class ModifiableObject(NonConstantObject):
                 DeprecationWarning, stacklevel=3)
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
         elif isinstance(value, dict):
+            warnings.warn(
+                "dict values are no longer accepted for value assignment. "
+                "Use `sum(v << (d['bits'] * i) for i, v in enumerate(d['values']))` "
+                "to convert the dict to an int before assignment.",
+                DeprecationWarning, stacklevel=3)
             # We're given a dictionary with a list of values and a bit size...
             num = 0
             vallist = list(value["values"])
