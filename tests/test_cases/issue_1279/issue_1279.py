@@ -9,9 +9,9 @@ import cocotb
     expect_error=cocotb.result.SimFailure,
     stage=1,
 )
-def test_sim_failure_a(dut):
+async def test_sim_failure_a(dut):
     # invoke a deadlock, as nothing is driving this clock
-    yield cocotb.triggers.RisingEdge(dut.clk)
+    await cocotb.triggers.RisingEdge(dut.clk)
 
 
 @cocotb.test(
@@ -19,6 +19,5 @@ def test_sim_failure_a(dut):
     expect_error=cocotb.result.SimFailure,
     stage=2,
 )
-def test_sim_failure_b(dut):
-    yield cocotb.triggers.NullTrigger()
-    raise cocotb.result.TestFailure("This test should never run")
+async def test_sim_failure_b(dut):
+    assert False, "This test should never run"

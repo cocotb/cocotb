@@ -3,13 +3,12 @@ from cocotb.triggers import Timer
 from cocotb.result import TestSuccess
 
 
-@cocotb.coroutine
-def raise_test_success():
-    yield Timer(1, units='ns')
+async def raise_test_success():
+    await Timer(1, units='ns')
     raise TestSuccess("TestSuccess")
 
 
 @cocotb.test()
-def error_test(dut):
+async def error_test(dut):
     cocotb.fork(raise_test_success())
-    yield Timer(10, units='ns')
+    await Timer(10, units='ns')

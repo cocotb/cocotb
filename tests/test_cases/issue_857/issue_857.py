@@ -3,9 +3,8 @@ import cocotb.regression
 import cocotb.triggers
 
 
-@cocotb.coroutine
-def dummy_coroutine(dut):
-    yield cocotb.triggers.Timer(10, "ns")
+async def dummy_coroutine(dut):
+    await cocotb.triggers.Timer(10, "ns")
 
 
 # Try to instantiate the TestFactory class using its full specifier name.
