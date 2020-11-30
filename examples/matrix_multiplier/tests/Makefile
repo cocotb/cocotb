@@ -55,13 +55,6 @@ endif
 # Fix the seed to ensure deterministic tests
 export RANDOM_SEED := 123456789
 
-# Export generics to test
-# Can't use plusargs since they aren't supported by ghdl
-export DATA_WIDTH
-export A_ROWS
-export B_COLUMNS
-export A_COLUMNS_B_ROWS
-
 TOPLEVEL    := matrix_multiplier
 MODULE      := test_matrix_multiplier
 
