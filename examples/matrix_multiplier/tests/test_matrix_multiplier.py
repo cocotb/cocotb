@@ -10,14 +10,13 @@ from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
 from cocotb.monitors import BusMonitor
 from cocotb.regression import TestFactory
-from cocotb.scoreboard import Scoreboard
 from cocotb.triggers import RisingEdge, ReadOnly
 
 NUM_SAMPLES = int(os.environ.get('NUM_SAMPLES', 3000))
-DATA_WIDTH = int(os.environ['DATA_WIDTH'])
-A_ROWS = int(os.environ['A_ROWS'])
-B_COLUMNS = int(os.environ['B_COLUMNS'])
-A_COLUMNS_B_ROWS = int(os.environ['A_COLUMNS_B_ROWS'])
+DATA_WIDTH = int(cocotb.top.DATA_WIDTH)
+A_ROWS = int(cocotb.top.A_ROWS)
+B_COLUMNS = int(cocotb.top.B_COLUMNS)
+A_COLUMNS_B_ROWS = int(cocotb.top.A_COLUMNS_B_ROWS)
 
 
 class MatrixMonitor(BusMonitor):
@@ -83,14 +82,22 @@ async def test_multiply(dut, a_data, b_data):
 
     cocotb.fork(Clock(dut.clk_i, 10, units='ns').start())
 
-    # Configure Scoreboard to compare module results to expected
+    # Configure checker to compare module results to expected
     expected_output = []
 
-    in_monitor = MatrixInMonitor(dut, callback=expected_output.append)
-    out_monitor = MatrixOutMonitor(dut)
+    dut._log.info("Configure monitors")
 
-    scoreboard = Scoreboard(dut)
-    scoreboard.add_interface(out_monitor, expected_output)
+    in_monitor = MatrixInMonitor(dut, callback=expected_output.append)
+
+    def check_output(transaction):
+        if not expected_output:
+            raise RuntimeError("Monitor captured unexpected multiplication operation")
+        exp = expected_output.pop(0)
+        assert transaction == exp, "Multiplication result {} did not match expected result {}".format(transaction, exp)
+
+    out_monitor = MatrixOutMonitor(dut, callback=check_output)
+
+    dut._log.info("Initialize and reset model")
 
     # Initial values
     dut.valid_i <= 0
@@ -103,8 +110,10 @@ async def test_multiply(dut, a_data, b_data):
         await RisingEdge(dut.clk_i)
     dut.reset_i <= 0
 
+    dut._log.info("Test multiplication operations")
+
     # Do multiplication operations
-    for A, B in zip(a_data(), b_data()):
+    for i, (A, B) in enumerate(zip(a_data(), b_data())):
         await RisingEdge(dut.clk_i)
         dut.a_i <= A
         dut.b_i <= B
@@ -113,9 +122,10 @@ async def test_multiply(dut, a_data, b_data):
         await RisingEdge(dut.clk_i)
         dut.valid_i <= 0
 
-    await RisingEdge(dut.clk_i)
+        if i % 100 == 0:
+            dut._log.info("{} / {}".format(i, NUM_SAMPLES))
 
-    raise scoreboard.result
+    await RisingEdge(dut.clk_i)
 
 
 def create_matrix(func, rows, cols):
