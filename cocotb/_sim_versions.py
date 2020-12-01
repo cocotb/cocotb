@@ -6,7 +6,9 @@
 Classes to compare simulation versions.
 
 These are for cocotb-internal use only.
-Warning: these classes silently allow comparing versions of different simulators.
+
+.. warning::
+    These classes silently allow comparing versions of different simulators.
 """
 
 from distutils.version import LooseVersion
