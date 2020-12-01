@@ -144,6 +144,12 @@ jobs:
             python-version: 3.8
             os: macos-latest
 
+          - sim: icarus
+            sim-version: homebrew
+            lang: verilog
+            python-version: 3.8
+            os: macos-11.0
+
           - sim: icarus             # Icarus windows master from source
             sim-version: master
             lang: verilog
