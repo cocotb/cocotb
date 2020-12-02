@@ -95,7 +95,6 @@ jobs:
             lang: verilog
             python-version: 3.8
             os: ubuntu-20.04
-            may_fail: true
 
             # Test GHDL on Ubuntu
 
@@ -136,7 +135,6 @@ jobs:
             lang: verilog
             python-version: 3.8
             os: macos-latest
-            may_fail: true
 
           - sim: icarus             # Icarus homebrew stable
             sim-version: homebrew
@@ -149,7 +147,6 @@ jobs:
             lang: verilog
             python-version: 3.8
             os: windows-latest
-            may_fail: true
 
           - sim: icarus             # Icarus windows 10.3 from source
             sim-version: v10_3
