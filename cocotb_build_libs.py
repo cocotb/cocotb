@@ -281,6 +281,8 @@ def _get_python_lib():
 
     if os.name == "nt":
         python_lib = _get_python_lib_link() + "." + _get_lib_ext_name()
+    elif sys.platform == "darwin":
+        python_lib = "lib" + _get_python_lib_link() + ".dylib"
     else:
         python_lib = "lib" + _get_python_lib_link() + "." + _get_lib_ext_name()
 
