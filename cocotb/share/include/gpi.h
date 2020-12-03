@@ -66,14 +66,6 @@ we have to create a process with the signal on the sensitivity list to imitate a
 
 #include <gpi_logging.h>
 
-#ifdef __cplusplus
-# define EXTERN_C_START extern "C" {
-# define EXTERN_C_END }
-#else
-# define EXTERN_C_START
-# define EXTERN_C_END
-#endif
-
 #ifndef __GNUC__
 # undef  __attribute__
 # define __attribute__(x)
@@ -110,7 +102,9 @@ we have to create a process with the signal on the sensitivity list to imitate a
     typedef struct GpiIterator *gpi_iterator_hdl;
 #endif
 
-EXTERN_C_START
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum gpi_event_e {
     SIM_INFO = 0,
@@ -265,6 +259,8 @@ GPI_EXPORT void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
 // Returns the number of libs
 GPI_EXPORT size_t gpi_print_registered_impl(void);
 
-EXTERN_C_END
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COCOTB_GPI_H_ */
