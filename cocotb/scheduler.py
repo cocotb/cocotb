@@ -184,11 +184,11 @@ class Scheduler:
         - Any pending writes are cached and do not happen immediately
 
     ReadOnly mode
-        - Corresponds to ``cbReadOnlySynch`` (VPI) or ``vhpiCbLastKnownDeltaCycle``
+        - Corresponds to ``cbReadOnlySynch`` (VPI) or ``vhpiCbRepEndOfTimeStep``
           (VHPI).  In this state we are not allowed to perform writes.
 
     Write mode
-        - Corresponds to ``cbReadWriteSynch`` (VPI) or ``vhpiCbEndOfProcesses`` (VHPI)
+        - Corresponds to ``cbReadWriteSynch`` (VPI) or ``vhpiCbRepLastKnownDeltaCycle`` (VHPI)
           In this mode we play back all the cached write updates.
 
     We can legally transition from Normal to Write by registering a :class:`~cocotb.triggers.ReadWrite`
