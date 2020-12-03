@@ -175,7 +175,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
 
    building
    Python Code Library Reference <library_reference>
-   C/C++ Code Library Reference <library_reference_c>
+   GPI Library Reference <library_reference_c>
    simulator_support
    extensions
 
