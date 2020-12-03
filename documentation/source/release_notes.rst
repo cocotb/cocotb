@@ -4,7 +4,7 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
-.. include:: generated/master-notes.rst
+.. include:: master-notes.rst
 
 .. towncrier release notes start
 

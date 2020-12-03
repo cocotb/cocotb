@@ -306,13 +306,11 @@ todo_include_todos = False
 
 # -- Extra setup for C documentation with Doxygen and breathe ------------------
 # see also https://breathe.readthedocs.io/en/latest/readthedocs.html
+subprocess.run('doxygen', cwd='..')
 
-env = os.environ.copy()
-env['PATH'] += ':.venv/bin'
-subprocess.call('doxygen', cwd='..')
-subprocess.call(['breathe-apidoc', '-o', 'source/generated', 'source/doxygen/_xml', '-f'], env=env, cwd='..')
-
-
+cpp_id_attributes = [
+    'GPI_EXPORT'
+]
 breathe_projects = { "cocotb": "doxygen/_xml" }
 breathe_default_project = "cocotb"
 breathe_domain_by_extension = {
@@ -344,5 +342,5 @@ graphviz_output_format = 'svg'
 in_progress_notes = subprocess.check_output(['towncrier', '--draft', '--name', 'cocotb', '--version', release],
                                             cwd='../..',
                                             universal_newlines=True)
-with open('generated/master-notes.rst', 'w') as f:
+with open('master-notes.rst', 'w') as f:
     f.write(in_progress_notes)
