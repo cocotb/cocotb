@@ -66,10 +66,6 @@ we have to create a process with the signal on the sensitivity list to imitate a
 
 #include <gpi_logging.h>
 
-#ifndef __GNUC__
-# undef  __attribute__
-# define __attribute__(x)
-#endif
 
 /*
  * Declare the handle types.
