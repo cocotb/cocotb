@@ -265,12 +265,6 @@ GPI_EXPORT void *gpi_get_callback_data(gpi_cb_hdl gpi_hdl);
 // Returns the number of libs
 GPI_EXPORT size_t gpi_print_registered_impl(void);
 
-#define GPI_RET(_code) \
-    if (_code == 1) \
-        return 0; \
-    else \
-        return -1
-
 EXTERN_C_END
 
 #endif /* COCOTB_GPI_H_ */
