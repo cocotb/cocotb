@@ -308,6 +308,9 @@ todo_include_todos = False
 # see also https://breathe.readthedocs.io/en/latest/readthedocs.html
 subprocess.run('doxygen', cwd='..')
 
+cpp_id_attributes = [
+    'GPI_EXPORT'
+]
 breathe_projects = { "cocotb": "doxygen/_xml" }
 breathe_default_project = "cocotb"
 breathe_domain_by_extension = {
