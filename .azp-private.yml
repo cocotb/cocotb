@@ -22,6 +22,7 @@ resources:
     type: github
     endpoint: cocotb
     name: cocotb/cocotb-private-ci
+    ref: refs/heads/cleanup
 
 extends:
   template: jobs.yml@cocotb-private-ci
