@@ -136,10 +136,6 @@ assign logic_a = stream_in_valid;
 always@* logic_b = stream_in_valid;
 always@(posedge clk) logic_c <= stream_in_valid;
 
-`ifndef __ICARUS__
-assign inout_if.b_out = inout_if.a_in;
-`endif
-
 reg _underscore_name;
 `ifdef __ICARUS__
     // By default, a variable must be used in some way in order
