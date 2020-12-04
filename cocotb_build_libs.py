@@ -281,6 +281,12 @@ def _get_python_lib():
 
     if os.name == "nt":
         python_lib = _get_python_lib_link() + "." + _get_lib_ext_name()
+    elif sys.platform == "darwin":
+        python_lib = os.path.join(sysconfig.get_config_var("LIBDIR"), "lib" + _get_python_lib_link() + ".")
+        if os.path.exists(python_lib + "dylib"):
+            python_lib += "dylib"
+        else:
+            python_lib += "so"
     else:
         python_lib = "lib" + _get_python_lib_link() + "." + _get_lib_ext_name()
 
