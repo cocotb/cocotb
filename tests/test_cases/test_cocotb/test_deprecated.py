@@ -129,6 +129,7 @@ async def test_assigning_structure_deprecated(dut):
 
     assert dut.stream_in_data_wide == BinaryValue(value=bytes(e), n_bits=len(dut.stream_in_data_wide))
 
+
 @cocotb.test()
 async def test_expect_error_bool_deprecated(_):
     async def t():
