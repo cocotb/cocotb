@@ -31,6 +31,7 @@
 
 #include <Python.h>
 #include <cocotb_utils.h>
+#include <gpi_logging.h>
 #include "embed.h"
 #include "locale.h"
 #include <cassert>
@@ -122,10 +123,7 @@ extern "C" void embed_init_python(void)
 
     assert(!gtstate);  // this function should not be called twice
 
-    void * lib_handle = utils_dyn_open(PY_SO_LIB);
-    if (!lib_handle) {
-        LOG_ERROR("Failed to find Python shared library");
-    }
+    (void)utils_dyn_open(PY_SO_LIB, GPIWarning);
 
     to_python();
     set_program_name_in_venv();

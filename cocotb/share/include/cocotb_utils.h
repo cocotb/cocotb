@@ -39,15 +39,17 @@
 
 #include <gpi_logging.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define xstr(a) str(a)
 #define str(a) #a
 
-extern COCOTBUTILS_EXPORT void* utils_dyn_open(const char* lib_name);
-extern COCOTBUTILS_EXPORT void* utils_dyn_sym(void *handle, const char* sym_name);
+COCOTBUTILS_EXPORT void* utils_dyn_open(
+    const char* lib_name,
+    enum gpi_log_levels error_log_level = GPIError);
+
+COCOTBUTILS_EXPORT void* utils_dyn_sym(
+    void *handle,
+    const char* sym_name,
+    enum gpi_log_levels error_log_level = GPIError);
 
 extern COCOTBUTILS_EXPORT int is_python_context;
 
@@ -73,9 +75,5 @@ extern COCOTBUTILS_EXPORT int is_python_context;
 } while (0)
 
 #define COCOTB_UNUSED(x) ((void)x)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* COCOTB_UTILS_H_ */

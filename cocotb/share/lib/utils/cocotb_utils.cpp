@@ -40,7 +40,7 @@
 // Tracks if we are in the context of Python or Simulator
 int is_python_context = 0;
 
-extern "C" void* utils_dyn_open(const char* lib_name)
+void* utils_dyn_open(const char* lib_name, enum gpi_log_levels error_log_level)
 {
     void *ret = NULL;
 #if ! defined(__linux__) && ! defined(__APPLE__)
@@ -54,10 +54,10 @@ extern "C" void* utils_dyn_open(const char* lib_name)
                            GetLastError(),
                            MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT),
                            (LPSTR)&msg_ptr, 255, NULL)) {
-            LOG_ERROR(log_fmt, lib_name, ": ", msg_ptr);
+            LOG(error_log_level, log_fmt, lib_name, ": ", msg_ptr);
             LocalFree(msg_ptr);
         } else {
-            LOG_ERROR(log_fmt, lib_name, "", "");
+            LOG(error_log_level, log_fmt, lib_name, "", "");
         }
     }
 #else
@@ -66,13 +66,13 @@ extern "C" void* utils_dyn_open(const char* lib_name)
 
     ret = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL);
     if (!ret) {
-        LOG_ERROR("Unable to open lib %s: %s", lib_name, dlerror());
+        LOG(error_log_level, "Unable to open lib %s: %s", lib_name, dlerror());
     }
 #endif
     return ret;
 }
 
-extern "C" void* utils_dyn_sym(void *handle, const char* sym_name)
+void* utils_dyn_sym(void *handle, const char* sym_name, enum gpi_log_levels error_log_level)
 {
     void *entry_point;
 #if ! defined(__linux__) && ! defined(__APPLE__)
@@ -85,16 +85,16 @@ extern "C" void* utils_dyn_sym(void *handle, const char* sym_name)
                            GetLastError(),
                            MAKELANGID(LANG_NEUTRAL, SUBLANG_SYS_DEFAULT),
                            (LPSTR)&msg_ptr, 255, NULL)) {
-            LOG_ERROR(log_fmt, sym_name, ": ", msg_ptr);
+            LOG(error_log_level, log_fmt, sym_name, ": ", msg_ptr);
             LocalFree(msg_ptr);
         } else {
-            LOG_ERROR(log_fmt, sym_name, "", "");
+            LOG(error_log_level, log_fmt, sym_name, "", "");
         }
     }
 #else
     entry_point = dlsym(handle, sym_name);
     if (!entry_point) {
-        LOG_ERROR("Unable to find symbol %s: %s", sym_name, dlerror());
+        LOG(error_log_level, "Unable to find symbol %s: %s", sym_name, dlerror());
     }
 #endif
     return entry_point;
