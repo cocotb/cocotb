@@ -41,13 +41,13 @@ from typing import Dict, List, Optional, Union
 from collections.abc import Coroutine
 
 import cocotb.handle
-import cocotb.log
 from cocotb.scheduler import Scheduler
 from cocotb.regression import RegressionManager
 from cocotb.decorators import RunningTask
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine, function, external  # noqa: F401
+from cocotb.log import _log_from_c, _filter_from_c  # noqa: F401
 
 from ._version import __version__
 
@@ -73,7 +73,8 @@ def _setup_logging():
 
     # Don't set the logging up until we've attempted to fix the standard IO,
     # otherwise it will end up connected to the unfixed IO.
-    cocotb.log.default_config()
+    from cocotb.log import default_config
+    default_config()
     log = logging.getLogger(__name__)
 
     # we can't log these things until the logging is set up!
