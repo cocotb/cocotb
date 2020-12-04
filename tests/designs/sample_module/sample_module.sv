@@ -51,7 +51,7 @@ module sample_module #(
     input  integer                              stream_in_int,
     output real                                 stream_out_real,
     output integer                              stream_out_int,
-    input  test_if                              inout_if,
+    inout  test_if                              inout_if,
     input  string                               stream_in_string,
 `endif
     input  [7:0]                                stream_in_data,
