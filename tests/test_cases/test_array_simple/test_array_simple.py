@@ -176,6 +176,20 @@ async def test_ndim_array_indexes(dut):
     _check_value(tlog, dut.array_2d[1]    , [0xDE, 0xAD, 0x12, 0xEF])
 
 
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) else ())
+async def test_struct(dut):
+    """Test setting and getting values of structs."""
+    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    dut.inout_if.a_in <= 1
+    await Timer(1000, 'ns')
+    _check_value(tlog, dut.inout_if.a_in, 1)
+    _check_value(tlog, dut.inout_if.b_out, 1)
+    dut.inout_if.a_in <= 0
+    await Timer(1000, 'ns')
+    _check_value(tlog, dut.inout_if.a_in, 0)
+    _check_value(tlog, dut.inout_if.b_out, 0)
+
+
 @contextlib.contextmanager
 def assert_raises(exc_type):
     try:
