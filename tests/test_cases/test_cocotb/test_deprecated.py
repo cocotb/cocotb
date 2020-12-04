@@ -128,3 +128,13 @@ async def test_assigning_structure_deprecated(dut):
     await Timer(1, 'step')
 
     assert dut.stream_in_data_wide == BinaryValue(value=bytes(e), n_bits=len(dut.stream_in_data_wide))
+
+    
+@cocotb.test()
+async def test_expect_error_bool_deprecated(_):
+    async def t():
+        pass
+    with assert_deprecated():
+        cocotb.test(expect_error=True)(t)
+    with assert_deprecated():
+        cocotb.test(expect_error=False)(t)

@@ -6,7 +6,7 @@ Tests that specifically test generator-based coroutines
 """
 import cocotb
 from cocotb.triggers import Timer
-from common import clock_gen, _check_traceback
+from common import clock_gen, _check_traceback, assert_raises
 import textwrap
 
 
@@ -91,23 +91,24 @@ def test_yield_list(dut):
 
 
 @cocotb.coroutine
-def syntax_error():
+def erroring_coro():
     yield Timer(100)
     fail  # noqa
 
 
-@cocotb.test(expect_error=True)
-def test_coroutine_syntax_error(dut):
-    """Syntax error in a coroutine that we yield"""
+@cocotb.test()
+def test_coroutine_error(dut):
+    """Error in a coroutine that we yield"""
     yield clock_gen(dut.clk)
-    yield syntax_error()
+    with assert_raises(NameError):
+        yield erroring_coro()
 
 
-@cocotb.test(expect_error=True)
-def test_fork_syntax_error(dut):
-    """Syntax error in a coroutine that we fork"""
+@cocotb.test(expect_error=NameError)
+def test_fork_error(dut):
+    """Error in a coroutine that we fork"""
     yield clock_gen(dut.clk)
-    cocotb.fork(syntax_error())
+    cocotb.fork(erroring_coro())
     yield clock_gen(dut.clk)
 
 

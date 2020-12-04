@@ -113,10 +113,8 @@ async def do_test_afterdelay_in_readonly(dut, delay):
     exited = True
 
 
-@cocotb.test(expect_error=True,
-             skip=cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith(("riviera")),  # gh-1245
+@cocotb.test(expect_error=TriggerException if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")) else (),
              expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
-                                                             "riviera",
                                                              "modelsim",
                                                              "ncsim",
                                                              "xmsim")))
@@ -131,12 +129,7 @@ async def test_readwrite_in_readonly(dut):
     assert exited
 
 
-@cocotb.test(expect_error=True,
-             expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
-                                                             "riviera",
-                                                             "modelsim",
-                                                             "ncsim",
-                                                             "xmsim")))
+@cocotb.test(expect_error=Exception)
 async def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited

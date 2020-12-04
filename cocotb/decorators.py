@@ -510,9 +510,8 @@ class test(coroutine, metaclass=_decorator_helper):
         expect_fail (bool, optional):
             Don't mark the result as a failure if the test fails.
 
-        expect_error (bool or exception type or tuple of exception types, optional):
-            If ``True``, consider this test passing if it raises *any* :class:`Exception`, and failing if it does not.
-            If given an exception type or tuple of exception types, catching *only* a listed exception type is considered passing.
+        expect_error (exception type or tuple of exception types, optional):
+            Mark the result as a pass only if one of the exception types is raised in the test.
             This is primarily for cocotb internal regression use for when a simulator error is expected.
 
             Users are encouraged to use the following idiom instead::
@@ -529,6 +528,10 @@ class test(coroutine, metaclass=_decorator_helper):
             .. versionchanged:: 1.3
                 Specific exception types can be expected
 
+            .. deprecated:: 1.5
+                Passing a :class:`bool` value is now deprecated.
+                Pass a specific :class:`Exception` or a tuple of Exceptions instead.
+
         skip (bool, optional):
             Don't execute this test as part of the regression. Test can still be run
             manually by setting :make:var:`TESTCASE`.
@@ -540,7 +543,7 @@ class test(coroutine, metaclass=_decorator_helper):
     _id_count = 0  # used by the RegressionManager to sort tests in definition order
 
     def __init__(self, f, timeout_time=None, timeout_unit="step",
-                 expect_fail=False, expect_error=False,
+                 expect_fail=False, expect_error=(),
                  skip=False, stage=None):
 
         if timeout_unit is None:
@@ -571,6 +574,11 @@ class test(coroutine, metaclass=_decorator_helper):
         self.timeout_time = timeout_time
         self.timeout_unit = timeout_unit
         self.expect_fail = expect_fail
+        if isinstance(expect_error, bool):
+            warnings.warn(
+                "Passing bool values to `except_error` option of `cocotb.test` is deprecated. "
+                "Pass a specific Exception type instead",
+                DeprecationWarning, stacklevel=2)
         if expect_error is True:
             expect_error = (Exception,)
         elif expect_error is False:
