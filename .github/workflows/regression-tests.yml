@@ -115,13 +115,6 @@ jobs:
             # Test Verilator on Ubuntu
 
           - sim: verilator
-            sim-version: apt
-            lang: verilog
-            python-version: 3.8
-            os: ubuntu-20.04
-            may_fail: true
-
-          - sim: verilator
             sim-version: master
             lang: verilog
             python-version: 3.8
