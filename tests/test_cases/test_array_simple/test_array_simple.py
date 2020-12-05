@@ -183,11 +183,9 @@ async def test_struct(dut):
     dut.inout_if.a_in <= 1
     await Timer(1000, 'ns')
     _check_value(tlog, dut.inout_if.a_in, 1)
-    _check_value(tlog, dut.inout_if.b_out, 1)
     dut.inout_if.a_in <= 0
     await Timer(1000, 'ns')
     _check_value(tlog, dut.inout_if.a_in, 0)
-    _check_value(tlog, dut.inout_if.b_out, 0)
 
 
 @contextlib.contextmanager
