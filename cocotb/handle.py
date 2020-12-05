@@ -692,12 +692,17 @@ class ModifiableObject(NonConstantObject):
         because assigning integers less than 32 bits is faster.
 
         Args:
-            value (ctypes.Structure, cocotb.binary.BinaryValue, int, double):
+            value (cocotb.binary.BinaryValue, int):
                 The value to drive onto the simulator object.
 
         Raises:
             TypeError: If target is not wide enough or has an unsupported type
                  for value assignment.
+
+        .. deprecated:: 1.5
+            :class:`ctypes.Structure` objects are no longer accepted as values for assignment.
+            Convert the struct object to a :class:`~cocotb.binary.BinaryValue` before assignment using
+            ``BinaryValue(value=bytes(struct_obj), n_bits=len(signal))`` instead.
         """
         value, set_action = self._check_for_set_action(value)
 
@@ -705,6 +710,10 @@ class ModifiableObject(NonConstantObject):
             call_sim(self, self._handle.set_signal_val_long, set_action, value)
             return
         if isinstance(value, ctypes.Structure):
+            warnings.warn(
+                "`ctypes.Structure` values are no longer accepted for value assignment. "
+                "Use `BinaryValue(value=bytes(struct_obj), n_bits=len(signal))` instead",
+                DeprecationWarning, stacklevel=3)
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
         elif isinstance(value, int):
             value = BinaryValue(value=value, n_bits=len(self), bigEndian=False)

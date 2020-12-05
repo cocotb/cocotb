@@ -2,7 +2,10 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 import cocotb
+from cocotb.triggers import Timer
+from cocotb.binary import BinaryValue
 import warnings
+import ctypes
 from contextlib import contextmanager
 from common import assert_raises
 
@@ -106,6 +109,25 @@ async def test_handle_compat_mapping(dut):
     with assert_deprecated():
         dut.fullname = "myfullname"
     assert dut.fullname == "myfullname"
+
+
+@cocotb.test()
+async def test_assigning_structure_deprecated(dut):
+    """signal <= ctypes.Structure assignment is deprecated"""
+
+    class Example(ctypes.Structure):
+        _fields_ = [
+            ("a", ctypes.c_byte),
+            ("b", ctypes.c_uint32)]
+
+    e = Example(a=0xCC, b=0x12345678)
+
+    with assert_deprecated():
+        dut.stream_in_data_wide <= e
+
+    await Timer(1, 'step')
+
+    assert dut.stream_in_data_wide == BinaryValue(value=bytes(e), n_bits=len(dut.stream_in_data_wide))
 
 
 @cocotb.test()

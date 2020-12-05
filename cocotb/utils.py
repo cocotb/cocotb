@@ -174,7 +174,13 @@ def pack(ctypes_obj):
 
     Returns:
         New Python string containing the bytes from memory holding *ctypes_obj*.
+
+    .. deprecated:: 1.5
+        This function is deprecated, use ``bytes(ctypes_obj)`` instead.
     """
+    warnings.warn(
+        "This function is deprecated and will be removed, use ``bytes(ctypes_obj)`` instead.",
+        DeprecationWarning, stacklevel=2)
     return ctypes.string_at(ctypes.addressof(ctypes_obj),
                             ctypes.sizeof(ctypes_obj))
 
@@ -196,7 +202,15 @@ def unpack(ctypes_obj, string, bytes=None):
         :exc:`ValueError`: If length of *string* and size of *ctypes_obj*
             are not equal.
         :exc:`MemoryError`: If *bytes* is longer than size of *ctypes_obj*.
+
+    .. deprecated:: 1.5
+        Converting bytes to a ctypes object should be done with :meth:`~ctypes._CData.from_buffer_copy`.
+        If you need to assign bytes into an *existing* ctypes object, use ``memoryview(ctypes_obj).cast('B')[:bytes] = string``,
+        see :class:`memoryview` for details.
     """
+    warnings.warn(
+        "This function is being removed, use ``memoryview(ctypes_obj).cast('B')[:bytes] = string`` instead.",
+        DeprecationWarning, stacklevel=2)
     if bytes is None:
         if len(string) != ctypes.sizeof(ctypes_obj):
             raise ValueError("Attempt to unpack a string of size %d into a \
