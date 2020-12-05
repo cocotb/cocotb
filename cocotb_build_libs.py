@@ -142,6 +142,9 @@ class build_ext(_build_ext):
                 name = os.path.split(fullname)[-1]
                 filename = os.path.split(filename)[-1]
                 libraries = {"lib" + lib for lib in ext.libraries}.intersection(ext_names)
+                # Add the runtime dependency on libcocotb to libembed dependencies
+                if name == "libembed":
+                    libraries.add("libcocotb")
                 create_rc_file(name, filename, libraries)
 
         super().run()
@@ -370,6 +373,27 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     )
 
     #
+    #  libembed
+    #
+    libembed_sources = [
+        os.path.join(share_lib_dir, "embed", "embed.cpp")
+    ]
+    if os.name == "nt":
+        libembed_sources += ["libembed.rc"]
+    libembed = Extension(
+        os.path.join("cocotb", "libs", "libembed"),
+        define_macros=[
+            ("COCOTB_EMBED_EXPORTS", ""),
+            ("EMBED_IMPL_LIB", "libcocotb." + _get_lib_ext_name()),
+            ("PYTHON_LIB", _get_python_lib())] + _extra_defines,
+        include_dirs=[include_dir],
+        libraries=["gpilog", "cocotbutils"],
+        sources=libembed_sources,
+        extra_link_args=_extra_link_args(lib_name="libembed", rpaths=["$ORIGIN"]),
+        extra_compile_args=_extra_cxx_compile_args,
+    )
+
+    #
     #  libcocotb
     #
     libcocotb_sources = [
@@ -379,12 +403,11 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libcocotb_sources += ["libcocotb.rc"]
     libcocotb = Extension(
         os.path.join("cocotb", "libs", "libcocotb"),
-        define_macros=[("COCOTB_EMBED_EXPORTS", ""), ("PYTHON_SO_LIB", _get_python_lib())] + _extra_defines,
+        define_macros=_extra_defines,
         include_dirs=[include_dir],
-        libraries=[_get_python_lib_link(), "gpilog", "cocotbutils", "pygpilog"],
-        library_dirs=python_lib_dirs,
+        libraries=["gpilog", "cocotbutils", "pygpilog"],
         sources=libcocotb_sources,
-        extra_link_args=_extra_link_args(lib_name="libcocotb", rpaths=["$ORIGIN"] + python_lib_dirs),
+        extra_link_args=_extra_link_args(lib_name="libcocotb", rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
     )
 
@@ -401,7 +424,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         os.path.join("cocotb", "libs", "libgpi"),
         define_macros=[("GPI_EXPORTS", ""), ("LIB_EXT", _get_lib_ext_name()), ("SINGLETON_HANDLES", "")] + _extra_defines,
         include_dirs=[include_dir],
-        libraries=["cocotbutils", "gpilog", "cocotb"],
+        libraries=["cocotbutils", "gpilog", "embed"],
         sources=libgpi_sources,
         extra_link_args=_extra_link_args(lib_name="libgpi", rpaths=["$ORIGIN"]),
         extra_compile_args=_extra_cxx_compile_args,
@@ -429,7 +452,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
     # The libraries in this list are compiled in order of their appearance.
     # If there is a linking dependency on one library to another,
     # the linked library must be built first.
-    return [libgpilog, libpygpilog, libcocotbutils, libcocotb, libgpi, libsim]
+    return [libgpilog, libpygpilog, libcocotbutils, libembed, libgpi, libcocotb, libsim]
 
 
 def _get_vpi_lib_ext(

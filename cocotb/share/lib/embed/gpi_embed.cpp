@@ -36,6 +36,7 @@
 #include <gpi.h>                // gpi_event_t
 #include "locale.h"
 #include <cassert>
+#include <exports.h>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -113,21 +114,10 @@ static void set_program_name_in_venv(void)
  * Stores the thread state for cocotb in static variable gtstate
  */
 
-extern "C" void embed_init_python(void)
+extern "C" COCOTB_EXPORT void _embed_init_python(void)
 {
 
-#ifndef PYTHON_SO_LIB
-#error "Python version needs passing in with -DPYTHON_SO_LIB=libpython<ver>.so"
-#else
-#define PY_SO_LIB xstr(PYTHON_SO_LIB)
-#endif
-
     assert(!gtstate);  // this function should not be called twice
-
-    void * lib_handle = utils_dyn_open(PY_SO_LIB);
-    if (!lib_handle) {
-        LOG_ERROR("Failed to find Python shared library");
-    }
 
     to_python();
     set_program_name_in_venv();
@@ -173,7 +163,7 @@ extern "C" void embed_init_python(void)
  *
  * Cleans up reference counts for Python objects and calls Py_Finalize function.
  */
-extern "C" void embed_sim_cleanup(void)
+extern "C" COCOTB_EXPORT void _embed_sim_cleanup(void)
 {
     // If initialization fails, this may be called twice:
     // Before the initial callback returns and in the final callback.
@@ -208,16 +198,18 @@ static int get_module_ref(const char *modname, PyObject **mod)
     PyObject *pModule = PyImport_ImportModule(modname);
 
     if (pModule == NULL) {
+        // LCOV_EXCL_START
         PyErr_Print();
         LOG_ERROR("Failed to load Python module \"%s\"", modname);
         return -1;
+        // LCOV_EXCL_STOP
     }
 
     *mod = pModule;
     return 0;
 }
 
-extern "C" int embed_sim_init(int argc, char const * const * argv)
+extern "C" COCOTB_EXPORT int _embed_sim_init(int argc, char const * const * argv)
 {
 
     int i;
@@ -240,64 +232,80 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
     to_python();
 
     if (get_module_ref("cocotb", &cocotb_module)) {
+        // LCOV_EXCL_START
         goto cleanup;
+        // LCOV_EXCL_STOP
     }
 
     LOG_INFO("Python interpreter initialized and cocotb loaded!");
 
     if (get_module_ref("cocotb.log", &cocotb_log_module)) {
+        // LCOV_EXCL_START
         goto cleanup;
+        // LCOV_EXCL_STOP
     }
 
     // Obtain the function to use when logging from C code
     log_func = PyObject_GetAttrString(cocotb_log_module, "_log_from_c");      // New reference
     if (log_func == NULL) {
+        // LCOV_EXCL_START
         PyErr_Print();
         LOG_ERROR("Failed to get the _log_from_c function");
         goto cleanup;
+        // LCOV_EXCL_STOP
     }
 
     // Obtain the function to check whether to call log function
     filter_func = PyObject_GetAttrString(cocotb_log_module, "_filter_from_c");   // New reference
     if (filter_func == NULL) {
+        // LCOV_EXCL_START
         Py_DECREF(log_func);
         PyErr_Print();
         LOG_ERROR("Failed to get the _filter_from_c method");
         goto cleanup;
+        // LCOV_EXCL_STOP
     }
 
     py_gpi_logger_initialize(log_func, filter_func);    // Note: This function steals references to log_func and filter_func.
 
     pEventFn = PyObject_GetAttrString(cocotb_module, "_sim_event");     // New reference
     if (pEventFn == NULL) {
+        // LCOV_EXCL_START
         PyErr_Print();
         LOG_ERROR("Failed to get the _sim_event method");
         goto cleanup;
+        // LCOV_EXCL_STOP
     }
 
     cocotb_init = PyObject_GetAttrString(cocotb_module, "_initialise_testbench");   // New reference
     if (cocotb_init == NULL) {
+        // LCOV_EXCL_START
         PyErr_Print();
         LOG_ERROR("Failed to get the _initialise_testbench method");
         goto cleanup;
+        // LCOV_EXCL_STOP
     }
 
     // Build argv for cocotb module
     argv_list = PyList_New(argc);                                       // New reference
     if (argv_list == NULL) {
+        // LCOV_EXCL_START
         PyErr_Print();
         LOG_ERROR("Unable to create argv list");
         goto cleanup;
+        // LCOV_EXCL_STOP
     }
     for (i = 0; i < argc; i++) {
         // Decode, embedding non-decodable bytes using PEP-383. This can only
         // fail with MemoryError or similar.
         PyObject *argv_item = PyUnicode_DecodeLocale(argv[i], "surrogateescape");  // New reference
         if (argv_item == NULL) {
+            // LCOV_EXCL_START
             PyErr_Print();
             LOG_ERROR("Unable to convert command line argument %d to Unicode string.", i);
             Py_DECREF(argv_list);
             goto cleanup;
+            // LCOV_EXCL_STOP
         }
         PyList_SET_ITEM(argv_list, i, argv_item);                       // Note: This function steals the reference to argv_item
     }
@@ -311,9 +319,11 @@ extern "C" int embed_sim_init(int argc, char const * const * argv)
         LOG_DEBUG("_initialise_testbench successful");
         Py_DECREF(cocotb_retval);
     } else {
+        // LCOV_EXCL_START
         PyErr_Print();
         LOG_ERROR("cocotb initialization failed - exiting");
         goto cleanup;
+        // LCOV_EXCL_STOP
     }
 
     goto ok;
@@ -330,9 +340,9 @@ ok:
     return ret;
 }
 
-extern "C" void embed_sim_event(gpi_event_t level, const char *msg)
+extern "C" COCOTB_EXPORT void _embed_sim_event(gpi_event_t level, const char *msg)
 {
-    /* Indicate to the upper layer a sim event occurred */
+    /* Indicate to the upper layer that a sim event occurred */
 
     if (pEventFn) {
         PyGILState_STATE gstate;

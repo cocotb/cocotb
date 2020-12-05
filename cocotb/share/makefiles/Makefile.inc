@@ -122,6 +122,29 @@ endif
 
 endif
 
+define find_libpython_errmsg =
+
+
+find_libpython was not able to find a libpython in the current Python environment. Ensure
+the Python development packages are installed. If they are installed and find_libpython
+is not finding the path to libpython, file an upstream bug in find_libpython; then
+manually override the LIBPYTHON_LOC make variable with the aboslute path to libpython.so
+(or libpython.dll on Windows).
+
+endef
+
+# get the path to libpython and the return code from the script
+# adapted from https://stackoverflow.com/a/24658961/6614127
+FIND_LIBPYTHON_RES := $(shell find_libpython; echo; echo $$?)
+FIND_LIBPYTHON_RC := $(lastword $(FIND_LIBPYTHON_RES))
+LIBPYTHON_LOC := $(strip $(subst $(FIND_LIBPYTHON_RC)QQQQ,,$(FIND_LIBPYTHON_RES)QQQQ))
+
+# complain if libpython isn't found, and export otherwise
+ifneq ($(FIND_LIBPYTHON_RC),0)
+    $(error $(find_libpython_errmsg))
+endif
+export LIBPYTHON_LOC
+
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
 endif # COCOTB_MAKEFILE_INC_INCLUDED
