@@ -79,21 +79,19 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
     make SIM=verilator
 
-cocotb supports Verilator 4.020 and above.
 Verilator converts Verilog code to C++ code that is compiled.
 It does not support VHDL.
 One major limitation compared to standard Verilog simulators is that it does not support delayed assignments.
 
 To run cocotb with Verilator, you need ``verilator`` in your PATH.
 
-Finally, cocotb currently generates a Verilator toplevel C++ simulation loop which is timed at the highest precision.
-If your design's clocks vary in precision, the performance of the simulation can be improved in the same order of magnitude by adjusting the precision in the Makefile, e.g.,
+.. note::
 
-.. code-block:: makefile
-
-    COCOTB_HDL_TIMEPRECISION = 1us # Set precision to 10^-6s
+    cocotb requires Verilator 4.106 or later.
 
 .. versionadded:: 1.3
+
+.. versionchanged:: 1.5 Improved cocotb support and greatly improved performance when using a higher time precision. Verilator 4.106 or later is required.
 
 Coverage
 --------

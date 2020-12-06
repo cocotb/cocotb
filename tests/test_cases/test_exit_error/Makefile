@@ -25,14 +25,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ###############################################################################
 
-ifeq ($(SIM),verilator)
-
-all:
-	@echo "Skipping test due to Verilator hanging when prematurely shutting down"  # gh-2008
-clean::
-
-else
-
 # detecting an expected failure has to happen here, as the python code is invalid
 .PHONY: override_for_this_test
 override_for_this_test:
@@ -41,5 +33,3 @@ override_for_this_test:
 include ../../designs/sample_module/Makefile
 
 MODULE = test_exit
-
-endif
