@@ -23,6 +23,11 @@
 
 static vluint64_t main_time = 0;       // Current simulation time
 
+#ifdef VERILATOR_USRCLK_FILE
+static vluint64_t next_user_clock_time = 0;
+vluint64_t user_clock_cb(std::unique_ptr<Vtop> & topp, vluint64_t current_time);
+#endif
+
 double sc_time_stamp() {       // Called by $time in Verilog
     return main_time;           // converts to double, to match
                                 // what SystemC does
@@ -75,6 +80,18 @@ int main(int argc, char** argv) {
 #endif
 
     while (!Verilated::gotFinish()) {
+
+#ifdef VERILATOR_USRCLK_FILE
+        // Call user callback for clock toggle
+        if (main_time == next_user_clock_time) {
+            next_user_clock_time = user_clock_cb(top, main_time);
+
+            // Call Value Change callbacks triggered by clock toggle
+            // These can modify signal values
+            settle_value_callbacks();
+        }
+#endif
+
         // Call registered timed callbacks (e.g. clock timer)
         // These are called at the beginning of the time step
         // before the iterative regions (IEEE 1800-2012 4.4.1)
@@ -112,14 +129,19 @@ int main(int argc, char** argv) {
         // skip ahead to the next registered callback
         vluint64_t next_time = VerilatedVpi::cbNextDeadline();
 
+#ifdef VERILATOR_USRCLK_FILE
+        // Don't skip past the next user clock callback
+        next_time = std::min(next_user_clock_time, next_time);
+#endif
+
         // If there are no more cbAfterDelay callbacks,
         // the next deadline is max value, so end the simulation now
+        // Also end if the simulation reaches max time
         if (next_time == static_cast<vluint64_t>(~0ULL)) {
             vl_finish(__FILE__, __LINE__, "");
             break;
-        } else {
-            main_time = next_time;
         }
+        main_time = next_time;
 
         // Call registered NextSimTime
         // It should be called in simulation cycle before everything else
