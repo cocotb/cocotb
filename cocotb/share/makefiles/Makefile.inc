@@ -135,7 +135,7 @@ endef
 
 # get the path to libpython and the return code from the script
 # adapted from https://stackoverflow.com/a/24658961/6614127
-FIND_LIBPYTHON_RES := $(shell find_libpython; echo; echo $$?)
+FIND_LIBPYTHON_RES := $(shell cocotb-config --libpython; echo $$?)
 FIND_LIBPYTHON_RC := $(lastword $(FIND_LIBPYTHON_RES))
 LIBPYTHON_LOC := $(strip $(subst $(FIND_LIBPYTHON_RC)QQQQ,,$(FIND_LIBPYTHON_RES)QQQQ))
 

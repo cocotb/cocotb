@@ -43,6 +43,7 @@ import os
 import sys
 import textwrap
 import cocotb
+import find_libpython
 
 __all__ = ["share_dir", "makefiles_dir"]
 
@@ -145,6 +146,12 @@ def get_parser():
         help="echo the version of cocotb",
         action=PrintAction,
         text=version,
+    )
+    parser.add_argument(
+        "--libpython",
+        help="prints the absolute path to the libpython associated with the current Python installation",
+        action=PrintAction,
+        text=find_libpython.find_libpython(),
     )
 
     return parser
