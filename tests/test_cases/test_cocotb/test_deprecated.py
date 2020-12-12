@@ -27,7 +27,7 @@ def assert_deprecated(warning_category=DeprecationWarning):
 @cocotb.test()
 async def test_returnvalue_deprecated(dut):
 
-    @cocotb.coroutine
+    @cocotb.coroutine   # testing ReturnValue deprecated
     def get_value():
         yield cocotb.triggers.Timer(1, units='ns')
         raise cocotb.result.ReturnValue(42)

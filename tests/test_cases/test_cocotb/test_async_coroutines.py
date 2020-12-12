@@ -14,13 +14,13 @@ from common import assert_raises
 class produce:
     """ Test helpers that produce a value / exception in different ways """
     @staticmethod
-    @cocotb.coroutine
+    @cocotb.coroutine   # testing legacy coroutine against async func
     def coro(outcome):
         yield Timer(1)
         return outcome.get()
 
     @staticmethod
-    @cocotb.coroutine
+    @cocotb.coroutine   # testing coroutine decorator on async func
     async def async_annotated(outcome):
         await Timer(1)
         return outcome.get()

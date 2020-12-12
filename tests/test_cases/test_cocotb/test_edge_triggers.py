@@ -14,7 +14,6 @@ from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles, F
 from cocotb.clock import Clock
 
 
-@cocotb.coroutine
 async def count_edges_cycles(signal, edges):
     edge = RisingEdge(signal)
     for i in range(edges):
@@ -24,7 +23,6 @@ async def count_edges_cycles(signal, edges):
     return edges
 
 
-@cocotb.coroutine
 async def do_single_edge_check(dut, level):
     """Do test for rising edge"""
     old_value = dut.clk.value.integer
@@ -119,7 +117,6 @@ async def test_fork_and_monitor(dut, period=1000, clocks=6):
     assert result == clocks, "Expected task to return %d but got %s" % (clocks, repr(result))
 
 
-@cocotb.coroutine
 async def do_clock(dut, limit, period):
     """Simple clock with a limit"""
     wait_period = period / 2
@@ -131,7 +128,6 @@ async def do_clock(dut, limit, period):
         limit -= 1
 
 
-@cocotb.coroutine
 async def do_edge_count(dut, signal):
     """Count the edges"""
     global edges_seen
@@ -205,7 +201,6 @@ async def test_clock_cycles_forked(dut):
 
     clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
 
-    @cocotb.coroutine
     async def wait_ten():
         await ClockCycles(dut.clk, 10)
 

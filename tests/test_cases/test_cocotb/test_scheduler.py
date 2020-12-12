@@ -165,7 +165,6 @@ async def test_stack_overflow(dut):
     before passing control to the simulator.
     """
     # gh-637
-    @cocotb.coroutine
     async def null_coroutine():
         await NullTrigger()
 
@@ -309,7 +308,7 @@ async def test_task_repr(dut):
         yield Timer(1, units='ns')
         raise ValueError("inner")
 
-    @cocotb.coroutine
+    @cocotb.coroutine   # testing debug with legacy coroutine syntax
     def generator_coro_outer():
         yield from generator_coro_inner()
 
@@ -339,7 +338,7 @@ async def test_task_repr(dut):
         log.info(repr(task))
         assert re.match(r"<Task \d+ adding coro=coroutine_outer\(\)>", repr(task))
 
-    @cocotb.coroutine
+    @cocotb.coroutine   # Combine requires use of cocotb.coroutine
     async def coroutine_wait():
         await Timer(1, units='ns')
 
@@ -419,7 +418,6 @@ async def test_start_soon_decorator(_):
     """ Tests start_soon works with RunningTasks """
     a = 0
 
-    @cocotb.coroutine
     async def example():
         nonlocal a
         a = 1

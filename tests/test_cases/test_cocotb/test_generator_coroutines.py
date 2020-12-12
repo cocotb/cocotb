@@ -5,7 +5,7 @@
 Tests that specifically test generator-based coroutines
 """
 import cocotb
-from cocotb.triggers import Timer
+from cocotb.triggers import Timer, NullTrigger
 from common import clock_gen, _check_traceback, assert_raises
 import textwrap
 
@@ -67,13 +67,18 @@ def test_function_not_decorated_fork(dut):
     yield Timer(500)
 
 
+@cocotb.coroutine
+def example():
+    yield NullTrigger()
+
+
 @cocotb.test()
 def test_adding_a_coroutine_without_starting(dut):
     """Catch (and provide useful error) for attempts to fork coroutines
     incorrectly"""
     yield Timer(100)
     try:
-        forked = cocotb.fork(clock_gen)
+        cocotb.fork(example)
     except TypeError as exc:
         assert "a coroutine that hasn't started" in str(exc)
     else:
@@ -169,7 +174,9 @@ def test_exceptions_direct(dut):
     expected = textwrap.dedent(r"""
     Traceback \(most recent call last\):
       File ".*common\.py", line \d+, in _check_traceback
-        yield running_coro
+        await running_coro
+      File ".*\/cocotb\/decorators.py", line \d+, in __await__
+        return \(yield self\)
       File ".*test_generator_coroutines\.py", line \d+, in raise_soon
         yield raise_inner\(\)
       File ".*test_generator_coroutines\.py", line \d+, in raise_inner
@@ -198,7 +205,9 @@ def test_exceptions_forked(dut):
     expected = textwrap.dedent(r"""
     Traceback \(most recent call last\):
       File ".*common\.py", line \d+, in _check_traceback
-        yield running_coro
+        await running_coro
+      File ".*\/cocotb\/decorators.py", line \d+, in __await__
+        return \(yield self\)
       File ".*test_generator_coroutines\.py", line \d+, in raise_soon
         yield coro\.join\(\)
       File ".*test_generator_coroutines\.py", line \d+, in raise_inner
