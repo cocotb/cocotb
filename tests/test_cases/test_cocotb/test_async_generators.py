@@ -10,7 +10,7 @@ async def whoops_async_generator():
     yield cocotb.triggers.Timer(1)
 
 
-@cocotb.test()
+@cocotb.test()  # testing async generator in legacy coroutine syntax
 def test_yielding_accidental_async_generator(dut):
     # this test deliberately does not use `async def`, as we are testing the behavior of `yield`
     try:

@@ -36,7 +36,7 @@ class SomeException(Exception):
     pass
 
 
-@cocotb.test()
+@cocotb.test()  # test yielding decorated async coroutine in legacy coroutine
 def test_annotated_async_from_coro(dut):
     """
     Test that normal coroutines are able to call async functions annotated
@@ -112,7 +112,7 @@ async def test_await_causes_start(dut):
     assert coro.has_started()
 
 
-@cocotb.test()
+@cocotb.test()  # test forking undecorated async coroutine in legacy coroutine
 def test_undecorated_coroutine_fork(dut):
     ran = False
 
@@ -125,7 +125,7 @@ def test_undecorated_coroutine_fork(dut):
     assert ran
 
 
-@cocotb.test()
+@cocotb.test()  # test yielding undecorated async coroutine in legacy coroutine
 def test_undecorated_coroutine_yield(dut):
     ran = False
 
