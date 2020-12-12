@@ -4,9 +4,24 @@
 Installing the Development Version
 **********************************
 
-We are assuming here that you have :ref:`installed the prerequisites<install-prerequisites>`.
+The development version of cocotb may have differerent prerequisites
+from those for the stable version:
 
-The instructions for installing the development version of cocotb vary depending on your operating system:
+..
+   Likely changes after 1.5:
+   * Python 3.6+
+   * pytest
+
+* Python 3.5+
+* Python-dev packages
+* GCC 4.8.1+ or Clang 3.3+ and associated development packages
+* GNU Make
+* A Verilog or VHDL simulator, depending on your :term:`RTL` source code
+
+Please refer to :ref:`install-prerequisites` for details.
+
+
+The instructions for installing the development version of cocotb itself vary depending on your operating system:
 
 .. tabs::
 

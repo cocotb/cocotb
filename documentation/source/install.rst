@@ -14,7 +14,7 @@ In this document, we are assuming that you already have a
 Installation of Prerequisites
 =============================
 
-Cocotb has the following requirements:
+Cocotb in the stable version has the following requirements:
 
 * Python 3.5+
 * Python-dev packages
