@@ -5,7 +5,7 @@ Installing the Development Version
 **********************************
 
 The development version of cocotb may have differerent prerequisites
-from those for the stable version:
+than the stable version:
 
 ..
    Likely changes after 1.5:
