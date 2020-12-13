@@ -12,6 +12,8 @@ python:
   install:
     - method: pip
       path: .
+      extra_requirements:
+        - bus
 
 sphinx:
   configuration: documentation/source/conf.py
