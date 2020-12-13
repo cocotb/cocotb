@@ -133,6 +133,10 @@ setup(
         "Source Code": "https://github.com/cocotb/cocotb",
         "Documentation": "https://docs.cocotb.org",
     },
+
+    extras_require={
+        "bus": ["cocotb_bus"]
+    }
 )
 
 print(log_stream.getvalue())
