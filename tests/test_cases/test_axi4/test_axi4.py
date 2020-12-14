@@ -9,12 +9,14 @@ from random import randint, randrange, getrandbits
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.drivers.amba import (AXIBurst, AXI4LiteMaster, AXI4Master,
-                                 AXIProtocolError, AXIReadBurstLengthMismatch,
-                                 AXIxRESP)
 from cocotb.regression import TestFactory
 from cocotb.result import TestFailure
 from cocotb.triggers import ClockCycles, Combine, Join, RisingEdge
+
+from cocotb_bus.drivers.amba import (
+    AXIBurst, AXI4LiteMaster, AXI4Master, AXIProtocolError, AXIReadBurstLengthMismatch,
+    AXIxRESP
+)
 
 
 CLK_PERIOD = (10, "ns")

@@ -4,8 +4,9 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, ReadOnly
-from cocotb.monitors import BusMonitor
-from cocotb.scoreboard import Scoreboard
+
+from cocotb_bus.scoreboard import Scoreboard
+from cocotb_bus.monitors import BusMonitor
 
 import random
 import warnings

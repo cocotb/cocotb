@@ -8,9 +8,10 @@ from random import getrandbits
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
-from cocotb.monitors import BusMonitor
 from cocotb.regression import TestFactory
 from cocotb.triggers import RisingEdge, ReadOnly
+
+from cocotb_bus.monitors import BusMonitor
 
 NUM_SAMPLES = int(os.environ.get('NUM_SAMPLES', 3000))
 DATA_WIDTH = int(cocotb.top.DATA_WIDTH)

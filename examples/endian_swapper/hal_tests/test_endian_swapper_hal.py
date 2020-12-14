@@ -29,8 +29,9 @@ import logging
 import cocotb
 from cocotb.triggers import RisingEdge, Timer, ReadOnly
 from cocotb.clock import Clock
-from cocotb.drivers.avalon import AvalonMaster
 from cocotb.result import TestFailure
+
+from cocotb_bus.drivers.avalon import AvalonMaster
 
 import hal
 import io_module

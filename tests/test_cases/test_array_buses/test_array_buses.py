@@ -1,7 +1,7 @@
 import cocotb
 from cocotb.clock import Clock
-from cocotb.drivers import BusDriver
-from cocotb.monitors import BusMonitor
+from cocotb_bus.drivers import BusDriver
+from cocotb_bus.monitors import BusMonitor
 from cocotb.triggers import RisingEdge
 
 
