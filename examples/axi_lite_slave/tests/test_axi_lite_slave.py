@@ -2,8 +2,9 @@ import os
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import Timer
-from cocotb.drivers.amba import AXI4LiteMaster
-from cocotb.drivers.amba import AXIProtocolError
+
+from cocotb_bus.drivers.amba import AXI4LiteMaster
+from cocotb_bus.drivers.amba import AXIProtocolError
 
 CLK_PERIOD_NS = 10
 

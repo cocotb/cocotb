@@ -31,11 +31,12 @@ import warnings
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
-from cocotb.monitors import Monitor
-from cocotb.drivers import BitDriver
 from cocotb.binary import BinaryValue
 from cocotb.regression import TestFactory
-from cocotb.scoreboard import Scoreboard
+
+from cocotb_bus.monitors import Monitor
+from cocotb_bus.drivers import BitDriver
+from cocotb_bus.scoreboard import Scoreboard
 
 #      dut
 #    ________

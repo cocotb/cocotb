@@ -33,12 +33,13 @@ import cocotb
 
 from cocotb.clock import Clock
 from cocotb.triggers import Timer, RisingEdge, ReadOnly
-from cocotb.drivers import BitDriver
-from cocotb.drivers.avalon import AvalonSTPkts as AvalonSTDriver
-from cocotb.drivers.avalon import AvalonMaster
-from cocotb.monitors.avalon import AvalonSTPkts as AvalonSTMonitor
 from cocotb.regression import TestFactory
-from cocotb.scoreboard import Scoreboard
+
+from cocotb_bus.drivers import BitDriver
+from cocotb_bus.drivers.avalon import AvalonSTPkts as AvalonSTDriver
+from cocotb_bus.drivers.avalon import AvalonMaster
+from cocotb_bus.monitors.avalon import AvalonSTPkts as AvalonSTMonitor
+from cocotb_bus.scoreboard import Scoreboard
 
 # Data generators
 with warnings.catch_warnings():

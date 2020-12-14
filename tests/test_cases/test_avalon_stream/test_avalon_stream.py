@@ -5,12 +5,13 @@ import struct
 import warnings
 
 import cocotb
-from cocotb.drivers import BitDriver
-from cocotb.drivers.avalon import AvalonST as AvalonSTDriver
-from cocotb.monitors.avalon import AvalonST as AvalonSTMonitor
 from cocotb.triggers import RisingEdge
 from cocotb.clock import Clock
-from cocotb.scoreboard import Scoreboard
+
+from cocotb_bus.drivers import BitDriver
+from cocotb_bus.drivers.avalon import AvalonST as AvalonSTDriver
+from cocotb_bus.monitors.avalon import AvalonST as AvalonSTMonitor
+from cocotb_bus.scoreboard import Scoreboard
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')

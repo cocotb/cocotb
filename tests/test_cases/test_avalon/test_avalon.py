@@ -32,10 +32,11 @@ Also used as regression test of cocotb capabilities
 """
 
 import cocotb
-from cocotb.drivers.avalon import AvalonMemory
 from cocotb.triggers import Timer, RisingEdge
 from cocotb.clock import Clock
 from cocotb.result import TestFailure
+
+from cocotb_bus.drivers.avalon import AvalonMemory
 
 
 class BurstAvlReadTest(object):
