@@ -14,7 +14,7 @@
 
 ## Installation
 
-Cocotb requires:
+The current stable version of cocotb requires:
 
 - Python 3.5+
 - A C++11 compiler
@@ -31,9 +31,11 @@ pip install cocotb
 
 **!!! Windows Users !!!** See [here](https://docs.cocotb.org/en/stable/install.html) for installation instructions.
 
-For more details on installation, including prerequisites, see [the documentation](https://docs.cocotb.org/en/stable/install.html).
+For more details on installation, including prerequisites,
+see [the documentation](https://docs.cocotb.org/en/stable/install.html).
 
-For detail on how to install the *development* version of cocotb, see [the lastest documentation](https://docs.cocotb.org/en/latest/install_devel.html#install-devel).
+For details on how to install the *development* version of cocotb,
+see [the preliminary documentation of the future release](https://docs.cocotb.org/en/latest/install_devel.html#install-devel).
 
 ## Usage
 
@@ -103,14 +105,14 @@ make SIM=icarus
 
 [![asciicast](https://asciinema.org/a/317220.svg)](https://asciinema.org/a/317220)
 
-For more information please see the [cocotb documentation](https://docs.cocotb.org/) and the [wiki](https://github.com/cocotb/cocotb/wiki).
+For more information please see the [cocotb documentation](https://docs.cocotb.org/)
+and [our wiki](https://github.com/cocotb/cocotb/wiki).
 
 ## Tutorials, examples and related projects
 
-* [Endian Swapper tutorial](https://docs.cocotb.org/en/stable/endian_swapper.html)
-* [Ping using TUN/TAP tutorial](https://docs.cocotb.org/en/stable/ping_tun_tap.html)
-* [Cocotb based USB 1.1 test suite for FPGA IP, with testbenches for a variety of open source USB cores](https://github.com/antmicro/usb-test-suite-build)
-* [Functional Coverage and Constrained Randomization Extensions for Cocotb](https://github.com/mciepluc/cocotb-coverage)
-* [UVM 1.2 port to Python](https://github.com/tpoikela/uvm-python)
-
-For more related resources please check the [wiki](https://github.com/cocotb/cocotb/wiki/Further-Resources) and the [list of projects depending on cocotb](https://github.com/cocotb/cocotb/network/dependents).
+* the tutorial section [in the official documentation](https://docs.cocotb.org/)
+* [cocotb-based USB 1.1 test suite](https://github.com/antmicro/usb-test-suite-build) for FPGA IP, with testbenches for a variety of open source USB cores
+* [`cocotb-coverage`](https://github.com/mciepluc/cocotb-coverage), an extension for Functional Coverage and Constrained Randomization
+* [`uvm-python`](https://github.com/tpoikela/uvm-python), an almost 1:1 port of UVM 1.2 to Python
+* our wiki [on extension modules](https://github.com/cocotb/cocotb/wiki/Further-Resources#extension-modules-cocotbext)
+* the list of [GitHub projects depending on cocotb](https://github.com/cocotb/cocotb/network/dependents)
