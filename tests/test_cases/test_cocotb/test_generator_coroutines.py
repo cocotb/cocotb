@@ -175,7 +175,7 @@ def test_exceptions_direct(dut):
     Traceback \(most recent call last\):
       File ".*common\.py", line \d+, in _check_traceback
         await running_coro
-      File ".*\/cocotb\/decorators.py", line \d+, in __await__
+      File ".*cocotb[\\\/]decorators.py", line \d+, in __await__
         return \(yield self\)
       File ".*test_generator_coroutines\.py", line \d+, in raise_soon
         yield raise_inner\(\)
@@ -206,7 +206,7 @@ def test_exceptions_forked(dut):
     Traceback \(most recent call last\):
       File ".*common\.py", line \d+, in _check_traceback
         await running_coro
-      File ".*\/cocotb\/decorators.py", line \d+, in __await__
+      File ".*cocotb[\\\/]decorators.py", line \d+, in __await__
         return \(yield self\)
       File ".*test_generator_coroutines\.py", line \d+, in raise_soon
         yield coro\.join\(\)
