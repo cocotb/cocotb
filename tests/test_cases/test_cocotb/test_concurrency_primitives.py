@@ -75,8 +75,6 @@ async def test_first_does_not_kill(dut):
     """ Test that `First` does not kill coroutines that did not finish first """
     ran = False
 
-    # decorating `async def` is required to use `First`
-    @cocotb.coroutine
     async def coro():
         nonlocal ran
         await Timer(2, units='ns')

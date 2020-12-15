@@ -30,6 +30,7 @@
 import abc
 import warnings
 from collections.abc import Awaitable
+import inspect
 
 from cocotb import simulator
 from cocotb.log import SimLog
@@ -719,17 +720,23 @@ class _AggregateWaitable(Waitable):
     __slots__ = ('triggers',)
 
     def __init__(self, *triggers):
-        self.triggers = tuple(triggers)
+        usable_triggers = []
 
         # Do some basic type-checking up front, rather than waiting until we
         # await them.
         allowed_types = (Trigger, Waitable, cocotb.decorators.RunningTask)
-        for trigger in self.triggers:
-            if not isinstance(trigger, allowed_types):
+        for trigger in triggers:
+            if inspect.iscoroutine(trigger):
+                usable_triggers.append(cocotb.decorators.RunningTask(trigger))
+            elif isinstance(trigger, allowed_types):
+                usable_triggers.append(trigger)
+            else:
                 raise TypeError(
-                    "All triggers must be instances of Trigger! Got: {}"
+                    "All triggers must be awaitable! Got: {}"
                     .format(type(trigger).__qualname__)
                 )
+
+        self.triggers = tuple(usable_triggers)
 
     def __repr__(self):
         # no _pointer_str here, since this is not a trigger, so identity
@@ -888,7 +895,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
         await with_timeout(First(coro, event.wait()), 100, 'ns')
 
     Args:
-        trigger (:class:`~cocotb.triggers.Trigger` or :class:`~cocotb.triggers.Waitable` or :class:`~cocotb.decorators.RunningTask`):
+        trigger (:class:`~cocotb.triggers.Trigger` or :class:`~cocotb.triggers.Waitable` or :class:`~cocotb.decorators.RunningTask` or :class:`types.CoroutineType`):
             A single object that could be right of an :keyword:`await` expression in cocotb.
         timeout_time (numbers.Real or decimal.Decimal):
             Simulation time duration before timeout occurs.
