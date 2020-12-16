@@ -75,8 +75,7 @@ async def test_first_does_not_kill(dut):
     """ Test that `First` does not kill coroutines that did not finish first """
     ran = False
 
-    # decorating `async def` is required to use `First`
-    @cocotb.coroutine
+    @cocotb.coroutine   # decorating `async def` is required to use `First`
     async def coro():
         nonlocal ran
         await Timer(2, units='ns')
@@ -97,7 +96,8 @@ async def test_first_does_not_kill(dut):
 @cocotb.test()
 async def test_exceptions_first(dut):
     """ Test exception propagation via cocotb.triggers.First """
-    @cocotb.coroutine
+
+    @cocotb.coroutine   # decorating `async def` is required to use `First`
     def raise_inner():
         yield Timer(10, "ns")
         raise ValueError('It is soon now')
@@ -111,7 +111,7 @@ async def test_exceptions_first(dut):
     expected = textwrap.dedent(r"""
     Traceback \(most recent call last\):
       File ".*common\.py", line \d+, in _check_traceback
-        yield running_coro
+        await running_coro
       File ".*test_concurrency_primitives\.py", line \d+, in raise_soon
         await cocotb\.triggers\.First\(raise_inner\(\)\)
       File ".*triggers\.py", line \d+, in _wait

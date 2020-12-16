@@ -86,7 +86,6 @@ async def test_timer_with_rational_units(dut):
 exited = False
 
 
-@cocotb.coroutine
 async def do_test_readwrite_in_readonly(dut):
     global exited
     await RisingEdge(dut.clk)
@@ -95,7 +94,6 @@ async def do_test_readwrite_in_readonly(dut):
     exited = True
 
 
-@cocotb.coroutine
 async def do_test_cached_write_in_readonly(dut):
     global exited
     await RisingEdge(dut.clk)
@@ -104,7 +102,6 @@ async def do_test_cached_write_in_readonly(dut):
     exited = True
 
 
-@cocotb.coroutine
 async def do_test_afterdelay_in_readonly(dut, delay):
     global exited
     await RisingEdge(dut.clk)
@@ -175,7 +172,7 @@ async def test_writes_have_taken_effect_after_readwrite(dut):
     assert dut.stream_in_data.value == 2
 
 
-@cocotb.coroutine
+@cocotb.coroutine   # cocotb.coroutine necessary to use in with_timeout
 async def example():
     await Timer(10, 'ns')
     return 1

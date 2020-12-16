@@ -8,25 +8,22 @@ import re
 import traceback
 from contextlib import contextmanager
 
-import cocotb
 from cocotb.triggers import Timer
 
 
-@cocotb.coroutine
-def clock_gen(clock):
+async def clock_gen(clock):
     """Example clock gen for test use"""
     for i in range(5):
         clock <= 0
-        yield Timer(100, "ns")
+        await Timer(100, "ns")
         clock <= 1
-        yield Timer(100, "ns")
+        await Timer(100, "ns")
     clock._log.warning("Clock generator finished!")
 
 
-@cocotb.coroutine
-def _check_traceback(running_coro, exc_type, pattern):
+async def _check_traceback(running_coro, exc_type, pattern):
     try:
-        yield running_coro
+        await running_coro
     except exc_type:
         tb_text = traceback.format_exc()
     else:

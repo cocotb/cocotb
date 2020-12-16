@@ -14,13 +14,13 @@ from common import assert_raises
 class produce:
     """ Test helpers that produce a value / exception in different ways """
     @staticmethod
-    @cocotb.coroutine
+    @cocotb.coroutine   # testing legacy coroutine against async func
     def coro(outcome):
         yield Timer(1)
         return outcome.get()
 
     @staticmethod
-    @cocotb.coroutine
+    @cocotb.coroutine   # testing coroutine decorator on async func
     async def async_annotated(outcome):
         await Timer(1)
         return outcome.get()
@@ -36,7 +36,7 @@ class SomeException(Exception):
     pass
 
 
-@cocotb.test()
+@cocotb.test()  # test yielding decorated async coroutine in legacy coroutine
 def test_annotated_async_from_coro(dut):
     """
     Test that normal coroutines are able to call async functions annotated
@@ -112,7 +112,7 @@ async def test_await_causes_start(dut):
     assert coro.has_started()
 
 
-@cocotb.test()
+@cocotb.test()  # test forking undecorated async coroutine in legacy coroutine
 def test_undecorated_coroutine_fork(dut):
     ran = False
 
@@ -125,7 +125,7 @@ def test_undecorated_coroutine_fork(dut):
     assert ran
 
 
-@cocotb.test()
+@cocotb.test()  # test yielding undecorated async coroutine in legacy coroutine
 def test_undecorated_coroutine_yield(dut):
     ran = False
 
