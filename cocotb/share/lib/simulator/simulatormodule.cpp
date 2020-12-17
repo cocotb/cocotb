@@ -40,6 +40,8 @@ static int releases = 0;
 static int sim_ending = 0;
 
 #include <cocotb_utils.h>     // COCOTB_UNUSED
+#include <chrono>
+#include <random>
 #include <type_traits>
 #include <Python.h>
 #include "gpi_logging.h"
@@ -61,6 +63,11 @@ struct callback_data {
     PyObject *kwargs;                   // Keyword arguments to call the function with
     gpi_sim_hdl cb_hdl;
 };
+
+// Simulator clock
+struct sim_clock_data;
+typedef struct sim_clock_data *sim_clock;
+static std::default_random_engine rand_gen{};
 
 /* define the extension types as templates */
 namespace {
@@ -148,6 +155,9 @@ namespace {
     PyTypeObject gpi_hdl_Object<gpi_iterator_hdl>::py_type;
     template<>
     PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type;
+    template<>
+    PyTypeObject gpi_hdl_Object<sim_clock>::py_type;
+
 }
 
 
@@ -887,7 +897,6 @@ static PyObject *stop_simulator(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-
 static PyObject *deregister(gpi_hdl_Object<gpi_cb_hdl> *self, PyObject *args)
 {
     COCOTB_UNUSED(args);
@@ -911,6 +920,22 @@ static PyObject *log_level(PyObject *self, PyObject *args)
 
     Py_RETURN_NONE;
 }
+
+static PyObject *set_random_seed(PyObject *, PyObject *args)
+{
+    long long seed;
+
+    if (!PyArg_ParseTuple(args, "L:set_random_seed", &seed)) {
+        return NULL;
+    }
+
+    rand_gen.seed(static_cast<std::default_random_engine::result_type>(seed));
+
+    Py_RETURN_NONE;
+}
+
+// Create a clock driver
+static PyObject *create_clock(PyObject *, PyObject *args, PyObject *keywds);
 
 static int add_module_constants(PyObject* simulator)
 {
@@ -962,6 +987,13 @@ static int add_module_types(PyObject* simulator)
     typ = (PyObject *)&gpi_hdl_Object<gpi_iterator_hdl>::py_type;
     Py_INCREF(typ);
     if (PyModule_AddObject(simulator, "gpi_iterator_hdl", typ) < 0) {
+        Py_DECREF(typ);
+        return -1;
+    }
+
+    typ = (PyObject *)&gpi_hdl_Object<sim_clock>::py_type;
+    Py_INCREF(typ);
+    if (PyModule_AddObject(simulator, "sim_clock", typ) < 0) {
         Py_DECREF(typ);
         return -1;
     }
@@ -1068,6 +1100,27 @@ static PyMethodDef SimulatorMethods[] = {
         "get_simulator_version() -> str\n"
         "Get the simulator's product version string."
     )},
+    {"set_random_seed", set_random_seed, METH_VARARGS, PyDoc_STR(
+        "set_random_seed(value, /)\n"
+        "--\n\n"
+        "set_random_seed(value: int) -> None\n"
+        "Set random seed for clock jitter generation.\n"
+        "\n"
+        ".. versionadded:: 1.5"
+    )},
+    // GCC 8+ warns on casting PyCFunctionWithKeywords to PyCFunction, so first cast to void (*)(void).
+    // Solution taken from bpo-33012
+    {"create_clock", (PyCFunction)(void (*)(void))create_clock, METH_VARARGS | METH_KEYWORDS, PyDoc_STR(
+        "create_clock(signal, high_steps, low_steps, high_jitter, low_jitter)\n"
+        "--\n\n"
+        "create_clock(signal: cocotb.simulator.gpi_sim_hdl, high_steps: int, low_steps: int, high_jitter: int = 0, low_jitter: int = 0) -> cocotb.simulator.sim_clock\n"
+        "Create a clock driver on a signal.\n"
+        "\n"
+        "Raises:\n"
+        "    ValueError: If any argument values are negative.\n"
+        "\n"
+        ".. versionadded:: 1.5"
+    )},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -1102,6 +1155,9 @@ PyMODINIT_FUNC PyInit_simulator(void)
     if (PyType_Ready(&gpi_hdl_Object<gpi_iterator_hdl>::py_type) < 0) {
         return NULL;
     }
+    if (PyType_Ready(&gpi_hdl_Object<sim_clock>::py_type) < 0) {
+        return NULL;
+    }
 
     PyObject* simulator = PyModule_Create(&moduledef);
     if (simulator == NULL) {
@@ -1117,6 +1173,9 @@ PyMODINIT_FUNC PyInit_simulator(void)
         Py_DECREF(simulator);
         return NULL;
     }
+
+    // Use time as default seed for random generator
+    rand_gen.seed(static_cast<std::default_random_engine::result_type>(std::chrono::system_clock::now().time_since_epoch().count()));
 
     return simulator;
 }
@@ -1323,5 +1382,203 @@ PyTypeObject gpi_hdl_Object<gpi_cb_hdl>::py_type = []() -> PyTypeObject {
     type.tp_name = "cocotb.simulator.gpi_cb_hdl";
     type.tp_doc = "GPI callback handle";
     type.tp_methods = gpi_cb_hdl_methods;
+    return type;
+}();
+
+
+// Simulator clock
+// This provides support for a GPI-layer clock generator for increased performance.
+// The GPI callback used for driving the clock signal does not interact with Python
+// code and so does not suffer from the performance penalty
+
+struct sim_clock_data {
+  static constexpr uint64_t TOGGLE_ALWAYS = 0;
+  static constexpr uint64_t LAST_TOGGLE = 1;
+
+  gpi_sim_hdl signal;
+  int64_t high_steps;
+  int64_t low_steps;
+  long next_value;
+  uint64_t  toggles;  // Support for cocotb.clock.Clock cycles
+  gpi_cb_hdl timed_callback;
+
+  // Jitter support
+  std::normal_distribution<float> *gaussian;
+  int64_t high_jitter;
+  int64_t low_jitter;
+};
+
+static PyObject *create_clock(PyObject *, PyObject *args, PyObject *keywds)
+{
+  if (!gpi_has_registered_impl()) {
+    PyErr_SetString(PyExc_RuntimeError, "No simulator available!");
+    return NULL;
+  }
+
+  PyObject *sig_hdl;
+  long long high_steps;
+  long long low_steps;
+  long long high_jitter = 0;
+  long long low_jitter = 0;
+  static const char *kwlist[] = {"signal", "high_steps", "low_steps",
+                                 "high_jitter", "low_jitter", NULL};
+
+  if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!LL|LL", const_cast<char **>(kwlist),
+                                   &gpi_hdl_Object<gpi_sim_hdl>::py_type, &sig_hdl,
+                                   &high_steps, &low_steps, &high_jitter, &low_jitter)) {
+    return NULL;
+  }
+
+  if (high_steps < 0) {
+    PyErr_SetString(PyExc_ValueError, "high_steps value must be a non-negative integer");
+    return NULL;
+  }
+  if (low_steps < 0) {
+    PyErr_SetString(PyExc_ValueError, "low_steps value must be a non-negative integer");
+    return NULL;
+  }
+  if (high_jitter < 0) {
+    PyErr_SetString(PyExc_ValueError, "high_jitter value must be a non-negative integer");
+    return NULL;
+  }
+  if (low_jitter < 0) {
+    PyErr_SetString(PyExc_ValueError, "low_jitter value must be a non-negative integer");
+    return NULL;
+  }
+
+  sim_clock clock = new sim_clock_data{};
+  clock->signal = ((gpi_hdl_Object<gpi_sim_hdl> *)sig_hdl)->hdl;
+  clock->high_steps = static_cast<int64_t>(high_steps);
+  clock->low_steps = static_cast<int64_t>(low_steps);
+
+  if (high_jitter > 0 || low_jitter > 0) {
+    // Gaussian distribution for each clock, 3-sigma in [-1, 1]
+    clock->gaussian = new std::normal_distribution<float>(0.0, 0.333f);
+    clock->high_jitter = static_cast<int64_t>(high_jitter);
+    clock->low_jitter = static_cast<int64_t>(low_jitter);
+  }
+
+  PyObject *new_clk = gpi_hdl_New(clock);
+
+  return new_clk;
+}
+
+// sim_clock timed callback must not interact with Python to keep good performance
+static int clock_callback(void *user_data) {
+  sim_clock_data *clock = (sim_clock_data *)user_data;
+
+  if (clock->timed_callback) gpi_deregister_callback(clock->timed_callback);
+  clock->timed_callback = nullptr;
+
+  auto set_value = clock->next_value;
+  gpi_set_signal_value_long(clock->signal, clock->next_value, GPI_DEPOSIT);
+
+  // Stop clock by returning before registering callback
+  if (clock->toggles == sim_clock_data::LAST_TOGGLE) {
+    return 0;
+  }
+
+  if (clock->toggles != sim_clock_data::TOGGLE_ALWAYS) --clock->toggles;
+
+  clock->next_value = ~set_value & 1U;
+  int64_t steps = set_value ? clock->high_steps : clock->low_steps;
+
+  if (clock->gaussian) {
+    auto jitter_normalized = clock->gaussian->operator()(rand_gen);
+    int64_t jitter_scale = set_value ? clock->high_jitter : clock->low_jitter;
+    int64_t jitter = lround(jitter_normalized * static_cast<float>(jitter_scale));
+    // Enforce bounds to match jitter parameter
+    jitter = std::min(jitter_scale, jitter);
+    jitter = std::max(-jitter_scale, jitter);
+
+    steps += jitter;
+  }
+
+  clock->timed_callback = gpi_register_timed_callback((gpi_function_t)clock_callback, user_data, static_cast<uint64_t>(steps));
+
+  return 0;
+}
+
+static PyObject *sim_clock_stop(gpi_hdl_Object<sim_clock> *self, PyObject *args)
+{
+  COCOTB_UNUSED(args);
+  gpi_cb_hdl *cb_p = &self->hdl->timed_callback;
+
+  if (*cb_p != nullptr) {
+    gpi_deregister_callback(*cb_p);
+    *cb_p = nullptr;
+  }
+
+  Py_RETURN_NONE;
+}
+
+static PyObject *sim_clock_start(gpi_hdl_Object<sim_clock> *self, PyObject *args) {
+  if (self->hdl->timed_callback) Py_RETURN_NONE;
+
+  long long toggles;
+  int posedge_first;
+
+  if (!PyArg_ParseTuple(args, "Lp:start", &toggles, &posedge_first)) {
+      return NULL;
+  }
+
+  if (toggles < 0) {
+    PyErr_SetString(PyExc_ValueError, "Number of clock toggles cannot be negative");
+    return NULL;
+  }
+
+  self->hdl->next_value = posedge_first;
+  self->hdl->toggles = sim_clock_data::TOGGLE_ALWAYS;
+
+  clock_callback((void *)self->hdl);
+
+  // Set toggles here so it's not decremented in callback
+  self->hdl->toggles = static_cast<uint64_t>(toggles);
+
+  Py_RETURN_NONE;
+}
+
+static PyObject *sim_clock_is_running(gpi_hdl_Object<sim_clock> *self, PyObject *) {
+  int result = self->hdl->timed_callback != nullptr;
+  return PyBool_FromLong(result);
+}
+
+static PyMethodDef sim_clock_methods[] = {
+  {"stop", (PyCFunction)sim_clock_stop, METH_NOARGS, PyDoc_STR(
+      "stop($self)\n"
+      "--\n\n"
+      "stop() -> None\n"
+      "Stop driving this clock.")},
+  {"start", (PyCFunction)sim_clock_start, METH_VARARGS, PyDoc_STR(
+      "start($self, toggles)\n"
+      "--\n\n"
+      "start(toggles: int, posedge_first: bool) -> None\n"
+      "Start driving this clock.\n"
+      "\n"
+      "Raises:\n"
+      "    ValueError: If toggles value is negative.")},
+  {"is_running", (PyCFunction)sim_clock_is_running, METH_NOARGS, PyDoc_STR(
+      "is_running($self)\n"
+      "--\n\n"
+      "is_running() -> bool\n"
+      "Return ``True`` if this clock is being driven.")},
+  {NULL, NULL, 0, NULL}  // Sentinel
+};
+
+static void sim_clock_dealloc(gpi_hdl_Object<sim_clock> *self) {
+  sim_clock_stop(self, Py_None);
+  if (self->hdl->gaussian) delete self->hdl->gaussian;
+  delete self->hdl;
+  self->hdl = nullptr;
+  Py_TYPE(self)->tp_free((PyObject *) self);
+}
+
+template<>
+PyTypeObject gpi_hdl_Object<sim_clock>::py_type = []() -> PyTypeObject {
+    auto type = fill_common_slots<sim_clock>();
+    type.tp_name = "cocotb.simulator.sim_clock";
+    type.tp_doc = "Simulator clock";
+    type.tp_methods = sim_clock_methods;
+    type.tp_dealloc = (destructor)sim_clock_dealloc;
     return type;
 }();
