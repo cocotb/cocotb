@@ -28,11 +28,16 @@
 """A clock class."""
 
 import itertools
+from typing import Union, Tuple, Optional
 import warnings
 
+import cocotb
 from cocotb.log import SimLog
 from cocotb.triggers import Timer
 from cocotb.utils import get_sim_steps, get_time_from_sim_steps, lazy_property
+from cocotb.handle import SimHandleBase
+
+_logger = SimLog(__name__)
 
 
 class BaseClock:
@@ -165,3 +170,170 @@ class Clock(BaseClock):
 
     def __str__(self):
         return type(self).__qualname__ + "(%3.1f MHz)" % self.frequency
+
+
+class CClock:
+    r"""High performance, configurable simulator clock driver.
+
+    This class is a wrapper for a C++ layer clock driver with methods for control.
+    Use :meth:`start` to start the clock driver and :meth:`stop` to stop it.
+    The :attr:`is_running` property returns whether the driver is active.
+
+    Example:
+
+    .. code-block:: python
+
+        # 0.5 duty cycle by default
+        c = CClock(dut.clk, 100, units='ns')
+        c.start()
+
+    Args:
+        signal: The clock signal to be driven.
+        period: The clock period in *units*.
+        units: One of
+            ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
+            When *units* is ``'step'``,
+            the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
+        duty_cycle: The clock duty cycle as a float in [0, 1].
+            Duty cycle is defined as the fraction of the period where the clock is high.
+            Default is 0.5.
+
+            .. note::
+                Duty cycles of 0 or 1 may cause glitches or unexpected simulator behavior.
+
+        jitter: Maximum jitter for one clock period in *units*.
+            Default is 0.
+
+    Raises:
+        ValueError: If duty cycle value is not in [0, 1].
+
+    If clock jitter is non-zero, random edge-to-edge clock jitter will be generated
+    using a normal (gaussian) distribution for the jitter values.
+    With a clock period defined as one rising edge to the next rising edge, the jitter
+    will be bounded each clock period by ``[-jitter, +jitter]``.
+
+    Jitter example:
+
+    .. code-block:: python
+
+        # 1MHz clock with 10ns of jitter
+        c = CClock(dut.clk, 1000, units='ns', jitter=10)
+        c.start()
+
+    .. versionadded:: 1.5
+    """
+    def __init__(
+        self, signal: SimHandleBase,
+        period: Union[int, float],
+        units: str = 'step',
+        duty_cycle: Optional[float] = 0.5,
+        jitter: Union[int, float] = 0
+    ):
+        self.signal = signal
+
+        if not 0.0 <= duty_cycle <= 1.0:
+            raise ValueError("Duty cycle must be in range [0, 1]")
+
+        if duty_cycle == 0.0 or duty_cycle == 1.0:
+            warnings.warn("Duty cycles of 0 or 1 may cause glitches or unexpected simulator behavior",
+                          category=RuntimeWarning)
+
+        period_steps = get_sim_steps(period, units)
+
+        high_steps = round(period_steps * duty_cycle)
+        low_steps = period_steps - high_steps
+
+        # Divide jitter budget between high and low, scaled to duty cycle
+        jitter_steps = get_sim_steps(jitter, units)
+        high_jitter = round(jitter_steps * duty_cycle)
+        low_jitter = jitter_steps - high_jitter
+
+        _logger.debug("Creating simulator.sim_clock with ({}, {}, {}, {}, {})".format(
+            self.signal._name, high_steps, low_steps, high_jitter, low_jitter))
+
+        self._sim_clk = cocotb.simulator.create_clock(
+            self.signal._handle, high_steps, low_steps,
+            high_jitter, low_jitter)
+
+        # All simulator clocks must be tracked by the scheduler for cleanup between tests
+        cocotb.scheduler._add_sim_clock(self._sim_clk)
+
+    @classmethod
+    def from_period_tuple(
+        cls, signal: SimHandleBase,
+        period: Tuple[Union[int, float], Union[int, float]],
+        units: str = 'step',
+        jitter: Union[int, float] = 0
+    ):
+        """Create CClock by using separate high and low clock times.
+
+        Example:
+
+        .. code-block:: python
+
+            c = CClock.from_period_tuple(dut.clk, (60, 40), units='ns')
+            c.start()
+
+        Args:
+            signal: The clock signal to be driven.
+            period: The clock period as a 2-tuple of (high_time, low_time) in *units*.
+            units: One of
+                ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
+                When *units* is ``'step'``,
+                the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
+            jitter: Maximum jitter for one clock period in *units*.
+                Default is 0.
+        """
+        if not isinstance(period, tuple):
+            raise TypeError("Clock period must be a 2-tuple")
+
+        if len(period) != 2:
+            raise ValueError("Clock period tuple must have 2 members")
+
+        high_steps = get_sim_steps(period[0], units)
+        low_steps = get_sim_steps(period[1], units)
+        period = high_steps + low_steps
+
+        duty_cycle = high_steps / period
+
+        return cls(signal, period, 'step', duty_cycle, jitter)
+
+    def start(self, *, periods: Optional[int] = None, posedge_first: bool = True):
+        """Start driving the clock.
+
+        Args:
+            periods: Drive the clock for this many periods,
+                or if ``None`` then drive the clock forever.
+
+                .. note::
+                    ``0`` is not the same as ``None``, as ``0`` will not start the clock.
+
+            posedge_first: If ``True``, start driving the clock with the
+                positive-going edge at the start of the high part of the period.
+                If ``False``, start driving with the negative-going edge.
+                This is not the same as inverting the clock.
+                Default is ``True``.
+
+        Raises:
+            ValueError: If *periods* is negative.
+        """
+        if periods == 0:
+            return
+
+        if periods is None:
+            toggles = 0
+        else:
+            if periods < 0:
+                raise ValueError("Periods value must be a non-negative integer")
+            toggles = periods * 2
+
+        self._sim_clk.start(toggles, posedge_first)
+
+    def stop(self):
+        """Stop driving the clock."""
+        self._sim_clk.stop()
+
+    @property
+    def is_running(self) -> bool:
+        """Active status of the clock driver."""
+        return self._sim_clk.is_running()

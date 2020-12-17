@@ -232,15 +232,20 @@ def _initialise_testbench(argv_):
     if RANDOM_SEED is None:
         if 'ntb_random_seed' in plusargs:
             RANDOM_SEED = eval(plusargs['ntb_random_seed'])
+            RANDOM_SOURCE = "plusarg ntb_random_seed"
         elif 'seed' in plusargs:
             RANDOM_SEED = eval(plusargs['seed'])
+            RANDOM_SOURCE = "plusarg seed"
         else:
             RANDOM_SEED = int(time.time())
-        log.info("Seeding Python random module with %d" % (RANDOM_SEED))
+            RANDOM_SOURCE = "time.time() (default)"
     else:
         RANDOM_SEED = int(RANDOM_SEED)
-        log.info("Seeding Python random module with supplied seed %d" % (RANDOM_SEED))
+        RANDOM_SOURCE = "envar RANDOM_SEED"
+
+    log.info("Seeding random generators with seed {} from {}".format(RANDOM_SEED, RANDOM_SOURCE))
     random.seed(RANDOM_SEED)
+    simulator.set_random_seed(RANDOM_SEED)
 
     # Setup DUT object
     from cocotb import simulator

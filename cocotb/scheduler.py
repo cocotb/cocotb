@@ -251,6 +251,8 @@ class Scheduler:
         self._write_coro_inst = None
         self._writes_pending = Event()
 
+        self._simulator_clocks = set()
+
     async def _do_writes(self):
         """ An internal coroutine that performs pending writes """
         while True:
@@ -851,6 +853,10 @@ class Scheduler:
             while self._pending_coros:
                 self.add(self._pending_coros.pop(0))
 
+    def _add_sim_clock(self, clock):
+        """Keep track of simulator clocks for cleanup between tests."""
+        self._simulator_clocks.add(clock)
+
     def finish_test(self, exc):
         self._test.abort(exc)
         self._check_termination()
@@ -882,6 +888,15 @@ class Scheduler:
                 if _debug:
                     self.log.debug("Killing %s" % str(coro))
                 coro.kill()
+
+        # Stop and delete all simulator clocks
+        # TODO: Move clock management to tasks once a task can cleanup on kill/cancel
+        while (self._simulator_clocks):
+            clock = self._simulator_clocks.pop()
+            if _debug:
+                self.log.debug("Stopping simulator clock {!r}".format(clock))
+            clock.stop()
+            del clock
 
         if self._main_thread is not threading.current_thread():
             raise Exception("Cleanup() called outside of the main thread")

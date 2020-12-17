@@ -30,6 +30,7 @@ Writing and Generating tests
     :members:
     :member-order: bysource
 
+
 Interacting with the Simulator
 ==============================
 
@@ -73,6 +74,7 @@ classes used within ``cocotb``.
     :members:
     :member-order: bysource
     :private-members:
+
 
 Testbench Structure
 ===================
@@ -173,6 +175,10 @@ Clock
 -----
 
 .. autoclass:: cocotb.clock.Clock
+    :members:
+    :member-order: bysource
+
+.. autoclass:: cocotb.clock.CClock
     :members:
     :member-order: bysource
 
