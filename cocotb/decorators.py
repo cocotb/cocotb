@@ -136,6 +136,9 @@ class RunningTask:
     def _finished(self):
         return self._outcome is not None
 
+    def fail(self, exc):
+        self._outcome = outcomes.Error(exc)
+
     def __iter__(self):
         return self
 

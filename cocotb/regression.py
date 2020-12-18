@@ -72,6 +72,9 @@ def _my_import(name: str) -> Any:
 
 _logger = SimLog(__name__)
 
+_test_cbs = []
+def register_test_cb(cb):
+    _test_cbs.append(cb)
 
 class RegressionManager:
     """Encapsulates all regression capability into a single place"""
@@ -227,6 +230,10 @@ class RegressionManager:
                 if hasattr(thing, "im_hook"):
                     yield thing
 
+    @property
+    def test(self) -> Test:
+        return self._test
+
     def _init_hook(self, hook: Hook) -> Optional[RunningTask]:
         try:
             test = hook(self._dut)
@@ -295,6 +302,9 @@ class RegressionManager:
 
         # stop capturing log output
         cocotb.log.removeHandler(test.handler)
+
+        for cb in _test_cbs:
+            cb(self._test, self._test_task)
 
         self._record_result(
             test=self._test,
