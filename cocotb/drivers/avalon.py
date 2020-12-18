@@ -684,6 +684,7 @@ class AvalonSTPkts(ValidatedBusDriver):
             empty = BinaryValue(n_bits=len(self.bus.empty), bigEndian=False)
 
         # Drive some defaults since we don't know what state we're in
+        await NextTimeStep()
         if self.use_empty:
             self.bus.empty <= 0
         self.bus.startofpacket <= 0
