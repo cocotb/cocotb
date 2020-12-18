@@ -63,7 +63,8 @@ class Clock(BaseClock):
         cocotb.fork(c.start())
 
     Args:
-        signal: The clock pin/signal to be driven.
+        signal: The clock pin/signal to be driven.  Given a vector signal, all bits will
+            be driven.
         period (int): The clock period. Must convert to an even number of
             timesteps.
         units (str, optional): One of
@@ -109,6 +110,7 @@ class Clock(BaseClock):
 
     .. versionchanged:: 1.5
         Support ``'step'`` as the the *units* argument to mean "simulator time step".
+        Given a vector signal, set all bits in the vector, not just the rightmost bit.
 
     .. deprecated:: 1.5
         Using None as the the *units* argument is deprecated, use ``'step'`` instead.
@@ -150,17 +152,19 @@ class Clock(BaseClock):
             it = range(cycles)
 
         # branch outside for loop for performance (decision has to be taken only once)
+        high_value = 2**len(self.signal)-1
+        low_value = 0
         if start_high:
             for _ in it:
-                self.signal <= 1
+                self.signal <= high_value
                 await t
-                self.signal <= 0
+                self.signal <= low_value
                 await t
         else:
             for _ in it:
-                self.signal <= 0
+                self.signal <= low_value
                 await t
-                self.signal <= 1
+                self.signal <= high_value
                 await t
 
     def __str__(self):

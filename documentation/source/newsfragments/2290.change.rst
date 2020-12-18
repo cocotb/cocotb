@@ -1,0 +1,1 @@
+:class:`cocotb.clock.Clock` now drives all bits of a vector signal.
