@@ -6,6 +6,212 @@ This guide explains how to contribute to cocotb, and documents the processes we 
 All processes in this document are designed to streamline the development effort, to avoid bottlenecks, and to ultimately give a pleasant experience to all involved.
 
 
+## Getting Help
+
+Cocotb is a diverse and challenging project to contribute to.
+If you ever feel lost, out of your depth, or simply want to know more, the [cocotb Gitter channel](https://gitter.im/cocotb/Lobby) is actively watched by many cocotb users, contributors, and maintainers.
+It is a good idea if you are unsure whether your problem or question is worthy of a Github Issue to first post it to the Gitter channel.
+You may also ask questions in [Github issues](https://github.com/cocotb/cocotb/issues).
+If you don't receive any response on the Gitter channel or a Github issue, or you want help privately, you may directly contact a [maintainer](#maintainers).
+
+
+## What to Work On
+
+There is *a lot* of work to do on this project, no matter your area of expertise or skill level.
+
+If you are a beginner there are several [Github issues](https://github.com/cocotb/cocotb/issues) marked [`good first issue`](https://github.com/cocotb/cocotb/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) you can look at.
+There are also a number of things you can work on that aren't in Github issues and don't require in-depth knowledge of the cocotb internals.
+They including the following:
+
+* Documentation improvements
+* Managing Github issues and the Gitter channel
+* Testing and coverage improvements
+
+Cocotb is still not perfect. There are plenty of [bug fixes](https://github.com/cocotb/cocotb/issues?q=is%3Aopen+is%3Aissue+label%3Atype%3Abug) and [features](https://github.com/cocotb/cocotb/issues?q=is%3Aopen+is%3Aissue+label%3Atype%3Afeature) that can be worked on.
+Most of these are recorded as Github issues.
+
+
+### Documentation
+
+Cocotb's documentation is always open to improvements.
+Improving documentation will help users better understand and use cocotb;
+and may decrease the number of questions the Gitter channel and Github issue page.
+Updating documentation requires knowledge of:
+
+* [reStructuredText](https://docutils.sourceforge.io/rst.html)
+* [Sphinx documentation generator](https://www.sphinx-doc.org/en/master/)
+* [Markdown](https://www.markdownguide.org/)
+* [How to architect documentation](https://documentation.divio.com/)
+
+Some documentation should be located in the official documentation on [Read the Docs/RTD](https://docs.cocotb.org/en/latest/),
+while the rest belongs on the [Wiki](https://github.com/cocotb/cocotb/wiki).
+There are several ways to improve the documentation:
+
+* Better documenting core functionality (RTD)
+* Documenting common "gotchas" (RTD)
+* Documenting difficult and niche use cases (Wiki)
+* Documenting common design patterns (Wiki)
+* Documenting internal components (Wiki)
+
+See the documentation on [building the documentation](#building-documentation-locally) and the [guidelines on submitting pull requests](#patch-requirements).
+Documentation improvements typically require no maintainer pre-approval; you can simply work on the documentation and open a pull request.
+Documentation on the Wiki does not require a pull request; any user with a Github account can contribute to it.
+Please be responsible with that power.
+
+
+### Project Management
+
+The cocotb project is [fairly popular](https://larsasplund.github.io/github-facts/verification-practices.html#frameworks) and the
+[Gitter channel](https://gitter.im/cocotb/Lobby) and
+[Github issues](https://github.com/cocotb/cocotb) page receive a fair amount of traffic;
+which is only expected to increase.
+People are needed to categorize issues and pull requests, and respond to questions.
+Working this task is the quickest way to learn how cocotb works.
+Tending to this task requires the following:
+
+* people skills
+* an understanding of the scope of cocotb
+* general understanding about how cocotb works
+
+Someone working this task should set notifications on the Gitter channel to be notified of any new comments.
+They should also "watch" the Github repo by selecting the "Watching" notification level button in the upper right corner of the main Github page.
+Finally, they should notify the maintainers that they are able and willing to accept questions.
+
+To be able to add labels and close issues and PRs you will need special permissions.
+Contact a [maintainer](#maintainer) if you are interested in receiving these permissions.
+They will be granted according to the project's need and the requestor's familiarity with cocotb.
+Once you have those permissions, see the guidelines on [managing issues and pull requests](#Managing-of-Issues-and-Pull-Requests).
+
+This task can also be done without special repo permissions, by just commenting on the issue or PR.
+This is especially helpful for Github issues about bugs.
+If you can duplicate the bug or confirm the bug report is invalid, that helps maintainers *a lot*.
+
+
+### Tests and Coverage
+
+Cocotb has a suite of unit tests (located in the `tests` directory) and examples (located in the `examples` directory) which are functional acceptance tests.
+If a pull request cannot pass *all* of these tests, it will likely be rejected.
+To ensure cocotb only includes the highest quality code, these test should be exhaustive.
+We use code coverage as a quantifiable metric of the "exhaustiveness" of these tests, and wish to improve this metric.
+
+Working on this task requires a familiarity with:
+
+* Cocotb's core functionality
+* How to write Verilog and VHDL
+* How to write cocotb tests in Python
+* (Optionally) [codecov](https://docs.codecov.io/docs); coverage aggregator and Github bot
+* (Optionally) the [coverage](https://coverage.readthedocs.io/en/latest/) module, for Python code coverage
+* (Optionally) [gcov](https://gcc.gnu.org/onlinedocs/gcc/Gcov.html), for C++ code coverage
+* (Optionally) [Github Actions](https://docs.github.com/en/free-pro-team@latest/actions), for automatic acceptance testing
+
+Cocotb's regression tests can be improved by:
+
+* Testing more of cocotb's core functionality
+* Testing corner cases left out of the current set of tests (identified by looking at code coverage)
+* Increasing the matrix of simulators, operating system, and Python installations tested in CI
+
+Testing improvements don't require maintainer pre-approval, but require a pull request.
+Please see the [guidelines on submitting pull requests](#patch-requirements).
+
+
+### Features
+
+Cocotb is still in development and new features are still welcome and appreciated;
+as long as they stay [in scope](#Architecture-and-Scope-of-Cocotb).
+Cocotb is comprised of several major codebases, each requiring different sets of skills and development process.
+Instead of including that breakdown here, it is done in the [internal documentation](https://github.com/cocotb/cocotb/wiki/cocotb-Internals).
+
+Small improvements to existing features generally do not require maintainer pre-approval.
+Large changes, approximately >150 LOC changed, and new features generally require maintainer pre-approval.
+If a change is deemed too large for the main repo, or out of scope,
+please feel free to make it an [extension](https://docs.cocotb.org/en/latest/extensions.html).
+
+***New features must not break existing features.***
+
+Feature changes require full coverage of the added feature.
+This likely requires adding new unit tests to the `tests` directory.
+Issue-specific test directories will not be accepted, unless a special HDL entity is required.
+Instead, place the test in an existing test suite (`test_cocotb`, `test_discovery`, etc.).
+
+Features should generally follow the following design principles:
+
+* Something the user cannot do without assistance of cocotb-specific code
+* Orthogonal to existing features
+* Easily composed with existing features
+* Limited in scope and impervious to scope creep
+
+
+### Bugfixes
+
+**!WARNING!** Bugfixing cocotb is not for the faint of heart!
+
+Bugs happen.
+cocotb supports many simulators that have inconsistent support for the procedural interfaces cocotb depends on,
+and it has a number of features that aren't wholly tested yet.
+There are likely many bugs lurking, waiting to be found;
+which is why increasing testing and code coverage is important.
+Working on bugfixing can be very challenging, depending on the cause of the bug.
+In general, bugfixing requires knowledge of:
+
+* How cocotb works
+* [cocotb's debugging utilities](https://github.com/cocotb/cocotb/wiki/Debugging-HOW-TOs#cocotb-debugging-functionality)
+* (Optional) Simulator interfaces (VPI, VHPI, and FLI)
+* (Optional) Python debugging tools ([pdb](https://github.com/cocotb/cocotb/wiki/Debugging-HOW-TOs#using-a-remote-python-debugger), [dowser](https://github.com/cocotb/cocotb/wiki/Debugging-HOW-TOs#debugging-python-memory-usage))
+* (Optional) C/C++ debugging tools ([gdb](https://github.com/cocotb/cocotb/wiki/Debugging-HOW-TOs#using-a-remote-cc-debugger), [valgrind](https://github.com/cocotb/cocotb/wiki/Debugging-HOW-TOs#debugging-cc-memory-usage))
+* (Optional) Specific simulators (sometimes the bug exists in the simulator and not cocotb)
+
+Fixing a bug follows the procedure:
+
+1. Locate buggy behavior, make a Github issue
+    * Maintainers may be able to offer more information, confirm it as a bug, or confirm it as expected behavior
+2. Make a Minimum Reproducible Failing Example (MRFE, pronounced like Murphy, like the law :)
+    * Confirms the bug
+    * Add to [regressions](#running-tests-locally)
+3. Open a new draft pull request with the MRFE test
+    * It should cause CI to fail
+4. Determine scope of the bug, and add that detail to the pull request
+    * Which simulators/interfaces are affected?
+    * Which Python versions?
+    * Which operating systems?
+5. Determine the cause of the bug, and add that detail to the pull request
+    * May require Python or C debugging, or the builtin cocotb debugging utilities
+6. Make a fix, and push it up on the PR branch
+    * It should cause the CI to pass
+    * The fix should not break other existing functionality
+
+Details on how to debug cocotb can be found on the [Wiki](https://github.com/cocotb/cocotb/wiki/Debugging-HOW-TOs).
+
+
+### Deprecations and Removals
+
+Cocotb's treatment of deprecations and removal follows guidelines laid out [here](https://symfony.com/doc/current/setup/upgrade_major.html#make-your-code-deprecation-free).
+Deprecations serve the following purposes:
+
+* Remove legacy code that has been deemed out of scope
+* Remove support for a simulator, OS, or Python version that is past end-of-life
+* Remove potentially dangerous, broken, and misunderstood interfaces (usually accompanied with a superior alternative)
+
+Deprecations can be incorporated at any time.
+They are typically implemented by [issuing a `DeprecationWarning`](https://docs.python.org/3/library/warnings.html#warnings.warn) in Python code;
+or [issuing a LOG_WARN](https://docs.cocotb.org/en/stable/generated/file/gpi__logging_8h.html?highlight=LOG_WARN#c.LOG_WARN) with `DEPRECATED` in the message in C++ code.
+
+Removals only occur on major version bumps.
+One can create removal pull requests at any time, on the condition they will not be accepted until the next release is known to be a major version release.
+
+
+### Breaking Changes
+
+Breaking changes are changes to the interface or behavior of a user-facing entity.
+They are necessary when a user-facing interfaces are broken in a way that cannot be changed without changing the behavior of user's code.
+In these situations it is ideal to be able to implement a switch between new better behavior and the old broken behavior.
+On major version bumps, this switch will be deprecated and the new behavior will become the default.
+
+In cases where behavioral switches are not easy to implement, breaking changes will attempt to be broadcasted to user by [issuing a `DeprecationWarning`](https://docs.python.org/3/library/warnings.html#warnings.warn) when the to-be-changed behavior is invoked.
+Before major releases, pending breaking changes will be incorporated.
+
+One can create pull requests with breaking changes at any time, on the condition they will not be accepted until the next release is known to be a major version release.
+
+
 ## Setting Up a Development Environment
 
 Assuming you have used cocotb prior to reading this guide, you will already have the cocotb [installation prerequisites](https://docs.cocotb.org/en/latest/install.html) and standard development tools (editor, shell, git, etc.) installed.
@@ -84,10 +290,11 @@ python -m pip install --global-option build_ext --global-option --compiler=mingw
 ```
 
 Once that has been done, you can navigate to the directory containing the test you wish to run.
-Then you may issue an [appropriate]https://docs.cocotb.org/en/latest/building.html#makefile-based-test-scripts) `make` command:
+Then you may issue an [appropriate](https://docs.cocotb.org/en/latest/building.html#makefile-based-test-scripts) `make` command.
+For example, if you want to test with Icarus using Verilog sources:
 
 ```command
-make SIM=icarus
+make SIM=icarus TOPLEVEL_LANG=verilog
 ```
 
 
@@ -124,6 +331,18 @@ The core of cocotb are
 As a general rule, functionality beyond this core set should go into extensions.
 However, none of these rules are set in stone.
 They can and should be challenged at times to ensure the project stays relevant to the majority of its users.
+
+
+## Maintainer Pre-approval
+
+After making changes to cocotb, changes must be approved by at least one maintainer before being included.
+Out-of-scope and breaking changes ***will not be accepted***.
+Also a maintainer could object to a change due to implementation approach or code quality reasons.
+To potentially save you frustration and time, it is a good idea to get maintainer pre-approval on the task before starting it.
+
+The best way to get maintainer pre-approval is to make a [Github issue](https://github.com/cocotb/cocotb/issues).
+These issues can be a place for maintainers, as well as other users, to voice opinions on a proposed change before the task is worked.
+You may also propose changes on the [Gitter channel](https://gitter.im/cocotb/Lobby) or by directly contacting a [maintainer](#maintainer).
 
 
 ## How to Get Changes Merged
@@ -273,6 +492,14 @@ Founders
 
 - Chris Higgs (@chiggs)
 - Stuart Hodgson (@stuarthodgson)
+
+### Getting in Contact with a Maintainer
+
+All of the maintainers are active on the [Gitter channel](https://github.com/cocotb/cocotb).
+They prefer inquiries go through direct messages on Gitter,
+or by mentioning them in the main [cocotb Gitter channel](https://gitter.im/cocotb/Lobby) using `@{maintainer name}`.
+Maintainers are unpaid volunteers, so it might take a while for a maintainer to get back to you.
+
 
 ## Code of Conduct
 
