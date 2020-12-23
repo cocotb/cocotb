@@ -1,0 +1,10 @@
+The :class:`cocotb.log.SimLogFormatter` class now defines
+:meth:`~cocotb.log.SimLogFormatter._format_sim_time`,
+:meth:`~cocotb.log.SimLogFormatter._format_recordname`,
+:meth:`~cocotb.log.SimLogFormatter._format_filename`,
+:meth:`~cocotb.log.SimLogFormatter._format_funcname`,
+:meth:`~cocotb.log.SimLogFormatter._format_exc_msg` and
+:meth:`~cocotb.log.SimLogFormatter._format_build_line`
+to help in customizing the log output.
+
+A new example ``custom_logger`` shows how this can be used in practice.
