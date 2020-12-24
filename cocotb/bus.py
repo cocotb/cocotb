@@ -82,9 +82,7 @@ class Bus:
             else:
                 signame = sig_name
 
-            if array_idx is not None:
-                signame += "[{:d}]".format(array_idx)
-            self._add_signal(attr_name, signame)
+            self._add_signal(attr_name, signame, array_idx)
 
         # Also support a set of optional signals that don't have to be present
         for attr_name, sig_name in _build_sig_attr_dict(optional_signals).items():
@@ -93,19 +91,18 @@ class Bus:
             else:
                 signame = sig_name
 
-            if array_idx is not None:
-                signame += "[{:d}]".format(array_idx)
-
-            self._entity._log.debug("Signal name {}".format(signame))
             if hasattr(entity, signame):
-                self._add_signal(attr_name, signame)
+                self._add_signal(attr_name, signame, array_idx)
             else:
                 self._entity._log.debug("Ignoring optional missing signal "
                                         "%s on bus %s" % (sig_name, name))
 
-    def _add_signal(self, attr_name, signame):
-        self._entity._log.debug("Signal name {}".format(signame))
-        setattr(self, attr_name, getattr(self._entity, signame))
+    def _add_signal(self, attr_name, signame, array_idx=None):
+        self._entity._log.debug("Signal name {}, idx {}".format(signame, array_idx))
+        handle = getattr(self._entity, signame)
+        if array_idx is not None:
+            handle = handle[array_idx]
+        setattr(self, attr_name, handle)
         self._signals[attr_name] = getattr(self, attr_name)
 
     def drive(self, obj, strict=False):
