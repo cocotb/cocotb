@@ -13,15 +13,16 @@ and the Python documentation for :class:`logging.handlers.RotatingFileHandler`.
 .. code-block:: python3
 
     from logging.handlers import RotatingFileHandler
+    from cocotb.log import SimLogFormatter
 
     root_logger = logging.getLogger()
 
     # undo the setup cocotb did
     for handler in root_logger.handlers:
-        root_logger.remove_handler(handler)
+        root_logger.removeHandler(handler)
         handler.close()
 
     # do whatever configuration you want instead
-    file_handler = RotatingFileHandler(logfile, maxBytes=(5 * 1024 * 1024), backupCount=2)
-    file_handler.setFormatter(cocotb.log.SimLogFormatter())
+    file_handler = RotatingFileHandler("rotating.log", maxBytes=(5 * 1024 * 1024), backupCount=2)
+    file_handler.setFormatter(SimLogFormatter())
     root_logger.addHandler(file_handler)
