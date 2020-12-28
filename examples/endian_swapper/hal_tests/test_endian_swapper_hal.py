@@ -38,11 +38,11 @@ import io_module
 
 async def reset(dut, duration=10):
     dut._log.debug("Resetting DUT")
-    dut.reset_n = 0
-    dut.stream_in_valid = 0
+    dut.reset_n <= 0
+    dut.stream_in_valid <= 0
     await Timer(duration, units='ns')
     await RisingEdge(dut.clk)
-    dut.reset_n = 1
+    dut.reset_n <= 1
     dut._log.debug("Out of reset")
 
 

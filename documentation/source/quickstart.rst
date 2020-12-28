@@ -101,9 +101,9 @@ following:
 
         dut._log.info("Running test!")
         for cycle in range(10):
-            dut.clk = 0
+            dut.clk <= 0
             await Timer(1, units='ns')
-            dut.clk = 1
+            dut.clk <= 1
             await Timer(1, units='ns')
         dut._log.info("Running test!")
 
