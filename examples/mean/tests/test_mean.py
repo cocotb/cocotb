@@ -105,7 +105,7 @@ async def mean_randomised_test(dut):
 
     dut.rst <= 1
     for i in range(BUS_WIDTH):
-        dut.i_data[i] = 0
+        dut.i_data[i] <= 0
     dut.i_valid <= 0
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
@@ -115,7 +115,7 @@ async def mean_randomised_test(dut):
         nums = []
         for i in range(BUS_WIDTH):
             x = random.randint(0, 2**DATA_WIDTH - 1)
-            dut.i_data[i] = x
+            dut.i_data[i] <= x
             nums.append(x)
         dut.i_valid <= 1
 
