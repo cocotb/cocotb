@@ -30,23 +30,16 @@
 #ifndef COCOTB_EMBED_H_
 #define COCOTB_EMBED_H_
 
-#include <exports.h>
-#ifdef COCOTB_EMBED_EXPORTS
-#define COCOTB_EMBED_EXPORT COCOTB_EXPORT
-#else
-#define COCOTB_EMBED_EXPORT COCOTB_IMPORT
-#endif
-
 #include <gpi.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern COCOTB_EMBED_EXPORT void embed_init_python(void);
-extern COCOTB_EMBED_EXPORT void embed_sim_cleanup(void);
-extern COCOTB_EMBED_EXPORT int embed_sim_init(int argc, char const* const* argv);
-extern COCOTB_EMBED_EXPORT void embed_sim_event(gpi_event_t level, const char *msg);
+extern void embed_init_python(void);
+extern void embed_sim_cleanup(void);
+extern int embed_sim_init(int argc, char const* const* argv);
+extern void embed_sim_event(gpi_event_t level, const char *msg);
 
 #ifdef __cplusplus
 }

@@ -30,10 +30,8 @@
 // Embed Python into the simulator using GPI
 
 #include <Python.h>
-#include <cocotb_utils.h>
-#include <gpi_logging.h>        // LOG_* macros
-#include <py_gpi_logging.h>     // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize
-#include <gpi.h>                // gpi_event_t
+#include <py_gpi_logging.h>     // py_gpi_logger_set_level, py_gpi_logger_initialize, py_gpi_logger_finalize, to_python, to_simulator
+#include <gpi.h>                // gpi_event_t, LOG_* macros
 #include "locale.h"
 #include <cassert>
 #include <exports.h>

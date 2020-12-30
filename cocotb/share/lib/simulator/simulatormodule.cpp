@@ -27,24 +27,17 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-/**
-* @file   simulatormodule.c
-* @brief Python extension to provide access to the simulator
-*
-* Uses GPI calls to interface to the simulator.
-*/
+#include <Python.h>
+
+#include <type_traits>
+
+#include <gpi.h>                // LOG_* macros, COCOTB_UNUSED
+#include <py_gpi_logging.h>     // py_gpi_logger_set_level
 
 static int takes = 0;
 static int releases = 0;
 
 static int sim_ending = 0;
-
-#include <cocotb_utils.h>       // COCOTB_UNUSED
-#include <type_traits>
-#include <Python.h>
-#include <gpi_logging.h>        // LOG_* macros
-#include <py_gpi_logging.h>     // py_gpi_logger_set_level
-#include "gpi.h"
 
 // This file defines the routines available to Python
 

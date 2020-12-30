@@ -27,7 +27,6 @@
 
 #include "VpiImpl.h"
 #include <cstring>
-#include <cocotb_utils.h>  // COCOTB_UNUSED
 
 extern "C" {
 

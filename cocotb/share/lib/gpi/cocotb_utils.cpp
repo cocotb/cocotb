@@ -27,8 +27,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <cocotb_utils.h>
-#include <gpi_logging.h>
+#include <gpi.h>
 #include <stdlib.h>
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -36,9 +35,6 @@
 #else
 #include <windows.h>
 #endif
-
-// Tracks if we are in the context of Python or Simulator
-int is_python_context = 0;
 
 extern "C" void* utils_dyn_open(const char* lib_name)
 {

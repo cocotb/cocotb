@@ -3,11 +3,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <Python.h>         // all things Python
-#include <gpi_logging.h>    // all things GPI logging
+#include <gpi.h>            // all things GPI logging
 #include <py_gpi_logging.h> // PY_GPI_LOG_SIZE
 #include <cstdarg>          // va_list, va_copy, va_end
 #include <cstdio>           // fprintf, vsnprintf
 
+
+// Tracks if we are in the context of Python or Simulator
+int is_python_context = 0;
 
 static PyObject *pLogHandler = nullptr;
 

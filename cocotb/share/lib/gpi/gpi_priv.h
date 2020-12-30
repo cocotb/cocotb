@@ -36,12 +36,10 @@
 #define GPI_EXPORT COCOTB_IMPORT
 #endif
 
-#include <gpi.h>
-#include <embed.h>
+#include <gpi.h>    // COCOTB_UNUSED
 #include <string>
 #include <vector>
 #include <map>
-#include <cocotb_utils.h>  // COCOTB_UNUSED
 
 typedef enum gpi_cb_state {
     GPI_FREE = 0,

@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <embed.h>
-#include <cocotb_utils.h>   // xstr, utils_dyn_open, utils_dyn_sym
-#include <gpi.h>            // gpi_event_t
+#include <gpi.h>            // gpi_event_t, xstr, utils_dyn_open, utils_dyn_sym
 #include <cstdlib>          // getenv
 #if ! defined(__linux__) && ! defined(__APPLE__)
 #include <windows.h>        // Win32 API for loading the embed impl library

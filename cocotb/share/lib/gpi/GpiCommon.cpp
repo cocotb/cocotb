@@ -27,13 +27,14 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include "gpi_priv.h"
-#include <cocotb_utils.h>
 #include <sys/types.h>
 #include <vector>
 #include <map>
 #include <algorithm>
 #include <string>
+
+#include <gpi_priv.h>
+#include <embed.h>
 
 using namespace std;
 

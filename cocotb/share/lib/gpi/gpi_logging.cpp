@@ -27,7 +27,7 @@
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#include <gpi_logging.h>
+#include <gpi.h>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
