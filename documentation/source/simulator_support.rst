@@ -60,6 +60,16 @@ to the top component as shown in the example below:
     `endif
     endmodule
 
+.. _sim-icarus-minimal-runscript:
+
+Minimal run script
+------------------
+
+A minimal run script is the following (taken from the ``simple_dff`` example):
+
+.. literalinclude:: ../../examples/simple_dff/run_icarus.sh
+   :caption: run_icarus.sh
+
 .. _sim-icarus-issues:
 
 Issues for this simulator
@@ -131,6 +141,16 @@ For Verilator 4.102 and above, the `-CFLAGS -DVM_TRACE_FST=1` argument is no lon
 
 The resulting file will be ``dump.fst`` and can be opened by ``gtkwave dump.fst``.
 
+.. _sim-verilator-minimal-runscript:
+
+Minimal run script
+------------------
+
+A minimal run script is the following (taken from the ``simple_dff`` example):
+
+.. literalinclude:: ../../examples/simple_dff/run_verilator.sh
+   :caption: run_verilator.sh
+
 .. _sim-verilator-issues:
 
 Issues for this simulator
@@ -151,6 +171,16 @@ In order to use this simulator, set :make:var:`SIM` to ``vcs``:
     make SIM=vcs
 
 cocotb currently only supports :term:`VPI` for Synopsys VCS, not :term:`VHPI`.
+
+.. _sim-vcs-minimal-runscript:
+
+Minimal run script
+------------------
+
+A minimal run script is the following (taken from the ``simple_dff`` example):
+
+.. literalinclude:: ../../examples/simple_dff/run_vcs_verilog.sh
+   :caption: run_vcs_verilog.sh
 
 .. _sim-vcs-issues:
 
@@ -233,6 +263,19 @@ In order to use this simulator, set :make:var:`SIM` to ``questa``:
 
 For more information, see :ref:`sim-modelsim`.
 
+.. _sim-questa-minimal-runscript:
+
+Minimal run script
+------------------
+
+A minimal run script is the following (taken from the ``simple_dff`` example):
+
+.. literalinclude:: ../../examples/simple_dff/run_questa_verilog.sh
+   :caption: run_questa_verilog.sh
+
+.. literalinclude:: ../../examples/simple_dff/run_questa_vhdl.sh
+   :caption: run_questa_vhdl.sh
+
 .. _sim-questa-issues:
 
 Issues for this simulator
@@ -311,6 +354,19 @@ In order to use this simulator, set :make:var:`SIM` to ``xcelium``:
 
 The simulator automatically loads :term:`VPI` even when only :term:`VHPI` is requested.
 
+.. _sim-xcelium-minimal-runscript:
+
+Minimal run script
+------------------
+
+A minimal run script is the following (taken from the ``simple_dff`` example):
+
+.. literalinclude:: ../../examples/simple_dff/run_xcelium_verilog.sh
+   :caption: run_xcelium_verilog.sh
+
+.. literalinclude:: ../../examples/simple_dff/run_xcelium_vhdl.sh
+   :caption: run_xcelium_vhdl.sh
+
 .. _sim-xcelium-issues:
 
 Issues for this simulator
@@ -332,6 +388,16 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 
 Support is preliminary.
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
+
+.. _sim-ghdl-minimal-runscript:
+
+Minimal run script
+------------------
+
+A minimal run script is the following (taken from the ``simple_dff`` example):
+
+.. literalinclude:: ../../examples/simple_dff/run_ghdl.sh
+   :caption: run_ghdl.sh
 
 .. _sim-ghdl-issues:
 
@@ -377,6 +443,16 @@ set :make:var:`SIM` to ``cvc``:
     make SIM=cvc
 
 Note that cocotb's makefile is using CVC's interpreted mode.
+
+.. _sim-cvc-minimal-runscript:
+
+Minimal run script
+------------------
+
+A minimal run script is the following (taken from the ``simple_dff`` example):
+
+.. literalinclude:: ../../examples/simple_dff/run_cvc.sh
+   :caption: run_cvc.sh
 
 .. _sim-cvc-issues:
 
