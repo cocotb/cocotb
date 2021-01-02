@@ -66,6 +66,147 @@ async def test_delayed_assignment_still_errors(dut):
         dut.stream_in_int <= []
 
 
+async def int_values_test(signal, values):
+    """Test integer access to a signal."""
+
+    log = logging.getLogger("cocotb.test")
+    for val in values:
+        signal <= val
+        await Timer(10, 'ns')
+
+        if val < 0:
+            got = signal.value.signed_integer
+        else:
+            got = int(signal)
+
+        if got != val:
+            log.error("Expected value %d, got value %d" %(val, got))
+        assert got == val
+
+
+def gen_int_test_values(n_bits):
+    """Generates a list of int test values for a given number of bits."""
+    unsigned_min = 0
+    unsigned_max = 2**n_bits-1
+    signed_min = -2**(n_bits-1)
+    signed_max = 2**(n_bits-1)-1
+
+    return [1, -1, 4, -4, unsigned_min, unsigned_max, signed_min, signed_max]
+
+
+def gen_int_ovfl_value(n_bits):
+    return 2**n_bits
+
+
+def gen_int_unfl_value(n_bits):
+    return -2**(n_bits-1)-1
+
+
+@cocotb.test()
+async def test_int_8bit(dut):
+    """Test int access to 8-bit vector."""
+    values = gen_int_test_values(len(dut.stream_in_data))
+    await int_values_test(dut.stream_in_data, values)
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_8bit_overflow(dut):
+    """Test 8-bit vector overflow."""
+    value = gen_int_ovfl_value(len(dut.stream_in_data))
+    await int_values_test(dut.stream_in_data, [value])
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_8bit_underflow(dut):
+    """Test 8-bit vector underflow."""
+    value = gen_int_unfl_value(len(dut.stream_in_data))
+    await int_values_test(dut.stream_in_data, [value])
+
+
+@cocotb.test()
+async def test_int_32bit(dut):
+    """Test int access to 32-bit vector."""
+    values = gen_int_test_values(len(dut.stream_in_data_dword))
+    await int_values_test(dut.stream_in_data_dword, values)
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_32bit_overflow(dut):
+    """Test 32-bit vector overflow."""
+    value = gen_int_ovfl_value(len(dut.stream_in_data_dword))
+    await int_values_test(dut.stream_in_data_dword, [value])
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_32bit_underflow(dut):
+    """Test 32-bit vector underflow."""
+    value = gen_int_unfl_value(len(dut.stream_in_data_dword))
+    await int_values_test(dut.stream_in_data_dword, [value])
+
+
+@cocotb.test()
+async def test_int_39bit(dut):
+    """Test int access to 39-bit vector."""
+    values = gen_int_test_values(len(dut.stream_in_data_39bit))
+    await int_values_test(dut.stream_in_data_39bit, values)
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_39bit_overflow(dut):
+    """Test 39-bit vector overflow."""
+    value = gen_int_ovfl_value(len(dut.stream_in_data_39bit))
+    await int_values_test(dut.stream_in_data_39bit, [value])
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_39bit_underflow(dut):
+    """Test 39-bit vector underflow."""
+    value = gen_int_unfl_value(len(dut.stream_in_data_39bit))
+    await int_values_test(dut.stream_in_data_39bit, [value])
+
+
+@cocotb.test()
+async def test_int_64bit(dut):
+    """Test int access to 64-bit vector."""
+    values = gen_int_test_values(len(dut.stream_in_data_wide))
+    await int_values_test(dut.stream_in_data_wide, values)
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_64bit_overflow(dut):
+    """Test 64-bit vector overflow."""
+    value = gen_int_ovfl_value(len(dut.stream_in_data_wide))
+    await int_values_test(dut.stream_in_data_wide, [value])
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_64bit_underflow(dut):
+    """Test 64-bit vector underflow."""
+    value = gen_int_unfl_value(len(dut.stream_in_data_wide))
+    await int_values_test(dut.stream_in_data_wide, [value])
+
+
+@cocotb.test()
+async def test_int_128bit(dut):
+    """Test int access to 128-bit vector."""
+    values = gen_int_test_values(len(dut.stream_in_data_dqword))
+    await int_values_test(dut.stream_in_data_dqword, values)
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_128bit_overflow(dut):
+    """Test 128-bit vector overflow."""
+    value = gen_int_ovfl_value(len(dut.stream_in_data_dqword))
+    await int_values_test(dut.stream_in_data_dqword, [value])
+
+
+@cocotb.test(expect_error=OverflowError)
+async def test_int_128bit_underflow(dut):
+    """Test 128-bit vector underflow."""
+    value = gen_int_unfl_value(len(dut.stream_in_data_dqword))
+    await int_values_test(dut.stream_in_data_dqword, [value])
+
+
 @cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
 async def test_integer(dut):
     """Test access to integers."""

@@ -35,7 +35,7 @@ import enum
 
 import cocotb
 from cocotb import simulator
-from cocotb.binary import BinaryValue
+from cocotb.binary import BinaryValue, BinaryRepresentation
 from cocotb.log import SimLog
 
 # Only issue a warning for each deprecated attribute access
@@ -702,8 +702,10 @@ class ModifiableObject(NonConstantObject):
                 The value to drive onto the simulator object.
 
         Raises:
-            TypeError: If target is not wide enough or has an unsupported type
-                 for value assignment.
+            TypeError: If target has an unsupported type for value assignment.
+
+            OverflowError: If int value is out of the range that can be represented
+                by the target. -2**(Nbits - 1) <= value <= 2**Nbits - 1
 
         .. deprecated:: 1.5
             :class:`ctypes.Structure` objects are no longer accepted as values for assignment.
@@ -712,17 +714,29 @@ class ModifiableObject(NonConstantObject):
         """
         value, set_action = self._check_for_set_action(value)
 
-        if isinstance(value, int) and value < 0x7fffffff and len(self) <= 32:
-            call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.NONE))
-            return
+        if isinstance(value, int):
+            min_value = -2 ** (len(self) - 1)  # minimum negative value for 'signed' number
+            max_value = 2 ** len(self) - 1     # maximum positive value for 'unsigned' number
+
+            if min_value <= value <= max_value:
+                if len(self) <= 32 and value < 0x7fffffff:  # set_signal_val_int() does not support full 32-bit 'unsigned' range
+                    call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.NONE))
+                    return
+                elif value < 0:
+                    value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
+                else:
+                    value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.UNSIGNED)
+            else:
+                raise OverflowError(
+                    "Int value ({!r}) out of range for assignment of {!r}-bit signal ({!r})"
+                    .format(value, len(self), self._name))
+
         if isinstance(value, ctypes.Structure):
             warnings.warn(
                 "`ctypes.Structure` values are no longer accepted for value assignment. "
                 "Use `BinaryValue(value=bytes(struct_obj), n_bits=len(signal))` instead",
                 DeprecationWarning, stacklevel=3)
             value = BinaryValue(value=cocotb.utils.pack(value), n_bits=len(self))
-        elif isinstance(value, int):
-            value = BinaryValue(value=value, n_bits=len(self), bigEndian=False)
         elif isinstance(value, dict):
             # We're given a dictionary with a list of values and a bit size...
             num = 0
