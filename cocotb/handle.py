@@ -845,6 +845,9 @@ class IntegerObject(ModifiableObject):
         Raises:
             TypeError: If target has an unsupported type for
                  integer value assignment.
+
+            OverflowError: If value is out of range for assignment
+                 of 32-bit IntegerObject.
         """
         value, set_action = self._check_for_set_action(value)
 

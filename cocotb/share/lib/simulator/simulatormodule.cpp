@@ -41,6 +41,7 @@ static int sim_ending = 0;
 
 #include <cocotb_utils.h>     // COCOTB_UNUSED
 #include <type_traits>
+#include <limits>
 #include <Python.h>
 #include "gpi_logging.h"
 #include "gpi.h"
@@ -663,10 +664,17 @@ static PyObject *set_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
 
 static PyObject *set_signal_val_int(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    int value;
+    long long value;
     gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "ii:set_signal_val_int", &action, &value)) {
+    if (!PyArg_ParseTuple(args, "iL:set_signal_val_int", &action, &value)) {
+        return NULL;
+    }
+
+    if (value < std::numeric_limits<int32_t>::min() ||
+        value > std::numeric_limits<int32_t>::max()) {
+        const char *m_name = gpi_get_signal_name_str(self->hdl);
+        PyErr_Format(PyExc_OverflowError, "Value (%lld) out of range for assignment of 32-bit integer signal (%s)", value, m_name);
         return NULL;
     }
 
