@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
 
 
-def create_sxs_assembly_manifest(name: str, filename: str, libraries: List[str]) -> str:
+def create_sxs_assembly_manifest(name: str, filename: str, libraries: List[str], dependency_only=False) -> str:
     """
     Create side-by-side (sxs) assembly manifest
 
@@ -48,14 +48,22 @@ def create_sxs_assembly_manifest(name: str, filename: str, libraries: List[str])
             </dependency>
             ''') % (lib, architecture))
 
-    manifest_body = textwrap.dedent('''\
-        <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-        <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-            <assemblyIdentity name="%s" version="1.0.0.0" type="win32" processorArchitecture="%s" />
-            <file name="%s" />
-            %s
-        </assembly>
-        ''') % (name, architecture, filename, textwrap.indent("".join(dependencies), '    ').strip())
+    if not dependency_only:
+        manifest_body = textwrap.dedent('''\
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+                <assemblyIdentity name="%s" version="1.0.0.0" type="win32" processorArchitecture="%s" />
+                <file name="%s" />
+                %s
+            </assembly>
+            ''') % (name, architecture, filename, textwrap.indent("".join(dependencies), '    ').strip())
+    else:
+        manifest_body = textwrap.dedent('''\
+            <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+            <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+                %s
+            </assembly>
+            ''') % (textwrap.indent("".join(dependencies), '    ').strip())
 
     return manifest_body
 
@@ -111,6 +119,21 @@ def create_rc_file(name, filename, libraries):
         END
         ''') % manifest
 
+    # Add the runtime dependency on libcocotb to libembed dependencies
+    if name == "libembed":
+        manifest = create_sxs_assembly_manifest(name, filename, ["libcocotb"], dependency_only=True)
+
+        # Escape double quotes and put every line between double quotes for embedding into rc file
+        manifest = manifest.replace('"', '""')
+        manifest = '\n'.join(['"%s\\r\\n"' % x for x in manifest.splitlines()])
+
+        rc_body += textwrap.dedent('''\
+            1000 RT_MANIFEST
+            BEGIN
+            %s
+            END
+            ''') % manifest
+
     with open(name + ".rc", "w", encoding='utf-8') as f:
         f.write(rc_body)
 
@@ -142,9 +165,6 @@ class build_ext(_build_ext):
                 name = os.path.split(fullname)[-1]
                 filename = os.path.split(filename)[-1]
                 libraries = {"lib" + lib for lib in ext.libraries}.intersection(ext_names)
-                # Add the runtime dependency on libcocotb to libembed dependencies
-                if name == "libembed":
-                    libraries.add("libcocotb")
                 create_rc_file(name, filename, libraries)
 
         super().run()

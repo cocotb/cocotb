@@ -33,18 +33,22 @@ static bool init_failed = false;
 
 
 #if ! defined(__linux__) && ! defined(__APPLE__)
-HANDLE act_ctx = NULL;
+static ACTCTX act_ctx = {
+    /* cbSize */ sizeof(ACTCTX),
+    /* dwFlags */ ACTCTX_FLAG_HMODULE_VALID | ACTCTX_FLAG_RESOURCE_NAME_VALID,
+    /* lpSource */ NULL,
+    /* wProcessorArchitecture */ 0,
+    /* wLangId */ 0,
+    /* lpAssemblyDirectory */ NULL,
+    /* lpResourceName */ MAKEINTRESOURCE(1000),
+    /* lpApplicationName */ NULL,
+    /* hModule */ 0
+};
 
-BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID)
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID)
 {
-
     if (fdwReason == DLL_PROCESS_ATTACH) {
-        // Save current activation context.
-        GetCurrentActCtx(&act_ctx);
-    } else if (fdwReason == DLL_PROCESS_DETACH) {
-        if (act_ctx) {
-            ReleaseActCtx(act_ctx);
-        }
+        act_ctx.hModule = hinstDLL;
     }
 
     return TRUE;
@@ -69,7 +73,15 @@ extern "C" void embed_init_python(void)
     }
 
 #if ! defined(__linux__) && ! defined(__APPLE__)
-    if (!act_ctx) {
+    if (!act_ctx.hModule) {
+        // LCOV_EXCL_START
+        init_failed = true;
+        return;
+        // LCOV_EXCL_STOP
+    }
+
+    HANDLE hact_ctx = CreateActCtx(&act_ctx);
+    if(hact_ctx == INVALID_HANDLE_VALUE) {
         // LCOV_EXCL_START
         init_failed = true;
         return;
@@ -77,7 +89,7 @@ extern "C" void embed_init_python(void)
     }
 
     ULONG_PTR Cookie;
-    if(!ActivateActCtx(act_ctx, &Cookie)) {
+    if(!ActivateActCtx(hact_ctx, &Cookie)) {
         // LCOV_EXCL_START
         init_failed = true;
         return;
@@ -125,6 +137,8 @@ extern "C" void embed_init_python(void)
         return;
         // LCOV_EXCL_STOP
     }
+
+    ReleaseActCtx(hact_ctx);
 #endif
 
     // call to embed library impl
