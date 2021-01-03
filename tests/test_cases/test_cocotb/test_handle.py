@@ -10,6 +10,7 @@ import cocotb
 from cocotb.triggers import Timer
 
 from common import assert_raises
+from cocotb.handle import _Limits
 
 
 @cocotb.test()
@@ -66,172 +67,198 @@ async def test_delayed_assignment_still_errors(dut):
         dut.stream_in_int <= []
 
 
-async def int_values_test(signal, values):
+async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
     """Test integer access to a signal."""
-
     log = logging.getLogger("cocotb.test")
+    values = gen_int_test_values(n_bits, limits)
     for val in values:
         signal <= val
-        await Timer(10, 'ns')
+        await Timer(1, 'ns')
 
-        if val < 0:
-            got = signal.value.signed_integer
+        if limits == _Limits.VECTOR_NBIT:
+            if val < 0:
+                got = signal.value.signed_integer
+            else:
+                got = signal.value.integer
         else:
-            got = int(signal)
+            got = signal.value
 
-        if got != val:
-            log.error("Expected value %d, got value %d" %(val, got))
-        assert got == val
+        assert got == val, "Expected value {}, got value {}!".format(val, got)
 
 
-def gen_int_test_values(n_bits):
+def gen_int_test_values(n_bits, limits=_Limits.VECTOR_NBIT):
     """Generates a list of int test values for a given number of bits."""
     unsigned_min = 0
     unsigned_max = 2**n_bits-1
     signed_min = -2**(n_bits-1)
     signed_max = 2**(n_bits-1)-1
 
-    return [1, -1, 4, -4, unsigned_min, unsigned_max, signed_min, signed_max]
+    if limits == _Limits.VECTOR_NBIT:
+        return [1, -1, 4, -4, unsigned_min, unsigned_max, signed_min, signed_max]
+    elif limits == _Limits.SIGNED_NBIT:
+        return [1, -1, 4, -4, signed_min, signed_max]
+    else:
+        return [1, -1, 4, -4, unsigned_min, unsigned_max]
 
 
-def gen_int_ovfl_value(n_bits):
-    return 2**n_bits
+async def int_overflow_test(signal, n_bits, test_mode, limits=_Limits.VECTOR_NBIT):
+    """Test integer overflow."""
+    if test_mode == "ovfl":
+        value = gen_int_ovfl_value(n_bits, limits)
+    elif test_mode == "unfl":
+        value = gen_int_unfl_value(n_bits, limits)
+    else:
+        value = None
+
+    with assert_raises(OverflowError):
+        signal <= value
 
 
-def gen_int_unfl_value(n_bits):
-    return -2**(n_bits-1)-1
+def gen_int_ovfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
+    unsigned_max = 2**n_bits-1
+    signed_max = 2**(n_bits-1)-1
+
+    if limits == _Limits.SIGNED_NBIT:
+        return signed_max + 1
+    elif limits == _Limits.UNSIGNED_NBIT:
+        return unsigned_max + 1
+    else:
+        return unsigned_max + 1
+
+
+def gen_int_unfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
+    unsigned_min = 0
+    signed_min = -2**(n_bits-1)
+
+    if limits == _Limits.SIGNED_NBIT:
+        return signed_min - 1
+    elif limits == _Limits.UNSIGNED_NBIT:
+        return unsigned_min - 1
+    else:
+        return signed_min - 1
 
 
 @cocotb.test()
 async def test_int_8bit(dut):
     """Test int access to 8-bit vector."""
-    values = gen_int_test_values(len(dut.stream_in_data))
-    await int_values_test(dut.stream_in_data, values)
+    await int_values_test(dut.stream_in_data, len(dut.stream_in_data))
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_8bit_overflow(dut):
     """Test 8-bit vector overflow."""
-    value = gen_int_ovfl_value(len(dut.stream_in_data))
-    await int_values_test(dut.stream_in_data, [value])
+    await int_overflow_test(dut.stream_in_data, len(dut.stream_in_data), "ovfl")
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_8bit_underflow(dut):
     """Test 8-bit vector underflow."""
-    value = gen_int_unfl_value(len(dut.stream_in_data))
-    await int_values_test(dut.stream_in_data, [value])
+    await int_overflow_test(dut.stream_in_data, len(dut.stream_in_data), "unfl")
 
 
 @cocotb.test()
 async def test_int_32bit(dut):
     """Test int access to 32-bit vector."""
-    values = gen_int_test_values(len(dut.stream_in_data_dword))
-    await int_values_test(dut.stream_in_data_dword, values)
+    await int_values_test(dut.stream_in_data_dword, len(dut.stream_in_data_dword))
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_32bit_overflow(dut):
     """Test 32-bit vector overflow."""
-    value = gen_int_ovfl_value(len(dut.stream_in_data_dword))
-    await int_values_test(dut.stream_in_data_dword, [value])
+    await int_overflow_test(dut.stream_in_data_dword, len(dut.stream_in_data_dword), "ovfl")
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_32bit_underflow(dut):
     """Test 32-bit vector underflow."""
-    value = gen_int_unfl_value(len(dut.stream_in_data_dword))
-    await int_values_test(dut.stream_in_data_dword, [value])
+    await int_overflow_test(dut.stream_in_data_dword, len(dut.stream_in_data_dword), "unfl")
 
 
 @cocotb.test()
 async def test_int_39bit(dut):
     """Test int access to 39-bit vector."""
-    values = gen_int_test_values(len(dut.stream_in_data_39bit))
-    await int_values_test(dut.stream_in_data_39bit, values)
+    await int_values_test(dut.stream_in_data_39bit, len(dut.stream_in_data_39bit))
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_39bit_overflow(dut):
     """Test 39-bit vector overflow."""
-    value = gen_int_ovfl_value(len(dut.stream_in_data_39bit))
-    await int_values_test(dut.stream_in_data_39bit, [value])
+    await int_overflow_test(dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "ovfl")
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_39bit_underflow(dut):
     """Test 39-bit vector underflow."""
-    value = gen_int_unfl_value(len(dut.stream_in_data_39bit))
-    await int_values_test(dut.stream_in_data_39bit, [value])
+    await int_overflow_test(dut.stream_in_data_39bit, len(dut.stream_in_data_39bit), "unfl")
 
 
 @cocotb.test()
 async def test_int_64bit(dut):
     """Test int access to 64-bit vector."""
-    values = gen_int_test_values(len(dut.stream_in_data_wide))
-    await int_values_test(dut.stream_in_data_wide, values)
+    await int_values_test(dut.stream_in_data_wide, len(dut.stream_in_data_wide))
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_64bit_overflow(dut):
     """Test 64-bit vector overflow."""
-    value = gen_int_ovfl_value(len(dut.stream_in_data_wide))
-    await int_values_test(dut.stream_in_data_wide, [value])
+    await int_overflow_test(dut.stream_in_data_wide, len(dut.stream_in_data_wide), "ovfl")
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_64bit_underflow(dut):
     """Test 64-bit vector underflow."""
-    value = gen_int_unfl_value(len(dut.stream_in_data_wide))
-    await int_values_test(dut.stream_in_data_wide, [value])
+    await int_overflow_test(dut.stream_in_data_wide, len(dut.stream_in_data_wide), "unfl")
 
 
 @cocotb.test()
 async def test_int_128bit(dut):
     """Test int access to 128-bit vector."""
-    values = gen_int_test_values(len(dut.stream_in_data_dqword))
-    await int_values_test(dut.stream_in_data_dqword, values)
+    await int_values_test(dut.stream_in_data_dqword, len(dut.stream_in_data_dqword))
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_128bit_overflow(dut):
     """Test 128-bit vector overflow."""
-    value = gen_int_ovfl_value(len(dut.stream_in_data_dqword))
-    await int_values_test(dut.stream_in_data_dqword, [value])
+    await int_overflow_test(dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "ovfl")
 
 
-@cocotb.test(expect_error=OverflowError)
+@cocotb.test()
 async def test_int_128bit_underflow(dut):
     """Test 128-bit vector underflow."""
-    value = gen_int_unfl_value(len(dut.stream_in_data_dqword))
-    await int_values_test(dut.stream_in_data_dqword, [value])
+    await int_overflow_test(dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "unfl")
 
 
 @cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
 async def test_integer(dut):
     """Test access to integers."""
-    for value in [0, 1, -1, 4, -4, 2**31-1, -2**31]:
-        dut.stream_in_int = value
-        await cocotb.triggers.Timer(10, 'ns')
-        assert int(dut.stream_in_int) == value
+    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
+        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in riviera, not IntegerObject
+    else:
+        limits = _Limits.SIGNED_NBIT
+
+    await int_values_test(dut.stream_in_int, 32, limits)
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else OverflowError)
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
 async def test_integer_overflow(dut):
     """Test integer overflow."""
-    value = 2**31
-    dut.stream_in_int = value
-    await cocotb.triggers.Timer(10, 'ns')
-    assert int(dut.stream_in_int) == value
+    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
+        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in riviera, not IntegerObject
+    else:
+        limits = _Limits.SIGNED_NBIT
+
+    await int_overflow_test(dut.stream_in_int, 32, "ovfl", limits)
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else OverflowError)
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
 async def test_integer_underflow(dut):
     """Test integer underflow."""
-    value = -2**32-1
-    dut.stream_in_int = value
-    await cocotb.triggers.Timer(10, 'ns')
-    assert int(dut.stream_in_int) == value
+    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
+        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in riviera, not IntegerObject
+    else:
+        limits = _Limits.SIGNED_NBIT
+
+    await int_overflow_test(dut.stream_in_int, 32, "unfl", limits)
 
 
 @cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())

@@ -32,6 +32,7 @@
 import ctypes
 import warnings
 import enum
+from functools import lru_cache
 
 import cocotb
 from cocotb import simulator
@@ -43,9 +44,25 @@ _deprecation_warned = set()
 
 
 class _Limits(enum.IntEnum):
-    NONE         = 0
-    SIGNED_32BIT = 1  # -2**(Nbits - 1) <= value <= 2**(Nbits - 1)  where Nbits = 32
-    VECTOR_NBIT  = 2  # -2**(Nbits - 1) <= value <= 2**Nbits - 1    where Nbits <= 32
+    SIGNED_NBIT   = 1
+    UNSIGNED_NBIT = 2
+    VECTOR_NBIT   = 3
+
+
+@lru_cache(maxsize=None)
+def _value_limits(n_bits, limits):
+    """Calculate min/max for given number of bits and limits class"""
+    if limits == _Limits.SIGNED_NBIT:
+        min_val = -2**(n_bits-1)
+        max_val = 2**(n_bits-1) - 1
+    elif limits == _Limits.UNSIGNED_NBIT:
+        min_val = 0
+        max_val = 2**n_bits - 1
+    else:
+        min_val = -2**(n_bits-1)
+        max_val = 2**n_bits - 1
+
+    return min_val, max_val
 
 
 class SimHandleBase:
@@ -716,14 +733,12 @@ class ModifiableObject(NonConstantObject):
         value, set_action = self._check_for_set_action(value)
 
         if isinstance(value, int):
-            if len(self) <= 32:
-                call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.VECTOR_NBIT))
-                return
+            min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
+            if min_val <= value <= max_val:
+                if len(self) <= 32:
+                    call_sim(self, self._handle.set_signal_val_int, set_action, value)
+                    return
 
-            min_value = -2 ** (len(self) - 1)  # minimum negative value for 'signed' number
-            max_value = 2 ** len(self) - 1     # maximum positive value for 'unsigned' number
-
-            if min_value <= value <= max_value:
                 if value < 0:
                     value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
                 else:
@@ -845,7 +860,13 @@ class EnumObject(ModifiableObject):
                 "Unsupported type for enum value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.NONE))
+        min_val, max_val = _value_limits(32, _Limits.UNSIGNED_NBIT)
+        if min_val <= value <= max_val:
+            call_sim(self, self._handle.set_signal_val_int, set_action, value)
+        else:
+            raise OverflowError(
+                "Int value ({!r}) out of range for assignment of enum signal ({!r})"
+                .format(value, self._name))
 
     @ModifiableObject.value.getter
     def value(self) -> int:
@@ -880,7 +901,13 @@ class IntegerObject(ModifiableObject):
                 "Unsupported type for integer value assignment: {} ({!r})"
                 .format(type(value), value))
 
-        call_sim(self, self._handle.set_signal_val_int, set_action, value, int(_Limits.SIGNED_32BIT))
+        min_val, max_val = _value_limits(32, _Limits.SIGNED_NBIT)
+        if min_val <= value <= max_val:
+            call_sim(self, self._handle.set_signal_val_int, set_action, value)
+        else:
+            raise OverflowError(
+                "Int value ({!r}) out of range for assignment of integer signal ({!r})"
+                .format(value, self._name))
 
     @ModifiableObject.value.getter
     def value(self) -> int:

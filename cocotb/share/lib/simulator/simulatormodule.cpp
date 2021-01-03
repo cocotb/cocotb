@@ -174,12 +174,6 @@ struct sim_time {
 
 static struct sim_time cache_time;
 
-enum class limits_e : int {
-    NONE = 0,
-    SIGNED_32BIT = 1,
-    VECTOR_NBIT = 2
-};
-
 /**
  * @name    Callback Handling
  * @brief   Handle a callback coming from GPI
@@ -672,37 +666,9 @@ static PyObject *set_signal_val_int(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject 
 {
     long long value;
     gpi_set_action_t action;
-    limits_e limits;
 
-    if (!PyArg_ParseTuple(args, "iLi:set_signal_val_int", &action, &value, &limits)) {
+    if (!PyArg_ParseTuple(args, "iL:set_signal_val_int", &action, &value)) {
         return NULL;
-    }
-
-    if (limits == limits_e::SIGNED_32BIT) {
-        if (value < std::numeric_limits<int32_t>::min() ||
-            value > std::numeric_limits<int32_t>::max()) {
-            const char *m_name = gpi_get_signal_name_str(self->hdl);
-            PyErr_Format(PyExc_OverflowError, "Value (%lld) out of range for assignment of 32-bit signed integer signal (%s)", value, m_name);
-            return NULL;
-        }
-    }
-    else if (limits == limits_e::VECTOR_NBIT) {
-        int m_elems = gpi_get_num_elems(self->hdl);
-
-        if (m_elems > 32) {
-            const char *m_name = gpi_get_signal_name_str(self->hdl);
-            PyErr_Format(PyExc_ValueError, "%d-bit signal (%s) is wider than 32-bit maximum supported by set_signal_val_int()", m_elems, m_name);
-            return NULL;
-        }
-
-        long long m_max = (1LL << m_elems) - 1LL;   // unsigned max value: 2**N-1
-        long long m_min = -(1LL << (m_elems - 1));  // signed min value: -2**(N-1)
-
-        if (value < m_min || value > m_max) {
-            const char *m_name = gpi_get_signal_name_str(self->hdl);
-            PyErr_Format(PyExc_OverflowError, "Value (%lld) out of range for assignment of %d-bit signal (%s)", value, m_elems, m_name);
-            return NULL;
-        }
     }
 
     gpi_set_signal_value_int(self->hdl, static_cast<int32_t>(value), action);
@@ -1198,7 +1164,7 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
     },
     {"set_signal_val_int",
         (PyCFunction)set_signal_val_int, METH_VARARGS, PyDoc_STR(
-            "set_signal_val_int($self, action, value, limits, /)\n"
+            "set_signal_val_int($self, action, value, /)\n"
             "--\n\n"
             "Set the value of a signal using an int"
         )
