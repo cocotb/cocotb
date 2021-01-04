@@ -309,3 +309,11 @@ def test_buff_little_endian():
         v.buff = b'\xC9\xF6'
     assert v.buff == orig_bytes
     assert v.binstr == orig_str
+
+
+def test_bad_binstr():
+    with pytest.raises(ValueError, match=r'Attempting to assign character 4 to a BinaryValue'):
+        BinaryValue(value="01XZ4")
+
+    with pytest.raises(ValueError, match=r'Attempting to assign character % to a BinaryValue'):
+        BinaryValue(value="Uu%")
