@@ -1,1 +1,0 @@
-The package build process is now fully PEP517 compliant.
