@@ -27,6 +27,7 @@
 
 import cocotb
 import logging
+from cocotb.binary import BinaryValue
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
@@ -87,6 +88,51 @@ async def access_signal(dut):
         raise TestError("%s.%s != %d" %
                         (dut.stream_in_data._path,
                          dut.stream_in_data.value.integer, 1))
+
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
+async def access_type_bit_verilog(dut):
+    """Access type bit in SystemVerilog"""
+    await Timer(1, "step")
+    assert dut.mybit.value == 1, "The default value was incorrect"
+    dut.mybit <= 0
+    await Timer(1, "ns")
+    assert dut.mybit.value == 0, "The assigned value was incorrect"
+
+    assert dut.mybits.value == 0b11, "The default value was incorrect"
+    dut.mybits <= 0b00
+    await Timer(1, "ns")
+    assert dut.mybits.value == 0b00, "The assigned value was incorrect"
+
+    assert dut.mybits_uninitialized.value == 0b00, "The default value was incorrect"
+    dut.mybits_uninitialized <= 0b11
+    await Timer(1, "ns")
+    assert dut.mybits_uninitialized.value == 0b11, "The assigned value was incorrect"
+
+
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
+async def access_type_bit_verilog_metavalues(dut):
+    """Access type bit in SystemVerilog with metavalues that the type does not support.
+
+    Note that some simulators (wrongly) allow metavalues even for bits when taking the VPI route.
+    The metavalues still may show up as `0` and `1` in HDL (Xcelium and Riviera).
+    """
+    await Timer(1, "ns")
+    dut.mybits <= BinaryValue("XZ")
+    await Timer(1, "ns")
+    print(dut.mybits.value.binstr)
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim", "riviera")):
+        assert dut.mybits.value.binstr.lower() == "xz", "The assigned value was not as expected"
+    else:
+        assert dut.mybits.value.binstr.lower() == "00", "The assigned value was incorrect"
+
+    dut.mybits <= BinaryValue("ZX")
+    await Timer(1, "ns")
+    print(dut.mybits.value.binstr)
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim", "riviera")):
+        assert dut.mybits.value.binstr.lower() == "zx", "The assigned value was not as expected"
+    else:
+        assert dut.mybits.value.binstr.lower() == "00", "The assigned value was incorrect"
 
 
 @cocotb.test(

@@ -144,4 +144,22 @@ reg _underscore_name;
     assign _underscore_name = 0;
 `endif
 
+bit mybit;
+bit [1:0] mybits;
+bit [1:0] mybits_uninitialized;
+initial begin
+    mybit = 1;
+    mybits = '1;
+end
+
+always @(*) begin
+    $display("%m: mybit has been updated, new value is %b", mybit);
+end
+always @(*) begin
+    $display("%m: mybits has been updated, new value is %b", mybits);
+end
+always @(*) begin
+    $display("%m: mybits_uninitialized has been updated, new value is %b", mybits_uninitialized);
+end
+
 endmodule
