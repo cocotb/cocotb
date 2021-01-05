@@ -51,6 +51,23 @@ async def test_string_handle_takes_bytes(dut):
     assert val == b"bytes"
 
 
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+async def test_string_ansi_color(dut):
+    await cocotb.triggers.Timer(10, 'ns')
+    dut.stream_in_string.value = b"\x1b[33myellow\x1b[49m\x1b[39m"
+    await cocotb.triggers.Timer(10, 'ns')
+    val = dut.stream_in_string.value
+    assert isinstance(val, bytes)
+    if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith("riviera"):
+        # Riviera-PRO doesn't return anything with VHDL; gh-2328
+        assert val == b""
+    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
+        # Xcelium with VPI breaks ANSI coloring when reading; gh-2328
+        assert val == b"[33myellow[49m[39m"
+    else:
+        assert val == b"\x1b[33myellow\x1b[49m\x1b[39m"
+
+
 async def test_delayed_assignment_still_errors(dut):
     """ Writing a bad value should fail even if the write is scheduled to happen later """
 

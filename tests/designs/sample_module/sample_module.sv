@@ -91,6 +91,11 @@ always @(stream_in_real)
 always @(stream_in_int)
     stream_out_int = stream_in_int;
 
+`ifndef VERILATOR
+always @(stream_in_string)
+    $display("%m: stream_in_string has been updated, new value is '%s'", stream_in_string);
+`endif
+
 test_if struct_var;
 `endif
 

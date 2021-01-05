@@ -51,7 +51,7 @@ entity sample_module is
         stream_in_ready                 : out   std_ulogic;
         stream_in_real                  : in    real;
         stream_in_int                   : in    integer;
-        stream_in_string                : in    string(1 to 8);
+        stream_in_string                : in    string(1 to 64);
         stream_in_bool                  : in    boolean;
 
         inout_if                        : in    test_if;
@@ -62,7 +62,7 @@ entity sample_module is
         stream_out_ready                : in    std_ulogic;
         stream_out_real                 : out   real;
         stream_out_int                  : out   integer;
-        stream_out_string               : out   string(1 to 8);
+        stream_out_string               : out   string(1 to 64);
         stream_out_bool                 : out   boolean
     );
 end;
@@ -128,6 +128,11 @@ begin
         if rising_edge(clk) then
             stream_out_data_registered <= stream_in_data;
         end if;
+    end process;
+
+    process (stream_in_string) is
+    begin
+      report "stream_in_string has been updated, new value is '" & stream_in_string & "'";
     end process;
 
     stream_out_data_comb <= afunc(stream_in_data) when stream_in_func_en = '0' else stream_in_data;
