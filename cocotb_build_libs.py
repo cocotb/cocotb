@@ -345,7 +345,7 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libcocotbutils_sources += ["libcocotbutils.rc"]
     libcocotbutils_libraries = ["gpilog"]
     if os.name != "nt":
-        libcocotbutils_libraries.append("dl")
+        libcocotbutils_libraries.append("dl")  # dlopen, dlerror, dlsym
     libcocotbutils = Extension(
         os.path.join("cocotb", "libs", "libcocotbutils"),
         define_macros=[("COCOTBUTILS_EXPORTS", "")] + _extra_defines,
