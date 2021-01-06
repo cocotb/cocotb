@@ -270,15 +270,13 @@ def _sim_event(level, message):
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
-        scheduler.finish_test(TestFailure("Failure from external source: %s" %
-                              message))
+        scheduler._finish_test(TestFailure("Failure from external source: {}".format(message)))
     elif level is SIM_FAIL:
         # We simply return here as the simulator will exit
         # so no cleanup is needed
-        msg = ("Failing test at simulator request before test run completion: "
-               "%s" % message)
+        msg = "Failing test at simulator request before test run completion: {}".format(message)
         scheduler.log.error(msg)
-        scheduler.finish_scheduler(SimFailure(msg))
+        scheduler._finish_scheduler(SimFailure(msg))
     else:
         scheduler.log.error("Unsupported sim event")
 
