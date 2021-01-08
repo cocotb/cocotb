@@ -49,77 +49,87 @@ VpiCbHdl::VpiCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl)
     cb_data.user_data = (char*)this;
 }
 
-/* If the user data already has a callback handle then deregister
- * before getting the new one
- */
 int VpiCbHdl::arm_callback() {
-
-    if (m_state == GPI_PRIMED) {
-        fprintf(stderr,
-                "Attempt to prime an already primed trigger for %s!\n",
-                m_impl->reason_to_string(cb_data.reason));
-    }
-
-    // Only a problem if we have not been asked to deregister and register
-    // in the same simulation callback
-    if (m_obj_hdl != NULL && m_state != GPI_DELETE) {
-        fprintf(stderr,
-                "We seem to already be registered, deregistering %s!\n",
-                m_impl->reason_to_string(cb_data.reason));
-        cleanup_callback();
-    }
-
-    vpiHandle new_hdl = vpi_register_cb(&cb_data);
-
-    if (!new_hdl) {
-        LOG_ERROR("VPI: Unable to register a callback handle for VPI type %s(%d)",
+    switch(m_state) {
+    case GPI_PRIMED:
+    case GPI_CALL:
+        LOG_WARN("VPI: Attempted to prime an already primed trigger for %s (%d)",
                   m_impl->reason_to_string(cb_data.reason), cb_data.reason);
-        check_vpi_error();
-        return -1;
+        /* FALLTHRU */
+    case GPI_FREE: {
+        if (m_obj_hdl != NULL) {
+            if (m_state == GPI_FREE) {
+                // LCOV_EXCL_START
+                LOG_ERROR("VPI: Simulator callback already registered for %s (%d)",
+                        m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+                return -1;
+                // LCOV_EXCL_STOP
+            } else {
+                cleanup_callback();
+            }
+        }
 
-    } else {
-        m_state = GPI_PRIMED;
+        vpiHandle new_hdl = vpi_register_cb(&cb_data);
+        check_vpi_error();
+
+        if (!new_hdl) {
+            // LCOV_EXCL_START
+            LOG_ERROR("VPI: Unable to register a simulator callback for %s (%d)",
+                      m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+            return -1;
+            // LCOV_EXCL_STOP
+        }
+        set_call_state(GPI_PRIMED);
+        m_obj_hdl = new_hdl;
+        break;
     }
 
-    m_obj_hdl = new_hdl;
+    case GPI_DELETE:
+        // This state is used by VpiTimedCbHdl only
+        LOG_DEBUG("VPI: Re-priming callback for %s (%d)", m_impl->reason_to_string(cb_data.reason), cb_data.reason);
+        set_call_state(GPI_PRIMED);
+        break;
+
+    // LCOV_EXCL_START
+    default:
+        LOG_ERROR("VPI: Callback for %s (%d) in illegal state: %d",
+                  m_impl->reason_to_string(cb_data.reason), cb_data.reason, m_state);
+        return -1;
+    // LCOV_EXCL_STOP
+    }
 
     return 0;
 }
 
 int VpiCbHdl::cleanup_callback()
 {
-    if (m_state == GPI_FREE)
-        return 0;
+    switch (m_state) {
+    case GPI_FREE:
+        break;
 
-    /* If the one-time callback has not come back then
-     * remove it, it is has then free it. The remove is done
-     * internally */
-
-    if (m_state == GPI_PRIMED) {
+    case GPI_CALL:      // Executing
+    case GPI_PRIMED:    // Registered but not called yet
         if (!m_obj_hdl) {
-            LOG_ERROR("VPI: passed a NULL pointer");
-            return -1;
+            // LCOV_EXCL_START
+            LOG_ERROR("VPI: Simulator callback handle is NULL, unable to clean up");
+            // LCOV_EXCL_STOP
+        } else if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
+            // LCOV_EXCL_START
+            LOG_ERROR("VPI: Unable to remove simulator callback");
+            // LCOV_EXCL_STOP
         }
-
-        if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
-            LOG_ERROR("VPI: unable to remove callback");
-            return -1;
-        }
-
         check_vpi_error();
-    } else {
-#ifndef MODELSIM
-        /* This is disabled for now, causes a small leak going to put back in */
-        if (!(vpi_free_object(get_handle<vpiHandle>()))) {
-            LOG_ERROR("VPI: unable to free handle");
-            return -1;
-        }
-#endif
+        m_obj_hdl = NULL;
+        set_call_state(GPI_FREE);
+        break;
+
+    // LCOV_EXCL_START
+    default:
+        LOG_ERROR("VPI: Callback for %s (%d) in illegal state: %d",
+                  m_impl->reason_to_string(cb_data.reason), cb_data.reason, m_state);
+        break;
+    // LCOV_EXCL_STOP
     }
-
-
-    m_obj_hdl = NULL;
-    m_state = GPI_FREE;
 
     return 0;
 }
@@ -457,23 +467,6 @@ VpiValueCbHdl::VpiValueCbHdl(GpiImplInterface *impl,
     cb_data.obj = m_signal->get_handle<vpiHandle>();
 }
 
-int VpiValueCbHdl::cleanup_callback()
-{
-    if (m_state == GPI_FREE)
-        return 0;
-
-    /* This is a recurring callback so just remove when
-     * not wanted */
-    if (!(vpi_remove_cb(get_handle<vpiHandle>()))) {
-        LOG_ERROR("VPI: unable to remove callback");
-        return -1;
-    }
-
-    m_obj_hdl = NULL;
-    m_state = GPI_FREE;
-    return 0;
-}
-
 VpiStartupCbHdl::VpiStartupCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),
                                                            VpiCbHdl(impl)
 {
@@ -524,22 +517,42 @@ VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCbHd
 
 int VpiTimedCbHdl::cleanup_callback()
 {
+    // Returning non-0 will delete this callback object
+
     switch (m_state) {
-    case GPI_PRIMED:
-        /* Issue #188: Work around for modelsim that is harmless to others too,
-           we tag the time as delete, let it fire then do not pass up
-           */
-        LOG_DEBUG("Not removing PRIMED timer %d", vpi_time.low);
-        m_state = GPI_DELETE;
-        return 0;
-    case GPI_DELETE:
-        LOG_DEBUG("Removing DELETE timer %d", vpi_time.low);
-    default:
+    case GPI_FREE:
         break;
+
+    case GPI_PRIMED:
+        // Issue #188: Work around for modelsim that is harmless to others too,
+        // we tag the callback as DELETE, let it fire then do not execute user callback
+        LOG_DEBUG("VPI: Marking PRIMED timer callback of %d for DELETE", vpi_time.low);
+        set_call_state(GPI_DELETE);
+        break;
+
+    case GPI_CALL:
+        LOG_DEBUG("VPI: Marking currently executing timer callback of %d for DELETE", vpi_time.low);
+        set_call_state(GPI_DELETE);
+        break;
+
+    case GPI_DELETE:
+        LOG_DEBUG("VPI: Releasing handle for DELETE timer callback of %d", vpi_time.low);
+        if (!(vpi_free_object(get_handle<vpiHandle>()))) {
+            // LCOV_EXCL_START
+            LOG_ERROR("VPI: unable to release simulator callback handle");
+            return -1;
+            // LCOV_EXCL_STOP
+        }
+        return 1;
+
+    // LCOV_EXCL_START
+    default:
+        LOG_ERROR("VPI: Timer callback in illegal state: %d", m_state);
+        return -1;
+    // LCOV_EXCL_STOP
     }
-    VpiCbHdl::cleanup_callback();
-    /* Return one so we delete this object */
-    return 1;
+
+    return 0;
 }
 
 VpiReadwriteCbHdl::VpiReadwriteCbHdl(GpiImplInterface *impl) : GpiCbHdl(impl),

@@ -104,7 +104,7 @@ class VpiSignalObjHdl;
 class VpiValueCbHdl : public VpiCbHdl, public GpiValueCbHdl {
 public:
     VpiValueCbHdl(GpiImplInterface *impl, VpiSignalObjHdl *sig, int edge);
-    int cleanup_callback() override;
+
 private:
     s_vpi_value m_vpi_value;
 };

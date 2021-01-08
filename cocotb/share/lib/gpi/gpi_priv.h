@@ -44,11 +44,11 @@
 #include <cocotb_utils.h>  // COCOTB_UNUSED
 
 typedef enum gpi_cb_state {
-    GPI_FREE = 0,
-    GPI_PRIMED = 1,
-    GPI_CALL = 2,
-    GPI_REPRIME = 3,
-    GPI_DELETE = 4,
+    GPI_FREE = 0,           ///< No sim callback is registered or sim callback is disabled
+    GPI_PRIMED = 1,         ///< Sim callback is registered and enabled
+    GPI_CALL = 2,           ///< User callback function is executing
+    GPI_REPRIME = 3,        ///< Callback is armed again while in user callback function
+    GPI_DELETE = 4,         ///< Callback is marked for cleanup and user callback will not be called
 } gpi_cb_state_e;
 
 class GpiCbHdl;
