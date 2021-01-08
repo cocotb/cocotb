@@ -631,7 +631,7 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 {
     int rv = 0;
 
-    VpiCbHdl *cb_hdl = (VpiCbHdl*)cb_data->user_data;
+    VpiCbHdl *cb_hdl = reinterpret_cast<VpiCbHdl*>(cb_data->user_data);
 
     if (!cb_hdl) {
         LOG_CRITICAL("VPI: Callback data corrupted: ABORTING");
@@ -648,14 +648,19 @@ int32_t handle_vpi_callback(p_cb_data cb_data)
 
         gpi_cb_state_e new_state = cb_hdl->get_call_state();
 
-        /* We have re-primed in the handler */
-        if (new_state != GPI_PRIMED)
+        if (new_state == GPI_REPRIME) {
+            cb_hdl->set_call_state(GPI_PRIMED);
+        }
+
+        // Cleanup if the callback wasn't re-primed in the handler
+        if (new_state != GPI_PRIMED && new_state != GPI_REPRIME){
             if (cb_hdl->cleanup_callback()) {
                 delete cb_hdl;
             }
+        }
 
     } else {
-        /* Issue #188: This is a work around for a modelsim */
+        // Issue #188: This is a work around for Modelsim
         if (cb_hdl->cleanup_callback()) {
             delete cb_hdl;
         }
