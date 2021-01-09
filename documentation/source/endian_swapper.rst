@@ -60,7 +60,7 @@ If we inspect this line-by-line:
 
     self.stream_in  = AvalonSTDriver(dut, "stream_in", dut.clk)
 
-Here we are creating an :class:`AvalonSTDriver <cocotb.drivers.avalon.AvalonSTPkts>` instance.
+Here we are creating an :class:`AvalonSTDriver <cocotb_bus.drivers.avalon.AvalonSTPkts>` instance.
 The constructor requires 3 arguments - a handle to the entity containing the interface (``dut``),
 the name of the interface (``stream_in``) and the associated clock with which to drive the interface (``dut.clk``).
 The driver will auto-discover the signals for the interface,
@@ -87,7 +87,7 @@ By following the signal naming convention the driver can find the signals associ
             self.stream_out = AvalonSTMonitor(dut, "stream_out", dut.clk)
             self.csr = AvalonMaster(dut, "csr", dut.clk)
 
-We do the same to create the :class:`monitor <cocotb.monitors.avalon.AvalonSTPkts>` on ``stream_out`` and the CSR interface.
+We do the same to create the :class:`monitor <cocotb_bus.monitors.avalon.AvalonSTPkts>` on ``stream_out`` and the CSR interface.
 
 
 .. code-block:: python3
@@ -96,7 +96,7 @@ We do the same to create the :class:`monitor <cocotb.monitors.avalon.AvalonSTPkt
             self.scoreboard = Scoreboard(dut)
             self.scoreboard.add_interface(self.stream_out, self.expected_output)
 
-The above lines create a :class:`.Scoreboard` instance and attach it to the ``stream_out`` monitor instance.
+The above lines create a :class:`cocotb_bus.scoreboard.Scoreboard` instance and attach it to the ``stream_out`` monitor instance.
 The scoreboard is used to check that the :term:`DUT` behavior is correct.
 The call to :meth:`.add_interface()` takes a Monitor instance as the first argument and
 the second argument is a mechanism for describing the expected output for that interface.
@@ -135,7 +135,7 @@ There are various 'knobs' we can tweak on this testbench to vary the behavior:
 * Configuration switching of the endian swap register during the test.
 
 We want to run different variations of tests but they will all have a very similar structure so we create a common ``run_test`` function.
-To generate backpressure on the ``stream_out`` interface we use the :class:`.BitDriver` class from :mod:`cocotb.drivers`.
+To generate backpressure on the ``stream_out`` interface we use the :class:`~cocotb_bus.drivers.BitDriver` class from :mod:`cocotb_bus.drivers`.
 
 .. code-block:: python3
 
@@ -180,14 +180,14 @@ We can see that this test function creates an instance of the testbench,
 resets the :term:`DUT` by running the coroutine ``tb.reset()`` and then starts off any optional coroutines passed in using the keyword arguments.
 We then send in all the packets from ``data_in``, ensure that all the packets have been received by waiting 2 cycles at the end.
 We read the packet count and compare this with the number of packets.
-Finally we use the :any:`tb.scoreboard.result <cocotb.scoreboard.Scoreboard.result>` to determine the status of the test.
-If any transactions didn't match the expected output then this member would be an instance of the :exc:`.TestFailure` result.
+Finally we use the :any:`tb.scoreboard.result <cocotb_bus.scoreboard.Scoreboard.result>` to determine the status of the test.
+If any transactions didn't match the expected output then this member would be an instance of the :exc:`~cocotb.results.TestFailure` result.
 
 
 Test permutations
 -----------------
 
-Having defined a test function we can now auto-generate different permutations of tests using the :class:`.TestFactory` class:
+Having defined a test function we can now auto-generate different permutations of tests using the :class:`~cocotb.regression.TestFactory` class:
 
 .. code-block:: python3
 
