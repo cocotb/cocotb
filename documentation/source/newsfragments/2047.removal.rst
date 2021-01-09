@@ -1,1 +1,1 @@
-:class:`~cocotb.scoreboard.Scoreboard` and all contents of :mod:`cocotb.generators` have been deprecated.
+The contents of :mod:`cocotb.generators` have been deprecated.

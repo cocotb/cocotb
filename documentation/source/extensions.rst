@@ -47,9 +47,9 @@ A bus driver is the "active" part, it drives the signals that make up the bus to
 A bus monitor is the "passive" part, it observes signal changes on the bus and assigns meaning to them.
 Monitors can also check the bus behavior against a standard to ensure no invalid states are being observed.
 
-The signals which make up the bus should be grouped in a class inheriting from :any:`cocotb.bus.Bus`.
-Bus drivers should inherit from the :any:`cocotb.drivers.BusDriver` class.
-Bus monitors should inherit from the :any:`cocotb.monitors.BusMonitor` class.
+The signals which make up the bus should be grouped in a class inheriting from :any:`cocotb_bus.bus.Bus`.
+Bus drivers should inherit from the :any:`cocotb_bus.drivers.BusDriver` class.
+Bus monitors should inherit from the :any:`cocotb_bus.monitors.BusMonitor` class.
 
 Packaging extensions
 ====================

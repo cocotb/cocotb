@@ -1,1 +1,1 @@
-Updated :class:`~cocotb.drivers.Driver`, :class:`~cocotb.monitors.Monitor`, and all their subclasses to use the :keyword:`async`/:keyword:`await` syntax instead of the :keyword:`yield` syntax.
+Updated :class:`~cocotb_bus.drivers.Driver`, :class:`~cocotb_bus.monitors.Monitor`, and all their subclasses to use the :keyword:`async`/:keyword:`await` syntax instead of the :keyword:`yield` syntax.
