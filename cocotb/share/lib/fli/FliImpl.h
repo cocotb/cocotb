@@ -240,7 +240,7 @@ public:
     double get_signal_value_real() override;
     long get_signal_value_long() override;
 
-    int set_signal_value(long value, gpi_set_action_t action) override;
+    int set_signal_value(int32_t value, gpi_set_action_t action) override;
     int set_signal_value(double value, gpi_set_action_t action) override;
     int set_signal_value_str(std::string &value, gpi_set_action_t action) override;
     int set_signal_value_binstr(std::string &value, gpi_set_action_t action) override;
@@ -277,7 +277,7 @@ public:
     long get_signal_value_long() override;
 
     using FliValueObjHdl::set_signal_value;
-    int set_signal_value(long value, gpi_set_action_t action) override;
+    int set_signal_value(int32_t value, gpi_set_action_t action) override;
 
     int initialise(std::string &name, std::string &fq_name) override;
 
@@ -316,7 +316,7 @@ public:
     const char* get_signal_value_binstr() override;
 
     using FliValueObjHdl::set_signal_value;
-    int set_signal_value(long value, gpi_set_action_t action) override;
+    int set_signal_value(int32_t value, gpi_set_action_t action) override;
     int set_signal_value_binstr(std::string &value, gpi_set_action_t action) override;
 
     int initialise(std::string &name, std::string &fq_name) override;
@@ -347,7 +347,7 @@ public:
     long get_signal_value_long() override;
 
     using FliValueObjHdl::set_signal_value;
-    int set_signal_value(long value, gpi_set_action_t action) override;
+    int set_signal_value(int32_t value, gpi_set_action_t action) override;
 
     int initialise(std::string &name, std::string &fq_name) override;
 };

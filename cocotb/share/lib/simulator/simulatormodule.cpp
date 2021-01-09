@@ -41,6 +41,7 @@ static int sim_ending = 0;
 
 #include <cocotb_utils.h>       // COCOTB_UNUSED
 #include <type_traits>
+#include <limits>
 #include <Python.h>
 #include <gpi_logging.h>        // LOG_* macros
 #include <py_gpi_logging.h>     // py_gpi_logger_set_level
@@ -662,16 +663,16 @@ static PyObject *set_signal_val_real(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject
     Py_RETURN_NONE;
 }
 
-static PyObject *set_signal_val_long(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
+static PyObject *set_signal_val_int(gpi_hdl_Object<gpi_sim_hdl> *self, PyObject *args)
 {
-    long value;
+    long long value;
     gpi_set_action_t action;
 
-    if (!PyArg_ParseTuple(args, "il:set_signal_val_long", &action, &value)) {
+    if (!PyArg_ParseTuple(args, "iL:set_signal_val_int", &action, &value)) {
         return NULL;
     }
 
-    gpi_set_signal_value_long(self->hdl, value, action);
+    gpi_set_signal_value_int(self->hdl, static_cast<int32_t>(value), action);
     Py_RETURN_NONE;
 }
 
@@ -1163,12 +1164,11 @@ static PyMethodDef gpi_sim_hdl_methods[] = {
             "Get the value of a signal as a float."
         )
     },
-    {"set_signal_val_long",
-        (PyCFunction)set_signal_val_long, METH_VARARGS, PyDoc_STR(
-            "set_signal_val_long($self, action, value, /)\n"
+    {"set_signal_val_int",
+        (PyCFunction)set_signal_val_int, METH_VARARGS, PyDoc_STR(
+            "set_signal_val_int($self, action, value, /)\n"
             "--\n\n"
-            "set_signal_val_long(action: int, value: int) -> None\n"
-            "Set the value of a signal using an integer.\n"
+            "Set the value of a signal using an int"
         )
     },
     {"set_signal_val_str",

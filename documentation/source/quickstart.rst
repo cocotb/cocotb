@@ -154,6 +154,42 @@ writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 (see :meth:`~cocotb.handle.NonHierarchyObject.setimmediatevalue`).
 
+Signed and unsigned values
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Both signed and unsigned values can be assigned to signals using a Python int.
+Cocotb makes no assumptions regarding the signedness of the signal. It only
+considers the width of the signal, so it will allow values in the range from
+the minimum negative value for a signed number up to the maximum positive
+value for an unsigned number: ``-2**(Nbits - 1) <= value <= 2**Nbits - 1``
+Note: assigning out-of-range values will raise an :exc:`OverflowError`.
+
+A :class:`BinaryValue` object can be used instead of a Python int to assign a
+value to signals with more fine-grained control (e.g. signed values only).
+
+.. code-block:: verilog
+
+    module my_module (
+        input   logic       clk,
+        input   logic       rst,
+        input   logic [2:0] data_in,
+        output  logic [2:0] data_out
+        );
+
+.. code-block:: python3
+
+    # assignment of negative value
+    dut.data_in <= -4
+
+    # assignment of positive value
+    dut.data_in <= 7
+
+    # assignment of out-of-range values
+    dut.data_in <= 8   # raises OverflowError
+    dut.data_in <= -5  # raises OverflowError
+
+Forcing and freezing signals
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In addition to regular value assignments (deposits), signals can be forced
 to a predetermined value or frozen at their current value. To achieve this,
 the various actions described in :ref:`assignment-methods` can be used.

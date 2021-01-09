@@ -117,7 +117,7 @@ async def test_in_vect_packed_packed_packed(dut):
 async def test_in_vect_packed_packed_unpacked(dut):
     await Timer(1, "ns")
     print("Setting: dut.in_vect_packed_packed_unpacked type %s" % type(dut.in_vect_packed_packed_unpacked))
-    dut.in_vect_packed_packed_unpacked = [95869805, 95869805, 95869805]
+    dut.in_vect_packed_packed_unpacked = [365, 365, 365]
     await Timer(1, "ns")
     print("Getting: dut.out_vect_packed_packed_unpacked type %s" % type(dut.out_vect_packed_packed_unpacked))
     if dut.out_vect_packed_packed_unpacked != [365, 365, 365]:

@@ -509,7 +509,7 @@ int gpi_is_indexable(gpi_sim_hdl obj_hdl)
     return 0;
 }
 
-void gpi_set_signal_value_long(gpi_sim_hdl sig_hdl, long value, gpi_set_action_t action)
+void gpi_set_signal_value_int(gpi_sim_hdl sig_hdl, int32_t value, gpi_set_action_t action)
 {
     GpiSignalObjHdl *obj_hdl = static_cast<GpiSignalObjHdl*>(sig_hdl);
 
