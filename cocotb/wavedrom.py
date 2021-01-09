@@ -1,49 +1,42 @@
+# Copyright cocotb contributors
 # Copyright (c) 2014 Potential Ventures Ltd
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Potential Ventures Ltd, nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
 
 import json
 from collections import OrderedDict, defaultdict
+from collections.abc import Mapping
 
 import cocotb
-from cocotb.bus import Bus
 from cocotb.triggers import RisingEdge, ReadOnly
+from cocotb.handle import SimHandleBase
+
+
+try:
+    from cocotb_bus.bus import Bus
+except ImportError:
+    Bus = None
 
 
 class Wavedrom:
     """Base class for a WaveDrom compatible tracer."""
 
-    def __init__(self, obj):
-
+    def __init__(self, obj, name=""):
         self._hdls = OrderedDict()
-        if isinstance(obj, Bus):
-            for name in sorted(obj._signals.keys()):
-                self._hdls[name] = obj._signals[name]
+        self._name = name
+        if isinstance(obj, Mapping):
+            self._hdls.update(obj)
+        elif isinstance(obj, SimHandleBase):
+            name = obj._name.split(".")[-1]
+            self._hdls[name] = obj
+            self._name = name
+        elif Bus is not None and isinstance(obj, Bus):
+            self._hdls.update(obj._signals)
             self._name = obj._name
         else:
-            self._hdls[obj._name.split(".")[-1]] = obj
-
+            raise TypeError(
+                "Cannot use {} with {} objects".format(type(self).__qualname__, type(obj).__name__)
+            ) from None
         self.clear()
 
     def sample(self):
