@@ -81,6 +81,11 @@ The **stable version** of cocotb can be installed by running
 
 .. note::
 
+    The reusable bus interfaces and testbenching components have recently been moved to the `cocotb-bus <https://github.com/cocotb/cocotb-bus>`_ package.
+    You can easily install these at the same time as cocotb by adding the ``bus`` extra install: ``pip install cocotb[bus]``.
+
+.. note::
+
     If your user does not have permissions to install cocotb using the instructions above,
     try adding the :option:`--user` option to :command:`pip`
     (see `the pip documentation <https://pip.pypa.io/en/stable/user_guide/#user-installs>`_).
