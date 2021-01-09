@@ -35,6 +35,10 @@ see [the documentation](https://docs.cocotb.org/en/stable/install.html).
 For details on how to install the *development* version of cocotb,
 see [the preliminary documentation of the future release](https://docs.cocotb.org/en/latest/install_devel.html#install-devel).
 
+**!!! Bus and Testbenching Components !!!**
+The reusable bus interfaces and testbenching components have recently been moved to the [cocotb-bus](https://github.com/cocotb/cocotb-bus) package.
+You can easily install these at the same time as cocotb by adding the `bus` extra install: `pip install cocotb[bus]`.
+
 ## Usage
 
 As a first trivial introduction to cocotb, the following example "tests" a flip-flop.
@@ -109,6 +113,7 @@ and [our wiki](https://github.com/cocotb/cocotb/wiki).
 ## Tutorials, examples and related projects
 
 * the tutorial section [in the official documentation](https://docs.cocotb.org/)
+* [cocotb-bus](https://github.com/cocotb/cocotb-bus) for pre-packaged testbenching tools and reusable bus interfaces.
 * [cocotb-based USB 1.1 test suite](https://github.com/antmicro/usb-test-suite-build) for FPGA IP, with testbenches for a variety of open source USB cores
 * [`cocotb-coverage`](https://github.com/mciepluc/cocotb-coverage), an extension for Functional Coverage and Constrained Randomization
 * [`uvm-python`](https://github.com/tpoikela/uvm-python), an almost 1:1 port of UVM 1.2 to Python
