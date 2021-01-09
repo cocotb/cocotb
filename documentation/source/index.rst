@@ -96,7 +96,6 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    :hidden:
 
    endian_swapper
-   ping_tun_tap
    hal_cosimulation
    examples
 

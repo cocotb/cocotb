@@ -35,7 +35,6 @@ EXAMPLES := adder/tests \
             matrix_multiplier/tests \
             mean/tests \
             mixed_language/tests
-# requires root permissions: ping_tun_tap/tests
 
 .PHONY: $(EXAMPLES)
 
