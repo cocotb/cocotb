@@ -1,0 +1,9 @@
+The bus and testbenching components in cocotb have been officially moved to the `cocotb-bus <https://github.com/cocotb/cocotb-bus>`_ package.
+This includes
+:class:`~cocotb_bus.bus.Bus`,
+:class:`~cocotb_bus.scoreboard.Scoreboard`,
+everything in :mod:`cocotb_bus.drivers <cocotb.drivers>`,
+and everything in :mod:`cocotb_bus.monitors <cocotb.monitors>`.
+Documentation will remain in the main cocotb repo for now.
+Old names will continue to exist, but their use will cause a :class:`DeprecationWarning`,
+and will be removed in the future.
