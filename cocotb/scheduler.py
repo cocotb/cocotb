@@ -39,6 +39,7 @@ import sys
 import logging
 import threading
 import inspect
+import warnings
 from typing import Any, Union
 from collections.abc import Coroutine
 
@@ -327,6 +328,14 @@ class Scheduler:
 
     def react(self, trigger):
         """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._react(trigger)
+
+    def _react(self, trigger):
+        """
         Called when a trigger fires.
 
         We ensure that we only start the event loop once, rather than
@@ -440,7 +449,7 @@ class Scheduler:
                         continue
                     if _debug:
                         self.log.debug("Scheduling coroutine %s" % (coro._coro.__qualname__))
-                    self.schedule(coro, trigger=trigger)
+                    self._schedule(coro, trigger=trigger)
                     if _debug:
                         self.log.debug("Scheduled coroutine %s" % (coro._coro.__qualname__))
 
@@ -469,6 +478,14 @@ class Scheduler:
                                " to simulator")
 
     def unschedule(self, coro):
+        """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._unschedule(coro)
+
+    def _unschedule(self, coro):
         """Unschedule a coroutine.  Unprime any pending triggers"""
 
         # Unprime the trigger this coroutine is waiting on
@@ -489,10 +506,10 @@ class Scheduler:
 
             if not self._terminate:
                 self._terminate = True
-                self.cleanup()
+                self._cleanup()
 
         elif Join(coro) in self._trigger2coros:
-            self.react(Join(coro))
+            self._react(Join(coro))
         else:
             try:
                 # throws an error if the background coroutine errored
@@ -500,11 +517,11 @@ class Scheduler:
                 coro._outcome.get()
             except (TestComplete, AssertionError) as e:
                 coro.log.info("Test stopped by this forked coroutine")
-                e = remove_traceback_frames(e, ['unschedule', 'get'])
+                e = remove_traceback_frames(e, ['_unschedule', 'get'])
                 self._test.abort(e)
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
-                e = remove_traceback_frames(e, ['unschedule', 'get'])
+                e = remove_traceback_frames(e, ['_unschedule', 'get'])
                 self._test.abort(e)
 
     def _schedule_write(self, handle, write_func, *args):
@@ -542,7 +559,7 @@ class Scheduler:
                     "More than one coroutine waiting on an unprimed trigger")
 
             try:
-                trigger.prime(self.react)
+                trigger.prime(self._react)
             except Exception as e:
                 # discard the trigger we associated, it will never fire
                 self._trigger2coros.pop(trigger)
@@ -554,10 +571,26 @@ class Scheduler:
                 )
 
     def queue(self, coroutine):
+        """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._queue(coroutine)
+
+    def _queue(self, coroutine):
         """Queue a coroutine for execution"""
         self._pending_coros.append(coroutine)
 
     def queue_function(self, coro):
+        """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._queue_function(coro)
+
+    def _queue_function(self, coro):
         """Queue a coroutine for execution and move the containing thread
         so that it does not block execution of the main thread any longer.
         """
@@ -601,6 +634,14 @@ class Scheduler:
         return event.outcome.get()
 
     def run_in_executor(self, func, *args, **kwargs):
+        """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._run_in_executor(func, *args, **kwargs)
+
+    def _run_in_executor(self, func, *args, **kwargs):
         """Run the coroutine in a separate execution thread
         and return an awaitable object for the caller.
         """
@@ -675,7 +716,7 @@ class Scheduler:
         if _debug:
             self.log.debug("Adding new coroutine %s" % task._coro.__qualname__)
 
-        self.schedule(task)
+        self._schedule(task)
         self._check_termination()
         return task
 
@@ -694,10 +735,18 @@ class Scheduler:
         if _debug:
             self.log.debug("Queueing a new coroutine %s" % task._coro.__qualname__)
 
-        self.queue(task)
+        self._queue(task)
         return task
 
     def add_test(self, test_coro):
+        """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._add_test(test_coro)
+
+    def _add_test(self, test_coro):
         """Called by the regression manager to queue the next test"""
         if self._test is not None:
             raise InternalError("Test was added while another was in progress")
@@ -721,7 +770,7 @@ class Scheduler:
         return result.join()
 
     def _trigger_from_unstarted_coro(self, result: cocotb.decorators.RunningTask) -> Trigger:
-        self.queue(result)
+        self._queue(result)
         if _debug:
             self.log.debug("Scheduling nested coroutine: %s" %
                            result._coro.__qualname__)
@@ -779,6 +828,14 @@ class Scheduler:
             self._current_task = old_task
 
     def schedule(self, coroutine, trigger=None):
+        """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._schedule(coroutine, trigger)
+
+    def _schedule(self, coroutine, trigger=None):
         """Schedule a coroutine by calling the send method.
 
         Args:
@@ -812,7 +869,7 @@ class Scheduler:
             # this can't go in the else above, as that causes unwanted exception
             # chaining
             if coro_completed:
-                self.unschedule(coroutine)
+                self._unschedule(coroutine)
 
             # Don't handle the result if we're shutting down
             if self._terminate:
@@ -852,10 +909,26 @@ class Scheduler:
                 self.add(self._pending_coros.pop(0))
 
     def finish_test(self, exc):
+        """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._finish_test(exc)
+
+    def _finish_test(self, exc):
         self._test.abort(exc)
         self._check_termination()
 
     def finish_scheduler(self, exc):
+        """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._finish_scheduler(exc)
+
+    def _finish_scheduler(self, exc):
         """Directly call into the regression manager and end test
            once we return the sim will close us so no cleanup is needed.
         """
@@ -868,6 +941,14 @@ class Scheduler:
             cocotb.regression_manager.handle_result(self._test)
 
     def cleanup(self):
+        """
+        .. deprecated:: 1.5
+            This function is now private.
+        """
+        warnings.warn("This function is now private.", DeprecationWarning, stacklevel=2)
+        return self._cleanup()
+
+    def _cleanup(self):
         """Clear up all our state.
 
         Unprime all pending triggers and kill off any coroutines, stop all externals.

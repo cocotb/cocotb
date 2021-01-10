@@ -228,7 +228,7 @@ class RunningTask:
             self.log.debug("kill() called on coroutine")
         # todo: probably better to throw an exception for anyone waiting on the coroutine
         self._outcome = outcomes.Value(None)
-        cocotb.scheduler.unschedule(self)
+        cocotb.scheduler._unschedule(self)
 
     def join(self):
         """Return a trigger that will fire when the wrapped coroutine exits."""
@@ -335,7 +335,7 @@ class RunningTest(RunningCoroutine):
         if _debug:
             self.log.debug("outcome forced to {}".format(outcome))
         self._outcome = outcome
-        cocotb.scheduler.unschedule(self)
+        cocotb.scheduler._unschedule(self)
 
     def sort_name(self):
         if self.stage is None:
@@ -395,7 +395,7 @@ class function:
         return SimLog("cocotb.function.%s" % self._coro.__qualname__, id(self))
 
     def __call__(self, *args, **kwargs):
-        return cocotb.scheduler.queue_function(self._coro(*args, **kwargs))
+        return cocotb.scheduler._queue_function(self._coro(*args, **kwargs))
 
     def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
@@ -418,7 +418,7 @@ class external:
         self._log = SimLog("cocotb.external.%s" % self._func.__qualname__, id(self))
 
     def __call__(self, *args, **kwargs):
-        return cocotb.scheduler.run_in_executor(self._func, *args, **kwargs)
+        return cocotb.scheduler._run_in_executor(self._func, *args, **kwargs)
 
     def __get__(self, obj, owner=None):
         """Permit the decorator to be used on class methods
