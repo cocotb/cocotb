@@ -28,6 +28,7 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 #include "FliImpl.h"
 #include "mti.h"
