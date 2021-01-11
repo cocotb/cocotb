@@ -121,8 +121,10 @@ async def access_type_bit_verilog_metavalues(dut):
     dut.mybits <= BinaryValue("XZ")
     await Timer(1, "ns")
     print(dut.mybits.value.binstr)
-    if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim", "riviera")):
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim")):
         assert dut.mybits.value.binstr.lower() == "xz", "The assigned value was not as expected"
+    elif cocotb.SIM_NAME.lower().startswith(("riviera",)):
+        assert dut.mybits.value.binstr.lower() == "10", "The assigned value was not as expected"
     else:
         assert dut.mybits.value.binstr.lower() == "00", "The assigned value was incorrect"
 
