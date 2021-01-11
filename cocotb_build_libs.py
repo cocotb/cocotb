@@ -214,6 +214,10 @@ class build_ext(_build_ext):
 
             ext.extra_link_args += ["-Wl,-rpath,%s" % rpath for rpath in rpaths]
 
+        # vpi_user.h and vhpi_user.h require that WIN32 is defined
+        if os.name == "nt":
+            ext.define_macros += [("WIN32", "")]
+
         old_build_temp = self.build_temp
         self.build_temp = os.path.join(self.build_temp, ext.name)
         super().build_extension(ext)
