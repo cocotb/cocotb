@@ -20,6 +20,15 @@ from typing import List
 logger = logging.getLogger(__name__)
 cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
 
+_base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings", "-Wconversion"]
+_ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
+_extra_cxx_compile_args = ["-std=c++11", "-fvisibility=hidden", "-fvisibility-inlines-hidden"] + _ccx_warns
+if os.name != "nt":
+    _extra_cxx_compile_args += ["-flto"]
+
+# Make PRI* format macros available with C++11 compiler but older libc, e.g. on RHEL6.
+_extra_defines = [("__STDC_FORMAT_MACROS", "")]
+
 
 def create_sxs_assembly_manifest(name: str, filename: str, libraries: List[str], dependency_only=False) -> str:
     """
@@ -180,6 +189,31 @@ class build_ext(_build_ext):
 
         A normal PEP 517 install still works as the temp directories are discarded anyway.
         """
+        ext.extra_compile_args += _extra_cxx_compile_args
+
+        if os.name == "nt":
+            # Align behavior of gcc with msvc and export only symbols marked with __declspec(dllexport)
+            ext.extra_link_args += ["-Wl,--exclude-all-symbols"]
+        else:
+            ext.extra_link_args += ["-flto"]
+
+            lib_name = os.path.split(ext.name)[-1]
+
+            rpaths = []
+            if lib_name == "simulator":
+                rpaths += ["$ORIGIN/libs"]
+                install_name = None
+            else:
+                rpaths += ["$ORIGIN"]
+                install_name = lib_name
+
+            if sys.platform == "darwin":
+                rpaths = [rpath.replace("$ORIGIN", "@loader_path") for rpath in rpaths]
+                if install_name is not None:
+                    ext.extra_link_args += ["-Wl,-install_name,@rpath/%s.so" % install_name]
+
+            ext.extra_link_args += ["-Wl,-rpath,%s" % rpath for rpath in rpaths]
+
         old_build_temp = self.build_temp
         self.build_temp = os.path.join(self.build_temp, ext.name)
         super().build_extension(ext)
@@ -265,28 +299,6 @@ class build_ext(_build_ext):
             )
 
 
-def _extra_link_args(lib_name=None, rpaths=[]):
-    """
-    Add linker argument to load dependencies from the directory where vpi/vhpi/fli library is located
-    On osx use `install_name`.
-    Use `rpath` on all platforms
-    """
-
-    args = []
-    if sys.platform == "darwin" and lib_name is not None:
-        args += ["-Wl,-install_name,@rpath/%s.so" % lib_name]
-    for rpath in rpaths:
-        if sys.platform == "darwin":
-            rpath = rpath.replace("$ORIGIN", "@loader_path")
-        args += ["-Wl,-rpath,%s" % rpath]
-    if os.name == "nt":
-        # Align behavior of gcc with msvc and export only symbols marked with __declspec(dllexport)
-        args += ["-Wl,--exclude-all-symbols"]
-    else:
-        args += ["-flto"]
-    return args
-
-
 def _get_python_lib_link():
     """ Get name of python library used for linking """
 
@@ -321,17 +333,6 @@ def _get_python_lib():
     return python_lib
 
 
-# TODO [gh-1372]: make this work for MSVC which has a different flag syntax
-_base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings", "-Wconversion"]
-_ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
-_extra_cxx_compile_args = ["-std=c++11", "-fvisibility=hidden", "-fvisibility-inlines-hidden"] + _ccx_warns
-if os.name != "nt":
-    _extra_cxx_compile_args += ["-flto"]
-
-# Make PRI* format macros available with C++11 compiler but older libc, e.g. on RHEL6.
-_extra_defines = [("__STDC_FORMAT_MACROS", "")]
-
-
 def _get_common_lib_ext(include_dir, share_lib_dir):
     """
     Defines common libraries.
@@ -357,8 +358,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         include_dirs=[include_dir],
         libraries=libcocotbutils_libraries,
         sources=libcocotbutils_sources,
-        extra_link_args=_extra_link_args(lib_name="libcocotbutils", rpaths=["$ORIGIN"]),
-        extra_compile_args=_extra_cxx_compile_args,
     )
 
     #
@@ -378,8 +377,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         define_macros=[("GPILOG_EXPORTS", "")] + _extra_defines,
         include_dirs=[include_dir],
         sources=libgpilog_sources,
-        extra_link_args=_extra_link_args(lib_name="libgpilog", rpaths=["$ORIGIN"]),
-        extra_compile_args=_extra_cxx_compile_args,
     )
 
     #
@@ -396,8 +393,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         include_dirs=[include_dir],
         libraries=["gpilog"],
         sources=libpygpilog_sources,
-        extra_link_args=_extra_link_args(lib_name="libpygpilog", rpaths=["$ORIGIN"]),
-        extra_compile_args=_extra_cxx_compile_args,
     )
 
     #
@@ -417,8 +412,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         include_dirs=[include_dir],
         libraries=["gpilog", "cocotbutils"],
         sources=libembed_sources,
-        extra_link_args=_extra_link_args(lib_name="libembed", rpaths=["$ORIGIN"]),
-        extra_compile_args=_extra_cxx_compile_args,
     )
 
     #
@@ -435,8 +428,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         include_dirs=[include_dir],
         libraries=["gpilog", "cocotbutils", "pygpilog"],
         sources=libcocotb_sources,
-        extra_link_args=_extra_link_args(lib_name="libcocotb", rpaths=["$ORIGIN"]),
-        extra_compile_args=_extra_cxx_compile_args,
     )
 
     #
@@ -454,8 +445,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         include_dirs=[include_dir],
         libraries=["cocotbutils", "gpilog", "embed"],
         sources=libgpi_sources,
-        extra_link_args=_extra_link_args(lib_name="libgpi", rpaths=["$ORIGIN"]),
-        extra_compile_args=_extra_cxx_compile_args,
     )
 
     #
@@ -473,8 +462,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         libraries=["cocotbutils", "gpilog", "gpi", "pygpilog"],
         library_dirs=python_lib_dirs,
         sources=simulator_sources,
-        extra_compile_args=_extra_cxx_compile_args,
-        extra_link_args=_extra_link_args(rpaths=["$ORIGIN/libs"]),
     )
 
     # The libraries in this list are compiled in order of their appearance.
@@ -500,8 +487,6 @@ def _get_vpi_lib_ext(
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
         sources=libcocotbvpi_sources,
-        extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
-        extra_compile_args=_extra_cxx_compile_args,
     )
 
     return libcocotbvpi
@@ -524,8 +509,6 @@ def _get_vhpi_lib_ext(
         libraries=["gpi", "gpilog"] + extra_lib,
         library_dirs=extra_lib_dir,
         sources=libcocotbvhpi_sources,
-        extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
-        extra_compile_args=_extra_cxx_compile_args,
     )
 
     return libcocotbvhpi
@@ -603,8 +586,6 @@ def get_ext():
                 include_dirs=[include_dir, modelsim_include_dir],
                 libraries=["gpi", "gpilog"] + modelsim_extra_lib,
                 sources=fli_sources,
-                extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
-                extra_compile_args=_extra_cxx_compile_args,
             )
 
             ext.append(fli_ext)
