@@ -72,6 +72,7 @@ def help_vars_text():
     COCOTB_LOG_LEVEL          Default logging level (default INFO)
     COCOTB_RESOLVE_X          How to resolve X, Z, U, W on integer conversion
     MEMCHECK                  HTTP port to use for debugging Python memory usage
+    LIBPYTHON_LOC             Absolute path to libpython
 
     Regression Manager
     ------------------
