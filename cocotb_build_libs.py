@@ -151,10 +151,6 @@ def _get_lib_ext_name():
 
 class build_ext(_build_ext):
     def run(self):
-
-        def_dir = os.path.join(cocotb_share_dir, "def")
-        self._gen_import_libs(def_dir)
-
         if os.name == "nt":
             create_sxs_appconfig(self.get_ext_fullpath(os.path.join("cocotb", "simulator")))
 
@@ -168,6 +164,16 @@ class build_ext(_build_ext):
                 create_rc_file(name, filename, libraries)
 
         super().run()
+
+    def build_extensions(self):
+        if os.name == "nt":
+            def_dir = os.path.join(cocotb_share_dir, "def")
+            self._gen_import_libs(def_dir)
+
+            for e in self.extensions:
+                e.library_dirs += [def_dir]
+
+        super().build_extensions()
 
     def build_extension(self, ext):
         """Build each extension in its own temp directory to make gcov happy.
@@ -247,17 +253,16 @@ class build_ext(_build_ext):
         load the DLL (.a) based on module definition files (.def)
         """
 
-        if os.name == "nt":
-            for sim in ["icarus", "modelsim", "aldec", "ghdl"]:
-                subprocess.run(
-                    [
-                        "dlltool",
-                        "-d",
-                        os.path.join(def_dir, sim + ".def"),
-                        "-l",
-                        os.path.join(def_dir, "lib" + sim + ".a"),
-                    ]
-                )
+        for sim in ["icarus", "modelsim", "aldec", "ghdl"]:
+            subprocess.run(
+                [
+                    "dlltool",
+                    "-d",
+                    os.path.join(def_dir, sim + ".def"),
+                    "-l",
+                    os.path.join(def_dir, "lib" + sim + ".a"),
+                ]
+            )
 
 
 def _extra_link_args(lib_name=None, rpaths=[]):
@@ -535,7 +540,6 @@ def get_ext():
 
     share_lib_dir = os.path.relpath(os.path.join(cocotb_share_dir, "lib"))
     include_dir = os.path.relpath(os.path.join(cocotb_share_dir, "include"))
-    share_def_dir = os.path.relpath(os.path.join(cocotb_share_dir, "def"))
 
     ext = []
 
@@ -547,18 +551,15 @@ def get_ext():
     #  Icarus Verilog
     #
     icarus_extra_lib = []
-    icarus_extra_lib_path = []
     logger.info("Compiling libraries for Icarus Verilog")
     if os.name == "nt":
         icarus_extra_lib = ["icarus"]
-        icarus_extra_lib_path = [share_def_dir]
 
     icarus_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="ICARUS",
         extra_lib=icarus_extra_lib,
-        extra_lib_dir=icarus_extra_lib_path,
     )
     ext.append(icarus_vpi_ext)
 
@@ -566,18 +567,15 @@ def get_ext():
     #  Modelsim/Questa
     #
     modelsim_extra_lib = []
-    modelsim_extra_lib_path = []
     logger.info("Compiling libraries for Modelsim/Questa")
     if os.name == "nt":
         modelsim_extra_lib = ["modelsim"]
-        modelsim_extra_lib_path = [share_def_dir]
 
     modelsim_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="MODELSIM",
         extra_lib=modelsim_extra_lib,
-        extra_lib_dir=modelsim_extra_lib_path,
     )
     ext.append(modelsim_vpi_ext)
 
@@ -604,7 +602,6 @@ def get_ext():
                 define_macros=[("COCOTBFLI_EXPORTS", "")] + _extra_defines,
                 include_dirs=[include_dir, modelsim_include_dir],
                 libraries=["gpi", "gpilog"] + modelsim_extra_lib,
-                library_dirs=modelsim_extra_lib_path,
                 sources=fli_sources,
                 extra_link_args=_extra_link_args(lib_name=lib_name, rpaths=["$ORIGIN"]),
                 extra_compile_args=_extra_cxx_compile_args,
@@ -624,18 +621,15 @@ def get_ext():
     # GHDL
     #
     ghdl_extra_lib = []
-    ghdl_extra_lib_path = []
     logger.info("Compiling libraries for GHDL")
     if os.name == "nt":
         ghdl_extra_lib = ["ghdl"]
-        ghdl_extra_lib_path = [share_def_dir]
 
     ghdl_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="GHDL",
         extra_lib=ghdl_extra_lib,
-        extra_lib_dir=ghdl_extra_lib_path,
     )
     ext.append(ghdl_vpi_ext)
 
@@ -668,18 +662,15 @@ def get_ext():
     # Aldec Riviera Pro
     #
     aldec_extra_lib = []
-    aldec_extra_lib_path = []
     logger.info("Compiling libraries for Riviera")
     if os.name == "nt":
         aldec_extra_lib = ["aldec"]
-        aldec_extra_lib_path = [share_def_dir]
 
     aldec_vpi_ext = _get_vpi_lib_ext(
         include_dir=include_dir,
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
         extra_lib=aldec_extra_lib,
-        extra_lib_dir=aldec_extra_lib_path,
     )
     ext.append(aldec_vpi_ext)
 
@@ -688,7 +679,6 @@ def get_ext():
         share_lib_dir=share_lib_dir,
         sim_define="ALDEC",
         extra_lib=aldec_extra_lib,
-        extra_lib_dir=aldec_extra_lib_path,
     )
     ext.append(aldec_vhpi_ext)
 
