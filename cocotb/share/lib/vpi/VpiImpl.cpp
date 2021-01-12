@@ -102,6 +102,7 @@ static gpi_objtype_t to_gpi_objtype(int32_t vpitype)
         case vpiNetBit:
             return GPI_NET;
 
+        case vpiBitVar:
         case vpiReg:
         case vpiRegBit:
         case vpiMemoryWord:
@@ -191,6 +192,7 @@ GpiObjHdl* VpiImpl::create_gpi_obj_from_handle(vpiHandle new_hdl,
     switch (type) {
         case vpiNet:
         case vpiNetBit:
+        case vpiBitVar:
         case vpiReg:
         case vpiRegBit:
         case vpiEnumNet:
