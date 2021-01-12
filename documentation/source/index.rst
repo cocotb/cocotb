@@ -122,6 +122,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    coroutines
    triggers
    testbench_tools
+   custom_flows
    rotating_logger
 
 .. todo::
