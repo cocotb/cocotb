@@ -128,8 +128,8 @@ define find_libpython_errmsg =
 find_libpython was not able to find a libpython in the current Python environment. Ensure
 the Python development packages are installed. If they are installed and find_libpython
 is not finding the path to libpython, file an upstream bug in find_libpython; then
-manually override the LIBPYTHON_LOC make variable with the aboslute path to libpython.so
-(or libpython.dll on Windows).
+manually override the LIBPYTHON_LOC make variable with the absolute path to libpython.so
+(or python.dll on Windows).
 
 endef
 

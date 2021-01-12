@@ -130,6 +130,12 @@ Cocotb
 
     This needs the :mod:`cherrypy` and :mod:`dowser` Python modules installed.
 
+.. envvar:: LIBPYTHON_LOC
+
+    The absolute path the Python library associated with the current Python installation;
+    i.e. ``libpython.so`` or ``python.dll`` on Windows.
+    This is determined with ``cocotb-config --libpython`` in cocotb's makefiles.
+
 
 Regression Manager
 ~~~~~~~~~~~~~~~~~~
