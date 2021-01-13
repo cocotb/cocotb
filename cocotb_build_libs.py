@@ -192,6 +192,11 @@ class build_ext(_build_ext):
                 if not self.compiler.initialized:
                     self.compiler.initialize()
 
+                # Setuptools defaults to activate automatic manifest generation for msvc,
+                # disable it here as we manually generate it to also support mingw on windows
+                for (k, ldflags) in self.compiler._ldflags.items():
+                    self.compiler._ldflags[k] = [x for x in ldflags if not x.startswith("/MANIFEST")] + ["/MANIFEST:NO"]
+
                 self.compiler.compile_options = [x for x in self.compiler.compile_options if not x.startswith("/W")] + ["/W4"]
 
             def_dir = os.path.join(cocotb_share_dir, "def")
