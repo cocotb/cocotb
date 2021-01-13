@@ -238,6 +238,9 @@ jobs:
       run: python -m pip install  --global-option build_ext --global-option --compiler=mingw32 -e .
     - name: Install Python testing dependencies (Windows)
       run: pip install coverage xunitparser pytest pytest-cov
+    - name: SxS trace test (Windows)
+      if: startsWith(matrix.os, 'windows')
+      run: .\tests\sxs.ps1
     - name: Test (Windows)
       if: startsWith(matrix.os, 'windows')
       id: windowstesting
