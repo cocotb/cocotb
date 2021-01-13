@@ -10,8 +10,9 @@ Tests for edge triggers
 * ClockCycles
 """
 import cocotb
-from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles, First
+from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles, First, Combine
 from cocotb.clock import Clock
+from cocotb.result import SimTimeoutError
 
 
 async def count_edges_cycles(signal, edges):
@@ -208,3 +209,27 @@ async def test_clock_cycles_forked(dut):
     b = cocotb.fork(wait_ten())
     await a.join()
     await b.join()
+
+
+@cocotb.test(
+    timeout_time=100,
+    timeout_unit="ns",
+    expect_error=(
+        SimTimeoutError if (
+            cocotb.LANGUAGE in ["verilog"] and
+            cocotb.SIM_NAME.lower().startswith(("riviera", "aldec"))  # gh-2344
+        )
+        else ()
+    ),
+)
+async def test_both_edge_triggers(dut):
+    async def wait_rising_edge():
+        await RisingEdge(dut.clk)
+
+    async def wait_falling_edge():
+        await FallingEdge(dut.clk)
+
+    rising_coro = cocotb.fork(wait_rising_edge())
+    falling_coro = cocotb.fork(wait_falling_edge())
+    cocotb.fork(Clock(dut.clk, 10, units='ns').start())
+    await Combine(rising_coro, falling_coro)
