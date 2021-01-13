@@ -318,15 +318,25 @@ class build_ext(_build_ext):
         """
 
         for sim in ["icarus", "modelsim", "aldec", "ghdl"]:
-            subprocess.run(
-                [
-                    "dlltool",
-                    "-d",
-                    os.path.join(def_dir, sim + ".def"),
-                    "-l",
-                    os.path.join(def_dir, "lib" + sim + ".a"),
-                ]
-            )
+            if self._uses_msvc():
+                subprocess.run(
+                    [
+                        self.compiler.lib,
+                        "/def:" + os.path.join(def_dir, sim + ".def"),
+                        "/out:" + os.path.join(def_dir, sim + ".lib"),
+                        "/machine:" + ("X64" if sys.maxsize > 2**32 else "X86")
+                    ]
+                )
+            else:
+                subprocess.run(
+                    [
+                        "dlltool",
+                        "-d",
+                        os.path.join(def_dir, sim + ".def"),
+                        "-l",
+                        os.path.join(def_dir, "lib" + sim + ".a"),
+                    ]
+                )
 
 
 def _get_python_lib_link():
