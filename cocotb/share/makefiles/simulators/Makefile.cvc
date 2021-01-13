@@ -63,7 +63,7 @@ endif
 $(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	MODULE=$(MODULE) \
 	TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=$(LIB_DIR)/libcocotbvpi_modelsim:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+        $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=$(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_modelsim:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 ifeq ($(CVC_ITERP),1)
@@ -80,7 +80,7 @@ ifeq ($(CVC_ITERP),1)
     debug:  $(CUSTOM_SIM_DEPS)
 	MODULE=$(MODULE) \
         TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        gdb --args $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=$(LIB_DIR)/modelsim/libcocotbvpi:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+        gdb --args $(CMD) $(CVC_ARGS) +acc+2 -o $(SIM_BUILD)/sim.vvp +define+COCOTB_SIM=1 +loadvpi=$(LIB_DIR)/modelsim/$(LIB_PREFIX)cocotbvpi:vlog_startup_routines_bootstrap $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 else
     debug: $(SIM_BUILD)/sim.vvp $(CUSTOM_SIM_DEPS)
 	MODULE=$(MODULE) \

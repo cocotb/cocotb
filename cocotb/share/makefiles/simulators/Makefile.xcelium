@@ -81,7 +81,7 @@ endif
 # GPI_EXTRA=cocotbvhpi if needed.
 
 # Xcelium will use default vlog_startup_routines symbol only if VPI library name is libvpi.so
-GPI_ARGS = -loadvpi $(LIB_DIR)/libcocotbvpi_ius:vlog_startup_routines_bootstrap
+GPI_ARGS = -loadvpi $(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_ius:vlog_startup_routines_bootstrap
 ifeq ($(TOPLEVEL_LANG),verilog)
     HDL_SOURCES = $(VERILOG_SOURCES)
     ROOT_LEVEL = $(TOPLEVEL)

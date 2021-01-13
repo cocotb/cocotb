@@ -76,7 +76,7 @@ $(COCOTB_RESULTS_FILE): analyse $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(CMD) -r $(GHDL_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(LIB_DIR)/libcocotbvpi_ghdl.$(LIB_EXT) $(SIM_ARGS) $(PLUSARGS)
+	$(CMD) -r $(GHDL_ARGS) --workdir=$(SIM_BUILD) -P$(SIM_BUILD) --work=$(RTL_LIBRARY) $(TOPLEVEL) --vpi=$(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_ghdl.$(LIB_EXT) $(SIM_ARGS) $(PLUSARGS)
 
 	$(call check_for_results_file)
 

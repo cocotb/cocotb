@@ -86,13 +86,13 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
-    GPI_ARGS = -pli $(call to_tcl_path,$(LIB_DIR)/libcocotbvpi_aldec)
+    GPI_ARGS = -pli $(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_aldec)
 ifneq ($(VHDL_SOURCES),)
     GPI_EXTRA = cocotbvhpi_aldec:cocotbvhpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    GPI_ARGS = -loadvhpi $(call to_tcl_path,$(LIB_DIR)/libcocotbvhpi_aldec):vhpi_startup_routines_bootstrap
+    GPI_ARGS = -loadvhpi $(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvhpi_aldec):vhpi_startup_routines_bootstrap
 ifneq ($(VERILOG_SOURCES),)
     GPI_EXTRA = cocotbvpi_aldec:cocotbvpi_entry_point
 endif
