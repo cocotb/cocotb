@@ -59,7 +59,7 @@ How does cocotb work?
 A typical cocotb testbench requires no additional :term:`RTL` code.
 The Design Under Test (:term:`DUT`) is instantiated as the toplevel in the simulator without any wrapper code.
 cocotb drives stimulus onto the inputs to the :term:`DUT` (or further down the hierarchy) and monitors the outputs directly from Python.
-
+Note that cocotb can not instantiate :term:`HDL` blocks - your DUT must be complete.
 
 .. image:: diagrams/svg/cocotb_overview.svg
 

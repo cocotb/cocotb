@@ -8,6 +8,9 @@ Simulation Hangs
 Did you directly call an ``async def`` function without using :keyword:`await`;
 or a :class:`~cocotb.coroutine` without using :keyword:`yield`?
 
+If you want to exit cocotb and the simulator using :kbd:`Control-C` (the Unix signal ``SIGINT``) but this doesn't work,
+you can try :kbd:`Control-\\` (the Unix signal ``SIGQUIT``).
+
 
 Increasing Verbosity
 ====================
@@ -16,11 +19,15 @@ If things fail in the :term:`VPI`/:term:`VHPI`/:term:`FLI` area, check your simu
 increase its verbosity about what may be wrong. You can then set these options on the :command:`make` command line
 as :make:var:`COMPILE_ARGS`, :make:var:`SIM_ARGS` or :make:var:`EXTRA_ARGS` (see :doc:`building` for details).
 If things fail from within Python, or coroutines aren't being called when you expect, the
-:make:var:`COCOTB_SCHEDULER_DEBUG` variable can be used to (greatly) increase the verbosity of the scheduler.
+:envvar:`COCOTB_SCHEDULER_DEBUG` variable can be used to (greatly) increase the verbosity of the scheduler.
 
+
+.. _troubleshooting-attaching-debugger:
 
 Attaching a Debugger
 ====================
+
+.. _troubleshooting-attaching-debugger-c:
 
 C and C++
 ---------
@@ -30,7 +37,9 @@ you can set the environment variable :envvar:`COCOTB_ATTACH` to a pause time val
 If set, cocotb will print the process ID (PID) to attach to and wait the specified time before
 actually letting the simulator run.
 
-For the GNU debugger GDB, the command is :command:`attach <process-id>`.
+For the GNU debugger GDB, the command is ``attach <process-id>``.
+
+.. _troubleshooting-attaching-debugger-python:
 
 Python
 ------
@@ -38,7 +47,8 @@ Python
 When executing the Makefile to run a cocotb test, a Python shell interpreter is called from within the
 :term:`VPI`/:term:`VHPI`/:term:`FLI` library.
 Hence it is not possible to directly attach a Python debugger to the Python process being part of the simulator that uses the aforementioned library.
-Using ``import pdb; pdb.set_trace()`` directly is also frequently not possible, due to the way that simulators interfere with stdin.
+Using ``import pdb; pdb.set_trace()`` directly is also frequently not possible,
+due to the way that simulators interfere with stdin.
 
 To successfully debug your Python code use the `remote_pdb`_ Python package to create a :command:`pdb` instance
 accessible via a TCP socket:
@@ -93,7 +103,7 @@ it is strongly recommended to use an environment variable, i.e.
 and *not* ``make EXTRA_ARGS=...``.
 
 This is because in the case of the disrecommended ``make EXTRA_ARGS=...``,
-if one of the involved Makefiles contains lines to assign (``=``) or append (``+=``) to ``EXTRA_ARGS`` internally,
+if one of the involved Makefiles contains lines to assign (``=``) or append (``+=``) to :make:var:`EXTRA_ARGS` internally,
 such lines will be ignored.
 These lines are needed for the operation of cocotb however,
 and having them ignored is likely to lead to strange errors.
@@ -112,7 +122,7 @@ It is usually an issue with your environment, but sometimes can occur when using
 Check your environment
 ----------------------
 
-To see if your environment is the issue, look at the value of the ``LD_LIBRARY_PATH`` environment variable.
+To see if your environment is the issue, look at the value of the :envvar:`LD_LIBRARY_PATH` environment variable.
 Ensure the first path in the colon-deliminated list is the path to the libstdc++ that shipped with the compiler you used to build cocotb.
 
 .. code:: shell
@@ -129,21 +139,21 @@ If the library you built cocotb with is not first, prepend that path to the list
 Check your simulator
 --------------------
 
-Sometimes, simulators modify the ``LD_LIBRARY_PATH`` so they point to the libraries that are shipped with instead of the system libraries.
+Sometimes, simulators modify the :envvar:`LD_LIBRARY_PATH` so they point to the libraries that are shipped with instead of the system libraries.
 If you are running an old simulator, the packaged libraries may include a pre-C++11 libstdc++.
-To see if your simulator is modifying the ``LD_LIBRARY_PATH``, open the simulator up to an internal console and obtain the environment variable.
+To see if your simulator is modifying the :envvar:`LD_LIBRARY_PATH`, open the simulator up to an internal console and obtain the environment variable.
 
-For example, with Mentor Questa and Cadence Xcelium, one could open a Tcl console and run the ``env`` command to list the current environment.
-The ``LD_LIBRARY`` path should appear in the list.
+For example, with Mentor Questa and Cadence Xcelium, one could open a Tcl console and run the :command:`env` command to list the current environment.
+The :envvar:`LD_LIBRARY_PATH` should appear in the list.
 
-If the simulator does modify the ``LD_LIBRARY_PATH``, refer to the simulator documentation on how to prevent or work around this issue.
+If the simulator does modify the :envvar:`LD_LIBRARY_PATH`, refer to the simulator documentation on how to prevent or work around this issue.
 
 For example, Questa ships with GCC.
 Sometimes that version of GCC is old enough to not support C++11 (<4.8).
-When you install cocotb, ``pip`` uses the system (or some other) compiler that supports C++11.
-But when you try to run cocotb with the older Questa, it prepends the older libraries Questa ships with to ``LD_LIBRARY_PATH``.
+When you install cocotb, :command:`pip` uses the system (or some other) compiler that supports C++11.
+But when you try to run cocotb with the older Questa, it prepends the older libraries Questa ships with to :envvar:`LD_LIBRARY_PATH`.
 This causes the older libstdc++ Questa ships with to be loaded, resuling in the error message.
-For Questa, you can use the ``-noautoldlibpath`` option to turn off the ``LD_LIBRARY_PATH`` prepend to resolve this issue.
+For Questa, you can use the :option:`-noautoldlibpath` option to turn off the :envvar:`LD_LIBRARY_PATH` prepend to resolve this issue.
 
 
 Using cocotb with more than one Python installation

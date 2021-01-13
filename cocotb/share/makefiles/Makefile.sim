@@ -41,8 +41,15 @@ regression                Run simulator when dependencies have changes
 clean                     Remove build and simulation artefacts
 help                      This help text
 
+endef
+
+# NOTE: keep this at 80 chars.
+define help_makevars =
 Variables
 =========
+
+The following variables are makefile variables:
+
 Makefile-based Test Scripts
 ---------------------------
 GUI                       Set this to 1 to enable the GUI mode in the simulator
@@ -74,10 +81,11 @@ endef
 # this cannot be a regular target because of the way Makefile.$(SIM) is included
 ifeq ($(MAKECMDGOALS),help)
     $(info $(help_targets))
+    $(info $(help_makevars))
     # hack to get newlines in output, see https://stackoverflow.com/a/54539610
     # NOTE: the output of the command must not include a '%' sign, otherwise the formatting will break
-    help_vars := $(subst %,${newline},$(shell cocotb-config --help-vars | tr \\n %))
-    $(info ${help_vars})
+    help_envvars := $(subst %,${newline},$(shell cocotb-config --help-vars | tr \\n %))
+    $(info ${help_envvars})
     # is there a cleaner way to exit here?
     $(error "Stopping after printing help")
 endif

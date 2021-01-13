@@ -32,7 +32,10 @@ This allows for a rapid re-running of a simulator if none of the :term:`RTL` sou
 Variables
 =========
 
-The following sections document makefile variables and environment variables according to their owner/consumer.
+The following sections document environment variables and makefile variables according to their owner/consumer.
+
+Of the environment variables, only :envvar:`MODULE` is mandatory to be set
+(typically done in a makefile or run script), all others are optional.
 
 ..
   If you edit the following sections, please also update the "helpmsg" text in cocotb/config.py
@@ -71,9 +74,10 @@ Cocotb
     Use this to override the default behavior of annotating cocotb output with
     ANSI color codes if the output is a terminal (``isatty()``).
 
-    ``COCOTB_ANSI_OUTPUT=1`` forces output to be ANSI regardless of the type of ``stdout`` or the presence of :envvar:`NO_COLOR`.
-
-    ``COCOTB_ANSI_OUTPUT=0`` suppresses the ANSI output in the log messages
+    ``COCOTB_ANSI_OUTPUT=1``
+       forces output to be ANSI-colored regardless of the type of ``stdout`` or the presence of :envvar:`NO_COLOR`
+    ``COCOTB_ANSI_OUTPUT=0``
+       suppresses the ANSI color output in the log messages
 
 .. envvar:: NO_COLOR
 
@@ -132,7 +136,7 @@ Cocotb
 
 .. envvar:: LIBPYTHON_LOC
 
-    The absolute path the Python library associated with the current Python installation;
+    The absolute path to the Python library associated with the current Python installation;
     i.e. ``libpython.so`` or ``python.dll`` on Windows.
     This is determined with ``cocotb-config --libpython`` in cocotb's makefiles.
 
@@ -140,15 +144,14 @@ Cocotb
 Regression Manager
 ~~~~~~~~~~~~~~~~~~
 
-.. envvar:: COCOTB_PDB_ON_EXCEPTION
-
-   If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
-
 .. envvar:: MODULE
 
-    The name of the module(s) to search for test functions.
+    The name of the Python module(s) to search for test functions -
+    if your tests are in a file called ``test_mydesign.py``, ``MODULE`` would be set to ``test_mydesign``.
     Multiple modules can be specified using a comma-separated list.
     All tests will be run from each specified module in order of the module's appearance in this list.
+
+    The is the only environment variable that is **required** for cocotb, all others are optional.
 
 .. envvar:: TESTCASE
 
@@ -176,6 +179,11 @@ Regression Manager
 
     .. deprecated:: 1.5
         :class:`cocotb.hook` is deprecated, and in the future this variable will be ignored.
+
+.. envvar:: COCOTB_PDB_ON_EXCEPTION
+
+   If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
+   See also the :ref:`troubleshooting-attaching-debugger-python` subsection of :ref:`troubleshooting-attaching-debugger`.
 
 
 Scheduler
@@ -208,6 +216,8 @@ GPI
 
 Makefile-based Test Scripts
 ---------------------------
+
+The following variables are makefile variables, not environment variables.
 
 .. make:var:: GUI
 

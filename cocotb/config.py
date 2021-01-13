@@ -61,6 +61,8 @@ def help_vars_text():
     # NOTE: make sure to keep "helpmsg" aligned with documentation/source/building.rst
     # Also keep it at 80 chars.
     helpmsg = textwrap.dedent("""\
+    The following variables are environment variables:
+
     Cocotb
     ------
     TOPLEVEL                  Instance in the hierarchy to use as the DUT
