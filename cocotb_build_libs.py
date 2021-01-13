@@ -14,6 +14,7 @@ from setuptools import Extension
 from distutils.spawn import find_executable
 from setuptools.command.build_ext import build_ext as _build_ext
 from distutils.file_util import copy_file
+from distutils.ccompiler import get_default_compiler
 from typing import List
 
 
@@ -25,6 +26,8 @@ _ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]
 _extra_cxx_compile_args = ["-std=c++11", "-fvisibility=hidden", "-fvisibility-inlines-hidden"] + _ccx_warns
 if os.name != "nt":
     _extra_cxx_compile_args += ["-flto"]
+
+_extra_cxx_compile_args_msvc = ["/permissive-"]
 
 # Make PRI* format macros available with C++11 compiler but older libc, e.g. on RHEL6.
 _extra_defines = [("__STDC_FORMAT_MACROS", "")]
@@ -159,6 +162,14 @@ def _get_lib_ext_name():
 
 
 class build_ext(_build_ext):
+    def _uses_msvc(self):
+        if self.compiler == "msvc":
+            return True
+        if self.compiler is None:
+            return get_default_compiler() == "msvc"
+        else:
+            return "msvc" == getattr(self.compiler, "compiler_type", None)
+
     def run(self):
         if os.name == "nt":
             create_sxs_appconfig(self.get_ext_fullpath(os.path.join("cocotb", "simulator")))
@@ -176,6 +187,13 @@ class build_ext(_build_ext):
 
     def build_extensions(self):
         if os.name == "nt":
+            if self._uses_msvc():
+                # Initialize the compiler now so that compiler/linker flags are populated
+                if not self.compiler.initialized:
+                    self.compiler.initialize()
+
+                self.compiler.compile_options = [x for x in self.compiler.compile_options if not x.startswith("/W")] + ["/W4"]
+
             def_dir = os.path.join(cocotb_share_dir, "def")
             self._gen_import_libs(def_dir)
 
@@ -189,30 +207,33 @@ class build_ext(_build_ext):
 
         A normal PEP 517 install still works as the temp directories are discarded anyway.
         """
-        ext.extra_compile_args += _extra_cxx_compile_args
-
-        if os.name == "nt":
-            # Align behavior of gcc with msvc and export only symbols marked with __declspec(dllexport)
-            ext.extra_link_args += ["-Wl,--exclude-all-symbols"]
+        if self._uses_msvc():
+            ext.extra_compile_args += _extra_cxx_compile_args_msvc
         else:
-            ext.extra_link_args += ["-flto"]
+            ext.extra_compile_args += _extra_cxx_compile_args
 
-            lib_name = os.path.split(ext.name)[-1]
-
-            rpaths = []
-            if lib_name == "simulator":
-                rpaths += ["$ORIGIN/libs"]
-                install_name = None
+            if os.name == "nt":
+                # Align behavior of gcc with msvc and export only symbols marked with __declspec(dllexport)
+                ext.extra_link_args += ["-Wl,--exclude-all-symbols"]
             else:
-                rpaths += ["$ORIGIN"]
-                install_name = lib_name
+                ext.extra_link_args += ["-flto"]
 
-            if sys.platform == "darwin":
-                rpaths = [rpath.replace("$ORIGIN", "@loader_path") for rpath in rpaths]
-                if install_name is not None:
-                    ext.extra_link_args += ["-Wl,-install_name,@rpath/%s.so" % install_name]
+                lib_name = os.path.split(ext.name)[-1]
 
-            ext.extra_link_args += ["-Wl,-rpath,%s" % rpath for rpath in rpaths]
+                rpaths = []
+                if lib_name == "simulator":
+                    rpaths += ["$ORIGIN/libs"]
+                    install_name = None
+                else:
+                    rpaths += ["$ORIGIN"]
+                    install_name = lib_name
+
+                if sys.platform == "darwin":
+                    rpaths = [rpath.replace("$ORIGIN", "@loader_path") for rpath in rpaths]
+                    if install_name is not None:
+                        ext.extra_link_args += ["-Wl,-install_name,@rpath/%s.so" % install_name]
+
+                ext.extra_link_args += ["-Wl,-rpath,%s" % rpath for rpath in rpaths]
 
         # vpi_user.h and vhpi_user.h require that WIN32 is defined
         if os.name == "nt":
