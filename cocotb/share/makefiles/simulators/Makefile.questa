@@ -81,13 +81,13 @@ ifeq ($(TOPLEVEL_LANG),vhdl)
     CUSTOM_COMPILE_DEPS += $(FLI_LIB)
     VSIM_ARGS += -foreign \"cocotb_init $(call to_tcl_path,$(FLI_LIB))\"
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = cocotbvpi_modelsim:cocotbvpi_entry_point
+    GPI_EXTRA = $(LIB_PREFIX)cocotbvpi_modelsim.$(LIB_EXT):cocotbvpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
     VSIM_ARGS += -pli $(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_modelsim.$(LIB_EXT))
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = cocotbfli_modelsim:cocotbfli_entry_point
+    GPI_EXTRA = $(LIB_PREFIX)cocotbfli_modelsim.$(LIB_EXT):cocotbfli_entry_point
 endif
 
 else
