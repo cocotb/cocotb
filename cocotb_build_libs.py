@@ -259,6 +259,13 @@ class build_ext(_build_ext):
         if lib_name == "libgpi" and not self._uses_msvc():
             ext.define_macros += [("LIB_PREFIX", "lib")]
 
+        if lib_name == "libembed":
+            if self._uses_msvc():
+                embed_lib_name = "cocotb"
+            else:
+                embed_lib_name = "libcocotb"
+            ext.define_macros += [("EMBED_IMPL_LIB", embed_lib_name + "." + _get_lib_ext_name())]
+
         old_build_temp = self.build_temp
         self.build_temp = os.path.join(self.build_temp, ext.name)
         super().build_extension(ext)
@@ -467,7 +474,6 @@ def _get_common_lib_ext(include_dir, share_lib_dir):
         os.path.join("cocotb", "libs", "libembed"),
         define_macros=[
             ("COCOTB_EMBED_EXPORTS", ""),
-            ("EMBED_IMPL_LIB", "libcocotb." + _get_lib_ext_name()),
             ("PYTHON_LIB", _get_python_lib())] + _extra_defines,
         include_dirs=[include_dir],
         libraries=["gpilog", "cocotbutils"],
