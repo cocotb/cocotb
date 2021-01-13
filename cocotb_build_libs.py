@@ -106,7 +106,7 @@ def create_sxs_appconfig(filename):
         f.write(config_body)
 
 
-def create_rc_file(rc_filename, name, filename, libraries):
+def create_rc_file(rc_filename, name, filename, libraries, runtime_libraries):
     """
     Creates windows resource definition script to embed the side-by-side assembly manifest into the libraries.
 
@@ -131,9 +131,8 @@ def create_rc_file(rc_filename, name, filename, libraries):
         END
         ''') % manifest
 
-    # Add the runtime dependency on libcocotb to libembed dependencies
-    if name == "libembed":
-        manifest = create_sxs_assembly_manifest(name, filename, ["libcocotb"], dependency_only=True)
+    if runtime_libraries is not None:
+        manifest = create_sxs_assembly_manifest(name, filename, runtime_libraries, dependency_only=True)
 
         # Escape double quotes and put every line between double quotes for embedding into rc file
         manifest = manifest.replace('"', '""')
@@ -198,11 +197,19 @@ class build_ext(_build_ext):
                 filename = os.path.split(filename)[-1]
                 libraries = {"lib" + lib for lib in ext.libraries}.intersection(ext_names)
                 rc_filename = name + ".rc"
+                runtime_libraries = None
+
+                # Add the runtime dependency on libcocotb to libembed
+                if name == "libembed":
+                    runtime_libraries = ["libcocotb"]
+
                 # Strip lib prefix for msvc
                 if self._uses_msvc():
                     name = name[3:] if name.startswith("lib") else name
                     libraries = {(lib[3:] if lib.startswith("lib") else lib) for lib in libraries}
-                create_rc_file(rc_filename, name, filename, libraries)
+                    if runtime_libraries is not None:
+                        runtime_libraries = {(lib[3:] if lib.startswith("lib") else lib) for lib in runtime_libraries}
+                create_rc_file(rc_filename, name, filename, libraries, runtime_libraries)
 
             def_dir = os.path.join(cocotb_share_dir, "def")
             self._gen_import_libs(def_dir)
