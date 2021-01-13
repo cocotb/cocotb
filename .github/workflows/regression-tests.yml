@@ -137,6 +137,16 @@ jobs:
             lang: verilog
             python-version: 3.8
             os: windows-latest
+            toolchain: mingw
+            extra_name: "mingw | "
+
+          - sim: icarus             # use msvc instead of mingw
+            sim-version: master
+            lang: verilog
+            python-version: 3.8
+            os: windows-latest
+            toolchain: msvc
+            extra_name: "msvc | "
 
             # Other
 
@@ -230,14 +240,22 @@ jobs:
         sudo make install
 
       # Windows Testing
-    - name: Install cocotb build dependencies (Windows)
-      if: startsWith(matrix.os, 'windows')
-      run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
-    - name: Install cocotb (Windows)
-      if: startsWith(matrix.os, 'windows')
-      run: python -m pip install  --global-option build_ext --global-option --compiler=mingw32 -e .
     - name: Install Python testing dependencies (Windows)
       run: pip install coverage xunitparser pytest pytest-cov
+    - name: Install cocotb build dependencies (Windows, mingw)
+      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
+      run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
+    - name: Install cocotb (Windows, mingw)
+      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
+      run: python -m pip install  --global-option build_ext --global-option --compiler=mingw32 -v -e .
+      continue-on-error: ${{matrix.may_fail || false}}
+    - name: Install cocotb (Windows, msvc)
+      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
+      run: python -m pip install -v -e .
+      continue-on-error: ${{matrix.may_fail || false}}
+    - name: Install cocotb runtime dependencies (Windows, msvc)
+      if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'msvc'
+      run: conda install --yes -c msys2 m2-base m2-make
     - name: SxS trace test (Windows)
       if: startsWith(matrix.os, 'windows')
       run: .\tests\sxs.ps1
