@@ -224,6 +224,8 @@ class build_ext(_build_ext):
 
         A normal PEP 517 install still works as the temp directories are discarded anyway.
         """
+        lib_name = os.path.split(ext.name)[-1]
+
         if self._uses_msvc():
             ext.extra_compile_args += _extra_cxx_compile_args_msvc
         else:
@@ -234,8 +236,6 @@ class build_ext(_build_ext):
                 ext.extra_link_args += ["-Wl,--exclude-all-symbols"]
             else:
                 ext.extra_link_args += ["-flto"]
-
-                lib_name = os.path.split(ext.name)[-1]
 
                 rpaths = []
                 if lib_name == "simulator":
@@ -255,6 +255,9 @@ class build_ext(_build_ext):
         # vpi_user.h and vhpi_user.h require that WIN32 is defined
         if os.name == "nt":
             ext.define_macros += [("WIN32", "")]
+
+        if lib_name == "libgpi" and not self._uses_msvc():
+            ext.define_macros += [("LIB_PREFIX", "lib")]
 
         old_build_temp = self.build_temp
         self.build_temp = os.path.join(self.build_temp, ext.name)

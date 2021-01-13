@@ -159,6 +159,11 @@ void gpi_embed_event(gpi_event_t level, const char *msg)
 static void gpi_load_libs(std::vector<std::string> to_load)
 {
 #define DOT_LIB_EXT "." xstr(LIB_EXT)
+#ifdef LIB_PREFIX
+#define LIB_PREFIX_STR xstr(LIB_PREFIX)
+#else
+#define LIB_PREFIX_STR ""
+#endif
     std::vector<std::string>::iterator iter;
 
     for (iter = to_load.begin();
@@ -182,7 +187,7 @@ static void gpi_load_libs(std::vector<std::string> to_load)
             func_name = std::string(it+1, arg.end());
         }
 
-        std::string full_name = "lib" + lib_name + DOT_LIB_EXT;
+        std::string full_name = LIB_PREFIX_STR + lib_name + DOT_LIB_EXT;
         void *lib_handle = utils_dyn_open(full_name.c_str());
         if (!lib_handle) {
             printf("cocotb: Error loading shared library %s\n", full_name.c_str());
