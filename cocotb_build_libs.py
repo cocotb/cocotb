@@ -106,7 +106,7 @@ def create_sxs_appconfig(filename):
         f.write(config_body)
 
 
-def create_rc_file(name, filename, libraries):
+def create_rc_file(rc_filename, name, filename, libraries):
     """
     Creates windows resource definition script to embed the side-by-side assembly manifest into the libraries.
 
@@ -146,7 +146,7 @@ def create_rc_file(name, filename, libraries):
             END
             ''') % manifest
 
-    with open(name + ".rc", "w", encoding='utf-8') as f:
+    with open(rc_filename, "w", encoding='utf-8') as f:
         f.write(rc_body)
 
 
@@ -174,15 +174,6 @@ class build_ext(_build_ext):
         if os.name == "nt":
             create_sxs_appconfig(self.get_ext_fullpath(os.path.join("cocotb", "simulator")))
 
-            ext_names = {os.path.split(ext.name)[-1] for ext in self.extensions}
-            for ext in self.extensions:
-                fullname = self.get_ext_fullname(ext.name)
-                filename = self.get_ext_filename(fullname)
-                name = os.path.split(fullname)[-1]
-                filename = os.path.split(filename)[-1]
-                libraries = {"lib" + lib for lib in ext.libraries}.intersection(ext_names)
-                create_rc_file(name, filename, libraries)
-
         super().run()
 
     def build_extensions(self):
@@ -198,6 +189,20 @@ class build_ext(_build_ext):
                     self.compiler._ldflags[k] = [x for x in ldflags if not x.startswith("/MANIFEST")] + ["/MANIFEST:NO"]
 
                 self.compiler.compile_options = [x for x in self.compiler.compile_options if not x.startswith("/W")] + ["/W4"]
+
+            ext_names = {os.path.split(ext.name)[-1] for ext in self.extensions}
+            for ext in self.extensions:
+                fullname = self.get_ext_fullname(ext.name)
+                filename = self.get_ext_filename(fullname)
+                name = os.path.split(fullname)[-1]
+                filename = os.path.split(filename)[-1]
+                libraries = {"lib" + lib for lib in ext.libraries}.intersection(ext_names)
+                rc_filename = name + ".rc"
+                # Strip lib prefix for msvc
+                if self._uses_msvc():
+                    name = name[3:] if name.startswith("lib") else name
+                    libraries = {(lib[3:] if lib.startswith("lib") else lib) for lib in libraries}
+                create_rc_file(rc_filename, name, filename, libraries)
 
             def_dir = os.path.join(cocotb_share_dir, "def")
             self._gen_import_libs(def_dir)
@@ -273,11 +278,16 @@ class build_ext(_build_ext):
         # mingw on msys2 uses `-` as seperator
         tail_split = tail_split[0].split("-")
 
+        # strip lib prefix if msvc is used
+        if self._uses_msvc() and tail_split[0].startswith("lib"):
+            tail_split[0] = tail_split[0][3:]
+
         filename_short = os.path.join(head, tail_split[0] + "." + _get_lib_ext_name())
 
         # icarus requires vpl extension
         filename_short = filename_short.replace("libcocotbvpi_icarus.so", "libcocotbvpi_icarus.vpl")
         filename_short = filename_short.replace("libcocotbvpi_icarus.dll", "libcocotbvpi_icarus.vpl")
+        filename_short = filename_short.replace("cocotbvpi_icarus.dll", "cocotbvpi_icarus.vpl")
 
         return filename_short
 
