@@ -256,9 +256,6 @@ class build_ext(_build_ext):
         if os.name == "nt":
             ext.define_macros += [("WIN32", "")]
 
-        if lib_name == "libgpi" and not self._uses_msvc():
-            ext.define_macros += [("LIB_PREFIX", "lib")]
-
         if lib_name == "libembed":
             if self._uses_msvc():
                 embed_lib_name = "cocotb"

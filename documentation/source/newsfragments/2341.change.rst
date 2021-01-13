@@ -1,0 +1,1 @@
+Changed how libraries are specified in :envvar:`GPI_EXTRA` to allow specifiying libraries with paths, and names that don't start with "lib".

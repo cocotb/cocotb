@@ -31,14 +31,14 @@ ifeq ($(TOPLEVEL_LANG),verilog)
     # backslashes needed because we embed in `echo` below
     GPI_ARGS = -pli \"$(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_aldec)\"
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = cocotbvhpi_aldec:cocotbvhpi_entry_point
+    GPI_EXTRA = $(LIB_PREFIX)cocotbvhpi_aldec.$(LIB_EXT):cocotbvhpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     # backslashes needed because we embed in `echo` below
     GPI_ARGS = -loadvhpi \"$(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvhpi_aldec):vhpi_startup_routines_bootstrap\"
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = cocotbvpi_aldec:cocotbvpi_entry_point
+    GPI_EXTRA = $(LIB_PREFIX)cocotbvpi_aldec.$(LIB_EXT):cocotbvpi_entry_point
 endif
 else
    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
