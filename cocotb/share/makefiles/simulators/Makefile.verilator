@@ -33,6 +33,7 @@ ifeq ($(VERILATOR_SIM_DEBUG), 1)
   COMPILE_ARGS += --debug
   PLUSARGS += +verilator+debug
   SIM_BUILD_FLAGS += -DVL_DEBUG
+  USER_CPPFLAGS += -g
 endif
 
 ifeq ($(VERILATOR_TRACE),1)
