@@ -252,6 +252,23 @@ def _initialise_testbench(argv_):
     global top
     top = cocotb.handle.SimHandle(handle)
 
+    try:
+        import pytest
+    except ImportError:
+        log.warning("Pytest not found, assertion rewriting will not occur")
+    else:
+        try:
+            # Install the assertion rewriting hook, which must be done before we
+            # import the test modules.
+            from _pytest.config import Config
+            from _pytest.assertion import install_importhook
+            pytest_conf = Config.fromdictargs([], {})
+            install_importhook(pytest_conf)
+        except Exception:
+            log.exception(
+                "Configuring the assertion rewrite hook using pytest {} failed. "
+                "Please file a bug report!".format(pytest.__version__))
+
     # start Regression Manager
     global regression_manager
     regression_manager = RegressionManager.from_discovery(top)
