@@ -19,6 +19,7 @@ MODULE := "\
 	test_handle,\
 	test_logging,\
 	test_pytest,\
+	test_queues,\
 	"
 
 ifeq ($(shell python -c "import sys; print(sys.version_info >= (3, 6))"), "True")

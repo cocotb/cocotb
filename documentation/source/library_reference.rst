@@ -356,6 +356,13 @@ XGMII
 Miscellaneous
 =============
 
+Asynchronous Queues
+-------------------
+
+.. automodule:: cocotb.queue
+    :members:
+    :member-order: bysource
+
 Other Runtime Information
 -------------------------
 
