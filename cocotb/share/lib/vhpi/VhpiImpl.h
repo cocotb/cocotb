@@ -119,7 +119,7 @@ private:
 
 class VhpiTimedCbHdl : public VhpiCbHdl {
 public:
-    VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
+    VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time);
     int cleanup_callback() override;
 };
 
@@ -263,7 +263,7 @@ public:
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) override;
 
     /* Callback related, these may (will) return the same handle*/
-    GpiCbHdl *register_timed_callback(uint64_t time_ps) override;
+    GpiCbHdl *register_timed_callback(uint64_t time) override;
     GpiCbHdl *register_readonly_callback() override;
     GpiCbHdl *register_nexttime_callback() override;
     GpiCbHdl *register_readwrite_callback() override;

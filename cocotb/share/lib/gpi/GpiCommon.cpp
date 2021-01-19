@@ -573,9 +573,9 @@ gpi_cb_hdl gpi_register_value_change_callback(int (*gpi_function)(const void *),
 /* It should not matter which implementation we use for this so just pick the first
    one */
 gpi_cb_hdl gpi_register_timed_callback(int (*gpi_function)(const void *),
-                                        void *gpi_cb_data, uint64_t time_ps)
+                                        void *gpi_cb_data, uint64_t time)
 {
-    GpiCbHdl *gpi_hdl = registered_impls[0]->register_timed_callback(time_ps);
+    GpiCbHdl *gpi_hdl = registered_impls[0]->register_timed_callback(time);
     if (!gpi_hdl) {
         LOG_ERROR("Failed to register a timed callback");
         return NULL;

@@ -512,11 +512,11 @@ int VpiShutdownCbHdl::run_callback() {
     return 0;
 }
 
-VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps) : GpiCbHdl(impl),
+VpiTimedCbHdl::VpiTimedCbHdl(GpiImplInterface *impl, uint64_t time) : GpiCbHdl(impl),
                                                                          VpiCbHdl(impl)
 {
-    vpi_time.high = (uint32_t)(time_ps>>32);
-    vpi_time.low  = (uint32_t)(time_ps);
+    vpi_time.high = (uint32_t)(time>>32);
+    vpi_time.low  = (uint32_t)(time);
     vpi_time.type = vpiSimTime;
 
     cb_data.reason = cbAfterDelay;

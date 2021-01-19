@@ -254,7 +254,7 @@ public:
     virtual GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) = 0;
 
     /* Callback related, these may (will) return the same handle */
-    virtual GpiCbHdl *register_timed_callback(uint64_t time_ps) = 0;
+    virtual GpiCbHdl *register_timed_callback(uint64_t time) = 0;
     virtual GpiCbHdl *register_readonly_callback() = 0;
     virtual GpiCbHdl *register_nexttime_callback() = 0;
     virtual GpiCbHdl *register_readwrite_callback() = 0;

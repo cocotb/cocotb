@@ -158,12 +158,14 @@ class GPITrigger(Trigger):
 class Timer(GPITrigger):
     """Fires after the specified simulation time period has elapsed."""
 
-    def __init__(self, time_ps, units="step"):
+    def __init__(self, time=None, units="step", *, time_ps=None):
         """
         Args:
-           time_ps (numbers.Real or decimal.Decimal): The time value.
+           time (numbers.Real or decimal.Decimal): The time value.
                Note that despite the name this is not actually in picoseconds
                but depends on the *units* argument.
+               .. versionchanged:: 1.5.0
+                  Previously this argument was misleadingly called `time_ps`.
            units (str, optional): One of
                ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
                When *units* is ``'step'``,
@@ -210,8 +212,18 @@ class Timer(GPITrigger):
             Using None as the the *units* argument is deprecated, use ``'step'`` instead.
         """
         GPITrigger.__init__(self)
-        if time_ps <= 0:
-            if time_ps == 0:
+        if time_ps is not None:
+            if time is not None:
+                raise TypeError("Gave argument to both the 'time' and deprecated 'time_ps' parameter")
+            time = time_ps
+            warnings.warn(
+                "The parameter name 'time_ps' has been renamed to 'time'. Please update your invocation.",
+                DeprecationWarning, stacklevel=2)
+        else:
+            if time is None:
+                raise TypeError("Missing required argument 'time'")
+        if time <= 0:
+            if time == 0:
                 warnings.warn("Timer setup with value 0, which might exhibit undefined behavior in some simulators",
                               category=RuntimeWarning,
                               stacklevel=2)
@@ -221,8 +233,8 @@ class Timer(GPITrigger):
             warnings.warn(
                 'Using units=None is deprecated, use units="step" instead.',
                 DeprecationWarning, stacklevel=2)
-            units="step"  # don't propagate deprecated value
-        self.sim_steps = get_sim_steps(time_ps, units)
+            units = "step"  # don't propagate deprecated value
+        self.sim_steps = get_sim_steps(time, units)
 
     def prime(self, callback):
         """Register for a timed callback."""
