@@ -1,0 +1,2 @@
+Support for building with Microsoft Visual C++ has been added.
+See :ref:`install` for more details.

@@ -29,8 +29,6 @@ After installing these dependencies, the latest stable version of cocotb can be 
 pip install cocotb
 ```
 
-**!!! Windows Users !!!** See [here](https://docs.cocotb.org/en/stable/install.html) for installation instructions.
-
 For more details on installation, including prerequisites,
 see [the documentation](https://docs.cocotb.org/en/stable/install.html).
 

@@ -18,7 +18,7 @@ The current stable version of cocotb requires:
 
 * Python 3.5+
 * Python-dev packages
-* GCC 4.8.1+ or Clang 3.3+ and associated development packages
+* GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
 * GNU Make
 * A Verilog or VHDL simulator, depending on your :term:`RTL` source code
 
@@ -39,7 +39,7 @@ The installation instructions vary depending on your operating system:
 
       .. code-block::
 
-         conda install -c msys2 m2-base m2-make m2w64-toolchain libpython
+         conda install -c msys2 m2-base m2-make
 
    .. group-tab:: Linux - Debian
 
@@ -73,39 +73,11 @@ The installation instructions vary depending on your operating system:
 Installation of cocotb
 ======================
 
-.. tabs::
+The **latest release** of cocotb can be installed by running
 
-   .. group-tab:: Windows
+.. code-block:: bash
 
-      The **latest release** of cocotb can be installed by running
-
-      .. code-block:: bash
-
-          pip install --global-option build_ext --global-option --compiler=mingw32 cocotb
-
-   .. group-tab:: Linux - Debian
-
-      The **latest release** of cocotb can be installed by running
-
-      .. code-block:: bash
-
-          pip install cocotb
-
-   .. group-tab:: Linux - Red Hat
-
-      The **latest release** of cocotb can be installed by running
-
-      .. code-block:: bash
-
-          pip install cocotb
-
-   .. group-tab:: macOS
-
-      The **latest release** of cocotb can be installed by running
-
-      .. code-block:: bash
-
-          pip install cocotb
+    pip install cocotb
 
 .. note::
 

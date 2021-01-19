@@ -14,32 +14,18 @@ than the stable version:
 
 * Python 3.5+
 * Python-dev packages
-* GCC 4.8.1+ or Clang 3.3+ and associated development packages
+* GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
 * GNU Make
 * A Verilog or VHDL simulator, depending on your :term:`RTL` source code
 
 Please refer to :ref:`install-prerequisites` for details.
 
 
-The instructions for installing the development version of cocotb itself vary depending on your operating system:
+The development version of cocotb can be installed by running
 
-.. tabs::
+.. code-block:: bash
 
-   .. group-tab:: Windows
-
-      The development version of cocotb can be installed by running
-
-      .. code-block:: bash
-
-          pip install --global-option build_ext --global-option --compiler=mingw32 git+https://github.com/cocotb/cocotb@master
-
-   .. group-tab:: Linux and macOS
-
-      The development version of cocotb can be installed by running
-
-      .. code-block:: bash
-
-          pip install git+https://github.com/cocotb/cocotb@master
+    pip install git+https://github.com/cocotb/cocotb@master
 
 .. note::
 
