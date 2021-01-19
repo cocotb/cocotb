@@ -49,9 +49,9 @@ int FliProcessCbHdl::cleanup_callback()
 }
 
 FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface *impl,
-                             uint64_t time_ps) : GpiCbHdl(impl),
+                             uint64_t time) : GpiCbHdl(impl),
                                                  FliProcessCbHdl(impl),
-                                                 m_time_ps(time_ps)
+                                                 m_time(time)
 {
     m_proc_hdl = mti_CreateProcessWithPriority(NULL, handle_fli_callback, (void *)this, MTI_PROC_IMMEDIATE);
 }
@@ -59,10 +59,10 @@ FliTimedCbHdl::FliTimedCbHdl(GpiImplInterface *impl,
 int FliTimedCbHdl::arm_callback()
 {
     #if defined(__LP64__) || defined(_WIN64)
-        mti_ScheduleWakeup64(m_proc_hdl, static_cast<mtiTime64T>(m_time_ps));
+        mti_ScheduleWakeup64(m_proc_hdl, static_cast<mtiTime64T>(m_time));
     #else
         mtiTime64T m_time_union_ps;
-        MTI_TIME64_ASGN(m_time_union_ps, (mtiInt32T)((m_time_ps) >> 32), (mtiUInt32T)(m_time_ps));
+        MTI_TIME64_ASGN(m_time_union_ps, (mtiInt32T)((m_time) >> 32), (mtiUInt32T)(m_time));
         mti_ScheduleWakeup64(m_proc_hdl, m_time_union_ps);
     #endif
     m_sensitised = true;
@@ -77,15 +77,15 @@ int FliTimedCbHdl::cleanup_callback()
         /* Issue #188: Work around for modelsim that is harmless to othes too,
            we tag the time as delete, let it fire then do not pass up
            */
-        LOG_DEBUG("Not removing PRIMED timer %p", m_time_ps);
+        LOG_DEBUG("Not removing PRIMED timer %p", m_time);
         set_call_state(GPI_DELETE);
         return 0;
     case GPI_CALL:
-        LOG_DEBUG("Not removing CALL timer yet %p", m_time_ps);
+        LOG_DEBUG("Not removing CALL timer yet %p", m_time);
         set_call_state(GPI_DELETE);
         return 0;
     case GPI_DELETE:
-        LOG_DEBUG("Removing Postponed DELETE timer %p", m_time_ps);
+        LOG_DEBUG("Removing Postponed DELETE timer %p", m_time);
         break;
     default:
         break;

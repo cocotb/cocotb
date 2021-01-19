@@ -569,9 +569,9 @@ GpiIterator *VpiImpl::iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type
     return new_iter;
 }
 
-GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time_ps)
+GpiCbHdl *VpiImpl::register_timed_callback(uint64_t time)
 {
-    VpiTimedCbHdl *hdl = new VpiTimedCbHdl(this, time_ps);
+    VpiTimedCbHdl *hdl = new VpiTimedCbHdl(this, time);
 
     if (hdl->arm_callback()) {
         delete(hdl);

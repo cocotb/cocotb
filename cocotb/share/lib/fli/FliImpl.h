@@ -136,15 +136,15 @@ public:
 
 class FliTimedCbHdl : public FliProcessCbHdl {
 public:
-    FliTimedCbHdl(GpiImplInterface *impl, uint64_t time_ps);
+    FliTimedCbHdl(GpiImplInterface *impl, uint64_t time);
 
     int arm_callback() override;
     void reset_time(uint64_t new_time) {
-        m_time_ps = new_time;
+        m_time = new_time;
     }
     int cleanup_callback() override;
 private:
-    uint64_t m_time_ps;
+    uint64_t m_time;
 };
 
 
@@ -414,7 +414,7 @@ class FliTimerCache {
 public:
     FliTimerCache(FliImpl* impl) : impl(impl) { }
 
-    FliTimedCbHdl* get_timer(uint64_t time_ps);
+    FliTimedCbHdl* get_timer(uint64_t time);
     void put_timer(FliTimedCbHdl*);
 
 private:
@@ -474,7 +474,7 @@ public:
     GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) override;
 
     /* Callback related, these may (will) return the same handle*/
-    GpiCbHdl *register_timed_callback(uint64_t time_ps) override;
+    GpiCbHdl *register_timed_callback(uint64_t time) override;
     GpiCbHdl *register_readonly_callback() override;
     GpiCbHdl *register_nexttime_callback() override;
     GpiCbHdl *register_readwrite_callback() override;

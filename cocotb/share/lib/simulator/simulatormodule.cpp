@@ -463,7 +463,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    uint64_t time_ps;
+    uint64_t time;
     {   // Extract the time
         PyObject *pTime = PyTuple_GetItem(args, 0);
         long long pTime_as_longlong = PyLong_AsLongLong(pTime);
@@ -473,7 +473,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "Timer value must be a positive integer");
             return NULL;
         } else {
-            time_ps = (uint64_t)pTime_as_longlong;
+            time = (uint64_t)pTime_as_longlong;
         }
     }
 
@@ -497,7 +497,7 @@ static PyObject *register_timed_callback(PyObject *self, PyObject *args)
     }
 
     gpi_cb_hdl hdl = gpi_register_timed_callback(
-        (gpi_function_t)handle_gpi_callback, cb_data, time_ps);
+        (gpi_function_t)handle_gpi_callback, cb_data, time);
 
     // Check success
     PyObject *rv = gpi_hdl_New(hdl);

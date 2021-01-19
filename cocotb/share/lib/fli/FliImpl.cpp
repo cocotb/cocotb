@@ -518,9 +518,9 @@ error:
 }
 
 
-GpiCbHdl *FliImpl::register_timed_callback(uint64_t time_ps)
+GpiCbHdl *FliImpl::register_timed_callback(uint64_t time)
 {
-    FliTimedCbHdl *hdl = cache.get_timer(time_ps);
+    FliTimedCbHdl *hdl = cache.get_timer(time);
 
     if (hdl->arm_callback()) {
         delete(hdl);
@@ -993,16 +993,16 @@ void FliIterator::populate_handle_list(FliIterator::OneToMany childType)
 }
 
 
-FliTimedCbHdl* FliTimerCache::get_timer(uint64_t time_ps)
+FliTimedCbHdl* FliTimerCache::get_timer(uint64_t time)
 {
     FliTimedCbHdl *hdl;
 
     if (!free_list.empty()) {
         hdl = free_list.front();
         free_list.pop();
-        hdl->reset_time(time_ps);
+        hdl->reset_time(time);
     } else {
-        hdl = new FliTimedCbHdl(impl, time_ps);
+        hdl = new FliTimedCbHdl(impl, time);
     }
 
     return hdl;
