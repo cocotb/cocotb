@@ -31,7 +31,7 @@ The instructions for installing the development version of cocotb itself vary de
 
       .. code-block:: bash
 
-          pip install --global-option build_ext --global-option --compiler=mingw32 https://github.com/cocotb/cocotb/archive/master.zip
+          pip install --global-option build_ext --global-option --compiler=mingw32 git+https://github.com/cocotb/cocotb@master
 
    .. group-tab:: Linux and macOS
 
@@ -39,7 +39,7 @@ The instructions for installing the development version of cocotb itself vary de
 
       .. code-block:: bash
 
-          pip install https://github.com/cocotb/cocotb/archive/master.zip
+          pip install git+https://github.com/cocotb/cocotb@master
 
 .. note::
 
