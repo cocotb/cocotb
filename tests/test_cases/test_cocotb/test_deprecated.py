@@ -138,3 +138,13 @@ async def test_expect_error_bool_deprecated(_):
         cocotb.test(expect_error=True)(t)
     with assert_deprecated():
         cocotb.test(expect_error=False)(t)
+
+
+@cocotb.test()
+async def test_time_ps_deprecated(_):
+    with assert_deprecated():
+        Timer(time_ps=7, units='ns')
+    with assert_raises(TypeError):
+        Timer(time=0, time_ps=7, units='ns')
+    with assert_raises(TypeError):
+        Timer(units='ps')
