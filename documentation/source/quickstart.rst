@@ -15,8 +15,8 @@ a :ref:`supported simulator<simulator-support>`) and cocotb itself (``pip instal
 Download and extract the cocotb source files according to the *release version* you are using from
 https://github.com/cocotb/cocotb/releases - you can check your cocotb version with ``cocotb-config --version``.
 
-The sources for cocotb's *development version* are available from
-https://github.com/cocotb/cocotb/archive/master.zip
+The sources for cocotb's *development version* are available from https://github.com/cocotb/cocotb.
+See :ref:`install-devel` for more details.
 
 The following lines are all you need to run a first simulation with cocotb:
 
