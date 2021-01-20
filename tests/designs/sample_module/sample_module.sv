@@ -155,6 +155,7 @@ initial begin
     mybits = '1;
 end
 
+`ifndef VERILATOR
 always @(*) begin
     $display("%m: mybit has been updated, new value is %b", mybit);
 end
@@ -164,5 +165,6 @@ end
 always @(*) begin
     $display("%m: mybits_uninitialized has been updated, new value is %b", mybits_uninitialized);
 end
+`endif
 
 endmodule
