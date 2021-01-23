@@ -40,6 +40,30 @@ jobs:
         pip install flake8
         flake8
 
+  doc-sphinx:
+    runs-on: ubuntu-latest
+    name: sphinx
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{matrix.python-version}}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{matrix.python-version}}
+    - name: Install Sphinx doc building dependencies
+      run: |
+        pip install tox
+        sudo apt install -y --no-install-recommends doxygen
+    - name: Register Sphinx problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/sphinx.json"
+    - name: Run Sphinx
+      continue-on-error: true
+      run: |
+        tox -e docs
+
   tests:
 
     name: ${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}} ${{matrix.may_fail && '| May Fail' || ''}}
@@ -207,7 +231,7 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'apt'
       run: |
         sudo apt install -y --no-install-recommends ghdl-mcode ghdl
-    - name : Set up GHDL (Ubunutu - nightly)
+    - name : Set up GHDL (Ubuntu - nightly)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'ghdl' && matrix.sim-version == 'nightly'
       uses: ghdl/setup-ghdl-ci@nightly
       with:
@@ -218,7 +242,7 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator' && matrix.sim-version == 'apt'
       run: |
         sudo apt install -y --no-install-recommends verilator
-    - name: Set up Verilator (Ubunutu - source)
+    - name: Set up Verilator (Ubuntu - source)
       if: startsWith(matrix.os, 'ubuntu') && matrix.sim == 'verilator' && matrix.sim-version != 'apt'
       run: |
         sudo apt install -y --no-install-recommends make g++ perl python3 autoconf flex bison libfl2 libfl-dev zlibc zlib1g zlib1g-dev
