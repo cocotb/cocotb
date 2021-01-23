@@ -11,7 +11,7 @@ RUN pyenv global ${PYTHON_VERSION}
 RUN pip3 install --upgrade pip
 
 # Install extra packages
-RUN pip3 install -U flake8 pylint pytype mypy gcovr cherrypy dowser
+RUN pip3 install -U pytest flake8 pylint pytype mypy gcovr cherrypy dowser
 
 # Re-synchronize the OS package index
 RUN sudo apt-get update
