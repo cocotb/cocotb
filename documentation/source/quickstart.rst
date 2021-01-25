@@ -210,11 +210,26 @@ the various actions described in :ref:`assignment-methods` can be used.
     dut.my_signal <= Freeze()     # my_signal stays at current value until released
 
 
+.. _quickstart_reading_values:
+
 Reading values from signals
 ---------------------------
 
-Accessing the :attr:`~cocotb.handle.NonHierarchyObject.value` property of a handle object will return a :any:`BinaryValue` object.
-Any unresolved bits are preserved and can be accessed using the :attr:`~cocotb.binary.BinaryValue.binstr` attribute,
+Values in the DUT can be accessed with the :attr:`~cocotb.handle.NonHierarchyObject.value`
+property of a handle object.
+A common mistake is forgetting the ``.value`` which just gives you a reference to a handle
+(useful for defining an alias name), not the value.
+
+The Python type of a value depends on the handle's HDL type:
+
+* Arrays of ``logic`` and subtypes of that (``sfixed``, ``unsigned``, etc.) are of type :class:`~cocotb.binary.BinaryValue`.
+* Integer nets and constants (``integer``, ``natural``, etc.) return :class:`int`.
+* Floating point nets and constants (``real``) return :class:`float`.
+* Boolean nets and constants (``boolean``) return :class:`bool`.
+* String nets and constants (``string``) return :class:`bytes`.
+
+For a :class:`~cocotb.binary.BinaryValue` object, any unresolved bits are preserved and
+can be accessed using the :attr:`~cocotb.binary.BinaryValue.binstr` attribute,
 or a resolved integer value can be accessed using the :attr:`~cocotb.binary.BinaryValue.integer` attribute.
 
 .. code-block:: pycon
@@ -236,7 +251,6 @@ We can also cast the signal handle directly to an integer:
 
     >>> print(int(dut.counter))
     42
-
 
 
 Parallel and sequential execution
