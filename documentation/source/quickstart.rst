@@ -50,33 +50,43 @@ be used):
 Using cocotb
 ============
 
-A typical cocotb testbench requires no additional :term:`HDL` code (though nothing prevents you from adding testbench helper code).
-The Design Under Test (:term:`DUT`) is instantiated as the toplevel in the simulator
+A typical cocotb testbench requires no additional :term:`HDL` code
+(though nothing prevents you from adding testbench helper code).
+The *Design Under Test* (:term:`DUT`) is instantiated as the toplevel in the simulator
 without any wrapper code.
 Cocotb drives stimulus onto the inputs to the :term:`DUT` and monitors the outputs
 directly from Python.
 
+In the following sections we are showing you the code of a
+small but complete cocotb testbench environment.
+
+
+.. _quickstart_creating_a_makefile:
 
 Creating a Makefile
 -------------------
 
-To create a cocotb test we typically create a Makefile.  Cocotb provides
-rules which make it easy to get started.  We simply inform cocotb of the
-source files we need compiling, the toplevel entity to instantiate and the
-Python test script to load.
+To run a cocotb test we typically create a Makefile.
+Cocotb provides ``make`` rules to handle the simulator setup.
+We only need to inform cocotb of the source files we need compiling,
+the toplevel entity to instantiate and the Python test script to load.
 
 .. code-block:: makefile
 
     VERILOG_SOURCES += $(PWD)/submodule.sv
     VERILOG_SOURCES += $(PWD)/my_design.sv
-    # TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file:
+
+    # TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file
     TOPLEVEL = my_design
-    # MODULE is the name of the Python test file:
+
+    # MODULE is the basename of the Python test file
     MODULE = test_my_design
 
+    # include cocotb's make rules to take care of the simulator setup
     include $(shell cocotb-config --makefiles)/Makefile.sim
 
-We would then create a file called ``test_my_design.py`` containing our tests.
+We would then create a file called ``test_my_design.py`` containing our tests
+as shown in the next section.
 
 
 .. _quickstart_creating_a_test:
@@ -84,12 +94,14 @@ We would then create a file called ``test_my_design.py`` containing our tests.
 Creating a Test
 ---------------
 
-The test is written in Python. Cocotb wraps your top level with the handle you
+The test is written in Python. Cocotb wraps your HDL top level with the handle you
 pass it. In this documentation, and most of the examples in the project, that
 handle is ``dut``, but you can pass your own preferred name in instead. The
-handle is used in all Python files referencing your :term:`RTL` project. Assuming we
-have a toplevel port called ``clk`` we could create a test file containing the
-following:
+handle is used in all Python files referencing your :term:`RTL` project.
+
+Assuming we have a toplevel port called ``clk`` we could create a test file
+``test_my_design.py`` (so :envvar:`MODULE` is ``test_my_design``)
+containing the following:
 
 .. code-block:: python3
 
@@ -108,7 +120,7 @@ following:
             await Timer(1, units="ns")
 
         dut._log.info("my_signal_1 is", dut.my_signal_1.value)
-        assert dut.my_signal_2.value == 0, "my_signal_2 is not 0!"
+        assert dut.my_signal_2.value[0] == 0, "my_signal_2[0] is not 0!"
 
         dut._log.info("Running test...done")
 
@@ -116,24 +128,28 @@ following:
 This will first drive 10 periods of a square wave clock onto the ``clk`` port of the toplevel.
 After this, the clock stops,
 the value of ``my_signal_1`` is printed,
-and the value of ``my_signal_2`` is checked to be ``0``.
+and the value of index ``0`` of ``my_signal_2`` is checked to be ``0``.
 
 Things to note:
 
-* writing ``@cocotb.test()`` to mark this as a test to be run,
-* using ``<=`` to assign a value to a signal,
-* and use ``.value`` to read a value back.
+* Use the ``@cocotb.test()`` decorator to mark the test function to be run
+* Use ``<=`` to assign a value to a signal (alternatively, use ``.value =``)
+* Use ``.value`` to get a signal's current value
 
 The test shown is running sequentially, from start to end.
-It's most likely that you will want to do things "at the same time" however
-(think multiple ``always`` blocks in Verilog or ``process`` statements in VHDL).
+Lines with :keyword:`await` wait there until the simulator is returning control back to cocotb.
+
+It's most likely that you will want to do several things "at the same time" however -
+think multiple ``always`` blocks in Verilog or ``process`` statements in VHDL.
 In cocotb, you might move the clock generation part of the example above into its own
-:keyword:`async` function and :func:`~cocotb.fork` it from the test:
+:keyword:`async` function and :func:`~cocotb.fork` it ("start it in the background")
+from the test:
 
 .. code-block:: python3
 
     import cocotb
     from cocotb.triggers import Timer
+    from cocotb.triggers import FallingEdge
 
     async def generate_clock(dut):
         """Generate clock pulses."""
@@ -152,10 +168,11 @@ In cocotb, you might move the clock generation part of the example above into it
 
         cocotb.fork(generate_clock(dut))  # run the clock "in the background"
 
-        await Timer(5, units="ns")  # wait a bit, but continue while the clock is still running
+        await Timer(5, units="ns")  # wait a bit
+        await FallingEdge(dut.clk)  # wait for falling edge/"negedge"
 
         dut._log.info("my_signal_1 is", dut.my_signal_1.value)
-        assert dut.my_signal_2.value == 0, "my_signal_2 is not 0!"
+        assert dut.my_signal_2.value[0] == 0, "my_signal_2[0] is not 0!"
 
         dut._log.info("Running test...done")
 
