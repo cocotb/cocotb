@@ -126,7 +126,7 @@ Things to note are that we are:
 
 The test shown is running sequentially, from start to end.
 It's most likely that you will want to do things "at the same time" however
-(think multiple ``always`` blocks in Verilog or ``process``\ es in VHDL).
+(think multiple ``always`` blocks in Verilog or ``process`` statements in VHDL).
 In cocotb, you might move the clock generation part of the example above into its own
 :keyword:`async` function and :func:`~cocotb.fork` it from the test:
 
