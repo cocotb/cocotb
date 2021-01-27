@@ -118,7 +118,7 @@ After this, the clock stops,
 the value of ``my_signal_1`` is printed,
 and the value of ``my_signal_2`` is checked to be ``0``.
 
-Things to note are that we are:
+Things to note:
 
 * writing ``@cocotb.test()`` to mark this as a test to be run,
 * using ``<=`` to assign a value to a signal,
