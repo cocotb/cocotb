@@ -4,6 +4,7 @@ Test that cocotb doesn't die if a new logging level is added
 import cocotb
 import logging
 
+
 @cocotb.test()
 async def test_alu(dut):
     logging.basicConfig(level=logging.NOTSET)
