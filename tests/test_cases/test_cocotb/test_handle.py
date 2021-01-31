@@ -66,10 +66,10 @@ async def test_string_ansi_color(dut):
         # Riviera-PRO doesn't return anything with VHDL:
         assert val == b""
         # ...and the value shows up differently in the HDL:
-        assert dut.stream_in_string_asciival_sum.value == 1587
+        assert dut.stream_in_string_asciival_sum.value == sum(ord(char) for char in teststr.replace('\x1b', '\0'))
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
         # Xcelium with VPI strips the escape char when reading:
-        assert val == b"[33myellow[49m[39m"
+        assert val == bytes(teststr.replace('\x1b', '').encode("ascii"))
         # the HDL gets the correct value though:
         assert dut.stream_in_string_asciival_sum.value == asciival_sum
     else:
