@@ -56,9 +56,7 @@ async def test_string_handle_takes_bytes(dut):
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
     teststr = "\x1b[33myellow\x1b[49m\x1b[39m"
-    asciival_sum = 0
-    for char in teststr:
-        asciival_sum += ord(char)
+    asciival_sum = sum(ord(char) for char in teststr)
     await cocotb.triggers.Timer(10, 'ns')
     dut.stream_in_string.value = bytes(teststr.encode("ascii"))
     await cocotb.triggers.Timer(10, 'ns')
