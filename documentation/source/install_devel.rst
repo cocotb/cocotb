@@ -4,7 +4,17 @@
 Installing the Development Version
 **********************************
 
-The development version of cocotb may have differerent prerequisites
+.. note::
+
+   If you want to follow the instructions on this page,
+   make sure you are reading the version from the development version itself,
+   which is https://docs.cocotb.org/en/latest/install_devel.html
+
+   Once you installed the development version,
+   you should keep reading the matching documentation,
+   i.e. stay at https://docs.cocotb.org/en/latest/
+
+The development version of cocotb has different prerequisites
 than the stable version:
 
 ..
