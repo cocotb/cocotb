@@ -51,6 +51,32 @@ async def test_string_handle_takes_bytes(dut):
     assert val == b"bytes"
 
 
+@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) or
+             cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")))
+async def test_string_ansi_color(dut):
+    """Check how different simulators treat ANSI-colored strings, see gh-2328"""
+    teststr = "\x1b[33myellow\x1b[49m\x1b[39m"
+    asciival_sum = sum(ord(char) for char in teststr)
+    await cocotb.triggers.Timer(10, 'ns')
+    dut.stream_in_string.value = bytes(teststr.encode("ascii"))
+    await cocotb.triggers.Timer(10, 'ns')
+    val = dut.stream_in_string.value
+    assert isinstance(val, bytes)
+    if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith("riviera"):
+        # Riviera-PRO doesn't return anything with VHDL:
+        assert val == b""
+        # ...and the value shows up differently in the HDL:
+        assert dut.stream_in_string_asciival_sum.value == sum(ord(char) for char in teststr.replace('\x1b', '\0'))
+    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
+        # Xcelium with VPI strips the escape char when reading:
+        assert val == bytes(teststr.replace('\x1b', '').encode("ascii"))
+        # the HDL gets the correct value though:
+        assert dut.stream_in_string_asciival_sum.value == asciival_sum
+    else:
+        assert val == bytes(teststr.encode("ascii"))
+        assert dut.stream_in_string_asciival_sum.value == asciival_sum
+
+
 async def test_delayed_assignment_still_errors(dut):
     """ Writing a bad value should fail even if the write is scheduled to happen later """
 

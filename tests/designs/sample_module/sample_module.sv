@@ -91,8 +91,29 @@ always @(stream_in_real)
 always @(stream_in_int)
     stream_out_int = stream_in_int;
 
+var string stream_in_string_asciival_str;
+var int stream_in_string_asciival;
+var int stream_in_string_asciival_sum;
+`ifndef _VCP  // Aldec Riviera-PRO and Active-HDL
+  // workaround for
+  // # ELAB2: Fatal Error: ELAB2_0036 Unresolved hierarchical reference to "stream_in_string.len.len" from module "sample_module" (module not found).
+`ifndef VERILATOR
+always @(stream_in_string) begin
+    $display("%m: stream_in_string has been updated, new value is '%s'", stream_in_string);
+    stream_in_string_asciival_sum = 0;
+    for (int idx = 0; idx < stream_in_string.len(); idx=idx+1) begin
+        stream_in_string_asciival_str = $sformatf("%0d", stream_in_string[idx]);
+        stream_in_string_asciival = stream_in_string_asciival_str.atoi();
+        stream_in_string_asciival_sum += stream_in_string_asciival;
+        $display("%m: idx=%0d, stream_in_string_asciival=%0d -> stream_in_string_asciival_sum=%0d",
+                 idx, stream_in_string_asciival, stream_in_string_asciival_sum);
+    end
+end
+`endif //  `ifndef VERILATOR
+`endif //  `ifndef _VCP
+
 test_if struct_var;
-`endif
+`endif //  `ifndef __ICARUS__
 
 and test_and_gate(and_output, stream_in_ready, stream_in_valid);
 

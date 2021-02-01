@@ -51,7 +51,7 @@ entity sample_module is
         stream_in_ready                 : out   std_ulogic;
         stream_in_real                  : in    real;
         stream_in_int                   : in    integer;
-        stream_in_string                : in    string(1 to 8);
+        stream_in_string                : in    string(1 to 64);
         stream_in_bool                  : in    boolean;
 
         inout_if                        : in    test_if;
@@ -62,7 +62,7 @@ entity sample_module is
         stream_out_ready                : in    std_ulogic;
         stream_out_real                 : out   real;
         stream_out_int                  : out   integer;
-        stream_out_string               : out   string(1 to 8);
+        stream_out_string               : out   string(1 to 64);
         stream_out_bool                 : out   boolean
     );
 end;
@@ -113,6 +113,8 @@ architecture impl of sample_module is
     constant NUM_OF_MODULES : natural := 4;
     signal temp             : std_logic_vector(NUM_OF_MODULES-1 downto 0);
 
+    signal stream_in_string_asciival_sum : natural;
+
 begin
 
     genblk1: for i in NUM_OF_MODULES - 1 downto 0 generate
@@ -128,6 +130,28 @@ begin
         if rising_edge(clk) then
             stream_out_data_registered <= stream_in_data;
         end if;
+    end process;
+
+    process (stream_in_string) is
+      variable v_idx : positive;
+      variable v_cur_char : character;
+      variable v_stream_in_string_asciival : natural;
+      variable v_stream_in_string_asciival_sum : natural;
+    begin
+      report "stream_in_string has been updated, new value is '" & stream_in_string & "'";
+      v_stream_in_string_asciival_sum := 0;
+      for v_idx in stream_in_string'range loop
+        v_cur_char := stream_in_string(v_idx);
+        if v_cur_char /= ' ' then  -- only work on non-space characters
+          v_stream_in_string_asciival := character'pos(v_cur_char);
+          v_stream_in_string_asciival_sum := v_stream_in_string_asciival_sum + v_stream_in_string_asciival;
+          -- report "v_idx=" & integer'image(v_idx) &
+          --   ", v_stream_in_string_asciival=" & integer'image(v_stream_in_string_asciival) &
+          --   -- ", v_cur_char='" & v_cur_char & "'" &  -- this often ends the report output here
+          --   " -> v_stream_in_string_asciival_sum=" & integer'image(v_stream_in_string_asciival_sum);
+        end if;
+      end loop;  -- v_idx
+      stream_in_string_asciival_sum <= v_stream_in_string_asciival_sum;
     end process;
 
     stream_out_data_comb <= afunc(stream_in_data) when stream_in_func_en = '0' else stream_in_data;
