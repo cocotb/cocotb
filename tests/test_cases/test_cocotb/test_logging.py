@@ -75,3 +75,12 @@ async def test_logging_default_config(dut):
         # Restore pre-test configuration
         os.environ = os_environ_prev
         cocotb_log.level = log_level_prev
+
+
+@cocotb.test()
+async def test_custom_logging_levels(dut):
+    logging.basicConfig(level=logging.NOTSET)
+    logging.addLevelName(5, "SUPER_DEBUG")
+    logger = logging.getLogger("name")
+    logger.setLevel(5)
+    logger.log(5, "SUPER DEBUG MESSAGE!")
