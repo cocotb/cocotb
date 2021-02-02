@@ -10,7 +10,7 @@ Installing the Development Version
    make sure you are reading the version from the development version itself,
    which is https://docs.cocotb.org/en/latest/install_devel.html
 
-   Once you installed the development version,
+   Once you install the development version,
    you should keep reading the matching documentation,
    i.e. stay at https://docs.cocotb.org/en/latest/
 
