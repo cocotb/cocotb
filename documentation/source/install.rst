@@ -73,7 +73,7 @@ The installation instructions vary depending on your operating system:
 Installation of cocotb
 ======================
 
-The **latest release** of cocotb can be installed by running
+The **stable version** of cocotb can be installed by running
 
 .. code-block:: bash
 
@@ -91,7 +91,8 @@ The **latest release** of cocotb can be installed by running
     Use ``pip -V`` to check.
     If this prints "(python 2.7)", use :command:`pip3` or ``python3 -m pip`` in place of :command:`pip` in the command shown.
 
-If you want to install the **development version** of cocotb, :ref:`instructions are here<install-devel>`.
+If you want to install the **development version** of cocotb,
+`instructions are here <https://docs.cocotb.org/en/latest/install_devel.html>`_.
 
 After installation, you should be able to execute :command:`cocotb-config`.
 If it is not found, you need to append its location to the :envvar:`PATH` environment variable.
