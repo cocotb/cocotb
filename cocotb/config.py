@@ -105,7 +105,7 @@ def help_vars_text():
 
 def lib_name(interface: str, simulator: str) -> str:
     """
-    Returns the name of interface library for given interface (VPI/VHPI/FLI) and simulator.
+    Return the name of interface library for given interface (VPI/VHPI/FLI) and simulator.
     """
 
     interface_name = interface.lower()
@@ -145,7 +145,7 @@ def lib_name(interface: str, simulator: str) -> str:
 
 def lib_name_path(interface, simulator):
     """
-    Returns the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
+    Return the absolute path of interface library for given interface (VPI/VHPI/FLI) and simulator
     """
     library_name_path = os.path.join(libs_dir, lib_name(interface, simulator))
 
@@ -217,7 +217,7 @@ def get_parser():
     )
     parser.add_argument(
         "--libpython",
-        help="prints the absolute path to the libpython associated with the current Python installation",
+        help="Print the absolute path to the libpython associated with the current Python installation",
         action=PrintAction,
         text=find_libpython.find_libpython(),
     )

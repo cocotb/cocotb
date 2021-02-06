@@ -75,7 +75,7 @@ $(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(CUSTOM_COMPILE_DEPS
 	TOPLEVEL=$(TOPLEVEL) \
 	$(CMD) -top $(TOPLEVEL) $(PLUSARGS) +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog \
 	-timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
-	$(EXTRA_ARGS) -debug -load $(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_vcs.so $(COMPILE_ARGS) $(VERILOG_SOURCES)
+	$(EXTRA_ARGS) -debug -load $(shell cocotb-config --lib-name-path vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(CUSTOM_SIM_DEPS)

@@ -29,16 +29,16 @@ ACOM_ARGS += -dbg
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
     # backslashes needed because we embed in `echo` below
-    GPI_ARGS = -pli \"$(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_aldec)\"
+    GPI_ARGS = -pli \"$(shell cocotb-config --lib-name-path vpi activehdl)\"
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = $(LIB_PREFIX)cocotbvhpi_aldec.$(LIB_EXT):cocotbvhpi_entry_point
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi activehdl):cocotbvhpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
     # backslashes needed because we embed in `echo` below
-    GPI_ARGS = -loadvhpi \"$(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvhpi_aldec):vhpi_startup_routines_bootstrap\"
+    GPI_ARGS = -loadvhpi \"$(shell cocotb-config --lib-name-path vhpi activehdl):vhpi_startup_routines_bootstrap\"
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = $(LIB_PREFIX)cocotbvpi_aldec.$(LIB_EXT):cocotbvpi_entry_point
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vpi activehdl):cocotbvpi_entry_point
 endif
 else
    $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
