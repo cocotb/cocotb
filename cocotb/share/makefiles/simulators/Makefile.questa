@@ -69,7 +69,7 @@ else
     VSIM_ARGS += -onfinish exit
 endif
 
-FLI_LIB := $(LIB_DIR)/$(LIB_PREFIX)cocotbfli_modelsim.$(LIB_EXT)
+FLI_LIB := $(shell cocotb-config --lib-name-path fli questa)
 # if this target is run, then cocotb did not build the library
 $(FLI_LIB):
 	@echo -e "ERROR: cocotb was not installed with an FLI library, as the mti.h header could not be located.\n\
@@ -79,15 +79,15 @@ $(FLI_LIB):
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),vhdl)
     CUSTOM_COMPILE_DEPS += $(FLI_LIB)
-    VSIM_ARGS += -foreign \"cocotb_init $(call to_tcl_path,$(FLI_LIB))\"
+    VSIM_ARGS += -foreign \"cocotb_init $(FLI_LIB)\"
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = $(LIB_PREFIX)cocotbvpi_modelsim.$(LIB_EXT):cocotbvpi_entry_point
+    GPI_EXTRA =  $(shell cocotb-config --lib-name-path vpi questa):cocotbvpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
-    VSIM_ARGS += -pli $(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_modelsim.$(LIB_EXT))
+    VSIM_ARGS += -pli $(shell cocotb-config --lib-name-path vpi questa)
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = $(LIB_PREFIX)cocotbfli_modelsim.$(LIB_EXT):cocotbfli_entry_point
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path fli questa):cocotbfli_entry_point
 endif
 
 else

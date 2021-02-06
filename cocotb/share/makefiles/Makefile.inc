@@ -64,16 +64,6 @@ PYTHON_BIN ?= $(realpath $(shell cocotb-config --python-bin))
 include $(COCOTB_SHARE_DIR)/makefiles/Makefile.deprecations
 
 LIB_DIR=$(COCOTB_PY_DIR)/cocotb/libs
-LIB_PREFIX := lib
-
-ifeq ($(OS),Msys)
-    LIB_EXT := dll
-    ifneq (,$(wildcard $(LIB_DIR)/cocotb.dll))
-        LIB_PREFIX :=
-    endif
-else
-    LIB_EXT := so
-endif
 
 PYTHON_ARCH := $(shell $(PYTHON_BIN) -c 'from platform import architecture; print(architecture()[0])')
 ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)

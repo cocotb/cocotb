@@ -78,20 +78,20 @@ ifneq (,$(findstring timescale,$(EXTRA_ARGS)))
 endif
 
 # Loading the VHPI library causes an error, so we always load the VPI library and supply
-# GPI_EXTRA=$(LIB_PREFIX)cocotbvhpi.$(LIB_EXT) if needed.
+# GPI_EXTRA=$(shell cocotb-config --lib-name-path vhpi xcelium) if needed.
 
 # Xcelium will use default vlog_startup_routines symbol only if VPI library name is libvpi.so
-GPI_ARGS = -loadvpi $(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_ius:vlog_startup_routines_bootstrap
+GPI_ARGS = -loadvpi $(shell cocotb-config --lib-name-path vpi xcelium):vlog_startup_routines_bootstrap
 ifeq ($(TOPLEVEL_LANG),verilog)
     HDL_SOURCES = $(VERILOG_SOURCES)
     ROOT_LEVEL = $(TOPLEVEL)
     EXTRA_ARGS += -top $(TOPLEVEL)
     ifneq ($(VHDL_SOURCES),)
         HDL_SOURCES += $(VHDL_SOURCES)
-        GPI_EXTRA = $(LIB_PREFIX)cocotbvhpi_ius.$(LIB_EXT):cocotbvhpi_entry_point
+        GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point
     endif
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    GPI_EXTRA = $(LIB_PREFIX)cocotbvhpi_ius.$(LIB_EXT):cocotbvhpi_entry_point
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi xcelium):cocotbvhpi_entry_point
     EXTRA_ARGS += -top $(TOPLEVEL)
     RTL_LIBRARY ?= $(TOPLEVEL)
     MAKE_LIB = -makelib $(RTL_LIBRARY)

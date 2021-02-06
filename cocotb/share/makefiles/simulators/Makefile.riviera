@@ -86,15 +86,15 @@ endif
 
 GPI_EXTRA:=
 ifeq ($(TOPLEVEL_LANG),verilog)
-    GPI_ARGS = -pli $(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvpi_aldec)
+    GPI_ARGS = -pli $(shell cocotb-config --lib-name-path vpi riviera)
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = $(LIB_PREFIX)cocotbvhpi_aldec.$(LIB_EXT):cocotbvhpi_entry_point
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vhpi riviera):cocotbvhpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    GPI_ARGS = -loadvhpi $(call to_tcl_path,$(LIB_DIR)/$(LIB_PREFIX)cocotbvhpi_aldec):vhpi_startup_routines_bootstrap
+    GPI_ARGS = -loadvhpi $(shell cocotb-config --lib-name-path vhpi riviera):vhpi_startup_routines_bootstrap
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA = $(LIB_PREFIX)cocotbvpi_aldec.$(LIB_EXT):cocotbvpi_entry_point
+    GPI_EXTRA = $(shell cocotb-config --lib-name-path vpi riviera)):cocotbvpi_entry_point
 endif
 
 else
