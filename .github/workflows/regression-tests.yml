@@ -18,8 +18,6 @@ jobs:
   lint-whitespace:
     runs-on: ubuntu-latest
     name: whitespace
-    strategy:
-      fail-fast: false
     steps:
     - uses: actions/checkout@v2
     - name: whitespace
