@@ -5,9 +5,15 @@ name: Regression Tests
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - 'stable/**'
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
+      - 'stable/**'
 
 jobs:
 
