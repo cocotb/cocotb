@@ -9,6 +9,7 @@
 
 # Python and C++ code coverage
 .coverage
+.coverage.cocotb
 *.gcno
 *.gcda
 *.gcov
@@ -26,10 +27,14 @@ develop-eggs
 .installed.cfg
 __pycache__
 .tox
+.eggs
 
 # Vim tmp files
 *.swp
 *~
+
+# VSCode project files
+.vscode/
 
 # Emacs tmp files
 \#*\#
