@@ -296,7 +296,18 @@ jobs:
 
     # codecov
     - name: Upload to codecov
-      if: steps.windowstesting.outcome == 'success' || steps.unixtesting.outcome == 'success'
+      # Notes:
+      # - The "--relative/-r" argument is not available on macOS gcov, skip
+      #   coverage upload there.
+      # - Clang builds must use llvm-cov instead of gcov, which isn't picked
+      #   currently by the codecov uploader. Hence we do not upload coverage
+      #   from clang builds currently, which don't add much anyways.
+      if: >
+        (steps.windowstesting.outcome == 'success'
+         || steps.unixtesting.outcome == 'success')
+        && !startsWith(matrix.os, 'macos')
+        && matrix.cxx != 'clang++'
+
       run: |
         pip install codecov
         codecov --gcov-args='-rl'
