@@ -32,10 +32,14 @@ import os
 import sys
 import sysconfig
 
+from ._version import version as __version__  # noqa: F401
+
 logger = getLogger("find_libpython")
 
 is_windows = os.name == "nt"
 is_apple = sys.platform == "darwin"
+is_msys = sysconfig.get_platform().startswith("msys")
+is_mingw = sysconfig.get_platform().startswith("mingw")
 
 SHLIB_SUFFIX = sysconfig.get_config_var("SHLIB_SUFFIX")
 if SHLIB_SUFFIX is None:
@@ -47,49 +51,6 @@ if is_apple:
     # sysconfig.get_config_var("SHLIB_SUFFIX") can be ".so" in macOS.
     # Let's not use the value from sysconfig.
     SHLIB_SUFFIX = ".dylib"
-
-
-def linked_libpython():
-    """
-    Find the linked libpython using dladdr (in *nix).
-
-    Calling this in Windows always return `None` at the moment.
-
-    Returns
-    -------
-    path : str or None
-        A path to linked libpython.  Return `None` if statically linked.
-    """
-    if is_windows:
-        return None
-    return _linked_libpython_unix()
-
-
-class Dl_info(ctypes.Structure):
-    _fields_ = [
-        ("dli_fname", ctypes.c_char_p),
-        ("dli_fbase", ctypes.c_void_p),
-        ("dli_sname", ctypes.c_char_p),
-        ("dli_saddr", ctypes.c_void_p),
-    ]
-
-
-def _linked_libpython_unix():
-    libdl = ctypes.CDLL(ctypes.util.find_library("dl"))
-    libdl.dladdr.argtypes = [ctypes.c_void_p, ctypes.POINTER(Dl_info)]
-    libdl.dladdr.restype = ctypes.c_int
-
-    dlinfo = Dl_info()
-    retcode = libdl.dladdr(
-        ctypes.cast(ctypes.pythonapi.Py_GetVersion, ctypes.c_void_p),
-        ctypes.pointer(dlinfo),
-    )
-    if retcode == 0:  # means error
-        return None
-    path = os.path.realpath(dlinfo.dli_fname.decode())
-    if path == os.path.realpath(sys.executable):
-        return None
-    return path
 
 
 def library_name(name, suffix=SHLIB_SUFFIX, is_windows=is_windows):
@@ -152,14 +113,24 @@ def candidate_names(suffix=SHLIB_SUFFIX):
         Candidate name libpython.
     """
     LDLIBRARY = sysconfig.get_config_var("LDLIBRARY")
-    if LDLIBRARY:
+    if LDLIBRARY and os.path.splitext(LDLIBRARY)[1] == suffix:
         yield LDLIBRARY
 
     LIBRARY = sysconfig.get_config_var("LIBRARY")
-    if LIBRARY:
-        yield os.path.splitext(LIBRARY)[0] + suffix
+    if LIBRARY and os.path.splitext(LIBRARY)[1] == suffix:
+        yield LIBRARY
 
-    dlprefix = "" if is_windows else "lib"
+    DLLLIBRARY = sysconfig.get_config_var("DLLLIBRARY")
+    if DLLLIBRARY:
+        yield DLLLIBRARY
+
+    if is_mingw:
+        dlprefix = "lib"
+    elif is_windows or is_msys:
+        dlprefix = ""
+    else:
+        dlprefix = "lib"
+
     sysdata = dict(
         v=sys.version_info,
         # VERSION is X.Y in Linux/macOS and XY in Windows:
@@ -195,8 +166,6 @@ def candidate_paths(suffix=SHLIB_SUFFIX):
         and may not exist.
     """
 
-    yield linked_libpython()
-
     # List candidates for directories in which libpython may exist
     lib_dirs = []
     append_truthy(lib_dirs, sysconfig.get_config_var("LIBPL"))
@@ -209,7 +178,7 @@ def candidate_paths(suffix=SHLIB_SUFFIX):
     #
     # But we try other places just in case.
 
-    if is_windows:
+    if is_windows or is_msys or is_mingw:
         lib_dirs.append(os.path.join(os.path.dirname(sys.executable)))
     else:
         lib_dirs.append(
@@ -297,6 +266,8 @@ def finding_libpython():
     """
     logger.debug("is_windows = %s", is_windows)
     logger.debug("is_apple = %s", is_apple)
+    logger.debug("is_mingw = %s", is_mingw)
+    logger.debug("is_msys = %s", is_msys)
     for path in candidate_paths():
         logger.debug("Candidate: %s", path)
         normalized = normalize_path(path)
@@ -354,6 +325,10 @@ def main(args=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Print debugging information."
+    )
+
+    parser.add_argument(
+        "--version", action="version", version="find_libpython {}".format(__version__)
     )
 
     group = parser.add_mutually_exclusive_group()
