@@ -290,6 +290,9 @@ jobs:
         tox
 
     # codecov
+    - name: Install codecov dependencies
+      # codecov-action apparently doesn't try to install any of its dependencies
+      run: pip install coverage
     - name: Upload to codecov
       # Notes:
       # - The "--relative/-r" argument is not available on macOS gcov, skip
