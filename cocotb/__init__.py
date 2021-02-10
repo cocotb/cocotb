@@ -154,7 +154,7 @@ def mem_debug(port):
     cocotb.memdebug.start(port)
 
 
-def _initialise_testbench(argv_):
+def _initialise_testbench(argv_):  # pragma: no cover
     """Initialize testbench.
 
     This function is called after the simulator has elaborated all
@@ -166,17 +166,25 @@ def _initialise_testbench(argv_):
     The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
     comma-separated list of modules to be executed before the first test.
     """
-    _rlock.acquire()
+    with _rlock:
 
-    if "COCOTB_LIBRARY_COVERAGE" in os.environ:
-        import coverage
+        if "COCOTB_LIBRARY_COVERAGE" in os.environ:
+            import coverage
 
-        global _library_coverage
-        _library_coverage = coverage.coverage(
-            data_file=".coverage.cocotb",
-            branch=True,
-            include=["{}/*".format(os.path.dirname(__file__))])
-        _library_coverage.start()
+            global _library_coverage
+            _library_coverage = coverage.coverage(
+                data_file=".coverage.cocotb",
+                branch=True,
+                include=["{}/*".format(os.path.dirname(__file__))])
+            _library_coverage.start()
+
+        return _initialise_testbench_(argv_)
+
+
+def _initialise_testbench_(argv_):
+    # The body of this function is split in two because no coverage is collected on
+    # the function that starts the coverage. By splitting it in two we get coverage
+    # on most of the function.
 
     global argc, argv
     argv = argv_
@@ -274,7 +282,6 @@ def _initialise_testbench(argv_):
     regression_manager = RegressionManager.from_discovery(top)
     regression_manager.execute()
 
-    _rlock.release()
     return True
 
 
