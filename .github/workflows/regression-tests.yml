@@ -302,7 +302,9 @@ jobs:
          || steps.unixtesting.outcome == 'success')
         && !startsWith(matrix.os, 'macos')
         && matrix.cxx != 'clang++'
-
-      run: |
-        pip install codecov
-        codecov --gcov-args='-rl'
+      uses: codecov/codecov-action@v1
+      with:
+        # There seems to be no way (as of Feb 2021) to get the job name in a
+        # variable; we hence have to re-assemble it here.
+        name: "${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}}"
+        gcov_args: "-rl"
