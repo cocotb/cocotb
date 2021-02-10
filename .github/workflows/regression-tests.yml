@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.5, 3.9]
+        python-version: [3.9]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{matrix.python-version}}
@@ -102,13 +102,6 @@ jobs:
             os: ubuntu-20.04
 
             # Test GHDL on Ubuntu
-
-          - sim: ghdl
-            sim-version: apt
-            lang: vhdl
-            python-version: 3.8
-            os: ubuntu-20.04
-            may_fail: true
 
           - sim: ghdl
             sim-version: nightly
