@@ -12,11 +12,8 @@ Make sure you have the :ref:`prerequisites<install-prerequisites>`
 (Python with development packages, a C++11 compiler with development packages, GNU Make,
 a :ref:`supported simulator<simulator-support>`) and cocotb itself (``pip install cocotb``) available.
 
-Download and extract the cocotb source files according to the *release version* you are using from
+Download and extract the cocotb source files *according to the release version* you are using from
 https://github.com/cocotb/cocotb/releases - you can check your cocotb version with ``cocotb-config --version``.
-
-The sources for cocotb's *development version* are available from https://github.com/cocotb/cocotb.
-See `Installing the Development Version <https://docs.cocotb.org/en/latest/install_devel.html>`_ for more details.
 
 The following lines are all you need to run a first simulation with cocotb:
 
@@ -57,8 +54,7 @@ without any wrapper code.
 Cocotb drives stimulus onto the inputs to the :term:`DUT` and monitors the outputs
 directly from Python.
 
-In the following sections we are showing you the code of a
-small but complete cocotb testbench environment.
+In the following sections we review an example of a small but complete cocotb testbench.
 
 
 .. _quickstart_creating_a_makefile:
@@ -66,12 +62,20 @@ small but complete cocotb testbench environment.
 Creating a Makefile
 -------------------
 
-To run a cocotb test we typically create a Makefile.
-Cocotb provides ``make`` rules to handle the simulator setup.
-We only need to inform cocotb of the source files we need compiling,
-the toplevel entity to instantiate and the Python test script to load.
+Cocotb provides makefiles to automate building a project's design sources
+and running a simulation with the cocotb environment.
+In the Makefile we specify the default simulator to use (:make:var:`SIM`),
+the language of the toplevel module or entity (:make:var:`TOPLEVEL_LANG`),
+the design source files (:make:var:`VERILOG_SOURCES`, :make:var:`VHDL_SOURCES`),
+the toplevel module or entity to instantiate (:envvar:`TOPLEVEL`),
+and a Python module that contains our cocotb tests (:envvar:`MODULE`).
 
 .. code-block:: makefile
+
+    # This is file Makefile
+
+    SIM ?= icarus
+    TOPLEVEL_LANG = verilog
 
     VERILOG_SOURCES += $(PWD)/submodule.sv
     VERILOG_SOURCES += $(PWD)/my_design.sv
@@ -104,6 +108,8 @@ Assuming we have a toplevel port called ``clk`` we could create a test file
 containing the following:
 
 .. code-block:: python3
+
+    # This is file test_my_design.py
 
     import cocotb
     from cocotb.triggers import Timer
@@ -146,6 +152,8 @@ In cocotb, you might move the clock generation part of the example above into it
 from the test:
 
 .. code-block:: python3
+
+    # This is file test_my_design.py
 
     import cocotb
     from cocotb.triggers import Timer
