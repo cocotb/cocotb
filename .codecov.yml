@@ -1,0 +1,20 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Codecov configuration
+codecov:
+    notify:
+        # Codecov claims [1] to wait until all CI runs have completed, but that
+        # doesn't work for our CI setup, causing early reports to come in which
+        # indicate a drop in coverage. These reports are later updated as more
+        # reports come in. But by that time the first issue comment has already
+        # been made and an email has been sent. Prevent that by explicitly
+        # specifying the number of builds that need to be uploaded to codecov
+        # [2].
+        #
+        # Keep this number in sync with the CI configuration!
+        #
+        # [1] https://docs.codecov.io/docs/merging-reports#how-does-codecov-know-when-to-send-notifications
+        # [2] https://docs.codecov.io/docs/notifications#preventing-notifications-until-after-n-builds
+        after_n_builds: 10
