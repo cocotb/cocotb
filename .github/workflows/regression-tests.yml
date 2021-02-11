@@ -304,6 +304,8 @@ jobs:
       # - Clang builds must use llvm-cov instead of gcov, which isn't picked
       #   currently by the codecov uploader. Hence we do not upload coverage
       #   from clang builds currently, which don't add much anyways.
+      # - When changing how many builds are uploaded to codecov also update
+      #   `codecov.notify.after_n_builds` in `.codecov.yml`.
       if: >
         (steps.windowstesting.outcome == 'success'
          || steps.unixtesting.outcome == 'success')
