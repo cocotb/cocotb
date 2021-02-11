@@ -162,10 +162,10 @@ class Timer(GPITrigger):
         """
         Args:
            time (numbers.Real or decimal.Decimal): The time value.
-               Note that despite the name this is not actually in picoseconds
-               but depends on the *units* argument.
+
                .. versionchanged:: 1.5.0
                   Previously this argument was misleadingly called `time_ps`.
+
            units (str, optional): One of
                ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
                When *units* is ``'step'``,
