@@ -335,7 +335,7 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 
 .. warning::
 
-    ghdl support is currently experimental. Some features of cocotb may not work correctly or at all.
+    GHDL support is currently experimental. Some features of cocotb may not work correctly or at all.
 
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
 
