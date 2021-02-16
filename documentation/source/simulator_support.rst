@@ -89,6 +89,10 @@ To run cocotb with Verilator, you need ``verilator`` in your PATH.
 
     cocotb requires Verilator 4.106 or later.
 
+.. warning::
+
+    Verilator support is currently experimental. Some features of cocotb may not work correctly or at all.
+
 .. versionadded:: 1.3
 
 .. versionchanged:: 1.5 Improved cocotb support and greatly improved performance when using a higher time precision. Verilator 4.106 or later is required.
@@ -102,7 +106,7 @@ To enable :term:`HDL` code coverage, add Verilator's coverage option(s) to the :
 
     EXTRA_ARGS += --coverage
 
-This will result in coverage data being written to ``coverage.dat``.
+This will result in coverage data being written to :file:`coverage.dat`.
 
 .. _sim-verilator-waveforms:
 
@@ -122,14 +126,13 @@ A VCD file named ``dump.vcd`` will be generated in the current directory.
 Verilator can produce waveform traces in the FST format, the native format of GTKWave.
 FST traces are much smaller and more efficient to write, but require the use of GTKWave.
 
-To enable FST tracing, add `--trace-fst -CFLAGS -DVM_TRACE_FST=1` to `EXTRA_ARGS` as shown below.
-For Verilator 4.102 and above, the `-CFLAGS -DVM_TRACE_FST=1` argument is no longer necessary.
+To enable FST tracing, add ``--trace-fst`` to :make:var:`EXTRA_ARGS` as shown below.
 
   .. code-block:: make
 
-    EXTRA_ARGS += --trace-fst --trace-structs -CFLAGS -DVM_TRACE_FST=1
+    EXTRA_ARGS += --trace-fst --trace-structs
 
-The resulting file will be ``dump.fst`` and can be opened by ``gtkwave dump.fst``.
+The resulting file will be :file:`dump.fst` and can be opened by ``gtkwave dump.fst``.
 
 .. _sim-verilator-issues:
 
@@ -330,7 +333,10 @@ In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 
     make SIM=ghdl
 
-Support is preliminary.
+.. warning::
+
+    GHDL support is currently experimental. Some features of cocotb may not work correctly or at all.
+
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
 
 .. _sim-ghdl-issues:
