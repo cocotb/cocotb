@@ -10,6 +10,14 @@ Reference Card
    The "| " syntax is a "Line Block", see
       https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#line-blocks
 
+.. spelling::
+   coro
+   coros
+   func
+   metavalue
+   TestFactory
+
+
 *coro*: a coroutine; *task*: a running coroutine
 
 +------------------------+-----------------------------------------------------------------+

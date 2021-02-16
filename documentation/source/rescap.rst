@@ -72,8 +72,8 @@ Here is the capture code for ``voltage`` with the "user-interface" highlighted:
 The cocotb part of the Testbench
 ================================
 
-test_rescap_minimalist
-----------------------
+``test_rescap_minimalist``
+--------------------------
 
 This is a very minimalist testcase.
 To run it, call:
@@ -102,8 +102,8 @@ There is no current flowing out of the ``vout`` terminal,
 so the current measurement always yields zero
 (within the accuracy of the analog solver).
 
-test_rescap
------------
+``test_rescap``
+---------------
 
 This is a more advanced testcase.
 

@@ -16,10 +16,10 @@ Make Targets
 Makefiles defines the targets ``regression`` and ``sim``, the default target is ``sim``.
 
 Both rules create a results file with the name taken from :envvar:`COCOTB_RESULTS_FILE`, defaulting to ``results.xml``.
-This file is a JUnit-compatible output file suitable for use with e.g. `Jenkins <https://jenkins.io/>`_.
+This file is a xUnit-compatible output file suitable for use with e.g. `Jenkins <https://jenkins.io/>`_.
 The ``sim`` targets unconditionally re-runs the simulator whereas the ``regression`` target only re-builds if any dependencies have changed.
 
-In addition, the target ``clean`` can be used to remove build and simulation artefacts.
+In addition, the target ``clean`` can be used to remove build and simulation artifacts.
 The target ``help`` lists these available targets and the variables described below.
 
 Make Phases

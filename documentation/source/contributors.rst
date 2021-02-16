@@ -5,6 +5,8 @@ Contributors
 .. spelling::
    McGregor
    Grimwood
+   FOSSi
+   Solarflare
 
 cocotb is developed and maintained by an active community.
 Our GitHub repository contains a list of all `contributors <https://github.com/cocotb/cocotb/graphs/contributors>`_.

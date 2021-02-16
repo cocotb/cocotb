@@ -288,7 +288,7 @@ class ReadOnly(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 
 
 class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
-    """Fires when the read-write portion of the sim cycles is reached."""
+    """Fires when the read-write portion of the simulation cycles is reached."""
     __slots__ = ()
 
     @classmethod

@@ -2,6 +2,9 @@
 Release Notes
 *************
 
+.. spelling::
+   dev
+
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
 .. include:: master-notes.rst
@@ -15,9 +18,9 @@ Features
 --------
 
 - :class:`~cocotb.triggers.Lock` can now be used in :keyword:`async with` statements. (:pr:`1031`)
-- Add support for distinguishing between NET (vpiNet) and REG (vpiReg) type when using vpi interface. (:pr:`1107`)
+- Add support for distinguishing between ``net`` (``vpiNet``) and ``reg`` (``vpiReg``) type when using the VPI interface. (:pr:`1107`)
 - Support for dropping into :mod:`pdb` upon failure, via the new :envvar:`COCOTB_PDB_ON_EXCEPTION` environment variable (:pr:`1180`)
-- Simulators run through a TCL script (Aldec Riviera Pro and Mentor simulators) now support a new :make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
+- Simulators run through a Tcl script (Aldec Riviera Pro and Mentor simulators) now support a new :make:var:`RUN_ARGS` Makefile variable, which is passed to the first invocation of the tool during runtime. (:pr:`1244`)
 - Cocotb now supports the following example of forking a *non-decorated* :ref:`async coroutine <async_functions>`.
 
   .. code-block:: python3
@@ -205,7 +208,7 @@ New features
 - New ``timeout_time`` and ``timeout_unit`` arguments to :func:`cocotb.test`, for adding test timeouts. (:pr:`1119`)
 - :func:`cocotb.triggers.with_timeout`, for a shorthand for waiting for a trigger with a timeout. (:pr:`1119`)
 - The ``expect_error`` argument to :func:`cocotb.test` now accepts a specific exception type. (:pr:`1116`)
-- New environment variable :envvar:`COCOTB_RESULTS_FILE`, to allow configuration of the xunit XML output filename.  (:pr:`1053`)
+- New environment variable :envvar:`COCOTB_RESULTS_FILE`, to allow configuration of the xUnit XML output filename.  (:pr:`1053`)
 - A new ``bus_separator`` argument to :class:`cocotb.drivers.BusDriver`. (:pr:`1160`)
 - A new ``start_high`` argument to :meth:`cocotb.clock.Clock.start`. (:pr:`1036`)
 - A new :data:`cocotb.__version__` constant, which contains the version number of the running cocotb. (:pr:`1196`)

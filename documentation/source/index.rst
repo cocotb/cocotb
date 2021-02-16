@@ -154,7 +154,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    - Move section "How does cocotb work?" from Introduction to here
    - Add some info from :doc:`coroutines`
    - Add GPI section
-   - Explain ReadOnly/ReadWrite/... phases
+   - Explain ``ReadOnly``, ``ReadWrite``, ... phases
    - Add pitfall from https://github.com/cocotb/cocotb/issues/526#issuecomment-300371629 to troubleshooting
 
 

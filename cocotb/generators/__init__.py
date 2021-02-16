@@ -77,7 +77,7 @@ def combine(generators):
 @public
 def gaussian(mean, sigma):
     """
-    Generate a guasian distribution indefinitely
+    Generate a Gaussian distribution indefinitely
 
     Args:
         mean (int/float): mean value

@@ -257,7 +257,7 @@ def hexdump(x: bytes) -> str:
     .. deprecated:: 1.4
         Passing a :class:`str` to this function is deprecated, as it
         is not an appropriate type for binary data. Doing so anyway
-        will encode the string to latin1.
+        will encode the string to ``latin1``.
 
     Example:
         >>> print(hexdump(b'this somewhat long string'))
@@ -300,7 +300,7 @@ def hexdiffs(x: bytes, y: bytes) -> str:
     .. deprecated:: 1.4
         Passing :class:`str`\ s to this function is deprecated, as it
         is not an appropriate type for binary data. Doing so anyway
-        will encode the string to latin1.
+        will encode the string to ``latin1``.
 
     Example:
         >>> print(hexdiffs(b'a', b'b'))

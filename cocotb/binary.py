@@ -176,7 +176,7 @@ class BinaryValue:
         .. versionchanged:: 1.4
 
             This no longer falls back to setting :attr:`buff` if a :class:`str`
-            containining any characters that aren't ``0``, ``1``, ``X`` or ``Z``
+            containing any characters that aren't ``0``, ``1``, ``X`` or ``Z``
             is used, since :attr:`buff` now accepts only :class:`bytes`. Instead,
             an error is raised.
         """

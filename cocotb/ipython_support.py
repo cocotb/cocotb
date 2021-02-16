@@ -31,7 +31,7 @@ def _runner(shell, x):
 
 async def embed(user_ns: dict = {}):
     """
-    Start an ipython shell in the current coroutine.
+    Start an IPython shell in the current coroutine.
 
     Unlike using :func:`IPython.embed` directly, the :keyword:`await` keyword
     can be used directly from the shell to wait for triggers.

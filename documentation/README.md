@@ -8,5 +8,9 @@ The documentation for the `master` branch can be found [here](https://docs.cocot
 `tox -e docs` can be used to create an appropriate virtual environment and
 invoke `sphinx-build` to generate the HTML docs.
 
-In addition to the python dependencies managed by `tox`, `doxygen` must be
+In addition to the Python dependencies managed by `tox`, `doxygen` must be
 installed.
+
+Other tox environments (run with `tox -e <env>`):
+* `docs-linkcheck` - run the Sphinx `linkcheck` builder
+* `docs-spelling` - run a spellchecker on the documentation

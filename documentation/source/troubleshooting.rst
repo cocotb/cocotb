@@ -48,7 +48,7 @@ When executing the Makefile to run a cocotb test, a Python shell interpreter is 
 :term:`VPI`/:term:`VHPI`/:term:`FLI` library.
 Hence it is not possible to directly attach a Python debugger to the Python process being part of the simulator that uses the aforementioned library.
 Using ``import pdb; pdb.set_trace()`` directly is also frequently not possible,
-due to the way that simulators interfere with stdin.
+due to the way that simulators interfere with ``stdin``.
 
 To successfully debug your Python code use the `remote_pdb`_ Python package to create a :command:`pdb` instance
 accessible via a TCP socket:
@@ -99,10 +99,10 @@ Setting make variables on the command line
 
 When trying to set one of the make variables listed in :ref:`building` from the command line,
 it is strongly recommended to use an environment variable, i.e.
-``EXTRA_ARGS="..." make`` (for the fish and csh shells: ``env EXTRA_ARGS="..." make``)
+``EXTRA_ARGS="..." make`` (for the ``fish`` and ``csh`` shells: ``env EXTRA_ARGS="..." make``)
 and *not* ``make EXTRA_ARGS=...``.
 
-This is because in the case of the disrecommended ``make EXTRA_ARGS=...``,
+This is because in the case of the discouraged ``make EXTRA_ARGS=...``,
 if one of the involved Makefiles contains lines to assign (``=``) or append (``+=``) to :make:var:`EXTRA_ARGS` internally,
 such lines will be ignored.
 These lines are needed for the operation of cocotb however,
@@ -116,14 +116,14 @@ use the syntax ``make EXTRA_ARGS=``.
 ============================
 
 This error can occur on Linux, and will raise ``ImportError: /some/libstdc++.so.6: version `GLIBCXX_3.4.XX' not found``.
-This occurs because an older non-C++11 version of libstdc++ is being loaded by the simulator or cocotb.
+This occurs because an older non-C++11 version of ``libstdc++`` is being loaded by the simulator or cocotb.
 It is usually an issue with your environment, but sometimes can occur when using a very old version of certain simulators.
 
 Check your environment
 ----------------------
 
 To see if your environment is the issue, look at the value of the :envvar:`LD_LIBRARY_PATH` environment variable.
-Ensure the first path in the colon-deliminated list is the path to the libstdc++ that shipped with the compiler you used to build cocotb.
+Ensure the first path in the colon-delimited list is the path to the ``libstdc++`` that shipped with the compiler you used to build cocotb.
 
 .. code:: shell
 
@@ -140,7 +140,7 @@ Check your simulator
 --------------------
 
 Sometimes, simulators modify the :envvar:`LD_LIBRARY_PATH` so they point to the libraries that are shipped with instead of the system libraries.
-If you are running an old simulator, the packaged libraries may include a pre-C++11 libstdc++.
+If you are running an old simulator, the packaged libraries may include a pre-C++11 ``libstdc++``.
 To see if your simulator is modifying the :envvar:`LD_LIBRARY_PATH`, open the simulator up to an internal console and obtain the environment variable.
 
 For example, with Mentor Questa and Cadence Xcelium, one could open a Tcl console and run the :command:`env` command to list the current environment.
@@ -152,14 +152,15 @@ For example, Questa ships with GCC.
 Sometimes that version of GCC is old enough to not support C++11 (<4.8).
 When you install cocotb, :command:`pip` uses the system (or some other) compiler that supports C++11.
 But when you try to run cocotb with the older Questa, it prepends the older libraries Questa ships with to :envvar:`LD_LIBRARY_PATH`.
-This causes the older libstdc++ Questa ships with to be loaded, resuling in the error message.
-For Questa, you can use the :option:`-noautoldlibpath` option to turn off the :envvar:`LD_LIBRARY_PATH` prepend to resolve this issue.
+This causes the older ``libstdc++`` Questa ships with to be loaded, resulting in the error message.
+For Questa, you can use the ``-noautoldlibpath`` option to turn off the :envvar:`LD_LIBRARY_PATH` prepend to resolve this issue.
 
 
 Using cocotb with more than one Python installation
 ===================================================
 
-Users of cocotb with more than one installation of a single Python version (including conda env users) must take care not to re-use cached versions of the installed cocotb package.
+Users of cocotb with more than one installation of a single Python version (including ``conda env`` users)
+must take care not to re-use cached versions of the installed cocotb package.
 If this isn't done, running simulations fails with errors like ``libpython3.7m.so.1.0: cannot open shared object file: No such file or directory``.
 
 Cocotb builds binary libraries during its installation process.
