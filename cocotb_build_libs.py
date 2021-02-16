@@ -625,6 +625,14 @@ def get_ext():
     )
     ext.append(modelsim_vpi_ext)
 
+    modelsim_vhpi_ext = _get_vhpi_lib_ext(
+        include_dir=include_dir,
+        share_lib_dir=share_lib_dir,
+        sim_define="MODELSIM",
+        extra_lib=modelsim_extra_lib,
+    )
+    ext.append(modelsim_vhpi_ext)
+
     vsim_path = find_executable("vdbg")
     if vsim_path is None:
         logger.warning(

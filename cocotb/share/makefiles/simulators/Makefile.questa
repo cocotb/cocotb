@@ -76,18 +76,31 @@ $(FLI_LIB):
 	If you installed an FLI-capable simulator after cocotb, you will need to reinstall cocotb.\n\
 	Please check the cocotb documentation on ModelSim support." >&2 && exit 1
 
-GPI_EXTRA:=
+VHPI_LIB := $(shell cocotb-config --lib-name-path vhpi questa)
+
+GPI_EXTRA :=
+
+VHDL_GPI_INTERFACE ?= fli
+
+ifeq ($(filter vhpi fli,$(VHDL_GPI_INTERFACE)),)
+    $(error "A valid value (fli or vhpi) was not provided for VHDL_GPI_INTERFACE=$(VHDL_GPI_INTERFACE)")
+endif
+
 ifeq ($(TOPLEVEL_LANG),vhdl)
     CUSTOM_COMPILE_DEPS += $(FLI_LIB)
+ifeq ($(VHDL_GPI_INTERFACE),fli)
     VSIM_ARGS += -foreign \"cocotb_init $(FLI_LIB)\"
+else
+    VSIM_ARGS += -voptargs="-access=rw+/." -foreign \"vhpi_startup_routines_bootstrap $(call to_tcl_path,$(VHPI_LIB))\"
+endif
 ifneq ($(VERILOG_SOURCES),)
-    GPI_EXTRA =  $(shell cocotb-config --lib-name-path vpi questa):cocotbvpi_entry_point
+    GPI_EXTRA :=  $(shell cocotb-config --lib-name-path vpi questa):cocotbvpi_entry_point
 endif
 
 else ifeq ($(TOPLEVEL_LANG),verilog)
     VSIM_ARGS += -pli $(shell cocotb-config --lib-name-path vpi questa)
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA = $(shell cocotb-config --lib-name-path fli questa):cocotbfli_entry_point
+    GPI_EXTRA := $(shell cocotb-config --lib-name-path $(VHDL_GPI_INTERFACE) questa):cocotbfli_entry_point
 endif
 
 else

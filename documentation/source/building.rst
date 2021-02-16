@@ -247,6 +247,12 @@ The following variables are makefile variables, not environment variables.
 
     The variable is also made available to cocotb tests conveniently as :data:`cocotb.LANGUAGE`.
 
+.. make:var:: VHDL_GPI_INTERFACE
+
+    Selects a simulator interface to use when :make:var:`TOPLEVEL_LANG` is ``vhdl`` sources are tested.
+    This includes the initial GPI interface loaded, and :make:var:`GPI_EXTRA` library loaded in mixed language simulations.
+    Valid values are ``vpi``, ``vhpi``, or ``fli``; however not all values are supported by all simulators.
+
 .. make:var:: VERILOG_SOURCES
 
       A list of the Verilog source files to include.
