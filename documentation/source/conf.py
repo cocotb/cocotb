@@ -325,11 +325,13 @@ spelling_lang = 'en_US'
 tokenizer_lang = spelling_lang
 
 # Location of word list.
-spelling_word_list_filename = ["spelling_wordlist.txt", "c_symbols.txt"]
+spelling_word_list_filename = ["spelling_wordlist.txt"]
+spelling_exclude_patterns = ["generated/**", "master-notes.rst"]
 
 spelling_ignore_pypi_package_names = False
 spelling_ignore_wiki_words = False
 spelling_show_suggestions = True
+spelling_ignore_acronyms=True
 
 # -- Extra setup for inheritance_diagram directive which uses graphviz ---------
 

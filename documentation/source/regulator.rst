@@ -31,7 +31,7 @@ The design ``i_regulator`` consists of a trimmable regulator model written in Ve
    :language: systemverilog
    :start-at: module regulator
 
-The regulator block itself is modelled as shown below:
+The regulator block itself is modeled as shown below:
 
 .. literalinclude:: ../../examples/mixed_signal/hdl/regulator_block.vams
    :caption: regulator_block.vams

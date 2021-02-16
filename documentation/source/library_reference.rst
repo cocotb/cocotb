@@ -2,6 +2,20 @@
 Library Reference
 *****************
 
+.. spelling::
+   AXIProtocolError
+   BusDriver
+   De
+   Re
+   ReadOnly
+   args
+   cbNextSimTime
+   ing
+   sim
+   stdout
+   un
+
+
 Test Results
 ============
 

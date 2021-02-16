@@ -877,7 +877,7 @@ class EnumObject(ModifiableObject):
 
 
 class IntegerObject(ModifiableObject):
-    """Specific object handle for Integer and Enum signals and variables."""
+    """Specific object handle for integer and enumeration signals and variables."""
 
     def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.

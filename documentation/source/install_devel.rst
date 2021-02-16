@@ -23,7 +23,7 @@ than the stable version:
    * pytest
 
 * Python 3.5+
-* Python-dev packages
+* Python development packages
 * GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
 * GNU Make
 * A Verilog or VHDL simulator, depending on your :term:`RTL` source code

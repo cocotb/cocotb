@@ -1,1 +1,1 @@
-Assigning Python ints to signals greater than 32 bits wide will now work correctly for negative values.
+Assigning Python integers to signals greater than 32 bits wide will now work correctly for negative values.

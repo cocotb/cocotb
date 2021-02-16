@@ -1015,7 +1015,7 @@ static PyMethodDef SimulatorMethods[] = {
         "register_nextstep_callback(func, /, *args)\n"
         "--\n\n"
         "register_nextstep_callback(func: Callable[..., None], *args: Any) -> cocotb.simulator.gpi_cb_hdl\n"
-        "Register a callback for the NextSimTime callback."
+        "Register a callback for the cbNextSimTime callback."
     )},
     {"register_rwsynch_callback", register_rwsynch_callback, METH_VARARGS, PyDoc_STR(
         "register_rwsynch_callback(func, /, *args)\n"

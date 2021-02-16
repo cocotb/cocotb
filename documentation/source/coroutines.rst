@@ -1,6 +1,10 @@
 .. _coroutines:
 .. _async_functions:
 
+.. spelling::
+   Async
+
+
 **********
 Coroutines
 **********
@@ -154,7 +158,7 @@ Generator-based coroutines
 
 Prior to Python 3.5, and the introduction of :keyword:`async` and :keyword:`await`, coroutines were implemented as wrappers around generators.
 Coroutine functions would be decorated with :class:`~cocotb.decorators.coroutine` and would use :keyword:`yield` to block on other coroutines or triggers.
-You may see existing code that uses this syntax for coroutines, but do not worry, it is compatible with async coroutines.
+You may see existing code that uses this syntax for coroutines, but do not worry, it is compatible with :keyword:`async` coroutines.
 
 Any object that can be used in an :keyword:`await` statement can also be used in a :keyword:`yield` statement while in a generator-based coroutine;
 including triggers like :class:`~cocotb.triggers.Timer`.
@@ -170,7 +174,7 @@ including triggers like :class:`~cocotb.triggers.Timer`.
             yield timer
             signal <= ~signal
 
-Likewise, any place that will accept async coroutines will also accept generator-based coroutines;
+Likewise, any place that will accept :keyword:`async` coroutines will also accept generator-based coroutines;
 including :func:`~cocotb.fork`.
 
 .. code-block:: python3
@@ -181,7 +185,7 @@ including :func:`~cocotb.fork`.
         cocotb.fork(simple_clock(clk, 5, units='ns'))
         yield RisingEdge(clk)
 
-Async coroutines can be yielded in generator-based coroutines.
+:keyword:`async` coroutines can be yielded in generator-based coroutines.
 
 .. code-block:: python3
 
@@ -196,7 +200,7 @@ Async coroutines can be yielded in generator-based coroutines.
         yield detect_transaction(clk, valid)
         return data.value
 
-Generator-based coroutines can also be awaited in async coroutines.
+Generator-based coroutines can also be awaited in :keyword:`async` coroutines.
 
 .. code-block:: python3
 

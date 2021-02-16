@@ -42,7 +42,7 @@ from typing import Iterator
 @public
 def get_bytes(nbytes: int, generator: Iterator[int]) -> bytes:
     """
-    Get nbytes from generator
+    Get *nbytes* bytes from *generator*
 
     .. versionchanged:: 1.4.0
         This now returns :class:`bytes`, not :class:`str`.
