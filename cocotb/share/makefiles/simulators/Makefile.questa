@@ -100,7 +100,7 @@ endif
 else ifeq ($(TOPLEVEL_LANG),verilog)
     VSIM_ARGS += -pli $(shell cocotb-config --lib-name-path vpi questa)
 ifneq ($(VHDL_SOURCES),)
-    GPI_EXTRA := $(shell cocotb-config --lib-name-path $(VHDL_GPI_INTERFACE) questa):cocotbfli_entry_point
+    GPI_EXTRA := $(shell cocotb-config --lib-name-path $(VHDL_GPI_INTERFACE) questa):cocotb$(VHDL_GPI_INTERFACE)_entry_point
 endif
 
 else
