@@ -92,9 +92,7 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
     make SIM=verilator
 
-Verilator converts Verilog code to C++ code that is compiled.
-It does not support VHDL.
-One major limitation compared to standard Verilog simulators is that it does not support delayed assignments.
+One major limitation compared to standard Verilog simulators is that it does not support delayed assignments when accessed from cocotb.
 
 To run cocotb with Verilator, you need ``verilator`` in your PATH.
 
