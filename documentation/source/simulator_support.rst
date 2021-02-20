@@ -7,6 +7,12 @@ Simulator Support
 This page lists the simulators that cocotb can be used with
 and documents specifics, limitations, workarounds etc.
 
+In general, cocotb can be used with any simulator supporting the industry-standard VPI, VHPI or FLI interfaces.
+However, in practice simulators exhibit small differences in behavior that cocotb mostly takes care of.
+
+If a simulator you would like to use with cocotb is not listed on this page
+open an issue at the `cocotb GitHub issue tracker <https://github.com/cocotb/cocotb/issues>`_.
+
 
 .. _sim-icarus:
 
@@ -73,6 +79,13 @@ Issues for this simulator
 Verilator
 =========
 
+.. warning::
+
+    Verilator is in the process of adding more functionality to its VPI interface, which is used by cocotb to access the design.
+    Therefore, Verilator support in cocotb is currently experimental.
+    Some features of cocotb may not work correctly or at all.
+    It is highly recommended to use the latest version of Verilator.
+
 In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
 .. code-block:: bash
@@ -89,13 +102,9 @@ To run cocotb with Verilator, you need ``verilator`` in your PATH.
 
     cocotb requires Verilator 4.106 or later.
 
-.. warning::
-
-    Verilator support is currently experimental. Some features of cocotb may not work correctly or at all.
-
 .. versionadded:: 1.3
 
-.. versionchanged:: 1.5 Improved cocotb support and greatly improved performance when using a higher time precision. Verilator 4.106 or later is required.
+.. versionchanged:: 1.5 Improved cocotb support and greatly improved performance when using a higher time precision.
 
 Coverage
 --------
@@ -225,8 +234,8 @@ Issues for this simulator
 
 .. _sim-questa:
 
-Mentor Questa
-=============
+Mentor/Siemens EDA Questa
+=========================
 
 In order to use this simulator, set :make:var:`SIM` to ``questa``:
 
@@ -242,12 +251,13 @@ Issues for this simulator
 -------------------------
 
 * `All issues with label category:simulators:questa <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aquesta>`_
-
+* Questa 2021.1 and later added experimental support the VHPI interface in addition to the proprietary FLI interface.
+  However, this support is not complete yet and users of cocotb should continue to use FLI for the time being.
 
 .. _sim-modelsim:
 
-Mentor ModelSim
-===============
+Mentor/Siemens EDA ModelSim
+===========================
 
 In order to use this simulator, set :make:var:`SIM` to ``modelsim``:
 
@@ -327,15 +337,16 @@ Issues for this simulator
 GHDL
 ====
 
+.. warning::
+
+    GHDL support in cocotb is experimental.
+    Some features of cocotb may not work correctly or at all.
+
 In order to use this simulator, set :make:var:`SIM` to ``ghdl``:
 
 .. code-block:: bash
 
     make SIM=ghdl
-
-.. warning::
-
-    GHDL support is currently experimental. Some features of cocotb may not work correctly or at all.
 
 Noteworthy is that despite GHDL being a VHDL simulator, it implements the :term:`VPI` interface.
 
