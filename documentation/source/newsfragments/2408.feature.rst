@@ -1,0 +1,3 @@
+Support for using Questa's VHPI has been added.
+Use :make:var:`VHDL_GPI_INTERFACE` to select between using the FLI or VHPI when dealing with VHDL simulations.
+Note that VHPI support in Questa is still experimental at this time.
