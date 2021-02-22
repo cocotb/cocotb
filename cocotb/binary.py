@@ -193,6 +193,8 @@ class BinaryValue:
             )
 
     def _convert_to_unsigned(self, x):
+        if x == 0:
+            return self._adjust_unsigned("")
         x = bin(x)
         if x[0] == '-':
             raise ValueError('Attempt to assigned negative number to unsigned '
@@ -200,6 +202,8 @@ class BinaryValue:
         return self._adjust_unsigned(x[2:])
 
     def _convert_to_signed_mag(self, x):
+        if x == 0:
+            return self._adjust_unsigned("")
         x = bin(x)
         if x[0] == '-':
             binstr = self._adjust_signed_mag('1' + x[3:])
@@ -213,6 +217,8 @@ class BinaryValue:
         if x < 0:
             binstr = bin(2 ** (_clog2(abs(x)) + 1) + x)[2:]
             binstr = self._adjust_twos_comp(binstr)
+        elif x == 0:
+            binstr = self._adjust_twos_comp("")
         else:
             binstr = self._adjust_twos_comp('0' + bin(x)[2:])
         if self.big_endian:
@@ -220,15 +226,21 @@ class BinaryValue:
         return binstr
 
     def _convert_from_unsigned(self, x):
+        if not len(x):
+            return 0
         return int(x.translate(_resolve_table), 2)
 
     def _convert_from_signed_mag(self, x):
+        if not len(x):
+            return 0
         rv = int(self._str[1:].translate(_resolve_table), 2)
         if self._str[0] == '1':
             rv = rv * -1
         return rv
 
     def _convert_from_twos_comp(self, x):
+        if not len(x):
+            return 0
         if x[0] == '1':
             binstr = x[1:]
             binstr = self._invert(binstr)
@@ -278,7 +290,7 @@ class BinaryValue:
         if self._n_bits is None:
             return x
         l = len(x)
-        if l <= self._n_bits:
+        if l < self._n_bits:
             if self.big_endian:
                 rv = x[:-1] + '0' * (self._n_bits - 1 - l)
                 rv = rv + x[-1]
@@ -300,7 +312,9 @@ class BinaryValue:
         if self._n_bits is None:
             return x
         l = len(x)
-        if l <= self._n_bits:
+        if l == 0:
+            rv = x
+        elif l < self._n_bits:
             if self.big_endian:
                 rv = x + x[-1] * (self._n_bits - l)
             else:
