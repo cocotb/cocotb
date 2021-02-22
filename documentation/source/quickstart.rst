@@ -188,5 +188,5 @@ all you would need to change is the command line:
 
 
 This concludes our quick introduction to cocotb.
-You can now look through our :ref:`tutorials` or check out the
+You can now look through our Tutorials or check out the
 :ref:`writing_tbs` chapter for more details on the above.
