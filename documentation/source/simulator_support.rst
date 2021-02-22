@@ -194,6 +194,7 @@ In order to use this simulator, set :make:var:`SIM` to ``riviera``:
 The :envvar:`LICENSE_QUEUE` environment variable can be used for this simulator –
 this setting will be mirrored in the TCL ``license_queue`` variable to control runtime license checkouts.
 
+
 .. _sim-aldec-issues:
 
 Issues for this simulator
@@ -266,7 +267,7 @@ In order to use this simulator, set :make:var:`SIM` to ``modelsim``:
 .. note::
 
    In order to use :term:`FLI` (for VHDL), a ``vdbg`` executable from the simulator installation directory needs to be available on the ``PATH`` during cocotb installation.
-   This is needed to access the proprietary ``mti.h`` header file.
+   This is needed to access the proprietary :file:`mti.h` header file.
 
 Any ModelSim PE or ModelSim PE derivatives (like the ModelSim Microsemi, Intel, Lattice Editions) do not support the VHDL :term:`FLI` feature.
 If you try to use them with :term:`FLI`, you will see a ``vsim-FLI-3155`` error:
@@ -374,7 +375,7 @@ The option can be set on the command line, as shown in the following example.
 
     SIM_ARGS=--vcd=anyname.vhd make SIM=ghdl
 
-A VCD file named ``anyname.vcd`` will be generated in the current directory.
+A VCD file named :file:`anyname.vcd` will be generated in the current directory.
 
 :make:var:`SIM_ARGS` can also be used to pass command line arguments related to :ref:`other waveform formats supported by GHDL <ghdl:export_waves>`.
 
