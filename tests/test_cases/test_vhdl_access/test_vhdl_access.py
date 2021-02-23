@@ -51,10 +51,10 @@ async def check_objects(dut):
 
     def check_instance(obj, objtype):
         if not isinstance(obj, objtype):
-            tlog.error("Expected %s to be of type %s but got %s" % (
+            tlog.error("Expected {} to be of type {} but got {}".format(
                 obj._fullname, objtype.__name__, type(obj).__name__))
             return 1
-        tlog.info("%s is %s" % (obj._fullname, type(obj).__name__))
+        tlog.info("{} is {}".format(obj._fullname, type(obj).__name__))
         return 0
 
     # Hierarchy checks

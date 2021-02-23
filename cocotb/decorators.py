@@ -140,7 +140,7 @@ class RunningTask:
         return self
 
     def __str__(self):
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
     def _get_coro_stack(self):
         """Get the coroutine callstack of this Task."""
@@ -305,7 +305,7 @@ class RunningTest(RunningCoroutine):
         self.handler = RunningTest.ErrorLogHandler(self.error_messages.append)
 
     def __str__(self):
-        return "<{}>".format(self.__name__)
+        return f"<{self.__name__}>"
 
     def _advance(self, outcome):
         if not self.started:
@@ -314,7 +314,7 @@ class RunningTest(RunningCoroutine):
             self.start_time = time.time()
             self.start_sim_time = get_sim_time('ns')
             self.started = True
-        return super(RunningTest, self)._advance(outcome)
+        return super()._advance(outcome)
 
     # like RunningTask.kill(), but with a way to inject a failure
     def abort(self, exc):
@@ -333,13 +333,13 @@ class RunningTest(RunningCoroutine):
             raise InternalError("Outcome already has a value, but is being set again.")
         outcome = outcomes.Error(exc)
         if _debug:
-            self.log.debug("outcome forced to {}".format(outcome))
+            self.log.debug(f"outcome forced to {outcome}")
         self._outcome = outcome
         cocotb.scheduler._unschedule(self)
 
     def sort_name(self):
         if self.stage is None:
-            return "%s.%s" % (self.module, self.funcname)
+            return f"{self.module}.{self.funcname}"
         else:
             return "%s.%d.%s" % (self.module, self.stage, self.funcname)
 
@@ -468,7 +468,7 @@ class hook(coroutine, metaclass=_decorator_helper):
     """
 
     def __init__(self, f):
-        super(hook, self).__init__(f)
+        super().__init__(f)
         warnings.warn(
             "Hooks have been deprecated. See the documentation for suggestions on alternatives.",
             DeprecationWarning, stacklevel=2)
@@ -569,7 +569,7 @@ class test(coroutine, metaclass=_decorator_helper):
                 else:
                     return res
 
-        super(test, self).__init__(f)
+        super().__init__(f)
 
         self.timeout_time = timeout_time
         self.timeout_unit = timeout_unit

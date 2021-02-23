@@ -7,7 +7,7 @@ from cocotb.triggers import Timer
 import itertools
 
 
-class Regulator_TB(object):
+class Regulator_TB:
     """Class for collecting testbench objects.
 
     Args:

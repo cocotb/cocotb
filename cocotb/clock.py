@@ -43,7 +43,7 @@ class BaseClock:
 
     @lazy_property
     def log(self):
-        return SimLog("cocotb.%s.%s" % (
+        return SimLog("cocotb.{}.{}".format(
             type(self).__qualname__, self.signal._name
         ))
 

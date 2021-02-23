@@ -21,7 +21,7 @@ def assert_deprecated(warning_category=DeprecationWarning):
             yield warns  # note: not a cocotb yield, but a contextlib one!
     finally:
         assert len(warns) >= 1
-        msg = "Expected {}".format(warning_category.__qualname__)
+        msg = f"Expected {warning_category.__qualname__}"
         assert issubclass(warns[0].category, warning_category), msg
 
 

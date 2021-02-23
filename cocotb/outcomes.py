@@ -39,7 +39,7 @@ class Value(Outcome):
         return self.value
 
     def __repr__(self):
-        return "Value({!r})".format(self.value)
+        return f"Value({self.value!r})"
 
 
 class Error(Outcome):
@@ -53,4 +53,4 @@ class Error(Outcome):
         raise self.error
 
     def __repr__(self):
-        return "Error({!r})".format(self.error)
+        return f"Error({self.error!r})"

@@ -11,7 +11,7 @@ async def rescap_minimalist_test(tb_hdl):
 
     tb_hdl.vdd_val <= 7.7
     tb_hdl.vss_val <= 0.0
-    tb_hdl.i_analog_probe.node_to_probe <= "tb_rescap.i_rescap.vout".encode("ascii")
+    tb_hdl.i_analog_probe.node_to_probe <= b"tb_rescap.i_rescap.vout"
 
     for toggle in [1, 0, 1, 0, 1, 0]:
         await Timer(50, units="ns")

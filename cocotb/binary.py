@@ -440,7 +440,7 @@ class BinaryValue:
         """ The binary representation stored as a string of ``0``, ``1``, and possibly ``x``, ``z``, and other states. """
         return self._str
 
-    _non_permitted_regex = re.compile("[^{}]".format(_permitted_chars))
+    _non_permitted_regex = re.compile(f"[^{_permitted_chars}]")
 
     @binstr.setter
     def binstr(self, string):

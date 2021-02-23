@@ -176,7 +176,7 @@ async def test_multiply(dut, a_data, b_data):
         dut.valid_i <= 0
 
         if i % 100 == 0:
-            dut._log.info("{} / {}".format(i, NUM_SAMPLES))
+            dut._log.info(f"{i} / {NUM_SAMPLES}")
 
     await RisingEdge(dut.clk_i)
 

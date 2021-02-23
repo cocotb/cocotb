@@ -13,7 +13,7 @@ import logging
 import os
 
 
-class StrCallCounter(object):
+class StrCallCounter:
     def __init__(self):
         self.str_counter = 0
 

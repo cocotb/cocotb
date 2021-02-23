@@ -22,9 +22,9 @@ factory.generate_tests()
 
 @cocotb.test()
 async def test_testfactory_verify_args(dut):
-    assert testfactory_test_args == set([
+    assert testfactory_test_args == {
         ("a1v1", "a2v1", "a3v1"),
         ("a1v2", "a2v1", "a3v1"),
         ("a1v1", "a2v2", "a3v2"),
         ("a1v2", "a2v2", "a3v2"),
-    ])
+    }

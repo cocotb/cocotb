@@ -134,7 +134,7 @@ class SimBaseLog(logging.getLoggerClass()):
 def SimLog(name, ident=None):
     """ Like logging.getLogger, but append a numeric identifier to the name """
     if ident is not None:
-        name = "%s.0x%x" % (name, ident)
+        name = f"{name}.0x{ident:x}"
     return logging.getLogger(name)
 
 
@@ -197,7 +197,7 @@ class SimLogFormatter(logging.Formatter):
             sim_time_str = "  -.--ns"
         else:
             time_ns = get_time_from_sim_steps(sim_time, 'ns')
-            sim_time_str = "{:6.2f}ns".format(time_ns)
+            sim_time_str = f"{time_ns:6.2f}ns"
         prefix = sim_time_str.rjust(11) + ' ' + level + ' '
         if not _suppress:
             prefix += self.ljust(record.name, _RECORD_CHARS) + \

@@ -14,7 +14,7 @@ async def issue_330_direct(dut):
 
     structure = dut.inout_if
 
-    tlog.info("Value of inout_if => a_in = %s ; b_out = %s" % (structure.a_in.value, structure.b_out.value))
+    tlog.info(f"Value of inout_if => a_in = {structure.a_in.value} ; b_out = {structure.b_out.value}")
 
 
 @cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())

@@ -54,7 +54,7 @@ def main():
         tree = ET.parse(fname)
         for ts in tree.iter("testsuite"):
             if args.debug:
-                print("Ts name : %s, package : %s" % ( ts.get('name'), ts.get('package')))
+                print("Ts name : {}, package : {}".format( ts.get('name'), ts.get('package')))
             use_element = None
             for existing in result:
                 if existing.get('name') == ts.get('name') and existing.get('package') == ts.get('package'):
@@ -80,7 +80,7 @@ def main():
             for failure in testcase.iter('failure'):
                 if args.set_rc:
                     rc = 1
-                print("Failure in testsuite: '%s' classname: '%s' testcase: '%s' with parameters '%s'" % (testsuite.get('name'), testcase.get('classname'), testcase.get('name'), testsuite.get('package')))
+                print("Failure in testsuite: '{}' classname: '{}' testcase: '{}' with parameters '{}'".format(testsuite.get('name'), testcase.get('classname'), testcase.get('name'), testsuite.get('package')))
                 if os.getenv('GITHUB_ACTIONS') is not None:
                     # Get test file relative to root of repo
                     repo_root = os.path.commonprefix([os.path.abspath(testcase.get('file')), os.path.abspath(__file__)])

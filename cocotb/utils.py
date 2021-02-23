@@ -132,8 +132,8 @@ def get_sim_steps(time, units="step"):
     result_rounded = math.floor(result)
 
     if result_rounded != result:
-        raise ValueError("Unable to accurately represent {0}({1}) with the "
-                         "simulator precision of 1e{2}".format(
+        raise ValueError("Unable to accurately represent {}({}) with the "
+                         "simulator precision of 1e{}".format(
                              time, units, _get_simulator_precision()))
 
     return int(result_rounded)
@@ -159,7 +159,7 @@ def _get_log_time_scale(units):
 
     units_lwr = units.lower()
     if units_lwr not in scale:
-        raise ValueError("Invalid unit ({0}) provided".format(units))
+        raise ValueError(f"Invalid unit ({units}) provided")
     else:
         return scale[units_lwr]
 
@@ -478,7 +478,7 @@ class ParametrizedSingleton(type):
             return cls.__instances[key]
         except KeyError:
             # construct the object as normal
-            self = super(ParametrizedSingleton, cls).__call__(*args, **kwargs)
+            self = super().__call__(*args, **kwargs)
             cls.__instances[key] = self
             return self
 
@@ -516,7 +516,7 @@ def reject_remaining_kwargs(name, kwargs):
         # match the error message to what Python 3 produces
         bad_arg = next(iter(kwargs))
         raise TypeError(
-            '{}() got an unexpected keyword argument {!r}'.format(name, bad_arg)
+            f'{name}() got an unexpected keyword argument {bad_arg!r}'
         )
 
 

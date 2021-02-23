@@ -185,7 +185,7 @@ async def access_single_bit_erroneous(dut):
 
 
 @cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus", "chronologic simulation vcs")) else (),
-             expect_fail=cocotb.SIM_NAME.lower().startswith(("riviera")) and cocotb.LANGUAGE in ["verilog"])
+             expect_fail=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.LANGUAGE in ["verilog"])
 async def access_integer(dut):
     """Integer should show as an IntegerObject"""
     bitfail = False
@@ -233,7 +233,7 @@ async def access_string_vhdl(dut):
     """Access to a string, both constant and signal."""
     tlog = logging.getLogger("cocotb.test")
     constant_string = dut.isample_module1.EXAMPLE_STRING
-    tlog.info("%r is %s" % (constant_string, constant_string.value))
+    tlog.info(f"{constant_string!r} is {constant_string.value}")
     if not isinstance(constant_string, ConstantObject):
         raise TestFailure("EXAMPLE_STRING was not constant")
     if constant_string != b"TESTING":
@@ -251,7 +251,7 @@ async def access_string_vhdl(dut):
     await Timer(1, "ns")
 
     if variable_string != test_string:
-        raise TestFailure("%r %s != '%s'" % (variable_string, variable_string.value, test_string))
+        raise TestFailure(f"{variable_string!r} {variable_string.value} != '{test_string}'")
 
     test_string = b"longer_than_the_array"
     tlog.info("Test writing over size with '%s'" % test_string)
@@ -264,7 +264,7 @@ async def access_string_vhdl(dut):
     test_string = test_string[:len(variable_string)]
 
     if variable_string != test_string:
-        raise TestFailure("%r %s != '%s'" % (variable_string, variable_string.value, test_string))
+        raise TestFailure(f"{variable_string!r} {variable_string.value} != '{test_string}'")
 
     tlog.info("Test read access to a string character")
 
@@ -294,7 +294,7 @@ async def access_string_vhdl(dut):
     result = variable_string.value
     tlog.info("After setting bytes of string value is %s" % result)
     if variable_string != test_string:
-        raise TestFailure("%r %s != '%s'" % (variable_string, result, test_string))
+        raise TestFailure(f"{variable_string!r} {result} != '{test_string}'")
 
 
 # TODO: add tests for Verilog "string_input_port" and "STRING_LOCALPARAM" (see issue #802)
@@ -307,17 +307,17 @@ async def access_const_string_verilog(dut):
     string_const = dut.STRING_CONST
 
     await Timer(10, "ns")
-    tlog.info("%r is %s" % (string_const, string_const.value))
+    tlog.info(f"{string_const!r} is {string_const.value}")
     if not isinstance(string_const, StringObject):
         raise TestFailure("STRING_CONST was not StringObject")
     if string_const != b"TESTING_CONST":
-        raise TestFailure("Initial value of STRING_CONST was not == b\'TESTING_CONST\' but {} instead".format(string_const.value))
+        raise TestFailure(f"Initial value of STRING_CONST was not == b\'TESTING_CONST\' but {string_const.value} instead")
 
     tlog.info("Modifying const string")
     string_const <= b"MODIFIED"
     await Timer(10, "ns")
     if string_const != b"TESTING_CONST":
-        raise TestFailure("STRING_CONST was not still b\'TESTING_CONST\' after modification but {} instead".format(string_const.value))
+        raise TestFailure(f"STRING_CONST was not still b\'TESTING_CONST\' after modification but {string_const.value} instead")
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
@@ -328,17 +328,17 @@ async def access_var_string_verilog(dut):
     string_var = dut.STRING_VAR
 
     await Timer(10, "ns")
-    tlog.info("%r is %s" % (string_var, string_var.value))
+    tlog.info(f"{string_var!r} is {string_var.value}")
     if not isinstance(string_var, StringObject):
         raise TestFailure("STRING_VAR was not StringObject")
     if string_var != b"TESTING_VAR":
-        raise TestFailure("Initial value of STRING_VAR was not == b\'TESTING_VAR\' but {} instead".format(string_var.value))
+        raise TestFailure(f"Initial value of STRING_VAR was not == b\'TESTING_VAR\' but {string_var.value} instead")
 
     tlog.info("Modifying var string")
     string_var <= b"MODIFIED"
     await Timer(10, "ns")
     if string_var != b"MODIFIED":
-        raise TestFailure("STRING_VAR was not == b\'MODIFIED\' after modification but {} instead".format(string_var.value))
+        raise TestFailure(f"STRING_VAR was not == b\'MODIFIED\' after modification but {string_var.value} instead")
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
@@ -419,7 +419,7 @@ async def skip_a_test(dut):
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
-             expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus")) else ())
+             expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else ())
 async def access_gate(dut):
     """
     Test access to a gate Object
@@ -438,7 +438,7 @@ async def custom_type(dut):
     tlog = logging.getLogger("cocotb.test")
 
     new_type = dut.cosLut
-    tlog.info("cosLut object %s %s" % (new_type, type(new_type)))
+    tlog.info("cosLut object {} {}".format(new_type, type(new_type)))
 
     expected_sub = 84
     expected_top = 4
@@ -453,7 +453,7 @@ async def custom_type(dut):
         return iter_count
 
     for sub in new_type:
-        tlog.info("Sub object %s %s" % (sub, type(sub)))
+        tlog.info("Sub object {} {}".format(sub, type(sub)))
         sub_count = _discover(sub)
         if sub_count != expected_sub:
             raise TestFailure("Expected %d found %d under %s" % (expected_sub, sub_count, sub))
@@ -484,12 +484,12 @@ async def type_check_verilog(dut):
         (dut.STRING_PARAM, "GPI_STRING")
     ]
 
-    if cocotb.SIM_NAME.lower().startswith(("icarus")):
+    if cocotb.SIM_NAME.lower().startswith("icarus"):
         test_handles.append((dut.logic_a, "GPI_NET"))  # https://github.com/steveicarus/iverilog/issues/312
     else:
         test_handles.append((dut.logic_a, "GPI_REGISTER"))
 
     for handle in test_handles:
-        tlog.info("Handle %s" % (handle[0]._fullname,))
+        tlog.info("Handle {}".format(handle[0]._fullname))
         if handle[0]._type != handle[1]:
-            raise TestFailure("Expected %s found %s for %s" % (handle[1], handle[0]._type, handle[0]._fullname))
+            raise TestFailure("Expected {} found {} for {}".format(handle[1], handle[0]._type, handle[0]._fullname))

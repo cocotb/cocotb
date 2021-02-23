@@ -187,7 +187,7 @@ class SimHandleBase:
     def __setattr__(self, name, value):
         if name in self._compat_mapping:
             if name not in _deprecation_warned:
-                warnings.warn("Use of attribute %r is deprecated, use %r instead" % (name, self._compat_mapping[name]),
+                warnings.warn("Use of attribute {!r} is deprecated, use {!r} instead".format(name, self._compat_mapping[name]),
                               DeprecationWarning, stacklevel=3)
                 _deprecation_warned.add(name)
             return setattr(self, self._compat_mapping[name], value)
@@ -197,7 +197,7 @@ class SimHandleBase:
     def __getattr__(self, name):
         if name in self._compat_mapping:
             if name not in _deprecation_warned:
-                warnings.warn("Use of attribute %r is deprecated, use %r instead" % (name, self._compat_mapping[name]),
+                warnings.warn("Use of attribute {!r} is deprecated, use {!r} instead".format(name, self._compat_mapping[name]),
                               DeprecationWarning, stacklevel=3)
                 _deprecation_warned.add(name)
             return getattr(self, self._compat_mapping[name])
@@ -272,7 +272,7 @@ class RegionObject(SimHandleBase):
     def __dir__(self):
         """Permits IPython tab completion to work."""
         self._discover_all()
-        return super(RegionObject, self).__dir__() + [str(k) for k in self._sub_handles]
+        return super().__dir__() + [str(k) for k in self._sub_handles]
 
 
 class HierarchyObject(RegionObject):
@@ -322,7 +322,7 @@ class HierarchyObject(RegionObject):
         if name in self._compat_mapping:
             return SimHandleBase.__setattr__(self, name, value)
 
-        raise AttributeError("%s contains no object named %s" % (self._name, name))
+        raise AttributeError(f"{self._name} contains no object named {name}")
 
     def __getattr__(self, name):
         """Query the simulator for an object with the specified name
@@ -338,7 +338,7 @@ class HierarchyObject(RegionObject):
         if name in self._compat_mapping:
             return SimHandleBase.__getattr__(self, name)
 
-        raise AttributeError("%s contains no object named %s" % (self._name, name))
+        raise AttributeError(f"{self._name} contains no object named {name}")
 
     def _id(self, name, extended: bool = True):
         """Query the simulator for an object with the specified *name*,
@@ -356,7 +356,7 @@ class HierarchyObject(RegionObject):
         if handle is not None:
             return handle
 
-        raise AttributeError("%s contains no object named %s" % (self._name, name))
+        raise AttributeError(f"{self._name} contains no object named {name}")
 
 
 class HierarchyArrayObject(RegionObject):
@@ -370,16 +370,16 @@ class HierarchyArrayObject(RegionObject):
         # VHPI(ALDEC):        _name__X where X is the index
         # VPI:                _name[X] where X is the index
         import re
-        result = re.match(r"{0}__(?P<index>\d+)$".format(self._name), name)
+        result = re.match(fr"{self._name}__(?P<index>\d+)$", name)
         if not result:
-            result = re.match(r"{0}\((?P<index>\d+)\)$".format(self._name), name)
+            result = re.match(fr"{self._name}\((?P<index>\d+)\)$", name)
         if not result:
-            result = re.match(r"{0}\[(?P<index>\d+)\]$".format(self._name), name)
+            result = re.match(fr"{self._name}\[(?P<index>\d+)\]$", name)
 
         if result:
             return int(result.group("index"))
         else:
-            raise ValueError("Unable to match an index pattern: {}".format(name))
+            raise ValueError(f"Unable to match an index pattern: {name}")
 
     def __len__(self):
         """Return the "length" of the generate block."""
@@ -446,7 +446,7 @@ class NonHierarchyObject(SimHandleBase):
 
             Use :meth:`setimmediatevalue` to set the value immediately.
         """
-        raise TypeError("Not permissible to get values of object %s of type %s" % (self._name, type(self)))
+        raise TypeError("Not permissible to get values of object {} of type {}".format(self._name, type(self)))
 
     @value.setter
     def value(self, value):
@@ -467,7 +467,7 @@ class NonHierarchyObject(SimHandleBase):
         ``call_sim(handle, f, *args)`` should be used to schedule simulator writes,
         rather than performing them directly as ``f(*args)``.
         """
-        raise TypeError("Not permissible to set values on object %s of type %s" % (self._name, type(self)))
+        raise TypeError("Not permissible to set values on object {} of type {}".format(self._name, type(self)))
 
     def __le__(self, value):
         """Overload less-than-or-equal-to operator to provide an HDL-like shortcut.
@@ -634,7 +634,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         See the docstring for this class.
         """
         if type(value) is not list:
-            raise TypeError("Assigning non-list value to object %s of type %s" % (self._name, type(self)))
+            raise TypeError("Assigning non-list value to object {} of type {}".format(self._name, type(self)))
         if len(value) != len(self):
             raise ValueError("Assigning list of length %d to object %s of length %d" % (
                 len(value), self._name, len(self)))

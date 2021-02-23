@@ -19,4 +19,4 @@ async def test_assertion_rewriting(dut):
         assert 1 != 42
     except AssertionError as e:
         assert "42" in str(e), (
-            "Assertion rewriting seems not to work, message was {}".format(e))
+            f"Assertion rewriting seems not to work, message was {e}")

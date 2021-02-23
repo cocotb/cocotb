@@ -25,7 +25,7 @@ async def signal_mon(signal, idx, edge):
 
 class DualMonitor:
     def __init__(self, edge, signal):
-        self.log = SimLog("cocotb.%s.%s" % (edge, signal._path))
+        self.log = SimLog(f"cocotb.{edge}.{signal._path}")
         self.edge_type = edge
         self.monitor_edges = [0, 0]
         self.signal = signal

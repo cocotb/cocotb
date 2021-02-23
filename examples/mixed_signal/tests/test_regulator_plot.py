@@ -59,11 +59,11 @@ def plot_data(tb_hdl, datasets, graphfile="cocotb_plot.png"):
     ax.step(trim_round, voltage, where="mid")
     ax.plot(trim_round, voltage, 'C0o', alpha=0.5)
     for i, j, k in zip(trim_round, trim, voltage):
-        ax.annotate("trim={}".format(j), xy=(i, k), xytext=(0, 5), textcoords='offset points', ha='center')
+        ax.annotate(f"trim={j}", xy=(i, k), xytext=(0, 5), textcoords='offset points', ha='center')
     ax.xaxis.set_major_locator(plt.NullLocator())
     ax.xaxis.set_major_formatter(plt.NullFormatter())
     fig.tight_layout()
     fig.set_size_inches(11, 6)
 
-    tb_hdl._log.info("Writing file {}".format(graphfile))
+    tb_hdl._log.info(f"Writing file {graphfile}")
     fig.savefig(graphfile)

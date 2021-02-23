@@ -15,9 +15,9 @@ tlog = logging.getLogger("cocotb.test")
 
 def _check_value(tlog, hdl, expected):
     if hdl.value != expected:
-        raise TestFailure("{2!r}: Expected >{0}< but got >{1}<".format(expected, hdl.value, hdl))
+        raise TestFailure(f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<")
     else:
-        tlog.info("   Found {0!r} ({1}) with value={2}".format(hdl, hdl._type, hdl.value))
+        tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
 
 
 @cocotb.test()
@@ -193,9 +193,9 @@ def assert_raises(exc_type):
     try:
         yield
     except exc_type as exc:
-        tlog.info("   {} raised as expected: {}".format(exc_type.__name__, exc))
+        tlog.info(f"   {exc_type.__name__} raised as expected: {exc}")
     else:
-        raise AssertionError("{} was not raised".format(exc_type.__name__))
+        raise AssertionError(f"{exc_type.__name__} was not raised")
 
 
 @cocotb.test()
