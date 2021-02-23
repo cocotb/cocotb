@@ -1,0 +1,1 @@
+cocotb now requires Python 3.6+.
