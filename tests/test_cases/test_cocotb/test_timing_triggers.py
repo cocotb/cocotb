@@ -110,7 +110,7 @@ async def do_test_afterdelay_in_readonly(dut, delay):
     exited = True
 
 
-@cocotb.test(expect_error=TriggerException if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")) else (),
+@cocotb.test(expect_error=TriggerException if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera") else (),
              expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
                                                              "modelsim",
                                                              "ncsim",

@@ -216,7 +216,7 @@ async def test_nulltrigger_reschedule(dut):
     async def reschedule(n):
         nonlocal last_fork
         for i in range(4):
-            log.info("Fork {}, iteration {}, last fork was {}".format(n, i, last_fork))
+            log.info(f"Fork {n}, iteration {i}, last fork was {last_fork}")
             assert last_fork != n
             last_fork = n
             await NullTrigger()

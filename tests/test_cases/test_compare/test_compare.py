@@ -11,7 +11,7 @@ from cocotb.handle import SimHandleBase, NonHierarchyObject
 from cocotb.triggers import RisingEdge, FallingEdge
 
 
-class Testbench(object):
+class Testbench:
 
     def __init__(self, dut):
         self.dut = dut

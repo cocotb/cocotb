@@ -55,7 +55,7 @@ def _raise_error(obj, msg):
     exc_info = sys.exc_info()
     buff = StringIO()
     traceback.print_exception(*exc_info, file=buff)
-    obj.log.error("%s\n%s" % (msg, buff.getvalue()))
+    obj.log.error(f"{msg}\n{buff.getvalue()}")
     exception = TestError(msg)
     exception.stderr.write(buff.getvalue())
     raise exception
@@ -103,7 +103,7 @@ class TestComplete(Exception):
     """Exception showing that the test was completed. Sub-exceptions detail the exit status."""
 
     def __init__(self, *args, **kwargs):
-        super(TestComplete, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.stdout = StringIO()
         self.stderr = StringIO()
 

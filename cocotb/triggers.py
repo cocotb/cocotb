@@ -348,7 +348,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
         return signal
 
     def __init__(self, signal):
-        super(_EdgeBase, self).__init__()
+        super().__init__()
         self.signal = signal
 
     def prime(self, callback):
@@ -359,7 +359,7 @@ class _EdgeBase(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
             )
             if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
-        super(_EdgeBase, self).prime(callback)
+        super().prime(callback)
 
     def __repr__(self):
         return "{}({!r})".format(type(self).__qualname__, self.signal)
@@ -622,7 +622,7 @@ class NullTrigger(Trigger):
     """
 
     def __init__(self, name=None, outcome=None):
-        super(NullTrigger, self).__init__()
+        super().__init__()
         self._callback = None
         self.name = name
         self.__outcome = outcome
@@ -631,7 +631,7 @@ class NullTrigger(Trigger):
     def _outcome(self):
         if self.__outcome is not None:
             return self.__outcome
-        return super(NullTrigger, self)._outcome
+        return super()._outcome
 
     def prime(self, callback):
         callback(self)
@@ -668,7 +668,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
         return coroutine
 
     def __init__(self, coroutine):
-        super(Join, self).__init__()
+        super().__init__()
         self._coroutine = coroutine
 
     @property
@@ -699,7 +699,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
         if self._coroutine._finished:
             callback(self)
         else:
-            super(Join, self).prime(callback)
+            super().prime(callback)
 
     def __repr__(self):
         return "{}({!s})".format(type(self).__qualname__, self._coroutine)

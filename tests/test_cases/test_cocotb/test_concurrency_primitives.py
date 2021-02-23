@@ -19,16 +19,16 @@ async def test_unfired_first_triggers(dut):
     waiters = [e.wait() for e in events]
 
     async def wait_for_firsts():
-        ret_i = waiters.index((await First(waiters[0], waiters[1])))
-        assert ret_i == 0, "Expected event 0 to fire, not {}".format(ret_i)
+        ret_i = waiters.index(await First(waiters[0], waiters[1]))
+        assert ret_i == 0, f"Expected event 0 to fire, not {ret_i}"
 
-        ret_i = waiters.index((await First(waiters[2])))
-        assert ret_i == 2, "Expected event 2 to fire, not {}".format(ret_i)
+        ret_i = waiters.index(await First(waiters[2]))
+        assert ret_i == 2, f"Expected event 2 to fire, not {ret_i}"
 
     async def wait_for_e1():
         """ wait on the event that didn't wake `wait_for_firsts` """
-        ret_i = waiters.index((await waiters[1]))
-        assert ret_i == 1, "Expected event 1 to fire, not {}".format(ret_i)
+        ret_i = waiters.index(await waiters[1])
+        assert ret_i == 1, f"Expected event 1 to fire, not {ret_i}"
 
     async def fire_events():
         """ fire the events in order """

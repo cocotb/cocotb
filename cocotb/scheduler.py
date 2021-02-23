@@ -140,7 +140,7 @@ class external_waiter:
 
             if _debug:
                 if self.state == external_state.EXITED:
-                    self._log.debug("Thread %s has exited from %s" % (
+                    self._log.debug("Thread {} has exited from {}".format(
                         self.thread, threading.current_thread()))
                 elif self.state == external_state.PAUSED:
                     self._log.debug("Thread %s has called yield from %s"  % (
@@ -502,7 +502,7 @@ class Scheduler:
 
         if coro is self._test:
             if _debug:
-                self.log.debug("Unscheduling test {}".format(coro))
+                self.log.debug(f"Unscheduling test {coro}")
 
             if not self._terminate:
                 self._terminate = True
@@ -527,7 +527,7 @@ class Scheduler:
     def _schedule_write(self, handle, write_func, *args):
         """ Queue `write_func` to be called on the next ReadWrite trigger. """
         if self._mode == Scheduler._MODE_READONLY:
-            raise Exception("Write to object {0} was scheduled during a read-only sync phase.".format(handle._name))
+            raise Exception(f"Write to object {handle._name} was scheduled during a read-only sync phase.")
 
         # TODO: we should be able to better keep track of when this needs to
         # be scheduled
@@ -754,7 +754,7 @@ class Scheduler:
         self._test = test_coro
         self._resume_coro_upon(
             test_coro,
-            NullTrigger(name="Start {!s}".format(test_coro), outcome=outcomes.Value(None))
+            NullTrigger(name=f"Start {test_coro!s}", outcome=outcomes.Value(None))
         )
 
     # This collection of functions parses a trigger out of the object
@@ -849,7 +849,7 @@ class Scheduler:
             else:
                 send_outcome = trigger._outcome
             if _debug:
-                self.log.debug("Scheduling with {}".format(send_outcome))
+                self.log.debug(f"Scheduling with {send_outcome}")
 
             coro_completed = False
             try:
@@ -894,7 +894,7 @@ class Scheduler:
                 for ext in self._pending_threads:
                     ext.thread_start()
                     if _debug:
-                        self.log.debug("Blocking from %s on %s" % (
+                        self.log.debug("Blocking from {} on {}".format(
                             threading.current_thread(), ext.thread))
                     state = ext.thread_wait()
                     if _debug:

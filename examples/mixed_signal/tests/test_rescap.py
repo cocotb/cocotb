@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 Dataset = namedtuple("Dataset", "time, voltage, current")
 
 
-class ResCap_TB(object):
+class ResCap_TB:
     """The testbench class for the rescap design."""
     def __init__(self, tb_hdl):
         self.tb_hdl = tb_hdl
@@ -81,9 +81,9 @@ class ResCap_TB(object):
             else:
                 alpha = 0.333
             ax_volt.plot(time, voltage, color=color_volt, alpha=alpha,
-                         marker=".", markerfacecolor="black", linewidth=1, label="V({})".format(node))
+                         marker=".", markerfacecolor="black", linewidth=1, label=f"V({node})")
             ax_curr.plot(time, current, color=color_curr, alpha=alpha,
-                         marker=".", markerfacecolor="black", linewidth=1, label="I({})".format(node))
+                         marker=".", markerfacecolor="black", linewidth=1, label=f"I({node})")
 
         ax_volt.tick_params(axis="y", labelcolor=color_volt)
         ax_curr.tick_params(axis="y", labelcolor=color_curr)
@@ -94,7 +94,7 @@ class ResCap_TB(object):
         fig.set_size_inches(11, 6)
         fig.legend(loc="upper right", bbox_to_anchor=(0.8, 0.9), frameon=False)
 
-        self.tb_hdl._log.info("Writing file {}".format(graphfile))
+        self.tb_hdl._log.info(f"Writing file {graphfile}")
         fig.savefig(graphfile)
 
 
@@ -112,14 +112,14 @@ async def run_test(tb_hdl):
     vdd = 0.0
     tb_py.tb_hdl.vdd_val <= vdd
     tb_py.tb_hdl.vss_val <= 0.0
-    tb_py.tb_hdl._log.info("Setting vdd={:.4} V".format(vdd))
+    tb_py.tb_hdl._log.info(f"Setting vdd={vdd:.4} V")
     # dummy read appears to be necessary for the analog solver
     _ = await tb_py.get_sample_data(nodes=nodes_to_probe)
 
     for vdd in [5.55, -3.33]:
         tb_py.tb_hdl.vdd_val <= vdd
         tb_py.tb_hdl.vss_val <= 0.0
-        tb_py.tb_hdl._log.info("Setting vdd={:.4} V".format(vdd))
+        tb_py.tb_hdl._log.info(f"Setting vdd={vdd:.4} V")
         data = await tb_py.get_sample_data(num=60, delay_ns=5, nodes=nodes_to_probe)
         for node in nodes_to_probe:
             probedata[node].extend(data[node])

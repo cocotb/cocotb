@@ -244,7 +244,7 @@ def _initialise_testbench_(argv_):
     SIM_NAME = simulator.get_simulator_product().strip()
     SIM_VERSION = simulator.get_simulator_version().strip()
 
-    cocotb.log.info("Running on {} version {}".format(SIM_NAME, SIM_VERSION))
+    cocotb.log.info(f"Running on {SIM_NAME} version {SIM_VERSION}")
 
     memcheck_port = os.getenv('MEMCHECK')
     if memcheck_port is not None:
@@ -282,7 +282,7 @@ def _initialise_testbench_(argv_):
 
     handle = simulator.get_root_handle(root_name)
     if not handle:
-        raise RuntimeError("Can not find root handle ({})".format(root_name))
+        raise RuntimeError(f"Can not find root handle ({root_name})")
 
     global top
     top = cocotb.handle.SimHandle(handle)
@@ -321,11 +321,11 @@ def _sim_event(level, message):
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
-        scheduler._finish_test(TestFailure("Failure from external source: {}".format(message)))
+        scheduler._finish_test(TestFailure(f"Failure from external source: {message}"))
     elif level is SIM_FAIL:
         # We simply return here as the simulator will exit
         # so no cleanup is needed
-        msg = "Failing test at simulator request before test run completion: {}".format(message)
+        msg = f"Failing test at simulator request before test run completion: {message}"
         scheduler.log.error(msg)
         scheduler._finish_scheduler(SimFailure(msg))
     else:

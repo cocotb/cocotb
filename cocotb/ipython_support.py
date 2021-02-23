@@ -16,7 +16,7 @@ class SimTimePrompt(Prompts):
         tokens = super().in_prompt_tokens()
         if self._show_time == self.shell.execution_count:
             tokens = [
-                (Token.Comment, "sim time: {}".format(cocotb.utils.get_sim_time())),
+                (Token.Comment, f"sim time: {cocotb.utils.get_sim_time()}"),
                 (Token.Text, "\n"),
             ] + tokens
         return tokens

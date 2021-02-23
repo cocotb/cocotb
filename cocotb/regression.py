@@ -117,14 +117,14 @@ class RegressionManager:
             self.log.info("Enabling coverage collection of Python code")
             # Exclude cocotb itself from coverage collection.
             cocotb_package_dir = os.path.dirname(__file__)
-            self._cov = coverage.coverage(branch=True, omit=["{}/*".format(cocotb_package_dir)])
+            self._cov = coverage.coverage(branch=True, omit=[f"{cocotb_package_dir}/*"])
             self._cov.start()
 
         # Test Discovery
         ####################
         self._queue = []
         for test in tests:
-            self.log.info("Found test {}.{}".format(test.__module__, test.__qualname__))
+            self.log.info(f"Found test {test.__module__}.{test.__qualname__}")
             self._queue.append(test)
         self.ntests = len(self._queue)
 
@@ -136,7 +136,7 @@ class RegressionManager:
         # Process Hooks
         ###################
         for hook in hooks:
-            self.log.info("Found hook {}.{}".format(hook.__module__, hook.__qualname__))
+            self.log.info(f"Found hook {hook.__module__}.{hook.__qualname__}")
             self._init_hook(hook)
 
     @classmethod
@@ -576,11 +576,11 @@ class RegressionManager:
         summary = ""
 
         summary += "*************************************************************************************\n"
-        summary += "**                                 ERRORS : {0:<39}**\n".format(self.failures)
+        summary += f"**                                 ERRORS : {self.failures:<39}**\n"
         summary += "*************************************************************************************\n"
-        summary += "**                               SIM TIME : {0:<39}**\n".format('{0:.2f} NS'.format(sim_time_ns))
-        summary += "**                              REAL TIME : {0:<39}**\n".format('{0:.2f} S'.format(real_time))
-        summary += "**                        SIM / REAL TIME : {0:<39}**\n".format('{0:.2f} NS/S'.format(ratio_time))
+        summary += "**                               SIM TIME : {:<39}**\n".format(f'{sim_time_ns:.2f} NS')
+        summary += "**                              REAL TIME : {:<39}**\n".format(f'{real_time:.2f} S')
+        summary += "**                        SIM / REAL TIME : {:<39}**\n".format(f'{ratio_time:.2f} NS/S')
         summary += "*************************************************************************************\n"
 
         self.log.info(summary)
@@ -743,10 +743,10 @@ class TestFactory:
 
         d = self.kwargs
 
-        for index, testoptions in enumerate((
-                                            dict(zip(d, v)) for v in
-                                            product(*d.values())
-                                            )):
+        for index, testoptions in enumerate(
+                dict(zip(d, v)) for v in
+                product(*d.values())
+        ):
 
             name = "%s%s%s_%03d" % (prefix, self.name, postfix, index + 1)
             doc = "Automatically generated test\n\n"
@@ -768,10 +768,9 @@ class TestFactory:
                         desc = "No docstring supplied"
                     else:
                         desc = optvalue.__doc__.split('\n')[0]
-                    doc += "\t%s: %s (%s)\n" % (optname, optvalue.__qualname__,
-                                                desc)
+                    doc += "\t{}: {} ({})\n".format(optname, optvalue.__qualname__, desc)
                 else:
-                    doc += "\t%s: %s\n" % (optname, repr(optvalue))
+                    doc += "\t{}: {}\n".format(optname, repr(optvalue))
 
             self.log.debug("Adding generated test \"%s\" to module \"%s\"" %
                            (name, mod.__name__))

@@ -14,7 +14,7 @@ async def issue_142_overflow_error(dut):
     cocotb.fork(Clock(dut.clk, 10, 'ns').start())
 
     def _compare(value):
-        assert int(dut.stream_in_data_wide.value) == int(value), "Expecting 0x%x but got 0x%x on %s" % (
+        assert int(dut.stream_in_data_wide.value) == int(value), "Expecting 0x{:x} but got 0x{:x} on {}".format(
             int(value), int(dut.stream_in_data_wide.value),
             str(dut.stream_in_data_wide))
 

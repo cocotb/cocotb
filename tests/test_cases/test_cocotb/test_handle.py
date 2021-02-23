@@ -52,7 +52,7 @@ async def test_string_handle_takes_bytes(dut):
 
 
 @cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) or
-             cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("riviera")))
+             cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"))
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
     teststr = "\x1b[33myellow\x1b[49m\x1b[39m"
@@ -109,7 +109,7 @@ async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
         else:
             got = signal.value
 
-        assert got == val, "Expected value {}, got value {}!".format(val, got)
+        assert got == val, f"Expected value {val}, got value {got}!"
 
 
 def gen_int_test_values(n_bits, limits=_Limits.VECTOR_NBIT):

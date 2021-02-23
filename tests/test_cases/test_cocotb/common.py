@@ -47,4 +47,4 @@ def assert_raises(exc_type, pattern=None):
                 "Correct exception type caught, but message did not match pattern"
         pass
     else:
-        assert False, "{} was not raised".format(exc_type.__name__)
+        assert False, f"{exc_type.__name__} was not raised"
