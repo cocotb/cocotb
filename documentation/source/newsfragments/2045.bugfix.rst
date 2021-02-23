@@ -1,1 +1,0 @@
-Tests skipped by default (created with `skip=True`) can again be run manually by setting the :envvar:`TESTCASE` variable.

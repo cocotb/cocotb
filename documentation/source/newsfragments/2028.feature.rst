@@ -1,2 +1,0 @@
-If ``pytest`` is installed, its assertion-rewriting framework will be used to
-produce more informative tracebacks from the :keyword:`assert` statement.

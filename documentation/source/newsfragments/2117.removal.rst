@@ -1,2 +1,0 @@
-Passing :class:`bool` values to ``expect_error`` option of :class:`cocotb.test` is deprecated.
-Pass a specific :class:`Exception` or a tuple of Exceptions instead.

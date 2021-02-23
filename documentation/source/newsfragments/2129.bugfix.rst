@@ -1,1 +1,0 @@
-Fixed an issue with VHPI on Mac OS and Linux where negative integers were returned as large positive values.

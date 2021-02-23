@@ -1,1 +1,0 @@
-Added asyncio-style queues, :class:`cocotb.queue.Queue`, :class:`cocotb.queue.PriorityQueue`, and :class:`cocotb.queue.LifoQueue`.
