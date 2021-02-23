@@ -1,8 +1,0 @@
-In :ref:`Icarus Verilog <sim-icarus>`, generate blocks are now accessible directly via lookup without having to iterate over parent handle. (:pr:`2079`, :pr:`2143`)
-
-  .. code-block:: python3
-
-      # Example pseudo-region
-      dut.genblk1       #<class 'cocotb.handle.HierarchyArrayObject'>
-
-  .. consume the towncrier issue number on this line.

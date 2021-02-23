@@ -1,1 +1,0 @@
-The outdated "ping" example has been removed from the documentation and repository.

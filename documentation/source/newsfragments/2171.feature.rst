@@ -1,6 +1,0 @@
-The ``units`` argument to :class:`cocotb.triggers.Timer`,
-:class:`cocotb.clock.Clock` and :func:`cocotb.utils.get_sim_steps`,
-and the ``timeout_unit`` argument to
-:func:`cocotb.triggers.with_timeout` and :class:`cocotb.test`
-now accepts ``'step'`` to mean the simulator time step.
-This used to be expressed using ``None``, which is now deprecated.

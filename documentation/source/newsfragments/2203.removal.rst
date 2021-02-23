@@ -1,1 +1,0 @@
-Deprecate :func:`~cocotb.utils.pack` and :func:`~cocotb.utils.unpack` and the use of :class:`python:ctypes.Structure` in signal assignments.

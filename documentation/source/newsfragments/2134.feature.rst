@@ -1,1 +1,0 @@
-The handle to :envvar:`TOPLEVEL`, typically seen as the first argument to a cocotb test function, is now available globally as :data:`cocotb.top`.

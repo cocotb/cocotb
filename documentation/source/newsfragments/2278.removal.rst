@@ -1,4 +1,0 @@
-The access modes of many interfaces in the cocotb core libraries were re-evaluated.
-Some interfaces that were previously public are now private and vice versa.
-Accessing the methods through their old name will create a :class:`DeprecationWarning`.
-In the future, the deprecated names will be removed.

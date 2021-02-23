@@ -1,1 +1,0 @@
-Fix GHDL's library search path, allowing libraries other than *work* to be used in simulation.

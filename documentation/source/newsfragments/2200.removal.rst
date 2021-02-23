@@ -1,1 +1,0 @@
-The undocumented class ``cocotb.xunit_reporter.File`` has been removed.

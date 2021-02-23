@@ -1,2 +1,0 @@
-Makefiles now automatically deduce :make:var:`TOPLEVEL_LANG` based on the value of :make:var:`VERILOG_SOURCES` and :make:var:`VHDL_SOURCES`.
-Makefiles also detect incorrect usage of :make:var:`TOPLEVEL_LANG` for simulators that only support one language.
