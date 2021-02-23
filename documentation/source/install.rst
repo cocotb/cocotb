@@ -16,11 +16,13 @@ Installation of Prerequisites
 
 The current stable version of cocotb requires:
 
-* Python 3.5+
+* Python 3.6+
 * Python development packages
 * GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
 * GNU Make
 * A Verilog or VHDL simulator, depending on your :term:`RTL` source code
+
+.. versionchanged:: 2.0 Dropped Python 3.5 support
 
 .. versionchanged:: 1.4 Dropped Python 2 support
 

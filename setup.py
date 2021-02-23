@@ -29,9 +29,9 @@
 ###############################################################################
 
 import sys
-if sys.version_info[:2] < (3, 5):
+if sys.version_info[:2] < (3, 6):
     msg = [
-        "This version of cocotb requires at least Python 3.5,",
+        "This version of cocotb requires at least Python 3.6,",
         "you are running Python %d.%d.%d." % (
             sys.version_info[0], sys.version_info[1], sys.version_info[2])
     ]
@@ -99,7 +99,7 @@ setup(
     maintainer_email='cocotb@lists.librecores.org',
     setup_requires=['setuptools_scm'],
     install_requires=[],
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     packages=find_packages(),
     package_data={
         'cocotb': (
@@ -118,7 +118,6 @@ setup(
     platforms='any',
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

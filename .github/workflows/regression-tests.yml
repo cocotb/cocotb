@@ -66,13 +66,6 @@ jobs:
             sim-version: apt
             lang: verilog
             # lowest version according to https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
-            python-version: 3.5.4
-            os: ubuntu-20.04
-
-          - sim: icarus
-            sim-version: apt
-            lang: verilog
-            # lowest version according to https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
             python-version: 3.6.7
             os: ubuntu-20.04
 
