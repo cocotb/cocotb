@@ -33,6 +33,7 @@ import ctypes
 import warnings
 import enum
 from functools import lru_cache
+from typing import Optional
 
 import cocotb
 from cocotb import simulator
@@ -90,25 +91,25 @@ class SimHandleBase:
             path (str): Path to this handle, ``None`` if root.
         """
         self._handle = handle
-        self._len = None  # type: int
+        self._len: Optional[int] = None
         """The "length" (the number of elements) of the underlying object. For vectors this is the number of bits."""
-        self._sub_handles = {}  # type: dict
+        self._sub_handles: dict = {}
         """Dictionary of this handle's children."""
-        self._invalid_sub_handles = set()  # type: set
+        self._invalid_sub_handles: set = set()
         """Python :class:`set` of invalid queries, for caching purposes."""
-        self._name = self._handle.get_name_string()  # type: str
+        self._name: str = self._handle.get_name_string()
         """The name of an object.
 
         :meta public:
         """
-        self._type = self._handle.get_type_string()  # type: str
+        self._type: str = self._handle.get_type_string()
         """The type of an object as a string.
 
         :meta public:
         """
-        self._fullname = self._name + "(%s)" % self._type  # type: str
+        self._fullname: str = self._name + "(%s)" % self._type
         """The name of an object with its type appended in parentheses."""
-        self._path = self._name if path is None else path  # type: str
+        self._path: str = self._name if path is None else path
         """The path to this handle, or its name if this is the root handle.
 
         :meta public:
@@ -116,7 +117,7 @@ class SimHandleBase:
         self._log = SimLog("cocotb.%s" % self._name)
         """The logging object."""
         self._log.debug("Created")
-        self._def_name = self._handle.get_definition_name()  # type: str
+        self._def_name: str = self._handle.get_definition_name()
         """The name of a GPI object's definition.
 
         This is the value of ``vpiDefName`` for VPI, ``vhpiNameP`` for VHPI,
@@ -125,7 +126,7 @@ class SimHandleBase:
 
         :meta public:
         """
-        self._def_file = self._handle.get_definition_file()  # type: str
+        self._def_file: str = self._handle.get_definition_file()
         """The name of the file that sources the object's definition.
 
         This is the value of ``vpiDefFile`` for VPI, ``vhpiFileNameP`` for VHPI,
@@ -480,7 +481,7 @@ class NonHierarchyObject(SimHandleBase):
     def __eq__(self, other):
         """Equality comparator for non-hierarchy objects
 
-        If ``other`` is not a :class:`SimHandleBase` instance the comparision
+        If ``other`` is not a :class:`SimHandleBase` instance the comparison
         uses the comparison method of the ``other`` object against our
         ``.value``.
         """

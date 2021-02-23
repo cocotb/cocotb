@@ -37,7 +37,7 @@ import threading
 import random
 import time
 import warnings
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 from collections.abc import Coroutine
 
 import cocotb.handle
@@ -96,40 +96,66 @@ def _setup_logging():
 # so that cocotb.scheduler gives you the singleton instance and not the
 # scheduler package
 
-scheduler = None  # type: cocotb.scheduler.Scheduler
-"""The global scheduler instance."""
+scheduler: Optional[Scheduler] = None
+"""The global scheduler instance.
 
-regression_manager = None  # type: cocotb.regression.RegressionManager
-"""The global regression manager instance."""
+This is guaranteed to hold a value at test time.
+"""
 
-argv = None  # type: List[str]
-"""The argument list as seen by the simulator"""
+regression_manager: Optional[RegressionManager] = None
+"""The global regression manager instance.
 
-argc = None  # type: int
-"""The length of :data:`cocotb.argv`"""
+This is guaranteed to hold a value at test time.
+"""
 
-plusargs = None  # type: Dict[str, Union[bool, str]]
-"""A dictionary of "plusargs" handed to the simulation. See :make:var:`PLUSARGS` for details."""
+argv: Optional[List[str]] = None
+"""The argument list as seen by the simulator.
 
-LANGUAGE = os.getenv("TOPLEVEL_LANG")  # type: str
-"""The value of :make:var:`TOPLEVEL_LANG`"""
+This is guaranteed to hold a value at test time.
+"""
 
-SIM_NAME = None  # type: str
-"""The running simulator product information. ``None`` if :mod:`cocotb` was not loaded from a simulator"""
+argc: Optional[int] = None
+"""The length of :data:`cocotb.argv`.
 
-SIM_VERSION = None  # type: str
-"""The version of the running simulator. ``None`` if :mod:`cocotb` was not loaded from a simulator"""
+This is guaranteed to hold a value at test time.
+"""
 
-RANDOM_SEED = None  # type: int
+plusargs: Optional[Dict[str, Union[bool, str]]] = None
+"""A dictionary of "plusargs" handed to the simulation.
+
+See :make:var:`PLUSARGS` for details.
+This is guaranteed to hold a value at test time.
+"""
+
+LANGUAGE: Optional[str] = os.getenv("TOPLEVEL_LANG")
+"""The value of :make:var:`TOPLEVEL_LANG`.
+
+This is guaranteed to hold a value at test time.
+"""
+
+SIM_NAME: Optional[str] = None
+"""The running simulator product information.
+
+``None`` if :mod:`cocotb` was not loaded from a simulator.
+"""
+
+SIM_VERSION: Optional[str] = None
+"""The version of the running simulator.
+
+``None`` if :mod:`cocotb` was not loaded from a simulator."""
+
+RANDOM_SEED: Optional[int] = None
 """
 The value passed to the Python default random number generator.
+
 See :envvar:`RANDOM_SEED` for details on how the value is computed.
+This is guaranteed to hold a value at test time.
 """
 
 _library_coverage = None
 """ used for cocotb library coverage """
 
-top = None  # type: cocotb.handle.SimHandleBase
+top: Optional[cocotb.handle.SimHandleBase] = None
 r"""
 A handle to the :envvar:`TOPLEVEL` entity/module.
 
