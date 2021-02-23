@@ -11,6 +11,105 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+Cocotb 1.5.0rc1 (2021-02-23)
+============================
+
+Features
+--------
+
+- Support for building with Microsoft Visual C++ has been added.
+  See :ref:`install` for more details. (:pr:`1798`)
+- Makefiles now automatically deduce :make:var:`TOPLEVEL_LANG` based on the value of :make:var:`VERILOG_SOURCES` and :make:var:`VHDL_SOURCES`.
+  Makefiles also detect incorrect usage of :make:var:`TOPLEVEL_LANG` for simulators that only support one language. (:pr:`1982`)
+- :meth:`cocotb.fork` will now raise a descriptive :class:`TypeError` if a coroutine function is passed into them. (:pr:`2006`)
+- Added :meth:`cocotb.scheduler.start_soon <cocotb.scheduler.Scheduler.start_soon>` which schedules a coroutine to start *after* the current coroutine yields control.
+  This behavior is distinct from :func:`cocotb.fork` which schedules the given coroutine immediately. (:pr:`2023`)
+- If ``pytest`` is installed, its assertion-rewriting framework will be used to
+  produce more informative tracebacks from the :keyword:`assert` statement. (:pr:`2028`)
+- The handle to :envvar:`TOPLEVEL`, typically seen as the first argument to a cocotb test function, is now available globally as :data:`cocotb.top`. (:pr:`2134`)
+- The ``units`` argument to :class:`cocotb.triggers.Timer`,
+  :class:`cocotb.clock.Clock` and :func:`cocotb.utils.get_sim_steps`,
+  and the ``timeout_unit`` argument to
+  :func:`cocotb.triggers.with_timeout` and :class:`cocotb.test`
+  now accepts ``'step'`` to mean the simulator time step.
+  This used to be expressed using ``None``, which is now deprecated. (:pr:`2171`)
+- :func:`cocotb.regression.TestFactory.add_option` now supports groups of options when a full Cartesian product is not desired (:pr:`2175`)
+- Added asyncio-style queues, :class:`cocotb.queue.Queue`, :class:`cocotb.queue.PriorityQueue`, and :class:`cocotb.queue.LifoQueue`. (:pr:`2297`)
+- Support for the SystemVerilog type ``bit`` has been added. (:pr:`2322`)
+- Added the ``--lib-dir``,  ``--lib-name`` and ``--lib-name-path`` options to the ``cocotb-config`` command to make cocotb integration into existing flows easier. (:pr:`2387`)
+- Support for using Questa's VHPI has been added.
+  Use :make:var:`VHDL_GPI_INTERFACE` to select between using the FLI or VHPI when dealing with VHDL simulations.
+  Note that VHPI support in Questa is still experimental at this time. (:pr:`2408`)
+
+
+Bugfixes
+--------
+
+- Assigning Python integers to signals greater than 32 bits wide will now work correctly for negative values. (:pr:`913`)
+- Fix GHDL's library search path, allowing libraries other than *work* to be used in simulation. (:pr:`2038`)
+- Tests skipped by default (created with `skip=True`) can again be run manually by setting the :envvar:`TESTCASE` variable. (:pr:`2045`)
+- In :ref:`Icarus Verilog <sim-icarus>`, generate blocks are now accessible directly via lookup without having to iterate over parent handle. (:pr:`2079`, :pr:`2143`)
+
+    .. code-block:: python3
+
+        # Example pseudo-region
+        dut.genblk1       #<class 'cocotb.handle.HierarchyArrayObject'>
+
+    .. consume the towncrier issue number on this line. (:pr:`2079`)
+- Fixed an issue with VHPI on Mac OS and Linux where negative integers were returned as large positive values. (:pr:`2129`)
+
+
+Improved Documentation
+----------------------
+
+- The  :ref:`mixed_signal` example has been added,
+  showing how to use HDL helper modules in cocotb testbenches that exercise
+  two mixed-signal (i.e. analog and digital) designs. (:pr:`1051`)
+- New example :ref:`matrix_multiplier`. (:pr:`1502`)
+- A :ref:`refcard` showing the most used features of cocotb has been added. (:pr:`2321`)
+- A chapter :ref:`custom-flows` has been added. (:pr:`2340`)
+
+
+Deprecations and Removals
+-------------------------
+
+- The contents of :mod:`cocotb.generators` have been deprecated. (:pr:`2047`)
+- The outdated "Sorter" example has been removed from the documentation. (:pr:`2049`)
+- Passing :class:`bool` values to ``expect_error`` option of :class:`cocotb.test` is deprecated.
+  Pass a specific :class:`Exception` or a tuple of Exceptions instead. (:pr:`2117`)
+- The system task overloads for ``$info``, ``$warn``, ``$error`` and ``$fatal`` in Verilog and mixed language testbenches have been removed. (:pr:`2133`)
+- :class:`~cocotb.result.TestError` has been deprecated, use :ref:`python:bltin-exceptions`. (:pr:`2177`)
+- The undocumented class ``cocotb.xunit_reporter.File`` has been removed. (:pr:`2200`)
+- Deprecated :class:`cocotb.hook` and :envvar:`COCOTB_HOOKS`.
+  See the documentation for :class:`cocotb.hook` for suggestions on alternatives. (:pr:`2201`)
+- Deprecate :func:`~cocotb.utils.pack` and :func:`~cocotb.utils.unpack` and the use of :class:`python:ctypes.Structure` in signal assignments. (:pr:`2203`)
+- The outdated "ping" example has been removed from the documentation and repository. (:pr:`2232`)
+- The access modes of many interfaces in the cocotb core libraries were re-evaluated.
+  Some interfaces that were previously public are now private and vice versa.
+  Accessing the methods through their old name will create a :class:`DeprecationWarning`.
+  In the future, the deprecated names will be removed. (:pr:`2278`)
+- The bus and testbenching components in cocotb have been officially moved to the `cocotb-bus <https://github.com/cocotb/cocotb-bus>`_ package.
+  This includes
+  :class:`~cocotb_bus.bus.Bus`,
+  :class:`~cocotb_bus.scoreboard.Scoreboard`,
+  everything in :mod:`cocotb_bus.drivers <cocotb.drivers>`,
+  and everything in :mod:`cocotb_bus.monitors <cocotb.monitors>`.
+  Documentation will remain in the main cocotb repository for now.
+  Old names will continue to exist, but their use will cause a :class:`DeprecationWarning`,
+  and will be removed in the future. (:pr:`2289`)
+
+
+Changes
+-------
+
+- Assigning out-of-range Python integers to signals would previously truncate the value silently for signal widths <= 32 bits and truncate the value with a warning for signal widths > 32 bits.
+  Assigning out-of-range Python integers to signals will now raise an :exc:`OverflowError`. (:pr:`913`)
+- Updated :class:`~cocotb_bus.drivers.Driver`, :class:`~cocotb_bus.monitors.Monitor`, and all their subclasses to use the :keyword:`async`/:keyword:`await` syntax instead of the :keyword:`yield` syntax. (:pr:`2022`)
+- The package build process is now fully :pep:`517` compliant. (:pr:`2091`)
+- Improved support and performance for :ref:`sim-verilator` (version 4.106 or later now required). (:pr:`2105`)
+- Changed how libraries are specified in :envvar:`GPI_EXTRA` to allow specifying libraries with paths, and names that don't start with "lib". (:pr:`2341`)
+
+
 Cocotb 1.4.0 (2020-07-08)
 =========================
 

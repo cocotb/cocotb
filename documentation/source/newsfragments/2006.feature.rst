@@ -1,1 +1,0 @@
-:meth:`cocotb.fork` will now raise a descriptive :class:`TypeError` if a coroutine function is passed into them.

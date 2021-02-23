@@ -1,1 +1,0 @@
-Improved support and performance for :ref:`sim-verilator` (version 4.106 or later now required).

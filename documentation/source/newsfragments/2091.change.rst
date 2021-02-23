@@ -1,1 +1,0 @@
-The package build process is now fully :pep:`517` compliant.

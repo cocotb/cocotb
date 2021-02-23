@@ -1,1 +1,0 @@
-Added the ``--lib-dir``,  ``--lib-name`` and ``--lib-name-path`` options to the ``cocotb-config`` command to make cocotb integration into existing flows easier.

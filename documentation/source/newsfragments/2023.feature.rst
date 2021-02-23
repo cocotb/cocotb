@@ -1,2 +1,0 @@
-Added :meth:`cocotb.scheduler.start_soon <cocotb.scheduler.Scheduler.start_soon>` which schedules a coroutine to start *after* the current coroutine yields control.
-This behavior is distinct from :func:`cocotb.fork` which schedules the given coroutine immediately.

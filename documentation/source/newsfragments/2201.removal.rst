@@ -1,2 +1,0 @@
-Deprecated :class:`cocotb.hook` and :envvar:`COCOTB_HOOKS`.
-See the documentation for :class:`cocotb.hook` for suggestions on alternatives.

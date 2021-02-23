@@ -1,1 +1,0 @@
-:func:`cocotb.regression.TestFactory.add_option` now supports groups of options when a full Cartesian product is not desired

@@ -1,1 +1,0 @@
-Support for the SystemVerilog type ``bit`` has been added.
