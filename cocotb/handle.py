@@ -723,7 +723,7 @@ class ModifiableObject(NonConstantObject):
             TypeError: If target has an unsupported type for value assignment.
 
         .. deprecated:: 1.5
-            Automatic truncation of values that exceed the size of the signal will result in a
+            Truncation of values that exceed the size of the signal will result in a
             :exc:`OverflowError` starting in 2.0.
 
         .. deprecated:: 1.5
@@ -735,9 +735,9 @@ class ModifiableObject(NonConstantObject):
 
         if isinstance(value, int):
             min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
-            if value < min_val or max_val < value:
+            if value < min_val or value > max_val:
                 warnings.warn(
-                    "Automatic truncation of values that exceed the size of the signal will raise an `OverflowError` starting in 2.0.",
+                    "Truncation of values that exceed the size of the signal will raise an `OverflowError` starting in 2.0.",
                     FutureWarning, stacklevel=3)
             if len(self) <= 32:
                 call_sim(self, self._handle.set_signal_val_int, set_action, value)
