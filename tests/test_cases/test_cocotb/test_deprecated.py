@@ -148,3 +148,10 @@ async def test_time_ps_deprecated(_):
         Timer(time=0, time_ps=7, units='ns')
     with assert_raises(TypeError):
         Timer(units='ps')
+
+
+@cocotb.test()
+async def test_value_assignment_truncation_deprecated(dut):
+    with assert_deprecated(FutureWarning):
+        # value too large to fit, will cause truncation
+        dut.stream_in_data <= 0x12345678

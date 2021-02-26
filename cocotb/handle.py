@@ -722,8 +722,9 @@ class ModifiableObject(NonConstantObject):
         Raises:
             TypeError: If target has an unsupported type for value assignment.
 
-            OverflowError: If int value is out of the range that can be represented
-                by the target. -2**(Nbits - 1) <= value <= 2**Nbits - 1
+        .. deprecated:: 1.5
+            Truncation of values that exceed the size of the signal will result in a
+            :exc:`OverflowError` starting in 2.0.
 
         .. deprecated:: 1.5
             :class:`ctypes.Structure` objects are no longer accepted as values for assignment.
@@ -734,19 +735,17 @@ class ModifiableObject(NonConstantObject):
 
         if isinstance(value, int):
             min_val, max_val = _value_limits(len(self), _Limits.VECTOR_NBIT)
-            if min_val <= value <= max_val:
-                if len(self) <= 32:
-                    call_sim(self, self._handle.set_signal_val_int, set_action, value)
-                    return
-
-                if value < 0:
-                    value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
-                else:
-                    value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.UNSIGNED)
+            if value < min_val or value > max_val:
+                warnings.warn(
+                    "Truncation of values that exceed the size of the signal will raise an `OverflowError` starting in 2.0.",
+                    FutureWarning, stacklevel=3)
+            if len(self) <= 32:
+                call_sim(self, self._handle.set_signal_val_int, set_action, value)
+                return
+            if value < 0:
+                value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
             else:
-                raise OverflowError(
-                    "Int value ({!r}) out of range for assignment of {!r}-bit signal ({!r})"
-                    .format(value, len(self), self._name))
+                value = BinaryValue(value=value, n_bits=len(self), bigEndian=False, binaryRepresentation=BinaryRepresentation.UNSIGNED)
 
         if isinstance(value, ctypes.Structure):
             warnings.warn(
