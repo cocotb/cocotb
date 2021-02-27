@@ -142,3 +142,12 @@ part of this testbench is implemented with cocotb and the helper part with HDL.
 .. toctree::
    rescap
    regulator
+
+
+.. _system_modeling:
+
+System Modeling
+===============
+
+.. toctree::
+   analog_model
