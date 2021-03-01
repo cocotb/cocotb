@@ -10,7 +10,7 @@ Tests for edge triggers
 * ClockCycles
 """
 import cocotb
-from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles, First, Combine
+from cocotb.triggers import RisingEdge, FallingEdge, Edge, Timer, ClockCycles, First, Combine, ReadOnly
 from cocotb.clock import Clock
 from cocotb.result import SimTimeoutError
 
@@ -233,3 +233,35 @@ async def test_both_edge_triggers(dut):
     falling_coro = cocotb.fork(wait_falling_edge())
     cocotb.fork(Clock(dut.clk, 10, units='ns').start())
     await Combine(rising_coro, falling_coro)
+
+
+@cocotb.test()
+async def test_edge_on_vector(dut):
+    """Test that Edge() triggers on any 0/1 change in a vector"""
+
+    cocotb.fork(Clock(dut.clk, 100, "ns").start())
+
+    edge_cnt = 0
+
+    async def wait_edge():
+        nonlocal edge_cnt
+        while True:
+            await Edge(dut.stream_out_data_registered)
+            if cocotb.SIM_NAME.lower().startswith("modelsim"):
+                await ReadOnly()  # not needed for other simulators
+            edge_cnt = edge_cnt + 1
+
+    cocotb.fork(wait_edge())
+
+    dut.stream_in_data <= 0
+    await RisingEdge(dut.clk)
+
+    for val in range(1, 2**len(dut.stream_in_data)-1):
+        # produce an edge by setting a value != 0:
+        dut.stream_in_data <= val
+        await RisingEdge(dut.clk)
+        # set back to all-0:
+        dut.stream_in_data <= 0
+        await RisingEdge(dut.clk)
+
+    assert edge_cnt == 2 * ((2**len(dut.stream_in_data)-1)-1)
