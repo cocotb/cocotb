@@ -168,6 +168,11 @@ class RegressionManager:
 
         modules = [s.strip() for s in module_str.split(',') if s.strip()]
 
+        tests = []
+        if test_str:
+            tests = [s.strip() for s in test_str.split(',') if s.strip()]
+            not_found_tests = []
+
         for module_name in modules:
             try:
                 _logger.debug("Python Path: " + ",".join(sys.path))
@@ -180,34 +185,41 @@ class RegressionManager:
                 _logger.info(traceback.format_exc())
                 raise
 
-            if test_str:
-
+            if tests:
                 # Specific functions specified, don't auto-discover
-                for test_name in test_str.rsplit(','):
-                    try:
-                        test = getattr(module, test_name)
-                    except AttributeError:
-                        _logger.error("Requested test %s wasn't found in module %s", test_name, module_name)
-                        err = AttributeError("Test %s doesn't exist in %s" % (test_name, module_name))
-                        raise err from None  # discard nested traceback
+                for test_name in tests:
+                    test = getattr(module, test_name, 0)
+                    if test:
+                        if not isinstance(test, Test):
+                            _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
+                                          test_name, module_name)
+                            raise ImportError("Failed to find requested test %s" % test_name)
 
-                    if not isinstance(test, Test):
-                        _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
-                                      test_name, module_name)
-                        raise ImportError("Failed to find requested test %s" % test_name)
+                        # If we request a test manually, it should be run even if skip=True is set.
+                        test.skip = False
 
-                    # If we request a test manually, it should be run even if skip=True is set.
-                    test.skip = False
+                        yield test
+                    else:
+                        not_found_tests.append(test_name)
 
-                    yield test
+                # Clear not_found_tests for the next module search
+                tests = not_found_tests.copy()
+                not_found_tests.clear()
 
-                # only look in first module for all functions and don't complain if all functions are not found
-                break
+                # Break if all tests were found
+                if not tests:
+                    break
+            else:
+                # auto-discover
+                for thing in vars(module).values():
+                    if isinstance(thing, Test):
+                        yield thing
 
-            # auto-discover
-            for thing in vars(module).values():
-                if isinstance(thing, Test):
-                    yield thing
+        # If any test were not found in any module, raise an error
+        if tests:
+            _logger.error("Requested test(s) %s wasn't found in module(s) %s", tests, modules)
+            err = AttributeError("Test(s) %s doesn't exist in %s" % (tests, modules))
+            raise err from None  # discard nested traceback
 
     @staticmethod
     def _discover_hooks() -> Iterable[Hook]:
