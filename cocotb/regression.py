@@ -192,16 +192,17 @@ class RegressionManager:
                         test = getattr(module, test_name)
                     except AttributeError:
                         not_found_tests.append(test_name)
-                    else:
-                        if not isinstance(test, Test):
-                            _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
-                                          test_name, module_name)
-                            raise ImportError("Failed to find requested test %s" % test_name)
+                        continue
 
-                        # If we request a test manually, it should be run even if skip=True is set.
-                        test.skip = False
+                    if not isinstance(test, Test):
+                        _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
+                                      test_name, module_name)
+                        raise ImportError("Failed to find requested test %s" % test_name)
 
-                        yield test
+                    # If we request a test manually, it should be run even if skip=True is set.
+                    test.skip = False
+
+                    yield test
 
                 # Clear not_found_tests for the next module search
                 tests = not_found_tests.copy()
