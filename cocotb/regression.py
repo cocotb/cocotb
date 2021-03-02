@@ -188,8 +188,11 @@ class RegressionManager:
             if tests:
                 # Specific functions specified, don't auto-discover
                 for test_name in tests:
-                    test = getattr(module, test_name, 0)
-                    if test:
+                    try:
+                        test = getattr(module, test_name)
+                    except AttributeError:
+                        not_found_tests.append(test_name)
+                    else:
                         if not isinstance(test, Test):
                             _logger.error("Requested %s from module %s isn't a cocotb.test decorated coroutine",
                                           test_name, module_name)
@@ -199,8 +202,6 @@ class RegressionManager:
                         test.skip = False
 
                         yield test
-                    else:
-                        not_found_tests.append(test_name)
 
                 # Clear not_found_tests for the next module search
                 tests = not_found_tests.copy()
@@ -218,8 +219,7 @@ class RegressionManager:
         # If any test were not found in any module, raise an error
         if tests:
             _logger.error("Requested test(s) %s wasn't found in module(s) %s", tests, modules)
-            err = AttributeError("Test(s) %s doesn't exist in %s" % (tests, modules))
-            raise err from None  # discard nested traceback
+            raise AttributeError("Test(s) %s doesn't exist in %s" % (tests, modules))
 
     @staticmethod
     def _discover_hooks() -> Iterable[Hook]:
