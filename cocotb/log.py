@@ -236,7 +236,7 @@ class SimColourLogFormatter(SimLogFormatter):
 
     loglevel2colour = {
         logging.DEBUG   :       "%s",
-        logging.INFO    :       ANSI.COLOR_INFO + "%s" + ANSI.COLOR_DEFAULT,
+        logging.INFO    :       "%s",
         logging.WARNING :       ANSI.COLOR_WARNING + "%s" + ANSI.COLOR_DEFAULT,
         logging.ERROR   :       ANSI.COLOR_ERROR + "%s" + ANSI.COLOR_DEFAULT,
         logging.CRITICAL:       ANSI.COLOR_CRITICAL + "%s" + ANSI.COLOR_DEFAULT,
