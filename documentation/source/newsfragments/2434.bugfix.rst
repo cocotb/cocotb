@@ -1,0 +1,1 @@
+Selecting tests from a module that is not the first on the :make:var:`MODULE` list will now work correctly.
