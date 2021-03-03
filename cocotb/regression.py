@@ -204,8 +204,8 @@ class RegressionManager:
 
                     yield test
 
-                # Clear not_found_tests for the next module search
-                tests = not_found_tests.copy()
+                # Use the non-matching test names in the next module search
+                tests = not_found_tests
 
             else:
                 # auto-discover
