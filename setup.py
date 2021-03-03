@@ -73,6 +73,9 @@ def package_files(directory):
     return paths
 
 
+# this sets the __version__ variable
+exec(read_file(path.join('cocotb', '_version.py')))
+
 # store log from build_libs and display at the end in verbose mode
 # see https://github.com/pypa/pip/issues/6634
 log_stream = StringIO()
@@ -84,11 +87,7 @@ log.addHandler(handler)
 setup(
     name='cocotb',
     cmdclass={'build_ext': build_ext},
-    use_scm_version=dict(
-        write_to='cocotb/_version.py',
-        write_to_template='__version__ = {version!r}',
-        version_scheme='release-branch-semver'
-    ),
+    version=__version__,  # noqa: F821
     description='cocotb is a coroutine based cosimulation library for writing VHDL and Verilog testbenches in Python.',
     url='https://docs.cocotb.org',
     license='BSD',
@@ -97,7 +96,6 @@ setup(
     author='Chris Higgs, Stuart Hodgson',
     maintainer='cocotb contributors',
     maintainer_email='cocotb@lists.librecores.org',
-    setup_requires=['setuptools_scm'],
     install_requires=[],
     python_requires='>=3.5',
     packages=find_packages(),

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel", "setuptools_scm"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.towncrier]
@@ -36,4 +36,3 @@ build-backend = "setuptools.build_meta"
         directory = "change"
         name = "Changes"
         showcontent = true
-

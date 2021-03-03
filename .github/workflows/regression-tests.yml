@@ -158,8 +158,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0  # ensure we clone all the tags so we can see setuptools_scm working
 
       # Install Python
     - name: Set up Python ${{matrix.python-version}}
