@@ -171,7 +171,6 @@ class RegressionManager:
         tests = None
         if test_str:
             tests = [s.strip() for s in test_str.split(',') if s.strip()]
-            not_found_tests = []
 
         for module_name in modules:
             try:
@@ -186,6 +185,7 @@ class RegressionManager:
                 raise
 
             if tests is not None:
+                not_found_tests = []
                 # Specific functions specified, don't auto-discover
                 for test_name in tests:
                     try:
@@ -206,7 +206,6 @@ class RegressionManager:
 
                 # Clear not_found_tests for the next module search
                 tests = not_found_tests.copy()
-                not_found_tests.clear()
 
             else:
                 # auto-discover
