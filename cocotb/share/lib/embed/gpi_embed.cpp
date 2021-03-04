@@ -16,9 +16,9 @@
  *      derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- *AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -74,16 +74,16 @@ static void set_program_name_in_venv(void) {
     const char *venv_path_home = getenv("VIRTUAL_ENV");
     if (!venv_path_home) {
         LOG_INFO(
-            "Did not detect Python virtual environment. Using system-wide "
-            "Python interpreter");
+            "Did not detect Python virtual environment. "
+            "Using system-wide Python interpreter");
         return;
     }
 
     strncpy(venv_path, venv_path_home, sizeof(venv_path) - 1);
     if (venv_path[sizeof(venv_path) - 1]) {
         LOG_ERROR(
-            "Unable to set Python Program Name using virtual environment. Path "
-            "to virtual environment too long");
+            "Unable to set Python Program Name using virtual environment. "
+            "Path to virtual environment too long");
         return;
     }
 
@@ -91,8 +91,8 @@ static void set_program_name_in_venv(void) {
             sizeof(venv_path) - strlen(venv_path) - 1);
     if (venv_path[sizeof(venv_path) - 1]) {
         LOG_ERROR(
-            "Unable to set Python Program Name using virtual environment. Path "
-            "to interpreter too long");
+            "Unable to set Python Program Name using virtual environment. "
+            "Path to interpreter too long");
         return;
     }
 
@@ -101,8 +101,8 @@ static void set_program_name_in_venv(void) {
 
     if (venv_path_w[(sizeof(venv_path_w) / sizeof(wchar_t)) - 1]) {
         LOG_ERROR(
-            "Unable to set Python Program Name using virtual environment. Path "
-            "to interpreter too long");
+            "Unable to set Python Program Name using virtual environment. "
+            "Path to interpreter too long");
         return;
     }
 
