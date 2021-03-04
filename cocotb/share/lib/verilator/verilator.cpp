@@ -2,15 +2,15 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <memory>
+
 #include "Vtop.h"
 #include "verilated.h"
 #include "verilated_vpi.h"
 
-#include <memory>
-
 #ifndef VM_TRACE_FST
-    //emulate new verilator behavior for legacy versions
-    #define VM_TRACE_FST 0
+// emulate new verilator behavior for legacy versions
+#define VM_TRACE_FST 0
 #endif
 
 #if VM_TRACE
@@ -21,11 +21,11 @@
 #endif
 #endif
 
-static vluint64_t main_time = 0;       // Current simulation time
+static vluint64_t main_time = 0;  // Current simulation time
 
-double sc_time_stamp() {       // Called by $time in Verilog
-    return main_time;           // converts to double, to match
-                                // what SystemC does
+double sc_time_stamp() {  // Called by $time in Verilog
+    return main_time;     // converts to double, to match
+                          // what SystemC does
 }
 
 extern "C" {
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
     Verilated::debug(99);
 #endif
     std::unique_ptr<Vtop> top(new Vtop(""));
-    Verilated::fatalOnVpiError(false); // otherwise it will fail on systemtf
+    Verilated::fatalOnVpiError(false);  // otherwise it will fail on systemtf
 
 #ifdef VERILATOR_SIM_DEBUG
     Verilated::internalsDump();

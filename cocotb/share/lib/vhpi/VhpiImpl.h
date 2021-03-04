@@ -1,29 +1,29 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*    * Redistributions of source code must retain the above copyright
-*      notice, this list of conditions and the following disclaimer.
-*    * Redistributions in binary form must reproduce the above copyright
-*      notice, this list of conditions and the following disclaimer in the
-*      documentation and/or other materials provided with the distribution.
-*    * Neither the name of Potential Ventures Ltd
-*      names of its contributors may be used to endorse or promote products
-*      derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
+ * Copyright (c) 2013 Potential Ventures Ltd
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *    * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *    * Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *    * Neither the name of Potential Ventures Ltd
+ *      names of its contributors may be used to endorse or promote products
+ *      derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ******************************************************************************/
 
 #ifndef COCOTB_VHPI_IMPL_H_
 #define COCOTB_VHPI_IMPL_H_
@@ -35,11 +35,13 @@
 #define COCOTBVHPI_EXPORT COCOTB_IMPORT
 #endif
 
-#include "../gpi/gpi_priv.h"
 #include <vhpi_user.h>
 #include <vhpi_user_ext.h>
-#include <vector>
+
 #include <map>
+#include <vector>
+
+#include "../gpi/gpi_priv.h"
 
 // Define Index separator
 #ifdef IUS
@@ -51,15 +53,14 @@
 #endif
 
 // Should be run after every VHPI call to check error status
-static inline int __check_vhpi_error(const char *file, const char *func, long line)
-{
+static inline int __check_vhpi_error(const char *file, const char *func,
+                                     long line) {
     int err_occurred = 0;
 #if VHPI_CHECKING
     vhpiErrorInfoT info;
     enum gpi_log_levels loglevel;
     err_occurred = vhpi_check_error(&info);
-    if (!err_occurred)
-        return 0;
+    if (!err_occurred) return 0;
 
     switch (info.severity) {
         case vhpiNote:
@@ -82,25 +83,26 @@ static inline int __check_vhpi_error(const char *file, const char *func, long li
     }
 
     gpi_log("cocotb.gpi", loglevel, file, func, line,
-            "VHPI Error level %d: %s\nFILE %s:%d",
-            info.severity, info.message, info.file, info.line);
+            "VHPI Error level %d: %s\nFILE %s:%d", info.severity, info.message,
+            info.file, info.line);
 
 #endif
     return err_occurred;
 }
 
-#define check_vhpi_error() do { \
-    __check_vhpi_error(__FILE__, __func__, __LINE__); \
-} while (0)
+#define check_vhpi_error()                                \
+    do {                                                  \
+        __check_vhpi_error(__FILE__, __func__, __LINE__); \
+    } while (0)
 
 class VhpiCbHdl : public virtual GpiCbHdl {
-public:
+  public:
     VhpiCbHdl(GpiImplInterface *impl);
 
     int arm_callback() override;
     int cleanup_callback() override;
 
-protected:
+  protected:
     vhpiCbDataT cb_data;
     vhpiTimeT vhpi_time;
 };
@@ -108,103 +110,104 @@ protected:
 class VhpiSignalObjHdl;
 
 class VhpiValueCbHdl : public VhpiCbHdl, public GpiValueCbHdl {
-public:
+  public:
     VhpiValueCbHdl(GpiImplInterface *impl, VhpiSignalObjHdl *sig, int edge);
-    int cleanup_callback() override {
-        return VhpiCbHdl::cleanup_callback();
-    }
-private:
+    int cleanup_callback() override { return VhpiCbHdl::cleanup_callback(); }
+
+  private:
     std::string initial_value;
 };
 
 class VhpiTimedCbHdl : public VhpiCbHdl {
-public:
+  public:
     VhpiTimedCbHdl(GpiImplInterface *impl, uint64_t time);
     int cleanup_callback() override;
 };
 
 class VhpiReadOnlyCbHdl : public VhpiCbHdl {
-public:
+  public:
     VhpiReadOnlyCbHdl(GpiImplInterface *impl);
 };
 
 class VhpiNextPhaseCbHdl : public VhpiCbHdl {
-public:
+  public:
     VhpiNextPhaseCbHdl(GpiImplInterface *impl);
 };
 
 class VhpiStartupCbHdl : public VhpiCbHdl {
-public:
+  public:
     VhpiStartupCbHdl(GpiImplInterface *impl);
     int run_callback() override;
     int cleanup_callback() override {
-        /* Too many simulators get upset with this so we override to do nothing */
+        /* Too many simulators get upset with this so we override to do nothing
+         */
         return 0;
     }
 };
 
 class VhpiShutdownCbHdl : public VhpiCbHdl {
-public:
+  public:
     VhpiShutdownCbHdl(GpiImplInterface *impl);
     int run_callback() override;
     int cleanup_callback() override {
-        /* Too many simulators get upset with this so we override to do nothing */
+        /* Too many simulators get upset with this so we override to do nothing
+         */
         return 0;
     }
 };
 
 class VhpiReadwriteCbHdl : public VhpiCbHdl {
-public:
+  public:
     VhpiReadwriteCbHdl(GpiImplInterface *impl);
 };
 
 class VhpiArrayObjHdl : public GpiObjHdl {
-public:
-    VhpiArrayObjHdl(GpiImplInterface *impl,
-                    vhpiHandleT hdl,
-                    gpi_objtype_t objtype) : GpiObjHdl(impl, hdl, objtype) { }
+  public:
+    VhpiArrayObjHdl(GpiImplInterface *impl, vhpiHandleT hdl,
+                    gpi_objtype_t objtype)
+        : GpiObjHdl(impl, hdl, objtype) {}
     ~VhpiArrayObjHdl() override;
 
     int initialise(std::string &name, std::string &fq_name) override;
 };
 
 class VhpiObjHdl : public GpiObjHdl {
-public:
-    VhpiObjHdl(GpiImplInterface *impl,
-               vhpiHandleT hdl,
-               gpi_objtype_t objtype) : GpiObjHdl(impl, hdl, objtype) { }
+  public:
+    VhpiObjHdl(GpiImplInterface *impl, vhpiHandleT hdl, gpi_objtype_t objtype)
+        : GpiObjHdl(impl, hdl, objtype) {}
     ~VhpiObjHdl() override;
 
     int initialise(std::string &name, std::string &fq_name) override;
 };
 
 class VhpiSignalObjHdl : public GpiSignalObjHdl {
-public:
-    VhpiSignalObjHdl(GpiImplInterface *impl,
-                     vhpiHandleT hdl,
-                     gpi_objtype_t objtype,
-                     bool is_const) : GpiSignalObjHdl(impl, hdl, objtype, is_const),
-                                      m_rising_cb(impl, this, GPI_RISING),
-                                      m_falling_cb(impl, this, GPI_FALLING),
-                                      m_either_cb(impl, this, GPI_FALLING | GPI_RISING) { }
+  public:
+    VhpiSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl,
+                     gpi_objtype_t objtype, bool is_const)
+        : GpiSignalObjHdl(impl, hdl, objtype, is_const),
+          m_rising_cb(impl, this, GPI_RISING),
+          m_falling_cb(impl, this, GPI_FALLING),
+          m_either_cb(impl, this, GPI_FALLING | GPI_RISING) {}
     ~VhpiSignalObjHdl() override;
 
-    const char* get_signal_value_binstr() override;
-    const char* get_signal_value_str() override;
+    const char *get_signal_value_binstr() override;
+    const char *get_signal_value_str() override;
     double get_signal_value_real() override;
     long get_signal_value_long() override;
 
     using GpiSignalObjHdl::set_signal_value;
     int set_signal_value(int32_t value, gpi_set_action_t action) override;
     int set_signal_value(double value, gpi_set_action_t action) override;
-    int set_signal_value_str(std::string &value, gpi_set_action_t action) override;
-    int set_signal_value_binstr(std::string &value, gpi_set_action_t action) override;
+    int set_signal_value_str(std::string &value,
+                             gpi_set_action_t action) override;
+    int set_signal_value_binstr(std::string &value,
+                                gpi_set_action_t action) override;
 
     /* Value change callback accessor */
     GpiCbHdl *value_change_cb(int edge) override;
     int initialise(std::string &name, std::string &fq_name) override;
 
-protected:
+  protected:
     vhpiEnumT chr2vhpi(char value);
     vhpiValueT m_value;
     vhpiValueT m_binvalue;
@@ -214,44 +217,46 @@ protected:
 };
 
 class VhpiLogicSignalObjHdl : public VhpiSignalObjHdl {
-public:
-    VhpiLogicSignalObjHdl(GpiImplInterface *impl,
-                         vhpiHandleT hdl,
-                         gpi_objtype_t objtype,
-                         bool is_const) : VhpiSignalObjHdl(impl, hdl, objtype, is_const) { }
-
+  public:
+    VhpiLogicSignalObjHdl(GpiImplInterface *impl, vhpiHandleT hdl,
+                          gpi_objtype_t objtype, bool is_const)
+        : VhpiSignalObjHdl(impl, hdl, objtype, is_const) {}
 
     using GpiSignalObjHdl::set_signal_value;
     int set_signal_value(int32_t value, gpi_set_action_t action) override;
-    int set_signal_value_binstr(std::string &value, gpi_set_action_t action) override;
+    int set_signal_value_binstr(std::string &value,
+                                gpi_set_action_t action) override;
 
     int initialise(std::string &name, std::string &fq_name) override;
 };
 
 class VhpiIterator : public GpiIterator {
-public:
+  public:
     VhpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl);
 
     ~VhpiIterator() override;
 
-    Status next_handle(std::string &name, GpiObjHdl **hdl, void **raw_hdl) override;
+    Status next_handle(std::string &name, GpiObjHdl **hdl,
+                       void **raw_hdl) override;
 
-private:
+  private:
     vhpiHandleT m_iterator;
     vhpiHandleT m_iter_obj;
-    static std::map<vhpiClassKindT, std::vector<vhpiOneToManyT>> iterate_over;      /* Possible mappings */
+    static std::map<vhpiClassKindT, std::vector<vhpiOneToManyT>>
+        iterate_over;                      /* Possible mappings */
     std::vector<vhpiOneToManyT> *selected; /* Mapping currently in use */
     std::vector<vhpiOneToManyT>::iterator one2many;
 };
 
 class VhpiImpl : public GpiImplInterface {
-public:
-    VhpiImpl(const std::string& name) : GpiImplInterface(name),
-                                        m_read_write(this),
-                                        m_next_phase(this),
-                                        m_read_only(this) { }
+  public:
+    VhpiImpl(const std::string &name)
+        : GpiImplInterface(name),
+          m_read_write(this),
+          m_next_phase(this),
+          m_read_only(this) {}
 
-     /* Sim related */
+    /* Sim related */
     void sim_end() override;
     void get_sim_time(uint32_t *high, uint32_t *low) override;
     void get_sim_precision(int32_t *precision) override;
@@ -260,7 +265,8 @@ public:
 
     /* Hierachy related */
     GpiObjHdl *get_root_handle(const char *name) override;
-    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl, gpi_iterator_sel_t type) override;
+    GpiIterator *iterate_handle(GpiObjHdl *obj_hdl,
+                                gpi_iterator_sel_t type) override;
 
     /* Callback related, these may (will) return the same handle*/
     GpiCbHdl *register_timed_callback(uint64_t time) override;
@@ -268,18 +274,19 @@ public:
     GpiCbHdl *register_nexttime_callback() override;
     GpiCbHdl *register_readwrite_callback() override;
     int deregister_callback(GpiCbHdl *obj_hdl) override;
-    GpiObjHdl* native_check_create(std::string &name, GpiObjHdl *parent) override;
-    GpiObjHdl* native_check_create(int32_t index, GpiObjHdl *parent) override;
-    GpiObjHdl* native_check_create(void *raw_hdl, GpiObjHdl *parent) override;
+    GpiObjHdl *native_check_create(std::string &name,
+                                   GpiObjHdl *parent) override;
+    GpiObjHdl *native_check_create(int32_t index, GpiObjHdl *parent) override;
+    GpiObjHdl *native_check_create(void *raw_hdl, GpiObjHdl *parent) override;
 
-    const char * reason_to_string(int reason) override;
-    const char * format_to_string(int format);
+    const char *reason_to_string(int reason) override;
+    const char *format_to_string(int format);
 
     GpiObjHdl *create_gpi_obj_from_handle(vhpiHandleT new_hdl,
                                           std::string &name,
                                           std::string &fq_name);
 
-private:
+  private:
     VhpiReadwriteCbHdl m_read_write;
     VhpiNextPhaseCbHdl m_next_phase;
     VhpiReadOnlyCbHdl m_read_only;

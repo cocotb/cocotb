@@ -6,10 +6,11 @@
 #define COCOTB_EXPORTS_H_
 
 // Make cocotb work correctly when the default visibility is changed to hidden
-// Changing the default visibility to hidden has the advantage of significantly reducing the code size,
-// load times as well as letting the optimizer produce better code
+// Changing the default visibility to hidden has the advantage of significantly
+// reducing the code size, load times as well as letting the optimizer produce
+// better code
 #if defined(__linux__) || defined(__APPLE__)
-#define COCOTB_EXPORT __attribute__ ((visibility ("default")))
+#define COCOTB_EXPORT __attribute__((visibility("default")))
 #define COCOTB_IMPORT
 #else
 #define COCOTB_EXPORT __declspec(dllexport)

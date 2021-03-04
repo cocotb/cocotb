@@ -2,12 +2,12 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <Python.h>         // all things Python
-#include <gpi_logging.h>    // all things GPI logging
-#include <py_gpi_logging.h> // PY_GPI_LOG_SIZE
-#include <cstdarg>          // va_list, va_copy, va_end
-#include <cstdio>           // fprintf, vsnprintf
+#include <Python.h>          // all things Python
+#include <gpi_logging.h>     // all things GPI logging
+#include <py_gpi_logging.h>  // PY_GPI_LOG_SIZE
 
+#include <cstdarg>  // va_list, va_copy, va_end
+#include <cstdio>   // fprintf, vsnprintf
 
 static PyObject *pLogHandler = nullptr;
 
@@ -15,17 +15,9 @@ static PyObject *pLogFilter = nullptr;
 
 static int py_gpi_log_level = GPIInfo;
 
-
-static void py_gpi_log_handler(
-    void *,
-    const char *name,
-    int level,
-    const char *pathname,
-    const char *funcname,
-    long lineno,
-    const char *msg,
-    va_list argp)
-{
+static void py_gpi_log_handler(void *, const char *name, int level,
+                               const char *pathname, const char *funcname,
+                               long lineno, const char *msg, va_list argp) {
     if (level < py_gpi_log_level) {
         return;
     }
@@ -35,17 +27,19 @@ static void py_gpi_log_handler(
 
     PyGILState_STATE gstate = PyGILState_Ensure();
 
-    // Declared here in order to be initialized before any goto statements and refcount cleanup
-    PyObject *logger_name_arg = NULL, *filename_arg = NULL, *lineno_arg = NULL, *msg_arg = NULL, *function_arg = NULL;
+    // Declared here in order to be initialized before any goto statements and
+    // refcount cleanup
+    PyObject *logger_name_arg = NULL, *filename_arg = NULL, *lineno_arg = NULL,
+             *msg_arg = NULL, *function_arg = NULL;
 
-    PyObject *level_arg = PyLong_FromLong(level);                  // New reference
+    PyObject *level_arg = PyLong_FromLong(level);  // New reference
     if (level_arg == NULL) {
         // LCOV_EXCL_START
         goto error;
         // LCOV_EXCL_STOP
     }
 
-    logger_name_arg = PyUnicode_FromString(name);      // New reference
+    logger_name_arg = PyUnicode_FromString(name);  // New reference
     if (logger_name_arg == NULL) {
         // LCOV_EXCL_START
         goto error;
@@ -54,7 +48,8 @@ static void py_gpi_log_handler(
 
     {
         // check if log level is enabled
-        PyObject *filter_ret = PyObject_CallFunctionObjArgs(pLogFilter, logger_name_arg, level_arg, NULL);
+        PyObject *filter_ret = PyObject_CallFunctionObjArgs(
+            pLogFilter, logger_name_arg, level_arg, NULL);
         if (filter_ret == NULL) {
             // LCOV_EXCL_START
             goto error;
@@ -65,7 +60,8 @@ static void py_gpi_log_handler(
         Py_DECREF(filter_ret);
         if (is_enabled < 0) {
             // LCOV_EXCL_START
-            /* A Python exception occured while converting `filter_ret` to bool */
+            /* A Python exception occured while converting `filter_ret` to bool
+             */
             goto error;
             // LCOV_EXCL_STOP
         }
@@ -87,28 +83,28 @@ static void py_gpi_log_handler(
         }
     }
 
-    filename_arg = PyUnicode_FromString(pathname);      // New reference
+    filename_arg = PyUnicode_FromString(pathname);  // New reference
     if (filename_arg == NULL) {
         // LCOV_EXCL_START
         goto error;
         // LCOV_EXCL_STOP
     }
 
-    lineno_arg = PyLong_FromLong(lineno);               // New reference
+    lineno_arg = PyLong_FromLong(lineno);  // New reference
     if (lineno_arg == NULL) {
         // LCOV_EXCL_START
         goto error;
         // LCOV_EXCL_STOP
     }
 
-    msg_arg = PyUnicode_FromString(log_buff);           // New reference
+    msg_arg = PyUnicode_FromString(log_buff);  // New reference
     if (msg_arg == NULL) {
         // LCOV_EXCL_START
         goto error;
         // LCOV_EXCL_STOP
     }
 
-    function_arg = PyUnicode_FromString(funcname);      // New reference
+    function_arg = PyUnicode_FromString(funcname);  // New reference
     if (function_arg == NULL) {
         // LCOV_EXCL_START
         goto error;
@@ -116,8 +112,11 @@ static void py_gpi_log_handler(
     }
 
     {
-        // Log function args are logger_name, level, filename, lineno, msg, function
-        PyObject *handler_ret = PyObject_CallFunctionObjArgs(pLogHandler, logger_name_arg, level_arg, filename_arg, lineno_arg, msg_arg, function_arg, NULL);
+        // Log function args are logger_name, level, filename, lineno, msg,
+        // function
+        PyObject *handler_ret = PyObject_CallFunctionObjArgs(
+            pLogHandler, logger_name_arg, level_arg, filename_arg, lineno_arg,
+            msg_arg, function_arg, NULL);
         if (handler_ret == NULL) {
             // LCOV_EXCL_START
             goto error;
@@ -130,8 +129,11 @@ static void py_gpi_log_handler(
 error:
     // LCOV_EXCL_START
     /* Note: don't call the LOG_ERROR macro because that might recurse */
-    gpi_native_logger_vlog(name, level, pathname, funcname, lineno, msg, argp_copy);
-    gpi_native_logger_log("cocotb.gpi", GPIError, __FILE__, __func__, __LINE__, "Error calling Python logging function from C++ while logging the above");
+    gpi_native_logger_vlog(name, level, pathname, funcname, lineno, msg,
+                           argp_copy);
+    gpi_native_logger_log("cocotb.gpi", GPIError, __FILE__, __func__, __LINE__,
+                          "Error calling Python logging function from C++ "
+                          "while logging the above");
     PyErr_Print();
     // LCOV_EXCL_STOP
 ok:
@@ -145,24 +147,18 @@ ok:
     PyGILState_Release(gstate);
 }
 
-
-extern "C" void py_gpi_logger_set_level(int level)
-{
+extern "C" void py_gpi_logger_set_level(int level) {
     py_gpi_log_level = level;
     gpi_native_logger_set_level(level);
 }
 
-
-extern "C" void py_gpi_logger_initialize(PyObject * handler, PyObject * filter)
-{
+extern "C" void py_gpi_logger_initialize(PyObject *handler, PyObject *filter) {
     pLogHandler = handler;
     pLogFilter = filter;
     gpi_set_log_handler(py_gpi_log_handler, nullptr);
 }
 
-
-extern "C" void py_gpi_logger_finalize()
-{
+extern "C" void py_gpi_logger_finalize() {
     gpi_clear_log_handler();
     Py_XDECREF(pLogHandler);
     Py_XDECREF(pLogFilter);
