@@ -11,7 +11,7 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
-Cocotb 1.5.0rc1 (2021-02-23)
+cocotb 1.5.0rc2 (2021-03-04)
 ============================
 
 Features
