@@ -376,8 +376,13 @@ All changes which should go into the main codebase of cocotb must follow this se
 - The code must be within the [scope of cocotb](#architecture-and-scope-of-cocotb).
 - All code must be licensed under the [Revised BSD License](https://github.com/cocotb/cocotb/blob/master/LICENSE).
   By contributing to this project you signal your agreement with these license terms.
-- All code must follow the established coding standards.
-  For Python code, follow the [PEP 8](https://www.python.org/dev/peps/pep-0008/) style guide.
+- All code must follow the established coding standards:
+   - For Python code, follow the [PEP 8](https://www.python.org/dev/peps/pep-0008/) style guide.
+   - For C++ code, follow the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) but with 4 space indentation.
+     You can run the following command to automatically format the modified file to match the standard:
+     ```command
+     clang-format -i <file>
+     ```
 - All code must pass existing tests.
   New functionality must be accompanied by tests, and bug fixes should add tests to increase the test coverage and prevent regressions.
 - If code changes or enhances documented behavior the documentation should be updated.
