@@ -42,6 +42,18 @@ jobs:
         pip install flake8
         flake8
 
+  clang-format-lint:
+    runs-on: ubuntu-latest
+    name: clang-format
+    steps:
+    - uses: actions/checkout@v2
+    - uses: DoozyX/clang-format-lint-action@v0.11
+      with:
+        source: '.'
+        extensions: 'h,cpp'
+        clangFormatVersion: 10
+        exclude: './cocotb/share/include/*user*.h ./examples'
+
   tests:
 
     name: ${{matrix.extra_name}}${{matrix.sim}} (${{matrix.sim-version}}) | ${{matrix.os}} | Python ${{matrix.python-version}} ${{matrix.may_fail && '| May Fail' || ''}}
