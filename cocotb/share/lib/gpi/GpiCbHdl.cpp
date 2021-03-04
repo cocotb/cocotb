@@ -1,53 +1,43 @@
 /******************************************************************************
-* Copyright (c) 2013 Potential Ventures Ltd
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*    * Redistributions of source code must retain the above copyright
-*      notice, this list of conditions and the following disclaimer.
-*    * Redistributions in binary form must reproduce the above copyright
-*      notice, this list of conditions and the following disclaimer in the
-*      documentation and/or other materials provided with the distribution.
-*    * Neither the name of Potential Ventures Ltd,
-*       SolarFlare Communications Inc nor the
-*      names of its contributors may be used to endorse or promote products
-*      derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
+ * Copyright (c) 2013 Potential Ventures Ltd
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *    * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *    * Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *    * Neither the name of Potential Ventures Ltd,
+ *       SolarFlare Communications Inc nor the
+ *      names of its contributors may be used to endorse or promote products
+ *      derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ******************************************************************************/
 
 #include "gpi_priv.h"
 
-const char * GpiObjHdl::get_name_str()
-{
-    return m_name.c_str();
-}
+const char *GpiObjHdl::get_name_str() { return m_name.c_str(); }
 
-const char * GpiObjHdl::get_fullname_str()
-{
-    return m_fullname.c_str();
-}
+const char *GpiObjHdl::get_fullname_str() { return m_fullname.c_str(); }
 
-const std::string & GpiObjHdl::get_fullname()
-{
-    return m_fullname;
-}
+const std::string &GpiObjHdl::get_fullname() { return m_fullname; }
 
-const char * GpiObjHdl::get_type_str()
-{
+const char *GpiObjHdl::get_type_str() {
 #define CASE_OPTION(_X) \
-    case _X: \
-        ret = #_X; \
+    case _X:            \
+        ret = #_X;      \
         break
 
     const char *ret;
@@ -73,46 +63,38 @@ const char * GpiObjHdl::get_type_str()
     return ret;
 }
 
-const std::string & GpiObjHdl::get_name()
-{
-    return m_name;
-}
+const std::string &GpiObjHdl::get_name() { return m_name; }
 
 /* Genertic base clss implementations */
-bool GpiHdl::is_this_impl(GpiImplInterface *impl)
-{
+bool GpiHdl::is_this_impl(GpiImplInterface *impl) {
     return impl == this->m_impl;
 }
 
-int GpiObjHdl::initialise(std::string &name, std::string &fq_name)
-{
+int GpiObjHdl::initialise(std::string &name, std::string &fq_name) {
     m_name = name;
     m_fullname = fq_name;
     return 0;
 }
 
-int GpiCbHdl::run_callback()
-{
+int GpiCbHdl::run_callback() {
     LOG_DEBUG("Generic run_callback");
     this->gpi_function(m_cb_data);
     LOG_DEBUG("Generic run_callback done");
     return 0;
 }
 
-int GpiCbHdl::cleanup_callback()
-{
+int GpiCbHdl::cleanup_callback() {
     LOG_WARN("Generic cleanup_handler");
     return 0;
 }
 
-int GpiCbHdl::arm_callback()
-{
+int GpiCbHdl::arm_callback() {
     LOG_WARN("Generic arm_callback");
     return 0;
 }
 
-int GpiCbHdl::set_user_data(int (*gpi_function)(const void*), const void *data)
-{
+int GpiCbHdl::set_user_data(int (*gpi_function)(const void *),
+                            const void *data) {
     if (!gpi_function) {
         LOG_ERROR("gpi_function to set_user_data is NULL");
     }
@@ -121,31 +103,17 @@ int GpiCbHdl::set_user_data(int (*gpi_function)(const void*), const void *data)
     return 0;
 }
 
-const void * GpiCbHdl::get_user_data()
-{
-    return m_cb_data;
-}
+const void *GpiCbHdl::get_user_data() { return m_cb_data; }
 
-void GpiCbHdl::set_call_state(gpi_cb_state_e new_state)
-{
-    m_state = new_state;
-}
+void GpiCbHdl::set_call_state(gpi_cb_state_e new_state) { m_state = new_state; }
 
-gpi_cb_state_e GpiCbHdl::get_call_state()
-{
-    return m_state;
-}
+gpi_cb_state_e GpiCbHdl::get_call_state() { return m_state; }
 
-GpiCbHdl::~GpiCbHdl()
-{
+GpiCbHdl::~GpiCbHdl() {}
 
-}
-
-GpiValueCbHdl::GpiValueCbHdl(GpiImplInterface *impl,
-                             GpiSignalObjHdl *signal,
-                             int edge) : GpiCbHdl(impl),
-                                         m_signal(signal)
-{
+GpiValueCbHdl::GpiValueCbHdl(GpiImplInterface *impl, GpiSignalObjHdl *signal,
+                             int edge)
+    : GpiCbHdl(impl), m_signal(signal) {
     if (edge == (GPI_RISING | GPI_FALLING))
         required_value = "X";
     else if (edge & GPI_RISING)
@@ -154,8 +122,7 @@ GpiValueCbHdl::GpiValueCbHdl(GpiImplInterface *impl,
         required_value = "0";
 }
 
-int GpiValueCbHdl::run_callback()
-{
+int GpiValueCbHdl::run_callback() {
     std::string current_value;
     bool pass = false;
 
@@ -163,8 +130,7 @@ int GpiValueCbHdl::run_callback()
         pass = true;
     else {
         current_value = m_signal->get_signal_value_binstr();
-        if (current_value  == required_value)
-            pass = true;
+        if (current_value == required_value) pass = true;
     }
 
     if (pass) {
