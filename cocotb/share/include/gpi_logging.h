@@ -16,9 +16,9 @@
  *      derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- *AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL POTENTIAL VENTURES LTD BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -47,8 +47,8 @@ extern "C" {
  *
  *  The native logger only logs level names at these log level values.
  *  They were specifically chosen to align with the default level values in the
- * Python logging module. Implementers of custom loggers should emit human
- * readable level names for these value, but may support other values
+ *  Python logging module. Implementers of custom loggers should emit human
+ *  readable level names for these value, but may support other values.
  */
 enum gpi_log_levels {
     GPIDebug = 10,  ///< Prints `DEBUG` by default. Verbose information, useful
@@ -103,7 +103,7 @@ enum gpi_log_levels {
     @param lineno    Line number of the call site
     @param msg       The message to log, uses C-sprintf-style format specifier
     @param args      Additional arguments; formatted and inserted in message
-   according to format specifier in msg argument
+                     according to format specifier in msg argument
  */
 typedef void(gpi_log_handler_type)(void *userdata, const char *name, int level,
                                    const char *pathname, const char *funcname,
@@ -118,7 +118,7 @@ typedef void(gpi_log_handler_type)(void *userdata, const char *name, int level,
     @param lineno    Line number of the call site
     @param msg       The message to log, uses C-sprintf-style format specifier
     @param ...       Additional arguments; formatted and inserted in message
-   according to format specifier in msg argument
+                     according to format specifier in msg argument
  */
 GPILOG_EXPORT void gpi_log(const char *name, int level, const char *pathname,
                            const char *funcname, long lineno, const char *msg,
@@ -133,7 +133,7 @@ GPILOG_EXPORT void gpi_log(const char *name, int level, const char *pathname,
     @param lineno    Line number of the call site
     @param msg       The message to log, uses C-sprintf-style format specifier
     @param args      Additional arguments; formatted and inserted in message
-   according to format specifier in msg argument
+                     according to format specifier in msg argument
  */
 GPILOG_EXPORT void gpi_vlog(const char *name, int level, const char *pathname,
                             const char *funcname, long lineno, const char *msg,
@@ -141,7 +141,7 @@ GPILOG_EXPORT void gpi_vlog(const char *name, int level, const char *pathname,
 
 /** Retrieve the current log handler.
     @param handler  Location to return current log handler. If no custom logger
-   is registered this will be `NULL`.
+                    is registered this will be `NULL`.
     @param userdata Location to return log handler userdata
  */
 GPILOG_EXPORT void gpi_get_log_handler(gpi_log_handler_type **handler,
@@ -167,7 +167,7 @@ GPILOG_EXPORT void gpi_clear_log_handler(void);
     @param lineno    Line number of the call site
     @param msg       The message to log, uses C-sprintf-style format specifier
     @param ...       Additional arguments; formatted and inserted in message
-   according to format specifier in msg argument
+                     according to format specifier in msg argument
  */
 GPILOG_EXPORT void gpi_native_logger_log(const char *name, int level,
                                          const char *pathname,
@@ -183,7 +183,7 @@ GPILOG_EXPORT void gpi_native_logger_log(const char *name, int level,
     @param lineno    Line number of the call site
     @param msg       The message to log, uses C-sprintf-style format specifier
     @param args      Additional arguments; formatted and inserted in message
-   according to format specifier in msg argument
+                     according to format specifier in msg argument
  */
 GPILOG_EXPORT void gpi_native_logger_vlog(const char *name, int level,
                                           const char *pathname,
@@ -192,7 +192,7 @@ GPILOG_EXPORT void gpi_native_logger_vlog(const char *name, int level,
 
 /** Set minimum logging level of the native logger.
     If a logging request occurs where the logging level is lower than the level
-   set by this function, it is not logged. Only affects the native logger.
+    set by this function, it is not logged. Only affects the native logger.
     @param level     Logging level
     @return          Previous logging level
  */
