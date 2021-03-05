@@ -24,8 +24,9 @@ class Queue(Generic[T]):
 
         self._maxsize = maxsize
 
-        self._finished = Event()
-        self._finished.set()
+        self._full_event = Event('{} full'.format(type(self).__name__))
+        self._empty_event = Event('{} empty'.format(type(self).__name__))
+        self._empty_event.set()
 
         self._getters = collections.deque()
         self._putters = collections.deque()
@@ -60,7 +61,7 @@ class Queue(Generic[T]):
     def _format(self):
         result = 'maxsize={}'.format(repr(self._maxsize))
         if getattr(self, '_queue', None):
-            result += ' _queue={}'.format(repr(list(self._queue)))
+            result += ' _queue={!r}'.format(list(self._queue))
         if self._getters:
             result += ' _getters[{}]'.format(len(self._getters))
         if self._putters:
@@ -80,6 +81,13 @@ class Queue(Generic[T]):
         """Return ``True`` if the queue is empty, ``False`` otherwise."""
         return not self._queue
 
+    async def wait_empty(self) -> None:
+        """Wait until the queue becomes empty.
+
+        If the queue is empty, return immediately.
+        """
+        await self._empty_event.wait()
+
     def full(self) -> bool:
         """Return ``True`` if there are :meth:`maxsize` items in the queue.
 
@@ -91,6 +99,17 @@ class Queue(Generic[T]):
             return False
         else:
             return self.qsize() >= self._maxsize
+
+    async def wait_full(self) -> None:
+        """Wait until the queue becomes full.
+
+        If the queue is full, return immediately.
+        If the Queue was initialized with ``maxsize=0``,
+        raise :exc:`RuntimeError` instead of waiting indefinitely.
+        """
+        if self._maxsize <= 0:
+            raise RuntimeError("Queue with no maxsize cannot become full")
+        await self._full_event.wait()
 
     async def put(self, item: T) -> None:
         """Put an *item* into the queue.
@@ -112,7 +131,9 @@ class Queue(Generic[T]):
         if self.full():
             raise QueueFull()
         self._put(item)
-        self._finished.clear()
+        self._empty_event.clear()
+        if self.full():
+            self._full_event.set()
         self._wakeup_next(self._getters)
 
     async def get(self) -> T:
@@ -135,6 +156,9 @@ class Queue(Generic[T]):
         if self.empty():
             raise QueueEmpty()
         item = self._get()
+        self._full_event.clear()
+        if self.empty():
+            self._empty_event.set()
         self._wakeup_next(self._putters)
         return item
 
