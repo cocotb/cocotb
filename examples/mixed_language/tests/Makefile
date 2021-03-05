@@ -19,8 +19,8 @@ TOPLEVEL = endian_swapper_mixed
 
 PWD=$(shell pwd)
 
-VERILOG_SOURCES = $(PWD)/../../endian_swapper/hdl/endian_swapper.sv
-VHDL_SOURCES    = $(PWD)/../../endian_swapper/hdl/endian_swapper.vhdl
+VERILOG_SOURCES = $(PWD)/../hdl/endian_swapper.sv
+VHDL_SOURCES    = $(PWD)/../hdl/endian_swapper.vhdl
 
 ifeq ($(TOPLEVEL_LANG),verilog)
     VERILOG_SOURCES += $(PWD)/../hdl/toplevel.sv
