@@ -33,7 +33,7 @@ ifeq ($(TOPLEVEL_LANG),verilog)
     endif
 
 else ifeq ($(TOPLEVEL_LANG),vhdl)
-    VHDL_SOURCES = $(PWD)/../../mean/hdl/mean_pkg.vhd $(PWD)/../hdl/matrix_multiplier_pkg.vhd $(PWD)/../hdl/matrix_multiplier.vhd
+    VHDL_SOURCES = $(PWD)/../hdl/matrix_multiplier_pkg.vhd $(PWD)/../hdl/matrix_multiplier.vhd
 
     ifneq ($(filter $(SIM),ghdl questa modelsim riviera activehdl),)
         # ghdl, questa, and aldec all use SIM_ARGS with '-g' for setting generics

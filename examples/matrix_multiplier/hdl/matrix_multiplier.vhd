@@ -6,7 +6,6 @@ library ieee ;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.matrix_multiplier_pkg.all;
-use work.mean_pkg.clog2;
 
 entity matrix_multiplier is
   generic (
