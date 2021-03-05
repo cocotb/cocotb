@@ -7,7 +7,7 @@ Tests relating to cocotb.queue.Queue, cocotb.queue.LifoQueue, cocotb.queue.Prior
 import cocotb
 from cocotb.queue import Queue, PriorityQueue, LifoQueue, QueueFull, QueueEmpty
 from cocotb.regression import TestFactory
-from cocotb.triggers import Combine
+from cocotb.triggers import Combine, NullTrigger
 import pytest
 
 
@@ -256,3 +256,99 @@ async def test_str_and_repr(_):
     s = repr(q)
     assert "_getters" not in s
     assert str(q)[:-1] in s
+
+
+@cocotb.test()
+async def test_wait_full(_):
+    QUEUE_SIZE = 5
+
+    q = Queue()
+
+    with pytest.raises(RuntimeError):
+        await q.wait_full()
+
+    q = Queue(maxsize=QUEUE_SIZE)
+
+    async def full_coro():
+        await q.wait_full()
+
+    fwaiter = cocotb.fork(full_coro())
+    assert not fwaiter._finished
+
+    for i in range(QUEUE_SIZE - 1):
+        q.put_nowait(i)
+
+    assert not q.full()
+    assert not fwaiter._finished
+
+    q.put_nowait(QUEUE_SIZE - 1)
+
+    assert q.full()
+    assert not fwaiter._finished
+
+    await NullTrigger()
+
+    assert q.full()
+    assert fwaiter._finished
+
+    # wait on already full queue
+    fwaiter2 = cocotb.fork(full_coro())
+
+    await NullTrigger()
+
+    assert fwaiter2._finished
+
+    q.get_nowait()
+
+    assert not q.full()
+
+    fwaiter = cocotb.fork(full_coro())
+    assert not fwaiter._finished
+
+
+@cocotb.test()
+async def test_wait_empty(_):
+    QUEUE_SIZE = 5
+    q = Queue(maxsize=QUEUE_SIZE)
+
+    # fill queue
+    for i in range(QUEUE_SIZE):
+        q.put_nowait(i)
+
+    async def empty_coro():
+        await q.wait_empty()
+
+    ewaiter = cocotb.fork(empty_coro())
+    assert not q.empty()
+    assert not ewaiter._finished
+
+    for _ in range(QUEUE_SIZE - 1):
+        q.get_nowait()
+
+    assert not q.empty()
+    assert not ewaiter._finished
+
+    q.get_nowait()
+
+    assert q.empty()
+    assert not ewaiter._finished
+
+    await NullTrigger()
+
+    assert q.empty()
+    assert ewaiter._finished
+
+    # wait on already empty queue
+    ewaiter2 = cocotb.fork(empty_coro())
+
+    await NullTrigger()
+
+    assert ewaiter2._finished
+
+    q.put_nowait(0)
+
+    assert not q.empty()
+
+    ewaiter = cocotb.fork(empty_coro())
+    assert not ewaiter._finished
+    ewaiter.kill()
