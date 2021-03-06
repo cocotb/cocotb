@@ -21,6 +21,6 @@ jobs:
           If it has not been resolved, you may need to provide more information.
           If no more activity on this issue occurs in 7 days, it will be closed.
         stale-issue-label: "status:stale"
-        only-labels: "type:question,status:close?"
+        any-of-labels: "type:question,status:close?"
         exempt-issue-labels: "type:bug,type:feature"
-        operations-per-run: 5
+        operations-per-run: 30
