@@ -141,6 +141,37 @@ To enable FST tracing, add ``--trace-fst`` to :make:var:`EXTRA_ARGS` as shown be
 
 The resulting file will be :file:`dump.fst` and can be opened by ``gtkwave dump.fst``.
 
+.. _sim-verilator-user-clocks:
+
+C++ clocks
+----------
+
+For increased performance, clocks may be generated in C++ with a user-defined callback function.
+First define a callback matching the cocotb-provided declaration:
+
+  .. code-block:: cpp
+
+    #include <memory>       // unique_ptr
+    #include "Vtop.h"
+    #include "verilated.h"  // vluint64_t
+
+    vluint64_t user_clock_cb(std::unique_ptr<Vtop> & topp, vluint64_t current_time) {
+        if (current_time % CLK_HALFPERIOD == 0) {
+            topp->clk = !topp->clk;
+        }
+        // Return the next simulation time to call this callback
+        return current_time + CLK_HALFPERIOD;
+    }
+
+Then add the C++ file to the Makefile using ``VERILATOR_USRCLK_FILE`` as shown below.
+The user file will be compiled and linked with the cocotb simulation files.
+
+  .. code-block:: make
+
+    VERILATOR_USRCLK_FILE = verilator_usrclk.cpp
+
+.. versionadded: 1.5
+
 .. _sim-verilator-issues:
 
 Issues for this simulator
