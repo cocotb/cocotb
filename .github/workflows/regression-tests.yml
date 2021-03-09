@@ -163,6 +163,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
       # Install Python
     - name: Set up Python ${{matrix.python-version}}
