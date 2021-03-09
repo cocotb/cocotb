@@ -93,8 +93,7 @@ Driving Buses
 Examples and specific bus implementation bus drivers (AMBA, Avalon, XGMII, and
 others) exist in the :class:`.Driver` class enabling a test to append
 transactions to perform the serialization of transactions onto a physical
-interface. Here is an example using the Avalon bus driver in the ``endian_swapper``
-example:
+interface. Here is an example using an Avalon bus driver:
 
 .. code-block:: python3
 
