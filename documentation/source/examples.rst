@@ -64,7 +64,7 @@ one to monitor the matrix multiplier input,
 and another to monitor the output.
 The ``MatrixMultiplierTester`` :func:`~cocotb.fork`\ s a coroutine which consumes transactions from the input monitor,
 feeds them into a model to compute an expected output,
-and finally compares the two for correctness.
+and finally compares the module output to the expected for correctness.
 
 The main test coroutine stimulates the matrix multiplier DUT with the test data.
 Once all the test inputs have been applied it decides when the test is done.
