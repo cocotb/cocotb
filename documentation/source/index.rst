@@ -119,7 +119,6 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    writing_testbenches
    coroutines
    triggers
-   testbench_tools
    custom_flows
    rotating_logger
 
