@@ -107,7 +107,6 @@ Cocotb
     will be written which contains statistics about the cumulative time spent in the functions.
 
     From this, a callgraph diagram can be generated with `gprof2dot <https://github.com/jrfonseca/gprof2dot>`_ and ``graphviz``.
-    See the ``profile`` Make target in the ``endian_swapper`` example on how to set this up.
 
 .. envvar:: COCOTB_LOG_LEVEL
 
