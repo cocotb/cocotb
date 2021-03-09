@@ -56,13 +56,13 @@ A reusable ``DataValidMonitor`` class is defined.
 It monitors a streaming data/valid bus,
 samples the bus when a transaction occurs,
 and places those transactions into an asynchronous :class:`~cocotb.queue.Queue`.
-The queue allows another coroutine to consume monitored transactions at it's own pace.
+The queue allows another coroutine to consume monitored transactions at its own pace.
 
 A reusable ``MatrixMultiplierTester`` is also defined.
 It instantiates two of the ``DataValidMonitor``\ s:
 one to monitor the matrix multiplier input,
 and another to monitor the output.
-The ``MatrixMultiplierTester`` then creates a :class:`coroutine <cocotb.fork>` which consumes transaction from the input monitor,
+The ``MatrixMultiplierTester`` :func:`~cocotb.fork`\ s a coroutine which consumes transaction from the input monitor,
 feeds them into a model to compute an expected output,
 and finally compares the two for correctness.
 
