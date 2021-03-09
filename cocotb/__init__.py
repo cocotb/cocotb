@@ -218,6 +218,7 @@ def _initialise_testbench_(argv_):
 
     root_name = os.getenv("TOPLEVEL")
     if root_name is not None:
+        root_name = root_name.strip()
         if root_name == "":
             root_name = None
         elif '.' in root_name:
