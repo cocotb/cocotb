@@ -217,3 +217,26 @@ thus the access will raise an :exc:`AttributeError`.
 A workaround is to use indirect access using
 :meth:`~cocotb.handle.HierarchyObject._id` like in the following example:
 ``dut._id("_some_signal", extended=False)``.
+
+Logging
+=======
+
+Cocotb uses the builtin :mod:`logging` library, with some configuration described in :ref:`logging-reference-section` to provide some sensible defaults.
+Any forked coroutine holds a :class:`logging.Logger`,
+and can be set to its own logging level.
+
+.. code-block:: python3
+
+    task = cocotb.fork(coro)
+    task.log.setLevel(logging.DEBUG)
+    task.log.debug("Running Task!")
+
+The :term:`DUT` and each hierarchical object can also have individual logging levels set.
+When logging :term:`HDL` objects, beware that ``_log`` is the preferred way to use
+logging. This helps minimize the change of name collisions with an :term:`HDL` log
+component with the Python logging functionality.
+
+.. code-block:: python3
+
+    dut.my_signal._log.info("Setting signal")
+    dut.my_signal <= 1
