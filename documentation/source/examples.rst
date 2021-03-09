@@ -52,21 +52,24 @@ When input ``valid_i`` is high
 and ``c_o`` is calculated,
 ``valid_o`` goes high to signal a valid output value.
 
-The testbench defines ``MatrixInMonitor`` and ``MatrixOutMonitor``
-(both sub-classes of :class:`.BusMonitor`)
-and a test case ``test_multiply``.
+A reusable ``DataValidMonitor`` class is defined.
+It monitors a streaming data/valid bus,
+samples the bus when a transaction occurs,
+and places those transactions into an asynchronous :class:`~cocotb.queue.Queue`.
+The queue allows another coroutine to consume monitored transactions at its own pace.
 
-``MatrixInMonitor`` watches for valid input matrices,
-then does the multiplication in Python
-and stores the result as the expected output matrix.
+A reusable ``MatrixMultiplierTester`` is also defined.
+It instantiates two of the ``DataValidMonitor``\ s:
+one to monitor the matrix multiplier input,
+and another to monitor the output.
+The ``MatrixMultiplierTester`` :func:`~cocotb.fork`\ s a coroutine which consumes transactions from the input monitor,
+feeds them into a model to compute an expected output,
+and finally compares the module output to the expected for correctness.
 
-``MatrixOutMonitor`` watches for valid output matrices
-and compares the result to the expected value.
+The main test coroutine stimulates the matrix multiplier DUT with the test data.
+Once all the test inputs have been applied it decides when the test is done.
 
-The testbench makes use of :class:`.TestFactory`
-and random data generators
-to test many sets of matrices,
-and :class:`.Scoreboard` to compare expected and actual results.
+The testbench makes use of :class:`.TestFactory` and random data generators to test many sets of matrices.
 
 The number of data bits for each entry in the matrices,
 as well as the row and column counts for each matrix,
