@@ -7,16 +7,16 @@ tasks:
       export COCOTB_REDUCED_LOG_FMT=1
     init: >
       gp preview https://docs.cocotb.org/ &&
-      cd /workspace/cocotb/examples/dff/tests &&
-      gp open ../hdl/dff.v &&
-      gp open ../hdl/dff.vhdl &&
+      cd /workspace/cocotb/examples/simple_dff &&
+      gp open dff.sv &&
+      gp open dff.vhdl &&
       gp open Makefile &&
-      gp open dff_cocotb.py &&
+      gp open test_dff.py &&
       make SIM=icarus &&
       EXTRA_ARGS="--trace-fst --trace-structs" make SIM=verilator &&
       gtkwave dump.fst --rcvar 'initial_window_x 1920' --rcvar 'initial_window_y 1061' --rcvar 'do_initial_zoom_fit yes' &
     command: >
-      cd /workspace/cocotb/examples/dff/tests ;
+      cd /workspace/cocotb/examples/simple_dff ;
       history -s make SIM=cvc ;
       history -s make SIM=ghdl TOPLEVEL_LANG=vhdl ;
       history -s make SIM=icarus ;
