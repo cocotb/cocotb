@@ -47,10 +47,12 @@ Cocotb
 
     Use this to indicate the instance in the hierarchy to use as the :term:`DUT`.
     If this isn't defined then the first root instance is used.
-    Leading and trailing whitespace are automaticall discarded.
+    Leading and trailing whitespace are automatically discarded.
 
     The DUT is available in cocotb tests as a Python object at :data:`cocotb.top`;
     and is also passed to all cocotb tests as the :ref:`first and only parameter <quickstart_creating_a_test>`.
+
+    .. versionchanged:: 2.0 Strip leading and trailing whitespace
 
 .. envvar:: RANDOM_SEED
 
