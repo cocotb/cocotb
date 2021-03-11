@@ -7,12 +7,8 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
-.. include:: master-notes.rst
-
-.. towncrier release notes start
-
-cocotb 1.5.0rc3 (2021-03-06)
-============================
+cocotb 1.5.0 (2021-03-11)
+=========================
 
 Features
 --------
