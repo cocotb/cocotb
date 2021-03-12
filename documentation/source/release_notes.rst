@@ -11,8 +11,9 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
-Cocotb 1.5.0rc1 (2021-02-23)
-============================
+
+cocotb 1.5.0 (2021-03-11)
+=========================
 
 Features
 --------
@@ -103,8 +104,7 @@ Deprecations and Removals
 Changes
 -------
 
-- Assigning out-of-range Python integers to signals would previously truncate the value silently for signal widths <= 32 bits and truncate the value with a warning for signal widths > 32 bits.
-  Assigning out-of-range Python integers to signals will now raise an :exc:`OverflowError`. (:pr:`913`)
+- Assigning negative Python integers to handles does an implicit two's compliment conversion. (:pr:`913`)
 - Updated :class:`~cocotb_bus.drivers.Driver`, :class:`~cocotb_bus.monitors.Monitor`, and all their subclasses to use the :keyword:`async`/:keyword:`await` syntax instead of the :keyword:`yield` syntax. (:pr:`2022`)
 - The package build process is now fully :pep:`517` compliant. (:pr:`2091`)
 - Improved support and performance for :ref:`sim-verilator` (version 4.106 or later now required). (:pr:`2105`)
