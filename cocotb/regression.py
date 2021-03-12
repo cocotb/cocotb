@@ -533,9 +533,10 @@ class RegressionManager:
         summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(**header_dict)
         summary += LINE_SEP
 
-        test_line = "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n"
+        test_line = "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **{end}\n"
         for result in self.test_results:
             hilite = ''
+            lolite = ''
 
             if result['pass'] is None:
                 pass_fail_str = "N/A"
@@ -545,6 +546,7 @@ class RegressionManager:
                 pass_fail_str = "FAIL"
                 if want_color_output():
                     hilite = ANSI.COLOR_HILITE_SUMMARY
+                    lolite = ANSI.COLOR_DEFAULT
 
             test_dict = dict(
                 a=result['test'],
@@ -557,7 +559,8 @@ class RegressionManager:
                 c_len=SIM_FIELD_LEN - 1,
                 d_len=REAL_FIELD_LEN - 1,
                 e_len=RATIO_FIELD_LEN - 1,
-                start=hilite)
+                start=hilite,
+                end=lolite)
 
             summary += test_line.format(**test_dict)
 
