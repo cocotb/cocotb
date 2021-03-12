@@ -297,7 +297,7 @@ def _initialise_testbench_(argv_):
             # import the test modules.
             from _pytest.config import Config
             from _pytest.assertion import install_importhook
-            pytest_conf = Config.fromdictargs([], {})
+            pytest_conf = Config.fromdictargs({}, ['--capture=no'])
             install_importhook(pytest_conf)
         except Exception:
             log.exception(
