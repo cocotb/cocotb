@@ -29,15 +29,17 @@
 
 `timescale 1 ps / 1 ps
 
+`ifndef __ICARUS__
 typedef struct {
     logic a;
     logic [7:0] b[0:2];
 } rec_type;
+`endif
 
 module array_module (
     input                                       clk,
 
-    input  integer                              select_in,
+    input  int                                  select_in,
 
     input          [7:0]                        port_desc_in,
     input          [0:7]                        port_asc_in,
@@ -47,15 +49,17 @@ module array_module (
     output         [0:7]                        port_asc_out,
     output         [1:8]                        port_ofst_out,
 
-    output logic                                port_logic_out,
-    output logic   [7:0]                        port_logic_vec_out,
+`ifndef __ICARUS__
+    output rec_type                             port_rec_out,
+    output rec_type                             port_cmplx_out[0:1],
+`endif
     //output bit                                  port_bool_out,
     //output integer                              port_int_out,
     //output real                                 port_real_out,
     //output byte                                 port_char_out,
     //output string                               port_str_out,
-    output rec_type                             port_rec_out,
-    output rec_type                             port_cmplx_out[0:1]
+    output logic                                port_logic_out,
+    output logic   [7:0]                        port_logic_vec_out
 );
 
 parameter logic          param_logic       = 1'b1;
@@ -95,6 +99,7 @@ wire logic [7:0]    sig_logic_vec;
 //     real           sig_real;
 //     byte           sig_char;
 //     string         sig_str;
+`ifndef __ICARUS__
      rec_type       sig_rec;
      rec_type       sig_cmplx [0:1];
 
@@ -102,6 +107,8 @@ typedef logic [7:0] uint16_t;
 
 uint16_t sig_t7 [3:0][3:0];
 uint16_t [3:0][3:0] sig_t8;
+`endif
+
 
 assign port_ofst_out = port_ofst_in;
 
@@ -117,6 +124,7 @@ always @(posedge clk) begin
 //        port_real_out          = const_real;
 //        port_char_out          = const_char;
 //        port_str_out           = const_str;
+`ifndef __ICARUS__
         port_rec_out.a         = sig_rec.a;
         port_rec_out.b[0]      = sig_rec.b[0];
         port_rec_out.b[1]      = sig_rec.b[1];
@@ -129,6 +137,7 @@ always @(posedge clk) begin
         port_cmplx_out[1].b[0] = sig_cmplx[1].b[0];
         port_cmplx_out[1].b[1] = sig_cmplx[1].b[1];
         port_cmplx_out[1].b[2] = sig_cmplx[1].b[2];
+`endif
     end else begin
         if (select_in == 2) begin
             port_logic_out         = sig_logic;
@@ -138,6 +147,7 @@ always @(posedge clk) begin
 //            port_real_out          = sig_real;
 //            port_char_out          = sig_char;
 //            port_str_out           = sig_str;
+`ifndef __ICARUS__
             port_rec_out.a         = sig_rec.a;
             port_rec_out.b[0]      = sig_rec.b[0];
             port_rec_out.b[1]      = sig_rec.b[1];
@@ -150,6 +160,7 @@ always @(posedge clk) begin
             port_cmplx_out[1].b[0] = sig_cmplx[1].b[0];
             port_cmplx_out[1].b[1] = sig_cmplx[1].b[1];
             port_cmplx_out[1].b[2] = sig_cmplx[1].b[2];
+`endif
         end else begin
             port_logic_out         = param_logic;
             port_logic_vec_out     = param_logic_vec;
@@ -158,6 +169,7 @@ always @(posedge clk) begin
 //            port_real_out          = param_real;
 //            port_char_out          = param_char;
 //            port_str_out           = param_str;
+`ifndef __ICARUS__
             port_rec_out.a         = sig_rec.a;
             port_rec_out.b[0]      = sig_rec.b[0];
             port_rec_out.b[1]      = sig_rec.b[1];
@@ -170,6 +182,7 @@ always @(posedge clk) begin
             port_cmplx_out[1].b[0] = sig_cmplx[1].b[0];
             port_cmplx_out[1].b[1] = sig_cmplx[1].b[1];
             port_cmplx_out[1].b[2] = sig_cmplx[1].b[2];
+`endif
         end
     end
 end
@@ -200,5 +213,16 @@ for (idx2 = 7; idx2 >= 0; idx2=idx2-1) begin:desc_gen
 end
 endgenerate
 
-endmodule
+initial begin
+    // "use" these wires for something to prevent Icarus Verilog from optimizing them away
+    // (see https://github.com/steveicarus/iverilog/issues/322)
+    $display(sig_t1);
+    $display(sig_t2[4]);
+    $display(sig_t3a[1]);
+    $display(sig_t3b[0]);
+    $display(sig_t4[0][4]);
+    $display(sig_t5[0][0]);
+    $display(sig_t6[0][2]);
+end
 
+endmodule

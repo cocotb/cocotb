@@ -9,6 +9,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import HierarchyObject, HierarchyArrayObject, ModifiableObject, NonHierarchyIndexableObject, ConstantObject
+from cocotb._sim_versions import IcarusVersion
 
 
 def _check_type(tlog, hdl, expected):
@@ -108,13 +109,14 @@ async def test_read_write(dut):
     tlog.info("Writing the signals!!!")
     dut.sig_logic         = 1
     dut.sig_logic_vec     = 0xCC
-    dut.sig_t2 = [0xCC, 0xDD, 0xEE, 0xFF]
-    dut.sig_t4 = [
-        [0x00, 0x11, 0x22, 0x33],
-        [0x44, 0x55, 0x66, 0x77],
-        [0x88, 0x99, 0xAA, 0xBB],
-        [0xCC, 0xDD, 0xEE, 0xFF]
-    ]
+    if not (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) < IcarusVersion("11.0"))):
+        dut.sig_t2 = [0xCC, 0xDD, 0xEE, 0xFF]
+        dut.sig_t4 = [
+            [0x00, 0x11, 0x22, 0x33],
+            [0x44, 0x55, 0x66, 0x77],
+            [0x88, 0x99, 0xAA, 0xBB],
+            [0xCC, 0xDD, 0xEE, 0xFF]
+        ]
 
     if cocotb.LANGUAGE in ["vhdl"]:
         dut.sig_bool          = 1
@@ -140,11 +142,12 @@ async def test_read_write(dut):
     tlog.info("Checking writes:")
     _check_logic(tlog, dut.port_logic_out    , 1)
     _check_logic(tlog, dut.port_logic_vec_out, 0xCC)
-    _check_value(tlog, dut.sig_t2, [0xCC, 0xDD, 0xEE, 0xFF])
-    _check_logic(tlog, dut.sig_t2[7], 0xCC)
-    _check_logic(tlog, dut.sig_t2[4], 0xFF)
-    _check_logic(tlog, dut.sig_t4[1][5], 0x66)
-    _check_logic(tlog, dut.sig_t4[3][7], 0xCC)
+    if not (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) < IcarusVersion("11.0"))):
+        _check_value(tlog, dut.sig_t2, [0xCC, 0xDD, 0xEE, 0xFF])
+        _check_logic(tlog, dut.sig_t2[7], 0xCC)
+        _check_logic(tlog, dut.sig_t2[4], 0xFF)
+        _check_logic(tlog, dut.sig_t4[1][5], 0x66)
+        _check_logic(tlog, dut.sig_t4[3][7], 0xCC)
 
     if cocotb.LANGUAGE in ["vhdl"]:
         _check_int(tlog, dut.port_bool_out, 1)
@@ -167,8 +170,9 @@ async def test_read_write(dut):
         _check_logic(tlog, dut.port_cmplx_out[1].b[2], 0x55)
 
     tlog.info("Writing a few signal sub-indices!!!")
-    dut.sig_logic_vec[2]     = 0
-    if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")) or
+    if cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) >= IcarusVersion("11.0")):
+        dut.sig_logic_vec[2]     = 0
+    if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim", "icarus")) or
                                            (cocotb.SIM_NAME.lower().startswith(("riviera")) and
                                             cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")))):
         dut.sig_t6[1][3][2]      = 1
@@ -182,8 +186,10 @@ async def test_read_write(dut):
     await Timer(10, "ns")
 
     tlog.info("Checking writes (2):")
-    _check_logic(tlog, dut.port_logic_vec_out, 0xC8)
-    if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")) or
+    if cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) >= IcarusVersion("11.0")):
+        # this value depends on the dut.sig_logic_vec[2] being written to above
+        _check_logic(tlog, dut.port_logic_vec_out, 0xC8)
+    if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim", "icarus")) or
                                            (cocotb.SIM_NAME.lower().startswith(("riviera")) and
                                             cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")))):
         _check_logic(tlog, dut.sig_t6[1][3][2], 1)
@@ -353,6 +359,12 @@ async def test_discover_all(dut):
             pass_total = 1038
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("chronologic simulation vcs")):
         pass_total = 606
+    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("icarus")):
+        # HDL file has been stripped down for Icarus to be able to compile it, so not much has been left to find
+        if IcarusVersion(cocotb.SIM_VERSION) < IcarusVersion("11.0"):
+            pass_total = 137
+        else:
+            pass_total = 621
     else:
         pass_total = 1078
 
@@ -402,7 +414,9 @@ async def test_direct_constant_indexing(dut):
     _check_type(tlog, dut.const_cmplx[1].b[1], ConstantObject)
 
 
-@cocotb.test()
+@cocotb.test(
+    # Icarus 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
+    expect_error=IndexError if (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))) else ())
 async def test_direct_signal_indexing(dut):
     """Test directly accessing signal/net data in arrays, i.e. not iterating"""
 
