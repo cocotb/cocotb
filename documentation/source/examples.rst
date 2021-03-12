@@ -34,6 +34,15 @@ to start and stop generation of input data.
 
 A :class:`.TestFactory` is used to generate the random tests.
 
+Latency
+=======
+
+The directory :file:`cocotb/examples/simple_latency/` contains a simple testbench to demonstrate how to implementat latency in python similar to Verilog, e.g. `assign #(delay) output_sig = input_sig;`.
+To do so 3 outputs from :term:`RTL` design are looped back with different delay values.
+This example uses 4 flip-flops based on the D flip-flop model in :term:`RTL`, one to register the original signal from testbench, and 3 to register the looped back signals.
+Origianl signal value is saved for the 2 previous cycles to verify the registerd signal values. Also waveform is generated for better visualization.
+
+This example does not use any :class:`.Driver`, :class:`.Monitor`, or :class:`.Scoreboard`.
 
 .. _matrix_multiplier:
 
