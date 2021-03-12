@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 Dataset = namedtuple("Dataset", "time, voltage, current")
 
 
-class ResCap_TB(object):
+class ResCap_TB():
     """The testbench class for the rescap design."""
     def __init__(self, tb_hdl):
         self.tb_hdl = tb_hdl

@@ -168,7 +168,6 @@ class trace:
         for sig in self._signals:
             sig.clear()
         self.disable()
-        return None
 
     def write(self, filename, **kwargs):
         with open(filename, "w") as f:
