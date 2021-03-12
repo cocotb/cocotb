@@ -30,6 +30,7 @@
 EXAMPLES := adder/tests \
             simple_dff \
             matrix_multiplier/tests \
+            custom_logger \
             mixed_language/tests
 
 .PHONY: $(EXAMPLES)

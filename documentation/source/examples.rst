@@ -123,6 +123,47 @@ The directory :file:`cocotb/examples/axi_lite_slave/` contains ...
     Write documentation, see :file:`README.md`
 
 
+.. _example_custom_logger:
+
+Custom Logger
+=============
+
+The directory :file:`cocotb/examples/custom_logger/` contains an example of
+a custom logger class. It inherits from :class:`~cocotb.log.SimColourLogFormatter`
+and re-implements :meth:`~cocotb.log.SimLogFormatter.format_sim_time`.
+A test shows the class' usage.
+
+Changes compared to the default logger are:
+
+* Prints timestamps in microseconds.
+* Prints a vertical "bracket" highlighting timestamp changes:
+
+  * a "├" in the leftmost column if the current timestamp is different from the previous one, and
+  * a "│" in the leftmost column if the current timestamp is the same as the previous one.
+
+The output then looks as follows:
+
+.. code-block::
+
+   ├    0.0010us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 0, msg 0
+   │    0.0010us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 0, msg 1
+   │    0.0010us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 0, msg 2
+   │    0.0010us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 0, msg 3
+   │    0.0010us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 0, msg 4
+   ├    0.0020us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 1, msg 0
+   ├    0.0030us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 2, msg 0
+   │    0.0030us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 2, msg 1
+   │    0.0030us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 2, msg 2
+   ├    0.0050us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 4, msg 0
+   │    0.0050us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 4, msg 1
+   │    0.0050us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 4, msg 2
+   │    0.0050us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 4, msg 3
+   │    0.0050us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 4, msg 4
+   ├    0.0060us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 5, msg 0
+   │    0.0060us INFO    cocotb.dummy                       ..t_custom_logger.py:48   in do_log                         timestep 5, msg 1
+   ...
+
+
 .. _mixed_signal:
 
 Mixed-signal (analog/digital)

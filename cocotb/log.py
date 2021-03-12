@@ -33,6 +33,7 @@ import os
 import sys
 import logging
 import warnings
+from functools import lru_cache
 
 from cocotb.utils import (
     get_sim_time, get_time_from_sim_steps, want_color_output
@@ -40,17 +41,9 @@ from cocotb.utils import (
 
 import cocotb.ANSI as ANSI
 
-if "COCOTB_REDUCED_LOG_FMT" in os.environ:
-    _suppress = True
-else:
-    _suppress = False
+REDUCED_LOG_FMT = bool("COCOTB_REDUCED_LOG_FMT" in os.environ)
 
-# Column alignment
-_LEVEL_CHARS    = len("CRITICAL")  # noqa
-_RECORD_CHARS   = 35  # noqa
-_FILENAME_CHARS = 20  # noqa
-_LINENO_CHARS   = 4  # noqa
-_FUNCNAME_CHARS = 31  # noqa
+_LEVELNAME_CHARS = len("CRITICAL")  # noqa
 
 # Default log level if not overwritten by the user.
 _COCOTB_LOG_LEVEL_DEFAULT = "INFO"
@@ -173,7 +166,7 @@ class SimLogFormatter(logging.Formatter):
     """
 
     # Removes the arguments from the base class. Docstring needed to make
-    # sphinx happy.
+    # Sphinx happy.
     def __init__(self):
         """ Takes no arguments. """
         super().__init__()
@@ -181,31 +174,74 @@ class SimLogFormatter(logging.Formatter):
     # Justify and truncate
     @staticmethod
     def ljust(string, chars):
+        """Left-justify and truncate *string* to *chars* length."""
+
         if len(string) > chars:
-            return ".." + string[(chars - 2) * -1:]
+            return "".join(["..", string[(chars - 2) * -1:]])
         return string.ljust(chars)
 
     @staticmethod
     def rjust(string, chars):
+        """Right-justify and truncate *string* to *chars* length."""
+
         if len(string) > chars:
-            return ".." + string[(chars - 2) * -1:]
+            return "".join(["..", string[(chars - 2) * -1:]])
         return string.rjust(chars)
 
-    def _format(self, level, record, msg, coloured=False):
+    @staticmethod
+    def _format_sim_time(record, time_chars=11, time_base="ns"):
+        """Return formatted simulator timestamp.
+
+        Uses :attr:`~logging.LogRecord.created_sim_time` and
+        :func:`~cocotb.utils.get_time_from_sim_steps`.
+
+        .. versionadded:: 2.0
+        """
+
         sim_time = getattr(record, 'created_sim_time', None)
         if sim_time is None:
-            sim_time_str = "  -.--ns"
+            sim_time_str = "  -.--{}".format(time_base)
         else:
-            time_ns = get_time_from_sim_steps(sim_time, 'ns')
-            sim_time_str = "{:6.2f}ns".format(time_ns)
-        prefix = sim_time_str.rjust(11) + ' ' + level + ' '
-        if not _suppress:
-            prefix += self.ljust(record.name, _RECORD_CHARS) + \
-                self.rjust(os.path.split(record.filename)[1], _FILENAME_CHARS) + \
-                ':' + self.ljust(str(record.lineno), _LINENO_CHARS) + \
-                ' in ' + self.ljust(str(record.funcName), _FUNCNAME_CHARS) + ' '
+            time_with_base = get_time_from_sim_steps(sim_time, time_base)
+            sim_time_str = "{:6.2f}{}".format(time_with_base, time_base)
+        return sim_time_str.rjust(time_chars)
 
-        # these lines are copied from the builtin logger
+    @lru_cache(maxsize=128)
+    def _format_recordname(self, recordname, chars=35):
+        """Return formatted record name *recordname* with *chars* length.
+
+        .. versionadded:: 2.0
+        """
+
+        return self.ljust(recordname, chars)
+
+    @lru_cache(maxsize=128)
+    def _format_filename(self, filename, lineno, filename_chars=20, lineno_chars=4):
+        """Return formatted ``filename:lineno`` pair with *filename_chars* and *lineno_chars* length.
+
+        .. versionadded:: 2.0
+        """
+
+        return "".join([self.rjust(os.path.split(filename)[1], filename_chars),
+                        ':',
+                        self.ljust(str(lineno), lineno_chars)])
+
+    @lru_cache(maxsize=128)
+    def _format_funcname(self, funcname, chars=31):
+        """Return formatted function name *funcname* with *chars* length.
+
+        .. versionadded:: 2.0
+        """
+
+        return self.ljust(funcname, chars)
+
+    def _format_exc_msg(self, record, msg):
+        """Return log message *msg* (followed by traceback text if applicable).
+
+        .. versionadded:: 2.0
+        """
+
+        # these lines are copied from the built-in logger
         if record.exc_info:
             # Cache the traceback text to avoid converting it multiple times
             # (it's constant anyway)
@@ -213,22 +249,42 @@ class SimLogFormatter(logging.Formatter):
                 record.exc_text = self.formatException(record.exc_info)
         if record.exc_text:
             if msg[-1:] != "\n":
-                msg = msg + "\n"
-            msg = msg + record.exc_text
+                msg = "".join([msg, "\n"])
+            msg = "".join([msg, record.exc_text])
+        return msg
+
+    def _format_build_line(self, levelname, record, msg, coloured=False):
+        """Build the formatted line and return it.
+
+        Uses :func:`_format_sim_time`, :func:`_format_recordname`,
+        :func:`_format_filename`, :func:`_format_funcname` and :func:`_format_exc_msg` by default.
+
+        .. versionadded:: 2.0
+        """
+        prefix = self._format_sim_time(record)
+        # NOTE: using a format_levelname here is a bit more complicated since ``levelname`` is
+        #       already left-justified and potentially ANSI-colored at this point
+        prefix = " ".join([prefix, levelname])
+        if not REDUCED_LOG_FMT:
+            prefix = "".join([prefix, self._format_recordname(record.name)])
+            prefix = "".join([prefix, self._format_filename(record.filename, record.lineno)])
+            prefix = " in ".join([prefix, self._format_funcname(record.funcName)])
+
+        msg = self._format_exc_msg(record, msg)
 
         prefix_len = len(prefix)
         if coloured:
-            prefix_len -= (len(level) - _LEVEL_CHARS)
-        pad = "\n" + " " * (prefix_len)
-        return prefix + pad.join(msg.split('\n'))
+            prefix_len -= (len(levelname) - _LEVELNAME_CHARS)
+        pad = "".join(["\n", " " * (prefix_len)])
+        return "".join([prefix, pad.join(msg.split('\n'))])
 
     def format(self, record):
-        """Prettify the log output, annotate with simulation time"""
+        """Prettify the log output, annotate with simulation time."""
 
         msg = record.getMessage()
-        level = record.levelname.ljust(_LEVEL_CHARS)
+        levelname = record.levelname.ljust(_LEVELNAME_CHARS)
 
-        return self._format(level, record, msg)
+        return self._format_build_line(levelname, record, msg)
 
 
 class SimColourLogFormatter(SimLogFormatter):
@@ -237,22 +293,22 @@ class SimColourLogFormatter(SimLogFormatter):
     loglevel2colour = {
         logging.DEBUG   :       "%s",
         logging.INFO    :       "%s",
-        logging.WARNING :       ANSI.COLOR_WARNING + "%s" + ANSI.COLOR_DEFAULT,
-        logging.ERROR   :       ANSI.COLOR_ERROR + "%s" + ANSI.COLOR_DEFAULT,
-        logging.CRITICAL:       ANSI.COLOR_CRITICAL + "%s" + ANSI.COLOR_DEFAULT,
+        logging.WARNING :       "".join([ANSI.COLOR_WARNING, "%s", ANSI.COLOR_DEFAULT]),
+        logging.ERROR   :       "".join([ANSI.COLOR_ERROR, "%s", ANSI.COLOR_DEFAULT]),
+        logging.CRITICAL:       "".join([ANSI.COLOR_CRITICAL, "%s", ANSI.COLOR_DEFAULT]),
     }
 
     def format(self, record):
-        """Prettify the log output, annotate with simulation time"""
+        """Prettify the log output, annotate with simulation time."""
 
         msg = record.getMessage()
 
         # Need to colour each line in case coloring is applied in the message
         msg = '\n'.join([SimColourLogFormatter.loglevel2colour.get(record.levelno,"%s") % line for line in msg.split('\n')])
-        level = (SimColourLogFormatter.loglevel2colour.get(record.levelno, "%s") %
-                 record.levelname.ljust(_LEVEL_CHARS))
+        levelname = (SimColourLogFormatter.loglevel2colour[record.levelno] %
+                     record.levelname.ljust(_LEVELNAME_CHARS))
 
-        return self._format(level, record, msg, coloured=True)
+        return self._format_build_line(levelname, record, msg, coloured=True)
 
 
 def _filter_from_c(logger_name, level):
