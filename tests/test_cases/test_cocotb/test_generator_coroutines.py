@@ -92,7 +92,7 @@ def test_yield_list(dut):
     cocotb.scheduler.add(clock_gen(clock))
     yield [Timer(1000), Timer(2000)]
 
-    yield Timer(10000)
+    yield Timer(10_000)
 
 
 @cocotb.coroutine

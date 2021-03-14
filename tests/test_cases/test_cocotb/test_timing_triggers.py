@@ -51,22 +51,22 @@ async def test_timer_with_units(dut):
 
     await Timer(3, 'ns')
 
-    assert get_sim_time(units='fs') == time_fs+3000000.0, "Expected a delay of 3 ns"
+    assert get_sim_time(units='fs') == time_fs+3_000_000.0, "Expected a delay of 3 ns"
 
     time_fs = get_sim_time(units='fs')
     await Timer(1.5, 'ns')
 
-    assert get_sim_time(units='fs') == time_fs+1500000.0, "Expected a delay of 1.5 ns"
+    assert get_sim_time(units='fs') == time_fs+1_500_000.0, "Expected a delay of 1.5 ns"
 
     time_fs = get_sim_time(units='fs')
     await Timer(10.0, 'ps')
 
-    assert get_sim_time(units='fs') == time_fs+10000.0, "Expected a delay of 10 ps"
+    assert get_sim_time(units='fs') == time_fs+10_000.0, "Expected a delay of 10 ps"
 
     time_fs = get_sim_time(units='fs')
     await Timer(1.0, 'us')
 
-    assert get_sim_time(units='fs') == time_fs+1000000000.0, "Expected a delay of 1 us"
+    assert get_sim_time(units='fs') == time_fs+1_000_000_000.0, "Expected a delay of 1 us"
 
 
 @cocotb.test()
@@ -75,12 +75,12 @@ async def test_timer_with_rational_units(dut):
     # now with fractions
     time_fs = get_sim_time(units='fs')
     await Timer(Fraction(1, int(1e9)), units='sec')
-    assert get_sim_time(units='fs') == time_fs + 1000000.0, "Expected a delay of 1 ns"
+    assert get_sim_time(units='fs') == time_fs + 1_000_000.0, "Expected a delay of 1 ns"
 
     # now with decimals
     time_fs = get_sim_time(units='fs')
     await Timer(Decimal('1e-9'), units='sec')
-    assert get_sim_time(units='fs') == time_fs + 1000000.0, "Expected a delay of 1 ns"
+    assert get_sim_time(units='fs') == time_fs + 1_000_000.0, "Expected a delay of 1 ns"
 
 
 exited = False
@@ -121,7 +121,7 @@ async def test_readwrite_in_readonly(dut):
     exited = False
     clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
     coro = cocotb.fork(do_test_readwrite_in_readonly(dut))
-    await First(Join(coro), Timer(10000, "ns"))
+    await First(Join(coro), Timer(10_000, "ns"))
     clk_gen.kill()
     assert exited
 
@@ -133,7 +133,7 @@ async def test_cached_write_in_readonly(dut):
     exited = False
     clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
     coro = cocotb.fork(do_test_cached_write_in_readonly(dut))
-    await First(Join(coro), Timer(10000, "ns"))
+    await First(Join(coro), Timer(10_000, "ns"))
     clk_gen.kill()
     assert exited
 
@@ -145,7 +145,7 @@ async def test_afterdelay_in_readonly_valid(dut):
     exited = False
     clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
     coro = cocotb.fork(do_test_afterdelay_in_readonly(dut, 1))
-    await First(Join(coro), Timer(100000, "ns"))
+    await First(Join(coro), Timer(100_000, "ns"))
     clk_gen.kill()
     assert exited
 
