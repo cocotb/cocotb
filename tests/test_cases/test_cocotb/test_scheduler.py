@@ -52,7 +52,7 @@ async def clock_two(dut):
     count = 0
     while count != 50:
         await RisingEdge(dut.clk)
-        await Timer(10000, "ns")
+        await Timer(10_000, "ns")
         count += 1
 
 
@@ -168,7 +168,7 @@ async def test_stack_overflow(dut):
     async def null_coroutine():
         await NullTrigger()
 
-    for _ in range(10000):
+    for _ in range(10_000):
         await null_coroutine()
 
     await Timer(100, "ns")
