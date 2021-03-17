@@ -14,6 +14,7 @@ Bugfixes
 --------
 
 - Prevent pytest assertion rewriting (:pr:`2028`) from capturing stdin, which causes problems with IPython support (:pr:`1649`). (:pr:`2462`)
+- Add dependency on `cocotb_bus <https://github.com/cocotb/cocotb-bus>`_ to prevent breaking users that were previously using the bus and testbenching objects. (:pr:`2477`)
 
 
 cocotb 1.5.0 (2021-03-11)

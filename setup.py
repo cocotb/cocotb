@@ -98,7 +98,7 @@ setup(
     maintainer='cocotb contributors',
     maintainer_email='cocotb@lists.librecores.org',
     setup_requires=['setuptools_scm'],
-    install_requires=[],
+    install_requires=['cocotb-bus<1.0'],
     python_requires='>=3.5',
     packages=find_packages(),
     package_data={
