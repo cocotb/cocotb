@@ -7,6 +7,7 @@ Release Notes
 
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
+
 cocotb 1.5.1 (2021-XX-XX)
 =========================
 
@@ -15,6 +16,7 @@ Bugfixes
 
 - Prevent pytest assertion rewriting (:pr:`2028`) from capturing stdin, which causes problems with IPython support (:pr:`1649`). (:pr:`2462`)
 - Add dependency on `cocotb_bus <https://github.com/cocotb/cocotb-bus>`_ to prevent breaking users that were previously using the bus and testbenching objects. (:pr:`2477`)
+- Add back functionality to :class:`cocotb.binary.BinaryValue` that allows the user to change ``binaryRepresentation`` after object creation. (:pr:`2480`)
 
 
 cocotb 1.5.0 (2021-03-11)

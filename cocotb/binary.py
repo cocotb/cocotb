@@ -157,12 +157,18 @@ class BinaryValue:
 
         self._n_bits = n_bits
 
-        self._convert_to = self._convert_to_map[self.binaryRepresentation].__get__(self, self.__class__)
-
-        self._convert_from = self._convert_from_map[self.binaryRepresentation].__get__(self, self.__class__)
-
         if value is not None:
             self.assign(value)
+
+    @property
+    def binaryRepresentation(self):
+        return self._binaryRepresentation
+
+    @binaryRepresentation.setter
+    def binaryRepresentation(self, binaryRepresentation):
+        self._binaryRepresentation = binaryRepresentation
+        self._convert_to = self._convert_to_map[binaryRepresentation].__get__(self, self.__class__)
+        self._convert_from = self._convert_from_map[binaryRepresentation].__get__(self, self.__class__)
 
     def assign(self, value):
         """Decides how best to assign the value to the vector.
