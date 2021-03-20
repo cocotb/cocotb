@@ -4,7 +4,7 @@ from functools import reduce
 
 
 def load_entry():
-    """Gather entry point information by parsing :envar:`COCOTB_ENTRY_POINT`."""
+    """Gather entry point information by parsing :envvar:`COCOTB_ENTRY_POINT`."""
     entry_point_str = os.environ.get("COCOTB_ENTRY_POINT", "cocotb:_initialise_testbench")
     try:
         if ":" not in entry_point_str:
