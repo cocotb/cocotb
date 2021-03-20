@@ -30,7 +30,6 @@
 """
 
 import cocotb
-from cocotb.result import TestFailure
 
 
 @cocotb.test()
@@ -40,5 +39,6 @@ async def plusargs_test(dut):
     for name in cocotb.plusargs:
         print("COCOTB:", name, cocotb.plusargs[name])
 
-    if cocotb.plusargs['foo'] != 'bar':
-        raise TestFailure("plusargs 'foo' value '{}' does not match expected 'bar'".format(cocotb.plusargs['foo']))
+    assert 'test1' in cocotb.plusargs
+    assert cocotb.plusargs['foo'] == 'bar'
+    assert cocotb.plusargs['lol'] == 'wow=4'

@@ -36,6 +36,8 @@ initial begin
     $display("SIM: Plusargs test");
     result = $value$plusargs("foo=%s", foo_string);
     $display("SIM: Plusarg foo has value %0s", foo_string);
+    result = $value$plusargs("lol=%s", foo_string);
+    $display("SIM: Plusarg lol has value %0s", foo_string);
     #1 $display("SIM: Test running");
 end
 

@@ -1,0 +1,1 @@
+Correctly parse plusargs with ``=``\ s in the value.

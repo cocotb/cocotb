@@ -343,7 +343,7 @@ def process_plusargs():
     for option in cocotb.argv:
         if option.startswith('+'):
             if option.find('=') != -1:
-                (name, value) = option[1:].split('=')
+                (name, value) = option[1:].split('=', 1)
                 plusargs[name] = value
             else:
                 plusargs[option[1:]] = True
