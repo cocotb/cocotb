@@ -7,26 +7,24 @@ from cocotb._py_compat import cache
 """ DESIGN NOTES
 
 __singleton_cache__
-    Used to ensure there is only ever one instance of a particular value. This is a
-    memory optimization: there will only ever be 4 objects allocated; and also a speed
-    optimization: value equality can be identity equality (as inherited from the `object`
-    base class).
+    Used to ensure there is only ever one instance of a particular value.
+    This is a memory optimization: there will only ever be 4 objects allocated;
+    and also a speed optimization: value equality can be identity equality (as inherited from the `object` base class).
 
 operator `isinstance(other, type(self)`
     Allows operation between a `Bit` and a `Logic` to return a `Logic`.
 
 strict type equality
-    To use `Logic` or `Bit` in hashable collections we need to define `__hash__` and
-    `__eq__` such that "Hashable objects which compare equal must have the same hash
-    value." (https://hynek.me/articles/hashes-and-equality/, 3/20/21). The best way to
-    achieve this is to make `Logic` and `Bit` never equal, like `tuple` and `list`. If we
-    instead made them equal in hash and value, they would be substitutable; which we
-    don't want.
+    To use `Logic` or `Bit` in hashable collections we need to define `__hash__` and `__eq__` such that
+    "Hashable objects which compare equal must have the same hash value."
+    Retreived from https://hynek.me/articles/hashes-and-equality/ on 20/3/21.
+    The best way to achieve this is to make `Logic` and `Bit` never equal, like `tuple` and `list`.
+    If we instead made them equal in hash and value, they would be substitutable; which we don't want.
 
 @cache
-    Shows extreme performance improvements. Even faster than precomputing the results and
-    storing them in the type. Everything can be cached since there are a (hopefully)
-    limited number of valid values in all subclasses.
+    Shows extreme performance improvements.
+    Even faster than precomputing the results and storing them in the type.
+    Everything can be cached since there are a (hopefully) limited number of valid values in all subclasses.
 """
 
 
