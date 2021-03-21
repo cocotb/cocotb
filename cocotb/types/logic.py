@@ -17,7 +17,7 @@ operator `isinstance(other, type(self)`
 strict type equality
     To use `Logic` or `Bit` in hashable collections we need to define `__hash__` and `__eq__` such that
     "Hashable objects which compare equal must have the same hash value."
-    Retreived from https://hynek.me/articles/hashes-and-equality/ on 20/3/21.
+    Retrieved from https://hynek.me/articles/hashes-and-equality/ on 2021-03-20.
     The best way to achieve this is to make `Logic` and `Bit` never equal, like `tuple` and `list`.
     If we instead made them equal in hash and value, they would be substitutable; which we don't want.
 
