@@ -62,7 +62,7 @@ else:
     insertion_ordered_dict = collections.OrderedDict
 
 
-# backport of Python 3.8's functools.cache decorator
+# backport of Python 3.9's functools.cache decorator
 if sys.version_info < (3, 9):
     from functools import lru_cache
 
