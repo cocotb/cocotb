@@ -1,0 +1,1 @@
+:envvar:`COCOTB_RESULTS_FILE` now properly communicates with the :data:`Regression Manager <cocotb.regression_manager>` to allow overloading the result filename.
