@@ -91,6 +91,8 @@ COCOTB_RESULTS_FILE ?= results.xml
 COCOTB_HDL_TIMEUNIT ?= 1ns
 COCOTB_HDL_TIMEPRECISION ?= 1ps
 
+export COCOTB_RESULTS_FILE
+
 # Depend on all Python from the cocotb package. This triggers a
 # recompilation of the simulation if cocotb is updated.
 CUSTOM_SIM_DEPS += $(shell find $(COCOTB_PY_DIR)/cocotb/ -name "*.py")
