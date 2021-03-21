@@ -28,8 +28,10 @@ def test_logic_conversions():
     Logic(Logic('1'))
     Logic(Logic('X'))
     Logic(Logic('Z'))
-    with pytest.raises(ValueError):
-        Logic('j')
+
+    for value in ('j', 2, object()):
+        with pytest.raises(ValueError):
+            Logic(value)
 
 
 def test_bit_conversions():
@@ -41,8 +43,10 @@ def test_bit_conversions():
     Bit('1')
     Bit(Bit('0'))
     Bit(Bit('1'))
-    with pytest.raises(ValueError):
-        _ = Bit(object())
+
+    for value in ('X', 2, object()):
+        with pytest.raises(ValueError):
+            Bit(value)
 
 
 def test_bit_logic_conversions():
