@@ -33,7 +33,7 @@ class Logic:
     Model of a 4-value (``0``, ``1``, ``X``, ``Z``) datatype commonly seen in HDLs.
 
     Modeled after (System)Verilog's 4-value ``logic`` type.
-    VHDL's 8-value ``std_logic`` type maps to this type by treating weak values as full strength values
+    VHDL's 9-value ``std_ulogic`` type maps to this type by treating weak values as full strength values
     and "uninitialized" (``U``) and "don't care" (``-``) as "unknown" (``X``).
 
     Supports common logic operations ``&``, ``|``, ``^``, and ``~``.
