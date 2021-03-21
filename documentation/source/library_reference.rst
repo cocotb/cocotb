@@ -75,6 +75,8 @@ as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 
 .. autoclass:: cocotb.types.Bit
 
+.. versionadded:: 2.0
+
 Triggers
 --------
 See :ref:`simulator-triggers` for a list of sub-classes. Below are the internal
