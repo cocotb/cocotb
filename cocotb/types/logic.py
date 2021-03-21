@@ -30,7 +30,7 @@ strict type equality
 
 class Logic:
     """
-    Model of 4-value (0, 1, X, Z) datatype commonly seen in HDLs.
+    Model of a 4-value (``0``, ``1``, ``X``, ``Z``) datatype commonly seen in HDLs.
 
     Modeled after (System)Verilog's 4-value ``logic`` type.
     VHDL's 8-value ``std_logic`` type maps to this type by treating weak values as full strength values
@@ -63,6 +63,7 @@ class Logic:
         "u": 2,
         "W": 2,
         "w": 2,
+        "-": 2,
         # high impedance
         "Z": 3,
         "z": 3,
@@ -167,13 +168,13 @@ class Logic:
 
 class Bit(Logic):
     """
-    Model of 2-value (0, 1) datatype commonly seen in HDLs.
+    Model of a 2-value (``0``, ``1``) datatype commonly seen in HDLs.
 
     Modeled after (System)Verilog's 2-value ``bit`` type.
     VHDL's ``bit`` type maps to this type perfectly.
 
     Supports common logic operations ``&``, ``|``, ``^``, and ``~``.
-    Can be converted to and from :class:`int`, :class:`str`, :class:`bool`, and :class:`cocotb.types.Logic`..
+    Can be converted to and from :class:`int`, :class:`str`, :class:`bool`, and :class:`cocotb.types.Logic`.
     """
 
     # must create a separate cache for Bit
