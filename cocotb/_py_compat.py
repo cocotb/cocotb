@@ -60,3 +60,13 @@ if sys.version_info[:2] >= (3, 7):
 else:
     import collections
     insertion_ordered_dict = collections.OrderedDict
+
+
+# backport of Python 3.8's functools.cache decorator
+if sys.version_info < (3, 9):
+    from functools import lru_cache
+
+    def cache(f):
+        return lru_cache(maxsize=None)(f)
+else:
+    from functools import cache  # noqa: F401
