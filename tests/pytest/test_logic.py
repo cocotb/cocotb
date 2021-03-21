@@ -22,6 +22,7 @@ def test_logic_conversions():
     Logic('W')
     Logic('u')
     Logic('U')
+    Logic('-')
     Logic('z')
     Logic('Z')
     Logic(Logic('0'))
@@ -98,6 +99,7 @@ def test_logic_self_identity():
     assert Logic('W') == l
     assert Logic('u') == l
     assert Logic('U') == l
+    assert Logic('-') == l
     assert Logic(Logic('X')) == l
 
     l = Logic('Z')
