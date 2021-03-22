@@ -32,12 +32,6 @@ async def test_logging_with_args(dut):
     dut._log.info("%s", counter)
     assert counter.str_counter == 1
 
-    # now try again on the root cocotb logger, which unlike nested loggers
-    # is captured
-    counter = StrCallCounter()
-    cocotb.log.info("%s", counter)
-    assert counter.str_counter == 2  # once for stdout, once for captured logs
-
     dut._log.info("No substitution")
 
     dut._log.warning("Testing multiple line\nmessage")
