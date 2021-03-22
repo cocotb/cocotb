@@ -89,7 +89,6 @@ def help_vars_text():
     TESTCASE                  Test function(s) to run (comma-separated list)
     COCOTB_RESULTS_FILE       File name for xUnit XML tests results
     COVERAGE                  Report Python coverage (also HDL for some simulators)
-    COCOTB_HOOKS              Comma-separated module list to be executed before test
 
     GPI
     ---
