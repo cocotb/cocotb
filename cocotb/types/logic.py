@@ -137,10 +137,6 @@ class Logic:
     def __invert__(self):
         return type(self)(("1", "0", "X", "X")[self._repr])
 
-    __eq__ = object.__eq__
-
-    __hash__ = object.__hash__
-
     @cache
     def __repr__(self):
         return "{}({!r})".format(type(self).__name__, str(self))
