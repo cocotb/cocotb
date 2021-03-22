@@ -158,7 +158,7 @@ class Logic:
         if self._repr < 2:
             return self._repr
         raise ValueError(
-            f"Cannot convert {sefl!r} to int"
+            f"Cannot convert {self!r} to int"
         )
 
 
