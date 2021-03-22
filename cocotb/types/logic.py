@@ -150,7 +150,7 @@ class Logic:
         if self._repr < 2:
             return bool(self._repr)
         raise ValueError(
-            "Cannot convert {self!r} to bool".format(type(self).__qualname__)
+            f"Cannot convert {self!r} to bool"
         )
 
     @cache
@@ -158,7 +158,7 @@ class Logic:
         if self._repr < 2:
             return self._repr
         raise ValueError(
-            "Cannot convert {sefl!r} to int".format(type(self).__qualname__)
+            f"Cannot convert {sefl!r} to int"
         )
 
 
