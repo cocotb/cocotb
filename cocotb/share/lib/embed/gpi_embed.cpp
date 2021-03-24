@@ -317,7 +317,6 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
     }
     Py_DECREF(cocotb_retval);
 
-
     return 0;
 }
 
