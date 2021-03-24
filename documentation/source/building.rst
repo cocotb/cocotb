@@ -224,7 +224,7 @@ PyGPI
 .. envvar:: COCOTB_ENTRY_POINT
 
     The Python module and callable that starts up the Python cosimulation environment.
-    This defaults to :value:`cocotb:_initialise_testbench`, which is the cocotb standard entry point.
+    This defaults to :data:`cocotb:_initialise_testbench`, which is the cocotb standard entry point.
     User overloads can be used to enter alternative Python frameworks or to hook existing cocotb functionality.
     The variable is formatted as ``path.to.entry.module:entry_point.function``.
     The string before the colon is the Python module to import
