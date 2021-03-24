@@ -127,6 +127,17 @@ def test_bit_hashability():
     assert len(s) == 2
 
 
+def test_logic_bit_hashability():
+    s = {
+        Logic('0'),
+        Logic('1'),
+        Logic('X'),
+        Logic('Z'),
+        Bit('0'),
+        Bit('1')}
+    assert len(s) == 6
+
+
 def test_logic_default_value():
     assert Logic() == Logic('X')
 
