@@ -6,29 +6,32 @@ import pytest
 
 
 def test_logic_conversions():
-    Logic(0)
-    Logic(1)
-    Logic(True)
-    Logic(False)
-    Logic('0')
-    Logic('l')
-    Logic('L')
-    Logic('1')
-    Logic('h')
-    Logic('H')
-    Logic('x')
-    Logic('X')
-    Logic('w')
-    Logic('W')
-    Logic('u')
-    Logic('U')
-    Logic('-')
-    Logic('z')
-    Logic('Z')
-    Logic(Logic('0'))
-    Logic(Logic('1'))
-    Logic(Logic('X'))
-    Logic(Logic('Z'))
+    l = Logic('0')
+    assert Logic('l') == l
+    assert Logic('L') == l
+    assert Logic(0) == l
+    assert Logic(False) == l
+    assert Logic(Logic('0')) == l
+
+    l = Logic('1')
+    assert Logic(1) == l
+    assert Logic(True) == l
+    assert Logic('h') == l
+    assert Logic('H') == l
+    assert Logic(Logic('1')) == l
+
+    l = Logic('X')
+    assert Logic('x') == l
+    assert Logic('w') == l
+    assert Logic('W') == l
+    assert Logic('u') == l
+    assert Logic('U') == l
+    assert Logic('-') == l
+    assert Logic(Logic('X')) == l
+
+    l = Logic('Z')
+    assert Logic('z') == l
+    assert Logic(Logic('Z')) == l
 
     for value in ('j', 2, object()):
         with pytest.raises(ValueError):
@@ -36,14 +39,15 @@ def test_logic_conversions():
 
 
 def test_bit_conversions():
-    Bit(0)
-    Bit(1)
-    Bit(False)
-    Bit(True)
-    Bit('0')
-    Bit('1')
-    Bit(Bit('0'))
-    Bit(Bit('1'))
+    b = Bit(0)
+    assert Bit(False) == b
+    assert Bit('0') == b
+    assert Bit(Bit(0)) == b
+
+    b = Bit(1)
+    assert Bit(True) == b
+    assert Bit('1') == b
+    assert Bit(Bit(1)) == b
 
     for value in ('X', 2, object()):
         with pytest.raises(ValueError):
@@ -76,45 +80,6 @@ def test_bit_equality():
 def test_logic_bit_equality():
     assert Logic(0) != Bit(0)
     assert Logic(1) != Bit(1)
-
-
-def test_logic_self_identity():
-    l = Logic('0')
-    assert Logic('l') == l
-    assert Logic('L') == l
-    assert Logic(0) == l
-    assert Logic(False) == l
-    assert Logic(Logic('0')) == l
-
-    l = Logic('1')
-    assert Logic(1) == l
-    assert Logic(True) == l
-    assert Logic('h') == l
-    assert Logic('H') == l
-    assert Logic(Logic('1')) == l
-
-    l = Logic('X')
-    assert Logic('x') == l
-    assert Logic('w') == l
-    assert Logic('W') == l
-    assert Logic('u') == l
-    assert Logic('U') == l
-    assert Logic('-') == l
-    assert Logic(Logic('X')) == l
-
-    l = Logic('Z')
-    assert Logic('z') == l
-    assert Logic(Logic('Z')) == l
-
-
-def test_bit_self_identity():
-    b = Bit(0)
-    assert Bit(False) == b
-    assert Bit('0') == b
-
-    b = Bit(1)
-    assert Bit(True) == b
-    assert Bit('1') == b
 
 
 def test_logic_hashability():
