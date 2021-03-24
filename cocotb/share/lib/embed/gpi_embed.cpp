@@ -283,7 +283,7 @@ extern "C" COCOTB_EXPORT int _embed_sim_init(int argc,
         return -1;
         // LCOV_EXCL_STOP
     }
-    // cocotb must hold _sim_event until _embed_sim_end runs
+    // cocotb must hold _sim_event until _embed_sim_cleanup runs
 
     // Build argv for cocotb module
     auto argv_list = PyList_New(argc);

@@ -1,9 +1,11 @@
 import os
 import importlib
 from functools import reduce
+from types import ModuleType
+from typing import Tuple, Callable
 
 
-def load_entry():
+def load_entry() -> Tuple[ModuleType, Callable]:
     """Gather entry point information by parsing :envvar:`COCOTB_ENTRY_POINT`."""
     entry_point_str = os.environ.get("COCOTB_ENTRY_POINT", "cocotb:_initialise_testbench")
     try:
