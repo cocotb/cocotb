@@ -76,7 +76,7 @@ class Logic:
             _repr = cls._repr_map[value]
         except KeyError:
             raise ValueError(
-                "{!r} is not convertable to a {}".format(value, cls.__qualname__)
+                "{!r} is not convertible to a {}".format(value, cls.__qualname__)
             ) from None
         # ensure only one object is made per representation
         if _repr not in cls.__singleton_cache__:
