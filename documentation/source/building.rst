@@ -230,13 +230,17 @@ PyGPI
     The string before the colon is the Python module to import
     and the string following the colon is the object to call as the entry function.
 
-    The entry function must be a callable that takes a single positional argument, the command ``argv`` list.
+    The entry function must be a callable matching this form:
+
+    * ``entry_function(argv: List[str]) -> bool``
+
     The entry module must have the following additional functions defined:
 
-    * ``_sim_event(level: int)``
-    * ``_log_from_c(logger_name: str, level: int, filename: str, lineno: int, msg: str, function_name: str))``
-    * ``_filter_from_c(logger_name: str, level: int)``
+    * ``_sim_event(level: int) -> bool``
+    * ``_log_from_c(logger_name: str, level: int, filename: str, lineno: int, msg: str, function_name: str)) -> bool``
+    * ``_filter_from_c(logger_name: str, level: int) -> bool``
 
+    The entry module functions return ``True`` on success. On failure, they should return ``False`` or raise an :class:`Exception`.
     These additional requirements on the entry module may be relaxed over time.
 
 
