@@ -224,7 +224,7 @@ Passing And Failing Tests
 
 A cocotb test is considered to have `failed` if the test coroutine,
 or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
-fails an ``assert`` statement or raises an :exc:`cocotb.result.TestFailure`.
+fails an ``assert`` statement or raises a :exc:`cocotb.result.TestFailure`.
 Below are examples of `failing` tests.
 
 .. code-block:: python3
@@ -253,7 +253,7 @@ Below are examples of `failing` tests.
 
 When a test fails, a stacktrace is printed.
 If ``pytest`` is installed and ``assert`` statements are used,
-a more informative stacktrace, including the values that caused the ``assert`` to fail, is printed.
+a more informative stacktrace is printed which includes the values that caused the ``assert`` to fail.
 For example, see the output for the first test from above.
 
 .. code-block::
