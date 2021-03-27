@@ -17,13 +17,13 @@ operator `isinstance(other, type(self)`
 strict type equality
     To use `Logic` or `Bit` in hashable collections we need to define `__hash__` and `__eq__` such that
     "Hashable objects which compare equal must have the same hash value."
-    Retrieved from https://hynek.me/articles/hashes-and-equality/ on 2021-03-20.
+    (retrieved from https://hynek.me/articles/hashes-and-equality/ on 2021-03-20).
     The best way to achieve this is to make `Logic` and `Bit` never equal, like `tuple` and `list`.
     If we instead made them equal in hash and value, they would be substitutable; which we don't want.
 
 @cache
-    Shows extreme performance improvements.
-    Even faster than precomputing the results and storing them in the type.
+    Shows extreme performance improvements,
+    even faster than precomputing the results and storing them in the type.
     Everything can be cached since there are a (hopefully) limited number of valid values in all subclasses.
 """
 
@@ -32,21 +32,21 @@ class Logic:
     r"""
     Model of a 4-value (``0``, ``1``, ``X``, ``Z``) datatype commonly seen in HDLs.
 
-    Modeled after (System)Verilog's 4-value ``logic`` type.
+    This is modeled after (System)Verilog's 4-value ``logic`` type.
     VHDL's 9-value ``std_ulogic`` type maps to this type by treating weak values as full strength values
     and treating "uninitialized" (``U``) and "don't care" (``-``) as "unknown" (``X``).
 
-    Can be converted from :class:`int`, :class:`str`, :class:`bool`, and :class:`~cocotb.types.Bit` using the ``Logic(value)`` syntax.
+    :class:`Logic` can be converted from :class:`int`, :class:`str`, :class:`bool`, and :class:`~cocotb.types.Bit` using the ``Logic(value)`` syntax.
     The list of acceptable values includes ``0``, ``1``, ``True``, ``False``, ``'0'``, ``'1'``, ``'X'``, and ``'Z'``.
     For a comprehensive list of values that can be converted into :class:`Logic` see :file:`tests/pytest/test_logic.py`.
 
-    Can be converted to :class:`int`, :class:`str`, :class:`bool` using the appropriate constructor syntax.
+    :class:`Logic` can be converted to :class:`int`, :class:`str`, :class:`bool` using the appropriate constructor syntax.
     For example, ``int(Logic(0)) == 0``, ``bool(Logic(1)) is True``, and ``str(Logic('X')) == 'X'``.
     The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0`` or ``1``.
 
     :class:`Logic` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
-    Supports common logic operations ``&``, ``|``, ``^``, and ``~``.
+    :class:`Logic` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
 
     .. code-block:: py3
 
@@ -182,19 +182,19 @@ class Bit(Logic):
     r"""
     Model of a 2-value (``0``, ``1``) datatype commonly seen in HDLs.
 
-    Modeled after (System)Verilog's 2-value ``bit`` type.
+    This is modeled after (System)Verilog's 2-value ``bit`` type.
     VHDL's ``bit`` type maps to this type perfectly.
 
-    Can be converted from :class:`int`, :class:`str`, :class:`bool`, and :class:`~cocotb.types.Logic` using the ``Bit(value)`` syntax.
+    :class:`Bit` can be converted from :class:`int`, :class:`str`, :class:`bool`, and :class:`~cocotb.types.Logic` using the ``Bit(value)`` syntax.
     The list of acceptable values includes ``0``, ``1``, ``True``, ``False``, ``'0'``, ``'1'``.
     For a comprehensive list of values that can be converted into :class:`Bit` see :file:`tests/pytest/test_logic.py`.
 
-    Can be converted to :class:`int`, :class:`str`, :class:`bool` using the appropriate constructor syntax.
+    :class:`Bit` can be converted to :class:`int`, :class:`str`, :class:`bool` using the appropriate constructor syntax.
     For example, ``int(Bit(0)) == 0``, ``bool(Bit(1)) is True``, and ``str(Bit('1')) == '1'``.
 
     :class:`Bit` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
-    Supports common logic operations ``&``, ``|``, ``^``, and ``~``.
+    :class:`Bit` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
 
     .. code-block:: py3
 
