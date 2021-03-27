@@ -315,6 +315,10 @@ class HierarchyObject(RegionObject):
         # then try handles
         sub = self.__get_sub_handle_by_name(name)
         if sub is not None:
+            warnings.warn(
+                "Setting values on handles using the ``dut.handle = value`` syntax is deprecated."
+                "Instead use the ``handle.value = value`` or ``handle <= value`` syntax",
+                DeprecationWarning, stacklevel=2)
             sub.value = value
             return
 
@@ -582,6 +586,10 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
     def __setitem__(self, index, value):
         """Provide transparent assignment to indexed array handles."""
         self[index].value = value
+        warnings.warn(
+            "Setting values on handles using the ``dut.handle[i] = value`` syntax is deprecated."
+            "Instead use the ``handle[i].value = value`` or ``handle[i] <= value`` syntax",
+            DeprecationWarning, stacklevel=2)
 
     def __getitem__(self, index):
         if isinstance(index, slice):
