@@ -28,6 +28,7 @@
 """A collections of triggers which a testbench can await."""
 
 import abc
+import inspect
 import warnings
 from collections.abc import Awaitable
 
@@ -890,7 +891,9 @@ class ClockCycles(Waitable):
 
 async def with_timeout(trigger, timeout_time, timeout_unit="step"):
     """
-    Waits on triggers, throws an exception if it waits longer than the given time.
+    Waits on triggers and coroutines, throws an exception if it waits longer than the given time.
+
+    When used with a coroutine, the coroutine will be forked and awaited, and the return value forwarded when the coroutine finishes.  If the timeout expires, the coroutine will be killed.
 
     Usage:
 
@@ -900,7 +903,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
         await with_timeout(First(coro, event.wait()), 100, 'ns')
 
     Args:
-        trigger (:class:`~cocotb.triggers.Trigger` or :class:`~cocotb.triggers.Waitable` or :class:`~cocotb.decorators.RunningTask`):
+        trigger (:class:`~cocotb.triggers.Trigger`, :class:`~cocotb.triggers.Waitable`, :class:`~cocotb.decorators.RunningTask`, or :term:`python:coroutine`):
             A single object that could be right of an :keyword:`await` expression in cocotb.
         timeout_time (numbers.Real or decimal.Decimal):
             Simulation time duration before timeout occurs.
@@ -915,9 +918,21 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
 
     .. versionadded:: 1.3
 
+    .. versionchanged:: 1.5
+        Support passing :term:`python:coroutine`\\ s.
+
     .. deprecated:: 1.5
         Using None as the the *timeout_unit* argument is deprecated, use ``'step'`` instead.
-   """
+    """
+
+    if inspect.iscoroutine(trigger):
+        task = cocotb.fork(trigger)
+        try:
+            res = await with_timeout(task, timeout_time, timeout_unit)
+        except cocotb.result.SimTimeoutError:
+            task.kill()
+            raise
+        return await task
 
     if timeout_unit is None:
         warnings.warn(
