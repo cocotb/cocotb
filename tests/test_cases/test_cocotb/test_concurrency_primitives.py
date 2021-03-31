@@ -149,3 +149,19 @@ async def test_event_is_set(dut):
     assert e.is_set()
     e.clear()
     assert not e.is_set()
+
+
+@cocotb.test()
+async def test_combine_start_soon(_):
+    async def coro(delay):
+        start_time = cocotb.utils.get_sim_time(units="ns")
+        await Timer(delay, "ns")
+        assert cocotb.utils.get_sim_time(units="ns") == start_time + delay
+
+    max_delay = 10
+
+    coros = [cocotb.scheduler.start_soon(coro(d)) for d in range(1, max_delay + 1)]
+
+    test_start = cocotb.utils.get_sim_time(units="ns")
+    await Combine(*coros)
+    assert cocotb.utils.get_sim_time(units="ns") == test_start + max_delay
