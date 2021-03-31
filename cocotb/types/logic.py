@@ -37,14 +37,14 @@ class Logic:
     and treating "uninitialized" (``U``) and "don't care" (``-``) as "unknown" (``X``).
 
     :class:`Logic` can be converted from :class:`int`, :class:`str`, :class:`bool`, and :class:`~cocotb.types.Bit` using the ``Logic(value)`` syntax.
-    The list of acceptable values includes ``0``, ``1``, ``True``, ``False``, ``'0'``, ``'1'``, ``'X'``, and ``'Z'``.
+    The list of acceptable values includes ``0``, ``1``, ``True``, ``False``, ``"0"``, ``"1"``, ``"X"``, and ``"Z"``.
     For a comprehensive list of values that can be converted into :class:`Logic` see :file:`tests/pytest/test_logic.py`.
 
     :class:`Logic` can be converted to :class:`int`, :class:`str`, :class:`bool` using the appropriate constructor syntax.
-    For example, ``int(Logic(0)) == 0``, ``bool(Logic(1)) is True``, and ``str(Logic('X')) == 'X'``.
+    For example, ``int(Logic(0)) == 0``, ``bool(Logic(1)) is True``, and ``str(Logic("X")) == "X"``.
     The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0`` or ``1``.
 
-    The default value of ``Logic()`` is ``Logic('X')``.
+    The default value of ``Logic()`` is ``Logic("X")``.
 
     :class:`Logic` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
@@ -167,17 +167,13 @@ class Logic:
     def __bool__(self):
         if self._repr < 2:
             return bool(self._repr)
-        raise ValueError(
-            f"Cannot convert {self!r} to bool"
-        )
+        raise ValueError(f"Cannot convert {self!r} to bool")
 
     @cache
     def __int__(self):
         if self._repr < 2:
             return self._repr
-        raise ValueError(
-            f"Cannot convert {self!r} to int"
-        )
+        raise ValueError(f"Cannot convert {self!r} to int")
 
 
 class Bit(Logic):
@@ -188,13 +184,13 @@ class Bit(Logic):
     VHDL's ``bit`` type maps to this type perfectly.
 
     :class:`Bit` can be converted from :class:`int`, :class:`str`, :class:`bool`, and :class:`~cocotb.types.Logic` using the ``Bit(value)`` syntax.
-    The list of acceptable values includes ``0``, ``1``, ``True``, ``False``, ``'0'``, ``'1'``.
+    The list of acceptable values includes ``0``, ``1``, ``True``, ``False``, ``"0"``, ``"1"``.
     For a comprehensive list of values that can be converted into :class:`Bit` see :file:`tests/pytest/test_logic.py`.
 
     :class:`Bit` can be converted to :class:`int`, :class:`str`, :class:`bool` using the appropriate constructor syntax.
-    For example, ``int(Bit(0)) == 0``, ``bool(Bit(1)) is True``, and ``str(Bit('1')) == '1'``.
+    For example, ``int(Bit(0)) == 0``, ``bool(Bit(1)) is True``, and ``str(Bit("1")) == "1"``.
 
-    The default value of ``Bit()`` is ``Bit('0')``.
+    The default value of ``Bit()`` is ``Bit("0")``.
 
     :class:`Bit` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
