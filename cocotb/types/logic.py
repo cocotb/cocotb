@@ -44,6 +44,8 @@ class Logic:
     For example, ``int(Logic(0)) == 0``, ``bool(Logic(1)) is True``, and ``str(Logic('X')) == 'X'``.
     The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0`` or ``1``.
 
+    The default value of ``Logic()`` is ``Logic('X')``.
+
     :class:`Logic` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
     :class:`Logic` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
@@ -191,6 +193,8 @@ class Bit(Logic):
 
     :class:`Bit` can be converted to :class:`int`, :class:`str`, :class:`bool` using the appropriate constructor syntax.
     For example, ``int(Bit(0)) == 0``, ``bool(Bit(1)) is True``, and ``str(Bit('1')) == '1'``.
+
+    The default value of ``Bit()`` is ``Bit('0')``.
 
     :class:`Bit` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
