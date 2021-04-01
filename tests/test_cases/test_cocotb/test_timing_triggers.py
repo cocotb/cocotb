@@ -209,6 +209,21 @@ async def test_timeout_func_pass(dut):
 
 
 @cocotb.test()
+async def test_decorated_coroutine_killed_after_timeout(_):
+    @cocotb.coroutine
+    async def example():
+        await Timer(10, 'ns')
+        return 1
+    coro = example()
+    try:
+        await cocotb.triggers.with_timeout(coro, timeout_time=1, timeout_unit='ns')
+    except cocotb.result.SimTimeoutError:
+        pass
+    assert not coro._finished
+    assert await coro == 1
+
+
+@cocotb.test()
 async def test_readwrite(dut):
     """ Test that ReadWrite can be waited on """
     # gh-759
