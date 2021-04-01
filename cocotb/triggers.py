@@ -890,7 +890,7 @@ class ClockCycles(Waitable):
 
 
 async def with_timeout(trigger, timeout_time, timeout_unit="step"):
-    """
+    r"""
     Waits on triggers and coroutines, throws an exception if it waits longer than the given time.
 
     When used with a coroutine, the coroutine will be forked and awaited, and the return value forwarded when the coroutine finishes.  If the timeout expires, the coroutine will be killed.
