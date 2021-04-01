@@ -219,7 +219,7 @@ A workaround is to use indirect access using
 ``dut._id("_some_signal", extended=False)``.
 
 
-Passing And Failing Tests
+Passing and Failing Tests
 =========================
 
 A cocotb test is considered to have `failed` if the test coroutine,
@@ -252,7 +252,7 @@ Below are examples of `failing` tests.
         await Timer(10, 'ns')
 
 When a test fails, a stacktrace is printed.
-If ``pytest`` is installed and ``assert`` statements are used,
+If :mod:`pytest` is installed and ``assert`` statements are used,
 a more informative stacktrace is printed which includes the values that caused the ``assert`` to fail.
 For example, see the output for the first test from above.
 
