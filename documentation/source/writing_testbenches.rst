@@ -258,11 +258,11 @@ For example, see the output for the first test from above.
 
 .. code-block::
 
-    0.00ns ERROR    cocotb.regression                         regression.py:408  in _score_test                     Test Failed: test (result was AssertionError)
-                                                                                                                    Traceback (most recent call last):
-                                                                                                                      File "test.py", line3, in test
-                                                                                                                        assert 1 > 2, "Testing the obvious"
-                                                                                                                    AssertionError: Testing the obvious
+    0.00ns ERROR    Test Failed: test (result was AssertionError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        assert 1 > 2, "Testing the obvious"
+                    AssertionError: Testing the obvious
 
 
 A cocotb test is considered to have `errored` if the test coroutine,
@@ -288,11 +288,11 @@ For example, see the below output for the first test from above.
 
 .. code-block::
 
-    0.00ns ERROR    cocotb.regression                         regression.py:408  in _score_test                     Test Failed: test (result was NameError)
-                                                                                                                    Traceback (most recent call last):
-                                                                                                                      File "test.py", line 3, in test
-                                                                                                                        await coro_that_does_not_exist()  # NameError
-                                                                                                                    NameError: name 'coro_that_does_not_exist' is not defined
+    0.00ns ERROR    Test Failed: test (result was NameError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        await coro_that_does_not_exist()  # NameError
+                    NameError: name 'coro_that_does_not_exist' is not defined
 
 
 If a test coroutine completes without `failing` or `erroring`,
@@ -324,7 +324,7 @@ A passing test will print the following output.
 
 .. code-block::
 
-    0.00ns INFO     cocotb.regression                         regression.py:373  in _score_test                     Test Passed: test
+    0.00ns INFO     Test Passed: test
 
 
 Logging
