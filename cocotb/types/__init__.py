@@ -3,3 +3,4 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from .logic import Logic, Bit  # noqa: F401
 from .range import Range  # noqa: F401
+from .array import Array  # noqa: F401
