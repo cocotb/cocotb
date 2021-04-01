@@ -918,7 +918,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
 
     .. versionadded:: 1.3
 
-    .. versionchanged:: 1.5
+    .. versionchanged:: 1.6
         Support passing :term:`python:coroutine`\\ s.
 
     .. deprecated:: 1.5
@@ -932,7 +932,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
         except cocotb.result.SimTimeoutError:
             task.kill()
             raise
-        return await task
+        return res
 
     if timeout_unit is None:
         warnings.warn(
