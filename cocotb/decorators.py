@@ -512,3 +512,10 @@ class test(coroutine, metaclass=_decorator_helper):
         self.stage = stage
         self.im_test = True    # For auto-regressions
         self.name = self._func.__name__
+
+    def __call__(self, *args, **kwargs):
+        inst = self._func(*args, **kwargs)
+        coro = RunningCoroutine(inst, self)
+        coro.__name__ = "Test {}".format(inst.__name__)
+        coro.__qualname__ = "Test {}".format(inst.__qualname__)
+        return coro
