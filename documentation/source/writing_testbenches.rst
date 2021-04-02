@@ -218,6 +218,115 @@ A workaround is to use indirect access using
 :meth:`~cocotb.handle.HierarchyObject._id` like in the following example:
 ``dut._id("_some_signal", extended=False)``.
 
+
+Passing and Failing Tests
+=========================
+
+A cocotb test is considered to have `failed` if the test coroutine,
+or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
+fails an ``assert`` statement or raises a :exc:`cocotb.result.TestFailure`.
+Below are examples of `failing` tests.
+
+.. code-block:: python3
+
+    @cocotb.test()
+    async def test(dut):
+        assert 1 > 2, "Testing the obvious"
+
+    @cocotb.test()
+    async def test(dut):
+        raise TestFailure("Reason")
+
+    @cocotb.test()
+    async def test(dut):
+        async def fails_test():
+            assert 1 > 2
+        cocotb.fork(fails_test())
+        await Timer(10, 'ns')
+
+    @cocotb.test()
+    async def test(dut):
+        async def fails_test():
+            raise TestFailure("Reason")
+        cocotb.fork(fails_test())
+        await Timer(10, 'ns')
+
+When a test fails, a stacktrace is printed.
+If :mod:`pytest` is installed and ``assert`` statements are used,
+a more informative stacktrace is printed which includes the values that caused the ``assert`` to fail.
+For example, see the output for the first test from above.
+
+.. code-block::
+
+    0.00ns ERROR    Test Failed: test (result was AssertionError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        assert 1 > 2, "Testing the obvious"
+                    AssertionError: Testing the obvious
+
+
+A cocotb test is considered to have `errored` if the test coroutine,
+or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
+raises an exception that isn't considered a `failure`.
+Below are examples of `erroring` tests.
+
+.. code-block:: python3
+
+    @cocotb.test()
+    async def test(dut):
+        await coro_that_does_not_exist()  # NameError
+
+    @cocotb.test()
+    async def test(dut):
+        async def coro_with_an_error():
+            dut.signal_that_does_not_exist <= 1  # AttributeError
+        cocotb.fork(coro_with_an_error())
+        await Timer(10, 'ns')
+
+When a test ends with an error, a stacktrace is printed.
+For example, see the below output for the first test from above.
+
+.. code-block::
+
+    0.00ns ERROR    Test Failed: test (result was NameError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        await coro_that_does_not_exist()  # NameError
+                    NameError: name 'coro_that_does_not_exist' is not defined
+
+
+If a test coroutine completes without `failing` or `erroring`,
+or if the test coroutine,
+or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
+raises :exc:`cocotb.result.TestSuccess`,
+the test is considered to have `passed`.
+Below are examples of `passing` tests.
+
+.. code-block:: python3
+
+    @cocotb.test():
+    async def test(dut):
+        assert 2 > 1  # assertion is correct, then the coroutine ends
+
+    @cocotb.test()
+    async def test(dut):
+        raise TestSuccess("Reason")  # ends test with success early
+        assert 1 > 2  # this would fail, but it isn't run because the test was ended early
+
+    @cocotb.test()
+    async def test(dut):
+        async def ends_test_with_pass():
+            raise TestSuccess("Reason")
+        cocotb.fork(ends_test_with_pass())
+        await Timer(10, 'ns')
+
+A passing test will print the following output.
+
+.. code-block::
+
+    0.00ns INFO     Test Passed: test
+
+
 Logging
 =======
 
