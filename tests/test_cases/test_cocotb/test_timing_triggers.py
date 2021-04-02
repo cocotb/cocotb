@@ -219,7 +219,7 @@ async def test_decorated_coroutine_killed_after_timeout(_):
         await cocotb.triggers.with_timeout(coro, timeout_time=1, timeout_unit='ns')
     except cocotb.result.SimTimeoutError:
         pass
-    assert not coro._finished
+    assert coro._finished
     assert await coro == 1
 
 

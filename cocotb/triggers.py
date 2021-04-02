@@ -945,7 +945,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
         :class:`~cocotb.coroutine`\ s that are passed unstarted are now killed if there is a timeout.
     """
 
-    if inspect.iscoroutine(trigger) or isinstance(trigger, cocotb.decorators.coroutine) and not trigger._started:
+    if inspect.iscoroutine(trigger) or isinstance(trigger, cocotb.decorators.RunningCoroutine) and not trigger._started:
         task = cocotb.fork(trigger)
         try:
             res = await with_timeout(task, timeout_time, timeout_unit)
