@@ -220,7 +220,7 @@ async def test_decorated_coroutine_killed_after_timeout(_):
     except cocotb.result.SimTimeoutError:
         pass
     assert coro._finished
-    assert await coro == 1
+    assert await coro is None
 
 
 @cocotb.test()
