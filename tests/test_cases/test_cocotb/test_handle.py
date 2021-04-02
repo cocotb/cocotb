@@ -298,7 +298,7 @@ async def test_real_assign_double(dut):
     timer_shortest = Timer(1, "step")
     await timer_shortest
     log.info("Setting the value %g" % val)
-    dut.stream_in_real = val
+    dut.stream_in_real <= val
     await timer_shortest
     await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = float(dut.stream_out_real)

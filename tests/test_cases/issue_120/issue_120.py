@@ -6,9 +6,9 @@ from cocotb.triggers import RisingEdge, ReadOnly
 
 
 async def send_data(dut):
-    dut.stream_in_valid = 1
+    dut.stream_in_valid <= 1
     await RisingEdge(dut.clk)
-    dut.stream_in_valid = 0
+    dut.stream_in_valid <= 0
 
 
 async def monitor(dut):

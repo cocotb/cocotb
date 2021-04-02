@@ -9,6 +9,7 @@ import ctypes
 from contextlib import contextmanager
 from common import assert_raises
 from typing import List
+from cocotb._sim_versions import IcarusVersion
 
 
 @contextmanager
@@ -172,3 +173,24 @@ async def test_dict_signal_assignment_deprecated(dut):
     await Timer(1, 'step')
 
     assert dut.stream_in_data.value == pack_bit_vector(**d)
+
+
+@cocotb.test()
+async def test_assigning_setattr_syntax_deprecated(dut):
+    with assert_deprecated():
+        dut.stream_in_data = 1
+    with assert_raises(AttributeError):
+        # attempt to use __setattr__ syntax on signal that doesn't exist
+        dut.does_not_exist = 0
+
+
+icarus_under_11 = cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))
+
+
+@cocotb.test(expect_error=Exception if icarus_under_11 else ())
+async def test_assigning_setitem_syntax_deprecated(dut):
+    with assert_deprecated():
+        dut.stream_in_data[0] = 1
+    with assert_raises(IndexError):
+        # attempt to use __setitem__ syntax on signal that doesn't exist
+        dut.stream_in_data[800000] = 1

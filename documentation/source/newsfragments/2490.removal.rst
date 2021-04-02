@@ -1,0 +1,2 @@
+Setting values on handles using the ``dut.handle = value`` syntax is deprecated.
+Instead use the ``handle.value = value`` or ``handle <= value`` syntax.

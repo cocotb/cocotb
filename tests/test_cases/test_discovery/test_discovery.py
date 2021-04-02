@@ -157,24 +157,6 @@ async def access_single_bit(dut):
                          dut.stream_out_data_comb.value.integer, (1 << 2)))
 
 
-@cocotb.test(
-    # Icarus up to (including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
-    expect_error=IndexError if (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))) else (),
-    skip=cocotb.LANGUAGE in ["vhdl"])
-async def access_single_bit_assignment(dut):
-    """Access a single bit in a vector of the DUT using the assignment mechanism"""
-    dut.stream_in_data = 0
-    await Timer(1, "ns")
-    dut._log.info("%s = %d bits" %
-                  (dut.stream_in_data._path, len(dut.stream_in_data)))
-    dut.stream_in_data[2] = 1
-    await Timer(1, "ns")
-    if dut.stream_out_data_comb.value.integer != (1 << 2):
-        raise TestError("%s.%s != %d" %
-                        (dut.stream_out_data_comb._path,
-                         dut.stream_out_data_comb.value.integer, (1 << 2)))
-
-
 @cocotb.test(expect_error=IndexError)
 async def access_single_bit_erroneous(dut):
     """Access a non-existent single bit"""
