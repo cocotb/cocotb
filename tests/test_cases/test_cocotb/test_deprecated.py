@@ -191,6 +191,7 @@ icarus_under_11 = cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersio
 async def test_assigning_setitem_syntax_deprecated(dut):
     with assert_deprecated():
         dut.stream_in_data[0] = 1
-    with assert_raises(IndexError):
-        # attempt to use __setitem__ syntax on signal that doesn't exist
-        dut.stream_in_data[800000] = 1
+    with assert_deprecated():
+        with assert_raises(IndexError):
+            # attempt to use __setitem__ syntax on signal that doesn't exist
+            dut.stream_in_data[800000] = 1
