@@ -1,6 +1,6 @@
 from typing import Any, Iterator, overload
 from collections.abc import Sequence
-from functools import cached_property, lru_cache
+from cocotb._py_compat import cached_property, cache
 
 
 class Range(Sequence):
@@ -83,7 +83,7 @@ class Range(Sequence):
         self._range = range(left, right + step, step)
 
     @staticmethod
-    @lru_cache(maxsize=None)
+    @cache
     def _translate_direction(direction) -> int:
         direction = direction.lower()
         if direction == "to":

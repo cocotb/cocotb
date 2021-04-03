@@ -29,6 +29,7 @@ These are for internal use - users should use a third party library like `six`
 if they want to use these shims in their own code
 """
 import sys
+from functools import lru_cache
 
 
 # backport of Python 3.7's contextlib.nullcontext
@@ -60,3 +61,21 @@ if sys.version_info[:2] >= (3, 7):
 else:
     import collections
     insertion_ordered_dict = collections.OrderedDict
+
+
+# backport of Python 3.9's functools.cache decorator
+if sys.version_info < (3, 9):
+    def cache(f):
+        return lru_cache(maxsize=None)(f)
+else:
+    from functools import cache  # noqa: F401
+
+
+# Emulates Python 3.8's functools.cached_property decorator.
+# Uses lru_cache with LRU functionality, otherwise the cache could hold references to
+# dead objects and grow infinitely.
+if sys.version_info >= (3, 8):
+    from functools import cached_property
+else:
+    def cached_property(method):
+        return property(lru_cache(method))

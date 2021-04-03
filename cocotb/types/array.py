@@ -1,7 +1,7 @@
 from typing import Optional, Any, Iterable, Iterator, overload
 from collections.abc import Sequence
 from .range import Range
-from functools import cached_property
+from cocotb._py_compat import cached_property
 from itertools import zip_longest
 from sys import maxsize
 
