@@ -78,4 +78,4 @@ if sys.version_info >= (3, 8):
     from functools import cached_property
 else:
     def cached_property(method):
-        return property(lru_cache(method))
+        return property(lru_cache()(method))
