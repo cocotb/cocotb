@@ -9,8 +9,8 @@ class Range(Sequence):
 
     In Python, :class:`range` and :class:`slice` have a non-inclusive right bound.
     In both Verilog and VHDL, ranges and arrays have an inclusive right bound.
-    This type mimic's Python's :class:`range` type, but implements HDL-like inclusive right bounds.
-    Also supports :attr:`left`, :attr:`right`, and :attr:`length` attributes as seen in VHDL.
+    This type mimics Python's :class:`range` type, but implements HDL-like inclusive right bounds,
+    and also supports :attr:`left`, :attr:`right`, and :attr:`length` attributes as seen in VHDL.
 
     .. code-block:: python3
 
@@ -30,7 +30,7 @@ class Range(Sequence):
         >>> r.to_range()
         range(-2, 4)
 
-    Supports "null" ranges as seen in VHDL.
+    :class:`Range` supports "null" ranges as seen in VHDL.
     "null" ranges occur when a left bound cannot reach a right bound with the given direction.
     They have a length of 0, but the left, right, and direction values remain as given.
 
@@ -55,7 +55,7 @@ class Range(Sequence):
 
     Args:
         left: leftmost bound of range
-        direction: 'to' if values are ascending or 'downto' if descending
+        direction: ``'to'`` if values are ascending, ``'downto'`` if descending
         right: rightmost bound of range (inclusive)
     """
 
