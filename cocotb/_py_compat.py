@@ -29,6 +29,7 @@ These are for internal use - users should use a third party library like `six`
 if they want to use these shims in their own code
 """
 import sys
+from functools import lru_cache
 
 
 # backport of Python 3.7's contextlib.nullcontext
@@ -64,8 +65,6 @@ else:
 
 # backport of Python 3.9's functools.cache decorator
 if sys.version_info < (3, 9):
-    from functools import lru_cache
-
     def cache(f):
         return lru_cache(maxsize=None)(f)
 else:
