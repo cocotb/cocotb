@@ -9,7 +9,7 @@ class Range(Sequence):
 
     In Python, :class:`range` and :class:`slice` have a non-inclusive right bound.
     In both Verilog and VHDL, ranges and arrays have an inclusive right bound.
-    This type mimic's Python's :class:`range` type, but supports HDL-like inclusive right bounds.
+    This type mimic's Python's :class:`range` type, but implements HDL-like inclusive right bounds.
     Also supports :attr:`left`, :attr:`right`, and :attr:`length` attributes as seen in VHDL.
 
     .. code-block:: python3
@@ -47,15 +47,15 @@ class Range(Sequence):
 
     Ranges also support all the features of :class:`range` including, but not limited to:
 
-    - ``value in range`` to see if a vlaue is in the range,
+    - ``value in range`` to see if a value is in the range,
     - ``range.index(value)`` to see what position in the range the value is,
     - ``len(range)`` which is equivalent to :attr:`length`.
 
     The typical use case of this type is in conjunction with :class:`~cocotb.types.Array`.
 
-    Args
+    Args:
         left: leftmost bound of range
-        direction: 'to' if values are ascending or 'downto' if decending
+        direction: 'to' if values are ascending or 'downto' if descending
         right: rightmost bound of range (inclusive)
     """
 
@@ -95,7 +95,7 @@ class Range(Sequence):
 
     @classmethod
     def from_range(cls, rng: range) -> "Range":
-        """Converts :class:`range` to :class:`Range`"""
+        """Converts :class:`range` to :class:`Range`."""
         if rng.step not in (1, -1):
             raise ValueError("step must be 1 or -1")
         obj = cls.__new__(cls)
@@ -103,27 +103,27 @@ class Range(Sequence):
         return obj
 
     def to_range(self) -> range:
-        """Converts :class:`Range` to :class:`range`"""
+        """Convert :class:`Range` to :class:`range`."""
         return self._range
 
     @cached_property
     def left(self) -> int:
-        """Leftmost value in a range"""
+        """Leftmost value in a range."""
         return self._range.start
 
     @cached_property
     def direction(self) -> str:
-        """``'to'`` if values are meant to be ascending, ``'downto'`` otherwise"""
+        """``'to'`` if values are meant to be ascending, ``'downto'`` otherwise."""
         return "to" if self._range.step == 1 else "downto"
 
     @cached_property
     def right(self) -> int:
-        """Rightmost value in a range"""
+        """Rightmost value in a range."""
         return self._range.stop - self._range.step
 
     @cached_property
     def length(self) -> int:
-        """Length of range"""
+        """Length of range."""
         return len(self._range)
 
     def __len__(self) -> int:
