@@ -25,19 +25,19 @@ class Array(Sequence):
     .. code-block:: python3
 
         >>> Array("1234")  # the 0-based range `(0, len(value)-1)` is inferred
-        Array(['1', '2', '3', '4'], Range(0, 3))
+        Array(['1', '2', '3', '4'], Range(0, 'to', 3))
 
         >>> Array(range=Range(0, 'downto', -3))  # the initial values are `None`
-        Array([None, None, None, None], Range(0, -3))
+        Array([None, None, None, None], Range(0, 'downto', -3))
 
-        >>> Array([1, True, object(), 'example'], Range(-2, 1))  # initial value and range lengths must be equal
-        Array([1, True, <object object at 0x7f4cff7b5570>, 'example'], Range(-2, 'to', 1))
+        >>> Array([1, True, None, 'example'], Range(-2, 1))  # initial value and range lengths must be equal
+        Array([1, True, None, 'example'], Range(-2, 'to', 1))
 
     Arrays also support "null" ranges; "null" arrays have zero length and cannot be indexed.
 
     .. code-block:: python3
 
-        >>> Array(range=Range(0, 'to', 1))
+        >>> Array(range=Range(1, 'to', 0))
         Array([], Range(1, 'to', 0))
 
     Indexing and slicing is very similar to :class:`list`\ s, but it uses the indexing scheme specified.
@@ -55,7 +55,7 @@ class Array(Sequence):
         >>> ''.join(a)
         '12ba43cd'
 
-        >>> b = Array("1234", Range(0, 'downto', -3))
+        >>> b = Array("1234", Range(0, -3))
         >>> b[-2]
         '3'
         >>> b[-1:]
@@ -144,7 +144,7 @@ class Array(Sequence):
     def __contains__(self, item: Any) -> bool:
         return item in self._value
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: Any) -> bool:
         try:
             return all(a == b for a, b in zip_longest(self, other, fillvalue=object()))
         except TypeError:
