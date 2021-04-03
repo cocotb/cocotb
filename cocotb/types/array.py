@@ -234,4 +234,4 @@ class Array(Sequence):
         try:
             return self._range.index(item)
         except ValueError:
-            raise IndexError("index {} out of range".format(item)) from None
+            raise IndexError(f"index {item} out of range") from None
