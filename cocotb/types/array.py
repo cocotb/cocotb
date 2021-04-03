@@ -37,8 +37,8 @@ class Array(Sequence):
         >>> Array(range=Range(0, 'to', 1))
         Array([], Range(1, 'to', 0))
 
-    Indexing and slicing is very similar to :class:`list`\ s, except you use the indexing scheme you specified.
-    Like :class:`list`\ s, you don't have to specify a start or stop, and the start or end of the array are inferred.
+    Indexing and slicing is very similar to :class:`list`\ s, but it uses the indexing scheme specified.
+    Like :class:`list`\ s, if a start or stop index is not specified, it is inferred as the start or end of the array.
     Slicing an array returns a new :class:`~cocotb.types.Array` object, whose bounds are the slice indexes.
 
     .. code-block:: python3
@@ -65,7 +65,7 @@ class Array(Sequence):
         Slice indexes must be specified in the same direction as the array and do not support specifying a "step".
 
     .. note::
-        When setting a slice, the new value must be an iterable of the same size as the slice you are selecting.
+        When setting a slice, the new value must be an iterable of the same size as the slice.
 
     .. note::
         Negative indexes are *not* treated as an offset from the end of the array, but are treated literally.
