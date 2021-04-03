@@ -81,7 +81,11 @@ class Array(Sequence):
         range: Indexing scheme of the array.
     """
 
-    __slots__ = ("_value", "_range", "__dict__")  # __dict__ necessary for cached_property
+    __slots__ = (
+        "_value",
+        "_range",
+        "__dict__",  # necessary for cached_property
+    )
 
     def __init__(
         self, value: Optional[Iterable[Any]] = None, range: Optional[Range] = None
@@ -201,15 +205,15 @@ class Array(Sequence):
             self._value[start_i : stop_i + 1] = value
         else:
             raise TypeError(
-                "indexes must be ints or slices, not {}".format(
-                    type(item).__name__
-                )
+                "indexes must be ints or slices, not {}".format(type(item).__name__)
             )
 
     def __repr__(self) -> str:
         return "{}({!r}, {!r})".format(type(self).__name__, self._value, self._range)
 
-    def index(self, value: Any, start: Optional[int] = None, stop: Optional[int] = None) -> int:
+    def index(
+        self, value: Any, start: Optional[int] = None, stop: Optional[int] = None
+    ) -> int:
         """Return index of first occurrence of *value*."""
         if start is not None:
             start = self._translate_index(start)
