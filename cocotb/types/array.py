@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Optional, Any, Iterable, Iterator, overload
+from typing import Optional, Any, Iterable, Iterator, overload, List
 from collections.abc import Sequence
 from .range import Range
 from cocotb._py_compat import cached_property
@@ -82,6 +82,10 @@ class Array(Sequence):
     Args:
         value: Initial value for the array.
         range: Indexing scheme of the array.
+
+    Raises:
+        ValueError: When argument values cannot be used to construct an array.
+        TypeError: When invalid argument types are used.
     """
 
     __slots__ = (
@@ -111,10 +115,66 @@ class Array(Sequence):
         else:
             raise TypeError("must pass a value, range, or both")
 
-    _construct_value = list
+    @staticmethod
+    def _construct_value(value: Iterable[Any]) -> List[Any]:
+        """
+        Constructs the value portion of the array.
+
+        For overriding by subclasses.
+        Used by constructor when values are given
+        and by __setitem__ when setting a slice to an iterable.
+
+        Args:
+            value: Any iterable of values that are constructable into elements using :meth:`_construct_elements`
+
+        Returns:
+            A :class:`list` of elements.
+
+        Raises:
+            TypeError: When the type isn't supported.
+            ValueError: When the iterable's values prevent construction into a list of elements.
+        """
+        return list(value)
+
+    @staticmethod
+    def _construct_element(elem: Any) -> Any:
+        """
+        Constructs a single element of an array.
+
+        For overriding by subclasses.
+        Used by __setitem__ when setting a single element.
+
+        Args:
+            elem: Any object that the implementation can turn into an array element.
+
+        Returns:
+            An array element.
+
+        Raises:
+            TypeError: When the type isn't supported.
+            ValueError: When the value prevents construction into an element.
+        """
+        return elem
 
     @staticmethod
     def _construct_range(rng: Any) -> Range:
+        """
+        Constructs the range portion of the array.
+
+        For overriding by subclasses.
+        Used by the constructor when setting the range
+        and by __setitem__ when creating a slice.
+
+        Args:
+            rng: Any object that the implementation can turn into a :class:`Range` object.
+
+        Returns:
+            The :class:`Range` object describing the array's indexing scheme.
+
+        Raises:
+            TypeError: When type isn't supported.
+            ValueError: When the value prevents construction into a range.
+        """
         if isinstance(rng, Range):
             return rng
         raise TypeError("range argument must be of type 'Range'")
@@ -183,12 +243,9 @@ class Array(Sequence):
             stop_i = self._translate_index(stop)
             if start_i > stop_i:
                 raise IndexError("slice direction does not match array direction")
-            # avoid second copy
-            cls = type(self)
-            val = cls.__new__(cls)
-            val._value = self._value[start_i : stop_i + 1]
-            val._range = Range(start, self.direction, stop)
-            return val
+            value = self._value[start_i : stop_i + 1]
+            range = Range(start, self.direction, stop)
+            return type(self)(value=value, range=range)
         raise TypeError(
             "indexes must be ints or slices, not {}".format(type(item).__name__)
         )
@@ -204,6 +261,7 @@ class Array(Sequence):
     def __setitem__(self, item, value):
         if isinstance(item, int):
             idx = self._translate_index(item)
+            value = self._construct_element(value)
             self._value[idx] = value
         elif isinstance(item, slice):
             start = item.start or self.left
@@ -214,7 +272,7 @@ class Array(Sequence):
             stop_i = self._translate_index(stop)
             if start_i > stop_i:
                 raise IndexError("slice direction does not match array direction")
-            value = list(value)
+            value = self._construct_value(value)
             if len(value) != (stop_i - start_i + 1):
                 raise ValueError(
                     "value  of length {!r} will not fit in slice [{}:{}]".format(

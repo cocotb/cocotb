@@ -33,6 +33,10 @@ def test_both_construction():
 def test_bad_construction():
     with pytest.raises(TypeError):
         Array()
+    with pytest.raises(TypeError):
+        Array(value=1)
+    with pytest.raises(TypeError):
+        Array(range=tuple())
 
 
 def test_length():
