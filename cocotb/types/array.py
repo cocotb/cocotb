@@ -94,11 +94,11 @@ class Array(Sequence):
         self, value: Optional[Iterable[Any]] = None, range: Optional[Range] = None
     ):
         if value is not None and range is None:
-            self._value = list(value)
-            self._range = Range(0, "to", len(self._value) - 1)
+            self._value = self._construct_value(value)
+            self._range = self._construct_range(Range(0, "to", len(self._value) - 1))
         elif value is not None and range is not None:
-            self._value = list(value)
-            self._range = range
+            self._value = self._construct_value(value)
+            self._range = self._construct_range(range)
             if len(self._value) != len(self._range):
                 raise ValueError(
                     "init value of length {!r} not fit in {!r}".format(
@@ -106,10 +106,18 @@ class Array(Sequence):
                     )
                 )
         elif value is None and range is not None:
-            self._value = [None] * len(range)
-            self._range = range
+            self._value = self._construct_value(None for _ in range)
+            self._range = self._construct_range(range)
         else:
             raise TypeError("must pass a value, range, or both")
+
+    _construct_value = list
+
+    @staticmethod
+    def _construct_range(rng: Any) -> Range:
+        if isinstance(rng, Range):
+            return rng
+        raise TypeError("range argument must be of type 'Range'")
 
     @cached_property
     def left(self) -> int:
