@@ -204,7 +204,11 @@ class Array(Sequence):
                 raise IndexError("slice direction does not match array direction")
             value = list(value)
             if len(value) != (stop_i - start_i + 1):
-                raise ValueError("value is not the same length as the slice")
+                raise ValueError(
+                    "value  of length {!r} will not fit in slice [{}:{}]".format(
+                        len(value), start, stop
+                    )
+                )
             self._value[start_i : stop_i + 1] = value
         else:
             raise TypeError(
