@@ -100,7 +100,11 @@ class Array(Sequence):
             self._value = list(value)
             self._range = range
             if len(self._value) != len(self._range):
-                raise ValueError("Init value does not fit in given range")
+                raise ValueError(
+                    "init value of length {!r} not fit in {!r}".format(
+                        len(self._value), self._range
+                    )
+                )
         elif value is None and range is not None:
             self._value = [None] * len(range)
             self._range = range
