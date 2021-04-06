@@ -115,7 +115,7 @@ class Array(Sequence):
     @staticmethod
     def _construct_value(value: Iterable[Any]) -> List[Any]:
         """
-        Constructs the value portion of the array.
+        Construct the value portion of the array.
 
         For overriding by subclasses.
         Used by constructor when values are given
@@ -136,7 +136,7 @@ class Array(Sequence):
     @staticmethod
     def _construct_element(elem: Any) -> Any:
         """
-        Constructs a single element of an array.
+        Construct a single element of an array.
 
         For overriding by subclasses.
         Used by __setitem__ when setting a single element.
@@ -156,7 +156,7 @@ class Array(Sequence):
     @staticmethod
     def _construct_range(rng: Any) -> Range:
         """
-        Constructs the range portion of the array.
+        Construct the range portion of the array.
 
         For overriding by subclasses.
         Used by the constructor when setting the range
