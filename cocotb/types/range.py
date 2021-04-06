@@ -174,5 +174,5 @@ class Range(Sequence):
 
     def __repr__(self) -> str:
         return "{}({!r}, {!r}, {!r})".format(
-            type(self).__name__, self.left, self.direction, self.right
+            type(self).__qualname__, self.left, self.direction, self.right
         )
