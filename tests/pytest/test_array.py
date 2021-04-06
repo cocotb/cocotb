@@ -152,3 +152,9 @@ def test_set_slice_wrong_length():
     a = Array("example")
     with pytest.raises(ValueError):
         a[2:4] = "real bad"
+
+
+def test_slice_correct_infered():
+    a = Array("1234")
+    b = a[:0]
+    assert b.right == 0

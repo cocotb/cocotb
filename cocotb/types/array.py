@@ -236,8 +236,8 @@ class Array(Sequence):
             idx = self._translate_index(item)
             return self._value[idx]
         elif isinstance(item, slice):
-            start = item.start or self.left
-            stop = item.stop or self.right
+            start = item.start if item.start is not None else self.left
+            stop = item.stop if item.stop is not None else self.right
             if item.step is not None:
                 raise IndexError("do not specify step")
             start_i = self._translate_index(start)
@@ -269,8 +269,8 @@ class Array(Sequence):
             value = self._construct_element(value)
             self._value[idx] = value
         elif isinstance(item, slice):
-            start = item.start or self.left
-            stop = item.stop or self.right
+            start = item.start if item.start is not None else self.left
+            stop = item.stop if item.stop is not None else self.right
             if item.step is not None:
                 raise IndexError("do not specify step")
             start_i = self._translate_index(start)
