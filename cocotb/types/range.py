@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from typing import Any, Iterator, overload
 from collections.abc import Sequence
-from cocotb._py_compat import cache
 
 
 class Range(Sequence):
@@ -80,21 +79,17 @@ class Range(Sequence):
         if direction is not None and right is None:
             right, direction = direction, None
         if direction is None:
-            step = 1 if left < right else -1
+            # direction is 'to' if left == right
+            step = 1 if left <= right else -1
         else:
-            step = self._translate_direction(direction)
+            direction = direction.lower()
+            if direction == "to":
+                step = 1
+            elif direction == "downto":
+                step = -1
+            else:
+                raise ValueError("direction must be 'to' or 'downto'")
         self._range = range(left, right + step, step)
-
-    @staticmethod
-    @cache
-    def _translate_direction(direction) -> int:
-        direction = direction.lower()
-        if direction == "to":
-            return 1
-        elif direction == "downto":
-            return -1
-        else:
-            raise ValueError("direction must be 'to' or 'downto'")
 
     @classmethod
     def from_range(cls, rng: range) -> "Range":
