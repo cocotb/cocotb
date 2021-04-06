@@ -55,7 +55,7 @@ def test_equality():
     assert Array("1234", Range(1, 4)) == Array("1234", Range(1, 4))
     assert Array("1234", Range(1, 4)) == Array("1234", Range(0, -3))
     assert Array("1234", Range(1, 4)) != Array("4321", Range(1, 4))
-    assert Array("1234") == "1234"
+    assert Array("1234") != "1234"
     assert Array("1234") != 8
 
 
@@ -121,9 +121,9 @@ def test_slicing():
     b = a[2:6]
     assert b.left == 2
     assert b.right == 6
-    assert b == "sting"
+    assert b == Array("sting")
     a[0:3] = "hack"
-    assert a == "hackingstuff"
+    assert a == Array("hackingstuff")
 
 
 def test_slicing_infered_start_stop():

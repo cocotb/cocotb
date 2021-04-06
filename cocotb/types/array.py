@@ -4,7 +4,6 @@
 from typing import Optional, Any, Iterable, Iterator, overload, List
 from collections.abc import Sequence
 from .range import Range
-from itertools import zip_longest
 from sys import maxsize
 
 
@@ -214,16 +213,9 @@ class Array(Sequence):
         return item in self._value
 
     def __eq__(self, other: Any) -> bool:
-        sentinel = object()
-        try:
-            it = zip_longest(self, other, fillvalue=sentinel)
-        except TypeError:
+        if not isinstance(other, type(self)):
             return NotImplemented
-        for a, b in it:
-            # sentinel check MUST come before element equality check
-            if b == sentinel or a != b:
-                return False
-        return True
+        return self._value == other._value
 
     @overload
     def __getitem__(self, item: int) -> Any:
