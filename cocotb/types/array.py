@@ -302,7 +302,12 @@ class Array(Sequence):
     def index(
         self, value: Any, start: Optional[int] = None, stop: Optional[int] = None
     ) -> int:
-        """Return index of first occurrence of *value*."""
+        """
+        Return index of first occurrence of *value*.
+
+        Raises :exc:`ValueError` if the value is not found.
+        Search only within *start* and *stop* if given.
+        """
         if start is not None:
             start = self._translate_index(start)
         else:
