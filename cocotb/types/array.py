@@ -40,6 +40,8 @@ class Array(Sequence):
         Array([], Range(1, 'to', 0))
 
     Indexing and slicing is very similar to :class:`list`\ s, but it uses the indexing scheme specified.
+    Slicing, just like the :class:`~cocotb.types.Range` object uses an inclusive right bound,
+    which is commonly seen in HDLs.
     Like :class:`list`\ s, if a start or stop index is not specified, it is inferred as the start or end of the array.
     Slicing an array returns a new :class:`~cocotb.types.Array` object, whose bounds are the slice indexes.
 
