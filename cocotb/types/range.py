@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from typing import Any, Iterator, overload
 from collections.abc import Sequence
-from cocotb._py_compat import cached_property, cache
+from cocotb._py_compat import cache
 
 
 class Range(Sequence):
@@ -62,7 +62,7 @@ class Range(Sequence):
         right: rightmost bound of range (inclusive)
     """
 
-    __slots__ = ("_range", "__dict__")  # __dict__ necessary for cached_property
+    __slots__ = ("_range",)
 
     @overload
     def __init__(self, left: int, right: int):
@@ -109,22 +109,22 @@ class Range(Sequence):
         """Convert :class:`Range` to :class:`range`."""
         return self._range
 
-    @cached_property
+    @property
     def left(self) -> int:
         """Leftmost value in a range."""
         return self._range.start
 
-    @cached_property
+    @property
     def direction(self) -> str:
         """``'to'`` if values are meant to be ascending, ``'downto'`` otherwise."""
         return "to" if self._range.step == 1 else "downto"
 
-    @cached_property
+    @property
     def right(self) -> int:
         """Rightmost value in a range."""
         return self._range.stop - self._range.step
 
-    @cached_property
+    @property
     def length(self) -> int:
         """Length of range."""
         return len(self._range)

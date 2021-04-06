@@ -4,7 +4,6 @@
 from typing import Optional, Any, Iterable, Iterator, overload, List
 from collections.abc import Sequence
 from .range import Range
-from cocotb._py_compat import cached_property
 from itertools import zip_longest
 from sys import maxsize
 
@@ -88,7 +87,6 @@ class Array(Sequence):
     __slots__ = (
         "_value",
         "_range",
-        "__dict__",  # necessary for cached_property
     )
 
     def __init__(
@@ -176,27 +174,27 @@ class Array(Sequence):
             return rng
         raise TypeError("range argument must be of type 'Range'")
 
-    @cached_property
+    @property
     def left(self) -> int:
         """Leftmost index of the array."""
-        return self._range.left
+        return self.range.left
 
-    @cached_property
+    @property
     def direction(self) -> str:
         """``'to'`` if indexes are ascending, ``'downto'`` otherwise."""
-        return self._range.direction
+        return self.range.direction
 
-    @cached_property
+    @property
     def right(self) -> int:
         """Rightmost index of the array."""
-        return self._range.right
+        return self.range.right
 
-    @cached_property
+    @property
     def length(self):
         """Length of the array."""
-        return self._range.length
+        return self.range.length
 
-    @cached_property
+    @property
     def range(self) -> Range:
         """:class:`Range` of the indexes of the array."""
         return self._range
