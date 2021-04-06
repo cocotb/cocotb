@@ -65,13 +65,10 @@ class Array(Sequence):
         Array(['4', '3', '2', '1'], Range(0, 'downto', -3))
 
     .. note::
-        Slice indexes must be specified in the same direction as the array and do not support specifying a "step".
 
-    .. note::
-        When setting a slice, the new value must be an iterable of the same size as the slice.
-
-    .. note::
-        Negative indexes are *not* treated as an offset from the end of the array, but are treated literally.
+        - Slice indexes must be specified in the same direction as the array and do not support specifying a "step".
+        - When setting a slice, the new value must be an iterable of the same size as the slice.
+        - Negative indexes are *not* treated as an offset from the end of the array, but are treated literally.
 
     Arrays support the methods and semantics defined by :class:`collections.abc.Sequence` including, but not limited to:
 
