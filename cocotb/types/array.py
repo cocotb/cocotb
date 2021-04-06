@@ -212,10 +212,16 @@ class Array(Sequence):
         return item in self._value
 
     def __eq__(self, other: Any) -> bool:
+        sentinel = object()
         try:
-            return all(a == b for a, b in zip_longest(self, other, fillvalue=object()))
+            it = zip_longest(self, other, fillvalue=sentinel)
         except TypeError:
             return NotImplemented
+        for a, b in it:
+            # sentinel check MUST come before element equality check
+            if b == sentinel or a != b:
+                return False
+        return True
 
     @overload
     def __getitem__(self, item: int) -> Any:
