@@ -28,7 +28,7 @@ Reference Card
 | Assign metavalue       | ``dut.mysignal <= BinaryValue("X")``                            |
 +------------------------+-----------------------------------------------------------------+
 | Read                   | | ``val = dut.mysignal.value``                                  |
-|                        | | (``mysig = dut.mysignal`` *creates an alias/reference)*       |
+|                        | | (``mysig = dut.mysignal`` *creates an alias/reference*)       |
 +------------------------+-----------------------------------------------------------------+
 | Bit slice              | | ``mybit = dut.myarray[0].value``                              |
 |                        | | ``mybits = dut.mysignal.value[0]``                            |
@@ -59,6 +59,21 @@ Reference Card
 | Resume on Task 0 and 1 | ``await cocotb.triggers.Combine(task_0, task_1)``               |
 +------------------------+-----------------------------------------------------------------+
 | Kill coro              | ``task_0.kill()``                                               |
++------------------------+-----------------------------------------------------------------+
+|                                                                                          |
++------------------------+-----------------------------------------------------------------+
+| Queue write            | | ``await cocotb.queue.Queue.put(item)``                        |
+|                        | | ``cocotb.queue.Queue.put_nowait(item)``                       |
++------------------------+-----------------------------------------------------------------+
+| Queue read             | | ``item = await cocotb.queue.Queue.get()``                     |
+|                        | | ``item = cocotb.queue.Queue.get_nowait()``                    |
++------------------------+-----------------------------------------------------------------+
+| Queue attributes       | | ``queue.maxsize``  (``None`` *== unlimited*)                  |
+|                        | | ``queue.qsize()``                                             |
+|                        | | ``queue.empty()``                                             |
+|                        | | ``queue.full()``                                              |
++------------------------+-----------------------------------------------------------------+
+| Specialized queues     | ``.PriorityQueue``, ``.LifoQueue``                              |
 +------------------------+-----------------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+
