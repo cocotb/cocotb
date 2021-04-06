@@ -243,7 +243,11 @@ class Array(Sequence):
             start_i = self._translate_index(start)
             stop_i = self._translate_index(stop)
             if start_i > stop_i:
-                raise IndexError("slice direction does not match array direction")
+                raise IndexError(
+                    "slice [{}:{}] direction does not match array direction [{}:{}]".format(
+                        start, stop, self.left, self.right
+                    )
+                )
             value = self._value[start_i : stop_i + 1]
             range = Range(start, self.direction, stop)
             return type(self)(value=value, range=range)
@@ -272,7 +276,11 @@ class Array(Sequence):
             start_i = self._translate_index(start)
             stop_i = self._translate_index(stop)
             if start_i > stop_i:
-                raise IndexError("slice direction does not match array direction")
+                raise IndexError(
+                    "slice [{}:{}] direction does not match array direction [{}:{}]".format(
+                        start, stop, self.left, self.right
+                    )
+                )
             value = self._construct_value(value)
             if len(value) != (stop_i - start_i + 1):
                 raise ValueError(

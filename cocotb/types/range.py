@@ -100,7 +100,7 @@ class Range(Sequence):
     def from_range(cls, rng: range) -> "Range":
         """Convert :class:`range` to :class:`Range`."""
         if rng.step not in (1, -1):
-            raise ValueError("step must be 1 or -1")
+            raise ValueError("step must be '1' or '-1'")
         obj = cls.__new__(cls)
         obj._range = rng
         return obj
