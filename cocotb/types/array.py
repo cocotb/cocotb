@@ -105,7 +105,7 @@ class Array(Sequence):
             self._range = self._construct_range(range)
             if len(self._value) != len(self._range):
                 raise ValueError(
-                    "init value of length {!r} not fit in {!r}".format(
+                    "init value of length {!r} does not fit in {!r}".format(
                         len(self._value), self._range
                     )
                 )
@@ -275,7 +275,7 @@ class Array(Sequence):
             value = self._construct_value(value)
             if len(value) != (stop_i - start_i + 1):
                 raise ValueError(
-                    "value  of length {!r} will not fit in slice [{}:{}]".format(
+                    "value of length {!r} will not fit in slice [{}:{}]".format(
                         len(value), start, stop
                     )
                 )

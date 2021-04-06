@@ -35,7 +35,7 @@ class Range(Sequence):
 
     :class:`Range` supports "null" ranges as seen in VHDL.
     "null" ranges occur when a left bound cannot reach a right bound with the given direction.
-    They have a length of 0, but the left, right, and direction values remain as given.
+    They have a length of 0, but the :attr:`left`, :attr:`right`, and :attr:`direction` values remain as given.
 
     .. code-block:: python3
 
@@ -98,7 +98,7 @@ class Range(Sequence):
 
     @classmethod
     def from_range(cls, rng: range) -> "Range":
-        """Converts :class:`range` to :class:`Range`."""
+        """Convert :class:`range` to :class:`Range`."""
         if rng.step not in (1, -1):
             raise ValueError("step must be 1 or -1")
         obj = cls.__new__(cls)
