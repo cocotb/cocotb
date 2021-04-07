@@ -133,7 +133,7 @@ class Logic:
         return self._repr
 
     def __repr__(self) -> str:
-        return "{}({!r})".format(self.__class__.__name__, str(self))
+        return "{}({!r})".format(self.__class__.__qualname__, str(self))
 
     def __str__(self) -> str:
         return ("0", "1", "X", "Z")[self._repr]
