@@ -1,6 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
+from typing import Any, Optional
 from cocotb._py_compat import cache
 
 
@@ -89,7 +90,7 @@ class Logic:
     }
 
     @cache
-    def __new__(cls, value=None):
+    def __new__(cls, value: Optional[Any] = None) -> 'Logic':
         # convert to internal representation
         try:
             _repr = cls._repr_map[value]
@@ -105,7 +106,7 @@ class Logic:
         return cls.__singleton_cache__[_repr]
 
     @cache
-    def __and__(self, other):
+    def __and__(self, other: Any) -> 'Logic':
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
@@ -117,11 +118,11 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rand__(self, other):
+    def __rand__(self, other: Any) -> 'Logic':
         return self & other
 
     @cache
-    def __or__(self, other):
+    def __or__(self, other: Any) -> 'Logic':
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
@@ -133,11 +134,11 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __ror__(self, other):
+    def __ror__(self, other: Any) -> 'Logic':
         return self | other
 
     @cache
-    def __xor__(self, other):
+    def __xor__(self, other: Any) -> 'Logic':
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
@@ -149,29 +150,29 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rxor__(self, other):
+    def __rxor__(self, other: Any) -> 'Logic':
         return self ^ other
 
     @cache
-    def __invert__(self):
+    def __invert__(self) -> 'Logic':
         return type(self)(("1", "0", "X", "X")[self._repr])
 
     @cache
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}({!r})".format(type(self).__name__, str(self))
 
     @cache
-    def __str__(self):
+    def __str__(self) -> str:
         return ("0", "1", "X", "Z")[self._repr]
 
     @cache
-    def __bool__(self):
+    def __bool__(self) -> bool:
         if self._repr < 2:
             return bool(self._repr)
         raise ValueError(f"Cannot convert {self!r} to bool")
 
     @cache
-    def __int__(self):
+    def __int__(self) -> int:
         if self._repr < 2:
             return self._repr
         raise ValueError(f"Cannot convert {self!r} to int")
