@@ -34,6 +34,7 @@
  * Uses GPI calls to interface to the simulator.
  */
 
+int unused;
 static int takes = 0;
 static int releases = 0;
 
