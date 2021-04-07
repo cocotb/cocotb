@@ -70,11 +70,34 @@ class Array(Sequence):
         - When setting a slice, the new value must be an iterable of the same size as the slice.
         - Negative indexes are *not* treated as an offset from the end of the array, but are treated literally.
 
-    Arrays support the methods and semantics defined by :class:`collections.abc.Sequence` including, but not limited to:
+    Arrays are equal to other arrays of the same length with the same values (structural equality).
+    Bounds do not matter for equality.
 
-    - ``len(array)`` for getting the length of the array,
-    - ``value in array`` to check if an array contains a value,
-    - ``array.index(value)`` to find the index of the first occurrence of a value in the array.
+    .. code-block:: python3
+
+        >>> a = Array([1, 1, 2, 3, 5], Range(4, "downto", 0))
+        >>> b = Array([1, 1, 2, 3, 5], Range(-2, "to", 2))
+        >>> a == b
+        True
+
+    Arrays support the methods and semantics defined by :class:`collections.abc.Sequence`.
+
+    .. code-block:: python
+
+        >>> a = Array("stuff", Range(2, "downto", -2))
+        >>> len(a)
+        5
+        >>> "t" in a
+        True
+        >>> a.index("u")
+        0
+        >>> for c in a:
+        ...     print(c)
+        s
+        t
+        u
+        f
+        f
 
     Args:
         value: Initial value for the array.
