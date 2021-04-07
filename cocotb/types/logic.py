@@ -77,9 +77,9 @@ class Logic:
         return obj
 
     def __and__(self, other: Any) -> "Logic":
-        if not isinstance(other, type(self)):
+        if not isinstance(other, self.__class__):
             return NotImplemented
-        return type(self)(
+        return self.__class__(
             (
                 ("0", "0", "0", "0"),
                 ("0", "1", "X", "X"),
@@ -92,9 +92,9 @@ class Logic:
         return self & other
 
     def __or__(self, other: Any) -> "Logic":
-        if not isinstance(other, type(self)):
+        if not isinstance(other, self.__class__):
             return NotImplemented
-        return type(self)(
+        return self.__class__(
             (
                 ("0", "1", "X", "X"),
                 ("1", "1", "1", "1"),
@@ -107,9 +107,9 @@ class Logic:
         return self | other
 
     def __xor__(self, other: Any) -> "Logic":
-        if not isinstance(other, type(self)):
+        if not isinstance(other, self.__class__):
             return NotImplemented
-        return type(self)(
+        return self.__class__(
             (
                 ("0", "1", "X", "X"),
                 ("1", "0", "X", "X"),
@@ -122,10 +122,10 @@ class Logic:
         return self ^ other
 
     def __invert__(self) -> "Logic":
-        return type(self)(("1", "0", "X", "X")[self._repr])
+        return self.__class__(("1", "0", "X", "X")[self._repr])
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, type(self)):
+        if not isinstance(other, self.__class__):
             return NotImplemented
         return self._repr == other._repr
 
@@ -133,7 +133,7 @@ class Logic:
         return self._repr
 
     def __repr__(self) -> str:
-        return "{}({!r})".format(type(self).__name__, str(self))
+        return "{}({!r})".format(self.__class__.__name__, str(self))
 
     def __str__(self) -> str:
         return ("0", "1", "X", "Z")[self._repr]
