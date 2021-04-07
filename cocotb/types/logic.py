@@ -2,31 +2,7 @@
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
 from typing import Any, Optional
-from cocotb._py_compat import cache
-
-
-""" DESIGN NOTES
-
-__singleton_cache__
-    Used to ensure there is only ever one instance of a particular value.
-    This is a memory optimization: there will only ever be 4 objects allocated;
-    and also a speed optimization: value equality can be identity equality (as inherited from the `object` base class).
-
-operator `isinstance(other, type(self)`
-    Allows operation between a `Bit` and a `Logic` to return a `Logic`.
-
-strict type equality
-    To use `Logic` or `Bit` in hashable collections we need to define `__hash__` and `__eq__` such that
-    "Hashable objects which compare equal must have the same hash value."
-    (retrieved from https://hynek.me/articles/hashes-and-equality/ on 2021-03-20).
-    The best way to achieve this is to make `Logic` and `Bit` never equal, like `tuple` and `list`.
-    If we instead made them equal in hash and value, they would be substitutable; which we don't want.
-
-@cache
-    Shows extreme performance improvements,
-    even faster than precomputing the results and storing them in the type.
-    Everything can be cached since there are a (hopefully) limited number of valid values in all subclasses.
-"""
+from functools import lru_cache
 
 
 class Logic:
@@ -60,8 +36,6 @@ class Logic:
     """
     __slots__ = ("_repr",)
 
-    __singleton_cache__ = {}
-
     _repr_map = {
         # 0 and weak 0
         False: 0,
@@ -89,8 +63,8 @@ class Logic:
         "z": 3,
     }
 
-    @cache
-    def __new__(cls, value: Optional[Any] = None) -> 'Logic':
+    @lru_cache(maxsize=None)
+    def __new__(cls, value: Optional[Any] = None) -> "Logic":
         # convert to internal representation
         try:
             _repr = cls._repr_map[value]
@@ -98,15 +72,11 @@ class Logic:
             raise ValueError(
                 "{!r} is not convertible to a {}".format(value, cls.__qualname__)
             ) from None
-        # ensure only one object is made per representation
-        if _repr not in cls.__singleton_cache__:
-            obj = super().__new__(cls)
-            obj._repr = _repr
-            cls.__singleton_cache__[_repr] = obj
-        return cls.__singleton_cache__[_repr]
+        obj = super().__new__(cls)
+        obj._repr = _repr
+        return obj
 
-    @cache
-    def __and__(self, other: Any) -> 'Logic':
+    def __and__(self, other: Any) -> "Logic":
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
@@ -118,11 +88,10 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rand__(self, other: Any) -> 'Logic':
+    def __rand__(self, other: Any) -> "Logic":
         return self & other
 
-    @cache
-    def __or__(self, other: Any) -> 'Logic':
+    def __or__(self, other: Any) -> "Logic":
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
@@ -134,11 +103,10 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __ror__(self, other: Any) -> 'Logic':
+    def __ror__(self, other: Any) -> "Logic":
         return self | other
 
-    @cache
-    def __xor__(self, other: Any) -> 'Logic':
+    def __xor__(self, other: Any) -> "Logic":
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
@@ -150,28 +118,31 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rxor__(self, other: Any) -> 'Logic':
+    def __rxor__(self, other: Any) -> "Logic":
         return self ^ other
 
-    @cache
-    def __invert__(self) -> 'Logic':
+    def __invert__(self) -> "Logic":
         return type(self)(("1", "0", "X", "X")[self._repr])
 
-    @cache
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self._repr == other._repr
+
+    def __hash__(self) -> int:
+        return self._repr
+
     def __repr__(self) -> str:
         return "{}({!r})".format(type(self).__name__, str(self))
 
-    @cache
     def __str__(self) -> str:
         return ("0", "1", "X", "Z")[self._repr]
 
-    @cache
     def __bool__(self) -> bool:
         if self._repr < 2:
             return bool(self._repr)
         raise ValueError(f"Cannot convert {self!r} to bool")
 
-    @cache
     def __int__(self) -> int:
         if self._repr < 2:
             return self._repr
@@ -205,9 +176,6 @@ class Bit(Logic):
     """
     __slots__ = ()
 
-    # must create a separate cache for Bit
-    __singleton_cache__ = {}
-
     _repr_map = {
         # 0
         None: 0,
@@ -227,9 +195,7 @@ Logic._repr_map.update(
         Logic("1"): 1,
         Logic("X"): 2,
         Logic("Z"): 3,
-        Bit("0"): 0,
-        Bit("1"): 1,
     }
 )
 
-Bit._repr_map.update({Logic("0"): 0, Logic("1"): 1, Bit("0"): 0, Bit("1"): 1})
+Bit._repr_map.update({Bit("0"): 0, Bit("1"): 1})

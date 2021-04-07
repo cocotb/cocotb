@@ -78,8 +78,8 @@ def test_bit_equality():
 
 
 def test_logic_bit_equality():
-    assert Logic(0) != Bit(0)
-    assert Logic(1) != Bit(1)
+    assert Logic(0) == Bit(0)
+    assert Logic(1) == Bit(1)
 
 
 def test_logic_hashability():
@@ -94,7 +94,7 @@ def test_bit_hashability():
 
 def test_logic_bit_hashability():
     s = {Logic("0"), Logic("1"), Logic("X"), Logic("Z"), Bit("0"), Bit("1")}
-    assert len(s) == 6
+    assert len(s) == 4
 
 
 def test_logic_default_value():
