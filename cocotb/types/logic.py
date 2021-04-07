@@ -57,6 +57,7 @@ class Logic:
             c_out = (a & b) | (b & c_in) | (a & c_in)
             return res, c_out
     """
+    __slots__ = ("_repr",)
 
     __singleton_cache__ = {}
 
@@ -201,6 +202,7 @@ class Bit(Logic):
         def mux(a: Bit, b: Bit, s: Bit) -> Bit
             return (a & ~s) | (b & s)
     """
+    __slots__ = ()
 
     # must create a separate cache for Bit
     __singleton_cache__ = {}
