@@ -64,8 +64,11 @@ class Array(Sequence):
         >>> b
         Array(['4', '3', '2', '1'], Range(0, 'downto', -3))
 
-    .. note::
+    .. warning::
+        Arrays behave differently in certain situations than Python's builtin sequence types (:class:`list`, :class:`tuple`, etc.).
 
+        - Arrays are not necessarily 0-based and slices use inclusive right bounds,
+          so many functions that work on Python sequences by index (like :mod:`bisect`) may not work on arrays.
         - Slice indexes must be specified in the same direction as the array and do not support specifying a "step".
         - When setting a slice, the new value must be an iterable of the same size as the slice.
         - Negative indexes are *not* treated as an offset from the end of the array, but are treated literally.
