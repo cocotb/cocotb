@@ -120,11 +120,15 @@ class Array(Sequence):
         self, value: Optional[Iterable[Any]] = None, range: Optional[Range] = None
     ):
         if value is not None and range is None:
-            self._value = self._construct_value(value)
-            self._range = self._construct_range(Range(0, "to", len(self._value) - 1))
+            constructor = self._construct_element
+            self._value = [constructor(v) for v in value]
+            self._range = Range(0, "to", len(self._value) - 1)
         elif value is not None and range is not None:
-            self._value = self._construct_value(value)
-            self._range = self._construct_range(range)
+            if not isinstance(range, Range):
+                raise TypeError("range argument must be of type 'Range'")
+            constructor = self._construct_element
+            self._value = [constructor(v) for v in value]
+            self._range = range
             if len(self._value) != len(self._range):
                 raise ValueError(
                     "init value of length {!r} does not fit in {!r}".format(
@@ -132,39 +136,23 @@ class Array(Sequence):
                     )
                 )
         elif value is None and range is not None:
-            self._value = self._construct_value(None for _ in range)
-            self._range = self._construct_range(range)
+            if not isinstance(range, Range):
+                raise TypeError("range argument must be of type 'Range'")
+            constructor = self._construct_element
+            self._value = [constructor(None) for _ in range]
+            self._range = range
         else:
             raise TypeError("must pass a value, range, or both")
-
-    @staticmethod
-    def _construct_value(value: Iterable[Any]) -> List[Any]:
-        """
-        Construct the value portion of the array.
-
-        For overriding by subclasses.
-        Used by constructor when values are given
-        and by __setitem__ when setting a slice to an iterable.
-
-        Args:
-            value: Any iterable of values that are constructable into elements using :meth:`_construct_elements`
-
-        Returns:
-            A :class:`list` of elements.
-
-        Raises:
-            TypeError: When the type isn't supported.
-            ValueError: When the iterable's values prevent construction into a list of elements.
-        """
-        return list(value)
 
     @staticmethod
     def _construct_element(elem: Any) -> Any:
         """
         Construct a single element of an array.
 
-        For overriding by subclasses.
-        Used by __setitem__ when setting a single element.
+        Will be fed elements of the *value* iterable if given to the constructor,
+        :data:`None` when no *value* is given to the constuctor,
+        the *value* in __setitem__ when assigning to a single index,
+        and elements of the *value* iterable when assigning to a slice.
 
         Args:
             elem: Any object that the implementation can turn into an array element.
@@ -177,29 +165,6 @@ class Array(Sequence):
             ValueError: When the value prevents construction into an element.
         """
         return elem
-
-    @staticmethod
-    def _construct_range(rng: Any) -> Range:
-        """
-        Construct the range portion of the array.
-
-        For overriding by subclasses.
-        Used by the constructor when setting the range
-        and by __setitem__ when creating a slice.
-
-        Args:
-            rng: Any object that the implementation can turn into a :class:`Range` object.
-
-        Returns:
-            The :class:`Range` object describing the array's indexing scheme.
-
-        Raises:
-            TypeError: When type isn't supported.
-            ValueError: When the value prevents construction into a range.
-        """
-        if isinstance(rng, Range):
-            return rng
-        raise TypeError("range argument must be of type 'Range'")
 
     @property
     def left(self) -> int:
@@ -301,7 +266,8 @@ class Array(Sequence):
                         start, stop, self.left, self.right
                     )
                 )
-            value = self._construct_value(value)
+            constructor = self._construct_element
+            value = [constructor(v) for v in value]
             if len(value) != (stop_i - start_i + 1):
                 raise ValueError(
                     "value of length {!r} will not fit in slice [{}:{}]".format(
