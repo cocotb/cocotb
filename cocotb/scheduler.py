@@ -930,7 +930,7 @@ class Scheduler:
         `exc` is the exception that the test should report as its reason for
         aborting.
         """
-        if self._test._outcome is not None:
+        if self._test._outcome is not None:  # pragma: no cover
             raise InternalError("Outcome already has a value, but is being set again.")
         outcome = outcomes.Error(exc)
         if _debug:
