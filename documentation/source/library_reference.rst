@@ -71,6 +71,9 @@ as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 
 .. versionadded:: 2.0
 
+.. inheritance-diagram:: cocotb.types
+   :parts: 1
+
 .. autoclass:: cocotb.types.Logic
 
 .. autoclass:: cocotb.types.Bit
@@ -84,6 +87,12 @@ as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 .. autoclass:: cocotb.types.Array
     :members:
     :exclude-members: count, index
+
+.. autoclass:: cocotb.types.LogicArray
+    :members:
+
+.. autoclass:: cocotb.types.BitArray
+    :members:
 
 Triggers
 --------
