@@ -458,6 +458,17 @@ class Scheduler:
                     # happened in gh-957)
                     del coro
 
+                # Handle any newly queued coroutines that need to be scheduled
+                while self._pending_coros:
+                    task = self._pending_coros.pop(0)
+                    if _debug:
+                        self.log.debug("Scheduling queued coroutine %s" % (task._coro.__qualname__))
+                    self._schedule(task)
+                    if _debug:
+                        self.log.debug("Scheduled queued coroutine %s" % (task._coro.__qualname__))
+
+                    del task
+
                 # Schedule may have queued up some events so we'll burn through those
                 while self._pending_events:
                     if _debug:
@@ -487,6 +498,12 @@ class Scheduler:
 
     def _unschedule(self, coro):
         """Unschedule a coroutine.  Unprime any pending triggers"""
+        if coro in self._pending_coros:
+            assert not coro.has_started()
+            self._pending_coros.remove(coro)
+            # Close coroutine so there is no RuntimeWarning that it was never awaited
+            coro.close()
+            return
 
         # Unprime the trigger this coroutine is waiting on
         trigger = coro._trigger
@@ -580,7 +597,9 @@ class Scheduler:
 
     def _queue(self, coroutine):
         """Queue a coroutine for execution"""
-        self._pending_coros.append(coroutine)
+        # Don't queue the same coroutine more than once (gh-2503)
+        if coroutine not in self._pending_coros:
+            self._pending_coros.append(coroutine)
 
     def queue_function(self, coro):
         """
@@ -904,10 +923,6 @@ class Scheduler:
                         self._pending_threads.remove(ext)
                         self._pending_events.append(ext.event)
 
-            # Handle any newly queued coroutines that need to be scheduled
-            while self._pending_coros:
-                self.add(self._pending_coros.pop(0))
-
     def finish_test(self, exc):
         """
         .. deprecated:: 1.5
@@ -963,6 +978,10 @@ class Scheduler:
                 if _debug:
                     self.log.debug("Killing %s" % str(coro))
                 coro.kill()
+
+        # kill any queued coroutines
+        for task in self._pending_coros:
+            task.kill()
 
         if self._main_thread is not threading.current_thread():
             raise Exception("Cleanup() called outside of the main thread")

@@ -1,0 +1,1 @@
+Fixed several scheduling issues related to the use of :meth:`cocotb.scheduler.start_soon <cocotb.scheduler.Scheduler.start_soon>`.
