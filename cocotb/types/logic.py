@@ -9,30 +9,64 @@ class Logic:
     r"""
     Model of a 4-value (``0``, ``1``, ``X``, ``Z``) datatype commonly seen in HDLs.
 
+    .. currentmodule:: cocotb.types
+
     This is modeled after (System)Verilog's 4-value ``logic`` type.
     VHDL's 9-value ``std_ulogic`` type maps to this type by treating weak values as full strength values
     and treating "uninitialized" (``U``) and "don't care" (``-``) as "unknown" (``X``).
 
-    :class:`Logic` can be converted from :class:`int`, :class:`str`, :class:`bool`, and :class:`~cocotb.types.Bit` using the ``Logic(value)`` syntax.
-    The list of acceptable values includes ``0``, ``1``, ``True``, ``False``, ``"0"``, ``"1"``, ``"X"``, and ``"Z"``.
+    :class:`Logic` can be converted to and from :class:`int`, :class:`str`, :class:`bool`, and :class:`Bit`
+    by using the appropriate constructor syntax.
+    The list of values convertable to :class:`Logic` includes
+    ``0``, ``1``, ``True``, ``False``, ``"0"``, ``"1"``, ``"X"``, ``"Z"``, ``Bit('0')``, and ``Bit('1')``.
     For a comprehensive list of values that can be converted into :class:`Logic` see :file:`tests/pytest/test_logic.py`.
 
-    :class:`Logic` can be converted to :class:`int`, :class:`str`, :class:`bool` using the appropriate constructor syntax.
-    For example, ``int(Logic(0)) == 0``, ``bool(Logic(1)) is True``, and ``str(Logic("X")) == "X"``.
-    The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0`` or ``1``.
+    .. code-block:: python3
 
-    The default value of ``Logic()`` is ``Logic("X")``.
+        >>> Logic("X")
+        Logic('X')
+        >>> Logic(True)
+        Logic('1')
+        >>> Logic(1)
+        Logic('1')
+        >>> Logic(Bit(0))
+        Logic('0')
+
+        >>> Logic()  # default value
+        Logic('X')
+
+        >>> str(Logic("Z"))
+        'Z'
+        >>> bool(Logic(0))
+        False
+        >>> int(Logic(1))
+        1
+        >>> Bit(Logic("1"))
+        Bit('1')
+
+    .. note::
+
+        The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0`` or ``1``.
 
     :class:`Logic` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
     :class:`Logic` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
 
-    .. code-block:: py3
+    .. code-block:: python3
 
-        def full_adder(a: Logic, b: Logic, c_in: Logic) -> (Logic, Logic):
-            res = a ^ b ^ c_in
-            c_out = (a & b) | (b & c_in) | (a & c_in)
-            return res, c_out
+        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> (Logic, Logic):
+        ...     res = a ^ b ^ carry
+        ...     carry_out = (a & b) | (b & carry) | (a & carry)
+        ...     return res, carry_out
+
+        >>> full_adder(a=Logic('0'), b=Logic('1'), carry=Logic('1'))
+        (Logic('0'), Logic('1'))
+
+    Args:
+        value: value to construct into a :class:`Logic`.
+
+    Raises:
+        ValueError: if the value cannot be constructed into a :class:`Logic`.
     """
     __slots__ = ("_repr",)
 
@@ -153,17 +187,49 @@ class Bit(Logic):
     r"""
     Model of a 2-value (``0``, ``1``) datatype commonly seen in HDLs.
 
+    .. currentmodule:: cocotb.types
+
     This is modeled after (System)Verilog's 2-value ``bit`` type.
     VHDL's ``bit`` type maps to this type perfectly.
 
-    :class:`Bit` can be converted from :class:`int`, :class:`str`, :class:`bool`, and :class:`~cocotb.types.Logic` using the ``Bit(value)`` syntax.
-    The list of acceptable values includes ``0``, ``1``, ``True``, ``False``, ``"0"``, ``"1"``.
+    :class:`Bit` is a proper subtype of :class:`Logic`, meaning a use of :class:`Logic` can be substituted with a :class:`Bit`.
+    Some behavior may surprise you if you do not expect it.
+
+    .. code-block:: python3
+
+        >>> Bit(0) == Logic(0)
+        True
+        >>> Bit(0) in {Logic(0)}
+        True
+
+    :class:`Bit` can be converted to and from :class:`int`, :class:`str`, :class:`bool`, and :class:`Logic`
+    by using the appropriate constructor syntax.
+    The list of values convertable to :class:`Bit` includes
+    ``0``, ``1``, ``True``, ``False``, ``"0"``, ``"1"``, ``Logic('0')``, and ``Logic('1')``.
     For a comprehensive list of values that can be converted into :class:`Bit` see :file:`tests/pytest/test_logic.py`.
 
-    :class:`Bit` can be converted to :class:`int`, :class:`str`, :class:`bool` using the appropriate constructor syntax.
-    For example, ``int(Bit(0)) == 0``, ``bool(Bit(1)) is True``, and ``str(Bit("1")) == "1"``.
+    .. code-block:: python3
 
-    The default value of ``Bit()`` is ``Bit("0")``.
+        >>> Bit("0")
+        Bit('0')
+        >>> Bit(True)
+        Bit('1')
+        >>> Bit(1)
+        Bit('1')
+        >>> Bit(Logic(0))
+        Bit('0')
+
+        >>> Bit()  # default value
+        Bit('0')
+
+        >>> str(Bit("0"))
+        '0'
+        >>> bool(Bit(False))
+        False
+        >>> int(Bit(1))
+        1
+        >>> Logic(Bit("1"))
+        Logic('1')
 
     :class:`Bit` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
@@ -171,8 +237,20 @@ class Bit(Logic):
 
     .. code-block:: py3
 
-        def mux(a: Bit, b: Bit, s: Bit) -> Bit
-            return (a & ~s) | (b & s)
+        >>> def mux(a: Bit, b: Bit, s: Bit) -> Bit:
+        ...     return (a & ~s) | (b & s)
+
+        >>> a = Bit(0)
+        >>> b = Bit(1)
+        >>> sel = Bit(1)  # choose second argument
+        >>> mux(a, b, sel)
+        Bit('1')
+
+    Args:
+        value: value to construct into a :class:`Bit`.
+
+    Raises:
+        ValueError: if the value cannot be constructed into a :class:`Bit`.
     """
     __slots__ = ()
 
