@@ -37,6 +37,8 @@ def test_bad_construction():
         Array(value=1)
     with pytest.raises(TypeError):
         Array(range=tuple())
+    with pytest.raises(TypeError):
+        Array(value="1234", range=tuple())
 
 
 def test_length():
