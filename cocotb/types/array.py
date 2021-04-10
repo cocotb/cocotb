@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Optional, Any, Iterable, Iterator, overload, List
+from typing import Optional, Any, Iterable, Iterator, overload
 from collections.abc import Sequence
 from .range import Range
 from sys import maxsize
