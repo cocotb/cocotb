@@ -150,8 +150,8 @@ class Array(Sequence):
         Construct a single element of an array.
 
         Will be fed elements of the *value* iterable if given to the constructor,
-        :data:`None` when no *value* is given to the constuctor,
-        the *value* in __setitem__ when assigning to a single index,
+        :data:`None` when no *value* is given to the constructor,
+        the *value* in ``__setitem__`` when assigning to a single index,
         and elements of the *value* iterable when assigning to a slice.
 
         Args:
