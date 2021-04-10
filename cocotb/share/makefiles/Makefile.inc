@@ -110,10 +110,14 @@ regression: $(COCOTB_RESULTS_FILE)
 # Attempt to detect TOPLEVEL_LANG based on available sources if not set
 ifeq ($(TOPLEVEL_LANG),)
 
-ifneq ($(and $(VHDL_SOURCES),$(if $(VERILOG_SOURCES),,1),)
+ifneq ($(VHDL_SOURCES),)
+ifeq ($(VERILOG_SOURCES),)
 	TOPLEVEL_LANG := vhdl
-else ifneq ($(and $(VERILOG_SOURCES),$(if $(VHDL_SOURCES),,1),)
+endif
+else ifneq ($(VERILOG_SOURCES),)
+ifeq ($(VHDL_SOURCES),)
 	TOPLEVEL_LANG := verilog
+endif
 endif
 
 endif
