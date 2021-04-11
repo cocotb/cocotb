@@ -893,7 +893,31 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
     r"""
     Waits on triggers and coroutines, throws an exception if it waits longer than the given time.
 
-    When used with a coroutine, the coroutine will be forked and awaited, and the return value forwarded when the coroutine finishes.  If the timeout expires, the coroutine will be killed.
+    When a :term:`python:coroutine` is passed,
+    the callee coroutine is started,
+    the caller blocks until the callee completes,
+    and the callee's result is returned to the caller.
+    If timeout occurs, the callee is killed
+    and :exc:`SimTimeoutError` is raised.
+
+    When an unstarted :class:`~cocotb.coroutine`\ is passed,
+    the callee coroutine is started,
+    the caller blocks until the callee completes,
+    and the callee's result is returned to the caller.
+    If timeout occurs, the callee `continues to run`
+    and :exc:`SimTimeoutError` is raised.
+
+    When a :func:`~cocotb.fork`\ ed coroutine is passed,
+    the caller blocks until the callee completes
+    and the callee's result is returned to the caller.
+    If timeout occurs, the callee `continues to run`
+    and :exc:`SimTimeoutError` is raised.
+
+    If a :class:`~cocotb.triggers.Trigger` or :class:`~cocotb.triggers.Waitable` is passed,
+    the caller blocks until the trigger fires,
+    and the trigger is returned to the caller.
+    If timeout occurs, the trigger is cancelled
+    and :exc:`SimTimeoutError` is raised.
 
     Usage:
 
@@ -918,11 +942,11 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
 
     .. versionadded:: 1.3
 
-    .. versionchanged:: 1.6
-        Support passing :term:`python:coroutine`\ s.
-
     .. deprecated:: 1.5
         Using None as the the *timeout_unit* argument is deprecated, use ``'step'`` instead.
+
+    .. versionchanged:: 1.6
+        Support passing :term:`python:coroutine`\ s.
     """
 
     if inspect.iscoroutine(trigger):
