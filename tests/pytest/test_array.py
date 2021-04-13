@@ -43,7 +43,6 @@ def test_bad_construction():
 
 def test_length():
     a = Array(range=Range(1, 6))
-    assert a.length == 6
     assert len(a) == 6
 
 

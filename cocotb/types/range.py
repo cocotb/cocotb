@@ -18,11 +18,11 @@ class Range(Sequence):
     .. code-block:: python3
 
         >>> r = Range(-2, 3)
-        >>> r.left, r.right, r.length
+        >>> r.left, r.right, len(r)
         (-2, 3, 6)
 
         >>> s = Range(8, 'downto', 1)
-        >>> s.left, s.right, s.length
+        >>> s.left, s.right, len(s)
         (8, 1, 8)
 
     :meth:`from_range` and :meth:`to_range` can be used to convert from and to :class:`range`.
@@ -42,7 +42,7 @@ class Range(Sequence):
         >>> r = Range(1, 'to', 0)  # no way to count from 1 'to' 0
         >>> r.left, r.direction, r.right
         (1, 'to', 0)
-        >>> r.length
+        >>> len(r)
         0
 
     .. note::
@@ -52,7 +52,6 @@ class Range(Sequence):
 
     - ``value in range`` to see if a value is in the range,
     - ``range.index(value)`` to see what position in the range the value is,
-    - ``len(range)`` which is equivalent to :attr:`length`.
 
     The typical use case of this type is in conjunction with :class:`~cocotb.types.Array`.
 
@@ -120,13 +119,8 @@ class Range(Sequence):
         """Rightmost value in a range."""
         return self._range.stop - self._range.step
 
-    @property
-    def length(self) -> int:
-        """Length of range."""
-        return len(self._range)
-
     def __len__(self) -> int:
-        return self.length
+        return len(self._range)
 
     @overload
     def __getitem__(self, item: int) -> int:

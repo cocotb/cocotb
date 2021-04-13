@@ -10,7 +10,6 @@ def test_to_range():
     assert r.left == 1
     assert r.direction == 'to'
     assert r.right == 8
-    assert r.length == 8
     assert len(r) == 8
     assert list(r) == [1, 2, 3, 4, 5, 6, 7, 8]
     assert list(reversed(r)) == [8, 7, 6, 5, 4, 3, 2, 1]
@@ -33,7 +32,6 @@ def test_downto_range():
     assert r.left == 4
     assert r.direction == 'downto'
     assert r.right == -3
-    assert r.length == 8
     assert len(r) == 8
     assert list(r) == [4, 3, 2, 1, 0, -1, -2, -3]
     assert list(reversed(r)) == [-3, -2, -1, 0, 1, 2, 3, 4]
@@ -56,7 +54,6 @@ def test_null_range():
     assert r.left == 1
     assert r.direction == 'downto'
     assert r.right == 4
-    assert r.length == 0
     assert len(r) == 0
     assert list(r) == []
     assert list(reversed(r)) == []
@@ -93,7 +90,6 @@ def test_conversions():
     assert r.left == 10
     assert r.right == 2
     assert r.direction == 'downto'
-    assert r.length == 9
     assert r.to_range() == t
 
 
@@ -105,7 +101,6 @@ def test_repr():
 def test_uppercase_in_direction():
     r = Range(1, 'TO', 8)
     assert r.direction == 'to'
-    assert r.length == 8
 
 
 def test_bad_direction():

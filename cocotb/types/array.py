@@ -182,17 +182,12 @@ class Array(Sequence):
         return self.range.right
 
     @property
-    def length(self):
-        """Length of the array."""
-        return self.range.length
-
-    @property
     def range(self) -> Range:
         """:class:`Range` of the indexes of the array."""
         return self._range
 
     def __len__(self) -> int:
-        return self.length
+        return len(self.range)
 
     def __iter__(self) -> Iterator[Any]:
         return iter(self._value)
