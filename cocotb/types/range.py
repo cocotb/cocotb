@@ -12,7 +12,8 @@ class Range(Sequence):
     In Python, :class:`range` and :class:`slice` have a non-inclusive right bound.
     In both Verilog and VHDL, ranges and arrays have an inclusive right bound.
     This type mimics Python's :class:`range` type, but implements HDL-like inclusive right bounds,
-    and also supports :attr:`left`, :attr:`right`, and :attr:`length` attributes as seen in VHDL.
+    using the names :attr:`left` and :attr:`right` as replacements for ``start`` and ``stop`` to
+    match VHDL.
 
     .. code-block:: python3
 
