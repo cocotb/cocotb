@@ -159,3 +159,12 @@ def test_slice_correct_infered():
     a = Array("1234")
     b = a[:0]
     assert b.right == 0
+
+
+def test_logic_array_concat():
+    l = Array("01ZX", Range(0, 'to', 3))
+    p = Array("1101")
+    r = l.concat(p)
+    assert r == Array("01ZX1101")
+    with pytest.raises(TypeError):
+        l.concat("nope")

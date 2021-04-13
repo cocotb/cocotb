@@ -5,6 +5,7 @@ from typing import Optional, Any, Iterable, Iterator, overload
 from collections.abc import Sequence
 from .range import Range
 from sys import maxsize
+from itertools import chain
 
 
 class Array(Sequence):
@@ -277,6 +278,21 @@ class Array(Sequence):
 
     def __repr__(self) -> str:
         return "{}({!r}, {!r})".format(type(self).__name__, self._value, self._range)
+
+    def concat(self, other: Any) -> "Array":
+        """
+        Create a new array that is the concatenation of one array with another.
+        Raises:
+            TypeError: when *other* is an object of dissimilar type.
+        """
+        if not isinstance(other, self.__class__):
+            raise TypeError(
+                "unsupported operand types for concat() {!r} and {!r}".format(
+                    self.__class__.__qualname__,
+                    other.__class__.__qualname__
+                )
+            )
+        return self.__class__(chain(self, other))
 
     def index(
         self, value: Any, start: Optional[int] = None, stop: Optional[int] = None
