@@ -5,7 +5,6 @@ from typing import Optional, Any, Iterable, Iterator, overload
 from collections.abc import Sequence
 from .range import Range
 from sys import maxsize
-from itertools import chain
 
 
 class Array(Sequence):
@@ -292,7 +291,7 @@ class Array(Sequence):
                     other.__class__.__qualname__
                 )
             )
-        return self.__class__(chain(self, other))
+        return self.__class__(self._value + other._value)
 
     def index(
         self, value: Any, start: Optional[int] = None, stop: Optional[int] = None
