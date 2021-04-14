@@ -110,7 +110,7 @@ class Logic:
         obj._repr = _repr
         return obj
 
-    def __and__(self, other: Any) -> "Logic":
+    def __and__(self, other: "Logic") -> "Logic":
         if not isinstance(other, self.__class__):
             return NotImplemented
         return self.__class__(
@@ -122,10 +122,10 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rand__(self, other: Any) -> "Logic":
+    def __rand__(self, other: "Logic") -> "Logic":
         return self & other
 
-    def __or__(self, other: Any) -> "Logic":
+    def __or__(self, other: "Logic") -> "Logic":
         if not isinstance(other, self.__class__):
             return NotImplemented
         return self.__class__(
@@ -137,10 +137,10 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __ror__(self, other: Any) -> "Logic":
+    def __ror__(self, other: "Logic") -> "Logic":
         return self | other
 
-    def __xor__(self, other: Any) -> "Logic":
+    def __xor__(self, other: "Logic") -> "Logic":
         if not isinstance(other, self.__class__):
             return NotImplemented
         return self.__class__(
@@ -152,13 +152,13 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rxor__(self, other: Any) -> "Logic":
+    def __rxor__(self, other: "Logic") -> "Logic":
         return self ^ other
 
     def __invert__(self) -> "Logic":
         return self.__class__(("1", "0", "X", "X")[self._repr])
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return NotImplemented
         return self._repr == other._repr
