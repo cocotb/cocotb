@@ -155,7 +155,10 @@ class Range(Sequence):
     def index(
         self, value: Any, start: Optional[int] = None, stop: Optional[int] = None
     ) -> int:
-        return self._range.index(value, start, stop)
+        if start is not None or stop is not None:
+            # bpo-43836
+            raise RuntimeError("'range.index' does not currently support the 'start' or 'stop' arguments")
+        return self._range.index(value)
 
     def count(self, item: Any) -> int:
         return self._range.count(item)

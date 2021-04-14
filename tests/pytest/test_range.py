@@ -121,3 +121,8 @@ def test_bad_step():
 def test_bad_getitem():
     with pytest.raises(TypeError):
         Range(10, 'downto', 4)["8"]
+
+
+def test_range_index_bpo43836():
+    with pytest.raises(RuntimeError):
+        Range(10, 0).index(7, start=4, stop=10)
