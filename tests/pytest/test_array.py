@@ -168,3 +168,13 @@ def test_logic_array_concat():
     assert r == Array("01ZX1101")
     with pytest.raises(TypeError):
         l.concat("nope")
+
+
+def test_changing_range():
+    a = Array("1234")
+    a.range = Range(3, 'downto', 0)
+    assert a.range == Range(3, 'downto', 0)
+    with pytest.raises(TypeError):
+        a.range = range(10)
+    with pytest.raises(ValueError):
+        a.range = Range(7, 'downto', 0)

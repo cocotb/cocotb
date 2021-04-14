@@ -83,6 +83,18 @@ class Array(Sequence):
         >>> a == b
         True
 
+    You can change the bounds of an array by setting the :attr:`range` to a new value.
+    The new bounds must be the same length of the array.
+
+    .. code-block:: python3
+
+        >>> a = Array("1234")
+        >>> a.range
+        Range(0, 'to', 3)
+        >>> a.range = Range(3, 'downto', 0)
+        >>> a.range
+        Range(3, 'downto', 0)
+
     Arrays support the methods and semantics defined by :class:`collections.abc.Sequence`.
 
     .. code-block:: python
@@ -185,6 +197,15 @@ class Array(Sequence):
     def range(self) -> Range:
         """:class:`Range` of the indexes of the array."""
         return self._range
+
+    @range.setter
+    def range(self, new_range: Range) -> None:
+        """Sets a new indexing scheme on the array, must be the same size"""
+        if not isinstance(new_range, Range):
+            raise TypeError("range argument must be of type 'Range'")
+        if len(new_range) != len(self):
+            raise ValueError(f"{new_range!r} not the same length as old range ({self._range!r}).")
+        self._range = new_range
 
     def __len__(self) -> int:
         return len(self.range)
