@@ -204,7 +204,9 @@ class Array(Sequence):
         if not isinstance(new_range, Range):
             raise TypeError("range argument must be of type 'Range'")
         if len(new_range) != len(self):
-            raise ValueError(f"{new_range!r} not the same length as old range ({self._range!r}).")
+            raise ValueError(
+                f"{new_range!r} not the same length as old range ({self._range!r})."
+            )
         self._range = new_range
 
     def __len__(self) -> int:
@@ -308,8 +310,7 @@ class Array(Sequence):
         if not isinstance(other, self.__class__):
             raise TypeError(
                 "unsupported operand types for concat() {!r} and {!r}".format(
-                    self.__class__.__qualname__,
-                    other.__class__.__qualname__
+                    self.__class__.__qualname__, other.__class__.__qualname__
                 )
             )
         return self.__class__(self._value + other._value)
