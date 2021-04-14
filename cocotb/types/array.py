@@ -132,14 +132,12 @@ class Array(Sequence):
         self, value: Optional[Iterable[Any]] = None, range: Optional[Range] = None
     ):
         if value is not None and range is None:
-            constructor = self._construct_element
-            self._value = [constructor(v) for v in value]
+            self._value = list(value)
             self._range = Range(0, "to", len(self._value) - 1)
         elif value is not None and range is not None:
             if not isinstance(range, Range):
                 raise TypeError("range argument must be of type 'Range'")
-            constructor = self._construct_element
-            self._value = [constructor(v) for v in value]
+            self._value = list(value)
             self._range = range
             if len(self._value) != len(self._range):
                 raise ValueError(
@@ -150,33 +148,10 @@ class Array(Sequence):
         elif value is None and range is not None:
             if not isinstance(range, Range):
                 raise TypeError("range argument must be of type 'Range'")
-            constructor = self._construct_element
-            self._value = [constructor(None) for _ in range]
+            self._value = [None] * len(range)
             self._range = range
         else:
             raise TypeError("must pass a value, range, or both")
-
-    @staticmethod
-    def _construct_element(elem: Any) -> Any:
-        """
-        Construct a single element of an array.
-
-        Will be fed elements of the *value* iterable if given to the constructor,
-        :data:`None` when no *value* is given to the constructor,
-        the *value* in ``__setitem__`` when assigning to a single index,
-        and elements of the *value* iterable when assigning to a slice.
-
-        Args:
-            elem: Any object that the implementation can turn into an array element.
-
-        Returns:
-            An array element.
-
-        Raises:
-            TypeError: When the type isn't supported.
-            ValueError: When the value prevents construction into an element.
-        """
-        return elem
 
     @property
     def left(self) -> int:
@@ -269,7 +244,6 @@ class Array(Sequence):
     def __setitem__(self, item, value):
         if isinstance(item, int):
             idx = self._translate_index(item)
-            value = self._construct_element(value)
             self._value[idx] = value
         elif isinstance(item, slice):
             start = item.start if item.start is not None else self.left
@@ -284,8 +258,7 @@ class Array(Sequence):
                         start, stop, self.left, self.right
                     )
                 )
-            constructor = self._construct_element
-            value = [constructor(v) for v in value]
+            value = list(value)
             if len(value) != (stop_i - start_i + 1):
                 raise ValueError(
                     "value of length {!r} will not fit in slice [{}:{}]".format(
