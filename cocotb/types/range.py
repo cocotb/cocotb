@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Any, Iterator, overload
+from typing import Any, Iterator, overload, Optional
 from collections.abc import Sequence
 
 
@@ -65,10 +65,6 @@ class Range(Sequence):
 
     @overload
     def __init__(self, left: int, right: int):
-        pass  # pragma: no cover
-
-    @overload
-    def __init__(self, *, left: int, right: int):
         pass  # pragma: no cover
 
     @overload
@@ -156,8 +152,10 @@ class Range(Sequence):
     def __hash__(self) -> int:
         return hash(self._range)
 
-    def index(self, item: Any) -> int:
-        return self._range.index(item)
+    def index(
+        self, value: Any, start: Optional[int] = None, stop: Optional[int] = None
+    ) -> int:
+        return self._range.index(value, start, stop)
 
     def count(self, item: Any) -> int:
         return self._range.count(item)
