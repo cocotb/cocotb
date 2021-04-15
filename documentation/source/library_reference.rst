@@ -38,8 +38,6 @@ Writing and Generating tests
 
 .. autoclass:: cocotb.function
 
-.. autoclass:: cocotb.hook
-
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource

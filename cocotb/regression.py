@@ -42,7 +42,7 @@ from cocotb.log import SimLog
 from cocotb.result import TestSuccess, SimFailure
 from cocotb.utils import get_sim_time, remove_traceback_frames, want_color_output
 from cocotb.xunit_reporter import XUnitReporter
-from cocotb.decorators import test as Test, hook as Hook, RunningTask
+from cocotb.decorators import test as Test, RunningTask
 from cocotb.outcomes import Outcome, Error
 from cocotb.handle import SimHandle
 
@@ -76,12 +76,11 @@ _logger = SimLog(__name__)
 class RegressionManager:
     """Encapsulates all regression capability into a single place"""
 
-    def __init__(self, dut: SimHandle, tests: Iterable[Test], hooks: Iterable[Hook]):
+    def __init__(self, dut: SimHandle, tests: Iterable[Test]):
         """
         Args:
             dut (SimHandle): The root handle to pass into test functions.
             tests (Iterable[Test]): tests to run
-            hooks (Iterable[Hook]): hooks to tun
         """
         self._dut = dut
         self._test = None
@@ -133,16 +132,10 @@ class RegressionManager:
 
         self._queue.sort(key=lambda test: (test.stage, test._id))
 
-        # Process Hooks
-        ###################
-        for hook in hooks:
-            self.log.info(f"Found hook {hook.__module__}.{hook.__qualname__}")
-            self._init_hook(hook)
-
     @classmethod
     def from_discovery(cls, dut: SimHandle):
         """
-        Obtains the test and hook lists by discovery.
+        Obtains the test list by discovery.
 
         See :envvar:`MODULE` and :envvar:`TESTCASE` for details on how tests are discovered.
 
@@ -150,8 +143,7 @@ class RegressionManager:
             dut (SimHandle): The root handle to pass into test functions.
         """
         tests = cls._discover_tests()
-        hooks = cls._discover_hooks()
-        return cls(dut, tests, hooks)
+        return cls(dut, tests)
 
     @staticmethod
     def _discover_tests() -> Iterable[Test]:
@@ -217,32 +209,6 @@ class RegressionManager:
         if tests:
             _logger.error("Requested test(s) %s wasn't found in module(s) %s", tests, modules)
             raise AttributeError("Test(s) %s doesn't exist in %s" % (tests, modules))
-
-    @staticmethod
-    def _discover_hooks() -> Iterable[Hook]:
-        """
-        Discovers hooks automatically.
-
-        See :envvar:`COCOTB_HOOKS` for details on how hooks are discovered.
-        """
-        hooks_str = os.getenv('COCOTB_HOOKS', '')
-        hooks = [s.strip() for s in hooks_str.split(',') if s.strip()]
-
-        for module_name in hooks:
-            _logger.info("Loading hook from module '" + module_name + "'")
-            module = _my_import(module_name)
-
-            for thing in vars(module).values():
-                if hasattr(thing, "im_hook"):
-                    yield thing
-
-    def _init_hook(self, hook: Hook) -> Optional[RunningTask]:
-        try:
-            test = hook(self._dut)
-        except Exception:
-            self.log.warning("Failed to initialize hook %s" % hook.name, exc_info=True)
-        else:
-            return cocotb.scheduler.add(test)
 
     def tear_down(self) -> None:
         # prevent re-entering the tear down procedure

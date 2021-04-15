@@ -47,7 +47,7 @@ from cocotb.regression import RegressionManager
 from cocotb.decorators import RunningTask
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
+from cocotb.decorators import test, coroutine, function, external  # noqa: F401
 
 from ._version import __version__
 
@@ -188,9 +188,6 @@ def _initialise_testbench(argv_):  # pragma: no cover
 
     The test must be defined by the environment variables
     :envvar:`MODULE` and :envvar:`TESTCASE`.
-
-    The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
-    comma-separated list of modules to be executed before the first test.
     """
     with _rlock:
 

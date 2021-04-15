@@ -374,33 +374,6 @@ class _decorator_helper(type):
 
 
 @public
-class hook(coroutine, metaclass=_decorator_helper):
-    r"""
-    Decorator to mark a function as a hook for cocotb.
-
-    Used as ``@cocotb.hook()``.
-
-    All hooks are run at the beginning of a cocotb test suite, prior to any
-    test code being run.
-
-    .. deprecated:: 1.5
-        Hooks are deprecated.
-        Their functionality can be replaced with module-level Python code,
-        higher-priority tests using the ``stage`` argument to :func:`cocotb.test`\ s,
-        or custom decorators which perform work before and after the tests
-        they decorate.
-    """
-
-    def __init__(self, f):
-        super().__init__(f)
-        warnings.warn(
-            "Hooks have been deprecated. See the documentation for suggestions on alternatives.",
-            DeprecationWarning, stacklevel=2)
-        self.im_hook = True
-        self.name = self._func.__name__
-
-
-@public
 class test(coroutine, metaclass=_decorator_helper):
     """Decorator to mark a function as a test.
 

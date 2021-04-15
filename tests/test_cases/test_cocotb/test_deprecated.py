@@ -86,14 +86,6 @@ async def test_raise_error_deprecated(dut):
 
 
 @cocotb.test()
-async def test_hook_deprecated(_):
-    async def example():
-        pass
-    with assert_deprecated():
-        cocotb.hook()(example)
-
-
-@cocotb.test()
 async def test_handle_compat_mapping(dut):
     """
     Test DeprecationWarnings for _compat_mapping.

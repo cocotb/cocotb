@@ -174,14 +174,6 @@ Regression Manager
 
     This needs the :mod:`coverage` Python module to be installed.
 
-.. envvar:: COCOTB_HOOKS
-
-    A comma-separated list of modules that should be executed before the first test.
-    You can also use the :class:`cocotb.hook` decorator to mark a function to be run before test code.
-
-    .. deprecated:: 1.5
-        :class:`cocotb.hook` is deprecated, and in the future this variable will be ignored.
-
 .. envvar:: COCOTB_PDB_ON_EXCEPTION
 
    If defined, cocotb will drop into the Python debugger (:mod:`pdb`) if a test fails with an exception.
