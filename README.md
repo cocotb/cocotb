@@ -17,7 +17,9 @@
 The current stable version of cocotb requires:
 
 - Python 3.5+
-- A C++11 compiler
+- Python development packages (Python/C API headers and embedding library)
+- GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
+- GNU Make 3+
 - An HDL simulator (such as [Icarus Verilog](https://docs.cocotb.org/en/stable/simulator_support.html#icarus-verilog),
 [Verilator](https://docs.cocotb.org/en/stable/simulator_support.html#verilator),
 [GHDL](https://docs.cocotb.org/en/stable/simulator_support.html#ghdl) or
