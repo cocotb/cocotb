@@ -14,7 +14,7 @@ def concat(a: Array, b: Array) -> Array:
     exactly like other binary operations in Python.
 
     Raises:
-        TypeError: when *other* is an object of dissimilar type.
+        TypeError: when the arguments do not support concatenation in the given order.
     """
     if hasattr(a, '__concat__'):
         res = a.__concat__(b)
@@ -25,7 +25,7 @@ def concat(a: Array, b: Array) -> Array:
         if res is not NotImplemented:
             return res
     raise TypeError(
-        "can't concat value of type {!r} with value of type {!r}".format(
+        "cannot concatenate {!r} with {!r}".format(
             a.__class__.__qualname__, b.__class__.__qualname__
         )
     )
