@@ -128,6 +128,20 @@ class Array(Sequence):
         "_range",
     )
 
+    _value: Sequence
+    """
+    Private interface for subclasses to access the value as a :class:`~collections.abc.Sequence`
+
+    Subclasses that don't use a Sequence as their main representation should emulate this object,
+    or override *all* :class:`~cocotb.types.Array` methods *except*:
+        - :attr:`left`
+        - :attr:`direction`
+        - :attr:`right`
+        - :attr:`range`
+        - :attr:`__len__`
+        - :attr:`_translate_index`
+    """
+
     def __init__(
         self, value: Optional[Iterable[Any]] = None, range: Optional[Range] = None
     ):
@@ -274,19 +288,15 @@ class Array(Sequence):
     def __repr__(self) -> str:
         return "{}({!r}, {!r})".format(type(self).__name__, self._value, self._range)
 
-    def concat(self, other: Any) -> "Array":
-        """
-        Create a new array that is the concatenation of one array with another.
-        Raises:
-            TypeError: when *other* is an object of dissimilar type.
-        """
+    def __concat__(self, other: "Array") -> "Array":
         if not isinstance(other, self.__class__):
-            raise TypeError(
-                "unsupported operand types for concat() {!r} and {!r}".format(
-                    self.__class__.__qualname__, other.__class__.__qualname__
-                )
-            )
+            return NotImplemented
         return self.__class__(self._value + other._value)
+
+    def __rconcat__(self, other: "Array") -> "Array":
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return self.__class__(other._value + self._value)
 
     def index(
         self, value: Any, start: Optional[int] = None, stop: Optional[int] = None

@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from cocotb.types import Array, Range
+from cocotb.types import Array, Range, concat
 import pytest
 
 
@@ -161,13 +161,23 @@ def test_slice_correct_infered():
     assert b.right == 0
 
 
-def test_logic_array_concat():
+def test_array_concat():
     l = Array("01ZX", Range(0, 'to', 3))
     p = Array("1101")
-    r = l.concat(p)
+    r = concat(l, p)
     assert r == Array("01ZX1101")
+
+    class SpecialArray(Array):
+        pass
+
+    q = SpecialArray("ABC")
+    r2 = concat(q, l)
+    assert r2 == Array("ABC01ZX")
+
     with pytest.raises(TypeError):
-        l.concat("nope")
+        concat(l, "nope")
+    with pytest.raises(TypeError):
+        concat("nope", l)
 
 
 def test_changing_range():
