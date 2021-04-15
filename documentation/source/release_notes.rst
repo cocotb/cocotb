@@ -8,6 +8,16 @@ Release Notes
 All releases are available from the `GitHub Releases Page <https://github.com/cocotb/cocotb/releases>`_.
 
 
+cocotb 1.5.2 (upcoming)
+=========================
+
+Bugfixes
+--------
+
+- Change some makefile syntax to support GNU Make 3 (:pr:`2496`)
+- Fix behavior of ``cocotb-config --libpython`` when finding libpython fails (:pr:`2522`)
+
+
 cocotb 1.5.1 (2021-03-20)
 =========================
 
