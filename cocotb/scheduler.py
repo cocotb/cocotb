@@ -535,11 +535,11 @@ class Scheduler:
             except (TestComplete, AssertionError) as e:
                 coro.log.info("Test stopped by this forked coroutine")
                 e = remove_traceback_frames(e, ['_unschedule', 'get'])
-                self._test.abort(e)
+                self._abort_test(e)
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
                 e = remove_traceback_frames(e, ['_unschedule', 'get'])
-                self._test.abort(e)
+                self._abort_test(e)
 
     def _schedule_write(self, handle, write_func, *args):
         """ Queue `write_func` to be called on the next ReadWrite trigger. """
@@ -932,8 +932,26 @@ class Scheduler:
         return self._finish_test(exc)
 
     def _finish_test(self, exc):
-        self._test.abort(exc)
+        self._abort_test(exc)
         self._check_termination()
+
+    def _abort_test(self, exc):
+        """Force this test to end early, without executing any cleanup.
+
+        This happens when a background task fails, and is consistent with
+        how the behavior has always been. In future, we may want to behave
+        more gracefully to allow the test body to clean up.
+
+        `exc` is the exception that the test should report as its reason for
+        aborting.
+        """
+        if self._test._outcome is not None:  # pragma: no cover
+            raise InternalError("Outcome already has a value, but is being set again.")
+        outcome = outcomes.Error(exc)
+        if _debug:
+            self._test.log.debug(f"outcome forced to {outcome}")
+        self._test._outcome = outcome
+        self._unschedule(self._test)
 
     def finish_scheduler(self, exc):
         """
@@ -952,7 +970,7 @@ class Scheduler:
 
         if self._test:
             self.log.debug("Issue sim closedown result to regression object")
-            self._test.abort(exc)
+            self._abort_test(exc)
             cocotb.regression_manager.handle_result(self._test)
 
     def cleanup(self):

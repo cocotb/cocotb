@@ -302,9 +302,6 @@ class RegressionManager:
         real_time = time.time() - self._test_start_time
         sim_time_ns = get_sim_time('ns') - self._test_start_sim_time
 
-        # stop capturing log output
-        cocotb.log.removeHandler(test.handler)
-
         self._record_result(
             test=self._test,
             outcome=self._test_task._outcome,
@@ -479,9 +476,6 @@ class RegressionManager:
                        self.count, self.ntests,
                        end,
                        self._test.__qualname__))
-
-        # start capturing log output
-        cocotb.log.addHandler(self._test_task.handler)
 
         self._test_start_time = time.time()
         self._test_start_sim_time = get_sim_time('ns')

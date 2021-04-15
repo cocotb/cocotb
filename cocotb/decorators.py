@@ -26,8 +26,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys
-import time
-import logging
 import functools
 import inspect
 import os
@@ -36,7 +34,7 @@ import warnings
 import cocotb
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
-from cocotb.utils import get_sim_time, lazy_property, remove_traceback_frames, extract_coro_stack
+from cocotb.utils import lazy_property, remove_traceback_frames, extract_coro_stack
 from cocotb import outcomes
 
 # Sadly the Python standard logging module is very slow so it's better not to
@@ -268,80 +266,6 @@ class RunningCoroutine(RunningTask):
         self.__doc__ = parent._func.__doc__
         self.module = parent._func.__module__
         self.funcname = parent._func.__name__
-
-
-class RunningTest(RunningCoroutine):
-    """Add some useful Test functionality to a RunningCoroutine."""
-
-    class ErrorLogHandler(logging.Handler):
-        def __init__(self, fn):
-            self.fn = fn
-            logging.Handler.__init__(self, level=logging.DEBUG)
-
-        def handle(self, record):
-            # For historical reasons, only logs sent directly to the `cocotb`
-            # logger are recorded - logs to `cocotb.scheduler` for instance
-            # are not recorded. Changing this behavior may have significant
-            # memory usage implications, so should not be done without some
-            # thought.
-            if record.name == 'cocotb':
-                self.fn(self.format(record))
-
-    def __init__(self, inst, parent):
-        self.error_messages = []
-        RunningCoroutine.__init__(self, inst, parent)
-        self.log = SimLog("cocotb.test.%s" % inst.__qualname__, id(self))
-        self.started = False
-        self.start_time = 0
-        self.start_sim_time = 0
-        self.expect_fail = parent.expect_fail
-        self.expect_error = parent.expect_error
-        self.skip = parent.skip
-        self.stage = parent.stage
-        self.__name__ = "Test %s" % inst.__name__
-        self.__qualname__ = "Test %s" % inst.__qualname__
-
-        # make sure not to create a circular reference here
-        self.handler = RunningTest.ErrorLogHandler(self.error_messages.append)
-
-    def __str__(self):
-        return f"<{self.__name__}>"
-
-    def _advance(self, outcome):
-        if not self.started:
-            self.log.info("Starting test: \"%s\"\nDescription: %s" %
-                          (self.funcname, self.__doc__))
-            self.start_time = time.time()
-            self.start_sim_time = get_sim_time('ns')
-            self.started = True
-        return super()._advance(outcome)
-
-    # like RunningTask.kill(), but with a way to inject a failure
-    def abort(self, exc):
-        """Force this test to end early, without executing any cleanup.
-
-        This happens when a background task fails, and is consistent with
-        how the behavior has always been. In future, we may want to behave
-        more gracefully to allow the test body to clean up.
-
-        `exc` is the exception that the test should report as its reason for
-        aborting.
-        """
-        if self._outcome is not None:
-            # imported here to avoid circular imports
-            from cocotb.scheduler import InternalError
-            raise InternalError("Outcome already has a value, but is being set again.")
-        outcome = outcomes.Error(exc)
-        if _debug:
-            self.log.debug(f"outcome forced to {outcome}")
-        self._outcome = outcome
-        cocotb.scheduler._unschedule(self)
-
-    def sort_name(self):
-        if self.stage is None:
-            return f"{self.module}.{self.funcname}"
-        else:
-            return "%s.%d.%s" % (self.module, self.stage, self.funcname)
 
 
 class coroutine:
@@ -590,4 +514,8 @@ class test(coroutine, metaclass=_decorator_helper):
         self.name = self._func.__name__
 
     def __call__(self, *args, **kwargs):
-        return RunningTest(self._func(*args, **kwargs), self)
+        inst = self._func(*args, **kwargs)
+        coro = RunningCoroutine(inst, self)
+        coro.__name__ = "Test {}".format(inst.__name__)
+        coro.__qualname__ = "Test {}".format(inst.__qualname__)
+        return coro
