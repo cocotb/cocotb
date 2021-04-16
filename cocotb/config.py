@@ -156,7 +156,7 @@ def lib_name_path(interface, simulator):
     return library_name_path
 
 
-def findlibpython():
+def _findlibpython():
     libpython_path = find_libpython.find_libpython()
     if libpython_path is None:
         sys.exit(1)
