@@ -16,14 +16,16 @@ def concat(a: Array, b: Array) -> Array:
     Raises:
         TypeError: when the arguments do not support concatenation in the given order.
     """
-    a_concat = getattr(a.__class__, "__concat__", None)
-    a_rconcat = getattr(a.__class__, "__rconcat__", None)
-    b_rconcat = getattr(b.__class__, "__rconcat__", None)
+    type_a = type(a)
+    type_b = type(b)
+    a_concat = getattr(type_a, "__concat__", None)
+    a_rconcat = getattr(type_a, "__rconcat__", None)
+    b_rconcat = getattr(type_b, "__rconcat__", None)
 
-    if isinstance(b, a.__class__) and a_rconcat != b_rconcat:
+    if type_a is not type_b and issubclass(type_b, type_a) and a_rconcat != b_rconcat:
         # 'b' is a subclass of 'a' with a more specific implementation of 'concat(a, b)'
         call_order = ((b, b_rconcat, a), (a, a_concat, b))
-    elif a.__class__ != b.__class__:
+    elif type_a is not type_b:
         # normal call order
         call_order = ((a, a_concat, b), (b, b_rconcat, a))
     else:
@@ -39,6 +41,6 @@ def concat(a: Array, b: Array) -> Array:
 
     raise TypeError(
         "cannot concatenate {!r} with {!r}".format(
-            a.__class__.__qualname__, b.__class__.__qualname__
+            type_a.__qualname__, type_b.__qualname__
         )
     )
