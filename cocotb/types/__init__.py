@@ -16,11 +16,12 @@ def concat(a: Array, b: Array) -> Array:
     Raises:
         TypeError: when the arguments do not support concatenation in the given order.
     """
+    MISSING = object()
     type_a = type(a)
     type_b = type(b)
-    a_concat = getattr(type_a, "__concat__", None)
-    a_rconcat = getattr(type_a, "__rconcat__", None)
-    b_rconcat = getattr(type_b, "__rconcat__", None)
+    a_concat = getattr(type_a, "__concat__", MISSING)
+    a_rconcat = getattr(type_a, "__rconcat__", MISSING)
+    b_rconcat = getattr(type_b, "__rconcat__", MISSING)
 
     if type_a is not type_b and issubclass(type_b, type_a) and a_rconcat != b_rconcat:
         # 'b' is a subclass of 'a' with a more specific implementation of 'concat(a, b)'
@@ -33,7 +34,7 @@ def concat(a: Array, b: Array) -> Array:
         call_order = ((a, a_concat, b),)
 
     for lhs, method, rhs in call_order:
-        if method is None:
+        if method is MISSING:
             continue
         res = method(lhs, rhs)
         if res is not NotImplemented:
