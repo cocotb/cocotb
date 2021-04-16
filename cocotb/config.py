@@ -228,7 +228,7 @@ def get_parser():
         nargs=0,
         metavar=(),
         action=PrintFuncAction,
-        function=findlibpython,
+        function=_findlibpython,
     )
     parser.add_argument(
         "--lib-dir",
