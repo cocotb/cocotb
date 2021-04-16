@@ -155,6 +155,13 @@ def lib_name_path(interface, simulator):
     return library_name_path
 
 
+def _findlibpython():
+    libpython_path = find_libpython.find_libpython()
+    if libpython_path is None:
+        sys.exit(1)
+    return libpython_path
+
+
 class PrintAction(argparse.Action):
     def __init__(self, option_strings, dest, text=None, **kwargs):
         super().__init__(option_strings, dest, nargs=0, **kwargs)
@@ -217,8 +224,10 @@ def get_parser():
     parser.add_argument(
         "--libpython",
         help="Print the absolute path to the libpython associated with the current Python installation",
-        action=PrintAction,
-        text=find_libpython.find_libpython(),
+        nargs=0,
+        metavar=(),
+        action=PrintFuncAction,
+        function=_findlibpython,
     )
     parser.add_argument(
         "--lib-dir",

@@ -133,6 +133,8 @@ manually override the LIBPYTHON_LOC make variable with the absolute path to libp
 
 endef
 
+ifndef LIBPYTHON_LOC
+
 # get the path to libpython and the return code from the script
 # adapted from https://stackoverflow.com/a/24658961/6614127
 FIND_LIBPYTHON_RES := $(shell cocotb-config --libpython; echo $$?)
@@ -143,6 +145,9 @@ LIBPYTHON_LOC := $(strip $(subst $(FIND_LIBPYTHON_RC)QQQQ,,$(FIND_LIBPYTHON_RES)
 ifneq ($(FIND_LIBPYTHON_RC),0)
     $(error $(find_libpython_errmsg))
 endif
+
+endif
+
 export LIBPYTHON_LOC
 
 else
