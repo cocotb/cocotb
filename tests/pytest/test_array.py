@@ -167,12 +167,22 @@ def test_array_concat():
     r = concat(l, p)
     assert r == Array("01ZX1101")
 
+    rconcat_called = None
+
     class SpecialArray(Array):
-        pass
+
+        def __rconcat__(self, other):
+            nonlocal rconcat_called
+            rconcat_called = 3
+            return super().__rconcat__(other)
 
     q = SpecialArray("ABC")
+
     r2 = concat(q, l)
     assert r2 == Array("ABC01ZX")
+    r3 = concat(l, q)
+    assert r3 == Array("01ZXABC")
+    assert rconcat_called == 3
 
     with pytest.raises(TypeError):
         concat(l, "nope")
