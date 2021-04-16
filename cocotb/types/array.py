@@ -289,14 +289,14 @@ class Array(Sequence):
         return "{}({!r}, {!r})".format(type(self).__name__, self._value, self._range)
 
     def __concat__(self, other: "Array") -> "Array":
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, type(self)):
             return NotImplemented
-        return self.__class__(self._value + other._value)
+        return type(self)(self._value + other._value)
 
     def __rconcat__(self, other: "Array") -> "Array":
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, type(self)):
             return NotImplemented
-        return self.__class__(other._value + self._value)
+        return type(self)(other._value + self._value)
 
     def index(
         self, value: Any, start: Optional[int] = None, stop: Optional[int] = None
