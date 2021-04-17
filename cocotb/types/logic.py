@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 from typing import Tuple  # noqa: F401
 from functools import lru_cache
 
@@ -71,6 +71,8 @@ class Logic:
     """
     __slots__ = ("_repr",)
 
+    __singleton_cache__: Dict[int, "Logic"] = {}
+
     _repr_map = {
         # 0 and weak 0
         False: 0,
@@ -107,8 +109,11 @@ class Logic:
             raise ValueError(
                 "{!r} is not convertible to a {}".format(value, cls.__qualname__)
             ) from None
-        obj = super().__new__(cls)
-        obj._repr = _repr
+        obj = cls.__singleton_cache__.get(_repr, None)
+        if obj is None:
+            obj = super().__new__(cls)
+            obj._repr = _repr
+            cls.__singleton_cache__[_repr] = obj
         return obj
 
     def __and__(self, other: "Logic") -> "Logic":
@@ -254,6 +259,8 @@ class Bit(Logic):
         ValueError: if the value cannot be constructed into a :class:`Bit`.
     """
     __slots__ = ()
+
+    __singleton_cache__: Dict[int, "Bit"] = {}
 
     _repr_map = {
         # 0

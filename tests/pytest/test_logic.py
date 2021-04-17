@@ -254,3 +254,13 @@ def test_logic_invert():
 def test_bit_invert():
     assert ~Bit(0) == Bit(1)
     assert ~Bit(1) == Bit(0)
+
+
+def test_logic_identity():
+    assert Logic(0) is Logic(False)
+    assert Logic("X") is Logic("X")
+
+
+def test_bit_identity():
+    assert Bit(0) is Bit(False)
+    assert Bit(Logic(1)) is Bit("1")
