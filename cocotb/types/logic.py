@@ -6,6 +6,20 @@ from typing import Tuple  # noqa: F401
 from functools import lru_cache
 
 
+class _StaticOnlyProp:
+
+    def __init__(self, fget):
+        self.fget = fget
+
+    def __set_name__(self, cls, name):
+        self.__cls = cls
+
+    def __get__(self, instance, cls):
+        if cls is not self.__cls or instance is not None:
+            raise AttributeError
+        return self.fget()
+
+
 class Logic:
     r"""
     Model of a 4-value (``0``, ``1``, ``X``, ``Z``) datatype commonly seen in HDLs.
@@ -99,6 +113,22 @@ class Logic:
         "Z": 3,
         "z": 3,
     }
+
+    @_StaticOnlyProp
+    def _0():
+        return Logic("0")
+
+    @_StaticOnlyProp
+    def _1():
+        return Logic("1")
+
+    @_StaticOnlyProp
+    def X():
+        return Logic("X")
+
+    @_StaticOnlyProp
+    def Z():
+        return Logic("Z")
 
     @lru_cache(maxsize=None)
     def __new__(cls, value: Optional[Any] = None) -> "Logic":
@@ -273,6 +303,14 @@ class Bit(Logic):
         1: 1,
         "1": 1,
     }
+
+    @_StaticOnlyProp
+    def _0():
+        return Bit("0")
+
+    @_StaticOnlyProp
+    def _1():
+        return Bit("1")
 
 
 Logic._repr_map.update(

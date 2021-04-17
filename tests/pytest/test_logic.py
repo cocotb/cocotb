@@ -257,10 +257,14 @@ def test_bit_invert():
 
 
 def test_logic_identity():
-    assert Logic(0) is Logic(False)
-    assert Logic("X") is Logic("X")
+    assert Logic._0 is Logic(False)
+    assert Logic._1 is Logic(1)
+    assert Logic("X") is Logic.X
+    assert Logic.Z is Logic("Z")
 
 
 def test_bit_identity():
-    assert Bit(0) is Bit(False)
-    assert Bit(Logic(1)) is Bit("1")
+    assert Bit._0 is Bit(False)
+    assert Bit(Logic(1)) is Bit._1
+    with pytest.raises(AttributeError):
+        Bit.X
