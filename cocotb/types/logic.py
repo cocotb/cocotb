@@ -48,13 +48,13 @@ class Logic:
 
         The :class:`int` and :class:`bool` conversions will raise :exc:`ValueError` if the value is not ``0`` or ``1``.
 
-    :class:`Logic` values are hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
+    :class:`Logic` values are immutable and therefore hashable and can be placed in :class:`set`\ s and used as keys in :class:`dict`\ s.
 
     :class:`Logic` supports the common logic operations ``&``, ``|``, ``^``, and ``~``.
 
     .. code-block:: python3
 
-        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> (Logic, Logic):
+        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> Tuple[Logic, Logic]:
         ...     res = a ^ b ^ carry
         ...     carry_out = (a & b) | (b & carry) | (a & carry)
         ...     return res, carry_out
