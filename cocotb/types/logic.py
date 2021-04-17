@@ -1,7 +1,7 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 from functools import lru_cache
 
 
