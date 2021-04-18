@@ -111,7 +111,9 @@ Cocotb
 .. envvar:: COCOTB_LOG_LEVEL
 
     The default logging level to use. This is set to ``INFO`` unless overridden.
-    Valid values are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
+    Valid values are ``TRACE``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``.
+
+    ``TRACE`` is used for internal low-level logging and produces very verbose logs.
 
 .. envvar:: COCOTB_RESOLVE_X
 

@@ -77,9 +77,9 @@ int GpiObjHdl::initialise(std::string &name, std::string &fq_name) {
 }
 
 int GpiCbHdl::run_callback() {
-    LOG_DEBUG("Generic run_callback");
+    LOG_TRACE("Generic run_callback");
     this->gpi_function(m_cb_data);
-    LOG_DEBUG("Generic run_callback done");
+    LOG_TRACE("Generic run_callback done");
     return 0;
 }
 

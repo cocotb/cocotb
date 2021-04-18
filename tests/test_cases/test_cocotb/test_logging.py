@@ -65,6 +65,11 @@ async def test_logging_default_config(dut):
         log_default_config()
         assert cocotb_log.level == logging.ERROR, cocotb_log.level
 
+        # Set custom TRACE log level
+        os.environ['COCOTB_LOG_LEVEL'] = 'TRACE'
+        log_default_config()
+        assert cocotb_log.level == logging.TRACE, cocotb_log.level
+
     finally:
         # Restore pre-test configuration
         os.environ = os_environ_prev
