@@ -287,7 +287,7 @@ async def test_integer_underflow(dut):
     await int_overflow_test(dut.stream_in_int, 32, "unfl", limits)
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_real_assign_double(dut):
     """
     Assign a random floating point value, read it back from the DUT and check
@@ -306,7 +306,7 @@ async def test_real_assign_double(dut):
     assert got == val, "Values didn't match!"
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else OverflowError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_real_assign_int(dut):
     """Assign a random integer value to ensure we can write types convertible to
     int, read it back from the DUT and check it matches what we assigned.
