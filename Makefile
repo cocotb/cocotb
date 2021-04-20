@@ -45,9 +45,13 @@ do_tests::
 	$(MAKE) -k -C examples
 # increase coverage
 do_tests::
-	$(MAKE) -k -C tests/test_cases/test_cocotb/ COCOTB_LOG_LEVEL=DEBUG > test_cocotb_DEBUG.log
+	$(MAKE) -k -C tests/test_cases/test_cocotb/ \
+		MODULE=test_scheduler TESTCASE=test_coroutine_kill,test_coroutine_close_down \
+		COCOTB_LOG_LEVEL=TRACE > /dev/null
 do_tests::
-	$(MAKE) -k -C tests/test_cases/test_cocotb/ COCOTB_SCHEDULER_DEBUG=1 > test_cocotb_SCHEDULER_DEBUG.log
+	$(MAKE) -k -C tests/test_cases/test_cocotb/ \
+		MODULE=test_scheduler TESTCASE=test_coroutine_kill,test_coroutine_close_down \
+		COCOTB_SCHEDULER_DEBUG=1 > /dev/null
 
 # For Jenkins we use the exit code to detect compile errors or catastrophic
 # failures and the XML to track test results
