@@ -948,23 +948,20 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
     .. versionchanged:: 1.6
         Support passing :term:`python:coroutine`\ s.
     """
-
-    if inspect.iscoroutine(trigger):
-        task = cocotb.fork(trigger)
-        try:
-            res = await with_timeout(task, timeout_time, timeout_unit)
-        except cocotb.result.SimTimeoutError:
-            task.kill()
-            raise
-        return res
-
     if timeout_unit is None:
         warnings.warn(
             'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.',
             DeprecationWarning, stacklevel=2)
-        timeout_unit="step"  # don't propagate deprecated value
+        timeout_unit = "step"  # don't propagate deprecated value
+    if inspect.iscoroutine(trigger):
+        trigger = cocotb.fork(trigger)
+        shielded = False
+    else:
+        shielded = True
     timeout_timer = cocotb.triggers.Timer(timeout_time, timeout_unit)
     res = await First(timeout_timer, trigger)
+    if isinstance(res, cocotb.decorators.RunningTask) and not shielded:
+        trigger.kill()
     if res is timeout_timer:
         raise cocotb.result.SimTimeoutError
     else:
