@@ -35,7 +35,6 @@ the ReadOnly (and this is invalid, at least in Modelsim).
 """
 from contextlib import contextmanager
 import os
-import sys
 import logging
 import threading
 import inspect
@@ -711,7 +710,7 @@ class Scheduler:
                 "decorator?"
                 .format(coroutine)
             )
-        if sys.version_info >= (3, 6) and inspect.isasyncgen(coroutine):
+        if inspect.isasyncgen(coroutine):
             raise TypeError(
                 "{} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await.".format(
@@ -823,7 +822,7 @@ class Scheduler:
         if isinstance(result, cocotb.triggers.Waitable):
             return self._trigger_from_waitable(result)
 
-        if sys.version_info >= (3, 6) and inspect.isasyncgen(result):
+        if inspect.isasyncgen(result):
             raise TypeError(
                 "{} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await.".format(
