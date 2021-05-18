@@ -300,8 +300,6 @@ class ReadWrite(GPITrigger, metaclass=_ParameterizedSingletonAndABC):
 
     def prime(self, callback):
         if self.cbhdl is None:
-            # import pdb
-            # pdb.set_trace()
             self.cbhdl = simulator.register_rwsynch_callback(callback, self)
             if self.cbhdl is None:
                 raise TriggerException("Unable set up %s Trigger" % (str(self)))
