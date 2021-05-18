@@ -56,12 +56,18 @@ else
     export ICARUS_BIN_DIR
 endif
 
+ifdef TOPLEVEL
+  TOPMODULE_ARG := -s $(TOPLEVEL)
+else
+  TOPMODULE_ARG :=
+endif
+
 COMPILE_ARGS += -f $(SIM_BUILD)/cmds.f -g2012 # Default to latest SystemVerilog standard
 
 # Compilation phase
 $(SIM_BUILD)/sim.vvp: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	@echo "+timescale+$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)" > $(SIM_BUILD)/cmds.f
-	$(CMD) -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 -s $(TOPLEVEL) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
+	$(CMD) -o $(SIM_BUILD)/sim.vvp -D COCOTB_SIM=1 $(TOPMODULE_ARG) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES)
 
 # Execution phase
 
