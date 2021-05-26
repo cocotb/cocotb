@@ -153,10 +153,10 @@ jobs:
             # Other
 
           - sim: icarus             # use clang instead of gcc
-            sim-version: v10_3
+            sim-version: v11_0
             lang: verilog
             python-version: 3.8
-            os: ubuntu-latest
+            os: ubuntu-20.04
             cxx: clang++
             cc: clang
             extra_name: "clang | "
