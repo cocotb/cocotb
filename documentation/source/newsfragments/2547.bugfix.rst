@@ -1,0 +1,1 @@
+Verilator and Icarus now support running without specifying a :envvar:`TOPLEVEL`.

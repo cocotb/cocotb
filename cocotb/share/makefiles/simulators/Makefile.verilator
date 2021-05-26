@@ -29,6 +29,12 @@ ifneq ($(MIN_VERSION),$(VLT_MIN))
   $(error cocotb requires Verilator $(VLT_MIN) or later, but using $(VLT_VERSION))
 endif
 
+ifdef TOPLEVEL
+  TOPMODULE_ARG := --top-module $(TOPLEVEL)
+else
+  TOPMODULE_ARG :=
+endif
+
 ifeq ($(VERILATOR_SIM_DEBUG), 1)
   COMPILE_ARGS += --debug
   PLUSARGS += +verilator+debug
@@ -44,16 +50,16 @@ EXTRA_ARGS += --timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
 SIM_BUILD_FLAGS += -std=c++11
 
-COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o $(TOPLEVEL) -LDFLAGS "-Wl,-rpath,$(shell cocotb-config --lib-dir) -L$(shell cocotb-config --lib-dir) -lcocotbvpi_verilator"
+COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o Vtop -LDFLAGS "-Wl,-rpath,$(shell cocotb-config --lib-dir) -L$(shell cocotb-config --lib-dir) -lcocotbvpi_verilator"
 
 $(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp | $(SIM_BUILD)
-	$(CMD) -cc --exe -Mdir $(SIM_BUILD) -DCOCOTB_SIM=1 --top-module $(TOPLEVEL) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp
+	$(CMD) -cc --exe -Mdir $(SIM_BUILD) -DCOCOTB_SIM=1 $(TOPMODULE_ARG) $(COMPILE_ARGS) $(EXTRA_ARGS) $(VERILOG_SOURCES) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp
 
 # Compilation phase
-$(SIM_BUILD)/$(TOPLEVEL): $(SIM_BUILD)/Vtop.mk
+$(SIM_BUILD)/Vtop: $(SIM_BUILD)/Vtop.mk
 	CPPFLAGS="$(SIM_BUILD_FLAGS)" make -C $(SIM_BUILD) -f Vtop.mk
 
-$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS)
+$(COCOTB_RESULTS_FILE): $(SIM_BUILD)/Vtop $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
@@ -61,7 +67,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS)
 
 	$(call check_for_results_file)
 
-debug: $(SIM_BUILD)/$(TOPLEVEL) $(CUSTOM_SIM_DEPS)
+debug: $(SIM_BUILD)/Vtop $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
