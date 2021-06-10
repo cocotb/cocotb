@@ -1,0 +1,1 @@
+:class:`cocotb.triggers.Event` is now `await`\ able.

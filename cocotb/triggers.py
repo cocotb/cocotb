@@ -406,7 +406,7 @@ class _Event(PythonTrigger):
         return "<{!r}.wait() at {}>".format(self.parent, _pointer_str(self))
 
 
-class Event:
+class Event(Awaitable[None]):
     """Event to permit synchronization between two coroutines.
 
     Awaiting :meth:`wait()` from one coroutine will block the coroutine until
@@ -463,6 +463,9 @@ class Event:
         else:
             fmt = "<{0} for {1} at {2}>"
         return fmt.format(type(self).__qualname__, self.name, _pointer_str(self))
+
+    def __await__(self) -> None:
+        yield self.wait()
 
 
 class _InternalEvent(PythonTrigger):

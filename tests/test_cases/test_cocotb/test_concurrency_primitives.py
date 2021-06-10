@@ -5,7 +5,7 @@
 Tests for concurrency primitives like First and Combine
 """
 import cocotb
-from cocotb.triggers import Timer, First, Event, Combine
+from cocotb.triggers import Timer, First, Event, Combine, NullTrigger
 import textwrap
 from common import _check_traceback
 
@@ -165,3 +165,16 @@ async def test_combine_start_soon(_):
     test_start = cocotb.utils.get_sim_time(units="ns")
     await Combine(*coros)
     assert cocotb.utils.get_sim_time(units="ns") == test_start + max_delay
+
+
+@cocotb.test()
+async def test_event_awaitable(dut):
+
+    e = Event()
+
+    @cocotb.fork
+    async def setter():
+        await NullTrigger()
+        e.set()
+
+    await e
