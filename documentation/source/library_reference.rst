@@ -79,6 +79,8 @@ as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
     :members:
     :exclude-members: count, index
 
+.. autofunction:: cocotb.types.concat
+
 .. autoclass:: cocotb.types.Array
     :members:
     :exclude-members: count, index
