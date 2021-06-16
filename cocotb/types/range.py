@@ -14,6 +14,9 @@ class Range(Sequence):
     This type mimics Python's :class:`range` type, but implements HDL-like inclusive right bounds,
     using the names :attr:`left` and :attr:`right` as replacements for ``start`` and ``stop`` to
     match VHDL.
+    Range directionality can be specified using ``'to'`` or ``'downto'`` between the
+    left and right bounds.
+    Not specifying directionality will cause the directionality to be inferred.
 
     .. code-block:: python3
 
