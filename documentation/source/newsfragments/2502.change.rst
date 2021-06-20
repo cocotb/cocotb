@@ -1,2 +1,1 @@
-The environment variable :envvar:`COCOTB_LOG_LEVEL` now supports ``TRACE`` value,
-which is used for verbose low-level logging that was previously in ``DEBUG`` logs.
+The environment variable :envvar:`COCOTB_LOG_LEVEL` now supports ``TRACE`` value, which is used for verbose low-level logging that was previously in ``DEBUG`` logs.
