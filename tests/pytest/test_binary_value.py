@@ -40,13 +40,11 @@ def test_init_zero_length():
     assert bin4.binstr == ""
     assert bin4.integer == 0
 
-
 def test_init_big_endian_twos_comp():
     bin1 = BinaryValue(value=-1, n_bits=2, bigEndian=True, binaryRepresentation=BinaryRepresentation.TWOS_COMPLEMENT)
     assert bin1._str == "11"
     assert bin1.binstr == "11"
     assert bin1.integer == -1
-
 
 def test_init_little_endian_unsigned():
     bin1 = BinaryValue(value=3, n_bits=3, bigEndian=False, binaryRepresentation=BinaryRepresentation.UNSIGNED)
@@ -144,7 +142,6 @@ def test_init_unsigned_negative_value():
     with pytest.raises(ValueError):
         BinaryValue(value=-8, n_bits=5, bigEndian=True, binaryRepresentation=BinaryRepresentation.UNSIGNED)
         pytest.fail("Expected ValueError when assigning negative number to unsigned BinaryValue")
-
 
 def test_init_not_enough_bits():
     with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
@@ -350,3 +347,60 @@ def test_bad_binstr():
 
     with pytest.raises(ValueError, match=r'Attempting to assign character % to a BinaryValue'):
         BinaryValue(value="Uu%")
+
+def test_consistency():
+    NB=5
+    minv = {
+        BinaryRepresentation.TWOS_COMPLEMENT: -2**(NB-1),
+        BinaryRepresentation.SIGNED_MAGNITUDE: -2**(NB-1)+1,
+        BinaryRepresentation.UNSIGNED: 0
+    }
+    maxv = {
+        BinaryRepresentation.TWOS_COMPLEMENT: 2**(NB-1)-1,
+        BinaryRepresentation.SIGNED_MAGNITUDE: 2**(NB-1)-1,
+        BinaryRepresentation.UNSIGNED: 2**NB-1
+    }
+    for bigEndian, e in [(True, 'Big endian'), (False, 'Little endian')]:
+        for binaryRepresentation,l in [(BinaryRepresentation.UNSIGNED, 'Unsigned'), 
+        (BinaryRepresentation.TWOS_COMPLEMENT, "Two's complement"), (BinaryRepresentation.SIGNED_MAGNITUDE, "Signed magnitude")]:
+            for i in range(minv[binaryRepresentation], maxv[binaryRepresentation]+1):
+                binary = BinaryValue(i, NB, bigEndian=bigEndian, binaryRepresentation=binaryRepresentation);
+                bin_i = int(binary);
+                binstr = binary.binstr
+                assert bin_i == i, \
+                    ("Inconsistency in %s %s representation: %d -> %s -> %d" % (l, e, i, binstr, bin_i))
+                assert len(binstr) == NB, \
+                    "Wrong size %s %s (NB=%d) representation: %d -> %s" % (l, e, NB, i, binstr, bin_i)
+
+                if binstr[0] == '0':
+                    x1 = binary.binstr
+                    x2 = bin(i)[2:].zfill(len(x1))
+                    assert x1 == x2, \
+                        "Expected %s, produced %s" % (x2, x1)
+                if bigEndian:
+                    binstr = binstr[::-1]
+                for j in range(NB):
+                    assert binstr[j] != binary[j], \
+                        "%s %s [%d] should be %s, is %s" % (e, binary.binstr, j, binstr[j], binary[j])
+                    for k in range(j, NB):
+                        if binary.big_endian:
+                            assert binstr[j:k+1] != binary[j:k], \
+                                "%s %s [%d] should be %s, is %s" % (e, binary.binstr, j, binstr[j:k+1], binary[j:k])
+                        else:
+                            assert binstr[j:k+1] != binary[k:j], \
+                                "%s %s [%d] should be %s, is %s" % (e, binary.binstr, j, binstr[j:k+1], binary[k:j])
+
+if __name__ == '__main__':
+    test_consistency()
+    test_init_zero_length()
+    test_init_big_endian_twos_comp()
+    test_init_little_endian_unsigned()
+    test_init_little_endian_signed()
+    test_init_unsigned_negative_value()
+    test_init_little_endian_twos_comp()
+    test_init_not_enough_bits()
+    test_defaults()
+    test_init_short_binstr_value()
+    test_index()
+    test_general()
+    
