@@ -195,60 +195,48 @@ class BinaryValue:
     def _convert_to_unsigned(self, x):
         if x == 0:
             return self._adjust_unsigned("")
-        x = bin(x)
-        if x[0] == '-':
+        if x < 0:
             raise ValueError('Attempt to assigned negative number to unsigned '
                              'BinaryValue')
-        return self._adjust_unsigned(x[2:])
+        x = self._adjust_unsigned(bin(x)[2:])
+        return x
 
     def _convert_to_signed_mag(self, x):
         if x == 0:
             return self._adjust_unsigned("")
-        x = bin(x)
-        if x[0] == '-':
-            binstr = self._adjust_signed_mag('1' + x[3:])
-        else:
-            binstr = self._adjust_signed_mag('0' + x[2:])
-        if self.big_endian:
-            binstr = binstr[::-1]
+        # trick to reuse _adjust_unsigned instead of fixing 
+        
+        binstr = ('1' if x < 0 else '0') + bin(abs(x))[2:]
+        binstr = self._adjust_signed_mag(binstr)
         return binstr
 
     def _convert_to_twos_comp(self, x):
         if x < 0:
-            binstr = bin(2 ** (_clog2(abs(x)) + 1) + x)[2:]
-            binstr = self._adjust_twos_comp(binstr)
-        elif x == 0:
-            binstr = self._adjust_twos_comp("")
-        else:
-            binstr = self._adjust_twos_comp('0' + bin(x)[2:])
-        if self.big_endian:
-            binstr = binstr[::-1]
+            binstr = '1' + self._invert(bin(-x-1)[2:])
+        elif x >= 0:
+            binstr = '0' + bin(x)[2:]
+        binstr = self._adjust_twos_comp(binstr)
         return binstr
 
     def _convert_from_unsigned(self, x):
         if not len(x):
             return 0
-        return int(x.translate(_resolve_table), 2)
+        return int('0' + x.translate(_resolve_table), 2)
 
     def _convert_from_signed_mag(self, x):
         if not len(x):
             return 0
-        rv = int(self._str[1:].translate(_resolve_table), 2)
-        if self._str[0] == '1':
-            rv = rv * -1
+        binstr = x.translate(_resolve_table)
+        rv = int('0' + binstr[1:], 2)
+        rv = -rv if binstr[0] == '1' else rv
         return rv
 
     def _convert_from_twos_comp(self, x):
         if not len(x):
             return 0
-        if x[0] == '1':
-            binstr = x[1:]
-            binstr = self._invert(binstr)
-            rv = int(binstr, 2) + 1
-            rv = rv * -1
-        else:
-            rv = int(x.translate(_resolve_table), 2)
-        return rv
+        binstr = x.translate(_resolve_table)
+        S = (1 << (len(x)-1))
+        return (int('0' + binstr, 2) ^ S) - S
 
     _convert_to_map = {
         BinaryRepresentation.UNSIGNED         : _convert_to_unsigned,
@@ -272,17 +260,14 @@ class BinaryValue:
             return x
         l = len(x)
         if l <= self._n_bits:
-            if self.big_endian:
-                rv = x + '0' * (self._n_bits - l)
-            else:
-                rv = '0' * (self._n_bits - l) + x
-        elif l > self._n_bits:
-            if self.big_endian:
-                rv = x[l - self._n_bits:]
-            else:
-                rv = x[:l - self._n_bits]
+            rv = x.rjust(self._n_bits, '0')
+        else:
+            rv = x[l - self._n_bits:]
+        
+        if len(rv) < l:
             warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
                 self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
+        
         return rv
 
     def _adjust_signed_mag(self, x):
@@ -290,44 +275,28 @@ class BinaryValue:
         if self._n_bits is None:
             return x
         l = len(x)
-        if l < self._n_bits:
-            if self.big_endian:
-                rv = x[:-1] + '0' * (self._n_bits - 1 - l)
-                rv = rv + x[-1]
-            else:
-                rv = '0' * (self._n_bits - 1 - l) + x[1:]
-                rv = x[0] + rv
-        elif l > self._n_bits:
-            if self.big_endian:
-                rv = x[l - self._n_bits:]
-            else:
-                rv = x[:-(l - self._n_bits)]
+
+        if l <= self._n_bits:
+            rv = x[0] + x[1:].rjust(self.n_bits-1, '0')
+        else:
+            # First discard the sign, then the most significant bits
+            rv = x[l-self._n_bits:]
+        if len(rv) < l:
             warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
                 self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
-        else:
-            rv = x
         return rv
 
     def _adjust_twos_comp(self, x):
         if self._n_bits is None:
             return x
         l = len(x)
-        if l == 0:
-            rv = x
-        elif l < self._n_bits:
-            if self.big_endian:
-                rv = x + x[-1] * (self._n_bits - l)
-            else:
-                rv = x[0] * (self._n_bits - l) + x
-        elif l > self._n_bits:
-            if self.big_endian:
-                rv = x[l - self._n_bits:]
-            else:
-                rv = x[:-(l - self._n_bits)]
+        if l < self._n_bits:
+            rv = x.rjust(self._n_bits, x[0])
+        else:
+            rv = x[l - self._n_bits:]
+        if len(rv) < l:
             warnings.warn("{}-bit value requested, truncating value {!r} ({} bits) to {!r}".format(
                 self._n_bits, x, l, rv), category=RuntimeWarning, stacklevel=3)
-        else:
-            rv = x
         return rv
 
     @property
@@ -337,7 +306,8 @@ class BinaryValue:
 
     @integer.setter
     def integer(self, val):
-        self._str = self._convert_to(val)
+        binstr = self._convert_to(val)
+        self._str = binstr
 
     @property
     def value(self):
@@ -354,13 +324,7 @@ class BinaryValue:
     @property
     def signed_integer(self):
         """The signed integer representation of the underlying vector."""
-        ival = int(self._str.translate(_resolve_table), 2)
-        bits = len(self._str)
-        signbit = (1 << (bits - 1))
-        if (ival & signbit) == 0:
-            return ival
-        else:
-            return -1 * (1 + (int(~ival) & (signbit - 1)))
+        return self._convert_from_twos_comp(self._str)
 
     @signed_integer.setter
     def signed_integer(self, val):
@@ -667,6 +631,7 @@ class BinaryValue:
     def __getitem__(self, key):
         """BinaryValue uses Verilog/VHDL style slices as opposed to Python
         style"""
+        copy_sign=False
         if isinstance(key, slice):
             first, second = key.start, key.stop
             if self.big_endian:
@@ -678,6 +643,8 @@ class BinaryValue:
                 if first > second:
                     raise IndexError('Big Endian indices must be specified '
                                      'low to high')
+                if first == 0 and second > first:
+                    copy_sign = True
                 _binstr = self.binstr[first:(second + 1)]
             else:
                 if first < 0 or second < 0:
@@ -690,18 +657,23 @@ class BinaryValue:
                                      'high to low')
                 high = self._n_bits - second
                 low = self._n_bits - 1 - first
+                if low == 0 and high > low + 1:
+                    copy_sign = True
                 _binstr = self.binstr[low:high]
         else:
             index = key
             if index > self._n_bits - 1:
                 raise IndexError('Index greater than number of bits.')
-            if self.big_endian:
-                _binstr = self.binstr[index]
-            else:
-                _binstr = self.binstr[self._n_bits-1-index]
-        rv = BinaryValue(n_bits=len(_binstr), bigEndian=self.big_endian,
-                         binaryRepresentation=self.binaryRepresentation)
-        rv.binstr = _binstr
+            if not self.big_endian:
+                index = self._n_bits-1-index
+            if index == 0 and self.binaryRepresentation == BinaryRepresentation.TWOS_COMPLEMENT:
+                copy_sign = True
+            _binstr = self.binstr[index]
+        # o-alexandre-felipe: In my opinion we should keep the representation only
+        # if the sign bit is copied, otherwise we create an unsigned value.    
+        binaryRepresentation = self.binaryRepresentation
+        rv = BinaryValue(_binstr, n_bits=len(_binstr), bigEndian=self.big_endian,
+                        binaryRepresentation=binaryRepresentation)
         return rv
 
     def __setitem__(self, key, val):
