@@ -637,6 +637,9 @@ class TestFactory:
 
     .. versionchanged:: 1.5
         Groups of options are now supported
+
+    .. versionchanged:: 2.0
+        Options are listed in test names instead of a counter
     """
 
     # Prevent warnings from collection of TestFactories by unit testing frameworks.
@@ -708,9 +711,6 @@ class TestFactory:
                 product(*d.values())
         ):
 
-            name = "%s%s%s_%03d" % (prefix, self.name, postfix, index + 1)
-            doc = "Automatically generated test\n\n"
-
             # preprocess testoptions to split tuples
             testoptions_split = {}
             for optname, optvalue in testoptions.items():
@@ -722,6 +722,8 @@ class TestFactory:
                     for n, v in zip(optname, optvalue):
                         testoptions_split[n] = v
 
+            doc = "Automatically generated test\n\n"
+
             for optname, optvalue in testoptions_split.items():
                 if callable(optvalue):
                     if not optvalue.__doc__:
@@ -732,15 +734,19 @@ class TestFactory:
                 else:
                     doc += "\t{}: {}\n".format(optname, repr(optvalue))
 
-            self.log.debug("Adding generated test \"%s\" to module \"%s\"" %
-                           (name, mod.__name__))
             kwargs = {}
             kwargs.update(self.kwargs_constant)
             kwargs.update(testoptions_split)
+
+            options_str = ",".join(f"{optname}={optvalue!r}" for optname, optvalue in kwargs.items())
+            name = f"{prefix}{self.name}{postfix}({options_str})"
+
             if hasattr(mod, name):
                 self.log.error("Overwriting %s in module %s. "
                                "This causes a previously defined testcase "
                                "not to be run. Consider setting/changing "
-                               "name_postfix" % (name, mod))
+                               "the postfix option" % (name, mod))
+
+            self.log.debug(f"Adding generated test {name!r} to module {mod.__name__!r}")
             setattr(mod, name, _create_test(self.test_function, name, doc, mod,
                                             *self.args, **kwargs))
