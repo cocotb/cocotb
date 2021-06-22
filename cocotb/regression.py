@@ -639,7 +639,7 @@ class TestFactory:
         Groups of options are now supported
 
     .. versionchanged:: 2.0
-        Options are used in names instead of numbers
+        Options are listed in test names instead of a counter
     """
 
     # Prevent warnings from collection of TestFactories by unit testing frameworks.
