@@ -9,7 +9,8 @@ Contributors
    Solarflare
 
 cocotb is developed and maintained by an active community.
-Our GitHub repository contains a list of all `contributors <https://github.com/cocotb/cocotb/graphs/contributors>`_.
+Our GitHub repository contains a list of the :reposrc:`Maintainers <CONTRIBUTING.md#maintainers>` and all
+`contributors <https://github.com/cocotb/cocotb/graphs/contributors>`_.
 
 Since mid-2018 cocotb is an independent project under the umbrella of the
 `Free and Open Source Silicon Foundation <https://www.fossi-foundation.org>`_.
