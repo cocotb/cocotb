@@ -35,6 +35,7 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'sphinx.ext.extlinks',
     'sphinx.ext.intersphinx',
     'sphinxcontrib.makedomain',
     'sphinx.ext.inheritance_diagram',
@@ -347,3 +348,11 @@ in_progress_notes = subprocess.check_output(['towncrier', '--draft', '--name', '
                                             universal_newlines=True)
 with open('master-notes.rst', 'w') as f:
     f.write(in_progress_notes)
+
+# -- External link helpers -----------------------------------------------------
+
+extlinks = {
+   'wikipedia': ('https://en.wikipedia.org/wiki/%s', None),
+   'reposharp': ('https://github.com/cocotb/cocotb/issues/%s', '#'),
+   'reposrc':   ('https://github.com/cocotb/cocotb/blob/master/%s', None)
+}
