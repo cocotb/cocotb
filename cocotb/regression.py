@@ -34,6 +34,7 @@ import sys
 import os
 import traceback
 import pdb
+import warnings
 from typing import Any, Optional, Tuple, Iterable
 
 import cocotb
@@ -682,7 +683,7 @@ class TestFactory:
                     raise ValueError("Mismatch between number of options and number of option values in group")
         self.kwargs[name] = optionlist
 
-    def generate_tests(self, prefix="", postfix=""):
+    def generate_tests(self, prefix=None, postfix=None):
         """
         Generate an exhaustive set of tests using the cartesian product of the
         possible keyword arguments.
@@ -699,7 +700,18 @@ class TestFactory:
                      when naming generated test cases. This allows reuse of
                      a single ``test_function`` with multiple
                      :class:`TestFactories <.TestFactory>` without name clashes.
+
+        .. deprecated:: 2.0
+            The *prefix* and *postfix* argument.
         """
+
+        if prefix is not None or postfix is not None:
+            warnings.warn(
+                "The 'prefix' and 'postfix' options are no longer necessary to prevent "
+                "test name collisions. They will be removed in the future.",
+                DeprecationWarning, stacklevel=2)
+        prefix = "" if prefix is None else prefix
+        postfix = "" if postfix is None else postfix
 
         frm = inspect.stack()[1]
         mod = inspect.getmodule(frm[0])
