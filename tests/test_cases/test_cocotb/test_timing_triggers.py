@@ -246,6 +246,6 @@ async def test_time_units_eq_None(dut):
         assert 'Using units=None is deprecated, use units="step" instead.' in str(w[-1].message)
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        await cocotb.triggers.with_timeout(example(), timeout_time=222222, timeout_unit=None)
+        await cocotb.triggers.with_timeout(example(), timeout_time=12_000_000, timeout_unit=None)
         assert issubclass(w[-1].category, DeprecationWarning)
         assert 'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.' in str(w[-1].message)
