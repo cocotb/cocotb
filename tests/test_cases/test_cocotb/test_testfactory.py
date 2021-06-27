@@ -6,6 +6,7 @@ Tests of cocotb.regression.TestFactory functionality
 """
 import cocotb
 from cocotb.regression import TestFactory
+import pytest
 
 
 testfactory_test_args = set()
@@ -28,3 +29,13 @@ async def test_testfactory_verify_args(dut):
         ("a1v1", "a2v2", "a3v2"),
         ("a1v2", "a2v2", "a3v2"),
     }
+
+
+@cocotb.test()
+async def test_testfactory_collision(_):
+    """ Test warning is thrown when there is a collision in generates test names with TestFactory. """
+    tf = TestFactory(run_testfactory_test)
+    tf.add_option(("arg1", "arg2", "arg3"), (("a1v1", "a2v1", "a3v1"),))
+    with pytest.warns(RuntimeWarning) as w:
+        tf.generate_tests()
+    assert "already defined" in str(w.pop())

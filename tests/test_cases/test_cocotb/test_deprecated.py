@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from common import assert_raises
 from typing import List
 from cocotb._sim_versions import IcarusVersion
+from cocotb.regression import TestFactory
 
 
 @contextmanager
@@ -187,3 +188,17 @@ async def test_assigning_setitem_syntax_deprecated(dut):
         with assert_raises(IndexError):
             # attempt to use __setitem__ syntax on signal that doesn't exist
             dut.stream_in_data[800000] = 1
+
+
+async def test_stub(_):
+    """ Test that does nothing and always passes. """
+
+
+@cocotb.test()
+async def test_generate_test_options_deprecated(_):
+    """ Test that the `refix` and `postfix` options to `TestFactory.generate_tests`. """
+    tf = TestFactory(test_stub)
+
+    with assert_deprecated():
+        tf.generate_tests(prefix="1", postfix="1")
+    assert "1test_stub1()" in globals()
