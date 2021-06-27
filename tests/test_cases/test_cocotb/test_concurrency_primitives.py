@@ -10,6 +10,7 @@ import textwrap
 from common import _check_traceback
 from random import randint
 from collections import deque
+from cocotb.utils import get_sim_time
 
 
 @cocotb.test()
@@ -170,9 +171,9 @@ async def test_combine_start_soon(_):
 
 
 @cocotb.test()
-async def test_recursive_combine(_):
+async def test_recursive_combine_and_fork(_):
     """ Test using `Combine` on forked coroutines that themselves use `Combine`.
-    
+
     This does not test passing `Combine` triggers into `Combine`. """
 
     async def mergesort(n):
@@ -199,3 +200,23 @@ async def test_recursive_combine(_):
     res = await mergesort(t)
     t.sort()
     assert t == res
+
+
+@cocotb.test()
+async def test_recursive_combine(_):
+    """Tests using a `Combine` trigger in another `Combine` trigger"""
+
+    async def waiter(N):
+        await Timer(N, 'ns')
+
+    start_time = get_sim_time('ns')
+    await Combine(
+        Combine(
+            cocotb.fork(waiter(10)),
+            cocotb.fork(waiter(20))
+        ),
+        cocotb.fork(waiter(30))
+    )
+    end_time = get_sim_time('ns')
+
+    assert end_time - start_time == 30
