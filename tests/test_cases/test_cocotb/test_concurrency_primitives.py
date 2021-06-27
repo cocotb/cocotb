@@ -172,9 +172,7 @@ async def test_combine_start_soon(_):
 
 @cocotb.test()
 async def test_recursive_combine_and_fork(_):
-    """ Test using `Combine` on forked coroutines that themselves use `Combine`.
-
-    This does not test passing `Combine` triggers into `Combine`. """
+    """ Test using `Combine` on forked coroutines that themselves use `Combine`. """
 
     async def mergesort(n):
         if len(n) == 1:
@@ -204,10 +202,12 @@ async def test_recursive_combine_and_fork(_):
 
 @cocotb.test()
 async def test_recursive_combine(_):
-    """Tests using a `Combine` trigger in another `Combine` trigger"""
+    """ Tests pass a `Combine` trigger directly to another `Combine` trigger. """
 
+    done = set()
     async def waiter(N):
         await Timer(N, 'ns')
+        done.add(N)
 
     start_time = get_sim_time('ns')
     await Combine(
@@ -220,3 +220,4 @@ async def test_recursive_combine(_):
     end_time = get_sim_time('ns')
 
     assert end_time - start_time == 30
+    assert done == {10, 20, 30}
