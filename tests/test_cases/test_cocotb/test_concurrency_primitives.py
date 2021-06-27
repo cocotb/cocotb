@@ -171,6 +171,9 @@ async def test_combine_start_soon(_):
 
 @cocotb.test()
 async def test_recursive_combine(_):
+    """ Test using `Combine` on forked coroutines that themselves use `Combine`.
+    
+    This does not test passing `Combine` triggers into `Combine`. """
 
     async def mergesort(n):
         if len(n) == 1:
