@@ -202,7 +202,7 @@ async def test_recursive_combine_and_fork(_):
 
 @cocotb.test()
 async def test_recursive_combine(_):
-    """ Tests pass a `Combine` trigger directly to another `Combine` trigger. """
+    """ Test passing a `Combine` trigger directly to another `Combine` trigger. """
 
     done = set()
 
