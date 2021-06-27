@@ -8,6 +8,9 @@ import cocotb
 from cocotb.triggers import Timer, First, Event, Combine
 import textwrap
 from common import _check_traceback
+from random import randint
+from collections import deque
+from cocotb.utils import get_sim_time
 
 
 @cocotb.test()
@@ -165,3 +168,57 @@ async def test_combine_start_soon(_):
     test_start = cocotb.utils.get_sim_time(units="ns")
     await Combine(*coros)
     assert cocotb.utils.get_sim_time(units="ns") == test_start + max_delay
+
+
+@cocotb.test()
+async def test_recursive_combine_and_fork(_):
+    """ Test using `Combine` on forked coroutines that themselves use `Combine`. """
+
+    async def mergesort(n):
+        if len(n) == 1:
+            return n
+        part1 = n[:len(n) // 2]
+        part2 = n[len(n) // 2:]
+        sort1 = cocotb.fork(mergesort(part1))
+        sort2 = cocotb.fork(mergesort(part2))
+        await Combine(sort1, sort2)
+        res1 = deque(sort1.retval)
+        res2 = deque(sort2.retval)
+        res = []
+        while res1 and res2:
+            if res1[0] < res2[0]:
+                res.append(res1.popleft())
+            else:
+                res.append(res2.popleft())
+        res.extend(res1)
+        res.extend(res2)
+        return res
+
+    t = [randint(0, 1000) for _ in range(100)]
+    res = await mergesort(t)
+    t.sort()
+    assert t == res
+
+
+@cocotb.test()
+async def test_recursive_combine(_):
+    """ Test passing a `Combine` trigger directly to another `Combine` trigger. """
+
+    done = set()
+
+    async def waiter(N):
+        await Timer(N, 'ns')
+        done.add(N)
+
+    start_time = get_sim_time('ns')
+    await Combine(
+        Combine(
+            cocotb.fork(waiter(10)),
+            cocotb.fork(waiter(20))
+        ),
+        cocotb.fork(waiter(30))
+    )
+    end_time = get_sim_time('ns')
+
+    assert end_time - start_time == 30
+    assert done == {10, 20, 30}
