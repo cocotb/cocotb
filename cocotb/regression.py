@@ -754,10 +754,14 @@ class TestFactory:
             name = f"{prefix}{self.name}{postfix}({options_str})"
 
             if hasattr(mod, name):
-                self.log.error("Overwriting %s in module %s. "
-                               "This causes a previously defined testcase "
-                               "not to be run. Consider setting/changing "
-                               "the postfix option" % (name, mod))
+                warnings.warn(
+                    f"{name} is already defined in {mod}; "
+                    "overwriting the existing test definition. "
+                    "If you want to run the same test multiple times, "
+                    "add a loop option to the test and do so explicitly.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
 
             self.log.debug(f"Adding generated test {name!r} to module {mod.__name__!r}")
             setattr(mod, name, _create_test(self.test_function, name, doc, mod,
