@@ -205,6 +205,7 @@ async def test_recursive_combine(_):
     """ Tests pass a `Combine` trigger directly to another `Combine` trigger. """
 
     done = set()
+
     async def waiter(N):
         await Timer(N, 'ns')
         done.add(N)
