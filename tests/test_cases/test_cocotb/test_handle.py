@@ -51,6 +51,7 @@ async def test_string_handle_takes_bytes(dut):
     assert val == b"bytes"
 
 
+# GHDL fails to discover string input properly (gh-2584)
 @cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) or
              cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"))
 async def test_string_ansi_color(dut):
@@ -287,7 +288,9 @@ async def test_integer_underflow(dut):
     await int_overflow_test(dut.stream_in_int, 32, "unfl", limits)
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+# GHDL cannot find real signals (gh-2589)
+# iverilog cannot find real signals (gh-2590)
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_real_assign_double(dut):
     """
     Assign a random floating point value, read it back from the DUT and check
@@ -306,7 +309,9 @@ async def test_real_assign_double(dut):
     assert got == val, "Values didn't match!"
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else OverflowError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+# GHDL cannot find real signals (gh-2589)
+# iverilog cannot find real signals (gh-2590)
+@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_real_assign_int(dut):
     """Assign a random integer value to ensure we can write types convertible to
     int, read it back from the DUT and check it matches what we assigned.
