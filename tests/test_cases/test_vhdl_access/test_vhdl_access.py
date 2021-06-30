@@ -30,7 +30,8 @@ from cocotb.handle import HierarchyObject, ModifiableObject, IntegerObject, Cons
 from cocotb.result import TestFailure
 
 
-@cocotb.test()
+# GHDL discovers enum as `vpiNet` (gh-2600)
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl"))
 async def check_enum_object(dut):
     """
     Enumerations currently behave as normal signals
@@ -41,7 +42,8 @@ async def check_enum_object(dut):
         raise TestFailure("Expected the FSM enum to be an EnumObject")
 
 
-@cocotb.test()
+# GHDL unable to access signals in generate loops (gh-2594)
+@cocotb.test(expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def check_objects(dut):
     """
     Check the types of objects that are returned

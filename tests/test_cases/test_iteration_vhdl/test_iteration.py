@@ -86,7 +86,8 @@ async def recursive_discovery(dut):
         raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
 
 
-@cocotb.test()
+# GHDL unable to access signals in generate loops (gh-2594)
+@cocotb.test(expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def discovery_all(dut):
     """Discover everything on top-level."""
     dut._log.info("Iterating over top-level to discover objects")
@@ -112,7 +113,15 @@ async def dual_iteration(dut):
     await Combine(loop_one, loop_two)
 
 
-@cocotb.test(expect_fail=(cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith(("2019.10", "2020."))) or cocotb.SIM_NAME.lower().startswith("aldec"))
+# GHDL unable to access record types (gh-2591)
+@cocotb.test(
+    expect_fail=(
+        cocotb.SIM_NAME.lower().startswith("riviera")
+        and cocotb.SIM_VERSION.startswith(("2019.10", "2020."))
+    )
+    or cocotb.SIM_NAME.lower().startswith("aldec"),
+    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
+)
 async def test_n_dimension_array(dut):
     """Test iteration over multi-dimensional array."""
     tlog = logging.getLogger("cocotb.test")

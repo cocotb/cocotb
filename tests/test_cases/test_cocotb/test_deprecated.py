@@ -40,8 +40,8 @@ async def test_returnvalue_deprecated(dut):
     assert "return statement instead" in str(warns[0].message)
 
 
-# strings are not supported on Icarus
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+# strings are not supported on Icarus (gh-2585) or GHDL (gh-2584)
+@cocotb.test(expect_error=AssertionError if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) else ())
 async def test_unicode_handle_assignment_deprecated(dut):
     with assert_deprecated() as warns:
         dut.stream_in_string <= "Bad idea"
@@ -179,7 +179,8 @@ async def test_assigning_setattr_syntax_deprecated(dut):
 icarus_under_11 = cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))
 
 
-@cocotb.test(expect_error=Exception if icarus_under_11 else ())
+# indexing packed arrays is not supported in iverilog < 11 (gh-2586) or GHDL (gh-2587)
+@cocotb.test(expect_error=IndexError if icarus_under_11 or cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_assigning_setitem_syntax_deprecated(dut):
     with assert_deprecated():
         dut.stream_in_data[0] = 1

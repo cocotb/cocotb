@@ -12,6 +12,8 @@ from cocotb.triggers import Timer
 from common import assert_raises
 from cocotb.handle import _Limits
 
+SIM_NAME = cocotb.SIM_NAME.lower()
+
 
 @cocotb.test()
 async def test_lessthan_raises_error(dut):
@@ -41,8 +43,15 @@ async def test_bad_attr(dut):
         assert False, "Expected AttributeError"
 
 
-# strings are not supported on Icarus
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith("icarus"))
+# iverilog fails to discover string inputs (gh-2585)
+# GHDL fails to discover string input properly (gh-2584)
+@cocotb.test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith("icarus")
+    else TypeError
+    if SIM_NAME.startswith("ghdl")
+    else ()
+)
 async def test_string_handle_takes_bytes(dut):
     dut.stream_in_string.value = b"bytes"
     await cocotb.triggers.Timer(10, 'ns')
@@ -51,8 +60,16 @@ async def test_string_handle_takes_bytes(dut):
     assert val == b"bytes"
 
 
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) or
-             cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"))
+# iverilog fails to discover string inputs (gh-2585)
+# GHDL fails to discover string input properly (gh-2584)
+@cocotb.test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith("icarus")
+    else TypeError
+    if SIM_NAME.startswith("ghdl")
+    else (),
+    skip=cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera")
+)
 async def test_string_ansi_color(dut):
     """Check how different simulators treat ANSI-colored strings, see gh-2328"""
     teststr = "\x1b[33myellow\x1b[49m\x1b[39m"
@@ -62,12 +79,12 @@ async def test_string_ansi_color(dut):
     await cocotb.triggers.Timer(10, 'ns')
     val = dut.stream_in_string.value
     assert isinstance(val, bytes)
-    if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith("riviera"):
+    if cocotb.LANGUAGE in ["vhdl"] and SIM_NAME.startswith("riviera"):
         # Riviera-PRO doesn't return anything with VHDL:
         assert val == b""
         # ...and the value shows up differently in the HDL:
         assert dut.stream_in_string_asciival_sum.value == sum(ord(char) for char in teststr.replace('\x1b', '\0'))
-    elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")):
+    elif cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith(("ncsim", "xmsim")):
         # Xcelium with VPI strips the escape char when reading:
         assert val == bytes(teststr.replace('\x1b', '').encode("ascii"))
         # the HDL gets the correct value though:
@@ -109,7 +126,7 @@ async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
         else:
             got = signal.value
 
-        assert got == val, f"Expected value {val}, got value {got}!"
+        assert got == val
 
 
 def gen_int_test_values(n_bits, limits=_Limits.VECTOR_NBIT):
@@ -254,40 +271,48 @@ async def test_int_128bit_underflow(dut):
     await int_overflow_test(dut.stream_in_data_dqword, len(dut.stream_in_data_dqword), "unfl")
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
+@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
 async def test_integer(dut):
     """Test access to integers."""
-    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
-        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in riviera, not IntegerObject
+    if cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera") or SIM_NAME.startswith("ghdl"):
+        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
     await int_values_test(dut.stream_in_int, 32, limits)
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
+@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
 async def test_integer_overflow(dut):
     """Test integer overflow."""
-    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
-        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in riviera, not IntegerObject
+    if cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera") or SIM_NAME.startswith("ghdl"):
+        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
     await int_overflow_test(dut.stream_in_int, 32, "ovfl", limits)
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
+@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith("icarus") else ())
 async def test_integer_underflow(dut):
     """Test integer underflow."""
-    if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
-        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in riviera, not IntegerObject
+    if cocotb.LANGUAGE in ["verilog"] and SIM_NAME.startswith("riviera") or SIM_NAME.startswith("ghdl"):
+        limits = _Limits.VECTOR_NBIT  # stream_in_int is ModifiableObject in Riviera and GHDL, not IntegerObject
     else:
         limits = _Limits.SIGNED_NBIT
 
     await int_overflow_test(dut.stream_in_int, 32, "unfl", limits)
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
+# GHDL unable to find real signals (gh-2589)
+# iverilog unable to find real signals (gh-2590)
+@cocotb.test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith("icarus")
+    else AttributeError
+    if SIM_NAME.startswith("ghdl")
+    else ()
+)
 async def test_real_assign_double(dut):
     """
     Assign a random floating point value, read it back from the DUT and check
@@ -306,7 +331,15 @@ async def test_real_assign_double(dut):
     assert got == val, "Values didn't match!"
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
+# GHDL unable to find real signals (gh-2589)
+# iverilog unable to find real signals (gh-2590)
+@cocotb.test(
+    expect_error=AttributeError
+    if SIM_NAME.startswith("icarus")
+    else AttributeError
+    if SIM_NAME.startswith("ghdl")
+    else ()
+)
 async def test_real_assign_int(dut):
     """Assign a random integer value to ensure we can write types convertible to
     int, read it back from the DUT and check it matches what we assigned.

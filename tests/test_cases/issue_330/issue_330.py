@@ -3,8 +3,12 @@
 import cocotb
 import logging
 
+SIM_NAME = cocotb.SIM_NAME.lower()
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
+
+# GHDL unable to access record signals (gh-2591)
+# Icarus doesn't support structs (gh-2592)
+@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith(("icarus", "ghdl")) else ())
 async def issue_330_direct(dut):
     """
     Access a structure
@@ -17,7 +21,9 @@ async def issue_330_direct(dut):
     tlog.info(f"Value of inout_if => a_in = {structure.a_in.value} ; b_out = {structure.b_out.value}")
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME in ["Icarus Verilog"] else ())
+# GHDL unable to access record signals (gh-2591)
+# Icarus doesn't support structs (gh-2592)
+@cocotb.test(expect_error=AttributeError if SIM_NAME.startswith(("icarus", "ghdl")) else ())
 async def issue_330_iteration(dut):
     """
     Access a structure via issue_330_iteration

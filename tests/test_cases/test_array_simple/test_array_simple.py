@@ -20,7 +20,8 @@ def _check_value(tlog, hdl, expected):
         tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
 
 
-@cocotb.test()
+# GHDL unable to put values on nested array types (gh-2588)
+@cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_1dim_array_handles(dut):
     """Test getting and setting array values using the handle of the full array."""
 
@@ -40,7 +41,13 @@ async def test_1dim_array_handles(dut):
     _check_value(tlog, dut.array_0_to_3    , [0x30, 0x20, 0x10, 0x00])
 
 
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
+# GHDL unable to put values on nested array types (gh-2588)
+# iverilog flattens multi-dimensional unpacked arrays (gh-2595)
+@cocotb.test(
+    expect_error=Exception
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
+    else ()
+)
 async def test_ndim_array_handles(dut):
     """Test getting and setting multi-dimensional array values using the handle of the full array."""
 
@@ -57,7 +64,8 @@ async def test_ndim_array_handles(dut):
     _check_value(tlog, dut.array_2d, [[0xF0, 0xE0, 0xD0, 0xC0], [0xB0, 0xA0, 0x90, 0x80]])
 
 
-@cocotb.test()
+# GHDL unable to put values on nested array types (gh-2588)
+@cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_1dim_array_indexes(dut):
     """Test getting and setting values of array indexes."""
 
@@ -97,7 +105,13 @@ async def test_1dim_array_indexes(dut):
     _check_value(tlog, dut.array_0_to_3[3]    , 0x42)
 
 
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
+# GHDL unable to put values on nested array types (gh-2588)
+# iverilog flattens multi-dimensional unpacked arrays (gh-2595)
+@cocotb.test(
+    expect_error=Exception
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
+    else ()
+)
 async def test_ndim_array_indexes(dut):
     """Test getting and setting values of multi-dimensional array indexes."""
 
@@ -128,6 +142,8 @@ async def test_ndim_array_indexes(dut):
     _check_value(tlog, dut.array_2d[1][28], 0xEF)
 
 
+# GHDL unable to access record signals (gh-2591)
+# Icarus doesn't support structs (gh-2592)
 @cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) else ())
 async def test_struct(dut):
     """Test setting and getting values of structs."""

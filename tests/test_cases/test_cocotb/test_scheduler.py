@@ -303,7 +303,13 @@ async def test_last_scheduled_write_wins(dut):
 
     assert dut.stream_in_data.value.integer == 2
 
-    await Timer(1, "ns")
+
+# GHDL unable to put values on nested array types (gh-2588)
+@cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+async def test_last_scheduled_write_wins_array(dut):
+    """
+    Test that the last scheduled write for an *arrayed* signal handle is the value that is written.
+    """
     dut.array_7_downto_4 <= [1, 2, 3, 4]
     dut.array_7_downto_4[7] <= 10
 

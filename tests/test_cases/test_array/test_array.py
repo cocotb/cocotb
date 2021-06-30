@@ -10,6 +10,8 @@ from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
 from cocotb.handle import HierarchyObject, HierarchyArrayObject, ModifiableObject, NonHierarchyIndexableObject, ConstantObject
 
+SIM_NAME = cocotb.SIM_NAME.lower()
+
 
 def _check_type(tlog, hdl, expected):
     assert isinstance(hdl, expected), f">{hdl!r} ({hdl._type})< should be >{expected}<"
@@ -42,7 +44,8 @@ def _check_value(tlog, hdl, expected):
 
 
 # NOTE: simulator-specific handling is done in this test itself, not via expect_error in the decorator
-@cocotb.test()
+# GHDL unable to access std_logic_vector generics (gh-2593) (hard crash, so skip)
+@cocotb.test(skip=SIM_NAME.startswith("ghdl"))
 async def test_read_write(dut):
     """Test handle inheritance"""
     tlog = logging.getLogger("cocotb.test")
@@ -196,7 +199,8 @@ async def test_read_write(dut):
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)
 
 
-@cocotb.test()
+# GHDL unable to access signals in generate loops (gh-2594)
+@cocotb.test(expect_error=IndexError if SIM_NAME.startswith("ghdl") else ())
 async def test_gen_loop(dut):
     """Test accessing Generate Loops"""
     tlog = logging.getLogger("cocotb.test")
@@ -336,6 +340,8 @@ async def test_discover_all(dut):
 
     if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith("riviera"):
         pass_total = 571
+    elif cocotb.SIM_NAME.lower().startswith("ghdl"):
+        pass_total = 56
     elif cocotb.LANGUAGE in ["vhdl"]:
         pass_total = 856
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
@@ -372,7 +378,10 @@ async def test_discover_all(dut):
         raise TestFailure(f"Expected {pass_total} objects but found {total}")
 
 
-@cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera")))
+# GHDL unable to access std_logic_vector generics (gh-2593)
+@cocotb.test(
+    skip=(cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera")),
+    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else ())
 async def test_direct_constant_indexing(dut):
     """Test directly accessing constant/parameter data in arrays, i.e. not iterating"""
 
@@ -402,7 +411,8 @@ async def test_direct_constant_indexing(dut):
     _check_type(tlog, dut.const_cmplx[1].b[1], ConstantObject)
 
 
-@cocotb.test()
+# GHDL unable to index packed arrays (gh-2587)
+@cocotb.test(expect_error=IndexError if SIM_NAME.startswith("ghdl") else ())
 async def test_direct_signal_indexing(dut):
     """Test directly accessing signal/net data in arrays, i.e. not iterating"""
 

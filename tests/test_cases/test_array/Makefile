@@ -29,14 +29,14 @@
 
 ifeq ($(SIM),)
 all:
-	@echo "Skipping test_array since icarus doesn't support indexing"
+	@echo "Skipping test_array since icarus doesn't support structs"
 
 clean::
 # nothing to clean, just define target in this branch
 
 else ifeq ($(shell echo $(SIM) | tr A-Z a-z),icarus)
 all:
-	@echo "Skipping test_array since icarus doesn't support indexing"
+	@echo "Skipping test_array since icarus doesn't support structs"
 
 clean::
 # nothing to clean, just define target in this branch

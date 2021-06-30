@@ -27,6 +27,7 @@
 
 import cocotb
 import logging
+import pytest
 from cocotb.binary import BinaryValue
 from cocotb.triggers import Timer
 from cocotb.result import TestError, TestFailure
@@ -34,7 +35,9 @@ from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, String
 from cocotb._sim_versions import IcarusVersion
 
 
-@cocotb.test()
+# GHDL unable to access signals in generate loops (gh-2594)
+@cocotb.test(
+    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def pseudo_region_access(dut):
     """Test that pseudo-regions are accessible before iteration"""
 
@@ -69,10 +72,11 @@ async def discover_module_values(dut):
         raise TestFailure("Expected to discover things in the DUT")
 
 
-@cocotb.test(expect_error=AttributeError)
+@cocotb.test()
 async def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
-    fake_signal = dut.fake_signal
+    with pytest.raises(AttributeError):
+        fake_signal = dut.fake_signal
 
 
 @cocotb.test()
@@ -166,8 +170,19 @@ async def access_single_bit_erroneous(dut):
     dut.stream_in_data[bit] <= 1
 
 
-@cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus", "chronologic simulation vcs")) else (),
-             expect_fail=cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.LANGUAGE in ["verilog"])
+# Riviera discovers integers as nets (gh-2597)
+# GHDL discovers integers as nets (gh-2596)
+# Icarus does not support integer signals (gh-2598)
+@cocotb.test(
+    expect_error=AttributeError
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "chronologic simulation vcs"))
+    else (),
+    expect_fail=(
+        cocotb.SIM_NAME.lower().startswith("riviera")
+        and cocotb.LANGUAGE in ["verilog"]
+        or cocotb.SIM_NAME.lower().startswith("ghdl")
+    ),
+)
 async def access_integer(dut):
     """Integer should show as an IntegerObject"""
     bitfail = False
@@ -210,7 +225,10 @@ async def access_constant_integer(dut):
         raise TestFailure("EXAMPLE_WIDTH was not 7")
 
 
-@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+# GHDL inexplicably crashes, so we will skip this test for now
+# likely has to do with overall poor support of string over the VPI
+@cocotb.test(
+    skip=cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("ghdl"))
 async def access_string_vhdl(dut):
     """Access to a string, both constant and signal."""
     tlog = logging.getLogger("cocotb.test")
@@ -412,7 +430,10 @@ async def access_gate(dut):
         raise TestFailure("Gate should be HierarchyObject")
 
 
-@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
+# GHDL unable to access record types (gh-2591)
+@cocotb.test(
+    skip=cocotb.LANGUAGE in ["verilog"],
+    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def custom_type(dut):
     """
     Test iteration over a custom type

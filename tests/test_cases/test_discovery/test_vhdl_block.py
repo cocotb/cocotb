@@ -26,17 +26,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import cocotb
-from cocotb.result import TestFailure
 
 
-@cocotb.test()
+# GHDL cannot find signal in "block" statement, may be related to (gh-2594)
+@cocotb.test(
+    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def block_iter(dut):
     """Access a VHDL block statement"""
 
-    try:
-        dut._log.info("Block: {} ({})".format(dut.isample_module1.SAMPLE_BLOCK._name,
-                                              type(dut.isample_module1.SAMPLE_BLOCK)))
-        dut._log.info("Signal inside Block: {} ({})".format(dut.isample_module1.SAMPLE_BLOCK.clk_inv._name,
-                                                            type(dut.isample_module1.SAMPLE_BLOCK.clk_inv)))
-    except AttributeError:
-        raise TestFailure("Could not traverse into vhpiBlockStmtK")
+    dut._log.info("Block: {} ({})".format(dut.isample_module1.SAMPLE_BLOCK._name,
+                                          type(dut.isample_module1.SAMPLE_BLOCK)))
+    dut._log.info("Signal inside Block: {} ({})".format(dut.isample_module1.SAMPLE_BLOCK.clk_inv._name,
+                                                        type(dut.isample_module1.SAMPLE_BLOCK.clk_inv)))
