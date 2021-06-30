@@ -9,7 +9,6 @@ from typing import Dict, List, Any
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
-from cocotb.regression import TestFactory
 from cocotb.triggers import RisingEdge
 from cocotb.queue import Queue
 from cocotb.handle import SimHandleBase
