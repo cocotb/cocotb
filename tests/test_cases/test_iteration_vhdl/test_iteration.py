@@ -86,7 +86,7 @@ async def recursive_discovery(dut):
         raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
 
 
-# GHDL cannot access into generate loop (gh-2594)
+# GHDL unable to access signals in generate loops (gh-2594)
 @cocotb.test(expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def discovery_all(dut):
     """Discover everything on top-level."""
@@ -113,7 +113,7 @@ async def dual_iteration(dut):
     await Combine(loop_one, loop_two)
 
 
-# GHDL cannot access record types (gh-2591)
+# GHDL unable to access record types (gh-2591)
 @cocotb.test(
     expect_fail=(
         cocotb.SIM_NAME.lower().startswith("riviera")

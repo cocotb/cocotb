@@ -42,7 +42,7 @@ async def check_enum_object(dut):
         raise TestFailure("Expected the FSM enum to be an EnumObject")
 
 
-# GHDL cannot access generate loops (gh-2594)
+# GHDL unable to access signals in generate loops (gh-2594)
 @cocotb.test(expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def check_objects(dut):
     """

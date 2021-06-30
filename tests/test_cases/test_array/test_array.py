@@ -44,7 +44,7 @@ def _check_value(tlog, hdl, expected):
 
 
 # NOTE: simulator-specific handling is done in this test itself, not via expect_error in the decorator
-# GHDL cannot access std_logic_vector generics (gh-2593) (hard crash, so skip)
+# GHDL unable to access std_logic_vector generics (gh-2593) (hard crash, so skip)
 @cocotb.test(skip=SIM_NAME.startswith("ghdl"))
 async def test_read_write(dut):
     """Test handle inheritance"""

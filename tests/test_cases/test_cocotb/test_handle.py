@@ -304,8 +304,8 @@ async def test_integer_underflow(dut):
     await int_overflow_test(dut.stream_in_int, 32, "unfl", limits)
 
 
-# GHDL cannot find real signals (gh-2589)
-# iverilog cannot find real signals (gh-2590)
+# GHDL unable to find real signals (gh-2589)
+# iverilog unable to find real signals (gh-2590)
 @cocotb.test(
     expect_error=AttributeError
     if SIM_NAME.startswith("icarus")
@@ -331,8 +331,8 @@ async def test_real_assign_double(dut):
     assert got == val, "Values didn't match!"
 
 
-# GHDL cannot find real signals (gh-2589)
-# iverilog cannot find real signals (gh-2590)
+# GHDL unable to find real signals (gh-2589)
+# iverilog unable to find real signals (gh-2590)
 @cocotb.test(
     expect_error=AttributeError
     if SIM_NAME.startswith("icarus")

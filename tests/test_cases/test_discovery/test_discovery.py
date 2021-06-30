@@ -72,6 +72,7 @@ async def discover_module_values(dut):
         raise TestFailure("Expected to discover things in the DUT")
 
 
+@cocotb.test()
 async def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
     with pytest.raises(AttributeError):
@@ -429,7 +430,7 @@ async def access_gate(dut):
         raise TestFailure("Gate should be HierarchyObject")
 
 
-# GHDL doesn't support accessing record types (gh-2591)
+# GHDL unable to access record types (gh-2591)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
     expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())

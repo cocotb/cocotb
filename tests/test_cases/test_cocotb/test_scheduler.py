@@ -304,7 +304,7 @@ async def test_last_scheduled_write_wins(dut):
     assert dut.stream_in_data.value.integer == 2
 
 
-# GHDL cannot put values on nested array types (gh-2588)
+# GHDL unable to put values on nested array types (gh-2588)
 @cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_last_scheduled_write_wins_array(dut):
     """
