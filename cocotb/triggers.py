@@ -960,9 +960,9 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
         shielded = True
     timeout_timer = cocotb.triggers.Timer(timeout_time, timeout_unit)
     res = await First(timeout_timer, trigger)
-    if isinstance(res, cocotb.decorators.RunningTask) and not shielded:
-        trigger.kill()
     if res is timeout_timer:
+        if not shielded:
+            trigger.kill()
         raise cocotb.result.SimTimeoutError
     else:
         return res
