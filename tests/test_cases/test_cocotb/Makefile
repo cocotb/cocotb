@@ -22,3 +22,7 @@ MODULE := "\
 	test_pytest,\
 	test_queues,\
 	"
+
+ifeq ($(SIM),questa)
+	SIM_ARGS := "-t ps"
+endif

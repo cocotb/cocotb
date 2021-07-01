@@ -113,7 +113,12 @@ async def test_in_vect_packed_packed_packed(dut):
         raise TestFailure("Failed to readback dut.out_vect_packed_packed_packed")
 
 
-@cocotb.test()
+# Questa unable to access elements of a logic array if the last dimension is unpacked (gh-2605)
+@cocotb.test(
+    expect_error=IndexError
+    if cocotb.LANGUAGE == "verilog" and cocotb.SIM_NAME.lower().startswith("modelsim")
+    else ()
+)
 async def test_in_vect_packed_packed_unpacked(dut):
     await Timer(1, "ns")
     print("Setting: dut.in_vect_packed_packed_unpacked type %s" % type(dut.in_vect_packed_packed_unpacked))
@@ -157,7 +162,12 @@ async def test_in_arr_packed_packed(dut):
         raise TestFailure("Failed to readback dut.out_arr_packed_packed")
 
 
-@cocotb.test()
+# Questa unable to access elements of a logic array if the last dimension is unpacked (gh-2605)
+@cocotb.test(
+    expect_error=IndexError
+    if cocotb.LANGUAGE == "verilog" and cocotb.SIM_NAME.lower().startswith("modelsim")
+    else ()
+)
 async def test_in_arr_packed_unpacked(dut):
     await Timer(1, "ns")
     print("Setting: dut.in_arr_packed_unpacked type %s" % type(dut.in_arr_packed_unpacked))
@@ -190,7 +200,12 @@ async def test_in_2d_arr_packed(dut):
         raise TestFailure("Failed to readback dut.out_2d_arr_packed")
 
 
-@cocotb.test()
+# Questa unable to access elements of a logic array if the last dimension is unpacked (gh-2605)
+@cocotb.test(
+    expect_error=IndexError
+    if cocotb.LANGUAGE == "verilog" and cocotb.SIM_NAME.lower().startswith("modelsim")
+    else ()
+)
 async def test_in_2d_arr_unpacked(dut):
     await Timer(1, "ns")
     print("Setting: dut.in_2d_arr_unpacked type %s" % type(dut.in_2d_arr_unpacked))
