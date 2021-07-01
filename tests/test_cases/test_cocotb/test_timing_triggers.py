@@ -110,7 +110,7 @@ async def do_test_afterdelay_in_readonly(dut, delay):
     exited = True
 
 
-# Riviera and Questa (in verilog) correctly fail to register ReadWrite after ReadOnly
+# Riviera and Questa (in Verilog) correctly fail to register ReadWrite after ReadOnly
 # Riviera and Questa (in VHDL) incorrectly allow registering ReadWrite after ReadOnly
 @cocotb.test(
     expect_error=TriggerException
