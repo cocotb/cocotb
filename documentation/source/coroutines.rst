@@ -157,7 +157,7 @@ Generator-based coroutines
 .. note:: This style is no longer recommended and support may someday be removed.
 
 Prior to Python 3.5, and the introduction of :keyword:`async` and :keyword:`await`, coroutines were implemented as wrappers around generators.
-Coroutine functions would be decorated with :class:`~cocotb.decorators.coroutine` and would use :keyword:`yield` to block on other coroutines or triggers.
+Coroutine functions would be decorated with :class:`~cocotb.coroutine` and would use :keyword:`yield` to block on other coroutines or triggers.
 You may see existing code that uses this syntax for coroutines, but do not worry, it is compatible with :keyword:`async` coroutines.
 
 Any object that can be used in an :keyword:`await` statement can also be used in a :keyword:`yield` statement while in a generator-based coroutine;
@@ -223,7 +223,7 @@ You may also see syntax like ``yield [trigger_a, trigger_b, ...]``, which is syn
         yield [timeout, coro]
 
 Tests can also be generator-based coroutines.
-Tests are not required to be decorated with :class:`~cocotb.decorators.coroutine` as the :class:`~cocotb.decorators.test` decorator will handle this case automatically.
+Tests are not required to be decorated with :class:`~cocotb.coroutine` as the :class:`~cocotb.test` decorator will handle this case automatically.
 
 .. code-block:: python3
 
