@@ -1,11 +1,12 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Any, Iterator, overload, Optional
-from collections.abc import Sequence
+import typing
+
+T = typing.TypeVar("T")
 
 
-class Range(Sequence):
+class Range(typing.Sequence[int]):
     r"""
     Variant of :class:`range` with inclusive right bound.
 
@@ -66,38 +67,48 @@ class Range(Sequence):
 
     __slots__ = ("_range",)
 
-    @overload
-    def __init__(self, left: int, right: int):
+    @typing.overload
+    def __init__(self, left: int, direction: int) -> None:
         pass  # pragma: no cover
 
-    @overload
-    def __init__(self, left: int, direction: str, right: int):
+    @typing.overload
+    def __init__(self, left: int, direction: str, right: int) -> None:
         pass  # pragma: no cover
 
-    def __init__(self, left, direction=None, right=None):
-        if direction is not None and right is None:
-            right, direction = direction, None
-        if direction is None:
-            # direction is 'to' if left == right
-            step = 1 if left <= right else -1
+    @typing.overload
+    def __init__(self, left: int, *, right: int) -> None:
+        pass  # pragma: no cover
+
+    def __init__(
+        self,
+        left: int,
+        direction: typing.Union[int, str, None] = None,
+        right: typing.Union[int, None] = None,
+    ) -> None:
+        start = left
+        stop: int
+        step: int
+        if isinstance(direction, int) and right is None:
+            step = _guess_step(left, direction)
+            stop = direction + step
+        elif direction is None and isinstance(right, int):
+            step = _guess_step(left, right)
+            stop = right + step
+        elif isinstance(direction, str) and isinstance(right, int):
+            step = _direction_to_step(direction)
+            stop = right + step
         else:
-            direction = direction.lower()
-            if direction == "to":
-                step = 1
-            elif direction == "downto":
-                step = -1
-            else:
-                raise ValueError("direction must be 'to' or 'downto'")
-        self._range = range(left, right + step, step)
+            raise TypeError("invalid arguments")
+        self._range = range(start, stop, step)
 
     @classmethod
-    def from_range(cls, rng: range) -> "Range":
+    def from_range(cls, range: range) -> "Range":
         """Convert :class:`range` to :class:`Range`."""
-        if rng.step not in (1, -1):
-            raise ValueError("step must be '1' or '-1'")
-        obj = cls.__new__(cls)
-        obj._range = rng
-        return obj
+        return cls(
+            left=range.start,
+            direction=_step_to_direction(range.step),
+            right=(range.stop - range.step),
+        )
 
     def to_range(self) -> range:
         """Convert :class:`Range` to :class:`range`."""
@@ -111,7 +122,7 @@ class Range(Sequence):
     @property
     def direction(self) -> str:
         """``'to'`` if values are meant to be ascending, ``'downto'`` otherwise."""
-        return "to" if self._range.step == 1 else "downto"
+        return _step_to_direction(self._range.step)
 
     @property
     def right(self) -> int:
@@ -121,15 +132,15 @@ class Range(Sequence):
     def __len__(self) -> int:
         return len(self._range)
 
-    @overload
+    @typing.overload
     def __getitem__(self, item: int) -> int:
         pass  # pragma: no cover
 
-    @overload
+    @typing.overload
     def __getitem__(self, item: slice) -> "Range":
         pass  # pragma: no cover
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: typing.Union[int, slice]) -> typing.Union[int, "Range"]:
         if isinstance(item, int):
             return self._range[item]
         elif isinstance(item, slice):
@@ -138,37 +149,50 @@ class Range(Sequence):
             "indices must be integers or slices, not {}".format(type(item).__name__)
         )
 
-    def __contains__(self, item: Any) -> bool:
+    def __contains__(self, item: object) -> bool:
         return item in self._range
 
-    def __iter__(self) -> Iterator[int]:
+    def __iter__(self) -> typing.Iterator[int]:
         return iter(self._range)
 
-    def __reversed__(self) -> Iterator[int]:
+    def __reversed__(self) -> typing.Iterator[int]:
         return reversed(self._range)
 
-    def __eq__(self, other: Any) -> bool:
-        if type(self) is not type(other):
-            return NotImplemented
-        return self._range == other._range
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, type(self)):
+            return self._range == other._range
+        return NotImplemented  # must not be in a type narrowing context to be ignored properly
 
     def __hash__(self) -> int:
         return hash(self._range)
 
-    def index(
-        self, value: Any, start: Optional[int] = None, stop: Optional[int] = None
-    ) -> int:
-        if start is not None or stop is not None:
-            # bpo-43836
-            raise RuntimeError(
-                "'range.index' does not currently support the 'start' or 'stop' arguments"
-            )
-        return self._range.index(value)
-
-    def count(self, item: Any) -> int:
+    def count(self, item: int) -> int:
         return self._range.count(item)
 
     def __repr__(self) -> str:
         return "{}({!r}, {!r}, {!r})".format(
             type(self).__qualname__, self.left, self.direction, self.right
         )
+
+
+def _guess_step(left: int, right: int) -> int:
+    if left <= right:
+        return 1
+    return -1
+
+
+def _direction_to_step(direction: str) -> int:
+    direction = direction.lower()
+    if direction == "to":
+        return 1
+    elif direction == "downto":
+        return -1
+    raise ValueError("direction must be 'to' or 'downto'")
+
+
+def _step_to_direction(step: int) -> str:
+    if step == 1:
+        return "to"
+    elif step == -1:
+        return "downto"
+    raise ValueError("step must be 1 or -1")

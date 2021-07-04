@@ -65,6 +65,15 @@ def test_null_range():
     assert r.count(4) == 0
 
 
+def test_bad_arguments():
+    with pytest.raises(TypeError):
+        Range(1, "to")  # nowhere ...
+    with pytest.raises(TypeError):
+        Range("1", "to", 5)
+    with pytest.raises(ValueError):
+        Range(1, "BAD DIRECTION", 3)
+
+
 def test_equality():
     assert Range(7, 'downto', -7) == Range(7, 'downto', -7)
     assert Range(7, 'downto', -7) != Range(0, 'to', 8)
@@ -121,8 +130,3 @@ def test_bad_step():
 def test_bad_getitem():
     with pytest.raises(TypeError):
         Range(10, 'downto', 4)["8"]
-
-
-def test_range_index_bpo43836():
-    with pytest.raises(RuntimeError):
-        Range(10, 0).index(7, start=4, stop=10)
