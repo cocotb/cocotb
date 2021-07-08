@@ -261,7 +261,7 @@ The following variables are makefile variables, not environment variables.
 
 .. make:var:: VHDL_SOURCES_<lib>
 
-      A list of the VHDL source files to include in the VHDL library *lib* (currently for GHDL/ModelSim/Questa only).
+      A list of the VHDL source files to include in the VHDL library *lib* (currently for GHDL/ModelSim/Questa/Xcelium only).
 
 .. make:var:: COMPILE_ARGS
 

@@ -103,13 +103,21 @@ else
     $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
+# Returns arguments to compile single VHDL library
+define add_lib
+	-makelib $(SOURCES_VAR:VHDL_SOURCES_%=%) $($(SOURCES_VAR)) -endlib
+endef
+
+# Builds a list of arguments to support VHDL libraries specified in VHDL_SOURCES_*:
+LIBS := $(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)),$(add_lib))
+
 $(COCOTB_RESULTS_FILE): $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	set -o pipefail; \
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
 	$(CMD) -timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
-	$(EXTRA_ARGS) $(GPI_ARGS) $(INCDIRS) -access +rwc -createdebugdb $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
+	$(EXTRA_ARGS) $(GPI_ARGS) $(INCDIRS) -access +rwc -createdebugdb $(LIBS) $(MAKE_LIB) $(HDL_SOURCES) $(PLUSARGS) 2>&1 | tee $(SIM_BUILD)/sim.log
 
 	$(call check_for_results_file)
 
