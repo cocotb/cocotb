@@ -292,6 +292,16 @@ The following variables are makefile variables, not environment variables.
       to set the random seed value if :envvar:`RANDOM_SEED` is not set.
       If both ``+ntb_random_seed`` and ``+seed`` are set, ``+ntb_random_seed`` is used.
 
+.. make:var:: SIM_CMD_PREFIX
+
+      Prefix added to invocations of $(CMD)
+
+      Can be used to add environment variables or prefixed commands to invocations of $(CMD).
+      For example, ``SIM_CMD_PREFIX := LD_PRELOAD="foo.so bar.so"`` can be used to force a particular library to load.
+      Or, ``SIM_CMD_PREFIX := gdb --args`` to run the simulation with the GDB debugger.
+
+      .. versionadded:: 1.6.0
+
 .. make:var:: COCOTB_HDL_TIMEUNIT
 
       The default time unit that should be assumed for simulation when not specified by modules in the design.
