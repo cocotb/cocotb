@@ -91,8 +91,10 @@ Cocotb
 
 .. envvar:: COCOTB_REDUCED_LOG_FMT
 
-    If defined, log lines displayed in the terminal will be shorter. It will print only
-    time, message type (``INFO``, ``WARNING``, ``ERROR``, ...) and the log message itself.
+    Defaults internally to ``1``.
+    If the value is ``1``, log lines displayed in the terminal will be shorter.
+    It will print only time, message type (``INFO``, ``WARNING``, ``ERROR``, ...) and the log message itself.
+    Set to ``0`` if you wish to have the full format message.
 
 .. envvar:: COCOTB_ATTACH
 

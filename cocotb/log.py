@@ -40,10 +40,10 @@ from cocotb.utils import (
 
 import cocotb.ANSI as ANSI
 
-if "COCOTB_REDUCED_LOG_FMT" in os.environ:
-    _suppress = True
-else:
-    _suppress = False
+try:
+    _suppress = int(os.environ.get("COCOTB_REDUCED_LOG_FMT", "1"))
+except ValueError:
+    _suppress = 1
 
 # Column alignment
 _LEVEL_CHARS    = len("CRITICAL")  # noqa

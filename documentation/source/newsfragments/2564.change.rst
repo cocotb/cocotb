@@ -1,0 +1,1 @@
+Make :envvar:`COCOTB_REDUCED_LOG_FMT` enabled by default.
