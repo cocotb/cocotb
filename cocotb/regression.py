@@ -285,15 +285,18 @@ class RegressionManager:
         """
 
         if test.skip:
-            hilight_start = ANSI.COLOR_TEST if want_color_output() else ''
+            hilight_start = ANSI.COLOR_SKIPPED if want_color_output() else ''
             hilight_end = ANSI.COLOR_DEFAULT if want_color_output() else ''
             # Want this to stand out a little bit
-            self.log.info("{}Skipping test {}/{}:{} {}".format(
-                hilight_start,
-                self.count,
-                self.ntests,
-                hilight_end,
-                test.__qualname__))
+            self.log.info(
+                "{start}skipping{end} {name} ({i}/{total})".format(
+                    start=hilight_start,
+                    i=self.count,
+                    total=self.ntests,
+                    end=hilight_end,
+                    name=test.__qualname__
+                )
+            )
             self._record_result(test, None, 0, 0)
             return None
 
@@ -313,12 +316,6 @@ class RegressionManager:
         Given a test and the test's outcome, determine if the test met expectations and log pertinent information
         """
 
-        # Helper for logging result
-        def _result_was():
-            result_was = ("{} (result was {})".format
-                          (test.__qualname__, type(result).__qualname__))
-            return result_was
-
         # scoring outcomes
         result_pass = True
         sim_failed = False
@@ -330,51 +327,83 @@ class RegressionManager:
         else:
             result = TestSuccess()
 
-        if (isinstance(result, TestSuccess) and
-                not test.expect_fail and
-                not test.expect_error):
-            self.log.info("Test Passed: %s" % test.__qualname__)
+        if (
+            isinstance(result, TestSuccess)
+            and not test.expect_fail
+            and not test.expect_error
+        ):
+            self._log_test_passed(test, None, None)
 
-        elif (isinstance(result, AssertionError) and
-                test.expect_fail):
-            self.log.info("Test failed as expected: " + _result_was())
+        elif isinstance(result, AssertionError) and test.expect_fail:
+            self._log_test_passed(
+                test, result, "failed as expected"
+            )
 
-        elif (isinstance(result, TestSuccess) and
-              test.expect_error):
-            self.log.error("Test passed but we expected an error: " +
-                           _result_was())
+        elif isinstance(result, TestSuccess) and test.expect_error:
+            self._log_test_failed(
+                test, None, "passed but we expected an error"
+            )
             result_pass = False
 
         elif isinstance(result, TestSuccess):
-            self.log.error("Test passed but we expected a failure: " +
-                           _result_was())
+            self._log_test_failed(
+                test, None, "passed but we expected a failure"
+            )
             result_pass = False
 
         elif isinstance(result, SimFailure):
             if isinstance(result, test.expect_error):
-                self.log.info("Test errored as expected: " + _result_was())
+                self._log_test_passed(test, result, "errored as expected")
             else:
-                self.log.error("Test error has lead to simulator shutting us "
-                               "down", exc_info=result)
+                self.log.error("Test error has lead to simulator shutting us down")
                 result_pass = False
             # whether we expected it or not, the simulation has failed unrecoverably
             sim_failed = True
 
         elif test.expect_error:
             if isinstance(result, test.expect_error):
-                self.log.info("Test errored as expected: " + _result_was())
+                self._log_test_passed(test, result, "errored as expected")
             else:
-                self.log.error("Test errored with unexpected type: " + _result_was(), exc_info=result)
+                self._log_test_failed(test, result, "errored with unexpected type ")
                 result_pass = False
 
         else:
-            self.log.error("Test Failed: " + _result_was(), exc_info=result)
+            self._log_test_failed(test, result, None)
             result_pass = False
 
             if _pdb_on_exception:
                 pdb.post_mortem(result.__traceback__)
 
         return result_pass, sim_failed
+
+    def _log_test_passed(
+        self, test: Test, result: Optional[Exception] = None, msg: Optional[str] = None
+    ) -> None:
+        start_hilight = ANSI.COLOR_PASSED if want_color_output() else ""
+        stop_hilight = ANSI.COLOR_DEFAULT if want_color_output() else ""
+        if msg is None:
+            rest = ""
+        else:
+            rest = f": {msg}"
+        if result is None:
+            result_was = ""
+        else:
+            result_was = f" (result was {type(result).__qualname__})"
+        self.log.info(f"{test} {start_hilight}passed{stop_hilight}{rest}{result_was}")
+
+    def _log_test_failed(
+        self, test: Test, result: Optional[Exception] = None, msg: Optional[str] = None
+    ) -> None:
+        start_hilight = ANSI.COLOR_FAILED if want_color_output() else ""
+        stop_hilight = ANSI.COLOR_DEFAULT if want_color_output() else ""
+        if msg is None:
+            rest = ""
+        else:
+            rest = f": {msg}"
+        self.log.info(
+            f"{test} {start_hilight}failed{stop_hilight}{rest}",
+            exc_info=result
+        )
 
     def _record_result(
         self,
@@ -437,11 +466,15 @@ class RegressionManager:
             start = ANSI.COLOR_TEST
             end = ANSI.COLOR_DEFAULT
         # Want this to stand out a little bit
-        self.log.info("%sRunning test %d/%d:%s %s" %
-                      (start,
-                       self.count, self.ntests,
-                       end,
-                       self._test.__qualname__))
+        self.log.info(
+            "{start}running{end} {name} ({i}/{total})".format(
+                start=start,
+                i=self.count,
+                total=self.ntests,
+                end=end,
+                name=self._test.__qualname__,
+            )
+        )
 
         self._test_start_time = time.time()
         self._test_start_sim_time = get_sim_time('ns')
