@@ -92,6 +92,7 @@ class RegressionManager:
         self.start_time = time.time()
         self.test_results = []
         self.count = 0
+        self.passed = 0
         self.skipped = 0
         self.failures = 0
         self._tearing_down = False
@@ -230,8 +231,6 @@ class RegressionManager:
 
         # Write out final log messages
         self._log_test_summary()
-        self._log_sim_summary()
-        self.log.info("Shutting down...")
 
         # Generate output reports
         self.xunit.write()
@@ -437,6 +436,8 @@ class RegressionManager:
             if not test_pass:
                 self.xunit.add_failure()
                 self.failures += 1
+            else:
+                self.passed += 1
 
         self.test_results.append({
             'test': '.'.join([test.__module__, test.__qualname__]),
@@ -482,23 +483,25 @@ class RegressionManager:
 
     def _log_test_summary(self) -> None:
 
-        if self.failures:
-            self.log.error("Failed %d out of %d tests (%d skipped)" %
-                           (self.failures, self.count, self.skipped))
-        else:
-            self.log.info("Passed %d tests (%d skipped)" %
-                          (self.count, self.skipped))
+        real_time = time.time() - self.start_time
+        sim_time_ns = get_sim_time('ns')
+        ratio_time = self._safe_divide(sim_time_ns, real_time)
 
         if len(self.test_results) == 0:
             return
 
         TEST_FIELD = 'TEST'
-        RESULT_FIELD = 'PASS/FAIL'
-        SIM_FIELD = 'SIM TIME(NS)'
-        REAL_FIELD = 'REAL TIME(S)'
-        RATIO_FIELD = 'RATIO(NS/S)'
+        RESULT_FIELD = 'STATUS'
+        SIM_FIELD = 'SIM TIME (ns)'
+        REAL_FIELD = 'REAL TIME (s)'
+        RATIO_FIELD = 'RATIO (ns/s)'
+        TOTAL_NAME = f"TESTS={self.ntests} PASS={self.passed} FAIL={self.failures} SKIP={self.skipped}"
 
-        TEST_FIELD_LEN = max(len(TEST_FIELD), len(max([x['test'] for x in self.test_results], key=len)))
+        TEST_FIELD_LEN = max(
+            len(TEST_FIELD),
+            len(TOTAL_NAME),
+            len(max([x['test'] for x in self.test_results], key=len))
+        )
         RESULT_FIELD_LEN = len(RESULT_FIELD)
         SIM_FIELD_LEN = len(SIM_FIELD)
         REAL_FIELD_LEN = len(REAL_FIELD)
@@ -526,19 +529,28 @@ class RegressionManager:
         summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(**header_dict)
         summary += LINE_SEP
 
-        test_line = "{start}** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **{end}\n"
+        test_line = "** {a:<{a_len}}  {start}{b:^{b_len}}{end}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}}  **\n"
         for result in self.test_results:
             hilite = ''
             lolite = ''
 
             if result['pass'] is None:
-                pass_fail_str = "N/A"
+                ratio = "-.--"
+                pass_fail_str = "SKIP"
+                if want_color_output():
+                    hilite = ANSI.COLOR_SKIPPED
+                    lolite = ANSI.COLOR_DEFAULT
             elif result['pass']:
+                ratio = format(result['ratio'], "0.2f")
                 pass_fail_str = "PASS"
+                if want_color_output():
+                    hilite = ANSI.COLOR_PASSED
+                    lolite = ANSI.COLOR_DEFAULT
             else:
+                ratio = format(result['ratio'], "0.2f")
                 pass_fail_str = "FAIL"
                 if want_color_output():
-                    hilite = ANSI.COLOR_HILITE_SUMMARY
+                    hilite = ANSI.COLOR_FAILED
                     lolite = ANSI.COLOR_DEFAULT
 
             test_dict = dict(
@@ -546,7 +558,7 @@ class RegressionManager:
                 b=pass_fail_str,
                 c=result['sim'],
                 d=result['real'],
-                e=result['ratio'],
+                e=ratio,
                 a_len=TEST_FIELD_LEN,
                 b_len=RESULT_FIELD_LEN,
                 c_len=SIM_FIELD_LEN - 1,
@@ -559,22 +571,21 @@ class RegressionManager:
 
         summary += LINE_SEP
 
-        self.log.info(summary)
+        summary += test_line.format(
+            a=TOTAL_NAME,
+            b="",
+            c=sim_time_ns,
+            d=real_time,
+            e=format(ratio_time, "0.2f"),
+            a_len=TEST_FIELD_LEN,
+            b_len=RESULT_FIELD_LEN,
+            c_len=SIM_FIELD_LEN - 1,
+            d_len=REAL_FIELD_LEN - 1,
+            e_len=RATIO_FIELD_LEN - 1,
+            start="",
+            end="")
 
-    def _log_sim_summary(self) -> None:
-        real_time = time.time() - self.start_time
-        sim_time_ns = get_sim_time('ns')
-        ratio_time = self._safe_divide(sim_time_ns, real_time)
-
-        summary = ""
-
-        summary += "*************************************************************************************\n"
-        summary += f"**                                 ERRORS : {self.failures:<39}**\n"
-        summary += "*************************************************************************************\n"
-        summary += "**                               SIM TIME : {:<39}**\n".format(f'{sim_time_ns:.2f} NS')
-        summary += "**                              REAL TIME : {:<39}**\n".format(f'{real_time:.2f} S')
-        summary += "**                        SIM / REAL TIME : {:<39}**\n".format(f'{ratio_time:.2f} NS/S')
-        summary += "*************************************************************************************\n"
+        summary += LINE_SEP
 
         self.log.info(summary)
 
