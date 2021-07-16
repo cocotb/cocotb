@@ -529,22 +529,25 @@ class RegressionManager:
         summary += "** {a:<{a_len}}  {b:^{b_len}}  {c:>{c_len}}  {d:>{d_len}}  {e:>{e_len}} **\n".format(**header_dict)
         summary += LINE_SEP
 
-        test_line = "** {a:<{a_len}}  {start}{b:^{b_len}}{end}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}.2f}  **\n"
+        test_line = "** {a:<{a_len}}  {start}{b:^{b_len}}{end}  {c:>{c_len}.2f}   {d:>{d_len}.2f}   {e:>{e_len}}  **\n"
         for result in self.test_results:
             hilite = ''
             lolite = ''
 
             if result['pass'] is None:
+                ratio = "-.--"
                 pass_fail_str = "SKIP"
                 if want_color_output():
                     hilite = ANSI.COLOR_SKIPPED
                     lolite = ANSI.COLOR_DEFAULT
             elif result['pass']:
+                ratio = format(result['ratio'], "0.2f")
                 pass_fail_str = "PASS"
                 if want_color_output():
                     hilite = ANSI.COLOR_PASSED
                     lolite = ANSI.COLOR_DEFAULT
             else:
+                ratio = format(result['ratio'], "0.2f")
                 pass_fail_str = "FAIL"
                 if want_color_output():
                     hilite = ANSI.COLOR_FAILED
@@ -555,7 +558,7 @@ class RegressionManager:
                 b=pass_fail_str,
                 c=result['sim'],
                 d=result['real'],
-                e=result['ratio'],
+                e=ratio,
                 a_len=TEST_FIELD_LEN,
                 b_len=RESULT_FIELD_LEN,
                 c_len=SIM_FIELD_LEN - 1,
@@ -573,7 +576,7 @@ class RegressionManager:
             b="",
             c=sim_time_ns,
             d=real_time,
-            e=ratio_time,
+            e=format(ratio_time, "0.2f"),
             a_len=TEST_FIELD_LEN,
             b_len=RESULT_FIELD_LEN,
             c_len=SIM_FIELD_LEN - 1,
