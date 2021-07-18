@@ -35,6 +35,8 @@ __pycache__
 
 # VSCode project files
 .vscode/
+*.code-workspace
+
 
 # Emacs tmp files
 \#*\#
@@ -105,3 +107,4 @@ examples/*/tests/compile
 # Tachyon DA CVC
 tests/test_cases/*/verilog.log
 examples/*/tests/verilog.log
+

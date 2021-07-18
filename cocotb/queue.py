@@ -4,10 +4,16 @@
 from typing import Generic, TypeVar
 import collections
 import heapq
-from asyncio import QueueEmpty, QueueFull
+import asyncio.queues
 
 import cocotb
 from cocotb.triggers import Event, _pointer_str
+
+class QueueFull(asyncio.queues.QueueFull):
+    """Raised when the Queue.put_nowait() method is called on a full Queue."""
+
+class QueueEmpty(asyncio.queues.QueueEmpty):
+    """Raised when the Queue.get_nowait() or Queue.peek_nowait() method is called on a empty Queue."""
 
 T = TypeVar('T')
 
@@ -35,6 +41,9 @@ class Queue(Generic[T]):
     def _init(self, maxsize):
         self._queue = collections.deque()
 
+    def _peek(self):
+        return self._queue[0]
+        
     def _put(self, item):
         self._queue.append(item)
 
@@ -135,6 +144,28 @@ class Queue(Generic[T]):
         if self.empty():
             raise QueueEmpty()
         item = self._get()
+        self._wakeup_next(self._putters)
+        return item
+
+    async def peek(self) -> T:
+        """
+        Return a copy of the first item in the queue. If the queue is empty
+        wait until it is not.
+        """
+        while self.empty():
+            event = Event('{} get'.format(type(self).__name__))
+            self._getters.append((event, cocotb.scheduler._current_task))
+            await event.wait()
+        return self.peek_nowait()
+
+    def peek_nowait(self) -> T:
+        """
+        Return the first item in the queue. If the queue is empty
+        raise QueueEmpty()
+        """
+        if self.empty():
+            raise QueueEmpty()
+        item = self._peek()
         self._wakeup_next(self._putters)
         return item
 

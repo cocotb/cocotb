@@ -5,6 +5,7 @@
 Tests relating to cocotb.queue.Queue, cocotb.queue.LifoQueue, cocotb.queue.PriorityQueue
 """
 import cocotb
+from cocotb.clock import Clock
 from cocotb.queue import Queue, PriorityQueue, LifoQueue, QueueFull, QueueEmpty
 from cocotb.regression import TestFactory
 from cocotb.triggers import Combine
@@ -22,12 +23,18 @@ async def run_queue_nonblocking_test(dut, queue_type):
     assert q.empty()
     assert not q.full()
 
+    with pytest.raises(QueueEmpty):
+        xx = q.peek_nowait()
     # put one item
     q.put_nowait(0)
+
+    zero = q.peek_nowait()
+    assert zero == 0
 
     assert q.qsize() == 1
     assert not q.empty()
     assert not q.full()
+
 
     # fill queue
     if queue_type is PriorityQueue:
@@ -180,10 +187,13 @@ async def run_queue_blocking_test(dut, queue_type):
         lst.append(item)
 
     async def getter(lst, num):
+        item = await q.peek()
+        assert ref_q.peek_nowait() == item
         item = await q.get()
         assert ref_q.get_nowait() == item
         lst.append(num)
 
+    
     coro_list = []
     putter_list = []
     getter_list = []
@@ -256,3 +266,5 @@ async def test_str_and_repr(_):
     s = repr(q)
     assert "_getters" not in s
     assert str(q)[:-1] in s
+
+
