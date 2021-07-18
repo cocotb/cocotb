@@ -4,8 +4,8 @@
 from typing import Generic, TypeVar
 import collections
 import heapq
-
 import asyncio.queues
+
 import cocotb
 from cocotb.triggers import Event, _pointer_str
 
