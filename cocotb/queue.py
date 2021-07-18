@@ -9,11 +9,14 @@ import asyncio.queues
 import cocotb
 from cocotb.triggers import Event, _pointer_str
 
+
 class QueueFull(asyncio.queues.QueueFull):
     """Raised when the Queue.put_nowait() method is called on a full Queue."""
 
+
 class QueueEmpty(asyncio.queues.QueueEmpty):
     """Raised when the Queue.get_nowait() or Queue.peek_nowait() method is called on a empty Queue."""
+
 
 T = TypeVar('T')
 
