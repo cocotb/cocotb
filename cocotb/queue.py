@@ -15,7 +15,7 @@ class QueueFull(asyncio.queues.QueueFull):
 
 
 class QueueEmpty(asyncio.queues.QueueEmpty):
-    """Raised when the Queue.get_nowait() or Queue.peek_nowait() method is called on a empty Queue."""
+    """Raised when the Queue.get_nowait() method is called on a empty Queue."""
 
 
 T = TypeVar('T')
