@@ -1,23 +1,43 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Any, Optional, Dict
-from typing import Tuple  # noqa: F401
+import typing
 from functools import lru_cache
 
+LogicT = typing.TypeVar("LogicT", bound="Logic")
+LogicLiteralT = typing.Union[str, int, bool]
 
-class _StaticOnlyProp:
 
-    def __init__(self, fget):
-        self.fget = fget
+_0 = 0
+_1 = 1
+_X = 2
+_Z = 3
 
-    def __set_name__(self, cls, name):
-        self.__cls = cls
-
-    def __get__(self, instance, cls):
-        if cls is not self.__cls or instance is not None:
-            raise AttributeError
-        return self.fget()
+_literal_repr: typing.Dict[LogicLiteralT, int] = {
+    # 0 and weak 0
+    False: _0,
+    0: _0,
+    "0": _0,
+    "L": _0,
+    "l": _0,
+    # 1 and weak 1
+    True: _1,
+    1: _1,
+    "1": _1,
+    "H": _1,
+    "h": _1,
+    # unknown, unassigned, and weak unknown
+    "X": _X,
+    "x": _X,
+    "U": _X,
+    "u": _X,
+    "W": _X,
+    "w": _X,
+    "-": _X,
+    # high impedance
+    "Z": _Z,
+    "z": _Z,
+}
 
 
 class Logic:
@@ -69,7 +89,7 @@ class Logic:
 
     .. code-block:: python3
 
-        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> Tuple[Logic, Logic]:
+        >>> def full_adder(a: Logic, b: Logic, carry: Logic) -> typing.Tuple[Logic, Logic]:
         ...     res = a ^ b ^ carry
         ...     carry_out = (a & b) | (b & carry) | (a & carry)
         ...     return res, carry_out
@@ -84,69 +104,46 @@ class Logic:
         ValueError: if the value cannot be constructed into a :class:`Logic`.
     """
     __slots__ = ("_repr",)
+    _repr: int
 
-    __singleton_cache__: Dict[int, "Logic"] = {}
+    _default = _X
+    _valid = {_X, _0, _1, _Z}
 
-    _repr_map = {
-        # 0 and weak 0
-        False: 0,
-        0: 0,
-        "0": 0,
-        "L": 0,
-        "l": 0,
-        # 1 and weak 1
-        True: 1,
-        1: 1,
-        "1": 1,
-        "H": 1,
-        "h": 1,
-        # unknown, unassigned, and weak unknown
-        None: 2,
-        "X": 2,
-        "x": 2,
-        "U": 2,
-        "u": 2,
-        "W": 2,
-        "w": 2,
-        "-": 2,
-        # high impedance
-        "Z": 3,
-        "z": 3,
-    }
-
-    @_StaticOnlyProp
-    def _0():
-        return Logic("0")
-
-    @_StaticOnlyProp
-    def _1():
-        return Logic("1")
-
-    @_StaticOnlyProp
-    def X():
-        return Logic("X")
-
-    @_StaticOnlyProp
-    def Z():
-        return Logic("Z")
-
+    @classmethod
     @lru_cache(maxsize=None)
-    def __new__(cls, value: Optional[Any] = None) -> "Logic":
-        # convert to internal representation
-        try:
-            _repr = cls._repr_map[value]
-        except KeyError:
-            raise ValueError(
-                "{!r} is not convertible to a {}".format(value, cls.__qualname__)
-            ) from None
-        obj = cls.__singleton_cache__.get(_repr, None)
-        if obj is None:
-            obj = super().__new__(cls)
-            obj._repr = _repr
-            cls.__singleton_cache__[_repr] = obj
+    def _make(cls: typing.Type[LogicT], _repr: int) -> LogicT:
+        """enforce singleton"""
+        self = object.__new__(cls)
+        self._repr = _repr
+        return typing.cast(LogicT, self)
+
+    def __new__(
+        cls: typing.Type[LogicT],
+        value: typing.Union[None, LogicLiteralT, "Logic"] = None,
+    ) -> LogicT:
+        if isinstance(value, Logic):
+            # convert Logic
+            _repr = value._repr
+        elif value is None:
+            _repr = cls._default
+        else:
+            # convert literal
+            try:
+                _repr = _literal_repr[value]
+            except KeyError:
+                raise ValueError(
+                    "{!r} is not convertible to a {}".format(value, cls.__qualname__)
+                ) from None
+        if _repr not in cls._valid:
+            raise ValueError("{!r} is not a valid {}".format(value, cls.__qualname__))
+        obj = cls._make(_repr)
         return obj
 
-    def __and__(self, other: "Logic") -> "Logic":
+    if not typing.TYPE_CHECKING:  # pragma: no cover
+        # mypy currently does not support lru_cache on __new__
+        __new__ = lru_cache(maxsize=None)(__new__)
+
+    def __and__(self: LogicT, other: LogicT) -> LogicT:
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
@@ -158,10 +155,10 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rand__(self, other: "Logic") -> "Logic":
+    def __rand__(self: LogicT, other: LogicT) -> LogicT:
         return self & other
 
-    def __or__(self, other: "Logic") -> "Logic":
+    def __or__(self: LogicT, other: LogicT) -> LogicT:
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
@@ -173,10 +170,10 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __ror__(self, other: "Logic") -> "Logic":
+    def __ror__(self: LogicT, other: LogicT) -> LogicT:
         return self | other
 
-    def __xor__(self, other: "Logic") -> "Logic":
+    def __xor__(self: LogicT, other: LogicT) -> LogicT:
         if not isinstance(other, type(self)):
             return NotImplemented
         return type(self)(
@@ -188,13 +185,13 @@ class Logic:
             )[self._repr][other._repr]
         )
 
-    def __rxor__(self, other: "Logic") -> "Logic":
+    def __rxor__(self: LogicT, other: LogicT) -> LogicT:
         return self ^ other
 
-    def __invert__(self) -> "Logic":
+    def __invert__(self: LogicT) -> LogicT:
         return type(self)(("1", "0", "X", "X")[self._repr])
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
             return NotImplemented
         return self._repr == other._repr
@@ -209,13 +206,13 @@ class Logic:
         return ("0", "1", "X", "Z")[self._repr]
 
     def __bool__(self) -> bool:
-        if self._repr < 2:
+        if self._repr in {_0, _1}:
             return bool(self._repr)
         raise ValueError(f"Cannot convert {self!r} to bool")
 
     def __int__(self) -> int:
-        if self._repr < 2:
-            return self._repr
+        if self._repr in {_0, _1}:
+            return int(self._repr)
         raise ValueError(f"Cannot convert {self!r} to int")
 
 
@@ -290,36 +287,5 @@ class Bit(Logic):
     """
     __slots__ = ()
 
-    __singleton_cache__: Dict[int, "Bit"] = {}
-
-    _repr_map = {
-        # 0
-        None: 0,
-        False: 0,
-        0: 0,
-        "0": 0,
-        # 1
-        True: 1,
-        1: 1,
-        "1": 1,
-    }
-
-    @_StaticOnlyProp
-    def _0():
-        return Bit("0")
-
-    @_StaticOnlyProp
-    def _1():
-        return Bit("1")
-
-
-Logic._repr_map.update(
-    {
-        Logic("0"): 0,
-        Logic("1"): 1,
-        Logic("X"): 2,
-        Logic("Z"): 3,
-    }
-)
-
-Bit._repr_map.update({Bit("0"): 0, Bit("1"): 1})
+    _default = _0
+    _valid = {_0, _1}
