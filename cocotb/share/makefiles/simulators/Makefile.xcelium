@@ -103,16 +103,15 @@ else
     $(error "A valid value (verilog or vhdl) was not provided for TOPLEVEL_LANG=$(TOPLEVEL_LANG)")
 endif
 
-# Returns arguments to compile single VHDL library
-define add_lib
-	-makelib $(SOURCES_VAR:VHDL_SOURCES_%=%) $($(SOURCES_VAR)) -endlib
-endef
-
 # Builds a list of arguments to support VHDL libraries specified in VHDL_SOURCES_*:
-LIBS := $(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)),$(add_lib))
+LIBS := $(foreach LIB, $(VHDL_LIB_ORDER),-makelib $(LIB) $(VHDL_SOURCES_$(LIB)) -endlib)
 
 $(COCOTB_RESULTS_FILE): $(HDL_SOURCES) $(CUSTOM_COMPILE_DEPS) $(CUSTOM_SIM_DEPS) | $(SIM_BUILD)
 	-@rm -f $(COCOTB_RESULTS_FILE)
+
+	# Make sure all libs in SOURCES_VHDL_* are mentioned in VHDL_LIB_ORDER and vice versa
+	$(foreach LIB, $(VHDL_LIB_ORDER), $(check_vhdl_sources))
+	$(foreach SOURCES_VAR, $(filter VHDL_SOURCES_%, $(.VARIABLES)), $(check_lib_order))
 
 	set -o pipefail; \
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) GPI_EXTRA=$(GPI_EXTRA) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \

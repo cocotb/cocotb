@@ -265,6 +265,10 @@ The following variables are makefile variables, not environment variables.
 
       A list of the VHDL source files to include in the VHDL library *lib* (currently for GHDL/ModelSim/Questa/Xcelium only).
 
+.. make:var:: VHDL_LIB_ORDER
+
+      A space-separated list defining the order in which VHDL libraries should be compiled (needed for ModelSim/Questa/Xcelium, GHDL determines the order automatically).
+
 .. make:var:: COMPILE_ARGS
 
       Any arguments or flags to pass to the compile stage of the simulation.

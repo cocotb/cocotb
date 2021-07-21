@@ -150,6 +150,20 @@ endif
 
 export LIBPYTHON_LOC
 
+define check_vhdl_sources
+if [ "$(VHDL_SOURCES_$(LIB))" == "" ]; then \
+  >&2 echo "ERROR: VHDL_SOURCES_$(LIB) is empty or undefined, but '$(LIB)' is present in VHDL_LIB_ORDER."; \
+  exit 1; \
+fi;
+endef
+
+define check_lib_order
+  if [ "$(filter $(SOURCES_VAR:VHDL_SOURCES_%=%), $(VHDL_LIB_ORDER))" == "" ]; then \
+    >&2 echo "ERROR: $(SOURCES_VAR) defined, but library $(SOURCES_VAR:VHDL_SOURCES_%=%) not present in VHDL_LIB_ORDER."; \
+    exit 1; \
+  fi;
+endef
+
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)
 endif # COCOTB_MAKEFILE_INC_INCLUDED
