@@ -1,15 +1,19 @@
 # Copyright cocotb contributors
 # Licensed under the Revised BSD License, see LICENSE for details.
 # SPDX-License-Identifier: BSD-3-Clause
-from typing import Optional, Any, Iterable, Iterator, overload
-from collections.abc import Sequence
-from .range import Range
-from sys import maxsize
+import typing
+from itertools import chain
+
+from cocotb.types.range import Range
+
+T = typing.TypeVar("T")
+S = typing.TypeVar("S")
+Self = typing.TypeVar("Self", bound="Array[typing.Any]")
 
 
-class Array(Sequence):
+class Array(typing.Reversible[T], typing.Collection[T]):
     r"""
-    Fixed-size, arbitrarily-indexed, heterogeneous sequence type.
+    Fixed-size, arbitrarily-indexed, homogeneous collection type.
 
     Arrays are similar to, but different from Python :class:`list`\ s.
     An array can store values of any type or values of multiple types at a time, just like a :class:`list`.
@@ -25,9 +29,6 @@ class Array(Sequence):
         >>> Array("1234")  # the 0-based range `(0, len(value)-1)` is inferred
         Array(['1', '2', '3', '4'], Range(0, 'to', 3))
 
-        >>> Array(range=Range(0, "downto", -3))  # the initial values are `None`
-        Array([None, None, None, None], Range(0, 'downto', -3))
-
         >>> Array([1, True, None, "example"], Range(-2, 1))  # initial value and range lengths must be equal
         Array([1, True, None, 'example'], Range(-2, 'to', 1))
 
@@ -35,7 +36,7 @@ class Array(Sequence):
 
     .. code-block:: python3
 
-        >>> Array(range=Range(1, "to", 0))
+        >>> Array([], range=Range(1, "to", 0))
         Array([], Range(1, 'to', 0))
 
     Indexing and slicing is very similar to :class:`list`\ s, but it uses the indexing scheme specified.
@@ -128,30 +129,11 @@ class Array(Sequence):
         "_range",
     )
 
-    _value: Sequence
-    """
-    Private interface for subclasses to access the value as a :class:`~collections.abc.Sequence`
-
-    Subclasses that don't use a Sequence as their main representation should emulate this object,
-    or override *all* :class:`~cocotb.types.Array` methods *except*:
-        - :attr:`left`
-        - :attr:`direction`
-        - :attr:`right`
-        - :attr:`range`
-        - :attr:`__len__`
-        - :attr:`_translate_index`
-    """
-
-    def __init__(
-        self, value: Optional[Iterable[Any]] = None, range: Optional[Range] = None
-    ):
-        if value is not None and range is None:
-            self._value = list(value)
+    def __init__(self, value: typing.Iterable[T], range: typing.Optional[Range] = None):
+        self._value = list(value)
+        if range is None:
             self._range = Range(0, "to", len(self._value) - 1)
-        elif value is not None and range is not None:
-            if not isinstance(range, Range):
-                raise TypeError("range argument must be of type 'Range'")
-            self._value = list(value)
+        else:
             self._range = range
             if len(self._value) != len(self._range):
                 raise ValueError(
@@ -159,13 +141,6 @@ class Array(Sequence):
                         len(self._value), self._range
                     )
                 )
-        elif value is None and range is not None:
-            if not isinstance(range, Range):
-                raise TypeError("range argument must be of type 'Range'")
-            self._value = [None] * len(range)
-            self._range = range
-        else:
-            raise TypeError("must pass a value, range, or both")
 
     @property
     def left(self) -> int:
@@ -201,29 +176,31 @@ class Array(Sequence):
     def __len__(self) -> int:
         return len(self.range)
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self) -> typing.Iterator[T]:
         return iter(self._value)
 
-    def __reversed__(self) -> Iterator[Any]:
+    def __reversed__(self) -> typing.Iterator[T]:
         return reversed(self._value)
 
-    def __contains__(self, item: Any) -> bool:
+    def __contains__(self, item: object) -> bool:
         return item in self._value
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return self._value == other._value
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, type(self)):
+            return self._value == other._value
+        return NotImplemented
 
-    @overload
-    def __getitem__(self, item: int) -> Any:
-        pass  # pragma: no cover
+    @typing.overload
+    def __getitem__(self, item: int) -> T:
+        ...
 
-    @overload
-    def __getitem__(self, item: slice) -> "Array":
-        pass  # pragma: no cover
+    @typing.overload
+    def __getitem__(self, item: slice) -> "Array[T]":
+        ...
 
-    def __getitem__(self, item):
+    def __getitem__(
+        self, item: typing.Union[int, slice]
+    ) -> typing.Union[T, "Array[T]"]:
         if isinstance(item, int):
             idx = self._translate_index(item)
             return self._value[idx]
@@ -247,18 +224,20 @@ class Array(Sequence):
             "indexes must be ints or slices, not {}".format(type(item).__name__)
         )
 
-    @overload
-    def __setitem__(self, item: int, value: Any) -> None:
-        pass  # pragma: no cover
+    @typing.overload
+    def __setitem__(self, item: int, value: T) -> None:
+        ...
 
-    @overload
-    def __setitem__(self, item: slice, value: Iterable[Any]) -> None:
-        pass  # pragma: no cover
+    @typing.overload
+    def __setitem__(self, item: slice, value: typing.Iterable[T]) -> None:
+        ...
 
-    def __setitem__(self, item, value):
+    def __setitem__(
+        self, item: typing.Union[int, slice], value: typing.Union[T, typing.Iterable[T]]
+    ) -> None:
         if isinstance(item, int):
             idx = self._translate_index(item)
-            self._value[idx] = value
+            self._value[idx] = typing.cast(T, value)
         elif isinstance(item, slice):
             start = item.start if item.start is not None else self.left
             stop = item.stop if item.stop is not None else self.right
@@ -272,7 +251,7 @@ class Array(Sequence):
                         start, stop, self.left, self.right
                     )
                 )
-            value = list(value)
+            value = list(typing.cast(typing.Iterable[T], value))
             if len(value) != (stop_i - start_i + 1):
                 raise ValueError(
                     "value of length {!r} will not fit in slice [{}:{}]".format(
@@ -288,37 +267,38 @@ class Array(Sequence):
     def __repr__(self) -> str:
         return "{}({!r}, {!r})".format(type(self).__name__, self._value, self._range)
 
-    def __concat__(self, other: "Array") -> "Array":
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return type(self)(self._value + other._value)
+    def __concat__(self: Self, other: Self) -> Self:
+        if isinstance(other, type(self)):
+            return type(self)(chain(self, other))
+        return NotImplemented
 
-    def __rconcat__(self, other: "Array") -> "Array":
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return type(self)(other._value + self._value)
+    def __rconcat__(self: Self, other: Self) -> Self:
+        if isinstance(other, type(self)):
+            return type(self)(chain(other, self))
+        return NotImplemented
 
     def index(
-        self, value: Any, start: Optional[int] = None, stop: Optional[int] = None
+        self,
+        value: T,
+        start: typing.Optional[int] = None,
+        stop: typing.Optional[int] = None,
     ) -> int:
         """
         Return index of first occurrence of *value*.
 
-        Raises :exc:`ValueError` if the value is not found.
+        Raises :exc:`IndexError` if the value is not found.
         Search only within *start* and *stop* if given.
         """
-        if start is not None:
-            start = self._translate_index(start)
-        else:
-            start = 0
-        if stop is not None:
-            stop = self._translate_index(stop)
-        else:
-            stop = maxsize  # same default value used by Python lists
-        idx = self._value.index(value, start, stop)
-        return self._range[idx]
+        if start is None:
+            start = self.left
+        if stop is None:
+            stop = self.right
+        for i in Range(start, self.direction, stop):
+            if self[i] == value:
+                return i
+        raise IndexError(f"{value!r} not in array")
 
-    def count(self, value: Any) -> int:
+    def count(self, value: T) -> int:
         """Return number of occurrences of *value*."""
         return self._value.count(value)
 
