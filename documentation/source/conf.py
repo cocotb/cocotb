@@ -39,7 +39,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinxcontrib.makedomain',
     'sphinx.ext.inheritance_diagram',
-    'cairosvgconverter',
+    'sphinxcontrib.cairosvgconverter',
     'breathe',
     'sphinx_issues',
     'sphinxarg.ext',
