@@ -73,7 +73,7 @@ $(SIM_BUILD)/pli.tab : | $(SIM_BUILD)
 $(SIM_BUILD)/simv: $(VERILOG_SOURCES) $(SIM_BUILD)/pli.tab $(CUSTOM_COMPILE_DEPS) | $(SIM_BUILD)
 	cd $(SIM_BUILD) && \
 	TOPLEVEL=$(TOPLEVEL) \
-	$(SIM_CMD_PREFIX) $(CMD) -top $(TOPLEVEL) $(PLUSARGS) +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog \
+	$(CMD) -top $(TOPLEVEL) $(PLUSARGS) +acc+1 +vpi -P pli.tab +define+COCOTB_SIM=1 -sverilog \
 	-timescale=$(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION) \
 	$(EXTRA_ARGS) -debug -load $(shell cocotb-config --lib-name-path vpi vcs) $(COMPILE_ARGS) $(VERILOG_SOURCES)
 
@@ -82,7 +82,7 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/simv $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
 
 	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-	$(SIM_BUILD)/simv +define+COCOTB_SIM=1 $(SIM_ARGS) $(EXTRA_ARGS)
+	$(SIM_CMD_PREFIX) $(SIM_BUILD)/simv +define+COCOTB_SIM=1 $(SIM_ARGS) $(EXTRA_ARGS)
 
 	$(call check_for_results_file)
 
