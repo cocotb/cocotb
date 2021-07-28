@@ -36,10 +36,9 @@ else
 endif
 
 ifeq ($(VERILATOR_SIM_DEBUG), 1)
-  COMPILE_ARGS += --debug
+  COMPILE_ARGS += --debug -CFLAGS "-DVL_DEBUG -g"
   PLUSARGS += +verilator+debug
-  SIM_BUILD_FLAGS += -DVL_DEBUG
-  USER_CPPFLAGS += -g
+  BUILD_ARGS += OPT_FAST=-Og OPT_SLOW=-Og OPT_GLOBAL=-Og
 endif
 
 ifeq ($(VERILATOR_TRACE),1)
@@ -48,8 +47,6 @@ endif
 
 EXTRA_ARGS += --timescale $(COCOTB_HDL_TIMEUNIT)/$(COCOTB_HDL_TIMEPRECISION)
 
-SIM_BUILD_FLAGS += -std=c++11
-
 COMPILE_ARGS += --vpi --public-flat-rw --prefix Vtop -o Vtop -LDFLAGS "-Wl,-rpath,$(shell cocotb-config --lib-dir) -L$(shell cocotb-config --lib-dir) -lcocotbvpi_verilator"
 
 $(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_SHARE_DIR)/lib/verilator/verilator.cpp | $(SIM_BUILD)
@@ -57,7 +54,7 @@ $(SIM_BUILD)/Vtop.mk: $(VERILOG_SOURCES) $(CUSTOM_COMPILE_DEPS) $(COCOTB_SHARE_D
 
 # Compilation phase
 $(SIM_BUILD)/Vtop: $(SIM_BUILD)/Vtop.mk
-	CPPFLAGS="$(SIM_BUILD_FLAGS)" make -C $(SIM_BUILD) -f Vtop.mk
+	make -C $(SIM_BUILD) $(BUILD_ARGS) -f Vtop.mk
 
 $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/Vtop $(CUSTOM_SIM_DEPS)
 	-@rm -f $(COCOTB_RESULTS_FILE)
@@ -67,13 +64,8 @@ $(COCOTB_RESULTS_FILE): $(SIM_BUILD)/Vtop $(CUSTOM_SIM_DEPS)
 
 	$(call check_for_results_file)
 
-debug: $(SIM_BUILD)/Vtop $(CUSTOM_SIM_DEPS)
-	-@rm -f $(COCOTB_RESULTS_FILE)
-
-	MODULE=$(MODULE) TESTCASE=$(TESTCASE) TOPLEVEL=$(TOPLEVEL) TOPLEVEL_LANG=$(TOPLEVEL_LANG) \
-        $(SIM_CMD_PREFIX) gdb --args $< $(PLUSARGS)
-
-	$(call check_for_results_file)
+debug:
+	$(MAKE) VERILATOR_SIM_DEBUG=1 SIM_CMD_PREFIX="gdb --args" $(COCOTB_RESULTS_FILE)
 
 clean::
 	@rm -rf $(SIM_BUILD)
