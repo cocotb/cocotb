@@ -39,7 +39,6 @@ static int releases = 0;
 
 #include <Python.h>
 #include <cocotb_utils.h>    // to_python to_simulator
-#include <gpi_logging.h>     // LOG_* macros
 #include <py_gpi_logging.h>  // py_gpi_logger_set_level
 
 #include <limits>
