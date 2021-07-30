@@ -261,22 +261,6 @@ err:
     return ret;
 }
 
-static PyObject *log_msg(PyObject *, PyObject *args) {
-    const char *name;
-    const char *path;
-    const char *msg;
-    const char *funcname;
-    int lineno;
-
-    if (!PyArg_ParseTuple(args, "sssis:log_msg", &name, &path, &funcname,
-                          &lineno, &msg))
-        return NULL;
-
-    gpi_log(name, GPIInfo, path, funcname, lineno, msg);
-
-    Py_RETURN_NONE;
-}
-
 static callback_data *callback_data_new(PyObject *func, PyObject *args,
                                         PyObject *kwargs) {
     callback_data *data = (callback_data *)malloc(sizeof(callback_data));
@@ -912,12 +896,6 @@ static int add_module_types(PyObject *simulator) {
  */
 
 static PyMethodDef SimulatorMethods[] = {
-    {"log_msg", log_msg, METH_VARARGS,
-     PyDoc_STR("log_msg(name, path, funcname, lineno, msg, /)\n"
-               "--\n\n"
-               "log_msg(name: str, path: str, funcname: str, lineno: int, msg: "
-               "str) -> None\n"
-               "Log a message.")},
     {"get_root_handle", get_root_handle, METH_VARARGS,
      PyDoc_STR("get_root_handle(name, /)\n"
                "--\n\n"
