@@ -132,14 +132,12 @@ GPI_EXPORT const char *gpi_get_simulator_product(void);
 GPI_EXPORT const char *gpi_get_simulator_version(void);
 
 // Functions for extracting a gpi_sim_hdl to an object
-// Returns a handle to the root simulation object,
-// Should be freed with gpi_free_handle
+// Returns a handle to the root simulation object.
 GPI_EXPORT gpi_sim_hdl gpi_get_root_handle(const char *name);
 GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl parent,
                                               const char *name);
 GPI_EXPORT gpi_sim_hdl gpi_get_handle_by_index(gpi_sim_hdl parent,
                                                int32_t index);
-GPI_EXPORT void gpi_free_handle(gpi_sim_hdl gpi_hdl);
 
 // Types that can be passed to the iterator.
 //
