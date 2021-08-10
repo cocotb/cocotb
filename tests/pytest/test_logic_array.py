@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import pytest
 
-from cocotb.types import Array, BitArray, Logic, LogicArray, Range, concat
+from cocotb.types import Logic, LogicArray, Range, concat
 
 
 def test_logic_array_constructor():
@@ -13,6 +13,29 @@ def test_logic_array_constructor():
     with pytest.raises(ValueError):
         LogicArray([object()])
 
+    assert LogicArray(0) == LogicArray("0")
+    assert LogicArray(0xA7) == LogicArray("10100111")
+    assert LogicArray(-1) == LogicArray("1")
+
+    assert LogicArray(10, Range(5, "downto", 0)) == LogicArray("001010")
+    assert LogicArray(-2, Range(5, "downto", 0)) == LogicArray("111110")
+    with pytest.raises(ValueError):
+        LogicArray(10, Range(1, "to", 3))
+
+
+def test_logic_array_properties():
+    assert LogicArray(0).integer == 0
+    assert LogicArray(0).signed_integer == 0
+    assert LogicArray(0).binstr == "0"
+    assert LogicArray(10).integer == 10
+    assert LogicArray(10).signed_integer == -6
+    assert LogicArray(10).binstr == "1010"
+    assert LogicArray(-6).integer == 10
+    assert LogicArray(-6).signed_integer == -6
+    assert LogicArray(-6).binstr == "1010"
+    assert LogicArray(0).is_resolvable
+    assert not LogicArray("XX").is_resolvable
+
 
 def test_logic_array_setattr():
     l = LogicArray("0000")
@@ -20,12 +43,6 @@ def test_logic_array_setattr():
     assert l == LogicArray("00X0")
     with pytest.raises(TypeError):
         l[object()] = "X"
-
-
-def test_logic_array_str():
-    s = "01ZX"
-    l = LogicArray(s)
-    assert str(l) == s
 
 
 def test_logic_array_repr():
@@ -79,22 +96,3 @@ def test_logic_array_xor():
 
 def test_logic_array_invert():
     assert ~LogicArray("01XZ") == LogicArray("10XX")
-
-
-def test_logic_array_concat_promotion():
-    assert type(concat(LogicArray(""), LogicArray(""))) is LogicArray
-    assert type(concat(LogicArray(""), BitArray(""))) is LogicArray
-    assert type(concat(LogicArray(""), Array(""))) is Array
-    assert type(concat(BitArray(""), LogicArray(""))) is LogicArray
-    assert type(concat(BitArray(""), BitArray(""))) is BitArray
-    assert type(concat(BitArray(""), Array(""))) is Array
-    assert type(concat(Array(""), LogicArray(""))) is Array
-    assert type(concat(Array(""), BitArray(""))) is Array
-    assert type(concat(Array(""), Array(""))) is Array
-
-
-def test_logic_array_bitwise_promption():
-    assert type(LogicArray("") & LogicArray("")) is LogicArray
-    assert type(LogicArray("") & BitArray("")) is LogicArray
-    assert type(BitArray("") & LogicArray("")) is LogicArray
-    assert type(BitArray("") & BitArray("")) is BitArray
