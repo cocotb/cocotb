@@ -746,6 +746,8 @@ class Scheduler:
         starts the given coroutine only after the current coroutine yields control.
         This is useful when the coroutine to be forked has logic before the first
         :keyword:`await` that may not be safe to execute immediately.
+
+        .. versionadded:: 1.5
         """
 
         task = self.create_task(coro)

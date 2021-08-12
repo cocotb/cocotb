@@ -171,6 +171,31 @@ def fork(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     return scheduler.add(coro)
 
 
+def start_soon(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+    """
+    Schedule a coroutine to be run concurrently.
+
+    Note that this is not an async function,
+    and the new task will not execute until the calling task yields control.
+
+    .. versionadded:: 1.6.0
+    """
+    return scheduler.start_soon(coro)
+
+
+async def start(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+    """
+    Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
+
+    The calling task will resume execution before control is returned to the simulator.
+
+    .. versionadded:: 1.6.0
+    """
+    task = scheduler.start_soon(coro)
+    await cocotb.triggers.NullTrigger()
+    return task
+
+
 # FIXME is this really required?
 _rlock = threading.RLock()
 
