@@ -91,9 +91,6 @@ as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 .. autoclass:: cocotb.types.LogicArray
     :members:
 
-.. autoclass:: cocotb.types.BitArray
-    :members:
-
 Triggers
 --------
 See :ref:`simulator-triggers` for a list of sub-classes. Below are the internal

@@ -34,7 +34,7 @@ def test_logic_array_properties():
     assert LogicArray(-6).signed_integer == -6
     assert LogicArray(-6).binstr == "1010"
     assert LogicArray(0).is_resolvable
-    assert not LogicArray("XX").is_resolvable
+    assert not LogicArray("1X1").is_resolvable
 
 
 def test_logic_array_setattr():
