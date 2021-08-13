@@ -1,0 +1,1 @@
+Added :class:`~cocotb.types.LogicArray` modeling datatype.
