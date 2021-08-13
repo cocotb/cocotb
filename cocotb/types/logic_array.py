@@ -19,11 +19,11 @@ class LogicArray(Array[Logic]):
 
     .. currentmodule:: cocotb.types
 
-    LogicArrays can be constructed from either iterables of values constructible into
-    :class:`Logic`: like :class:`bool`, :class:`str`, :class:`int`;
+    :class:`LogicArray`\ s can be constructed from either iterables of values
+    constructible into :class:`Logic`: like :class:`bool`, :class:`str`, :class:`int`;
     or from integers.
     If constructed from a positive integer, an unsigned bit representation is used to
-    construct the LogicArray.
+    construct the :class:`LogicArray`.
     If constructed from a negative integer, a two's complement bit representation is
     used.
     Like :class:`Array`, if no *range* argument is given, it is deduced from the length
@@ -40,25 +40,25 @@ class LogicArray(Array[Logic]):
         >>> LogicArray(0xA)                     # picks smallest range that can fit the value
         LogicArray('1010', Range(3, 'downto', 0))
 
-        >>> LogicArray(-4, Range(0, "to", 3))   # will sign extend
+        >>> LogicArray(-4, Range(0, "to", 3))   # will sign-extend
         LogicArray('1100', Range(0, 'to', 3))
 
-    LogicArrays support the same operations as :class:`Array`;
+    :class:`LogicArray`\ s support the same operations as :class:`Array`;
     however, it enforces the condition that all elements must be a :class:`Logic`.
 
     .. code-block:: python3
 
-        >>> l = LogicArray("1010")
-        >>> l[0]                                # is indexable
+        >>> la = LogicArray("1010")
+        >>> la[0]                               # is indexable
         Logic('0')
 
-        >>> l[1:]                               # is slice-able
+        >>> la[1:]                              # is slice-able
         LogicArray('10', Range(1, 'downto', 0))
 
-        >>> Logic("0") in l                     # is a collection
+        >>> Logic("0") in la                    # is a collection
         True
 
-        >>> list(l)                             # is an iterable
+        >>> list(la)                            # is an iterable
         [Logic('1'), Logic('0'), Logic('1'), Logic('0')]
 
     When setting an element or slice, the *value* is first constructed into a
@@ -66,31 +66,31 @@ class LogicArray(Array[Logic]):
 
     .. code-block:: python3
 
-        >>> l = LogicArray("1010")
-        >>> l[3] = "Z"
-        >>> l[3]
+        >>> la = LogicArray("1010")
+        >>> la[3] = "Z"
+        >>> la[3]
         Logic('Z')
 
-        >>> l[2:] = ['X', True, 0]
-        >>> l
+        >>> la[2:] = ['X', True, 0]
+        >>> la
         LogicArray('ZX10', Range(3, 'downto', 0))
 
-    LogicArrays can be converted into :class:`str`\ s or :class:`int`\s.
+    :class:`LogicArray`\ s can be converted into :class:`str`\ s or :class:`int`\ s.
 
     .. code-block:: python3
 
-        >>> l = LogicArray("1010")
-        >>> l.binstr
+        >>> la = LogicArray("1010")
+        >>> la.binstr
         '1010'
 
-        >>> l.integer           # uses unsigned representation
+        >>> la.integer          # uses unsigned representation
         10
 
-        >>> l.signed_integer    # uses two's complement representation
+        >>> la.signed_integer   # uses two's complement representation
         -6
 
-    LogicArrays also support element-wise logical operations: ``&``, ``|``, ``^``,
-    and ``~``.
+    :class:`LogicArray` \s also support element-wise logical operations: ``&``, ``|``,
+    ``^``, and ``~``.
 
     .. code-block:: python3
 
@@ -98,10 +98,10 @@ class LogicArray(Array[Logic]):
         ...     s = LogicArray([sel] * len(a))
         ...     return (a & ~s) | (b & s)
 
-        >>> l = LogicArray("0110")
+        >>> la = LogicArray("0110")
         >>> p = LogicArray("1110")
         >>> sel = Logic('1')        # choose second option
-        >>> big_mux(l, p, sel)
+        >>> big_mux(la, p, sel)
         LogicArray('1110', Range(3, 'downto', 0))
 
     Args:
@@ -144,7 +144,7 @@ class LogicArray(Array[Logic]):
         else:
             self._range = range
         if len(self._value) != len(self._range):
-            raise ValueError(f"{value} will not fit in {range}")
+            raise ValueError(f"value of length {len(self._value)} will not fit in {self._range}")
 
     @property
     def binstr(self) -> str:
@@ -195,7 +195,7 @@ class LogicArray(Array[Logic]):
             )
         else:
             raise TypeError(
-                "indexes must be ints or slices, not {}".format(type(item).__name__)
+                f"indexes must be ints or slices, not {type(item).__name__}"
             )
 
     def __repr__(self) -> str:
@@ -205,7 +205,9 @@ class LogicArray(Array[Logic]):
         if isinstance(other, type(self)):
             if len(self) != len(other):
                 raise ValueError(
-                    "cannot perform bitwise & on arrays of different length"
+                    f"cannot perform bitwise & "
+                    f"between {type(self).__qualname__} of length {len(self)} "
+                    f"and {type(other).__qualname__} of length {len(other)}"
                 )
             return type(self)(a & b for a, b in zip(self, other))  # type: ignore
         return NotImplemented
@@ -217,7 +219,9 @@ class LogicArray(Array[Logic]):
         if isinstance(other, type(self)):
             if len(self) != len(other):
                 raise ValueError(
-                    "cannot perform bitwise | on arrays of different length"
+                    f"cannot perform bitwise & "
+                    f"between {type(self).__qualname__} of length {len(self)} "
+                    f"and {type(other).__qualname__} of length {len(other)}"
                 )
             return type(self)(a | b for a, b in zip(self, other))  # type: ignore
         return NotImplemented
@@ -229,7 +233,9 @@ class LogicArray(Array[Logic]):
         if isinstance(other, type(self)):
             if len(self) != len(other):
                 raise ValueError(
-                    "cannot perform bitwise ^ on arrays of different length"
+                    f"cannot perform bitwise & "
+                    f"between {type(self).__qualname__} of length {len(self)} "
+                    f"and {type(other).__qualname__} of length {len(other)}"
                 )
             return type(self)(a ^ b for a, b in zip(self, other))  # type: ignore
         return NotImplemented
@@ -241,7 +247,7 @@ class LogicArray(Array[Logic]):
         return type(self)(~v for v in self)
 
 
-def _int_to_bitstr(value: int, bit_length: int) -> str:
+def _int_to_bitstr(value: int, n_bits: int) -> str:
     if value < 0:
-        value += 1 << bit_length
-    return format(value, f"0{bit_length}b")
+        value += 1 << n_bits
+    return format(value, f"0{n_bits}b")
