@@ -71,9 +71,6 @@ as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 
 .. versionadded:: 2.0
 
-.. inheritance-diagram:: cocotb.types
-   :parts: 1
-
 .. autoclass:: cocotb.types.Logic
 
 .. autoclass:: cocotb.types.Bit
