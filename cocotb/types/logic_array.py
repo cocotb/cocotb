@@ -126,21 +126,25 @@ class LogicArray(Array[Logic]):
             else:
                 bitlen = max(1, int.bit_length(value))
             if range is None:
-                value = _int_to_bitstr(value, bitlen)
-                range = Range(bitlen-1, "downto", 0)
-            elif bitlen > len(range):
-                raise ValueError(f"{value} will not fit in {range}")
+                self._value = [Logic(v) for v in _int_to_bitstr(value, bitlen)]
             else:
-                value = _int_to_bitstr(value, len(range))
+                if bitlen > len(range):
+                    raise ValueError(f"{value} will not fit in {range}")
+                self._value = [Logic(v) for v in _int_to_bitstr(value, len(range))]
+        elif isinstance(value, typing.Iterable):
+            self._value = [Logic(v) for v in value]
         elif isinstance(value, BinaryValue):
-            value = value.binstr
-        elif range is None:
-            value = list(value)
-            range = Range(len(value) - 1, 'downto', 0)
-        super().__init__(
-            value=(Logic(v) for v in value),
-            range=range,
-        )
+            self._value = [Logic(v) for v in value.binstr]
+        else:
+            raise TypeError(
+                f"cannot construct {type(self).__qualname__} from value of type {type(value).__qualname__}"
+            )
+        if range is None:
+            self._range = Range(len(self._value) - 1, "downto", 0)
+        else:
+            self._range = range
+        if len(self._value) != len(self._range):
+            raise ValueError(f"{value} will not fit in {range}")
 
     @property
     def binstr(self) -> str:

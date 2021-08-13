@@ -23,6 +23,12 @@ def test_logic_array_constructor():
     with pytest.raises(ValueError):
         LogicArray(10, Range(1, "to", 3))
 
+    with pytest.raises(TypeError):
+        LogicArray(object())
+
+    with pytest.raises(ValueError):
+        LogicArray("101010", Range(0, 'to', 0))
+
 
 def test_logic_array_properties():
     assert LogicArray(0).integer == 0
