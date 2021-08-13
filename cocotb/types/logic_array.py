@@ -31,16 +31,16 @@ class LogicArray(Array[Logic]):
     .. code-block:: python3
 
         >>> LogicArray("01XZ")
-        LogicArray('01XZ', Range(0, 'to', 3))
+        LogicArray('01XZ', Range(3, 'downto', 0))
 
         >>> LogicArray([0, True, "X"])
-        LogicArray('01X', Range(0, 'to', 2))
+        LogicArray('01X', Range(2, 'downto', 0))
 
         >>> LogicArray(0xA)                     # picks smallest range that can fit the value
-        LogicArray('1010', Range(0, 'to', 3))
+        LogicArray('1010', Range(3, 'downto', 0))
 
-        >>> LogicArray(-1, Range(0, "to", 3))   # will sign extend
-        LogicArray('1111', Range(0, 'to', 3))
+        >>> LogicArray(-4, Range(0, "to", 3))   # will sign extend
+        LogicArray('1100', Range(0, 'to', 3))
 
     LogicArrays support the same operations as :class:`Array`;
     however, it enforces the condition that all elements must be a :class:`Logic`.
@@ -49,16 +49,16 @@ class LogicArray(Array[Logic]):
 
         >>> l = LogicArray("1010")
         >>> l[0]                                # is indexable
-        Logic('1')
+        Logic('0')
 
-        >>> l[2:]                               # is slice-able
-        LogicArray('10', Range(2, 'to', 3))
+        >>> l[1:]                               # is slice-able
+        LogicArray('10', Range(1, 'downto', 0))
 
         >>> Logic("0") in l                     # is a collection
         True
 
         >>> list(l)                             # is an iterable
-        [Logic("1"), Logic("0"), Logic("1"), Logic("0"),]
+        [Logic('1'), Logic('0'), Logic('1'), Logic('0')]
 
     When setting an element or slice, the *value* is first constructed into a
     :class:`Logic`.
@@ -66,13 +66,13 @@ class LogicArray(Array[Logic]):
     .. code-block:: python3
 
         >>> l = LogicArray("1010")
-        >>> l[0] = "Z"
-        >>> l[0]
+        >>> l[3] = "Z"
+        >>> l[3]
         Logic('Z')
 
-        >>> l[:2] = [True, 'X', 0]
+        >>> l[2:] = ['X', True, 0]
         >>> l
-        LogicArray('1X0Z', Range(0, 'to', 3))
+        LogicArray('ZX10', Range(3, 'downto', 0))
 
     LogicArrays can be converted into :class:`str`\ s or :class:`int`\s.
 
@@ -80,7 +80,7 @@ class LogicArray(Array[Logic]):
 
         >>> l = LogicArray("1010")
         >>> l.binstr
-        "1010"
+        '1010'
 
         >>> l.integer           # uses unsigned representation
         10
@@ -101,7 +101,7 @@ class LogicArray(Array[Logic]):
         >>> p = LogicArray("1110")
         >>> sel = Logic('1')        # choose second option
         >>> big_mux(l, p, sel)
-        LogicArray('1110', Range(0, 'to', 3))
+        LogicArray('1110', Range(3, 'downto', 0))
 
     Args:
         value: Initial value for the array.
@@ -131,7 +131,9 @@ class LogicArray(Array[Logic]):
                 raise ValueError(f"{value} will not fit in {range}")
             else:
                 value = _int_to_bitstr(value, len(range))
-
+        elif range is None:
+            value = list(value)
+            range = Range(len(value) - 1, 'downto', 0)
         super().__init__(
             value=(Logic(v) for v in value),
             range=range,

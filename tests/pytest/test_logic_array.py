@@ -39,7 +39,7 @@ def test_logic_array_properties():
 
 def test_logic_array_setattr():
     l = LogicArray("0000")
-    l[2] = "X"
+    l[1] = "X"
     assert l == LogicArray("00X0")
     with pytest.raises(TypeError):
         l[object()] = "X"
