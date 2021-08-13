@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
 
+from cocotb.binary import BinaryValue
 from cocotb.types.array import Array
 from cocotb.types.logic import Logic, LogicConstructibleT
 from cocotb.types.range import Range
@@ -116,7 +117,7 @@ class LogicArray(Array[Logic]):
 
     def __init__(
         self,
-        value: typing.Union[int, typing.Iterable[LogicConstructibleT]],
+        value: typing.Union[int, typing.Iterable[LogicConstructibleT], BinaryValue],
         range: typing.Optional[Range] = None,
     ) -> None:
         if isinstance(value, int):
@@ -131,6 +132,8 @@ class LogicArray(Array[Logic]):
                 raise ValueError(f"{value} will not fit in {range}")
             else:
                 value = _int_to_bitstr(value, len(range))
+        elif isinstance(value, BinaryValue):
+            value = value.binstr
         elif range is None:
             value = list(value)
             range = Range(len(value) - 1, 'downto', 0)
