@@ -18,18 +18,54 @@ class LogicArray(Array[Logic]):
 
     .. currentmodule:: cocotb.types
 
-    Supports all of the same operations as :class:`Array`;
-    however, it enforces the condition that all elements must be a :class:`Logic`.
-    When constructing a :class:`LogicArray`, or setting a slice,
-    the *value* is treated as an iterable of values that are constructed into :class:`Logic`\ s.
-    Also, when setting an element, the *value* is first constructed into a :class:`Logic`.
+    LogicArrays can be constructed from either iterables of values constructible into
+    :class:`Logic`: like :class:`bool`, :class:`str`, :class:`int`;
+    or from integers.
+    If constructed from a positive integer, an unsigned bit representation is used to
+    construct the LogicArray.
+    If constructed from a negative integer, a two's complement bit representation is
+    used.
+    Like :class:`Array`, if no *range* argument is given, it is deduced from the length
+    of the iterable or bit string used to initialize the variable.
 
     .. code-block:: python3
 
-        >>> l = LogicArray("01XZ")
-        >>> l[0]
-        Logic('0')
+        >>> LogicArray("01XZ")
+        LogicArray('01XZ', Range(0, 'to', 3))
 
+        >>> LogicArray([0, True, "X"])
+        LogicArray('01X', Range(0, 'to', 2))
+
+        >>> LogicArray(0xA)                     # picks smallest range that can fit the value
+        LogicArray('1010', Range(0, 'to', 3))
+
+        >>> LogicArray(-1, Range(0, "to", 3))   # will sign extend
+        LogicArray('1111', Range(0, 'to', 3))
+
+    LogicArrays support the same operations as :class:`Array`;
+    however, it enforces the condition that all elements must be a :class:`Logic`.
+
+    .. code-block:: python3
+
+        >>> l = LogicArray("1010")
+        >>> l[0]                                # is indexable
+        Logic('1')
+
+        >>> l[2:]                               # is slice-able
+        LogicArray('10', Range(2, 'to', 3))
+
+        >>> Logic("0") in l                     # is a collection
+        True
+
+        >>> list(l)                             # is an iterable
+        [Logic("1"), Logic("0"), Logic("1"), Logic("0"),]
+
+    When setting an element or slice, the *value* is first constructed into a
+    :class:`Logic`.
+
+    .. code-block:: python3
+
+        >>> l = LogicArray("1010")
         >>> l[0] = "Z"
         >>> l[0]
         Logic('Z')
@@ -38,7 +74,22 @@ class LogicArray(Array[Logic]):
         >>> l
         LogicArray('1X0Z', Range(0, 'to', 3))
 
-    Support element-wise logical operations: ``&``, ``|``, ``^``, and ``~``.
+    LogicArrays can be converted into :class:`str`\ s or :class:`int`\s.
+
+    .. code-block:: python3
+
+        >>> l = LogicArray("1010")
+        >>> l.binstr
+        "1010"
+
+        >>> l.integer           # uses unsigned representation
+        10
+
+        >>> l.signed_integer    # uses two's complement representation
+        -6
+
+    LogicArrays also support element-wise logical operations: ``&``, ``|``, ``^``,
+    and ``~``.
 
     .. code-block:: python3
 
@@ -48,7 +99,7 @@ class LogicArray(Array[Logic]):
 
         >>> l = LogicArray("0110")
         >>> p = LogicArray("1110")
-        >>> sel = Logic('1')       # choose second option
+        >>> sel = Logic('1')        # choose second option
         >>> big_mux(l, p, sel)
         LogicArray('1110', Range(0, 'to', 3))
 
