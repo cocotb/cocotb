@@ -82,9 +82,9 @@ class Clock(BaseClock):
             low_time = Timer(low_delay, units="ns")
             await Timer(initial_delay, units="ns")
             while True:
-                dut.clk <= 1
+                dut.clk.value = 1
                 await high_time
-                dut.clk <= 0
+                dut.clk.value = 0
                 await low_time
 
     If you also want to change the timing during simulation,
@@ -96,9 +96,9 @@ class Clock(BaseClock):
 
         async def custom_clock():
             while True:
-                dut.clk <= 1
+                dut.clk.value = 1
                 await Timer(high_delay, units="ns")
-                dut.clk <= 0
+                dut.clk.value = 0
                 await Timer(low_delay, units="ns")
 
         high_delay = low_delay = 100
@@ -152,15 +152,15 @@ class Clock(BaseClock):
         # branch outside for loop for performance (decision has to be taken only once)
         if start_high:
             for _ in it:
-                self.signal <= 1
+                self.signal.value = 1
                 await t
-                self.signal <= 0
+                self.signal.value = 0
                 await t
         else:
             for _ in it:
-                self.signal <= 0
+                self.signal.value = 0
                 await t
-                self.signal <= 1
+                self.signal.value = 1
                 await t
 
     def __str__(self):

@@ -152,15 +152,15 @@ async def test_multiply(dut):
     dut._log.info("Initialize and reset model")
 
     # Initial values
-    dut.valid_i <= 0
-    dut.a_i <= create_a(lambda x: 0)
-    dut.b_i <= create_b(lambda x: 0)
+    dut.valid_i.value = 0
+    dut.a_i.value = create_a(lambda x: 0)
+    dut.b_i.value = create_b(lambda x: 0)
 
     # Reset DUT
-    dut.reset_i <= 1
+    dut.reset_i.value = 1
     for _ in range(3):
         await RisingEdge(dut.clk_i)
-    dut.reset_i <= 0
+    dut.reset_i.value = 0
 
     # start tester after reset so we know it's in a good state
     tester.start()
@@ -170,12 +170,12 @@ async def test_multiply(dut):
     # Do multiplication operations
     for i, (A, B) in enumerate(zip(gen_a(), gen_b())):
         await RisingEdge(dut.clk_i)
-        dut.a_i <= A
-        dut.b_i <= B
-        dut.valid_i <= 1
+        dut.a_i.value = A
+        dut.b_i.value = B
+        dut.valid_i.value = 1
 
         await RisingEdge(dut.clk_i)
-        dut.valid_i <= 0
+        dut.valid_i.value = 0
 
         if i % 100 == 0:
             dut._log.info(f"{i} / {NUM_SAMPLES}")

@@ -41,11 +41,11 @@ async def do_single_edge_check(dut, level):
 @cocotb.test()
 async def test_rising_edge(dut):
     """Test that a rising edge can be awaited on"""
-    dut.clk <= 0
+    dut.clk.value = 0
     await Timer(1, "ns")
     test = cocotb.fork(do_single_edge_check(dut, 1))
     await Timer(10, "ns")
-    dut.clk <= 1
+    dut.clk.value = 1
     fail_timer = Timer(1000, "ns")
     result = await First(fail_timer, test.join())
     assert result is not fail_timer, "Test timed out"
@@ -54,11 +54,11 @@ async def test_rising_edge(dut):
 @cocotb.test()
 async def test_falling_edge(dut):
     """Test that a falling edge can be awaited on"""
-    dut.clk <= 1
+    dut.clk.value = 1
     await Timer(1, "ns")
     test = cocotb.fork(do_single_edge_check(dut, 0))
     await Timer(10, "ns")
-    dut.clk <= 0
+    dut.clk.value = 0
     fail_timer = Timer(1000, "ns")
     result = await First(fail_timer, test.join())
     assert result is not fail_timer, "Test timed out"
@@ -67,29 +67,29 @@ async def test_falling_edge(dut):
 @cocotb.test()
 async def test_either_edge(dut):
     """Test that either edge can be triggered on"""
-    dut.clk <= 0
+    dut.clk.value = 0
     await Timer(1, "ns")
-    dut.clk <= 1
+    dut.clk.value = 1
     await Edge(dut.clk)
     assert dut.clk.value.integer == 1
     await Timer(10, "ns")
-    dut.clk <= 0
+    dut.clk.value = 0
     await Edge(dut.clk)
     assert dut.clk.value.integer == 0
     await Timer(10, "ns")
-    dut.clk <= 1
+    dut.clk.value = 1
     await Edge(dut.clk)
     assert dut.clk.value.integer == 1
     await Timer(10, "ns")
-    dut.clk <= 0
+    dut.clk.value = 0
     await Edge(dut.clk)
     assert dut.clk.value.integer == 0
     await Timer(10, "ns")
-    dut.clk <= 1
+    dut.clk.value = 1
     await Edge(dut.clk)
     assert dut.clk.value.integer == 1
     await Timer(10, "ns")
-    dut.clk <= 0
+    dut.clk.value = 0
     await Edge(dut.clk)
     assert dut.clk.value.integer == 0
 
@@ -123,9 +123,9 @@ async def do_clock(dut, limit, period):
     wait_period = period / 2
     while limit:
         await Timer(wait_period, "ns")
-        dut.clk <= 0
+        dut.clk.value = 0
         await Timer(wait_period, "ns")
-        dut.clk <= 1
+        dut.clk.value = 1
         limit -= 1
 
 
@@ -253,15 +253,15 @@ async def test_edge_on_vector(dut):
 
     cocotb.fork(wait_edge())
 
-    dut.stream_in_data <= 0
+    dut.stream_in_data.value = 0
     await RisingEdge(dut.clk)
 
     for val in range(1, 2**len(dut.stream_in_data)-1):
         # produce an edge by setting a value != 0:
-        dut.stream_in_data <= val
+        dut.stream_in_data.value = val
         await RisingEdge(dut.clk)
         # set back to all-0:
-        dut.stream_in_data <= 0
+        dut.stream_in_data.value = 0
         await RisingEdge(dut.clk)
 
     assert edge_cnt == 2 * ((2**len(dut.stream_in_data)-1)-1)
