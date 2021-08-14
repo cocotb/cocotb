@@ -538,6 +538,11 @@ class Scheduler:
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
                 e = remove_traceback_frames(e, ['_unschedule', 'get'])
+                warnings.warn(
+                    '"Unwatched" tasks that throw exceptions will not cause the test to fail. '
+                    "See issue #2664 for more details.",
+                    FutureWarning
+                )
                 self._abort_test(e)
 
     def _schedule_write(self, handle, write_func, *args):
