@@ -89,7 +89,7 @@ class LogicArray(Array[Logic]):
         >>> la.signed_integer   # uses two's complement representation
         -6
 
-    :class:`LogicArray` \s also support element-wise logical operations: ``&``, ``|``,
+    :class:`LogicArray`\ s also support element-wise logical operations: ``&``, ``|``,
     ``^``, and ``~``.
 
     .. code-block:: python3
