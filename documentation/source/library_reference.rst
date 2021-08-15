@@ -58,6 +58,10 @@ Interacting with the Simulator
 
 .. autofunction:: cocotb.fork
 
+.. autofunction:: cocotb.start_soon
+
+.. autofunction:: cocotb.start
+
 .. autofunction:: cocotb.decorators.RunningTask.join
 
 .. autofunction:: cocotb.decorators.RunningTask.kill
