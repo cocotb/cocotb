@@ -219,7 +219,7 @@ class LogicArray(Array[Logic]):
         if isinstance(other, type(self)):
             if len(self) != len(other):
                 raise ValueError(
-                    f"cannot perform bitwise & "
+                    f"cannot perform bitwise | "
                     f"between {type(self).__qualname__} of length {len(self)} "
                     f"and {type(other).__qualname__} of length {len(other)}"
                 )
@@ -233,7 +233,7 @@ class LogicArray(Array[Logic]):
         if isinstance(other, type(self)):
             if len(self) != len(other):
                 raise ValueError(
-                    f"cannot perform bitwise & "
+                    f"cannot perform bitwise ^ "
                     f"between {type(self).__qualname__} of length {len(self)} "
                     f"and {type(other).__qualname__} of length {len(other)}"
                 )
