@@ -5,6 +5,7 @@ import typing
 
 from .array import Array  # noqa: F401
 from .logic import Bit, Logic  # noqa: F401
+from .logic_array import LogicArray  # noqa: F401
 from .range import Range  # noqa: F401
 
 

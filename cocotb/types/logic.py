@@ -6,6 +6,7 @@ from functools import lru_cache
 
 LogicT = typing.TypeVar("LogicT", bound="Logic")
 LogicLiteralT = typing.Union[str, int, bool]
+LogicConstructibleT = typing.Union[LogicLiteralT, "Logic"]
 
 
 _0 = 0
@@ -119,7 +120,7 @@ class Logic:
 
     def __new__(
         cls: typing.Type[LogicT],
-        value: typing.Union[None, LogicLiteralT, "Logic"] = None,
+        value: typing.Optional[LogicConstructibleT] = None,
     ) -> LogicT:
         if isinstance(value, Logic):
             # convert Logic

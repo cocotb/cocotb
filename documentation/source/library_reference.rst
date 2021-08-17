@@ -89,6 +89,9 @@ as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
     :members:
     :exclude-members: count, index
 
+.. autoclass:: cocotb.types.LogicArray
+    :members:
+
 Triggers
 --------
 See :ref:`simulator-triggers` for a list of sub-classes. Below are the internal
