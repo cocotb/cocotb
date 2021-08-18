@@ -1,0 +1,1 @@
+Support a custom entry point from C to Python with :envvar:`PYGPI_ENTRY_POINT`.
