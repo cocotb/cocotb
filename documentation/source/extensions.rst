@@ -84,7 +84,8 @@ All packaging metadata goes into :file:`setup.py`.
         classifiers = [
           "Programming Language :: Python :: 3",
           "Operating System :: OS Independent",
-          "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)"])
+          "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+          "Framework :: cocotb"])
 
 With this file structure in place the cocotb extension can be installed through ``pip`` in development mode ::
 

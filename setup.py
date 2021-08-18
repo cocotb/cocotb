@@ -122,6 +122,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: BSD License",
         "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+        "Framework :: cocotb",
     ],
 
     # these appear in the sidebar on PyPI
