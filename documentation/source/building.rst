@@ -232,16 +232,14 @@ PyGPI
 
     The entry function must be a callable matching this form:
 
-    * ``entry_function(argv: List[str]) -> bool``
+    * ``entry_function(argv: List[str]) -> None``
 
-    The entry module must have the following additional functions defined:
-
-    * ``_sim_event(level: int) -> bool``
-    * ``_log_from_c(logger_name: str, level: int, filename: str, lineno: int, msg: str, function_name: str)) -> bool``
-    * ``_filter_from_c(logger_name: str, level: int) -> bool``
-
-    The entry module functions return ``True`` on success. On failure, they should return ``False`` or raise an :class:`Exception`.
+    The entry module must have the following additional functions defined.
     These additional requirements on the entry module may be relaxed over time.
+
+    * ``_sim_event(level: int) -> None``
+    * ``_log_from_c(logger_name: str, level: int, filename: str, lineno: int, msg: str, function_name: str)) -> None``
+    * ``_filter_from_c(logger_name: str, level: int) -> bool``
 
 
 Makefile-based Test Scripts

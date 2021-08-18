@@ -227,7 +227,7 @@ def _initialise_testbench(argv_):  # pragma: no cover
                 include=["{}/*".format(os.path.dirname(__file__))])
             _library_coverage.start()
 
-        return _initialise_testbench_(argv_)
+        _initialise_testbench_(argv_)
 
 
 def _initialise_testbench_(argv_):
@@ -332,8 +332,6 @@ def _initialise_testbench_(argv_):
     regression_manager = RegressionManager.from_discovery(top)
     regression_manager.execute()
 
-    return True
-
 
 def _sim_event(level, message):
     """Function that can be called externally to signal an event."""
@@ -353,8 +351,6 @@ def _sim_event(level, message):
         scheduler._finish_scheduler(SimFailure(msg))
     else:
         scheduler.log.error("Unsupported sim event")
-
-    return True
 
 
 def process_plusargs():
