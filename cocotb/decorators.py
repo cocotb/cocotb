@@ -274,7 +274,7 @@ class RunningTest(RunningCoroutine):
     """
     The result of calling a :class:`cocotb.test` decorated object.
 
-    All this class does is change __name__ to show "Test" instead of "Task".
+    All this class does is change ``__name__`` to show "Test" instead of "Task".
     """
 
     _name: str = "Test"

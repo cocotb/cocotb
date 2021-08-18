@@ -632,7 +632,7 @@ class TestFactory:
     """Factory to automatically generate tests.
 
     Args:
-        test_function: A callable that return the test Coroutine.
+        test_function: A Callable that returns the test Coroutine.
             Must take *dut* as the first argument.
         *args: Remaining arguments are passed directly to the test function.
             Note that these arguments are not varied. An argument that
