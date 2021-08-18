@@ -618,12 +618,10 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
     Returns:
         Decorated test function
     """
-    # causes early type check, during call to generate_tests()
-    test = cocotb.scheduler.create_task(function(cocotb.top, *args, **kwargs))
 
     @wraps(function)
     async def _my_test(dut):
-        await test
+        await function(cocotb.top, *args, **kwargs)
 
     return cocotb.test()(_my_test)
 
