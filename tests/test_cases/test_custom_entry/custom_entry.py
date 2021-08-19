@@ -2,12 +2,12 @@ from typing import List
 
 from cocotb.log import _filter_from_c, _log_from_c  # noqa: F401
 
-file = open("results.log", "w")
-
 
 def entry_func(argv: List[str]) -> None:
-    print("got entry", file=file)
+    with open("results.log", "w") as file:
+        print("got entry", file=file)
 
 
 def _sim_event(level: int, message: str) -> None:
-    print(f"got event level={level} message={message}", file=file)
+    with open("results.log", "a") as file:
+        print(f"got event level={level} message={message}", file=file)
