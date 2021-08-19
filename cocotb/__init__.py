@@ -196,6 +196,18 @@ async def start(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     return task
 
 
+def create_task(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+    """
+    Constructs a coroutine into a Task without scheduling the Task.
+
+    The Task can later be scheduled with :func:`cocotb.fork`, :func:`cocotb.start`, or
+    :func:`cocotb.start_soon`.
+
+    .. versionadded:: 1.6.0
+    """
+    return cocotb.scheduler.create_task(coro)
+
+
 # FIXME is this really required?
 _rlock = threading.RLock()
 

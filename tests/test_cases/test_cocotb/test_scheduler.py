@@ -10,12 +10,25 @@ Test for scheduler and coroutine behavior
 """
 import logging
 import re
+from typing import Coroutine
 
 import cocotb
-from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, Combine, Event, ReadOnly, First
+import pytest
 from cocotb.clock import Clock
-from common import clock_gen
+from cocotb.decorators import RunningTask
+from cocotb.triggers import (
+    Combine,
+    Event,
+    First,
+    Join,
+    NullTrigger,
+    ReadOnly,
+    RisingEdge,
+    Timer,
+    Trigger,
+)
 
+from common import clock_gen
 
 test_flag = False
 
@@ -543,7 +556,7 @@ async def test_start(_):
     await Timer(1, 'step')
     assert task1._finished
 
-    task2 = cocotb.scheduler.create_task(coro())
+    task2 = cocotb.create_task(coro())
     task3 = await cocotb.start(task2)
     assert task3 is task2
 
@@ -595,3 +608,55 @@ async def test_start_scheduling(dut):
     assert coro_started is True
     await Timer(1, 'step')  # await a GPITrigger to ensure control returns to simulator
     assert sim_resumed is True
+
+
+@cocotb.test()
+async def test_create_task(_):
+
+    # proper construction from coroutines
+    async def coro():
+        pass
+
+    assert type(cocotb.create_task(coro())) == RunningTask
+
+    # proper construction from Coroutine objects
+    class CoroType(Coroutine):
+        def __init__(self):
+            self._coro = coro()
+
+        def send(self, value):
+            return self._coro.send(value)
+
+        def throw(self, exception):
+            self._coro.throw(exception)
+
+        def close(self):
+            self._coro.close()
+
+        def __await__(self):
+            yield from self._coro.__await__()
+
+    assert type(cocotb.create_task(CoroType())) == RunningTask
+
+    # fail if given async generators
+    async def agen():
+        yield None
+
+    with pytest.raises(TypeError):
+        cocotb.create_task(agen())
+
+    # fail if given coroutine function
+    with pytest.raises(TypeError):
+        cocotb.create_task(coro)
+
+    # fail if given Coroutine Type
+    with pytest.raises(TypeError):
+        cocotb.create_task(CoroType)
+
+    # fail if given async generator function
+    with pytest.raises(TypeError):
+        cocotb.create_task(agen)
+
+    # fail if given random type
+    with pytest.raises(TypeError):
+        cocotb.create_task(object())
