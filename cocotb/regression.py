@@ -621,7 +621,7 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
 
     @wraps(function)
     async def _my_test(dut):
-        await function(cocotb.top, *args, **kwargs)
+        await function(dut, *args, **kwargs)
 
     return cocotb.test()(_my_test)
 
