@@ -6,14 +6,12 @@ import os
 import sys
 import sysconfig
 import logging
-import distutils
+import shutil
 import subprocess
 import textwrap
 
 from setuptools import Extension
-from distutils.spawn import find_executable
 from setuptools.command.build_ext import build_ext as _build_ext
-from distutils.file_util import copy_file
 from distutils.ccompiler import get_default_compiler
 from typing import List
 
@@ -329,9 +327,10 @@ class build_ext(_build_ext):
 
             os.makedirs(os.path.dirname(dest_filename), exist_ok=True)
 
-            copy_file(
-                src_filename, dest_filename, verbose=self.verbose, dry_run=self.dry_run
-            )
+            if not self.dry_run:
+                if self.verbose:
+                    print(f"Copying {src_filename} to {dest_filename}")
+                shutil.copyfile(src_filename, dest_filename)
             if ext._needs_stub:
                 self.write_stub(package_dir or os.curdir, ext, True)
 
@@ -579,7 +578,7 @@ def _get_vhpi_lib_ext(
 
 def get_ext():
 
-    cfg_vars = distutils.sysconfig.get_config_vars()
+    cfg_vars = sysconfig.get_config_vars()
 
     if sys.platform == "darwin":
         cfg_vars["LDSHARED"] = cfg_vars["LDSHARED"].replace("-bundle", "-dynamiclib")
@@ -633,7 +632,7 @@ def get_ext():
     )
     ext.append(modelsim_vhpi_ext)
 
-    vsim_path = find_executable("vdbg")
+    vsim_path = shutil.which("vdbg")
     if vsim_path is None:
         logger.warning(
             "Modelsim/Questa executable (vdbg) executable not found. No FLI interface will be available."

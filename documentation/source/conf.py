@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 
 import cocotb
-from distutils.version import LooseVersion
+from cocotb._vendor.distutils_version import LooseVersion
 
 os.environ["SPHINX_BUILD"] = "1"
 
