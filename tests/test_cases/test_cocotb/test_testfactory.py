@@ -4,6 +4,8 @@
 """
 Tests of cocotb.regression.TestFactory functionality
 """
+from collections.abc import Coroutine
+
 import cocotb
 from cocotb.regression import TestFactory
 
@@ -28,3 +30,26 @@ async def test_testfactory_verify_args(dut):
         ("a1v1", "a2v2", "a3v2"),
         ("a1v2", "a2v2", "a3v2"),
     }
+
+
+class TestClass(Coroutine):
+
+    def __init__(self, dut, myarg):
+        self._coro = self.run(dut, myarg)
+
+    async def run(self, dut, myarg):
+        assert myarg == 1
+
+    def send(self, value):
+        self._coro.send(value)
+
+    def throw(self, exception):
+        self._coro.throw(exception)
+
+    def __await__(self):
+        yield from self._coro.__await__()
+
+
+tf = TestFactory(TestClass)
+tf.add_option("myarg", [1])
+tf.generate_tests()

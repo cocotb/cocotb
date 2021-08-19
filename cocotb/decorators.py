@@ -30,6 +30,7 @@ import functools
 import inspect
 import os
 import warnings
+import collections.abc
 
 import cocotb
 from cocotb.log import SimLog
@@ -86,11 +87,12 @@ class RunningTask:
         triggers to fire.
     """
 
+    _name: str = "Task"  # class name of schedulable task
     _id_count = 0  # used by the scheduler for debug
 
     def __init__(self, inst):
 
-        if inspect.iscoroutine(inst):
+        if isinstance(inst, collections.abc.Coroutine):
             self._natively_awaitable = True
         elif inspect.isgenerator(inst):
             self._natively_awaitable = False
@@ -115,7 +117,7 @@ class RunningTask:
 
         self._task_id = self._id_count
         RunningTask._id_count += 1
-        self.__name__ = "Task %d" % self._task_id
+        self.__name__ = f"{type(self)._name} {self._task_id}"
         self.__qualname__ = self.__name__
 
     @lazy_property
@@ -268,6 +270,16 @@ class RunningCoroutine(RunningTask):
         self.funcname = parent._func.__name__
 
 
+class RunningTest(RunningCoroutine):
+    """
+    The result of calling a :class:`cocotb.test` decorated object.
+
+    All this class does is change ``__name__`` to show "Test" instead of "Task".
+    """
+
+    _name: str = "Test"
+
+
 class coroutine:
     """Decorator class that allows us to provide common coroutine mechanisms:
 
@@ -375,12 +387,11 @@ class _decorator_helper(type):
 
 @public
 class test(coroutine, metaclass=_decorator_helper):
-    """Decorator to mark a function as a test.
+    """
+    Decorator to mark a Callable which returns a Coroutine as a test.
 
-    All tests are coroutines.  The test decorator provides
-    some common reporting etc., a test timeout and allows
-    us to mark tests as expected failures.
-
+    The test decorator provides a test timeout, and allows us to mark tests as skipped
+    or expecting errors or failures.
     Tests are evaluated in the order they are defined in a test module.
 
     Used as ``@cocotb.test(...)``.
@@ -488,7 +499,5 @@ class test(coroutine, metaclass=_decorator_helper):
 
     def __call__(self, *args, **kwargs):
         inst = self._func(*args, **kwargs)
-        coro = RunningCoroutine(inst, self)
-        coro.__name__ = "Test {}".format(inst.__name__)
-        coro.__qualname__ = "Test {}".format(inst.__qualname__)
+        coro = RunningTest(inst, self)
         return coro

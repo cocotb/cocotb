@@ -696,7 +696,7 @@ class Scheduler:
 
         if isinstance(coroutine, RunningTask):
             return coroutine
-        if inspect.iscoroutine(coroutine):
+        if isinstance(coroutine, Coroutine):
             return RunningTask(coroutine)
         if inspect.iscoroutinefunction(coroutine):
             raise TypeError(

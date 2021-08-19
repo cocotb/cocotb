@@ -1,0 +1,1 @@
+:class:`~cocotb.regression.TestFactory` and :class:`cocotb.test` now accept any :class:`collections.abc.Callable` object which returns a :class:`collections.abc.Coroutine` as a test function.

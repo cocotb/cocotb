@@ -35,6 +35,7 @@ import os
 import traceback
 import pdb
 from typing import Any, Optional, Tuple, Iterable
+from functools import wraps
 
 import cocotb
 import cocotb.ANSI as ANSI
@@ -617,13 +618,11 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
     Returns:
         Decorated test function
     """
+
+    @wraps(function)
     async def _my_test(dut):
         await function(dut, *args, **kwargs)
 
-    _my_test.__name__ = name
-    _my_test.__qualname__ = name
-    _my_test.__doc__ = documentation
-    _my_test.__module__ = mod.__name__
     return cocotb.test()(_my_test)
 
 
@@ -631,7 +630,7 @@ class TestFactory:
     """Factory to automatically generate tests.
 
     Args:
-        test_function: The function that executes a test.
+        test_function: A Callable that returns the test Coroutine.
             Must take *dut* as the first argument.
         *args: Remaining arguments are passed directly to the test function.
             Note that these arguments are not varied. An argument that
@@ -687,12 +686,6 @@ class TestFactory:
     __test__ = False
 
     def __init__(self, test_function, *args, **kwargs):
-        if sys.version_info > (3, 6) and inspect.isasyncgenfunction(test_function):
-            raise TypeError("Expected a coroutine function, but got the async generator '{}'. "
-                            "Did you forget to convert a `yield` to an `await`?"
-                            .format(test_function.__qualname__))
-        if not (isinstance(test_function, cocotb.coroutine) or inspect.iscoroutinefunction(test_function)):
-            raise TypeError("TestFactory requires a cocotb coroutine")
         self.test_function = test_function
         self.name = self.test_function.__qualname__
 
