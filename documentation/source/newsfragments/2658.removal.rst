@@ -1,1 +1,0 @@
-Deprecate ``signal <= newval`` syntax for setting values on handles, due to its unreliability in corner cases which make cocotb harder to learn and teach. Use the ``signal.value = newval`` syntax instead.
