@@ -480,9 +480,9 @@ class NonHierarchyObject(SimHandleBase):
         >>> module.signal <= 2
         """
         warnings.warn(
-            "Setting values on handles using the ``handle <= value`` syntax will be deprecated. "
+            "Setting values on handles using the ``handle <= value`` syntax is deprecated. "
             "Instead use the ``handle.value = value`` syntax",
-            PendingDeprecationWarning,
+            DeprecationWarning,
             stacklevel=2)
         self.value = value
         return _AssignmentResult(self, value)
