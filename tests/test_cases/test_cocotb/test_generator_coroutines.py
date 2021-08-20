@@ -109,14 +109,6 @@ def test_coroutine_error(dut):
         yield erroring_coro()
 
 
-@cocotb.test(expect_error=NameError)
-def test_fork_error(dut):
-    """Error in a coroutine that we fork"""
-    yield clock_gen(dut.clk)
-    cocotb.fork(erroring_coro())
-    yield clock_gen(dut.clk)
-
-
 @cocotb.test()
 def test_coroutine_return(dut):
     """ Test that the Python 3.3 syntax for returning from generators works """
