@@ -193,7 +193,7 @@ async def test_assigning_setitem_syntax_deprecated(dut):
 
 @cocotb.test()
 async def test_assigning_less_than_syntax_deprecated(dut):
-    with assert_deprecated(PendingDeprecationWarning):
+    with assert_deprecated(DeprecationWarning):
         dut.stream_in_data <= 1
 
 
