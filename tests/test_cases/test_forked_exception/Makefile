@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 MODULE := test_forked_exception
-export PYTHONWARNINGS = error::FutureWarning
 
 # ensure the test runs, squash any error code, and ensure a failing test was reported
 .PHONY: override_for_this_test
