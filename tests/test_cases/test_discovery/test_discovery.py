@@ -99,17 +99,17 @@ async def access_type_bit_verilog(dut):
     """Access type bit in SystemVerilog"""
     await Timer(1, "step")
     assert dut.mybit.value == 1, "The default value was incorrect"
-    dut.mybit <= 0
+    dut.mybit.value = 0
     await Timer(1, "ns")
     assert dut.mybit.value == 0, "The assigned value was incorrect"
 
     assert dut.mybits.value == 0b11, "The default value was incorrect"
-    dut.mybits <= 0b00
+    dut.mybits.value = 0b00
     await Timer(1, "ns")
     assert dut.mybits.value == 0b00, "The assigned value was incorrect"
 
     assert dut.mybits_uninitialized.value == 0b00, "The default value was incorrect"
-    dut.mybits_uninitialized <= 0b11
+    dut.mybits_uninitialized.value = 0b11
     await Timer(1, "ns")
     assert dut.mybits_uninitialized.value == 0b11, "The assigned value was incorrect"
 
@@ -122,7 +122,7 @@ async def access_type_bit_verilog_metavalues(dut):
     The metavalues still may show up as `0` and `1` in HDL (Xcelium and Riviera).
     """
     await Timer(1, "ns")
-    dut.mybits <= BinaryValue("XZ")
+    dut.mybits.value = BinaryValue("XZ")
     await Timer(1, "ns")
     print(dut.mybits.value.binstr)
     if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim")):
@@ -132,7 +132,7 @@ async def access_type_bit_verilog_metavalues(dut):
     else:
         assert dut.mybits.value.binstr.lower() == "00", "The assigned value was incorrect"
 
-    dut.mybits <= BinaryValue("ZX")
+    dut.mybits.value = BinaryValue("ZX")
     await Timer(1, "ns")
     print(dut.mybits.value.binstr)
     if cocotb.SIM_NAME.lower().startswith(("icarus", "ncsim", "xmsim")):
@@ -149,11 +149,11 @@ async def access_type_bit_verilog_metavalues(dut):
     skip=cocotb.LANGUAGE in ["vhdl"])
 async def access_single_bit(dut):
     """Access a single bit in a vector of the DUT"""
-    dut.stream_in_data <= 0
+    dut.stream_in_data.value = 0
     await Timer(1, "ns")
     dut._log.info("%s = %d bits" %
                   (dut.stream_in_data._path, len(dut.stream_in_data)))
-    dut.stream_in_data[2] <= 1
+    dut.stream_in_data[2].value = 1
     await Timer(1, "ns")
     if dut.stream_out_data_comb.value.integer != (1 << 2):
         raise TestError("%s.%s != %d" %
@@ -167,7 +167,7 @@ async def access_single_bit_erroneous(dut):
     dut._log.info("%s = %d bits" %
                   (dut.stream_in_data._path, len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
-    dut.stream_in_data[bit] <= 1
+    dut.stream_in_data[bit].value = 1
 
 
 # Riviera discovers integers as nets (gh-2597)
@@ -314,7 +314,7 @@ async def access_const_string_verilog(dut):
         raise TestFailure(f"Initial value of STRING_CONST was not == b\'TESTING_CONST\' but {string_const.value} instead")
 
     tlog.info("Modifying const string")
-    string_const <= b"MODIFIED"
+    string_const.value = b"MODIFIED"
     await Timer(10, "ns")
     if string_const != b"TESTING_CONST":
         raise TestFailure(f"STRING_CONST was not still b\'TESTING_CONST\' after modification but {string_const.value} instead")
@@ -335,7 +335,7 @@ async def access_var_string_verilog(dut):
         raise TestFailure(f"Initial value of STRING_VAR was not == b\'TESTING_VAR\' but {string_var.value} instead")
 
     tlog.info("Modifying var string")
-    string_var <= b"MODIFIED"
+    string_var.value = b"MODIFIED"
     await Timer(10, "ns")
     if string_var != b"MODIFIED":
         raise TestFailure(f"STRING_VAR was not == b\'MODIFIED\' after modification but {string_var.value} instead")
@@ -415,7 +415,7 @@ async def skip_a_test(dut):
     dut._log.info("%s = %d bits" %
                   (dut.stream_in_data._path, len(dut.stream_in_data)))
     bit = len(dut.stream_in_data) + 4
-    dut.stream_in_data[bit] <= 1
+    dut.stream_in_data[bit].value = 1
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],

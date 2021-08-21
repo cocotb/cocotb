@@ -29,8 +29,8 @@ class Regulator_TB:
     async def get_voltage(self, node):
         """Measure voltage on *node*."""
         toggle = next(self._bit_toggle_stream)
-        self.tb_hdl.i_analog_probe.node_to_probe <= node.encode("ascii")
-        self.analog_probe.probe_voltage_toggle <= toggle
+        self.tb_hdl.i_analog_probe.node_to_probe.value = node.encode("ascii")
+        self.analog_probe.probe_voltage_toggle.value = toggle
         await Timer(1, units="ps")  # waiting time needed for the analog values to be updated
         self.tb_hdl._log.debug(
             "trim value={}: {}={:.4} V".format(
@@ -61,11 +61,11 @@ class Regulator_TB:
         trim_val_max = 2 ** (trim_val_node.value.n_bits - 1) - 1
         # the actual trimming procedure:
         # minimum values
-        trim_val_node <= trim_val_min
+        trim_val_node.value = trim_val_min
         await Timer(self.settling_time_ns, units="ns")
         volt_min = await self.get_voltage(probed_node)
         # maximum values
-        trim_val_node <= trim_val_max
+        trim_val_node.value = trim_val_max
         await Timer(self.settling_time_ns, units="ns")
         volt_max = await self.get_voltage(probed_node)
         if target_volt > volt_max:
@@ -110,7 +110,7 @@ async def run_test(tb_hdl):
         probed_node=node, target_volt=target_volt, trim_val_node=tb_py.tb_hdl.trim_val
     )
     best_trim_rounded = round(best_trim_float)
-    tb_py.tb_hdl.trim_val <= best_trim_rounded
+    tb_py.tb_hdl.trim_val.value = best_trim_rounded
     await Timer(tb_py.settling_time_ns, units="ns")
     trimmed_volt = await tb_py.get_voltage(node)
     tb_py.tb_hdl._log.info(

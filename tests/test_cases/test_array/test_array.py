@@ -104,15 +104,15 @@ async def test_read_write(dut):
             _check_logic(tlog, dut.const_cmplx[2].b[1], 0xFF)
             _check_logic(tlog, dut.const_cmplx[2].b[2], 0xFF)
 
-    dut.select_in         <= 2
+    dut.select_in        .value = 2
 
     await Timer(10, "ns")
 
     tlog.info("Writing the signals!!!")
-    dut.sig_logic         <= 1
-    dut.sig_logic_vec     <= 0xCC
-    dut.sig_t2 <= [0xCC, 0xDD, 0xEE, 0xFF]
-    dut.sig_t4 <= [
+    dut.sig_logic        .value = 1
+    dut.sig_logic_vec    .value = 0xCC
+    dut.sig_t2.value = [0xCC, 0xDD, 0xEE, 0xFF]
+    dut.sig_t4.value = [
         [0x00, 0x11, 0x22, 0x33],
         [0x44, 0x55, 0x66, 0x77],
         [0x88, 0x99, 0xAA, 0xBB],
@@ -120,23 +120,23 @@ async def test_read_write(dut):
     ]
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        dut.sig_bool          <= 1
-        dut.sig_int           <= 5000
-        dut.sig_real          <= 22.54
-        dut.sig_char          <= ord('Z')
-        dut.sig_str           <= "Testing"
-        dut.sig_rec.a         <= 1
-        dut.sig_rec.b[0]      <= 0x01
-        dut.sig_rec.b[1]      <= 0x23
-        dut.sig_rec.b[2]      <= 0x45
-        dut.sig_cmplx[0].a    <= 0
-        dut.sig_cmplx[0].b[0] <= 0x67
-        dut.sig_cmplx[0].b[1] <= 0x89
-        dut.sig_cmplx[0].b[2] <= 0xAB
-        dut.sig_cmplx[1].a    <= 1
-        dut.sig_cmplx[1].b[0] <= 0xCD
-        dut.sig_cmplx[1].b[1] <= 0xEF
-        dut.sig_cmplx[1].b[2] <= 0x55
+        dut.sig_bool         .value = 1
+        dut.sig_int          .value = 5000
+        dut.sig_real         .value = 22.54
+        dut.sig_char         .value = ord('Z')
+        dut.sig_str          .value = "Testing"
+        dut.sig_rec.a        .value = 1
+        dut.sig_rec.b[0]     .value = 0x01
+        dut.sig_rec.b[1]     .value = 0x23
+        dut.sig_rec.b[2]     .value = 0x45
+        dut.sig_cmplx[0].a   .value = 0
+        dut.sig_cmplx[0].b[0].value = 0x67
+        dut.sig_cmplx[0].b[1].value = 0x89
+        dut.sig_cmplx[0].b[2].value = 0xAB
+        dut.sig_cmplx[1].a   .value = 1
+        dut.sig_cmplx[1].b[0].value = 0xCD
+        dut.sig_cmplx[1].b[1].value = 0xEF
+        dut.sig_cmplx[1].b[2].value = 0x55
 
     await Timer(10, "ns")
 
@@ -170,17 +170,17 @@ async def test_read_write(dut):
         _check_logic(tlog, dut.port_cmplx_out[1].b[2], 0x55)
 
     tlog.info("Writing a few signal sub-indices!!!")
-    dut.sig_logic_vec[2]     <= 0
+    dut.sig_logic_vec[2]    .value = 0
     if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")) or
                                            (cocotb.SIM_NAME.lower().startswith("riviera") and
                                             cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")))):
-        dut.sig_t6[1][3][2]      <= 1
-        dut.sig_t6[0][2][7]      <= 0
+        dut.sig_t6[1][3][2]     .value = 1
+        dut.sig_t6[0][2][7]     .value = 0
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        dut.sig_str[2]           <= ord('E')
-        dut.sig_rec.b[1][7]      <= 1
-        dut.sig_cmplx[1].b[1][0] <= 0
+        dut.sig_str[2]          .value = ord('E')
+        dut.sig_rec.b[1][7]     .value = 1
+        dut.sig_cmplx[1].b[1][0].value = 0
 
     await Timer(10, "ns")
 
@@ -420,15 +420,15 @@ async def test_direct_signal_indexing(dut):
 
     cocotb.fork(Clock(dut.clk, 10, "ns").start())
 
-    dut.port_desc_in <= 0
-    dut.port_asc_in  <= 0
-    dut.port_ofst_in <= 0
+    dut.port_desc_in.value = 0
+    dut.port_asc_in .value = 0
+    dut.port_ofst_in.value = 0
 
     await Timer(20, "ns")
 
-    dut.port_desc_in[2] <= 1
-    dut.port_asc_in[2]  <= 1
-    dut.port_ofst_in[2] <= 1
+    dut.port_desc_in[2].value = 1
+    dut.port_asc_in[2] .value = 1
+    dut.port_ofst_in[2].value = 1
 
     await Timer(20, "ns")
 

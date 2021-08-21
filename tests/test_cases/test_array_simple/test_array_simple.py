@@ -28,10 +28,10 @@ async def test_1dim_array_handles(dut):
     cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
 
     # Set values with '<=' operator
-    dut.array_7_downto_4 <= [0xF0, 0xE0, 0xD0, 0xC0]
-    dut.array_4_to_7     <= [0xB0, 0xA0, 0x90, 0x80]
-    dut.array_3_downto_0 <= [0x70, 0x60, 0x50, 0x40]
-    dut.array_0_to_3     <= [0x30, 0x20, 0x10, 0x00]
+    dut.array_7_downto_4.value = [0xF0, 0xE0, 0xD0, 0xC0]
+    dut.array_4_to_7.value = [0xB0, 0xA0, 0x90, 0x80]
+    dut.array_3_downto_0.value = [0x70, 0x60, 0x50, 0x40]
+    dut.array_0_to_3.value = [0x30, 0x20, 0x10, 0x00]
 
     await Timer(1000, 'ns')
 
@@ -54,7 +54,7 @@ async def test_ndim_array_handles(dut):
     cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
 
     # Set values with '<=' operator
-    dut.array_2d <= [
+    dut.array_2d.value = [
         [0xF0, 0xE0, 0xD0, 0xC0],
         [0xB0, 0xA0, 0x90, 0x80]
     ]
@@ -71,10 +71,10 @@ async def test_1dim_array_indexes(dut):
 
     cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
 
-    dut.array_7_downto_4 <= [0xF0, 0xE0, 0xD0, 0xC0]
-    dut.array_4_to_7     <= [0xB0, 0xA0, 0x90, 0x80]
-    dut.array_3_downto_0 <= [0x70, 0x60, 0x50, 0x40]
-    dut.array_0_to_3     <= [0x30, 0x20, 0x10, 0x00]
+    dut.array_7_downto_4.value = [0xF0, 0xE0, 0xD0, 0xC0]
+    dut.array_4_to_7.value = [0xB0, 0xA0, 0x90, 0x80]
+    dut.array_3_downto_0.value = [0x70, 0x60, 0x50, 0x40]
+    dut.array_0_to_3.value = [0x30, 0x20, 0x10, 0x00]
 
     await Timer(1000, 'ns')
 
@@ -90,11 +90,11 @@ async def test_1dim_array_indexes(dut):
     _check_value(tlog, dut.array_0_to_3[1]    , 0x20)
 
     # Get sub-handles through NonHierarchyIndexableObject.__getitem__
-    dut.array_7_downto_4[7] <= 0xDE
-    dut.array_4_to_7[4]     <= 0xFC
-    dut.array_3_downto_0[0] <= 0xAB
-    dut.array_0_to_3[1]     <= 0x7A
-    dut.array_0_to_3[3]     <= 0x42
+    dut.array_7_downto_4[7].value = 0xDE
+    dut.array_4_to_7[4].value = 0xFC
+    dut.array_3_downto_0[0].value = 0xAB
+    dut.array_0_to_3[1].value = 0x7A
+    dut.array_0_to_3[3].value = 0x42
 
     await Timer(1000, 'ns')
 
@@ -117,7 +117,7 @@ async def test_ndim_array_indexes(dut):
 
     cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
 
-    dut.array_2d <= [
+    dut.array_2d.value = [
         [0xF0, 0xE0, 0xD0, 0xC0],
         [0xB0, 0xA0, 0x90, 0x80]
     ]
@@ -131,8 +131,8 @@ async def test_ndim_array_indexes(dut):
     _check_value(tlog, dut.array_2d[1][28], 0x80)
 
     # Get sub-handles through NonHierarchyIndexableObject.__getitem__
-    dut.array_2d[1]     <= [0xDE, 0xAD, 0xBE, 0xEF]
-    dut.array_2d[0][31] <= 0x0F
+    dut.array_2d[1].value = [0xDE, 0xAD, 0xBE, 0xEF]
+    dut.array_2d[0][31].value = 0x0F
 
     await Timer(1000, 'ns')
 
@@ -148,10 +148,10 @@ async def test_ndim_array_indexes(dut):
 async def test_struct(dut):
     """Test setting and getting values of structs."""
     cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
-    dut.inout_if.a_in <= 1
+    dut.inout_if.a_in.value = 1
     await Timer(1000, 'ns')
     _check_value(tlog, dut.inout_if.a_in, 1)
-    dut.inout_if.a_in <= 0
+    dut.inout_if.a_in.value = 0
     await Timer(1000, 'ns')
     _check_value(tlog, dut.inout_if.a_in, 0)
 
@@ -170,10 +170,10 @@ def assert_raises(exc_type):
 async def test_exceptions(dut):
     """Test that correct Exceptions are raised."""
     with assert_raises(TypeError):
-        dut.array_7_downto_4 <= (0xF0, 0xE0, 0xD0, 0xC0)
+        dut.array_7_downto_4.value = (0xF0, 0xE0, 0xD0, 0xC0)
     with assert_raises(TypeError):
-        dut.array_4_to_7     <= Exception("Exception Object")
+        dut.array_4_to_7.value = Exception("Exception Object")
     with assert_raises(ValueError):
-        dut.array_3_downto_0 <= [0x70, 0x60, 0x50]
+        dut.array_3_downto_0.value = [0x70, 0x60, 0x50]
     with assert_raises(ValueError):
-        dut.array_0_to_3     <= [0x40, 0x30, 0x20, 0x10, 0x00]
+        dut.array_0_to_3.value = [0x40, 0x30, 0x20, 0x10, 0x00]

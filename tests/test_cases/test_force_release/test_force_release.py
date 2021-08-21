@@ -17,8 +17,8 @@ async def test_force_release(dut):
     """
     log = logging.getLogger("cocotb.test")
     await Timer(10, "ns")
-    dut.stream_in_data <= 4
-    dut.stream_out_data_comb <= Force(5)
+    dut.stream_in_data.value = 4
+    dut.stream_out_data_comb.value = Force(5)
     await Timer(10, "ns")
     got_in = int(dut.stream_in_data)
     got_out = int(dut.stream_out_data_comb)
@@ -26,8 +26,8 @@ async def test_force_release(dut):
     log.info("dut.stream_out_data_comb = %d" % got_out)
     assert got_in != got_out
 
-    dut.stream_out_data_comb <= Release()
-    dut.stream_in_data <= 3
+    dut.stream_out_data_comb.value = Release()
+    dut.stream_in_data.value = 3
     await Timer(10, "ns")
     got_in = int(dut.stream_in_data)
     got_out = int(dut.stream_out_data_comb)

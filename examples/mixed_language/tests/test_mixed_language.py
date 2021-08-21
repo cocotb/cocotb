@@ -13,10 +13,10 @@ async def mixed_language_test(dut):
     vhdl = dut.i_swapper_vhdl
     dut._log.info("Got: %s" % repr(vhdl._name))
 
-    verilog.reset_n <= 1
+    verilog.reset_n.value = 1
     await Timer(100, units='ns')
 
-    vhdl.reset_n <= 1
+    vhdl.reset_n.value = 1
     await Timer(100, units='ns')
 
     assert int(verilog.reset_n) == int(vhdl.reset_n), "reset_n signals were different"

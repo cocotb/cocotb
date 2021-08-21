@@ -25,9 +25,9 @@ class ResCap_TB:
 
     async def _get_single_sample(self, node):
         toggle = next(self.togglestream)
-        self.tb_hdl.i_analog_probe.node_to_probe <= node.encode('ascii')
-        self.analog_probe.probe_voltage_toggle <= toggle
-        self.analog_probe.probe_current_toggle <= toggle
+        self.tb_hdl.i_analog_probe.node_to_probe.value = node.encode('ascii')
+        self.analog_probe.probe_voltage_toggle.value = toggle
+        self.analog_probe.probe_current_toggle.value = toggle
         await Timer(1, units="ps")  # waiting time needed for the analog values to be updated
         dataset = Dataset(
             time=get_sim_time(units="ns"),
@@ -110,15 +110,15 @@ async def run_test(tb_hdl):
     probedata = defaultdict(list)
 
     vdd = 0.0
-    tb_py.tb_hdl.vdd_val <= vdd
-    tb_py.tb_hdl.vss_val <= 0.0
+    tb_py.tb_hdl.vdd_val.value = vdd
+    tb_py.tb_hdl.vss_val.value = 0.0
     tb_py.tb_hdl._log.info(f"Setting vdd={vdd:.4} V")
     # dummy read appears to be necessary for the analog solver
     _ = await tb_py.get_sample_data(nodes=nodes_to_probe)
 
     for vdd in [5.55, -3.33]:
-        tb_py.tb_hdl.vdd_val <= vdd
-        tb_py.tb_hdl.vss_val <= 0.0
+        tb_py.tb_hdl.vdd_val.value = vdd
+        tb_py.tb_hdl.vss_val.value = 0.0
         tb_py.tb_hdl._log.info(f"Setting vdd={vdd:.4} V")
         data = await tb_py.get_sample_data(num=60, delay_ns=5, nodes=nodes_to_probe)
         for node in nodes_to_probe:

@@ -57,8 +57,8 @@ async def test_analog_model(digital) -> None:
         # hand digital value over as "meas_val" to digital part (HDL)
         # "meas_val_valid" pulses for one clock cycle
         await RisingEdge(digital.clk)
-        digital.meas_val <= afe_out
-        digital.meas_val_valid <= 1
+        digital.meas_val.value = afe_out
+        digital.meas_val_valid.value = 1
         await RisingEdge(digital.clk)
-        digital.meas_val_valid <= 0
+        digital.meas_val_valid.value = 0
         await Timer(3.3, "us")

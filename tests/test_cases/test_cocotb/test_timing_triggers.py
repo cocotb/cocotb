@@ -28,9 +28,9 @@ async def test_function_reentrant_clock(dut):
     clock = dut.clk
     timer = Timer(100, "ns")
     for i in range(10):
-        clock <= 0
+        clock.value = 0
         await timer
-        clock <= 1
+        clock.value = 1
         await timer
 
 
@@ -98,7 +98,7 @@ async def do_test_cached_write_in_readonly(dut):
     global exited
     await RisingEdge(dut.clk)
     await ReadOnly()
-    dut.clk <= 0
+    dut.clk.value = 0
     exited = True
 
 
@@ -170,7 +170,7 @@ async def test_writes_have_taken_effect_after_readwrite(dut):
     waiter = cocotb.fork(write_manually())
 
     # do a delayed write. This will be overwritten
-    dut.stream_in_data <= 3
+    dut.stream_in_data.value = 3
     await waiter
 
     # check that the write we expected took precedence
@@ -205,7 +205,7 @@ async def test_readwrite(dut):
     """ Test that ReadWrite can be waited on """
     # gh-759
     await Timer(1, "ns")
-    dut.clk <= 1
+    dut.clk.value = 1
     await ReadWrite()
 
 

@@ -8,4 +8,4 @@ async def test(dut):
     #
     #   b.vhdl:9:5:@0ms:(report note): :a(structural):b@b(structural):
     #
-    dut.x <= False
+    dut.x.value = False

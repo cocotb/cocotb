@@ -317,7 +317,7 @@ class HierarchyObject(RegionObject):
         if sub is not None:
             warnings.warn(
                 "Setting values on handles using the ``dut.handle = value`` syntax is deprecated. "
-                "Instead use the ``handle.value = value`` or ``handle <= value`` syntax",
+                "Instead use the ``handle.value = value`` syntax",
                 DeprecationWarning, stacklevel=2)
             sub.value = value
             return
@@ -479,6 +479,11 @@ class NonHierarchyObject(SimHandleBase):
         Example:
         >>> module.signal <= 2
         """
+        warnings.warn(
+            "Setting values on handles using the ``handle <= value`` syntax is deprecated. "
+            "Instead use the ``handle.value = value`` syntax",
+            DeprecationWarning,
+            stacklevel=2)
         self.value = value
         return _AssignmentResult(self, value)
 
@@ -587,7 +592,7 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
         """Provide transparent assignment to indexed array handles."""
         warnings.warn(
             "Setting values on handles using the ``dut.handle[i] = value`` syntax is deprecated. "
-            "Instead use the ``handle[i].value = value`` or ``handle[i] <= value`` syntax",
+            "Instead use the ``handle[i].value = value`` syntax",
             DeprecationWarning, stacklevel=2)
         self[index].value = value
 

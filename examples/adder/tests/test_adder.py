@@ -14,8 +14,8 @@ async def adder_basic_test(dut):
     A = 5
     B = 10
 
-    dut.A <= A
-    dut.B <= B
+    dut.A.value = A
+    dut.B.value = B
 
     await Timer(2, units='ns')
 
@@ -31,8 +31,8 @@ async def adder_randomised_test(dut):
         A = random.randint(0, 15)
         B = random.randint(0, 15)
 
-        dut.A <= A
-        dut.B <= B
+        dut.A.value = A
+        dut.B.value = B
 
         await Timer(2, units='ns')
 

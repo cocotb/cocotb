@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from common import assert_raises
 from typing import List
 from cocotb._sim_versions import IcarusVersion
+import pytest
 
 
 @contextmanager
@@ -44,14 +45,14 @@ async def test_returnvalue_deprecated(dut):
 @cocotb.test(expect_error=AssertionError if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) else ())
 async def test_unicode_handle_assignment_deprecated(dut):
     with assert_deprecated() as warns:
-        dut.stream_in_string <= "Bad idea"
+        dut.stream_in_string.value = "Bad idea"
         await cocotb.triggers.ReadWrite()
     assert "bytes" in str(warns[0].message)
 
 
 @cocotb.test()
 async def test_convert_handle_to_string_deprecated(dut):
-    dut.stream_in_data <= 0
+    dut.stream_in_data.value = 0
     await cocotb.triggers.Timer(1, units='ns')
 
     with assert_deprecated(FutureWarning) as warns:
@@ -107,7 +108,7 @@ async def test_handle_compat_mapping(dut):
 
 @cocotb.test()
 async def test_assigning_structure_deprecated(dut):
-    """signal <= ctypes.Structure assignment is deprecated"""
+    """signal.value = ctypes.Structure assignment is deprecated"""
 
     class Example(ctypes.Structure):
         _fields_ = [
@@ -117,7 +118,7 @@ async def test_assigning_structure_deprecated(dut):
     e = Example(a=0xCC, b=0x12345678)
 
     with assert_deprecated():
-        dut.stream_in_data_wide <= e
+        dut.stream_in_data_wide.value = e
 
     await Timer(1, 'step')
 
@@ -160,7 +161,7 @@ async def test_dict_signal_assignment_deprecated(dut):
     d = dict(values=[0xC, 0x5], bits=4)
 
     with assert_deprecated():
-        dut.stream_in_data <= d
+        dut.stream_in_data.value = d
 
     await Timer(1, 'step')
 
@@ -188,3 +189,18 @@ async def test_assigning_setitem_syntax_deprecated(dut):
         with assert_raises(IndexError):
             # attempt to use __setitem__ syntax on signal that doesn't exist
             dut.stream_in_data[800000] = 1
+
+
+@cocotb.test()
+async def test_assigning_less_than_syntax_deprecated(dut):
+    with assert_deprecated(DeprecationWarning):
+        dut.stream_in_data <= 1
+
+
+@cocotb.test()
+async def test_lessthan_raises_error(dut):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ret = dut.stream_in_data <= 0x12
+    with pytest.raises(TypeError):
+        bool(ret)

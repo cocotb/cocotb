@@ -225,7 +225,7 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
     cocotb.fork(killer())
 
     await Timer(2, "step")  # allow Timer in victim to pass making it schedule RisingEdge after the killer
-    dut.clk <= 1
+    dut.clk.value = 1
     await Timer(1, "step")
     assert not victim_resumed
 
@@ -299,16 +299,16 @@ async def test_last_scheduled_write_wins(dut):
     @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
     async def first():
         await Timer(1, "ns")
-        log.info("scheduling stream_in_data <= 1")
-        dut.stream_in_data <= 1
+        log.info("scheduling stream_in_data.value = 1")
+        dut.stream_in_data.value = 1
         e.set()
 
     @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
     async def second():
         await Timer(1, "ns")
         await e.wait()
-        log.info("scheduling stream_in_data <= 2")
-        dut.stream_in_data <= 2
+        log.info("scheduling stream_in_data.value = 2")
+        dut.stream_in_data.value = 2
 
     await Combine(first(), second())
 
@@ -323,8 +323,8 @@ async def test_last_scheduled_write_wins_array(dut):
     """
     Test that the last scheduled write for an *arrayed* signal handle is the value that is written.
     """
-    dut.array_7_downto_4 <= [1, 2, 3, 4]
-    dut.array_7_downto_4[7] <= 10
+    dut.array_7_downto_4.value = [1, 2, 3, 4]
+    dut.array_7_downto_4[7].value = 10
 
     await ReadOnly()
 

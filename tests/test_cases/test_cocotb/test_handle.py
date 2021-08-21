@@ -16,20 +16,6 @@ SIM_NAME = cocotb.SIM_NAME.lower()
 
 
 @cocotb.test()
-async def test_lessthan_raises_error(dut):
-    """
-    Test that trying to use <= as if it were a comparison produces an error
-    """
-    ret = dut.stream_in_data <= 0x12
-    try:
-        bool(ret)
-    except TypeError:
-        pass
-    else:
-        assert False, "No exception was raised when confusing comparison with assignment"
-
-
-@cocotb.test()
 async def test_bad_attr(dut):
 
     with assert_raises(AttributeError):
@@ -105,9 +91,9 @@ async def test_delayed_assignment_still_errors(dut):
         dut.stream_in_int.setimmediatevalue([])
 
     with assert_raises(ValueError):
-        dut.stream_in_int <= "1010 not a real binary string"
+        dut.stream_in_int.value = "1010 not a real binary string"
     with assert_raises(TypeError):
-        dut.stream_in_int <= []
+        dut.stream_in_int.value = []
 
 
 async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
@@ -115,7 +101,7 @@ async def int_values_test(signal, n_bits, limits=_Limits.VECTOR_NBIT):
     log = logging.getLogger("cocotb.test")
     values = gen_int_test_values(n_bits, limits)
     for val in values:
-        signal <= val
+        signal.value = val
         await Timer(1, 'ns')
 
         if limits == _Limits.VECTOR_NBIT:
@@ -154,7 +140,7 @@ async def int_overflow_test(signal, n_bits, test_mode, limits=_Limits.VECTOR_NBI
         value = None
 
     with assert_raises(OverflowError):
-        signal <= value
+        signal.value = value
 
 
 def gen_int_ovfl_value(n_bits, limits=_Limits.VECTOR_NBIT):
@@ -323,7 +309,7 @@ async def test_real_assign_double(dut):
     timer_shortest = Timer(1, "step")
     await timer_shortest
     log.info("Setting the value %g" % val)
-    dut.stream_in_real <= val
+    dut.stream_in_real.value = val
     await timer_shortest
     await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = float(dut.stream_out_real)
@@ -349,7 +335,7 @@ async def test_real_assign_int(dut):
     timer_shortest = Timer(1, "step")
     await timer_shortest
     log.info("Setting the value %i" % val)
-    dut.stream_in_real <= val
+    dut.stream_in_real.value = val
     await timer_shortest
     await timer_shortest  # FIXME: Workaround for VHPI scheduling - needs investigation
     got = dut.stream_out_real
@@ -366,12 +352,12 @@ async def test_access_underscore_name(dut):
         dut._underscore_name
 
     # indirect access works
-    dut._id("_underscore_name", extended=False) <= 0
+    dut._id("_underscore_name", extended=False).value = 0
     await Timer(1, 'ns')
     assert dut._id("_underscore_name", extended=False).value == 0
-    dut._id("_underscore_name", extended=False) <= 1
+    dut._id("_underscore_name", extended=False).value = 1
     await Timer(1, 'ns')
     assert dut._id("_underscore_name", extended=False).value == 1
-    dut._id("_underscore_name", extended=False) <= 0
+    dut._id("_underscore_name", extended=False).value = 0
     await Timer(1, 'ns')
     assert dut._id("_underscore_name", extended=False).value == 0
