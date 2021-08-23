@@ -153,6 +153,8 @@ extern "C" void py_gpi_logger_set_level(int level) {
 }
 
 extern "C" void py_gpi_logger_initialize(PyObject *handler, PyObject *filter) {
+    Py_INCREF(handler);
+    Py_INCREF(filter);
     pLogHandler = handler;
     pLogFilter = filter;
     gpi_set_log_handler(py_gpi_log_handler, nullptr);

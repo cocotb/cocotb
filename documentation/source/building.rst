@@ -218,6 +218,29 @@ GPI
         and loading from libraries that `aren't` prefixed with "lib".
         Paths `should not` contain commas.
 
+PyGPI
+-----
+
+.. envvar:: PYGPI_ENTRY_POINT
+
+    The Python module and callable that starts up the Python cosimulation environment.
+    This defaults to :data:`cocotb:_initialise_testbench`, which is the cocotb standard entry point.
+    User overloads can be used to enter alternative Python frameworks or to hook existing cocotb functionality.
+    The variable is formatted as ``path.to.entry.module:entry_point.function``.
+    The string before the colon is the Python module to import
+    and the string following the colon is the object to call as the entry function.
+
+    The entry function must be a callable matching this form:
+
+    * ``entry_function(argv: List[str]) -> None``
+
+    The entry module must have the following additional functions defined.
+    These additional requirements on the entry module may be relaxed over time.
+
+    * ``_sim_event(level: int) -> None``
+    * ``_log_from_c(logger_name: str, level: int, filename: str, lineno: int, msg: str, function_name: str)) -> None``
+    * ``_filter_from_c(logger_name: str, level: int) -> bool``
+
 
 Makefile-based Test Scripts
 ---------------------------

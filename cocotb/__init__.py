@@ -41,13 +41,13 @@ from typing import Dict, List, Optional, Union
 from collections.abc import Coroutine
 
 import cocotb.handle
-import cocotb.log
 from cocotb.scheduler import Scheduler
 from cocotb.regression import RegressionManager
 from cocotb.decorators import RunningTask
 
 # Things we want in the cocotb namespace
 from cocotb.decorators import test, coroutine, function, external  # noqa: F401
+from cocotb.log import _log_from_c, _filter_from_c  # noqa: F401
 
 from ._version import __version__
 
@@ -73,7 +73,8 @@ def _setup_logging():
 
     # Don't set the logging up until we've attempted to fix the standard IO,
     # otherwise it will end up connected to the unfixed IO.
-    cocotb.log.default_config()
+    from cocotb.log import default_config
+    default_config()
     log = logging.getLogger(__name__)
 
     # we can't log these things until the logging is set up!
@@ -238,7 +239,7 @@ def _initialise_testbench(argv_):  # pragma: no cover
                 include=["{}/*".format(os.path.dirname(__file__))])
             _library_coverage.start()
 
-        return _initialise_testbench_(argv_)
+        _initialise_testbench_(argv_)
 
 
 def _initialise_testbench_(argv_):
@@ -343,8 +344,6 @@ def _initialise_testbench_(argv_):
     regression_manager = RegressionManager.from_discovery(top)
     regression_manager.execute()
 
-    return True
-
 
 def _sim_event(level, message):
     """Function that can be called externally to signal an event."""
@@ -364,8 +363,6 @@ def _sim_event(level, message):
         scheduler._finish_scheduler(SimFailure(msg))
     else:
         scheduler.log.error("Unsupported sim event")
-
-    return True
 
 
 def process_plusargs():
