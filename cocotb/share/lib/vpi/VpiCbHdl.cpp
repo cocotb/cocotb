@@ -570,7 +570,8 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
     };
 
     // append base class vpiInstance members
-    module_options.insert(module_options.begin(), instance_options.begin(), instance_options.end());
+    module_options.insert(module_options.begin(), instance_options.begin(),
+        instance_options.end());
 
     std::vector<int32_t> struct_options = {
         vpiNet,
@@ -632,6 +633,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl)
     vpiHandle vpi_hdl = m_parent->get_handle<vpiHandle>();
 
     int type = vpi_get(vpiType, vpi_hdl);
+
     try {
         selected = &iterate_over.at(type);
     } catch (std::out_of_range const &) {
