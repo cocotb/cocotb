@@ -30,7 +30,7 @@
 import abc
 import warnings
 from collections.abc import Awaitable
-from typing import Union
+from typing import Union, Optional
 from numbers import Real
 from decimal import Decimal
 
@@ -161,11 +161,13 @@ class GPITrigger(Trigger):
 class Timer(GPITrigger):
     """Fires after the specified simulation time period has elapsed."""
 
+    round_mode: str = "error"
+
     def __init__(
         self,
         time: Union[Real, Decimal] = None,
         units: str = "step",
-        round_mode: str = "error",
+        round_mode: Optional[str] = None,
         *,
         time_ps: Union[Real, Decimal] = None
     ) -> None:
@@ -247,6 +249,8 @@ class Timer(GPITrigger):
                 'Using units=None is deprecated, use units="step" instead.',
                 DeprecationWarning, stacklevel=2)
             units = "step"  # don't propagate deprecated value
+        if round_mode is None:
+            round_mode = type(self).round_mode
         self.sim_steps = get_sim_steps(time, units, round_mode)
 
     def prime(self, callback):
