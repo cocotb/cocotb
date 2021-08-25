@@ -1,5 +1,6 @@
-# This file is public domain, it can be freely copied without restrictions.
-# SPDX-License-Identifier: CC0-1.0
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
 
 import cocotb
 
