@@ -548,16 +548,19 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
 
     // vpiInstance is the base class for module, program, interface, etc.
     std::vector<int32_t> instance_options = {
-        vpiNet, vpiNetArray, vpiReg, vpiRegArray,
+        vpiNet,
+        vpiNetArray,
+        vpiReg,
+        vpiRegArray,
     };
 
     std::vector<int32_t> module_options = {
         // vpiModule,            // Aldec SEGV on mixed language
         // vpiModuleArray,       // Aldec SEGV on mixed language
         // vpiIODecl,            // Don't care about these
-        vpiMemory, vpiIntegerVar,
-        vpiRealVar, vpiRealNet, vpiStructVar, vpiStructNet, vpiVariables,
-        vpiNamedEvent, vpiNamedEventArray, vpiParameter,
+        vpiMemory, vpiIntegerVar, vpiRealVar, vpiRealNet, vpiStructVar,
+        vpiStructNet, vpiVariables, vpiNamedEvent, vpiNamedEventArray,
+        vpiParameter,
         // vpiSpecParam,         // Don't care
         // vpiParamAssign,       // Aldec SEGV on mixed language
         // vpiDefParam,          // Don't care
@@ -571,7 +574,7 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
 
     // append base class vpiInstance members
     module_options.insert(module_options.begin(), instance_options.begin(),
-        instance_options.end());
+                          instance_options.end());
 
     std::vector<int32_t> struct_options = {
         vpiNet,
