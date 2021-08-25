@@ -1,0 +1,1 @@
+Support rounding modes in :class:`~cocotb.triggers.Timer`.
