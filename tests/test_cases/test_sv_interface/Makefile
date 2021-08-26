@@ -20,7 +20,7 @@ clean::
 else
 ifeq ($(filter questa xcelium vcs riviera verilator,$(shell echo $(SIM) | tr A-Z a-z)),)
 all::
-	@echo "skipping simulator $(SIM) because it might not support SV interfaces"
+	@echo "Skipping simulator $(SIM) because it might not support SV interfaces"
 clean::
 else
 include $(shell cocotb-config --makefiles)/Makefile.sim
