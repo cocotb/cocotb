@@ -1,0 +1,1 @@
+Fixed discovery of signals inside SystemVerilog interfaces.
