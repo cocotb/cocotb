@@ -159,7 +159,7 @@ class GPITrigger(Trigger):
 
 
 class Timer(GPITrigger):
-    """Fires after the specified simulation time period has elapsed."""
+    """Fire after the specified simulation time period has elapsed."""
 
     round_mode: str = "error"
 

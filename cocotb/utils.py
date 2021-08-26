@@ -115,7 +115,7 @@ def get_sim_steps(
         time: The value to convert to simulation time steps.
         units: String specifying the units of the result
             (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
-            ``'step'`` means time is already in simulation time steps.
+            ``'step'`` means *time* is already in simulation time steps.
         round_mode: String specifying how to handle time values that sit between time steps
             (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
 
@@ -158,7 +158,7 @@ def get_sim_steps(
     elif round_mode == "floor":
         result_rounded = math.floor(result)
     else:
-        raise ValueError(f"invalid round_mode specifier: {round_mode}")
+        raise ValueError(f"Invalid round_mode specifier: {round_mode}")
 
     return result_rounded
 
