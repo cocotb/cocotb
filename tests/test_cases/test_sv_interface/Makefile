@@ -18,7 +18,7 @@ all:
 	@echo "Skipping test due to TOPLEVEL_LANG=$(TOPLEVEL_LANG) not being verilog"
 clean::
 else
-ifeq ($(filter questa xcelium vcs riviera verilator,$(shell echo $(SIM) | tr A-Z a-z)),)
+ifeq ($(filter questa xcelium ius vcs riviera activehdl verilator,$(shell echo $(SIM) | tr A-Z a-z)),)
 all::
 	@echo "Skipping simulator $(SIM) because it might not support SV interfaces"
 clean::
