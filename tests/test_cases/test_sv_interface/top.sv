@@ -10,10 +10,7 @@ interface sv_if();
   wire c;
 endinterface
 
-module top (
-  input x,
-  output y
-);
+module top ();
 
 sv_if sv_if_i();
 
