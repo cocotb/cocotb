@@ -7,10 +7,10 @@ VERILOG_SOURCES = $(shell pwd)/top.sv
 MODULE = test_sv_if
 TOPLEVEL = top
 
-# simulator behavior:
-# icarus sees SV interfaces as vpiModule but doesn't discover signals inside them
-# verilator sees SV interfaces as vpiModule and discovers signals inside them
-# commercial simulators all see SV interfaces as vpiInterface and discover signals inside them
+# Simulator behavior:
+# Icarus Verilog sees SV interfaces as vpiModule but doesn't discover signals inside them
+# Verilator sees SV interfaces as vpiModule and discovers signals inside them
+# Commercial simulators all see SV interfaces as vpiInterface and discover signals inside them
 
 
 ifneq ($(TOPLEVEL_LANG),verilog)
