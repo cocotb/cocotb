@@ -130,7 +130,7 @@ def get_sim_steps(
 
     Raises:
         ValueError: if the value cannot be represented accurately in terms of simulator
-            time steps wound *round_mode* is ``"error"``.
+            time steps when *round_mode* is ``"error"``.
 
     .. versionchanged:: 1.5
         Support ``'step'`` as the the *units* argument to mean "simulator time step".
