@@ -111,6 +111,12 @@ def get_sim_steps(
 ) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
 
+    When *round_mode* is ``"error"``, a :exc:`ValueError` is thrown if the value cannot
+    be accurately represented in terms of simulator time steps.
+    When *round_mode* is ``"round"``, ``"ceil"``, or ``"floor"``, the corresponding
+    rounding function from the standard library will be used to round to a simulator
+    time step.
+
     Args:
         time: The value to convert to simulation time steps.
         units: String specifying the units of the result
@@ -122,11 +128,9 @@ def get_sim_steps(
     Returns:
         The number of simulation time steps.
 
-    When *round_mode* is ``"error"``, a :exc:`ValueError` is thrown if the value cannot
-    be accurately represented in terms of simulator time steps.
-    When *round_mode* is ``"round"``, ``"ceil"``, or ``"floor"``, the corresponding
-    rounding function from the standard library will be used to round to a simulator
-    time step.
+    Raises:
+        ValueError: if the value cannot be represented accurately in terms of simulator
+            time steps wound *round_mode* is ``"error"``.
 
     .. versionchanged:: 1.5
         Support ``'step'`` as the the *units* argument to mean "simulator time step".

@@ -12,7 +12,7 @@ async def test_get_sim_steps(_):
     # test invalid round_mode specifier
     with pytest.raises(ValueError) as e:
         utils.get_sim_steps(1, "step", "notvalid")
-    assert "invalid" in str(e)
+    assert "invalid" in str(e).lower()
 
     # test default, update if default changes
     with pytest.raises(ValueError):
