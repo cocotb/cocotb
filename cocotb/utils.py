@@ -26,7 +26,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """Collection of handy functions."""
-
+from typing import Union
+from numbers import Real
+from decimal import Decimal
 import ctypes
 import inspect
 import math
@@ -102,41 +104,67 @@ def get_time_from_sim_steps(steps, units):
     return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(units))
 
 
-def get_sim_steps(time, units="step"):
+def get_sim_steps(
+    time: Union[Real, Decimal],
+    units: str = "step",
+    round_mode: str = "error"
+) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
 
+    When *round_mode* is ``"error"``, a :exc:`ValueError` is thrown if the value cannot
+    be accurately represented in terms of simulator time steps.
+    When *round_mode* is ``"round"``, ``"ceil"``, or ``"floor"``, the corresponding
+    rounding function from the standard library will be used to round to a simulator
+    time step.
+
     Args:
-        time (numbers.Real or decimal.Decimal):  The value to convert to simulation time steps.
-        units (str, optional):  String specifying the units of the result
+        time: The value to convert to simulation time steps.
+        units: String specifying the units of the result
             (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
-            ``'step'`` means time is already in simulation time steps.
+            ``'step'`` means *time* is already in simulation time steps.
+        round_mode: String specifying how to handle time values that sit between time steps
+            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
 
     Returns:
-        int: The number of simulation time steps.
+        The number of simulation time steps.
 
     Raises:
-        :exc:`ValueError`: If given *time* cannot be represented by simulator precision.
+        ValueError: if the value cannot be represented accurately in terms of simulator
+            time steps when *round_mode* is ``"error"``.
 
     .. versionchanged:: 1.5
         Support ``'step'`` as the the *units* argument to mean "simulator time step".
+
+    .. versionchanged:: 1.6
+        Support rounding modes.
     """
-    result = time
     if units not in (None, "step"):
-        result = _ldexp10(result, _get_log_time_scale(units) - _get_simulator_precision())
+        result = _ldexp10(time, _get_log_time_scale(units) - _get_simulator_precision())
+    else:
+        result = time
     if units is None:
         warnings.warn(
             'Using units=None is deprecated, use units="step" instead.',
             DeprecationWarning, stacklevel=2)
         units="step"  # don't propagate deprecated value
 
-    result_rounded = math.floor(result)
+    if round_mode == "error":
+        result_rounded = math.floor(result)
+        if result_rounded != result:
+            precision = _get_simulator_precision()
+            raise ValueError(
+                f"Unable to accurately represent {time}({units}) with the simulator precision of 1e{precision}"
+            )
+    elif round_mode == "ceil":
+        result_rounded = math.ceil(result)
+    elif round_mode == "round":
+        result_rounded = round(result)
+    elif round_mode == "floor":
+        result_rounded = math.floor(result)
+    else:
+        raise ValueError(f"Invalid round_mode specifier: {round_mode}")
 
-    if result_rounded != result:
-        raise ValueError("Unable to accurately represent {}({}) with the "
-                         "simulator precision of 1e{}".format(
-                             time, units, _get_simulator_precision()))
-
-    return int(result_rounded)
+    return result_rounded
 
 
 def _get_log_time_scale(units):

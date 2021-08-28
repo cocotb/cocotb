@@ -12,6 +12,7 @@ Tests related to timing triggers
 """
 import cocotb
 import warnings
+import pytest
 from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep, First, TriggerException
 from cocotb.utils import get_sim_time, get_sim_steps
 from cocotb.clock import Clock
@@ -255,3 +256,24 @@ async def test_time_units_eq_None(dut):
         await cocotb.triggers.with_timeout(example(), timeout_time=12_000_000, timeout_unit=None)
         assert issubclass(w[-1].category, DeprecationWarning)
         assert 'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.' in str(w[-1].message)
+
+
+@cocotb.test()
+async def test_timer_round_mode(_):
+
+    # test invalid round_mode specifier
+    with pytest.raises(ValueError) as e:
+        Timer(1, "step", "notvalid")
+    assert "invalid" in str(e).lower()
+
+    # test default, update if default changes
+    with pytest.raises(ValueError):
+        Timer(0.5, "step")
+
+    # test valid
+    with pytest.raises(ValueError):
+        Timer(0.5, "step", "error")
+    assert Timer(24.0, "step", "error").sim_steps == 24
+    assert Timer(1.2, "step", "floor").sim_steps == 1
+    assert Timer(1.2, "step", "ceil").sim_steps == 2
+    assert Timer(1.2, "step", "round").sim_steps == 1

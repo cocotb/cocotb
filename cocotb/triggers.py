@@ -30,6 +30,9 @@
 import abc
 import warnings
 from collections.abc import Awaitable
+from typing import Union, Optional
+from numbers import Real
+from decimal import Decimal
 
 from cocotb import simulator
 from cocotb.log import SimLog
@@ -156,17 +159,26 @@ class GPITrigger(Trigger):
 
 
 class Timer(GPITrigger):
-    """Fires after the specified simulation time period has elapsed."""
+    """Fire after the specified simulation time period has elapsed."""
 
-    def __init__(self, time=None, units="step", *, time_ps=None):
+    round_mode: str = "error"
+
+    def __init__(
+        self,
+        time: Union[Real, Decimal] = None,
+        units: str = "step",
+        round_mode: Optional[str] = None,
+        *,
+        time_ps: Union[Real, Decimal] = None
+    ) -> None:
         """
         Args:
-           time (numbers.Real or decimal.Decimal): The time value.
+           time: The time value.
 
                .. versionchanged:: 1.5.0
                   Previously this argument was misleadingly called `time_ps`.
 
-           units (str, optional): One of
+           units: One of
                ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``.
                When *units* is ``'step'``,
                the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
@@ -210,6 +222,9 @@ class Timer(GPITrigger):
 
         .. deprecated:: 1.5
             Using None as the the *units* argument is deprecated, use ``'step'`` instead.
+
+        .. versionchanged:: 1.6
+            Support rounding modes.
         """
         GPITrigger.__init__(self)
         if time_ps is not None:
@@ -234,7 +249,9 @@ class Timer(GPITrigger):
                 'Using units=None is deprecated, use units="step" instead.',
                 DeprecationWarning, stacklevel=2)
             units = "step"  # don't propagate deprecated value
-        self.sim_steps = get_sim_steps(time, units)
+        if round_mode is None:
+            round_mode = type(self).round_mode
+        self.sim_steps = get_sim_steps(time, units, round_mode)
 
     def prime(self, callback):
         """Register for a timed callback."""
