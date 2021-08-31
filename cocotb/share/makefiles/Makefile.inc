@@ -37,7 +37,7 @@ COCOTB_MAKEFILE_INC_INCLUDED = 1
 .PHONY: sim
 sim:
 	-@rm -f $(COCOTB_RESULTS_FILE)
-	$(MAKE) $(COCOTB_RESULTS_FILE)
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) $(COCOTB_RESULTS_FILE)
 
 # Make sure to use bash for the pipefail option used in many simulator Makefiles
 SHELL := bash
