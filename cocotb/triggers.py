@@ -167,8 +167,8 @@ class Timer(GPITrigger):
         self,
         time: Union[Real, Decimal] = None,
         units: str = "step",
-        round_mode: Optional[str] = None,
         *,
+        round_mode: Optional[str] = None,
         time_ps: Union[Real, Decimal] = None
     ) -> None:
         """
@@ -251,7 +251,7 @@ class Timer(GPITrigger):
             units = "step"  # don't propagate deprecated value
         if round_mode is None:
             round_mode = type(self).round_mode
-        self.sim_steps = get_sim_steps(time, units, round_mode)
+        self.sim_steps = get_sim_steps(time, units, round_mode=round_mode)
 
     def prime(self, callback):
         """Register for a timed callback."""
