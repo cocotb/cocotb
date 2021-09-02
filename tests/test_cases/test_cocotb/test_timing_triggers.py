@@ -263,7 +263,7 @@ async def test_timer_round_mode(_):
 
     # test invalid round_mode specifier
     with pytest.raises(ValueError) as e:
-        Timer(1, "step", "notvalid")
+        Timer(1, "step", round_mode="notvalid")
     assert "invalid" in str(e).lower()
 
     # test default, update if default changes
@@ -272,8 +272,8 @@ async def test_timer_round_mode(_):
 
     # test valid
     with pytest.raises(ValueError):
-        Timer(0.5, "step", "error")
-    assert Timer(24.0, "step", "error").sim_steps == 24
-    assert Timer(1.2, "step", "floor").sim_steps == 1
-    assert Timer(1.2, "step", "ceil").sim_steps == 2
-    assert Timer(1.2, "step", "round").sim_steps == 1
+        Timer(0.5, "step", round_mode="error")
+    assert Timer(24.0, "step", round_mode="error").sim_steps == 24
+    assert Timer(1.2, "step", round_mode="floor").sim_steps == 1
+    assert Timer(1.2, "step", round_mode="ceil").sim_steps == 2
+    assert Timer(1.2, "step", round_mode="round").sim_steps == 1
