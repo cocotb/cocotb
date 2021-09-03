@@ -413,7 +413,7 @@ class test(coroutine, metaclass=_decorator_helper):
             .. versionadded:: 1.3
 
             .. deprecated:: 1.5
-                Using None as the the *timeout_unit* argument is deprecated, use ``'step'`` instead.
+                Using ``None`` as the *timeout_unit* argument is deprecated, use ``'step'`` instead.
 
         expect_fail (bool, optional):
             Don't mark the result as a failure if the test fails.
