@@ -7,7 +7,6 @@ import cocotb
 
 from cocotb.clock import Clock
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
 from cocotb.handle import HierarchyObject, HierarchyArrayObject, ModifiableObject, NonHierarchyIndexableObject, ConstantObject
 
 SIM_NAME = cocotb.SIM_NAME.lower()
@@ -208,14 +207,9 @@ async def test_gen_loop(dut):
     asc_gen_20  = dut.asc_gen[20]
     desc_gen    = dut.desc_gen
 
-    if not isinstance(dut.asc_gen, HierarchyArrayObject):
-        raise TestFailure(f"Generate Loop parent >{dut.asc_gen!r}< should be HierarchyArrayObject")
-
-    if not isinstance(desc_gen, HierarchyArrayObject):
-        raise TestFailure(f"Generate Loop parent >{desc_gen!r}< should be HierarchyArrayObject")
-
-    if not isinstance(asc_gen_20, HierarchyObject):
-        raise TestFailure(f"Generate Loop child >{asc_gen_20!r}< should be HierarchyObject")
+    assert isinstance(dut.asc_gen, HierarchyArrayObject)
+    assert isinstance(desc_gen, HierarchyArrayObject)
+    assert isinstance(asc_gen_20, HierarchyObject)
 
     tlog.info("Direct access found %s", asc_gen_20)
     tlog.info("Direct access found %s", desc_gen)
@@ -223,15 +217,11 @@ async def test_gen_loop(dut):
     for gens in desc_gen:
         tlog.info("Iterate access found %s", gens)
 
-    if len(desc_gen) != 8:
-        raise TestError("Length of desc_gen is >{}< and should be 8".format(len(desc_gen)))
-    else:
-        tlog.info("Length of desc_gen is %d", len(desc_gen))
+    assert len(desc_gen) == 8
+    tlog.info("Length of desc_gen is %d", len(desc_gen))
 
-    if len(dut.asc_gen) != 8:
-        raise TestError("Length of asc_gen is >{}< and should be 8".format(len(dut.asc_gen)))
-    else:
-        tlog.info("Length of asc_gen is %d", len(dut.asc_gen))
+    assert len(dut.asc_gen) == 8
+    tlog.info("Length of asc_gen is %d", len(dut.asc_gen))
 
     for gens in dut.asc_gen:
         tlog.info("Iterate access found %s", gens)
@@ -374,8 +364,7 @@ async def test_discover_all(dut):
     tlog.info("Iterating over %r (%s)", dut, dut._type)
     total = _discover(dut, "")
     tlog.info("Found a total of %d things", total)
-    if total != pass_total:
-        raise TestFailure(f"Expected {pass_total} objects but found {total}")
+    assert total == pass_total
 
 
 # GHDL unable to access std_logic_vector generics (gh-2593)
@@ -433,21 +422,15 @@ async def test_direct_signal_indexing(dut):
     await Timer(20, "ns")
 
     tlog.info("Checking bit mapping from input to generate loops.")
-    if int(dut.desc_gen[2].sig) != 1:
-        raise TestFailure("Expected {!r} to be a 1 but got {}".format(dut.desc_gen[2].sig, int(dut.desc_gen[2].sig)))
-    else:
-        tlog.info("   %r = %d", dut.desc_gen[2].sig, int(dut.desc_gen[2].sig))
+    assert int(dut.desc_gen[2].sig) == 1
+    tlog.info("   %r = %d", dut.desc_gen[2].sig, int(dut.desc_gen[2].sig))
 
-    if int(dut.asc_gen[18].sig) != 1:
-        raise TestFailure("Expected {!r} to be a 1 but got {}".format(dut.asc_gen[18].sig, int(dut.asc_gen[18].sig)))
-    else:
-        tlog.info("   %r = %d", dut.asc_gen[18].sig, int(dut.asc_gen[18].sig))
+    assert int(dut.asc_gen[18].sig) == 1
+    tlog.info("   %r = %d", dut.asc_gen[18].sig, int(dut.asc_gen[18].sig))
 
     tlog.info("Checking indexing of data with offset index.")
-    if int(dut.port_ofst_out) != 64:
-        raise TestFailure("Expected {!r} to be a 64 but got {}".format(dut.port_ofst_out, int(dut.port_ofst_out)))
-    else:
-        tlog.info("   %r = %d (%s)", dut.port_ofst_out, int(dut.port_ofst_out), dut.port_ofst_out.value.binstr)
+    assert int(dut.port_ofst_out) == 64
+    tlog.info("   %r = %d (%s)", dut.port_ofst_out, int(dut.port_ofst_out), dut.port_ofst_out.value.binstr)
 
     tlog.info("Checking Types of complex array structures in signals.")
     _check_type(tlog, dut.sig_desc[20], ModifiableObject)

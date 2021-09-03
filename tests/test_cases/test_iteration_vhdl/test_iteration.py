@@ -27,7 +27,6 @@ import logging
 
 import cocotb
 from cocotb.triggers import Timer, Combine
-from cocotb.result import TestFailure
 
 
 def total_object_count():
@@ -82,8 +81,7 @@ async def recursive_discovery(dut):
         return count
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
-    if total != pass_total:
-        raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
+    assert total == pass_total
 
 
 # GHDL unable to access signals in generate loops (gh-2594)

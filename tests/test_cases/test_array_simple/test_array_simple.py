@@ -7,17 +7,14 @@ import logging
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.result import TestFailure
 from cocotb.triggers import Timer
 
 tlog = logging.getLogger("cocotb.test")
 
 
 def _check_value(tlog, hdl, expected):
-    if hdl.value != expected:
-        raise TestFailure(f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<")
-    else:
-        tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
+    assert hdl.value == expected
+    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
 
 
 # GHDL unable to put values on nested array types (gh-2588)

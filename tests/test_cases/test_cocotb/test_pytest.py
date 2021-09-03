@@ -4,22 +4,12 @@
 """ Tests relating to pytest integration """
 
 import cocotb
-from cocotb.result import TestFailure
-
-# pytest is an optional dependency
-try:
-    import pytest
-except ImportError:
-    pytest = None
+import pytest
 
 
-@cocotb.test(skip=pytest is None)
-async def test_assertion_rewriting(dut):
+@cocotb.test()
+async def test_assertion_rewriting(_):
     """ Test that assertion rewriting hooks take effect in cocotb tests """
-    try:
+    with pytest.raises(AssertionError) as e:
         assert 1 == 42
-    except AssertionError as e:
-        assert "42" in str(e), (
-            f"Assertion rewriting seems not to work, message was {e}")
-    else:
-        raise TestFailure('AssertionError was not thrown')
+    assert "42" in str(e), f"Assertion rewriting seems not to work, message was {e}"
