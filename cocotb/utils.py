@@ -53,7 +53,7 @@ def _get_simulator_precision():
 def get_python_integer_types():
     warnings.warn(
         "This is an internal cocotb function, use six.integer_types instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
     return (int,)
 
 
