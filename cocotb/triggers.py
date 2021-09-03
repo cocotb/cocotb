@@ -746,7 +746,7 @@ class _AggregateWaitable(Waitable):
     __slots__ = ('triggers',)
 
     def __init__(self, *triggers):
-        self.triggers = tuple(triggers)
+        self.triggers = triggers
 
         # Do some basic type-checking up front, rather than waiting until we
         # await them.
@@ -842,10 +842,9 @@ class First(_AggregateWaitable):
     async def _wait(self):
         waiters = []
         e = _InternalEvent(self)
-        triggers = list(self.triggers)
         completed = []
         # start a parallel task for each trigger
-        for t in triggers:
+        for t in self.triggers:
             def on_done(ret):
                 completed.append(ret)
                 e.set()
