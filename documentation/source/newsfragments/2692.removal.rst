@@ -1,0 +1,1 @@
+:exc:`cocotb.result.TestFailure` is deprecated, use an ``assert`` statement instead.
