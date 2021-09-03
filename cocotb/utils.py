@@ -58,23 +58,33 @@ def get_python_integer_types():
 
 
 # Simulator helper functions
-def get_sim_time(units=None):
+def get_sim_time(units: str = "step") -> int:
     """Retrieves the simulation time from the simulator.
 
     Args:
-        units (str or None, optional): String specifying the units of the result
-            (one of ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
-            ``None`` will return the raw simulation time.
+        units: String specifying the units of the result
+            (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+            ``'step'`` will return the raw simulation time.
+
+            .. deprecated:: 1.6.0
+                Using ``None`` as the *units* argument is deprecated, use ``'step'`` instead.
 
     Returns:
         The simulation time in the specified units.
+
+    .. versionchanged:: 1.6.0
+        Support ``'step'`` as the the *units* argument to mean "simulator time step".
     """
     timeh, timel = simulator.get_sim_time()
 
     result = (timeh << 32 | timel)
 
-    if units is not None:
+    if units not in (None, "step"):
         result = get_time_from_sim_steps(result, units)
+    if units is None:
+        warnings.warn(
+            'Using units=None is deprecated, use units="step" instead.',
+            DeprecationWarning, stacklevel=2)
 
     return result
 
