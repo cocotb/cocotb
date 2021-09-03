@@ -27,7 +27,6 @@ import logging
 
 import cocotb
 from cocotb.handle import HierarchyObject, ModifiableObject
-from cocotb.result import TestFailure
 
 
 @cocotb.test()
@@ -63,5 +62,4 @@ async def port_not_hierarchy(dut):
     fails += check_instance(dut.i_verilog.clock, ModifiableObject)
     fails += check_instance(dut.i_verilog.tx_data, ModifiableObject)
 
-    if fails:
-        raise TestFailure("%d Failures during the test" % fails)
+    assert fails == 0

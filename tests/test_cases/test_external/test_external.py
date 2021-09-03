@@ -33,11 +33,12 @@ Also used a regression test of cocotb capabilities
 import threading
 
 import cocotb
-from cocotb.result import TestFailure
 from cocotb.triggers import Timer, RisingEdge, ReadOnly
 from cocotb.clock import Clock
 from cocotb.decorators import external
 from cocotb.utils import get_sim_time
+
+import pytest
 
 
 def return_two(dut):
@@ -63,9 +64,7 @@ def print_sim_time(dut, base_time):
     for _ in range(5):
         _t = get_sim_time('ns')
         dut._log.info("Time reported = %d", _t)
-        if _t != base_time:
-            raise TestFailure("Time reported does not match base_time %f != %f" %
-                              (_t, base_time))
+        assert _t == base_time
     dut._log.info("external function has ended")
 
 
@@ -85,8 +84,7 @@ async def test_time_in_external(dut):
     time_now = get_sim_time('ns')
     await Timer(10, units='ns')
 
-    if time != time_now:
-        raise TestFailure("Time has elapsed over external call")
+    assert time == time_now
 
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
@@ -114,8 +112,7 @@ async def test_time_in_function(dut):
             expected_after = time + 100*n
             await wait_cycles_wrapper(dut, n)
             time_after = get_sim_time('ns')
-            if expected_after != time_after:
-                raise TestFailure("Wrong time elapsed in external call")
+            assert expected_after == time_after
 
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
@@ -246,12 +243,8 @@ async def test_external_raised_exception(dut):
     def func():
         raise ValueError()
 
-    try:
+    with pytest.raises(ValueError):
         await func()
-    except ValueError:
-        pass
-    else:
-        raise TestFailure('Exception was not thrown')
 
 
 @cocotb.test()
@@ -263,13 +256,9 @@ async def test_external_returns_exception(dut):
     def func():
         return ValueError()
 
-    try:
-        result = await func()
-    except ValueError:
-        raise TestFailure('Exception should not have been thrown')
+    result = await func()
 
-    if not isinstance(result, ValueError):
-        raise TestFailure('Exception was not returned')
+    assert isinstance(result, ValueError)
 
 
 @cocotb.test()
@@ -285,12 +274,8 @@ async def test_function_raised_exception(dut):
     def ext():
         return func()
 
-    try:
+    with pytest.raises(ValueError):
         await ext()
-    except ValueError:
-        pass
-    else:
-        raise TestFailure('Exception was not thrown')
 
 
 @cocotb.test()
@@ -307,13 +292,9 @@ async def test_function_returns_exception(dut):
     def ext():
         return gen_func()
 
-    try:
-        result = await ext()
-    except ValueError:
-        raise TestFailure('Exception should not have been thrown')
+    result = await ext()
 
-    if not isinstance(result, ValueError):
-        raise TestFailure('Exception was not returned')
+    assert isinstance(result, ValueError)
 
 
 @cocotb.test()
