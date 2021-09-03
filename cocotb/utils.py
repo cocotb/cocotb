@@ -298,6 +298,10 @@ def hexdump(x: bytes) -> str:
         is not an appropriate type for binary data. Doing so anyway
         will encode the string to ``latin1``.
 
+    .. deprecated:: 1.6.0
+        The function will be removed in the next major version.
+        Use :func:`scapy.utils.hexdump` instead.
+
     Example:
         >>> print(hexdump(b'this somewhat long string'))
         0000   74 68 69 73 20 73 6F 6D 65 77 68 61 74 20 6C 6F   this somewhat lo
@@ -305,6 +309,9 @@ def hexdump(x: bytes) -> str:
         <BLANKLINE>
     """
     # adapted from scapy.utils.hexdump
+    warnings.warn(
+        "cocotb.utils.hexdump is deprecated. Use scapy.utils.hexdump instead.",
+        DeprecationWarning, stacklevel=2)
     rs = ""
     if isinstance(x, str):
         warnings.warn(
@@ -341,6 +348,10 @@ def hexdiffs(x: bytes, y: bytes) -> str:
         is not an appropriate type for binary data. Doing so anyway
         will encode the string to ``latin1``.
 
+    .. deprecated:: 1.6.0
+        The function will be removed in the next major version.
+        Use :func:`scapy.utils.hexdiff` instead.
+
     Example:
         >>> print(hexdiffs(b'a', b'b'))
         0000      61                                               a
@@ -352,6 +363,9 @@ def hexdiffs(x: bytes, y: bytes) -> str:
         <BLANKLINE>
     """
     # adapted from scapy.utils.hexdiff
+    warnings.warn(
+        "cocotb.utils.hexdiffs is deprecated. Use scapy.utils.hexdiff instead.",
+        DeprecationWarning, stacklevel=2)
 
     def highlight(string: str, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT) -> str:
         """Highlight with ANSI colors if possible/requested and not running in GUI."""

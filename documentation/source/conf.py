@@ -50,7 +50,8 @@ extensions = [
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'ghdl': ('https://ghdl.readthedocs.io/en/latest', None)
+    'ghdl': ('https://ghdl.readthedocs.io/en/latest', None),
+    'scapy': ('https://scapy.readthedocs.io/en/latest', None),
 }
 
 # Github repo
