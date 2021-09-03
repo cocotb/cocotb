@@ -275,7 +275,7 @@ async def test_event_set_schedule(dut):
         nonlocal waiter_scheduled
         waiter_scheduled = True
 
-    cocotb.fork(waiter(e))
+    await cocotb.start(waiter(e))
 
     e.set()
 
@@ -351,7 +351,7 @@ async def test_task_repr(dut):
     log.info(repr(gen_task))
     assert re.match(r"<Task \d+ created coro=generator_coro_outer\(\)>", repr(gen_task))
 
-    cocotb.fork(gen_task)
+    cocotb.start_soon(gen_task)
 
     await gen_e.wait()
 
@@ -394,7 +394,7 @@ async def test_task_repr(dut):
     async def coroutine_outer():
         return await coroutine_middle()
 
-    coro_task = cocotb.fork(coroutine_outer())
+    coro_task = await cocotb.start(coroutine_outer())
 
     coro_e.set(coro_task)
 
@@ -414,7 +414,7 @@ async def test_task_repr(dut):
     async def coroutine_first():
         await First(coroutine_wait(), Timer(2, units='ns'))
 
-    coro_task = cocotb.fork(coroutine_first())
+    coro_task = await cocotb.start(coroutine_first())
 
     log.info(repr(coro_task))
     assert re.match(
@@ -425,11 +425,17 @@ async def test_task_repr(dut):
     async def coroutine_timer():
         await Timer(1, units='ns')
 
-    coro_task = cocotb.fork(coroutine_timer())
+    coro_task = await cocotb.start(coroutine_timer())
 
     # Trigger.__await__ should be popped from the coroutine stack
     log.info(repr(coro_task))
     assert re.match(r"<Task \d+ pending coro=coroutine_timer\(\) trigger=<Timer of 1000.00ps at \w+>>", repr(coro_task))
+
+    # created but not scheduled yet
+    coro_task = cocotb.start_soon(coroutine_outer())
+
+    log.info(repr(coro_task))
+    assert re.match(r"<Task \d+ created coro=coroutine_outer\(\)>", repr(coro_task))
 
 
 @cocotb.test()

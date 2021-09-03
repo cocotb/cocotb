@@ -29,7 +29,7 @@ async def test_trigger_lock(dut):
                 await Timer(10, "ns")
                 resource += 1
 
-    cocotb.fork(co())
+    cocotb.start_soon(co())
     async with lock:
         for i in range(4):
             resource += 1
@@ -67,7 +67,7 @@ async def test_internalevent(dut):
         e.set('data')
 
     # Test waiting more than once
-    cocotb.fork(set_internalevent())
+    cocotb.start_soon(set_internalevent())
     time_ns = get_sim_time(units='ns')
     await e
     assert e.is_set()
@@ -87,7 +87,7 @@ async def test_internalevent(dut):
         ran = True
 
     # Test multiple coroutines waiting
-    cocotb.fork(await_internalevent())
+    await cocotb.start(await_internalevent())
     assert not e.is_set()
     assert not ran
     # _InternalEvent can only be awaited by one coroutine
@@ -101,7 +101,7 @@ async def test_internalevent(dut):
     # Test waiting after set
     e = _InternalEvent(None)
     assert not e.is_set()
-    cocotb.fork(set_internalevent())
+    cocotb.start_soon(set_internalevent())
     await Timer(2, units='ns')
     assert e.is_set()
     time_ns = get_sim_time(units='ns')

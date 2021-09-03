@@ -49,7 +49,7 @@ async def test_read_write(dut):
     """Test handle inheritance"""
     tlog = logging.getLogger("cocotb.test")
 
-    cocotb.fork(Clock(dut.clk, 10, "ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
     await Timer(10, "ns")
 
@@ -407,7 +407,7 @@ async def test_direct_signal_indexing(dut):
 
     tlog = logging.getLogger("cocotb.test")
 
-    cocotb.fork(Clock(dut.clk, 10, "ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
     dut.port_desc_in.value = 0
     dut.port_asc_in .value = 0

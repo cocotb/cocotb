@@ -140,7 +140,7 @@ Concurrent and sequential execution
 
 An :keyword:`await` will run an :keyword:`async` coroutine and wait for it to complete.
 The called coroutine "blocks" the execution of the current coroutine.
-Wrapping the call in :func:`~cocotb.fork` runs the coroutine concurrently,
+Wrapping the call in :func:`~cocotb.start` or :func:`~cocotb.start_soon` runs the coroutine concurrently,
 allowing the current coroutine to continue executing.
 At any time you can :keyword:`await` the result of the forked coroutine,
 which will block until the forked coroutine finishes.
@@ -165,7 +165,7 @@ The following example shows these in action:
         dut._log.debug("After reset")
 
         # Run reset_dut concurrently
-        reset_thread = cocotb.fork(reset_dut(reset_n, duration_ns=500))
+        reset_thread = cocotb.start_soon(reset_dut(reset_n, duration_ns=500))
 
         # This timer will complete before the timer in the concurrently executing "reset_thread"
         await Timer(250, units="ns")
@@ -240,14 +240,14 @@ Below are examples of `failing` tests.
     async def test(dut):
         async def fails_test():
             assert 1 > 2
-        cocotb.fork(fails_test())
+        cocotb.start_soon(fails_test())
         await Timer(10, 'ns')
 
     @cocotb.test()
     async def test(dut):
         async def fails_test():
             raise TestFailure("Reason")
-        cocotb.fork(fails_test())
+        cocotb.start_sson(fails_test())
         await Timer(10, 'ns')
 
 When a test fails, a stacktrace is printed.
@@ -279,7 +279,7 @@ Below are examples of `erroring` tests.
     async def test(dut):
         async def coro_with_an_error():
             dut.signal_that_does_not_exist.value = 1  # AttributeError
-        cocotb.fork(coro_with_an_error())
+        cocotb.start_soon(coro_with_an_error())
         await Timer(10, 'ns')
 
 When a test ends with an error, a stacktrace is printed.
@@ -316,7 +316,7 @@ Below are examples of `passing` tests.
     async def test(dut):
         async def ends_test_with_pass():
             raise TestSuccess("Reason")
-        cocotb.fork(ends_test_with_pass())
+        cocotb.start_soon(ends_test_with_pass())
         await Timer(10, 'ns')
 
 A passing test will print the following output.
@@ -335,7 +335,7 @@ and can be set to its own logging level.
 
 .. code-block:: python3
 
-    task = cocotb.fork(coro)
+    task = cocotb.start_soon(coro)
     task.log.setLevel(logging.DEBUG)
     task.log.debug("Running Task!")
 

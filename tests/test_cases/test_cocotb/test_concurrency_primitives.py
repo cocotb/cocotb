@@ -39,8 +39,8 @@ async def test_unfired_first_triggers(dut):
             await Timer(1, "ns")
             e.set()
 
-    fire_task = cocotb.fork(fire_events())
-    e1_task = cocotb.fork(wait_for_e1())
+    fire_task = cocotb.start_soon(fire_events())
+    e1_task = cocotb.start_soon(wait_for_e1())
     await wait_for_firsts()
 
     # make sure the other tasks finish
@@ -68,7 +68,7 @@ async def test_nested_first(dut):
         assert ret is not inner_first
         assert ret is waiters[0]
 
-    fire_task = cocotb.fork(fire_events())
+    fire_task = cocotb.start_soon(fire_events())
     await wait_for_nested_first()
     await fire_task.join()
 
@@ -135,12 +135,25 @@ async def test_combine(dut):
     """ Test the Combine trigger. """
     # gh-852
 
-    async def do_something(delay):
+    async def coro(delay):
         await Timer(delay, "ns")
 
-    crs = [cocotb.fork(do_something(dly)) for dly in [10, 30, 20]]
+    tasks = [await cocotb.start(coro(dly)) for dly in [10, 30, 20]]
 
-    await Combine(*(cr.join() for cr in crs))
+    await Combine(*(t.join() for t in tasks))
+
+
+@cocotb.test()
+async def test_fork_combine(dut):
+    """ Test the Combine trigger with forked coroutines. """
+    # gh-852
+
+    async def coro(delay):
+        await Timer(delay, "ns")
+
+    tasks = [cocotb.fork(coro(dly)) for dly in [10, 30, 20]]
+
+    await Combine(*(t.join() for t in tasks))
 
 
 @cocotb.test()
@@ -163,15 +176,15 @@ async def test_combine_start_soon(_):
 
     max_delay = 10
 
-    coros = [cocotb.scheduler.start_soon(coro(d)) for d in range(1, max_delay + 1)]
+    tasks = [cocotb.start_soon(coro(d)) for d in range(1, max_delay + 1)]
 
     test_start = cocotb.utils.get_sim_time(units="ns")
-    await Combine(*coros)
+    await Combine(*tasks)
     assert cocotb.utils.get_sim_time(units="ns") == test_start + max_delay
 
 
 @cocotb.test()
-async def test_recursive_combine_and_fork(_):
+async def test_recursive_combine_and_start_soon(_):
     """ Test using `Combine` on forked coroutines that themselves use `Combine`. """
 
     async def mergesort(n):
@@ -179,8 +192,8 @@ async def test_recursive_combine_and_fork(_):
             return n
         part1 = n[:len(n) // 2]
         part2 = n[len(n) // 2:]
-        sort1 = cocotb.fork(mergesort(part1))
-        sort2 = cocotb.fork(mergesort(part2))
+        sort1 = cocotb.start_soon(mergesort(part1))
+        sort2 = cocotb.start_soon(mergesort(part2))
         await Combine(sort1, sort2)
         res1 = deque(sort1.retval)
         res2 = deque(sort2.retval)
@@ -213,10 +226,10 @@ async def test_recursive_combine(_):
     start_time = get_sim_time('ns')
     await Combine(
         Combine(
-            cocotb.fork(waiter(10)),
-            cocotb.fork(waiter(20))
+            cocotb.start_soon(waiter(10)),
+            cocotb.start_soon(waiter(20))
         ),
-        cocotb.fork(waiter(30))
+        cocotb.start_soon(waiter(30))
     )
     end_time = get_sim_time('ns')
 

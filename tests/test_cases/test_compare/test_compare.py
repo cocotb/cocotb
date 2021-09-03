@@ -19,7 +19,7 @@ class Testbench:
 
     async def initialise(self):
         """Initalise the testbench"""
-        cocotb.fork(Clock(self.dut.clk, 10).start())
+        cocotb.start_soon(Clock(self.dut.clk, 10).start())
         self.dut.reset.value = 0
         for _ in range(2):
             await self.clkedge

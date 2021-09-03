@@ -35,7 +35,7 @@ async def test_analog_model(digital) -> None:
     """Exercise an Analog Front-end and its digital controller."""
 
     clock = Clock(digital.clk, 1, units="us")  # create a 1us period clock on port clk
-    cocotb.fork(clock.start())  # start the clock
+    cocotb.start_soon(clock.start())  # start the clock
 
     afe_in_queue = Queue()
     afe_out_queue = Queue()
@@ -43,7 +43,7 @@ async def test_analog_model(digital) -> None:
         in_queue=afe_in_queue, out_queue=afe_out_queue
     )  # instantiate the analog front-end
 
-    cocotb.fork(gain_select(digital, afe))
+    cocotb.start_soon(gain_select(digital, afe))
 
     for in_V in [0.1, 0.1, 0.0, 0.25, 0.25]:
         # set the input voltage

@@ -103,7 +103,7 @@ async def test_time_in_function(dut):
     def wait_cycles_wrapper(dut, n):
         return wait_cycles(dut, n)
 
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units='ns').start())
     await Timer(10, units='ns')
     for n in range(5):
         for i in range(20):
@@ -128,8 +128,8 @@ async def test_external_call_return(dut):
             await Timer(1000, units='ns')
             count += 1
 
-    mon = cocotb.fork(clock_monitor(dut))
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+    mon = cocotb.start_soon(clock_monitor(dut))
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units='ns').start())
     value = await external(return_two)(dut)
     assert value == 2
 
@@ -166,7 +166,7 @@ async def test_function_from_readonly(dut):
     Test that @external functions that call @functions that await Triggers
     can be called from ReadOnly state
     """
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units='ns').start())
 
     await ReadOnly()
     dut._log.info("In readonly")
@@ -182,7 +182,7 @@ async def test_function_that_awaits(dut):
     awaits Triggers and return values back through to
     the test
     """
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units='ns').start())
 
     value = await external(calls_cocotb_function)(dut)
     assert value == 2
@@ -196,7 +196,7 @@ async def test_await_after_function(dut):
     from @external functions that call @functions that consume
     simulation time
     """
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units='ns').start())
 
     value = await external(calls_cocotb_function)(dut)
     assert value == 2
@@ -207,7 +207,7 @@ async def test_await_after_function(dut):
 
 # Cadence simulators: "Unable set up RisingEdge(...) Trigger" with VHDL (see #1076)
 @cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else ())
-async def test_external_from_fork(dut):
+async def test_external_from_start_soon(dut):
     """
     Test that @external functions work when awaited from a forked
     task
@@ -220,15 +220,15 @@ async def test_external_from_fork(dut):
         value = await external(return_two)(dut)
         return value
 
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, units='ns').start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, units='ns').start())
 
-    coro1 = cocotb.fork(run_function(dut))
+    coro1 = cocotb.start_soon(run_function(dut))
     value = await coro1.join()
     assert value == 2
     dut._log.info("Back from join 1")
 
     value = 0
-    coro2 = cocotb.fork(run_external(dut))
+    coro2 = cocotb.start_soon(run_external(dut))
     value = await coro2.join()
     assert value == 2
     dut._log.info("Back from join 2")
@@ -330,7 +330,7 @@ async def test_function_from_weird_thread_fails(dut):
         t.start()
         t.join()
 
-    task = cocotb.fork(ext())
+    task = cocotb.start_soon(ext())
 
     await Timer(20, units='ns')
 
@@ -356,8 +356,8 @@ async def test_function_called_in_parallel(dut):
     def call_function(x):
         return function(x)
 
-    t1 = cocotb.fork(call_function(1))
-    t2 = cocotb.fork(call_function(2))
+    t1 = cocotb.start_soon(call_function(1))
+    t2 = cocotb.start_soon(call_function(2))
     v1 = await t1
     v2 = await t2
     assert v1 == 1, v1

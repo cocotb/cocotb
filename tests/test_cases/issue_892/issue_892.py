@@ -10,5 +10,5 @@ async def raise_test_success():
 
 @cocotb.test()
 async def error_test(dut):
-    cocotb.fork(raise_test_success())
+    cocotb.start_soon(raise_test_success())
     await Timer(10, units='ns')

@@ -126,8 +126,8 @@ async def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
     exited = False
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.fork(do_test_readwrite_in_readonly(dut))
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+    coro = cocotb.start_soon(do_test_readwrite_in_readonly(dut))
     await First(Join(coro), Timer(10_000, "ns"))
     clk_gen.kill()
     assert exited
@@ -138,8 +138,8 @@ async def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
     exited = False
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.fork(do_test_cached_write_in_readonly(dut))
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+    coro = cocotb.start_soon(do_test_cached_write_in_readonly(dut))
     await First(Join(coro), Timer(10_000, "ns"))
     clk_gen.kill()
     assert exited
@@ -150,8 +150,8 @@ async def test_afterdelay_in_readonly_valid(dut):
     """Test Timer delay after ReadOnly phase"""
     global exited
     exited = False
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.fork(do_test_afterdelay_in_readonly(dut, 1))
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+    coro = cocotb.start_soon(do_test_afterdelay_in_readonly(dut, 1))
     await First(Join(coro), Timer(100_000, "ns"))
     clk_gen.kill()
     assert exited
@@ -168,7 +168,7 @@ async def test_writes_have_taken_effect_after_readwrite(dut):
         dut.stream_in_data.setimmediatevalue(2)
 
     # queue a background task to do a manual write
-    waiter = cocotb.fork(write_manually())
+    waiter = cocotb.start_soon(write_manually())
 
     # do a delayed write. This will be overwritten
     dut.stream_in_data.value = 3

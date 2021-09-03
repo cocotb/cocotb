@@ -22,7 +22,7 @@ def _check_value(tlog, hdl, expected):
 async def test_1dim_array_handles(dut):
     """Test getting and setting array values using the handle of the full array."""
 
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
 
     dut.array_7_downto_4.value = [0xF0, 0xE0, 0xD0, 0xC0]
     dut.array_4_to_7.value = [0xB0, 0xA0, 0x90, 0x80]
@@ -47,7 +47,7 @@ async def test_1dim_array_handles(dut):
 async def test_ndim_array_handles(dut):
     """Test getting and setting multi-dimensional array values using the handle of the full array."""
 
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
 
     dut.array_2d.value = [
         [0xF0, 0xE0, 0xD0, 0xC0],
@@ -64,7 +64,7 @@ async def test_ndim_array_handles(dut):
 async def test_1dim_array_indexes(dut):
     """Test getting and setting values of array indexes."""
 
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
 
     dut.array_7_downto_4.value = [0xF0, 0xE0, 0xD0, 0xC0]
     dut.array_4_to_7.value = [0xB0, 0xA0, 0x90, 0x80]
@@ -110,7 +110,7 @@ async def test_1dim_array_indexes(dut):
 async def test_ndim_array_indexes(dut):
     """Test getting and setting values of multi-dimensional array indexes."""
 
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
 
     dut.array_2d.value = [
         [0xF0, 0xE0, 0xD0, 0xC0],
@@ -142,7 +142,7 @@ async def test_ndim_array_indexes(dut):
 @cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) else ())
 async def test_struct(dut):
     """Test setting and getting values of structs."""
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
     dut.inout_if.a_in.value = 1
     await Timer(1000, 'ns')
     _check_value(tlog, dut.inout_if.a_in, 1)

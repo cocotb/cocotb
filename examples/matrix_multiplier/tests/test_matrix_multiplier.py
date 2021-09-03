@@ -41,7 +41,7 @@ class DataValidMonitor:
         """Start monitor"""
         if self._coro is not None:
             raise RuntimeError("Monitor already started")
-        self._coro = cocotb.fork(self._run())
+        self._coro = cocotb.start_soon(self._run())
 
     def stop(self) -> None:
         """Stop monitor"""
@@ -98,7 +98,7 @@ class MatrixMultiplierTester:
             raise RuntimeError("Monitor already started")
         self.input_mon.start()
         self.output_mon.start()
-        self._checker = cocotb.fork(self._check())
+        self._checker = cocotb.start_soon(self._check())
 
     def stop(self) -> None:
         """Stops everything"""
@@ -146,7 +146,7 @@ class MatrixMultiplierTester:
 async def test_multiply(dut):
     """Test multiplication of many matrices."""
 
-    cocotb.fork(Clock(dut.clk_i, 10, units='ns').start())
+    cocotb.start_soon(Clock(dut.clk_i, 10, units='ns').start())
     tester = MatrixMultiplierTester(dut)
 
     dut._log.info("Initialize and reset model")

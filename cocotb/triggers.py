@@ -660,7 +660,7 @@ class NullTrigger(Trigger):
 
 
 class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
-    r"""Fires when a :func:`~cocotb.fork`\ ed coroutine completes.
+    r"""Fires when a task completes.
 
     The result of blocking on the trigger can be used to get the coroutine
     result::
@@ -669,7 +669,7 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
             await Timer(1, units='ns')
             return "Hello world"
 
-        task = cocotb.fork(coro_inner())
+        task = cocotb.start_soon(coro_inner())
         result = await Join(task)
         assert result == "Hello world"
 
@@ -698,14 +698,14 @@ class Join(PythonTrigger, metaclass=_ParameterizedSingletonAndABC):
             Typically there is no need to use this attribute - the
             following code samples are equivalent::
 
-                forked = cocotb.fork(mycoro())
+                forked = cocotb.start_soon(mycoro())
                 j = Join(forked)
                 await j
                 result = j.retval
 
             ::
 
-                forked = cocotb.fork(mycoro())
+                forked = cocotb.start_soon(mycoro())
                 result = await Join(forked)
         """
         return self._coroutine.retval
@@ -807,7 +807,7 @@ class Combine(_AggregateWaitable):
                 if not triggers:
                     e.set()
                 ret.get()  # re-raise any exception
-            waiters.append(cocotb.fork(_wait_callback(t, on_done)))
+            waiters.append(cocotb.start_soon(_wait_callback(t, on_done)))
 
         # wait for the last waiter to complete
         await e
@@ -848,7 +848,7 @@ class First(_AggregateWaitable):
             def on_done(ret):
                 completed.append(ret)
                 e.set()
-            waiters.append(cocotb.fork(_wait_callback(t, on_done)))
+            waiters.append(cocotb.start_soon(_wait_callback(t, on_done)))
 
         # wait for a waiter to complete
         await e

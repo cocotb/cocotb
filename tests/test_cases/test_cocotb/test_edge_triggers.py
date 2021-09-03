@@ -43,7 +43,7 @@ async def test_rising_edge(dut):
     """Test that a rising edge can be awaited on"""
     dut.clk.value = 0
     await Timer(1, "ns")
-    test = cocotb.fork(do_single_edge_check(dut, 1))
+    test = cocotb.start_soon(do_single_edge_check(dut, 1))
     await Timer(10, "ns")
     dut.clk.value = 1
     fail_timer = Timer(1000, "ns")
@@ -56,7 +56,7 @@ async def test_falling_edge(dut):
     """Test that a falling edge can be awaited on"""
     dut.clk.value = 1
     await Timer(1, "ns")
-    test = cocotb.fork(do_single_edge_check(dut, 0))
+    test = cocotb.start_soon(do_single_edge_check(dut, 0))
     await Timer(10, "ns")
     dut.clk.value = 0
     fail_timer = Timer(1000, "ns")
@@ -96,13 +96,13 @@ async def test_either_edge(dut):
 
 @cocotb.test()
 async def test_fork_and_monitor(dut, period=1000, clocks=6):
-    cocotb.fork(Clock(dut.clk, period, "ns").start())
+    cocotb.start_soon(Clock(dut.clk, period, "ns").start())
 
     # Ensure the clock has started
     await RisingEdge(dut.clk)
 
     timer = Timer(period + 10, "ns")
-    task = cocotb.fork(count_edges_cycles(dut.clk, clocks))
+    task = cocotb.start_soon(count_edges_cycles(dut.clk, clocks))
     count = 0
     expect = clocks - 1
 
@@ -144,8 +144,8 @@ async def test_edge_count(dut):
     edges_seen = 0
     clk_period = 100
     edge_count = 10
-    clock = cocotb.fork(do_clock(dut, edge_count, clk_period))
-    test = cocotb.fork(do_edge_count(dut, dut.clk))
+    clock = cocotb.start_soon(do_clock(dut, edge_count, clk_period))
+    test = cocotb.start_soon(do_edge_count(dut, dut.clk))
 
     await Timer(clk_period * (edge_count + 1), "ns")
     assert edge_count == edges_seen, "Correct edge count failed - saw %d, wanted %d" % (edges_seen, edge_count)
@@ -188,7 +188,7 @@ async def test_clock_cycles(dut):
     Test the ClockCycles Trigger
     """
     clk = dut.clk
-    clk_gen = cocotb.fork(Clock(clk, 100, "ns").start())
+    clk_gen = cocotb.start_soon(Clock(clk, 100, "ns").start())
     await RisingEdge(clk)
     dut._log.info("After one edge")
     await ClockCycles(clk, 10)
@@ -200,13 +200,13 @@ async def test_clock_cycles_forked(dut):
     """ Test that ClockCycles can be used in forked coroutines """
     # gh-520
 
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
     async def wait_ten():
         await ClockCycles(dut.clk, 10)
 
-    a = cocotb.fork(wait_ten())
-    b = cocotb.fork(wait_ten())
+    a = cocotb.start_soon(wait_ten())
+    b = cocotb.start_soon(wait_ten())
     await a.join()
     await b.join()
 
@@ -229,9 +229,9 @@ async def test_both_edge_triggers(dut):
     async def wait_falling_edge():
         await FallingEdge(dut.clk)
 
-    rising_coro = cocotb.fork(wait_rising_edge())
-    falling_coro = cocotb.fork(wait_falling_edge())
-    cocotb.fork(Clock(dut.clk, 10, units='ns').start())
+    rising_coro = cocotb.start_soon(wait_rising_edge())
+    falling_coro = cocotb.start_soon(wait_falling_edge())
+    cocotb.start_soon(Clock(dut.clk, 10, units='ns').start())
     await Combine(rising_coro, falling_coro)
 
 
@@ -239,7 +239,7 @@ async def test_both_edge_triggers(dut):
 async def test_edge_on_vector(dut):
     """Test that Edge() triggers on any 0/1 change in a vector"""
 
-    cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
 
     edge_cnt = 0
 
@@ -251,7 +251,7 @@ async def test_edge_on_vector(dut):
                 await ReadOnly()  # not needed for other simulators
             edge_cnt = edge_cnt + 1
 
-    cocotb.fork(wait_edge())
+    cocotb.start_soon(wait_edge())
 
     dut.stream_in_data.value = 0
     await RisingEdge(dut.clk)

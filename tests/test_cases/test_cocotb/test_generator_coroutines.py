@@ -54,11 +54,11 @@ def test_function_not_decorated(dut):
 
 
 @cocotb.test()
-def test_function_not_decorated_fork(dut):
+def test_function_not_decorated_start_soon(dut):
     """Example of trying to fork a coroutine that isn't a coroutine"""
     yield Timer(500)
     try:
-        cocotb.fork(normal_function(dut))
+        cocotb.start_soon(normal_function(dut))
     except TypeError as exc:
         assert "isn't a coroutine" in str(exc)
     else:
@@ -78,7 +78,7 @@ def test_adding_a_coroutine_without_starting(dut):
     incorrectly"""
     yield Timer(100)
     try:
-        cocotb.fork(example)
+        cocotb.start_soon(example)
     except TypeError as exc:
         assert "a coroutine that hasn't started" in str(exc)
     else:
@@ -189,7 +189,7 @@ def test_exceptions_forked(dut):
     @cocotb.coroutine
     def raise_soon():
         yield Timer(1)
-        coro = cocotb.fork(raise_inner())
+        coro = cocotb.start_soon(raise_inner())
         yield coro.join()
 
     # it's ok to change this value if the traceback changes - just make sure

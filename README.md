@@ -79,7 +79,7 @@ async def test_dff_simple(dut):
     """ Test that d propagates to q """
 
     clock = Clock(dut.clk, 10, units="us")  # Create a 10us period clock on port clk
-    cocotb.fork(clock.start())  # Start the clock
+    cocotb.start_soon(clock.start())  # Start the clock
 
     for i in range(10):
         val = random.randint(0, 1)

@@ -51,8 +51,10 @@ class BaseClock:
 class Clock(BaseClock):
     r"""Simple 50:50 duty cycle clock driver.
 
-    Instances of this class should call its :meth:`start` method and :func:`fork` the
-    result.  This will create a clocking thread that drives the signal at the
+    Instances of this class should call its :meth:`start` method
+    and pass the coroutine object to one of the functions in :ref:`task-management`.
+
+    This will create a clocking task that drives the signal at the
     desired period/frequency.
 
     Example:
@@ -60,7 +62,7 @@ class Clock(BaseClock):
     .. code-block:: python
 
         c = Clock(dut.clk, 10, 'ns')
-        cocotb.fork(c.start())
+        await cocotb.start(c.start())
 
     Args:
         signal: The clock pin/signal to be driven.
@@ -72,7 +74,7 @@ class Clock(BaseClock):
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
 
     If you need more features like a phase shift and an asymmetric duty cycle,
-    it is simple to create your own clock generator (that you then :func:`fork`):
+    it is simple to create your own clock generator (that you then :func:`~cocotb.start`):
 
     .. code-block:: python
 
@@ -102,7 +104,7 @@ class Clock(BaseClock):
                 await Timer(low_delay, units="ns")
 
         high_delay = low_delay = 100
-        cocotb.fork(custom_clock())
+        await cocotb.start(custom_clock())
         await Timer(1000, units="ns")
         high_delay = low_delay = 10  # change the clock speed
         await Timer(1000, units="ns")
@@ -130,7 +132,7 @@ class Clock(BaseClock):
         self.mcoro = None
 
     async def start(self, cycles=None, start_high=True):
-        r"""Clocking coroutine.  Start driving your clock by :func:`fork`\ ing a
+        r"""Clocking coroutine.  Start driving your clock by :func:`cocotb.start`\ ing a
         call to this.
 
         Args:

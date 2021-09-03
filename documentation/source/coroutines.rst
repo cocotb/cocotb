@@ -208,7 +208,7 @@ including :func:`~cocotb.fork`.
     @cocotb.coroutine
     def start_clock(clk):
         # generator-based coroutines can still be forked
-        cocotb.fork(simple_clock(clk, 5, units='ns'))
+        cocotb.start_soon(simple_clock(clk, 5, units='ns'))
         yield RisingEdge(clk)
 
 :keyword:`async` coroutines can be yielded in generator-based coroutines.

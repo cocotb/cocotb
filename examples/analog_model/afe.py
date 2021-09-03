@@ -33,7 +33,7 @@ class PGA:
         self.in_queue = in_queue
         self.out_queue = out_queue
 
-        cocotb.fork(self.run())
+        cocotb.start_soon(self.run())
 
     @property
     def gain(self) -> float:
@@ -70,7 +70,7 @@ class ADC:
         self.in_queue = in_queue
         self.out_queue = out_queue
 
-        cocotb.fork(self.run())
+        cocotb.start_soon(self.run())
 
     async def run(self) -> None:
         while True:

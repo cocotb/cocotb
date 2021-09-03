@@ -22,8 +22,8 @@ async def monitor(dut):
 @cocotb.test(expect_error=cocotb.triggers.TriggerException if cocotb.SIM_NAME.startswith(("xmsim", "ncsim")) and cocotb.LANGUAGE in ["vhdl"] else ())
 async def issue_120_scheduling(dut):
 
-    cocotb.fork(Clock(dut.clk, 10, 'ns').start())
-    cocotb.fork(monitor(dut))
+    cocotb.start_soon(Clock(dut.clk, 10, 'ns').start())
+    cocotb.start_soon(monitor(dut))
     await RisingEdge(dut.clk)
 
     # First attempt, not from coroutine - works as expected

@@ -42,7 +42,7 @@ A reusable ``MatrixMultiplierTester`` is also defined.
 It instantiates two of the ``DataValidMonitor``\ s:
 one to monitor the matrix multiplier input,
 and another to monitor the output.
-The ``MatrixMultiplierTester`` :func:`~cocotb.fork`\ s a coroutine which consumes transactions from the input monitor,
+The ``MatrixMultiplierTester`` starts a task which consumes transactions from the input monitor,
 feeds them into a model to compute an expected output,
 and finally compares the module output to the expected for correctness.
 
