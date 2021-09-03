@@ -218,10 +218,10 @@ class Timer(GPITrigger):
             Warn for 0 as this will cause erratic behavior in some simulators as well.
 
         .. versionchanged:: 1.5
-            Support ``'step'`` as the the *units* argument to mean "simulator time step".
+            Support ``'step'`` as the *units* argument to mean "simulator time step".
 
         .. deprecated:: 1.5
-            Using None as the the *units* argument is deprecated, use ``'step'`` instead.
+            Using ``None`` as the *units* argument is deprecated, use ``'step'`` instead.
 
         .. versionchanged:: 1.6
             Support rounding modes.
@@ -931,7 +931,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
     .. versionadded:: 1.3
 
     .. deprecated:: 1.5
-        Using None as the the *timeout_unit* argument is deprecated, use ``'step'`` instead.
+        Using ``None`` as the *timeout_unit* argument is deprecated, use ``'step'`` instead.
    """
 
     if timeout_unit is None:

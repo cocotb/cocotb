@@ -108,10 +108,10 @@ class Clock(BaseClock):
         await Timer(1000, units="ns")
 
     .. versionchanged:: 1.5
-        Support ``'step'`` as the the *units* argument to mean "simulator time step".
+        Support ``'step'`` as the *units* argument to mean "simulator time step".
 
     .. deprecated:: 1.5
-        Using None as the the *units* argument is deprecated, use ``'step'`` instead.
+        Using ``None`` as the *units* argument is deprecated, use ``'step'`` instead.
     """
 
     def __init__(self, signal, period, units="step"):

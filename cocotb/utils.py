@@ -134,7 +134,7 @@ def get_sim_steps(
             time steps when *round_mode* is ``"error"``.
 
     .. versionchanged:: 1.5
-        Support ``'step'`` as the the *units* argument to mean "simulator time step".
+        Support ``'step'`` as the *units* argument to mean "simulator time step".
 
     .. versionchanged:: 1.6
         Support rounding modes.
@@ -176,7 +176,7 @@ def _get_log_time_scale(units):
             (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
     Returns:
-        The the ``log10()`` of the scale factor for the time unit.
+        The ``log10()`` of the scale factor for the time unit.
     """
     scale = {
         'fs' :    -15,
