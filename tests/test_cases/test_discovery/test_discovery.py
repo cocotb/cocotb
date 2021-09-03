@@ -26,16 +26,14 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import cocotb
-import logging
 import pytest
 from cocotb.binary import BinaryValue
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
 from cocotb.handle import IntegerObject, ConstantObject, HierarchyObject, StringObject
 from cocotb._sim_versions import IcarusVersion
 
 
-# GHDL unable to access signals in generate loops (gh-2594)
+# GHDL is unable to access signals in generate loops (gh-2594)
 @cocotb.test(
     expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def pseudo_region_access(dut):
@@ -45,10 +43,7 @@ async def pseudo_region_access(dut):
     if len(dut._sub_handles) != 0:
         dut._sub_handles = {}
 
-    pseudo_region = dut.genblk1
-    dut._log.info("Found %s (%s)", pseudo_region._name, type(pseudo_region))
-    first_generate_instance = pseudo_region[0]
-    dut._log.info("Found %s (%s)", first_generate_instance._name, type(first_generate_instance))
+    dut.genblk1[0]
 
 
 @cocotb.test()
@@ -56,7 +51,7 @@ async def recursive_discover(dut):
     """Discover absolutely everything in the DUT"""
     def _discover(obj):
         for thing in obj:
-            dut._log.info("Found %s (%s)", thing._name, type(thing))
+            dut._log.debug("Found %s (%s)", thing._name, type(thing))
             _discover(thing)
     _discover(dut)
 
@@ -66,32 +61,23 @@ async def discover_module_values(dut):
     """Discover everything in the DUT"""
     count = 0
     for thing in dut:
-        thing._log.info("Found something: %s" % thing._fullname)
         count += 1
-    if count < 2:
-        raise TestFailure("Expected to discover things in the DUT")
+    assert count >= 2, "Expected to discover things in the DUT"
 
 
 @cocotb.test()
 async def discover_value_not_in_dut(dut):
     """Try and get a value from the DUT that is not there"""
     with pytest.raises(AttributeError):
-        fake_signal = dut.fake_signal
+        dut.fake_signal
 
 
 @cocotb.test()
 async def access_signal(dut):
     """Access a signal using the assignment mechanism"""
-    tlog = logging.getLogger("cocotb.test")
-    signal = dut.stream_in_data
-
-    tlog.info("Signal is %s" % type(signal))
     dut.stream_in_data.setimmediatevalue(1)
     await Timer(1, "ns")
-    if dut.stream_in_data.value.integer != 1:
-        raise TestError("%s.%s != %d" %
-                        (dut.stream_in_data._path,
-                         dut.stream_in_data.value.integer, 1))
+    assert dut.stream_in_data.value.integer == 1
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
@@ -144,30 +130,23 @@ async def access_type_bit_verilog_metavalues(dut):
 
 
 @cocotb.test(
-    # Icarus up to (including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
+    # Icarus up to (and including) 10.3 doesn't support bit-selects, see https://github.com/steveicarus/iverilog/issues/323
     expect_error=IndexError if (cocotb.SIM_NAME.lower().startswith("icarus") and (IcarusVersion(cocotb.SIM_VERSION) <= IcarusVersion("10.3 (stable)"))) else (),
     skip=cocotb.LANGUAGE in ["vhdl"])
 async def access_single_bit(dut):
     """Access a single bit in a vector of the DUT"""
     dut.stream_in_data.value = 0
     await Timer(1, "ns")
-    dut._log.info("%s = %d bits" %
-                  (dut.stream_in_data._path, len(dut.stream_in_data)))
     dut.stream_in_data[2].value = 1
     await Timer(1, "ns")
-    if dut.stream_out_data_comb.value.integer != (1 << 2):
-        raise TestError("%s.%s != %d" %
-                        (dut.stream_out_data_comb._path,
-                         dut.stream_out_data_comb.value.integer, (1 << 2)))
+    assert dut.stream_out_data_comb.value.integer == (1 << 2)
 
 
-@cocotb.test(expect_error=IndexError)
+@cocotb.test()
 async def access_single_bit_erroneous(dut):
     """Access a non-existent single bit"""
-    dut._log.info("%s = %d bits" %
-                  (dut.stream_in_data._path, len(dut.stream_in_data)))
-    bit = len(dut.stream_in_data) + 4
-    dut.stream_in_data[bit].value = 1
+    with pytest.raises(IndexError):
+        dut.stream_in_data[100000]
 
 
 # Riviera discovers integers as nets (gh-2597)
@@ -185,30 +164,18 @@ async def access_single_bit_erroneous(dut):
 )
 async def access_integer(dut):
     """Integer should show as an IntegerObject"""
-    bitfail = False
-    tlog = logging.getLogger("cocotb.test")
-    test_int = dut.stream_in_int
-    if not isinstance(test_int, IntegerObject):
-        raise TestFailure("dut.stream_in_int is not an integer but {} instead".format(type(test_int)))
+    assert isinstance(dut.stream_in_int, IntegerObject)
 
-    try:
-        bit = test_int[3]
-    except IndexError as e:
-        tlog.info("Access to bit is an error as expected")
-        bitfail = True
+    with pytest.raises(IndexError):
+        dut.stream_in_int[3]
 
-    if not bitfail:
-        raise TestFailure("Access into an integer should be invalid")
-
-    length = len(test_int)
-    if length != 1:
-        raise TestFailure("Length should be 1 not %d" % length)
+    assert len(dut.stream_in_int) == 1
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 async def access_ulogic(dut):
     """Access a std_ulogic as enum"""
-    constant_integer = dut.stream_in_valid
+    dut.stream_in_valid
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
@@ -216,206 +183,138 @@ async def access_constant_integer(dut):
     """
     Access a constant integer
     """
-    tlog = logging.getLogger("cocotb.test")
-    constant_integer = dut.isample_module1.EXAMPLE_WIDTH
-    tlog.info("Value of EXAMPLE_WIDTH is %d" % constant_integer)
-    if not isinstance(constant_integer, ConstantObject):
-        raise TestFailure("EXAMPLE_WIDTH was not constant")
-    if constant_integer != 7:
-        raise TestFailure("EXAMPLE_WIDTH was not 7")
+    assert isinstance(dut.isample_module1.EXAMPLE_WIDTH, ConstantObject)
+    assert dut.isample_module1.EXAMPLE_WIDTH == 7
 
 
 # GHDL inexplicably crashes, so we will skip this test for now
 # likely has to do with overall poor support of string over the VPI
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("ghdl"))
-async def access_string_vhdl(dut):
+async def access_constant_string_vhdl(dut):
     """Access to a string, both constant and signal."""
-    tlog = logging.getLogger("cocotb.test")
     constant_string = dut.isample_module1.EXAMPLE_STRING
-    tlog.info(f"{constant_string!r} is {constant_string.value}")
-    if not isinstance(constant_string, ConstantObject):
-        raise TestFailure("EXAMPLE_STRING was not constant")
-    if constant_string != b"TESTING":
-        raise TestFailure("EXAMPLE_STRING was not == \'TESTING\'")
+    assert isinstance(constant_string, ConstantObject)
+    assert constant_string.value == b"TESTING"
 
-    tlog.info("Test writing under size")
 
+# GHDL discovers strings as vpiNetArray (gh-2584)
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"],
+             expect_error=TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+async def test_writing_string_undersized(dut):
     test_string = b"cocotb"
     dut.stream_in_string.setimmediatevalue(test_string)
-
-    variable_string = dut.stream_out_string
-    if variable_string != b'':
-        raise TestFailure("%r not \'\'" % variable_string)
-
+    assert dut.stream_out_string == b''
     await Timer(1, "ns")
+    assert dut.stream_out_string.value == test_string
 
-    if variable_string != test_string:
-        raise TestFailure(f"{variable_string!r} {variable_string.value} != '{test_string}'")
 
+# GHDL discovers strings as vpiNetArray (gh-2584)
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"],
+             expect_error=TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+async def test_writing_string_oversized(dut):
     test_string = b"longer_than_the_array"
-    tlog.info("Test writing over size with '%s'" % test_string)
-
     dut.stream_in_string.setimmediatevalue(test_string)
-    variable_string = dut.stream_out_string
-
     await Timer(1, "ns")
+    assert dut.stream_out_string.value == test_string[:len(dut.stream_out_string)]
 
-    test_string = test_string[:len(variable_string)]
 
-    if variable_string != test_string:
-        raise TestFailure(f"{variable_string!r} {variable_string.value} != '{test_string}'")
-
-    tlog.info("Test read access to a string character")
-
-    await Timer(1, "ns")
-
+# GHDL discovers strings as vpiNetArray (gh-2584)
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"],
+             expect_error=TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+async def test_read_single_character(dut):
+    test_string = b"cocotb!!!"
     idx = 3
-
-    result_slice = variable_string[idx]
-
+    dut.stream_in_string.setimmediatevalue(test_string)
+    await Timer(1, "ns")
     # String is defined as string(1 to 8) so idx=3 will access the 3rd character
-    if result_slice != test_string[idx - 1]:
-        raise TestFailure("Single character did not match {} != {}".format(result_slice, test_string[idx - 1]))
+    assert dut.stream_out_string[idx].value == test_string[idx - 1]
 
-    tlog.info("Test write access to a string character")
 
+# GHDL discovers strings as vpiNetArray (gh-2584)
+@cocotb.test(skip=cocotb.LANGUAGE in ["verilog"],
+             expect_error=TypeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+async def test_write_single_character(dut):
+    # set initial value
+    test_string = b"verilog0"
+    dut.stream_in_string.setimmediatevalue(test_string)
     await Timer(1, "ns")
 
-    for i in variable_string:
-        lower = chr(i)
-        upper = lower.upper()
-        i.setimmediatevalue(ord(upper))
-
+    # iterate over each character handle and uppercase it
+    for c in dut.stream_in_string:
+        lowercase = chr(c)
+        uppercase = lowercase.upper()
+        uppercase_as_int = ord(uppercase)
+        c.setimmediatevalue(uppercase_as_int)
     await Timer(1, "ns")
 
-    test_string = test_string.upper()
-
-    result = variable_string.value
-    tlog.info("After setting bytes of string value is %s" % result)
-    if variable_string != test_string:
-        raise TestFailure(f"{variable_string!r} {result} != '{test_string}'")
+    # test the output is uppercased
+    assert dut.stream_out_string.value == test_string.upper()
 
 
 # TODO: add tests for Verilog "string_input_port" and "STRING_LOCALPARAM" (see issue #802)
 
-@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"] or cocotb.SIM_NAME.lower().startswith(("icarus", "riviera")),
-             expect_error=cocotb.result.TestFailure if cocotb.SIM_NAME.lower().startswith(("xmsim", "ncsim", "modelsim", "chronologic simulation vcs")) else ())
+@cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"] or cocotb.SIM_NAME.lower().startswith("riviera"),
+             expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else ())
 async def access_const_string_verilog(dut):
     """Access to a const Verilog string."""
-    tlog = logging.getLogger("cocotb.test")
-    string_const = dut.STRING_CONST
 
     await Timer(10, "ns")
-    tlog.info(f"{string_const!r} is {string_const.value}")
-    if not isinstance(string_const, StringObject):
-        raise TestFailure("STRING_CONST was not StringObject")
-    if string_const != b"TESTING_CONST":
-        raise TestFailure(f"Initial value of STRING_CONST was not == b\'TESTING_CONST\' but {string_const.value} instead")
+    assert isinstance(dut.STRING_CONST, StringObject)
+    assert dut.STRING_CONST == b"TESTING_CONST"
 
-    tlog.info("Modifying const string")
-    string_const.value = b"MODIFIED"
+    dut.STRING_CONST.value = b"MODIFIED"
     await Timer(10, "ns")
-    if string_const != b"TESTING_CONST":
-        raise TestFailure(f"STRING_CONST was not still b\'TESTING_CONST\' after modification but {string_const.value} instead")
+    assert dut.STRING_CONST != b"TESTING_CONST"
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
              expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("icarus") else ())
 async def access_var_string_verilog(dut):
     """Access to a var Verilog string."""
-    tlog = logging.getLogger("cocotb.test")
-    string_var = dut.STRING_VAR
 
     await Timer(10, "ns")
-    tlog.info(f"{string_var!r} is {string_var.value}")
-    if not isinstance(string_var, StringObject):
-        raise TestFailure("STRING_VAR was not StringObject")
-    if string_var != b"TESTING_VAR":
-        raise TestFailure(f"Initial value of STRING_VAR was not == b\'TESTING_VAR\' but {string_var.value} instead")
+    assert isinstance(dut.STRING_VAR, StringObject)
+    assert dut.STRING_VAR == b"TESTING_VAR"
 
-    tlog.info("Modifying var string")
-    string_var.value = b"MODIFIED"
+    dut.STRING_VAR.value = b"MODIFIED"
     await Timer(10, "ns")
-    if string_var != b"MODIFIED":
-        raise TestFailure(f"STRING_VAR was not == b\'MODIFIED\' after modification but {string_var.value} instead")
+    assert dut.STRING_VAR == b"MODIFIED"
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 async def access_constant_boolean(dut):
     """Test access to a constant boolean"""
-    tlog = logging.getLogger("cocotb.test")
-
-    constant_boolean = dut.isample_module1.EXAMPLE_BOOL
-    if not isinstance(constant_boolean, ConstantObject):
-        raise TestFailure("dut.stream_in_int.EXAMPLE_BOOL is not a ConstantObject")
-
-    tlog.info("Value of %s is %d" % (constant_boolean._path, constant_boolean.value))
+    assert isinstance(dut.isample_module1.EXAMPLE_BOOL, ConstantObject)
+    assert dut.isample_module1.EXAMPLE_BOOL.value == True  # noqa
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["verilog"])
 async def access_boolean(dut):
     """Test access to a boolean"""
-    tlog = logging.getLogger("cocotb.test")
 
-    boolean = dut.stream_in_bool
+    with pytest.raises(IndexError):
+        dut.stream_in_bool[3]
 
-    return
+    assert len(dut.stream_in_bool) == 1
 
-    # if not isinstance(boolean, IntegerObject):
-    #     raise TestFailure("dut.stream_in_boolean is not a IntegerObject is %s" % type(boolean))
-
-    try:
-        bit = boolean[3]
-    except TestError as e:
-        tlog.info("Access to bit is an error as expected")
-        bitfail = True
-
-    if not bitfail:
-        raise TestFailure("Access into an integer should be invalid")
-
-    length = len(boolean)
-    if length != 1:
-        raise TestFailure("Length should be 1 not %d" % length)
-
-    tlog.info("Value of %s is %d" % (boolean._path, boolean.value))
-
-    curr_val = int(boolean)
-    output_bool = dut.stream_out_bool
-
-    tlog.info("Before  %d After = %d" % (curr_val, (not curr_val)))
-
-    boolean.setimmediatevalue(not curr_val)
-
+    curr_val = dut.stream_in_bool.value
+    dut.stream_in_bool.setimmediatevalue(not curr_val)
     await Timer(1, "ns")
-
-    tlog.info("Value of %s is now %d" % (output_bool._path, output_bool.value))
-    if (int(curr_val) == int(output_bool)):
-        raise TestFailure("Value did not propagate")
+    assert curr_val != dut.stream_out_bool.value
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
 async def access_internal_register_array(dut):
     """Test access to an internal register array"""
 
-    if (dut.register_array[0].value.binstr != "xxxxxxxx"):
-        raise TestFailure("Failed to access internal register array value")
+    assert dut.register_array[0].value.binstr == "xxxxxxxx", \
+        "Failed to access internal register array value"
 
     dut.register_array[1].setimmediatevalue(4)
-
     await Timer(1, "ns")
-
-    if (dut.register_array[1].value != 4):
-        raise TestFailure("Failed to set internal register array value")
-
-
-@cocotb.test(skip=True)
-async def skip_a_test(dut):
-    """This test shouldn't execute"""
-    dut._log.info("%s = %d bits" %
-                  (dut.stream_in_data._path, len(dut.stream_in_data)))
-    bit = len(dut.stream_in_data) + 4
-    dut.stream_in_data[bit].value = 1
+    assert dut.register_array[1].value == 4, \
+        "Failed to set internal register array value"
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"],
@@ -424,13 +323,10 @@ async def access_gate(dut):
     """
     Test access to a gate Object
     """
-    gate = dut.test_and_gate
-
-    if not isinstance(gate, HierarchyObject):
-        raise TestFailure("Gate should be HierarchyObject")
+    assert isinstance(dut.test_and_gate, HierarchyObject)
 
 
-# GHDL unable to access record types (gh-2591)
+# GHDL is unable to access record types (gh-2591)
 @cocotb.test(
     skip=cocotb.LANGUAGE in ["verilog"],
     expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
@@ -438,11 +334,6 @@ async def custom_type(dut):
     """
     Test iteration over a custom type
     """
-    tlog = logging.getLogger("cocotb.test")
-
-    new_type = dut.cosLut
-    tlog.info("cosLut object {} {}".format(new_type, type(new_type)))
-
     expected_sub = 84
     expected_top = 4
 
@@ -455,15 +346,12 @@ async def custom_type(dut):
             iter_count += _discover(elem)
         return iter_count
 
-    for sub in new_type:
-        tlog.info("Sub object {} {}".format(sub, type(sub)))
+    for sub in dut.cosLut:
         sub_count = _discover(sub)
-        if sub_count != expected_sub:
-            raise TestFailure("Expected %d found %d under %s" % (expected_sub, sub_count, sub))
+        assert sub_count == expected_sub
         count += 1
 
-    if expected_top != count:
-        raise TestFailure("Expected %d found %d for cosLut" % (expected_top, count))
+    assert expected_top == count
 
 
 @cocotb.test(skip=cocotb.LANGUAGE in ["vhdl"])
@@ -471,8 +359,6 @@ async def type_check_verilog(dut):
     """
     Test if types are recognized
     """
-
-    tlog = logging.getLogger("cocotb.test")
 
     test_handles = [
         (dut.stream_in_ready, "GPI_REGISTER"),
@@ -493,6 +379,4 @@ async def type_check_verilog(dut):
         test_handles.append((dut.logic_a, "GPI_REGISTER"))
 
     for handle in test_handles:
-        tlog.info("Handle {}".format(handle[0]._fullname))
-        if handle[0]._type != handle[1]:
-            raise TestFailure("Expected {} found {} for {}".format(handle[1], handle[0]._type, handle[0]._fullname))
+        assert handle[0]._type == handle[1]
