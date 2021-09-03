@@ -350,11 +350,11 @@ def _sim_event(level, message):
     # SIM_INFO = 0
     SIM_TEST_FAIL = 1
     SIM_FAIL = 2
-    from cocotb.result import TestFailure, SimFailure
+    from cocotb.result import SimFailure
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
-        scheduler._finish_test(TestFailure(f"Failure from external source: {message}"))
+        scheduler._finish_test(AssertionError(f"Failure from external source: {message}"))
     elif level is SIM_FAIL:
         # We simply return here as the simulator will exit
         # so no cleanup is needed

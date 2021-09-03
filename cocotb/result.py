@@ -163,8 +163,20 @@ class TestError(TestComplete):
 
 
 class TestFailure(TestComplete, AssertionError):
-    """Exception showing that the test was completed with severity Failure."""
-    pass
+    """
+    Exception showing that the test was completed with severity Failure.
+
+    .. deprecated:: 1.6.0
+        Use a standard ``assert`` statement instead of raising this exception.
+        Use ``expect_fail`` rather than ``expect_error`` with this exception in the
+        :class:`cocotb.test` decorator.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "TestFailure is deprecated, use an ``assert`` statement instead",
+            DeprecationWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
 
 
 class TestSuccess(TestComplete):
