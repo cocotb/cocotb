@@ -99,13 +99,13 @@ def _ldexp10(frac, exp):
         return frac / (10 ** -exp)
 
 
-def get_time_from_sim_steps(steps, units):
+def get_time_from_sim_steps(steps: int, units: str) -> int:
     """Calculates simulation time in the specified *units* from the *steps* based
     on the simulator precision.
 
     Args:
-        steps (int): Number of simulation steps.
-        units (str): String specifying the units of the result
+        steps: Number of simulation steps.
+        units: String specifying the units of the result
             (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
     Returns:
