@@ -880,6 +880,19 @@ class StringObject(ModifiableObject):
 
 _handle2obj = {}
 
+_type2cls = {
+    simulator.MODULE: HierarchyObject,
+    simulator.STRUCTURE: HierarchyObject,
+    simulator.REG: ModifiableObject,
+    simulator.NET: ModifiableObject,
+    simulator.NETARRAY: NonHierarchyIndexableObject,
+    simulator.REAL: RealObject,
+    simulator.INTEGER: IntegerObject,
+    simulator.ENUM: EnumObject,
+    simulator.STRING: StringObject,
+    simulator.GENARRAY: HierarchyArrayObject,
+}
+
 
 def SimHandle(handle, path=None):
     """Factory function to create the correct type of `SimHandle` object.
@@ -894,18 +907,6 @@ def SimHandle(handle, path=None):
     Raises:
         NotImplementedError: If no matching object for GPI type could be found.
     """
-    _type2cls = {
-        simulator.MODULE: HierarchyObject,
-        simulator.STRUCTURE: HierarchyObject,
-        simulator.REG: ModifiableObject,
-        simulator.NET: ModifiableObject,
-        simulator.NETARRAY: NonHierarchyIndexableObject,
-        simulator.REAL: RealObject,
-        simulator.INTEGER: IntegerObject,
-        simulator.ENUM: EnumObject,
-        simulator.STRING: StringObject,
-        simulator.GENARRAY: HierarchyArrayObject,
-    }
 
     # Enforce singletons since it's possible to retrieve handles avoiding
     # the hierarchy by getting driver/load information
