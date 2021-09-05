@@ -550,28 +550,6 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
             self[self_idx]._set_value(value[val_idx], call_sim)
 
 
-class NonConstantObject(NonHierarchyIndexableObject):
-    """A non-constant object"""
-
-    # FIXME: what is the difference to ModifiableObject? Explain in docstring.
-
-    def drivers(self):
-        """An iterator for gathering all drivers for a signal.
-
-        This is currently only available for VPI.
-        Also, only a few simulators implement this.
-        """
-        return self._handle.iterate(simulator.DRIVERS)
-
-    def loads(self):
-        """An iterator for gathering all loads on a signal.
-
-        This is currently only available for VPI.
-        Also, only a few simulators implement this.
-        """
-        return self._handle.iterate(simulator.LOADS)
-
-
 class _SetAction:
     """Base class representing the type of action used while write-accessing a handle."""
 
@@ -614,8 +592,24 @@ class Release(_SetAction):
         return 0, 2  # GPI_RELEASE
 
 
-class ModifiableObject(NonConstantObject):
+class ModifiableObject(NonHierarchyIndexableObject):
     """Base class for simulator objects whose values can be modified."""
+
+    def drivers(self):
+        """An iterator for gathering all drivers for a signal.
+
+        This is currently only available for VPI.
+        Also, only a few simulators implement this.
+        """
+        return self._handle.iterate(simulator.DRIVERS)
+
+    def loads(self):
+        """An iterator for gathering all loads on a signal.
+
+        This is currently only available for VPI.
+        Also, only a few simulators implement this.
+        """
+        return self._handle.iterate(simulator.LOADS)
 
     def _set_value(self, value, call_sim):
         """Set the value of the underlying simulation object to *value*.
@@ -708,7 +702,7 @@ class ModifiableObject(NonConstantObject):
             return value, 0  # GPI_DEPOSIT
         return value._as_gpi_args_for(self)
 
-    @NonConstantObject.value.getter
+    @NonHierarchyIndexableObject.value.getter
     def value(self) -> BinaryValue:
         binstr = self._handle.get_signal_val_binstr()
         # Skip BinaryValue.assign() as we know we are using a binstr
