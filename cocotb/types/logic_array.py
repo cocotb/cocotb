@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import typing
 
-from cocotb.binary import BinaryValue
+from cocotb.binary import BinaryValue, BinaryRepresentation
 from cocotb.types.array import Array
 from cocotb.types.logic import Logic, LogicConstructibleT
 from cocotb.types.range import Range
@@ -245,6 +245,18 @@ class LogicArray(Array[Logic]):
 
     def __invert__(self: Self) -> Self:
         return type(self)(~v for v in self)
+
+    def to_BinaryValue(
+        self,
+        bigEndian: bool = True,
+        binaryRepresentation: BinaryRepresentation = BinaryRepresentation.UNSIGNED,
+    ) -> BinaryValue:
+        return BinaryValue(
+            value=self.binstr,
+            n_bits=len(self),
+            bigEndian=bigEndian,
+            binaryRepresentation=binaryRepresentation
+        )
 
 
 def _int_to_bitstr(value: int, n_bits: int) -> str:
