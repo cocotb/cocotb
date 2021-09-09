@@ -39,6 +39,7 @@ import cocotb
 from cocotb import simulator
 from cocotb.binary import BinaryValue, BinaryRepresentation
 from cocotb.log import SimLog
+from cocotb.types import LogicArray
 
 # Only issue a warning for each deprecated attribute access
 _deprecation_warned = set()
@@ -790,6 +791,9 @@ class ModifiableObject(NonConstantObject):
             for val in vallist:
                 num = (num << value["bits"]) + val
             value = BinaryValue(value=num, n_bits=len(self), bigEndian=False)
+
+        elif isinstance(value, LogicArray):
+            value = value.to_BinaryValue()
 
         elif not isinstance(value, BinaryValue):
             raise TypeError(
