@@ -8,6 +8,7 @@ import logging
 import random
 import cocotb
 from cocotb.triggers import Timer
+from cocotb.types import LogicArray
 
 from common import assert_raises
 from cocotb.handle import _Limits
@@ -361,3 +362,10 @@ async def test_access_underscore_name(dut):
     dut._id("_underscore_name", extended=False).value = 0
     await Timer(1, 'ns')
     assert dut._id("_underscore_name", extended=False).value == 0
+
+
+@cocotb.test()
+async def assign_LogicArray(dut):
+    value = LogicArray(dut.stream_in_data.value)
+    value &= LogicArray("0x1X011z")
+    dut.stream_in_data.value = value
