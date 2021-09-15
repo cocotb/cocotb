@@ -34,7 +34,7 @@ Accessing bits of a vector directly was not possible until (including) version 1
 
 .. code-block:: python3
 
-    dut.stream_in_data[2] <= 1
+    dut.stream_in_data[2].value = 1
 
 See also https://github.com/steveicarus/iverilog/issues/323.
 

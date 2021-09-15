@@ -35,7 +35,7 @@ def test_init_zero_length():
     assert bin4.integer == 0
 
     with pytest.warns(RuntimeWarning, match=TRUNCATION_MATCH):
-        bin4 <= 5
+        bin4.value = 5
     assert bin4._str == ""
     assert bin4.binstr == ""
     assert bin4.integer == 0

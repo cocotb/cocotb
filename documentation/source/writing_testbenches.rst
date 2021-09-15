@@ -41,14 +41,13 @@ or using direct assignment while traversing the hierarchy.
     clk.value = 1
 
     # Direct assignment through the hierarchy
-    dut.input_signal <= 12
+    dut.input_signal.value = 12
 
     # Assign a value to a memory deep in the hierarchy
-    dut.sub_block.memory.array[4] <= 2
+    dut.sub_block.memory.array[4].value = 2
 
 
-The syntax ``sig <= new_value`` is a short form of ``sig.value = new_value``.
-It not only resembles :term:`HDL` syntax, but also has the same semantics:
+The assignment syntax ``sig.value = new_value`` has the same semantics as :term:`HDL`:
 writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 (see :meth:`~cocotb.handle.NonHierarchyObject.setimmediatevalue`).
@@ -80,14 +79,14 @@ value to signals with more fine-grained control (e.g. signed values only).
 .. code-block:: python3
 
     # assignment of negative value
-    dut.data_in <= -4
+    dut.data_in.value = -4
 
     # assignment of positive value
-    dut.data_in <= 7
+    dut.data_in.value = 7
 
     # assignment of out-of-range values
-    dut.data_in <= 8   # raises OverflowError
-    dut.data_in <= -5  # raises OverflowError
+    dut.data_in.value = 8   # raises OverflowError
+    dut.data_in.value = -5  # raises OverflowError
 
 
 .. _writing_tbs_reading_values:
@@ -152,9 +151,9 @@ The following example shows these in action:
 
     # A coroutine
     async def reset_dut(reset_n, duration_ns):
-        reset_n <= 0
+        reset_n.value = 0
         await Timer(duration_ns, units="ns")
-        reset_n <= 1
+        reset_n.value = 1
         reset_n._log.debug("Reset complete")
 
     @cocotb.test()
@@ -191,17 +190,17 @@ the various actions described in :ref:`assignment-methods` can be used.
 .. code-block:: python3
 
     # Deposit action
-    dut.my_signal <= 12
-    dut.my_signal <= Deposit(12)  # equivalent syntax
+    dut.my_signal.value = 12
+    dut.my_signal.value = Deposit(12)  # equivalent syntax
 
     # Force action
-    dut.my_signal <= Force(12)    # my_signal stays 12 until released
+    dut.my_signal.value = Force(12)    # my_signal stays 12 until released
 
     # Release action
-    dut.my_signal <= Release()    # Reverts any force/freeze assignments
+    dut.my_signal.value = Release()    # Reverts any force/freeze assignments
 
     # Freeze action
-    dut.my_signal <= Freeze()     # my_signal stays at current value until released
+    dut.my_signal.value = Freeze()     # my_signal stays at current value until released
 
 
 .. _writing_tbs_accessing_underscore_identifiers:
@@ -279,7 +278,7 @@ Below are examples of `erroring` tests.
     @cocotb.test()
     async def test(dut):
         async def coro_with_an_error():
-            dut.signal_that_does_not_exist <= 1  # AttributeError
+            dut.signal_that_does_not_exist.value = 1  # AttributeError
         cocotb.fork(coro_with_an_error())
         await Timer(10, 'ns')
 
@@ -348,4 +347,4 @@ component with the Python logging functionality.
 .. code-block:: python3
 
     dut.my_signal._log.info("Setting signal")
-    dut.my_signal <= 1
+    dut.my_signal.value = 1
