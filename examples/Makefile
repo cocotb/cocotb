@@ -30,7 +30,11 @@
 EXAMPLES := adder/tests \
             simple_dff \
             matrix_multiplier/tests \
-            mixed_language/tests
+            mixed_language/tests \
+
+ifeq ($(TOPLEVEL_LANG),verilog)
+EXAMPLES += doc_examples/quickstart
+endif
 
 .PHONY: $(EXAMPLES)
 
