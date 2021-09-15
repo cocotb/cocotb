@@ -12,6 +12,14 @@ Please install the :ref:`prerequisites<install-prerequisites>`
 and cocotb itself (``pip install cocotb``) now.
 Run ``cocotb-config --version`` in a terminal window to check that cocotb is correctly installed.
 
+The code for the following example is available as
+:reposrc:`examples/doc_examples/quickstart <examples/doc_examples/quickstart>`
+in the cocotb sources.
+You can also download the files here:
+:download:`my_design.sv <../../examples/doc_examples/quickstart/my_design.sv>`,
+:download:`test_my_design.py <../../examples/doc_examples/quickstart/test_my_design.py>`,
+:download:`Makefile <../../examples/doc_examples/quickstart/Makefile>`.
+
 
 .. _quickstart_creating_a_test:
 
@@ -30,30 +38,10 @@ In the following we'll call this object ``dut``.
 
 Let's create a test file ``test_my_design.py`` containing the following:
 
-.. code-block:: python3
-
-    # test_my_design.py
-
-    import cocotb
-    from cocotb.triggers import Timer
-
-
-    @cocotb.test()
-    async def my_first_test(dut):
-        """Try accessing the design."""
-
-        dut._log.info("Running test...")
-        for cycle in range(10):
-            dut.clk <= 0
-            await Timer(1, units="ns")
-            dut.clk <= 1
-            await Timer(1, units="ns")
-
-        dut._log.info("my_signal_1 is %s", dut.my_signal_1.value)
-        assert dut.my_signal_2.value[0] == 0, "my_signal_2[0] is not 0!"
-
-        dut._log.info("Running test...done")
-
+.. literalinclude:: ../../examples/doc_examples/quickstart/test_my_design.py
+   :language: python3
+   :start-at: # test_my_design.py (simple)
+   :end-before: # test_my_design.py (extended)
 
 This will first drive 10 periods of a square wave clock onto a port ``clk`` of the toplevel.
 After this, the clock stops,
@@ -63,7 +51,7 @@ and the value of index ``0`` of ``my_signal_2`` is checked to be ``0``.
 Things to note:
 
 * Use the ``@cocotb.test()`` decorator to mark the test function to be run.
-* Use ``<=`` to assign a value to a signal (alternatively, use ``.value =``).
+* Use ``.value = value`` to assign a value to a signal.
 * Use ``.value`` to get a signal's current value.
 
 The test shown is running sequentially, from start to end.
@@ -77,41 +65,9 @@ In cocotb, you might move the clock generation part of the example above into it
 :keyword:`async` function and :func:`~cocotb.start` it ("start it in the background")
 from the test:
 
-.. code-block:: python3
-
-    # test_my_design.py (extended)
-
-    import cocotb
-    from cocotb.triggers import Timer
-    from cocotb.triggers import FallingEdge
-
-
-    async def generate_clock(dut):
-        """Generate clock pulses."""
-
-        for cycle in range(10):
-            dut.clk <= 0
-            await Timer(1, units="ns")
-            dut.clk <= 1
-            await Timer(1, units="ns")
-
-
-    @cocotb.test()
-    async def my_second_test(dut):
-        """Try accessing the design."""
-
-        dut._log.info("Running test...")
-
-        await cocotb.start(generate_clock(dut))  # run the clock "in the background"
-
-        await Timer(5, units="ns")  # wait a bit
-        await FallingEdge(dut.clk)  # wait for falling edge/"negedge"
-
-        dut._log.info("my_signal_1 is %s", dut.my_signal_1.value)
-        assert dut.my_signal_2.value[0] == 0, "my_signal_2[0] is not 0!"
-
-        dut._log.info("Running test...done")
-
+.. literalinclude:: ../../examples/doc_examples/quickstart/test_my_design.py
+   :language: python3
+   :start-at: # test_my_design.py (extended)
 
 Note that the ``generate_clock()`` function is *not* marked with ``@cocotb.test()``
 since this is not a test on its own, just a helper function.
@@ -147,25 +103,9 @@ In the ``Makefile`` shown below we specify:
 * and a Python module that contains our cocotb tests (:envvar:`MODULE`.
   The file containing the test without the `.py` extension, ``test_my_design`` in our case).
 
-.. code-block:: makefile
-
-    # Makefile
-
-    # defaults
-    SIM ?= icarus
-    TOPLEVEL_LANG ?= verilog
-
-    VERILOG_SOURCES += $(PWD)/my_design.sv
-    # use VHDL_SOURCES for VHDL files
-
-    # TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file
-    TOPLEVEL = my_design
-
-    # MODULE is the basename of the Python test file
-    MODULE = test_my_design
-
-    # include cocotb's make rules to take care of the simulator setup
-    include $(shell cocotb-config --makefiles)/Makefile.sim
+.. literalinclude:: ../../examples/doc_examples/quickstart/Makefile
+   :language: make
+   :start-at: # Makefile
 
 
 .. _quickstart_running_a_test:
