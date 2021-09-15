@@ -21,11 +21,11 @@ Reference Card
 *coro*: a coroutine; *task*: a running coroutine
 
 +------------------------+-----------------------------------------------------------------+
-| Assign                 | ``dut.mysignal <= 0xFF00``                                      |
+| Assign                 | ``dut.mysignal.value = 0xFF00``                                 |
 +------------------------+-----------------------------------------------------------------+
 | Assign immediately     | ``dut.mysignal.setimmediatevalue(0xFF00)``                      |
 +------------------------+-----------------------------------------------------------------+
-| Assign metavalue       | ``dut.mysignal <= BinaryValue("X")``                            |
+| Assign metavalue       | ``dut.mysignal.value = BinaryValue("X")``                       |
 +------------------------+-----------------------------------------------------------------+
 | Read                   | | ``val = dut.mysignal.value``                                  |
 |                        | | (``mysig = dut.mysignal`` *creates an alias/reference*)       |
@@ -89,13 +89,13 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+
-| Force value            | ``dut.mysignal <= cocotb.handle.Force(0xFF00)``                 |
+| Force value            | ``dut.mysignal.value = cocotb.handle.Force(0xFF00)``            |
 +------------------------+-----------------------------------------------------------------+
-| Keep value             | ``dut.mysignal <= cocotb.handle.Freeze()``                      |
+| Keep value             | ``dut.mysignal.value = cocotb.handle.Freeze()``                 |
 +------------------------+-----------------------------------------------------------------+
-| Release Force/Freeze   | ``dut.mysignal <= cocotb.handle.Release()``                     |
+| Release Force/Freeze   | ``dut.mysignal.value = cocotb.handle.Release()``                |
 +------------------------+-----------------------------------------------------------------+
-| *Normal assignment with* ``<=`` *is a "deposit"* (``cocotb.handle.Deposit()``)           |
+| *Normal assignment is a "deposit"* (``cocotb.handle.Deposit()``)                         |
 +------------------------+-----------------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+

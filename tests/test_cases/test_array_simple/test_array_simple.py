@@ -24,7 +24,6 @@ async def test_1dim_array_handles(dut):
 
     cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
 
-    # Set values with '<=' operator
     dut.array_7_downto_4.value = [0xF0, 0xE0, 0xD0, 0xC0]
     dut.array_4_to_7.value = [0xB0, 0xA0, 0x90, 0x80]
     dut.array_3_downto_0.value = [0x70, 0x60, 0x50, 0x40]
@@ -50,7 +49,6 @@ async def test_ndim_array_handles(dut):
 
     cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
 
-    # Set values with '<=' operator
     dut.array_2d.value = [
         [0xF0, 0xE0, 0xD0, 0xC0],
         [0xB0, 0xA0, 0x90, 0x80]
