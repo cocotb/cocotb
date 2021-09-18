@@ -145,6 +145,7 @@ A test can spawn multiple coroutines, allowing for independent flows of executio
    :hidden:
 
    install_devel
+   best_practices
    troubleshooting
 
 .. todo::

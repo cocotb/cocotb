@@ -1,0 +1,1 @@
+A new section :ref:`best_practices` has been added.
