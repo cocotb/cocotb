@@ -250,7 +250,7 @@ jobs:
       # Windows Testing
     - name: Install Python testing dependencies (Windows)
       if: startsWith(matrix.os, 'windows')
-      run: pip install coverage xunitparser pytest pytest-cov
+      run: pip install coverage pytest pytest-cov
     - name: Install cocotb build dependencies (Windows, mingw)
       if: startsWith(matrix.os, 'windows') && matrix.toolchain == 'mingw'
       run: conda install --yes -c msys2 m2-base m2-make m2w64-toolchain libpython
