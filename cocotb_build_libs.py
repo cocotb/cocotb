@@ -121,7 +121,7 @@ def create_rc_file(rc_filename, name, filename, libraries, runtime_libraries):
 
     rc_body = textwrap.dedent('''\
         #pragma code_page(65001) // UTF-8
-        #include <WinUser.h>
+        #include <Windows.h>
 
         LANGUAGE 0x00, 0x00
 
