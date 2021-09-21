@@ -52,7 +52,7 @@ Cocotb
     The DUT is available in cocotb tests as a Python object at :data:`cocotb.top`;
     and is also passed to all cocotb tests as the :ref:`first and only parameter <quickstart_creating_a_test>`.
 
-    .. versionchanged:: 2.0 Strip leading and trailing whitespace
+    .. versionchanged:: 1.6.0 Strip leading and trailing whitespace
 
 .. envvar:: RANDOM_SEED
 

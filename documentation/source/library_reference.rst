@@ -75,7 +75,7 @@ These are a set of datatypes that model the behavior of common HDL datatypes.
 They can be used independently of cocotb for modeling and will replace :class:`BinaryValue`
 as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 
-.. versionadded:: 2.0
+.. versionadded:: 1.6.0
 
 .. autoclass:: cocotb.types.Logic
 
