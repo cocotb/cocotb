@@ -7,7 +7,7 @@ Tests relating to cocotb.queue.Queue, cocotb.queue.LifoQueue, cocotb.queue.Prior
 import cocotb
 from cocotb.queue import Queue, PriorityQueue, LifoQueue, QueueFull, QueueEmpty
 from cocotb.regression import TestFactory
-from cocotb.triggers import Combine
+from cocotb.triggers import Combine, NullTrigger
 import pytest
 
 
@@ -88,19 +88,19 @@ async def test_queue_contention(dut):
 
     # test put contention
     for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.fork(putter(putter_list, k)))
+        coro_list.append(await cocotb.start(putter(putter_list, k)))
 
     assert q.qsize() == QUEUE_SIZE
 
     # test killed putter
-    coro = cocotb.fork(putter(putter_list, 100))
+    coro = cocotb.start_soon(putter(putter_list, 100))
     coro.kill()
-    coro_list.append(cocotb.fork(putter(putter_list, 101)))
+    coro_list.append(cocotb.start_soon(putter(putter_list, 101)))
 
     for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.fork(getter(getter_list, k)))
+        coro_list.append(cocotb.start_soon(getter(getter_list, k)))
 
-    coro_list.append(cocotb.fork(getter(getter_list, 101)))
+    coro_list.append(cocotb.start_soon(getter(getter_list, 101)))
 
     await Combine(*coro_list)
 
@@ -115,17 +115,17 @@ async def test_queue_contention(dut):
 
     # test get contention
     for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.fork(getter(getter_list, k)))
+        coro_list.append(cocotb.start_soon(getter(getter_list, k)))
 
     # test killed getter
-    coro2 = cocotb.fork(getter(getter_list, 100))
+    coro2 = cocotb.start_soon(getter(getter_list, 100))
     coro2.kill()
-    coro_list.append(cocotb.fork(getter(getter_list, 101)))
+    coro_list.append(cocotb.start_soon(getter(getter_list, 101)))
 
     for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.fork(putter(putter_list, k)))
+        coro_list.append(cocotb.start_soon(putter(putter_list, k)))
 
-    coro_list.append(cocotb.fork(putter(putter_list, 101)))
+    coro_list.append(cocotb.start_soon(putter(putter_list, 101)))
 
     await Combine(*coro_list)
 
@@ -150,7 +150,7 @@ async def test_fair_scheduling(dut):
     q.put_nowait(None)
 
     # create NUM_PUTTER contending putters
-    putters = [cocotb.fork(putter(i)) for i in range(NUM_PUTTERS)]
+    putters = [await cocotb.start(putter(i)) for i in range(NUM_PUTTERS)]
 
     # remove value that forced contention
     assert q.get_nowait() is None, "Popped unexpected value"
@@ -190,12 +190,12 @@ async def run_queue_blocking_test(dut, queue_type):
 
     # test put contention
     for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.fork(putter(putter_list, k)))
+        coro_list.append(await cocotb.start(putter(putter_list, k)))
 
     assert q.qsize() == QUEUE_SIZE
 
     for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.fork(getter(getter_list, k)))
+        coro_list.append(await cocotb.start(getter(getter_list, k)))
 
     await Combine(*coro_list)
 
@@ -211,10 +211,10 @@ async def run_queue_blocking_test(dut, queue_type):
 
     # test get contention
     for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.fork(getter(getter_list, k)))
+        coro_list.append(await cocotb.start(getter(getter_list, k)))
 
     for k in range(NUM_PUTTERS):
-        coro_list.append(cocotb.fork(putter(putter_list, k)))
+        coro_list.append(await cocotb.start(putter(putter_list, k)))
 
     await Combine(*coro_list)
 
@@ -235,7 +235,7 @@ async def test_str_and_repr(_):
     q = Queue[int](maxsize=1)
 
     q.put_nowait(0)
-    putter = cocotb.fork(q.put(1))
+    putter = await cocotb.start(q.put(1))
 
     s = repr(q)
     assert "maxsize" in s
@@ -244,12 +244,23 @@ async def test_str_and_repr(_):
     assert str(q)[:-1] in s
 
     assert q.get_nowait() == 0
-    getter = cocotb.fork(q.get())
+    # There's now room in the queue and putter has been signalled to wake up
+    await NullTrigger()
+
+    # putter has put into queue
+    s = repr(q)
+    assert "_queue" in s
+    assert "_putters" not in s
+
+    assert q.get_nowait() == 1
+    getter = await cocotb.start(q.get())
 
     s = repr(q)
     assert "_putters" not in s
     assert "_getters" in s
     assert str(q)[:-1] in s
+
+    cocotb.start_soon(q.put(2))
 
     await getter
 

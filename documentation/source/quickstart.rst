@@ -74,7 +74,7 @@ control back to cocotb (see :ref:`simulator-triggers`).
 It's most likely that you will want to do several things "at the same time" however -
 think multiple ``always`` blocks in Verilog or ``process`` statements in VHDL.
 In cocotb, you might move the clock generation part of the example above into its own
-:keyword:`async` function and :func:`~cocotb.fork` it ("start it in the background")
+:keyword:`async` function and :func:`~cocotb.start` it ("start it in the background")
 from the test:
 
 .. code-block:: python3
@@ -102,7 +102,7 @@ from the test:
 
         dut._log.info("Running test...")
 
-        cocotb.fork(generate_clock(dut))  # run the clock "in the background"
+        await cocotb.start(generate_clock(dut))  # run the clock "in the background"
 
         await Timer(5, units="ns")  # wait a bit
         await FallingEdge(dut.clk)  # wait for falling edge/"negedge"
@@ -125,7 +125,7 @@ for more information on such concurrent processes.
    No need to write your own clock generator!
 
    You would start :class:`~cocotb.clock.Clock` with
-   ``cocotb.fork(Clock(dut.clk, 1, units="ns").start())`` near the top of your test,
+   ``cocotb.start_soon(Clock(dut.clk, 1, units="ns").start())`` near the top of your test,
    after importing it with ``from cocotb.clock import Clock``.
 
 

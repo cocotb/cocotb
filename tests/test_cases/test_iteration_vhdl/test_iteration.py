@@ -105,8 +105,8 @@ async def dual_iteration(dut):
             thing._log.info("Found something: %s", thing._fullname)
             await Timer(1)
 
-    loop_one = cocotb.fork(iteration_loop())
-    loop_two = cocotb.fork(iteration_loop())
+    loop_one = cocotb.start_soon(iteration_loop())
+    loop_two = cocotb.start_soon(iteration_loop())
 
     await Combine(loop_one, loop_two)
 

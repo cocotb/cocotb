@@ -113,7 +113,7 @@ async def test_await_causes_start(dut):
 
 
 @cocotb.test()  # test forking undecorated async coroutine in legacy coroutine
-def test_undecorated_coroutine_fork(dut):
+def test_undecorated_coroutine_start_soon(dut):
     ran = False
 
     async def example():
@@ -121,7 +121,7 @@ def test_undecorated_coroutine_fork(dut):
         await cocotb.triggers.Timer(1, 'ns')
         ran = True
 
-    yield cocotb.fork(example()).join()
+    yield cocotb.start_soon(example()).join()
     assert ran
 
 
@@ -146,7 +146,7 @@ async def test_fork_coroutine_function_exception(dut):
     pattern = "Coroutine function {} should be called " \
         "prior to being scheduled.".format(coro)
     with assert_raises(TypeError, pattern):
-        cocotb.fork(coro)
+        cocotb.start_soon(coro)
 
 
 @cocotb.test()

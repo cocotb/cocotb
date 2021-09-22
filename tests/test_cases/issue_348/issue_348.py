@@ -38,9 +38,9 @@ class DualMonitor:
     async def start(self):
         clock_edges = 10
 
-        cocotb.fork(clock_gen(self.signal, clock_edges))
-        _ = cocotb.fork(self.signal_mon(self.signal, 0, self.edge_type))
-        _ = cocotb.fork(self.signal_mon(self.signal, 1, self.edge_type))
+        cocotb.start_soon(clock_gen(self.signal, clock_edges))
+        _ = cocotb.start_soon(self.signal_mon(self.signal, 0, self.edge_type))
+        _ = cocotb.start_soon(self.signal_mon(self.signal, 1, self.edge_type))
 
         await Timer(100, 'ns')
 

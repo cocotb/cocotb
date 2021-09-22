@@ -22,7 +22,7 @@ async def test_clock_with_units(dut):
     assert str(clk_250mhz) == "Clock(250.0 MHz)"
     dut._log.info('Created clock >{}<'.format(str(clk_250mhz)))
 
-    clk_gen = cocotb.fork(clk_1mhz.start())
+    clk_gen = cocotb.start_soon(clk_1mhz.start())
 
     start_time_ns = get_sim_time(units='ns')
 
@@ -40,7 +40,7 @@ async def test_clock_with_units(dut):
 
     clk_gen.kill()
 
-    clk_gen = cocotb.fork(clk_250mhz.start())
+    clk_gen = await cocotb.start(clk_250mhz.start())
 
     start_time_ns = get_sim_time(units='ns')
 
@@ -62,7 +62,7 @@ async def test_clock_with_units(dut):
 @cocotb.test()
 async def test_external_clock(dut):
     """Test awaiting on an external non-cocotb coroutine decorated function"""
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
     count = 0
     while count != 100:
         await RisingEdge(dut.clk)

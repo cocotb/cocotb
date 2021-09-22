@@ -44,14 +44,14 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 | Wait time              | ``await cocotb.triggers.Timer(12, "ns")``                       |
 +------------------------+-----------------------------------------------------------------+
-| Generate clock         | ``clk = cocotb.fork(Clock(dut.clk, 12, "ns").start())``         |
+| Generate clock         | ``clk = await cocotb.start(Clock(dut.clk, 12, "ns").start())``  |
 +------------------------+-----------------------------------------------------------------+
 | Wait for signal edge   | | ``await cocotb.triggers.RisingEdge(dut.mysignal)``            |
 |                        | | ``await cocotb.triggers.FallingEdge(dut.mysignal)``           |
 |                        | | ``await cocotb.triggers.Edge(dut.mysignal)``                  |
 +------------------------+-----------------------------------------------------------------+
-| Run coros concurrently | | ``task_0 = cocotb.fork(coro_0())``                            |
-|                        | | ``task_1 = cocotb.scheduler.start_soon(coro)``                |
+| Run coros concurrently | | ``task_0 = await cocotb.start(coro_0())``  (start coro now)   |
+|                        | | ``task_1 = cocotb.start_soon(coro)``                          |
 |                        | | ``result = await task_0``                                     |
 +------------------------+-----------------------------------------------------------------+
 | Resume on Task 0 or 1  | ``await cocotb.triggers.First(task_0, task_1)``                 |

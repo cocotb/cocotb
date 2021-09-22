@@ -45,16 +45,10 @@ Writing and Generating tests
 Interacting with the Simulator
 ==============================
 
-.. currentmodule:: cocotb.binary
+.. _task-management:
 
-.. autoclass:: BinaryRepresentation
-    :members:
-    :member-order: bysource
-
-.. autoclass:: BinaryValue
-    :members:
-    :member-order: bysource
-    :exclude-members: get_value, get_buff, get_binstr, get_value_signed
+Task Management
+---------------
 
 .. autofunction:: cocotb.fork
 
@@ -67,6 +61,20 @@ Interacting with the Simulator
 .. autofunction:: cocotb.decorators.RunningTask.join
 
 .. autofunction:: cocotb.decorators.RunningTask.kill
+
+Handle Values
+-------------
+
+.. currentmodule:: cocotb.binary
+
+.. autoclass:: BinaryRepresentation
+    :members:
+    :member-order: bysource
+
+.. autoclass:: BinaryValue
+    :members:
+    :member-order: bysource
+    :exclude-members: get_value, get_buff, get_binstr, get_value_signed
 
 HDL Datatypes
 -------------
