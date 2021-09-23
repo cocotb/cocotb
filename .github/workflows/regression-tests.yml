@@ -105,7 +105,6 @@ jobs:
             lang: verilog
             python-version: "3.10.0-alpha - 3.10"
             os: ubuntu-20.04
-            may_fail: true
 
             # Test Icarus dev on Ubuntu
 
