@@ -3,13 +3,13 @@ More Examples
 *************
 
 Apart from the examples covered with full tutorials in the previous sections,
-the directory :file:`cocotb/examples/` contains some more smaller modules you may want to take a look at.
+the directory :file:`examples/` contains some more smaller modules you may want to take a look at.
 
 
 Adder
 =====
 
-The directory :file:`cocotb/examples/adder/` contains an ``adder`` :term:`RTL` in both Verilog and VHDL,
+The directory :file:`examples/adder/` contains an ``adder`` :term:`RTL` in both Verilog and VHDL,
 an ``adder_model`` implemented in Python,
 and the cocotb testbench with two defined tests ­ a simple :func:`adder_basic_test` and
 a slightly more advanced :func:`adder_randomised_test`.
@@ -20,7 +20,7 @@ a slightly more advanced :func:`adder_randomised_test`.
 Matrix Multiplier
 =================
 
-The directory :file:`cocotb/examples/matrix_multiplier`
+The directory :file:`examples/matrix_multiplier`
 contains a module for multiplying two matrices together,
 implemented in both **VHDL** and **SystemVerilog**.
 
@@ -62,7 +62,7 @@ are configurable in the Makefile.
 Mixed Language
 ==============
 
-The directory :file:`cocotb/examples/mixed_language/` contains two toplevel :term:`HDL` files,
+The directory :file:`examples/mixed_language/` contains two toplevel :term:`HDL` files,
 one in VHDL, one in SystemVerilog, that each instantiate an ``endian_swapper`` entity in
 SystemVerilog and VHDL in parallel and chains them together so that the endianness is swapped twice.
 
