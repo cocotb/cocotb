@@ -19,7 +19,7 @@ from typing import List
 
 
 logger = logging.getLogger(__name__)
-cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "cocotb", "share"))
+cocotb_share_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "src", "cocotb", "share"))
 
 _base_warns = ["-Wall", "-Wextra", "-Wcast-qual", "-Wwrite-strings", "-Wconversion"]
 _ccx_warns = _base_warns + ["-Wnon-virtual-dtor", "-Woverloaded-virtual"]

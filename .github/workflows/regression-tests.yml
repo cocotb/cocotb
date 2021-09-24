@@ -52,7 +52,7 @@ jobs:
         source: '.'
         extensions: 'h,cpp'
         clangFormatVersion: 10
-        exclude: './cocotb/share/include/*user*.h ./examples'
+        exclude: './src/cocotb/share/include/*user*.h ./examples'
 
   tests:
 

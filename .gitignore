@@ -85,7 +85,7 @@ bpad_*.err
 waves.shm/
 
 # Interface libraries built on setup
-cocotb/libs
+/src/cocotb/libs
 pip-wheel-metadata/
 
 # Mentor Modelsim/Questa
