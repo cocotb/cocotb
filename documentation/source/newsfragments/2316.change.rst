@@ -1,1 +1,0 @@
-Assigning out-of-range Python integers to signals would previously truncate the value silently for signal widths <= 32 bits and truncate the value with a warning for signal widths > 32 bits.

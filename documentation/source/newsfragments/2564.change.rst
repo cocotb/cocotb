@@ -1,1 +1,0 @@
-Shorter log lines (configurable with :envvar:`COCOTB_REDUCED_LOG_FMT`) are now the default. For wider log output, similar to previous cocotb releases, set the :envvar:`COCOTB_REDUCED_LOG_FMT` environment variable to ``0``.

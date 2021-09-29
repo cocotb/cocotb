@@ -1,1 +1,0 @@
-:func:`cocotb.utils.hexdiffs` is deprecated; use :func:`scapy.utils.hexdiff` instead.

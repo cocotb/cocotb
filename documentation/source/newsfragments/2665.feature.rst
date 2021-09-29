@@ -1,1 +1,0 @@
-Add :func:`cocotb.create_task` API for creating a Task from a Coroutine without scheduling.

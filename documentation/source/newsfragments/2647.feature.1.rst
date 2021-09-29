@@ -1,1 +1,0 @@
-:func:`cocotb.fork`, :func:`cocotb.start`, :func:`cocotb.start_soon`, and :func:`cocotb.create_task` now accept any object that implements the :class:`collections.abc.Coroutine` protocol.
