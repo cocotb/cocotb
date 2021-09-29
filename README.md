@@ -16,7 +16,7 @@
 
 The current stable version of cocotb requires:
 
-- Python 3.5+
+- Python 3.6+
 - Python development packages (Python/C API headers and embedding library)
 - GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
 - GNU Make 3+
