@@ -63,7 +63,6 @@ Changes
 -------
 
 - Assigning out-of-range Python integers to signals will now raise an :exc:`OverflowError`. (:pr:`2316`)
-- Assigning out-of-range Python integers to signals would previously truncate the value silently for signal widths <= 32 bits and truncate the value with a warning for signal widths > 32 bits. (:pr:`2316`)
 - cocotb now requires Python 3.6+. (:pr:`2422`)
 - Selecting tests using :make:var:`TESTCASE` will now search for the first occurrence of a test of that name in order of modules listed in :make:var:`MODULE`\ s, and not just the first module in that list. (:pr:`2434`)
 - The environment variable :envvar:`COCOTB_LOG_LEVEL` now supports ``TRACE`` value, which is used for verbose low-level logging that was previously in ``DEBUG`` logs. (:pr:`2502`)
