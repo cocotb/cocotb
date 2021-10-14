@@ -36,6 +36,8 @@ Reference Card
 | Convert                | | ``val = dut.mysignal.value.integer``                          |
 |                        | | ``val = dut.mysignal.value.binstr``                           |
 +------------------------+-----------------------------------------------------------------+
+| Vector length          | ``num_bits = len(dut.mysignal)``                                |
++------------------------+-----------------------------------------------------------------+
 | Check                  | ``assert dut.mysignal.value == exp, "Not as expected!"``        |
 +------------------------+-----------------------------------------------------------------+
 | Logging                | ``dut._log.info("Value is", dut.mysignal.value)``               |
