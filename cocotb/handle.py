@@ -156,7 +156,7 @@ class SimHandleBase:
         return self._len
 
     def __eq__(self, other):
-        """Equality comparator for handles
+        """Compare equality of handles.
 
         Example usage::
 
