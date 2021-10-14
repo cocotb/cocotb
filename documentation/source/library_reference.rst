@@ -189,6 +189,7 @@ Simulation Object Handles
     :show-inheritance:
     :synopsis: Classes for simulation objects.
     :exclude-members: Deposit, Force, Freeze, Release
+    :special-members: __len__
 ..
    Excluding the Assignment Methods that are getting their own section below
 
@@ -206,6 +207,18 @@ Assignment Methods
 .. autoclass:: Freeze
 
 .. autoclass:: Release
+
+Other Handle Methods
+--------------------
+
+.. currentmodule:: None
+
+.. function:: len(handle)
+
+   Return the "length" (the number of elements) of the underlying object.
+
+   For vectors this is the number of bits.
+
 
 Miscellaneous
 =============
