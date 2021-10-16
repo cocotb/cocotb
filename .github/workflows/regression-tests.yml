@@ -103,7 +103,7 @@ jobs:
           - sim: icarus
             sim-version: apt
             lang: verilog
-            python-version: "3.10.0-alpha - 3.10"
+            python-version: "3.10"
             os: ubuntu-20.04
 
             # Test Icarus dev on Ubuntu
