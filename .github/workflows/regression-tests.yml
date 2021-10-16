@@ -78,26 +78,26 @@ jobs:
             sim-version: apt
             lang: verilog
             # lowest version according to https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
-            python-version: 3.6.7
+            python-version: "3.6.7"
             os: ubuntu-20.04
 
           - sim: icarus
             sim-version: apt
             lang: verilog
             # lowest version according to https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
-            python-version: 3.7.1
+            python-version: "3.7.1"
             os: ubuntu-20.04
 
           - sim: icarus
             sim-version: apt
             lang: verilog
-            python-version: 3.8
+            python-version: "3.8"
             os: ubuntu-20.04
 
           - sim: icarus
             sim-version: apt
             lang: verilog
-            python-version: 3.9
+            python-version: "3.9"
             os: ubuntu-20.04
 
           - sim: icarus
@@ -111,7 +111,7 @@ jobs:
           - sim: icarus
             sim-version: master
             lang: verilog
-            python-version: 3.8
+            python-version: "3.8"
             os: ubuntu-20.04
 
             # Test GHDL on Ubuntu
@@ -119,7 +119,7 @@ jobs:
           - sim: ghdl
             sim-version: nightly
             lang: vhdl
-            python-version: 3.8
+            python-version: "3.8"
             os: ubuntu-latest
 
             # Test Verilator on Ubuntu
@@ -127,7 +127,7 @@ jobs:
           - sim: verilator
             sim-version: master
             lang: verilog
-            python-version: 3.8
+            python-version: "3.8"
             os: ubuntu-20.04
             may_fail: true
 
@@ -136,13 +136,13 @@ jobs:
           - sim: icarus             # Icarus homebrew --HEAD
             sim-version: homebrew-HEAD
             lang: verilog
-            python-version: 3.8
+            python-version: "3.8"
             os: macos-latest
 
           - sim: icarus             # Icarus windows master from source
             sim-version: master
             lang: verilog
-            python-version: 3.8
+            python-version: "3.8"
             os: windows-latest
             toolchain: mingw
             extra_name: "mingw | "
@@ -160,7 +160,7 @@ jobs:
           - sim: icarus             # use clang instead of gcc
             sim-version: v11_0
             lang: verilog
-            python-version: 3.8
+            python-version: "3.8"
             os: ubuntu-20.04
             cxx: clang++
             cc: clang
