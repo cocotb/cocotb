@@ -351,7 +351,7 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-    - uses: msys2/setup-msys2@v2
+    - uses: msys2/setup-msys2@v2.4.2
       with:
         msystem: MINGW64
         update: true
