@@ -248,8 +248,9 @@ Issues for this simulator
 -------------------------
 
 * `All issues with label category:simulators:questa <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aquesta>`_
-* Questa 2021.1 and later added experimental support the VHPI interface in addition to the proprietary FLI interface.
-  However, this support is not complete yet and users of cocotb should continue to use FLI for the time being.
+* Questa 2021.1 and later added experimental support the VHPI interface in addition to the proprietary FLI interface, which can be enabled by setting the :envvar:`VHDL_GPI_INTERFACE` environment variable to ``vhpi`` before running cocotb.
+  **However, VHPI support in Questa is not complete yet and users of cocotb should continue to use FLI for the time being.**
+
 
 .. _sim-modelsim:
 
