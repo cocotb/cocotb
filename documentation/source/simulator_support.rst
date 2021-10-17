@@ -84,7 +84,9 @@ Verilator
     Verilator is in the process of adding more functionality to its VPI interface, which is used by cocotb to access the design.
     Therefore, Verilator support in cocotb is currently experimental.
     Some features of cocotb may not work correctly or at all.
-    It is highly recommended to use the latest version of Verilator.
+
+    **Currently cocotb only supports Verilator 4.106 (no earlier or later version).**
+    See also the corresponding cocotb issue :issue:`2300` and `upstream issue <https://github.com/verilator/verilator/issues/2778>`_.
 
 In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
@@ -95,10 +97,6 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 One major limitation compared to standard Verilog simulators is that it does not support delayed assignments when accessed from cocotb.
 
 To run cocotb with Verilator, you need ``verilator`` in your PATH.
-
-.. note::
-
-    cocotb requires Verilator 4.106 or later.
 
 .. versionadded:: 1.3
 
