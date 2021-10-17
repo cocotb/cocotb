@@ -954,7 +954,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
             DeprecationWarning, stacklevel=2)
         timeout_unit = "step"  # don't propagate deprecated value
     if inspect.iscoroutine(trigger):
-        trigger = cocotb.fork(trigger)
+        trigger = cocotb.start_soon(trigger)
         shielded = False
     else:
         shielded = True
