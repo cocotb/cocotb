@@ -221,6 +221,11 @@ GPI
 PyGPI
 -----
 
+.. warning::
+
+    PyGPI is an experimental feature and subject to change.
+
+
 .. envvar:: PYGPI_ENTRY_POINT
 
     The Python module and callable that starts up the Python cosimulation environment.
