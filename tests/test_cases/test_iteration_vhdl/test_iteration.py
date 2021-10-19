@@ -45,7 +45,7 @@ def total_object_count():
 
     # Riviera-PRO
     if SIM_NAME.startswith("riviera"):
-        if SIM_VERSION.startswith(("2019.10", "2020.")):
+        if SIM_VERSION.startswith(("2019.10", "2020.", "2021.")):
             return 27359
         if SIM_VERSION.startswith("2016.02"):
             return 32393
@@ -115,7 +115,7 @@ async def dual_iteration(dut):
 @cocotb.test(
     expect_fail=(
         cocotb.SIM_NAME.lower().startswith("riviera")
-        and cocotb.SIM_VERSION.startswith(("2019.10", "2020."))
+        and cocotb.SIM_VERSION.startswith(("2019.10", "2020.", "2021."))
     )
     or cocotb.SIM_NAME.lower().startswith("aldec"),
     expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
