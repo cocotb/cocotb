@@ -1,1 +1,0 @@
-To support VHDL libraries in ModelSim/Questa/Xcelium, :make:var:`VHDL_LIB_ORDER` has been added to specify a library compilation order.

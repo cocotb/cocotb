@@ -1,1 +1,0 @@
-The ``stdout`` and ``stderr`` attributes on :class:`cocotb.result.TestComplete` and subclasses are deprecated.

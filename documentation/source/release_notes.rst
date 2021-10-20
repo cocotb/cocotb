@@ -11,6 +11,68 @@ All releases are available from the `GitHub Releases Page <https://github.com/co
 
 .. towncrier release notes start
 
+cocotb 1.6.0 (2021-10-20)
+=========================
+
+Features
+--------
+
+- Support a custom entry point from C to Python with :envvar:`PYGPI_ENTRY_POINT`. (:pr:`1225`)
+- Added :class:`~cocotb.types.Logic` and :class:`~cocotb.types.Bit` modeling datatypes. (:pr:`2059`)
+- ModelSim and Questa now support compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`2465`)
+- Added the :class:`~cocotb.types.LogicArray` modeling datatype. (:pr:`2514`)
+- Xcelium now supports compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``. (:pr:`2614`)
+- Add the :make:var:`SIM_CMD_PREFIX` to supported Makefile variables, allowing users to pass environment variables and other command prefixes to simulators. (:pr:`2615`)
+- To support VHDL libraries in ModelSim/Questa/Xcelium, :make:var:`VHDL_LIB_ORDER` has been added to specify a library compilation order. (:pr:`2635`)
+- :func:`cocotb.fork`, :func:`cocotb.start`, :func:`cocotb.start_soon`, and :func:`cocotb.create_task` now accept any object that implements the :class:`collections.abc.Coroutine` protocol. (:pr:`2647`)
+- :class:`~cocotb.regression.TestFactory` and :class:`cocotb.test` now accept any :class:`collections.abc.Callable` object which returns a :class:`collections.abc.Coroutine` as a test function. (:pr:`2647`)
+- Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions. (:pr:`2660`)
+- Add :func:`cocotb.create_task` API for creating a Task from a Coroutine without scheduling. (:pr:`2665`)
+- Support rounding modes in :class:`~cocotb.triggers.Timer`. (:pr:`2684`)
+- Support rounding modes in :class:`cocotb.utils.get_sim_steps`. (:pr:`2684`)
+- Support passing ``'step'`` as a time unit in :func:`cocotb.utils.get_sim_time`. (:pr:`2691`)
+
+
+Bugfixes
+--------
+
+- VHDL signals that are zero bits in width now read as the integer ``0``, instead of raising an exception. (:pr:`2294`)
+- Correctly parse plusargs with ``=``\ s in the value. (:pr:`2483`)
+- :envvar:`COCOTB_RESULTS_FILE` now properly communicates with the :data:`Regression Manager <cocotb.regression_manager>` to allow overloading the result filename. (:pr:`2487`)
+- Fixed several scheduling issues related to the use of :meth:`cocotb.scheduler.start_soon <cocotb.scheduler.Scheduler.start_soon>`. (:pr:`2504`)
+- Verilator and Icarus now support running without specifying a :envvar:`TOPLEVEL`. (:pr:`2547`)
+- Fixed discovery of signals inside SystemVerilog interfaces. (:pr:`2683`)
+
+
+Improved Documentation
+----------------------
+
+- The :ref:`analog_model` example has been added, showing how to use Python models for analog circuits together with a digital part. (:pr:`2438`)
+
+
+Deprecations and Removals
+-------------------------
+
+- Setting values on indexed handles using the ``handle[i] = value`` syntax is deprecated. Instead use the ``handle[i].value = value`` syntax. (:pr:`2490`)
+- Setting values on handles using the ``dut.handle = value`` syntax is deprecated. Instead use the ``handle.value = value`` syntax. (:pr:`2490`)
+- Setting values on handles using the ``signal <= newval`` syntax is deprecated. Instead, use the ``signal.value = newval`` syntax. (:pr:`2681`)
+- :func:`cocotb.utils.hexdump` is deprecated; use :func:`scapy.utils.hexdump` instead. (:pr:`2691`)
+- :func:`cocotb.utils.hexdiffs` is deprecated; use :func:`scapy.utils.hexdiff` instead. (:pr:`2691`)
+- Passing ``None`` to :func:`cocotb.utils.get_sim_time` is deprecated; use ``'step'`` as the time unit instead. (:pr:`2691`)
+- The ``stdout`` and ``stderr`` attributes on :class:`cocotb.result.TestComplete` and subclasses are deprecated. (:pr:`2692`)
+- :exc:`cocotb.result.TestFailure` is deprecated, use an ``assert`` statement instead. (:pr:`2692`)
+
+
+Changes
+-------
+
+- Assigning out-of-range Python integers to signals will now raise an :exc:`OverflowError`. (:pr:`2316`)
+- cocotb now requires Python 3.6+. (:pr:`2422`)
+- Selecting tests using :make:var:`TESTCASE` will now search for the first occurrence of a test of that name in order of modules listed in :make:var:`MODULE`\ s, and not just the first module in that list. (:pr:`2434`)
+- The environment variable :envvar:`COCOTB_LOG_LEVEL` now supports ``TRACE`` value, which is used for verbose low-level logging that was previously in ``DEBUG`` logs. (:pr:`2502`)
+- Improves formatting on test-related logging outputs. (:pr:`2564`)
+- Shorter log lines (configurable with :envvar:`COCOTB_REDUCED_LOG_FMT`) are now the default. For wider log output, similar to previous cocotb releases, set the :envvar:`COCOTB_REDUCED_LOG_FMT` environment variable to ``0``. (:pr:`2564`)
+
 
 cocotb 1.5.2 (2021-05-03)
 =========================

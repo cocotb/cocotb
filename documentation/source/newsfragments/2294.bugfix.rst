@@ -1,1 +1,0 @@
-VHDL signals that are zero bits in width now read as the integer ``0``, instead of raising an exception.
