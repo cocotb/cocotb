@@ -915,7 +915,11 @@ VhpiReadwriteCbHdl::VhpiReadwriteCbHdl(GpiImplInterface *impl)
 
 VhpiReadOnlyCbHdl::VhpiReadOnlyCbHdl(GpiImplInterface *impl)
     : GpiCbHdl(impl), VhpiCbHdl(impl) {
+#ifdef MODELSIM
+    cb_data.reason = vhpiCbRepStartOfPostponed;
+#else
     cb_data.reason = vhpiCbRepEndOfTimeStep;
+#endif
     cb_data.time = &vhpi_time;
 }
 
