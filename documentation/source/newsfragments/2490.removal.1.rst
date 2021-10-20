@@ -1,1 +1,0 @@
-Setting values on indexed handles using the ``handle[i] = value`` syntax is deprecated. Instead use the ``handle[i].value = value`` syntax.

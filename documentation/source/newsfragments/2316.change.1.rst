@@ -1,1 +1,0 @@
-Assigning out-of-range Python integers to signals will now raise an :exc:`OverflowError`.

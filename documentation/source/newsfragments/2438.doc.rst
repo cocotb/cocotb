@@ -1,1 +1,0 @@
-The :ref:`analog_model` example has been added, showing how to use Python models for analog circuits together with a digital part.

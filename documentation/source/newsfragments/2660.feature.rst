@@ -1,1 +1,0 @@
-Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions.

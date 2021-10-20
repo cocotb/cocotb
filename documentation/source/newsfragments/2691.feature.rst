@@ -1,1 +1,0 @@
-Support passing ``'step'`` as a time unit in :func:`cocotb.utils.get_sim_time`.
