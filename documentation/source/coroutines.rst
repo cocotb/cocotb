@@ -48,8 +48,7 @@ Coroutines can :keyword:`return` a value, so that they can be used by other coro
     async def check_signal_changes(dut):
         first = await get_signal(dut.clk, dut.signal)
         second = await get_signal(dut.clk, dut.signal)
-        if first == second:
-            raise TestFailure("Signal did not change")
+        assert first != second, "Signal did not change"
 
 Concurrent Execution
 ====================
