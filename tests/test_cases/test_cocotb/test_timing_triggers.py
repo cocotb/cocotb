@@ -11,7 +11,6 @@ Tests related to timing triggers
 * with_timeout
 """
 import cocotb
-import pytest
 import warnings
 import pytest
 from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep, First, TriggerException
