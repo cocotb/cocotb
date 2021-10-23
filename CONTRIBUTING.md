@@ -243,7 +243,7 @@ The regression does not end on the first failure, but continues until all tests 
 
 To run the tests locally with `tox`, you will need to select an appropriate test environment.
 Valid test environments are formatted as `{your python version}-{your OS}`.
-Valid python version values are `py36`, `py37`, `py38`, or `py39`;
+Valid python version values are `py36`, `py37`, `py38`, `py39` or `py310`;
 and valid OS values are `linux`, `macos`, or `windows`.
 For example, a valid test environment is `py38-linux`.
 You can see the list of valid test environments by running the below command:

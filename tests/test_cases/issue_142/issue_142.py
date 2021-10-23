@@ -11,7 +11,7 @@ from cocotb.binary import BinaryValue
 async def issue_142_overflow_error(dut):
     """Tranparently convert ints too long to pass
        through the GPI interface natively into BinaryValues"""
-    cocotb.fork(Clock(dut.clk, 10, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 10, 'ns').start())
 
     def _compare(value):
         assert int(dut.stream_in_data_wide.value) == int(value), "Expecting 0x{:x} but got 0x{:x} on {}".format(
@@ -21,9 +21,9 @@ async def issue_142_overflow_error(dut):
     # Wider values are transparently converted to BinaryValues
     for value in [0, 0x7FFFFFFF, 0x7FFFFFFFFFFF, BinaryValue(0x7FFFFFFFFFFFFF,len(dut.stream_in_data_wide),bigEndian=False)]:
 
-        dut.stream_in_data_wide <= value
+        dut.stream_in_data_wide.value = value
         await RisingEdge(dut.clk)
         _compare(value)
-        dut.stream_in_data_wide <= value
+        dut.stream_in_data_wide.value = value
         await RisingEdge(dut.clk)
         _compare(value)

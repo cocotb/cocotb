@@ -39,6 +39,7 @@ import cocotb
 from cocotb import simulator
 from cocotb.binary import BinaryValue, BinaryRepresentation
 from cocotb.log import SimLog
+from cocotb.types import LogicArray
 
 # Only issue a warning for each deprecated attribute access
 _deprecation_warned = set()
@@ -155,7 +156,7 @@ class SimHandleBase:
         return self._len
 
     def __eq__(self, other):
-        """Equality comparator for handles
+        """Compare equality of handles.
 
         Example usage::
 
@@ -315,6 +316,10 @@ class HierarchyObject(RegionObject):
         # then try handles
         sub = self.__get_sub_handle_by_name(name)
         if sub is not None:
+            warnings.warn(
+                "Setting values on handles using the ``dut.handle = value`` syntax is deprecated. "
+                "Instead use the ``handle.value = value`` syntax",
+                DeprecationWarning, stacklevel=2)
             sub.value = value
             return
 
@@ -475,6 +480,11 @@ class NonHierarchyObject(SimHandleBase):
         Example:
         >>> module.signal <= 2
         """
+        warnings.warn(
+            "Setting values on handles using the ``handle <= value`` syntax is deprecated. "
+            "Instead use the ``handle.value = value`` syntax",
+            DeprecationWarning,
+            stacklevel=2)
         self.value = value
         return _AssignmentResult(self, value)
 
@@ -581,6 +591,10 @@ class NonHierarchyIndexableObject(NonHierarchyObject):
 
     def __setitem__(self, index, value):
         """Provide transparent assignment to indexed array handles."""
+        warnings.warn(
+            "Setting values on handles using the ``dut.handle[i] = value`` syntax is deprecated. "
+            "Instead use the ``handle[i].value = value`` syntax",
+            DeprecationWarning, stacklevel=2)
         self[index].value = value
 
     def __getitem__(self, index):
@@ -777,6 +791,9 @@ class ModifiableObject(NonConstantObject):
             for val in vallist:
                 num = (num << value["bits"]) + val
             value = BinaryValue(value=num, n_bits=len(self), bigEndian=False)
+
+        elif isinstance(value, LogicArray):
+            value = value.to_BinaryValue()
 
         elif not isinstance(value, BinaryValue):
             raise TypeError(

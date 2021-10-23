@@ -41,14 +41,13 @@ or using direct assignment while traversing the hierarchy.
     clk.value = 1
 
     # Direct assignment through the hierarchy
-    dut.input_signal <= 12
+    dut.input_signal.value = 12
 
     # Assign a value to a memory deep in the hierarchy
-    dut.sub_block.memory.array[4] <= 2
+    dut.sub_block.memory.array[4].value = 2
 
 
-The syntax ``sig <= new_value`` is a short form of ``sig.value = new_value``.
-It not only resembles :term:`HDL` syntax, but also has the same semantics:
+The assignment syntax ``sig.value = new_value`` has the same semantics as :term:`HDL`:
 writes are not applied immediately, but delayed until the next write cycle.
 Use ``sig.setimmediatevalue(new_val)`` to set a new value immediately
 (see :meth:`~cocotb.handle.NonHierarchyObject.setimmediatevalue`).
@@ -80,14 +79,14 @@ value to signals with more fine-grained control (e.g. signed values only).
 .. code-block:: python3
 
     # assignment of negative value
-    dut.data_in <= -4
+    dut.data_in.value = -4
 
     # assignment of positive value
-    dut.data_in <= 7
+    dut.data_in.value = 7
 
     # assignment of out-of-range values
-    dut.data_in <= 8   # raises OverflowError
-    dut.data_in <= -5  # raises OverflowError
+    dut.data_in.value = 8   # raises OverflowError
+    dut.data_in.value = -5  # raises OverflowError
 
 
 .. _writing_tbs_reading_values:
@@ -141,7 +140,7 @@ Concurrent and sequential execution
 
 An :keyword:`await` will run an :keyword:`async` coroutine and wait for it to complete.
 The called coroutine "blocks" the execution of the current coroutine.
-Wrapping the call in :func:`~cocotb.fork` runs the coroutine concurrently,
+Wrapping the call in :func:`~cocotb.start` or :func:`~cocotb.start_soon` runs the coroutine concurrently,
 allowing the current coroutine to continue executing.
 At any time you can :keyword:`await` the result of the forked coroutine,
 which will block until the forked coroutine finishes.
@@ -152,9 +151,9 @@ The following example shows these in action:
 
     # A coroutine
     async def reset_dut(reset_n, duration_ns):
-        reset_n <= 0
+        reset_n.value = 0
         await Timer(duration_ns, units="ns")
-        reset_n <= 1
+        reset_n.value = 1
         reset_n._log.debug("Reset complete")
 
     @cocotb.test()
@@ -166,7 +165,7 @@ The following example shows these in action:
         dut._log.debug("After reset")
 
         # Run reset_dut concurrently
-        reset_thread = cocotb.fork(reset_dut(reset_n, duration_ns=500))
+        reset_thread = cocotb.start_soon(reset_dut(reset_n, duration_ns=500))
 
         # This timer will complete before the timer in the concurrently executing "reset_thread"
         await Timer(250, units="ns")
@@ -191,17 +190,17 @@ the various actions described in :ref:`assignment-methods` can be used.
 .. code-block:: python3
 
     # Deposit action
-    dut.my_signal <= 12
-    dut.my_signal <= Deposit(12)  # equivalent syntax
+    dut.my_signal.value = 12
+    dut.my_signal.value = Deposit(12)  # equivalent syntax
 
     # Force action
-    dut.my_signal <= Force(12)    # my_signal stays 12 until released
+    dut.my_signal.value = Force(12)    # my_signal stays 12 until released
 
     # Release action
-    dut.my_signal <= Release()    # Reverts any force/freeze assignments
+    dut.my_signal.value = Release()    # Reverts any force/freeze assignments
 
     # Freeze action
-    dut.my_signal <= Freeze()     # my_signal stays at current value until released
+    dut.my_signal.value = Freeze()     # my_signal stays at current value until released
 
 
 .. _writing_tbs_accessing_underscore_identifiers:
@@ -218,6 +217,115 @@ A workaround is to use indirect access using
 :meth:`~cocotb.handle.HierarchyObject._id` like in the following example:
 ``dut._id("_some_signal", extended=False)``.
 
+
+Passing and Failing Tests
+=========================
+
+A cocotb test is considered to have `failed` if the test coroutine,
+or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
+fails an ``assert`` statement or raises a :exc:`cocotb.result.TestFailure`.
+Below are examples of `failing` tests.
+
+.. code-block:: python3
+
+    @cocotb.test()
+    async def test(dut):
+        assert 1 > 2, "Testing the obvious"
+
+    @cocotb.test()
+    async def test(dut):
+        raise TestFailure("Reason")
+
+    @cocotb.test()
+    async def test(dut):
+        async def fails_test():
+            assert 1 > 2
+        cocotb.start_soon(fails_test())
+        await Timer(10, 'ns')
+
+    @cocotb.test()
+    async def test(dut):
+        async def fails_test():
+            raise TestFailure("Reason")
+        cocotb.start_sson(fails_test())
+        await Timer(10, 'ns')
+
+When a test fails, a stacktrace is printed.
+If :mod:`pytest` is installed and ``assert`` statements are used,
+a more informative stacktrace is printed which includes the values that caused the ``assert`` to fail.
+For example, see the output for the first test from above.
+
+.. code-block::
+
+    0.00ns ERROR    Test Failed: test (result was AssertionError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        assert 1 > 2, "Testing the obvious"
+                    AssertionError: Testing the obvious
+
+
+A cocotb test is considered to have `errored` if the test coroutine,
+or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
+raises an exception that isn't considered a `failure`.
+Below are examples of `erroring` tests.
+
+.. code-block:: python3
+
+    @cocotb.test()
+    async def test(dut):
+        await coro_that_does_not_exist()  # NameError
+
+    @cocotb.test()
+    async def test(dut):
+        async def coro_with_an_error():
+            dut.signal_that_does_not_exist.value = 1  # AttributeError
+        cocotb.start_soon(coro_with_an_error())
+        await Timer(10, 'ns')
+
+When a test ends with an error, a stacktrace is printed.
+For example, see the below output for the first test from above.
+
+.. code-block::
+
+    0.00ns ERROR    Test Failed: test (result was NameError)
+                    Traceback (most recent call last):
+                      File "test.py", line 3, in test
+                        await coro_that_does_not_exist()  # NameError
+                    NameError: name 'coro_that_does_not_exist' is not defined
+
+
+If a test coroutine completes without `failing` or `erroring`,
+or if the test coroutine,
+or any coroutine :func:`~cocotb.fork`\ ed by the test coroutine,
+raises :exc:`cocotb.result.TestSuccess`,
+the test is considered to have `passed`.
+Below are examples of `passing` tests.
+
+.. code-block:: python3
+
+    @cocotb.test():
+    async def test(dut):
+        assert 2 > 1  # assertion is correct, then the coroutine ends
+
+    @cocotb.test()
+    async def test(dut):
+        raise TestSuccess("Reason")  # ends test with success early
+        assert 1 > 2  # this would fail, but it isn't run because the test was ended early
+
+    @cocotb.test()
+    async def test(dut):
+        async def ends_test_with_pass():
+            raise TestSuccess("Reason")
+        cocotb.start_soon(ends_test_with_pass())
+        await Timer(10, 'ns')
+
+A passing test will print the following output.
+
+.. code-block::
+
+    0.00ns INFO     Test Passed: test
+
+
 Logging
 =======
 
@@ -227,7 +335,7 @@ and can be set to its own logging level.
 
 .. code-block:: python3
 
-    task = cocotb.fork(coro)
+    task = cocotb.start_soon(coro)
     task.log.setLevel(logging.DEBUG)
     task.log.debug("Running Task!")
 
@@ -239,4 +347,4 @@ component with the Python logging functionality.
 .. code-block:: python3
 
     dut.my_signal._log.info("Setting signal")
-    dut.my_signal <= 1
+    dut.my_signal.value = 1

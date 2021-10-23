@@ -51,8 +51,10 @@ class BaseClock:
 class Clock(BaseClock):
     r"""Simple 50:50 duty cycle clock driver.
 
-    Instances of this class should call its :meth:`start` method and :func:`fork` the
-    result.  This will create a clocking thread that drives the signal at the
+    Instances of this class should call its :meth:`start` method
+    and pass the coroutine object to one of the functions in :ref:`task-management`.
+
+    This will create a clocking task that drives the signal at the
     desired period/frequency.
 
     Example:
@@ -60,7 +62,7 @@ class Clock(BaseClock):
     .. code-block:: python
 
         c = Clock(dut.clk, 10, 'ns')
-        cocotb.fork(c.start())
+        await cocotb.start(c.start())
 
     Args:
         signal: The clock pin/signal to be driven.
@@ -72,7 +74,7 @@ class Clock(BaseClock):
             the timestep is determined by the simulator (see :make:var:`COCOTB_HDL_TIMEPRECISION`).
 
     If you need more features like a phase shift and an asymmetric duty cycle,
-    it is simple to create your own clock generator (that you then :func:`fork`):
+    it is simple to create your own clock generator (that you then :func:`~cocotb.start`):
 
     .. code-block:: python
 
@@ -82,9 +84,9 @@ class Clock(BaseClock):
             low_time = Timer(low_delay, units="ns")
             await Timer(initial_delay, units="ns")
             while True:
-                dut.clk <= 1
+                dut.clk.value = 1
                 await high_time
-                dut.clk <= 0
+                dut.clk.value = 0
                 await low_time
 
     If you also want to change the timing during simulation,
@@ -96,22 +98,22 @@ class Clock(BaseClock):
 
         async def custom_clock():
             while True:
-                dut.clk <= 1
+                dut.clk.value = 1
                 await Timer(high_delay, units="ns")
-                dut.clk <= 0
+                dut.clk.value = 0
                 await Timer(low_delay, units="ns")
 
         high_delay = low_delay = 100
-        cocotb.fork(custom_clock())
+        await cocotb.start(custom_clock())
         await Timer(1000, units="ns")
         high_delay = low_delay = 10  # change the clock speed
         await Timer(1000, units="ns")
 
     .. versionchanged:: 1.5
-        Support ``'step'`` as the the *units* argument to mean "simulator time step".
+        Support ``'step'`` as the *units* argument to mean "simulator time step".
 
     .. deprecated:: 1.5
-        Using None as the the *units* argument is deprecated, use ``'step'`` instead.
+        Using ``None`` as the *units* argument is deprecated, use ``'step'`` instead.
     """
 
     def __init__(self, signal, period, units="step"):
@@ -130,7 +132,7 @@ class Clock(BaseClock):
         self.mcoro = None
 
     async def start(self, cycles=None, start_high=True):
-        r"""Clocking coroutine.  Start driving your clock by :func:`fork`\ ing a
+        r"""Clocking coroutine.  Start driving your clock by :func:`cocotb.start`\ ing a
         call to this.
 
         Args:
@@ -152,15 +154,15 @@ class Clock(BaseClock):
         # branch outside for loop for performance (decision has to be taken only once)
         if start_high:
             for _ in it:
-                self.signal <= 1
+                self.signal.value = 1
                 await t
-                self.signal <= 0
+                self.signal.value = 0
                 await t
         else:
             for _ in it:
-                self.signal <= 0
+                self.signal.value = 0
                 await t
-                self.signal <= 1
+                self.signal.value = 1
                 await t
 
     def __str__(self):

@@ -27,21 +27,21 @@ import logging
 
 import cocotb
 from cocotb.handle import HierarchyObject, ModifiableObject, IntegerObject, ConstantObject, EnumObject
-from cocotb.result import TestFailure
 
 
-@cocotb.test()
+# GHDL discovers enum as `vpiNet` (gh-2600)
+@cocotb.test(expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl"))
 async def check_enum_object(dut):
     """
     Enumerations currently behave as normal signals
 
     TODO: Implement an EnumObject class and detect valid string mappings
     """
-    if not isinstance(dut.inst_ram_ctrl.write_ram_fsm, EnumObject):
-        raise TestFailure("Expected the FSM enum to be an EnumObject")
+    assert isinstance(dut.inst_ram_ctrl.write_ram_fsm, EnumObject)
 
 
-@cocotb.test()
+# GHDL unable to access signals in generate loops (gh-2594)
+@cocotb.test(expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def check_objects(dut):
     """
     Check the types of objects that are returned
@@ -88,8 +88,7 @@ async def check_objects(dut):
     except TypeError as e:
         pass
 
-    if fails:
-        raise TestFailure("%d Failures during the test" % fails)
+    assert fails == 0
 
 
 @cocotb.test()

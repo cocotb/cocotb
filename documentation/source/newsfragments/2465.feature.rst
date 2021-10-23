@@ -1,1 +1,0 @@
-ModelSim and Questa now support compilation into a named VHDL library ``lib`` using ``VHDL_SOURCES_<lib>``.

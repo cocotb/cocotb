@@ -7,8 +7,9 @@ import cocotb
 
 from cocotb.clock import Clock
 from cocotb.triggers import Timer
-from cocotb.result import TestError, TestFailure
 from cocotb.handle import HierarchyObject, HierarchyArrayObject, ModifiableObject, NonHierarchyIndexableObject, ConstantObject
+
+SIM_NAME = cocotb.SIM_NAME.lower()
 
 
 def _check_type(tlog, hdl, expected):
@@ -42,12 +43,13 @@ def _check_value(tlog, hdl, expected):
 
 
 # NOTE: simulator-specific handling is done in this test itself, not via expect_error in the decorator
-@cocotb.test()
+# GHDL unable to access std_logic_vector generics (gh-2593) (hard crash, so skip)
+@cocotb.test(skip=SIM_NAME.startswith("ghdl"))
 async def test_read_write(dut):
     """Test handle inheritance"""
     tlog = logging.getLogger("cocotb.test")
 
-    cocotb.fork(Clock(dut.clk, 10, "ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
     await Timer(10, "ns")
 
@@ -101,15 +103,15 @@ async def test_read_write(dut):
             _check_logic(tlog, dut.const_cmplx[2].b[1], 0xFF)
             _check_logic(tlog, dut.const_cmplx[2].b[2], 0xFF)
 
-    dut.select_in         = 2
+    dut.select_in        .value = 2
 
     await Timer(10, "ns")
 
     tlog.info("Writing the signals!!!")
-    dut.sig_logic         = 1
-    dut.sig_logic_vec     = 0xCC
-    dut.sig_t2 = [0xCC, 0xDD, 0xEE, 0xFF]
-    dut.sig_t4 = [
+    dut.sig_logic        .value = 1
+    dut.sig_logic_vec    .value = 0xCC
+    dut.sig_t2.value = [0xCC, 0xDD, 0xEE, 0xFF]
+    dut.sig_t4.value = [
         [0x00, 0x11, 0x22, 0x33],
         [0x44, 0x55, 0x66, 0x77],
         [0x88, 0x99, 0xAA, 0xBB],
@@ -117,23 +119,23 @@ async def test_read_write(dut):
     ]
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        dut.sig_bool          = 1
-        dut.sig_int           = 5000
-        dut.sig_real          = 22.54
-        dut.sig_char          = ord('Z')
-        dut.sig_str           = "Testing"
-        dut.sig_rec.a         = 1
-        dut.sig_rec.b[0]      = 0x01
-        dut.sig_rec.b[1]      = 0x23
-        dut.sig_rec.b[2]      = 0x45
-        dut.sig_cmplx[0].a    = 0
-        dut.sig_cmplx[0].b[0] = 0x67
-        dut.sig_cmplx[0].b[1] = 0x89
-        dut.sig_cmplx[0].b[2] = 0xAB
-        dut.sig_cmplx[1].a    = 1
-        dut.sig_cmplx[1].b[0] = 0xCD
-        dut.sig_cmplx[1].b[1] = 0xEF
-        dut.sig_cmplx[1].b[2] = 0x55
+        dut.sig_bool         .value = 1
+        dut.sig_int          .value = 5000
+        dut.sig_real         .value = 22.54
+        dut.sig_char         .value = ord('Z')
+        dut.sig_str          .value = "Testing"
+        dut.sig_rec.a        .value = 1
+        dut.sig_rec.b[0]     .value = 0x01
+        dut.sig_rec.b[1]     .value = 0x23
+        dut.sig_rec.b[2]     .value = 0x45
+        dut.sig_cmplx[0].a   .value = 0
+        dut.sig_cmplx[0].b[0].value = 0x67
+        dut.sig_cmplx[0].b[1].value = 0x89
+        dut.sig_cmplx[0].b[2].value = 0xAB
+        dut.sig_cmplx[1].a   .value = 1
+        dut.sig_cmplx[1].b[0].value = 0xCD
+        dut.sig_cmplx[1].b[1].value = 0xEF
+        dut.sig_cmplx[1].b[2].value = 0x55
 
     await Timer(10, "ns")
 
@@ -167,17 +169,17 @@ async def test_read_write(dut):
         _check_logic(tlog, dut.port_cmplx_out[1].b[2], 0x55)
 
     tlog.info("Writing a few signal sub-indices!!!")
-    dut.sig_logic_vec[2]     = 0
+    dut.sig_logic_vec[2]    .value = 0
     if cocotb.LANGUAGE in ["vhdl"] or not (cocotb.SIM_NAME.lower().startswith(("ncsim", "xmsim")) or
                                            (cocotb.SIM_NAME.lower().startswith("riviera") and
                                             cocotb.SIM_VERSION.startswith(("2016.06", "2016.10", "2017.02")))):
-        dut.sig_t6[1][3][2]      = 1
-        dut.sig_t6[0][2][7]      = 0
+        dut.sig_t6[1][3][2]     .value = 1
+        dut.sig_t6[0][2][7]     .value = 0
 
     if cocotb.LANGUAGE in ["vhdl"]:
-        dut.sig_str[2]           = ord('E')
-        dut.sig_rec.b[1][7]      = 1
-        dut.sig_cmplx[1].b[1][0] = 0
+        dut.sig_str[2]          .value = ord('E')
+        dut.sig_rec.b[1][7]     .value = 1
+        dut.sig_cmplx[1].b[1][0].value = 0
 
     await Timer(10, "ns")
 
@@ -196,7 +198,8 @@ async def test_read_write(dut):
         _check_logic(tlog, dut.port_cmplx_out[1].b[1], 0xEE)
 
 
-@cocotb.test()
+# GHDL unable to access signals in generate loops (gh-2594)
+@cocotb.test(expect_error=IndexError if SIM_NAME.startswith("ghdl") else ())
 async def test_gen_loop(dut):
     """Test accessing Generate Loops"""
     tlog = logging.getLogger("cocotb.test")
@@ -204,14 +207,9 @@ async def test_gen_loop(dut):
     asc_gen_20  = dut.asc_gen[20]
     desc_gen    = dut.desc_gen
 
-    if not isinstance(dut.asc_gen, HierarchyArrayObject):
-        raise TestFailure(f"Generate Loop parent >{dut.asc_gen!r}< should be HierarchyArrayObject")
-
-    if not isinstance(desc_gen, HierarchyArrayObject):
-        raise TestFailure(f"Generate Loop parent >{desc_gen!r}< should be HierarchyArrayObject")
-
-    if not isinstance(asc_gen_20, HierarchyObject):
-        raise TestFailure(f"Generate Loop child >{asc_gen_20!r}< should be HierarchyObject")
+    assert isinstance(dut.asc_gen, HierarchyArrayObject)
+    assert isinstance(desc_gen, HierarchyArrayObject)
+    assert isinstance(asc_gen_20, HierarchyObject)
 
     tlog.info("Direct access found %s", asc_gen_20)
     tlog.info("Direct access found %s", desc_gen)
@@ -219,15 +217,11 @@ async def test_gen_loop(dut):
     for gens in desc_gen:
         tlog.info("Iterate access found %s", gens)
 
-    if len(desc_gen) != 8:
-        raise TestError("Length of desc_gen is >{}< and should be 8".format(len(desc_gen)))
-    else:
-        tlog.info("Length of desc_gen is %d", len(desc_gen))
+    assert len(desc_gen) == 8
+    tlog.info("Length of desc_gen is %d", len(desc_gen))
 
-    if len(dut.asc_gen) != 8:
-        raise TestError("Length of asc_gen is >{}< and should be 8".format(len(dut.asc_gen)))
-    else:
-        tlog.info("Length of asc_gen is %d", len(dut.asc_gen))
+    assert len(dut.asc_gen) == 8
+    tlog.info("Length of asc_gen is %d", len(dut.asc_gen))
 
     for gens in dut.asc_gen:
         tlog.info("Iterate access found %s", gens)
@@ -336,6 +330,8 @@ async def test_discover_all(dut):
 
     if cocotb.LANGUAGE in ["vhdl"] and cocotb.SIM_NAME.lower().startswith("riviera"):
         pass_total = 571
+    elif cocotb.SIM_NAME.lower().startswith("ghdl"):
+        pass_total = 56
     elif cocotb.LANGUAGE in ["vhdl"]:
         pass_total = 856
     elif cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera"):
@@ -346,7 +342,7 @@ async def test_discover_all(dut):
             pass_total = 813
         elif cocotb.SIM_VERSION.startswith("2016.02"):
             pass_total = 947
-        elif cocotb.SIM_VERSION.startswith(("2019.10", "2020.")):
+        elif cocotb.SIM_VERSION.startswith(("2019.10", "2020.", "2021.")):
             # vpiVariables finds port_rec_out and sig_rec
             pass_total = 1006
         else:
@@ -368,11 +364,13 @@ async def test_discover_all(dut):
     tlog.info("Iterating over %r (%s)", dut, dut._type)
     total = _discover(dut, "")
     tlog.info("Found a total of %d things", total)
-    if total != pass_total:
-        raise TestFailure(f"Expected {pass_total} objects but found {total}")
+    assert total == pass_total
 
 
-@cocotb.test(skip=(cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera")))
+# GHDL unable to access std_logic_vector generics (gh-2593)
+@cocotb.test(
+    skip=(cocotb.LANGUAGE in ["verilog"] or cocotb.SIM_NAME.lower().startswith("riviera")),
+    expect_error=AttributeError if SIM_NAME.startswith("ghdl") else ())
 async def test_direct_constant_indexing(dut):
     """Test directly accessing constant/parameter data in arrays, i.e. not iterating"""
 
@@ -402,42 +400,37 @@ async def test_direct_constant_indexing(dut):
     _check_type(tlog, dut.const_cmplx[1].b[1], ConstantObject)
 
 
-@cocotb.test()
+# GHDL unable to index packed arrays (gh-2587)
+@cocotb.test(expect_error=IndexError if SIM_NAME.startswith("ghdl") else ())
 async def test_direct_signal_indexing(dut):
     """Test directly accessing signal/net data in arrays, i.e. not iterating"""
 
     tlog = logging.getLogger("cocotb.test")
 
-    cocotb.fork(Clock(dut.clk, 10, "ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, "ns").start())
 
-    dut.port_desc_in <= 0
-    dut.port_asc_in  <= 0
-    dut.port_ofst_in <= 0
+    dut.port_desc_in.value = 0
+    dut.port_asc_in .value = 0
+    dut.port_ofst_in.value = 0
 
     await Timer(20, "ns")
 
-    dut.port_desc_in[2] <= 1
-    dut.port_asc_in[2]  <= 1
-    dut.port_ofst_in[2] <= 1
+    dut.port_desc_in[2].value = 1
+    dut.port_asc_in[2] .value = 1
+    dut.port_ofst_in[2].value = 1
 
     await Timer(20, "ns")
 
     tlog.info("Checking bit mapping from input to generate loops.")
-    if int(dut.desc_gen[2].sig) != 1:
-        raise TestFailure("Expected {!r} to be a 1 but got {}".format(dut.desc_gen[2].sig, int(dut.desc_gen[2].sig)))
-    else:
-        tlog.info("   %r = %d", dut.desc_gen[2].sig, int(dut.desc_gen[2].sig))
+    assert int(dut.desc_gen[2].sig) == 1
+    tlog.info("   %r = %d", dut.desc_gen[2].sig, int(dut.desc_gen[2].sig))
 
-    if int(dut.asc_gen[18].sig) != 1:
-        raise TestFailure("Expected {!r} to be a 1 but got {}".format(dut.asc_gen[18].sig, int(dut.asc_gen[18].sig)))
-    else:
-        tlog.info("   %r = %d", dut.asc_gen[18].sig, int(dut.asc_gen[18].sig))
+    assert int(dut.asc_gen[18].sig) == 1
+    tlog.info("   %r = %d", dut.asc_gen[18].sig, int(dut.asc_gen[18].sig))
 
     tlog.info("Checking indexing of data with offset index.")
-    if int(dut.port_ofst_out) != 64:
-        raise TestFailure("Expected {!r} to be a 64 but got {}".format(dut.port_ofst_out, int(dut.port_ofst_out)))
-    else:
-        tlog.info("   %r = %d (%s)", dut.port_ofst_out, int(dut.port_ofst_out), dut.port_ofst_out.value.binstr)
+    assert int(dut.port_ofst_out) == 64
+    tlog.info("   %r = %d (%s)", dut.port_ofst_out, int(dut.port_ofst_out), dut.port_ofst_out.value.binstr)
 
     tlog.info("Checking Types of complex array structures in signals.")
     _check_type(tlog, dut.sig_desc[20], ModifiableObject)

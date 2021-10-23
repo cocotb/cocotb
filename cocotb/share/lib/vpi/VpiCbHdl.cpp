@@ -545,13 +545,22 @@ VpiNextPhaseCbHdl::VpiNextPhaseCbHdl(GpiImplInterface *impl)
 
 decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
     /* for reused lists */
-    std::initializer_list<int32_t> module_options = {
+
+    // vpiInstance is the base class for module, program, interface, etc.
+    std::vector<int32_t> instance_options = {
+        vpiNet,
+        vpiNetArray,
+        vpiReg,
+        vpiRegArray,
+    };
+
+    std::vector<int32_t> module_options = {
         // vpiModule,            // Aldec SEGV on mixed language
         // vpiModuleArray,       // Aldec SEGV on mixed language
         // vpiIODecl,            // Don't care about these
-        vpiNet, vpiNetArray, vpiReg, vpiRegArray, vpiMemory, vpiIntegerVar,
-        vpiRealVar, vpiRealNet, vpiStructVar, vpiStructNet, vpiVariables,
-        vpiNamedEvent, vpiNamedEventArray, vpiParameter,
+        vpiMemory, vpiIntegerVar, vpiRealVar, vpiRealNet, vpiStructVar,
+        vpiStructNet, vpiVariables, vpiNamedEvent, vpiNamedEventArray,
+        vpiParameter,
         // vpiSpecParam,         // Don't care
         // vpiParamAssign,       // Aldec SEGV on mixed language
         // vpiDefParam,          // Don't care
@@ -562,7 +571,12 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
         // vpiInterface,         // Aldec SEGV on mixed language
         // vpiInterfaceArray,    // Aldec SEGV on mixed language
     };
-    std::initializer_list<int32_t> struct_options = {
+
+    // append base class vpiInstance members
+    module_options.insert(module_options.begin(), instance_options.begin(),
+                          instance_options.end());
+
+    std::vector<int32_t> struct_options = {
         vpiNet,
 #ifndef IUS
         vpiNetArray,
@@ -573,6 +587,7 @@ decltype(VpiIterator::iterate_over) VpiIterator::iterate_over = [] {
 
     return decltype(VpiIterator::iterate_over){
         {vpiModule, module_options},
+        {vpiInterface, instance_options},
         {vpiGenScope, module_options},
 
         {vpiStructVar, struct_options},
@@ -621,6 +636,7 @@ VpiIterator::VpiIterator(GpiImplInterface *impl, GpiObjHdl *hdl)
     vpiHandle vpi_hdl = m_parent->get_handle<vpiHandle>();
 
     int type = vpi_get(vpiType, vpi_hdl);
+
     try {
         selected = &iterate_over.at(type);
     } catch (std::out_of_range const &) {

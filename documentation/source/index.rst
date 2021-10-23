@@ -48,7 +48,7 @@ All verification is done using Python which has various advantages over using Sy
 * Writing Python is **fast** - it's a very productive language.
 * It's **easy** to interface to other languages from Python.
 * Python has a huge library of existing code to **re-use**.
-* Python is **interpreted** - tests can be edited and re-run without having to recompile the design or exit the simulator GUI.
+* Python is **interpreted** - tests can be edited and re-run without having to recompile the design.
 * Python is **popular** - far more engineers know Python than SystemVerilog or VHDL.
 
 

@@ -5,18 +5,22 @@
    Async
 
 
-**********
-Coroutines
-**********
+********************
+Coroutines and Tasks
+********************
 
-Testbenches built using cocotb use coroutines. While the coroutine is executing
-the simulation is paused. The coroutine uses the :keyword:`await` keyword to
+Testbenches built using cocotb use Python coroutines.
+*Tasks* are cocotb objects that wrap coroutines
+and are used to schedule concurrent execution of the testbench coroutines.
+
+While active tasks are executing, the simulation is paused.
+The coroutine uses the :keyword:`await` keyword to
 block on another coroutine's execution or pass control of execution back to the
 simulator, allowing simulation time to advance.
 
 Typically coroutines :keyword:`await` a :class:`~cocotb.triggers.Trigger` object which
-indicates to the simulator some event which will cause the coroutine to be woken
-when it occurs.  For example:
+pauses the task, and indicates to the simulator some event which will cause the task to resume execution.
+For example:
 
 .. code-block:: python3
 
@@ -44,11 +48,28 @@ Coroutines can :keyword:`return` a value, so that they can be used by other coro
     async def check_signal_changes(dut):
         first = await get_signal(dut.clk, dut.signal)
         second = await get_signal(dut.clk, dut.signal)
-        if first == second:
-            raise TestFailure("Signal did not change")
+        assert first != second, "Signal did not change"
 
+Concurrent Execution
+====================
 
-Coroutines can be used with :func:`~cocotb.fork` for concurrent operation.
+Coroutines can be scheduled for concurrent execution with :func:`~cocotb.fork`, :func:`~cocotb.start`, and :func:`~cocotb.start_soon`.
+
+:func:`~cocotb.fork` schedules and executes the new coroutine immediately,
+returning control to the calling task after the new coroutine finishes or yields control.
+No other pending tasks are run.
+
+The *async* function :func:`~cocotb.start` schedules the new coroutine to be executed concurrently,
+then yields control to allow the new task (and any other pending tasks) to run,
+before resuming the calling task.
+
+:func:`~cocotb.start_soon` schedules the new coroutine for future execution,
+after the calling task yields control.
+
+.. note::
+    The preferred way to schedule tasks is with :func:`~cocotb.start` and :func:`~cocotb.start_soon`.
+    :func:`~cocotb.fork` remains for historical reasons,
+    but may be removed in a future version of cocotb.
 
 .. code-block:: python3
 
@@ -57,28 +78,28 @@ Coroutines can be used with :func:`~cocotb.fork` for concurrent operation.
         """While reset is active, toggle signals"""
         tb = uart_tb(dut)
         # "Clock" is a built in class for toggling a clock signal
-        cocotb.fork(Clock(dut.clk, 1, units='ns').start())
+        cocotb.start_soon(Clock(dut.clk, 1, units='ns').start())
         # reset_dut is a function -
         # part of the user-generated "uart_tb" class
-        cocotb.fork(tb.reset_dut(dut.rstn, 20))
+        # run reset_dut immediately before continuing
+        await cocotb.start(tb.reset_dut(dut.rstn, 20))
 
         await Timer(10, units='ns')
         print("Reset is still active: %d" % dut.rstn)
         await Timer(15, units='ns')
         print("Reset has gone inactive: %d" % dut.rstn)
 
-
-Forked coroutines can be used in an :keyword:`await` statement to block until the forked coroutine finishes.
+Other tasks can be used in an :keyword:`await` statement to suspend the current task until the other task finishes.
 
 .. code-block:: python3
 
     @cocotb.test()
     async def test_count_edge_cycles(dut, period_ns=1, clocks=6):
-        cocotb.fork(Clock(dut.clk, period_ns, units='ns').start())
+        cocotb.start_soon(Clock(dut.clk, period_ns, units='ns').start())
         await RisingEdge(dut.clk)
 
         timer = Timer(period_ns + 10, 'ns')
-        task = cocotb.fork(count_edges_cycles(dut.clk, clocks))
+        task = cocotb.start_soon(count_edges_cycles(dut.clk, clocks))
         count = 0
         expect = clocks - 1
 
@@ -92,8 +113,8 @@ Forked coroutines can be used in an :keyword:`await` statement to block until th
             else:
                 break
 
-Forked coroutines can be killed before they complete, forcing their completion before
-they'd naturally end.
+Tasks can be killed before they complete,
+forcing their completion before they would naturally end.
 
 .. code-block:: python3
 
@@ -102,7 +123,7 @@ they'd naturally end.
         clk_1mhz   = Clock(dut.clk, 1.0, units='us')
         clk_250mhz = Clock(dut.clk, 4.0, units='ns')
 
-        clk_gen = cocotb.fork(clk_1mhz.start())
+        clk_gen = cocotb.start_soon(clk_1mhz.start())
         start_time_ns = get_sim_time(units='ns')
         await Timer(1, units='ns')
         await RisingEdge(dut.clk)
@@ -112,7 +133,7 @@ they'd naturally end.
 
         clk_gen.kill()  # kill clock coroutine here
 
-        clk_gen = cocotb.fork(clk_250mhz.start())
+        clk_gen = cocotb.start_soon(clk_250mhz.start())
         start_time_ns = get_sim_time(units='ns')
         await Timer(1, units='ns')
         await RisingEdge(dut.clk)
@@ -124,7 +145,11 @@ they'd naturally end.
 .. versionchanged:: 1.4
     The :any:`cocotb.coroutine` decorator is no longer necessary for ``async def`` coroutines.
     ``async def`` coroutines can be used, without the ``@cocotb.coroutine`` decorator, wherever decorated coroutines are accepted,
-    including :keyword:`yield` statements and :any:`cocotb.fork`.
+    including :keyword:`yield` statements and :func:`cocotb.fork`.
+
+.. versionchanged:: 1.6
+    Added :func:`cocotb.start` and :func:`cocotb.start_soon` scheduling functions.
+
 
 Async generators
 ================
@@ -157,7 +182,7 @@ Generator-based coroutines
 .. note:: This style is no longer recommended and support may someday be removed.
 
 Prior to Python 3.5, and the introduction of :keyword:`async` and :keyword:`await`, coroutines were implemented as wrappers around generators.
-Coroutine functions would be decorated with :class:`~cocotb.decorators.coroutine` and would use :keyword:`yield` to block on other coroutines or triggers.
+Coroutine functions would be decorated with :class:`~cocotb.coroutine` and would use :keyword:`yield` to block on other coroutines or triggers.
 You may see existing code that uses this syntax for coroutines, but do not worry, it is compatible with :keyword:`async` coroutines.
 
 Any object that can be used in an :keyword:`await` statement can also be used in a :keyword:`yield` statement while in a generator-based coroutine;
@@ -167,12 +192,12 @@ including triggers like :class:`~cocotb.triggers.Timer`.
 
     @cocotb.coroutine
     def simple_clock(signal, half_period, half_period_units):
-        signal <= 0
+        signal.value = 0
         timer = Timer(half_period, half_period_units)
         while True:
             # in generator-based coroutines triggers are yielded
             yield timer
-            signal <= ~signal
+            signal.value = ~signal
 
 Likewise, any place that will accept :keyword:`async` coroutines will also accept generator-based coroutines;
 including :func:`~cocotb.fork`.
@@ -182,7 +207,7 @@ including :func:`~cocotb.fork`.
     @cocotb.coroutine
     def start_clock(clk):
         # generator-based coroutines can still be forked
-        cocotb.fork(simple_clock(clk, 5, units='ns'))
+        cocotb.start_soon(simple_clock(clk, 5, units='ns'))
         yield RisingEdge(clk)
 
 :keyword:`async` coroutines can be yielded in generator-based coroutines.
@@ -223,7 +248,7 @@ You may also see syntax like ``yield [trigger_a, trigger_b, ...]``, which is syn
         yield [timeout, coro]
 
 Tests can also be generator-based coroutines.
-Tests are not required to be decorated with :class:`~cocotb.decorators.coroutine` as the :class:`~cocotb.decorators.test` decorator will handle this case automatically.
+Tests are not required to be decorated with :class:`~cocotb.coroutine` as the :class:`~cocotb.test` decorator will handle this case automatically.
 
 .. code-block:: python3
 

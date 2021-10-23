@@ -37,7 +37,7 @@ COCOTB_MAKEFILE_INC_INCLUDED = 1
 .PHONY: sim
 sim:
 	-@rm -f $(COCOTB_RESULTS_FILE)
-	$(MAKE) $(COCOTB_RESULTS_FILE)
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) $(COCOTB_RESULTS_FILE)
 
 # Make sure to use bash for the pipefail option used in many simulator Makefiles
 SHELL := bash
@@ -71,7 +71,7 @@ ifeq ($(filter $(PYTHON_ARCH),64bit 32bit),)
 endif
 
 # Set PYTHONHOME to properly populate sys.path in embedded python interpreter
-export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'from distutils.sysconfig import get_config_var; print(get_config_var("prefix"))')
+export PYTHONHOME := $(shell $(PYTHON_BIN) -c 'from sysconfig import get_config_var; print(get_config_var("prefix"))')
 
 ifeq ($(OS),Msys)
     to_tcl_path = $(shell cygpath -m $(1) )
@@ -110,10 +110,14 @@ regression: $(COCOTB_RESULTS_FILE)
 # Attempt to detect TOPLEVEL_LANG based on available sources if not set
 ifeq ($(TOPLEVEL_LANG),)
 
-ifneq ($(and $(VHDL_SOURCES),$(if $(VERILOG_SOURCES),,1),)
+ifneq ($(VHDL_SOURCES),)
+ifeq ($(VERILOG_SOURCES),)
 	TOPLEVEL_LANG := vhdl
-else ifneq ($(and $(VERILOG_SOURCES),$(if $(VHDL_SOURCES),,1),)
+endif
+else ifneq ($(VERILOG_SOURCES),)
+ifeq ($(VHDL_SOURCES),)
 	TOPLEVEL_LANG := verilog
+endif
 endif
 
 endif
@@ -129,6 +133,8 @@ manually override the LIBPYTHON_LOC make variable with the absolute path to libp
 
 endef
 
+ifndef LIBPYTHON_LOC
+
 # get the path to libpython and the return code from the script
 # adapted from https://stackoverflow.com/a/24658961/6614127
 FIND_LIBPYTHON_RES := $(shell cocotb-config --libpython; echo $$?)
@@ -139,7 +145,24 @@ LIBPYTHON_LOC := $(strip $(subst $(FIND_LIBPYTHON_RC)QQQQ,,$(FIND_LIBPYTHON_RES)
 ifneq ($(FIND_LIBPYTHON_RC),0)
     $(error $(find_libpython_errmsg))
 endif
+
+endif
+
 export LIBPYTHON_LOC
+
+define check_vhdl_sources
+if [ "$(VHDL_SOURCES_$(LIB))" == "" ]; then \
+  >&2 echo "ERROR: VHDL_SOURCES_$(LIB) is empty or undefined, but '$(LIB)' is present in VHDL_LIB_ORDER."; \
+  exit 1; \
+fi;
+endef
+
+define check_lib_order
+  if [ "$(filter $(SOURCES_VAR:VHDL_SOURCES_%=%), $(VHDL_LIB_ORDER))" == "" ]; then \
+    >&2 echo "ERROR: $(SOURCES_VAR) defined, but library $(SOURCES_VAR:VHDL_SOURCES_%=%) not present in VHDL_LIB_ORDER."; \
+    exit 1; \
+  fi;
+endef
 
 else
     $(warning Including Makefile.inc from a user makefile is a no-op and deprecated. Remove the Makefile.inc inclusion from your makefile, and only leave the Makefile.sim include.)

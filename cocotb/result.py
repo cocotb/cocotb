@@ -100,12 +100,43 @@ class ReturnValue(Exception):
 
 
 class TestComplete(Exception):
-    """Exception showing that the test was completed. Sub-exceptions detail the exit status."""
+    """
+    Exception showing that the test was completed. Sub-exceptions detail the exit status.
+
+    .. deprecated:: 1.6.0
+        The ``stdout`` and ``stderr`` attributes.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.stdout = StringIO()
-        self.stderr = StringIO()
+        self.__stdout = StringIO()
+        self.__stderr = StringIO()
+
+    @staticmethod
+    def __deprecated(which: str) -> None:
+        warnings.warn(
+            f"Attribute {which} is deprecated and will be removed in the next major release",
+            DeprecationWarning, stacklevel=3)
+
+    @property
+    def stdout(self) -> StringIO:
+        self.__deprecated("stdout")
+        return self.__stdout
+
+    @stdout.setter
+    def stdout(self, new_value: StringIO) -> None:
+        self.__deprecated("stdout")
+        self.__stdout = new_value
+
+    @property
+    def stderr(self) -> StringIO:
+        self.__deprecated("stderr")
+        return self.__stderr
+
+    @stderr.setter
+    def stderr(self, new_value: StringIO) -> None:
+        self.__deprecated("stderr")
+        self.__stderr = new_value
 
 
 class ExternalException(Exception):
@@ -132,8 +163,20 @@ class TestError(TestComplete):
 
 
 class TestFailure(TestComplete, AssertionError):
-    """Exception showing that the test was completed with severity Failure."""
-    pass
+    """
+    Exception showing that the test was completed with severity Failure.
+
+    .. deprecated:: 1.6.0
+        Use a standard ``assert`` statement instead of raising this exception.
+        Use ``expect_fail`` rather than ``expect_error`` with this exception in the
+        :class:`cocotb.test` decorator.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "TestFailure is deprecated, use an ``assert`` statement instead",
+            DeprecationWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
 
 
 class TestSuccess(TestComplete):

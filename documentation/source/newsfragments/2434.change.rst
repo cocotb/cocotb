@@ -1,1 +1,0 @@
-Selecting tests using :make:var:`TESTCASE` will now search for the first occurrence of a test of that name in order of modules listed in :make:var:`MODULE`\ s, and not just the first module in that list.

@@ -9,7 +9,6 @@ from typing import Dict, List, Any
 import cocotb
 from cocotb.binary import BinaryValue
 from cocotb.clock import Clock
-from cocotb.regression import TestFactory
 from cocotb.triggers import RisingEdge
 from cocotb.queue import Queue
 from cocotb.handle import SimHandleBase
@@ -42,7 +41,7 @@ class DataValidMonitor:
         """Start monitor"""
         if self._coro is not None:
             raise RuntimeError("Monitor already started")
-        self._coro = cocotb.fork(self._run())
+        self._coro = cocotb.start_soon(self._run())
 
     def stop(self) -> None:
         """Stop monitor"""
@@ -99,7 +98,7 @@ class MatrixMultiplierTester:
             raise RuntimeError("Monitor already started")
         self.input_mon.start()
         self.output_mon.start()
-        self._checker = cocotb.fork(self._check())
+        self._checker = cocotb.start_soon(self._check())
 
     def stop(self) -> None:
         """Stops everything"""
@@ -141,24 +140,27 @@ class MatrixMultiplierTester:
             assert actual['C'] == expected
 
 
-async def test_multiply(dut, a_data, b_data):
+@cocotb.test(
+    expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ()
+)
+async def test_multiply(dut):
     """Test multiplication of many matrices."""
 
-    cocotb.fork(Clock(dut.clk_i, 10, units='ns').start())
+    cocotb.start_soon(Clock(dut.clk_i, 10, units='ns').start())
     tester = MatrixMultiplierTester(dut)
 
     dut._log.info("Initialize and reset model")
 
     # Initial values
-    dut.valid_i <= 0
-    dut.a_i <= create_a(lambda x: 0)
-    dut.b_i <= create_b(lambda x: 0)
+    dut.valid_i.value = 0
+    dut.a_i.value = create_a(lambda x: 0)
+    dut.b_i.value = create_b(lambda x: 0)
 
     # Reset DUT
-    dut.reset_i <= 1
+    dut.reset_i.value = 1
     for _ in range(3):
         await RisingEdge(dut.clk_i)
-    dut.reset_i <= 0
+    dut.reset_i.value = 0
 
     # start tester after reset so we know it's in a good state
     tester.start()
@@ -166,14 +168,14 @@ async def test_multiply(dut, a_data, b_data):
     dut._log.info("Test multiplication operations")
 
     # Do multiplication operations
-    for i, (A, B) in enumerate(zip(a_data(), b_data())):
+    for i, (A, B) in enumerate(zip(gen_a(), gen_b())):
         await RisingEdge(dut.clk_i)
-        dut.a_i <= A
-        dut.b_i <= B
-        dut.valid_i <= 1
+        dut.a_i.value = A
+        dut.b_i.value = B
+        dut.valid_i.value = 1
 
         await RisingEdge(dut.clk_i)
-        dut.valid_i <= 0
+        dut.valid_i.value = 0
 
         if i % 100 == 0:
             dut._log.info(f"{i} / {NUM_SAMPLES}")
@@ -203,9 +205,3 @@ def gen_b(num_samples=NUM_SAMPLES, func=getrandbits):
     """Generate random matrix data for B"""
     for _ in range(num_samples):
         yield create_b(func)
-
-
-factory = TestFactory(test_multiply)
-factory.add_option('a_data', [gen_a])
-factory.add_option('b_data', [gen_b])
-factory.generate_tests()

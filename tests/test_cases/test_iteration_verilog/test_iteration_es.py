@@ -27,7 +27,6 @@ import logging
 
 import cocotb
 from cocotb.triggers import First
-from cocotb.result import TestFailure
 
 
 @cocotb.test(expect_fail=cocotb.SIM_NAME in ["Icarus Verilog"])
@@ -55,8 +54,7 @@ async def recursive_discovery(dut):
         return count
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
-    if total != pass_total:
-        raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
+    assert total == pass_total
 
 
 async def iteration_loop(dut):
@@ -66,7 +64,7 @@ async def iteration_loop(dut):
 
 @cocotb.test()
 async def dual_iteration(dut):
-    loop_one = cocotb.fork(iteration_loop(dut))
-    loop_two = cocotb.fork(iteration_loop(dut))
+    loop_one = cocotb.start_soon(iteration_loop(dut))
+    loop_two = cocotb.start_soon(iteration_loop(dut))
 
     await First(loop_one.join(), loop_two.join())

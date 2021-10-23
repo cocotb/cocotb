@@ -23,6 +23,10 @@ and ``<TYPE>`` is one of:
 
 In that file, make sure to use full sentences with correct case and punctuation,
 and do not use a bullet point at the beginning of the file.
+Each fragment file should be a single piece of news on a single line;
+multi-line files will not render correctly.
+In cases where there is more than one piece of news for a pull request,
+split the news into 2 fragments (see below for details on how to do that).
 Use Sphinx references (see https://sphinx-tutorial.readthedocs.io/cheatsheet/)
 if you refer to added classes, methods etc.
 

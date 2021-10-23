@@ -35,6 +35,7 @@ __pycache__
 
 # VSCode project files
 .vscode/
+*.code-workspace
 
 # Emacs tmp files
 \#*\#

@@ -7,30 +7,27 @@ import logging
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.result import TestFailure
 from cocotb.triggers import Timer
 
 tlog = logging.getLogger("cocotb.test")
 
 
 def _check_value(tlog, hdl, expected):
-    if hdl.value != expected:
-        raise TestFailure(f"{hdl!r}: Expected >{expected}< but got >{hdl.value}<")
-    else:
-        tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
+    assert hdl.value == expected
+    tlog.info(f"   Found {hdl!r} ({hdl._type}) with value={hdl.value}")
 
 
-@cocotb.test()
+# GHDL unable to put values on nested array types (gh-2588)
+@cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_1dim_array_handles(dut):
     """Test getting and setting array values using the handle of the full array."""
 
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
 
-    # Set values with '<=' operator
-    dut.array_7_downto_4 <= [0xF0, 0xE0, 0xD0, 0xC0]
-    dut.array_4_to_7     <= [0xB0, 0xA0, 0x90, 0x80]
-    dut.array_3_downto_0 <= [0x70, 0x60, 0x50, 0x40]
-    dut.array_0_to_3     <= [0x30, 0x20, 0x10, 0x00]
+    dut.array_7_downto_4.value = [0xF0, 0xE0, 0xD0, 0xC0]
+    dut.array_4_to_7.value = [0xB0, 0xA0, 0x90, 0x80]
+    dut.array_3_downto_0.value = [0x70, 0x60, 0x50, 0x40]
+    dut.array_0_to_3.value = [0x30, 0x20, 0x10, 0x00]
 
     await Timer(1000, 'ns')
 
@@ -39,28 +36,20 @@ async def test_1dim_array_handles(dut):
     _check_value(tlog, dut.array_3_downto_0, [0x70, 0x60, 0x50, 0x40])
     _check_value(tlog, dut.array_0_to_3    , [0x30, 0x20, 0x10, 0x00])
 
-    # Set values through HierarchyObject.__setattr__ method on 'dut' handle
-    dut.array_7_downto_4 = [0x00, 0x11, 0x22, 0x33]
-    dut.array_4_to_7     = [0x44, 0x55, 0x66, 0x77]
-    dut.array_3_downto_0 = [0x88, 0x99, 0xAA, 0xBB]
-    dut.array_0_to_3     = [0xCC, 0xDD, 0xEE, 0xFF]
 
-    await Timer(1000, 'ns')
-
-    _check_value(tlog, dut.array_7_downto_4, [0x00, 0x11, 0x22, 0x33])
-    _check_value(tlog, dut.array_4_to_7    , [0x44, 0x55, 0x66, 0x77])
-    _check_value(tlog, dut.array_3_downto_0, [0x88, 0x99, 0xAA, 0xBB])
-    _check_value(tlog, dut.array_0_to_3    , [0xCC, 0xDD, 0xEE, 0xFF])
-
-
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
+# GHDL unable to put values on nested array types (gh-2588)
+# iverilog flattens multi-dimensional unpacked arrays (gh-2595)
+@cocotb.test(
+    expect_error=Exception
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
+    else ()
+)
 async def test_ndim_array_handles(dut):
     """Test getting and setting multi-dimensional array values using the handle of the full array."""
 
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
 
-    # Set values with '<=' operator
-    dut.array_2d <= [
+    dut.array_2d.value = [
         [0xF0, 0xE0, 0xD0, 0xC0],
         [0xB0, 0xA0, 0x90, 0x80]
     ]
@@ -69,27 +58,18 @@ async def test_ndim_array_handles(dut):
 
     _check_value(tlog, dut.array_2d, [[0xF0, 0xE0, 0xD0, 0xC0], [0xB0, 0xA0, 0x90, 0x80]])
 
-    # Set values through HierarchyObject.__setattr__ method on 'dut' handle
-    dut.array_2d = [
-        [0x00, 0x11, 0x22, 0x33],
-        [0x44, 0x55, 0x66, 0x77]
-    ]
 
-    await Timer(1000, 'ns')
-
-    _check_value(tlog, dut.array_2d, [[0x00, 0x11, 0x22, 0x33], [0x44, 0x55, 0x66, 0x77]])
-
-
-@cocotb.test()
+# GHDL unable to put values on nested array types (gh-2588)
+@cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def test_1dim_array_indexes(dut):
     """Test getting and setting values of array indexes."""
 
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
 
-    dut.array_7_downto_4 <= [0xF0, 0xE0, 0xD0, 0xC0]
-    dut.array_4_to_7     <= [0xB0, 0xA0, 0x90, 0x80]
-    dut.array_3_downto_0 <= [0x70, 0x60, 0x50, 0x40]
-    dut.array_0_to_3     <= [0x30, 0x20, 0x10, 0x00]
+    dut.array_7_downto_4.value = [0xF0, 0xE0, 0xD0, 0xC0]
+    dut.array_4_to_7.value = [0xB0, 0xA0, 0x90, 0x80]
+    dut.array_3_downto_0.value = [0x70, 0x60, 0x50, 0x40]
+    dut.array_0_to_3.value = [0x30, 0x20, 0x10, 0x00]
 
     await Timer(1000, 'ns')
 
@@ -105,11 +85,11 @@ async def test_1dim_array_indexes(dut):
     _check_value(tlog, dut.array_0_to_3[1]    , 0x20)
 
     # Get sub-handles through NonHierarchyIndexableObject.__getitem__
-    dut.array_7_downto_4[7] <= 0xDE
-    dut.array_4_to_7[4]     <= 0xFC
-    dut.array_3_downto_0[0] <= 0xAB
-    dut.array_0_to_3[1]     <= 0x7A
-    dut.array_0_to_3[3]     <= 0x42
+    dut.array_7_downto_4[7].value = 0xDE
+    dut.array_4_to_7[4].value = 0xFC
+    dut.array_3_downto_0[0].value = 0xAB
+    dut.array_0_to_3[1].value = 0x7A
+    dut.array_0_to_3[3].value = 0x42
 
     await Timer(1000, 'ns')
 
@@ -119,29 +99,20 @@ async def test_1dim_array_indexes(dut):
     _check_value(tlog, dut.array_0_to_3[1]    , 0x7A)
     _check_value(tlog, dut.array_0_to_3[3]    , 0x42)
 
-    # Set sub-handle values through NonHierarchyIndexableObject.__setitem__
-    dut.array_7_downto_4[7] = 0x77
-    dut.array_4_to_7[4]     = 0x44
-    dut.array_3_downto_0[0] = 0x00
-    dut.array_0_to_3[1]     = 0x11
-    dut.array_0_to_3[3]     = 0x33
 
-    await Timer(1000, 'ns')
-
-    _check_value(tlog, dut.array_7_downto_4[7], 0x77)
-    _check_value(tlog, dut.array_4_to_7[4]    , 0x44)
-    _check_value(tlog, dut.array_3_downto_0[0], 0x00)
-    _check_value(tlog, dut.array_0_to_3[1]    , 0x11)
-    _check_value(tlog, dut.array_0_to_3[3]    , 0x33)
-
-
-@cocotb.test(skip=cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")))
+# GHDL unable to put values on nested array types (gh-2588)
+# iverilog flattens multi-dimensional unpacked arrays (gh-2595)
+@cocotb.test(
+    expect_error=Exception
+    if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl"))
+    else ()
+)
 async def test_ndim_array_indexes(dut):
     """Test getting and setting values of multi-dimensional array indexes."""
 
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
 
-    dut.array_2d <= [
+    dut.array_2d.value = [
         [0xF0, 0xE0, 0xD0, 0xC0],
         [0xB0, 0xA0, 0x90, 0x80]
     ]
@@ -155,8 +126,8 @@ async def test_ndim_array_indexes(dut):
     _check_value(tlog, dut.array_2d[1][28], 0x80)
 
     # Get sub-handles through NonHierarchyIndexableObject.__getitem__
-    dut.array_2d[1]     <= [0xDE, 0xAD, 0xBE, 0xEF]
-    dut.array_2d[0][31] <= 0x0F
+    dut.array_2d[1].value = [0xDE, 0xAD, 0xBE, 0xEF]
+    dut.array_2d[0][31].value = 0x0F
 
     await Timer(1000, 'ns')
 
@@ -165,25 +136,17 @@ async def test_ndim_array_indexes(dut):
     _check_value(tlog, dut.array_2d[1][30], 0xAD)
     _check_value(tlog, dut.array_2d[1][28], 0xEF)
 
-    # Set sub-handle values through NonHierarchyIndexableObject.__setitem__
-    dut.array_2d[0]     = [0xBA, 0xBE, 0xCA, 0xFE]
-    dut.array_2d[1][29] = 0x12
 
-    await Timer(1000, 'ns')
-
-    _check_value(tlog, dut.array_2d[0][31], 0xBA)
-    _check_value(tlog, dut.array_2d[0][30], 0xBE)
-    _check_value(tlog, dut.array_2d[1]    , [0xDE, 0xAD, 0x12, 0xEF])
-
-
+# GHDL unable to access record signals (gh-2591)
+# Icarus doesn't support structs (gh-2592)
 @cocotb.test(expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith(("icarus", "ghdl")) else ())
 async def test_struct(dut):
     """Test setting and getting values of structs."""
-    cocotb.fork(Clock(dut.clk, 1000, 'ns').start())
-    dut.inout_if.a_in <= 1
+    cocotb.start_soon(Clock(dut.clk, 1000, 'ns').start())
+    dut.inout_if.a_in.value = 1
     await Timer(1000, 'ns')
     _check_value(tlog, dut.inout_if.a_in, 1)
-    dut.inout_if.a_in <= 0
+    dut.inout_if.a_in.value = 0
     await Timer(1000, 'ns')
     _check_value(tlog, dut.inout_if.a_in, 0)
 
@@ -202,10 +165,10 @@ def assert_raises(exc_type):
 async def test_exceptions(dut):
     """Test that correct Exceptions are raised."""
     with assert_raises(TypeError):
-        dut.array_7_downto_4 <= (0xF0, 0xE0, 0xD0, 0xC0)
+        dut.array_7_downto_4.value = (0xF0, 0xE0, 0xD0, 0xC0)
     with assert_raises(TypeError):
-        dut.array_4_to_7      = Exception("Exception Object")
+        dut.array_4_to_7.value = Exception("Exception Object")
     with assert_raises(ValueError):
-        dut.array_3_downto_0 <= [0x70, 0x60, 0x50]
+        dut.array_3_downto_0.value = [0x70, 0x60, 0x50]
     with assert_raises(ValueError):
-        dut.array_0_to_3     <= [0x40, 0x30, 0x20, 0x10, 0x00]
+        dut.array_0_to_3.value = [0x40, 0x30, 0x20, 0x10, 0x00]

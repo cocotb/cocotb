@@ -51,6 +51,8 @@ extern "C" {
  *  readable level names for these value, but may support other values.
  */
 enum gpi_log_levels {
+    GPITrace = 5,   ///< Prints `TRACE` by default. Information about execution
+                    ///< of simulator callbacks and Python / simulator contexts
     GPIDebug = 10,  ///< Prints `DEBUG` by default. Verbose information, useful
                     ///< for debugging
     GPIInfo = 20,  ///< Prints `INFO` by default. Information about major events
@@ -68,6 +70,11 @@ enum gpi_log_levels {
  */
 #define LOG_(level, ...) \
     gpi_log("cocotb.gpi", level, __FILE__, __func__, __LINE__, __VA_ARGS__);
+
+/** Logs a message at TRACE log level using the current log handler.
+    Automatically populates arguments using information in the called context.
+ */
+#define LOG_TRACE(...) LOG_(GPITrace, __VA_ARGS__)
 
 /** Logs a message at DEBUG log level using the current log handler.
     Automatically populates arguments using information in the called context.

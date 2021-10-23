@@ -12,12 +12,12 @@ async def test_trim_vals(tb_hdl):
     """Set trim value of regulator and measure resulting voltage."""
 
     probed_node = "tb_regulator.i_regulator.vout"
-    tb_hdl.vdd_val <= 7.7
-    tb_hdl.vss_val <= 0.0
+    tb_hdl.vdd_val.value = 7.7
+    tb_hdl.vss_val.value = 0.0
 
     probedata = []
     for trim_val in [0, 3, -5]:
-        tb_hdl.trim_val <= trim_val
+        tb_hdl.trim_val.value = trim_val
         await Timer(1, units="ns")
         trimmed_volt = await get_voltage(tb_hdl, probed_node)
         tb_hdl._log.info(
@@ -35,8 +35,8 @@ async def test_trim_vals(tb_hdl):
 async def get_voltage(tb_hdl, node):
     """Measure voltage on *node*."""
     await Timer(1, units="ps")  # let trim_val take effect
-    tb_hdl.i_analog_probe.node_to_probe <= node.encode("ascii")
-    tb_hdl.i_analog_probe.probe_voltage_toggle <= ~int(tb_hdl.i_analog_probe.probe_voltage_toggle)
+    tb_hdl.i_analog_probe.node_to_probe.value = node.encode("ascii")
+    tb_hdl.i_analog_probe.probe_voltage_toggle.value = ~int(tb_hdl.i_analog_probe.probe_voltage_toggle)
     await Timer(1, units="ps")  # waiting time needed for the analog values to be updated
     tb_hdl._log.debug("Voltage on node {} is {:.4} V".format(
         node, tb_hdl.i_analog_probe.voltage.value))

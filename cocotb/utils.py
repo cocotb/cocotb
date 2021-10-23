@@ -26,7 +26,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """Collection of handy functions."""
-
+from typing import Union
+from numbers import Real
+from decimal import Decimal
 import ctypes
 import inspect
 import math
@@ -51,28 +53,38 @@ def _get_simulator_precision():
 def get_python_integer_types():
     warnings.warn(
         "This is an internal cocotb function, use six.integer_types instead",
-        DeprecationWarning)
+        DeprecationWarning, stacklevel=2)
     return (int,)
 
 
 # Simulator helper functions
-def get_sim_time(units=None):
+def get_sim_time(units: str = "step") -> int:
     """Retrieves the simulation time from the simulator.
 
     Args:
-        units (str or None, optional): String specifying the units of the result
-            (one of ``None``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
-            ``None`` will return the raw simulation time.
+        units: String specifying the units of the result
+            (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
+            ``'step'`` will return the raw simulation time.
+
+            .. deprecated:: 1.6.0
+                Using ``None`` as the *units* argument is deprecated, use ``'step'`` instead.
 
     Returns:
         The simulation time in the specified units.
+
+    .. versionchanged:: 1.6.0
+        Support ``'step'`` as the the *units* argument to mean "simulator time step".
     """
     timeh, timel = simulator.get_sim_time()
 
     result = (timeh << 32 | timel)
 
-    if units is not None:
+    if units not in (None, "step"):
         result = get_time_from_sim_steps(result, units)
+    if units is None:
+        warnings.warn(
+            'Using units=None is deprecated, use units="step" instead.',
+            DeprecationWarning, stacklevel=2)
 
     return result
 
@@ -87,13 +99,13 @@ def _ldexp10(frac, exp):
         return frac / (10 ** -exp)
 
 
-def get_time_from_sim_steps(steps, units):
+def get_time_from_sim_steps(steps: int, units: str) -> int:
     """Calculates simulation time in the specified *units* from the *steps* based
     on the simulator precision.
 
     Args:
-        steps (int): Number of simulation steps.
-        units (str): String specifying the units of the result
+        steps: Number of simulation steps.
+        units: String specifying the units of the result
             (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
     Returns:
@@ -102,41 +114,68 @@ def get_time_from_sim_steps(steps, units):
     return _ldexp10(steps, _get_simulator_precision() - _get_log_time_scale(units))
 
 
-def get_sim_steps(time, units="step"):
+def get_sim_steps(
+    time: Union[Real, Decimal],
+    units: str = "step",
+    *,
+    round_mode: str = "error"
+) -> int:
     """Calculates the number of simulation time steps for a given amount of *time*.
 
+    When *round_mode* is ``"error"``, a :exc:`ValueError` is thrown if the value cannot
+    be accurately represented in terms of simulator time steps.
+    When *round_mode* is ``"round"``, ``"ceil"``, or ``"floor"``, the corresponding
+    rounding function from the standard library will be used to round to a simulator
+    time step.
+
     Args:
-        time (numbers.Real or decimal.Decimal):  The value to convert to simulation time steps.
-        units (str, optional):  String specifying the units of the result
+        time: The value to convert to simulation time steps.
+        units: String specifying the units of the result
             (one of ``'step'``, ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
-            ``'step'`` means time is already in simulation time steps.
+            ``'step'`` means *time* is already in simulation time steps.
+        round_mode: String specifying how to handle time values that sit between time steps
+            (one of ``'error'``, ``'round'``, ``'ceil'``, ``'floor'``).
 
     Returns:
-        int: The number of simulation time steps.
+        The number of simulation time steps.
 
     Raises:
-        :exc:`ValueError`: If given *time* cannot be represented by simulator precision.
+        ValueError: if the value cannot be represented accurately in terms of simulator
+            time steps when *round_mode* is ``"error"``.
 
     .. versionchanged:: 1.5
-        Support ``'step'`` as the the *units* argument to mean "simulator time step".
+        Support ``'step'`` as the *units* argument to mean "simulator time step".
+
+    .. versionchanged:: 1.6
+        Support rounding modes.
     """
-    result = time
     if units not in (None, "step"):
-        result = _ldexp10(result, _get_log_time_scale(units) - _get_simulator_precision())
+        result = _ldexp10(time, _get_log_time_scale(units) - _get_simulator_precision())
+    else:
+        result = time
     if units is None:
         warnings.warn(
             'Using units=None is deprecated, use units="step" instead.',
             DeprecationWarning, stacklevel=2)
         units="step"  # don't propagate deprecated value
 
-    result_rounded = math.floor(result)
+    if round_mode == "error":
+        result_rounded = math.floor(result)
+        if result_rounded != result:
+            precision = _get_simulator_precision()
+            raise ValueError(
+                f"Unable to accurately represent {time}({units}) with the simulator precision of 1e{precision}"
+            )
+    elif round_mode == "ceil":
+        result_rounded = math.ceil(result)
+    elif round_mode == "round":
+        result_rounded = round(result)
+    elif round_mode == "floor":
+        result_rounded = math.floor(result)
+    else:
+        raise ValueError(f"Invalid round_mode specifier: {round_mode}")
 
-    if result_rounded != result:
-        raise ValueError("Unable to accurately represent {}({}) with the "
-                         "simulator precision of 1e{}".format(
-                             time, units, _get_simulator_precision()))
-
-    return int(result_rounded)
+    return result_rounded
 
 
 def _get_log_time_scale(units):
@@ -147,7 +186,7 @@ def _get_log_time_scale(units):
             (one of ``'fs'``, ``'ps'``, ``'ns'``, ``'us'``, ``'ms'``, ``'sec'``).
 
     Returns:
-        The the ``log10()`` of the scale factor for the time unit.
+        The ``log10()`` of the scale factor for the time unit.
     """
     scale = {
         'fs' :    -15,
@@ -259,6 +298,10 @@ def hexdump(x: bytes) -> str:
         is not an appropriate type for binary data. Doing so anyway
         will encode the string to ``latin1``.
 
+    .. deprecated:: 1.6.0
+        The function will be removed in the next major version.
+        Use :func:`scapy.utils.hexdump` instead.
+
     Example:
         >>> print(hexdump(b'this somewhat long string'))
         0000   74 68 69 73 20 73 6F 6D 65 77 68 61 74 20 6C 6F   this somewhat lo
@@ -266,6 +309,9 @@ def hexdump(x: bytes) -> str:
         <BLANKLINE>
     """
     # adapted from scapy.utils.hexdump
+    warnings.warn(
+        "cocotb.utils.hexdump is deprecated. Use scapy.utils.hexdump instead.",
+        DeprecationWarning, stacklevel=2)
     rs = ""
     if isinstance(x, str):
         warnings.warn(
@@ -302,6 +348,10 @@ def hexdiffs(x: bytes, y: bytes) -> str:
         is not an appropriate type for binary data. Doing so anyway
         will encode the string to ``latin1``.
 
+    .. deprecated:: 1.6.0
+        The function will be removed in the next major version.
+        Use :func:`scapy.utils.hexdiff` instead.
+
     Example:
         >>> print(hexdiffs(b'a', b'b'))
         0000      61                                               a
@@ -313,6 +363,9 @@ def hexdiffs(x: bytes, y: bytes) -> str:
         <BLANKLINE>
     """
     # adapted from scapy.utils.hexdiff
+    warnings.warn(
+        "cocotb.utils.hexdiffs is deprecated. Use scapy.utils.hexdiff instead.",
+        DeprecationWarning, stacklevel=2)
 
     def highlight(string: str, colour=ANSI.COLOR_HILITE_HEXDIFF_DEFAULT) -> str:
         """Highlight with ANSI colors if possible/requested and not running in GUI."""

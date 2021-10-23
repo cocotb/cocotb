@@ -13,6 +13,7 @@ Tests related to timing triggers
 import cocotb
 import pytest
 import warnings
+import pytest
 from cocotb.triggers import Timer, RisingEdge, ReadOnly, ReadWrite, Join, NextTimeStep, First, TriggerException
 from cocotb.utils import get_sim_time, get_sim_steps
 from cocotb.clock import Clock
@@ -29,9 +30,9 @@ async def test_function_reentrant_clock(dut):
     clock = dut.clk
     timer = Timer(100, "ns")
     for i in range(10):
-        clock <= 0
+        clock.value = 0
         await timer
-        clock <= 1
+        clock.value = 1
         await timer
 
 
@@ -99,7 +100,7 @@ async def do_test_cached_write_in_readonly(dut):
     global exited
     await RisingEdge(dut.clk)
     await ReadOnly()
-    dut.clk <= 0
+    dut.clk.value = 0
     exited = True
 
 
@@ -111,17 +112,23 @@ async def do_test_afterdelay_in_readonly(dut, delay):
     exited = True
 
 
-@cocotb.test(expect_error=TriggerException if cocotb.LANGUAGE in ["verilog"] and cocotb.SIM_NAME.lower().startswith("riviera") else (),
-             expect_fail=cocotb.SIM_NAME.lower().startswith(("icarus",
-                                                             "modelsim",
-                                                             "ncsim",
-                                                             "xmsim")))
+# Riviera and Questa (in Verilog) correctly fail to register ReadWrite after ReadOnly
+# Riviera and Questa (in VHDL) incorrectly allow registering ReadWrite after ReadOnly
+@cocotb.test(
+    expect_error=TriggerException
+    if cocotb.LANGUAGE in ["verilog"]
+    and cocotb.SIM_NAME.lower().startswith(("riviera", "modelsim"))
+    else (),
+    expect_fail=cocotb.SIM_NAME.lower().startswith(
+        ("icarus", "ncsim", "xmsim")
+    ),
+)
 async def test_readwrite_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
     exited = False
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.fork(do_test_readwrite_in_readonly(dut))
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+    coro = cocotb.start_soon(do_test_readwrite_in_readonly(dut))
     await First(Join(coro), Timer(10_000, "ns"))
     clk_gen.kill()
     assert exited
@@ -132,8 +139,8 @@ async def test_cached_write_in_readonly(dut):
     """Test doing invalid sim operation"""
     global exited
     exited = False
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.fork(do_test_cached_write_in_readonly(dut))
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+    coro = cocotb.start_soon(do_test_cached_write_in_readonly(dut))
     await First(Join(coro), Timer(10_000, "ns"))
     clk_gen.kill()
     assert exited
@@ -144,8 +151,8 @@ async def test_afterdelay_in_readonly_valid(dut):
     """Test Timer delay after ReadOnly phase"""
     global exited
     exited = False
-    clk_gen = cocotb.fork(Clock(dut.clk, 100, "ns").start())
-    coro = cocotb.fork(do_test_afterdelay_in_readonly(dut, 1))
+    clk_gen = cocotb.start_soon(Clock(dut.clk, 100, "ns").start())
+    coro = cocotb.start_soon(do_test_afterdelay_in_readonly(dut, 1))
     await First(Join(coro), Timer(100_000, "ns"))
     clk_gen.kill()
     assert exited
@@ -162,10 +169,10 @@ async def test_writes_have_taken_effect_after_readwrite(dut):
         dut.stream_in_data.setimmediatevalue(2)
 
     # queue a background task to do a manual write
-    waiter = cocotb.fork(write_manually())
+    waiter = cocotb.start_soon(write_manually())
 
     # do a delayed write. This will be overwritten
-    dut.stream_in_data <= 3
+    dut.stream_in_data.value = 3
     await waiter
 
     # check that the write we expected took precedence
@@ -213,7 +220,7 @@ async def test_readwrite(dut):
     """ Test that ReadWrite can be waited on """
     # gh-759
     await Timer(1, "ns")
-    dut.clk <= 1
+    dut.clk.value = 1
     await ReadWrite()
 
 
@@ -260,6 +267,27 @@ async def test_time_units_eq_None(dut):
         assert 'Using units=None is deprecated, use units="step" instead.' in str(w[-1].message)
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        await cocotb.triggers.with_timeout(example(), timeout_time=222222, timeout_unit=None)
+        await cocotb.triggers.with_timeout(example(), timeout_time=12_000_000, timeout_unit=None)
         assert issubclass(w[-1].category, DeprecationWarning)
         assert 'Using timeout_unit=None is deprecated, use timeout_unit="step" instead.' in str(w[-1].message)
+
+
+@cocotb.test()
+async def test_timer_round_mode(_):
+
+    # test invalid round_mode specifier
+    with pytest.raises(ValueError) as e:
+        Timer(1, "step", round_mode="notvalid")
+    assert "invalid" in str(e).lower()
+
+    # test default, update if default changes
+    with pytest.raises(ValueError):
+        Timer(0.5, "step")
+
+    # test valid
+    with pytest.raises(ValueError):
+        Timer(0.5, "step", round_mode="error")
+    assert Timer(24.0, "step", round_mode="error").sim_steps == 24
+    assert Timer(1.2, "step", round_mode="floor").sim_steps == 1
+    assert Timer(1.2, "step", round_mode="ceil").sim_steps == 2
+    assert Timer(1.2, "step", round_mode="round").sim_steps == 1

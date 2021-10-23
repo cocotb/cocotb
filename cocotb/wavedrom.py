@@ -160,7 +160,7 @@ class trace:
         for sig in self._signals:
             sig.clear()
         self.enable()
-        self._coro = cocotb.fork(self._monitor())
+        self._coro = cocotb.start_soon(self._monitor())
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

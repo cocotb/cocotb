@@ -21,20 +21,22 @@ Reference Card
 *coro*: a coroutine; *task*: a running coroutine
 
 +------------------------+-----------------------------------------------------------------+
-| Assign                 | ``dut.mysignal <= 0xFF00``                                      |
+| Assign                 | ``dut.mysignal.value = 0xFF00``                                 |
 +------------------------+-----------------------------------------------------------------+
 | Assign immediately     | ``dut.mysignal.setimmediatevalue(0xFF00)``                      |
 +------------------------+-----------------------------------------------------------------+
-| Assign metavalue       | ``dut.mysignal <= BinaryValue("X")``                            |
+| Assign metavalue       | ``dut.mysignal.value = BinaryValue("X")``                       |
 +------------------------+-----------------------------------------------------------------+
 | Read                   | | ``val = dut.mysignal.value``                                  |
-|                        | | (``mysig = dut.mysignal`` *creates an alias/reference)*       |
+|                        | | (``mysig = dut.mysignal`` *creates an alias/reference*)       |
 +------------------------+-----------------------------------------------------------------+
 | Bit slice              | | ``mybit = dut.myarray[0].value``                              |
 |                        | | ``mybits = dut.mysignal.value[0]``                            |
 +------------------------+-----------------------------------------------------------------+
 | Convert                | | ``val = dut.mysignal.value.integer``                          |
 |                        | | ``val = dut.mysignal.value.binstr``                           |
++------------------------+-----------------------------------------------------------------+
+| Vector length          | ``num_bits = len(dut.mysignal)``                                |
 +------------------------+-----------------------------------------------------------------+
 | Check                  | ``assert dut.mysignal.value == exp, "Not as expected!"``        |
 +------------------------+-----------------------------------------------------------------+
@@ -44,14 +46,14 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 | Wait time              | ``await cocotb.triggers.Timer(12, "ns")``                       |
 +------------------------+-----------------------------------------------------------------+
-| Generate clock         | ``clk = cocotb.fork(Clock(dut.clk, 12, "ns").start())``         |
+| Generate clock         | ``clk = await cocotb.start(Clock(dut.clk, 12, "ns").start())``  |
 +------------------------+-----------------------------------------------------------------+
 | Wait for signal edge   | | ``await cocotb.triggers.RisingEdge(dut.mysignal)``            |
 |                        | | ``await cocotb.triggers.FallingEdge(dut.mysignal)``           |
 |                        | | ``await cocotb.triggers.Edge(dut.mysignal)``                  |
 +------------------------+-----------------------------------------------------------------+
-| Run coros concurrently | | ``task_0 = cocotb.fork(coro_0())``                            |
-|                        | | ``task_1 = cocotb.scheduler.start_soon(coro)``                |
+| Run coros concurrently | | ``task_0 = await cocotb.start(coro_0())``  (start coro now)   |
+|                        | | ``task_1 = cocotb.start_soon(coro)``                          |
 |                        | | ``result = await task_0``                                     |
 +------------------------+-----------------------------------------------------------------+
 | Resume on Task 0 or 1  | ``await cocotb.triggers.First(task_0, task_1)``                 |
@@ -59,6 +61,21 @@ Reference Card
 | Resume on Task 0 and 1 | ``await cocotb.triggers.Combine(task_0, task_1)``               |
 +------------------------+-----------------------------------------------------------------+
 | Kill coro              | ``task_0.kill()``                                               |
++------------------------+-----------------------------------------------------------------+
+|                                                                                          |
++------------------------+-----------------------------------------------------------------+
+| Queue write            | | ``await cocotb.queue.Queue.put(item)``                        |
+|                        | | ``cocotb.queue.Queue.put_nowait(item)``                       |
++------------------------+-----------------------------------------------------------------+
+| Queue read             | | ``item = await cocotb.queue.Queue.get()``                     |
+|                        | | ``item = cocotb.queue.Queue.get_nowait()``                    |
++------------------------+-----------------------------------------------------------------+
+| Queue attributes       | | ``queue.maxsize``  (``None`` *== unlimited*)                  |
+|                        | | ``queue.qsize()``                                             |
+|                        | | ``queue.empty()``                                             |
+|                        | | ``queue.full()``                                              |
++------------------------+-----------------------------------------------------------------+
+| Specialized queues     | ``.PriorityQueue``, ``.LifoQueue``                              |
 +------------------------+-----------------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+
@@ -74,13 +91,13 @@ Reference Card
 +------------------------+-----------------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+
-| Force value            | ``dut.mysignal <= cocotb.handle.Force(0xFF00)``                 |
+| Force value            | ``dut.mysignal.value = cocotb.handle.Force(0xFF00)``            |
 +------------------------+-----------------------------------------------------------------+
-| Keep value             | ``dut.mysignal <= cocotb.handle.Freeze()``                      |
+| Keep value             | ``dut.mysignal.value = cocotb.handle.Freeze()``                 |
 +------------------------+-----------------------------------------------------------------+
-| Release Force/Freeze   | ``dut.mysignal <= cocotb.handle.Release()``                     |
+| Release Force/Freeze   | ``dut.mysignal.value = cocotb.handle.Release()``                |
 +------------------------+-----------------------------------------------------------------+
-| *Normal assignment with* ``<=`` *is a "deposit"* (``cocotb.handle.Deposit()``)           |
+| *Normal assignment is a "deposit"* (``cocotb.handle.Deposit()``)                         |
 +------------------------+-----------------------------------------------------------------+
 |                                                                                          |
 +------------------------+-----------------------------------------------------------------+

@@ -35,7 +35,6 @@ the ReadOnly (and this is invalid, at least in Modelsim).
 """
 from contextlib import contextmanager
 import os
-import sys
 import logging
 import threading
 import inspect
@@ -458,6 +457,17 @@ class Scheduler:
                     # happened in gh-957)
                     del coro
 
+                # Handle any newly queued coroutines that need to be scheduled
+                while self._pending_coros:
+                    task = self._pending_coros.pop(0)
+                    if _debug:
+                        self.log.debug("Scheduling queued coroutine %s" % (task._coro.__qualname__))
+                    self._schedule(task)
+                    if _debug:
+                        self.log.debug("Scheduled queued coroutine %s" % (task._coro.__qualname__))
+
+                    del task
+
                 # Schedule may have queued up some events so we'll burn through those
                 while self._pending_events:
                     if _debug:
@@ -487,6 +497,12 @@ class Scheduler:
 
     def _unschedule(self, coro):
         """Unschedule a coroutine.  Unprime any pending triggers"""
+        if coro in self._pending_coros:
+            assert not coro.has_started()
+            self._pending_coros.remove(coro)
+            # Close coroutine so there is no RuntimeWarning that it was never awaited
+            coro.close()
+            return
 
         # Unprime the trigger this coroutine is waiting on
         trigger = coro._trigger
@@ -518,11 +534,16 @@ class Scheduler:
             except (TestComplete, AssertionError) as e:
                 coro.log.info("Test stopped by this forked coroutine")
                 e = remove_traceback_frames(e, ['_unschedule', 'get'])
-                self._test.abort(e)
+                self._abort_test(e)
             except Exception as e:
                 coro.log.error("Exception raised by this forked coroutine")
                 e = remove_traceback_frames(e, ['_unschedule', 'get'])
-                self._test.abort(e)
+                warnings.warn(
+                    '"Unwatched" tasks that throw exceptions will not cause the test to fail. '
+                    "See issue #2664 for more details.",
+                    FutureWarning
+                )
+                self._abort_test(e)
 
     def _schedule_write(self, handle, write_func, *args):
         """ Queue `write_func` to be called on the next ReadWrite trigger. """
@@ -580,7 +601,9 @@ class Scheduler:
 
     def _queue(self, coroutine):
         """Queue a coroutine for execution"""
-        self._pending_coros.append(coroutine)
+        # Don't queue the same coroutine more than once (gh-2503)
+        if coroutine not in self._pending_coros:
+            self._pending_coros.append(coroutine)
 
     def queue_function(self, coro):
         """
@@ -678,7 +701,7 @@ class Scheduler:
 
         if isinstance(coroutine, RunningTask):
             return coroutine
-        if inspect.iscoroutine(coroutine):
+        if isinstance(coroutine, Coroutine):
             return RunningTask(coroutine)
         if inspect.iscoroutinefunction(coroutine):
             raise TypeError(
@@ -692,7 +715,7 @@ class Scheduler:
                 "decorator?"
                 .format(coroutine)
             )
-        if sys.version_info >= (3, 6) and inspect.isasyncgen(coroutine):
+        if inspect.isasyncgen(coroutine):
             raise TypeError(
                 "{} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await.".format(
@@ -728,6 +751,8 @@ class Scheduler:
         starts the given coroutine only after the current coroutine yields control.
         This is useful when the coroutine to be forked has logic before the first
         :keyword:`await` that may not be safe to execute immediately.
+
+        .. versionadded:: 1.5
         """
 
         task = self.create_task(coro)
@@ -804,7 +829,7 @@ class Scheduler:
         if isinstance(result, cocotb.triggers.Waitable):
             return self._trigger_from_waitable(result)
 
-        if sys.version_info >= (3, 6) and inspect.isasyncgen(result):
+        if inspect.isasyncgen(result):
             raise TypeError(
                 "{} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await.".format(
@@ -904,10 +929,6 @@ class Scheduler:
                         self._pending_threads.remove(ext)
                         self._pending_events.append(ext.event)
 
-            # Handle any newly queued coroutines that need to be scheduled
-            while self._pending_coros:
-                self.add(self._pending_coros.pop(0))
-
     def finish_test(self, exc):
         """
         .. deprecated:: 1.5
@@ -917,8 +938,26 @@ class Scheduler:
         return self._finish_test(exc)
 
     def _finish_test(self, exc):
-        self._test.abort(exc)
+        self._abort_test(exc)
         self._check_termination()
+
+    def _abort_test(self, exc):
+        """Force this test to end early, without executing any cleanup.
+
+        This happens when a background task fails, and is consistent with
+        how the behavior has always been. In future, we may want to behave
+        more gracefully to allow the test body to clean up.
+
+        `exc` is the exception that the test should report as its reason for
+        aborting.
+        """
+        if self._test._outcome is not None:  # pragma: no cover
+            raise InternalError("Outcome already has a value, but is being set again.")
+        outcome = outcomes.Error(exc)
+        if _debug:
+            self._test.log.debug(f"outcome forced to {outcome}")
+        self._test._outcome = outcome
+        self._unschedule(self._test)
 
     def finish_scheduler(self, exc):
         """
@@ -937,7 +976,7 @@ class Scheduler:
 
         if self._test:
             self.log.debug("Issue sim closedown result to regression object")
-            self._test.abort(exc)
+            self._abort_test(exc)
             cocotb.regression_manager.handle_result(self._test)
 
     def cleanup(self):
@@ -963,6 +1002,10 @@ class Scheduler:
                 if _debug:
                     self.log.debug("Killing %s" % str(coro))
                 coro.kill()
+
+        # kill any queued coroutines
+        for task in self._pending_coros:
+            task.kill()
 
         if self._main_thread is not threading.current_thread():
             raise Exception("Cleanup() called outside of the main thread")

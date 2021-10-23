@@ -62,7 +62,7 @@ extern COCOTBUTILS_EXPORT int is_python_context;
             exit(1);                                     \
         }                                                \
         ++is_python_context;                             \
-        LOG_DEBUG("Returning to Python");                \
+        LOG_TRACE("Returning to Python");                \
     } while (0)
 
 #define to_simulator()                                              \
@@ -72,7 +72,7 @@ extern COCOTBUTILS_EXPORT int is_python_context;
             exit(1);                                                \
         }                                                           \
         --is_python_context;                                        \
-        LOG_DEBUG("Returning to simulator");                        \
+        LOG_TRACE("Returning to simulator");                        \
     } while (0)
 
 #define COCOTB_UNUSED(x) ((void)x)

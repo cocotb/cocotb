@@ -41,13 +41,13 @@ from typing import Dict, List, Optional, Union
 from collections.abc import Coroutine
 
 import cocotb.handle
-import cocotb.log
 from cocotb.scheduler import Scheduler
 from cocotb.regression import RegressionManager
 from cocotb.decorators import RunningTask
 
 # Things we want in the cocotb namespace
-from cocotb.decorators import test, coroutine, hook, function, external  # noqa: F401
+from cocotb.decorators import test, coroutine, function, external  # noqa: F401
+from cocotb.log import _log_from_c, _filter_from_c  # noqa: F401
 
 from ._version import __version__
 
@@ -73,7 +73,8 @@ def _setup_logging():
 
     # Don't set the logging up until we've attempted to fix the standard IO,
     # otherwise it will end up connected to the unfixed IO.
-    cocotb.log.default_config()
+    from cocotb.log import default_config
+    default_config()
     log = logging.getLogger(__name__)
 
     # we can't log these things until the logging is set up!
@@ -171,6 +172,43 @@ def fork(coro: Union[RunningTask, Coroutine]) -> RunningTask:
     return scheduler.add(coro)
 
 
+def start_soon(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+    """
+    Schedule a coroutine to be run concurrently.
+
+    Note that this is not an async function,
+    and the new task will not execute until the calling task yields control.
+
+    .. versionadded:: 1.6.0
+    """
+    return scheduler.start_soon(coro)
+
+
+async def start(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+    """
+    Schedule a coroutine to be run concurrently, then yield control to allow pending tasks to execute.
+
+    The calling task will resume execution before control is returned to the simulator.
+
+    .. versionadded:: 1.6.0
+    """
+    task = scheduler.start_soon(coro)
+    await cocotb.triggers.NullTrigger()
+    return task
+
+
+def create_task(coro: Union[RunningTask, Coroutine]) -> RunningTask:
+    """
+    Constructs a coroutine into a Task without scheduling the Task.
+
+    The Task can later be scheduled with :func:`cocotb.fork`, :func:`cocotb.start`, or
+    :func:`cocotb.start_soon`.
+
+    .. versionadded:: 1.6.0
+    """
+    return cocotb.scheduler.create_task(coro)
+
+
 # FIXME is this really required?
 _rlock = threading.RLock()
 
@@ -188,9 +226,6 @@ def _initialise_testbench(argv_):  # pragma: no cover
 
     The test must be defined by the environment variables
     :envvar:`MODULE` and :envvar:`TESTCASE`.
-
-    The environment variable :envvar:`COCOTB_HOOKS`, if present, contains a
-    comma-separated list of modules to be executed before the first test.
     """
     with _rlock:
 
@@ -204,7 +239,7 @@ def _initialise_testbench(argv_):  # pragma: no cover
                 include=["{}/*".format(os.path.dirname(__file__))])
             _library_coverage.start()
 
-        return _initialise_testbench_(argv_)
+        _initialise_testbench_(argv_)
 
 
 def _initialise_testbench_(argv_):
@@ -309,19 +344,17 @@ def _initialise_testbench_(argv_):
     regression_manager = RegressionManager.from_discovery(top)
     regression_manager.execute()
 
-    return True
-
 
 def _sim_event(level, message):
     """Function that can be called externally to signal an event."""
     # SIM_INFO = 0
     SIM_TEST_FAIL = 1
     SIM_FAIL = 2
-    from cocotb.result import TestFailure, SimFailure
+    from cocotb.result import SimFailure
 
     if level is SIM_TEST_FAIL:
         scheduler.log.error("Failing test at simulator request")
-        scheduler._finish_test(TestFailure(f"Failure from external source: {message}"))
+        scheduler._finish_test(AssertionError(f"Failure from external source: {message}"))
     elif level is SIM_FAIL:
         # We simply return here as the simulator will exit
         # so no cleanup is needed
@@ -330,8 +363,6 @@ def _sim_event(level, message):
         scheduler._finish_scheduler(SimFailure(msg))
     else:
         scheduler.log.error("Unsupported sim event")
-
-    return True
 
 
 def process_plusargs():

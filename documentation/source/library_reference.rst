@@ -38,14 +38,32 @@ Writing and Generating tests
 
 .. autoclass:: cocotb.function
 
-.. autoclass:: cocotb.hook
-
 .. autoclass:: cocotb.regression.TestFactory
     :members:
     :member-order: bysource
 
 Interacting with the Simulator
 ==============================
+
+.. _task-management:
+
+Task Management
+---------------
+
+.. autofunction:: cocotb.fork
+
+.. autofunction:: cocotb.start_soon
+
+.. autofunction:: cocotb.start
+
+.. autofunction:: cocotb.create_task
+
+.. autofunction:: cocotb.decorators.RunningTask.join
+
+.. autofunction:: cocotb.decorators.RunningTask.kill
+
+Handle Values
+-------------
 
 .. currentmodule:: cocotb.binary
 
@@ -58,11 +76,31 @@ Interacting with the Simulator
     :member-order: bysource
     :exclude-members: get_value, get_buff, get_binstr, get_value_signed
 
-.. autofunction:: cocotb.fork
+HDL Datatypes
+-------------
 
-.. autofunction:: cocotb.decorators.RunningTask.join
+These are a set of datatypes that model the behavior of common HDL datatypes.
+They can be used independently of cocotb for modeling and will replace :class:`BinaryValue`
+as the types used by cocotb's `simulator handles <#simulation-object-handles>`_.
 
-.. autofunction:: cocotb.decorators.RunningTask.kill
+.. versionadded:: 1.6.0
+
+.. autoclass:: cocotb.types.Logic
+
+.. autoclass:: cocotb.types.Bit
+
+.. autoclass:: cocotb.types.Range
+    :members:
+    :exclude-members: count, index
+
+.. autofunction:: cocotb.types.concat
+
+.. autoclass:: cocotb.types.Array
+    :members:
+    :exclude-members: count, index
+
+.. autoclass:: cocotb.types.LogicArray
+    :members:
 
 Triggers
 --------
@@ -130,7 +168,7 @@ Logging
 
 .. attribute:: logging.LogRecord.created_sim_time
 
-    The result of :func:`get_sim_time` at the point the log was created
+    The result of :func:`~cocotb.utils.get_sim_time` at the point the log was created
     (in simulator units). The formatter is responsible for converting this
     to something like nanoseconds via :func:`~cocotb.utils.get_time_from_sim_steps`.
 
@@ -151,6 +189,7 @@ Simulation Object Handles
     :show-inheritance:
     :synopsis: Classes for simulation objects.
     :exclude-members: Deposit, Force, Freeze, Release
+    :special-members: __len__
 ..
    Excluding the Assignment Methods that are getting their own section below
 
@@ -168,6 +207,18 @@ Assignment Methods
 .. autoclass:: Freeze
 
 .. autoclass:: Release
+
+Other Handle Methods
+--------------------
+
+.. currentmodule:: None
+
+.. function:: len(handle)
+
+   Return the "length" (the number of elements) of the underlying object.
+
+   For vectors this is the number of bits.
+
 
 Miscellaneous
 =============

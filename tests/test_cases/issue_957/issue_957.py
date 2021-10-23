@@ -9,7 +9,7 @@ async def wait_edge(dut):
 
 @cocotb.test()
 async def test1(dut):
-    cocotb.fork(wait_edge(dut))
+    cocotb.start_soon(wait_edge(dut))
     await Timer(10, 'ns')
 
 

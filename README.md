@@ -16,8 +16,10 @@
 
 The current stable version of cocotb requires:
 
-- Python 3.5+
-- A C++11 compiler
+- Python 3.6+
+- Python development packages (Python/C API headers and embedding library)
+- GCC 4.8.1+, Clang 3.3+ or Microsoft Visual C++ 14.21+ and associated development packages
+- GNU Make 3+
 - An HDL simulator (such as [Icarus Verilog](https://docs.cocotb.org/en/stable/simulator_support.html#icarus-verilog),
 [Verilator](https://docs.cocotb.org/en/stable/simulator_support.html#verilator),
 [GHDL](https://docs.cocotb.org/en/stable/simulator_support.html#ghdl) or
@@ -77,11 +79,11 @@ async def test_dff_simple(dut):
     """ Test that d propagates to q """
 
     clock = Clock(dut.clk, 10, units="us")  # Create a 10us period clock on port clk
-    cocotb.fork(clock.start())  # Start the clock
+    cocotb.start_soon(clock.start())  # Start the clock
 
     for i in range(10):
         val = random.randint(0, 1)
-        dut.d <= val  # Assign the random value val to the input port d
+        dut.d.value = val  # Assign the random value val to the input port d
         await FallingEdge(dut.clk)
         assert dut.q.value == val, "output q was incorrect on the {}th cycle".format(i)
 ```

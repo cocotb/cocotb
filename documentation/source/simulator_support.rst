@@ -34,7 +34,7 @@ Accessing bits of a vector directly was not possible until (including) version 1
 
 .. code-block:: python3
 
-    dut.stream_in_data[2] <= 1
+    dut.stream_in_data[2].value = 1
 
 See also https://github.com/steveicarus/iverilog/issues/323.
 
@@ -84,7 +84,9 @@ Verilator
     Verilator is in the process of adding more functionality to its VPI interface, which is used by cocotb to access the design.
     Therefore, Verilator support in cocotb is currently experimental.
     Some features of cocotb may not work correctly or at all.
-    It is highly recommended to use the latest version of Verilator.
+
+    **Currently cocotb only supports Verilator 4.106 (no earlier or later version).**
+    See also the corresponding cocotb issue :issue:`2300` and `upstream issue <https://github.com/verilator/verilator/issues/2778>`_.
 
 In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 
@@ -95,10 +97,6 @@ In order to use this simulator, set :make:var:`SIM` to ``verilator``:
 One major limitation compared to standard Verilog simulators is that it does not support delayed assignments when accessed from cocotb.
 
 To run cocotb with Verilator, you need ``verilator`` in your PATH.
-
-.. note::
-
-    cocotb requires Verilator 4.106 or later.
 
 .. versionadded:: 1.3
 
@@ -250,8 +248,9 @@ Issues for this simulator
 -------------------------
 
 * `All issues with label category:simulators:questa <https://github.com/cocotb/cocotb/issues?q=is%3Aissue+-label%3Astatus%3Aduplicate+label%3Acategory%3Asimulators%3Aquesta>`_
-* Questa 2021.1 and later added experimental support the VHPI interface in addition to the proprietary FLI interface.
-  However, this support is not complete yet and users of cocotb should continue to use FLI for the time being.
+* Questa 2021.1 and later added experimental support the VHPI interface in addition to the proprietary FLI interface, which can be enabled by setting the :envvar:`VHDL_GPI_INTERFACE` environment variable to ``vhpi`` before running cocotb.
+  **However, VHPI support in Questa is not complete yet and users of cocotb should continue to use FLI for the time being.**
+
 
 .. _sim-modelsim:
 

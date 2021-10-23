@@ -14,9 +14,9 @@ from cocotb.triggers import Timer
 async def clock_gen(clock):
     """Example clock gen for test use"""
     for i in range(5):
-        clock <= 0
+        clock.value = 0
         await Timer(100, "ns")
-        clock <= 1
+        clock.value = 1
         await Timer(100, "ns")
     clock._log.warning("Clock generator finished!")
 

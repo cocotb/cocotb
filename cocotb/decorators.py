@@ -26,17 +26,16 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys
-import time
-import logging
 import functools
 import inspect
 import os
 import warnings
+import collections.abc
 
 import cocotb
 from cocotb.log import SimLog
 from cocotb.result import ReturnValue
-from cocotb.utils import get_sim_time, lazy_property, remove_traceback_frames, extract_coro_stack
+from cocotb.utils import lazy_property, remove_traceback_frames, extract_coro_stack
 from cocotb import outcomes
 
 # Sadly the Python standard logging module is very slow so it's better not to
@@ -88,11 +87,12 @@ class RunningTask:
         triggers to fire.
     """
 
+    _name: str = "Task"  # class name of schedulable task
     _id_count = 0  # used by the scheduler for debug
 
     def __init__(self, inst):
 
-        if inspect.iscoroutine(inst):
+        if isinstance(inst, collections.abc.Coroutine):
             self._natively_awaitable = True
         elif inspect.isgenerator(inst):
             self._natively_awaitable = False
@@ -101,7 +101,7 @@ class RunningTask:
                 "Coroutine function {} should be called prior to being "
                 "scheduled."
                 .format(inst))
-        elif sys.version_info >= (3, 6) and inspect.isasyncgen(inst):
+        elif inspect.isasyncgen(inst):
             raise TypeError(
                 "{} is an async generator, not a coroutine. "
                 "You likely used the yield keyword instead of await.".format(
@@ -117,7 +117,7 @@ class RunningTask:
 
         self._task_id = self._id_count
         RunningTask._id_count += 1
-        self.__name__ = "Task %d" % self._task_id
+        self.__name__ = f"{type(self)._name} {self._task_id}"
         self.__qualname__ = self.__name__
 
     @lazy_property
@@ -271,77 +271,13 @@ class RunningCoroutine(RunningTask):
 
 
 class RunningTest(RunningCoroutine):
-    """Add some useful Test functionality to a RunningCoroutine."""
+    """
+    The result of calling a :class:`cocotb.test` decorated object.
 
-    class ErrorLogHandler(logging.Handler):
-        def __init__(self, fn):
-            self.fn = fn
-            logging.Handler.__init__(self, level=logging.DEBUG)
+    All this class does is change ``__name__`` to show "Test" instead of "Task".
+    """
 
-        def handle(self, record):
-            # For historical reasons, only logs sent directly to the `cocotb`
-            # logger are recorded - logs to `cocotb.scheduler` for instance
-            # are not recorded. Changing this behavior may have significant
-            # memory usage implications, so should not be done without some
-            # thought.
-            if record.name == 'cocotb':
-                self.fn(self.format(record))
-
-    def __init__(self, inst, parent):
-        self.error_messages = []
-        RunningCoroutine.__init__(self, inst, parent)
-        self.log = SimLog("cocotb.test.%s" % inst.__qualname__, id(self))
-        self.started = False
-        self.start_time = 0
-        self.start_sim_time = 0
-        self.expect_fail = parent.expect_fail
-        self.expect_error = parent.expect_error
-        self.skip = parent.skip
-        self.stage = parent.stage
-        self.__name__ = "Test %s" % inst.__name__
-        self.__qualname__ = "Test %s" % inst.__qualname__
-
-        # make sure not to create a circular reference here
-        self.handler = RunningTest.ErrorLogHandler(self.error_messages.append)
-
-    def __str__(self):
-        return f"<{self.__name__}>"
-
-    def _advance(self, outcome):
-        if not self.started:
-            self.log.info("Starting test: \"%s\"\nDescription: %s" %
-                          (self.funcname, self.__doc__))
-            self.start_time = time.time()
-            self.start_sim_time = get_sim_time('ns')
-            self.started = True
-        return super()._advance(outcome)
-
-    # like RunningTask.kill(), but with a way to inject a failure
-    def abort(self, exc):
-        """Force this test to end early, without executing any cleanup.
-
-        This happens when a background task fails, and is consistent with
-        how the behavior has always been. In future, we may want to behave
-        more gracefully to allow the test body to clean up.
-
-        `exc` is the exception that the test should report as its reason for
-        aborting.
-        """
-        if self._outcome is not None:
-            # imported here to avoid circular imports
-            from cocotb.scheduler import InternalError
-            raise InternalError("Outcome already has a value, but is being set again.")
-        outcome = outcomes.Error(exc)
-        if _debug:
-            self.log.debug(f"outcome forced to {outcome}")
-        self._outcome = outcome
-        cocotb.scheduler._unschedule(self)
-
-    def sort_name(self):
-        if self.stage is None:
-            return f"{self.module}.{self.funcname}"
-        else:
-            return "%s.%d.%s" % (self.module, self.stage, self.funcname)
+    _name: str = "Test"
 
 
 class coroutine:
@@ -450,40 +386,12 @@ class _decorator_helper(type):
 
 
 @public
-class hook(coroutine, metaclass=_decorator_helper):
-    r"""
-    Decorator to mark a function as a hook for cocotb.
-
-    Used as ``@cocotb.hook()``.
-
-    All hooks are run at the beginning of a cocotb test suite, prior to any
-    test code being run.
-
-    .. deprecated:: 1.5
-        Hooks are deprecated.
-        Their functionality can be replaced with module-level Python code,
-        higher-priority tests using the ``stage`` argument to :func:`cocotb.test`\ s,
-        or custom decorators which perform work before and after the tests
-        they decorate.
-    """
-
-    def __init__(self, f):
-        super().__init__(f)
-        warnings.warn(
-            "Hooks have been deprecated. See the documentation for suggestions on alternatives.",
-            DeprecationWarning, stacklevel=2)
-        self.im_hook = True
-        self.name = self._func.__name__
-
-
-@public
 class test(coroutine, metaclass=_decorator_helper):
-    """Decorator to mark a function as a test.
+    """
+    Decorator to mark a Callable which returns a Coroutine as a test.
 
-    All tests are coroutines.  The test decorator provides
-    some common reporting etc., a test timeout and allows
-    us to mark tests as expected failures.
-
+    The test decorator provides a test timeout, and allows us to mark tests as skipped
+    or expecting errors or failures.
     Tests are evaluated in the order they are defined in a test module.
 
     Used as ``@cocotb.test(...)``.
@@ -505,7 +413,7 @@ class test(coroutine, metaclass=_decorator_helper):
             .. versionadded:: 1.3
 
             .. deprecated:: 1.5
-                Using None as the the *timeout_unit* argument is deprecated, use ``'step'`` instead.
+                Using ``None`` as the *timeout_unit* argument is deprecated, use ``'step'`` instead.
 
         expect_fail (bool, optional):
             Don't mark the result as a failure if the test fails.
@@ -590,4 +498,6 @@ class test(coroutine, metaclass=_decorator_helper):
         self.name = self._func.__name__
 
     def __call__(self, *args, **kwargs):
-        return RunningTest(self._func(*args, **kwargs), self)
+        inst = self._func(*args, **kwargs)
+        coro = RunningTest(inst, self)
+        return coro

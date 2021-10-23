@@ -28,7 +28,7 @@
  ******************************************************************************/
 
 /**
- * @file   simulatormodule.c
+ * @file   simulatormodule.cpp
  * @brief Python extension to provide access to the simulator
  *
  * Uses GPI calls to interface to the simulator.
@@ -136,7 +136,7 @@ static PyObject *gpi_hdl_richcompare(PyObject *self, PyObject *other, int op) {
     }
 }
 
-// Initialize the python type slots
+// Initialize the Python type slots
 template <typename gpi_hdl>
 PyTypeObject fill_common_slots() {
     PyTypeObject type = {};

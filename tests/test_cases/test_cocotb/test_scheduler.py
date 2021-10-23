@@ -10,12 +10,25 @@ Test for scheduler and coroutine behavior
 """
 import logging
 import re
+from typing import Coroutine
 
 import cocotb
-from cocotb.triggers import Join, Timer, RisingEdge, Trigger, NullTrigger, Combine, Event, ReadOnly, First
+import pytest
 from cocotb.clock import Clock
-from common import clock_gen
+from cocotb.decorators import RunningTask
+from cocotb.triggers import (
+    Combine,
+    Event,
+    First,
+    Join,
+    NullTrigger,
+    ReadOnly,
+    RisingEdge,
+    Timer,
+    Trigger,
+)
 
+from common import clock_gen
 
 test_flag = False
 
@@ -175,6 +188,21 @@ async def test_stack_overflow(dut):
 
 
 @cocotb.test()
+async def test_stack_overflow_pending_coros(dut):
+    """
+    Test against stack overflow when queueing many pending coroutines
+    before yielding to scheduler.
+    """
+    # gh-2489
+    async def simple_coroutine():
+        await Timer(10, "step")
+
+    coros = [cocotb.start_soon(simple_coroutine()) for _ in range(1024)]
+
+    await Combine(*coros)
+
+
+@cocotb.test()
 async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
     # gh-1348
     # NOTE: this test depends on scheduling priority.
@@ -197,7 +225,7 @@ async def test_kill_coroutine_waiting_on_the_same_trigger(dut):
     cocotb.fork(killer())
 
     await Timer(2, "step")  # allow Timer in victim to pass making it schedule RisingEdge after the killer
-    dut.clk <= 1
+    dut.clk.value = 1
     await Timer(1, "step")
     assert not victim_resumed
 
@@ -247,7 +275,7 @@ async def test_event_set_schedule(dut):
         nonlocal waiter_scheduled
         waiter_scheduled = True
 
-    cocotb.fork(waiter(e))
+    await cocotb.start(waiter(e))
 
     e.set()
 
@@ -271,16 +299,16 @@ async def test_last_scheduled_write_wins(dut):
     @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
     async def first():
         await Timer(1, "ns")
-        log.info("scheduling stream_in_data <= 1")
-        dut.stream_in_data <= 1
+        log.info("scheduling stream_in_data.value = 1")
+        dut.stream_in_data.value = 1
         e.set()
 
     @cocotb.coroutine   # TODO: Remove once Combine accepts bare coroutines
     async def second():
         await Timer(1, "ns")
         await e.wait()
-        log.info("scheduling stream_in_data <= 2")
-        dut.stream_in_data <= 2
+        log.info("scheduling stream_in_data.value = 2")
+        dut.stream_in_data.value = 2
 
     await Combine(first(), second())
 
@@ -288,9 +316,15 @@ async def test_last_scheduled_write_wins(dut):
 
     assert dut.stream_in_data.value.integer == 2
 
-    await Timer(1, "ns")
-    dut.array_7_downto_4 <= [1, 2, 3, 4]
-    dut.array_7_downto_4[7] <= 10
+
+# GHDL unable to put values on nested array types (gh-2588)
+@cocotb.test(expect_error=Exception if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
+async def test_last_scheduled_write_wins_array(dut):
+    """
+    Test that the last scheduled write for an *arrayed* signal handle is the value that is written.
+    """
+    dut.array_7_downto_4.value = [1, 2, 3, 4]
+    dut.array_7_downto_4[7].value = 10
 
     await ReadOnly()
 
@@ -317,7 +351,7 @@ async def test_task_repr(dut):
     log.info(repr(gen_task))
     assert re.match(r"<Task \d+ created coro=generator_coro_outer\(\)>", repr(gen_task))
 
-    cocotb.fork(gen_task)
+    cocotb.start_soon(gen_task)
 
     await gen_e.wait()
 
@@ -360,7 +394,7 @@ async def test_task_repr(dut):
     async def coroutine_outer():
         return await coroutine_middle()
 
-    coro_task = cocotb.fork(coroutine_outer())
+    coro_task = await cocotb.start(coroutine_outer())
 
     coro_e.set(coro_task)
 
@@ -380,7 +414,7 @@ async def test_task_repr(dut):
     async def coroutine_first():
         await First(coroutine_wait(), Timer(2, units='ns'))
 
-    coro_task = cocotb.fork(coroutine_first())
+    coro_task = await cocotb.start(coroutine_first())
 
     log.info(repr(coro_task))
     assert re.match(
@@ -391,11 +425,17 @@ async def test_task_repr(dut):
     async def coroutine_timer():
         await Timer(1, units='ns')
 
-    coro_task = cocotb.fork(coroutine_timer())
+    coro_task = await cocotb.start(coroutine_timer())
 
     # Trigger.__await__ should be popped from the coroutine stack
     log.info(repr(coro_task))
     assert re.match(r"<Task \d+ pending coro=coroutine_timer\(\) trigger=<Timer of 1000.00ps at \w+>>", repr(coro_task))
+
+    # created but not scheduled yet
+    coro_task = cocotb.start_soon(coroutine_outer())
+
+    log.info(repr(coro_task))
+    assert re.match(r"<Task \d+ created coro=coroutine_outer\(\)>", repr(coro_task))
 
 
 @cocotb.test()
@@ -407,7 +447,7 @@ async def test_start_soon_async(_):
         nonlocal a
         a = 1
 
-    cocotb.scheduler.start_soon(example())
+    cocotb.start_soon(example())
     assert a == 0
     await NullTrigger()
     assert a == 1
@@ -418,11 +458,211 @@ async def test_start_soon_decorator(_):
     """ Tests start_soon works with RunningTasks """
     a = 0
 
+    @cocotb.decorators.coroutine
     async def example():
         nonlocal a
         a = 1
 
-    cocotb.scheduler.start_soon(example())
+    cocotb.start_soon(example())
     assert a == 0
     await NullTrigger()
     assert a == 1
+
+
+@cocotb.test()
+async def test_start_soon_scheduling(dut):
+    """Test order of scheduling when using start_soon."""
+    coro_scheduled = False
+
+    def react_wrapper(trigger):
+        """Function to prime trigger with."""
+        log = logging.getLogger("cocotb.test")
+        log.debug("react_wrapper start")
+        assert coro_scheduled is False
+        cocotb.scheduler._react(trigger)
+        assert coro_scheduled is True
+        log.debug("react_wrapper end")
+
+    async def coro():
+        nonlocal coro_scheduled
+        coro_scheduled = True
+
+    t = Timer(1, 'step')
+    # pre-prime with wrapper function instead of letting scheduler prime it normally
+    t.prime(react_wrapper)
+    await t
+    # react_wrapper is now on the stack
+    cocotb.start_soon(coro())  # coro() should run before returning to the simulator
+    await Timer(1, 'step')  # await a GPITrigger to ensure control returns to simulator
+    assert coro_scheduled is True
+
+
+@cocotb.test()
+async def test_await_start_soon(_):
+    """Test awaiting start_soon queued coroutine before it starts."""
+    async def coro():
+        start_time = cocotb.utils.get_sim_time(units="ns")
+        await Timer(1, "ns")
+        assert cocotb.utils.get_sim_time(units="ns") == start_time + 1
+
+    coro = cocotb.start_soon(coro())
+
+    await coro
+
+
+@cocotb.test()
+async def test_kill_start_soon_task(_):
+    """Test killing task queued by start_soon."""
+    coro_scheduled = False
+
+    async def coro():
+        nonlocal coro_scheduled
+        coro_scheduled = True
+
+    task = cocotb.start_soon(coro())
+    task.kill()
+
+    await NullTrigger()
+    assert coro_scheduled is False
+    assert task._finished
+
+
+start_soon_started = False
+
+
+@cocotb.test()
+async def test_test_end_after_start_soon(_):
+    """Test ending test before start_soon queued coroutine starts."""
+    async def coro():
+        global start_soon_started
+        start_soon_started = True
+
+    cocotb.start_soon(coro())
+
+
+@cocotb.test()
+async def test_previous_start_soon_not_scheduled(_):
+    """Test that queued coroutine from previous test did not run.
+
+    NOTE: This test must be after test_test_end_after_start_soon.
+    """
+    assert start_soon_started is False
+
+
+@cocotb.test()
+async def test_start(_):
+    async def coro():
+        await Timer(1, 'step')
+
+    task1 = await cocotb.start(coro())
+    assert type(task1) is cocotb.decorators.RunningTask
+    assert task1.has_started()
+    assert not task1._finished
+
+    await Timer(1, 'step')
+    assert task1._finished
+
+    task2 = cocotb.create_task(coro())
+    task3 = await cocotb.start(task2)
+    assert task3 is task2
+
+    await Timer(1, 'step')
+
+    task4 = cocotb.start_soon(coro())
+    assert not task4.has_started()
+    task5 = await cocotb.start(coro())
+    assert task4.has_started()
+    await Timer(1, 'step')
+    assert task4._finished
+
+    async def coro_val():
+        return 1
+
+    task6 = await cocotb.start(coro_val())
+    assert task6._finished
+    assert await task6 == 1
+
+
+@cocotb.test()
+async def test_start_scheduling(dut):
+    """Test that start resumes calling task before control is yielded to simulator."""
+    sim_resumed = False
+    coro_started = False
+
+    def react_wrapper(trigger):
+        """Function to prime trigger with."""
+        nonlocal sim_resumed
+        log = logging.getLogger("cocotb.test")
+        log.debug("react_wrapper start")
+        sim_resumed = False
+        cocotb.scheduler._react(trigger)
+        sim_resumed = True
+        log.debug("react_wrapper end")
+
+    async def coro():
+        nonlocal coro_started
+        coro_started = True
+
+    t = Timer(1, 'step')
+    # pre-prime with wrapper function instead of letting scheduler prime it normally
+    t.prime(react_wrapper)
+    await t
+    # react_wrapper is now on the stack
+    assert sim_resumed is False
+    await cocotb.start(coro())
+    assert sim_resumed is False
+    assert coro_started is True
+    await Timer(1, 'step')  # await a GPITrigger to ensure control returns to simulator
+    assert sim_resumed is True
+
+
+@cocotb.test()
+async def test_create_task(_):
+
+    # proper construction from coroutines
+    async def coro():
+        pass
+
+    assert type(cocotb.create_task(coro())) == RunningTask
+
+    # proper construction from Coroutine objects
+    class CoroType(Coroutine):
+        def __init__(self):
+            self._coro = coro()
+
+        def send(self, value):
+            return self._coro.send(value)
+
+        def throw(self, exception):
+            self._coro.throw(exception)
+
+        def close(self):
+            self._coro.close()
+
+        def __await__(self):
+            yield from self._coro.__await__()
+
+    assert type(cocotb.create_task(CoroType())) == RunningTask
+
+    # fail if given async generators
+    async def agen():
+        yield None
+
+    with pytest.raises(TypeError):
+        cocotb.create_task(agen())
+
+    # fail if given coroutine function
+    with pytest.raises(TypeError):
+        cocotb.create_task(coro)
+
+    # fail if given Coroutine Type
+    with pytest.raises(TypeError):
+        cocotb.create_task(CoroType)
+
+    # fail if given async generator function
+    with pytest.raises(TypeError):
+        cocotb.create_task(agen)
+
+    # fail if given random type
+    with pytest.raises(TypeError):
+        cocotb.create_task(object())

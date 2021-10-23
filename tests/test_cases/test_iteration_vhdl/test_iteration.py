@@ -27,7 +27,6 @@ import logging
 
 import cocotb
 from cocotb.triggers import Timer, Combine
-from cocotb.result import TestFailure
 
 
 def total_object_count():
@@ -46,7 +45,7 @@ def total_object_count():
 
     # Riviera-PRO
     if SIM_NAME.startswith("riviera"):
-        if SIM_VERSION.startswith(("2019.10", "2020.")):
+        if SIM_VERSION.startswith(("2019.10", "2020.", "2021.")):
             return 27359
         if SIM_VERSION.startswith("2016.02"):
             return 32393
@@ -82,11 +81,11 @@ async def recursive_discovery(dut):
         return count
     total = dump_all_the_things(dut)
     tlog.info("Found a total of %d things", total)
-    if total != pass_total:
-        raise TestFailure("Expected %d objects but found %d" % (pass_total, total))
+    assert total == pass_total
 
 
-@cocotb.test()
+# GHDL unable to access signals in generate loops (gh-2594)
+@cocotb.test(expect_error=IndexError if cocotb.SIM_NAME.lower().startswith("ghdl") else ())
 async def discovery_all(dut):
     """Discover everything on top-level."""
     dut._log.info("Iterating over top-level to discover objects")
@@ -106,13 +105,21 @@ async def dual_iteration(dut):
             thing._log.info("Found something: %s", thing._fullname)
             await Timer(1)
 
-    loop_one = cocotb.fork(iteration_loop())
-    loop_two = cocotb.fork(iteration_loop())
+    loop_one = cocotb.start_soon(iteration_loop())
+    loop_two = cocotb.start_soon(iteration_loop())
 
     await Combine(loop_one, loop_two)
 
 
-@cocotb.test(expect_fail=(cocotb.SIM_NAME.lower().startswith("riviera") and cocotb.SIM_VERSION.startswith(("2019.10", "2020."))) or cocotb.SIM_NAME.lower().startswith("aldec"))
+# GHDL unable to access record types (gh-2591)
+@cocotb.test(
+    expect_fail=(
+        cocotb.SIM_NAME.lower().startswith("riviera")
+        and cocotb.SIM_VERSION.startswith(("2019.10", "2020.", "2021."))
+    )
+    or cocotb.SIM_NAME.lower().startswith("aldec"),
+    expect_error=AttributeError if cocotb.SIM_NAME.lower().startswith("ghdl") else (),
+)
 async def test_n_dimension_array(dut):
     """Test iteration over multi-dimensional array."""
     tlog = logging.getLogger("cocotb.test")

@@ -8,9 +8,10 @@ Tests of cocotb.test functionality
 * expect_fail
 * timeout
 """
+from collections.abc import Coroutine
+
 import cocotb
 from cocotb.triggers import Timer
-from cocotb.result import TestFailure
 from common import clock_gen
 
 
@@ -32,7 +33,7 @@ async def test_tests_are_tests(dut):
 # just to be sure...
 @cocotb.test(expect_fail=True)
 async def test_async_test_can_fail(dut):
-    raise TestFailure
+    assert False
 
 
 @cocotb.test()
@@ -106,3 +107,22 @@ async def test_ordering_1(dut):
     global last_ordered_test
     val, last_ordered_test = last_ordered_test, 1
     assert val == 2
+
+
+@cocotb.test()
+class TestClass(Coroutine):
+
+    def __init__(self, dut):
+        self._coro = self.run(dut)
+
+    async def run(self, dut):
+        pass
+
+    def send(self, value):
+        self._coro.send(value)
+
+    def throw(self, exception):
+        self._coro.throw(exception)
+
+    def __await__(self):
+        yield from self._coro.__await__()

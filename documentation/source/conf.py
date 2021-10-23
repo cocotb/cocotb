@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 
 import cocotb
-from distutils.version import LooseVersion
+from cocotb._vendor.distutils_version import LooseVersion
 
 os.environ["SPHINX_BUILD"] = "1"
 
@@ -35,20 +35,23 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'sphinx.ext.extlinks',
     'sphinx.ext.intersphinx',
     'sphinxcontrib.makedomain',
     'sphinx.ext.inheritance_diagram',
-    'cairosvgconverter',
+    'sphinxcontrib.cairosvgconverter',
     'breathe',
     'sphinx_issues',
     'sphinxarg.ext',
     'sphinxcontrib.spelling',
     'sphinx_tabs.tabs',
+    'sphinxcontrib.details.directive',
     ]
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'ghdl': ('https://ghdl.readthedocs.io/en/latest', None)
+    'ghdl': ('https://ghdl.readthedocs.io/en/latest', None),
+    'scapy': ('https://scapy.readthedocs.io/en/latest', None),
 }
 
 # Github repo
@@ -346,3 +349,11 @@ in_progress_notes = subprocess.check_output(['towncrier', '--draft', '--name', '
                                             universal_newlines=True)
 with open('master-notes.rst', 'w') as f:
     f.write(in_progress_notes)
+
+# -- External link helpers -----------------------------------------------------
+
+extlinks = {
+   'wikipedia': ('https://en.wikipedia.org/wiki/%s', None),
+   'reposharp': ('https://github.com/cocotb/cocotb/issues/%s', '#'),
+   'reposrc':   ('https://github.com/cocotb/cocotb/blob/master/%s', None)
+}
