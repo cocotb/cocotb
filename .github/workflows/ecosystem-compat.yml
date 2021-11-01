@@ -1,0 +1,59 @@
+# Copyright cocotb contributors
+# Licensed under the Revised BSD License, see LICENSE for details.
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Tests to ensure that projects depending on cocotb continue to work with the
+# latest development version of cocotb.
+#
+# Generally, we test the development version of cocotb against supported,
+# released versions of the other projects. (It is expected that the projects
+# themselves test their in-development code against the released version of
+# cocotb.)
+
+name: Ecosystem compatibility tests
+
+on:
+  # Run daily at midnight (UTC).
+  schedule:
+    - cron: '0 0 * * *'
+  # Allow triggering a CI run from the web UI.
+  workflow_dispatch:
+
+jobs:
+  cocotb-coverage:
+    name: Test cocotb-coverage 1.1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install Icarus Verilog
+        run: sudo apt install -y --no-install-recommends iverilog
+
+      - name: Checkout cocotb repository
+        uses: actions/checkout@v2
+        with:
+          path: cocotb
+
+      - name: Install the development version of cocotb
+        run: pip3 install ./cocotb
+
+      - name: Checkout cocotb-coverage repository
+        uses: actions/checkout@v2
+        with:
+          repository: mciepluc/cocotb-coverage
+          path: cocotb-coverage
+
+      - name: Install the release version of cocotb-coverage
+        run: pip3 install cocotb-coverage==1.1
+
+      - name: Run tests
+        # Don't run tests through tox (as present in cocotb-coverage) to be able
+        # to override the cocotb dependency.
+        run: |
+          pip3 install pytest
+          cd cocotb-coverage
+          export SIM=icarus
+          make -k -C tests
