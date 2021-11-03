@@ -905,7 +905,7 @@ class ClockCycles(Waitable):
 
 async def with_timeout(trigger, timeout_time, timeout_unit="step"):
     r"""
-    Waits on triggers and coroutines, throws an exception if it waits longer than the given time.
+    Waits on triggers or coroutines, throws an exception if it waits longer than the given time.
 
     When a :term:`python:coroutine` is passed,
     the callee coroutine is started,
