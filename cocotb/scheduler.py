@@ -293,7 +293,7 @@ class Scheduler:
     def _test_completed(self, trigger=None):
         """Called after a test and its cleanup have completed"""
         if _debug:
-            self.log.debug("begin_test called with trigger: %s" %
+            self.log.debug("_test_completed called with trigger: %s" %
                            (str(trigger)))
         if _profiling:
             ps = pstats.Stats(_profile).sort_stats('cumulative')
