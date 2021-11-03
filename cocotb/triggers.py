@@ -89,8 +89,9 @@ class Trigger(Awaitable):
         Sub-classes must override this, but should end by calling the base class
         method.
 
-        Do not call this directly within coroutines, it is intended to be used
-        only by the scheduler.
+        .. warning::
+            Do not call this directly within a :term:`task`. It is intended to be used
+            only by the scheduler.
         """
         self.primed = True
 
@@ -104,8 +105,9 @@ class Trigger(Awaitable):
         Sub-classes may override this, but should end by calling the base class
         method.
 
-        Do not call this directly within coroutines, it is intended to be used
-        only by the scheduler.
+        .. warning::
+            Do not call this directly within a :term:`task`. It is intended to be used
+            only by the scheduler.
         """
         self.primed = False
 
