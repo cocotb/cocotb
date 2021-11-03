@@ -63,18 +63,6 @@ def public(f):
 public(public)  # Emulate decorating ourself
 
 
-@public
-class CoroutineComplete(Exception):
-    """To ensure that a coroutine has completed before we fire any triggers
-    that are blocked waiting for the coroutine to end, we create a sub-class
-    exception that the scheduler catches and the callbacks are attached
-    here.
-    """
-
-    def __init__(self, text=""):
-        Exception.__init__(self, text)
-
-
 class RunningTask:
     """Per instance wrapper around a running generator.
 
@@ -190,24 +178,18 @@ class RunningTask:
             outcome: The :any:`outcomes.Outcome` object to resume with.
 
         Returns:
-            The object yielded from the coroutine
+            The object yielded from the coroutine or None if coroutine finished
 
-        Raises:
-            CoroutineComplete: If the coroutine returns or throws an error, self._outcome is set, and
-           :exc:`CoroutineComplete` is thrown.
         """
         try:
             self._started = True
             return outcome.send(self._coro)
         except ReturnValue as e:
             self._outcome = outcomes.Value(e.retval)
-            raise CoroutineComplete()
         except StopIteration as e:
             self._outcome = outcomes.Value(e.value)
-            raise CoroutineComplete()
         except BaseException as e:
             self._outcome = outcomes.Error(remove_traceback_frames(e, ['_advance', 'send']))
-            raise CoroutineComplete()
 
     def send(self, value):
         return self._coro.send(value)

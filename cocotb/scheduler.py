@@ -876,31 +876,25 @@ class Scheduler:
             if _debug:
                 self.log.debug(f"Scheduling with {send_outcome}")
 
-            coro_completed = False
-            try:
-                coroutine._trigger = None
-                result = coroutine._advance(send_outcome)
-                if _debug:
-                    self.log.debug("Coroutine %s yielded %s (mode %d)" %
-                                   (coroutine._coro.__qualname__, str(result), self._mode))
+            coroutine._trigger = None
+            result = coroutine._advance(send_outcome)
 
-            except cocotb.decorators.CoroutineComplete:
+            if coroutine._finished:
                 if _debug:
                     self.log.debug("Coroutine {} completed with {}".format(
                         coroutine, coroutine._outcome
                     ))
-                coro_completed = True
-
-            # this can't go in the else above, as that causes unwanted exception
-            # chaining
-            if coro_completed:
+                assert result is None
                 self._unschedule(coroutine)
 
             # Don't handle the result if we're shutting down
             if self._terminate:
                 return
 
-            if not coro_completed:
+            if not coroutine._finished:
+                if _debug:
+                    self.log.debug("Coroutine %s yielded %s (mode %d)" %
+                                   (coroutine._coro.__qualname__, str(result), self._mode))
                 try:
                     result = self._trigger_from_any(result)
                 except TypeError as exc:
