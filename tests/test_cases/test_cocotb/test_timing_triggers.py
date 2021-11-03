@@ -179,7 +179,24 @@ async def test_writes_have_taken_effect_after_readwrite(dut):
     assert dut.stream_in_data.value == 2
 
 
-@cocotb.coroutine   # cocotb.coroutine necessary to use in with_timeout
+@cocotb.coroutine
+async def example_coro():
+    await Timer(10, 'ns')
+    return 1
+
+
+@cocotb.test()
+async def test_timeout_func_coro_fail(dut):
+    with pytest.raises(cocotb.result.SimTimeoutError):
+        await cocotb.triggers.with_timeout(example_coro(), timeout_time=1, timeout_unit='ns')
+
+
+@cocotb.test()
+async def test_timeout_func_coro_pass(dut):
+    res = await cocotb.triggers.with_timeout(example_coro(), timeout_time=100, timeout_unit='ns')
+    assert res == 1
+
+
 async def example():
     await Timer(10, 'ns')
     return 1
@@ -187,12 +204,8 @@ async def example():
 
 @cocotb.test()
 async def test_timeout_func_fail(dut):
-    try:
+    with pytest.raises(cocotb.result.SimTimeoutError):
         await cocotb.triggers.with_timeout(example(), timeout_time=1, timeout_unit='ns')
-    except cocotb.result.SimTimeoutError:
-        pass
-    else:
-        assert False, "Expected a Timeout"
 
 
 @cocotb.test()
