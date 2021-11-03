@@ -921,7 +921,7 @@ async def with_timeout(trigger, timeout_time, timeout_unit="step"):
     If timeout occurs, the callee `continues to run`
     and :exc:`SimTimeoutError` is raised.
 
-    When a :func:`~cocotb.fork`\ ed coroutine is passed,
+    When a :term:`task` is passed,
     the caller blocks until the callee completes
     and the callee's result is returned to the caller.
     If timeout occurs, the callee `continues to run`
