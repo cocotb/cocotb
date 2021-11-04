@@ -338,18 +338,19 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-    - uses: msys2/setup-msys2@v2.4.2
+    - uses: msys2/setup-msys2@v2
       with:
+        # Workaround for https://github.com/cocotb/cocotb/issues/2739
+        location: D:/a/_temp/msys
         msystem: MINGW64
         update: true
-        install: |
-            git
-            make
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-python-pip
-            mingw-w64-x86_64-python-pytest
-            mingw-w64-x86_64-python-wheel
-            mingw-w64-x86_64-${{ matrix.pkg }}
+        install: git make
+        pacboy: >-
+          gcc:p
+          python-pip:p
+          python-pytest:p
+          python-wheel:p
+          ${{ matrix.pkg }}:p
     - uses: actions/checkout@v2
     - name: install cocotb
       run: pip install --no-build-isolation .
