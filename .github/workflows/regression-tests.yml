@@ -323,7 +323,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
+        sys:
+          - { icon: '⬛', msys: MINGW32 }
+          - { icon: '🟦', msys: MINGW64 }
+          - { icon: '🟨', msys: UCRT64  } # Experimental!
+        tool:
           - sim: verilator
             lang: verilog
             pkg: verilator
@@ -333,16 +337,18 @@ jobs:
             pkg: iverilog
           - sim: ghdl
             lang: vhdl
-            pkg: ghdl-llvm
+            pkg: ghdl
+    name: ${{ matrix.sys.icon }} ${{ matrix.sys.msys }} | ${{ matrix.tool.sim }}
     defaults:
       run:
         shell: msys2 {0}
     steps:
-    - uses: msys2/setup-msys2@v2
+    - name: '${{ matrix.sys.icon }} Setup MSYS2'
+      uses: msys2/setup-msys2@v2
       with:
         # Workaround for https://github.com/cocotb/cocotb/issues/2739
         location: D:/a/_temp/msys
-        msystem: MINGW64
+        msystem: ${{ matrix.sys.msys }}
         update: true
         install: git make
         pacboy: >-
@@ -350,10 +356,10 @@ jobs:
           python-pip:p
           python-pytest:p
           python-wheel:p
-          ${{ matrix.pkg }}:p
+          ${{ matrix.tool.pkg }}:p
     - uses: actions/checkout@v2
     - name: install cocotb
       run: pip install --no-build-isolation .
     - name: run regressions
-      run: make SIM=${{ matrix.sim }} TOPLEVEL_LANG=${{ matrix.lang }}
-      continue-on-error: ${{matrix.may_fail || false}}
+      run: make SIM=${{ matrix.tool.sim }} TOPLEVEL_LANG=${{ matrix.tool.lang }}
+      continue-on-error: ${{matrix.tool.may_fail || false}}
