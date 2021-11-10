@@ -317,7 +317,6 @@ class RegressionManager:
         hasher.update(test.__qualname__.encode())
         hasher.update(test.__module__.encode())
         seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
-        print(test.__qualname__, seed, flush=True)
         random.seed(seed)
 
         return running_test
