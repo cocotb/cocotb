@@ -36,6 +36,8 @@ import traceback
 import pdb
 from typing import Any, Optional, Tuple, Iterable
 from functools import wraps
+import random
+import hashlib
 
 import cocotb
 import cocotb.ANSI as ANSI
@@ -308,8 +310,16 @@ class RegressionManager:
             self._record_result(test, test_init_outcome, 0, 0)
             return None
 
-        test = test_init_outcome.get()
-        return test
+        running_test = test_init_outcome.get()
+
+        # seed random number generator based on test module, name, and RANDOM_SEED
+        hasher = hashlib.sha1()
+        hasher.update(test.__qualname__.encode())
+        hasher.update(test.__module__.encode())
+        seed = cocotb.RANDOM_SEED + int(hasher.hexdigest(), 16)
+        random.seed(seed)
+
+        return running_test
 
     def _score_test(self, test: Test, outcome: Outcome) -> Tuple[bool, bool]:
         """
