@@ -256,8 +256,8 @@ gpi_sim_hdl gpi_get_root_handle(const char *name) {
     }
 }
 
-static GpiObjHdl *__gpi_get_handle_by_name(GpiObjHdl *parent, std::string name,
-                                           GpiImplInterface *skip_impl) {
+static GpiObjHdl *gpi_get_handle_by_name_(GpiObjHdl *parent, std::string name,
+                                          GpiImplInterface *skip_impl) {
     LOG_DEBUG("Searching for %s", name.c_str());
 
     // check parent impl *first* if it's not skipped
@@ -303,8 +303,8 @@ static GpiObjHdl *__gpi_get_handle_by_name(GpiObjHdl *parent, std::string name,
     return NULL;
 }
 
-static GpiObjHdl *__gpi_get_handle_by_raw(GpiObjHdl *parent, void *raw_hdl,
-                                          GpiImplInterface *skip_impl) {
+static GpiObjHdl *gpi_get_handle_by_raw(GpiObjHdl *parent, void *raw_hdl,
+                                        GpiImplInterface *skip_impl) {
     vector<GpiImplInterface *>::iterator iter;
 
     GpiObjHdl *hdl = NULL;
@@ -335,7 +335,7 @@ static GpiObjHdl *__gpi_get_handle_by_raw(GpiObjHdl *parent, void *raw_hdl,
 
 gpi_sim_hdl gpi_get_handle_by_name(gpi_sim_hdl base, const char *name) {
     std::string s_name = name;
-    GpiObjHdl *hdl = __gpi_get_handle_by_name(base, s_name, NULL);
+    GpiObjHdl *hdl = gpi_get_handle_by_name_(base, s_name, NULL);
     if (!hdl) {
         LOG_DEBUG(
             "Failed to find a handle named %s via any registered "
@@ -398,7 +398,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iter) {
                 LOG_DEBUG(
                     "Found a name but unable to create via native "
                     "implementation, trying others");
-                next = __gpi_get_handle_by_name(parent, name, iter->m_impl);
+                next = gpi_get_handle_by_name_(parent, name, iter->m_impl);
                 if (next) {
                     return next;
                 }
@@ -410,7 +410,7 @@ gpi_sim_hdl gpi_next(gpi_iterator_hdl iter) {
                 LOG_DEBUG(
                     "Found an object but not accessible via %s, trying others",
                     iter->m_impl->get_name_c());
-                next = __gpi_get_handle_by_raw(parent, raw_hdl, iter->m_impl);
+                next = gpi_get_handle_by_raw(parent, raw_hdl, iter->m_impl);
                 if (next) {
                     return next;
                 }
