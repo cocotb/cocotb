@@ -258,16 +258,29 @@ gpi_sim_hdl gpi_get_root_handle(const char *name) {
 
 static GpiObjHdl *__gpi_get_handle_by_name(GpiObjHdl *parent, std::string name,
                                            GpiImplInterface *skip_impl) {
-    vector<GpiImplInterface *>::iterator iter;
-
-    GpiObjHdl *hdl = NULL;
-
     LOG_DEBUG("Searching for %s", name.c_str());
 
-    for (iter = registered_impls.begin(); iter != registered_impls.end();
+    // check parent impl *first* if it's not skipped
+    if (!skip_impl || (skip_impl != parent->m_impl)) {
+        auto hdl = parent->m_impl->native_check_create(name, parent);
+        if (hdl) {
+            return CHECK_AND_STORE(hdl);
+        }
+    }
+
+    // iterate over all registered impls to see if we can get the signal
+    for (auto iter = registered_impls.begin(); iter != registered_impls.end();
          iter++) {
+        // check if impl is skipped
         if (skip_impl && (skip_impl == (*iter))) {
             LOG_DEBUG("Skipping %s implementation", (*iter)->get_name_c());
+            continue;
+        }
+
+        // already checked parent implementation
+        if ((*iter) == parent->m_impl) {
+            LOG_DEBUG("Already checked %s implementation",
+                      (*iter)->get_name_c());
             continue;
         }
 
@@ -280,17 +293,14 @@ static GpiObjHdl *__gpi_get_handle_by_name(GpiObjHdl *parent, std::string name,
            be seen discovered even if the parents implementation is not the same
            as the one that we are querying through */
 
-        // std::string &to_query = base->is_this_impl(*iter) ? s_name : fq_name;
-        if ((hdl = (*iter)->native_check_create(name, parent))) {
+        auto hdl = (*iter)->native_check_create(name, parent);
+        if (hdl) {
             LOG_DEBUG("Found %s via %s", name.c_str(), (*iter)->get_name_c());
-            break;
+            return CHECK_AND_STORE(hdl);
         }
     }
 
-    if (hdl)
-        return CHECK_AND_STORE(hdl);
-    else
-        return hdl;
+    return NULL;
 }
 
 static GpiObjHdl *__gpi_get_handle_by_raw(GpiObjHdl *parent, void *raw_hdl,
