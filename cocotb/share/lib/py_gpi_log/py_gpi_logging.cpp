@@ -2,12 +2,13 @@
 // Licensed under the Revised BSD License, see LICENSE for details.
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <Python.h>          // all things Python
-#include <gpi_logging.h>     // all things GPI logging
-#include <py_gpi_logging.h>  // PY_GPI_LOG_SIZE
+#include <Python.h>       // all things Python
+#include <gpi_logging.h>  // all things GPI logging
+#include <py_gpi_logging.h>
 
 #include <cstdarg>  // va_list, va_copy, va_end
 #include <cstdio>   // fprintf, vsnprintf
+#include <vector>   // std::vector
 
 static PyObject *pLogHandler = nullptr;
 
@@ -71,15 +72,24 @@ static void py_gpi_log_handler(void *, const char *name, int level,
         }
     }
 
-    static char log_buff[PY_GPI_LOG_SIZE];
+    static std::vector<char> log_buff(512);
 
     // Ignore truncation
     {
-        int n = vsnprintf(log_buff, sizeof(log_buff), msg, argp);
-        if (n < 0 || n >= (int)sizeof(log_buff)) {
+        log_buff.clear();
+        int n = vsnprintf(log_buff.data(), log_buff.capacity(), msg, argp);
+        if (n < 0) {
             // LCOV_EXCL_START
             fprintf(stderr, "Log message construction failed\n");
             // LCOV_EXCL_STOP
+        } else if ((unsigned)n >= log_buff.capacity()) {
+            log_buff.reserve((unsigned)n + 1);
+            vsnprintf(log_buff.data(), (unsigned)n + 1, msg, argp_copy);
+            if (n < 0) {
+                fprintf(stderr,
+                        "Log message construction failed: (error code) %d\n",
+                        n);
+            }
         }
     }
 
@@ -97,7 +107,7 @@ static void py_gpi_log_handler(void *, const char *name, int level,
         // LCOV_EXCL_STOP
     }
 
-    msg_arg = PyUnicode_FromString(log_buff);  // New reference
+    msg_arg = PyUnicode_FromString(log_buff.data());  // New reference
     if (msg_arg == NULL) {
         // LCOV_EXCL_START
         goto error;
@@ -129,8 +139,8 @@ static void py_gpi_log_handler(void *, const char *name, int level,
 error:
     // LCOV_EXCL_START
     /* Note: don't call the LOG_ERROR macro because that might recurse */
-    gpi_native_logger_vlog(name, level, pathname, funcname, lineno, msg,
-                           argp_copy);
+    gpi_native_logger_log(name, level, pathname, funcname, lineno,
+                          log_buff.data());
     gpi_native_logger_log("cocotb.gpi", GPIError, __FILE__, __func__, __LINE__,
                           "Error calling Python logging function from C++ "
                           "while logging the above");
