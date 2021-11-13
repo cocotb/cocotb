@@ -335,6 +335,12 @@ GpiObjHdl *FliImpl::native_check_create(std::string &name, GpiObjHdl *parent) {
     } else if (search_rgn) {
         mtiRegionIdT rgn;
 
+        // Looking for generates should only occur if the parent is from this
+        // implementation
+        if (!parent->is_this_impl(fli_table)) {
+            return NULL;
+        }
+
         /* If not found, check to see if the name of a generate loop and create
          * a pseudo-region */
         for (rgn = mti_FirstLowerRegion(parent->get_handle<mtiRegionIdT>());
