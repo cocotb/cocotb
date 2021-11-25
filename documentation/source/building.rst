@@ -373,6 +373,17 @@ The following variables are makefile variables, not environment variables.
     You can usually write out such a file from the simulator's GUI.
     This is currently supported for the Mentor Questa, Mentor ModelSim and Aldec Riviera simulators.
 
+.. make:var:: TOPLEVEL_LIBRARY
+
+    The name of the library that contains the :make:var:`TOPLEVEL` module/entity.
+    Defaults to the :make:var:`RTL_LIBRARY`.
+    Only supported by the Siemens EDA Questa simulator.
+
+.. make:var:: RTL_LIBRARY
+
+    The name of the library that contains :make:var:`VHDL_SOURCES` and :make:var:`VERILOG_SOURCES`.
+    Only supported by the Aldec Riviera-PRO, Aldec Active-HDL, and Siemens EDA Questa simulators.
+
 
 Library Build Process
 ---------------------
