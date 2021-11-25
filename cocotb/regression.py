@@ -633,6 +633,11 @@ def _create_test(function, name, documentation, mod, *args, **kwargs):
     async def _my_test(dut):
         await function(dut, *args, **kwargs)
 
+    _my_test.__name__ = name
+    _my_test.__qualname__ = name
+    _my_test.__doc__ = documentation
+    _my_test.__module__ = mod.__name__
+
     return cocotb.test()(_my_test)
 
 
