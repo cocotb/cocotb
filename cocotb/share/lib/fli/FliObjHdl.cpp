@@ -26,10 +26,15 @@
  ******************************************************************************/
 
 #include <bitset>
+#include <cmath>
+#include <string>
 #include <vector>
 
 #include "FliImpl.h"
 #include "acc_vhdl.h"
+
+using std::abs;
+using std::to_string;
 
 GpiCbHdl *FliSignalObjHdl::value_change_cb(int edge) {
     FliSignalCbHdl *cb = NULL;
@@ -236,11 +241,6 @@ long FliEnumObjHdl::get_signal_value_long() {
 
 int FliEnumObjHdl::set_signal_value(const int32_t value,
                                     const gpi_set_action_t action) {
-    if (action != GPI_DEPOSIT) {
-        LOG_ERROR("Force or release action not supported for FLI.");
-        return -1;
-    }
-
     if (value > m_num_enum || value < 0) {
         LOG_ERROR(
             "Attempted to set an enum with range [0,%d] with invalid value %d!",
@@ -249,14 +249,42 @@ int FliEnumObjHdl::set_signal_value(const int32_t value,
     }
 
     if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(),
-                        static_cast<mtiLongT>(value));
+        switch (action) {
+            case GPI_DEPOSIT:
+                mti_SetVarValue(get_handle<mtiVariableIdT>(),
+                                static_cast<mtiLongT>(value));
+                return 0;
+            case GPI_FORCE:
+                LOG_ERROR("Forcing VHDL variables is not supported by the FLI");
+                return -1;
+            case GPI_RELEASE:
+                LOG_ERROR(
+                    "Releasing VHDL variables is not supported by the FLI");
+                return -1;
+            default:
+                LOG_ERROR("Unknown set value action (%d)", action);
+                return -1;
+        }
     } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(),
-                           static_cast<mtiLongT>(value));
+        switch (action) {
+            case GPI_DEPOSIT:
+                mti_SetSignalValue(get_handle<mtiSignalIdT>(),
+                                   static_cast<mtiLongT>(value));
+                return 0;
+            case GPI_FORCE: {
+                std::string value_str = "10#";
+                value_str.append(to_string(abs(value)));
+                return !mti_ForceSignal(get_handle<mtiSignalIdT>(),
+                                        const_cast<char *>(value_str.c_str()),
+                                        0, MTI_FORCE_FREEZE, -1, -1);
+            }
+            case GPI_RELEASE:
+                return !mti_ReleaseSignal(get_handle<mtiSignalIdT>());
+            default:
+                LOG_ERROR("Unknown set value action (%d)", action);
+                return -1;
+        }
     }
-
-    return 0;
 }
 
 int FliLogicObjHdl::initialise(std::string &name, std::string &fq_name) {
@@ -334,21 +362,45 @@ const char *FliLogicObjHdl::get_signal_value_binstr() {
 
 int FliLogicObjHdl::set_signal_value(const int32_t value,
                                      const gpi_set_action_t action) {
-    if (action != GPI_DEPOSIT) {
-        LOG_ERROR("Force or release action not supported for FLI.");
-        return -1;
-    }
-
     if (m_fli_type == MTI_TYPE_ENUM) {
         mtiInt32T enumVal = value ? m_enum_map['1'] : m_enum_map['0'];
 
         if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), enumVal);
+            switch (action) {
+                case GPI_DEPOSIT:
+                    mti_SetVarValue(get_handle<mtiVariableIdT>(), enumVal);
+                    return 0;
+                case GPI_FORCE:
+                    LOG_ERROR(
+                        "Forcing VHDL variables is not supported by the FLI");
+                    return -1;
+                case GPI_RELEASE:
+                    LOG_ERROR(
+                        "Releasing VHDL variables is not supported by the FLI");
+                    return -1;
+                default:
+                    LOG_ERROR("Unknown set value action (%d)", action);
+                    return -1;
+            }
         } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
+            switch (action) {
+                case GPI_DEPOSIT:
+                    mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
+                    return 0;
+                case GPI_FORCE: {
+                    char const *value_str = (value ? "2#1" : "2#0");
+                    return !mti_ForceSignal(get_handle<mtiSignalIdT>(),
+                                            const_cast<char *>(value_str), 0,
+                                            MTI_FORCE_FREEZE, -1, -1);
+                }
+                case GPI_RELEASE:
+                    return !mti_ReleaseSignal(get_handle<mtiSignalIdT>());
+                default:
+                    LOG_ERROR("Unknown set value action (%d)", action);
+                    return -1;
+            }
         }
     } else {
-        LOG_DEBUG("set_signal_value(int32_t)::0x%08x", value);
         for (int i = 0, idx = m_num_elems - 1; i < m_num_elems; i++, idx--) {
             mtiInt32T enumVal =
                 value & (1 << i) ? m_enum_map['1'] : m_enum_map['0'];
@@ -357,30 +409,97 @@ int FliLogicObjHdl::set_signal_value(const int32_t value,
         }
 
         if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
+            switch (action) {
+                case GPI_DEPOSIT:
+                    mti_SetVarValue(get_handle<mtiVariableIdT>(),
+                                    (mtiLongT)m_mti_buff);
+                    return 0;
+                case GPI_FORCE:
+                    LOG_ERROR(
+                        "Forcing VHDL variables is not supported by the FLI");
+                    return -1;
+                case GPI_RELEASE:
+                    LOG_ERROR(
+                        "Releasing VHDL variables is not supported by the FLI");
+                    return -1;
+                default:
+                    LOG_ERROR("Unknown set value action (%d)", action);
+                    return -1;
+            }
         } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(),
-                               (mtiLongT)m_mti_buff);
+            switch (action) {
+                case GPI_DEPOSIT:
+                    mti_SetSignalValue(get_handle<mtiSignalIdT>(),
+                                       (mtiLongT)m_mti_buff);
+                    return 0;
+                case GPI_FORCE: {
+                    std::string value_str = "2#";
+                    for (int idx = m_num_elems - 1; idx >= 0; idx--) {
+                        value_str.append((value & (1 << idx)) ? "1" : "0");
+                    }
+                    return !mti_ForceSignal(
+                        get_handle<mtiSignalIdT>(),
+                        const_cast<char *>(value_str.c_str()), 0,
+                        MTI_FORCE_FREEZE, -1, -1);
+                }
+                case GPI_RELEASE:
+                    return !mti_ReleaseSignal(get_handle<mtiSignalIdT>());
+                default:
+                    LOG_ERROR("Unknown set value action (%d)", action);
+                    return -1;
+            }
         }
     }
-
-    return 0;
 }
 
 int FliLogicObjHdl::set_signal_value_binstr(std::string &value,
                                             const gpi_set_action_t action) {
-    if (action != GPI_DEPOSIT) {
-        LOG_ERROR("Force or release action not supported for FLI.");
-        return -1;
-    }
-
     if (m_fli_type == MTI_TYPE_ENUM) {
+        if (value.length() != 1) {
+            LOG_ERROR(
+                "FLI: Unable to set logic vector due to the string having "
+                "incorrect length. Length of %d needs to be 1",
+                value.length());
+            return -1;
+        }
         mtiInt32T enumVal = m_enum_map[value.c_str()[0]];
 
         if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), enumVal);
+            switch (action) {
+                case GPI_DEPOSIT:
+                    mti_SetVarValue(get_handle<mtiVariableIdT>(), enumVal);
+                    return 0;
+                case GPI_FORCE:
+                    LOG_ERROR(
+                        "Forcing VHDL variables is not supported by the FLI");
+                    return -1;
+                case GPI_RELEASE:
+                    LOG_ERROR(
+                        "Releasing VHDL variables is not supported by the FLI");
+                    return -1;
+                default:
+                    LOG_ERROR("Unknown set value action (%d)", action);
+                    return -1;
+            }
         } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
+            switch (action) {
+                case GPI_DEPOSIT:
+                    mti_SetSignalValue(get_handle<mtiSignalIdT>(), enumVal);
+                    return 0;
+                case GPI_FORCE: {
+                    std::string value_str = "2#";
+                    value_str.append(value);
+                    return !mti_ForceSignal(
+                        get_handle<mtiSignalIdT>(),
+                        const_cast<char *>(value_str.c_str()), 0,
+                        MTI_FORCE_FREEZE, -1, -1);
+                }
+                case GPI_RELEASE:
+                    return !mti_ReleaseSignal(get_handle<mtiSignalIdT>());
+                default:
+                    LOG_ERROR("Unknown set value action (%d)", action);
+                    return -1;
+            }
         }
     } else {
         if ((int)value.length() != m_num_elems) {
@@ -391,27 +510,54 @@ int FliLogicObjHdl::set_signal_value_binstr(std::string &value,
             return -1;
         }
 
-        LOG_DEBUG("set_signal_value(string)::%s", value.c_str());
-
-        mtiInt32T enumVal;
-        std::string::iterator valIter;
         int i = 0;
 
-        for (valIter = value.begin();
+        for (auto valIter = value.begin();
              (valIter != value.end()) && (i < m_num_elems); valIter++, i++) {
-            enumVal = m_enum_map[*valIter];
+            auto enumVal = m_enum_map[*valIter];
             m_mti_buff[i] = (char)enumVal;
         }
 
         if (m_is_var) {
-            mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
+            switch (action) {
+                case GPI_DEPOSIT:
+                    mti_SetVarValue(get_handle<mtiVariableIdT>(),
+                                    (mtiLongT)m_mti_buff);
+                    return 0;
+                case GPI_FORCE:
+                    LOG_ERROR(
+                        "Forcing VHDL variables is not supported by the FLI");
+                    return -1;
+                case GPI_RELEASE:
+                    LOG_ERROR(
+                        "Releasing VHDL variables is not supported by the FLI");
+                    return -1;
+                default:
+                    LOG_ERROR("Unknown set value action (%d)", action);
+                    return -1;
+            }
         } else {
-            mti_SetSignalValue(get_handle<mtiSignalIdT>(),
-                               (mtiLongT)m_mti_buff);
+            switch (action) {
+                case GPI_DEPOSIT:
+                    mti_SetSignalValue(get_handle<mtiSignalIdT>(),
+                                       (mtiLongT)m_mti_buff);
+                    return 0;
+                case GPI_FORCE: {
+                    std::string value_str = "2#";
+                    value_str.append(value);
+                    return !mti_ForceSignal(
+                        get_handle<mtiSignalIdT>(),
+                        const_cast<char *>(value_str.c_str()), 0,
+                        MTI_FORCE_FREEZE, -1, -1);
+                }
+                case GPI_RELEASE:
+                    return !mti_ReleaseSignal(get_handle<mtiSignalIdT>());
+                default:
+                    LOG_ERROR("Unknown set value action (%d)", action);
+                    return -1;
+            }
         }
     }
-
-    return 0;
 }
 
 int FliIntObjHdl::initialise(std::string &name, std::string &fq_name) {
@@ -456,20 +602,47 @@ long FliIntObjHdl::get_signal_value_long() {
 
 int FliIntObjHdl::set_signal_value(const int32_t value,
                                    const gpi_set_action_t action) {
-    if (action != GPI_DEPOSIT) {
-        LOG_ERROR("Force or release action not supported for FLI.");
-        return -1;
-    }
-
     if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(),
-                        static_cast<mtiLongT>(value));
+        switch (action) {
+            case GPI_DEPOSIT:
+                mti_SetVarValue(get_handle<mtiVariableIdT>(),
+                                static_cast<mtiLongT>(value));
+                return 0;
+            case GPI_FORCE:
+                LOG_ERROR("Forcing VHDL variables is not supported by the FLI");
+                return -1;
+            case GPI_RELEASE:
+                LOG_ERROR(
+                    "Releasing VHDL variables is not supported by the FLI");
+                return -1;
+            default:
+                LOG_ERROR("Unknown set value action (%d)", action);
+                return -1;
+        }
     } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(),
-                           static_cast<mtiLongT>(value));
+        switch (action) {
+            case GPI_DEPOSIT:
+                mti_SetSignalValue(get_handle<mtiSignalIdT>(),
+                                   static_cast<mtiLongT>(value));
+                return 0;
+            case GPI_FORCE: {
+                std::string value_str;
+                if (value < 0) {
+                    value_str.append("-");
+                }
+                value_str.append("10#");
+                value_str.append(to_string(abs(value)));
+                return !mti_ForceSignal(get_handle<mtiSignalIdT>(),
+                                        const_cast<char *>(value_str.c_str()),
+                                        0, MTI_FORCE_FREEZE, -1, -1);
+            }
+            case GPI_RELEASE:
+                return !mti_ReleaseSignal(get_handle<mtiSignalIdT>());
+            default:
+                LOG_ERROR("Unknown set value action (%d)", action);
+                return -1;
+        }
     }
-
-    return 0;
 }
 
 int FliRealObjHdl::initialise(std::string &name, std::string &fq_name) {
@@ -495,20 +668,43 @@ double FliRealObjHdl::get_signal_value_real() {
 
 int FliRealObjHdl::set_signal_value(const double value,
                                     const gpi_set_action_t action) {
-    if (action != GPI_DEPOSIT) {
-        LOG_ERROR("Force or release action not supported for FLI.");
-        return -1;
-    }
-
     m_mti_buff[0] = value;
 
     if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
+        switch (action) {
+            case GPI_DEPOSIT:
+                mti_SetVarValue(get_handle<mtiVariableIdT>(),
+                                (mtiLongT)m_mti_buff);
+                return 0;
+            case GPI_FORCE:
+                LOG_ERROR("Forcing VHDL variables is not supported by the FLI");
+                return -1;
+            case GPI_RELEASE:
+                LOG_ERROR(
+                    "Releasing VHDL variables is not supported by the FLI");
+                return -1;
+            default:
+                LOG_ERROR("Unknown set value action (%d)", action);
+                return -1;
+        }
     } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
+        switch (action) {
+            case GPI_DEPOSIT:
+                mti_SetSignalValue(get_handle<mtiSignalIdT>(),
+                                   (mtiLongT)m_mti_buff);
+                return 0;
+            case GPI_FORCE: {
+                LOG_ERROR("Cannot force a real signal with the FLI");
+                return -1;
+            }
+            case GPI_RELEASE:
+                mti_ReleaseSignal(get_handle<mtiSignalIdT>());
+                return 0;
+            default:
+                LOG_ERROR("Unknown set value action (%d)", action);
+                return -1;
+        }
     }
-
-    return 0;
 }
 
 int FliStringObjHdl::initialise(std::string &name, std::string &fq_name) {
@@ -542,18 +738,41 @@ const char *FliStringObjHdl::get_signal_value_str() {
 
 int FliStringObjHdl::set_signal_value_str(std::string &value,
                                           const gpi_set_action_t action) {
-    if (action != GPI_DEPOSIT) {
-        LOG_ERROR("Force or release action not supported for FLI.");
-        return -1;
-    }
-
     strncpy(m_mti_buff, value.c_str(), static_cast<size_t>(m_num_elems));
 
     if (m_is_var) {
-        mti_SetVarValue(get_handle<mtiVariableIdT>(), (mtiLongT)m_mti_buff);
+        switch (action) {
+            case GPI_DEPOSIT:
+                mti_SetVarValue(get_handle<mtiVariableIdT>(),
+                                (mtiLongT)m_mti_buff);
+                return 0;
+            case GPI_FORCE:
+                LOG_ERROR("Forcing VHDL variables is not supported by the FLI");
+                return -1;
+            case GPI_RELEASE:
+                LOG_ERROR(
+                    "Releasing VHDL variables is not supported by the FLI");
+                return -1;
+            default:
+                LOG_ERROR("Unknown set value action (%d)", action);
+                return -1;
+        }
     } else {
-        mti_SetSignalValue(get_handle<mtiSignalIdT>(), (mtiLongT)m_mti_buff);
+        switch (action) {
+            case GPI_DEPOSIT:
+                mti_SetSignalValue(get_handle<mtiSignalIdT>(),
+                                   (mtiLongT)m_mti_buff);
+                return 0;
+            case GPI_FORCE: {
+                return !mti_ForceSignal(get_handle<mtiSignalIdT>(),
+                                        const_cast<char *>(value.c_str()), 0,
+                                        MTI_FORCE_FREEZE, -1, -1);
+            }
+            case GPI_RELEASE:
+                return !mti_ReleaseSignal(get_handle<mtiSignalIdT>());
+            default:
+                LOG_ERROR("Unknown set value action (%d)", action);
+                return -1;
+        }
     }
-
-    return 0;
 }

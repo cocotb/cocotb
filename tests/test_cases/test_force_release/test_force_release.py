@@ -5,11 +5,8 @@ from cocotb.triggers import Timer
 from cocotb.handle import Force, Release
 
 
-# Questa FLI GPI implementation does not support Force/Release (gh-1855)
 @cocotb.test(
     expect_fail=cocotb.SIM_NAME.lower().startswith("ghdl")
-    or cocotb.LANGUAGE == "vhdl"
-    and cocotb.SIM_NAME.lower().startswith("modelsim")
 )
 async def test_force_release(dut):
     """
