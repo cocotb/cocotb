@@ -40,6 +40,7 @@ import threading
 import inspect
 import warnings
 from typing import Any, Union
+from collections import OrderedDict
 from collections.abc import Coroutine
 
 import cocotb
@@ -231,9 +232,10 @@ class Scheduler:
         # Our main state
         self._mode = Scheduler._MODE_NORMAL
 
-        # A dictionary of pending (write_func, args), keyed by handle. Only the last scheduled write
-        # in a timestep is performed, all the rest are discarded in python.
-        self._write_calls = _py_compat.insertion_ordered_dict()
+        # A dictionary of pending (write_func, args), keyed by handle.
+        # Writes are applied oldest to newest (least recently used).
+        # Only the last scheduled write to a particular handle in a timestep is performed.
+        self._write_calls = OrderedDict()
 
         self._pending_coros = []
         self._pending_triggers = []
@@ -261,7 +263,7 @@ class Scheduler:
             await self._read_write
 
             while self._write_calls:
-                handle, (func, args) = self._write_calls.popitem()
+                handle, (func, args) = self._write_calls.popitem(last=False)
                 func(*args)
             self._writes_pending.clear()
 
@@ -286,7 +288,7 @@ class Scheduler:
             self._timer1.prime(self._test_completed)
             self._trigger2coros = _py_compat.insertion_ordered_dict()
             self._terminate = False
-            self._write_calls = _py_compat.insertion_ordered_dict()
+            self._write_calls = OrderedDict()
             self._writes_pending.clear()
             self._mode = Scheduler._MODE_TERM
 
@@ -555,6 +557,8 @@ class Scheduler:
         if self._write_coro_inst is None:
             self._write_coro_inst = self.add(self._do_writes())
 
+        if handle in self._write_calls:
+            del self._write_calls[handle]
         self._write_calls[handle] = (write_func, args)
         self._writes_pending.set()
 
